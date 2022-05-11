@@ -59,6 +59,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.RangeError;
 import org.jruby.java.util.ArrayUtils;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
@@ -1017,7 +1018,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (len < 0) throw runtime.newIndexError("negative length (" + len + ")");
         if (beg < 0 && (beg += realLength) < 0)
             throw runtime.newIndexError("index " + (beg - realLength) + " out of array");
-
         final RubyArray rplArr;
         final int rlen;
 
@@ -1726,8 +1726,23 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         } else if (arg0 instanceof RubyRange) {
             RubyRange range = (RubyRange) arg0;
             final Ruby runtime = metaClass.runtime;
-            int beg = checkInt(runtime, range.begLen0(realLength));
-            splice(runtime, beg, checkInt(runtime, range.begLen1(realLength, beg)), arg1);
+            // check for that first index can fit in an integer
+            long begl0 = range.begLen0(realLength);
+            int beg0;
+            try {
+                beg0 = checkInt(runtime, begl0);
+            } catch (RangeError e) {
+                throw runtime.newIndexError(String.format("index %d too big", begl0));
+            }
+            // check for that second index can fit in an integer
+            long begl1 = range.begLen1(realLength, beg0);
+            int beg1;
+            try {
+                beg1 = checkInt(runtime, begl1);
+            } catch (RangeError e) {
+                throw runtime.newIndexError(String.format("index %d too big", begl1));
+            }
+            splice(runtime, beg0, beg1, arg1);
         } else {
             asetFallback(arg0, arg1);
         }
