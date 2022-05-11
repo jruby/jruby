@@ -2503,8 +2503,10 @@ class TestArray < Test::Unit::TestCase
     assert_raise(IndexError) { [0][-2] = 1 }
     assert_raise(IndexError) { [0][LONGP] = 2 }
     assert_raise(IndexError) { [0][(LONGP + 1) / 2 - 1] = 2 }
-    assert_raise(IndexError) { [0][LONGP..-1] = 2 }
-    assert_raise(IndexError) { [0][LONGP..] = 2 }
+    # changed to RangeError as LONGP is too large to be 
+    # converted to int
+    assert_raise(RangeError) { [0][LONGP..-1] = 2 }
+    assert_raise(RangeError) { [0][LONGP..] = 2 }
     a = [0]
     a[2] = 4
     assert_equal([0, nil, 4], a)
