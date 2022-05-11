@@ -697,7 +697,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>strscan</artifactId>
-      <version>3.0.2</version>
+      <version>3.0.3</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1026,7 +1026,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>specifications/shellwords-0.1.0*</include>
           <include>specifications/singleton-0.1.1*</include>
           <include>specifications/stringio-3.0.2*</include>
-          <include>specifications/strscan-3.0.2*</include>
+          <include>specifications/strscan-3.0.3*</include>
           <include>specifications/time-0.1.0*</include>
           <include>specifications/timeout-0.2.0*</include>
           <include>specifications/tsort-0.1.0*</include>
@@ -1097,7 +1097,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>gems/shellwords-0.1.0*/**/*</include>
           <include>gems/singleton-0.1.1*/**/*</include>
           <include>gems/stringio-3.0.2*/**/*</include>
-          <include>gems/strscan-3.0.2*/**/*</include>
+          <include>gems/strscan-3.0.3*/**/*</include>
           <include>gems/time-0.1.0*/**/*</include>
           <include>gems/timeout-0.2.0*/**/*</include>
           <include>gems/tsort-0.1.0*/**/*</include>
@@ -1168,7 +1168,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>cache/shellwords-0.1.0*</include>
           <include>cache/singleton-0.1.1*</include>
           <include>cache/stringio-3.0.2*</include>
-          <include>cache/strscan-3.0.2*</include>
+          <include>cache/strscan-3.0.3*</include>
           <include>cache/time-0.1.0*</include>
           <include>cache/timeout-0.2.0*</include>
           <include>cache/tsort-0.1.0*</include>
