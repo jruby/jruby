@@ -1726,27 +1726,22 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         } else if (arg0 instanceof RubyRange) {
             RubyRange range = (RubyRange) arg0;
             final Ruby runtime = metaClass.runtime;
-            // check for that first index can fit in an integer
-            long begl0 = range.begLen0(realLength);
-            int beg0;
-            try {
-                beg0 = checkInt(runtime, begl0);
-            } catch (RangeError e) {
-                throw runtime.newIndexError(String.format("index %d too big", begl0));
-            }
-            // check for that second index can fit in an integer
-            long begl1 = range.begLen1(realLength, beg0);
-            int beg1;
-            try {
-                beg1 = checkInt(runtime, begl1);
-            } catch (RangeError e) {
-                throw runtime.newIndexError(String.format("index %d too big", begl1));
-            }
+            int beg0 = checkLongForInt(runtime, range.begLen0(realLength));
+            int beg1 = checkLongForInt(runtime, range.begLen1(realLength, beg0));
             splice(runtime, beg0, beg1, arg1);
         } else {
             asetFallback(arg0, arg1);
         }
         return arg1;
+    }
+
+    // stand in method for checkInt as it raises the wrong type of 
+    // exception to mri
+    private int checkLongForInt(final Ruby runtime, long value) {
+        if (((int)value) != value) {
+            throw runtime.newIndexError(String.format("index %d is too big", value));
+        }
+        return (int)value;
     }
 
     private void asetFallback(IRubyObject arg0, IRubyObject arg1) {
