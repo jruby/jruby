@@ -216,7 +216,7 @@ public class RubyGlobal {
         runtime.defineVariable(new BacktraceGlobalVariable(runtime, "$@"), THREAD);
 
         initSTDIO(runtime, globals);
-
+        
         runtime.defineVariable(new LoadedFeatures(runtime, "$\""), GLOBAL);
         runtime.defineVariable(new LoadedFeatures(runtime, "$LOADED_FEATURES"), GLOBAL);
 
@@ -246,7 +246,7 @@ public class RubyGlobal {
         globals.defineReadonly("$-p",
                 new ValueAccessor(runtime.newBoolean(runtime.getInstanceConfig().isAssumePrinting())),
                 GLOBAL);
-        globals.defineReadonly("$-a",
+                globals.defineReadonly("$-a",
                 new ValueAccessor(runtime.newBoolean(runtime.getInstanceConfig().isSplit())),
                 GLOBAL);
         globals.defineReadonly("$-l",
@@ -255,6 +255,13 @@ public class RubyGlobal {
 
         // ARGF, $< object
         RubyArgsFile.initArgsFile(runtime);
+
+        String inplace = runtime.config.getInPlaceBackupExtension();
+        if (inplace != null) {
+            runtime.defineVariable(new ArgfGlobalVariable(runtime, "$-i", runtime.newString(inplace)), GLOBAL);
+        } else {
+            runtime.defineVariable(new ArgfGlobalVariable(runtime, "$-i", runtime.getNil()), GLOBAL);
+        }
 
         globals.alias("$-0", "$/");
 
@@ -948,6 +955,22 @@ public class RubyGlobal {
         public IRubyObject set(IRubyObject value) {
             if (!value.isNil() && ! (value instanceof RubyString)) {
                 throw runtime.newTypeError("value of " + name() + " must be a String");
+            }
+            return super.set(value);
+        }
+    }
+
+    public static class ArgfGlobalVariable extends GlobalVariable {
+        public ArgfGlobalVariable(Ruby runtime, String name, IRubyObject value) {
+            super(runtime, name, value);
+            set(value);
+        }
+
+        @Override
+        public IRubyObject set(IRubyObject value) {
+            RubyArgsFile.inplace_mode_set(runtime.getCurrentContext(), runtime.getArgsFile(), value);
+            if (value.isNil() || !value.isTrue()) {
+                runtime.getInstanceConfig().setInPlaceBackupExtension(null);
             }
             return super.set(value);
         }

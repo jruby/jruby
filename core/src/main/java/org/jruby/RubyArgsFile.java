@@ -283,7 +283,7 @@ public class RubyArgsFile extends RubyObject {
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
 
         if (data.inPlace == null) return context.nil;
-        if (data.inPlace.isNil()) return context.runtime.newString("");
+        if (data.inPlace.isNil()) return context.nil;
 
         return data.inPlace.dup();
     }
@@ -296,7 +296,9 @@ public class RubyArgsFile extends RubyObject {
     private static IRubyObject setInplaceMode(ThreadContext context, IRubyObject recv, IRubyObject test) {
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
 
-        if (!test.isTrue()) {
+        if (test.isNil()) {
+            data.inPlace = context.nil;
+        } else if (!test.isTrue()) {
             data.inPlace = context.fals;
         } else {
             test = TypeConverter.convertToType(test, context.runtime.getString(), "to_str", false);
