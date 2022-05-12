@@ -168,10 +168,10 @@ public class RubyGlobal {
 
         RubyInstanceConfig.Verbosity verbosity = runtime.getInstanceConfig().getVerbosity();
         runtime.defineVariable(new WarningGlobalVariable(runtime, "$-W", verbosity), GLOBAL);
-
+        
         final GlobalVariable kcodeGV;
         kcodeGV = new NonEffectiveGlobalVariable(runtime, "$KCODE", runtime.getNil());
-
+        
         runtime.defineVariable(kcodeGV, GLOBAL);
         runtime.defineVariable(new GlobalVariable.Copy(runtime, "$-K", kcodeGV), GLOBAL);
         IRubyObject defaultRS = runtime.newString(runtime.getInstanceConfig().getRecordSeparator());
@@ -182,14 +182,14 @@ public class RubyGlobal {
         globals.setDefaultSeparator(defaultRS);
         runtime.defineVariable(new StringGlobalVariable(runtime, "$\\", runtime.getNil()), GLOBAL);
         runtime.defineVariable(new DeprecatedStringGlobalVariable(runtime, "$,", runtime.getNil()), GLOBAL);
-
+        
         runtime.defineVariable(new LineNumberGlobalVariable(runtime, "$."), GLOBAL);
         runtime.defineVariable(new LastlineGlobalVariable(runtime, "$_"), FRAME);
         runtime.defineVariable(new LastExitStatusVariable(runtime, "$?"), THREAD);
-
+        
         runtime.defineVariable(new ErrorInfoGlobalVariable(runtime, "$!", runtime.getNil()), THREAD);
         runtime.defineVariable(new NonEffectiveGlobalVariable(runtime, "$=", runtime.getFalse()), GLOBAL);
-
+        
         if(runtime.getInstanceConfig().getInputFieldSeparator() == null) {
             runtime.defineVariable(new DeprecatedStringOrRegexpGlobalVariable(runtime, "$;", runtime.getNil()), GLOBAL);
         } else {
@@ -212,14 +212,14 @@ public class RubyGlobal {
         IRubyObject debug = runtime.newBoolean(runtime.getInstanceConfig().isDebug());
         runtime.defineVariable(new DebugGlobalVariable(runtime, "$DEBUG", debug), GLOBAL);
         runtime.defineVariable(new DebugGlobalVariable(runtime, "$-d", debug), GLOBAL);
-
+        
         runtime.defineVariable(new BacktraceGlobalVariable(runtime, "$@"), THREAD);
-
+        
         initSTDIO(runtime, globals);
-
+        
         runtime.defineVariable(new LoadedFeatures(runtime, "$\""), GLOBAL);
         runtime.defineVariable(new LoadedFeatures(runtime, "$LOADED_FEATURES"), GLOBAL);
-
+        
         runtime.defineVariable(new LoadPath(runtime, "$:"), GLOBAL);
         runtime.defineVariable(new LoadPath(runtime, "$-I"), GLOBAL);
         runtime.defineVariable(new LoadPath(runtime, "$LOAD_PATH"), GLOBAL);
@@ -234,7 +234,7 @@ public class RubyGlobal {
         // as $$ used to. Using $$ to kill processes could take down many runtimes, but by basing
         // $$ on getpid() where available, we have the same semantics as MRI.
         globals.defineReadonly("$$", new PidAccessor(runtime), GLOBAL);
-
+        
         // after defn of $stderr as the call may produce warnings
         defineGlobalEnvConstants(runtime);
 
@@ -246,7 +246,7 @@ public class RubyGlobal {
         globals.defineReadonly("$-p",
                 new ValueAccessor(runtime.newBoolean(runtime.getInstanceConfig().isAssumePrinting())),
                 GLOBAL);
-        globals.defineReadonly("$-a",
+                globals.defineReadonly("$-a",
                 new ValueAccessor(runtime.newBoolean(runtime.getInstanceConfig().isSplit())),
                 GLOBAL);
         globals.defineReadonly("$-l",
@@ -255,6 +255,13 @@ public class RubyGlobal {
 
         // ARGF, $< object
         RubyArgsFile.initArgsFile(runtime);
+        
+        String inplace = runtime.config.getInPlaceBackupExtension();
+        if (inplace != null) {
+            runtime.defineVariable(new ArgfGlobalVariable(runtime, "$-i", runtime.newString(inplace)), GLOBAL);
+        } else {
+            runtime.defineVariable(new ArgfGlobalVariable(runtime, "$-i", runtime.getNil()), GLOBAL);
+        }
 
         globals.alias("$-0", "$/");
 
@@ -948,6 +955,22 @@ public class RubyGlobal {
         public IRubyObject set(IRubyObject value) {
             if (!value.isNil() && ! (value instanceof RubyString)) {
                 throw runtime.newTypeError("value of " + name() + " must be a String");
+            }
+            return super.set(value);
+        }
+    }
+
+    public static class ArgfGlobalVariable extends GlobalVariable {
+        public ArgfGlobalVariable(Ruby runtime, String name, IRubyObject value) {
+            super(runtime, name, value);
+            set(value);
+        }
+
+        @Override
+        public IRubyObject set(IRubyObject value) {
+            RubyArgsFile.inplace_mode_set(runtime.getCurrentContext(), runtime.getArgsFile(), value);
+            if (value.isNil() || !value.isTrue()) {
+                runtime.getInstanceConfig().setInPlaceBackupExtension(null);
             }
             return super.set(value);
         }
