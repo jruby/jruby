@@ -295,7 +295,7 @@ public class RubyArgsFile extends RubyObject {
 
     private static IRubyObject setInplaceMode(ThreadContext context, IRubyObject recv, IRubyObject test) {
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
-        
+
         if (test.isNil()) {
             data.inPlace = context.nil;
         } else if (!test.isTrue()) {
