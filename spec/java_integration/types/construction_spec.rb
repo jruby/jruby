@@ -789,8 +789,7 @@ describe "A Ruby class implementing an interface returning a Java Object[]" do
       end
     end
     expect(ArrayReturningInterfaceConsumer.new.eat(Bar.new)).not_to eq(nil)
-    expect(ArrayReturningInterfaceConsumer.new.eat(Bar.new).java_object.class.name).to eq('Java::JavaArray')
-    expect(ArrayReturningInterfaceConsumer.new.eat(Bar.new).java_object.class).to eq(Java::JavaArray)
+    expect(ArrayReturningInterfaceConsumer.new.eat(Bar.new).java_object).to be_a(Java::JavaArray) # ArrayJavaProxy (compat)
   end
 end
 

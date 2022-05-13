@@ -32,49 +32,34 @@
 package org.jruby.javasupport;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.RubyBoolean;
-import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyString;
-import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
-import static org.jruby.javasupport.JavaClass.toRubyArray;
 
-public abstract class JavaCallable extends JavaAccessibleObject implements ParameterTypes {
+public abstract class JavaCallable implements ParameterTypes {
 
     protected final Class<?>[] parameterTypes;
 
     private static final boolean REWRITE_JAVA_TRACE = Options.REWRITE_JAVA_TRACE.load();
 
-    protected JavaCallable(Ruby runtime, RubyClass rubyClass, Class<?>[] parameterTypes) {
-        super(runtime, rubyClass);
+    protected JavaCallable(Class<?>[] parameterTypes) {
         this.parameterTypes = parameterTypes;
-    }
-
-    public static void registerRubyMethods(Ruby runtime, RubyClass result) {
-        result.defineAnnotatedMethods(JavaCallable.class);
     }
 
     public final int getArity() { return parameterTypes.length; }
 
     public final Class<?>[] getParameterTypes() { return parameterTypes; }
 
-    //public abstract int getArity();
-    //public abstract Class<?>[] getParameterTypes();
     public abstract int getModifiers();
     public abstract Class<?>[] getExceptionTypes();
     public abstract Type[] getGenericExceptionTypes();
@@ -83,65 +68,20 @@ public abstract class JavaCallable extends JavaAccessibleObject implements Param
     public abstract boolean isVarArgs();
     public abstract String toGenericString();
 
-    @JRubyMethod
-    public final RubyFixnum arity(ThreadContext context) {
-        return context.runtime.newFixnum(getArity());
-    }
+    public abstract AccessibleObject accessibleObject();
 
-    @JRubyMethod(name = { "argument_types", "parameter_types" })
-    @SuppressWarnings("deprecation")
-    public final RubyArray parameter_types(ThreadContext context) {
-        return toRubyArray(context.runtime, getParameterTypes());
-    }
+    public abstract boolean equals(final Object other);
+    public abstract int hashCode();
 
-    @JRubyMethod
-    @SuppressWarnings("deprecation")
-    public RubyArray exception_types(ThreadContext context) {
-        return toRubyArray(context.runtime, getExceptionTypes());
-    }
-
-    @JRubyMethod
-    public IRubyObject generic_parameter_types(ThreadContext context) {
-        return Java.getInstance(context.runtime, getGenericParameterTypes());
-    }
-
-    @JRubyMethod
-    public IRubyObject generic_exception_types(ThreadContext context) {
-        return Java.getInstance(context.runtime, getGenericExceptionTypes());
-    }
-
-    @JRubyMethod
-    public IRubyObject parameter_annotations(ThreadContext context) {
-        return Java.getInstance(context.runtime, getParameterAnnotations());
-    }
-
-    @JRubyMethod(name = "varargs?")
-    public RubyBoolean varargs_p(ThreadContext context) {
-        return context.runtime.newBoolean(isVarArgs());
-    }
-
-    @JRubyMethod
-    public RubyString to_generic_string(ThreadContext context) {
-        return context.runtime.newString(toGenericString());
-    }
-
-    @JRubyMethod(name = "public?")
-    public RubyBoolean public_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context.runtime, Modifier.isPublic(getModifiers()));
+    @Override
+    public String toString() {
+        return accessibleObject().toString();
     }
 
     protected final void checkArity(ThreadContext context, final int length) {
         if ( length != getArity() ) {
             throw context.runtime.newArgumentError(length, getArity());
         }
-    }
-
-    final Object[] convertArguments(final IRubyObject[] args) {
-        return JavaUtil.convertArguments(args, parameterTypes, 0);
-    }
-
-    final Object[] convertArguments(final IRubyObject[] args, int offset) {
-        return JavaUtil.convertArguments(args, parameterTypes, offset);
     }
 
     protected final IRubyObject handleThrowable(ThreadContext context, final Throwable ex) {

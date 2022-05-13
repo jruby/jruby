@@ -901,7 +901,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
     compare_to_ignore_case concat contentEquals content_equals endsWith
     ends_with equals equalsIgnoreCase equals_ignore_case getBytes getChars
     getClass get_bytes get_chars get_class hashCode hash_code indexOf
-    index_of intern java_class java_object java_object= lastIndexOf last_index_of
+    index_of intern java_class java_object lastIndexOf last_index_of
     length matches notify notifyAll notify_all regionMatches region_matches replace
     replaceAll replaceFirst replace_all replace_first split startsWith starts_with
     subSequence sub_sequence substring toCharArray toLowerCase

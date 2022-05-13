@@ -43,8 +43,8 @@ import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.proxies.ConcreteJavaProxy.NewMethodReified;
 import org.jruby.java.proxies.ConcreteJavaProxy.StaticJCreateMethod;
+import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.Java;
-import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -82,8 +82,8 @@ import static org.jruby.javasupport.JavaClass.EMPTY_CLASS_ARRAY;
  * @see java.lang.reflect.Proxy
  *
  */
+@JRubyClass(name="Java::JavaProxyClass")
 public class JavaProxyClass extends JavaProxyReflectionObject {
-
 
     private final Class proxyClass;
     private final ArrayList<JavaProxyMethod> methods = new ArrayList<>();
@@ -338,11 +338,11 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             }
 
             final IRubyObject invokee = args[0];
-            if ( ! ( invokee instanceof JavaObject ) ) {
-                throw runtime.newTypeError("invokee not a java object");
+            if ( ! ( invokee instanceof JavaProxy) ) {
+                throw runtime.newTypeError("not a java proxy: " + (invokee == null ? null : invokee.getClass()));
             }
 
-            Object receiver_value = ((JavaObject) invokee).getValue();
+            Object receiver_value = ((JavaProxy) invokee).getObject();
 
             final Object[] arguments = new Object[ args.length - 1 ];
 
@@ -549,28 +549,28 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
      */
     private static final ThreadLocal<Object[]> lookup = new ThreadLocal<>();
 
-    public static Integer addStaticInitLookup(Object... objects) {
+    public static int addStaticInitLookup(Object... objects) {
         // TODO: is this a log or an exception?
         if (objects != null) ensureStaticIntConsumed();
         lookup.set(objects);
-        if (objects == null) return 0;
-        int val = objects.hashCode();
-        return val;
+        return System.identityHashCode(objects); // 0 if null
     }
 
     public static void ensureStaticIntConsumed() {
         if (lookup.get() != null) {
-            throw new IllegalStateException("Thread local class wasn't consumed for class " + ((RubyClass)lookup.get()[1]).getName());
+            throw new IllegalStateException("Thread local class wasn't consumed for: " + lookup.get()[1]);
         }
     }
 
     // used by reified code in RubyClass
-    public static Object[] getStaticInitLookup(int id) {
-        if (lookup.get() == null) throw new IllegalStateException("Thread local class wasn't set up for reification");
-        if (lookup.get().hashCode() != id) throw new IllegalStateException("Thread local class wasn't was reification was expecting");
-        Object[] o = lookup.get();
+    public static Object[] getStaticInitLookup(final int id) {
+        final Object[] objects = lookup.get();
+        if (objects == null) throw new IllegalStateException("Thread local class wasn't set up for reification");
+        if (System.identityHashCode(objects) != id) {
+            throw new IllegalStateException("Thread local class wasn't what reification was expecting: " +  lookup.get()[1]);
+        }
         lookup.set(null);
-        return o;
+        return objects;
     }
 
     public static JavaProxyClass getProxyClass(final Ruby runtime, final RubyClass clazz) {

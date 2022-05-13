@@ -59,6 +59,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -68,7 +69,7 @@ import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
-import org.jruby.RubyInstanceConfig;
+import org.jruby.exceptions.TypeError;
 import org.jruby.ext.bigdecimal.RubyBigDecimal;
 import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
@@ -95,9 +96,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.TypeConverter;
-import org.jruby.util.cli.Options;
 
 public class JavaUtil {
+
     public static IRubyObject[] convertJavaArrayToRuby(final Ruby runtime, final Object[] objects) {
         if ( objects == null || objects.length == 0 ) return IRubyObject.NULL_ARRAY;
 
@@ -263,8 +264,8 @@ public class JavaUtil {
             }
 
         }
-        JavaObject javaObject = (JavaObject) Helpers.invoke(context, rubyObject, "__jcreate_meta!");
-        return (T) javaObject.getValue();
+        JavaProxy javaObject = (JavaProxy) Helpers.invoke(context, rubyObject, "__jcreate_meta!");
+        return (T) javaObject.getObject();
     }
 
     public static <T> NumericConverter<T> getNumericConverter(Class<T> target) {
@@ -277,6 +278,7 @@ public class JavaUtil {
      * @param object
      * @return true if the object is wrapping a Java object
      */
+    @SuppressWarnings("deprecation")
     public static boolean isJavaObject(final IRubyObject object) {
         return object instanceof JavaProxy || object.dataGetStruct() instanceof JavaObject;
     }
@@ -287,6 +289,7 @@ public class JavaUtil {
      * @return Java object
      * @see JavaUtil#isJavaObject(IRubyObject)
      */
+    @SuppressWarnings("deprecation")
     public static <T> T unwrapJavaObject(final IRubyObject object) {
         if ( object instanceof JavaProxy ) {
             return (T) ((JavaProxy) object).getObject();
@@ -300,6 +303,7 @@ public class JavaUtil {
      * @return java object or passed object
      * @see JavaUtil#isJavaObject(IRubyObject)
      */
+    @SuppressWarnings("deprecation")
     public static <T> T unwrapIfJavaObject(final IRubyObject object) {
         if ( object instanceof JavaProxy ) {
             return (T) ((JavaProxy) object).getObject();
@@ -338,12 +342,13 @@ public class JavaUtil {
      * @note Returns null if not a wrapped Java value.
      * @return unwrapped Java (object's) value
      */
-    public static Object unwrapJavaValue(final IRubyObject object) {
+    @SuppressWarnings("deprecation")
+    public static <T> T unwrapJavaValue(final IRubyObject object) {
         if ( object instanceof JavaProxy ) {
-            return ((JavaProxy) object).getObject();
+            return (T) ((JavaProxy) object).getObject();
         }
         if ( object instanceof JavaObject ) {
-            return ((JavaObject) object).getValue();
+            return (T) ((JavaObject) object).getValue();
         }
         final Object unwrap = object.dataGetStruct();
         if ( unwrap instanceof IRubyObject ) {
@@ -658,7 +663,7 @@ public class JavaUtil {
     public static final JavaConverter JAVA_DEFAULT_CONVERTER = new JavaConverter(Object.class) {
         public IRubyObject convert(Ruby runtime, Object object) {
             IRubyObject result = trySimpleConversions(runtime, object);
-            return result == null ? JavaObject.wrap(runtime, object) : result;
+            return result == null ? Java.getInstance(runtime, object) : result;
         }
         public IRubyObject get(Ruby runtime, Object array, int i) {
             return convert(runtime, ((Object[]) array)[i]);
@@ -1514,6 +1519,7 @@ public class JavaUtil {
     }
 
     @Deprecated
+    @SuppressWarnings("deprecation")
     public static IRubyObject primitive_to_java(IRubyObject recv, IRubyObject object, Block unusedBlock) {
         if (object instanceof JavaObject) {
             return object;
@@ -1553,7 +1559,7 @@ public class JavaUtil {
         }
 
         // we've found a Java type to which we've coerced the Ruby value, wrap it
-        return JavaObject.wrap(runtime, javaObject);
+        return Java.getInstance(runtime, javaObject);
     }
 
     @Deprecated
@@ -1672,6 +1678,58 @@ public class JavaUtil {
             }
         }
         return (JavaObject)obj;
+    }
+
+    @SuppressWarnings("deprecation")
+    public static <T> T unwrapJava(final Object wrapped, final T defaultValue) {
+        if ( wrapped instanceof JavaProxy ) {
+            return (T) ((JavaProxy) wrapped).getObject();
+        }
+        if ( wrapped instanceof JavaObject ) { // handles JavaClass as well
+            return (T) ((JavaObject) wrapped).getValue();
+        }
+        return defaultValue;
+    }
+
+    public static <T> T unwrapJava(final IRubyObject wrapped) {
+        if (wrapped == null) throw new NullPointerException();
+
+        Object unwrap = unwrapJava(wrapped, RubyBasicObject.NEVER);
+        if (unwrap == RubyBasicObject.NEVER) {
+            throw wrapped.getRuntime().newTypeError(wrapped, "JavaProxy");
+        }
+        return (T) unwrap;
+    }
+
+    /**
+     * Get the associated JavaClass for a Java proxy module/class or wrapper.
+     *
+     * @note Works best when passed module/class is assumed to be a Java proxy wrapper.
+     *
+     * @param type
+     * @return class
+     */
+    public static Class<?> getJavaClass(final RubyModule type) throws TypeError {
+        return getJavaClass(type, () -> {
+            throw type.getRuntime().newTypeError("wrong argument type (not a Java proxy nor does respond to java_class) " + type);
+        });
+    }
+
+    /**
+     * Get the associated JavaClass for a Java proxy module/class or wrapper.
+     *
+     * @param type
+     * @param ifNone fallback if none Java class wrapper
+     * @return class or the result of the supplier function
+     */
+    // Class objects have a java_class method but they're not considered Java proxies
+    public static Class<?> getJavaClass(final RubyModule type, final Supplier<Class<?>> ifNone) {
+        if (type.getJavaProxy()) return (Class<?>) type.dataGetStruct();
+
+        IRubyObject java_class = JavaProxy.getJavaClass(type); // always a JavaProxy
+        if (java_class != null) return (Class<?>) ((JavaProxy) java_class).getObject();
+
+        return ifNone == null ? null : ifNone.get();
     }
 
     @Deprecated

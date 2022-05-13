@@ -5,7 +5,6 @@ import java.lang.reflect.Method;
 import org.jruby.*;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.junit.Test;
 
 import org.jruby.test.ThrowingConstructor;
@@ -105,12 +104,11 @@ public class TestJava extends junit.framework.TestCase {
         JavaConstructor constructor = JavaConstructor.create(runtime,
                 ThrowingConstructor.class.getDeclaredConstructor(Integer.class)
         );
-        assertNotNull(constructor.new_instance(context, new IRubyObject[] { runtime.newFixnum(0) }));
 
-        assertNotNull(constructor.new_instance(context, new Object[] { 1 }));
+        assertNotNull(constructor.newInstanceDirect(context, new Object[] { 1 }));
 
         try {
-            constructor.new_instance(context, new Object[0]);
+            constructor.newInstanceDirect(context, new Object[0]);
             assertTrue("raise exception expected", false);
         }
         catch (RaiseException ex) {
@@ -121,7 +119,7 @@ public class TestJava extends junit.framework.TestCase {
         }
 
         try {
-            constructor.new_instance(context, new Object[] { -1 });
+            constructor.newInstanceDirect(context, new Object[] { -1 });
             assertTrue("raise exception expected", false);
         }
         catch (IllegalStateException ex) {
@@ -132,7 +130,7 @@ public class TestJava extends junit.framework.TestCase {
         }
 
         try {
-            constructor.new_instance(context, new Object[] { null }); // new IllegalStateException() null cause message
+            constructor.newInstanceDirect(context, new Object[] { null }); // new IllegalStateException() null cause message
             assertTrue("raise exception expected", false);
         }
         catch (IllegalStateException ex) {

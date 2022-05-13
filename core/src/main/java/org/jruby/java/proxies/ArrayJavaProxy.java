@@ -63,12 +63,15 @@ public final class ArrayJavaProxy extends JavaProxy {
         return new ArrayJavaProxy(runtime, Java.getProxyClassForObject(runtime, array), array);
     }
 
+    @Override
+    @Deprecated
     protected JavaArray asJavaObject(final Object array) {
         return new JavaArray(getRuntime(), array);
     }
 
+    @Deprecated
     public final JavaArray getJavaArray() {
-        return (JavaArray) dataGetStruct();
+        return asJavaObject(this.object);
     }
 
     public Object get(final int index) {
@@ -487,10 +490,13 @@ public final class ArrayJavaProxy extends JavaProxy {
         return JavaUtil.convertJavaArrayToRubyWithNesting(context, array);
     }
 
+    public Class<?> getComponentType() {
+        return getObject().getClass().getComponentType();
+    }
+
     @JRubyMethod(name = "component_type")
     public IRubyObject component_type(ThreadContext context) {
-        Class<?> componentType = getObject().getClass().getComponentType();
-        return Java.getProxyClass(context.runtime, componentType);
+        return Java.getProxyClass(context.runtime, getComponentType());
     }
 
     private static final byte[] END_BRACKET_COLON_SPACE = new byte[] { ']', ':', ' ' };
@@ -892,8 +898,8 @@ public final class ArrayJavaProxy extends JavaProxy {
         public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
             final Ruby runtime = context.runtime;
 
-            if ( ! ( arg0 instanceof JavaArray ) ) {
-                throw runtime.newTypeError(arg0, runtime.getJavaSupport().getJavaArrayClass());
+            if (!(arg0 instanceof ArrayJavaProxy)) {
+                throw runtime.newTypeError(arg0, "ArrayJavaProxy");
             }
 
             IRubyObject proxy = newMethod.call(context, self, clazz, "new_proxy");

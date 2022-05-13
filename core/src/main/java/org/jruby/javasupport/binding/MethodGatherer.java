@@ -8,6 +8,7 @@ import org.jruby.java.invokers.ConstructorInvoker;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaSupport;
+import org.jruby.javasupport.JavaSupportImpl;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -106,7 +107,7 @@ public class MethodGatherer {
             staticNames = new HashMap<>(STATIC_RESERVED_NAMES);
             instanceNames = new HashMap<>(INSTANCE_RESERVED_NAMES);
         } else {
-            JavaSupport javaSupport = runtime.getJavaSupport();
+            JavaSupportImpl javaSupport = (JavaSupportImpl) runtime.getJavaSupport();
 
             Map<String, AssignedName> staticAssignedNames = javaSupport.getStaticAssignedNames().get(superClass);
             staticNames = new HashMap<>(staticAssignedNames.size() + STATIC_RESERVED_NAMES.size());
@@ -128,7 +129,7 @@ public class MethodGatherer {
 
         assignStaticAliases();
 
-        JavaSupport javaSupport = runtime.getJavaSupport();
+        JavaSupportImpl javaSupport = (JavaSupportImpl) runtime.getJavaSupport();
 
         javaSupport.getStaticAssignedNames().get(javaClass).putAll(staticNames);
 
@@ -322,6 +323,7 @@ public class MethodGatherer {
         }
     };
 
+    @SuppressWarnings("deprecation")
     protected void installInnerClasses(final Class<?> javaClass, final RubyModule proxy) {
         // setup constants for public inner classes
         Class<?>[] classes = JavaClass.getDeclaredClasses(javaClass);
@@ -445,6 +447,7 @@ public class MethodGatherer {
         getStaticInstallers().forEach(($, value) -> value.install(proxy));
     }
 
+    @SuppressWarnings("deprecation")
     void installConstructors(Class<?> javaClass, final RubyModule proxy) {
         Constructor[] constructors = JavaClass.getConstructors(javaClass);
 
@@ -531,8 +534,8 @@ public class MethodGatherer {
         return instanceInstallers == Collections.EMPTY_MAP ? this.instanceInstallers = new HashMap() : instanceInstallers;
     }
 
+    @SuppressWarnings("deprecation")
     void setupFieldsAndConstants(Class<?> javaClass) {
-        boolean isInterface = javaClass.isInterface();
         Field[] fields = JavaClass.getDeclaredFields(javaClass);
 
         for (Field field : fields) {

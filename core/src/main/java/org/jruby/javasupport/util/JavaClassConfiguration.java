@@ -39,9 +39,9 @@ import java.util.Set;
  * Configuration for Reified classes, both normal, and java concrete extension
  */
 public class JavaClassConfiguration implements Cloneable {
-    private static final Set<String> DEFAULT_EXCLUDES = Collections
-            .unmodifiableSet(new HashSet<>(Arrays.asList("class", "finalize", "initialize", "java_class", "java_object",
-                    "__jcreate!", "java_interfaces", "java_proxy_class", "java_proxy_class=")));
+    private static final Set<String> DEFAULT_EXCLUDES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+        "class", "finalize", "initialize", "java_class", "java_object", "__jcreate!", "java_interfaces", "java_proxy_class"
+    )));
 
     // general
     public Map<String, List<Map<Class<?>, Map<String, Object>>>> parameterAnnotations;

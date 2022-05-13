@@ -31,6 +31,7 @@ package org.jruby;
 import org.jcodings.Encoding;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ir.interpreter.Interpreter;
+import org.jruby.java.proxies.JavaProxy;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.BasicObjectSites;
@@ -585,12 +586,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @return the true Java class of this (Ruby) object
      */
     @Override
-    public Class getJavaClass() {
-        Object obj = dataGetStruct();
-        if (obj instanceof JavaObject) {
-            return ((JavaObject) obj).getValue().getClass();
-        }
-        return getClass();
+    public Class<?> getJavaClass() {
+        Object obj = JavaUtil.unwrapJava(dataGetStruct(), null);
+        return obj != null ? obj.getClass() : getClass();
     }
 
     /** rb_to_id
@@ -823,8 +821,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     private Object unwrap_java_object() {
         final Object innerWrapper = dataGetStruct(); // java_object
-        if (innerWrapper instanceof JavaObject) { // for interface impls
-            return ((JavaObject) innerWrapper).getValue(); // never null
+        if (innerWrapper instanceof JavaProxy) { // for interface impls
+            return ((JavaProxy) innerWrapper).getObject(); // never null
         }
         return null;
     }

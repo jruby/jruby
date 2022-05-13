@@ -1020,7 +1020,7 @@ public abstract class RealClassGenerator {
             m.swap();
 
 
-            m.getfield(p(SplitCtorData.class), "blk", ci(Block.class));
+            m.getfield(p(SplitCtorData.class), "block", ci(Block.class));
             m.aload(rubyIndex); // ruby
             m.aload(rubyClassIndex); // rubyclass
             m.invokespecial(p(cjr.reifiedParent), "<init>", CONCRETE_CTOR_SIG);

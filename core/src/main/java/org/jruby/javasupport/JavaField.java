@@ -40,37 +40,21 @@ import java.lang.reflect.Modifier;
 
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
-import org.jruby.RubyClass;
-import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 @Deprecated
 // @JRubyClass(name="Java::JavaField")
-public class JavaField extends JavaAccessibleObject {
+public class JavaField {
 
     private final Field field;
 
     public final Field getValue() { return field; }
 
-    public static RubyClass createJavaFieldClass(Ruby runtime, RubyModule javaModule) {
-        // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here, since we don't intend for people to monkey with
-        // this type and it can't be marshalled. Confirm. JRUBY-415
-        RubyClass result = javaModule.defineClassUnder("JavaField", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-
-        JavaAccessibleObject.registerRubyMethods(runtime, result);
-
-        result.defineAnnotatedMethods(JavaField.class);
-
-        return result;
-    }
-
     public JavaField(Ruby runtime, Field field) {
-        super(runtime, runtime.getJavaSupport().getJavaFieldClass());
         this.field = field;
     }
 
@@ -197,7 +181,6 @@ public class JavaField extends JavaAccessibleObject {
         return context.runtime.newString(field.getName());
     }
 
-    @Override
     public AccessibleObject accessibleObject() {
         return field;
     }

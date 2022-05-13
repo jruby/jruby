@@ -71,7 +71,6 @@ import org.jruby.javasupport.JavaConstructor;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.proxy.ReifiedJavaProxy;
 import org.jruby.javasupport.util.JavaClassConfiguration;
-import org.jruby.javasupport.util.JavaClassConfiguration.DirectFieldConfiguration;
 import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
@@ -85,7 +84,6 @@ import org.jruby.runtime.ivars.VariableTableManager;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.Invalidator;
-import org.jruby.specialized.RubyObjectSpecializer;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.CodegenUtils;
@@ -1297,8 +1295,9 @@ public class RubyClass extends RubyModule {
         if (reifiedSuper != null) {
 
             // super must be Object, BasicObject, or a reified user class
-            boolean result = reifiedSuper == RubyObject.class || reifiedSuper == RubyBasicObject.class
-                    || Reified.class.isAssignableFrom(reifiedSuper);
+            boolean result = reifiedSuper == RubyObject.class ||
+                    reifiedSuper == RubyBasicObject.class ||
+                    Reified.class.isAssignableFrom(reifiedSuper);
             // TODO: check & test for nested java classes
             if (!result || ReifiedJavaProxy.class.isAssignableFrom(reifiedSuper)) java[0] = true;
 
@@ -1331,8 +1330,7 @@ public class RubyClass extends RubyModule {
      * @param useChildLoader whether to load the class into its own child classloader
      */
     public void reifyWithAncestors(String classDumpDir, boolean useChildLoader) {
-        boolean[] box = { false };
-        if (isReifiable(box)) {
+        if (isReifiable(new boolean[] { false })) {
             RubyClass realSuper = getSuperClass().getRealClass();
 
             if (realSuper.reifiedClass == null) realSuper.reifyWithAncestors(classDumpDir, useChildLoader);
@@ -1437,8 +1435,8 @@ public class RubyClass extends RubyModule {
             }
         }
         catch (Exception ex) {
-            if (nearEnd) throw (RuntimeException)ex;
-            JavaProxyClass.addStaticInitLookup((Object[])null); // wipe any local values not retrieved
+            if (nearEnd) Helpers.throwException(ex);
+            JavaProxyClass.addStaticInitLookup((Object[]) null); // wipe any local values not retrieved
             logReifyException(ex, true);
         }
 
@@ -2134,7 +2132,7 @@ public class RubyClass extends RubyModule {
             if (candidates.size() > 0) { // TODO: doc: implies javaConstructable?
                 List<JavaConstructor> savedCtorsList = new ArrayList<>(candidates.size());
                 for (Constructor<?> constructor : candidates) {
-                    savedCtorsList.add(new JavaConstructor(runtime, constructor));
+                    savedCtorsList.add(JavaConstructor.wrap(constructor));
                 }
                 savedSuperCtors = savedCtorsList.toArray(new JavaConstructor[savedCtorsList.size()]);
             } else {

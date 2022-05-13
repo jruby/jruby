@@ -37,10 +37,13 @@ package org.jruby.javasupport;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.Unrescuable;
 import org.jruby.javasupport.binding.AssignedName;
 import org.jruby.javasupport.ext.JavaExtensions;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.util.ObjectProxyCache;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Loader;
 import org.jruby.util.collections.ClassValue;
@@ -51,6 +54,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static org.jruby.javasupport.Java.initCause;
 
 public abstract class JavaSupport {
 
@@ -68,7 +73,36 @@ public abstract class JavaSupport {
 
     private final Map<Class, UnfinishedProxy> unfinishedProxies;
 
-    protected JavaSupport(final Ruby runtime) {
+    private final ObjectProxyCache<IRubyObject,RubyClass> objectProxyCache =
+            // TODO: specifying soft refs, may want to compare memory consumption,
+            // behavior with weak refs (specify WEAK in place of SOFT below)
+            new ObjectProxyCache<IRubyObject,RubyClass>(ObjectProxyCache.ReferenceType.WEAK) {
+
+                public IRubyObject allocateProxy(Object javaObject, RubyClass clazz) {
+                    return Java.allocateProxy(javaObject, clazz);
+                }
+            };
+
+    private RubyModule javaModule;
+    private RubyModule javaUtilitiesModule;
+    private RubyModule javaArrayUtilitiesModule;
+    private RubyClass javaObjectClass;
+    private JavaClass objectJavaClass;
+    private RubyClass javaClassClass;
+    private RubyClass javaPackageClass;
+    private RubyClass javaArrayClass;
+    private RubyClass javaProxyClass;
+    private RubyClass arrayJavaProxyCreatorClass;
+    private RubyClass javaFieldClass;
+    private RubyClass javaMethodClass;
+    private RubyClass javaConstructorClass;
+    private RubyModule javaInterfaceTemplate;
+    private RubyClass arrayProxyClass;
+    private RubyClass concreteProxyClass;
+    private RubyClass mapJavaProxy;
+    private RubyClass javaProxyConstructorClass;
+
+    public JavaSupport(final Ruby runtime) {
         this.runtime = runtime;
 
         this.javaClassCache = ClassValue.newInstance(klass -> new JavaClass(runtime, getJavaClassClass(), klass));
@@ -88,6 +122,188 @@ public abstract class JavaSupport {
         });
         // Proxy creation is synchronized (see above) so a HashMap is fine for recursion detection.
         this.unfinishedProxies = new ConcurrentHashMap<>(8, 0.75f, 1);
+    }
+
+    @Deprecated
+    public Class loadJavaClassVerbose(String className) {
+        try {
+            return loadJavaClass(className);
+        } catch (ClassNotFoundException ex) {
+            throw initCause(runtime.newNameError("cannot load Java class " + className, className, ex), ex);
+        } catch (ExceptionInInitializerError ex) {
+            throw initCause(runtime.newNameError("cannot initialize Java class " + className, className, ex), ex);
+        } catch (LinkageError ex) {
+            throw initCause(runtime.newNameError("cannot link Java class " + className + ", probable missing dependency: " + ex.getLocalizedMessage(), className, ex), ex);
+        } catch (SecurityException ex) {
+            if (runtime.isVerbose()) ex.printStackTrace(runtime.getErrorStream());
+            throw initCause(runtime.newSecurityError(ex.getLocalizedMessage()), ex);
+        }
+    }
+
+    @Deprecated
+    public Class loadJavaClassQuiet(String className) {
+        try {
+            return loadJavaClass(className);
+        } catch (ClassNotFoundException ex) {
+            throw initCause(runtime.newNameError("cannot load Java class " + className, className, ex, false), ex);
+        } catch (ExceptionInInitializerError ex) {
+            throw initCause(runtime.newNameError("cannot initialize Java class " + className, className, ex, false), ex);
+        } catch (LinkageError ex) {
+            throw initCause(runtime.newNameError("cannot link Java class " + className, className, ex, false), ex);
+        } catch (SecurityException ex) {
+            throw initCause(runtime.newSecurityError(ex.getLocalizedMessage()), ex);
+        }
+    }
+
+    public void handleNativeException(Throwable exception, Member target) {
+        if ( exception instanceof RaiseException) {
+            // allow RaiseExceptions to propagate
+            throw (RaiseException) exception;
+        }
+        if (exception instanceof Unrescuable) {
+            // allow "unrescuable" flow-control exceptions to propagate
+            if ( exception instanceof Error ) {
+                throw (Error) exception;
+            }
+            if ( exception instanceof RuntimeException ) {
+                throw (RuntimeException) exception;
+            }
+        }
+        // rethrow original
+        Helpers.throwException(exception);
+    }
+
+    // not synchronizing these methods, no harm if these values get set more
+    // than once.
+    // (also note that there's no chance of getting a partially initialized
+    // class/module, as happens-before is guaranteed by volatile write/read
+    // of constants table.)
+
+    public RubyModule getJavaModule() {
+        RubyModule module;
+        if ((module = javaModule) != null) return module;
+        return javaModule = runtime.getModule("Java");
+    }
+
+    public RubyModule getJavaUtilitiesModule() {
+        RubyModule module;
+        if ((module = javaUtilitiesModule) != null) return module;
+        return javaUtilitiesModule = runtime.getModule("JavaUtilities");
+    }
+
+    public RubyModule getJavaArrayUtilitiesModule() {
+        RubyModule module;
+        if ((module = javaArrayUtilitiesModule) != null) return module;
+        return javaArrayUtilitiesModule = runtime.getModule("JavaArrayUtilities");
+    }
+
+    @Deprecated // no longer used
+    public RubyClass getJavaObjectClass() {
+        RubyClass clazz;
+        if ((clazz = javaObjectClass) != null) return clazz;
+        return javaObjectClass = getJavaModule().getClass("JavaObject");
+    }
+
+    public RubyClass getJavaProxyConstructorClass() {
+        RubyClass clazz;
+        if ((clazz = javaProxyConstructorClass) != null) return clazz;
+        return javaProxyConstructorClass = getJavaModule().getClass("JavaProxyConstructor");
+    }
+
+    @Deprecated // no longer used
+    public JavaClass getObjectJavaClass() {
+        JavaClass clazz;
+        if ((clazz = objectJavaClass) != null) return clazz;
+        return objectJavaClass = JavaClass.get(runtime, Object.class);
+    }
+
+    @Deprecated
+    public void setObjectJavaClass(JavaClass objectJavaClass) {
+        // noop
+    }
+
+    @Deprecated
+    public RubyClass getJavaArrayClass() {
+        RubyClass clazz;
+        if ((clazz = javaArrayClass) != null) return clazz;
+        return javaArrayClass = getJavaModule().getClass("JavaArray");
+    }
+
+    @Deprecated
+    public RubyClass getJavaClassClass() {
+        RubyClass clazz;
+        if ((clazz = javaClassClass) != null) return clazz;
+        return javaClassClass = getJavaModule().getClass("JavaClass");
+    }
+
+    public RubyClass getJavaPackageClass() {
+        return javaPackageClass;
+    }
+
+    public void setJavaPackageClass(RubyClass javaPackageClass) {
+        this.javaPackageClass = javaPackageClass;
+    }
+
+    public RubyModule getJavaInterfaceTemplate() {
+        RubyModule module;
+        if ((module = javaInterfaceTemplate) != null) return module;
+        return javaInterfaceTemplate = runtime.getModule("JavaInterfaceTemplate");
+    }
+
+    @Deprecated
+    public RubyModule getPackageModuleTemplate() {
+        return null; // no longer used + has been deprecated since ~ 9.1
+    }
+
+    public RubyClass getJavaProxyClass() {
+        RubyClass clazz;
+        if ((clazz = javaProxyClass) != null) return clazz;
+        return javaProxyClass = runtime.getClass("JavaProxy");
+    }
+
+    public RubyClass getArrayJavaProxyCreatorClass() {
+        RubyClass clazz;
+        if ((clazz = arrayJavaProxyCreatorClass) != null) return clazz;
+        return arrayJavaProxyCreatorClass = runtime.getClass("ArrayJavaProxyCreator");
+    }
+
+    public RubyClass getConcreteProxyClass() {
+        RubyClass clazz;
+        if ((clazz = concreteProxyClass) != null) return clazz;
+        return concreteProxyClass = runtime.getClass("ConcreteJavaProxy");
+    }
+
+    public RubyClass getMapJavaProxyClass() {
+        RubyClass clazz;
+        if ((clazz = mapJavaProxy) != null) return clazz;
+        return mapJavaProxy = runtime.getClass("MapJavaProxy");
+    }
+
+    public RubyClass getArrayProxyClass() {
+        RubyClass clazz;
+        if ((clazz = arrayProxyClass) != null) return clazz;
+        return arrayProxyClass = runtime.getClass("ArrayJavaProxy");
+    }
+
+    @Deprecated // not used
+    public RubyClass getJavaFieldClass() {
+        RubyClass clazz;
+        if ((clazz = javaFieldClass) != null) return clazz;
+        return javaFieldClass = getJavaModule().getClass("JavaField");
+    }
+
+    @Deprecated // not used
+    public RubyClass getJavaMethodClass() {
+        RubyClass clazz;
+        if ((clazz = javaMethodClass) != null) return clazz;
+        return javaMethodClass = getJavaModule().getClass("JavaMethod");
+    }
+
+    @Deprecated // not used
+    public RubyClass getJavaConstructorClass() {
+        RubyClass clazz;
+        if ((clazz = javaConstructorClass) != null) return clazz;
+        return javaConstructorClass = getJavaModule().getClass("JavaConstructor");
     }
 
     public Class<?> loadJavaClass(String className) throws ClassNotFoundException {
@@ -110,149 +326,28 @@ public abstract class JavaSupport {
         return primitiveClass;
     }
 
-    @Deprecated
-    public abstract Class loadJavaClassVerbose(String className);
+    public ObjectProxyCache<IRubyObject, RubyClass> getObjectProxyCache() {
+        return objectProxyCache;
+    }
 
-    @Deprecated
-    public abstract Class loadJavaClassQuiet(String className);
-
-    public abstract void handleNativeException(Throwable exception, Member target);
-
-    public abstract ObjectProxyCache<IRubyObject,RubyClass> getObjectProxyCache();
+    // Internal API
 
     @Deprecated
     public abstract Map<String, JavaClass> getNameClassMap();
 
-    @Deprecated
-    public abstract Object getJavaObjectVariable(Object o, int i);
-
-    @Deprecated
-    public abstract void setJavaObjectVariable(Object o, int i, Object v);
-
-    public abstract RubyModule getJavaModule();
-
-    public abstract RubyModule getJavaUtilitiesModule();
-
-    public abstract RubyModule getJavaArrayUtilitiesModule();
-
-    public abstract RubyClass getJavaObjectClass();
-
-    @Deprecated
-    public abstract JavaClass getObjectJavaClass();
-
-    @Deprecated
-    public abstract void setObjectJavaClass(JavaClass objectJavaClass);
-
-    public abstract RubyClass getJavaArrayClass();
-
-    public abstract RubyClass getJavaClassClass();
-
-    public abstract RubyClass getJavaPackageClass();
-    abstract void setJavaPackageClass(RubyClass javaPackageClass);
-
-    public abstract RubyModule getJavaInterfaceTemplate();
-
-    @Deprecated
-    public abstract RubyModule getPackageModuleTemplate();
-
-    public abstract RubyClass getJavaProxyClass();
-
-    public abstract RubyClass getArrayJavaProxyCreatorClass();
-
-    public abstract RubyClass getConcreteProxyClass();
-
-    public abstract RubyClass getMapJavaProxyClass();
-
-    public abstract RubyClass getArrayProxyClass();
-
-    @Deprecated
-    public abstract RubyClass getJavaFieldClass();
-
-    @Deprecated
-    public abstract RubyClass getJavaMethodClass();
-
-    @Deprecated
-    public abstract RubyClass getJavaConstructorClass();
-
-    public abstract RubyClass getJavaProxyConstructorClass();
-
+    @Deprecated // internal API
     public abstract ClassValue<Map<String, AssignedName>> getStaticAssignedNames();
 
+    @Deprecated // internal API
     public abstract ClassValue<Map<String, AssignedName>> getInstanceAssignedNames();
 
     @Deprecated // internal API - no longer used
     public abstract Map<Set<?>, JavaProxyClass> getJavaProxyClassCache();
 
-    /**
-     * a replacement for {@link #getJavaProxyClassCache()} API
-     */
-    protected abstract JavaProxyClass fetchJavaProxyClass(ProxyClassKey classKey);
-
-    /**
-     * a replacement for {@link #getJavaProxyClassCache()} API
-     */
-    protected abstract JavaProxyClass saveJavaProxyClass(ProxyClassKey classKey, JavaProxyClass klass);
-
-    /**
-     * @note Internal API - subject to change!
-     */
-    public static final class ProxyClassKey {
-        final Class superClass;
-        final Class[] interfaces;
-        final Set<String> names; // "usable" method names - assumed immutable
-
-        private ProxyClassKey(Class superClass, Class[] interfaces, Set<String> names) {
-            this.superClass = superClass;
-            this.interfaces = interfaces;
-            this.names = names;
-        }
-
-        public static ProxyClassKey getInstance(Class superClass, Class[] interfaces, Set<String> names) {
-            return new ProxyClassKey(superClass, interfaces, names);
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if ( obj instanceof ProxyClassKey ) {
-                final ProxyClassKey that = (ProxyClassKey) obj;
-                if (this.superClass != that.superClass) return false;
-
-                if (this.names.size() != that.names.size()) return false;
-                if ( ! this.names.equals(that.names) ) return false;
-
-                final int len = this.interfaces.length;
-                if (len != that.interfaces.length) return false;
-                // order is not important :
-                for ( int i = 0; i < len; i++ ) {
-                    final Class iface = this.interfaces[i];
-                    boolean ifaceFound = false;
-                    for ( int j = 0; j < len; j++ ) {
-                        if ( iface == that.interfaces[j] ) {
-                            ifaceFound = true; break;
-                        }
-                    }
-                    if ( ! ifaceFound ) return false;
-                }
-                return true;
-            }
-            return false;
-        }
-
-        private int hash;
-
-        @Override
-        public int hashCode() {
-            int hash = this.hash;
-            if (hash != 0) return hash;
-
-            for ( int i = 0; i < interfaces.length; i++ ) {
-                hash += interfaces[i].hashCode();
-            }
-            return this.hash = (hash * superClass.hashCode()) ^ this.names.hashCode();
-        }
+    @Deprecated // internal API - no longer used (kept functional due deprecated JavaClass.get API)
+    public JavaClass getJavaClassFromCache(Class clazz) {
+        return javaClassCache.get(clazz);
     }
-
-    // Internal API
 
     final void beginProxy(Class clazz, RubyModule proxy) {
         UnfinishedProxy up = new UnfinishedProxy(proxy);
@@ -273,13 +368,6 @@ public abstract class JavaSupport {
 
     RubyModule getProxyClassFromCache(Class clazz) {
         return proxyClassCache.get(clazz);
-    }
-
-    /**
-     * @deprecated Internal API - no longer used
-     */
-    public JavaClass getJavaClassFromCache(Class clazz) {
-        return javaClassCache.get(clazz);
     }
 
 }

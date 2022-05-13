@@ -47,7 +47,6 @@ import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodOneBlock;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZero;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
-import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.JavaUtilities;
 import org.jruby.runtime.Helpers;
@@ -276,10 +275,9 @@ public class JavaInterfaceTemplate {
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
             final Object wrapped = self.dataGetStruct();
             final Class<?> javaClass;
-            if ( wrapped != null ) {
-                javaClass = ((JavaObject) wrapped).getJavaClass();
-            }
-            else {
+            if (wrapped instanceof JavaProxy) {
+                javaClass = ((JavaProxy) wrapped).getJavaClass();
+            } else {
                 javaClass = self.getClass(); // NOTE what is this for?
             }
             return Java.getInstance(context.runtime, javaClass);
@@ -310,9 +308,10 @@ public class JavaInterfaceTemplate {
     private static IRubyObject newInterfaceProxy(final IRubyObject self) {
         final RubyClass current = self.getMetaClass();
         // construct the new interface impl and set it into the object
-        JavaObject newObject = Java.newInterfaceImpl(self, Java.getInterfacesFromRubyClass(current));
-        JavaUtilities.set_java_object(self, self, newObject); // self.dataWrapStruct(newObject);
-        return newObject;
+        Object impl = Java.newInterfaceImpl(self, Java.getInterfacesFromRubyClass(current));
+        IRubyObject implWrapper = Java.getInstance(self.getRuntime(), impl);
+        JavaUtilities.set_java_object(self, self, implWrapper); // self.dataWrapStruct(newObject);
+        return implWrapper;
     }
 
     private static void appendFeaturesToModule(ThreadContext context, final IRubyObject self, final RubyModule module) {
@@ -402,7 +401,7 @@ public class JavaInterfaceTemplate {
         final BlockInterfaceImpl ifaceImpl = new BlockInterfaceImpl(implClass, implBlock, methodNames);
         implClass.addMethod("method_missing", ifaceImpl); // def ImplClass.method_missing ...
 
-        final Class<?> ifaceClass = JavaClass.getJavaClass(context, ((RubyModule) self));
+        final Class<?> ifaceClass = JavaUtil.getJavaClass(((RubyModule) self));
         if ( methodNames == null ) {
             for ( Method method : ifaceClass.getMethods() ) {
                 BlockInterfaceImpl.ConcreteMethod implMethod = ifaceImpl.getConcreteMethod(method.getName());

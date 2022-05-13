@@ -109,13 +109,15 @@ end
 
 describe "Java::JavaObject.wrap" do
   it "wraps a Java object with an appropriate JavaObject subclass" do
-    obj = Java::JavaObject.wrap(java.lang.Object.new)
-    str = Java::JavaObject.wrap(java.lang.String.new)
+    obj = Java::JavaObject.wrap(raw_obj = java.lang.Object.new)
+    str = Java::JavaObject.wrap(raw_str = java.lang.String.new)
     cls = Java::JavaObject.wrap(java.lang.Class.forName('java.lang.String'))
 
+    expect(obj).to be raw_obj
     expect(obj.class).to eq(Java::JavaObject)
+    expect(str).to be raw_str
     expect(str.class).to eq(Java::JavaObject)
-    expect(cls.class).to eq(Java::JavaClass)
+    expect(cls).to be Java::JavaLang::String
   end
 end
 
