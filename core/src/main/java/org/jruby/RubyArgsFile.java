@@ -849,7 +849,7 @@ public class RubyArgsFile extends RubyObject {
         Ruby runtime = context.runtime;
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
         IRubyObject tmp, str, length;
-        long len = 0;
+            long len = 0;
 
         if (args.length > 0) {
             length = args[0];

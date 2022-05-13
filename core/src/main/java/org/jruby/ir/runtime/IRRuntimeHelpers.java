@@ -661,6 +661,9 @@ public class IRRuntimeHelpers {
         return UNDEFINED;
     }
 
+    // specific arity methods in JIT will only be fixed arity meaning no kwargs and no rest args.
+    // this logic is the same as recieveKeywords but we know it will never be a keyword argument (jit
+    // will save %undefined as the keyword value).
     @JIT // Only used for specificArity JITted methods with at least one parameter
     public static IRubyObject receiveSpecificArityKeywords(ThreadContext context, StaticScope staticScope, IRubyObject last) {
         IRScope scope = staticScope.getIRScope();
@@ -671,27 +674,39 @@ public class IRRuntimeHelpers {
 
         RubyHash hash = (RubyHash) last;
 
-        boolean isKwarg = hash.isRuby2KeywordHash();
+        boolean isKwarg = hash.isKeywordArguments();
 
+        // ruby2_keywords only get unmarked if it enters a method which accepts keywords.
+        // This means methods which don't just keep that marked hash around in case it is passed
+        // onto another method which accepts keywords.
         if (scope.isRuby2Keywords() && isKwarg) {
+            // a ruby2_keywords method which happens to receive a keyword.  Mark hash as ruby2_keyword
+            // So it can be used similarly to an ordinary hash passed in this way.
             hash.setKeywordArguments(false);
             hash.setKeywordRestArguments(false);
 
-            RubyHash newHash = hash.dupFast(context);
-            newHash.setRuby2KeywordHash(true);
+            hash = hash.dupFast(context);
+            hash.setRuby2KeywordHash(true);
 
-            return newHash;
-        } else if (hash.isRuby2KeywordHash()) {
-            RubyHash newHash = hash.dupFast(context);
+            return hash;
+        } else if (hash.isKeywordRestArguments()) {
+            // This is kwrest passed to a method which does not accept kwargs
 
-            newHash.setRuby2KeywordHash(false);
             hash.setKeywordArguments(false);
             hash.setKeywordRestArguments(false);
 
-            return newHash;
+            // We pass empty kwrest through so kwrest does not try and slurp it up as normal argument.
+            // This complicates check_arity but empty ** is special case.
+            return hash;
+        } else if (!isKwarg) {
+            // This is just an ordinary hash as last argument
+            return last;
+        } else {
+            hash.setKeywordArguments(false);
+            hash.setKeywordRestArguments(false);
+
+            return hash.dupFast(context);
         }
-
-        return last;
     }
 
     @JIT
@@ -743,20 +758,18 @@ public class IRRuntimeHelpers {
 
             args[args.length - 1] = hash;
             return UNDEFINED;
-        } else {
+        } else if (!acceptsKeywords && hash.isKeywordRestArguments()) {
             // This is kwrest passed to a method which does not accept kwargs
-            if (!acceptsKeywords && hash.isKeywordRestArguments()) {
-                hash.setKeywordArguments(false);
-                hash.setKeywordRestArguments(false);
+            hash.setKeywordArguments(false);
+            hash.setKeywordRestArguments(false);
 
-                // We pass empty kwrest through so kwrest does not try and slurp it up as normal argument.
-                // This complicates check_arity but empty ** is special case.
-                return UNDEFINED;
-            }
-
+            // We pass empty kwrest through so kwrest does not try and slurp it up as normal argument.
+            // This complicates check_arity but empty ** is special case.
+            return UNDEFINED;
+        } else if (!isKwarg) {
             // This is just an ordinary hash as last argument
-            if (!isKwarg) return UNDEFINED;
-
+            return UNDEFINED;
+        } else {
             hash.setKeywordArguments(false);
             hash.setKeywordRestArguments(false);
 

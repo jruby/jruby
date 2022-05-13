@@ -724,6 +724,12 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         String typePath = desc.declaringClassPath;
         String javaMethodName = desc.name;
 
+        // FIXME: Yuck.  Until we make callsites capable of coupling splatting to the method they are calling
+        // we have to toggle off this out-of-band field in all native methods.  See IRRuntimeHelpers#callsiteFunging.
+        method.aload(1);
+        method.ldc(false);
+        method.putfield("org/jruby/runtime/ThreadContext", "callSplats", "Z");
+
         checkArity(desc.anno, method, specificArity);
 
         CallConfiguration callConfig = CallConfiguration.getCallConfigByAnno(desc.anno);
