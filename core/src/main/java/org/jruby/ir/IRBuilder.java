@@ -4614,31 +4614,43 @@ public class IRBuilder {
                 new UnresolvedSuperInstr(scope, result, buildSelf(), args, block, scope.maybeUsingRefinements());
     }
 
-    private Operand buildSuperInstr(Operand block, Operand[] args) {
-        CallInstr superInstr;
-        Variable ret = createTemporaryVariable();
-        if (scope instanceof IRMethod && scope.getLexicalParent() instanceof IRClassBody) {
-            if (((IRMethod) scope).isInstanceMethod) {
-                superInstr = new InstanceSuperInstr(scope, ret, getCurrentModuleVariable(), getName(), args, block, scope.maybeUsingRefinements());
-            } else {
-                superInstr = new ClassSuperInstr(scope, ret, getCurrentModuleVariable(), getName(), args, block, scope.maybeUsingRefinements());
+    public Operand buildSuper(SuperNode callNode) {
+        Operand tempBlock = setupCallClosure(callNode.getIterNode());
+        if (tempBlock == null) tempBlock = getYieldClosureVariable();
+        Operand block = tempBlock;
+
+        HashNode keywordArgs = getSimpleKeywordArguments(callNode.getArgsNode());
+        boolean inClassBody = scope instanceof IRMethod && scope.getLexicalParent() instanceof IRClassBody;
+        boolean isInstanceMethod = inClassBody && ((IRMethod) scope).isInstanceMethod;
+        Variable result = createTemporaryVariable();
+        if (keywordArgs != null) {
+            Operand[] args = buildCallArgsExcept(callNode.getArgsNode(), keywordArgs);
+
+            if (keywordArgs.hasOnlyRestKwargs()) {  // {**k}, {**{}, **k}, etc...
+                Operand splatValue = buildRestKeywordArgs(keywordArgs);
+                Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { splatValue }));
+                determineIfWeNeedLineNumber(callNode); // buildOperand for fcall was papered over by args operand building so we check once more.
+                if_else(test, manager.getTrue(),
+                        () -> receiveBreakException(block,
+                                determineSuperInstr(result, args, block, inClassBody, isInstanceMethod)),
+                        () -> receiveBreakException(block,
+                                determineSuperInstr(result, addArg(args, splatValue), block, inClassBody, isInstanceMethod)));
+            } else {  // {a: 1, b: 2}
+                List<KeyValuePair<Operand, Operand>> kwargPairs = buildKeywordArguments(keywordArgs);
+                Operand kwargs = new Hash(kwargPairs, false);
+                determineIfWeNeedLineNumber(callNode); // buildOperand for fcall was papered over by args operand building so we check once more.
+                receiveBreakException(block,
+                        determineSuperInstr(result, addArg(args, kwargs), block, inClassBody, isInstanceMethod));
             }
         } else {
-            // We dont always know the method name we are going to be invoking if the super occurs in a closure.
-            // This is because the super can be part of a block that will be used by 'define_method' to define
-            // a new method.  In that case, the method called by super will be determined by the 'name' argument
-            // to 'define_method'.
-            superInstr = new UnresolvedSuperInstr(scope, ret, buildSelf(), args, block, scope.maybeUsingRefinements());
-        }
-        receiveBreakException(block, superInstr);
-        return ret;
-    }
+            Operand[] args = setupCallArgs(callNode.getArgsNode());
 
-    public Operand buildSuper(SuperNode superNode) {
-        Operand[] args = setupCallArgs(superNode.getArgsNode());
-        Operand block = setupCallClosure(superNode.getIterNode());
-        if (block == null) block = getYieldClosureVariable();
-        return buildSuperInstr(block, args);
+            determineIfWeNeedLineNumber(callNode);
+            receiveBreakException(block,
+                    determineSuperInstr(result, args, block, inClassBody, isInstanceMethod));
+        }
+
+        return result;
     }
 
     public Operand buildSValue(SValueNode node) {
