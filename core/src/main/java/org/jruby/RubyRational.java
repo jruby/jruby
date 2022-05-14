@@ -1115,9 +1115,6 @@ public class RubyRational extends RubyNumeric {
         Ruby runtime = context.runtime;
 
         opts = ArgsUtil.getOptionsArg(runtime, opts);
-        if (!opts.isNil()) {
-            n = context.nil;
-        }
 
         RoundingMode mode = RubyNumeric.getRoundingMode(context, opts);
 
