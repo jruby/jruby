@@ -1413,7 +1413,7 @@ public class RubyRational extends RubyNumeric {
     /** nurat_marshal_dump
      * 
      */
-    @JRubyMethod(name = "marshal_dump")
+    @JRubyMethod(name = "marshal_dump", visibility = Visibility.PRIVATE)
     public IRubyObject marshal_dump(ThreadContext context) {
         RubyArray dump = context.runtime.newArray(num, den);
         if (hasVariables()) dump.syncVariables(this);
