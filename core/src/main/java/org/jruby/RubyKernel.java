@@ -1994,7 +1994,7 @@ public class RubyKernel {
             throw context.runtime.newArgumentError("no method name given");
         }
 
-        String name = RubySymbol.objectToSymbolString(args[0]);
+        String name = RubySymbol.checkID(args[0]);
 
         final int length = args.length - 1;
         args = ( length == 0 ) ? IRubyObject.NULL_ARRAY : ArraySupport.newCopy(args, 1, length);
