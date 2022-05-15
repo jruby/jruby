@@ -1638,7 +1638,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     @JRubyMethod(name = "__send__", omit = true)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, Block block) {
-        String name = RubySymbol.objectToSymbolString(arg0);
+        String name = RubySymbol.checkID(arg0);
 
         StaticScope staticScope = context.getCurrentStaticScope();
 
@@ -1646,7 +1646,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
     @JRubyMethod(name = "__send__", omit = true)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        String name = RubySymbol.objectToSymbolString(arg0);
+        String name = RubySymbol.checkID(arg0);
 
         StaticScope staticScope = context.getCurrentStaticScope();
 
@@ -1654,7 +1654,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
     @JRubyMethod(name = "__send__", omit = true)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        String name = RubySymbol.objectToSymbolString(arg0);
+        String name = RubySymbol.checkID(arg0);
 
         StaticScope staticScope = context.getCurrentStaticScope();
 
@@ -1662,7 +1662,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
     @JRubyMethod(name = "__send__", required = 1, rest = true, omit = true)
     public IRubyObject send(ThreadContext context, IRubyObject[] args, Block block) {
-        String name = RubySymbol.objectToSymbolString(args[0]);
+        String name = RubySymbol.checkID(args[0]);
 
         StaticScope staticScope = context.getCurrentStaticScope();
 
