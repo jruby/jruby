@@ -340,11 +340,30 @@ public class RubyMath {
         return exp(context, recv, exponent);
     }
 
-    private static RubyFloat logCommon(ThreadContext context, double value, double base, String msg) {
-        if (value < 0 || base < 0) throw context.runtime.newMathDomainError(msg);
+    // MRI : get_double_rshift
+    private static double[] get_double_rshift(ThreadContext context, IRubyObject x) {
+        double y;
+        int numbits = 0;
+        if (x instanceof RubyBignum) {
+            RubyBignum bignum = (RubyBignum)x;
+            numbits = bignum.getValue().abs().bitLength();
+            if (bignum.getValue().signum() > 0 && numbits >= DBL_MAX_EXP) {
+                numbits -= DBL_MANT_DIG;
+                y = bignum.getValue().shiftRight(numbits).doubleValue();
+            } else {
+                numbits = 0;
+                y = bignum.getValue().doubleValue();
+            }
+        } else {
+            y = RubyNumeric.num2dbl(context, x);
+        }
 
-        return RubyFloat.newFloat(context.runtime, Math.log(value) / Math.log(base));
+        return new double[]{y, numbits};
     }
+
+    private static int DBL_MANT_DIG = 53;
+    private static int DBL_MAX_EXP = 1024;
+    private static double LOG_E_2 = Math.log(2);
 
     /** Returns the natural logarithm of x.
      * 
@@ -355,15 +374,27 @@ public class RubyMath {
     }
 
     public static RubyFloat log(ThreadContext context, IRubyObject val) {
-        double value = RubyNumeric.num2dbl(context, val);
-        return logCommon(context, value, Math.E, "log");
+        double [] ret = get_double_rshift(context, val);
+
+        if (ret[0] < 0) {
+            throw context.runtime.newMathDomainError("log");
+        }
+
+        /* log(d * 2 ** numbits) */
+        return RubyFloat.newFloat(context.runtime, Math.log(ret[0]) + ret[1]);
     }
 
     @JRubyMethod(name = "log", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat log(ThreadContext context, IRubyObject recv, IRubyObject val, IRubyObject base) {
-        double value = RubyNumeric.num2dbl(context, val);
+        double [] ret = get_double_rshift(context, val);
         double _base = RubyNumeric.num2dbl(context, base);
-        return logCommon(context, value, _base, "log");
+
+        if (ret[0] < 0 || _base < 0) {
+            throw context.runtime.newMathDomainError("log");
+        }
+
+        /* log(d * 2 ** numbits) / log(base) */
+        return RubyFloat.newFloat(context.runtime, Math.log(ret[0]) / Math.log(_base) + ret[1]);
     }
 
     public static RubyFloat log(ThreadContext context, IRubyObject recv, IRubyObject... args) {
@@ -383,13 +414,14 @@ public class RubyMath {
      */
     @JRubyMethod(name = "log10", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat log10(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        double value = RubyNumeric.num2dbl(context, x);
+        double [] ret = get_double_rshift(context, x);
 
-        if (value < 0) {
+        if (ret[0] < 0) {
             throw context.runtime.newMathDomainError("log10");
         }
 
-        return RubyFloat.newFloat(context.runtime, Math.log10(value));
+        /* log10(d * 2 ** numbits) */
+        return RubyFloat.newFloat(context.runtime, Math.log10(ret[0]) + ret[1]);
     }
 
     @Deprecated
@@ -402,7 +434,14 @@ public class RubyMath {
      */
     @JRubyMethod(name = "log2", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat log2(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        return logCommon(context, RubyNumeric.num2dbl(context, x), 2, "log2");
+        double [] ret = get_double_rshift(context, x);
+
+        if (ret[0] < 0) {
+            throw context.runtime.newMathDomainError("log2");
+        }
+
+        /* log2(d * 2 ** numbits) */
+        return RubyFloat.newFloat(context.runtime, Math.log(ret[0]) / LOG_E_2 + ret[1]);
     }
 
     @Deprecated
