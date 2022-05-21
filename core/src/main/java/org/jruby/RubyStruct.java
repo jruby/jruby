@@ -33,6 +33,7 @@
 
 package org.jruby;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -244,6 +245,7 @@ public class RubyStruct extends RubyObject {
             keywordInit = ret != null && ret.isTrue();
         }
 
+        Set<IRubyObject> tmpMemberSet = new HashSet<IRubyObject>();
         for (int i = (name == null && !nilName) ? 0 : 1; i < argc; i++) {
             IRubyObject arg = args[i];
             RubySymbol sym;
@@ -253,6 +255,11 @@ public class RubyStruct extends RubyObject {
                 sym = runtime.newSymbol(arg.convertToString().getByteList());
             } else {
                 sym = runtime.newSymbol(arg.asJavaString());
+            }
+            if (tmpMemberSet.contains(sym)) {
+                throw runtime.newArgumentError("duplicate member: " + sym);
+            } else {
+                tmpMemberSet.add(sym);
             }
 
             member.append(sym);
