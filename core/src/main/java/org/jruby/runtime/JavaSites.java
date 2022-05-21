@@ -52,6 +52,7 @@ public class JavaSites {
     public final FiberSites Fiber = new FiberSites();
     public final MonitorSites Monitor = new MonitorSites();
     public final SetSites Set = new SetSites();
+    public final StructSites Struct = new StructSites();
 
     public static class BasicObjectSites {
         public final CallSite respond_to = new FunctionalCachingCallSite("respond_to?");
@@ -302,6 +303,11 @@ public class JavaSites {
         public final CachingCallSite op_equal = new FunctionalCachingCallSite("==");
         public final RespondToCallSite respond_to_infinite = new RespondToCallSite("infinite?");
         public final CallSite infinite = new FunctionalCachingCallSite("infinite?");
+    }
+
+    public static class StructSites {
+        public final CallSite op_equal = new FunctionalCachingCallSite("==");
+        public final CallSite eql = new FunctionalCachingCallSite("eql?");
     }
 
     public static class TimeSites {

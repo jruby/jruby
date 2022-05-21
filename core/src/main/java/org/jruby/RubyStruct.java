@@ -44,8 +44,11 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.JavaSites;
+import org.jruby.runtime.JavaSites.StructSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -53,6 +56,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
+import org.jruby.util.RecursiveComparator;
 import org.jruby.util.RubyStringBuilder;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
@@ -592,8 +596,7 @@ public class RubyStruct extends RubyObject {
 
         if (other == this) return context.tru;
 
-        // recursion guard
-        return context.safeRecurse(EqualRecursive.INSTANCE, other, this, "==", true);
+        return RecursiveComparator.compare(context, sites(context).op_equal, this, other);
     }
 
     @JRubyMethod(name = "eql?", required = 1)
@@ -604,8 +607,26 @@ public class RubyStruct extends RubyObject {
             return context.fals;
         }
 
-        // recursion guard
-        return context.safeRecurse(EqlRecursive.INSTANCE, other, this, "eql?", true);
+        return RecursiveComparator.compare(context, sites(context).eql, this, other);
+    }
+
+    public RubyBoolean compare(ThreadContext context, CallSite site, IRubyObject other) {
+        if (!(other instanceof RubyStruct)) {
+            return context.fals;
+        }
+
+        RubyStruct struct = (RubyStruct) other;
+
+        if (values.length != struct.values.length) return context.fals;
+
+        for (int i = 0; i < values.length; i++) {
+            IRubyObject a = aref(i);
+            IRubyObject b = struct.aref(i);
+
+            if (!site.call(context, a, a, b).isTrue()) return context.fals;
+        }
+
+        return context.tru;
     }
 
     private static final byte[] STRUCT_BEG = { '#','<','s','t','r','u','c','t',' ' };
@@ -1021,6 +1042,10 @@ public class RubyStruct extends RubyObject {
         public IRubyObject call(ThreadContext context, RubyStruct self, IRubyObject obj, boolean recur) {
             return self.inspectStruct(context, recur);
         }
+    }
+
+    private static StructSites sites(ThreadContext context) {
+        return context.sites.Struct;
     }
 
     @Deprecated
