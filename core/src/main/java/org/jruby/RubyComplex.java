@@ -34,6 +34,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -42,6 +43,8 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 import org.jruby.util.TypeConverter;
 
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.function.BiFunction;
 
 import static org.jruby.ast.util.ArgsUtil.hasExceptionOption;
@@ -967,7 +970,11 @@ public class RubyComplex extends RubyNumeric {
      */
     @JRubyMethod(name = "hash")
     public IRubyObject hash(ThreadContext context) {
-        return f_xor(context, invokedynamic(context, real, HASH), invokedynamic(context, image, HASH));
+        Ruby runtime = context.runtime;
+        long realHash = RubyNumeric.fix2long(invokedynamic(context, real, HASH));
+        long imageHash = RubyNumeric.fix2long(invokedynamic(context, image, HASH));
+        byte [] bytes = ByteBuffer.allocate(16).putLong(realHash).putLong(imageHash).array();
+        return RubyFixnum.newFixnum(runtime, Helpers.multAndMix(runtime.getHashSeedK0(), Arrays.hashCode(bytes)));
     }
 
     @Override
@@ -1061,7 +1068,7 @@ public class RubyComplex extends RubyNumeric {
     /** nucomp_marshal_dump
      * 
      */
-    @JRubyMethod(name = "marshal_dump")
+    @JRubyMethod(name = "marshal_dump", visibility = Visibility.PRIVATE)
     public IRubyObject marshal_dump(ThreadContext context) {
         RubyArray dump = context.runtime.newArray(real, image);
         if (hasVariables()) dump.syncVariables(this);
