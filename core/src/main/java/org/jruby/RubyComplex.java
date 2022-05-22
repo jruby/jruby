@@ -1068,7 +1068,7 @@ public class RubyComplex extends RubyNumeric {
     /** nucomp_marshal_dump
      * 
      */
-    @JRubyMethod(name = "marshal_dump")
+    @JRubyMethod(name = "marshal_dump", visibility = Visibility.PRIVATE)
     public IRubyObject marshal_dump(ThreadContext context) {
         RubyArray dump = context.runtime.newArray(real, image);
         if (hasVariables()) dump.syncVariables(this);
