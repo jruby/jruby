@@ -83,6 +83,7 @@ import org.jcodings.unicode.UnicodeEncoding;
 
 import static org.jruby.RubyBasicObject.UNDEF;
 import static org.jruby.RubyBasicObject.getMetaClass;
+import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_EMPTY;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
 import static org.jruby.util.CodegenUtils.params;
@@ -2435,10 +2436,16 @@ public class Helpers {
     }
 
     @JIT
-    public static RubyArray argsPush(IRubyObject first, IRubyObject second) {
-        return second == UndefinedValue.UNDEFINED ?
-                (RubyArray) first.dup() :
-                ((RubyArray)first.dup()).append(second);
+    public static RubyArray argsPush(ThreadContext context, IRubyObject first, IRubyObject second) {
+        boolean isEmptyKeywordRest = second == UndefinedValue.UNDEFINED;
+
+        if (isEmptyKeywordRest) {
+            RubyArray array = (RubyArray) first.dup();
+            context.callInfo |= CALL_KEYWORD_EMPTY;
+            return array;
+        }
+
+        return ((RubyArray)first.dup()).append(second);
     }
 
     public static RubyArray argsCat(ThreadContext context, IRubyObject first, IRubyObject second) {

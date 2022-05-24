@@ -68,6 +68,10 @@ public @interface JRubyMethod {
      */
     boolean module() default false;
     /**
+     * Whether this method will forwards its arguments (and call state) onto another method).
+     */
+    boolean forward() default false;
+    /**
      * Whether this method expects to have a call frame allocated for it.
      */
     boolean frame() default false;

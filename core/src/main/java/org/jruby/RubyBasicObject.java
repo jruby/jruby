@@ -1636,7 +1636,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return method_missing(context, recv, args, block);
     }
 
-    @JRubyMethod(name = "__send__", omit = true)
+    @JRubyMethod(name = "__send__", omit = true, forward = true)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, Block block) {
         String name = RubySymbol.checkID(arg0);
 
@@ -1644,7 +1644,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         return getMetaClass().finvokeWithRefinements(context, this, staticScope, name, block);
     }
-    @JRubyMethod(name = "__send__", omit = true)
+    @JRubyMethod(name = "__send__", omit = true, forward = true)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         String name = RubySymbol.checkID(arg0);
 
@@ -1652,7 +1652,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         return getMetaClass().finvokeWithRefinements(context, this, staticScope, name, arg1, block);
     }
-    @JRubyMethod(name = "__send__", omit = true)
+    @JRubyMethod(name = "__send__", omit = true, forward = true)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         String name = RubySymbol.checkID(arg0);
 
@@ -1660,7 +1660,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         return getMetaClass().finvokeWithRefinements(context, this, staticScope, name, arg1, arg2, block);
     }
-    @JRubyMethod(name = "__send__", required = 1, rest = true, omit = true)
+    @JRubyMethod(name = "__send__", required = 1, rest = true, omit = true, forward = true)
     public IRubyObject send(ThreadContext context, IRubyObject[] args, Block block) {
         String name = RubySymbol.checkID(args[0]);
 

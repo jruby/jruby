@@ -276,7 +276,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
                     ClassWriter cw = createJavaMethodCtor(generatedClassPath, superClassString, info.getParameterDesc());
 
-                    addAnnotatedMethodInvoker(cw, superClassString, descs);
+                    addAnnotatedMethodInvoker(cw, superClassString, descs, info.isForward());
 
                     c = endClass(cw, generatedClassName);
                 }
@@ -709,26 +709,28 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
-    private void addAnnotatedMethodInvoker(ClassWriter cw, String superClass, List<JavaMethodDescriptor> descs) {
+    private void addAnnotatedMethodInvoker(ClassWriter cw, String superClass, List<JavaMethodDescriptor> descs, boolean forward) {
         for (JavaMethodDescriptor desc: descs) {
             int specificArity = desc.calculateSpecificCallArity();
 
             SkinnyMethodAdapter mv = beginMethod(cw, "call", specificArity, desc.hasBlock);
             mv.visitCode();
-            createAnnotatedMethodInvocation(desc, mv, superClass, specificArity, desc.hasBlock);
+            createAnnotatedMethodInvocation(desc, mv, superClass, specificArity, desc.hasBlock, forward);
             mv.end();
         }
     }
 
-    private void createAnnotatedMethodInvocation(JavaMethodDescriptor desc, SkinnyMethodAdapter method, String superClass, int specificArity, boolean block) {
+    private void createAnnotatedMethodInvocation(JavaMethodDescriptor desc, SkinnyMethodAdapter method,
+                                                 String superClass, int specificArity, boolean block, boolean forward) {
         String typePath = desc.declaringClassPath;
         String javaMethodName = desc.name;
 
-        // FIXME: Yuck.  Until we make callsites capable of coupling splatting to the method they are calling
-        // we have to toggle off this out-of-band field in all native methods.  See IRRuntimeHelpers#callsiteFunging.
-        method.aload(1);
-        method.ldc(false);
-        method.putfield("org/jruby/runtime/ThreadContext", "callSplats", "Z");
+        // Normal Ruby method which will consume arguments.
+        if (!forward) {
+            method.aload(1);
+            method.ldc(0);
+            method.putfield("org/jruby/runtime/ThreadContext", "callInfo", "I");
+        }
 
         checkArity(desc.anno, method, specificArity);
 

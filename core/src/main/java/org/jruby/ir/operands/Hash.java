@@ -16,6 +16,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
+import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_REST;
+
 // Represents a hash { _ =>_, _ => _ .. } in ruby
 //
 // NOTE: This operand is only used in the initial stages of optimization.
@@ -121,12 +124,10 @@ public class Hash extends Operand {
         if (isKeywordRest()) {
             // Dup the rest args hash and use that as the basis for inserting the non-rest args
             hash = ((RubyHash) pairs[0].getValue().retrieve(context, self, currScope, currDynScope, temp)).dupFast(context);
-            hash.setKeywordArguments(true);
             // Skip the first pair
             index++;
         } else {
             hash = RubyHash.newHash(runtime);
-            hash.setKeywordArguments(!literal);
         }
 
 
@@ -138,6 +139,9 @@ public class Hash extends Operand {
             hash.fastASetCheckString(runtime, key, value);
         }
 
+        // We mask this after we populate the hash just in case those retrieves are something which can transfer
+        // control to another call (which would reset callInfo if we set this above).
+        if (isKeywordRest() || !literal) context.callInfo |= CALL_KEYWORD;
         return hash;
     }
 
@@ -182,7 +186,7 @@ public class Hash extends Operand {
             }
         }
         builder.append("}");
-        if (literal) builder.append("(literal)");
+        builder.append("(" +  (literal ? "literal" : "keyword") + ")");
         return builder.toString();
     }
 

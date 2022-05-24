@@ -1074,16 +1074,11 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void BuildCompoundArrayInstr(BuildCompoundArrayInstr instr) {
-        if (instr.isArgsPush()) {
-            visit(instr.getAppendingArg());
-            visit(instr.getAppendedArg());
-            jvmMethod().invokeHelper("argsPush", RubyArray.class, IRubyObject.class, IRubyObject.class);
-        } else {
-            jvmMethod().loadContext();
-            visit(instr.getAppendingArg());
-            visit(instr.getAppendedArg());
-            jvmMethod().invokeHelper("argsCat", RubyArray.class, ThreadContext.class, IRubyObject.class, IRubyObject.class);
-        }
+        String helperMethod = instr.isArgsPush() ? "argsPush" : "argsCat";
+        jvmMethod().loadContext();
+        visit(instr.getAppendingArg());
+        visit(instr.getAppendedArg());
+        jvmMethod().invokeHelper(helperMethod, RubyArray.class, ThreadContext.class, IRubyObject.class, IRubyObject.class);
         jvmStoreLocal(instr.getResult());
     }
 

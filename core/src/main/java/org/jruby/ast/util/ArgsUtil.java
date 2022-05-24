@@ -254,13 +254,10 @@ public final class ArgsUtil {
         return extractKeywordArg(context, keyword, (RubyHash) opts);
     }
 
+    // FIXME: Remove this once invokers know about keyword arguments.
     public static RubyHash extractKeywords(IRubyObject possiblyKeywordArg) {
         if (possiblyKeywordArg instanceof RubyHash) {
-            RubyHash maybeKwarg = (RubyHash) possiblyKeywordArg;
-            if (maybeKwarg.isKeywordArguments()) {
-                maybeKwarg.setKeywordArguments(false);
-                return maybeKwarg;
-            }
+            return (RubyHash) possiblyKeywordArg;
         }
 
         return null;
