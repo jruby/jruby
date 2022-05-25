@@ -47,7 +47,6 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.function.BiFunction;
 
-import static org.jruby.ast.util.ArgsUtil.hasExceptionOption;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import static org.jruby.util.Numeric.*;
@@ -444,9 +443,20 @@ public class RubyComplex extends RubyNumeric {
      */
     @JRubyMethod(name = "convert", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject convert(ThreadContext context, IRubyObject recv, IRubyObject a1, IRubyObject a2) {
-        boolean raise = a2 != null ? hasExceptionOption(context, a2, true) : true;
+        Ruby runtime = context.runtime;
 
-        return convertCommon(context, recv, a1, a2, raise);
+        IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(runtime, a2, false);
+
+        if (maybeKwargs.isNil()) {
+            return convertCommon(context, recv, a1, a2, true);
+        }
+
+        IRubyObject exception = ArgsUtil.extractKeywordArg(context, "exception", (RubyHash) maybeKwargs);
+        if (exception instanceof RubyBoolean) {
+            return convertCommon(context, recv, a1, null, exception.isTrue());
+        }
+
+        throw runtime.newArgumentError("`Complex': expected true or false as exception: " + exception); 
     }
 
     /** nucomp_s_convert
@@ -457,17 +467,17 @@ public class RubyComplex extends RubyNumeric {
         Ruby runtime = context.runtime;
 
         IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(runtime, kwargs, false);
-        boolean raise;
 
         if (maybeKwargs.isNil()) {
             throw runtime.newArgumentError("convert", 3, 1, 2);
         }
 
         IRubyObject exception = ArgsUtil.extractKeywordArg(context, "exception", (RubyHash) maybeKwargs);
+        if (exception instanceof RubyBoolean) {
+            return convertCommon(context, recv, a1, a2, exception.isTrue());
+        }
 
-        raise = exception.isNil() ? true : exception.isTrue();
-
-        return convertCommon(context, recv, a1, a2, raise);
+        throw runtime.newArgumentError("`Complex': expected true or false as exception: " + exception); 
     }
 
     // MRI: nucomp_s_convert
