@@ -112,23 +112,23 @@ public class RubyMethod extends AbstractRubyMethod {
     /** Call the method.
      * 
      */
-    @JRubyMethod(name = {"call", "[]"})
+    @JRubyMethod(name = {"call", "[]"}, forward = true)
     public IRubyObject call(ThreadContext context, Block block) {
         return method.call(context, receiver, sourceModule, methodName, block);
     }
-    @JRubyMethod(name = {"call", "[]"})
+    @JRubyMethod(name = {"call", "[]"}, forward = true)
     public IRubyObject call(ThreadContext context, IRubyObject arg, Block block) {
         return method.call(context, receiver, sourceModule, methodName, arg, block);
     }
-    @JRubyMethod(name = {"call", "[]"})
+    @JRubyMethod(name = {"call", "[]"}, forward = true)
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         return method.call(context, receiver, sourceModule, methodName, arg0, arg1, block);
     }
-    @JRubyMethod(name = {"call", "[]"})
+    @JRubyMethod(name = {"call", "[]"}, forward = true)
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         return method.call(context, receiver, sourceModule, methodName, arg0, arg1, arg2, block);
     }
-    @JRubyMethod(name = {"call", "[]"}, rest = true)
+    @JRubyMethod(name = {"call", "[]"}, rest = true, forward = true)
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
         return method.call(context, receiver, sourceModule, methodName, args, block);
     }
