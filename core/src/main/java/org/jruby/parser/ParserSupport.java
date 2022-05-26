@@ -1679,7 +1679,14 @@ public class ParserSupport {
             return new ArgsCatNode(pushNode.getLine(), pushNode.getFirstNode(),
                     new ArrayNode(body.getLine(), body).add(node2));
         }
-
+        if (node1 instanceof ArgsCatNode) {
+            ArgsCatNode pushNode = (ArgsCatNode) node1;
+            Node body = pushNode.getSecondNode();
+            if (body instanceof ListNode) {
+                ((ListNode) body).add(node2);
+                return node1;
+            }
+        }
         return new ArgsPushNode(position(node1, node2), node1, node2);
     }
 
