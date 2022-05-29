@@ -1,1 +1,0 @@
-wip:Numeric#clone does not change frozen status if passed freeze: nil
