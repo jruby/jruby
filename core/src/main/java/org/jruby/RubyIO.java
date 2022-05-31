@@ -1009,6 +1009,15 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     public IRubyObject initialize(ThreadContext context, IRubyObject fileNumber, IRubyObject modeValue, IRubyObject options, Block unused) {
         int fileno = RubyNumeric.fix2int(fileNumber);
 
+        // TODO: MRI has a method name in ArgumentError. 
+        // e.g. `for_fd': wrong number of arguments (given 3, expected 1..2)
+        if (modeValue != null && !modeValue.isNil() && !(modeValue instanceof RubyInteger) && !(modeValue instanceof RubyString)) {
+            throw context.runtime.newArgumentError(3, 1, 2);
+        }
+        if (options == null || options.isNil()) {
+            throw context.runtime.newArgumentError(3, 1, 2);
+        }
+
         return initializeCommon(context, fileno, modeValue, options);
     }
 
