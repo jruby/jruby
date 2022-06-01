@@ -1478,7 +1478,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (!isAlive()) return context.nil;
 
 
-        pendingInterruptEnqueue(prepareRaiseException(context, args, Block.NULL_BLOCK));
+        pendingInterruptEnqueue(prepareRaiseException(context, args));
         interrupt();
 
         if (currentThread == this) {
@@ -1488,8 +1488,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return context.nil;
     }
 
-    private IRubyObject prepareRaiseException(ThreadContext context, IRubyObject[] args, Block block) {
+    public static IRubyObject prepareRaiseException(ThreadContext context, IRubyObject[] args) {
         final Ruby runtime = context.runtime;
+        IRubyObject errorInfo = context.getErrorInfo();
+
         if (args.length == 0) {
             if (errorInfo.isNil()) {
                 // We force RaiseException here to populate backtrace
@@ -1504,7 +1506,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         final RubyException exception;
         if (args.length == 1) {
             if (arg instanceof RubyString) {
-                tmp = runtime.getRuntimeError().newInstance(context, args, block);
+                tmp = runtime.getRuntimeError().newInstance(context, args, Block.NULL_BLOCK);
             }
             else if (arg instanceof ConcreteJavaProxy ) {
                 return arg;
@@ -1532,7 +1534,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             exception.set_backtrace(args[2]);
         }
 
-        IRubyObject cause = context.getErrorInfo();
+        IRubyObject cause = errorInfo;
         if (cause != exception) {
             exception.setCause(cause);
         }

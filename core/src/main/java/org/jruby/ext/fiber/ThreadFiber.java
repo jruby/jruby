@@ -2,8 +2,11 @@ package org.jruby.ext.fiber;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
+import org.jruby.RubyException;
+import org.jruby.RubyKernel;
 import org.jruby.RubyObject;
 import org.jruby.RubyThread;
 import org.jruby.anno.JRubyMethod;
@@ -19,6 +22,7 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ArraySupport;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -110,27 +114,56 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
             }
         }
         
-        IRubyObject val;
+        FiberRequest val;
         switch (values.length) {
             case 0: val = NEVER; break;
-            case 1: val = values[0]; break;
-            default: val = RubyArray.newArrayMayCopy(runtime, values);
+            case 1: val = new FiberRequest(values[0], RequestType.DATA); break;
+            default: val = new FiberRequest(RubyArray.newArrayMayCopy(runtime, values), RequestType.DATA);
         }
         
         if (data.parent != context.getFiberCurrentThread()) throw runtime.newFiberError("fiber called across threads");
         
         data.prev = context.getFiber();
 
+        FiberRequest result;
         try {
-            return exchangeWithFiber(context, currentFiberData, data, val);
+            result = exchangeWithFiber(context, currentFiberData, data, val);
         } finally {
             data.prev = null;
         }
+
+        if (result.type == RequestType.RAISE) {
+            throw ((RubyException) result.data).toThrowable();
+        }
+
+        return result.data;
     }
 
-    private static IRubyObject exchangeWithFiber(ThreadContext context, FiberData currentFiberData, FiberData targetFiberData, IRubyObject val) {
+    @JRubyMethod(rest = true)
+    public IRubyObject raise(ThreadContext context, IRubyObject[] args) {
+        return raise(context, RubyThread.prepareRaiseException(context, args));
+    }
+
+    public enum RequestType {
+        DATA,
+        RAISE
+    }
+
+    public static class FiberRequest {
+        final IRubyObject data;
+        final RequestType type;
+
+        FiberRequest(IRubyObject data, RequestType type) {
+            this.data = data;
+            this.type = type;
+        }
+    }
+
+    private static final FiberRequest NEVER = new FiberRequest(RubyBasicObject.NEVER, RequestType.DATA);
+
+    private static FiberRequest exchangeWithFiber(ThreadContext context, FiberData currentFiberData, FiberData targetFiberData, FiberRequest request) {
         // push should not block and does not check interrupts
-        targetFiberData.queue.push(context, val);
+        targetFiberData.queue.push(context, request);
 
         // At this point we consider ourselves "in" the resume, so we need to make an effort to propagate any interrupt
         // raise to the fiber. We forward the exception using the interrupt mechanism and then try once more to let the
@@ -139,14 +172,12 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         // interrupted again and must abandon the fiber.
 
         try {
-            IRubyObject result = currentFiberData.queue.pop(context);
-            return result == NEVER ? context.nil : result;
+            return currentFiberData.queue.pop(context);
         } catch (RaiseException re) {
             handleExceptionDuringExchange(context, currentFiberData, targetFiberData, re);
 
             // if we get here, we forwarded exception so try once more
-            IRubyObject result = currentFiberData.queue.pop(context);
-            return result == NEVER ? context.nil : result;
+            return currentFiberData.queue.pop(context);
         }
     }
 
@@ -214,11 +245,11 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
             }
         }
         
-        IRubyObject val;
+        FiberRequest val;
         switch (values.length) {
             case 0: val = NEVER; break;
-            case 1: val = values[0]; break;
-            default: val = RubyArray.newArrayMayCopy(runtime, values);
+            case 1: val = new FiberRequest(values[0], RequestType.DATA); break;
+            default: val = new FiberRequest(RubyArray.newArrayMayCopy(runtime, values), RequestType.DATA);
         }
         
         if (data.parent != context.getFiberCurrentThread()) throw runtime.newFiberError("fiber called across threads");
@@ -231,13 +262,64 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         } else {
             data.prev = context.getFiber();
         }
-        
+
+        FiberRequest result;
         try {
-            return exchangeWithFiber(context, currentFiberData, data, val);
+            result = exchangeWithFiber(context, currentFiberData, data, val);
         } finally {
             data.prev = null;
             currentFiberData.transferred = false;
         }
+
+        if (result.type == RequestType.RAISE) {
+            throw ((RubyException) result.data).toThrowable();
+        }
+
+        return result.data;
+    }
+    public IRubyObject raise(ThreadContext context, IRubyObject exception) {
+        Ruby runtime = context.runtime;
+
+        final FiberData data = this.data;
+        if (data.prev != null) throw runtime.newFiberError("double resume");
+
+        if (!alive()) throw runtime.newFiberError("dead fiber called");
+
+        FiberData currentFiberData = context.getFiber().data;
+
+        if (data == currentFiberData) {
+            RubyKernel.raise(context, this, exception);
+        }
+
+        if (data.parent != context.getFiberCurrentThread()) throw runtime.newFiberError("fiber called across threads");
+
+        FiberRequest val = new FiberRequest(exception, RequestType.RAISE);
+
+        if (currentFiberData.prev != null) {
+            // new fiber should answer to current prev and this fiber is marked as transferred
+            data.prev = currentFiberData.prev;
+            currentFiberData.prev = null;
+            currentFiberData.transferred = true;
+        } else {
+            data.prev = context.getFiber();
+        }
+
+        FiberRequest result = null;
+        try {
+            result = exchangeWithFiber(context, currentFiberData, data, val);
+        } finally {
+            if (result == null) {
+                // exception raised, mark transfer as completed
+                data.prev = null;
+                currentFiberData.transferred = false;
+            }
+        }
+
+        if (result.type == RequestType.RAISE) {
+            throw ((RubyException) result.data).toThrowable();
+        }
+
+        return result.data;
     }
     
     @JRubyMethod(meta = true)
@@ -252,7 +334,13 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         FiberData currentFiberData = verifyCurrentFiber(context, runtime);
         FiberData prevFiberData = currentFiberData.prev.data;
 
-        return exchangeWithFiber(context, currentFiberData, prevFiberData, value);
+        FiberRequest result = exchangeWithFiber(context, currentFiberData, prevFiberData, new FiberRequest(value, RequestType.DATA));
+
+        if (result.type == RequestType.RAISE) {
+            throw ((RubyException) result.data).toThrowable();
+        }
+
+        return result.data;
     }
 
     @JRubyMethod(meta = true, rest = true)
@@ -267,7 +355,13 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         FiberData currentFiberData = verifyCurrentFiber(context, runtime);
         FiberData prevFiberData = currentFiberData.prev.data;
 
-        return exchangeWithFiber(context, currentFiberData, prevFiberData, RubyArray.newArrayNoCopy(runtime, value));
+        FiberRequest result = exchangeWithFiber(context, currentFiberData, prevFiberData, new FiberRequest(RubyArray.newArrayNoCopy(runtime, value), RequestType.DATA));
+
+        if (result.type == RequestType.RAISE) {
+            throw ((RubyException) result.data).toThrowable();
+        }
+
+        return result.data;
     }
 
     private static FiberData verifyCurrentFiber(ThreadContext context, Ruby runtime) {
@@ -326,15 +420,15 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                     thread.setName("Fiber thread for block at: " + block.getBody().getFile() + ":" + block.getBody().getLine());
 
                     try {
-                        IRubyObject init = data.queue.pop(context);
+                        FiberRequest init = data.queue.pop(context);
 
                         try {
-                            IRubyObject result;
+                            FiberRequest result;
 
                             if (init == NEVER) {
-                                result = block.yieldSpecific(context);
+                                result = new FiberRequest(block.yieldSpecific(context), RequestType.DATA);
                             } else {
-                                result = block.yieldArray(context, init, null);
+                                result = new FiberRequest(block.yieldArray(context, init.data, null), RequestType.DATA);
                             }
 
                             // Clear ThreadFiber's thread since we're on the way out and need to appear non-alive?
@@ -369,7 +463,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                         }
                     } catch (RaiseException re) {
                         if (data.prev != null) {
-                            data.prev.thread.raise(re.getException());
+                            data.prev.data.queue.push(context, new FiberRequest(re.getException(), RequestType.RAISE));
                         }
                     } catch (Throwable t) {
                         if (data.prev != null) {

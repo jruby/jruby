@@ -873,6 +873,42 @@ public class RubyKernel {
     public static IRubyObject sprintf(IRubyObject recv, IRubyObject[] args) {
         return sprintf(recv.getRuntime().getCurrentContext(), recv, args);
     }
+    public static IRubyObject raise(ThreadContext context, IRubyObject self, IRubyObject arg0) {
+        final Ruby runtime = context.runtime;
+        int argc = 1;
+        boolean forceCause = false;
+
+        // semi extract_raise_opts :
+        IRubyObject cause;
+        if (arg0 instanceof RubyHash) {
+            RubyHash opt = (RubyHash) arg0;
+            RubySymbol key;
+            if (!opt.isEmpty() && (opt.has_key_p(context, key = runtime.newSymbol("cause")) == runtime.getTrue())) {
+                throw runtime.newArgumentError("only cause is given with no arguments");
+            }
+        }
+
+        cause = context.getErrorInfo(); // returns nil for no error-info
+
+        maybeRaiseJavaException(runtime, arg0);
+
+        RaiseException raise;
+        if (arg0 instanceof RubyString) {
+            raise = ((RubyException) runtime.getRuntimeError().newInstance(context, arg0)).toThrowable();
+        } else {
+            raise = convertToException(context, arg0, null).toThrowable();
+        }
+
+        if (runtime.isDebug()) {
+            printExceptionSummary(runtime, raise.getException());
+        }
+
+        if (forceCause || argc > 0 && raise.getException().getCause() == null && cause != raise.getException()) {
+            raise.getException().setCause(cause);
+        }
+
+        throw raise;
+    }
 
     @JRubyMethod(name = {"raise", "fail"}, optional = 3, module = true, visibility = PRIVATE, omit = true)
     public static IRubyObject raise(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
@@ -902,7 +938,7 @@ public class RubyKernel {
             if ( cause == null ) cause = context.getErrorInfo(); // returns nil for no error-info
         }
 
-        maybeRaiseJavaException(runtime, args, argc, cause);
+        maybeRaiseJavaException(runtime, args, argc);
 
         RaiseException raise;
         switch (argc) {
@@ -944,26 +980,27 @@ public class RubyKernel {
     }
 
     private static void maybeRaiseJavaException(final Ruby runtime,
-        final IRubyObject[] args, final int argc, final IRubyObject cause) {
+        final IRubyObject[] args, final int argc) {
         // Check for a Java exception
-        ConcreteJavaProxy exception = null;
+        IRubyObject maybeException = null;
         switch (argc) {
             case 0:
-                IRubyObject lastException = runtime.getGlobalVariables().get("$!");
-                if (lastException instanceof ConcreteJavaProxy) {
-                    exception = (ConcreteJavaProxy) lastException;
-                }
+                maybeException = runtime.getGlobalVariables().get("$!");
                 break;
             case 1:
-                if (args.length == 1 && args[0] instanceof ConcreteJavaProxy) {
-                    exception = (ConcreteJavaProxy) args[0];
-                }
+                if (args.length == 1) maybeException = args[0];
                 break;
         }
 
-        if (exception != null) {
+        maybeRaiseJavaException(runtime, maybeException);
+    }
+
+    private static void maybeRaiseJavaException(
+            final Ruby runtime, final IRubyObject arg0) {
+        // Check for a Java exception
+        if (arg0 instanceof ConcreteJavaProxy) {
             // looks like someone's trying to raise a Java exception. Let them.
-            Object maybeThrowable = exception.getObject();
+            Object maybeThrowable = ((ConcreteJavaProxy) arg0).getObject();
 
             if (!(maybeThrowable instanceof Throwable)) {
                 throw runtime.newTypeError("can't raise a non-Throwable Java object");
