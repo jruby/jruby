@@ -21,16 +21,18 @@ public class OneFixnumArgNoBlockCallInstr extends CallInstr {
 
     // clone constructor
     protected OneFixnumArgNoBlockCallInstr(IRScope scope, CallType callType, Variable result, RubySymbol name,
-                                        Operand receiver, Operand[] args, boolean potentiallyRefined, CallSite callSite,
-                                        long callSiteId) {
-        super(scope, Operation.CALL_1F, callType, result, name, receiver, args, null, potentiallyRefined, callSite, callSiteId);
+                                           Operand receiver, Operand[] args, int flags, boolean potentiallyRefined,
+                                           CallSite callSite, long callSiteId) {
+        super(scope, Operation.CALL_1F, callType, result, name, receiver, args, null, flags, potentiallyRefined,
+                callSite, callSiteId);
 
         fixNum = ((Fixnum) args[0]).value;
     }
 
     // normal constructor
-    public OneFixnumArgNoBlockCallInstr(IRScope scope, CallType callType, Variable result, RubySymbol name, Operand receiver, Operand[] args, boolean potentiallyRefined) {
-        super(scope, Operation.CALL_1F, callType, result, name, receiver, args, null, potentiallyRefined);
+    public OneFixnumArgNoBlockCallInstr(IRScope scope, CallType callType, Variable result, RubySymbol name,
+                                        Operand receiver, Operand[] args, int flags, boolean potentiallyRefined) {
+        super(scope, Operation.CALL_1F, callType, result, name, receiver, args, null, flags, potentiallyRefined);
 
         assert args.length == 1;
 
@@ -40,7 +42,7 @@ public class OneFixnumArgNoBlockCallInstr extends CallInstr {
     @Override
     public Instr clone(CloneInfo ii) {
         return new OneFixnumArgNoBlockCallInstr(ii.getScope(), getCallType(), ii.getRenamedVariable(result), getName(),
-                getReceiver().cloneForInlining(ii), cloneCallArgs(ii), isPotentiallyRefined(), callSite, callSiteId);
+                getReceiver().cloneForInlining(ii), cloneCallArgs(ii), getFlags(), isPotentiallyRefined(), callSite, callSiteId);
     }
 
     public long getFixnumArg() {
@@ -50,6 +52,9 @@ public class OneFixnumArgNoBlockCallInstr extends CallInstr {
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope dynamicScope, IRubyObject self, Object[] temp) {
         IRubyObject object = (IRubyObject) getReceiver().retrieve(context, self, currScope, dynamicScope, temp);
+
+        setCallInfo(context);
+
         return getCallSite().call(context, self, object, fixNum);
     }
 }

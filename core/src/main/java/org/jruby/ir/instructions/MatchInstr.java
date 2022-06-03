@@ -24,12 +24,13 @@ public class MatchInstr extends CallInstr implements FixedArityInstr {
     // clone constructor
     protected MatchInstr(IRScope scope, Variable result, Operand receiver, Operand arg, CallSite callSite, long callSiteId) {
         super(scope, Operation.MATCH, CallType.NORMAL, result, scope.getManager().getRuntime().newSymbol(MATCH),
-                receiver, new Operand[]{arg}, null, false, callSite, callSiteId);
+                receiver, new Operand[]{arg}, null, 0, false, callSite, callSiteId);
     }
 
     // normal constructor
     public MatchInstr(IRScope scope, Variable result, Operand receiver, Operand arg) {
-        super(scope, Operation.MATCH, CallType.NORMAL, result, scope.getManager().getRuntime().newSymbol(MATCH), receiver, new Operand[]{arg}, null, false);
+        super(scope, Operation.MATCH, CallType.NORMAL, result, scope.getManager().getRuntime().newSymbol(MATCH),
+                receiver, new Operand[]{arg}, null, 0, false);
 
         assert result != null : "Match2Instr result is null";
     }

@@ -15,25 +15,26 @@ import org.jruby.runtime.CallType;
 
 public class NoResultCallInstr extends CallBase {
     // FIXME: Removed results undoes specialized callinstrs.  Audit how often and what and make equalivalent versions here.
-    public static NoResultCallInstr create(IRScope scope, CallType callType, RubySymbol name, Operand receiver, Operand[] args,
-                                           Operand closure, boolean isPotentiallyRefined) {
+    public static NoResultCallInstr create(IRScope scope, CallType callType, RubySymbol name, Operand receiver,
+                                           Operand[] args, Operand closure, int flags, boolean isPotentiallyRefined) {
         if (closure == null && !containsArgSplat(args) && args.length == 1) {
-            return new OneOperandArgNoBlockNoResultCallInstr(scope, callType, name, receiver, args, null, isPotentiallyRefined);
+            return new OneOperandArgNoBlockNoResultCallInstr(scope, callType, name, receiver, args, null, flags, isPotentiallyRefined);
         }
 
-        return new NoResultCallInstr(scope, Operation.NORESULT_CALL, callType, name, receiver, args, closure, isPotentiallyRefined);
+        return new NoResultCallInstr(scope, Operation.NORESULT_CALL, callType, name, receiver, args, closure, flags, isPotentiallyRefined);
     }
 
     // clone constructor
     protected NoResultCallInstr(IRScope scope, Operation op, CallType callType, RubySymbol name, Operand receiver,
-                       Operand[] args, Operand closure, boolean potentiallyRefined, CallSite callSite, long callSiteId) {
-        super(scope, op, callType, name, receiver, args, closure, potentiallyRefined, callSite, callSiteId);
+                                Operand[] args, Operand closure, int flags, boolean potentiallyRefined,
+                                CallSite callSite, long callSiteId) {
+        super(scope, op, callType, name, receiver, args, closure, flags, potentiallyRefined, callSite, callSiteId);
     }
 
     // normal constructor
-    public NoResultCallInstr(IRScope scope, Operation op, CallType callType, RubySymbol name, Operand receiver, Operand[] args,
-                             Operand closure, boolean isPotentiallyRefined) {
-        super(scope, op, callType, name, receiver, args, closure, isPotentiallyRefined);
+    public NoResultCallInstr(IRScope scope, Operation op, CallType callType, RubySymbol name, Operand receiver,
+                             Operand[] args, Operand closure, int flags, boolean isPotentiallyRefined) {
+        super(scope, op, callType, name, receiver, args, closure, flags, isPotentiallyRefined);
     }
 
     /**
@@ -47,9 +48,10 @@ public class NoResultCallInstr extends CallBase {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new NoResultCallInstr(ii.getScope(), getOperation(), getCallType(), getName(), getReceiver().cloneForInlining(ii),
-                cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii), isPotentiallyRefined(),
-                getCallSite(), getCallSiteId());
+        return new NoResultCallInstr(ii.getScope(), getOperation(), getCallType(), getName(),
+                getReceiver().cloneForInlining(ii), cloneCallArgs(ii),
+                getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii), getFlags(),
+                isPotentiallyRefined(), getCallSite(), getCallSiteId());
     }
 
     public static NoResultCallInstr decode(IRReaderDecoder d) {
@@ -69,8 +71,10 @@ public class NoResultCallInstr extends CallBase {
         }
 
         Operand closure = hasClosureArg ? d.decodeOperand() : null;
+        int flags = d.decodeInt();
 
-        return NoResultCallInstr.create(d.getCurrentScope(), CallType.fromOrdinal(callTypeOrdinal), name, receiver, args, closure, d.getCurrentScope().maybeUsingRefinements());
+        return NoResultCallInstr.create(d.getCurrentScope(), CallType.fromOrdinal(callTypeOrdinal), name, receiver,
+                args, closure, flags, d.getCurrentScope().maybeUsingRefinements());
     }
 
     @Override

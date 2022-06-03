@@ -19,22 +19,24 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class OneOperandArgBlockCallInstr extends CallInstr {
     // clone constructor
     public OneOperandArgBlockCallInstr(IRScope scope, CallType callType, Variable result, RubySymbol name,
-                                       Operand receiver, Operand[] args, Operand closure, boolean isPotentiallyRefined,
-                                       CallSite callSite, long callSiteId) {
-        super(scope, Operation.CALL_1OB, callType, result, name, receiver, args, closure, isPotentiallyRefined, callSite, callSiteId);
+                                       Operand receiver, Operand[] args, Operand closure, int flags,
+                                       boolean isPotentiallyRefined, CallSite callSite, long callSiteId) {
+        super(scope, Operation.CALL_1OB, callType, result, name, receiver, args, closure, flags, isPotentiallyRefined,
+                callSite, callSiteId);
     }
 
     // normal constructor
-    public OneOperandArgBlockCallInstr(IRScope scope, CallType callType, Variable result, RubySymbol name, Operand receiver, Operand[] args,
-                                       Operand closure, boolean isPotentiallyRefined) {
-        super(scope, Operation.CALL_1OB, callType, result, name, receiver, args, closure, isPotentiallyRefined);
+    public OneOperandArgBlockCallInstr(IRScope scope, CallType callType, Variable result, RubySymbol name,
+                                       Operand receiver, Operand[] args, Operand closure, int flags,
+                                       boolean isPotentiallyRefined) {
+        super(scope, Operation.CALL_1OB, callType, result, name, receiver, args, closure, flags, isPotentiallyRefined);
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
         return new OneOperandArgBlockCallInstr(ii.getScope(), getCallType(), ii.getRenamedVariable(result), getName(),
                 getReceiver().cloneForInlining(ii), cloneCallArgs(ii),
-                getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii), isPotentiallyRefined(),
+                getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii), getFlags(), isPotentiallyRefined(),
                 getCallSite(), getCallSiteId());
     }
 
@@ -44,6 +46,8 @@ public class OneOperandArgBlockCallInstr extends CallInstr {
         IRubyObject object = (IRubyObject) getReceiver().retrieve(context, self, currScope, dynamicScope, temp);
         IRubyObject arg1 = (IRubyObject) getArg1().retrieve(context, self, currScope, dynamicScope, temp);
         Block preparedBlock = prepareBlock(context, self, currScope, dynamicScope, temp);
+
+        setCallInfo(context);
 
         if (hasLiteralClosure()) {
             return getCallSite().callIter(context, self, object, arg1, preparedBlock);

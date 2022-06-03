@@ -17,34 +17,39 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class OneOperandArgNoBlockCallInstr extends CallInstr {
     // specific instr constructor
-    public OneOperandArgNoBlockCallInstr(IRScope scope, CallType callType, Variable result, RubySymbol name, Operand receiver,
-                                         Operand[] args, boolean isPotentiallyRefined) {
-        this(scope, Operation.CALL_1O, callType, result, name, receiver, args, isPotentiallyRefined);
+    public OneOperandArgNoBlockCallInstr(IRScope scope, CallType callType, Variable result, RubySymbol name,
+                                         Operand receiver, Operand[] args, int flags, boolean isPotentiallyRefined) {
+        this(scope, Operation.CALL_1O, callType, result, name, receiver, args, flags, isPotentiallyRefined);
     }
 
     // clone constructor
-    public OneOperandArgNoBlockCallInstr(IRScope scope, Operation op, CallType callType, Variable result, RubySymbol name, Operand receiver,
-                                         Operand[] args, boolean isPotentiallyRefined, CallSite callSite, long callSiteId) {
-        super(scope, op, callType, result, name, receiver, args, null, isPotentiallyRefined, callSite, callSiteId);
+    public OneOperandArgNoBlockCallInstr(IRScope scope, Operation op, CallType callType, Variable result,
+                                         RubySymbol name, Operand receiver, Operand[] args, int flags,
+                                         boolean isPotentiallyRefined, CallSite callSite, long callSiteId) {
+        super(scope, op, callType, result, name, receiver, args, null, flags, isPotentiallyRefined, callSite, callSiteId);
     }
 
     // normal constructor
-    public OneOperandArgNoBlockCallInstr(IRScope scope, Operation op, CallType callType, Variable result, RubySymbol name, Operand receiver,
-                                         Operand[] args, boolean isPotentiallyRefined) {
-        super(scope, op, callType, result, name, receiver, args, null, isPotentiallyRefined);
+    public OneOperandArgNoBlockCallInstr(IRScope scope, Operation op, CallType callType, Variable result,
+                                         RubySymbol name, Operand receiver, Operand[] args, int flags,
+                                         boolean isPotentiallyRefined) {
+        super(scope, op, callType, result, name, receiver, args, null, flags, isPotentiallyRefined);
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
         return new OneOperandArgNoBlockCallInstr(ii.getScope(), Operation.CALL_1O, getCallType(),
                 ii.getRenamedVariable(result), getName(), getReceiver().cloneForInlining(ii), cloneCallArgs(ii),
-                isPotentiallyRefined(), getCallSite(), getCallSiteId());
+                getFlags(), isPotentiallyRefined(), getCallSite(), getCallSiteId());
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope dynamicScope, IRubyObject self, Object[] temp) {
         IRubyObject object = (IRubyObject) getReceiver().retrieve(context, self, currScope, dynamicScope, temp);
         IRubyObject arg1 = (IRubyObject) getArg1().retrieve(context, self, currScope, dynamicScope, temp);
+
+        setCallInfo(context);
+
         return getCallSite().call(context, self, object, arg1);
     }
 }

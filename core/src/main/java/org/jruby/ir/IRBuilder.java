@@ -47,8 +47,8 @@ import static org.jruby.ir.instructions.IntegerMathInstr.Op.SUBTRACT;
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 
 import static org.jruby.ir.operands.ScopeModule.*;
-import static org.jruby.runtime.CallType.FUNCTIONAL;
-import static org.jruby.runtime.CallType.NORMAL;
+import static org.jruby.runtime.CallType.*;
+import static org.jruby.runtime.ThreadContext.*;
 import static org.jruby.util.RubyStringBuilder.str;
 
 // This class converts an AST into a bunch of IR instructions
@@ -679,7 +679,7 @@ public class IRBuilder {
                 Operand lhs = build(argsCatNode.getFirstNode());
                 Operand rhs = build(argsCatNode.getSecondNode());
                 Variable res = createTemporaryVariable();
-                addInstr(new BuildCompoundArrayInstr(res, lhs, rhs, false));
+                addInstr(new BuildCompoundArrayInstr(res, lhs, rhs, false, false));
                 argsList.add(new Splat(res));
                 return rhs;
             }
@@ -688,7 +688,7 @@ public class IRBuilder {
                 Operand lhs = build(argsPushNode.getFirstNode());
                 Operand rhs = build(argsPushNode.getSecondNode());
                 Variable res = createTemporaryVariable();
-                addInstr(new BuildCompoundArrayInstr(res, lhs, rhs, true));
+                addInstr(new BuildCompoundArrayInstr(res, lhs, rhs, true, false));
                 argsList.add(new Splat(res));
                 return rhs;
             }
@@ -702,42 +702,115 @@ public class IRBuilder {
         throw notCompilable("Invalid node for attrassign call args", args);
     }
 
-    protected Operand[] buildCallArgs(Node args) {
-        return buildCallArgsExcept(args, null);
+    private Operand buildRestKeywordArgs(HashNode keywordArgs, int[] flags) {
+        flags[0] |= CALL_KEYWORD_REST;
+        List<KeyValuePair<Node, Node>> pairs = keywordArgs.getPairs();
+
+        if (pairs.size() == 1) { // Only a single rest arg here.  Do not bother to merge.
+            return buildWithOrder(pairs.get(0).getValue(), keywordArgs.containsVariableAssignment());
+        }
+
+        Variable splatValue = copy(new Hash(new ArrayList<>()));
+        for (KeyValuePair<Node, Node> pair: pairs) {
+            Operand splat = buildWithOrder(pair.getValue(), keywordArgs.containsVariableAssignment());
+            addInstr(new RuntimeHelperCall(splatValue, MERGE_KWARGS, new Operand[] { splatValue, splat }));
+        }
+
+        return splatValue;
     }
 
-    /**
-     * build each argument to a call but if we detect what appears to be a literal simple keyword argument
-     * signature we will pass that along to be excluded in the build here (we will build it separately).
-     * @param args for a call to be built
-     * @param excludeKeywordArg do not build the last one since it is a keyword arg
-     * @return the operands for the call.
-     */
-    protected Operand[] buildCallArgsExcept(Node args, Node excludeKeywordArg) {
+    protected Operand buildCallKeywordArguments(HashNode keywords, int[] flags) {
+        flags[0] |= CALL_KEYWORD;
+
+        if (keywords.hasOnlyRestKwargs()) return buildRestKeywordArgs(keywords, flags);
+
+        return buildWithOrder(keywords, keywords.containsVariableAssignment());
+    }
+
+    // This is very similar to buildArray but when building generic arrays we do not want to mark callinfo
+    // since array builds are not directly for setting up a call.
+    protected Operand buildCallArgsArrayForSplat(ListNode args, int[] flags) {
+        Node[] nodes = args.children();
+        Operand[] elts = new Operand[nodes.length];
+        boolean containsAssignments = args.containsVariableAssignment();
+        Operand keywordRestSplat = null;
+        for (int i = 0; i < nodes.length; i++) {
+            elts[i] = buildWithOrder(nodes[i], containsAssignments);
+            if (i == nodes.length - 1 && nodes[i] instanceof HashNode && !((HashNode) nodes[i]).isLiteral()) {
+                flags[0] |= CALL_KEYWORD;
+                if (((HashNode) nodes[i]).hasOnlyRestKwargs()) keywordRestSplat = elts[i];
+            }
+        }
+
+        // We have some amount of ** on the end of this array construction.  This is handled in IR since we
+        // do not want arrays to have to know if it has an UNDEFINED on the end and then not include it.  Also
+        // since we must evaluate array values left to right we cannot look at last argument first to eliminate
+        // complicating the array sizes computation.  Luckily, this is a rare feature to see used in actual code
+        // so externalizing this in IR should not be a big deal.
+        if (keywordRestSplat != null) {
+            Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[]{ keywordRestSplat }));
+            final Variable result = temp();
+            if_else(test, manager.getTrue(),
+                    () -> copy(result, new Array(removeArg(elts))),
+                    () -> copy(result, new Array(elts)));
+            return result;
+        } else {
+            return new Array(elts);
+        }
+    }
+
+    protected Operand[] buildCallArgsArray(ListNode args, int[] flags) {
+        Node[] children = args.children();
+        int numberOfArgs = children.length;
+        Operand[] builtArgs = new Operand[numberOfArgs];
+        boolean hasAssignments = args.containsVariableAssignment();
+
+        for (int i = 0; i < numberOfArgs; i++) {
+            if (i == numberOfArgs - 1 && children[i] instanceof HashNode && !((HashNode) children[i]).isLiteral()) {
+                HashNode hash = (HashNode) children[i];
+                builtArgs[i] = buildCallKeywordArguments(hash, flags);
+            } else {
+                builtArgs[i] = buildWithOrder(children[i], hasAssignments);
+            }
+        }
+
+        return builtArgs;
+    }
+
+    protected Operand[] buildCallArgs(Node args, int[] flags) {
         switch (args.getNodeType()) {
             case ARGSCATNODE:
             case ARGSPUSHNODE:
-                return new Operand[] { new Splat(addResultInstr(new BuildSplatInstr(createTemporaryVariable(), build(args), false))) };
-            case ARRAYNODE: {
-                Node[] children = ((ListNode) args).children();
-                int numberOfArgs = children.length - (excludeKeywordArg != null ? 1 : 0);
-                Operand[] builtArgs = new Operand[numberOfArgs];
-                boolean hasAssignments = args.containsVariableAssignment();
+                Operand lhs = build(((TwoValueNode) args).getFirstNode());
+                Node secondNode = ((TwoValueNode) args).getSecondNode();
 
-                for (int i = 0; i < numberOfArgs; i++) {
-                    builtArgs[i] = buildWithOrder(children[i], hasAssignments);
+                flags[0] |= CALL_SPLATS;
+                Operand valueToSplat;
+                if (secondNode instanceof ListNode) {
+                    valueToSplat = buildCallArgsArrayForSplat((ListNode) secondNode, flags);
+                } else if (secondNode instanceof HashNode && !((HashNode) secondNode).isLiteral()) {
+                    valueToSplat = buildCallKeywordArguments((HashNode) secondNode, flags);
+                } else {
+                    valueToSplat = build(secondNode);
+
                 }
-                return builtArgs;
-            }
+                Operand array = addResultInstr(new BuildCompoundArrayInstr(createTemporaryVariable(), lhs, valueToSplat,
+                        args.getNodeType() == NodeType.ARGSPUSHNODE, (flags[0] & CALL_KEYWORD_REST) != 0));
+
+                return new Operand[] { new Splat(addResultInstr(new BuildSplatInstr(createTemporaryVariable(), array, false))) };
+            case ARRAYNODE:
+                return buildCallArgsArray((ListNode) args, flags);
             case SPLATNODE:
+                flags[0] |= CALL_SPLATS;
                 return new Operand[] { new Splat(addResultInstr(new BuildSplatInstr(createTemporaryVariable(), build(args), false))) };
+
         }
 
         throw notCompilable("Invalid node for call args: ", args);
     }
 
-    public Operand[] setupCallArgs(Node args) {
-        return args == null ? Operand.EMPTY_ARRAY : buildCallArgs(args);
+    public Operand[] setupCallArgs(Node args, int[] flags) {
+        return args == null ? Operand.EMPTY_ARRAY : buildCallArgs(args, flags);
     }
 
     public static Operand[] addArg(Operand[] args, Operand extraArg) {
@@ -959,14 +1032,14 @@ public class IRBuilder {
         Operand lhs = build(argsCatNode.getFirstNode());
         Operand rhs = build(argsCatNode.getSecondNode());
 
-        return addResultInstr(new BuildCompoundArrayInstr(createTemporaryVariable(), lhs, rhs, false));
+        return addResultInstr(new BuildCompoundArrayInstr(createTemporaryVariable(), lhs, rhs, false, false));
     }
 
     public Operand buildArgsPush(final ArgsPushNode node) {
         Operand lhs = build(node.getFirstNode());
         Operand rhs = build(node.getSecondNode());
 
-        return addResultInstr(new BuildCompoundArrayInstr(createTemporaryVariable(), lhs, rhs, true));
+        return addResultInstr(new BuildCompoundArrayInstr(createTemporaryVariable(), lhs, rhs, true, false));
     }
 
     private Operand buildAttrAssign(Variable result, AttrAssignNode attrAssignNode) {
@@ -984,9 +1057,11 @@ public class IRBuilder {
 
         List<Operand> args = new ArrayList<>();
         Node argsNode = attrAssignNode.getArgsNode();
+        int[] flags = new int[] { 0 };
         Operand lastArg = buildAttrAssignCallArgs(args, argsNode, containsAssignment);
         Operand block = setupCallClosure(attrAssignNode.getBlockNode());
-        addInstr(AttrAssignInstr.create(scope, obj, attrAssignNode.getName(), args.toArray(new Operand[args.size()]), block, scope.maybeUsingRefinements()));
+        addInstr(AttrAssignInstr.create(scope, obj, attrAssignNode.getName(), args.toArray(new Operand[args.size()]),
+                block, flags[0], scope.maybeUsingRefinements()));
         addInstr(new CopyInstr(result, lastArg));
 
         if (attrAssignNode.isLazy()) {
@@ -1002,9 +1077,10 @@ public class IRBuilder {
     public Operand buildAttrAssignAssignment(Node node, Operand value) {
         final AttrAssignNode attrAssignNode = (AttrAssignNode) node;
         Operand obj = build(attrAssignNode.getReceiverNode());
-        Operand[] args = setupCallArgs(attrAssignNode.getArgsNode());
+        int[] flags = new int[] { 0 };
+        Operand[] args = setupCallArgs(attrAssignNode.getArgsNode(), flags);
         args = addArg(args, value);
-        addInstr(AttrAssignInstr.create(scope, obj, attrAssignNode.getName(), args, scope.maybeUsingRefinements()));
+        addInstr(AttrAssignInstr.create(scope, obj, attrAssignNode.getName(), args, flags[0], scope.maybeUsingRefinements()));
         return value;
     }
 
@@ -1187,45 +1263,39 @@ public class IRBuilder {
                 receiverNode instanceof HashNode &&
                 callNode.getIterNode() == null) {
             StrNode keyNode = (StrNode) argsAry.get(0);
-            addInstr(ArrayDerefInstr.create(scope, result, receiver, new FrozenString(keyNode.getValue(), keyNode.getCodeRange(), scope.getFile(), keyNode.getLine())));
+            FrozenString key = new FrozenString(keyNode.getValue(), keyNode.getCodeRange(), scope.getFile(), keyNode.getLine());
+            addInstr(ArrayDerefInstr.create(scope, result, receiver, key, 0));
             return result;
         }
 
         if (callNode.isLazy()) addInstr(new BNilInstr(lazyLabel, receiver));
 
-        HashNode keywordArgs = getSimpleKeywordArguments(callNode.getArgsNode());
-        if (keywordArgs != null) {
-            Operand[] args = buildCallArgsExcept(callNode.getArgsNode(), keywordArgs);
+        int[] flags = new int[] { 0 };
+        Operand[] args = setupCallArgs(callNode.getArgsNode(), flags);
+        Operand block = setupCallClosure(callNode.getIterNode());
 
-            if (keywordArgs.hasOnlyRestKwargs()) {  // {**k}, {**{}, **k}, etc...
-                Operand splatValue = buildRestKeywordArgs(keywordArgs);
-                Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { splatValue }));
-                Operand block = setupCallClosure(callNode.getIterNode());
-                determineIfWeNeedLineNumber(callNode); // buildOperand for fcall was papered over by args operand building so we check once more.
+        if ((flags[0] & CALL_KEYWORD) != 0) {
+            if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
+                Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
                 if_else(test, manager.getTrue(),
                         () -> receiveBreakException(block,
                                 determineIfProcNew(receiverNode,
-                                        CallInstr.create(scope, NORMAL, result, name, receiver, args, block))),
+                                        CallInstr.create(scope, NORMAL, result, name, receiver, removeArg(args), block, flags[0]))),
                         () -> receiveBreakException(block,
                                 determineIfProcNew(receiverNode,
-                                        CallInstr.create(scope, NORMAL, result, name, receiver, addArg(args, splatValue), block))));
-            } else {  // {a: 1, b: 2}
-                List<KeyValuePair<Operand, Operand>> kwargs = buildKeywordArguments(keywordArgs);
-                Operand block = setupCallClosure(callNode.getIterNode());
+                                        CallInstr.create(scope, NORMAL, result, name, receiver, args, block, flags[0]))));
 
-                determineIfWeNeedLineNumber(callNode); // buildOperand for fcall was papered over by args operand building so we check once more.
+            } else {  // {a: 1, b: 2}
+                determineIfWeNeedLineNumber(callNode); // buildOperand for call was papered over by args operand building so we check once more.
                 receiveBreakException(block,
                         determineIfProcNew(receiverNode,
-                                CallInstr.createWithKwargs(scope, NORMAL, result, name, receiver, args, block, kwargs)));
+                                CallInstr.create(scope, NORMAL, result, name, receiver, args, block, flags[0])));
             }
         } else {
-            Operand[] args = setupCallArgs(callNode.getArgsNode());
-            Operand block = setupCallClosure(callNode.getIterNode());
-
-            determineIfWeNeedLineNumber(callNode);
+            determineIfWeNeedLineNumber(callNode); // buildOperand for call was papered over by args operand building so we check once more.
             receiveBreakException(block,
                     determineIfProcNew(receiverNode,
-                            CallInstr.create(scope, result, name, receiver, args, block)));
+                            CallInstr.create(scope, NORMAL, result, name, receiver, args, block, flags[0])));
         }
 
         if (compileLazyLabel) {
@@ -1254,36 +1324,6 @@ public class IRBuilder {
         }
 
         return callInstr;
-    }
-
-    /*
-     * In the case of kwargs which are: a) only a restkwarg (**kw) or b) only symbol pairs it will
-     * return the last hash argument (so long as it is not an explicit real hash ({a: 1}).
-     *
-     * A heterogeneous mix os kwrest and symbol pairs will be built as an ordinary hash which
-     * has logic for performing explicit hash merging.  This more complicated handling has to
-     * exist since explicit hashes also can use **other_hash.
-     */
-    private HashNode getSimpleKeywordArguments(Node argsNode) {
-        // Block pass wraps itself around the main args list so don't hold that against it.
-        if (argsNode instanceof BlockPassNode) {
-            return null; //getPossibleKeywordArgument(((BlockPassNode) argsNode).getArgsNode());
-        }
-
-        if (argsNode instanceof ArrayNode) {
-            ArrayNode argsList = (ArrayNode) argsNode;
-
-            if (argsList.isEmpty()) return null;
-
-            Node lastNode = argsList.getLast();
-
-            if (lastNode instanceof HashNode) {
-                HashNode hash = (HashNode) lastNode;
-                if (!hash.isLiteral() && (hash.hasOnlyRestKwargs() || hash.hasOnlySymbolKeys())) return (HashNode) lastNode;
-            }
-        }
-
-        return null;
     }
 
     private void buildFindPattern(Label testEnd, Variable result, Variable deconstructed, FindPatternNode pattern,
@@ -1417,7 +1457,7 @@ public class IRBuilder {
                 Label matchElementCheck = getNewLabel();
                 Variable j = addResultInstr(new IntegerMathInstr(ADD, temp(), new Integer(i + preArgsSize), restNum));
                 Variable k = as_fixnum(j);
-                Variable elt = addResultInstr(CallInstr.create(scope, temp(), symbol("[]"), deconstructed, new Operand[]{k}, NullBlock.INSTANCE));
+                Variable elt = call(temp(), deconstructed, "[]", k);
                 Variable dd = addResultInstr(new CopyInstr(temp(), buildNil()));
                 buildPatternEach(testEnd, result, dd, elt, postArgs.get(i), inAlteration);
                 addInstr(BNEInstr.create(matchElementCheck, result, buildFalse()));
@@ -1477,7 +1517,7 @@ public class IRBuilder {
                 cond_ne(testEnd, result, tru());
 
                 String method = pattern.hasRestArg() ? "delete" : "[]";
-                Operand value = call(d, method, key);
+                Operand value = call(temp(), d, method, key);
                 buildPatternEach(testEnd, result, deconstructed, value, pair.getValue(), inAlteration);
                 cond_ne(testEnd, result, tru());
             }
@@ -1549,15 +1589,31 @@ public class IRBuilder {
         addInstr(new JumpInstr(label));
     }
 
+    // for simple calls without splats or keywords
     private Variable call(Variable result, Operand object, String name, Operand... args) {
-        addInstr(CallInstr.create(scope, result, symbol(name), object, args, NullBlock.INSTANCE));
+        return call(result, object, symbol(name), args);
+    }
+
+    // for simple calls without splats or keywords
+    private Variable call(Variable result, Operand object, RubySymbol name, Operand... args) {
+        return _call(result, NORMAL, object, name, args);
+    }
+
+    private Variable _call(Variable result, CallType type, Operand object, RubySymbol name, Operand... args) {
+        addInstr(CallInstr.create(scope, type, result, name, object, args, NullBlock.INSTANCE, 0));
         return result;
     }
 
-    private Operand call(Operand object, String name, Operand... args) {
-        Operand result = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), symbol(name), object, args, NullBlock.INSTANCE));
-        return result;
+    // for simple calls without splats or keywords
+    private Variable fcall(Variable result, Operand object, String name, Operand... args) {
+        return fcall(result, object, symbol(name), args);
     }
+
+    // for simple calls without splats or keywords
+    private Variable fcall(Variable result, Operand object, RubySymbol name, Operand... args) {
+        return _call(result, FUNCTIONAL, object, name, args);
+    }
+
 
     // Standard for loop in IR.  'test' is responsible for jumping if it fails.
     private void for_loop(Consumer<Label> test, Consumer<Label> increment, Consume2<Label, Label> body) {
@@ -3272,7 +3328,7 @@ public class IRBuilder {
         boolean debuggingFrozenStringLiteral = manager.getInstanceConfig().isDebuggingFrozenStringLiteral();
         addInstr(new BuildCompoundStringInstr(stringResult, pieces, node.getEncoding(), estimatedSize, false, debuggingFrozenStringLiteral, getFileName(), node.getLine()));
 
-        return addResultInstr(CallInstr.create(scope, FUNCTIONAL, result, manager.getRuntime().newSymbol("`"), Self.SELF, new Operand[] { stringResult }, null));
+        return fcall(result, Self.SELF, "`", stringResult);
     }
 
     /* ****************************************************************
@@ -3425,53 +3481,27 @@ public class IRBuilder {
         addInstr(new LabelInstr(endLabel));
     }
 
-    private Operand buildRestKeywordArgs(HashNode keywordArgs) {
-        List<KeyValuePair<Node, Node>> pairs = keywordArgs.getPairs();
-
-        if (pairs.size() == 1) { // Only a single rest arg here.  Do not bother to merge.
-            Operand kwargRestValue = buildWithOrder(pairs.get(0).getValue(), keywordArgs.containsVariableAssignment());
-            Variable result = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), MARK_KWARG, new Operand[] { kwargRestValue }));
-            return result;
-        }
-
-        Variable splatValue = copy(new Hash(new ArrayList<>()));
-        for (KeyValuePair<Node, Node> pair: pairs) {
-            Operand splat = buildWithOrder(pair.getValue(), keywordArgs.containsVariableAssignment());
-            addInstr(new RuntimeHelperCall(splatValue, MERGE_KWARGS, new Operand[] { splatValue, splat }));
-        }
-
-        return splatValue;
-    }
-
     public Operand buildFCall(Variable aResult, FCallNode fcallNode) {
         RubySymbol name = methodName = fcallNode.getName();
-
         Node callArgsNode = fcallNode.getArgsNode();
-        final Variable result = aResult == null ? createTemporaryVariable() : aResult;
+        Variable result = aResult == null ? createTemporaryVariable() : aResult;
+        int[] flags = new int[] { 0 };
+        Operand[] args = setupCallArgs(callArgsNode, flags);
+        Operand block = setupCallClosure(fcallNode.getIterNode());
 
-        HashNode keywordArgs = getSimpleKeywordArguments(fcallNode.getArgsNode());
-        if (keywordArgs != null) {
-            Operand[] args = buildCallArgsExcept(fcallNode.getArgsNode(), keywordArgs);
-
-            if (keywordArgs.hasOnlyRestKwargs()) {  // {**k}, {**{}, **k}, etc...
-                Operand splatValue = buildRestKeywordArgs(keywordArgs);
-                Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { splatValue }));
-                Operand block = setupCallClosure(fcallNode.getIterNode());
+        if ((flags[0] & CALL_KEYWORD) != 0) {
+            if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
+                Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
                 if_else(test, manager.getTrue(),
-                        () -> receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), args, block)),
-                        () -> receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), addArg(args, splatValue), block)));
+                        () -> receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), removeArg(args), block, flags[0])),
+                        () -> receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), args, block, flags[0])));
 
             } else {  // {a: 1, b: 2}
-                List<KeyValuePair<Operand, Operand>> kwargs = buildKeywordArguments(keywordArgs);
-                Operand block = setupCallClosure(fcallNode.getIterNode());
-
                 determineIfWeNeedLineNumber(fcallNode); // buildOperand for fcall was papered over by args operand building so we check once more.
-                receiveBreakException(block, CallInstr.createWithKwargs(scope, FUNCTIONAL, result, name, buildSelf(), args, block, kwargs));
+                receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), args, block, flags[0]));
             }
         } else {
-            Operand[] args = setupCallArgs(callArgsNode);
             determineIfMaybeRefined(fcallNode.getName(), args);
-            Operand block = setupCallClosure(fcallNode.getIterNode());
 
             // We will stuff away the iters AST source into the closure in the hope we can convert
             // this closure to a method.
@@ -3486,7 +3516,7 @@ public class IRBuilder {
             }
 
             determineIfWeNeedLineNumber(fcallNode); // buildOperand for fcall was papered over by args operand building so we check once more.
-            receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), args, block));
+            receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), args, block, flags[0]));
         }
 
         return result;
@@ -3546,7 +3576,7 @@ public class IRBuilder {
         Operand  receiver = build(forNode.getIterNode());
         Operand  forBlock = buildForIter(forNode);
         CallInstr callInstr = new CallInstr(scope, CallType.NORMAL, result, manager.runtime.newSymbol(CommonByteLists.EACH), receiver, EMPTY_OPERANDS,
-                forBlock, scope.maybeUsingRefinements());
+                forBlock, 0, scope.maybeUsingRefinements());
         receiveBreakException(forBlock, callInstr);
 
         return result;
@@ -3904,10 +3934,9 @@ public class IRBuilder {
     // FIXME: The logic for lazy and non-lazy building is pretty icky...clean up
     public Operand buildOpAsgn(OpAsgnNode opAsgnNode) {
         Label l;
-        Variable readerValue = createTemporaryVariable();
         Variable writerValue = createTemporaryVariable();
         Node receiver = opAsgnNode.getReceiverNode();
-        CallType callType = receiver instanceof SelfNode ? FUNCTIONAL : CallType.NORMAL;
+        CallType callType = receiver instanceof SelfNode ? FUNCTIONAL : NORMAL;
 
         // get attr
         Operand  v1 = build(opAsgnNode.getReceiverNode());
@@ -3921,7 +3950,7 @@ public class IRBuilder {
             addInstr(new BNilInstr(lazyLabel, v1));
         }
 
-        addInstr(CallInstr.create(scope, callType, readerValue, opAsgnNode.getVariableSymbolName(), v1, EMPTY_OPERANDS, null));
+        Variable readerValue = _call(temp(), callType, v1, opAsgnNode.getVariableSymbolName());
 
         // Ex: e.val ||= n
         //     e.val &&= n
@@ -3932,7 +3961,7 @@ public class IRBuilder {
 
             // compute value and set it
             Operand  v2 = build(opAsgnNode.getValueNode());
-            addInstr(CallInstr.create(scope, callType, writerValue, opAsgnNode.getVariableSymbolNameAsgn(), v1, new Operand[] {v2}, null));
+            _call(writerValue, callType, v1, opAsgnNode.getVariableSymbolNameAsgn(), v2);
             // It is readerValue = v2.
             // readerValue = writerValue is incorrect because the assignment method
             // might return something else other than the value being set!
@@ -3945,11 +3974,11 @@ public class IRBuilder {
         } else {  // Ex: e.val = e.val.f(n)
             // call operator
             Operand  v2 = build(opAsgnNode.getValueNode());
-            Variable setValue = createTemporaryVariable();
-            addInstr(CallInstr.create(scope, setValue, opAsgnNode.getOperatorSymbolName(), readerValue, new Operand[]{v2}, null));
+            Variable setValue = call(temp(), readerValue, opAsgnNode.getOperatorSymbolName(), v2);
 
             // set attr
-            addInstr(CallInstr.create(scope, callType, writerValue, opAsgnNode.getVariableSymbolNameAsgn(), v1, new Operand[] {setValue}, null));
+            _call(writerValue, callType, v1, opAsgnNode.getVariableSymbolNameAsgn(), setValue);
+
             // Returning writerValue is incorrect because the assignment method
             // might return something else other than the value being set!
             if (!opAsgnNode.isLazy()) return setValue;
@@ -4013,10 +4042,9 @@ public class IRBuilder {
             return result;
         }
 
-        Variable result = createTemporaryVariable();
         Operand lhs = build(node.getFirstNode());
         Operand rhs = build(node.getSecondNode());
-        addInstr(CallInstr.create(scope, result, node.getSymbolOperator(), lhs, new Operand[] { rhs }, null));
+        Variable result = call(temp(), lhs, node.getSymbolOperator(), rhs);
         return addResultInstr(new CopyInstr(createTemporaryVariable(), putConstantAssignment(node, result)));
     }
 
@@ -4091,14 +4119,16 @@ public class IRBuilder {
         Operand array = buildWithOrder(receiver, opElementAsgnNode.containsVariableAssignment());
         Label endLabel = getNewLabel();
         Variable elt = createTemporaryVariable();
-        Operand[] argList = setupCallArgs(opElementAsgnNode.getArgsNode());
+        int[] flags = new int[] { 0 };
+        Operand[] argList = setupCallArgs(opElementAsgnNode.getArgsNode(), flags);
         Operand block = setupCallClosure(opElementAsgnNode.getBlockNode());
-        addInstr(CallInstr.create(scope, callType, elt, symbol(ArrayDerefInstr.AREF), array, argList, block));
+        addInstr(CallInstr.create(scope, callType, elt, symbol(ArrayDerefInstr.AREF), array, argList, block, flags[0]));
         addInstr(createBranch(elt, truthy, endLabel));
         Operand value = build(opElementAsgnNode.getValueNode());
 
+        // FIXME: I think this will put value into kwargs spot but MRI does not support this at all.
         argList = addArg(argList, value);
-        addInstr(CallInstr.create(scope, callType, elt, symbol(ArrayDerefInstr.ASET), array, argList, block));
+        addInstr(CallInstr.create(scope, callType, elt, symbol(ArrayDerefInstr.ASET), array, argList, block, flags[0]));
         addInstr(new CopyInstr(elt, value));
 
         addInstr(new LabelInstr(endLabel));
@@ -4110,18 +4140,19 @@ public class IRBuilder {
         Node receiver = opElementAsgnNode.getReceiverNode();
         CallType callType = receiver instanceof SelfNode ? FUNCTIONAL : CallType.NORMAL;
         Operand array = buildWithOrder(receiver, opElementAsgnNode.containsVariableAssignment());
-        Operand[] argList = setupCallArgs(opElementAsgnNode.getArgsNode());
+        int[] flags = new int[] { 0 };
+        Operand[] argList = setupCallArgs(opElementAsgnNode.getArgsNode(), flags);
         Operand block = setupCallClosure(opElementAsgnNode.getBlockNode());
         Variable elt = createTemporaryVariable();
-        addInstr(CallInstr.create(scope, callType, elt, symbol(ArrayDerefInstr.AREF), array, argList, block)); // elt = a[args]
+        addInstr(CallInstr.create(scope, callType, elt, symbol(ArrayDerefInstr.AREF), array, argList, block, flags[0])); // elt = a[args]
+
         Operand value = build(opElementAsgnNode.getValueNode());                                       // Load 'value'
-        RubySymbol operation = opElementAsgnNode.getOperatorSymbolName();
-        addInstr(CallInstr.create(scope, callType, elt, operation, elt, new Operand[] { value }, null)); // elt = elt.OPERATION(value)
+        _call(elt, callType, elt, opElementAsgnNode.getOperatorSymbolName(), value); // elt = elt.OPERATION(value)
+        // FIXME: I think this will put value into kwargs spot but MRI does not support this at all.
         // SSS: do not load the call result into 'elt' to eliminate the RAW dependency on the call
         // We already know what the result is going be .. we are just storing it back into the array
-        Variable tmp = createTemporaryVariable();
         argList = addArg(argList, elt);
-        addInstr(CallInstr.create(scope, callType, tmp, symbol(ArrayDerefInstr.ASET), array, argList, block));   // a[args] = elt
+        addInstr(CallInstr.create(scope, callType, temp(), symbol(ArrayDerefInstr.ASET), array, argList, block, flags[0]));   // a[args] = elt
         return elt;
     }
 
@@ -4583,35 +4614,37 @@ public class IRBuilder {
         boolean inClassBody = scope instanceof IRMethod && scope.getLexicalParent() instanceof IRClassBody;
         boolean isInstanceMethod = inClassBody && ((IRMethod) scope).isInstanceMethod;
         Variable zsuperResult = createTemporaryVariable();
+        int[] flags = new int[] { 0 };
         if (keywordArgs.size() == 1 && keywordArgs.get(0).getKey().equals(Symbol.KW_REST_ARG_DUMMY)) {
-            Operand kwargRestValue = keywordArgs.get(0).getValue();
+            flags[0] |= (CALL_KEYWORD | CALL_KEYWORD_REST);
+            Operand keywordRest = keywordArgs.get(0).getValue();
             Operand[] args = callArgs.toArray(new Operand[callArgs.size()]);
-            Variable keywordRest = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), MARK_KWARG, new Operand[] { kwargRestValue }));
             Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { keywordRest }));
             if_else(test, manager.getTrue(),
                     () -> receiveBreakException(block,
-                            determineSuperInstr(zsuperResult, args, block, inClassBody, isInstanceMethod)),
+                            determineSuperInstr(zsuperResult, args, block, flags[0], inClassBody, isInstanceMethod)),
                     () -> receiveBreakException(block,
-                            determineSuperInstr(zsuperResult, addArg(args, keywordRest), block, inClassBody, isInstanceMethod)));
+                            determineSuperInstr(zsuperResult, addArg(args, keywordRest), block, flags[0], inClassBody, isInstanceMethod)));
         } else {
-            Operand[] args = getCallOperands(scope, callArgs, keywordArgs);
+            Operand[] args = getCallOperands(scope, callArgs, keywordArgs, flags);
             receiveBreakException(block,
-                    determineSuperInstr(zsuperResult, args, block, inClassBody, isInstanceMethod));
+                    determineSuperInstr(zsuperResult, args, block, flags[0], inClassBody, isInstanceMethod));
         }
 
         return zsuperResult;
     }
 
-    private CallInstr determineSuperInstr(Variable result, Operand[] args, Operand block, boolean inClassBody, boolean isInstanceMethod) {
+    private CallInstr determineSuperInstr(Variable result, Operand[] args, Operand block, int flags,
+                                          boolean inClassBody, boolean isInstanceMethod) {
         return inClassBody ?
                 isInstanceMethod ?
-                        new InstanceSuperInstr(scope, result, getCurrentModuleVariable(), getName(), args, block, scope.maybeUsingRefinements()) :
-                        new ClassSuperInstr(scope, result, getCurrentModuleVariable(), getName(), args, block, scope.maybeUsingRefinements()) :
+                        new InstanceSuperInstr(scope, result, getCurrentModuleVariable(), getName(), args, block, flags, scope.maybeUsingRefinements()) :
+                        new ClassSuperInstr(scope, result, getCurrentModuleVariable(), getName(), args, block, flags, scope.maybeUsingRefinements()) :
                 // We dont always know the method name we are going to be invoking if the super occurs in a closure.
                 // This is because the super can be part of a block that will be used by 'define_method' to define
                 // a new method.  In that case, the method called by super will be determined by the 'name' argument
                 // to 'define_method'.
-                new UnresolvedSuperInstr(scope, result, buildSelf(), args, block, scope.maybeUsingRefinements());
+                new UnresolvedSuperInstr(scope, result, buildSelf(), args, block, flags, scope.maybeUsingRefinements());
     }
 
     public Operand buildSuper(SuperNode callNode) {
@@ -4619,35 +4652,30 @@ public class IRBuilder {
         if (tempBlock == null) tempBlock = getYieldClosureVariable();
         Operand block = tempBlock;
 
-        HashNode keywordArgs = getSimpleKeywordArguments(callNode.getArgsNode());
         boolean inClassBody = scope instanceof IRMethod && scope.getLexicalParent() instanceof IRClassBody;
         boolean isInstanceMethod = inClassBody && ((IRMethod) scope).isInstanceMethod;
         Variable result = createTemporaryVariable();
-        if (keywordArgs != null) {
-            Operand[] args = buildCallArgsExcept(callNode.getArgsNode(), keywordArgs);
+        int[] flags = new int[] { 0 };
+        Operand[] args = setupCallArgs(callNode.getArgsNode(), flags);
 
-            if (keywordArgs.hasOnlyRestKwargs()) {  // {**k}, {**{}, **k}, etc...
-                Operand splatValue = buildRestKeywordArgs(keywordArgs);
-                Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { splatValue }));
-                determineIfWeNeedLineNumber(callNode); // buildOperand for fcall was papered over by args operand building so we check once more.
+        if ((flags[0] & CALL_KEYWORD) != 0) {
+            if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
+                Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
                 if_else(test, manager.getTrue(),
                         () -> receiveBreakException(block,
-                                determineSuperInstr(result, args, block, inClassBody, isInstanceMethod)),
+                                determineSuperInstr(result, removeArg(args), block, flags[0], inClassBody, isInstanceMethod)),
                         () -> receiveBreakException(block,
-                                determineSuperInstr(result, addArg(args, splatValue), block, inClassBody, isInstanceMethod)));
+                                determineSuperInstr(result, args, block, flags[0], inClassBody, isInstanceMethod)));
+
             } else {  // {a: 1, b: 2}
-                List<KeyValuePair<Operand, Operand>> kwargPairs = buildKeywordArguments(keywordArgs);
-                Operand kwargs = new Hash(kwargPairs, false);
                 determineIfWeNeedLineNumber(callNode); // buildOperand for fcall was papered over by args operand building so we check once more.
                 receiveBreakException(block,
-                        determineSuperInstr(result, addArg(args, kwargs), block, inClassBody, isInstanceMethod));
+                        determineSuperInstr(result, args, block, flags[0], inClassBody, isInstanceMethod));
             }
         } else {
-            Operand[] args = setupCallArgs(callNode.getArgsNode());
-
-            determineIfWeNeedLineNumber(callNode);
+            determineIfWeNeedLineNumber(callNode); // buildOperand for fcall was papered over by args operand building so we check once more.
             receiveBreakException(block,
-                    determineSuperInstr(result, args, block, inClassBody, isInstanceMethod));
+                    determineSuperInstr(result, args, block, flags[0], inClassBody, isInstanceMethod));
         }
 
         return result;
@@ -4739,7 +4767,7 @@ public class IRBuilder {
     public Operand buildVCall(Variable result, VCallNode node) {
         if (result == null) result = createTemporaryVariable();
 
-        return addResultInstr(CallInstr.create(scope, CallType.VARIABLE, result, node.getName(), buildSelf(), EMPTY_OPERANDS, null));
+        return _call(result, VARIABLE, buildSelf(), node.getName());
     }
 
     public Operand buildWhile(final WhileNode whileNode) {
@@ -4747,9 +4775,7 @@ public class IRBuilder {
     }
 
     public Operand buildXStr(XStrNode node) {
-        return addResultInstr(CallInstr.create(scope, FUNCTIONAL, createTemporaryVariable(),
-                manager.getRuntime().newSymbol("`"), Self.SELF,
-                new Operand[] { new FrozenString(node.getValue(), node.getCodeRange(), scope.getFile(), node.getLine()) }, null));
+        return fcall(temp(), Self.SELF, "`", new FrozenString(node.getValue(), node.getCodeRange(), scope.getFile(), node.getLine()));
     }
 
     public Operand buildYield(YieldNode node, Variable result) {
@@ -4811,19 +4837,19 @@ public class IRBuilder {
         if (superScope instanceof IRMethod && !defineMethod) {
             List<Operand> callArgs = new ArrayList<>(5);
             List<KeyValuePair<Operand, Operand>> keywordArgs = new ArrayList<>(3);
+            int[] flags = new int[] { 0 };
             determineZSuperCallArgs(superScope, superBuilder, callArgs, keywordArgs);
 
             if (keywordArgs.size() == 1 && keywordArgs.get(0).getKey().equals(Symbol.KW_REST_ARG_DUMMY)) {
-                Operand kwargRestValue = ((DepthCloneable) keywordArgs.get(0).getValue()).cloneForDepth(depthFromSuper);
+                Operand keywordRest = ((DepthCloneable) keywordArgs.get(0).getValue()).cloneForDepth(depthFromSuper);
                 Operand[] args = adjustVariableDepth(callArgs.toArray(new Operand[callArgs.size()]), depthFromSuper);
-                Variable keywordRest = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), MARK_KWARG, new Operand[] { kwargRestValue }));
                 Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { keywordRest }));
                 if_else(test, manager.getTrue(),
-                        () -> addInstr(new ZSuperInstr(scope, zsuperResult, buildSelf(), args, block, scope.maybeUsingRefinements())),
-                        () -> addInstr(new ZSuperInstr(scope, zsuperResult, buildSelf(), addArg(args, keywordRest), block, scope.maybeUsingRefinements())));
+                        () -> addInstr(new ZSuperInstr(scope, zsuperResult, buildSelf(), args, block, flags[0], scope.maybeUsingRefinements())),
+                        () -> addInstr(new ZSuperInstr(scope, zsuperResult, buildSelf(), addArg(args, keywordRest), block, flags[0], scope.maybeUsingRefinements())));
             } else {
-                Operand[] args = adjustVariableDepth(getCallOperands(scope, callArgs, keywordArgs), depthFromSuper);
-                addInstr(new ZSuperInstr(scope, zsuperResult, buildSelf(), args, block, scope.maybeUsingRefinements()));
+                Operand[] args = adjustVariableDepth(getCallOperands(scope, callArgs, keywordArgs, flags), depthFromSuper);
+                addInstr(new ZSuperInstr(scope, zsuperResult, buildSelf(), args, block, flags[0], scope.maybeUsingRefinements()));
             }
         } else {
             // We will not have a zsuper show up since we won't emit it but we still need to toggle it.
@@ -4958,30 +4984,6 @@ public class IRBuilder {
         return manager.runtime.newSymbol(bytelist);
     }
 
-    /**
-     * Extract all call arguments from the specified scope (only useful for Closures and Methods) so that
-     * we can convert zsupers to supers with explicit arguments.
-     *
-     * Note: This is fairly expensive because we walk entire scope when we could potentially stop earlier
-     * if we knew when recv_* were done.
-     */
-    public static Operand[] getCallArgs(IRScope scope, IRBuilder builder) {
-        List<Operand> callArgs = new ArrayList<>(5);
-        List<KeyValuePair<Operand, Operand>> keywordArgs = new ArrayList<>(3);
-
-        if (builder != null) {  // Still in currently building scopes
-            for (Instr instr : builder.instructions) {
-                extractCallOperands(callArgs, keywordArgs, instr);
-            }
-        } else {               // walked out past the eval to already build scopes
-            for (Instr instr : scope.interpreterContext.getInstructions()) {
-                extractCallOperands(callArgs, keywordArgs, instr);
-            }
-        }
-
-        return getCallOperands(scope, callArgs, keywordArgs);
-    }
-
     public static void determineZSuperCallArgs(IRScope scope, IRBuilder builder, List<Operand> callArgs, List<KeyValuePair<Operand, Operand>> keywordArgs) {
         if (builder != null) {  // Still in currently building scopes
             for (Instr instr : builder.instructions) {
@@ -5008,8 +5010,9 @@ public class IRBuilder {
         }
     }
 
-    private static Operand[] getCallOperands(IRScope scope, List<Operand> callArgs, List<KeyValuePair<Operand, Operand>> keywordArgs) {
+    private static Operand[] getCallOperands(IRScope scope, List<Operand> callArgs, List<KeyValuePair<Operand, Operand>> keywordArgs, int[] flags) {
         if (scope.receivesKeywordArgs()) {
+            flags[0] |= CALL_KEYWORD;
             int i = 0;
             Operand[] args = new Operand[callArgs.size() + 1];
             for (Operand arg: callArgs) {

@@ -32,21 +32,24 @@ public class ArrayDerefInstr extends OneOperandArgNoBlockCallInstr {
     public static final ByteList AREF = new ByteList(new byte[] {'[', ']'});
     public static final ByteList ASET = new ByteList(new byte[] {'[', ']', '='});
 
-    public static ArrayDerefInstr create(IRScope scope, Variable result, Operand obj, FrozenString arg0) {
-        return new ArrayDerefInstr(scope, result, obj, arg0);
+    public static ArrayDerefInstr create(IRScope scope, Variable result, Operand obj, FrozenString arg0, int flags) {
+        return new ArrayDerefInstr(scope, result, obj, arg0, flags);
     }
 
     // clone constructor
-    public ArrayDerefInstr(IRScope scope, Variable result, Operand obj, FrozenString arg0, CallSite callSite, long callSiteId) {
+    public ArrayDerefInstr(IRScope scope, Variable result, Operand obj, FrozenString arg0, int flags,
+                           CallSite callSite, long callSiteId) {
         super(scope, Operation.ARRAY_DEREF, CallType.FUNCTIONAL, result,
-                scope.getManager().getRuntime().newSymbol(AREF), obj, new Operand[] {arg0}, false, callSite, callSiteId);
+                scope.getManager().getRuntime().newSymbol(AREF), obj, new Operand[] {arg0}, flags, false,
+                callSite, callSiteId);
 
         key = arg0;
     }
 
     // normal constructor
-    public ArrayDerefInstr(IRScope scope, Variable result, Operand obj, FrozenString arg0) {
-        super(scope, Operation.ARRAY_DEREF, CallType.FUNCTIONAL, result, scope.getManager().getRuntime().newSymbol(AREF), obj, new Operand[] {arg0}, false);
+    public ArrayDerefInstr(IRScope scope, Variable result, Operand obj, FrozenString arg0, int flags) {
+        super(scope, Operation.ARRAY_DEREF, CallType.FUNCTIONAL, result,
+                scope.getManager().getRuntime().newSymbol(AREF), obj, new Operand[] {arg0}, flags, false);
 
         key = arg0;
     }
@@ -54,7 +57,7 @@ public class ArrayDerefInstr extends OneOperandArgNoBlockCallInstr {
     @Override
     public Instr clone(CloneInfo ii) {
         return new ArrayDerefInstr(ii.getScope(), (Variable) getResult().cloneForInlining(ii),
-                getReceiver().cloneForInlining(ii), key, getCallSite(), getCallSiteId());
+                getReceiver().cloneForInlining(ii), key, getFlags(), getCallSite(), getCallSiteId());
     }
 
     @Override
@@ -67,7 +70,7 @@ public class ArrayDerefInstr extends OneOperandArgNoBlockCallInstr {
     }
 
     public static ArrayDerefInstr decode(IRReaderDecoder d) {
-        return create(d.getCurrentScope(), d.decodeVariable(), d.decodeOperand(), (FrozenString) d.decodeOperand());
+        return create(d.getCurrentScope(), d.decodeVariable(), d.decodeOperand(), (FrozenString) d.decodeOperand(), d.decodeInt());
     }
 
     @Override

@@ -978,20 +978,8 @@ public class IRRuntimeHelpers {
 
     @JIT @Interp
     public static IRubyObject mergeKeywordArguments(ThreadContext context, IRubyObject restKwarg, IRubyObject explicitKwarg) {
-        // We are in a weird place (**{**{}, **{a: 1}}) where we have merged once
-        if (restKwarg == UNDEFINED) {
-            RubyHash otherHash = explicitKwarg.convertToHash();
-
-            if (otherHash.isEmpty()) return UNDEFINED;
-
-            RubyHash hash = (RubyHash) otherHash.dup();
-
-            context.callInfo |= (CALL_KEYWORD | CALL_KEYWORD_REST);
-
-            return hash;
-        }
-
-        int callInfo = context.callInfo;
+        // FIXME: Not sure we need to dup in cases like if we IS_EMPTY and realize we are passing empty kwargs around.
+        int callInfo = context.callInfo;  // we may call to_hash. save state.
         RubyHash hash = (RubyHash) TypeConverter.checkHashType(context.runtime, restKwarg).dup();
         hash.modify();
 
@@ -1000,7 +988,7 @@ public class IRRuntimeHelpers {
         // If all the kwargs are empty let's discard them
         if (otherHash.empty_p(context).isTrue()) {
             context.callInfo = callInfo;
-            return hash.isEmpty() ? UNDEFINED : hash;
+            return hash;
         }
 
         otherHash.visitAll(context, new KwargMergeVisitor(hash), Block.NULL_BLOCK);

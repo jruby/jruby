@@ -197,12 +197,13 @@ public final class ArgsUtil {
     public static IRubyObject extractKeywordArg(ThreadContext context, final RubyHash options, String validKey) {
         if (options.isEmpty()) return null;
 
-        IRubyObject ret = options.fastARef(context.runtime.newSymbol(validKey));
+        RubySymbol testKey = context.runtime.newSymbol(validKey);
+        IRubyObject ret = options.fastARef(testKey);
 
         if (ret == null || options.size() > 1) { // other (unknown) keys in options
             options.visitAll(context, new RubyHash.Visitor() {
                 public void visit(IRubyObject key, IRubyObject value) {
-                    throw context.runtime.newArgumentError("unknown keyword: " + key.inspect());
+                    if (!key.equals(testKey)) throw context.runtime.newArgumentError("unknown keyword: " + key.inspect());
                 }
             }, null);
         }

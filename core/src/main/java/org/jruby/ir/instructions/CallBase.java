@@ -43,20 +43,23 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     private transient boolean[] splatMap;
     protected transient boolean procNew;
     private final boolean potentiallyRefined;
+    private final int flags;  // call info the callee is interested in: CALL_SPLATS, CALL_KEYWORDS...
     private transient Set<FrameField> frameReads;
     private transient Set<FrameField> frameWrites;
 
     // main constructor
     protected CallBase(IRScope scope, Operation op, CallType callType, RubySymbol name, Operand receiver,
-                       Operand[] args, Operand closure, boolean potentiallyRefined) {
-        this(scope, op, callType, name, receiver, args, closure, potentiallyRefined, null, callSiteCounter++);
+                       Operand[] args, Operand closure, int flags, boolean potentiallyRefined) {
+        this(scope, op, callType, name, receiver, args, closure, flags, potentiallyRefined, null, callSiteCounter++);
     }
 
     // clone constructor
     protected CallBase(IRScope scope, Operation op, CallType callType, RubySymbol name, Operand receiver,
-                       Operand[] args, Operand closure, boolean potentiallyRefined, CallSite callSite, long callSiteId) {
+                       Operand[] args, Operand closure, int flags, boolean potentiallyRefined, CallSite callSite,
+                       long callSiteId) {
         super(op, arrayifyOperands(receiver, args, closure));
 
+        this.flags = flags;
         this.callSiteId = callSiteId;
         argsCount = args.length;
         hasClosure = closure != null;
@@ -89,12 +92,18 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         }
 
         if (hasClosure) e.encode(getClosureArg(null));
+
+        e.encode(flags);
     }
 
     // FIXME: Convert this to some Signature/Arity method
     // -0 is not possible so we add 1 to arguments with closure so we get a valid negative value.
     private int calculateArity() {
         return hasClosure ? -1*(argsCount + 1) : argsCount;
+    }
+
+    public int getFlags() {
+        return flags;
     }
 
     /**
@@ -536,11 +545,17 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         return allArgs;
     }
 
+    protected void setCallInfo(ThreadContext context) {
+        context.callInfo = getFlags();
+    }
+
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope dynamicScope, IRubyObject self, Object[] temp) {
         IRubyObject object = (IRubyObject) getReceiver().retrieve(context, self, currScope, dynamicScope, temp);
         IRubyObject[] values = prepareArguments(context, self, currScope, dynamicScope, temp);
         Block preparedBlock = prepareBlock(context, self, currScope, dynamicScope, temp);
+
+        setCallInfo(context);
 
         if (hasLiteralClosure()) {
             return callSite.callIter(context, self, object, values, preparedBlock);

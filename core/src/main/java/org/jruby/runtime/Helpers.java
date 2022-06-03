@@ -2436,8 +2436,8 @@ public class Helpers {
     }
 
     @JIT
-    public static RubyArray argsPush(ThreadContext context, IRubyObject first, IRubyObject second) {
-        boolean isEmptyKeywordRest = second == UndefinedValue.UNDEFINED;
+    public static RubyArray argsPush(ThreadContext context, IRubyObject first, IRubyObject second, boolean usesKeywords) {
+        boolean isEmptyKeywordRest = usesKeywords && second instanceof RubyHash && ((RubyHash) second).isEmpty();
 
         if (isEmptyKeywordRest) {
             RubyArray array = (RubyArray) first.dup();
