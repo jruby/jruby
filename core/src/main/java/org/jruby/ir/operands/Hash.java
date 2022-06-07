@@ -11,6 +11,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.KeyValuePair;
+import org.jruby.util.TypeConverter;
 
 import java.util.Arrays;
 import java.util.List;
@@ -123,7 +124,9 @@ public class Hash extends Operand {
 
         if (isKeywordRest()) {
             // Dup the rest args hash and use that as the basis for inserting the non-rest args
-            hash = ((RubyHash) pairs[0].getValue().retrieve(context, self, currScope, currDynScope, temp)).dupFast(context);
+            IRubyObject rest = (IRubyObject) pairs[0].getValue().retrieve(context, self, currScope, currDynScope, temp);
+            TypeConverter.checkType(context, rest, context.runtime.getHash());
+            hash = ((RubyHash) rest).dupFast(context);
             // Skip the first pair
             index++;
         } else {
