@@ -620,6 +620,10 @@ public class IRRuntimeHelpers {
     }
 
     public static IRubyObject isHashEmpty(ThreadContext context, IRubyObject hash) {
+        // ARGSPUSH ended up realizing we have an empty kwargs already and stripped off the empty value (meaning
+        // any call need not worry about subtracting a kwargs argument.
+        if ((context.callInfo & CALL_KEYWORD_EMPTY) != 0) return context.fals;
+
         boolean isEmpty = hash == UNDEFINED ||
                 hash instanceof RubyHash && ((RubyHash) hash).size() == 0;
         if (isEmpty) context.callInfo |= CALL_KEYWORD_EMPTY;

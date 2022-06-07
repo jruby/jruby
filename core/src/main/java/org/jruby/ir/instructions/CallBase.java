@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.jruby.ir.IRFlags.*;
+import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_EMPTY;
 
 public abstract class CallBase extends NOperandInstr implements ClosureAcceptingInstr, Site {
     public static long callSiteCounter = 1;
@@ -546,7 +547,8 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     }
 
     protected void setCallInfo(ThreadContext context) {
-        context.callInfo = getFlags();
+        // FIXME: This may propagate empty more than the current call?   empty might need to be stuff elsewhere to prevent this.
+        context.callInfo = (context.callInfo & CALL_KEYWORD_EMPTY) | getFlags();
     }
 
     @Override

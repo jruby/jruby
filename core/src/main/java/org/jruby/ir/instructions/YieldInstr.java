@@ -17,15 +17,19 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_EMPTY;
+
 public class YieldInstr extends TwoOperandResultBaseInstr implements FixedArityInstr, Site {
     public final boolean unwrapArray;
+    private final int flags;
     private long callSiteId;
 
-    public YieldInstr(Variable result, Operand block, Operand arg, boolean unwrapArray) {
+    public YieldInstr(Variable result, Operand block, Operand arg, int flags, boolean unwrapArray) {
         super(Operation.YIELD, result, block, arg == null ? UndefinedValue.UNDEFINED : arg);
 
         assert result != null: "YieldInstr result is null";
 
+        this.flags = flags;
         this.unwrapArray = unwrapArray;
         this.callSiteId = CallBase.callSiteCounter++;
     }
@@ -44,12 +48,12 @@ public class YieldInstr extends TwoOperandResultBaseInstr implements FixedArityI
         // that is being inlined, i.e. in METHOD_INLINE clone mode?
         // Fix BasicBlock.java:clone!!
         return new YieldInstr(ii.getRenamedVariable(result), getBlockArg().cloneForInlining(ii),
-                getYieldArg().cloneForInlining(ii), unwrapArray);
+                getYieldArg().cloneForInlining(ii), flags, unwrapArray);
     }
 
     @Override
     public String[] toStringNonOperandArgs() {
-        return new String[] { "unwrap: " + unwrapArray};
+        return new String[] { "flags: " + flags + "unwrap: " + unwrapArray};
     }
 
     public boolean isUnwrapArray() {
@@ -65,7 +69,12 @@ public class YieldInstr extends TwoOperandResultBaseInstr implements FixedArityI
     }
 
     public static YieldInstr decode(IRReaderDecoder d) {
-        return new YieldInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
+        return new YieldInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand(), d.decodeInt(), d.decodeBoolean());
+    }
+
+    protected void setCallInfo(ThreadContext context) {
+        // FIXME: This may propagate empty more than the current call?   empty might need to be stuff elsewhere to prevent this.
+        context.callInfo = (context.callInfo & CALL_KEYWORD_EMPTY) | flags;
     }
 
     @Interp
@@ -73,6 +82,7 @@ public class YieldInstr extends TwoOperandResultBaseInstr implements FixedArityI
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         Block blk = (Block)getBlockArg().retrieve(context, self, currScope, currDynScope, temp);
         if (getYieldArg() == UndefinedValue.UNDEFINED) {
+            setCallInfo(context);
             return IRRuntimeHelpers.yieldSpecific(context, blk);
         } else {
             Operand yieldOp = getYieldArg();
@@ -80,9 +90,11 @@ public class YieldInstr extends TwoOperandResultBaseInstr implements FixedArityI
                 // Special case this path!
                 // Don't build a RubyArray.
                 IRubyObject[] args = ((Array) yieldOp).retrieveArrayElts(context, self, currScope, currDynScope, temp);
+                setCallInfo(context);
                 return IRRuntimeHelpers.yieldValues(context, blk, args);
             } else {
                 IRubyObject yieldVal = (IRubyObject) yieldOp.retrieve(context, self, currScope, currDynScope, temp);
+                setCallInfo(context);
                 return IRRuntimeHelpers.yield(context, blk, yieldVal, unwrapArray);
             }
         }

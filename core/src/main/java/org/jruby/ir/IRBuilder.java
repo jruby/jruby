@@ -809,6 +809,40 @@ public class IRBuilder {
         throw notCompilable("Invalid node for call args: ", args);
     }
 
+    protected Operand buildYieldArgs(Node args, int[] flags) {
+        if (args == null) return UndefinedValue.UNDEFINED;
+
+        switch (args.getNodeType()) {
+            case ARGSCATNODE:
+            case ARGSPUSHNODE:
+                Operand lhs = build(((TwoValueNode) args).getFirstNode());
+                Node secondNode = ((TwoValueNode) args).getSecondNode();
+
+                flags[0] |= CALL_SPLATS;
+                Operand valueToSplat;
+                if (secondNode instanceof ListNode) {
+                    valueToSplat = buildCallArgsArrayForSplat((ListNode) secondNode, flags);
+                } else if (secondNode instanceof HashNode && !((HashNode) secondNode).isLiteral()) {
+                    valueToSplat = buildCallKeywordArguments((HashNode) secondNode, flags);
+                } else {
+                    valueToSplat = build(secondNode);
+
+                }
+                Operand array = addResultInstr(new BuildCompoundArrayInstr(createTemporaryVariable(), lhs, valueToSplat,
+                        args.getNodeType() == NodeType.ARGSPUSHNODE, (flags[0] & CALL_KEYWORD_REST) != 0));
+
+                return new Splat(addResultInstr(new BuildSplatInstr(createTemporaryVariable(), array, false)));
+            case ARRAYNODE: {
+                return new Array(buildCallArgsArray((ListNode) args, flags));
+            }
+            case SPLATNODE:
+                flags[0] |= CALL_SPLATS;
+                return new Splat(addResultInstr(new BuildSplatInstr(createTemporaryVariable(), build(args), false)));
+            default:
+                return build(args);
+        }
+    }
+
     public Operand[] setupCallArgs(Node args, int[] flags) {
         return args == null ? Operand.EMPTY_ARRAY : buildCallArgs(args, flags);
     }
@@ -4791,9 +4825,10 @@ public class IRBuilder {
         }
 
         Variable ret = result == null ? createTemporaryVariable() : result;
-        Operand value = argNode instanceof ArrayNode && unwrap ?  buildArray((ArrayNode)argNode, true) : build(argNode);
+        int[] flags = new int[] { 0 };
+        Operand value = buildYieldArgs(argNode, flags);
 
-        addInstr(new YieldInstr(ret, getYieldClosureVariable(), value, unwrap));
+        addInstr(new YieldInstr(ret, getYieldClosureVariable(), value, flags[0], unwrap));
 
         return ret;
     }
