@@ -1312,12 +1312,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             // must also register this object in ObjectSpace, so that future
             // calls to undefine_finalizer, which takes an object symbol, can
             // locate the object properly. See JRUBY-4839.
-            long id = getObjectId();
-            IRubyObject fixnumId = id();
+            final long id = getObjectId();
 
             getRuntime().getObjectSpace().registerObjectId(id, this);
 
-            finalizer = new Finalizer(fixnumId);
+            finalizer = new Finalizer(getRuntime().newFixnum(id));
             setInternalVariable("__finalizer__", finalizer);
             getRuntime().addFinalizer(finalizer);
         }
