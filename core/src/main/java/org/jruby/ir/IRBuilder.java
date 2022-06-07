@@ -707,7 +707,9 @@ public class IRBuilder {
         List<KeyValuePair<Node, Node>> pairs = keywordArgs.getPairs();
 
         if (pairs.size() == 1) { // Only a single rest arg here.  Do not bother to merge.
-            return buildWithOrder(pairs.get(0).getValue(), keywordArgs.containsVariableAssignment());
+            Operand splat = buildWithOrder(pairs.get(0).getValue(), keywordArgs.containsVariableAssignment());
+            // FIXME: This is only added to type check splat + conversion to_hash if not one.
+            return addResultInstr(new RuntimeHelperCall(temp(), MERGE_KWARGS, new Operand[] { new Hash(new ArrayList<>()), splat }));
         }
 
         Variable splatValue = copy(new Hash(new ArrayList<>()));

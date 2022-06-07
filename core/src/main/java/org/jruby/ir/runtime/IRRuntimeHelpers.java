@@ -624,6 +624,8 @@ public class IRRuntimeHelpers {
         // any call need not worry about subtracting a kwargs argument.
         if ((context.callInfo & CALL_KEYWORD_EMPTY) != 0) return context.fals;
 
+        hash = TypeConverter.checkHashType(context.runtime, hash);
+
         boolean isEmpty = hash == UNDEFINED ||
                 hash instanceof RubyHash && ((RubyHash) hash).size() == 0;
         if (isEmpty) context.callInfo |= CALL_KEYWORD_EMPTY;
