@@ -1106,7 +1106,7 @@ public class RubyDir extends RubyObject implements Closeable {
         final RubyString homeKey = RubyString.newStringShared(runtime, HOME);
         final RubyHash env = runtime.getENV();
 
-        if (env.has_key_p(homeKey).isFalse()) {
+        if (!env.hasKey(homeKey)) {
             return Optional.empty();
         } else {
             return Optional.of(env.op_aref(runtime.getCurrentContext(), homeKey).toString());
