@@ -650,7 +650,7 @@ public class IRRuntimeHelpers {
     }
 
     private static IRubyObject maybeUnmarkLast(ThreadContext context, RubyHash last) {
-        if (last.isRuby2KeywordHash()) {
+        if (last.isRuby2KeywordHash() && !last.isEmpty()) {
             RubyHash newHash = last.dupFast(context);
 
             newHash.setRuby2KeywordHash(false);
@@ -739,6 +739,11 @@ public class IRRuntimeHelpers {
             hash.setRuby2KeywordHash(false);
 
             return hash;
+        } else if (isRuby2Kwarg && !ruby2keywords && !acceptsKeywords && hasRestArgs) {
+            // passing in hash arg to 'def foo(*args)'
+            hash.setRuby2KeywordHash(false);
+
+            return UNDEFINED;
         } else if (ruby2keywords && (callInfo & CALL_KEYWORD) != 0) {
             // a ruby2_keywords method which happens to receive a keyword.  Mark hash as ruby2_keyword
             // So it can be used similarly to an ordinary hash passed in this way.
@@ -747,6 +752,11 @@ public class IRRuntimeHelpers {
 
             args[args.length - 1] = hash;
             return UNDEFINED;
+        } else if (isRuby2Kwarg && hash.isEmpty()) {
+            // case where we somehow (hash.clear) a marked ruby2_keyword.  We pass it as keyword even in non-keyword
+            // accepting methods so it is subtracted from the arity count.  Normally empty keyword arguments are not
+            // passed along but ruby2_keyword is a strange case since it is mutable by users.
+            return hash;
         } else if (!acceptsKeywords && (callInfo & CALL_KEYWORD_REST) != 0) {
             // This is kwrest passed to a method which does not accept kwargs
 
