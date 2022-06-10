@@ -97,7 +97,7 @@ class JarCache {
          * <p>
          * NOTE: Getting the value is an expensive operation on Windows systems (see
          * {@link <a href="https://github.com/jruby/jruby/issues/6730}").
-         * Therefore a cached value is used with a maximum lifetime of {@link Options#JAR_CACHE_TTL} milliseconds.
+         * Therefore a cached value is used with a maximum lifetime of {@link Options#JAR_CACHE_UPDATE_CHECK_INTERVALL} milliseconds.
          *
          * @param jarPath The path to the JAR file.
          * @return The last modification timestamp.
@@ -107,7 +107,7 @@ class JarCache {
             if (lastModifiedExpiration != null && currentTimeMillis < lastModifiedExpiration) {
                 return lastModified;
             }
-            this.lastModifiedExpiration = currentTimeMillis + Options.JAR_CACHE_TTL.load();
+            this.lastModifiedExpiration = currentTimeMillis + Options.JAR_CACHE_UPDATE_CHECK_INTERVALL.load();
             return new File(jarPath).lastModified();
         }
 
