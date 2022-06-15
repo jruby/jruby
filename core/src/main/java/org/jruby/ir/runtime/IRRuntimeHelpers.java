@@ -639,18 +639,19 @@ public class IRRuntimeHelpers {
      *   - def foo(args) same
      */
     private static void callSiteFunging(ThreadContext context, IRubyObject[] args, RubyHash lastArg, int callInfo,
-                                        boolean hasRestArgs, boolean acceptsKeywords, boolean ruby2keywords) {
-        if (ruby2keywords || (callInfo & CALL_SPLATS) == 0) return;
+                                        boolean hasRestArgs, boolean acceptsKeywords,
+                                        boolean ruby2_keywords_hash) {
+        if ((callInfo & CALL_SPLATS) == 0) return;
 
         if (acceptsKeywords || !hasRestArgs) {
-            IRubyObject unmarked = maybeUnmarkLast(context, lastArg);
+            IRubyObject unmarked = maybeUnmarkLast(context, lastArg, ruby2_keywords_hash);
 
             if (unmarked != null) args[args.length - 1] = unmarked;
         }
     }
 
-    private static IRubyObject maybeUnmarkLast(ThreadContext context, RubyHash last) {
-        if (last.isRuby2KeywordHash() && !last.isEmpty()) {
+    private static IRubyObject maybeUnmarkLast(ThreadContext context, RubyHash last, boolean ruby2_keywords_hash) {
+        if (ruby2_keywords_hash && !last.isEmpty()) {
             RubyHash newHash = last.dupFast(context);
 
             newHash.setRuby2KeywordHash(false);
@@ -714,7 +715,7 @@ public class IRRuntimeHelpers {
     // temp vars do this to work around no explicit initialization of temp values (e.g. they might start as null).
     @Interp
     public static IRubyObject receiveKeywords(ThreadContext context, IRubyObject[] args, boolean hasRestArgs,
-                                              boolean acceptsKeywords, boolean ruby2keywords) {
+                                              boolean acceptsKeywords, boolean ruby2_keywords_method) {
         int callInfo = context.resetCallInfo();
 
         if ((callInfo & CALL_KEYWORD_EMPTY) != 0) return UNDEFINED;
@@ -727,24 +728,24 @@ public class IRRuntimeHelpers {
         RubyHash hash = (RubyHash) last;
 
         // We record before funging last arg because we may unmark and replace last arg.
-        boolean isRuby2Kwarg = hash.isRuby2KeywordHash();
-
-        callSiteFunging(context, args, hash, callInfo, hasRestArgs, acceptsKeywords, ruby2keywords);
+        boolean ruby2_keywords_hash = hash.isRuby2KeywordHash();
 
         // ruby2_keywords only get unmarked if it enters a method which accepts keywords.
         // This means methods which don't just keep that marked hash around in case it is passed
         // onto another method which accepts keywords.
-        if (isRuby2Kwarg && acceptsKeywords) {
-            hash = hash.dupFast(context);
-            hash.setRuby2KeywordHash(false);
+        if (ruby2_keywords_hash) {
+            if (acceptsKeywords) {
+                if (!hash.isEmpty()) hash = hash.dupFast(context);
+                if (!ruby2_keywords_method) hash.setRuby2KeywordHash(false);
 
-            return hash;
-        } else if (isRuby2Kwarg && !ruby2keywords && !acceptsKeywords && hasRestArgs) {
-            // passing in hash arg to 'def foo(*args)'
-            hash.setRuby2KeywordHash(false);
+                return hash;
+            }
+        }
 
-            return UNDEFINED;
-        } else if (ruby2keywords && (callInfo & CALL_KEYWORD) != 0) {
+        callSiteFunging(context, args, hash, callInfo, hasRestArgs, acceptsKeywords, ruby2_keywords_hash);
+
+
+        if (ruby2_keywords_method && (callInfo & CALL_KEYWORD) != 0) {
             // a ruby2_keywords method which happens to receive a keyword.  Mark hash as ruby2_keyword
             // So it can be used similarly to an ordinary hash passed in this way.
             hash = hash.dupFast(context);
@@ -752,7 +753,7 @@ public class IRRuntimeHelpers {
 
             args[args.length - 1] = hash;
             return UNDEFINED;
-        } else if (isRuby2Kwarg && hash.isEmpty()) {
+        } else if (ruby2_keywords_hash && hash.isEmpty()) {
             // case where we somehow (hash.clear) a marked ruby2_keyword.  We pass it as keyword even in non-keyword
             // accepting methods so it is subtracted from the arity count.  Normally empty keyword arguments are not
             // passed along but ruby2_keyword is a strange case since it is mutable by users.

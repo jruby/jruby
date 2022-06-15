@@ -64,6 +64,7 @@ import org.jruby.runtime.Visibility;
 
 import static org.jruby.anno.FrameField.*;
 import static org.jruby.runtime.Helpers.invokeChecked;
+import static org.jruby.runtime.ThreadContext.*;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -1662,6 +1663,18 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
     @JRubyMethod(name = "__send__", required = 1, rest = true, omit = true, forward = true)
     public IRubyObject send(ThreadContext context, IRubyObject[] args, Block block) {
+        int callInfo = context.callInfo;
+
+        // FIXME: Likely all methods which can pass the last value to another ruby call must do this.
+        // MRI: from vm_args.setup_parameters_complex()
+        if (args.length > 0 && (callInfo & CALL_SPLATS) != 0) {
+            IRubyObject last = args[args.length - 1];
+            if (last instanceof RubyHash && ((RubyHash) last).isRuby2KeywordHash()) {
+                args[args.length - 1] = ((RubyHash) last).dupFast(context);
+                ((RubyHash) args[args.length - 1]).setRuby2KeywordHash(false);
+                context.callInfo |= (CALL_KEYWORD | CALL_KEYWORD_REST);
+            }
+        }
         String name = RubySymbol.checkID(args[0]);
 
         StaticScope staticScope = context.getCurrentStaticScope();
