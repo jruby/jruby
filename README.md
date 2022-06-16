@@ -1,7 +1,7 @@
 # JRuby - an implementation of the Ruby language on the JVM
 
-Master: ![Linux](https://github.com/jruby/jruby/actions/workflows/ci.yml/badge.svg), ![Windows](https://github.com/jruby/jruby/actions/workflows/ci-windows.yml/badge.svg)
-9.3 branch: ![Linux](https://github.com/jruby/jruby/actions/workflows/ci.yml/badge.svg?branch=jruby-9.3), ![Windows](https://github.com/jruby/jruby/actions/workflows/ci-windows.yml/badge.svg?branch=jruby-9.3)
+Master: [![JRuby CI](https://github.com/jruby/jruby/actions/workflows/ci.yml/badge.svg)](https://github.com/jruby/jruby/actions/workflows/ci.yml), [![JRuby CI (Windows)](https://github.com/jruby/jruby/actions/workflows/ci-windows.yml/badge.svg)](https://github.com/jruby/jruby/actions/workflows/ci-windows.yml)
+9.3 branch: [![JRuby CI](https://github.com/jruby/jruby/actions/workflows/ci.yml/badge.svg?branch=jruby-9.3)](https://github.com/jruby/jruby/actions/workflows/ci.yml), [![JRuby CI (Windows)](https://github.com/jruby/jruby/actions/workflows/ci-windows.yml/badge.svg?branch=jruby-9.3)](https://github.com/jruby/jruby/actions/workflows/ci-windows.yml)
 
 ## About
 
