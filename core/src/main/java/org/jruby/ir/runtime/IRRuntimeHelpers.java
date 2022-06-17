@@ -619,6 +619,11 @@ public class IRRuntimeHelpers {
         }
     }
 
+    @JIT @Interp
+    public static IRubyObject hashCheck(ThreadContext context, IRubyObject hash) {
+        return TypeConverter.checkHashType(context.runtime, hash);
+    }
+
     public static IRubyObject isHashEmpty(ThreadContext context, IRubyObject hash) {
         // ARGSPUSH ended up realizing we have an empty kwargs already and stripped off the empty value (meaning
         // any call need not worry about subtracting a kwargs argument.

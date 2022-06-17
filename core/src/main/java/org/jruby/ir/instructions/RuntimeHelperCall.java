@@ -27,7 +27,7 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
         HANDLE_PROPAGATED_BREAK, HANDLE_NONLOCAL_RETURN, HANDLE_BREAK_AND_RETURNS_IN_LAMBDA,
         IS_DEFINED_BACKREF, IS_DEFINED_NTH_REF, IS_DEFINED_GLOBAL, IS_DEFINED_INSTANCE_VAR,
         IS_DEFINED_CLASS_VAR, IS_DEFINED_SUPER, IS_DEFINED_METHOD, IS_DEFINED_CALL,
-        IS_DEFINED_CONSTANT_OR_METHOD, MERGE_KWARGS, IS_HASH_EMPTY, ARRAY_LENGTH;
+        IS_DEFINED_CONSTANT_OR_METHOD, MERGE_KWARGS, IS_HASH_EMPTY, HASH_CHECK, ARRAY_LENGTH;
 
         public static Methods fromOrdinal(int value) {
             return value < 0 || value >= values().length ? null : values()[value];
@@ -163,6 +163,8 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
                         (IRubyObject) getArgs()[1].retrieve(context, self, currScope, currDynScope, temp));
             case IS_HASH_EMPTY:
                 return IRRuntimeHelpers.isHashEmpty(context, (IRubyObject) arg1);
+            case HASH_CHECK:
+                return IRRuntimeHelpers.hashCheck(context, (IRubyObject) arg1);
             case ARRAY_LENGTH:
                 return IRRuntimeHelpers.arrayLength((RubyArray) arg1);
         }
