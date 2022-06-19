@@ -68,6 +68,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.proxies.ConcreteJavaProxy.SplitCtorData;
+import org.jruby.java.proxies.MapJavaProxy;
 import org.jruby.javasupport.Java.JCreateMethod;
 import org.jruby.javasupport.Java.JCtorCache;
 import org.jruby.javasupport.JavaConstructor;
@@ -1084,6 +1085,12 @@ public abstract class RealClassGenerator {
      */
     public static String makeConcreteConstructorProxy(ClassWriter cw, PositionAware initPosition, boolean hasRuby,
             ConcreteJavaReifier cjr, Class[] ctorTypes, boolean nested) {
+        Class clazz;
+        if (Map.class.isAssignableFrom(cjr.reifiedParent)) {
+            clazz = MapJavaProxy.class;
+        } else {
+            clazz = ConcreteJavaProxy.class;
+        }
         String sig = hasRuby ? sig(void.class, cjr.join(ctorTypes, Ruby.class, RubyClass.class))
                 : sig(void.class, ctorTypes);
         SkinnyMethodAdapter m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", sig, null, null);
@@ -1105,11 +1112,11 @@ public abstract class RealClassGenerator {
         m.aload(0); // uninitialized this
 
         //// new ConcreteJavaProxy(ruby, rubyClass);
-        m.newobj(p(ConcreteJavaProxy.class));
+        m.newobj(p(clazz));
         m.dup(); // rubyobject
         m.aload(rubyIndex); // ruby
         m.aload(rubyClassIndex); // rubyclass
-        m.invokespecial(p(ConcreteJavaProxy.class), "<init>", sig(void.class, Ruby.class, RubyClass.class));
+        m.invokespecial(p(clazz), "<init>", sig(void.class, Ruby.class, RubyClass.class));
 
         if (nested) m.iconst_1();
         else m.iconst_0(); // called from subclass?
