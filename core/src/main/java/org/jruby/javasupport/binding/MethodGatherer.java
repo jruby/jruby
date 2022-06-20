@@ -168,8 +168,9 @@ public class MethodGatherer {
         // same name+signature as subclass methods (see JRUBY-3130)
         for ( Class<?> klass = javaClass; klass != null; klass = klass.getSuperclass() ) {
             // only add if target class is public or source class is public, and package is exported
-            if (Modules.isExported(klass, Java.class) &&
-                    (isPublic || Modifier.isPublic(klass.getModifiers()))) {
+            if (Modifier.isPublic(klass.getModifiers()) && Modules.isExported(klass, Java.class)) {
+//            if (Modules.isExported(klass, Java.class) &&
+//                    (isPublic || Modifier.isPublic(klass.getModifiers()))) {
                 // for each class, scan declared methods for new signatures
                 try {
                     // add methods, including static if this is the actual class,
