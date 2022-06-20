@@ -168,9 +168,7 @@ public class MethodGatherer {
         // same name+signature as subclass methods (see JRUBY-3130)
         for ( Class<?> klass = javaClass; klass != null; klass = klass.getSuperclass() ) {
             // only add if target class is public or source class is public, and package is exported
-            if (Modifier.isPublic(klass.getModifiers()) && Modules.isExported(klass, Java.class)) {
-//            if (Modules.isExported(klass, Java.class) &&
-//                    (isPublic || Modifier.isPublic(klass.getModifiers()))) {
+            if ((isPublic || Modifier.isPublic(klass.getModifiers())) && Modules.isExported(klass, Java.class)) {
                 // for each class, scan declared methods for new signatures
                 try {
                     // add methods, including static if this is the actual class,
@@ -201,11 +199,9 @@ public class MethodGatherer {
         }
     }
 
-    private static boolean methodsAreEquivalent(Method child, Method parent) {
+    private static boolean sameTypesAndAccessModifier(Method child, Method parent) {
         int childModifiers, parentModifiers;
-
-        return parent.getDeclaringClass().isAssignableFrom(child.getDeclaringClass())
-                && parent.getReturnType().isAssignableFrom(child.getReturnType())
+        return parent.getReturnType().isAssignableFrom(child.getReturnType())
                 && child.isVarArgs() == parent.isVarArgs()
                 && Modifier.isPublic(childModifiers = child.getModifiers()) == Modifier.isPublic(parentModifiers = parent.getModifiers())
                 && Modifier.isProtected(childModifiers) == Modifier.isProtected(parentModifiers)
@@ -213,6 +209,36 @@ public class MethodGatherer {
                 && Arrays.equals(child.getParameterTypes(), parent.getParameterTypes());
     }
 
+    private static boolean methodsAreEquivalent(Method child, Method parent) {
+        if (parent.getDeclaringClass().isAssignableFrom(child.getDeclaringClass())) {
+            return sameTypesAndAccessModifier(child, parent); // most cases will end here
+        }
+
+        if (!sameTypesAndAccessModifier(child, parent)) return false;
+
+        // reaching here - methods look the same but types are not assignable
+        // this could happen in a real-world case such as ConcurrentHashMap#keySet:
+        //  - parent: java.util.concurrent.ConcurrentHashMap$CollectionView
+        //  - child: java.util.Set.size
+        //
+        // 1. class CollectionView<K,V,E> implements Collection
+        // 2. class KeySetView<K,V> extends CollectionView implements Set
+        //
+        // both Collection and Set (which extends Collection) include: int size()
+        // the base class that includes size impl (CollectionView) only implements Collection
+        // ( parent.getDeclaringClass().isAssignableFrom(child.getDeclaringClass()) == false )
+
+        final String methodName = parent.getName();
+        for (Class superClass : child.getDeclaringClass().getInterfaces()) {
+            for (Method superMethod : FILTERED_DECLARED_METHODS.get(superClass).instanceMethods) {
+                if (methodName.equals(superMethod.getName()) && sameTypesAndAccessModifier(superMethod, child)) {
+                    return true; // very same (child) method only re-declared
+                }
+            }
+        }
+
+        return false;
+    }
     private static void addNewMethods(
             final HashMap<String, List<Method>> nameMethods,
             final Method[] methods,
