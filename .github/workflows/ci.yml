@@ -147,11 +147,15 @@ jobs:
 
     name: mvn -Ptest, rake test:jruby (Windows, Java 11)
 
+    env:
+      JAVA_OPTS: "-Djdk.io.File.enableADS=true"
+      JDK_JAVA_OPTS: "-Djdk.io.File.enableADS=true"
+
     steps:
       - name: checkout
         uses: actions/checkout@v2
       - name: set up java 11
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: 11
