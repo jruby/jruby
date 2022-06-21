@@ -1384,12 +1384,21 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = {"has_key?", "key?", "include?", "member?"}, required = 1)
     public RubyBoolean has_key_p(ThreadContext context, IRubyObject key) {
-        return internalGetEntry(key) == NO_ENTRY ? context.fals : context.tru;
+        return hasKey(key) ? context.tru : context.fals;
     }
 
+    @Deprecated
     public RubyBoolean has_key_p(IRubyObject key) {
-        Ruby runtime = metaClass.runtime;
-        return internalGetEntry(key) == NO_ENTRY ? runtime.getFalse() : runtime.getTrue();
+        return has_key_p(metaClass.runtime.getCurrentContext(), key);
+    }
+
+    /**
+     * A Java API to test the presence of a (Ruby) key in the Hash
+     * @param key the native (Ruby) key
+     * @return true if the hash contains the provided key
+     */
+    public boolean hasKey(IRubyObject key) {
+        return internalGetEntry(key) != NO_ENTRY;
     }
 
     private static class Found extends RuntimeException {

@@ -77,6 +77,22 @@ describe "a java.util.Map instance" do
     expect( m.empty? ).to be true
   end
 
+  it "properly handles key? when key included in the map" do
+    map = java.util.HashMap.new
+    map[:foo] = 'bar'
+    map[:baz] = nil
+    expect( map.key?(:foo) ).to be true
+    expect( map.key?(:baz) ).to be true
+    expect( map.key?(:bar) ).to be false
+    expect( map.key?('bar') ).to be false
+
+    map = java.util.LinkedHashMap.new 'foo' => nil
+    expect( map.include?('foo') ).to be true
+    expect( map.has_key?('foo') ).to be true
+    expect( map.member?('foo') ).to be true
+    expect( map.include?('bar') ).to be false
+  end
+
   it "supports Hash-like operations" do
     h = java.util.HashMap.new
     test_ok(h.kind_of? java.util.Map)
