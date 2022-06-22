@@ -691,7 +691,9 @@ public class Bootstrap {
         boolean wantsBlock = true;
         if (method instanceof NativeCallMethod) {
             DynamicMethod.NativeCall nativeCall = ((NativeCallMethod) method).getNativeCall();
-            if (nativeCall != null) {
+            // if it is a non-JI native call and does not want block, drop it
+            // JI calls may lazily convert blocks to an interface type (jruby/jruby#7246)
+            if (nativeCall != null && !nativeCall.isJava()) {
                 Class[] nativeSignature = nativeCall.getNativeSignature();
 
                 // no args or last arg not a block, do no pass block
