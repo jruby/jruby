@@ -849,16 +849,14 @@ arg             : lhs '=' arg_rhs {
                                     $4, $5);
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN arg_rhs {
-                    $$ = p.dispatch("on_assign_error", 
-                                    p.dispatch("on_opassign", 
-                                               p.dispatch("on_const_path_field", $1, $3),
-                                               $4, $5));
+                    $$ = p.dispatch("on_opassign", 
+                                    p.dispatch("on_const_path_field", $1, $3),
+                                    $4, $5);
                 }
                 | tCOLON3 tCONSTANT tOP_ASGN arg_rhs {
-                    $$ = p.dispatch("on_assign_error", 
-                                    p.dispatch("on_opassign", 
-                                               p.dispatch("on_top_const_field", $2),
-                                               $3, $4));
+                    $$ = p.dispatch("on_opassign", 
+                                    p.dispatch("on_top_const_field", $2),
+                                    $3, $4);
                 }
                 | backref tOP_ASGN arg_rhs {
                     $$ = p.dispatch("on_assign_error", 
