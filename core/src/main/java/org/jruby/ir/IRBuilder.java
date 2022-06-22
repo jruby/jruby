@@ -312,7 +312,7 @@ public class IRBuilder {
     protected final List<Instr> instructions;
     protected List<Object> argumentDescriptions;
     protected int coverageMode;
-    private boolean executesOnce = true;
+    protected boolean executesOnce = true;
     private int temporaryVariableIndex = -1;
     private boolean needsYieldBlock = false;
 
