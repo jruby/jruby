@@ -16,6 +16,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import org.jruby.util.cli.Options;
+
 import static org.jruby.RubyFile.canonicalize;
 
 /**
@@ -38,11 +40,6 @@ import static org.jruby.RubyFile.canonicalize;
  * associated spec locally.
  */
 class JarCache {
-
-    /**
-     * The timeout in milliseconds for caching the last modified timestamp of JAR files.
-     */
-    private static final long LAST_MODIFIED_EXPIRATION_TIME_MILLISECONDS = 500;
 
     static class JarIndex {
         private static final String ROOT_KEY = "";
@@ -100,7 +97,7 @@ class JarCache {
          * <p>
          * NOTE: Getting the value is an expensive operation on Windows systems (see
          * {@link <a href="https://github.com/jruby/jruby/issues/6730}").
-         * Therefore a cached value is used with a maximum lifetime of {@link #LAST_MODIFIED_EXPIRATION_TIME_MILLISECONDS} milliseconds.
+         * Therefore a cached value is used with a maximum lifetime of {@link Options#JAR_CACHE_EXPIRATION} milliseconds.
          *
          * @param jarPath The path to the JAR file.
          * @return The last modification timestamp.
@@ -110,7 +107,7 @@ class JarCache {
             if (lastModifiedExpiration != null && currentTimeMillis < lastModifiedExpiration) {
                 return lastModified;
             }
-            this.lastModifiedExpiration = currentTimeMillis + LAST_MODIFIED_EXPIRATION_TIME_MILLISECONDS;
+            this.lastModifiedExpiration = currentTimeMillis + Options.JAR_CACHE_EXPIRATION.load();
             return new File(jarPath).lastModified();
         }
 
