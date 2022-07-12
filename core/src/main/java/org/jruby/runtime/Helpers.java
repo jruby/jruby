@@ -1436,7 +1436,7 @@ public class Helpers {
                 if (size == 0) {
                     handle = Binder.from(IRubyObject[].class).getStatic(LOOKUP, IRubyObject.class, "NULL_ARRAY");
                 } else {
-                    handle = MethodHandles.publicLookup().findStatic(Helpers.class, "constructObjectArray", MethodType.methodType(IRubyObject[].class, CodegenUtils.params(IRubyObject.class, size)));
+                    handle = MethodHandles.lookup().findStatic(Helpers.class, "constructObjectArray", MethodType.methodType(IRubyObject[].class, CodegenUtils.params(IRubyObject.class, size)));
                 }
 
                 constructObjectArrayHandles[size] = handle;
@@ -1506,7 +1506,7 @@ public class Helpers {
                 if (size == 0) {
                     handle = Binder.from(RubyString[].class).getStatic(LOOKUP, RubyString.class, "NULL_ARRAY");
                 } else {
-                    handle = MethodHandles.publicLookup().findStatic(Helpers.class, "constructRubyStringArray", MethodType.methodType(RubyString[].class, CodegenUtils.params(RubyString.class, size)));
+                    handle = MethodHandles.lookup().findStatic(Helpers.class, "constructRubyStringArray", MethodType.methodType(RubyString[].class, CodegenUtils.params(RubyString.class, size)));
                 }
 
                 constructRubyStringArrayHandles[size] = handle;
