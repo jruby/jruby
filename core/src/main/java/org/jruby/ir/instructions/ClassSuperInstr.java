@@ -96,7 +96,7 @@ public class ClassSuperInstr extends CallInstr {
         IRubyObject[] args = prepareArguments(context, self, currScope, currDynScope, temp);
         Block block = prepareBlock(context, self, currScope, currDynScope, temp);
 
-        setCallInfo(context);
+        IRRuntimeHelpers.setCallInfo(context, getFlags());
 
         if (isLiteralBlock) {
             return IRRuntimeHelpers.unresolvedSuperIter(context, self, args, block);

@@ -5,6 +5,7 @@ import org.jruby.RubyHash;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -16,9 +17,6 @@ import org.jruby.util.TypeConverter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
-import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
-import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_REST;
 
 // Represents a hash { _ =>_, _ => _ .. } in ruby
 //
@@ -144,7 +142,7 @@ public class Hash extends Operand {
 
         // We mask this after we populate the hash just in case those retrieves are something which can transfer
         // control to another call (which would reset callInfo if we set this above).
-        if (isKeywordRest() || !literal) context.callInfo |= CALL_KEYWORD;
+        if (isKeywordRest() || !literal) IRRuntimeHelpers.markKeywordOnCallInfo(context);
         return hash;
     }
 

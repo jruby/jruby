@@ -17,8 +17,6 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_EMPTY;
-
 public class YieldInstr extends TwoOperandResultBaseInstr implements FixedArityInstr, Site {
     public final boolean unwrapArray;
     private final int flags;
@@ -72,17 +70,12 @@ public class YieldInstr extends TwoOperandResultBaseInstr implements FixedArityI
         return new YieldInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand(), d.decodeInt(), d.decodeBoolean());
     }
 
-    protected void setCallInfo(ThreadContext context) {
-        // FIXME: This may propagate empty more than the current call?   empty might need to be stuff elsewhere to prevent this.
-        context.callInfo = (context.callInfo & CALL_KEYWORD_EMPTY) | flags;
-    }
-
     @Interp
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         Block blk = (Block)getBlockArg().retrieve(context, self, currScope, currDynScope, temp);
         if (getYieldArg() == UndefinedValue.UNDEFINED) {
-            setCallInfo(context);
+            IRRuntimeHelpers.setCallInfo(context, flags);
             return IRRuntimeHelpers.yieldSpecific(context, blk);
         } else {
             Operand yieldOp = getYieldArg();
@@ -90,11 +83,11 @@ public class YieldInstr extends TwoOperandResultBaseInstr implements FixedArityI
                 // Special case this path!
                 // Don't build a RubyArray.
                 IRubyObject[] args = ((Array) yieldOp).retrieveArrayElts(context, self, currScope, currDynScope, temp);
-                setCallInfo(context);
+                IRRuntimeHelpers.setCallInfo(context, flags);
                 return IRRuntimeHelpers.yieldValues(context, blk, args);
             } else {
                 IRubyObject yieldVal = (IRubyObject) yieldOp.retrieve(context, self, currScope, currDynScope, temp);
-                setCallInfo(context);
+                IRRuntimeHelpers.setCallInfo(context, flags);
                 return IRRuntimeHelpers.yield(context, blk, yieldVal, unwrapArray);
             }
         }

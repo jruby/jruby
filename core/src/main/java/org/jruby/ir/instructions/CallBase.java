@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.jruby.ir.IRFlags.*;
-import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_EMPTY;
 
 public abstract class CallBase extends NOperandInstr implements ClosureAcceptingInstr, Site {
     public static long callSiteCounter = 1;
@@ -546,18 +545,13 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         return allArgs;
     }
 
-    protected void setCallInfo(ThreadContext context) {
-        // FIXME: This may propagate empty more than the current call?   empty might need to be stuff elsewhere to prevent this.
-        context.callInfo = (context.callInfo & CALL_KEYWORD_EMPTY) | getFlags();
-    }
-
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope dynamicScope, IRubyObject self, Object[] temp) {
         IRubyObject object = (IRubyObject) getReceiver().retrieve(context, self, currScope, dynamicScope, temp);
         IRubyObject[] values = prepareArguments(context, self, currScope, dynamicScope, temp);
         Block preparedBlock = prepareBlock(context, self, currScope, dynamicScope, temp);
 
-        setCallInfo(context);
+        IRRuntimeHelpers.setCallInfo(context, getFlags());
 
         if (hasLiteralClosure()) {
             return callSite.callIter(context, self, object, values, preparedBlock);

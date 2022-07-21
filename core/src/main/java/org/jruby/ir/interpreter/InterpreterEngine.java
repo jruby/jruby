@@ -64,8 +64,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_EMPTY;
-
 /**
  * Base full interpreter.  Subclasses can use utility methods here and override what they want.  This method requires
  * that it has fully built and has had a CFG made, etc...
@@ -295,7 +293,7 @@ public class InterpreterEngine {
             case CALL_1F: {
                 OneFixnumArgNoBlockCallInstr call = (OneFixnumArgNoBlockCallInstr)instr;
                 IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);
-                context.callInfo = (context.callInfo & CALL_KEYWORD_EMPTY) | call.getFlags();
+                IRRuntimeHelpers.setCallInfo(context, call.getFlags());
                 result = call.getCallSite().call(context, self, r, call.getFixnumArg());
                 setResult(temp, currDynScope, call.getResult(), result);
                 break;
@@ -303,7 +301,7 @@ public class InterpreterEngine {
             case CALL_1D: {
                 OneFloatArgNoBlockCallInstr call = (OneFloatArgNoBlockCallInstr)instr;
                 IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);
-                context.callInfo = (context.callInfo & CALL_KEYWORD_EMPTY) | call.getFlags();
+                IRRuntimeHelpers.setCallInfo(context, call.getFlags());
                 result = call.getCallSite().call(context, self, r, call.getFloatArg());
                 setResult(temp, currDynScope, call.getResult(), result);
                 break;
@@ -312,7 +310,7 @@ public class InterpreterEngine {
                 OneOperandArgNoBlockCallInstr call = (OneOperandArgNoBlockCallInstr)instr;
                 IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);
                 IRubyObject o = (IRubyObject)call.getArg1().retrieve(context, self, currScope, currDynScope, temp);
-                context.callInfo = (context.callInfo & CALL_KEYWORD_EMPTY) | call.getFlags();
+                IRRuntimeHelpers.setCallInfo(context, call.getFlags());
                 result = call.getCallSite().call(context, self, r, o);
                 setResult(temp, currDynScope, call.getResult(), result);
                 break;
@@ -322,7 +320,7 @@ public class InterpreterEngine {
                 IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);
                 IRubyObject o1 = (IRubyObject)call.getArg1().retrieve(context, self, currScope, currDynScope, temp);
                 IRubyObject o2 = (IRubyObject)call.getArg2().retrieve(context, self, currScope, currDynScope, temp);
-                context.callInfo = (context.callInfo & CALL_KEYWORD_EMPTY) | call.getFlags();
+                IRRuntimeHelpers.setCallInfo(context, call.getFlags());
                 result = call.getCallSite().call(context, self, r, o1, o2);
                 setResult(temp, currDynScope, call.getResult(), result);
                 break;
@@ -334,7 +332,7 @@ public class InterpreterEngine {
                 IRubyObject o = (IRubyObject)call.getArg1().retrieve(context, self, currScope, currDynScope, temp);
                 Block preparedBlock = call.prepareBlock(context, self, currScope, currDynScope, temp);
                 CallSite callSite = call.getCallSite();
-                context.callInfo = (context.callInfo & CALL_KEYWORD_EMPTY) | call.getFlags();
+                IRRuntimeHelpers.setCallInfo(context, call.getFlags());
                 result = call.hasLiteralClosure() ?
                         callSite.callIter(context, self, r, o, preparedBlock) :
                         callSite.call(context, self, r, o, preparedBlock);
@@ -344,7 +342,7 @@ public class InterpreterEngine {
             case CALL_0O: {
                 ZeroOperandArgNoBlockCallInstr call = (ZeroOperandArgNoBlockCallInstr)instr;
                 IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);
-                context.callInfo = (context.callInfo & CALL_KEYWORD_EMPTY) | call.getFlags();
+                IRRuntimeHelpers.setCallInfo(context, call.getFlags());
                 result = call.getCallSite().call(context, self, r);
                 setResult(temp, currDynScope, call.getResult(), result);
                 break;
@@ -353,7 +351,7 @@ public class InterpreterEngine {
                 OneOperandArgNoBlockNoResultCallInstr call = (OneOperandArgNoBlockNoResultCallInstr)instr;
                 IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);
                 IRubyObject o = (IRubyObject)call.getArg1().retrieve(context, self, currScope, currDynScope, temp);
-                context.callInfo = (context.callInfo & CALL_KEYWORD_EMPTY) | call.getFlags();
+                IRRuntimeHelpers.setCallInfo(context, call.getFlags());
                 call.getCallSite().call(context, self, r, o);
                 break;
             }

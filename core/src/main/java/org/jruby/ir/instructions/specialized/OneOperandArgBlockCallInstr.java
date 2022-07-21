@@ -7,6 +7,7 @@ import org.jruby.ir.instructions.CallInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
@@ -47,7 +48,7 @@ public class OneOperandArgBlockCallInstr extends CallInstr {
         IRubyObject arg1 = (IRubyObject) getArg1().retrieve(context, self, currScope, dynamicScope, temp);
         Block preparedBlock = prepareBlock(context, self, currScope, dynamicScope, temp);
 
-        setCallInfo(context);
+        IRRuntimeHelpers.setCallInfo(context, getFlags());
 
         if (hasLiteralClosure()) {
             return getCallSite().callIter(context, self, object, arg1, preparedBlock);

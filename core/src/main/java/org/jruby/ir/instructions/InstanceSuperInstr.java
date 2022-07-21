@@ -130,7 +130,7 @@ public class InstanceSuperInstr extends CallInstr {
         Block block = prepareBlock(context, self, currScope, currDynScope, temp);
         RubyModule definingModule = ((RubyModule) getDefiningModule().retrieve(context, self, currScope, currDynScope, temp));
 
-        setCallInfo(context);
+        IRRuntimeHelpers.setCallInfo(context, getFlags());
 
         if (isLiteralBlock) {
             return IRRuntimeHelpers.instanceSuperIter(context, self, getId(), definingModule, args, block);

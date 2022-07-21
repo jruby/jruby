@@ -39,6 +39,10 @@ public class BuildCompoundArrayInstr extends TwoOperandResultBaseInstr {
 
     public boolean isArgsPush() { return isArgsPush; }
 
+    public boolean usesKeywordRest() {
+        return usesKeywordRest;
+    }
+
     @Override
     public Instr clone(CloneInfo ii) {
         return new BuildCompoundArrayInstr(ii.getRenamedVariable(result), getAppendingArg().cloneForInlining(ii),

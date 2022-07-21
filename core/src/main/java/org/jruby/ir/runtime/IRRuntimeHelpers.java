@@ -679,7 +679,12 @@ public class IRRuntimeHelpers {
         IRScope scope = staticScope.getIRScope();
         int callInfo = context.resetCallInfo();
 
-        if ((callInfo & CALL_KEYWORD_EMPTY) != 0) return UNDEFINED;
+        /*
+        if ((callInfo & CALL_KEYWORD_EMPTY) != 0) {
+            System.out.println("HERE.2a");
+            return UNDEFINED;
+        }*/
+
         if (!(last instanceof RubyHash)) return last;
 
         RubyHash hash = (RubyHash) last;
@@ -702,7 +707,7 @@ public class IRRuntimeHelpers {
 
             // We pass empty kwrest through so kwrest does not try and slurp it up as normal argument.
             // This complicates check_arity but empty ** is special case.
-            return hash;
+            return hash.dupFast(context);
         } else if (!isKwarg) {
             // This is just an ordinary hash as last argument
             return last;
@@ -776,6 +781,12 @@ public class IRRuntimeHelpers {
             // This last check needs explaining.  We never pass empty kwargs hashes so this means it is really a normal argument.
             return !acceptsKeywords || hash.isEmpty() ? UNDEFINED : hash.dupFast(context);
         }
+    }
+
+    @JIT @Interp
+    public static void setCallInfo(ThreadContext context, int flags) {
+        // FIXME: This may propagate empty more than the current call?   empty might need to be stuff elsewhere to prevent this.
+        context.callInfo = (context.callInfo & CALL_KEYWORD_EMPTY) | flags;
     }
 
     public static void checkForExtraUnwantedKeywordArgs(ThreadContext context, final StaticScope scope, RubyHash keywordArgs) {
@@ -1002,7 +1013,20 @@ public class IRRuntimeHelpers {
     public static IRubyObject mergeKeywordArguments(ThreadContext context, IRubyObject restKwarg, IRubyObject explicitKwarg) {
         // FIXME: Not sure we need to dup in cases like if we IS_EMPTY and realize we are passing empty kwargs around.
         int callInfo = context.callInfo;  // we may call to_hash. save state.
-        RubyHash hash = (RubyHash) TypeConverter.checkHashType(context.runtime, restKwarg).dup();
+        // FIXME: JIT is generating a hash which is empty but seems to contain an %undefined within it.
+        //   This was crashing because it would dup it and then try and dup the undefined within it.
+        //   This replacement logic is correct even if that was figured out but this should just be
+        //   hash = checkHashType(...).dup().
+        RubyHash hash;
+        if (!(restKwarg instanceof RubyHash)) {
+            hash = (RubyHash) TypeConverter.checkHashType(context.runtime, restKwarg);
+        } else {
+            if (!((RubyHash) restKwarg).isEmpty()) {
+                hash = (RubyHash) restKwarg.dup();
+            } else {
+                hash = RubyHash.newHash(context.runtime);
+            }
+        }
         hash.modify();
 
         RubyHash otherHash = explicitKwarg.convertToHash();
@@ -1188,6 +1212,17 @@ public class IRRuntimeHelpers {
         IRubyObject value = ((RubyHash) keywords).delete(key);
 
         return value == null ? UNDEFINED : value;
+    }
+
+    @JIT
+    public static IRubyObject keywordRestOnHash(ThreadContext context, IRubyObject rest) {
+        TypeConverter.checkType(context, rest, context.runtime.getHash());
+        return ((RubyHash) rest).dupFast(context);
+    }
+
+    @JIT
+    public static void markKeywordOnCallInfo(ThreadContext context) {
+        context.callInfo |= CALL_KEYWORD;
     }
 
     public static IRubyObject markAsKwarg(ThreadContext context, IRubyObject arg) {
