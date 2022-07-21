@@ -104,6 +104,7 @@ import static org.jruby.anno.FrameField.METHODNAME;
 import static org.jruby.anno.FrameField.SCOPE;
 import static org.jruby.anno.FrameField.SELF;
 import static org.jruby.anno.FrameField.VISIBILITY;
+import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PROTECTED;
 import static org.jruby.runtime.Visibility.PUBLIC;
@@ -2000,6 +2001,10 @@ public class RubyKernel {
         }
 
         String name = RubySymbol.checkID(args[0]);
+
+        if (args.length > 1) {
+            args[args.length - 1] = dupIfKeywordRestAtCallsite(context, args[args.length - 1]);
+        }
 
         final int length = args.length - 1;
         args = ( length == 0 ) ? IRubyObject.NULL_ARRAY : ArraySupport.newCopy(args, 1, length);

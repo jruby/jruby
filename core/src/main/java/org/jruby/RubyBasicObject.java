@@ -63,6 +63,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 
 import static org.jruby.anno.FrameField.*;
+import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
 import static org.jruby.runtime.Helpers.invokeChecked;
 import static org.jruby.runtime.ThreadContext.*;
 import static org.jruby.runtime.Visibility.*;
@@ -1651,6 +1652,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         StaticScope staticScope = context.getCurrentStaticScope();
 
+        arg1 = dupIfKeywordRestAtCallsite(context, arg1);
         return getMetaClass().finvokeWithRefinements(context, this, staticScope, name, arg1, block);
     }
     @JRubyMethod(name = "__send__", omit = true, forward = true)
@@ -1658,6 +1660,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         String name = RubySymbol.checkID(arg0);
 
         StaticScope staticScope = context.getCurrentStaticScope();
+
+        arg2 = dupIfKeywordRestAtCallsite(context, arg2);
 
         return getMetaClass().finvokeWithRefinements(context, this, staticScope, name, arg1, arg2, block);
     }
@@ -1667,12 +1671,16 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         // FIXME: Likely all methods which can pass the last value to another ruby call must do this.
         // MRI: from vm_args.setup_parameters_complex()
-        if (args.length > 0 && (callInfo & CALL_SPLATS) != 0) {
-            IRubyObject last = args[args.length - 1];
-            if (last instanceof RubyHash && ((RubyHash) last).isRuby2KeywordHash()) {
-                args[args.length - 1] = ((RubyHash) last).dupFast(context);
-                ((RubyHash) args[args.length - 1]).setRuby2KeywordHash(false);
-                context.callInfo |= (CALL_KEYWORD | CALL_KEYWORD_REST);
+        if (args.length > 0) {
+            if ((callInfo & CALL_SPLATS) != 0) {
+                IRubyObject last = args[args.length - 1];
+                if (last instanceof RubyHash && ((RubyHash) last).isRuby2KeywordHash()) {
+                    args[args.length - 1] = ((RubyHash) last).dupFast(context);
+                    ((RubyHash) args[args.length - 1]).setRuby2KeywordHash(false);
+                    context.callInfo |= (CALL_KEYWORD | CALL_KEYWORD_REST);
+                }
+            } else if (args.length > 1) {
+              args[args.length - 1] = dupIfKeywordRestAtCallsite(context, args[args.length - 1]);
             }
         }
         String name = RubySymbol.checkID(args[0]);

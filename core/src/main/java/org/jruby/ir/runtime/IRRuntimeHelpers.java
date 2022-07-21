@@ -707,7 +707,7 @@ public class IRRuntimeHelpers {
 
             // We pass empty kwrest through so kwrest does not try and slurp it up as normal argument.
             // This complicates check_arity but empty ** is special case.
-            return hash.dupFast(context);
+            return hash;
         } else if (!isKwarg) {
             // This is just an ordinary hash as last argument
             return last;
@@ -781,6 +781,21 @@ public class IRRuntimeHelpers {
             // This last check needs explaining.  We never pass empty kwargs hashes so this means it is really a normal argument.
             return !acceptsKeywords || hash.isEmpty() ? UNDEFINED : hash.dupFast(context);
         }
+    }
+
+    /**
+     * Methods like Kernel#send if it receives a key-splatted value at a send site (send :foo, **h)
+     * it will dup h.
+     */
+    public static IRubyObject dupIfKeywordRestAtCallsite(ThreadContext context, IRubyObject arg) {
+        int callInfo = context.callInfo;
+
+        if ((callInfo & CALL_KEYWORD_EMPTY) == 0 && (callInfo & CALL_KEYWORD_REST) != 0) {
+            arg = arg.dup();
+            context.callInfo = callInfo;
+        }
+
+        return arg;
     }
 
     @JIT @Interp
