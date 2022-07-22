@@ -3095,7 +3095,12 @@ public class IRBuilder {
 
             Variable av = getNewLocalVariable(key, 0);
             if (scope instanceof IRMethod) addArgumentDescription(type, key);
-            addInstr(new ReceiveKeywordRestArgInstr(av, keywords));
+
+            if (key != null && "nil".equals(key.idString())) {
+                if_not(keywords, UndefinedValue.UNDEFINED, () -> addRaiseError("ArgumentError", "no keywords accepted"));
+            } else {
+                addInstr(new ReceiveKeywordRestArgInstr(av, keywords));
+            }
         }
 
         // Block arg
@@ -3515,6 +3520,13 @@ public class IRBuilder {
         addInstr(new LabelInstr(elseLabel));
         elseBlock.run();
         addInstr(new LabelInstr(endLabel));
+    }
+
+    private void if_not(Operand testVariable, Operand testValue, VoidCodeBlock ifBlock) {
+        label((endLabel) -> {
+            addInstr(createBranch(testVariable, testValue, endLabel));
+            ifBlock.run();
+        });
     }
 
     public Operand buildFCall(Variable aResult, FCallNode fcallNode) {
