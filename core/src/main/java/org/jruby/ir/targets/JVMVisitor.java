@@ -2281,6 +2281,8 @@ public class JVMVisitor extends IRVisitor {
                 jvmMethod().loadContext();
                 visit(runtimehelpercall.getArgs()[0]);
                 jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "hashCheck", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
+                jvmStoreLocal(runtimehelpercall.getResult());
+                break;
             case IS_HASH_EMPTY:
                 jvmMethod().loadContext();
                 visit(runtimehelpercall.getArgs()[0]);
