@@ -33,6 +33,7 @@ import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
+import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
 import org.jruby.util.collections.IntHashMap;
 import org.jruby.util.log.Logger;
@@ -1074,14 +1075,13 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void BuildCompoundArrayInstr(BuildCompoundArrayInstr instr) {
+        jvmMethod().loadContext();
+        visit(instr.getAppendingArg());
+        visit(instr.getAppendedArg());
         if (instr.isArgsPush()) {
-            visit(instr.getAppendingArg());
-            visit(instr.getAppendedArg());
-            jvmMethod().invokeHelper("argsPush", RubyArray.class, IRubyObject.class, IRubyObject.class);
+            jvmAdapter().ldc(instr.usesKeywordRest());
+            jvmMethod().invokeHelper("argsPush", RubyArray.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, boolean.class);
         } else {
-            jvmMethod().loadContext();
-            visit(instr.getAppendingArg());
-            visit(instr.getAppendedArg());
             jvmMethod().invokeHelper("argsCat", RubyArray.class, ThreadContext.class, IRubyObject.class, IRubyObject.class);
         }
         jvmStoreLocal(instr.getResult());
@@ -1206,6 +1206,10 @@ public class JVMVisitor extends IRVisitor {
                 m.invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
             }
         }
+
+        m.loadContext();
+        m.adapter.ldc(call.getFlags());
+        m.invokeIRHelper("setCallInfo", sig(void.class, ThreadContext.class, int.class));
 
         switch (call.getCallType()) {
             case FUNCTIONAL:
@@ -1632,6 +1636,10 @@ public class JVMVisitor extends IRVisitor {
                 m.invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
             }
         }
+
+        m.loadContext();
+        m.adapter.ldc(instr.getFlags());
+        m.invokeIRHelper("setCallInfo", sig(void.class, ThreadContext.class, int.class));
 
         switch (operation) {
             case INSTANCE_SUPER:
@@ -2269,10 +2277,10 @@ public class JVMVisitor extends IRVisitor {
                 jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "mergeKeywordArguments", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
-            case MARK_KWARG:
+            case HASH_CHECK:
                 jvmMethod().loadContext();
                 visit(runtimehelpercall.getArgs()[0]);
-                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "markAsKwarg", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
+                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "hashCheck", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
             case IS_HASH_EMPTY:
@@ -2613,6 +2621,8 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext();
         if (kwargs) {
             visit(pairs.get(0).getValue());
+            jvmMethod().loadContext();
+            jvmMethod().invokeIRHelper("keywordRestOnHash", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
             jvmAdapter().checkcast(p(RubyHash.class));
 
             iter.next();
@@ -2631,6 +2641,12 @@ public class JVMVisitor extends IRVisitor {
         } else {
             jvmMethod().getDynamicValueCompiler().hash(pairs.size());
         }
+
+        if (kwargs || !hash.literal) {
+            jvmMethod().loadContext();
+            jvmMethod().invokeIRHelper("markKeywordOnCallInfo", sig(void.class, ThreadContext.class));
+        }
+
     }
 
     @Override

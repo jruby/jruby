@@ -34,7 +34,7 @@ import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
 
-public class ArgsPushNode extends Node {
+public class ArgsPushNode extends Node implements TwoValueNode {
     private Node firstNode;
     private Node secondNode;
 

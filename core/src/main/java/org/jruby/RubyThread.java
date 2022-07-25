@@ -556,7 +556,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * </pre>
      * <i>produces:</i> abxyzc
      */
-    @JRubyMethod(name = {"new", "fork"}, rest = true, meta = true)
+    @JRubyMethod(name = {"new", "fork"}, rest = true, meta = true, forward = true)
     public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
         return startThread(recv, args, true, block);
     }
@@ -607,12 +607,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return rubyThread;
     }
 
-    @JRubyMethod(rest = true, visibility = PRIVATE)
+    @JRubyMethod(rest = true, visibility = PRIVATE, forward = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
+        int callInfo = context.resetCallInfo();
         if (!block.isGiven()) throw context.runtime.newThreadError("must be called with a block");
         if (threadImpl != ThreadLike.DUMMY) throw context.runtime.newThreadError("already initialized thread");
 
-        startThread(context, new RubyRunnable(this, args, block));
+        startThread(context, new RubyRunnable(this, args, block, callInfo));
 
         return context.nil;
     }

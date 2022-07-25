@@ -20,10 +20,13 @@ import org.jruby.runtime.builtin.IRubyObject;
 // building the args-cat/push value, this is not really side-effect free.
 public class BuildCompoundArrayInstr extends TwoOperandResultBaseInstr {
     private final boolean isArgsPush;
+    // This array involves a last element known to be a keyword.
+    private final boolean usesKeywordRest;
 
-    public BuildCompoundArrayInstr(Variable result, Operand a1, Operand a2, boolean isArgsPush) {
+    public BuildCompoundArrayInstr(Variable result, Operand a1, Operand a2, boolean isArgsPush, boolean usesKeywordRest) {
         super(Operation.BUILD_COMPOUND_ARRAY, result, a1, a2);
         this.isArgsPush = isArgsPush;
+        this.usesKeywordRest = usesKeywordRest;
     }
 
     public Operand getAppendingArg() {
@@ -36,10 +39,14 @@ public class BuildCompoundArrayInstr extends TwoOperandResultBaseInstr {
 
     public boolean isArgsPush() { return isArgsPush; }
 
+    public boolean usesKeywordRest() {
+        return usesKeywordRest;
+    }
+
     @Override
     public Instr clone(CloneInfo ii) {
         return new BuildCompoundArrayInstr(ii.getRenamedVariable(result), getAppendingArg().cloneForInlining(ii),
-                getAppendedArg().cloneForInlining(ii), isArgsPush);
+                getAppendedArg().cloneForInlining(ii), isArgsPush, usesKeywordRest);
     }
 
     @Override
@@ -51,14 +58,14 @@ public class BuildCompoundArrayInstr extends TwoOperandResultBaseInstr {
     }
 
     public static BuildCompoundArrayInstr decode(IRReaderDecoder d) {
-        return new BuildCompoundArrayInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
+        return new BuildCompoundArrayInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand(), d.decodeBoolean(), d.decodeBoolean());
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         IRubyObject v1 = (IRubyObject)getAppendingArg().retrieve(context, self, currScope, currDynScope, temp);
         IRubyObject v2 = (IRubyObject) getAppendedArg().retrieve(context, self, currScope, currDynScope, temp);
-        return isArgsPush ? Helpers.argsPush(v1, v2) : Helpers.argsCat(context, v1, v2);
+        return isArgsPush ? Helpers.argsPush(context, v1, v2, usesKeywordRest) : Helpers.argsCat(context, v1, v2);
     }
 
     @Override

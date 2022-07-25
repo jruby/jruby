@@ -14,19 +14,21 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class OneArgOperandAttrAssignInstr extends AttrAssignInstr {
     // clone constructor
     protected OneArgOperandAttrAssignInstr(IRScope scope, CallType callType, RubySymbol name, Operand receiver,
-                              Operand[] args, boolean potentiallyRefined, CallSite callSite, long callSiteId) {
-        super(scope, callType, name, receiver, args, potentiallyRefined, callSite, callSiteId);
+                                           Operand[] args, int flags, boolean potentiallyRefined, CallSite callSite,
+                                           long callSiteId) {
+        super(scope, callType, name, receiver, args, flags, potentiallyRefined, callSite, callSiteId);
     }
 
     // normal constructor
-    public OneArgOperandAttrAssignInstr(IRScope scope, Operand obj, RubySymbol attr, Operand[] args, boolean isPotentiallyRefined) {
-        super(scope, obj, attr, args, null, isPotentiallyRefined);
+    public OneArgOperandAttrAssignInstr(IRScope scope, Operand obj, RubySymbol attr, Operand[] args, int flags,
+                                        boolean isPotentiallyRefined) {
+        super(scope, obj, attr, args, null, flags, isPotentiallyRefined);
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
         return new OneArgOperandAttrAssignInstr(ii.getScope(), getCallType(), getName(), getReceiver().cloneForInlining(ii),
-                cloneCallArgs(ii), isPotentiallyRefined(), getCallSite(), getCallSiteId());
+                cloneCallArgs(ii), getFlags(), isPotentiallyRefined(), getCallSite(), getCallSiteId());
     }
 
     @Override

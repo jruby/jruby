@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ * *** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -54,8 +55,9 @@ public class InstanceSuperInstr extends CallInstr {
 
     // clone constructor
     protected InstanceSuperInstr(IRScope scope, Variable result, Operand definingModule, RubySymbol name, Operand[] args,
-                                 Operand closure, boolean isPotentiallyRefined, CallSite callSite, long callSiteId) {
-        super(scope, Operation.INSTANCE_SUPER, CallType.SUPER, result, name, definingModule, args, closure,
+                                 Operand closure, int flags, boolean isPotentiallyRefined, CallSite callSite,
+                                 long callSiteId) {
+        super(scope, Operation.INSTANCE_SUPER, CallType.SUPER, result, name, definingModule, args, closure, flags,
                 isPotentiallyRefined, callSite, callSiteId);
 
         isLiteralBlock = closure instanceof WrappedIRClosure;
@@ -63,8 +65,9 @@ public class InstanceSuperInstr extends CallInstr {
 
     // normal constructor
     public InstanceSuperInstr(IRScope scope, Variable result, Operand definingModule, RubySymbol name, Operand[] args,
-                              Operand closure, boolean isPotentiallyRefined) {
-        super(scope, Operation.INSTANCE_SUPER, CallType.SUPER, result, name, definingModule, args, closure, isPotentiallyRefined);
+                              Operand closure, int flags, boolean isPotentiallyRefined) {
+        super(scope, Operation.INSTANCE_SUPER, CallType.SUPER, result, name, definingModule, args, closure, flags,
+                isPotentiallyRefined);
 
         isLiteralBlock = closure instanceof WrappedIRClosure;
     }
@@ -85,7 +88,7 @@ public class InstanceSuperInstr extends CallInstr {
     public Instr clone(CloneInfo ii) {
         return new InstanceSuperInstr(ii.getScope(), ii.getRenamedVariable(getResult()),
                 getDefiningModule().cloneForInlining(ii), getName(), cloneCallArgs(ii),
-                getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii),
+                getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii), getFlags(),
                 isPotentiallyRefined(), getCallSite(), getCallSiteId());
     }
 
@@ -107,8 +110,10 @@ public class InstanceSuperInstr extends CallInstr {
         }
 
         Operand closure = hasClosureArg ? d.decodeOperand() : null;
+        int flags = d.decodeInt();
 
-        return new InstanceSuperInstr(d.getCurrentScope(), d.decodeVariable(), receiver, name, args, closure, d.getCurrentScope().maybeUsingRefinements());
+        return new InstanceSuperInstr(d.getCurrentScope(), d.decodeVariable(), receiver, name, args, closure, flags,
+                d.getCurrentScope().maybeUsingRefinements());
     }
 
     /*
@@ -124,6 +129,8 @@ public class InstanceSuperInstr extends CallInstr {
         IRubyObject[] args = prepareArguments(context, self, currScope, currDynScope, temp);
         Block block = prepareBlock(context, self, currScope, currDynScope, temp);
         RubyModule definingModule = ((RubyModule) getDefiningModule().retrieve(context, self, currScope, currDynScope, temp));
+
+        IRRuntimeHelpers.setCallInfo(context, getFlags());
 
         if (isLiteralBlock) {
             return IRRuntimeHelpers.instanceSuperIter(context, self, getId(), definingModule, args, block);

@@ -12,6 +12,7 @@ import java.util.List;
 public class DescriptorInfo {
     private int min;
     private int max;
+    private boolean forward; // Will this method forward call state forward (send, new ... things with just delegate to another method)
     private boolean frame;
     private boolean rest;
     private boolean block;
@@ -31,6 +32,7 @@ public class DescriptorInfo {
     public DescriptorInfo(List<? extends MethodDescriptor> descs) {
         min = Integer.MAX_VALUE;
         max = 0;
+        forward = false;
         frame = false;
         rest = false;
         block = false;
@@ -88,6 +90,7 @@ public class DescriptorInfo {
 
             if (frame && !desc.anno.frame())
                 throw new RuntimeException("Unbalanced frame property on method " + desc.declaringClassName + '.' + desc.name);
+            forward |= desc.anno.forward();
             frame |= desc.anno.frame();
             block |= desc.hasBlock;
         }
@@ -134,6 +137,10 @@ public class DescriptorInfo {
     @Deprecated
     public boolean isBacktrace() {
         return false;
+    }
+
+    public boolean isForward() {
+        return forward;
     }
 
     public boolean isFrame() {

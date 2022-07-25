@@ -63,7 +63,9 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 
 import static org.jruby.anno.FrameField.*;
+import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
 import static org.jruby.runtime.Helpers.invokeChecked;
+import static org.jruby.runtime.ThreadContext.*;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -1636,7 +1638,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return method_missing(context, recv, args, block);
     }
 
-    @JRubyMethod(name = "__send__", omit = true)
+    @JRubyMethod(name = "__send__", omit = true, forward = true)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, Block block) {
         String name = RubySymbol.checkID(arg0);
 
@@ -1644,24 +1646,43 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         return getMetaClass().finvokeWithRefinements(context, this, staticScope, name, block);
     }
-    @JRubyMethod(name = "__send__", omit = true)
+    @JRubyMethod(name = "__send__", omit = true, forward = true)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         String name = RubySymbol.checkID(arg0);
 
         StaticScope staticScope = context.getCurrentStaticScope();
 
+        arg1 = dupIfKeywordRestAtCallsite(context, arg1);
         return getMetaClass().finvokeWithRefinements(context, this, staticScope, name, arg1, block);
     }
-    @JRubyMethod(name = "__send__", omit = true)
+    @JRubyMethod(name = "__send__", omit = true, forward = true)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         String name = RubySymbol.checkID(arg0);
 
         StaticScope staticScope = context.getCurrentStaticScope();
 
+        arg2 = dupIfKeywordRestAtCallsite(context, arg2);
+
         return getMetaClass().finvokeWithRefinements(context, this, staticScope, name, arg1, arg2, block);
     }
-    @JRubyMethod(name = "__send__", required = 1, rest = true, omit = true)
+    @JRubyMethod(name = "__send__", required = 1, rest = true, omit = true, forward = true)
     public IRubyObject send(ThreadContext context, IRubyObject[] args, Block block) {
+        int callInfo = context.callInfo;
+
+        // FIXME: Likely all methods which can pass the last value to another ruby call must do this.
+        // MRI: from vm_args.setup_parameters_complex()
+        if (args.length > 0) {
+            if ((callInfo & CALL_SPLATS) != 0) {
+                IRubyObject last = args[args.length - 1];
+                if (last instanceof RubyHash && ((RubyHash) last).isRuby2KeywordHash()) {
+                    args[args.length - 1] = ((RubyHash) last).dupFast(context);
+                    ((RubyHash) args[args.length - 1]).setRuby2KeywordHash(false);
+                    context.callInfo |= (CALL_KEYWORD | CALL_KEYWORD_REST);
+                }
+            } else if (args.length > 1) {
+              args[args.length - 1] = dupIfKeywordRestAtCallsite(context, args[args.length - 1]);
+            }
+        }
         String name = RubySymbol.checkID(args[0]);
 
         StaticScope staticScope = context.getCurrentStaticScope();
@@ -2527,7 +2548,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     k = Klass.new
      *     k.instance_exec(5) {|x| @secret+x }   #=> 104
      */
-    @JRubyMethod(name = "instance_exec", optional = 3, rest = true,
+    @JRubyMethod(name = "instance_exec", optional = 3, rest = true, forward = true,
             reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
             writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject instance_exec(ThreadContext context, IRubyObject[] args, Block block) {

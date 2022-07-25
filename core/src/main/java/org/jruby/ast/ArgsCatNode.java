@@ -36,7 +36,7 @@ import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
 
-public class ArgsCatNode extends Node {
+public class ArgsCatNode extends Node implements TwoValueNode {
 	private final Node firstNode;
     private final Node secondNode;
 

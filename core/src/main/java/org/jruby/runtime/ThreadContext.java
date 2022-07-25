@@ -109,7 +109,16 @@ public final class ThreadContext {
 
     // Is this thread currently with in a function trace?
     private boolean isWithinTrace;
-    public boolean callSplats;
+
+    // FIXME: This should get stuffed into call path OR call site should be passed through callpath and have
+    //     this in it.
+    // Call info state.
+    public final static int CALL_SPLATS =        1 << 0;
+    public final static int CALL_KEYWORD =       1 << 1;
+    public final static int CALL_KEYWORD_REST =  1 << 2;
+    public final static int CALL_KEYWORD_EMPTY = 1 << 3; // **{} is passed to call
+
+    public int callInfo;
 
     private RubyThread thread;
     private static final WeakReference<ThreadFiber> NULL_FIBER_REF = new WeakReference<ThreadFiber>(null);
@@ -1452,6 +1461,17 @@ public final class ThreadContext {
         RubyMatchData matchData = this.matchData;
         if (matchData != null) return matchData;
         return nil;
+    }
+
+    /**
+     * Reset call info state and return the value of call info right before
+     * it is reset.
+     * @return the old call info
+     */
+    public int resetCallInfo() {
+        int callInfo = this.callInfo;
+        this.callInfo = 0;
+        return callInfo;
     }
 
     @Deprecated

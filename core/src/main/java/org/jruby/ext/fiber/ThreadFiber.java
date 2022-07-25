@@ -58,7 +58,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         return context.nil;
     }
     
-    @JRubyMethod(rest = true)
+    @JRubyMethod(rest = true, forward = true)
     public IRubyObject resume(ThreadContext context, IRubyObject[] values) {
         Ruby runtime = context.runtime;
 

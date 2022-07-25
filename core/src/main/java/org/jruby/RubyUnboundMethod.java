@@ -131,7 +131,7 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
         return newUnboundMethod(implementationModule, methodName, originModule, originName, entry);
     }
 
-    @JRubyMethod(required =  1, rest = true)
+    @JRubyMethod(required =  1, rest = true, forward = true)
     public IRubyObject bind_call(ThreadContext context, IRubyObject[] args, Block block) {
         IRubyObject receiver = args[0];
         IRubyObject[] newArgs = new IRubyObject[args.length - 1];

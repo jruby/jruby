@@ -2899,7 +2899,7 @@ public class RubyModule extends RubyObject {
         addAccessor(context, TypeConverter.checkID(context.runtime, name), PUBLIC, false, true);
     }
 
-    @JRubyMethod(rest = true)
+    @JRubyMethod(required = 1, rest = true)
     public IRubyObject ruby2_keywords(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
 
@@ -2929,7 +2929,7 @@ public class RubyModule extends RubyObject {
                         context.runtime.getWarnings().warn(IRubyWarnings.ID.MISCELLANEOUS, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (method accepts keywords or method does not accept argument splat)"));
                     }
                 } else {
-                    context.runtime.getWarnings().warn(IRubyWarnings.ID.MISCELLANEOUS, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (method accepts keywords or method does not accept argument splat)"));
+                    context.runtime.getWarnings().warn(IRubyWarnings.ID.MISCELLANEOUS, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (method not defined in Ruby)"));
                 }
             } else {
                 context.runtime.getWarnings().warn(IRubyWarnings.ID.MISCELLANEOUS, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (can only set in method defining module)"));

@@ -53,6 +53,8 @@ import org.jruby.runtime.callsite.CacheEntry;
 
 import java.util.List;
 
+import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
+
 /** 
  * The RubyMethod class represents a RubyMethod object.
  * 
@@ -112,24 +114,34 @@ public class RubyMethod extends AbstractRubyMethod {
     /** Call the method.
      * 
      */
-    @JRubyMethod(name = {"call", "[]"})
+    @JRubyMethod(name = {"call", "[]"}, forward = true)
     public IRubyObject call(ThreadContext context, Block block) {
         return method.call(context, receiver, sourceModule, methodName, block);
     }
-    @JRubyMethod(name = {"call", "[]"})
+    @JRubyMethod(name = {"call", "[]"}, forward = true)
     public IRubyObject call(ThreadContext context, IRubyObject arg, Block block) {
+        arg = dupIfKeywordRestAtCallsite(context, arg);
+
         return method.call(context, receiver, sourceModule, methodName, arg, block);
     }
-    @JRubyMethod(name = {"call", "[]"})
+    @JRubyMethod(name = {"call", "[]"}, forward = true)
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        arg1 = dupIfKeywordRestAtCallsite(context, arg1);
+
         return method.call(context, receiver, sourceModule, methodName, arg0, arg1, block);
     }
-    @JRubyMethod(name = {"call", "[]"})
+    @JRubyMethod(name = {"call", "[]"}, forward = true)
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        arg2 = dupIfKeywordRestAtCallsite(context, arg2);
+
         return method.call(context, receiver, sourceModule, methodName, arg0, arg1, arg2, block);
     }
-    @JRubyMethod(name = {"call", "[]"}, rest = true)
+    @JRubyMethod(name = {"call", "[]"}, rest = true, forward = true)
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
+        if (args.length > 0) {
+            args[args.length - 1] = dupIfKeywordRestAtCallsite(context, args[args.length - 1]);
+        }
+
         return method.call(context, receiver, sourceModule, methodName, args, block);
     }
 
@@ -227,8 +239,10 @@ public class RubyMethod extends AbstractRubyMethod {
         body = new MethodBlockBody(runtime.getStaticScopeFactory().getDummyScope(), signature, entry, argsDesc,
                 receiver, originModule, originName, getFilename(), line == -1 ? -1 : line - 1);
         Block b = MethodBlockBody.createMethodBlock(body);
-        
-        return RubyProc.newProc(runtime, b, Block.Type.LAMBDA);
+
+        RubyProc proc = RubyProc.newProc(runtime, b, Block.Type.LAMBDA);
+        proc.setFromMethod();
+        return proc;
     }
 
     @JRubyMethod

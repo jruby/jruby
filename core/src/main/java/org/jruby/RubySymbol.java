@@ -285,7 +285,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
 
     public boolean validLocalVariableName() {
-        return type == SymbolNameType.LOCAL;
+        return type == SymbolNameType.LOCAL && !"nil".equals(idString());
     }
 
     @Override

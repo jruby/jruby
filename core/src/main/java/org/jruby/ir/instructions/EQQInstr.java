@@ -28,14 +28,15 @@ public class EQQInstr extends CallInstr implements FixedArityInstr {
     protected EQQInstr(IRScope scope, Variable result, Operand v1, Operand v2, boolean splattedValue, boolean isPotentiallyRefined, CallSite callSite,
                        long callSiteID) {
         super(scope, Operation.EQQ, CallType.FUNCTIONAL, result, scope.getManager().getRuntime().newSymbol("==="),
-                v1, new Operand[] { v2 }, null, isPotentiallyRefined, callSite, callSiteID);
+                v1, new Operand[] { v2 }, null, 0, isPotentiallyRefined, callSite, callSiteID);
 
         this.splattedValue = splattedValue;
     }
 
     // normal constructor
     public EQQInstr(IRScope scope, Variable result, Operand v1, Operand v2, boolean splattedValue, boolean isPotentiallyRefined) {
-        super(scope, Operation.EQQ, CallType.FUNCTIONAL, result, scope.getManager().getRuntime().newSymbol("==="), v1, new Operand[] { v2 }, null, isPotentiallyRefined);
+        super(scope, Operation.EQQ, CallType.FUNCTIONAL, result, scope.getManager().getRuntime().newSymbol("==="), v1,
+                new Operand[] { v2 }, null, 0, isPotentiallyRefined);
 
         assert result != null: "EQQInstr result is null";
 
@@ -85,6 +86,9 @@ public class EQQInstr extends CallInstr implements FixedArityInstr {
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         IRubyObject recv = (IRubyObject) getReceiver().retrieve(context, self, currScope, currDynScope, temp);
         IRubyObject value = (IRubyObject) getArg1().retrieve(context, self, currScope, currDynScope, temp);
+
+        // enebo: don't think we need to set callinfo?
+
         return IRRuntimeHelpers.isEQQ(context, recv, value, callSite, isSplattedValue());
     }
 

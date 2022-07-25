@@ -82,6 +82,7 @@ import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.methodType;
 import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.runtime.Helpers.constructObjectArrayHandle;
+import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
 import static org.jruby.runtime.invokedynamic.InvokeDynamicSupport.findStatic;
 import static org.jruby.runtime.invokedynamic.InvokeDynamicSupport.findVirtual;
 import static org.jruby.util.CodegenUtils.p;
@@ -588,10 +589,10 @@ public class Bootstrap {
     public static RubyHash hash(ThreadContext context, boolean literal, IRubyObject[] pairs) {
         Ruby runtime = context.runtime;
         RubyHash hash = new RubyHash(runtime, pairs.length / 2 + 1);
-        hash.setKeywordArguments(!literal);
         for (int i = 0; i < pairs.length;) {
             hash.fastASetCheckString(runtime, pairs[i++], pairs[i++]);
         }
+        if (!literal) context.callInfo |= CALL_KEYWORD;
         return hash;
     }
 
