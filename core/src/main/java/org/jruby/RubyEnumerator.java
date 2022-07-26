@@ -543,12 +543,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
     public final IRubyObject size(ThreadContext context) {
         if (sizeFn != null) {
             IRubyObject[] args = methodArgs;
-            // FIXME: yuck...lots of size impls to add a length param to avoid this array creation.
-            if (methodArgsHasKeywords) {
-                IRubyObject[] newArgs = new IRubyObject[args.length - 1];
-                System.arraycopy(args, 0, newArgs, 0, args.length - 1);
-                args = newArgs;
-            }
+
             return sizeFn.size(context, object, args);
         }
 

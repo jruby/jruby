@@ -1954,8 +1954,8 @@ public class RubyKernel {
     public static IRubyObject obj_to_enum(final ThreadContext context, IRubyObject self, IRubyObject[] args, final Block block) {
         // to_enum is a bit strange in that it will propagate the arguments it passes to each element it calls.  We are determining
         // whether we have recieved keywords so we can propagate this info.
-        boolean keywords = (context.callInfo & ThreadContext.CALL_KEYWORD) != 0 && (context.callInfo & ThreadContext.CALL_KEYWORD_EMPTY) == 0;
-        context.resetCallInfo();
+        int callInfo = context.callInfo;
+        boolean keywords = (callInfo & ThreadContext.CALL_KEYWORD) != 0 && (callInfo & ThreadContext.CALL_KEYWORD_EMPTY) == 0;
 
         String method = "each";
         SizeFn sizeFn = null;
@@ -1966,10 +1966,14 @@ public class RubyKernel {
         }
 
         if (block.isGiven()) {
-            sizeFn = (ctx, recv, args1) -> block.yieldValues(ctx, args1);
+            sizeFn = (ctx, recv, args1) -> {
+                ctx.callInfo = callInfo;
+                return block.yieldValues(ctx, args1);
+            };
         }
 
-        return enumeratorizeWithSize(context, self, method, args, sizeFn, keywords);
+        context.resetCallInfo();
+        return enumeratorizeWithSize(context, self, method, args, sizeFn);
     }
 
     @JRubyMethod(name = { "__method__", "__callee__" }, module = true, visibility = PRIVATE, reads = METHODNAME, omit = true)
