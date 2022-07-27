@@ -8,3 +8,4 @@ fails:Module#refine when super is called in a refinement looks in the lexical sc
 wip:Module#refine for methods accessed indirectly is honored by Kernel#method
 wip:Module#refine for methods accessed indirectly is honored by Kernel#public_method
 wip:Module#refine for methods accessed indirectly is honored by Kernel#instance_method
+fails:Module#refine applies refinements to calls in the refine block
