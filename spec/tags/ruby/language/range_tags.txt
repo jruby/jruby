@@ -1,0 +1,1 @@
+fails:Literal Ranges creates a simple range as an object literal
