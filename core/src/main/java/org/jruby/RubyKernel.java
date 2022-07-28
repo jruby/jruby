@@ -1955,8 +1955,6 @@ public class RubyKernel {
         // to_enum is a bit strange in that it will propagate the arguments it passes to each element it calls.  We are determining
         // whether we have recieved keywords so we can propagate this info.
         int callInfo = context.callInfo;
-        boolean keywords = (callInfo & ThreadContext.CALL_KEYWORD) != 0 && (callInfo & ThreadContext.CALL_KEYWORD_EMPTY) == 0;
-
         String method = "each";
         SizeFn sizeFn = null;
 
@@ -1972,8 +1970,10 @@ public class RubyKernel {
             };
         }
 
+        boolean keywords = (callInfo & ThreadContext.CALL_KEYWORD) != 0 && (callInfo & ThreadContext.CALL_KEYWORD_EMPTY) == 0;
+
         context.resetCallInfo();
-        return enumeratorizeWithSize(context, self, method, args, sizeFn);
+        return enumeratorizeWithSize(context, self, method, args, sizeFn, keywords);
     }
 
     @JRubyMethod(name = { "__method__", "__callee__" }, module = true, visibility = PRIVATE, reads = METHODNAME, omit = true)
