@@ -1,1 +1,0 @@
-fails:Integer#zero? Integer#zero? uses Numeric#zero?
