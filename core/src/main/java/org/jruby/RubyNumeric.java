@@ -516,30 +516,21 @@ public class RubyNumeric extends RubyObject {
         return callCoerced(context, site, other, false);
     }
 
-    // beneath are rewritten coercions that reflect MRI logic, the aboves are used only by RubyBigDecimal
-
-    /** coerce_body
-     *
-     */
-    protected final IRubyObject coerceBody(ThreadContext context, IRubyObject other) {
-        return sites(context).coerce.call(context, other, other, this);
-    }
-
     /** do_coerce
      *
      */
     protected final RubyArray doCoerce(ThreadContext context, IRubyObject other, boolean err) {
-        if (!sites(context).respond_to_coerce.respondsTo(context, other, other)) {
+        IRubyObject ary = getMetaClass(other).finvokeChecked(context, other, sites(context).coerce_checked, this);
+
+        if (ary == null) {
             if (err) {
                 coerceFailed(context, other);
             }
             return null;
         }
         final IRubyObject $ex = context.getErrorInfo();
-        final IRubyObject result;
 
-        result = coerceBody(context, other);
-        return coerceResult(context.runtime, result, err);
+        return coerceResult(context.runtime, ary, err);
     }
 
     private static RubyArray coerceResult(final Ruby runtime, final IRubyObject result, final boolean err) {

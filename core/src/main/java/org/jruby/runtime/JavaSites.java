@@ -178,6 +178,7 @@ public class JavaSites {
     public static class NumericSites {
         public final RespondToCallSite respond_to_coerce = new RespondToCallSite("coerce");
         public final CallSite coerce = new FunctionalCachingCallSite("coerce");
+        public final CheckedSites coerce_checked = new CheckedSites("coerce");
         public final CallSite op_cmp = new FunctionalCachingCallSite("<=>");
         public final CachingCallSite op_minus = new FunctionalCachingCallSite("-");
         public final CallSite op_quo = new FunctionalCachingCallSite("/");
