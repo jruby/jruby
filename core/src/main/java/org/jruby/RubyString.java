@@ -4072,6 +4072,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 if (!excl && c == e) break;
                 c++;
                 if (excl && c == e) break;
+                context.pollThreadEvents();
             }
             return this;
         } else if (isAscii && ASCII.isDigit(value.getUnsafeBytes()[value.getBegin()]) && ASCII.isDigit(end.value.getUnsafeBytes()[end.value.getBegin()])) {
@@ -4082,6 +4083,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             while (s < send) {
                 if (!ASCII.isDigit(bytes[s] & 0xff)) return uptoCommonNoDigits(context, end, excl, block, asSymbol);
                 s++;
+                context.pollThreadEvents();
             }
             s = end.value.getBegin();
             send = s + end.value.getRealSize();
@@ -4090,6 +4092,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             while (s < send) {
                 if (!ASCII.isDigit(bytes[s] & 0xff)) return uptoCommonNoDigits(context, end, excl, block, asSymbol);
                 s++;
+                context.pollThreadEvents();
             }
 
             IRubyObject b = stringToInum(10);
@@ -4109,6 +4112,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                     RubyString str = RubyString.newStringNoCopy(runtime, to, USASCIIEncoding.INSTANCE, CR_7BIT);
                     block.yield(context, asSymbol ? runtime.newSymbol(str.toString()) : str);
                     bl++;
+                    context.pollThreadEvents();
                 }
             } else {
                 StringSites sites = sites(context);
@@ -4121,6 +4125,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                     RubyString str = RubyString.newStringNoCopy(runtime, to, USASCIIEncoding.INSTANCE, CR_7BIT);
                     block.yield(context, asSymbol ? runtime.newSymbol(str.toString()) : str);
                     b = sites.succ.call(context, b, b);
+                    context.pollThreadEvents();
                 }
             }
             return this;
@@ -4146,6 +4151,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             current = next.convertToString();
             if (excl && current.op_equal(context, end).isTrue()) break;
             if (current.getByteList().length() > end.getByteList().length() || current.getByteList().length() == 0) break;
+            context.pollThreadEvents();
         }
         return this;
     }
@@ -4173,6 +4179,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                     current = RubyString.newStringNoCopy(runtime, to, USASCIIEncoding.INSTANCE, CR_7BIT);
                     block.yield(context, current);
                     bl++;
+                    context.pollThreadEvents();
                 }
 
                 argsArr.eltSetOk(1, RubyFixnum.newFixnum(runtime, bl));
@@ -4188,6 +4195,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             if (next == null) break;
             current = next.convertToString();
             if (current.getByteList().length() == 0) break;
+            context.pollThreadEvents();
         }
 
         return this;

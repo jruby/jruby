@@ -504,6 +504,7 @@ public class RubyRange extends RubyObject {
             while (rangeLt(context, v, end) != null) {
                 callback.doCall(context, v);
                 v = v.callMethod(context, "succ");
+                context.pollThreadEvents();
             }
         } else {
             IRubyObject c;
@@ -513,6 +514,7 @@ public class RubyRange extends RubyObject {
                     break;
                 }
                 v = v.callMethod(context, "succ");
+                context.pollThreadEvents();
             }
         }
     }
@@ -601,6 +603,7 @@ public class RubyRange extends RubyObject {
                 } else {
                     for (IRubyObject beg = begin;; beg = beg.callMethod(context, "succ")) {
                         block.yield(context, beg);
+                        context.pollThreadEvents();
                     }
                 }
             }

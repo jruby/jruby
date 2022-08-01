@@ -230,6 +230,7 @@ public abstract class RubyInteger extends RubyNumeric {
             long i;
             for (i = from; i < to; i++) {
                 block.yield(context, nil);
+                context.pollThreadEvents();
             }
             if (i <= to) {
                 block.yield(context, nil);
@@ -239,6 +240,7 @@ public abstract class RubyInteger extends RubyNumeric {
             long i;
             for (i = from; i < to; i++) {
                 block.yield(context, RubyFixnum.newFixnum(runtime, i));
+                context.pollThreadEvents();
             }
             if (i <= to) {
                 block.yield(context, RubyFixnum.newFixnum(runtime, i));
