@@ -4676,7 +4676,7 @@ states[607] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
 states[608] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     Node node;
                     if (((Node)yyVals[-3+yyTop].value) != null) {
-                        node = support.appendToBlock(node_assign(((Node)yyVals[-3+yyTop].value), new GlobalVarNode(((Integer)yyVals[-5+yyTop].value), support.symbolID(lexer.DOLLAR_BANG))), ((Node)yyVals[-1+yyTop].value));
+                        node = support.appendToBlock(node_assign(((Node)yyVals[-3+yyTop].value), new GlobalVarNode(((Integer)yyVals[-5+yyTop].value), support.symbolID(lexer.DOLLAR_BANG))), support.makeNullNil(((Node)yyVals[-1+yyTop].value)));
                         if (((Node)yyVals[-1+yyTop].value) != null) {
                             node.setLine(((Integer)yyVals[-5+yyTop].value));
                         }

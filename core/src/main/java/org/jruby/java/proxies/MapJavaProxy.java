@@ -265,15 +265,18 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         }
 
         @Override
-        public RubyBoolean has_key_p(IRubyObject key) {
-            final Object convertedKey = key.toJava(Object.class);
-            return getRuntime().newBoolean( mapDelegate().containsKey(convertedKey) );
+        public boolean hasKey(IRubyObject key) {
+            return mapDelegate().containsKey(key);
+        }
+
+        @Override
+        public RubyBoolean has_key_p(ThreadContext context, IRubyObject key) {
+            return mapDelegate().containsKey(key.toJava(Object.class)) ? context.tru : context.fals;
         }
 
         @Override
         public RubyBoolean has_value_p(ThreadContext context, IRubyObject val) {
-            final Object convertedVal = val.toJava(Object.class);
-            return getRuntime().newBoolean( mapDelegate().containsValue(convertedVal) );
+            return mapDelegate().containsValue(val.toJava(Object.class)) ? context.tru : context.fals;
         }
 
         @Override

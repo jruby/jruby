@@ -42,6 +42,8 @@ import javax.script.ScriptEngineFactory;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 import javax.script.SimpleScriptContext;
+
+import org.jruby.Ruby;
 import org.jruby.embed.EmbedEvalUnit;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.exceptions.NoMethodError;
@@ -274,6 +276,11 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
 
             ScriptException se = new ScriptException("Error during evaluation of Ruby in " + file + " at line " + line + ": " + e.getMessage());
             se.initCause(e);
+
+            // Exception is about to be propagated out to Java, so clear $!
+            Ruby runtime = e.getException().getRuntime();
+            runtime.getCurrentContext().setErrorInfo(runtime.getNil());
+
             return se;
         }
 
