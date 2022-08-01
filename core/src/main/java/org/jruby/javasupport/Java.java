@@ -247,13 +247,8 @@ public class Java implements Library {
     public static RubyModule setProxyClass(final Ruby runtime, final RubyModule target,
                                            final String constName, final Class<?> javaClass) {
         final RubyModule proxyClass = getProxyClass(runtime, javaClass);
-        IRubyObject existing = target.getConstantNoConstMissing(constName);
 
-        if ( existing != null && existing != RubyBasicObject.UNDEF && existing != proxyClass ) {
-            runtime.getWarnings().warn("replacing " + existing + " with " + proxyClass + " in constant '" + constName + " on class/module " + target);
-        }
-
-        target.setConstantQuiet(constName, proxyClass);
+        target.setConstant(constName, proxyClass);
         return proxyClass;
     }
 
