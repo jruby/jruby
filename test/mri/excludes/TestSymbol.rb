@@ -8,3 +8,4 @@ exclude :test_to_proc_yield, "works but 'Timeout::Error: execution of assert_rub
 exclude :test_symbol_encoding, "needs investigation"
 exclude :test_to_proc_arg_with_refinements, "[2.6] fails:  undefined method `hoge' for #<TestSymbol::TestToPRocArgWithRefinements:0xc267ef4>"
 exclude :test_to_proc_arg_with_refinements_override, "[2.6] fails:  undefined method `hoge' for #<TestSymbol::TestToPRocArgWithRefinements:0xc267ef4>"
+exclude :test_symbol_fstr_memory_leak, "no working assert_no_memory_leak method"
