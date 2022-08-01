@@ -40,6 +40,7 @@ import java.math.BigInteger;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
@@ -990,6 +991,120 @@ public class RubyBignum extends RubyInteger {
         }
 
         return value.testBit((int)position) ? RubyFixnum.one(context.runtime) : RubyFixnum.zero(context.runtime);
+    }
+
+    private enum BIGNUM_OP_T {
+        BIGNUM_OP_GT,
+        BIGNUM_OP_GE,
+        BIGNUM_OP_LT,
+        BIGNUM_OP_LE
+    };
+
+    // mri : big_op
+    private IRubyObject big_op(ThreadContext context, IRubyObject other, BIGNUM_OP_T op) {
+        IRubyObject rel;
+
+        if (other instanceof RubyInteger) {
+            rel = op_cmp(context, other);
+        } else if (other instanceof RubyFloat) {
+            rel = float_cmp(context, (RubyFloat)other);
+        } else {
+            CallSite site;
+            switch (op) {
+                case BIGNUM_OP_GT:
+                    site = sites(context).op_gt;
+                    break;
+                case BIGNUM_OP_GE:
+                    site = sites(context).op_ge;
+                    break;
+                case BIGNUM_OP_LT:
+                    site = sites(context).op_lt;
+                    break;
+                case BIGNUM_OP_LE:
+                    site = sites(context).op_le;
+                    break;
+            }
+            return coerceRelOp(context, sites(context).op_gt, other);
+        }
+
+        if (rel.isNil()) return context.fals;
+        int n = fix2int(rel);
+
+        IRubyObject ret = context.nil;
+        switch (op) {
+            case BIGNUM_OP_GT:
+                ret = n > 0 ? context.tru : context.fals;
+                break;
+            case BIGNUM_OP_GE:
+                ret =  n >= 0 ? context.tru : context.fals;
+                break;
+            case BIGNUM_OP_LT:
+                ret = n < 0 ? context.tru : context.fals;
+                break;
+            case BIGNUM_OP_LE:
+                ret = n <= 0 ? context.tru : context.fals;
+                break;
+        }
+        return ret;
+    }
+
+    @Override
+    @JRubyMethod(name = ">")
+    public IRubyObject op_gt(ThreadContext context, IRubyObject other) {
+        return big_op(context, other, BIGNUM_OP_T.BIGNUM_OP_GT);
+    }
+
+    @Override
+    @JRubyMethod(name = "<")
+    public IRubyObject op_lt(ThreadContext context, IRubyObject other) {
+        return big_op(context, other, BIGNUM_OP_T.BIGNUM_OP_LT);
+    }
+
+    @Override
+    @JRubyMethod(name = ">=")
+    public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
+        return big_op(context, other, BIGNUM_OP_T.BIGNUM_OP_GE);
+    }
+
+    @Override
+    @JRubyMethod(name = "<=")
+    public IRubyObject op_le(ThreadContext context, IRubyObject other) {
+        return big_op(context, other, BIGNUM_OP_T.BIGNUM_OP_LE);
+    }
+
+    // mri : rb_integer_float_cmp
+    private IRubyObject float_cmp(ThreadContext context, RubyFloat y) {
+        Ruby runtime = context.runtime;
+        double yd = y.value;
+        double yi, yf;
+
+        if (Double.isNaN(yd)) {
+            return context.nil;
+        }
+
+        if (Double.isInfinite(yd)) {
+            if (yd > 0.0) {
+                return RubyFixnum.one(runtime);
+            } else {
+                return RubyFixnum.minus_one(runtime);
+            }
+        }
+
+        if (yd > 0.0) {
+            yi = Math.floor(yd);
+        } else {
+            yi = Math.ceil(yd);
+        }
+        yf = yd - yi;
+
+        IRubyObject rel = op_cmp(context, newBignorm(runtime, yi));
+        if (yf == 0.0 || !rel.equals(RubyFixnum.zero(runtime))) {
+            return rel;
+        }
+        if (yf < 0.0) {
+            return RubyFixnum.one(runtime);
+        }
+        return RubyFixnum.minus_one(runtime);
     }
 
     @Override
