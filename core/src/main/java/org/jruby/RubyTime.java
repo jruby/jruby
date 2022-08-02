@@ -110,8 +110,8 @@ public class RubyTime extends RubyObject {
 
     private final static DateTimeFormatter INSPECT_FORMATTER = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss").withLocale(Locale.ENGLISH);
     private final static DateTimeFormatter TZ_FORMATTER = DateTimeFormat.forPattern(" Z").withLocale(Locale.ENGLISH);
-    private final static DateTimeFormatter TO_S_FORMATTER = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSS Z").withLocale(Locale.ENGLISH);
-    private final static DateTimeFormatter TO_S_UTC_FORMATTER = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSS 'UTC'").withLocale(Locale.ENGLISH);
+    private final static DateTimeFormatter TO_S_FORMATTER = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss Z").withLocale(Locale.ENGLISH);
+    private final static DateTimeFormatter TO_S_UTC_FORMATTER = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss 'UTC'").withLocale(Locale.ENGLISH);
     // There are two different popular TZ formats: legacy (AST+3:00:00, GMT-3), and
     // newer one (US/Pacific, America/Los_Angeles). This pattern is to detect
     // the legacy TZ format in order to convert it to the newer format
