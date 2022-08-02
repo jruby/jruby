@@ -110,8 +110,8 @@ public class RubyTime extends RubyObject {
 
     private final static DateTimeFormatter INSPECT_FORMATTER = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss").withLocale(Locale.ENGLISH);
     private final static DateTimeFormatter TZ_FORMATTER = DateTimeFormat.forPattern(" Z").withLocale(Locale.ENGLISH);
-    private final static DateTimeFormatter TO_S_FORMATTER = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss Z").withLocale(Locale.ENGLISH);
-    private final static DateTimeFormatter TO_S_UTC_FORMATTER = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss 'UTC'").withLocale(Locale.ENGLISH);
+    private final static DateTimeFormatter TO_S_FORMATTER = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSS Z").withLocale(Locale.ENGLISH);
+    private final static DateTimeFormatter TO_S_UTC_FORMATTER = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSS 'UTC'").withLocale(Locale.ENGLISH);
     // There are two different popular TZ formats: legacy (AST+3:00:00, GMT-3), and
     // newer one (US/Pacific, America/Los_Angeles). This pattern is to detect
     // the legacy TZ format in order to convert it to the newer format
@@ -899,7 +899,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod
     public IRubyObject to_s() {
         DateTimeFormatter simpleDateFormat = isUTC() ? TO_S_UTC_FORMATTER : TO_S_FORMATTER;
-
+        
         return RubyString.newString(getRuntime(), simpleDateFormat.print(getInspectDateTime()), USASCIIEncoding.INSTANCE);
     }
 
@@ -1544,7 +1544,10 @@ public class RubyTime extends RubyObject {
             millisecs = RubyNumeric.num2long(arg1) * 1000;
         }
 
-        if (!(arg3 instanceof RubySymbol)) {
+        if (arg3 instanceof RubyNil) {
+            // Default value according the Ruby time.c
+            arg3 = runtime.newSymbol("microsecond");
+        } else if (!(arg3 instanceof RubySymbol)) {
             throw context.runtime.newArgumentError("unexpected unit " + arg3);
         }
 
