@@ -100,6 +100,12 @@ rescue LoadError
 end
 
 begin
-  require 'jar_install_post_install_hook'
+  Gem.post_install do |gem_installer|
+    # defer this require until the post-install hook is actually called
+    # since otherwise Bundler will not be able to activate any other
+    # version of jar-dependencies than the pre-packaged default gem.
+    require "jars/post_install_hook"
+    Jars.post_install_hook(gem_installer)
+  end
 rescue LoadError
 end
