@@ -899,7 +899,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod
     public IRubyObject to_s() {
         DateTimeFormatter simpleDateFormat = isUTC() ? TO_S_UTC_FORMATTER : TO_S_FORMATTER;
-        
+
         return RubyString.newString(getRuntime(), simpleDateFormat.print(getInspectDateTime()), USASCIIEncoding.INSTANCE);
     }
 
