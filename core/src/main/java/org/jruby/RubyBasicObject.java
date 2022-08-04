@@ -1968,7 +1968,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         private void callFinalizer(IRubyObject finalizer) {
             ThreadContext context = finalizer.getRuntime().getCurrentContext();
-            sites(context).call.call(context, finalizer, finalizer, id);
+            try {
+                sites(context).call.call(context, finalizer, finalizer, id);
+            } finally {
+                // clear last error so it is not seen by future finalizers
+                context.setErrorInfo(context.nil);
+            }
         }
     }
 
