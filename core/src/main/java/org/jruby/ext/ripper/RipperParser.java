@@ -2278,17 +2278,15 @@ states[230] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop, int yyc
   return yyVal;
 };
 states[231] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop, int yychar) -> {
-                    yyVal = p.dispatch("on_assign_error", 
-                                    p.dispatch("on_opassign", 
-                                               p.dispatch("on_const_path_field", ((IRubyObject)yyVals[-4+yyTop]), ((IRubyObject)yyVals[-2+yyTop])),
-                                               ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_opassign", 
+                                    p.dispatch("on_const_path_field", ((IRubyObject)yyVals[-4+yyTop]), ((IRubyObject)yyVals[-2+yyTop])),
+                                    ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
   return yyVal;
 };
 states[232] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop, int yychar) -> {
-                    yyVal = p.dispatch("on_assign_error", 
-                                    p.dispatch("on_opassign", 
-                                               p.dispatch("on_top_const_field", ((IRubyObject)yyVals[-2+yyTop])),
-                                               ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_opassign", 
+                                    p.dispatch("on_top_const_field", ((IRubyObject)yyVals[-2+yyTop])),
+                                    ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
   return yyVal;
 };
 states[233] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop, int yychar) -> {
@@ -3890,6 +3888,6 @@ states[652] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop, int yyc
   return yyVal;
 };
 }
-					// line 2263 "RipperParser.y"
+					// line 2261 "RipperParser.y"
 }
-					// line 9839 "-"
+					// line 9837 "-"

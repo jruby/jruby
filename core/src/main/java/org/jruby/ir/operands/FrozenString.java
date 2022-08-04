@@ -103,6 +103,12 @@ public class FrozenString extends ImmutableLiteral<RubyString> implements String
         return IRRuntimeHelpers.newFrozenString(context, bytelist, coderange, file, line);
     }
 
+    // allways call createCacheObject (GH-7229)
+    @Override
+    public boolean isCached() {
+        return false;
+    }
+
     @Override
     public void visit(IRVisitor visitor) {
         visitor.FrozenString(this);

@@ -6,8 +6,7 @@ import org.junit.Test;
 import java.io.File;
 import java.net.URL;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.*;
 import static org.awaitility.Awaitility.waitAtMost;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
@@ -22,7 +21,7 @@ public class JarCacheTest {
     }
 
     /**
-     * Verifies that updating a JAR (i.e. change of last modification time) is recognized by the {@link JarCache} after at most 500ms.
+     * Verifies that updating a JAR (i.e. change of last modification time) is recognized by the {@link JarCache} after at most 1s.
      */
     @Test
     public void updateJar() {
@@ -33,7 +32,7 @@ public class JarCacheTest {
         assertNotNull(index);
 
         jarFile.setLastModified(System.currentTimeMillis() - MINUTES.toMillis(1));
-        waitAtMost(750, MILLISECONDS).untilAsserted(() -> {
+        waitAtMost(1, SECONDS).untilAsserted(() -> {
             JarCache.JarIndex updatedIndex = jarCache.getIndex(resource.getFile());
             assertNotSame(index, updatedIndex);
         });

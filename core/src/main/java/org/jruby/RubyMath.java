@@ -539,8 +539,15 @@ public class RubyMath {
      */
     @JRubyMethod(name = "ldexp", required = 2, module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat ldexp(ThreadContext context, IRubyObject recv, IRubyObject mantissa, IRubyObject exponent) {
-        return RubyFloat.newFloat(context.runtime, 
-                RubyNumeric.num2dbl(context, mantissa) * Math.pow(2.0, RubyNumeric.num2int(exponent)));
+        double m = RubyNumeric.num2dbl(context, mantissa);
+        int e = RubyNumeric.num2int(exponent);
+
+        if (e > 1023) {
+            // avoid overflow. Math.power(2.0, 1024) is greater than Math.MAX_VALUE.
+            return RubyFloat.newFloat(context.runtime, m * Math.pow(2.0, e - 1023) * Math.pow(2.0, 1023));
+        }
+
+        return RubyFloat.newFloat(context.runtime, m * Math.pow(2.0, e));
     }
 
     public static RubyFloat ldexp19(ThreadContext context, IRubyObject recv, IRubyObject mantissa, IRubyObject exponent) {

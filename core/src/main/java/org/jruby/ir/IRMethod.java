@@ -198,8 +198,9 @@ public class IRMethod extends IRScope {
     private synchronized void buildMethodImpl() {
         if (hasBeenBuilt()) return;
 
-        IRBuilder.topIRBuilder(getManager(), this).
-                defineMethodInner(defNode, getLexicalParent(), getCoverageMode()); // sets interpreterContext
+        IRBuilder builder = IRBuilder.topIRBuilder(getManager(), this);
+        builder.executesOnce = false; // set up so nested things (modules+) which think it could execute once knows it cannot (it is in a method).
+        builder.defineMethodInner(defNode, getLexicalParent(), getCoverageMode()); // sets interpreterContext
         this.defNode = null;
     }
 

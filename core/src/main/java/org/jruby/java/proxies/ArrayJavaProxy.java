@@ -586,10 +586,12 @@ public final class ArrayJavaProxy extends JavaProxy {
     // NOTE: special case as we want to inspect like a Character wrapper e.g. ['', 'a']
     private static RubyString inspectCharArrayPart(final Ruby runtime, final StringBuilder buffer, final char[] ary, final int len) {
         buffer.append('[');
-        for (int i = 0; ; i++) {
-            inspectCharValue(buffer, ary[i]);
-            if (i == len - 1) break;
-            buffer.append(", ");
+        if (len > 0) {
+            for (int i = 0; ; i++) {
+                inspectCharValue(buffer, ary[i]);
+                if (i == len - 1) break;
+                buffer.append(", ");
+            }
         }
         buffer.append(']');
         return RubyString.newString(runtime, buffer.append('>'));
