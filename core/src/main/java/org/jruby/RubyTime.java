@@ -45,6 +45,7 @@ import org.joda.time.*;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.tz.FixedDateTimeZone;
+import org.jruby.Ruby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
@@ -951,7 +952,16 @@ public class RubyTime extends RubyObject {
     @JRubyMethod
     @Override
     public RubyArray to_a(ThreadContext context) {
-        return RubyArray.newArrayNoCopy(context.runtime, sec(), min(), hour(), mday(), month(), year(), wday(), yday(), isdst(), zone());
+        return RubyArray.newArrayNoCopy(
+            context.runtime,
+            sec(), min(), hour(),
+            mday(), month(), year(),
+            wday(), yday(), isdst(),
+            getTimezoneShortName(context.runtime));
+    }
+
+    private RubyString getTimezoneShortName(Ruby runtime) {
+        return RubyString.newString(runtime, dt.getZone().getShortName(dt.getMillis()));
     }
 
     @JRubyMethod
