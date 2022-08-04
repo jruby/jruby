@@ -30,6 +30,7 @@ import static org.jruby.runtime.Visibility.PUBLIC;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Map;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;

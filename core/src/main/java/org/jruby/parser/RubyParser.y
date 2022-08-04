@@ -2720,7 +2720,7 @@ p_const         : tCOLON3 cname {
 opt_rescue      : k_rescue exc_list exc_var then compstmt opt_rescue {
                     Node node;
                     if ($3 != null) {
-                        node = support.appendToBlock(node_assign($3, new GlobalVarNode($1, support.symbolID(lexer.DOLLAR_BANG))), $5);
+                        node = support.appendToBlock(node_assign($3, new GlobalVarNode($1, support.symbolID(lexer.DOLLAR_BANG))), support.makeNullNil($5));
                         if ($5 != null) {
                             node.setLine($1);
                         }

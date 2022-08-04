@@ -281,6 +281,9 @@ describe "A Java primitive Array of type" do
 
       arr = Java::char[2].new; arr[1] = 'ō' # null char + multi-byte char
       expect(arr.inspect).to eql "#<Java::char[2]: ['\u0000', 'ō']>"
+
+      arr = ''.to_java.to_char_array
+      expect(arr.inspect).to eql "#<Java::char[0]: []>"
     end
 
     it 'handles equality to another array' do

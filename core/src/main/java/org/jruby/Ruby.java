@@ -5792,7 +5792,7 @@ public final class Ruby implements Constantizable {
      *
      * Access must be synchronized.
      */
-    private final ConcurrentHashMap<FStringEqual, WeakReference<RubyString>> dedupMap = new ConcurrentHashMap<>();
+    private final Map<FStringEqual, WeakReference<RubyString>> dedupMap = new ConcurrentWeakHashMap<>();
 
     private static final AtomicInteger RUNTIME_NUMBER = new AtomicInteger(0);
     private final int runtimeNumber = RUNTIME_NUMBER.getAndIncrement();

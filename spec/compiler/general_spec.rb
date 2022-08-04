@@ -1349,5 +1349,10 @@ modes.each do |mode|
       run('org') {|x| expect(x).to eq(org)}
       run('com') {|x| expect(x).to eq(com)}
     end
+
+    # See jruby/jruby#7246, test must loop twice to hit optimized dispatch
+    it "dispatches to Java using a block to implement an interface" do
+      run('ary = []; 2.times { java.util.ArrayList.new([1]).forEach { |e| ary << e } }; ary') {|ary| ary.should == [1, 1]}
+    end
   end
 end

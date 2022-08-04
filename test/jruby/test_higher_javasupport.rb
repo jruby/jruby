@@ -1975,6 +1975,20 @@ CLASSDEF
     def checkPermission( perm ); @checked << perm end
   end
 
+  def test_method_bind_edge_cases # GH-7244
+    # exercise JI hitting the edge case with CHM's CollectionView (implements Collection)
+    # implementing most methods that are also present in the java.util.Set interface
+    # CHM's keySet than returns a KeySetView (extends CollectionView implements Set)
+    java.util.concurrent.ConcurrentHashMap.new.keySet.toArray # was failing prior to bug fix
+    map = java.util.concurrent.ConcurrentHashMap.new(1 => '11')
+    assert_equal 1, map.keySet.size
+    key_set = map.key_set
+    assert_equal false, key_set.isEmpty
+    key_set.remove(1)
+    assert key_set.empty?
+    key_set.clear
+  end
+
   private
 
   def with_stderr_captured
