@@ -1160,6 +1160,7 @@ public class RubyNumeric extends RubyObject {
         if (inf) {
             for (;; i += diff) {
                 block.yield(context, RubyFixnum.newFixnum(runtime, i));
+                context.pollThreadEvents();
             }
         } else {
             // We must avoid integer overflows in "i += step".
@@ -1169,6 +1170,7 @@ public class RubyNumeric extends RubyObject {
                 if (end > tov) tov = end;
                 for (; i >= tov; i += diff) {
                     block.yield(context, RubyFixnum.newFixnum(runtime, i));
+                    context.pollThreadEvents();
                 }
                 if (i >= end) {
                     block.yield(context, RubyFixnum.newFixnum(runtime, i));
@@ -1178,6 +1180,7 @@ public class RubyNumeric extends RubyObject {
                 if (end < tov) tov = end;
                 for (; i <= tov; i += diff) {
                     block.yield(context, RubyFixnum.newFixnum(runtime, i));
+                    context.pollThreadEvents();
                 }
                 if (i <= end) {
                     block.yield(context, RubyFixnum.newFixnum(runtime, i));
@@ -1201,12 +1204,14 @@ public class RubyNumeric extends RubyObject {
             RubyFloat value = RubyFloat.newFloat(runtime, beg);
             for (;;) {
                 block.yield(context, value);
+                context.pollThreadEvents();
             }
         } else {
             for (i=0; i<n; i++) {
                 double d = i*unit+beg;
                 if (unit >= 0 ? end < d : d < end) d = end;
                 block.yield(context, RubyFloat.newFloat(runtime, d));
+                context.pollThreadEvents();
             }
         }
     }
@@ -1217,12 +1222,14 @@ public class RubyNumeric extends RubyObject {
         if (inf) {
             for (;; i = sites(context).op_plus.call(context, i, i, step)) {
                 block.yield(context, i);
+                context.pollThreadEvents();
             }
         } else {
             CallSite cmpSite = desc ? sites(context).op_lt : sites(context).op_gt;
 
             for (; !cmpSite.call(context, i, i, to).isTrue(); i = sites(context).op_plus.call(context, i, i, step)) {
                 block.yield(context, i);
+                context.pollThreadEvents();
             }
         }
     }
@@ -1330,11 +1337,13 @@ public class RubyNumeric extends RubyObject {
                 /* if unit is infinity, i*unit+beg is NaN */
                 if (n > 0) {
                     block.yield(context, dbl2num(context.runtime, beg));
+                    context.pollThreadEvents();
                 }
             } else if (unit == 0) {
                 IRubyObject val = dbl2num(context.runtime, beg);
                 for (;;) {
                     block.yield(context, val);
+                    context.pollThreadEvents();
                 }
             } else {
                 for (long i=0; i < n; i++) {
@@ -1343,6 +1352,7 @@ public class RubyNumeric extends RubyObject {
                         d = end;
                     }
                     block.yield(context, dbl2num(context.runtime, d));
+                    context.pollThreadEvents();
                 }
             }
 
