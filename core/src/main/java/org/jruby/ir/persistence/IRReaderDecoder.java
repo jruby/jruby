@@ -73,7 +73,7 @@ public interface IRReaderDecoder {
     public IRScope decodeScope();
 
     public TemporaryVariableType decodeTemporaryVariableType();
-    public ByteList getFilename();
+    public String getFilename();
 
     /**
      * Duplicate this decoder to isolate any state changes.

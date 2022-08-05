@@ -74,8 +74,7 @@ public class IRWriter {
 
         if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("NAME = " + scope.getId());
         if (scope instanceof IRScriptBody) {
-            if (shouldLog(file)) System.out.println("persistScopeHeader: file = " + scope.getFile());
-            file.encode(scope.getFile());
+            // filename comes in at load time, to allow for precompilation and relocating sources
         } else {
 
             if (shouldLog(file)) System.out.println("persistScopeHeader: id   = " + scope.getId());
@@ -95,7 +94,6 @@ public class IRWriter {
         file.encode(staticScope.getType());
         // This naively looks like a bug because these represent id's and not properly encoded names BUT all of those
         // symbols for these ids will be created when IRScope loads the LocalVariable versions of these...so this is ok.
-        file.encode(staticScope.getFile());
         file.encode(staticScope.getVariables());
         file.encode(staticScope.getFirstKeywordIndex());
         file.encode(staticScope.getSignature());
