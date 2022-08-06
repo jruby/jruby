@@ -415,6 +415,9 @@ public class RubyNumeric extends RubyObject {
      *          conversion failed.
      */
     public static IRubyObject str2inum(Ruby runtime, RubyString str, int base, boolean strict, boolean exception) {
+        if (!str.getEncoding().isAsciiCompatible()) {
+            throw runtime.newEncodingCompatibilityError("ASCII incompatible encoding: " + str.getEncoding());
+        }
         ByteList s = str.getByteList();
         return ConvertBytes.byteListToInum(runtime, s, base, strict, exception);
     }
