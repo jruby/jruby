@@ -418,35 +418,30 @@ public class TypeConverter {
         final Ruby runtime = context.runtime;
         IRubyObject tmp;
 
-        for (;;) {
-            switch (val.getMetaClass().getClassIndex()) {
-                case FLOAT:
-                    if (base != 0) return raiseIntegerBaseError(context, exception);
-                    RubyFloat flote = (RubyFloat) val;
-                    if (!exception && !Double.isFinite(flote.getDoubleValue())) return context.nil;
-                    return RubyNumeric.dbl2ival(context.runtime, flote.getValue());
-                case INTEGER:
-                    if (base != 0) return raiseIntegerBaseError(context, exception);
-                    return val;
-                case STRING:
-                    return RubyNumeric.str2inum(context.runtime, (RubyString) val, base, true, exception);
-                case NIL:
-                    if (base != 0) return raiseIntegerBaseError(context, exception);
-                    if (!exception) return context.nil;
-                    throw context.runtime.newTypeError("can't convert nil into Integer");
-                default: // MRI checks String sub-classes
-                    if (val instanceof RubyString) {
-                        return RubyNumeric.str2inum(context.runtime, (RubyString) val, base, true);
-                    }
-            }
+        if (base != 0) {
+            tmp = TypeConverter.checkStringType(context.runtime, val);
 
-            if (base != 0) {
-                tmp = TypeConverter.checkStringType(context.runtime, val);
-                if (tmp != context.nil) continue;
-                return raiseIntegerBaseError(context, exception);
+            if (!tmp.isNil()) {
+                val = tmp;
+            } else if (!exception) {
+                return context.nil;
+            } else {
+                //raise
+                return raiseIntegerBaseError(context, true);
             }
+        }
 
-            break;
+        if (val instanceof RubyFloat) {
+            RubyFloat f = (RubyFloat) val;
+            if (!exception && !Double.isFinite(f.getDoubleValue())) return context.nil;
+            return RubyNumeric.dbl2ival(context.runtime, f.getValue());
+        } else if (val instanceof RubyInteger) {
+            return val;
+        } else if (val instanceof RubyString) {
+            return RubyNumeric.str2inum(context.runtime, (RubyString) val, base, true, exception);
+        } else if (val.isNil()) {
+            if (!exception) return context.nil;
+            throw context.runtime.newTypeError("can't convert nil into Integer");
         }
 
         try {
