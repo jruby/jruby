@@ -973,7 +973,7 @@ public class RubyBignum extends RubyInteger {
      *
      */
     @Override
-    public RubyFixnum op_aref(ThreadContext context, IRubyObject other) {
+    protected IRubyObject op_aref_subclass(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyBignum) {
             // Need to normalize first
             other = bignorm(context.runtime, ((RubyBignum) other).value);
