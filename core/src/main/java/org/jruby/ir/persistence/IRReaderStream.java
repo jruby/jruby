@@ -50,18 +50,18 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
     private final List<IRScope> scopes;
     private IRScope currentScope; // FIXME: This is not thread-safe and more than a little gross
     /** Filename to use for the script */
-    private final ByteList filename;
+    private final String filename;
     private RubySymbol[] constantPool;
 
-    public IRReaderStream(IRManager manager, byte[] bytes, ByteList filename) {
+    public IRReaderStream(IRManager manager, byte[] bytes, String filename) {
         this(ByteBuffer.wrap(bytes), manager, new ArrayList<>(), null, filename, null);
     }
 
-    public IRReaderStream(IRManager manager, File file, ByteList filename) {
+    public IRReaderStream(IRManager manager, File file, String filename) {
         this(readingIntoBuffer(file), manager, new ArrayList<>(), null, filename, null);
     }
 
-    private IRReaderStream(ByteBuffer buf, IRManager manager, List<IRScope> scopes, IRScope currentScope, ByteList filename, RubySymbol[] constantPool) {
+    private IRReaderStream(ByteBuffer buf, IRManager manager, List<IRScope> scopes, IRScope currentScope, String filename, RubySymbol[] constantPool) {
         this.buf = buf;
         this.manager = manager;
         this.scopes = scopes;
@@ -84,7 +84,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
     }
 
     @Override
-    public ByteList getFilename() {
+    public String getFilename() {
         return filename;
     }
 

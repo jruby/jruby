@@ -399,22 +399,22 @@ public class JVMVisitor extends IRVisitor {
                 jvm.cls(),
                 Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
                 "run",
-                sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, boolean.class), null, null);
+                sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class, boolean.class), null, null);
         method.start();
 
         // save self class
         method.aload(1);
         method.invokeinterface(p(IRubyObject.class), "getMetaClass", sig(RubyClass.class));
-        method.astore(3);
+        method.astore(4);
 
         // instantiate script scope
         registerScopeField(script, scopeField);
 
         // FIXME: duplicated from IRBytecodeAdapter6
         method.getstatic(clsName, scopeField, ci(StaticScope.class));
-        method.astore(4);
+        method.astore(5);
 
-        method.aload(4);
+        method.aload(5);
 
         org.objectweb.asm.Label after = new org.objectweb.asm.Label();
         method.ifnonnull(after);
@@ -422,22 +422,22 @@ public class JVMVisitor extends IRVisitor {
             method.ldc(staticScopeDescriptorMap.get(scopeField));
             method.aconst_null();
             method.invokestatic(p(Helpers.class), "restoreScope", sig(StaticScope.class, String.class, StaticScope.class));
-            method.astore(4);
+            method.astore(5);
 
             // set scope's module
-            method.aload(4);
+            method.aload(5);
             method.aload(0);
             method.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
             method.invokevirtual(p(Ruby.class), "getObject", sig(RubyClass.class));
             method.invokevirtual(p(StaticScope.class), "setModule", sig(void.class, RubyModule.class));
 
             // set scope's filename
-            method.aload(4);
-            method.ldc(script.getFile());
+            method.aload(5);
+            method.aload(2);
             method.invokevirtual(p(StaticScope.class), "setFile", sig(void.class, String.class));
 
             // wrapping logic for load
-            method.iload(2);
+            method.iload(3);
 
             org.objectweb.asm.Label nowrap = new org.objectweb.asm.Label();
             method.iffalse(nowrap);
@@ -445,29 +445,29 @@ public class JVMVisitor extends IRVisitor {
                 method.aload(0);
                 method.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
                 method.aload(1); // self
-                method.aload(4);
+                method.aload(5);
                 method.invokevirtual(p(Ruby.class), "setupWrappedToplevel", sig(StaticScope.class, IRubyObject.class, StaticScope.class));
-                method.astore(4); // update to new scope
+                method.astore(5); // update to new scope
 
                 // set scope's filename
-                method.aload(4);
-                method.ldc(script.getFile());
+                method.aload(5);
+                method.aload(2);
                 method.invokevirtual(p(StaticScope.class), "setFile", sig(void.class, String.class));
             }
             method.label(nowrap);
 
-            method.aload(4);
+            method.aload(5);
             method.putstatic(clsName, scopeField, ci(StaticScope.class));
         }
         method.label(after);
 
         // execute script method
         method.aload(0); // context
-        method.aload(4); // static scope
+        method.aload(5); // static scope
         method.aload(1); // self
         method.aconst_null(); // args
         method.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class)); // block
-        method.aload(3); // self class
+        method.aload(4); // self class
         method.aconst_null(); // call name
 
         method.invokestatic(clsName, scopeName, sig(signature.type().returnType(), signature.type().parameterArray()));
