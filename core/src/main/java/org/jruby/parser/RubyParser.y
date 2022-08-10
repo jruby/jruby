@@ -221,7 +221,6 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
 %token <@@keyword_type@@> keyword__LINE__      /* {{`__LINE__'}} */
 %token <@@keyword_type@@> keyword__FILE__      /* {{`__FILE__'}} */
 %token <@@keyword_type@@> keyword__ENCODING__  /* {{`__ENCODING__'}} */
-  
 %token <@@token_type@@> tIDENTIFIER          /* {{local variable or method}} */
 %token <@@token_type@@> tFID                 /* {{method}} */
 %token <@@token_type@@> tGVAR                /* {{global variable}} */
@@ -315,7 +314,8 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
 %type <@@prod_p_kw_type@@> p_kw
   /* keyword_variable + user_variable are inlined into the grammar */
 %type <@@token_type@@> sym operation operation2 operation3
-%type <@@token_type@@> cname op fname 
+%type <@@token_type@@> cname op
+%type <@@token_type@@> fname 
 %type <@@prod_f_rest_arg_type@@> f_rest_arg
 %type <@@prod_f_block_arg_type@@> f_block_arg opt_f_block_arg
 %type <@@token_type@@> f_norm_arg f_bad_arg
@@ -824,12 +824,13 @@ expr            : command_call
 def_name        : fname {
                     p.pushLocalScope();
                     LexContext ctxt = p.getLexContext();
-                    RubySymbol name = p.symbolID($1);
-                    p.numparam_name(name);
+                    RubySymbol name = p.get_id($1);
+                    p.numparam_name($1);
                     /*%%%*/
                     $$ = new DefHolder(p.symbolID($1), p.getCurrentArg(), (LexContext) ctxt.clone());
+                    // Changed from MRI
                     /*% 
-                        $$ = p.new_array($1); // FIXME: No ctxt. no current arg
+                        $$ = p.new_array(name); // FIXME: No ctxt. no current arg
                     %*/
                     ctxt.in_def = true;
                     p.setCurrentArg(null);
@@ -1414,7 +1415,10 @@ fitem           : fname {  // LiteralNode
                     /*%%%*/
                     $$ =  new LiteralNode(p.src_line(), p.symbolID($1));
                     /*% %*/
-                    /*% ripper: symbol_literal!($1) %*/
+                    // Changed from MRI $1 is bytelist and not IRubyObject
+                    /*% 
+                      $$ = p.dispatch("on_symbol_literal", p.symbolID($1));
+                     %*/
 
                 }
                 | symbol {  // SymbolNode/DSymbolNode

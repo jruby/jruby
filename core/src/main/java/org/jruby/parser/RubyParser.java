@@ -2398,12 +2398,13 @@ states[65] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
 states[67] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.pushLocalScope();
                     LexContext ctxt = p.getLexContext();
-                    RubySymbol name = p.symbolID(((ByteList)yyVals[0+yyTop].value));
-                    p.numparam_name(name);
+                    RubySymbol name = p.get_id(((ByteList)yyVals[0+yyTop].value));
+                    p.numparam_name(((ByteList)yyVals[0+yyTop].value));
                     /*%%%*/
                     yyVal = new DefHolder(p.symbolID(((ByteList)yyVals[0+yyTop].value)), p.getCurrentArg(), (LexContext) ctxt.clone());
+                    /* Changed from MRI*/
                     /*% 
-                        $$ = p.new_array($1); // FIXME: No ctxt. no current arg
+                        $$ = p.new_array(name); // FIXME: No ctxt. no current arg
                     %*/
                     ctxt.in_def = true;
                     p.setCurrentArg(null);
@@ -3037,7 +3038,10 @@ states[159] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     /*%%%*/
                     yyVal =  new LiteralNode(p.src_line(), p.symbolID(((ByteList)yyVals[0+yyTop].value)));
                     /*% %*/
-                    /*% ripper: symbol_literal!($1) %*/
+                    /* Changed from MRI $1 is bytelist and not IRubyObject*/
+                    /*% 
+                      $$ = p.dispatch("on_symbol_literal", p.symbolID($1));
+                     %*/
 
   return yyVal;
 };
@@ -6668,7 +6672,7 @@ states[817] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4654 "parse.y"
+					// line 4658 "parse.y"
 
 }
-					// line 14424 "-"
+					// line 14428 "-"

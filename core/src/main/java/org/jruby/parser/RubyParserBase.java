@@ -288,7 +288,7 @@ public abstract class RubyParserBase {
                 if (numParamCurrent == null) numParamCurrent = newNode;
                 return newNode;
             }
-            if (currentScope.getType() != StaticScope.Type.BLOCK) numparam_name(name);
+            if (currentScope.getType() != StaticScope.Type.BLOCK) numparam_name(name.getBytes());
 
             return new VCallNode(node.getLine(), name);
         case CONSTDECLNODE: // CONSTANT
@@ -341,8 +341,9 @@ public abstract class RubyParserBase {
         return one != '0' && Character.isDigit(one); // _1..._9
     }
 
-    public void numparam_name(RubySymbol name) {
-        String id = name.idString();
+    public void numparam_name(ByteList name) {
+        // FIXME: probably make isNumParamId with ByteList.
+        String id = name.toString();
         if (isNumParamId(id)) compile_error(id + " is reserved for numbered parameter");
     }
 
@@ -383,7 +384,7 @@ public abstract class RubyParserBase {
     public AssignableNode assignableLabelOrIdentifier(ByteList byteName, Node value) {
         RubySymbol name = symbolID(byteName);
 
-        numparam_name(name);
+        numparam_name(byteName);
 
         if (warnOnUnusedVariables) addOrMarkVariable(name, currentScope.isDefined(name.idString()));
 
@@ -807,7 +808,7 @@ public abstract class RubyParserBase {
                     if (numParamCurrent == null) numParamCurrent = newNode;
                     return newNode;
                 }
-                if (currentScope.getType() != StaticScope.Type.BLOCK) numparam_name(name);
+                if (currentScope.getType() != StaticScope.Type.BLOCK) numparam_name(id);
 
                 return new VCallNode(loc, name);
             }
@@ -1604,7 +1605,7 @@ public abstract class RubyParserBase {
 
     public ArgumentNode arg_var(ByteList byteName) {
         RubySymbol name = symbolID(byteName);
-        numparam_name(name);
+        numparam_name(byteName);
 
         if (warnOnUnusedVariables) {
             scopedParserState.addDefinedVariable(name, lexer.getRubySourceline());
@@ -2164,5 +2165,9 @@ public abstract class RubyParserBase {
 
     public Node nil() {
         return NilImplicitNode.NIL;
+    }
+
+    public RubySymbol get_id(ByteList id) {
+        return symbolID(id);
     }
 }

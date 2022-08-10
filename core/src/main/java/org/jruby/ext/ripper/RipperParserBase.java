@@ -38,6 +38,8 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.ast.ArgumentNode;
+import org.jruby.ast.BlockArgNode;
 import org.jruby.ast.DefHolder;
 import org.jruby.ast.Node;
 import org.jruby.lexer.LexerSource;
@@ -379,12 +381,16 @@ public class RipperParserBase {
     }
 
     public ArgsTailHolder new_args_tail(int _line, IRubyObject kwarg, ByteList kwargRest, IRubyObject block) {
-        return new ArgsTailHolder(kwarg, symbolID(kwargRest), block);
+        RubySymbol keywordRestArg = block != null ? symbolID(kwargRest) : null;
+
+        return new ArgsTailHolder(kwarg, keywordRestArg, block);
     }
 
     protected ArgsTailHolder new_args_tail(int line, IRubyObject keywordArg,
                                            ByteList keywordRestArgName, ByteList block) {
-        return new_args_tail(line, keywordArg, keywordRestArgName, symbolID(block));
+        RubySymbol blockArg = block != null ? symbolID(block) : null;
+
+        return new_args_tail(line, keywordArg, keywordRestArgName, blockArg);
     }
 
         public IRubyObject method_add_block(IRubyObject method, IRubyObject block) {
@@ -592,7 +598,7 @@ public class RipperParserBase {
     }
 
     protected IRubyObject get_value(RubyArray holder) {
-        return holder.eltOk(1);
+        return holder.eltOk(0);
     }
 
     public void endless_method_name(RubyArray name) {
@@ -619,8 +625,8 @@ public class RipperParserBase {
         return (RubySymbol) ident;
     }
 
-    public void numparam_name(RubySymbol name) {
-        String id = name.idString();
+    public void numparam_name(IRubyObject name) {
+        String id = ((RubySymbol) name).idString();
         if (isNumParamId(id)) compile_error(id + " is reserved for numbered parameter");
     }
 
@@ -807,7 +813,7 @@ public class RipperParserBase {
     }
 
     public void setCurrentArg(IRubyObject arg) {
-        this.currentArg = extractByteList(arg);
+        this.currentArg = arg != null ? extractByteList(arg) : null;
     }
     
     public boolean getYYDebug() {
@@ -853,7 +859,11 @@ public class RipperParserBase {
     public ThreadContext getContext() {
         return context;
     }
-    
+
+    public RubySymbol get_id(IRubyObject name) {
+        return (RubySymbol) name;
+    }
+
     protected IRubyObject ripper;
     protected ThreadContext context;
     protected RubyLexer lexer;

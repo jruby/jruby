@@ -35,6 +35,7 @@ import java.util.HashMap;
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.LexingCommon;
@@ -410,8 +411,6 @@ public class RubyLexer extends LexingCommon {
             return token == EOF ? 0 : token;
         }
 
-        System.out.println("YACCVALUE: " + yaccValue);
-        
         if (token != EOF) dispatchScanEvent(token);
 
         return token == EOF ? 0 : token;
@@ -800,14 +799,13 @@ public class RubyLexer extends LexingCommon {
     public void dispatchScanEvent(int token) { //mri: ripper_dispatch_scan_event
         if (!hasScanEvent()) return;
         
-        yaccValue = scanEventValue(token);
+        scanEventValue(token);
     }
     
     private IRubyObject scanEventValue(int token) { // mri: ripper_scane_event_val
         //System.out.println("TOKP: " + tokp + ", LEX_P: " + lex_p);
         IRubyObject value = parser.getRuntime().newString(lexb.makeShared(tokp, lex_p - tokp));
         String event = tokenToEventId(token);
-        System.out.println("EVENT: " + event + ", VALUE: " + value);
         IRubyObject returnValue = parser.dispatch(event, value);
         flush();
         return returnValue;
@@ -1140,23 +1138,23 @@ public class RubyLexer extends LexingCommon {
                 if (c == '=') {
                     c = nextc();
                     if (c == '=') {
-                        yaccValue = EQ_EQ_EQ;
+                        yaccValue = symbol(EQ_EQ_EQ);
                         return tEQQ;
                     }
 
                     pushback(c);
-                    yaccValue = EQ_EQ;
+                    yaccValue = symbol(EQ_EQ);
                     return tEQ;
                 }
                 if (c == '~') {
-                    yaccValue = EQ_TILDE;
+                    yaccValue = symbol(EQ_TILDE);
                     return tMATCH;
                 } else if (c == '>') {
-                    yaccValue = EQ_GT;
+                    yaccValue = symbol(EQ_GT);
                     return tASSOC;
                 }
                 pushback(c);
-                yaccValue = EQ;
+                yaccValue = symbol(EQ);
                 return '=';
                 
             case '<':
@@ -1243,12 +1241,17 @@ public class RubyLexer extends LexingCommon {
         }
     }
 
+    private RubySymbol symbol(ByteList name) {
+        return getRuntime().newSymbol(name);
+    }
+
     private int identifierToken(int last_state, int result, String value) {
         if (result == tIDENTIFIER && !isLexState(last_state, EXPR_DOT|EXPR_FNAME) &&
                 parser.getCurrentScope().isDefined(value) >= 0) {
             setState(EXPR_END|EXPR_LABEL);
         }
 
+        yaccValue = getRuntime().newSymbol(createTokenByteList());
         identValue = value.intern();
         return result;
     }
