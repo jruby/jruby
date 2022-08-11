@@ -337,11 +337,11 @@ public abstract class RubyInteger extends RubyNumeric {
             IRubyObject i = RubyFixnum.zero(runtime);
             RubyFixnum one = RubyFixnum.one(runtime);
             while (true) {
-                if (!sites(context).op_lt.call(context, i, i, this).isTrue()) {
+                if (!((RubyInteger) i).op_lt(context, this).isTrue()) {
                     break;
                 }
                 block.yield(context, i);
-                i = sites(context).op_plus.call(context, i, i, one);
+                i = ((RubyInteger) i).op_plus(context, one);
             }
             return this;
         } else {
