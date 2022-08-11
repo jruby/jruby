@@ -45,11 +45,6 @@ describe "Module#const_defined?" do
     ConstantSpecs::ContainerA::ChildA.const_defined?(:CS_CONST4, true).should be_true
   end
 
-  it "returns true if the constant is defined in the receiver's superclass and the inherit flag is true" do
-    ConstantSpecs::ContainerA::ChildA.const_defined?(:CS_CONST4, true).should be_true
-  end
-
-
   it "coerces the inherit flag to a boolean" do
     ConstantSpecs::ContainerA::ChildA.const_defined?(:CS_CONST4, nil).should be_false
     ConstantSpecs::ContainerA::ChildA.const_defined?(:CS_CONST4, :true).should be_true
