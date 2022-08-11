@@ -770,16 +770,22 @@ public class RubyBignum extends RubyInteger {
     private static final int BIGLEN_LIMIT = 32 * 1024 * 1024;
 
     public final IRubyObject op_pow(final ThreadContext context, final long other) {
+        Ruby runtime = context.runtime;
         if (other < 0) {
-            return RubyRational.newRationalRaw(context.runtime, this).op_expt(context, other);
+            IRubyObject x = op_pow(context, -other);
+            if (x instanceof RubyInteger) {
+                return RubyRational.newRationalRaw(runtime, RubyFixnum.one(runtime), x);
+            } else {
+                return dbl2num(runtime, 1.0 / num2dbl(context,x));
+            }
         }
         final int xbits = value.bitLength();
         if ((xbits > BIGLEN_LIMIT) || (xbits * other > BIGLEN_LIMIT)) {
-            context.runtime.getWarnings().warn("in a**b, b may be too big");
-            return pow(context.runtime, (double) other);
+            runtime.getWarnings().warn("in a**b, b may be too big");
+            return pow(runtime, (double) other);
         }
         else {
-            return newBignum(context.runtime, value.pow((int) other));
+            return newBignum(runtime, value.pow((int) other));
         }
     }
 
