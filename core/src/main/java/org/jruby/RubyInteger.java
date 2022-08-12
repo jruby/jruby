@@ -155,7 +155,7 @@ public abstract class RubyInteger extends RubyNumeric {
 
     @JRubyMethod(meta = true)
     public static IRubyObject try_convert(ThreadContext context, IRubyObject self, IRubyObject num) {
-        return TypeConverter.checkToInteger(context, num);
+        return TypeConverter.checkIntegerType(context, num);
     }
 
     public abstract IRubyObject sqrt(ThreadContext context);

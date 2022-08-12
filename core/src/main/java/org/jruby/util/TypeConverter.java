@@ -275,6 +275,22 @@ public class TypeConverter {
                 className, '#' + methodName + " gives ", types(runtime, val.getType()), ")"));
     }
 
+    // rb_check_integer_type
+    public static IRubyObject checkIntegerType(ThreadContext context, IRubyObject obj) {
+        if (obj instanceof RubyInteger) return obj;
+
+        TypeConverterSites sites = sites(context);
+
+        IRubyObject conv = convertToType(context, obj, context.runtime.getInteger(), sites.to_int_checked, false);
+        if (conv.isNil()) {
+            return context.nil;
+        }
+        if (!(conv instanceof RubyInteger)) {
+            throw newTypeErrorMismatch(context.runtime, obj, context.runtime.getInteger(), "to_int", conv);
+        }
+        return conv;
+    }
+
     // rb_check_to_integer
     public static IRubyObject checkToInteger(ThreadContext context, IRubyObject obj) {
         if (obj instanceof RubyFixnum) return obj;
