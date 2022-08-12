@@ -45,7 +45,6 @@ import org.joda.time.*;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.tz.FixedDateTimeZone;
-import org.jruby.Ruby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
@@ -53,7 +52,6 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.TypeError;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.TimeSites;
@@ -61,7 +59,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
-import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.RubyDateFormatter;
 import org.jruby.util.Sprintf;
@@ -72,7 +69,6 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
-import java.text.NumberFormat;
 import java.time.*;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -351,7 +347,7 @@ public class RubyTime extends RubyObject {
                     }
                     v = tmp; break;
                 }
-                if (!(tmp = TypeConverter.checkIntegerType(context, v)).isNil()) {
+                if (!(tmp = TypeConverter.checkToInteger(context, v)).isNil()) {
                     v = tmp; // return tmp;
                 }
                 else {

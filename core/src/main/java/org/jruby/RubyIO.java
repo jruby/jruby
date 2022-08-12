@@ -66,7 +66,6 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.transcode.EConvFlags;
 import org.jruby.api.API;
 import org.jruby.ast.util.ArgsUtil;
-import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.common.IRubyWarnings.ID;
@@ -110,7 +109,6 @@ import static org.jruby.anno.FrameField.LASTLINE;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
-import static org.jruby.util.TypeConverter.booleanExpected;
 import static org.jruby.util.io.ChannelHelper.*;
 import static org.jruby.util.io.EncodingUtils.vmodeVperm;
 import static org.jruby.util.io.EncodingUtils.vperm;
@@ -1221,7 +1219,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         if (vmode.isNil())
             oflags = OpenFlags.O_RDONLY.intValue();
-        else if (!(intmode = TypeConverter.checkIntegerType(context, vmode)).isNil())
+        else if (!(intmode = TypeConverter.checkToInteger(context, vmode)).isNil())
             oflags = RubyNumeric.num2int(intmode);
         else {
             vmode = vmode.convertToString();

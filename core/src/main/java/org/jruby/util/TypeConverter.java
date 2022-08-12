@@ -276,7 +276,7 @@ public class TypeConverter {
     }
 
     // rb_check_to_integer
-    public static IRubyObject checkIntegerType(ThreadContext context, IRubyObject obj) {
+    public static IRubyObject checkToInteger(ThreadContext context, IRubyObject obj) {
         if (obj instanceof RubyFixnum) return obj;
 
         TypeConverterSites sites = sites(context);
@@ -287,8 +287,8 @@ public class TypeConverter {
     }
 
     // rb_check_to_integer
-    public static IRubyObject checkIntegerType(Ruby runtime, IRubyObject obj, String method) {
-        if (method.equals("to_int")) return checkIntegerType(runtime.getCurrentContext(), obj);
+    public static IRubyObject checkToInteger(Ruby runtime, IRubyObject obj, String method) {
+        if (method.equals("to_int")) return checkToInteger(runtime.getCurrentContext(), obj);
 
         if (obj instanceof RubyFixnum) return obj;
 
