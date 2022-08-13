@@ -342,28 +342,25 @@ public class RubyMath {
 
     // MRI : get_double_rshift
     private static double[] get_double_rshift(ThreadContext context, IRubyObject x) {
-        double y;
         int numbits = 0;
         if (x instanceof RubyBignum) {
             RubyBignum bignum = (RubyBignum)x;
             numbits = bignum.getValue().abs().bitLength();
             if (bignum.getValue().signum() > 0 && numbits >= DBL_MAX_EXP) {
                 numbits -= DBL_MANT_DIG;
-                y = bignum.getValue().shiftRight(numbits).doubleValue();
+                x = bignum.op_rshift(context, numbits);
             } else {
                 numbits = 0;
-                y = bignum.getValue().doubleValue();
             }
-        } else {
-            y = RubyNumeric.num2dbl(context, x);
         }
 
-        return new double[]{y, numbits};
+        return new double[]{RubyNumeric.num2dbl(context, x), numbits};
     }
 
     private static int DBL_MANT_DIG = 53;
     private static int DBL_MAX_EXP = 1024;
     private static double LOG_E_2 = Math.log(2);
+    private static double LOG_10_2 = Math.log10(2);
 
     /** Returns the natural logarithm of x.
      * 
@@ -381,7 +378,7 @@ public class RubyMath {
         }
 
         /* log(d * 2 ** numbits) */
-        return RubyFloat.newFloat(context.runtime, Math.log(ret[0]) + ret[1]);
+        return RubyFloat.newFloat(context.runtime, Math.log(ret[0]) + ret[1] * LOG_E_2);
     }
 
     @JRubyMethod(name = "log", module = true, visibility = Visibility.PRIVATE)
@@ -421,7 +418,7 @@ public class RubyMath {
         }
 
         /* log10(d * 2 ** numbits) */
-        return RubyFloat.newFloat(context.runtime, Math.log10(ret[0]) + ret[1]);
+        return RubyFloat.newFloat(context.runtime, Math.log10(ret[0]) + ret[1] * LOG_10_2);
     }
 
     @Deprecated
@@ -466,8 +463,6 @@ public class RubyMath {
     @JRubyMethod(name = "cbrt", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat cbrt(ThreadContext context, IRubyObject recv, IRubyObject x) {
         double result = Math.cbrt(RubyNumeric.num2dbl(context, x));
-
-        domainCheck(recv, result, "cbrt");
         
         return RubyFloat.newFloat(context.runtime, result);
     }
