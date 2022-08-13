@@ -1554,10 +1554,7 @@ public class RubyTime extends RubyObject {
             millisecs = RubyNumeric.num2long(arg1) * 1000;
         }
 
-        if (arg3 instanceof RubyNil) {
-            // Default value according the Ruby time.c
-            arg3 = runtime.newSymbol("microsecond");
-        } else if (!(arg3 instanceof RubySymbol)) {
+        if (!(arg3 instanceof RubySymbol)) {
             throw context.runtime.newArgumentError("unexpected unit " + arg3);
         }
 
