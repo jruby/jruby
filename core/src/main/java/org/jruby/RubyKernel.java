@@ -372,20 +372,23 @@ public class RubyKernel {
 
     @JRubyMethod(name = "Float", module = true, visibility = PRIVATE)
     public static IRubyObject new_float(ThreadContext context, IRubyObject recv, IRubyObject object, IRubyObject opts) {
-        boolean exception = checkExceptionOpt(context, opts);
+        boolean exception = checkExceptionOpt(context, context.runtime.getFloat(), opts);
 
         return new_float(context, object, exception);
     }
 
-    private static boolean checkExceptionOpt(ThreadContext context, IRubyObject opts) {
+    private static boolean checkExceptionOpt(ThreadContext context, RubyClass rubyClass, IRubyObject opts) {
         boolean exception = true;
 
         IRubyObject maybeOpts = ArgsUtil.getOptionsArg(context.runtime, opts, false);
 
         if (!maybeOpts.isNil()) {
-            IRubyObject exObj = ArgsUtil.extractKeywordArg(context, "exception", opts);
+            IRubyObject exObj = ArgsUtil.extractKeywordArg(context,  opts, "exception");
 
-            exception = exObj.isNil() ? true : exObj.isTrue();
+            if (exObj != context.tru && exObj != context.fals) {
+                throw context.runtime.newArgumentError("`" + rubyClass.getName() + "': expected true or false as exception: " + exObj);
+            }
+            exception = exObj.isTrue();
         }
 
         return exception;
@@ -471,17 +474,13 @@ public class RubyKernel {
 
     @JRubyMethod(name = "Integer", module = true, visibility = PRIVATE)
     public static IRubyObject new_integer(ThreadContext context, IRubyObject recv, IRubyObject object, IRubyObject baseOrOpts) {
-        boolean exception = true;
-
         IRubyObject maybeOpts = ArgsUtil.getOptionsArg(context.runtime, baseOrOpts, false);
 
         if (maybeOpts.isNil()) {
             return TypeConverter.convertToInteger(context, object, baseOrOpts.convertToInteger().getIntValue(), true);
         }
 
-        IRubyObject exObj = ArgsUtil.extractKeywordArg(context, "exception", maybeOpts);
-
-        if (exObj == context.fals) exception = false;
+        boolean exception = checkExceptionOpt(context, context.runtime.getInteger(), maybeOpts);
 
         return TypeConverter.convertToInteger(
                 context,
@@ -492,7 +491,7 @@ public class RubyKernel {
 
     @JRubyMethod(name = "Integer", module = true, visibility = PRIVATE)
     public static IRubyObject new_integer(ThreadContext context, IRubyObject recv, IRubyObject object, IRubyObject base, IRubyObject opts) {
-        boolean exception = checkExceptionOpt(context, opts);
+        boolean exception = checkExceptionOpt(context, context.runtime.getInteger(), opts);
 
         IRubyObject baseInteger = TypeConverter.convertToInteger(context, base, 0, exception);
 
