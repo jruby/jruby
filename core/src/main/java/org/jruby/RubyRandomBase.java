@@ -286,7 +286,7 @@ public class RubyRandomBase extends RubyObject {
 
         if (vmax.isNil()) return vmax;
         if (!(vmax instanceof RubyFloat)) {
-            v = TypeConverter.checkIntegerType(context, vmax);
+            v = TypeConverter.checkToInteger(context, vmax);
             if (!v.isNil()) return randInt(context, obj, rnd, (RubyInteger) v, true);
         }
         Ruby runtime = context.runtime;
@@ -432,7 +432,7 @@ public class RubyRandomBase extends RubyObject {
 
     private static IRubyObject checkMaxInt(ThreadContext context, IRubyObject vmax) {
         if (!(vmax instanceof RubyFloat)) {
-            IRubyObject v = TypeConverter.checkIntegerType(context, vmax);
+            IRubyObject v = TypeConverter.checkToInteger(context, vmax);
             if (v != context.nil) return v;
         }
         return null;

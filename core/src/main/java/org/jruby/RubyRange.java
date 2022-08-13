@@ -724,8 +724,8 @@ public class RubyRange extends RubyObject {
                 b.uptoCommon(context, end.asString(), isExclusive, blockCallback);
             }
         } else if (begin instanceof RubyNumeric
-                || !TypeConverter.checkIntegerType(runtime, begin, "to_int").isNil()
-                || !TypeConverter.checkIntegerType(runtime, end, "to_int").isNil()) {
+                || !TypeConverter.checkToInteger(runtime, begin, "to_int").isNil()
+                || !TypeConverter.checkToInteger(runtime, end, "to_int").isNil()) {
             numericStep(context, runtime, step, block);
         } else {
             IRubyObject tmp = begin.checkStringType();

@@ -696,19 +696,19 @@ public abstract class RubyInteger extends RubyNumeric {
 
     @JRubyMethod(name = "allbits?")
     public IRubyObject allbits_p(ThreadContext context, IRubyObject other) {
-        IRubyObject mask = TypeConverter.checkIntegerType(context, other);
+        IRubyObject mask = TypeConverter.checkToInteger(context, other);
         return ((RubyInteger) op_and(context, mask)).op_equal(context, mask);
     }
 
     @JRubyMethod(name = "anybits?")
     public IRubyObject anybits_p(ThreadContext context, IRubyObject other) {
-        IRubyObject mask = TypeConverter.checkIntegerType(context, other);
+        IRubyObject mask = TypeConverter.checkToInteger(context, other);
         return ((RubyInteger) op_and(context, mask)).zero_p(context).isTrue() ? context.fals : context.tru;
     }
 
     @JRubyMethod(name = "nobits?")
     public IRubyObject nobits_p(ThreadContext context, IRubyObject other) {
-        IRubyObject mask = TypeConverter.checkIntegerType(context, other);
+        IRubyObject mask = TypeConverter.checkToInteger(context, other);
         return ((RubyInteger) op_and(context, mask)).zero_p(context);
     }
 
