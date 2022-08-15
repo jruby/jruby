@@ -231,7 +231,10 @@ public class StringTerm extends StrTerm {
                         // goto non_ascii
                         hasNonAscii = true;
 
-                        if (buffer.getEncoding() != encoding) {
+                        if (!encodingDetermined[0]) {
+                            encodingDetermined[0] = true;
+                            buffer.setEncoding(lexer.getEncoding());
+                        } else if (buffer.getEncoding() != encoding) {
                             mixedEscape(lexer, buffer.getEncoding(), encoding);
                             continue;
                         }
