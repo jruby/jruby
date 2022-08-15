@@ -1252,54 +1252,11 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return newFixnum(context.runtime, value ^ other);
     }
 
-    /** fix_aref
+    /** rb_fix_aref
      *
      */
     @Override
-    public IRubyObject op_aref(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyRange) {
-            RubyRange range = (RubyRange) other;
-            IRubyObject beg = range.begin(context);
-            IRubyObject end = range.end(context);
-            boolean isExclusive = range.isExcludeEnd();
-
-            if (!end.isNil()) end = end.convertToInteger();
-
-            if (beg.isNil()) {
-                if (!negativeInt(context, end)) {
-                    if (!isExclusive) {
-                        end = ((RubyInteger) end).op_plus(context, context.runtime.newFixnum(1));
-                    }
-
-                    RubyInteger mask = generateMask(context, end);
-                    if (((RubyInteger) op_and(context, mask)).isZero()) {
-                        return context.runtime.newFixnum(0);
-                    } else {
-                        throw context.runtime.newArgumentError("The beginless range for Integer#[] results in infinity");
-                    }
-                } else {
-                    return context.runtime.newFixnum(0);
-                }
-            }
-            beg = beg.convertToInteger();
-            IRubyObject num = op_rshift(context, beg);
-            long cmp = compareIndexes(context, beg, end);
-            if (!end.isNil() && cmp < 0) {
-                IRubyObject length = ((RubyInteger) end).op_minus(context, beg);
-                if (!isExclusive) {
-                    length = ((RubyInteger) length).op_plus(context, context.runtime.newFixnum(1));
-                }
-                RubyInteger mask = generateMask(context, length);
-                num = (((RubyInteger) num).op_and(context, mask));
-                return num;
-            } else if (cmp == 0) {
-                if (isExclusive) return context.runtime.newFixnum(0);
-                other = beg;
-            } else {
-                return num;
-            }
-        }
-
+    protected IRubyObject op_aref_subclass(ThreadContext context, IRubyObject other) {
         if (!(other instanceof RubyFixnum) && !((other = fixCoerce(other)) instanceof RubyFixnum)) {
             BigInteger big = ((RubyBignum) other).value;
             other = RubyBignum.bignorm(context.runtime, big);
@@ -1317,15 +1274,6 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         }
 
         return (value & (1L << otherValue)) == 0 ? RubyFixnum.zero(context.runtime) : RubyFixnum.one(context.runtime);
-    }
-
-    private static long compareIndexes(ThreadContext context, IRubyObject beg, IRubyObject end) {
-        IRubyObject r = beg.callMethod(context, "<=>", end);
-
-        if (r.isNil()) return MAX;
-
-        JavaSites.FixnumSites sites = sites(context);
-        return RubyComparable.cmpint(context, sites.op_gt, sites.op_lt, r, beg, end);
     }
 
     /** fix_lshift

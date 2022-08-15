@@ -70,6 +70,9 @@ import static org.jruby.util.Numeric.f_lcm;
 @JRubyClass(name="Integer", parent="Numeric", overrides = {RubyFixnum.class, RubyBignum.class})
 public abstract class RubyInteger extends RubyNumeric {
 
+    private static final int BIT_SIZE = 64;
+    private static final long MAX = (1L << (BIT_SIZE - 1)) - 1;
+
     public static RubyClass createIntegerClass(Ruby runtime) {
         RubyClass integer = runtime.defineClass("Integer", runtime.getNumeric(),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
@@ -934,7 +937,63 @@ public abstract class RubyInteger extends RubyNumeric {
     public abstract IRubyObject op_xor(ThreadContext context, IRubyObject other);
 
     @JRubyMethod(name = "[]")
-    public abstract IRubyObject op_aref(ThreadContext context, IRubyObject index);
+    public IRubyObject op_aref(ThreadContext context, IRubyObject index) {
+        if (index instanceof RubyRange) {
+            RubyRange range = (RubyRange) index;
+            IRubyObject beg = range.begin(context);
+            IRubyObject end = range.end(context);
+            boolean isExclusive = range.isExcludeEnd();
+
+            if (!end.isNil()) end = end.convertToInteger();
+
+            if (beg.isNil()) {
+                if (!negativeInt(context, end)) {
+                    if (!isExclusive) {
+                        end = ((RubyInteger) end).op_plus(context, context.runtime.newFixnum(1));
+                    }
+
+                    RubyInteger mask = generateMask(context, end);
+                    if (((RubyInteger) op_and(context, mask)).isZero()) {
+                        return context.runtime.newFixnum(0);
+                    } else {
+                        throw context.runtime.newArgumentError("The beginless range for Integer#[] results in infinity");
+                    }
+                } else {
+                    return context.runtime.newFixnum(0);
+                }
+            }
+            beg = beg.convertToInteger();
+            IRubyObject num = op_rshift(context, beg);
+            long cmp = compareIndexes(context, beg, end);
+            if (!end.isNil() && cmp < 0) {
+                IRubyObject length = ((RubyInteger) end).op_minus(context, beg);
+                if (!isExclusive) {
+                    length = ((RubyInteger) length).op_plus(context, context.runtime.newFixnum(1));
+                }
+                RubyInteger mask = generateMask(context, length);
+                num = (((RubyInteger) num).op_and(context, mask));
+                return num;
+            } else if (cmp == 0) {
+                if (isExclusive) return context.runtime.newFixnum(0);
+                index = beg;
+            } else {
+                return num;
+            }
+        }
+
+        return op_aref_subclass(context, index);
+    }
+
+    private static long compareIndexes(ThreadContext context, IRubyObject beg, IRubyObject end) {
+        IRubyObject r = beg.callMethod(context, "<=>", end);
+
+        if (r.isNil()) return MAX;
+
+        JavaSites.IntegerSites sites = sites(context);
+        return RubyComparable.cmpint(context, sites.op_gt, sites.op_lt, r, beg, end);
+    }
+
+    protected abstract IRubyObject op_aref_subclass(ThreadContext context, IRubyObject index);
 
     @JRubyMethod(name = "[]")
     public IRubyObject op_aref(ThreadContext context, IRubyObject index, IRubyObject length) {
