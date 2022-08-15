@@ -176,6 +176,11 @@ public class PrependedModule extends RubyClass {
     }
 
     @Override
+    protected ConstantEntry constantEntryFetch(String name) {
+        return origin.constantEntryFetch(name);
+    }
+
+    @Override
     protected IRubyObject constantTableRemove(String name) {
         // this _is_ legal (when removing an undef)
         return origin.constantTableRemove(name);
