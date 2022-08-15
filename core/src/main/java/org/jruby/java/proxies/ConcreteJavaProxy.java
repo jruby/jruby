@@ -260,8 +260,14 @@ public class ConcreteJavaProxy extends JavaProxy {
 
             Constructor<? extends ReifiedJavaProxy> withBlock;
             try {
-                withBlock = reified.getConstructor(
-                        ConcreteJavaProxy.class, IRubyObject[].class, Block.class, Ruby.class, RubyClass.class);
+                Class _clazz;
+                if (Map.class.isAssignableFrom(reified)) {
+                    _clazz = MapJavaProxy.class;
+                } else {
+                    _clazz = ConcreteJavaProxy.class;
+                }
+                withBlock = reified.getConstructor(new Class[] { _clazz, IRubyObject[].class,
+                        Block.class, Ruby.class, RubyClass.class });
             } catch (SecurityException | NoSuchMethodException e) {
                 // ignore, don't install
                 withBlock = null;
