@@ -68,6 +68,8 @@ import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -531,12 +533,16 @@ public class Main {
 
         System.err.print(traceType.printBacktrace(raisedException, isatty));
 
+        Set<Object> shownCauses = new HashSet<Object>();
+        shownCauses.add(raisedException);
+
         for (
                 Object cause = raisedException.getCause();
-                cause != null && cause instanceof RubyException;
+                cause != null && cause instanceof RubyException && !shownCauses.contains(cause);
                 cause = ((RubyException) cause).getCause()) {
 
             System.err.print(traceType.printBacktrace((RubyException) cause, isatty));
+            shownCauses.add(cause);
         }
 
         return 1;
