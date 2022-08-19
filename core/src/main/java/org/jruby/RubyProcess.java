@@ -35,13 +35,15 @@ import jnr.constants.platform.RLIM;
 import jnr.constants.platform.RLIMIT;
 import jnr.constants.platform.Sysconf;
 import jnr.ffi.byref.IntByReference;
+import jnr.posix.Group;
+import jnr.posix.Passwd;
+import jnr.posix.POSIX;
 import jnr.posix.RLimit;
 import jnr.posix.Times;
 import jnr.posix.Timeval;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
-import jnr.posix.POSIX;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.platform.Platform;
@@ -1158,7 +1160,17 @@ public class RubyProcess {
         return egid_set(context.runtime, arg);
     }
     public static IRubyObject egid_set(Ruby runtime, IRubyObject arg) {
-        checkErrno(runtime, runtime.getPosix().setegid((int)arg.convertToInteger().getLongValue()));
+        int gid;
+        if (arg instanceof RubyInteger || arg.checkStringType().isNil()) {
+            gid = (int)arg.convertToInteger().getLongValue();
+        } else {
+            Group group = runtime.getPosix().getgrnam(arg.asJavaString());
+            if (group == null) {
+                throw runtime.newArgumentError("can't find group for " + arg.inspect());
+            }
+            gid = (int)group.getGID();
+        }
+        checkErrno(runtime, runtime.getPosix().setegid(gid));
         return RubyFixnum.zero(runtime);
     }
 
@@ -1305,7 +1317,17 @@ public class RubyProcess {
         return euid_set(context.runtime, arg);
     }
     public static IRubyObject euid_set(Ruby runtime, IRubyObject arg) {
-        checkErrno(runtime, runtime.getPosix().seteuid((int)arg.convertToInteger().getLongValue()));
+        int uid;
+        if (arg instanceof RubyInteger || arg.checkStringType().isNil()) {
+            uid = (int)arg.convertToInteger().getLongValue();
+        } else {
+            Passwd password = runtime.getPosix().getpwnam(arg.asJavaString());
+            if (password == null) {
+                throw runtime.newArgumentError("can't find user for " + arg.inspect());
+            }
+            uid = (int)password.getUID();
+        }
+        checkErrno(runtime, runtime.getPosix().seteuid(uid));
         return RubyFixnum.zero(runtime);
     }
 
