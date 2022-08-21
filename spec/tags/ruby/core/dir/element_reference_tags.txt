@@ -1,4 +1,2 @@
-fails:Dir.[] raises an Encoding::CompatibilityError if the argument encoding is not compatible with US-ASCII
-fails:Dir.[] matches files with backslashes in their name
 wip:Dir.[] respects the order of {} expressions, expanding left most first
 wip:Dir.[] respects the optional nested {} expressions
