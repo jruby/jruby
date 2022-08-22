@@ -895,21 +895,24 @@ public final class StringSupport {
         return -1;
     }
 
-    public static RubyString checkEmbeddedNulls(Ruby runtime, IRubyObject ptr, String errorMessage) {
-        RubyString checked = strNullCheck(ptr);
-
-        if (checked == null) throw runtime.newArgumentError(errorMessage);
-
-        return checked;
-    }
-
     // MRI: StringValueCStr, rb_string_value_cstr without trailing null addition
     public static RubyString checkEmbeddedNulls(Ruby runtime, IRubyObject ptr) {
-        return checkEmbeddedNulls(runtime, ptr, "string contains null char");
+        Object[] checked = strNullCheck(ptr);
+
+        if (checked[0] == null) {
+            if ((boolean)checked[1]) {
+                throw runtime.newArgumentError("string contains null char");
+            }
+            throw runtime.newArgumentError("string contains null byte");
+        }
+
+        return (RubyString) checked[0];
     }
 
     // MRI: str_null_check without trailing null check (JVM arrays do not null terminate)
-    public static RubyString strNullCheck(IRubyObject ptr) {
+    // This function returns Java Object Array, with index0 is RubyString and index1 is Boolean.
+    // Boolean corresponds to int *w arg of str_null_check.
+    public static Object [] strNullCheck(IRubyObject ptr) {
         final RubyString s = ptr.convertToString();
         ByteList sByteList = s.getByteList();
         byte[] sBytes = sByteList.unsafeBytes();
@@ -920,16 +923,16 @@ public final class StringSupport {
 
         if (minlen > 1) {
             if (strNullChar(sBytes, beg, len, minlen, enc) != -1) {
-                return null;
+                return new Object[] {null, true};
             }
-            return strFillTerm(s, sBytes, beg, len, minlen);
+            return new Object[] {strFillTerm(s, sBytes, beg, len, minlen), true};
         }
 
         if (memchr(sBytes, beg, '\0', len) != -1) {
-            return null;
+            return new Object[] {null, false};
         }
 
-        return s;
+        return new Object[] {s, false};
     }
 
     // MRI: str_null_char
