@@ -1,8 +1,5 @@
 package org.jruby.ext.fiber;
 
-import java.lang.ref.WeakReference;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
@@ -12,22 +9,58 @@ import org.jruby.RubyThread;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.ir.operands.IRException;
+import org.jruby.ir.runtime.IRBreakJump;
+import org.jruby.ir.runtime.IRReturnJump;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ExecutionContext;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-import org.jruby.ir.runtime.IRBreakJump;
-import org.jruby.ir.runtime.IRReturnJump;
-import org.jruby.ir.operands.IRException;
+import java.lang.invoke.MethodHandle;
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 
 public class ThreadFiber extends RubyObject implements ExecutionContext {
 
     private static final Logger LOG = LoggerFactory.getLogger(ThreadFiber.class);
+
+    private static final BiConsumer<Ruby, Runnable> FIBER_LAUNCHER;
+
+    static {
+        BiConsumer<Ruby, Runnable> fiberLauncher = null;
+        MethodHandle start = null;
+
+        try {
+            // test that API is available
+            Method ofVirtualMethod = Thread.class.getMethod("ofVirtual");
+            Object builder = ofVirtualMethod.invoke(null);
+            Method startMethod = Class.forName("java.lang.Thread$Builder").getMethod("start", Runnable.class);
+
+            fiberLauncher = (runtime, runnable) -> {
+                try {
+                    startMethod.invoke(builder, runnable);
+                } catch (Throwable t) {
+                    Helpers.throwException(t);
+                }
+            };
+        } catch (Throwable t) {
+            fiberLauncher = (runtime, runnable) -> runtime.getFiberExecutor().submit(runnable);
+        }
+
+        if (fiberLauncher == null) {
+        }
+
+        FIBER_LAUNCHER = fiberLauncher;
+    }
 
     public ThreadFiber(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
@@ -281,7 +314,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
         while (!retried) {
             try {
-                runtime.getFiberExecutor().execute(() -> {
+                FIBER_LAUNCHER.accept(runtime, () -> {
                     ThreadContext context = runtime.getCurrentContext();
                     context.setFiber(data.fiber.get());
                     context.useRecursionGuardsFrom(data.parent.getContext());
@@ -350,6 +383,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                 // Successfully submitted to executor, break out of retry loop
                 break;
             } catch (OutOfMemoryError oome) {
+                oome.printStackTrace();
                 String oomeMessage = oome.getMessage();
                 if (!retried && oomeMessage != null && oomeMessage.contains("unable to create new native thread")) {
                     // try to clean out stale enumerator threads by forcing GC
