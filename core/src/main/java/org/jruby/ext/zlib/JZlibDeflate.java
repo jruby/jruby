@@ -281,7 +281,7 @@ public class JZlibDeflate extends ZStream {
     private IRubyObject flush(int flush) {
         int last_flush = this.flush;
         this.flush = flush;
-        if (flush == JZlib.Z_NO_FLUSH) return RubyString.newEmptyString(getRuntime());
+        if (flush == JZlib.Z_NO_FLUSH) return RubyString.newEmptyBinaryString(getRuntime());
 
         run();
         this.flush = last_flush;
