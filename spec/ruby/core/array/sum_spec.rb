@@ -5,8 +5,14 @@ describe "Array#sum" do
     [1, 2, 3].sum.should == 6
   end
 
-  it "applies a block to each element before adding if it's given" do
-    [1, 2, 3].sum { |i| i * 10 }.should == 60
+  context "with a block" do
+    it "applies the block to each element" do
+      [1, 2, 3].sum { |i| i * 10 }.should == 60
+    end
+
+    it "does not destructure the element if it is an array" do
+      [[1, 2], [3]].sum(&:last).should == 5
+    end
   end
 
   # https://bugs.ruby-lang.org/issues/12217
