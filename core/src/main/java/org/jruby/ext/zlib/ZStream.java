@@ -77,7 +77,7 @@ public abstract class ZStream extends RubyObject {
 
     @JRubyMethod
     public IRubyObject flush_next_out(ThreadContext context, Block block) {
-        return RubyString.newEmptyString(context.getRuntime());
+        return RubyString.newEmptyBinaryString(context.getRuntime());
     }
 
     @JRubyMethod
@@ -145,7 +145,7 @@ public abstract class ZStream extends RubyObject {
 
     @JRubyMethod(name = "flush_next_in")
     public IRubyObject flush_next_in(ThreadContext context) {
-        return RubyString.newEmptyString(context.getRuntime());
+        return RubyString.newEmptyBinaryString(context.getRuntime());
     }
 
     @JRubyMethod(name = "total_in")
