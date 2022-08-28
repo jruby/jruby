@@ -346,9 +346,9 @@ public class RubyFileStat extends RubyObject {
                 buf.append("blksize=").append(blockSize(context).inspect().toString()); } catch (Exception e) {} finally { buf.append(", "); }
             try { buf.append("blocks=").append(blocks().inspect().toString()); } catch (Exception e) {} finally { buf.append(", "); }
 
-            buf.append("atime=").append(atime()).append(", ");
-            buf.append("mtime=").append(mtime()).append(", ");
-            buf.append("ctime=").append(ctime());
+            buf.append("atime=").append(atime().inspect()).append(", ");
+            buf.append("mtime=").append(mtime().inspect()).append(", ");
+            buf.append("ctime=").append(ctime().inspect());
             if (Platform.IS_BSD || Platform.IS_MAC) {
                 buf.append(", ").append("birthtime=").append(birthtime());
             }
