@@ -63,6 +63,7 @@ public class YieldInstr extends TwoOperandResultBaseInstr implements FixedArityI
         super.encode(e);
         e.encode(getBlockArg());
         e.encode(getYieldArg());
+        e.encode(flags);
         e.encode(isUnwrapArray());
     }
 
