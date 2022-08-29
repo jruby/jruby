@@ -2,3 +2,4 @@ wip:Dir.glob respects the order of {} expressions, expanding left most first
 wip:Dir.glob respects the optional nested {} expressions
 fails:Dir.glob will follow symlinks when processing a `*/` pattern.
 fails:Dir.glob will follow symlinks when testing directory after recursive directory in pattern
+fails:Dir.glob matches directory with special characters in their name in complex patterns

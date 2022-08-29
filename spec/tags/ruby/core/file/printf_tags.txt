@@ -23,3 +23,6 @@ fails:File#printf flags * raises ArgumentError when is mixed with width
 fails:File#printf width specifies the minimum number of characters that will be written to the result
 fails:File#printf precision float types controls the number of decimal places displayed in fraction part
 fails:File#printf reference by name %{name} style supports flags, width and precision
+fails:File#printf other formats c raises TypeError if argument is nil
+fails:File#printf other formats c raises TypeError if converting to String with to_str returns non-String
+fails:File#printf other formats c raises TypeError if converting to Integer with to_int returns non-Integer
