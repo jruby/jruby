@@ -76,6 +76,7 @@ public class EQQInstr extends CallInstr implements FixedArityInstr {
         d.decodeInt(); // we always know it is 1 arg (args count)
         Operand arg1 = d.decodeOperand();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("before result");
+        d.decodeInt(); // flags is always 0 but super.decode stores it anyways
         Variable result = d.decodeVariable();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call, result:  " + result);
 

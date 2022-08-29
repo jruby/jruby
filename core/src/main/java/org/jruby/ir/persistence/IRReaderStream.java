@@ -360,7 +360,8 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case ZSUPER: return ZSuperInstr.decode(this);
         }
 
-        throw new IllegalArgumentException("Unhandled operation: " + operation);
+        illegalArgument("Unhandled operation: " + operation);
+        return null; /* not reached */
     }    
 
     @Override
@@ -440,7 +441,9 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
         if (value == TRUE) return true;
         if (value == FALSE) return false;
 
-        throw new IllegalArgumentException("Value (" + ((int) value) + ", " + (char) value + ") is not a boolean.");
+
+        illegalArgument("Value (" + ((int) value) + ", " + (char) value + ") is not a boolean. " + getFilename() + ", " + getCurrentScope());
+        return false; /* not reached */
     }
 
     @Override
@@ -552,5 +555,10 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
         }
 
         throw new RuntimeException("failed to deserialize operand of type: " + type);
+    }
+
+    private void illegalArgument(String message) {
+        System.out.println("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
+        throw new IllegalArgumentException(message + "\nfile: " + getFilename() + "\nscope: " + getCurrentScope());
     }
 }

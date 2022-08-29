@@ -55,6 +55,7 @@ public class BuildCompoundArrayInstr extends TwoOperandResultBaseInstr {
         e.encode(getAppendingArg());
         e.encode(getAppendedArg());
         e.encode(isArgsPush());
+        e.encode(usesKeywordRest());
     }
 
     public static BuildCompoundArrayInstr decode(IRReaderDecoder d) {

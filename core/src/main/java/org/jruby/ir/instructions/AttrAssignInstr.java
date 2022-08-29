@@ -60,6 +60,7 @@ public class AttrAssignInstr extends NoResultCallInstr {
         e.encode(getReceiver());
         e.encode(getName());
         e.encode(getCallArgs());
+        e.encode(getFlags());
     }
 
     public static AttrAssignInstr decode(IRReaderDecoder d) {
