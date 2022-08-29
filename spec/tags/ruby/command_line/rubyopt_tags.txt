@@ -1,0 +1,3 @@
+fails:Processing RUBYOPT suppresses deprecation warnings for '-W:no-deprecated'
+fails:Processing RUBYOPT suppresses experimental warnings for '-W:no-experimental'
+fails:Processing RUBYOPT suppresses deprecation and experimental warnings for '-W:no-deprecated -W:no-experimental'

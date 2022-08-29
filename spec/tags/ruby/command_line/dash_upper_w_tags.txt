@@ -1,0 +1,4 @@
+fails:The -W command line option with :deprecated enables deprecation warnings
+fails:The -W command line option with :no-deprecated suppresses deprecation warnings
+fails:The -W command line option with :experimental enables experimental warnings
+fails:The -W command line option with :no-experimental suppresses experimental warnings
