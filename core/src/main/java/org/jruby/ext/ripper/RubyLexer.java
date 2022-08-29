@@ -799,9 +799,9 @@ public class RubyLexer extends LexingCommon {
     public void dispatchScanEvent(int token) { //mri: ripper_dispatch_scan_event
         if (!hasScanEvent()) return;
         
-        scanEventValue(token);
+        yaccValue = scanEventValue(token);
     }
-    
+
     private IRubyObject scanEventValue(int token) { // mri: ripper_scane_event_val
         //System.out.println("TOKP: " + tokp + ", LEX_P: " + lex_p);
         IRubyObject value = parser.getRuntime().newString(lexb.makeShared(tokp, lex_p - tokp));

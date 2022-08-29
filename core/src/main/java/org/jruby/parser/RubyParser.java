@@ -2399,12 +2399,12 @@ states[67] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
                     p.pushLocalScope();
                     LexContext ctxt = p.getLexContext();
                     RubySymbol name = p.get_id(((ByteList)yyVals[0+yyTop].value));
-                    p.numparam_name(((ByteList)yyVals[0+yyTop].value));
+                    p.numparam_name(name);
                     /*%%%*/
-                    yyVal = new DefHolder(p.symbolID(((ByteList)yyVals[0+yyTop].value)), p.getCurrentArg(), (LexContext) ctxt.clone());
+                    yyVal = new DefHolder(name, p.getCurrentArg(), (LexContext) ctxt.clone());
                     /* Changed from MRI*/
                     /*% 
-                        $$ = p.new_array(name); // FIXME: No ctxt. no current arg
+                        $$ = p.new_array($1); // FIXME: No ctxt. no current arg
                     %*/
                     ctxt.in_def = true;
                     p.setCurrentArg(null);
@@ -5716,8 +5716,10 @@ states[645] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                         Object n2 = $2;
 
 			if (n1 instanceof KeyValuePair) {
+System.out.println("a.1 s1: " + s1 + ", n1: " + n1 + ", s2: " + s2 + ", n2: " + n2);
 			    s1 = (IRubyObject) ((KeyValuePair) n1).getKey();
 			    n1 = ((KeyValuePair) n1).getValue();
+System.out.println("a.2 s1: " + s1 + ", n1: " + n1 + ", s2: " + s2 + ", n2: " + n2);
 			}
 			if (n2 instanceof KeyValuePair) {
 			    s2 = (IRubyObject) ((KeyValuePair) n2).getKey();
@@ -5726,12 +5728,16 @@ states[645] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 			$$ = p.dispatch("on_regexp_add", (IRubyObject) n1, (IRubyObject) n2);
 			if (s1 == null && s2 != null) {
 			    $$ = new KeyValuePair<IRubyObject, IRubyObject>($<IRubyObject>$, s2);
-			}
+			} else {
+System.out.println("s1: " + s1 + ", n1: " + n1 + ", s2: " + s2 + ", n2: " + n2);
+System.out.println("WHOAT: " + $$ + ", $1: " + $1 + ", $2: " + $2);
+}
                     %*/
   return yyVal;
 };
 states[646] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((Node)yyVals[0+yyTop].value);
+		    /*% ripper[brace]: ripper_new_yylval(p, 0, get_value($1), $1) %*/
   return yyVal;
 };
 states[647] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6252,8 +6258,12 @@ states[738] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[739] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    p.setCurrentArg(((ByteList)yyVals[0+yyTop].value));
+                    RubySymbol name = p.get_id(((ByteList)yyVals[0+yyTop].value));
+                    p.setCurrentArg(name);
+                    /*%%%*/
                     yyVal = p.arg_var(((ByteList)yyVals[0+yyTop].value));
+                    /*% %*/
+                    /*% ripper: get_value($1) %*/
   return yyVal;
 };
 states[740] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6288,7 +6298,7 @@ states[743] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[744] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.arg_var(p.formal_argument(((ByteList)yyVals[0+yyTop].value)));
-                    p.setCurrentArg(((ByteList)yyVals[0+yyTop].value));
+                    p.setCurrentArg(p.get_id(((ByteList)yyVals[0+yyTop].value)));
                     p.ordinalMaxNumParam();
                     p.getLexContext().in_argdef = false;
                     yyVal = ((ByteList)yyVals[0+yyTop].value);
@@ -6672,7 +6682,7 @@ states[817] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4658 "parse.y"
+					// line 4668 "parse.y"
 
 }
-					// line 14428 "-"
+					// line 14438 "-"

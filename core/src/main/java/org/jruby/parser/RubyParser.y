@@ -40,7 +40,7 @@
     'prod_undef_list_type' => ['Node', 'RubyArray'],
     'prod_bv_decls_type' => ['Node', 'RubyArray'],
     'prod_type' => ['Node', 'IRubyObject'],
-    'prod_string_type' => ['Object', 'IRubyObject'],
+    'prod_string_type' => ['Object', 'Object'],
     'prod_words_type' => ['ListNode', 'IRubyObject'],
     'prod_numeric_type' => ['NumericNode', 'IRubyObject'],
     'prod_blockarg_type' => ['BlockPassNode', 'IRubyObject'],
@@ -825,12 +825,12 @@ def_name        : fname {
                     p.pushLocalScope();
                     LexContext ctxt = p.getLexContext();
                     RubySymbol name = p.get_id($1);
-                    p.numparam_name($1);
+                    p.numparam_name(name);
                     /*%%%*/
-                    $$ = new DefHolder(p.symbolID($1), p.getCurrentArg(), (LexContext) ctxt.clone());
+                    $$ = new DefHolder(name, p.getCurrentArg(), (LexContext) ctxt.clone());
                     // Changed from MRI
                     /*% 
-                        $$ = p.new_array(name); // FIXME: No ctxt. no current arg
+                        $$ = p.new_array($1); // FIXME: No ctxt. no current arg
                     %*/
                     ctxt.in_def = true;
                     p.setCurrentArg(null);
@@ -3837,8 +3837,10 @@ regexp_contents: /* none */ {
                         Object n2 = $2;
 
 			if (n1 instanceof KeyValuePair) {
+System.out.println("a.1 s1: " + s1 + ", n1: " + n1 + ", s2: " + s2 + ", n2: " + n2);
 			    s1 = (IRubyObject) ((KeyValuePair) n1).getKey();
 			    n1 = ((KeyValuePair) n1).getValue();
+System.out.println("a.2 s1: " + s1 + ", n1: " + n1 + ", s2: " + s2 + ", n2: " + n2);
 			}
 			if (n2 instanceof KeyValuePair) {
 			    s2 = (IRubyObject) ((KeyValuePair) n2).getKey();
@@ -3847,7 +3849,10 @@ regexp_contents: /* none */ {
 			$$ = p.dispatch("on_regexp_add", (IRubyObject) n1, (IRubyObject) n2);
 			if (s1 == null && s2 != null) {
 			    $$ = new KeyValuePair<IRubyObject, IRubyObject>($<IRubyObject>$, s2);
-			}
+			} else {
+System.out.println("s1: " + s1 + ", n1: " + n1 + ", s2: " + s2 + ", n2: " + n2);
+System.out.println("WHOAT: " + $$ + ", $1: " + $1 + ", $2: " + $2);
+}
                     %*/
                 }
 
@@ -3856,6 +3861,7 @@ regexp_contents: /* none */ {
 // [!null] - StrNode, EvStrNode
 string_content  : tSTRING_CONTENT {
                     $$ = $1;
+		    /*% ripper[brace]: ripper_new_yylval(p, 0, get_value($1), $1) %*/
                 }
                 | tSTRING_DVAR {
                     $$ = p.getStrTerm();
@@ -4327,8 +4333,12 @@ f_norm_arg      : f_bad_arg {
                 }
 
 f_arg_asgn      : f_norm_arg {
-                    p.setCurrentArg($1);
+                    RubySymbol name = p.get_id($1);
+                    p.setCurrentArg(name);
+                    /*%%%*/
                     $$ = p.arg_var($1);
+                    /*% %*/
+                    /*% ripper: get_value($1) %*/
                 }
 
 f_arg_item      : f_arg_asgn {
@@ -4362,7 +4372,7 @@ f_arg           : f_arg_item {
 
 f_label 	: tLABEL {
                     p.arg_var(p.formal_argument($1));
-                    p.setCurrentArg($1);
+                    p.setCurrentArg(p.get_id($1));
                     p.ordinalMaxNumParam();
                     p.getLexContext().in_argdef = false;
                     $$ = $1;

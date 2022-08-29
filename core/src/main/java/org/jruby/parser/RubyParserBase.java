@@ -341,6 +341,10 @@ public abstract class RubyParserBase {
         return one != '0' && Character.isDigit(one); // _1..._9
     }
 
+    // FIXME: We probably only need one impl of this method.
+    public void numparam_name(RubySymbol name) {
+        numparam_name(name.getBytes());
+    }
     public void numparam_name(ByteList name) {
         // FIXME: probably make isNumParamId with ByteList.
         String id = name.toString();
@@ -1603,6 +1607,11 @@ public abstract class RubyParserBase {
         return arg_var(identifier);
     }
 
+    // FIXME:
+    public ArgumentNode arg_var(RubySymbol name) {
+        return arg_var(name.getBytes());
+    }
+
     public ArgumentNode arg_var(ByteList byteName) {
         RubySymbol name = symbolID(byteName);
         numparam_name(byteName);
@@ -2103,8 +2112,8 @@ public abstract class RubyParserBase {
         return lexer.getCurrentArg();
     }
 
-    protected void setCurrentArg(ByteList value) {
-        lexer.setCurrentArg(value);
+    protected void setCurrentArg(RubySymbol value) {
+        lexer.setCurrentArg(value == null ?  null : value.getBytes());
     }
 
     protected StrNode createStr(ByteList buffer, int flags) {

@@ -2478,8 +2478,8 @@ states[67] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop,
                     p.pushLocalScope();
                     LexContext ctxt = p.getLexContext();
                     RubySymbol name = p.get_id(((IRubyObject)yyVals[0+yyTop].value));
-                    p.numparam_name(((IRubyObject)yyVals[0+yyTop].value));
-                        yyVal = p.new_array(name); /* FIXME: No ctxt. no current arg*/
+                    p.numparam_name(name);
+                        yyVal = p.new_array(((IRubyObject)yyVals[0+yyTop].value)); /* FIXME: No ctxt. no current arg*/
 
                     ctxt.in_def = true;
                     p.setCurrentArg(null);
@@ -5586,7 +5586,7 @@ states[629] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
 {IRubyObject v1, v2, v3, v4;
                     v1 = p.dispatch("on_word_new");
                     v2 = v1;
-                    v3 = ((IRubyObject)yyVals[0+yyTop].value);
+                    v3 = yyVals[0+yyTop].value;
                     v4 = p.dispatch("on_word_add", v2, v3);
                     yyVal = v4;}
   return yyVal;
@@ -5594,7 +5594,7 @@ states[629] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
 states[630] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
 {IRubyObject v1, v2, v3;
                     v1 = ((IRubyObject)yyVals[-1+yyTop].value);
-                    v2 = ((IRubyObject)yyVals[0+yyTop].value);
+                    v2 = yyVals[0+yyTop].value;
                     v3 = p.dispatch("on_word_add", v1, v2);
                     yyVal = v3;}
   return yyVal;
@@ -5674,7 +5674,7 @@ states[640] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
 states[641] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
 {IRubyObject v1, v2, v3;
                     v1 = ((IRubyObject)yyVals[-1+yyTop].value);
-                    v2 = ((IRubyObject)yyVals[0+yyTop].value);
+                    v2 = yyVals[0+yyTop].value;
                     v3 = p.dispatch("on_string_add", v1, v2);
                     yyVal = v3;}
                     /* JRuby changed (removed)*/
@@ -5689,7 +5689,7 @@ states[642] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
 states[643] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
 {IRubyObject v1, v2, v3;
                     v1 = ((IRubyObject)yyVals[-1+yyTop].value);
-                    v2 = ((IRubyObject)yyVals[0+yyTop].value);
+                    v2 = yyVals[0+yyTop].value;
                     v3 = p.dispatch("on_xstring_add", v1, v2);
                     yyVal = v3;}
   return yyVal;
@@ -5707,11 +5707,13 @@ states[645] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
                         IRubyObject s1 = p.nil();
                         IRubyObject s2 = null;
                         Object n1 = ((KeyValuePair)yyVals[-1+yyTop].value);
-                        Object n2 = ((IRubyObject)yyVals[0+yyTop].value);
+                        Object n2 = yyVals[0+yyTop].value;
 
 			if (n1 instanceof KeyValuePair) {
+System.out.println("a.1 s1: " + s1 + ", n1: " + n1 + ", s2: " + s2 + ", n2: " + n2);
 			    s1 = (IRubyObject) ((KeyValuePair) n1).getKey();
 			    n1 = ((KeyValuePair) n1).getValue();
+System.out.println("a.2 s1: " + s1 + ", n1: " + n1 + ", s2: " + s2 + ", n2: " + n2);
 			}
 			if (n2 instanceof KeyValuePair) {
 			    s2 = (IRubyObject) ((KeyValuePair) n2).getKey();
@@ -5720,12 +5722,16 @@ states[645] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
 			yyVal = p.dispatch("on_regexp_add", (IRubyObject) n1, (IRubyObject) n2);
 			if (s1 == null && s2 != null) {
 			    yyVal = new KeyValuePair<IRubyObject, IRubyObject>(((IRubyObject)yyVal), s2);
-			}
+			} else {
+System.out.println("s1: " + s1 + ", n1: " + n1 + ", s2: " + s2 + ", n2: " + n2);
+System.out.println("WHOAT: " + yyVal + ", $1: " + ((KeyValuePair)yyVals[-1+yyTop].value) + ", $2: " + yyVals[0+yyTop].value);
+}
 
   return yyVal;
 };
 states[646] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop].value);
+{                    yyVal = new KeyValuePair<IRubyObject, IRubyObject>(p.get_value(((IRubyObject)yyVals[0+yyTop].value)), p.get_value(((IRubyObject)yyVals[0+yyTop].value)));;}
   return yyVal;
 };
 states[647] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6188,8 +6194,9 @@ states[738] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[739] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    p.setCurrentArg(((IRubyObject)yyVals[0+yyTop].value));
-                    yyVal = p.arg_var(((IRubyObject)yyVals[0+yyTop].value));
+                    RubySymbol name = p.get_id(((IRubyObject)yyVals[0+yyTop].value));
+                    p.setCurrentArg(name);
+{                    yyVal = p.get_value(((IRubyObject)yyVals[0+yyTop].value));}
   return yyVal;
 };
 states[740] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6214,7 +6221,7 @@ states[743] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
 };
 states[744] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.arg_var(p.formal_argument(((IRubyObject)yyVals[0+yyTop].value)));
-                    p.setCurrentArg(((IRubyObject)yyVals[0+yyTop].value));
+                    p.setCurrentArg(p.get_id(((IRubyObject)yyVals[0+yyTop].value)));
                     p.ordinalMaxNumParam();
                     p.getLexContext().in_argdef = false;
                     yyVal = ((IRubyObject)yyVals[0+yyTop].value);
@@ -6529,7 +6536,7 @@ states[817] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 }
-					// line 4515 "ripper_RubyParser.out"
+					// line 4522 "ripper_RubyParser.out"
 
 }
-					// line 14285 "-"
+					// line 14292 "-"

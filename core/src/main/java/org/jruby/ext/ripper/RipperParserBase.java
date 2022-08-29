@@ -115,6 +115,11 @@ public class RipperParserBase {
         return null;
     }
 
+    // FIXME: should only be one impl of this?
+    public IRubyObject arg_var(RubySymbol identifier) {
+        return arg_var(identifier.getBytes());
+    }
+
     public IRubyObject arg_var(ByteList identifier) {
         String name = lexer.getIdent();
         StaticScope current = getCurrentScope();
@@ -593,6 +598,10 @@ public class RipperParserBase {
         return value;
     }
 
+    protected IRubyObject ripper_new_yylval(IRubyObject id, IRubyObject b, IRubyObject c) {
+        return new RipperPair
+    }
+
     protected IRubyObject get_value(DefHolder holder) {
         return holder.name;
     }
@@ -860,8 +869,8 @@ public class RipperParserBase {
         return context;
     }
 
-    public RubySymbol get_id(IRubyObject name) {
-        return (RubySymbol) name;
+    public RubySymbol get_id(IRubyObject _ignored) {
+        return getRuntime().newSymbol(lexer.identValue);
     }
 
     protected IRubyObject ripper;
