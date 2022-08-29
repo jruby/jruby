@@ -111,6 +111,7 @@ public class RubyDate extends RubyObject {
         Date.defineAnnotatedMethods(RubyDate.class);
         Date.setConstant("ITALY", runtime.newFixnum(ITALY));
         Date.setConstant("ENGLAND", runtime.newFixnum(ENGLAND));
+        Date.setConstant("VERSION", runtime.newString("3.2.2"));
         return Date;
     }
 
