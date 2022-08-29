@@ -2620,8 +2620,8 @@ public class JVMVisitor extends IRVisitor {
 
         jvmMethod().loadContext();
         if (kwargs) {
-            visit(pairs.get(0).getValue());
             jvmMethod().loadContext();
+            visit(pairs.get(0).getValue());
             jvmMethod().invokeIRHelper("keywordRestOnHash", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
             jvmAdapter().checkcast(p(RubyHash.class));
 
