@@ -1636,7 +1636,7 @@ public class IRBuilder {
     }
 
     private Variable _call(Variable result, CallType type, Operand object, RubySymbol name, Operand... args) {
-        addInstr(CallInstr.create(scope, type, result, name, object, args, NullBlock.INSTANCE, 0));
+        addInstr(CallInstr.create(scope, type, result, name, object, args, null, 0));
         return result;
     }
 
