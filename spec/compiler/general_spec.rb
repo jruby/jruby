@@ -54,7 +54,7 @@ module PersistenceSpecUtils
     writer = org.jruby.ir.persistence.IRWriterStream.new(baos)
     org.jruby.ir.persistence.IRWriter.persist(writer, method)
 
-    reader = org.jruby.ir.persistence.IRReaderStream.new(manager, baos.to_byte_array, org.jruby.util.ByteList.new(filename.to_java.getBytes))
+    reader = org.jruby.ir.persistence.IRReaderStream.new(manager, baos.to_byte_array, filename.to_java)
     method = org.jruby.ir.persistence.IRReader.load(manager, reader)
 
     # interpret

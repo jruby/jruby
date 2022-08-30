@@ -2626,7 +2626,7 @@ public class RubyModule extends RubyObject {
 
         for (RubyModule p = getSuperClass(); p != null; p = p.getSuperClass()) {
             if (p.isIncluded()) {
-                ary.append(p.getOrigin());
+                ary.append(p.getDelegate().getOrigin());
             }
         }
 

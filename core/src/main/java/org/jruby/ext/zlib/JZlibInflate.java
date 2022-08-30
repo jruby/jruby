@@ -108,7 +108,7 @@ public class JZlibInflate extends ZStream {
             }
             return res;
         }
-        return RubyString.newEmptyString(context.runtime);
+        return RubyString.newEmptyBinaryString(context.runtime);
     }
 
     @JRubyMethod(name = "<<", required = 1)

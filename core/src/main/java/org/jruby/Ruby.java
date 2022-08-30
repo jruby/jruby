@@ -998,7 +998,9 @@ public final class Ruby implements Constantizable {
                 System.err.println("found class " + scriptClass.getName() + " for " + filename);
             }
 
-            return Compiler.getScriptFromClass(scriptClass);
+            Script script = Compiler.getScriptFromClass(scriptClass);
+
+            script.setFilename(filename);
         } catch (ClassNotFoundException cnfe) {
             // ignore and proceed to parse and execute
             if (Options.COMPILE_CACHE_CLASSES_LOGGING.load()) {
@@ -2589,7 +2591,7 @@ public final class Ruby implements Constantizable {
 
         try {
             // Get IR from .ir file
-            return IRReader.load(getIRManager(), new IRReaderStream(getIRManager(), IRFileExpert.getIRPersistedFile(file), new ByteList(file.getBytes())));
+            return IRReader.load(getIRManager(), new IRReaderStream(getIRManager(), IRFileExpert.getIRPersistedFile(file), file));
         } catch (IOException e) {
             // FIXME: What is something actually throws IOException
             return (ParseResult) parseFileAndGetAST(in, file, scope, lineNumber, false);
@@ -2610,7 +2612,7 @@ public final class Ruby implements Constantizable {
         if (!RubyInstanceConfig.IR_READING) return (ParseResult) parseFileFromMainAndGetAST(in, file, scope);
 
         try {
-            return IRReader.load(getIRManager(), new IRReaderStream(getIRManager(), IRFileExpert.getIRPersistedFile(file), new ByteList(file.getBytes())));
+            return IRReader.load(getIRManager(), new IRReaderStream(getIRManager(), IRFileExpert.getIRPersistedFile(file), file));
         } catch (IOException ex) {
             if (config.isVerbose()) {
                 LOG.info(ex);

@@ -963,7 +963,7 @@ public class RubyEnumerable {
                 }
                 @Override
                 public IRubyObject call(ThreadContext ctx, IRubyObject larg, Block blk) {
-                    result[0] = sumAdd(ctx, result[0], block.yieldArray(ctx, larg, null), memo);
+                    result[0] = sumAdd(ctx, result[0], block.yield(ctx, larg), memo);
                     return ctx.nil;
                 }
             });
@@ -2042,7 +2042,7 @@ public class RubyEnumerable {
         IRubyObject [] enums = new IRubyObject[args.length + 1];
         enums[0] = self;
         System.arraycopy(args, 0, enums, 1, args.length);
-        
+
         return RubyChain.newChain(context, enums);
     }
 

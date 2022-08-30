@@ -235,11 +235,11 @@ For detail, see the MSDN[http://msdn.microsoft.com/library/en-us/sysinfo/base/pr
         %w/RegEnumKeyExW    LLPPLLLP     L/,
         %w/RegQueryValueExW LPLPPP       L/,
         %w/RegSetValueExW   LPLLPL       L/,
-        %w/RegDeleteValue   LP           L/,
-        %w/RegDeleteKey     LP           L/,
+        %w/RegDeleteValueW   LP           L/,
+        %w/RegDeleteKeyW     LP           L/,
         %w/RegFlushKey      L            L/,
         %w/RegCloseKey      L            L/,
-        %w/RegQueryInfoKey  LPPPPPPPPPPP L/,
+        %w/RegQueryInfoKeyW  LPPPPPPPPPPP L/,
       ].each do |fn|
         const_set fn[0].intern, Win32API.new('advapi32.dll', *fn)
       end

@@ -651,6 +651,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return newEmptyString(runtime, runtime.getString());
     }
 
+    public static RubyString newEmptyBinaryString(Ruby runtime) {
+        return newAllocatedString(runtime, runtime.getString());
+    }
+
     private static final ByteList EMPTY_ASCII8BIT_BYTELIST = new ByteList(ByteList.NULL_ARRAY, ASCIIEncoding.INSTANCE);
     private static final ByteList EMPTY_USASCII_BYTELIST = new ByteList(ByteList.NULL_ARRAY, USASCIIEncoding.INSTANCE);
 
