@@ -5,6 +5,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.NoResultCallInstr;
+import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -32,7 +33,7 @@ public class OneOperandArgNoBlockNoResultCallInstr extends NoResultCallInstr {
     @Override
     public Instr clone(CloneInfo ii) {
         return new OneOperandArgNoBlockNoResultCallInstr(ii.getScope(), getCallType(), getName(), getReceiver().cloneForInlining(ii),
-                cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii), getFlags(),
+                cloneCallArgs(ii), getClosureArg().cloneForInlining(ii), getFlags(),
                 isPotentiallyRefined(), getCallSite(), getCallSiteId());
     }
 

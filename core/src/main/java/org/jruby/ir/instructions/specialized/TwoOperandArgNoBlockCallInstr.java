@@ -5,6 +5,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.CallInstr;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -21,14 +22,14 @@ public class TwoOperandArgNoBlockCallInstr  extends CallInstr  {
     protected TwoOperandArgNoBlockCallInstr(IRScope scope, CallType callType, Variable result, RubySymbol name,
                                             Operand receiver, Operand[] args, int flags, boolean isPotentiallyRefined,
                                             CallSite callSite, long callSiteId) {
-        super(scope, Operation.CALL_2O, callType, result, name, receiver, args, null, flags, isPotentiallyRefined,
+        super(scope, Operation.CALL_2O, callType, result, name, receiver, args, NullBlock.INSTANCE, flags, isPotentiallyRefined,
                 callSite, callSiteId);
     }
 
     // normal constructor
     public TwoOperandArgNoBlockCallInstr(IRScope scope, CallType callType, Variable result, RubySymbol name,
                                          Operand receiver, Operand[] args, int flags, boolean isPotentiallyRefined) {
-        super(scope, Operation.CALL_2O, callType, result, name, receiver, args, null, flags, isPotentiallyRefined);
+        super(scope, Operation.CALL_2O, callType, result, name, receiver, args, NullBlock.INSTANCE, flags, isPotentiallyRefined);
     }
 
     @Override

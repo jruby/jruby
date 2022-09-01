@@ -6,6 +6,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.specialized.OneArgOperandAttrAssignInstr;
+import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Self;
 import org.jruby.ir.persistence.IRReaderDecoder;
@@ -19,7 +20,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 // which is equivalent to: a.[]=(i,5)
 public class AttrAssignInstr extends NoResultCallInstr {
     public static AttrAssignInstr create(IRScope scope, Operand obj, RubySymbol attr, Operand[] args, Operand block, int flags, boolean isPotentiallyRefined) {
-        if (block == null && args.length == 1 && !containsArgSplat(args)) {
+        if (block == NullBlock.INSTANCE && args.length == 1 && !containsArgSplat(args)) {
             return new OneArgOperandAttrAssignInstr(scope, obj, attr, args, flags, isPotentiallyRefined);
         }
 
@@ -30,14 +31,14 @@ public class AttrAssignInstr extends NoResultCallInstr {
             return new OneArgOperandAttrAssignInstr(scope, obj, attr, args, flags, isPotentiallyRefined);
         }
 
-        return new AttrAssignInstr(scope, obj, attr, args, null, flags, isPotentiallyRefined);
+        return new AttrAssignInstr(scope, obj, attr, args, NullBlock.INSTANCE, flags, isPotentiallyRefined);
     }
 
     // clone constructor
     protected AttrAssignInstr(IRScope scope, CallType callType, RubySymbol name, Operand receiver,
                               Operand[] args, int flags, boolean potentiallyRefined, CallSite callSite,
                               long callSiteId) {
-        super(scope, Operation.ATTR_ASSIGN, callType, name, receiver, args, null, flags, potentiallyRefined, callSite, callSiteId);
+        super(scope, Operation.ATTR_ASSIGN, callType, name, receiver, args, NullBlock.INSTANCE, flags, potentiallyRefined, callSite, callSiteId);
     }
 
     // normal constructor

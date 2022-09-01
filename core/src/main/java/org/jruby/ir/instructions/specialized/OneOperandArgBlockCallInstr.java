@@ -37,7 +37,7 @@ public class OneOperandArgBlockCallInstr extends CallInstr {
     public Instr clone(CloneInfo ii) {
         return new OneOperandArgBlockCallInstr(ii.getScope(), getCallType(), ii.getRenamedVariable(result), getName(),
                 getReceiver().cloneForInlining(ii), cloneCallArgs(ii),
-                getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii), getFlags(), isPotentiallyRefined(),
+                getClosureArg().cloneForInlining(ii), getFlags(), isPotentiallyRefined(),
                 getCallSite(), getCallSiteId());
     }
 

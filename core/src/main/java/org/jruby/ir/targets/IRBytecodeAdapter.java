@@ -8,6 +8,7 @@ import com.headius.invokebinder.Signature;
 import org.jruby.RubyModule;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.instructions.ClosureAcceptingInstr;
+import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.targets.indy.IndyArgumentsCompiler;
@@ -434,8 +435,7 @@ public class IRBytecodeAdapter {
             return literal;
         }
         public static BlockPassType fromIR(ClosureAcceptingInstr callInstr) {
-            Operand closure = callInstr.getClosureArg();
-            return closure != null ? ( callInstr.hasLiteralClosure() ? BlockPassType.LITERAL : BlockPassType.GIVEN) : BlockPassType.NONE;
+            return callInstr.getClosureArg() != NullBlock.INSTANCE ? ( callInstr.hasLiteralClosure() ? BlockPassType.LITERAL : BlockPassType.GIVEN) : BlockPassType.NONE;
         }
     }
 

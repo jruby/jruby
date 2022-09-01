@@ -265,7 +265,7 @@ public class IRBuilder {
                 Instr clonedInstr = instr.clone(ii);
                 if (clonedInstr instanceof CallBase) {
                     CallBase call = (CallBase)clonedInstr;
-                    Operand block = call.getClosureArg(null);
+                    Operand block = call.getClosureArg(NullBlock.INSTANCE);
                     if (block instanceof WrappedIRClosure) builder.scope.addClosure(((WrappedIRClosure)block).getClosure());
                 }
                 builder.addInstr(clonedInstr);
@@ -1636,7 +1636,7 @@ public class IRBuilder {
     }
 
     private Variable _call(Variable result, CallType type, Operand object, RubySymbol name, Operand... args) {
-        addInstr(CallInstr.create(scope, type, result, name, object, args, null, 0));
+        addInstr(CallInstr.create(scope, type, result, name, object, args, NullBlock.INSTANCE, 0));
         return result;
     }
 
@@ -3571,7 +3571,7 @@ public class IRBuilder {
     }
 
     private Operand setupCallClosure(Node node) {
-        if (node == null) return null;
+        if (node == null) return NullBlock.INSTANCE;
 
         switch (node.getNodeType()) {
             case ITERNODE:
@@ -4697,7 +4697,7 @@ public class IRBuilder {
 
     public Operand buildSuper(SuperNode callNode) {
         Operand tempBlock = setupCallClosure(callNode.getIterNode());
-        if (tempBlock == null) tempBlock = getYieldClosureVariable();
+        if (tempBlock == NullBlock.INSTANCE) tempBlock = getYieldClosureVariable();
         Operand block = tempBlock;
 
         boolean inClassBody = scope instanceof IRMethod && scope.getLexicalParent() instanceof IRClassBody;
@@ -4941,7 +4941,7 @@ public class IRBuilder {
 
     public Operand buildZSuper(ZSuperNode zsuperNode) {
         Operand block = setupCallClosure(zsuperNode.getIterNode());
-        if (block == null) block = getYieldClosureVariable();
+        if (block == NullBlock.INSTANCE) block = getYieldClosureVariable();
 
         return scope instanceof IRMethod ? buildSuperInstr(block) : buildZSuperIfNest(block);
     }
