@@ -213,4 +213,25 @@ module MethodSpecs
       n * m
     end
   end
+
+  module ChangedVisibility
+    module A
+      private
+      def derp(message)
+        500
+      end
+    end
+
+    module B
+      private
+      def derp
+        super('superclass')
+      end
+    end
+
+    class C
+      include A
+      include B
+    end
+  end
 end

@@ -14,7 +14,7 @@
  *
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -31,12 +31,15 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
+import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CacheEntry;
 
 /**
  * This is similar to {@link DelegatingDynamicMethod} except that it does not delegate most properties of DynamicMethod.
@@ -51,88 +54,107 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author jpetersen
  */
 public class PartialDelegatingMethod extends DynamicMethod {
-    private final DynamicMethod method;
+    private final CacheEntry entry;
+    private final boolean findImplementer;
 
     /**
      * Constructor for PartialDelegatingMethod.
      * @param visibility
      */
-    public PartialDelegatingMethod(RubyModule implementationClass, DynamicMethod method, Visibility visibility) {
-        super(implementationClass, visibility, method.getName());
-        this.method = method;
+    public PartialDelegatingMethod(RubyModule implementationClass, CacheEntry entry, Visibility visibility) {
+        super(implementationClass, visibility, entry.method.getName());
+        this.entry = entry;
+        boolean findImplementer = true;
+
+        if (entry.method instanceof AbstractIRMethod) {
+            findImplementer = ((AbstractIRMethod) entry.method).needsToFindImplementer();
+        }
+
+        this.findImplementer = findImplementer;
     }
-    
+
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name) {
-        return method.call(context, self, klazz, name);
+        return entry.method.call(context, self, calculateSourceModule(self, calculateSourceModule(self, klazz)), name);
     }
-    
+
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg) {
-        return method.call(context, self, klazz, name, arg);
+        return entry.method.call(context, self, calculateSourceModule(self, calculateSourceModule(self, klazz)), name, arg);
     }
-    
+
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2) {
-        return method.call(context, self, klazz, name, arg1, arg2);
+        return entry.method.call(context, self, calculateSourceModule(self, calculateSourceModule(self, klazz)), name, arg1, arg2);
     }
-    
+
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-        return method.call(context, self, klazz, name, arg1, arg2, arg3);
+        return entry.method.call(context, self, calculateSourceModule(self, calculateSourceModule(self, klazz)), name, arg1, arg2, arg3);
     }
-    
+
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args) {
-        return method.call(context, self, klazz, name, args);
+        return entry.method.call(context, self, calculateSourceModule(self, klazz), name, args);
     }
-    
+
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, Block block) {
-        return method.call(context, self, klazz, name, block);
+        return entry.method.call(context, self, calculateSourceModule(self, klazz), name, block);
     }
-    
+
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, Block block) {
-        return method.call(context, self, klazz, name, arg1, block);
+        return entry.method.call(context, self, calculateSourceModule(self, klazz), name, arg1, block);
     }
-    
+
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return method.call(context, self, klazz, name, arg1, arg2, block);
+        return entry.method.call(context, self, calculateSourceModule(self, klazz), name, arg1, arg2, block);
     }
-    
+
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
-        return method.call(context, self, klazz, name, arg1, arg2, arg3, block);
+        return entry.method.call(context, self, calculateSourceModule(self, klazz), name, arg1, arg2, arg3, block);
     }
-    
+
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
-        return method.call(context, self, klazz, name, args, block);
+        return entry.method.call(context, self, calculateSourceModule(self, klazz), name, args, block);
     }
-    
+
     public DynamicMethod dup() {
-        return new PartialDelegatingMethod(getImplementationClass(), method, getVisibility());
+        return new PartialDelegatingMethod(implementationClass, entry, getVisibility());
     }
 
     public long getSerialNumber() {
-        return method.getSerialNumber();
-    }
-    
-    public DynamicMethod getRealMethod() {
-        return method.getRealMethod();
+        return entry.method.getSerialNumber();
     }
 
-    public DynamicMethod getDelegate() {
-        return method;
+    @Override
+    public DynamicMethod getRealMethod() {
+        return entry.method.getRealMethod();
     }
 
     @Deprecated @Override
     public Arity getArity() {
-        return method.getArity();
+        return entry.method.getArity();
     }
 
     @Override
     public Signature getSignature() {
-        return method.getSignature();
+        return entry.method.getSignature();
     }
 
     @Override
     public RubyModule getDefinedClass() {
         RubyModule definedClass = this.definedClass;
         if (definedClass != null) return definedClass;
-        return method.getDefinedClass();
+        return entry.method.getDefinedClass();
     }
 
+    // MRI: vm_call0_body and aliased_callable_method_entry
+    /* FIXME: This is not quite right. It appears that MRI does this logic at call time, but I believe
+              the calculated class is cached somewhere along with the "callable" method entry. The code
+              below means all aliases in modules will do the implementer search, unless we can detect
+              that the related method does not need "super". We can improve this at cache time in either
+              CacheEntry logic or CallSite logic.
+     */
+    private RubyModule calculateSourceModule(IRubyObject self, RubyModule incomingSourceModule) {
+        if (findImplementer) {
+            return Helpers.findImplementerIfNecessary(self.getMetaClass(), entry.method.getImplementationClass());
+        } else {
+            return incomingSourceModule;
+        }
+    }
 }

@@ -42,4 +42,13 @@ describe "Method#super_method" do
 
     method.super_method.should == nil
   end
+
+  # jruby:7240
+  context "after changing an inherited methods visiblity" do
+    it "calls the proper super method" do
+      MethodSpecs::ChangedVisibility::C.send :public, :derp
+
+      MethodSpecs::ChangedVisibility::C.new.derp.should == 500
+    end
+  end
 end
