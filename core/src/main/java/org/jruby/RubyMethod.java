@@ -16,7 +16,7 @@
  * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -38,6 +38,7 @@ import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.DelegatingDynamicMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.IRMethodArgs;
+import org.jruby.internal.runtime.methods.PartialDelegatingMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
@@ -51,13 +52,13 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 
-/** 
+/**
  * The RubyMethod class represents a RubyMethod object.
- * 
+ *
  * You can get such a method by calling the "method" method of an object.
- * 
+ *
  * Note: This was renamed from Method.java
- * 
+ *
  * @author  jpetersen
  * @since 0.2.3
  */
@@ -70,7 +71,7 @@ public class RubyMethod extends AbstractRubyMethod {
     }
 
     /** Create the RubyMethod class and add it to the Ruby runtime.
-     * 
+     *
      */
     public static RubyClass createMethodClass(Ruby runtime) {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here. Confirm. JRUBY-415
@@ -81,7 +82,7 @@ public class RubyMethod extends AbstractRubyMethod {
 
         methodClass.defineAnnotatedMethods(AbstractRubyMethod.class);
         methodClass.defineAnnotatedMethods(RubyMethod.class);
-        
+
         return methodClass;
     }
 
@@ -108,7 +109,7 @@ public class RubyMethod extends AbstractRubyMethod {
     }
 
     /** Call the method.
-     * 
+     *
      */
     @JRubyMethod(name = {"call", "[]"})
     public IRubyObject call(ThreadContext context, Block block) {
@@ -132,7 +133,7 @@ public class RubyMethod extends AbstractRubyMethod {
     }
 
     /** Returns the number of arguments a method accepted.
-     * 
+     *
      * @return the number of arguments of a method.
      */
     @JRubyMethod
@@ -206,7 +207,7 @@ public class RubyMethod extends AbstractRubyMethod {
     }
 
     /** Create a Proc object.
-     * 
+     *
      */
     @JRubyMethod
     public IRubyObject to_proc(ThreadContext context) {
@@ -225,19 +226,19 @@ public class RubyMethod extends AbstractRubyMethod {
         body = new MethodBlockBody(runtime.getStaticScopeFactory().getDummyScope(), signature, entry, argsDesc,
                 receiver, originModule, originName, getFilename(), line == -1 ? -1 : line - 1);
         Block b = MethodBlockBody.createMethodBlock(body);
-        
+
         return RubyProc.newProc(runtime, b, Block.Type.LAMBDA);
     }
 
     @JRubyMethod
     public RubyUnboundMethod unbind() {
         RubyUnboundMethod unboundMethod =
-        	RubyUnboundMethod.newUnboundMethod(implementationModule, methodName, originModule, originName, entry);
+          RubyUnboundMethod.newUnboundMethod(implementationModule, methodName, originModule, originName, entry);
         unboundMethod.infectBy(this);
-        
+
         return unboundMethod;
     }
-    
+
     @JRubyMethod(name = {"inspect", "to_s"})
     @Override
     public IRubyObject inspect() {
@@ -246,7 +247,7 @@ public class RubyMethod extends AbstractRubyMethod {
 
         RubyString str = RubyString.newString(runtime, "#<");
         String sharp = "#";
-        
+
         str.catString(getType().getName()).catString(": ");
 
         RubyModule definedClass;
@@ -347,7 +348,19 @@ public class RubyMethod extends AbstractRubyMethod {
 
     @JRubyMethod
     public IRubyObject super_method(ThreadContext context) {
-        return super_method(context, receiver, sourceModule.getSuperClass());
+        RubyModule superClass = null;
+        if (method instanceof PartialDelegatingMethod) {
+            PartialDelegatingMethod delegate = (PartialDelegatingMethod)method;
+            RubyModule definedClass = delegate.getRealMethod().getDefinedClass();
+            RubyModule module = sourceModule.findImplementer(definedClass);
+
+            if (module != null) {
+                superClass = module.getSuperClass();
+            }
+        } else {
+            superClass = sourceModule.getSuperClass();
+        }
+        return super_method(context, receiver, superClass);
     }
 
     @JRubyMethod

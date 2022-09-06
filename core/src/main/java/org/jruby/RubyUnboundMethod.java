@@ -13,7 +13,7 @@
  *
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -32,6 +32,7 @@ package org.jruby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.PartialDelegatingMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -71,7 +72,7 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
     }
 
     public static RubyClass defineUnboundMethodClass(Ruby runtime) {
-        RubyClass newClass = 
+        RubyClass newClass =
         	runtime.defineClass("UnboundMethod", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
 
         newClass.setClassIndex(ClassIndex.UNBOUNDMETHOD);
@@ -116,9 +117,9 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
     @JRubyMethod
     public RubyMethod bind(ThreadContext context, IRubyObject aReceiver) {
         RubyClass receiverClass = aReceiver.getMetaClass();
-        
+
         receiverClass.checkValidBindTargetFrom(context, (RubyModule) owner(context), true);
-        
+
         return RubyMethod.newMethod(implementationModule, methodName, receiverClass, originName, entry, aReceiver);
     }
 
@@ -159,7 +160,19 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
     }
 
     @JRubyMethod
-    public IRubyObject super_method(ThreadContext context ) {
-        return super_method(context, null, sourceModule.getSuperClass());
+    public IRubyObject super_method(ThreadContext context) {
+        RubyModule superClass = null;
+        if (method instanceof PartialDelegatingMethod) {
+            PartialDelegatingMethod delegate = (PartialDelegatingMethod)method;
+            RubyModule definedClass = delegate.getRealMethod().getDefinedClass();
+            RubyModule module = sourceModule.findImplementer(definedClass);
+
+            if (module != null) {
+                superClass = module.getSuperClass();
+            }
+        } else {
+            superClass = sourceModule.getSuperClass();
+        }
+        return super_method(context, null, superClass);
     }
 }
