@@ -1290,7 +1290,7 @@ public class JVMVisitor extends IRVisitor {
         Operand[] args = classsuperinstr.getCallArgs();
         Operand definingModule = classsuperinstr.getDefiningModule();
         boolean[] splatMap = classsuperinstr.splatMap();
-        Operand closure = classsuperinstr.getClosureArg(null);
+        Operand closure = classsuperinstr.getClosureArg(NullBlock.INSTANCE);
 
         superCommon(name, classsuperinstr, args, definingModule, splatMap, closure);
     }
@@ -1596,7 +1596,7 @@ public class JVMVisitor extends IRVisitor {
         Operand[] args = instancesuperinstr.getCallArgs();
         Operand definingModule = instancesuperinstr.getDefiningModule();
         boolean[] splatMap = instancesuperinstr.splatMap();
-        Operand closure = instancesuperinstr.getClosureArg(null);
+        Operand closure = instancesuperinstr.getClosureArg(NullBlock.INSTANCE);
 
         superCommon(name, instancesuperinstr, args, definingModule, splatMap, closure);
     }
@@ -1624,7 +1624,7 @@ public class JVMVisitor extends IRVisitor {
             visit(operand);
         }
 
-        boolean hasClosure = closure != null;
+        boolean hasClosure = closure != NullBlock.INSTANCE;
         boolean literalClosure = closure instanceof WrappedIRClosure;
         if (hasClosure) {
             m.loadContext();
@@ -2447,7 +2447,7 @@ public class JVMVisitor extends IRVisitor {
         // this would be getDefiningModule but that is not used for unresolved super
         Operand definingModule = UndefinedValue.UNDEFINED;
         boolean[] splatMap = unresolvedsuperinstr.splatMap();
-        Operand closure = unresolvedsuperinstr.getClosureArg(null);
+        Operand closure = unresolvedsuperinstr.getClosureArg(NullBlock.INSTANCE);
 
         superCommon(name, unresolvedsuperinstr, args, definingModule, splatMap, closure);
     }
@@ -2491,7 +2491,7 @@ public class JVMVisitor extends IRVisitor {
         // this would be getDefiningModule but that is not used for unresolved super
         Operand definingModule = UndefinedValue.UNDEFINED;
         boolean[] splatMap = zsuperinstr.splatMap();
-        Operand closure = zsuperinstr.getClosureArg(null);
+        Operand closure = zsuperinstr.getClosureArg(NullBlock.INSTANCE);
 
         superCommon(name, zsuperinstr, args, definingModule, splatMap, closure);
     }

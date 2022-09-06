@@ -6,6 +6,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.CallInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Float;
+import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -24,7 +25,7 @@ public class OneFloatArgNoBlockCallInstr extends CallInstr {
     protected OneFloatArgNoBlockCallInstr(IRScope scope, CallType callType, Variable result, RubySymbol name,
                                           Operand receiver, Operand[] args, int flags, boolean potentiallyRefined,
                                           CallSite callSite, long callSiteId) {
-        super(scope, Operation.CALL_1D, callType, result, name, receiver, args, null, flags, potentiallyRefined,
+        super(scope, Operation.CALL_1D, callType, result, name, receiver, args, NullBlock.INSTANCE, flags, potentiallyRefined,
                 callSite, callSiteId);
 
         this.flote = ((Float) args[0]).value;
@@ -33,7 +34,7 @@ public class OneFloatArgNoBlockCallInstr extends CallInstr {
     // normal constructor
     public OneFloatArgNoBlockCallInstr(IRScope scope, CallType callType, Variable result, RubySymbol name,
                                        Operand receiver, Operand[] args, int flags, boolean potentiallyRefined) {
-        super(scope, Operation.CALL_1D, callType, result, name, receiver, args, null, flags, potentiallyRefined);
+        super(scope, Operation.CALL_1D, callType, result, name, receiver, args, NullBlock.INSTANCE, flags, potentiallyRefined);
 
         assert args.length == 1;
 

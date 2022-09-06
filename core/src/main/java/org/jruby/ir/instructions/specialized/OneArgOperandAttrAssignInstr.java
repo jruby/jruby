@@ -5,6 +5,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.AttrAssignInstr;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -22,7 +23,7 @@ public class OneArgOperandAttrAssignInstr extends AttrAssignInstr {
     // normal constructor
     public OneArgOperandAttrAssignInstr(IRScope scope, Operand obj, RubySymbol attr, Operand[] args, int flags,
                                         boolean isPotentiallyRefined) {
-        super(scope, obj, attr, args, null, flags, isPotentiallyRefined);
+        super(scope, obj, attr, args, NullBlock.INSTANCE, flags, isPotentiallyRefined);
     }
 
     @Override

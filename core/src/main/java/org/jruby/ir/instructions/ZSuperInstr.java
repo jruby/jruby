@@ -6,6 +6,7 @@ import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
@@ -43,7 +44,7 @@ public class ZSuperInstr extends UnresolvedSuperInstr {
     @Override
     public Instr clone(CloneInfo ii) {
         return new ZSuperInstr(ii.getScope(), ii.getRenamedVariable(getResult()), getReceiver().cloneForInlining(ii),
-                cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii), getFlags(),
+                cloneCallArgs(ii), getClosureArg().cloneForInlining(ii), getFlags(),
                 isPotentiallyRefined(), getCallSite(), getCallSiteId());
     }
 
@@ -66,7 +67,7 @@ public class ZSuperInstr extends UnresolvedSuperInstr {
             args[i] = d.decodeOperand();
         }
 
-        Operand closure = hasClosureArg ? d.decodeOperand() : null;
+        Operand closure = hasClosureArg ? d.decodeOperand() : NullBlock.INSTANCE;
         int flags = d.decodeInt();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("before result");
         Variable result = d.decodeVariable();
