@@ -20,7 +20,7 @@ default_gems = [
     ['rubygems-update', '3.2.29', { bin: false }],
     ['bundler', '2.2.29'],
     ['cmath', '1.0.0'],
-    ['csv', '3.1.2'],
+    ['csv', '3.2.5'],
     ['e2mmap', '0.1.0'],
     ['ffi', '1.15.4'],
     ['fileutils', '1.4.1'],
