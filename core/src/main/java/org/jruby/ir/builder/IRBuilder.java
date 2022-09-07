@@ -22,6 +22,8 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.instructions.*;
+import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
+import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Boolean;
@@ -188,7 +190,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
      */
     protected Operand buildEnsureInternal(U body, U elseNode, U[] exceptions, U rescueBody, X optRescue,
                                           boolean isModifier, U ensureNode, boolean isRescue, U reference) {
-        var savedGlobalException = addResultInstr(new GetGlobalVariableInstr(temp(), symbol("$!")));
+        var savedGlobalException = addResultInstr(new GetErrorInfoInstr(temp()));
 
         // The ensure code is built first so that when the protected body is being built,
         // the ensure code can be cloned at break/next/return sites in the protected body.
