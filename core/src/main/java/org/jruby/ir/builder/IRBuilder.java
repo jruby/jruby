@@ -196,9 +196,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         // the ensure code can be cloned at break/next/return sites in the protected body.
         EnsureBlockInfo ebi = new EnsureBlockInfo(scope, getCurrentLoop(), activeRescuers.peek(), currentLine() + 1);
 
-        // Rescue will change $! but we need to restore $! later.  prism: ensure and isRescue means it is both (we
-        // call this method again below to rip those two things apart.
-        if (isRescue && ensureNode == null) ebi.savedGlobalException = savedGlobalException;
+        // $! will be restored from savedGlobalException where required.
+        ebi.savedGlobalException = savedGlobalException;
 
         // Record body of ensure and push to ensure body stack if there is an actual ensure body.
         Operand ensureRetVal = processEnsureBody(ensureNode, ebi);
@@ -250,7 +249,10 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         Variable exc = addResultInstr(new ReceiveJRubyExceptionInstr(temp()));
 
         // Now emit the ensure body's stashed instructions
-        if (ensureNode != null) ebi.emitEnsureBody(this);
+        if (ensureNode != null) {
+            addInstr(new RestoreErrorInfoInstr(exc));
+            ebi.emitEnsureBody(this);
+        }
 
         // 1. Ensure block has no explicit return => the result of the entire ensure expression is the result of the protected body.
         // 2. Ensure block has an explicit return => the result of the protected body is ignored.
