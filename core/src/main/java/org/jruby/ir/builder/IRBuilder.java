@@ -250,7 +250,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
         // Now emit the ensure body's stashed instructions
         if (ensureNode != null) {
-            addInstr(new RestoreErrorInfoInstr(exc));
+//            addInstr(new RestoreErrorInfoInstr(exc));
             ebi.emitEnsureBody(this);
         }
 
