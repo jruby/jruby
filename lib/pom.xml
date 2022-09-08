@@ -112,7 +112,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>csv</artifactId>
-      <version>3.1.9</version>
+      <version>3.2.5</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -981,7 +981,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>specifications/benchmark-0.2.0*</include>
           <include>specifications/bundler-2.3.13*</include>
           <include>specifications/cgi-0.2.0*</include>
-          <include>specifications/csv-3.1.9*</include>
+          <include>specifications/csv-3.2.5*</include>
           <include>specifications/debug-0.2.1*</include>
           <include>specifications/delegate-0.2.0*</include>
           <include>specifications/did_you_mean-1.6.1*</include>
@@ -1052,7 +1052,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>gems/benchmark-0.2.0*/**/*</include>
           <include>gems/bundler-2.3.13*/**/*</include>
           <include>gems/cgi-0.2.0*/**/*</include>
-          <include>gems/csv-3.1.9*/**/*</include>
+          <include>gems/csv-3.2.5*/**/*</include>
           <include>gems/debug-0.2.1*/**/*</include>
           <include>gems/delegate-0.2.0*/**/*</include>
           <include>gems/did_you_mean-1.6.1*/**/*</include>
@@ -1123,7 +1123,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>cache/benchmark-0.2.0*</include>
           <include>cache/bundler-2.3.13*</include>
           <include>cache/cgi-0.2.0*</include>
-          <include>cache/csv-3.1.9*</include>
+          <include>cache/csv-3.2.5*</include>
           <include>cache/debug-0.2.1*</include>
           <include>cache/delegate-0.2.0*</include>
           <include>cache/did_you_mean-1.6.1*</include>
