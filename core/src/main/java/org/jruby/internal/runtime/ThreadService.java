@@ -148,6 +148,9 @@ public class ThreadService extends ThreadLocal<SoftReference<ThreadContext>> {
     public void teardown() {
         // kill and await all live Ruby threads
         for (RubyThread rth : getActiveRubyThreads()) {
+            // don't kill current thread that is doing teardown
+            if (rth == getCurrentContext().getThread()) continue;
+
             if (rth.isAdopted()) return;
 
             try {
