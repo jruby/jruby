@@ -533,7 +533,7 @@ public class JavaUtil {
                 }
             }
             else if (maybeGetOrSet_ && rubyName.startsWith("set")) { // rubyName.startsWith("set_")
-                if (argCount == 1 && resultType == void.class) {    // setFoo(Foo) => foo=(Foo)
+                if (argCount == 1) {    // setFoo(Foo) => foo=(Foo)
                     final String rubyPropertyName = rubyName.substring(4);
                     nameSet.add(javaPropertyName + '=');
                     nameSet.add(rubyPropertyName + '=');
