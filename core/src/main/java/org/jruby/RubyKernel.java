@@ -902,7 +902,7 @@ public class RubyKernel {
             if ( cause == null ) cause = context.getErrorInfo(); // returns nil for no error-info
         }
 
-        maybeRaiseJavaException(runtime, args, argc, cause);
+        maybeRaiseJavaException(context, args, argc, cause);
 
         RaiseException raise;
         switch (argc) {
@@ -943,13 +943,13 @@ public class RubyKernel {
         throw raise;
     }
 
-    private static void maybeRaiseJavaException(final Ruby runtime,
+    private static void maybeRaiseJavaException(final ThreadContext context,
         final IRubyObject[] args, final int argc, final IRubyObject cause) {
         // Check for a Java exception
         ConcreteJavaProxy exception = null;
         switch (argc) {
             case 0:
-                IRubyObject lastException = runtime.getGlobalVariables().get("$!");
+                IRubyObject lastException = context.getErrorInfo();
                 if (lastException instanceof ConcreteJavaProxy) {
                     exception = (ConcreteJavaProxy) lastException;
                 }
@@ -963,14 +963,12 @@ public class RubyKernel {
 
         if (exception != null) {
             // looks like someone's trying to raise a Java exception. Let them.
-            Object maybeThrowable = exception.getObject();
+            Object javaThrowable = exception.getObject();
 
-            if (!(maybeThrowable instanceof Throwable)) {
-                throw runtime.newTypeError("can't raise a non-Throwable Java object");
+            if (javaThrowable instanceof Throwable) {
+                Helpers.throwException((Throwable) javaThrowable);
             }
-
-            final Throwable ex = (Throwable) maybeThrowable;
-            Helpers.throwException(ex); return; // not reached
+            throw context.runtime.newTypeError("can't raise a non-Throwable Java object");
         }
     }
 
