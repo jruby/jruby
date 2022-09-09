@@ -617,7 +617,7 @@ public class ParserSupport {
             return true;
         }
 
-        return node instanceof ILiteralNode || node instanceof NilNode || node instanceof TrueNode || node instanceof FalseNode;
+        return node instanceof LiteralValue || node instanceof NilNode || node instanceof TrueNode || node instanceof FalseNode;
     }
     
     protected Node makeNullNil(Node node) {

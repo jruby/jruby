@@ -7,13 +7,17 @@
 package org.jruby.ast;
 
 import java.util.List;
+
+import org.jruby.Ruby;
+import org.jruby.RubyRational;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
  * @author enebo
  */
-public class RationalNode extends NumericNode implements SideEffectFree {
+public class RationalNode extends NumericNode implements LiteralValue, SideEffectFree {
     private final NumericNode numerator;
     private final NumericNode denominator;
 
@@ -50,5 +54,11 @@ public class RationalNode extends NumericNode implements SideEffectFree {
 
     public NumericNode getDenominator() {
         return denominator;
+    }
+
+    @Override
+    public IRubyObject literalValue(Ruby runtime) {
+        return RubyRational.newRationalCanonicalize(runtime.getCurrentContext(),
+                numerator.literalValue(runtime), denominator.literalValue(runtime));
     }
 }
