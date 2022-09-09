@@ -472,11 +472,11 @@ stmt            : keyword_alias fitem {
                     $$ = $2;
                 }
                 | stmt modifier_if expr_value {
-                    $$ = support.new_if(support.getPosition($1), support.cond($3), $1, null);
+                    $$ = support.new_if(support.getPosition($1), $3, $1, null);
                     support.fixpos($<Node>$, $3);
                 }
                 | stmt modifier_unless expr_value {
-                    $$ = support.new_if(support.getPosition($1), support.cond($3), null, $1);
+                    $$ = support.new_if(support.getPosition($1), $3, null, $1);
                     support.fixpos($<Node>$, $3);
                 }
                 | stmt modifier_while expr_value {
@@ -1293,7 +1293,7 @@ arg             : lhs '=' arg_rhs {
                 }
                 | arg '?' arg opt_nl ':' arg {
                     support.value_expr(lexer, $1);
-                    $$ = support.new_if(support.getPosition($1), support.cond($1), $3, $6);
+                    $$ = support.new_if(support.getPosition($1), $1, $3, $6);
                 }
                 | primary {
                     $$ = $1;
@@ -1575,10 +1575,10 @@ primary         : literal
                     $$ = $2;
                 }
                 | keyword_if expr_value then compstmt if_tail keyword_end {
-                    $$ = support.new_if($1, support.cond($2), $4, $5);
+                    $$ = support.new_if($1, $2, $4, $5);
                 }
                 | keyword_unless expr_value then compstmt opt_else keyword_end {
-                    $$ = support.new_if($1, support.cond($2), $5, $4);
+                    $$ = support.new_if($1, $2, $5, $4);
                 }
                 | keyword_while {
                     lexer.getConditionState().push1();
@@ -1741,7 +1741,7 @@ do              : term
 
 if_tail         : opt_else
                 | keyword_elsif expr_value then compstmt if_tail {
-                    $$ = support.new_if($1, support.cond($2), $4, $5);
+                    $$ = support.new_if($1, $2, $4, $5);
                 }
 
 opt_else        : none
