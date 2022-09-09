@@ -446,6 +446,14 @@ public class IRRuntimeHelpers {
         return false;
     }
 
+    @JIT
+    public static void setErrorInfoGlobalVariable(ThreadContext context, Object exception) {
+        if (exception instanceof Throwable) {
+            exception = Helpers.wrapJavaException(context.runtime, (Throwable) exception);
+        }
+        setErrorInfoGlobalVariable(context, (IRubyObject) exception);
+    }
+
     public static void setErrorInfoGlobalVariable(ThreadContext context, IRubyObject exception) {
         context.runtime.getGlobalVariables().set("$!", exception);
     }

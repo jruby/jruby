@@ -125,4 +125,36 @@ class TestException < Test::Unit::TestCase
     assert_nil $!
   end
 
+  def test_exception_rescue_java(previous_error = nil)
+    begin
+      raise java.lang.IllegalStateException.new('from java')
+    rescue
+      assert_equal "from java", $!.message
+    ensure
+      assert_same previous_error, $!
+    end
+    assert_same previous_error, $!
+
+    begin
+      java.util.ArrayList.new.get(1)
+      raise 'foo'
+    rescue RuntimeError
+      fail 'should not rescue here' if $!
+    rescue java.lang.RuntimeException
+      assert_instance_of java.lang.IndexOutOfBoundsException, $!
+    end
+    assert_same previous_error, $!
+
+    begin
+      begin
+        java.util.ArrayList.new.addAll(nil)
+      ensure
+        assert_instance_of java.lang.NullPointerException, $!
+      end
+    rescue java.lang.NullPointerException
+      # pass
+    end
+    assert_same previous_error, $!
+  end if defined? JRUBY_VERSION
+
 end
