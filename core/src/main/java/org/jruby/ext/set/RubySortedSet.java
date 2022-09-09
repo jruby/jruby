@@ -157,9 +157,10 @@ public class RubySortedSet extends RubySet implements SortedSet {
         return this;
     }
 
-    @Override
-    public IRubyObject initialize_clone(ThreadContext context, IRubyObject orig) {
-        super.initialize_clone(context, orig);
+    @JRubyMethod(frame = true, forward = true, required = 1, optional = 1)
+    public IRubyObject initialize_clone(ThreadContext context, IRubyObject[] args) {
+        super.initialize_clone(context, args);
+        IRubyObject orig = args[0];
         if (this != orig) order.addAll(((RubySortedSet) orig).order);
         return this;
     }
