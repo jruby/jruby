@@ -7,7 +7,11 @@
 package org.jruby.ast;
 
 import java.util.List;
+
+import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
@@ -43,5 +47,10 @@ public class ComplexNode extends NumericNode implements SideEffectFree {
 
     public void setNumber(NumericNode y) {
         this.y = y;
+    }
+
+    @Override
+    public IRubyObject literalValue(Ruby runtime) {
+        return IRRuntimeHelpers.newComplexRaw(runtime.getCurrentContext(), y.literalValue(runtime));
     }
 }

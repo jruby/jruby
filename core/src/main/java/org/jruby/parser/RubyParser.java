@@ -1860,12 +1860,12 @@ states[26] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionSt
   return yyVal;
 };
 states[27] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = support.new_if(support.getPosition(((Node)yyVals[-2+yyTop].value)), support.cond(((Node)yyVals[0+yyTop].value)), ((Node)yyVals[-2+yyTop].value), null);
+                    yyVal = support.new_if(support.getPosition(((Node)yyVals[-2+yyTop].value)), ((Node)yyVals[0+yyTop].value), ((Node)yyVals[-2+yyTop].value), null);
                     support.fixpos(((Node)yyVal), ((Node)yyVals[0+yyTop].value));
   return yyVal;
 };
 states[28] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = support.new_if(support.getPosition(((Node)yyVals[-2+yyTop].value)), support.cond(((Node)yyVals[0+yyTop].value)), null, ((Node)yyVals[-2+yyTop].value));
+                    yyVal = support.new_if(support.getPosition(((Node)yyVals[-2+yyTop].value)), ((Node)yyVals[0+yyTop].value), null, ((Node)yyVals[-2+yyTop].value));
                     support.fixpos(((Node)yyVal), ((Node)yyVals[0+yyTop].value));
   return yyVal;
 };
@@ -2854,7 +2854,7 @@ states[261] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
 };
 states[262] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.value_expr(lexer, ((Node)yyVals[-5+yyTop].value));
-                    yyVal = support.new_if(support.getPosition(((Node)yyVals[-5+yyTop].value)), support.cond(((Node)yyVals[-5+yyTop].value)), ((Node)yyVals[-3+yyTop].value), ((Node)yyVals[0+yyTop].value));
+                    yyVal = support.new_if(support.getPosition(((Node)yyVals[-5+yyTop].value)), ((Node)yyVals[-5+yyTop].value), ((Node)yyVals[-3+yyTop].value), ((Node)yyVals[0+yyTop].value));
   return yyVal;
 };
 states[263] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -3165,11 +3165,11 @@ states[336] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
   return yyVal;
 };
 states[337] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = support.new_if(((Integer)yyVals[-5+yyTop].value), support.cond(((Node)yyVals[-4+yyTop].value)), ((Node)yyVals[-2+yyTop].value), ((Node)yyVals[-1+yyTop].value));
+                    yyVal = support.new_if(((Integer)yyVals[-5+yyTop].value), ((Node)yyVals[-4+yyTop].value), ((Node)yyVals[-2+yyTop].value), ((Node)yyVals[-1+yyTop].value));
   return yyVal;
 };
 states[338] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = support.new_if(((Integer)yyVals[-5+yyTop].value), support.cond(((Node)yyVals[-4+yyTop].value)), ((Node)yyVals[-1+yyTop].value), ((Node)yyVals[-2+yyTop].value));
+                    yyVal = support.new_if(((Integer)yyVals[-5+yyTop].value), ((Node)yyVals[-4+yyTop].value), ((Node)yyVals[-1+yyTop].value), ((Node)yyVals[-2+yyTop].value));
   return yyVal;
 };
 states[339] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -3364,7 +3364,7 @@ states[370] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
   return yyVal;
 };
 states[377] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = support.new_if(((Integer)yyVals[-4+yyTop].value), support.cond(((Node)yyVals[-3+yyTop].value)), ((Node)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value));
+                    yyVal = support.new_if(((Integer)yyVals[-4+yyTop].value), ((Node)yyVals[-3+yyTop].value), ((Node)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value));
   return yyVal;
 };
 states[379] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {

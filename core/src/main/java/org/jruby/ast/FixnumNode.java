@@ -43,7 +43,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /** 
  * Represents an integer literal.
  */
-public class FixnumNode extends NumericNode implements ILiteralNode, LiteralValue, SideEffectFree {
+public class FixnumNode extends NumericNode implements ILiteralNode, SideEffectFree {
     private long value;
 
     public FixnumNode(int line, long value) {
