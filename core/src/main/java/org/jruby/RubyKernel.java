@@ -1232,7 +1232,7 @@ public class RubyKernel {
         IRubyObject maybeException = null;
         switch (argc) {
             case 0:
-                maybeException = globalVariables(context).get("$!");
+                maybeException = context.getErrorInfo();
                 break;
             case 1:
                 if (args.length == 1) maybeException = args[0];
@@ -1259,7 +1259,7 @@ public class RubyKernel {
             if (!(maybeThrowable instanceof Throwable)) throw typeError(context, "can't raise a non-Throwable Java object");
 
             final Throwable ex = (Throwable) maybeThrowable;
-            return ex; // not reached
+            return ex;
         }
         return null;
     }
