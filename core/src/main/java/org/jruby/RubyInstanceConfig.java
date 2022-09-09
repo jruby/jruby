@@ -60,10 +60,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 
 /**
@@ -691,17 +691,17 @@ public class RubyInstanceConfig {
         this.loader = loader;
     }
 
-    private final List<String> extraLoadPaths = new LinkedList<>();
+    private final List<String> extraLoadPaths = new CopyOnWriteArrayList<>();
     public List<String> getExtraLoadPaths() {
         return extraLoadPaths;
     }
 
-    private final List<String> extraGemPaths = new LinkedList<>();
+    private final List<String> extraGemPaths = new CopyOnWriteArrayList<>();
     public List<String> getExtraGemPaths() {
         return extraGemPaths;
     }
 
-    private final List<Loader> extraLoaders = new LinkedList<>();
+    private final List<Loader> extraLoaders = new CopyOnWriteArrayList<>();
     public List<Loader> getExtraLoaders() {
         return extraLoaders;
     }

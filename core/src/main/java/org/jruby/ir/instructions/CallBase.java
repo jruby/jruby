@@ -62,7 +62,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         this.flags = flags;
         this.callSiteId = callSiteId;
         argsCount = args.length;
-        hasClosure = closure != null;
+        hasClosure = closure != NullBlock.INSTANCE;
         this.name = name;
         this.callType = callType;
         this.callSite = callSite == null ? getCallSiteFor(scope, callType, name.idString(), callSiteId, hasLiteralClosure(), potentiallyRefined) : callSite;
@@ -91,7 +91,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
             e.encode(arg);
         }
 
-        if (hasClosure) e.encode(getClosureArg(null));
+        if (hasClosure) e.encode(getClosureArg(NullBlock.INSTANCE));
 
         e.encode(flags);
     }
@@ -127,7 +127,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
 
     /** From interface ClosureAcceptingInstr */
     public Operand getClosureArg() {
-        return hasClosure ? operands[argsCount + 1] : null;
+        return hasClosure ? operands[argsCount + 1] : NullBlock.INSTANCE;
     }
 
     public Operand getClosureArg(Operand ifUnspecified) {
@@ -529,9 +529,10 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
 
     private final static int REQUIRED_OPERANDS = 1;
     private static Operand[] arrayifyOperands(Operand receiver, Operand[] callArgs, Operand closure) {
-        Operand[] allArgs = new Operand[callArgs.length + REQUIRED_OPERANDS + (closure != null ? 1 : 0)];
-
         assert receiver != null : "RECEIVER is null";
+        assert closure != null : "CLOSURE is null";
+
+        Operand[] allArgs = new Operand[callArgs.length + REQUIRED_OPERANDS + (closure != NullBlock.INSTANCE ? 1 : 0)];
 
         allArgs[0] = receiver;
         for (int i = 0; i < callArgs.length; i++) {
@@ -540,7 +541,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
             allArgs[i + REQUIRED_OPERANDS] = callArgs[i];
         }
 
-        if (closure != null) allArgs[callArgs.length + REQUIRED_OPERANDS] = closure;
+        if (closure != NullBlock.INSTANCE) allArgs[callArgs.length + REQUIRED_OPERANDS] = closure;
 
         return allArgs;
     }

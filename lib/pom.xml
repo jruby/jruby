@@ -112,7 +112,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>csv</artifactId>
-      <version>3.1.9</version>
+      <version>3.2.5</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -541,7 +541,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>psych</artifactId>
-      <version>4.0.3</version>
+      <version>4.0.5</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -981,7 +981,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>specifications/benchmark-0.2.0*</include>
           <include>specifications/bundler-2.3.13*</include>
           <include>specifications/cgi-0.2.0*</include>
-          <include>specifications/csv-3.1.9*</include>
+          <include>specifications/csv-3.2.5*</include>
           <include>specifications/debug-0.2.1*</include>
           <include>specifications/delegate-0.2.0*</include>
           <include>specifications/did_you_mean-1.6.1*</include>
@@ -1014,7 +1014,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>specifications/pp-0.3.0*</include>
           <include>specifications/prettyprint-0.1.1*</include>
           <include>specifications/pstore-0.1.1*</include>
-          <include>specifications/psych-4.0.3*</include>
+          <include>specifications/psych-4.0.5*</include>
           <include>specifications/racc-1.6.0*</include>
           <include>specifications/rake-ant-1.0.5*</include>
           <include>specifications/rdoc-6.4.0*</include>
@@ -1052,7 +1052,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>gems/benchmark-0.2.0*/**/*</include>
           <include>gems/bundler-2.3.13*/**/*</include>
           <include>gems/cgi-0.2.0*/**/*</include>
-          <include>gems/csv-3.1.9*/**/*</include>
+          <include>gems/csv-3.2.5*/**/*</include>
           <include>gems/debug-0.2.1*/**/*</include>
           <include>gems/delegate-0.2.0*/**/*</include>
           <include>gems/did_you_mean-1.6.1*/**/*</include>
@@ -1085,7 +1085,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>gems/pp-0.3.0*/**/*</include>
           <include>gems/prettyprint-0.1.1*/**/*</include>
           <include>gems/pstore-0.1.1*/**/*</include>
-          <include>gems/psych-4.0.3*/**/*</include>
+          <include>gems/psych-4.0.5*/**/*</include>
           <include>gems/racc-1.6.0*/**/*</include>
           <include>gems/rake-ant-1.0.5*/**/*</include>
           <include>gems/rdoc-6.4.0*/**/*</include>
@@ -1123,7 +1123,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>cache/benchmark-0.2.0*</include>
           <include>cache/bundler-2.3.13*</include>
           <include>cache/cgi-0.2.0*</include>
-          <include>cache/csv-3.1.9*</include>
+          <include>cache/csv-3.2.5*</include>
           <include>cache/debug-0.2.1*</include>
           <include>cache/delegate-0.2.0*</include>
           <include>cache/did_you_mean-1.6.1*</include>
@@ -1156,7 +1156,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>cache/pp-0.3.0*</include>
           <include>cache/prettyprint-0.1.1*</include>
           <include>cache/pstore-0.1.1*</include>
-          <include>cache/psych-4.0.3*</include>
+          <include>cache/psych-4.0.5*</include>
           <include>cache/racc-1.6.0*</include>
           <include>cache/rake-ant-1.0.5*</include>
           <include>cache/rdoc-6.4.0*</include>

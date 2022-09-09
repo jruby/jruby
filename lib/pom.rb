@@ -27,7 +27,7 @@ default_gems = [
     # https://github.com/ruby/cgi/pull/9
     # ['cgi', '0.3.1'],
     ['cgi', '0.2.0'],
-    ['csv', '3.1.9'],
+    ['csv', '3.2.5'],
     # https://github.com/ruby/date/issues/48
     # ['date', '3.2.2'],
     ['debug', '0.2.1'],
@@ -79,7 +79,7 @@ default_gems = [
     ['pp', '0.3.0'],
     ['prettyprint', '0.1.1'],
     ['pstore', '0.1.1'],
-    ['psych', '4.0.3'],
+    ['psych', '4.0.5'],
     ['racc', '1.6.0'],
     ['rake-ant', '1.0.5'],
     ['rdoc', '6.4.0'],

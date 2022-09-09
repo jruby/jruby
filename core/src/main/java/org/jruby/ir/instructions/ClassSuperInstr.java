@@ -6,6 +6,7 @@ import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
@@ -56,7 +57,7 @@ public class ClassSuperInstr extends CallInstr {
     @Override
     public Instr clone(CloneInfo ii) {
         return new ClassSuperInstr(ii.getScope(), ii.getRenamedVariable(getResult()), getDefiningModule().cloneForInlining(ii),
-                name, cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii),
+                name, cloneCallArgs(ii), getClosureArg().cloneForInlining(ii),
                 getFlags(), isPotentiallyRefined(), getCallSite(), getCallSiteId());
     }
 
@@ -77,7 +78,7 @@ public class ClassSuperInstr extends CallInstr {
             args[i] = d.decodeOperand();
         }
 
-        Operand closure = hasClosureArg ? d.decodeOperand() : null;
+        Operand closure = hasClosureArg ? d.decodeOperand() : NullBlock.INSTANCE;
         int flags = d.decodeInt();
 
         return new ClassSuperInstr(d.getCurrentScope(), d.decodeVariable(), receiver, name, args, closure, flags, d.getCurrentScope().maybeUsingRefinements());
