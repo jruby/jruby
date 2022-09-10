@@ -1,7 +1,0 @@
-wip:Kernel#clone with freeze: nil copies frozen state from the original, like #clone without arguments
-wip:Kernel#clone with freeze: nil copies frozen?
-wip:Kernel#clone with freeze: true freezes the copy even if the original was not frozen
-wip:Kernel#clone with freeze: true calls #initialize_clone with kwargs freeze: true
-wip:Kernel#clone with freeze: true calls #initialize_clone with kwargs freeze: true even if #initialize_clone only takes a single argument
-wip:Kernel#clone with freeze: false calls #initialize_clone with kwargs freeze: false
-wip:Kernel#clone with freeze: false calls #initialize_clone with kwargs freeze: false even if #initialize_clone only takes a single argument
