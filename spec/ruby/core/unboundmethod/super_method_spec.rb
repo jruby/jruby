@@ -30,10 +30,19 @@ describe "UnboundMethod#super_method" do
   # jruby:7240
   context "after changing an inherited methods visiblity" do
     it "returns the expected super_method" do
-      MethodSpecs::ChangedVisibility::C.send :public, :derp
+      MethodSpecs::InheritedMethods::C.send :public, :derp
 
-      method = MethodSpecs::ChangedVisibility::C.instance_method(:derp)
-      method.super_method.owner.should == MethodSpecs::ChangedVisibility::A
+      method = MethodSpecs::InheritedMethods::C.instance_method(:derp)
+      method.super_method.owner.should == MethodSpecs::InheritedMethods::A
+    end
+  end
+
+  context "after aliasing an inherited method" do
+    it "returns the expected super_method" do
+      MethodSpecs::InheritedMethods::C.alias_method :meow, :derp
+
+      method = MethodSpecs::InheritedMethods::C.instance_method(:meow)
+      method.super_method.owner.should == MethodSpecs::InheritedMethods::A
     end
   end
 end

@@ -214,7 +214,7 @@ module MethodSpecs
     end
   end
 
-  module ChangedVisibility
+  module InheritedMethods
     module A
       private
       def derp(message)
