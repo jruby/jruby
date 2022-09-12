@@ -54,7 +54,7 @@ public class ThrowExceptionInstr extends OneOperandInstr implements FixedArityIn
         RubyKernel.raise(context, self, new IRubyObject[] {(IRubyObject) excObj}, Block.NULL_BLOCK);
 
         // should never get here
-        throw new RuntimeException("Control shouldn't have reached here in ThrowEx");
+        throw new AssertionError("Control shouldn't have reached here in ThrowEx");
     }
 
     @Override
