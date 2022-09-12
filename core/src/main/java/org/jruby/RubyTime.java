@@ -1391,6 +1391,10 @@ public class RubyTime extends RubyObject {
             return time;
         }
 
+        if (arg3.isNil()) {
+            arg3 = context.runtime.newSymbol("microsecond");
+        }
+
         return atMulti(context, (RubyClass) recv, arg1, arg2, arg3, zone);
     }
 
