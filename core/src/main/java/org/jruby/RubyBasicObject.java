@@ -836,8 +836,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
 
         IRubyObject dup = metaClass.getRealClass().allocate();
+        ThreadContext context = getRuntime().getCurrentContext();
 
-        initCopy(metaClass.runtime.getCurrentContext(), dup, this, false);
+        initCopy(context, dup, this);
+        sites(context).initialize_dup.call(context, dup, dup, this);
 
         return dup;
     }
@@ -847,7 +849,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * Initializes a copy with variable and special instance variable
      * information, and then call the initialize_copy Ruby method.
      */
-    private static IRubyObject initCopy(ThreadContext context, IRubyObject clone, IRubyObject original, boolean doClone) {
+    private static void initCopy(ThreadContext context, IRubyObject clone, IRubyObject original) {
         assert !clone.isFrozen() : "frozen object (" + clone.getMetaClass().getName() + ") allocated";
 
         original.copySpecialInstanceVariables(clone);
@@ -858,11 +860,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             cloneMod.syncConstants((RubyModule)original);
             cloneMod.syncClassVariables((RubyModule)original);
         }
-
-        /* FIXME: finalizer should be dupped here */
-        return doClone ?
-                sites(context).initialize_clone.call(context, clone, clone, original) :
-                sites(context).initialize_dup.call(context, clone, clone, original);
     }
 
     protected static boolean OBJ_INIT_COPY(IRubyObject obj, IRubyObject orig) {
@@ -904,33 +901,36 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     @Override
     public IRubyObject rbClone() {
-        return rbCloneInternal(metaClass.runtime.getCurrentContext(), true);
+        Ruby runtime = getRuntime();
+        return rbCloneInternal(runtime.getCurrentContext(), runtime.getNil());
     }
 
     public IRubyObject rbClone(ThreadContext context, IRubyObject maybeOpts) {
         Ruby runtime = context.runtime;
 
-        boolean kwfreeze = true;
+        IRubyObject kwfreeze = null;
         IRubyObject opts = ArgsUtil.getOptionsArg(runtime, maybeOpts);
 
         if (!opts.isNil()) {
             IRubyObject freeze = ((RubyHash) opts).fastARef(runtime.newSymbol("freeze"));
-            if (freeze != null && freeze != runtime.getTrue() && freeze != runtime.getFalse()) {
-                throw runtime.newArgumentError(str(runtime, "unexpected value for freeze: ", types(runtime, freeze.getType())));
-            }
             if (freeze != null) {
-                kwfreeze = freeze.isTrue();
+                if (!freeze.isNil() && freeze != runtime.getTrue() && freeze != runtime.getFalse()) {
+                    throw runtime.newArgumentError(str(runtime, "unexpected value for freeze: ", types(runtime, freeze.getType())));
+                }
+                kwfreeze = freeze;
             }
         }
 
         return rbCloneInternal(context, kwfreeze);
     }
 
-    private RubyBasicObject rbCloneInternal(ThreadContext context, boolean freeze) {
+    // freeze (false, true, nil)
+    private RubyBasicObject rbCloneInternal(ThreadContext context, IRubyObject freeze) {
 
+        // MRI: immutable_obj_clone
         if (isSpecialObject()) {
             final Ruby runtime = context.runtime;
-            if (!freeze) throw runtime.newArgumentError(str(runtime, "can't unfreeze ", types(runtime, getType())));
+            if (freeze == runtime.getFalse()) throw runtime.newArgumentError(str(runtime, "can't unfreeze ", types(runtime, getType())));
 
             return this;
         }
@@ -939,9 +939,18 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         RubyBasicObject clone = (RubyBasicObject) metaClass.getRealClass().allocate();
         clone.setMetaClass(getSingletonClassCloneAndAttach(clone));
 
-        initCopy(context, clone, this, true);
+        initCopy(context, clone, this);
 
-        if (freeze && isFrozen()) clone.setFrozen(true);
+        if (freeze == context.nil) {
+            sites(context).initialize_clone.call(context, clone, clone, this);
+            if (isFrozen()) clone.setFrozen(true);
+        } else { // will always be true or false (MRI has bulletproofing to catch odd values (rb_bug explodes).
+            // FIXME: MRI uses C module variables to make a single hash ever for this setup.  We build every time.
+            RubyHash opts = RubyHash.newHash(context.runtime, getRuntime().newSymbol("freeze"), freeze);
+            context.callInfo = CALL_KEYWORD;
+            sites(context).initialize_clone.call(context, clone, clone, this, opts);
+            if (freeze == context.tru) clone.setFrozen(true);
+        }
 
         return clone;
     }

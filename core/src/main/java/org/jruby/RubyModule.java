@@ -3222,14 +3222,12 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "include", required = 1, rest = true)
     public RubyModule include(IRubyObject[] modules) {
-        ThreadContext context = metaClass.runtime.getCurrentContext();
-        // MRI checks all types first:
-        for (int i = modules.length; --i >= 0; ) {
-            IRubyObject module = modules[i];
-            if ( ! module.isModule() ) {
-                throw context.runtime.newTypeError(module, context.runtime.getModule());
-            }
+        for (IRubyObject module: modules) {
+            if (!module.isModule()) throw getRuntime().newTypeError(module, getRuntime().getModule());
         }
+
+        ThreadContext context = getRuntime().getCurrentContext();
+
         for (int i = modules.length - 1; i >= 0; i--) {
             IRubyObject module = modules[i];
             module.callMethod(context, "append_features", this);
@@ -3241,9 +3239,8 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "include", required = 1) // most common path: include Enumerable
     public RubyModule include(ThreadContext context, IRubyObject module) {
-        if (!module.isModule()) {
-            throw context.runtime.newTypeError(module, context.runtime.getModule());
-        }
+        if (!module.isModule()) throw context.runtime.newTypeError(module, context.runtime.getModule());
+
         module.callMethod(context, "append_features", this);
         module.callMethod(context, "included", this);
         return this;
