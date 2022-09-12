@@ -90,7 +90,6 @@ class EnsureBlockInfo {
      * @param builder
      */
     public void emitEnsureBody(IRBuilder builder) {
-        builder.addInstr(new LabelInstr(bodyStart));
         for (Instr i: instrs) {
             builder.addInstr(i);
         }
