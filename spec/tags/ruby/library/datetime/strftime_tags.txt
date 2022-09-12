@@ -1,1 +1,0 @@
-wip:DateTime#strftime should be able to show the commercial week
