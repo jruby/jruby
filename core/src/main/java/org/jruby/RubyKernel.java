@@ -955,6 +955,7 @@ public class RubyKernel {
             } else {
                 return new MainExitException(status, true);
             }
+
         }
 
         RaiseException ex = message == null ?
