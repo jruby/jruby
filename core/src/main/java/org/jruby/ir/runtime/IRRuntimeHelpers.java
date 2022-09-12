@@ -31,6 +31,7 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.common.IRubyWarnings;
+import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.coverage.CoverageData;
@@ -448,10 +449,15 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static void setErrorInfoGlobalVariable(ThreadContext context, Object exception) {
-        if (exception instanceof Throwable) {
+        if (exception instanceof RaiseException) {
+            exception = ((RaiseException) exception).getException();
+        } else if (exception instanceof Throwable && !(exception instanceof JumpException)) {
             exception = Helpers.wrapJavaException(context.runtime, (Throwable) exception);
         }
-        setErrorInfoGlobalVariable(context, (IRubyObject) exception);
+
+        if (exception instanceof IRubyObject) {
+            setErrorInfoGlobalVariable(context, (IRubyObject) exception);
+        }
     }
 
     public static void setErrorInfoGlobalVariable(ThreadContext context, IRubyObject exception) {

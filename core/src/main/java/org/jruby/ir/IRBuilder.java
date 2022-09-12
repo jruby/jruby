@@ -222,7 +222,6 @@ public class IRBuilder {
         }
 
         public void emitBody(IRBuilder b) {
-            b.addInstr(new LabelInstr(start));
             for (Instr i: instrs) {
                 b.addInstr(i);
             }
@@ -2885,9 +2884,10 @@ public class IRBuilder {
 
         // Now emit the ensure body's stashed instructions
         if (ensureNode != null) {
-//            Variable exc2 = createTemporaryVariable();
-//            addInstr(new ReceiveRubyExceptionInstr(exc2));
-//            addInstr(new RestoreErrorInfoInstr(exc2));
+            //Variable exc2 = createTemporaryVariable();
+            //addInstr(new ReceiveRubyExceptionInstr(exc2));
+            addInstr(new RestoreErrorInfoInstr(exc));
+            addInstr(new LabelInstr(ebi.start));
             ebi.emitBody(this);
         }
 
