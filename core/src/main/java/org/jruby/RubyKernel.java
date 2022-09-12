@@ -957,9 +957,11 @@ public class RubyKernel {
             }
         }
 
-        return message == null ?
+        RaiseException ex = message == null ?
                 context.runtime.newSystemExit(status) :
                 context.runtime.newSystemExit(status, message);
+        context.setErrorInfo(ex.getException()); // set $! (in case Kernel.exit called from at_exit)
+        return ex;
     }
 
 
