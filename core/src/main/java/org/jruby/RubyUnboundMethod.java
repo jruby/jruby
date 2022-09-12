@@ -13,7 +13,7 @@
  *
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
- *
+ * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -73,7 +73,7 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
     }
 
     public static RubyClass defineUnboundMethodClass(Ruby runtime) {
-        RubyClass newClass =
+        RubyClass newClass = 
         	runtime.defineClass("UnboundMethod", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
 
         newClass.setClassIndex(ClassIndex.UNBOUNDMETHOD);
@@ -118,9 +118,9 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
     @JRubyMethod
     public RubyMethod bind(ThreadContext context, IRubyObject aReceiver) {
         RubyClass receiverClass = aReceiver.getMetaClass();
-
+        
         receiverClass.checkValidBindTargetFrom(context, (RubyModule) owner(context), true);
-
+        
         return RubyMethod.newMethod(implementationModule, methodName, receiverClass, originName, entry, aReceiver);
     }
 

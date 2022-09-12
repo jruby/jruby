@@ -17,7 +17,7 @@
  * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
- *
+ * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -68,7 +68,7 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
     }
 
     /** Returns the number of arguments a method accepted.
-     *
+     * 
      * @return the number of arguments of a method.
      */
     @JRubyMethod(name = "arity")
