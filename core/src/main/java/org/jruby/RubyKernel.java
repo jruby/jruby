@@ -787,7 +787,7 @@ public class RubyKernel {
             }
         } else {
             RaiseException ex = message == null ? runtime.newSystemExit(status) : runtime.newSystemExit(status, message);
-            runtime.getCurrentContext().setErrorInfo(ex.getException()); // set $! (accessible in at_exit blocks)
+            runtime.getCurrentContext().setErrorInfo(ex.getException()); // set $! (in case Kernel.exit called from at_exit)
             throw ex;
         }
     }
