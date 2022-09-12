@@ -196,8 +196,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         // the ensure code can be cloned at break/next/return sites in the protected body.
         EnsureBlockInfo ebi = new EnsureBlockInfo(scope, getCurrentLoop(), activeRescuers.peek(), currentLine() + 1);
 
-        // $! will be restored from savedGlobalException where required.
-        ebi.savedGlobalException = savedGlobalException;
+        // Rescue will change $! but we need to restore $! later.
+        if (isRescue) ebi.savedGlobalException = savedGlobalException;
 
         // Record body of ensure and push to ensure body stack if there is an actual ensure body.
         Operand ensureRetVal = processEnsureBody(ensureNode, ebi);
