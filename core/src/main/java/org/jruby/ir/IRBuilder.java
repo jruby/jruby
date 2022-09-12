@@ -2839,7 +2839,7 @@ public class IRBuilder {
 
         // Record $! save var if we had a non-empty rescue node.
         // $! will be restored from it where required.
-        ebi.savedGlobalException = savedGlobalException;
+        if (ensureBodyNode instanceof RescueNode) ebi.savedGlobalException = savedGlobalException;
 
         ensureBodyBuildStack.push(ebi);
         Operand ensureRetVal = ensureNode == null ? manager.getNil() : build(ensureNode);
@@ -2884,8 +2884,6 @@ public class IRBuilder {
 
         // Now emit the ensure body's stashed instructions
         if (ensureNode != null) {
-            //Variable exc2 = createTemporaryVariable();
-            //addInstr(new ReceiveRubyExceptionInstr(exc2));
             addInstr(new RestoreErrorInfoInstr(exc));
             addInstr(new LabelInstr(ebi.start));
             ebi.emitBody(this);
