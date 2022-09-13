@@ -1423,7 +1423,7 @@ public class RubyTime extends RubyObject {
             return atOpts(context, recv, arg1, arg2, ms, context.nil);
         }
 
-        return atOpts(context, recv, arg1, context.nil, context.nil, maybeOpts);
+        return atOpts(context, recv, arg1, context.nil, null, maybeOpts);
     }
 
     @JRubyMethod(meta = true)
@@ -1434,7 +1434,7 @@ public class RubyTime extends RubyObject {
             return atOpts(context, recv, arg1, arg2, arg3, context.nil);
         }
 
-        return atOpts(context, recv, arg1, arg2, context.nil, arg3);
+        return atOpts(context, recv, arg1, arg2, null, arg3);
     }
 
     @JRubyMethod(required = 1, optional = 3, meta = true)
@@ -1456,7 +1456,7 @@ public class RubyTime extends RubyObject {
     private static IRubyObject atOpts(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject opts) {
         IRubyObject zone = ArgsUtil.extractKeywordArg(context, "in", opts);
 
-        if (arg2.isNil() && arg3.isNil()) {
+        if (arg2.isNil() && (arg3 == null || arg3.isNil())) {
             RubyTime time = at1(context, recv, arg1);
 
             time = time.gmtime();
@@ -1466,6 +1466,10 @@ public class RubyTime extends RubyObject {
             }
 
             return time;
+        }
+
+        if (arg3 == null) {
+            arg3 = context.runtime.newSymbol("microsecond");
         }
 
         return atMulti(context, (RubyClass) recv, arg1, arg2, arg3, zone);

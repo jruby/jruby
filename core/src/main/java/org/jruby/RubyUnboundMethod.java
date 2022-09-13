@@ -31,7 +31,9 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.PartialDelegatingMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
@@ -177,7 +179,18 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
     }
 
     @JRubyMethod
-    public IRubyObject super_method(ThreadContext context ) {
-        return super_method(context, null, sourceModule.getSuperClass());
+    public IRubyObject super_method(ThreadContext context) {
+        RubyModule superClass = null;
+        if (method instanceof PartialDelegatingMethod || method instanceof AliasMethod) {
+            RubyModule definedClass = method.getRealMethod().getDefinedClass();
+            RubyModule module = sourceModule.findImplementer(definedClass);
+
+            if (module != null) {
+                superClass = module.getSuperClass();
+            }
+        } else {
+            superClass = sourceModule.getSuperClass();
+        }
+        return super_method(context, null, superClass);
     }
 }

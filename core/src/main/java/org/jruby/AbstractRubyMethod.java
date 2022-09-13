@@ -160,7 +160,8 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
     protected IRubyObject super_method(ThreadContext context, IRubyObject receiver, RubyModule superClass) {
         if (superClass == null) return context.nil;
 
-        CacheEntry entry = superClass.searchWithCache(methodName);
+        String searchName = method.getRealMethod().getName();
+        CacheEntry entry = superClass.searchWithCache(searchName);
         if (entry.method == UndefinedMethod.INSTANCE ||
                 entry.method.getDefinedClass().getMethods().get(entry.method.getName()) == UndefinedMethod.INSTANCE) {
             return context.nil;

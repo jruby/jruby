@@ -36,7 +36,10 @@ package org.jruby.ast;
 import java.math.BigInteger;
 import java.util.List;
 
+import org.jruby.Ruby;
+import org.jruby.RubyBignum;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /** 
  * Represents a big integer literal.
@@ -76,5 +79,10 @@ public class BignumNode extends NumericNode implements SideEffectFree {
 
     public void setValue(BigInteger value) {
         this.value = value;
+    }
+
+    @Override
+    public IRubyObject literalValue(Ruby runtime) {
+        return RubyBignum.newBignum(runtime, value);
     }
 }

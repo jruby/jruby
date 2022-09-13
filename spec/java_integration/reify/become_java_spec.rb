@@ -341,6 +341,37 @@ describe "JRuby class reification" do
     expect(klass.load_class(a_class.get_name)).to eq(a_class)
   end
 
+  it "supports reifying concrete classes extending classes from an unrelated class loader" do
+    isolated_class_path = File.expand_path('../../../../test/target/test-classes-isolated', __FILE__)
+    classloader = java.net.URLClassLoader.new([java.net.URL.new("file://#{isolated_class_path}/")].to_java(java.net.URL))
+    JRuby.runtime.instance_config.add_loader(classloader)
+
+    # we can reference it from JRuby, because it was added to the JRuby loader above
+    class GH7327 < Java::Java_integrationFixturesIsolatedClasses::GH7327Base; end
+    # it should have created a unique Java class
+    expect(GH7327.become_java!).not_to eq(Java::Java_integrationFixturesIsolatedClasses::GH7327Base.java_class)
+  ensure
+    JRuby.runtime.instance_config.extra_loaders.clear
+  end
+
+  it "supports reifying concrete classes extending classes and implementing interfaces from multiple unrelated class loaders" do
+    isolated_class_path = File.expand_path('../../../../test/target/test-classes-isolated', __FILE__)
+    classloader1 = java.net.URLClassLoader.new([java.net.URL.new("file://#{isolated_class_path}/")].to_java(java.net.URL))
+    JRuby.runtime.instance_config.add_loader(classloader1)
+    isolated_interface_path = File.expand_path('../../../../test/target/test-interfaces-isolated', __FILE__)
+    classloader2 = java.net.URLClassLoader.new([java.net.URL.new("file://#{isolated_interface_path}/")].to_java(java.net.URL))
+    JRuby.runtime.instance_config.add_loader(classloader2)
+
+    # we can reference them from JRuby, because they were added to the JRuby loader above
+    class GH7327WithInterface < Java::Java_integrationFixturesIsolatedClasses::GH7327Base
+      include Java::Java_integrationFixturesIsolatedInterfaces::GH7327Interface
+    end
+    # it should have created a unique Java class
+    expect(GH7327WithInterface.become_java!).not_to eq(Java::Java_integrationFixturesIsolatedClasses::GH7327Base.java_class)
+  ensure
+    JRuby.runtime.instance_config.extra_loaders.clear
+  end
+
   class ReifiedSample
     def hello; 'Sayonara from Ruby' end
     java_signature "java.lang.String ahoy()"

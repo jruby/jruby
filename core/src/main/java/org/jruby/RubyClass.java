@@ -60,6 +60,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.java.codegen.MultiClassLoader;
 import org.jruby.java.codegen.RealClassGenerator;
 import org.jruby.java.codegen.Reified;
 import org.jruby.java.proxies.ConcreteJavaProxy;
@@ -88,6 +89,7 @@ import org.jruby.util.ArraySupport;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JavaNameMangler;
+import org.jruby.util.Loader;
 import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.StringSupport;
 import org.jruby.util.collections.ConcurrentWeakHashMap;
@@ -1389,7 +1391,11 @@ public class RubyClass extends RubyModule {
             parentCL = (OneShotClassLoader) parentReified.getClassLoader();
         } else {
             if (useChildLoader) {
-                parentCL = new OneShotClassLoader(runtime.getJRubyClassLoader());
+                MultiClassLoader parentLoader = new MultiClassLoader(runtime.getJRubyClassLoader());
+                for(Loader cLoader : runtime.getInstanceConfig().getExtraLoaders()) {
+                    parentLoader.addClassLoader(cLoader.getClassLoader());
+                }
+                parentCL = new OneShotClassLoader(parentLoader);
             } else {
                 parentCL = runtime.getJRubyClassLoader();
             }
