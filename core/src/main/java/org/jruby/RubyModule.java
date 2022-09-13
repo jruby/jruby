@@ -2236,8 +2236,7 @@ public class RubyModule extends RubyObject {
             if (this == method.getImplementationClass()) {
                 method.setVisibility(visibility);
             } else {
-                DynamicMethod newMethod = new PartialDelegatingMethod(this, method, visibility);
-
+                DynamicMethod newMethod = new PartialDelegatingMethod(this, entry, visibility);
                 methodLocation.addMethod(name, newMethod);
             }
 

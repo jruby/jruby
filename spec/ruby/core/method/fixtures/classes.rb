@@ -214,6 +214,7 @@ module MethodSpecs
     end
   end
 
+
   module InheritedMethods
     module A
       private
