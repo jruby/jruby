@@ -33,7 +33,7 @@ default_gems = [
     ['debug', '0.2.1'],
     ['delegate', '0.2.0'],
     ['did_you_mean', '1.6.1'],
-    ['digest', '3.1.0'], 
+    ['digest', '3.1.0'],
     ['drb', '2.1.0'],
     ['english', '0.7.1'],
     ['erb', '2.2.3'],
@@ -53,7 +53,7 @@ default_gems = [
     # https://github.com/ruby/io-nonblock/issues/4
     # ['io-nonblock', '0.1.0'],
     ['io-wait', '0.2.3'],
-    ['ipaddr', '1.2.3'],
+    ['ipaddr', '1.2.4'],
     ['irb', '1.4.1'],
     ['jar-dependencies', '0.4.1'],
     ['jruby-readline', '1.3.7'],
@@ -334,7 +334,7 @@ project 'JRuby Lib Setup' do
 
         # copy bin files if the gem has any
         copy_gem_executables.call(spec, gem_home) if options[:bin]
-        
+
         # TODO: try avoiding these binstub of gems - should use a full gem location
         spec.executables.each do |f|
           bin = Dir.glob(File.join( gems, "#{gem_name}*", spec.bindir ))[0]
