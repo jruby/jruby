@@ -136,7 +136,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
             throw ((RubyException) result.data).toThrowable();
         }
 
-        return result.data;
+        return processResultData(context, result);
     }
 
     @JRubyMethod(rest = true)
@@ -275,7 +275,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
             throw ((RubyException) result.data).toThrowable();
         }
 
-        return result.data;
+        return processResultData(context, result);
     }
     public IRubyObject raise(ThreadContext context, IRubyObject exception) {
         Ruby runtime = context.runtime;
@@ -312,7 +312,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
             throw ((RubyException) result.data).toThrowable();
         }
 
-        return result.data;
+        return processResultData(context, result);
     }
     
     @JRubyMethod(meta = true)
@@ -333,6 +333,10 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
             throw ((RubyException) result.data).toThrowable();
         }
 
+        return processResultData(context, result);
+    }
+
+    private static IRubyObject processResultData(ThreadContext context, FiberRequest result) {
         IRubyObject data = result.data;
 
         if (data == RubyBasicObject.NEVER) return context.nil;
@@ -358,7 +362,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
             throw ((RubyException) result.data).toThrowable();
         }
 
-        return result.data;
+        return processResultData(context, result);
     }
 
     private static FiberData verifyCurrentFiber(ThreadContext context, Ruby runtime) {
