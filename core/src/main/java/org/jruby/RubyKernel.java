@@ -875,15 +875,13 @@ public class RubyKernel {
     }
     public static IRubyObject raise(ThreadContext context, IRubyObject self, IRubyObject arg0) {
         final Ruby runtime = context.runtime;
-        int argc = 1;
-        boolean forceCause = false;
 
         // semi extract_raise_opts :
         IRubyObject cause;
         if (arg0 instanceof RubyHash) {
             RubyHash opt = (RubyHash) arg0;
             RubySymbol key;
-            if (!opt.isEmpty() && (opt.has_key_p(context, key = runtime.newSymbol("cause")) == runtime.getTrue())) {
+            if (!opt.isEmpty() && (opt.has_key_p(context, runtime.newSymbol("cause")) == runtime.getTrue())) {
                 throw runtime.newArgumentError("only cause is given with no arguments");
             }
         }
@@ -903,7 +901,7 @@ public class RubyKernel {
             printExceptionSummary(runtime, raise.getException());
         }
 
-        if (forceCause || argc > 0 && raise.getException().getCause() == null && cause != raise.getException()) {
+        if (raise.getException().getCause() == null && cause != raise.getException()) {
             raise.getException().setCause(cause);
         }
 
