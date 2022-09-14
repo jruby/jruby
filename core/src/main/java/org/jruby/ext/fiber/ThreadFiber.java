@@ -295,14 +295,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
         FiberRequest val = new FiberRequest(exception, RequestType.RAISE);
 
-        if (currentFiberData.prev != null) {
-            // new fiber should answer to current prev and this fiber is marked as transferred
-            data.prev = currentFiberData.prev;
-            currentFiberData.prev = null;
-            currentFiberData.transferred = true;
-        } else {
-            data.prev = context.getFiber();
-        }
+        data.prev = context.getFiber();
 
         FiberRequest result = null;
         try {
