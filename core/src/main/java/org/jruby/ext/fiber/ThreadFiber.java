@@ -340,7 +340,11 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
             throw ((RubyException) result.data).toThrowable();
         }
 
-        return result.data;
+        IRubyObject data = result.data;
+
+        if (data == RubyBasicObject.NEVER) return context.nil;
+
+        return data;
     }
 
     @JRubyMethod(meta = true, rest = true)
