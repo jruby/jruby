@@ -33,16 +33,19 @@ import java.util.EnumSet;
 import java.util.Set;
 import org.joni.WarnCallback;
 import org.jruby.Ruby;
+import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
 
+import static org.jruby.util.RubyStringBuilder.cat;
 import static org.jruby.util.RubyStringBuilder.str;
 
 /**
@@ -51,6 +54,7 @@ import static org.jruby.util.RubyStringBuilder.str;
 public class RubyWarnings implements IRubyWarnings, WarnCallback {
     private final Ruby runtime;
     private final Set<ID> oncelers = EnumSet.allOf(IRubyWarnings.ID.class);
+    // Set of categories we care about (set defined when creating warnings).
     private static final Set<Category> categories = EnumSet.allOf(Category.class);
 
     public RubyWarnings(Ruby runtime) {
@@ -61,7 +65,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         categories.add(Category.EXPERIMENTAL);
 
         // At time this is created globals/runtime has not setup warnings/verbosity in runtime yet.
-        if (!runtime.getInstanceConfig().isVerbose()) categories.remove(Category.DEPRECATED);
+        if (!runtime.isVerbose()) categories.remove(Category.DEPRECATED);
 
         RubyModule warning = runtime.defineModule("Warning");
 
@@ -118,6 +122,12 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         RubyModule warning = runtime.getWarning();
 
         sites(context).write.call(context, warning, errorStream, errorString);
+    }
+
+    public static IRubyObject warnWithCategory(ThreadContext context, IRubyObject errorString, IRubyObject category) {
+        RubySymbol cat = (RubySymbol) TypeConverter.convertToType(category, context.runtime.getSymbol(), "to_sym");
+        if (categories.contains(Category.fromId(cat.idString()))) warn(context, null, errorString);
+        return context.nil;
     }
 
     @Override
@@ -243,7 +253,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         return flag;
     }
 
-    @JRubyMethod
+    // This used to be jrubymethod but leave recv behind for backwards compat
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         Ruby runtime = context.runtime;
 
@@ -254,6 +264,21 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         }
         writeWarningToError(runtime.getCurrentContext(), str);
         return context.nil;
+    }
+
+    @JRubyMethod(required = 1, optional = 1)
+    public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        if (args.length > 1) {
+            IRubyObject opts = TypeConverter.checkHashType(context.runtime, args[1]);
+            IRubyObject ret = ArgsUtil.extractKeywordArg(context, (RubyHash) opts, "category");
+            if (ret.isNil()) {
+                return warn(context, recv, args[0]);
+            } else {
+                return warnWithCategory(context, args[0], ret);
+            }
+        } else {
+            return warn(context, recv, args[0]);
+        }
     }
 
     private static JavaSites.WarningSites sites(ThreadContext context) {
@@ -271,6 +296,15 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         IRubyObject errorStream = runtime.getGlobalVariables().get("$stderr");
         String buffer = fileName + " warning: " + message + '\n';
         errorStream.callMethod(runtime.getCurrentContext(), "write", runtime.newString(buffer));
+    }
+
+    // When runtime verbose is toggled we change the categories to reflect that.
+    public void adjustCategories(boolean isVerbose) {
+        if (isVerbose) {
+            categories.add(Category.DEPRECATED);
+        } else {
+            categories.remove(Category.DEPRECATED);
+        }
     }
 
     public enum Category {

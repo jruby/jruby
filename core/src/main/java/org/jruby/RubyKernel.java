@@ -78,6 +78,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
+import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
@@ -1296,23 +1297,23 @@ public class RubyKernel {
         }
 
         if (!context.runtime.getVerbose().isNil()) {
-            warnObj(context, recv, arg);
+            warnObj(context, recv, arg, context.nil);
         }
 
         return context.nil;
     }
 
-    private static void warnObj(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+    private static void warnObj(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject category) {
         if (arg instanceof RubyArray) {
             final RubyArray argAry = arg.convertToArray();
-            for (int i = 0; i < argAry.size(); i++) warnObj(context, recv, argAry.eltOk(i));
+            for (int i = 0; i < argAry.size(); i++) warnObj(context, recv, argAry.eltOk(i), category);
             return;
         }
 
-        warnStr(context, recv, arg.asString());
+        warnStr(context, recv, arg.asString(), category);
     }
 
-    static void warnStr(ThreadContext context, IRubyObject recv, RubyString message) {
+    static void warnStr(ThreadContext context, IRubyObject recv, RubyString message, IRubyObject category) {
         final Ruby runtime = context.runtime;
 
         if (!message.endsWithAsciiChar('\n')) {
@@ -1324,13 +1325,22 @@ public class RubyKernel {
             return;
         }
 
-        sites(context).warn.call(context, recv, runtime.getWarning(), message);
+        // FIXME: This seems "fragile".  Not sure if other transitional Ruby methods need this sort of thing or not (e.g. perhaps we need a helper on callsite for this).
+        DynamicMethod method = ((CachingCallSite) sites(context).warn).retrieveCache(runtime.getWarning()).method;
+        if (method.getSignature().isOneArgument()) {
+            sites(context).warn.call(context, recv, runtime.getWarning(), message);
+        } else {
+            RubyHash keywords = RubyHash.newHash(runtime, runtime.newSymbol("category"), category);
+            context.callInfo = ThreadContext.CALL_KEYWORD;
+            sites(context).warn.call(context, recv, runtime.getWarning(), message, keywords);
+        }
     }
 
     @JRubyMethod(module = true, rest = true, visibility = PRIVATE, omit = true)
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        boolean kwargs = false;
+        boolean explicitUplevel = false;
         int uplevel = 0;
+        IRubyObject category = context.nil;
 
         int argMessagesLen = args.length;
         if (argMessagesLen > 0) {
@@ -1338,12 +1348,19 @@ public class RubyKernel {
             if (opts != context.nil) {
                 argMessagesLen--;
 
-                IRubyObject ret = ArgsUtil.extractKeywordArg(context, (RubyHash) opts, "uplevel");
-                if (ret == null) kwargs = false; // as if options Hash wasn't passed
-                else {
-                    kwargs = true;
-                    if ((uplevel = RubyNumeric.num2int(ret)) < 0) {
+                IRubyObject[] ret = ArgsUtil.extractKeywordArgs(context, (RubyHash) opts, "uplevel", "category");
+                if (ret[0] != null) {
+                    explicitUplevel = true;
+                    if ((uplevel = RubyNumeric.num2int(ret[0])) < 0) {
                         throw context.runtime.newArgumentError("negative level (" + uplevel + ")");
+                    }
+                }
+
+                if (ret[1] != null) {
+                    if (ret[1].isNil()) {
+                        category = ret[1];
+                    } else {
+                        category = TypeConverter.convertToType(ret[1], context.runtime.getSymbol(), "to_sym");
                     }
                 }
             }
@@ -1352,13 +1369,13 @@ public class RubyKernel {
         int i = 0;
 
         if (!context.runtime.getVerbose().isNil() && argMessagesLen > 0) {
-            if (kwargs && argMessagesLen > 0) { // warn(uplevel: X) does nothing
-                warnStr(context, recv, buildWarnMessage(context, uplevel, args[0]));
+            if (explicitUplevel && argMessagesLen > 0) { // warn(uplevel: X) does nothing
+                warnStr(context, recv, buildWarnMessage(context, uplevel, args[0]), category);
                 i = 1;
             }
 
             for (; i < argMessagesLen; i++) {
-                warnObj(context, recv, args[i]);
+                warnObj(context, recv, args[i], category);
             }
         }
 
@@ -1366,12 +1383,14 @@ public class RubyKernel {
     }
 
     private static RubyString buildWarnMessage(ThreadContext context, final int uplevel, final IRubyObject arg) {
-        RubyStackTraceElement element = context.getSingleBacktrace(uplevel);
+        RubyStackTraceElement element = context.getSingleBacktraceExact(uplevel);
 
         RubyString message = RubyString.newStringLight(context.runtime, 32);
         if (element != null) {
             message.catString(element.getFileName()).cat(':').catString(Integer.toString(element.getLineNumber()))
                    .catString(": warning: ");
+        } else {
+            message.catString("warning: ");
         }
         return (RubyString) message.op_plus19(context, arg.asString());
     }
