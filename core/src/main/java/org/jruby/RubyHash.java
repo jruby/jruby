@@ -1666,9 +1666,9 @@ public class RubyHash extends RubyObject implements Map {
 
         if (!isEmpty()) {
             RubyArray pairs = (RubyArray) flatten(context);
+            RubyHash newKeys = newHash(context.runtime);
             int length = pairs.size();
             boolean aborted = false; // If break happens in blocks we stop transforming but still leave rest as-is.
-            clear();
             for (int i = 0; i < length; i += 2) {
                 IRubyObject oldKey = pairs.eltOk(i);
                 IRubyObject newKey;
@@ -1681,7 +1681,7 @@ public class RubyHash extends RubyObject implements Map {
                             newKey = block.yield(context, oldKey);
                         } catch (IRBreakJump e) {
                             aborted = true;
-                            newKey = oldKey;
+                            continue;
                         }
                     } else {
                         newKey = ((RubyHash) transformHash).internalGet(oldKey);
@@ -1692,7 +1692,7 @@ public class RubyHash extends RubyObject implements Map {
                                     newKey = block.yield(context, oldKey);
                                 } catch (IRBreakJump e) {
                                     aborted = true;
-                                    newKey = oldKey;
+                                    continue;
                                 }
                             } else {
                                 newKey = oldKey;
@@ -1701,7 +1701,11 @@ public class RubyHash extends RubyObject implements Map {
                     }
                 }
 
+                if (!newKeys.hasKey(oldKey)) {
+                    fastDelete(oldKey);
+                }
                 fastASet(newKey, pairs.eltOk(i + 1));
+                newKeys.fastASet(newKey, null);
             }
         }
 
