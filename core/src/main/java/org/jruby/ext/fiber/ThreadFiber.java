@@ -67,13 +67,19 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     }
 
     public ThreadFiber(Ruby runtime, RubyClass klass) {
+        this(runtime, klass, false);
+    }
+
+    public ThreadFiber(Ruby runtime, RubyClass klass, boolean root) {
         super(runtime, klass);
+
+        this.root = root;
     }
 
     public static void initRootFiber(ThreadContext context, RubyThread currentThread) {
         Ruby runtime = context.runtime;
 
-        ThreadFiber rootFiber = new ThreadFiber(runtime, runtime.getFiber());
+        ThreadFiber rootFiber = new ThreadFiber(runtime, runtime.getFiber(), true);
 
         rootFiber.data = new FiberData(new FiberQueue(runtime), currentThread, rootFiber);
         rootFiber.thread = currentThread;
@@ -102,7 +108,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         if (!alive()) throw runtime.newFiberError("dead fiber called");
 
         final FiberData data = this.data;
-        if (data.prev != null || data.transferred) throw runtime.newFiberError("double resume");
+        if (root || data.prev != null || data.transferred) throw runtime.newFiberError("attempt to resume a resuming fiber");
         
         FiberData currentFiberData = context.getFiber().data;
         
@@ -563,4 +569,5 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     
     volatile FiberData data;
     volatile RubyThread thread;
+    final boolean root;
 }
