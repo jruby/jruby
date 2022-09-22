@@ -1564,7 +1564,9 @@ public class RubyHash extends RubyObject implements Map {
     private static final VisitorWithState<Block> YieldKeyValueArrayVisitor = new VisitorWithState<Block>() {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Block block) {
-            if (block.getSignature().arityValue() > 1) {
+            if (block.type == Block.Type.LAMBDA) {
+                block.call(context, context.runtime.newArray(key, value));
+            } else if (block.getSignature().arityValue() > 1) {
                 block.yieldSpecific(context, key, value);
             } else {
                 block.yield(context, context.runtime.newArray(key, value));
