@@ -24,9 +24,7 @@ default_gems = [
     # https://github.com/ruby/bigdecimal/issues/169
     # ['bigdecimal', '3.1.1'],
     ['bundler', '2.3.13'],
-    # https://github.com/ruby/cgi/pull/9
-    # ['cgi', '0.3.1'],
-    ['cgi', '0.2.0'],
+    ['cgi', '0.3.3'],
     ['csv', '3.2.5'],
     # https://github.com/ruby/date/issues/48
     # ['date', '3.2.2'],

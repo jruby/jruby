@@ -99,7 +99,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>cgi</artifactId>
-      <version>0.2.0</version>
+      <version>0.3.3</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -980,7 +980,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/base64-0.1.1*</include>
           <include>specifications/benchmark-0.2.0*</include>
           <include>specifications/bundler-2.3.13*</include>
-          <include>specifications/cgi-0.2.0*</include>
+          <include>specifications/cgi-0.3.3*</include>
           <include>specifications/csv-3.2.5*</include>
           <include>specifications/debug-0.2.1*</include>
           <include>specifications/delegate-0.2.0*</include>
@@ -1051,7 +1051,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/base64-0.1.1*/**/*</include>
           <include>gems/benchmark-0.2.0*/**/*</include>
           <include>gems/bundler-2.3.13*/**/*</include>
-          <include>gems/cgi-0.2.0*/**/*</include>
+          <include>gems/cgi-0.3.3*/**/*</include>
           <include>gems/csv-3.2.5*/**/*</include>
           <include>gems/debug-0.2.1*/**/*</include>
           <include>gems/delegate-0.2.0*/**/*</include>
@@ -1122,7 +1122,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/base64-0.1.1*</include>
           <include>cache/benchmark-0.2.0*</include>
           <include>cache/bundler-2.3.13*</include>
-          <include>cache/cgi-0.2.0*</include>
+          <include>cache/cgi-0.3.3*</include>
           <include>cache/csv-3.2.5*</include>
           <include>cache/debug-0.2.1*</include>
           <include>cache/delegate-0.2.0*</include>
