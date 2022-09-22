@@ -1552,10 +1552,6 @@ public class RubyHash extends RubyObject implements Map {
         return block.isGiven() ? each_pairCommon(context, block) : enumeratorizeWithSize(context, this, "each", RubyHash::size);
     }
 
-    public IRubyObject each19(final ThreadContext context, final Block block) {
-        return each(context, block);
-    }
-
     /** rb_hash_each_pair
      *
      */
@@ -3015,5 +3011,10 @@ public class RubyHash extends RubyObject implements Map {
     @Deprecated
     public RubyHash rb_clear() {
         return rb_clear(getRuntime().getCurrentContext());
+    }
+
+    @Deprecated
+    public IRubyObject each19(final ThreadContext context, final Block block) {
+        return each(context, block);
     }
 }
