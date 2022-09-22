@@ -858,9 +858,13 @@ public class RubyLexer extends LexingCommon {
         return token;
     }
     
-    private boolean arg_ambiguous() {
+    private boolean arg_ambiguous(int c) {
         if (warnings.isVerbose() && Options.PARSER_WARN_AMBIGUOUS_ARGUMENTS.load()) {
-            warnings.warning(ID.AMBIGUOUS_ARGUMENT, getFile(), ruby_sourceline, "Ambiguous first argument; make sure.");
+            if (c == '/') {
+                warnings.warning(ID.AMBIGUOUS_ARGUMENT, getFile(), ruby_sourceline, "ambiguity between regexp and two divisions: wrap regexp in parentheses or add a space after `/' operator");
+            } else {
+                warnings.warning(ID.AMBIGUOUS_ARGUMENT, getFile(), ruby_sourceline, "ambiguous first argument; put parentheses or a space even after `" + (char) c + "' operator");
+            }
         }
         return true;
     }
@@ -1822,7 +1826,7 @@ public class RubyLexer extends LexingCommon {
             yaccValue = MINUS_GT;
             return RubyParser.tLAMBDA;
         }
-        if (isBEG() || (isSpaceArg(c, spaceSeen) && arg_ambiguous())) {
+        if (isBEG() || (isSpaceArg(c, spaceSeen) && arg_ambiguous('-'))) {
             setState(EXPR_BEG);
             pushback(c);
             yaccValue = MINUS_AT;
@@ -1910,7 +1914,7 @@ public class RubyLexer extends LexingCommon {
             return RubyParser.tOP_ASGN;
         }
         
-        if (isBEG() || (isSpaceArg(c, spaceSeen) && arg_ambiguous())) {
+        if (isBEG() || (isSpaceArg(c, spaceSeen) && arg_ambiguous('+'))) {
             setState(EXPR_BEG);
             pushback(c);
             if (Character.isDigit(c)) {
@@ -2072,7 +2076,7 @@ public class RubyLexer extends LexingCommon {
         }
         pushback(c);
         if (isSpaceArg(c, spaceSeen)) {
-            arg_ambiguous();
+            arg_ambiguous('/');
             lex_strterm = new StringTerm(str_regexp, '\0', '/', ruby_sourceline);
             yaccValue = SLASH;
             return RubyParser.tREGEXP_BEG;
