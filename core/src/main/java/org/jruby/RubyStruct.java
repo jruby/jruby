@@ -353,6 +353,11 @@ public class RubyStruct extends RubyObject {
             if (!keywordInit.isTrue()) return recv.inspect();
             return recv.inspect().convertToString().catString("(keyword_init: true)");
         }
+
+        @JRubyMethod(name = "keyword_init?")
+        public static IRubyObject keyword_init_p(IRubyObject self) {
+            return RubyStruct.getInternalVariable((RubyClass) self, KEYWORD_INIT_VAR);
+        }
     }
 
     /** Create new Structure.
