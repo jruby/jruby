@@ -1,2 +1,1 @@
 fails:Thread#inspect has a binary encoding
-wip:Thread#inspect returns a description including file and line number
