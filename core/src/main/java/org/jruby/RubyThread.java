@@ -1309,7 +1309,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return inspect(metaClass.runtime.getCurrentContext());
     }
 
-    @JRubyMethod
+    @JRubyMethod(name = { "inspect", "to_s"})
     public RubyString inspect(ThreadContext context) {
         final Ruby runtime = context.runtime;
         RubyString result = runtime.newString("#<");
@@ -1320,11 +1320,11 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         synchronized (this) {
             String id = threadImpl.getRubyName(); // thread.name
             if (notEmpty(id)) {
-                result.cat('@');
+                result.cat(' ');
                 result.cat(runtime.newSymbol(id).getBytes());
             }
             if (notEmpty(file) && line >= 0) {
-                result.cat('@');
+                result.cat(' ');
                 result.catString(file);
                 result.cat(':');
                 result.catString(Integer.toString(line + 1));
