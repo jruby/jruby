@@ -1,1 +1,0 @@
-wip:Hash#each_pair always yields an Array of 2 elements, even when given a callable of arity 2

@@ -1,1 +1,0 @@
-fails:Hash.ruby2_keywords_hash? returns true if the Hash is a keywords Hash marked by Module#ruby2_keywords
