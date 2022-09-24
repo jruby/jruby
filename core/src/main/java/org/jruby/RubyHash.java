@@ -67,6 +67,7 @@ import java.util.AbstractCollection;
 import java.util.AbstractSet;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -1019,6 +1020,7 @@ public class RubyHash extends RubyObject implements Map {
         modify();
         final RubyHashEntry[] oldTable = table;
         final RubyHashEntry[] newTable = new RubyHashEntry[oldTable.length];
+        Set<Integer> rehashedIndexes = new HashSet<>();
         for (int j = 0; j < oldTable.length; j++) {
             RubyHashEntry entry = oldTable[j];
             oldTable[j] = null;
@@ -1041,6 +1043,8 @@ public class RubyHash extends RubyObject implements Map {
                     // replace entry if hash changed
                     if (oldHash != newHash) {
                         entry = new RubyHashEntry(entry, newHash);
+                        // memorize hash value
+                        rehashedIndexes.add(newHash);
                     }
 
                     entry.next = newEntry;
@@ -1050,6 +1054,28 @@ public class RubyHash extends RubyObject implements Map {
             }
         }
         table = newTable;
+
+        // When a hash is large and contains duplicate keys, sometimes the above logic can not remove duplicate key.
+        // searches duplicate keys and removes it.
+        for (int hash : rehashedIndexes) {
+            RubyHashEntry entry = table[bucketIndex(hash, newTable.length)];
+            while (entry != null) {
+                if (entry.hash == hash) {
+                    RubyHashEntry nextEntry = entry.next;
+                    while (nextEntry != null) {
+                        if (internalKeyExist(entry.hash, entry.key, nextEntry.hash, nextEntry.key)) {
+                            RubyHashEntry tmpNext = entry.nextAdded;
+                            RubyHashEntry tmpPrev = entry.prevAdded;
+                            tmpPrev.nextAdded = tmpNext;
+                            tmpPrev.prevAdded = tmpPrev;
+                            size--;
+                        }
+                        nextEntry = nextEntry.next;
+                    }
+                }
+            entry = entry.next;
+            }
+        }
         return this;
     }
 
