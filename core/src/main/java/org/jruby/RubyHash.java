@@ -63,9 +63,10 @@ import org.jruby.util.RecursiveComparator;
 import org.jruby.util.TypeConverter;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.AbstractCollection;
 import java.util.AbstractSet;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
@@ -1334,7 +1335,8 @@ public class RubyHash extends RubyObject implements Map {
     private static final VisitorWithState<long[]> CalculateHashVisitor = new VisitorWithState<long[]>() {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, long[] hval) {
-            hval[0] += Helpers.safeHash(context, key).value ^ Helpers.safeHash(context, value).value;
+            byte [] bytes = ByteBuffer.allocate(16).putLong(Helpers.safeHash(context, key).value).putLong(Helpers.safeHash(context, value).value).array();
+            hval[0] ^= Helpers.multAndMix(context.runtime.getHashSeedK0(), Arrays.hashCode(bytes));
         }
     };
 
