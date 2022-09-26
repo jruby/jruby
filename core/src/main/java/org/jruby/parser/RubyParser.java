@@ -3038,10 +3038,7 @@ states[159] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     /*%%%*/
                     yyVal =  new LiteralNode(p.src_line(), p.symbolID(((ByteList)yyVals[0+yyTop].value)));
                     /*% %*/
-                    /* Changed from MRI $1 is bytelist and not IRubyObject*/
-                    /*% 
-                      $$ = p.dispatch("on_symbol_literal", p.symbolID($1));
-                     %*/
+                    /*% ripper: symbol_literal!($1) %*/
 
   return yyVal;
 };
@@ -3068,15 +3065,15 @@ states[163] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[164] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                     yyVal = OR;
+                     yyVal = p.maybe_symbolize(OR);
   return yyVal;
 };
 states[165] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                     yyVal = CARET;
+                     yyVal = p.maybe_symbolize(CARET);
   return yyVal;
 };
 states[166] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                     yyVal = AMPERSAND;
+                     yyVal = p.maybe_symbolize(AMPERSAND);
   return yyVal;
 };
 states[167] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -3100,7 +3097,7 @@ states[171] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[172] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                     yyVal = GT;
+                     yyVal = p.maybe_symbolize(GT);
   return yyVal;
 };
 states[173] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -3108,7 +3105,7 @@ states[173] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[174] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                     yyVal = LT;
+                     yyVal = p.maybe_symbolize(LT);
   return yyVal;
 };
 states[175] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -3128,15 +3125,15 @@ states[178] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[179] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                     yyVal = PLUS;
+                     yyVal = p.maybe_symbolize(PLUS);
   return yyVal;
 };
 states[180] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                     yyVal = MINUS;
+                     yyVal = p.maybe_symbolize(MINUS);
   return yyVal;
 };
 states[181] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                     yyVal = STAR;
+                     yyVal = p.maybe_symbolize(STAR);
   return yyVal;
 };
 states[182] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -3144,11 +3141,11 @@ states[182] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[183] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                     yyVal = SLASH;
+                     yyVal = p.maybe_symbolize(SLASH);
   return yyVal;
 };
 states[184] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                     yyVal = PERCENT;
+                     yyVal = p.maybe_symbolize(PERCENT);
   return yyVal;
 };
 states[185] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -3160,11 +3157,11 @@ states[186] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[187] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                     yyVal = BANG;
+                     yyVal = p.maybe_symbolize(BANG);
   return yyVal;
 };
 states[188] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                     yyVal = TILDE;
+                     yyVal = p.maybe_symbolize(TILDE);
   return yyVal;
 };
 states[189] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -3184,7 +3181,7 @@ states[192] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[193] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                     yyVal = BACKTICK;
+                     yyVal = p.maybe_symbolize(BACKTICK);
   return yyVal;
 };
 states[194] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -3651,11 +3648,11 @@ states[282] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[283] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = GT;
+                    yyVal = p.maybe_symbolize(GT);
   return yyVal;
 };
 states[284] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = LT;
+                    yyVal = p.maybe_symbolize(LT);
   return yyVal;
 };
 states[285] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -4474,7 +4471,7 @@ states[425] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[427] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = LexingCommon.NIL;
+                     yyVal = p.maybe_symbolize(LexingCommon.NIL);
   return yyVal;
 };
 states[428] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -5160,8 +5157,8 @@ states[553] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[554] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                     yyVal = p.new_find_pattern_tail(yyVals[yyTop - count + 1].start(), ((ByteList)yyVals[-4+yyTop].value), ((ListNode)yyVals[-2+yyTop].value), ((ByteList)yyVals[0+yyTop].value));
                      p.warn_experimental(yyVals[yyTop - count + 1].start(), "Find pattern is experimental, and the behavior may change in future versions of Ruby!");
+                     yyVal = p.new_find_pattern_tail(yyVals[yyTop - count + 1].start(), ((ByteList)yyVals[-4+yyTop].value), ((ListNode)yyVals[-2+yyTop].value), ((ByteList)yyVals[0+yyTop].value));
   return yyVal;
 };
 states[555] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -5696,12 +5693,7 @@ states[644] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     /*%%%*/
                     yyVal = null;
                     /*% %*/
-                    /*% ripper: xstring_new! %*/
-                    /*%%%*/
-                    /* JRuby changed*/
-                    /*%
-                        $$ = new KeyValuePair<IRubyObject, IRubyObject>((IRubyObject) $$, null);
-                    %*/
+                    /*% ripper: regexp_new! %*/
   return yyVal;
 };
 states[645] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -5710,28 +5702,7 @@ states[645] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     yyVal = p.literal_concat(((Node)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value));
                     /* JRuby changed*/
                     /*% 
-                        IRubyObject s1 = p.nil();
-                        IRubyObject s2 = null;
-                        Object n1 = $1;
-                        Object n2 = $2;
-
-			if (n1 instanceof KeyValuePair) {
-System.out.println("a.1 s1: " + s1 + ", n1: " + n1 + ", s2: " + s2 + ", n2: " + n2);
-			    s1 = (IRubyObject) ((KeyValuePair) n1).getKey();
-			    n1 = ((KeyValuePair) n1).getValue();
-System.out.println("a.2 s1: " + s1 + ", n1: " + n1 + ", s2: " + s2 + ", n2: " + n2);
-			}
-			if (n2 instanceof KeyValuePair) {
-			    s2 = (IRubyObject) ((KeyValuePair) n2).getKey();
-			    n2 = ((KeyValuePair) n2).getValue();
-			}
-			$$ = p.dispatch("on_regexp_add", (IRubyObject) n1, (IRubyObject) n2);
-			if (s1 == null && s2 != null) {
-			    $$ = new KeyValuePair<IRubyObject, IRubyObject>($<IRubyObject>$, s2);
-			} else {
-System.out.println("s1: " + s1 + ", n1: " + n1 + ", s2: " + s2 + ", n2: " + n2);
-System.out.println("WHOAT: " + $$ + ", $1: " + $1 + ", $2: " + $2);
-}
+			$$ = p.dispatch("on_regexp_add", $1, $2);
                     %*/
   return yyVal;
 };
@@ -5885,35 +5856,65 @@ states[675] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     /*%%%*/
                     yyVal = p.declareIdentifier(((ByteList)yyVals[0+yyTop].value));
                     /*%  %*/
-                    /*% ripper: var_ref!($1) %*/
+                    /*%
+                    if (p.id_is_var()) {
+                        $$ = p.dispatch("on_var_ref", $1);
+                    } else {
+                        $$ = p.dispatch("on_vcall", $1);
+                    }
+                    %*/
   return yyVal;
 };
 states[676] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new InstVarNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)));
                     /*%  %*/
-                    /*% ripper: var_ref!($1) %*/
+                    /*%
+                    if (p.id_is_var()) {
+                        $$ = p.dispatch("on_var_ref", $1);
+                    } else {
+                        $$ = p.dispatch("on_vcall", $1);
+                    }
+                    %*/
   return yyVal;
 };
 states[677] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new GlobalVarNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)));
                     /*%  %*/
-                    /*% ripper: var_ref!($1) %*/
+                    /*%
+                    if (p.id_is_var()) {
+                        $$ = p.dispatch("on_var_ref", $1);
+                    } else {
+                        $$ = p.dispatch("on_vcall", $1);
+                    }
+                    %*/
   return yyVal;
 };
 states[678] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new ConstNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)));
                     /*%  %*/
-                    /*% ripper: var_ref!($1) %*/
+                    /*%
+                    if (p.id_is_var()) {
+                        $$ = p.dispatch("on_var_ref", $1);
+                    } else {
+                        $$ = p.dispatch("on_vcall", $1);
+                    }
+                    %*/
   return yyVal;
 };
 states[679] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new ClassVarNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)));
                     /*%  %*/
-                    /*% ripper: var_ref!($1) %*/
+                    /*%
+                    if (p.id_is_var()) {
+                        $$ = p.dispatch("on_var_ref", $1);
+                    } else {
+                        $$ = p.dispatch("on_vcall", $1);
+                    }
+                    %*/
   return yyVal;
 };
 states[680] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6642,7 +6643,7 @@ states[795] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[796] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = DOT;
+                    yyVal = p.maybe_symbolize(DOT);
   return yyVal;
 };
 states[797] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6650,7 +6651,7 @@ states[797] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[798] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = DOT;
+                    yyVal = p.maybe_symbolize(DOT);
   return yyVal;
 };
 states[799] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6658,7 +6659,7 @@ states[799] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[801] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = ((ByteList)yyVals[0+yyTop].value);
+                    yyVal = p.maybe_symbolize(((ByteList)yyVals[0+yyTop].value));
   return yyVal;
 };
 states[806] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6682,7 +6683,7 @@ states[817] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4668 "parse.y"
+					// line 4669 "parse.y"
 
 }
-					// line 14438 "-"
+					// line 14439 "-"

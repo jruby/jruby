@@ -198,7 +198,7 @@ public class RipperParserBase {
         throw new SyntaxException("identifier " + identifier + " is not valid", identifier);
     }    
     
-    public boolean is_id_var() {
+    public boolean id_is_var() {
         String ident = lexer.getIdent().intern();
 
         return getCurrentScope().isDefined(ident) >= 0;
@@ -221,8 +221,10 @@ public class RipperParserBase {
         return dispatch("on_defined", value);
     }
 
-    public IRubyObject new_regexp(int line, KeyValuePair<IRubyObject, IRubyObject> contents, IRubyObject _end) {
-        return dispatch("on_regexp_literal", contents.getKey(), contents.getValue());
+    public IRubyObject new_regexp(int line, IRubyObject contents, IRubyObject _end) {
+        //IRubyObject key = ((RubyArray) contents).eltOk(0);
+        //IRubyObject value = ((RubyArray) contents).eltOk(1);
+        return dispatch("on_regexp_literal", contents);
     }
 
     protected IRubyObject match_op(IRubyObject left, IRubyObject right) {
@@ -230,11 +232,11 @@ public class RipperParserBase {
     }
 
     protected IRubyObject call_bin_op(IRubyObject left, IRubyObject id, IRubyObject right, int line) {
-        return dispatch("on_call", left, id, right);
+        return dispatch("on_binary", left, id, right);
     }
 
     protected IRubyObject call_bin_op(IRubyObject left, ByteList id, IRubyObject right, int line) {
-        return dispatch("on_call", left, intern(id), right);
+        return dispatch("on_binary", left, intern(id), right);
     }
 
     protected IRubyObject call_uni_op(IRubyObject recv, IRubyObject id) {
@@ -386,7 +388,7 @@ public class RipperParserBase {
     }
 
     public ArgsTailHolder new_args_tail(int _line, IRubyObject kwarg, ByteList kwargRest, IRubyObject block) {
-        RubySymbol keywordRestArg = block != null ? symbolID(kwargRest) : null;
+        RubySymbol keywordRestArg = kwargRest != null ? symbolID(kwargRest) : null;
 
         return new ArgsTailHolder(kwarg, keywordRestArg, block);
     }
@@ -599,7 +601,7 @@ public class RipperParserBase {
     }
 
     protected IRubyObject ripper_new_yylval(IRubyObject id, IRubyObject b, IRubyObject c) {
-        return new RipperPair
+        return b;
     }
 
     protected IRubyObject get_value(DefHolder holder) {
@@ -660,7 +662,7 @@ public class RipperParserBase {
             }
         }
 
-        return dispatch("on_array_pattern", constant, preArgs, restArg, postArgs);
+        return dispatch("on_aryptn", constant, preArgs, restArg, postArgs);
     }
 
     public RubyArray new_array_pattern_tail(int _line, IRubyObject preArgs, boolean hasRest, IRubyObject restArg, RubyArray postArgs) {
@@ -675,11 +677,11 @@ public class RipperParserBase {
 
 
     public IRubyObject new_find_pattern(IRubyObject constant, RubyArray findPattern) {
-        RubyArray preArgs = (RubyArray) findPattern.eltOk(0);
+        IRubyObject preArgs = findPattern.eltOk(0);
         IRubyObject restArg = findPattern.eltOk(1);
         IRubyObject postArgs = findPattern.eltOk(2);
 
-        return dispatch("on_find_pattern", constant, preArgs, restArg, postArgs);
+        return dispatch("on_fndptn", constant, preArgs, restArg, postArgs);
     }
 
     public RubyArray new_find_pattern_tail(int _line, IRubyObject preRestArg, IRubyObject args, IRubyObject postRestArg) {
@@ -707,7 +709,7 @@ public class RipperParserBase {
         IRubyObject keywordArgs = hashPattern.eltOk(0);
         IRubyObject keywordRestArgs = hashPattern.eltOk(1);
 
-        return dispatch("on_hash_pattern", constant, keywordArgs, keywordRestArgs);
+        return dispatch("on_hshptn", constant, keywordArgs, keywordRestArgs);
     }
 
     public RubyArray new_hash_pattern_tail(int _line, IRubyObject keywordArgs, ByteList keywordRestArg) {
@@ -784,6 +786,7 @@ public class RipperParserBase {
         if (value instanceof ByteList) return (ByteList) value;
         if (value instanceof RubyString) return ((RubyString) value).getByteList();
         if (value instanceof RubySymbol) return ((RubySymbol) value).getBytes();
+        if (value instanceof RubyArray) return ((RubyString) ((RubyArray) value).eltOk(1)).getByteList();
 
         throw new RuntimeException("Got unexpected object: " + value);
     }
@@ -871,6 +874,10 @@ public class RipperParserBase {
 
     public RubySymbol get_id(IRubyObject _ignored) {
         return getRuntime().newSymbol(lexer.identValue);
+    }
+
+    public IRubyObject maybe_symbolize(ByteList value) {
+        return getRuntime().newSymbol(value);
     }
 
     protected IRubyObject ripper;

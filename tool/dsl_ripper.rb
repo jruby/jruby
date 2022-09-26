@@ -182,7 +182,7 @@ class DSL
     elsif args.empty? and /\Aid[A-Z_]/ =~ event
       event
     elsif args.length > 0 && args[0] == "p"
-      "p.#{event}(#{args[1..-1].join(', ')})"
+      "p.#{event}(#{args[1..-1].map { |e|  e == 0 ? "null" : e }.join(', ')})"
     elsif event == 'RNODE'
       '$1'
     elsif event == 'STATIC_ID2SYM'
