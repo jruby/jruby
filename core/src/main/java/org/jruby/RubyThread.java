@@ -72,6 +72,7 @@ import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
@@ -237,7 +238,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public RubyThread(Ruby runtime, RubyClass klass, Runnable runnable) {
         this(runtime, klass, true);
 
-        startThread(runtime.getCurrentContext(), runnable);
+        startThread(runtime.getCurrentContext(), runnable, "<internal>", -1);
     }
 
     private void executeInterrupts(ThreadContext context, boolean blockingTiming) {
@@ -613,19 +614,20 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (!block.isGiven()) throw context.runtime.newThreadError("must be called with a block");
         if (threadImpl != ThreadLike.DUMMY) throw context.runtime.newThreadError("already initialized thread");
 
-        startThread(context, new RubyRunnable(this, args, block, callInfo));
+        BlockBody body = block.getBody();
+        startThread(context, new RubyRunnable(this, args, block, callInfo), body.getFile(), body.getLine());
 
         return context.nil;
     }
 
-    private Thread startThread(ThreadContext context, Runnable runnable) throws RaiseException, OutOfMemoryError {
+    private Thread startThread(ThreadContext context, Runnable runnable, String file, int line) throws RaiseException, OutOfMemoryError {
         final Ruby runtime = context.runtime;
         try {
             Thread thread = new Thread(runnable);
             thread.setDaemon(true);
 
-            this.file = context.getFile();
-            this.line = context.getLine();
+            this.file = file;
+            this.line = line;
 
             initThreadName(runtime, thread, file, line);
             
@@ -1320,7 +1322,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         synchronized (this) {
             String id = threadImpl.getRubyName(); // thread.name
             if (notEmpty(id)) {
-                result.cat(' ');
+                result.cat('@');
                 result.cat(runtime.newSymbol(id).getBytes());
             }
             if (notEmpty(file) && line >= 0) {
