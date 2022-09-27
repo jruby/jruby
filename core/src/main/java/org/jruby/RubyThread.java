@@ -1322,7 +1322,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         synchronized (this) {
             String id = threadImpl.getRubyName(); // thread.name
             if (notEmpty(id)) {
-                result.cat(' ');
+                result.cat('@');
                 result.cat(runtime.newSymbol(id).getBytes());
             }
             if (notEmpty(file) && line >= 0) {
