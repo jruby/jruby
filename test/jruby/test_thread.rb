@@ -353,8 +353,8 @@ class TestThread < Test::Unit::TestCase
 
   def test_inspect_and_to_s
     t = Thread.new {}.join
-    assert_match(/#<Thread:0x[0-9a-z]+ test\/jruby\/test_thread\.rb\:355 \w+>/, t.to_s)
-    assert_match(/#<Thread:0x[0-9a-z]+ test\/jruby\/test_thread\.rb\:355 \w+>/, t.inspect)
+    assert_match(/#<Thread:0x[0-9a-z]+ #{__FILE__}\:#{__LINE__ - 1} \w+>/, t.to_s)
+    assert_match(/#<Thread:0x[0-9a-z]+ #{__FILE__}\:#{__LINE__ - 2} \w+>/, t.inspect)
 
     assert_nil t.name
 
