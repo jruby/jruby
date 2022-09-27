@@ -1120,6 +1120,25 @@ public class RubyModule extends RubyObject {
 
             doPrependModule(module);
 
+            if (this.isModule()) {
+                boolean doPrepend = true;
+                synchronized (getRuntime().getHierarchyLock()) {
+                    for (RubyClass includeClass : includingHierarchies) {
+                        RubyClass checkClass = includeClass;
+                        while (checkClass != null) {
+                            if (checkClass instanceof IncludedModule && checkClass.getOrigin() == module) {
+                                doPrepend = false;
+                            }
+                            checkClass = checkClass.superClass;
+                        }
+
+                        if (doPrepend) {
+                            includeClass.doPrependModule(module);
+                        }
+                    }
+                }
+            }
+
             invalidateCoreClasses();
             invalidateCacheDescendants();
             invalidateConstantCacheForModuleInclusion(module);
@@ -1161,6 +1180,26 @@ public class RubyModule extends RubyObject {
         checkForCyclicInclude(module);
 
         doIncludeModule(module);
+
+        if (this.isModule()) {
+            boolean doInclude = true;
+            synchronized (getRuntime().getHierarchyLock()) {
+                for (RubyClass includeClass : includingHierarchies) {
+                    RubyClass checkClass = includeClass;
+                    while (checkClass != null) {
+                        if (checkClass instanceof IncludedModule && checkClass.getOrigin() == module) {
+                            doInclude = false;
+                        }
+                        checkClass = checkClass.superClass;
+                    }
+
+                    if (doInclude) {
+                        includeClass.doIncludeModule(module);
+                    }
+                }
+            }
+        }
+
         invalidateCoreClasses();
         invalidateCacheDescendants();
         invalidateConstantCacheForModuleInclusion(module);
@@ -3674,7 +3713,7 @@ public class RubyModule extends RubyObject {
      *
      * @param baseModule The module to include, along with any modules it itself includes
      */
-    private void doIncludeModule(RubyModule baseModule) {
+    void doIncludeModule(RubyModule baseModule) {
         List<RubyModule> modulesToInclude = gatherModules(baseModule);
 
         RubyModule currentInclusionPoint = methodLocation;
@@ -3714,7 +3753,7 @@ public class RubyModule extends RubyObject {
      *
      * @param baseModule The module to prepend, along with any modules it itself includes
      */
-    private void doPrependModule(RubyModule baseModule) {
+    void doPrependModule(RubyModule baseModule) {
         List<RubyModule> modulesToInclude = gatherModules(baseModule);
 
         if (!hasPrepends()) { // Set up a new holder class to hold all this types original methods.
