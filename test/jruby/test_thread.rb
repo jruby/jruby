@@ -353,18 +353,15 @@ class TestThread < Test::Unit::TestCase
 
   def test_inspect_and_to_s
     t = Thread.new {}.join
-    assert_match(/#<Thread:0x[0-9a-z]+>/, t.to_s)
-    # TODO we do not have file/line right :
-    # MRI: #<Thread:0x000000014b0e28@test/jruby/test_thread.rb:346 dead>
-    #assert_match(/#<Thread:0x[0-9a-z]+@test\/jruby\/test_thread\.rb\:346 \w+>/, t.inspect)
-    assert_match(/#<Thread:0x[0-9a-z]+(@.*\.rb\:\d+)? \w+>/, t.inspect)
+    assert_match(/#<Thread:0x[0-9a-z]+ test\/jruby\/test_thread\.rb\:355 \w+>/, t.to_s)
+    assert_match(/#<Thread:0x[0-9a-z]+ test\/jruby\/test_thread\.rb\:355 \w+>/, t.inspect)
 
     assert_nil t.name
 
     t = Thread.new {}.join
     t.name = 'universal'
-    assert_match(/#<Thread:0x[0-9a-z]+>/, t.to_s)
-    assert_match(/#<Thread:0x[0-9a-z]+@universal(@.*\.rb\:\d+)? \w+>/, t.inspect)
+    assert_match(/#<Thread:0x[0-9a-z]+@universal( .*\.rb\:\d+)? \w+>/, t.to_s)
+    assert_match(/#<Thread:0x[0-9a-z]+@universal( .*\.rb\:\d+)? \w+>/, t.inspect)
   end
 
   def test_thread_name
