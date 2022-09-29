@@ -214,25 +214,27 @@ module MethodSpecs
     end
   end
 
-
   module InheritedMethods
     module A
       private
       def derp(message)
-        500
+        'A'
       end
     end
 
     module B
       private
       def derp
-        super('superclass')
+        'B' + super('superclass')
       end
     end
 
     class C
       include A
       include B
+
+      public :derp
+      alias_method :meow, :derp
     end
   end
 end
