@@ -42,7 +42,7 @@ module ModuleSpecs
   class LookupChild < Lookup
   end
 
-  module ModuleWithPrepend 
+  module ModuleWithPrepend
     prepend LookupMod
   end
 
