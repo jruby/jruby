@@ -2,3 +2,5 @@ fails:Method#define_method when passed a Proc object and a method is defined ins
 fails:Module#define_method when the default definee is not the same as the module sets the visibility of the method to public
 fails:Method#define_method when passed a block behaves exactly like a lambda for break
 fails:Method#define_method when passed a block behaves exactly like a lambda for next
+fails:Module#define_method raises TypeError when #to_str called on non-String name returns non-String value
+fails:Module#define_method raises a TypeError when the given method is no Method/Proc
