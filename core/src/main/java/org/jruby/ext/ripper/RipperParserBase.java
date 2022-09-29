@@ -221,10 +221,8 @@ public class RipperParserBase {
         return dispatch("on_defined", value);
     }
 
-    public IRubyObject new_regexp(int line, IRubyObject contents, IRubyObject _end) {
-        //IRubyObject key = ((RubyArray) contents).eltOk(0);
-        //IRubyObject value = ((RubyArray) contents).eltOk(1);
-        return dispatch("on_regexp_literal", contents);
+    public IRubyObject new_regexp(int line, IRubyObject contents, IRubyObject end) {
+        return dispatch("on_regexp_literal", contents, end);
     }
 
     protected IRubyObject match_op(IRubyObject left, IRubyObject right) {
