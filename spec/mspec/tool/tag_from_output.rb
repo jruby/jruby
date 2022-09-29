@@ -11,6 +11,11 @@ abort 'Could not find tags directory' unless tags_dir
 
 output = ARGF.readlines
 
+# Automatically strip datetime of GitHub Actions
+if output.first =~ /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d+Z /
+  output = output.map { |line| line.split(' ', 2).last }
+end
+
 NUMBER = /^\d+\)$/
 ERROR_OR_FAILED = / (ERROR|FAILED)$/
 SPEC_FILE = /^(\/.+_spec\.rb)\:\d+/
