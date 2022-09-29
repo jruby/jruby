@@ -5,3 +5,4 @@ fails:Thread::Backtrace::Location#absolute_path canonicalization returns a canon
 fails:Thread::Backtrace::Location#absolute_path returns an absolute path when using a relative main script path
 fails:Thread::Backtrace::Location#absolute_path when used in a core method returns nil
 wip:Thread::Backtrace::Location#absolute_path when used in eval with a given filename returns nil with absolute_path
+fails:Thread::Backtrace::Location#absolute_path returns the correct absolute path when using a relative main script path and changing CWD
