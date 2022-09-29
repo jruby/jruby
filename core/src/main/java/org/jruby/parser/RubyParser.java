@@ -68,6 +68,7 @@ import static org.jruby.lexer.LexingCommon.GT;
 import static org.jruby.lexer.LexingCommon.LBRACKET_RBRACKET;
 import static org.jruby.lexer.LexingCommon.LCURLY;
 import static org.jruby.lexer.LexingCommon.LT;
+import static org.jruby.lexer.LexingCommon.LT_LT;
 import static org.jruby.lexer.LexingCommon.MINUS;
 import static org.jruby.lexer.LexingCommon.PERCENT;
 import static org.jruby.lexer.LexingCommon.OR;
@@ -93,7 +94,7 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
     public RubyParser(LexerSource source, IRubyWarnings warnings) {
         super(warnings); setLexer(new RubyLexer(this, source, warnings));
     }
-					// line 97 "-"
+					// line 98 "-"
   // %token constants
   public static final int keyword_class = 257;
   public static final int keyword_module = 258;
@@ -2294,8 +2295,7 @@ states[49] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
                     p.restore_defun(((DefHolder)yyVals[-3+yyTop].value));
                     /*%%%*/
                     yyVal = new DefsNode(((DefHolder)yyVals[-3+yyTop].value).line, (Node) ((DefHolder)yyVals[-3+yyTop].value).singleton, ((DefHolder)yyVals[-3+yyTop].value).name, ((ArgsNode)yyVals[-2+yyTop].value), p.getCurrentScope(), p.reduce_nodes(p.remove_begin(((Node)yyVals[0+yyTop].value))), yyVals[yyTop - count + 4].end());
-                    /* Changed from MRI (no more get_value) combined two stmts*/
-                    /*% %*/
+                    /*% %*/                    
                     /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, bodystmt!($4, Qnil, Qnil, Qnil)) %*/
                     p.popCurrentScope();
   return yyVal;
@@ -2306,8 +2306,7 @@ states[50] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
                     /*%%%*/
                     Node body = p.reduce_nodes(p.remove_begin(p.rescued_expr(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-2+yyTop].value), ((Node)yyVals[0+yyTop].value))));
                     yyVal = new DefsNode(((DefHolder)yyVals[-5+yyTop].value).line, (Node) ((DefHolder)yyVals[-5+yyTop].value).singleton, ((DefHolder)yyVals[-5+yyTop].value).name, ((ArgsNode)yyVals[-4+yyTop].value), p.getCurrentScope(), body, yyVals[yyTop - count + 6].end());
-                    /* Changed from MRI (no more get_value) (combined two stmts)*/
-                    /*% %*/
+                    /*% %*/                    
                     /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, bodystmt!(rescue_mod!($4, $6), Qnil, Qnil, Qnil)) %*/
                     p.popCurrentScope();
   return yyVal;
@@ -2404,7 +2403,7 @@ states[67] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
                     yyVal = new DefHolder(name, p.getCurrentArg(), (LexContext) ctxt.clone());
                     /* Changed from MRI*/
                     /*% 
-                        $$ = p.new_array($1); // FIXME: No ctxt. no current arg
+                        $$ = new NameHolder(ctxt, name, $1);
                     %*/
                     ctxt.in_def = true;
                     p.setCurrentArg(null);
@@ -2429,7 +2428,7 @@ states[70] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
                     ((DefHolder)yyVals[0+yyTop].value).setDotOrColon(p.extractByteList(((ByteList)yyVals[-2+yyTop].value)));
                     /* Changed from MRI*/
                     /*%
-                       $$ = p.new_array($2, $3, $5);
+                       $<NameHolder>$.value = p.new_array($2, $3, $<NameHolder>$.value);
                     %*/
   return yyVal;
 };
@@ -3185,167 +3184,167 @@ states[193] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[194] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.__LINE__.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.__LINE__.bytes);
   return yyVal;
 };
 states[195] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.__FILE__.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.__FILE__.bytes);
   return yyVal;
 };
 states[196] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.__ENCODING__.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.__ENCODING__.bytes);
   return yyVal;
 };
 states[197] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.LBEGIN.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.LBEGIN.bytes);
   return yyVal;
 };
 states[198] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.LEND.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.LEND.bytes);
   return yyVal;
 };
 states[199] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.ALIAS.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.ALIAS.bytes);
   return yyVal;
 };
 states[200] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.AND.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.AND.bytes);
   return yyVal;
 };
 states[201] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.BEGIN.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.BEGIN.bytes);
   return yyVal;
 };
 states[202] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.BREAK.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.BREAK.bytes);
   return yyVal;
 };
 states[203] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.CASE.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.CASE.bytes);
   return yyVal;
 };
 states[204] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.CLASS.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.CLASS.bytes);
   return yyVal;
 };
 states[205] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.DEF.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.DEF.bytes);
   return yyVal;
 };
 states[206] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.DEFINED_P.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.DEFINED_P.bytes);
   return yyVal;
 };
 states[207] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.DO.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.DO.bytes);
   return yyVal;
 };
 states[208] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                     yyVal = Keyword.ELSE.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.ELSE.bytes);
   return yyVal;
 };
 states[209] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.ELSIF.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.ELSIF.bytes);
   return yyVal;
 };
 states[210] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.END.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.END.bytes);
   return yyVal;
 };
 states[211] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.ENSURE.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.ENSURE.bytes);
   return yyVal;
 };
 states[212] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.FALSE.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.FALSE.bytes);
   return yyVal;
 };
 states[213] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.FOR.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.FOR.bytes);
   return yyVal;
 };
 states[214] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.IN.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.IN.bytes);
   return yyVal;
 };
 states[215] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.MODULE.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.MODULE.bytes);
   return yyVal;
 };
 states[216] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.NEXT.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.NEXT.bytes);
   return yyVal;
 };
 states[217] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.NIL.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.NIL.bytes);
   return yyVal;
 };
 states[218] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.NOT.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.NOT.bytes);
   return yyVal;
 };
 states[219] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.OR.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.OR.bytes);
   return yyVal;
 };
 states[220] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.REDO.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.REDO.bytes);
   return yyVal;
 };
 states[221] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.RESCUE.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.RESCUE.bytes);
   return yyVal;
 };
 states[222] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.RETRY.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.RETRY.bytes);
   return yyVal;
 };
 states[223] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.RETURN.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.RETURN.bytes);
   return yyVal;
 };
 states[224] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.SELF.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.SELF.bytes);
   return yyVal;
 };
 states[225] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.SUPER.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.SUPER.bytes);
   return yyVal;
 };
 states[226] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.THEN.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.THEN.bytes);
   return yyVal;
 };
 states[227] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.TRUE.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.TRUE.bytes);
   return yyVal;
 };
 states[228] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.UNDEF.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.UNDEF.bytes);
   return yyVal;
 };
 states[229] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.WHEN.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.WHEN.bytes);
   return yyVal;
 };
 states[230] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.YIELD.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.YIELD.bytes);
   return yyVal;
 };
 states[231] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.IF.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.IF.bytes);
   return yyVal;
 };
 states[232] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.UNLESS.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.UNLESS.bytes);
   return yyVal;
 };
 states[233] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.WHILE.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.WHILE.bytes);
   return yyVal;
 };
 states[234] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = Keyword.UNTIL.bytes;
+                    yyVal = p.maybe_symbolize(Keyword.UNTIL.bytes);
   return yyVal;
 };
 states[235] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -3498,7 +3497,7 @@ states[254] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[255] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.call_bin_op(((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), p.src_line());
+                    yyVal = p.call_bin_op(((Node)yyVals[-2+yyTop].value), STAR_STAR, ((Node)yyVals[0+yyTop].value), p.src_line());
   return yyVal;
 };
 states[256] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -3506,11 +3505,11 @@ states[256] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[257] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.call_uni_op(((Node)yyVals[0+yyTop].value), ((ByteList)yyVals[-1+yyTop].value));
+                    yyVal = p.call_uni_op(((Node)yyVals[0+yyTop].value), PLUS_AT);
   return yyVal;
 };
 states[258] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.call_uni_op(((Node)yyVals[0+yyTop].value), ((ByteList)yyVals[-1+yyTop].value));
+                    yyVal = p.call_uni_op(((Node)yyVals[0+yyTop].value), MINUS_AT);
   return yyVal;
 };
 states[259] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -3526,7 +3525,7 @@ states[261] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[262] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.call_bin_op(((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), p.src_line());
+                    yyVal = p.call_bin_op(((Node)yyVals[-2+yyTop].value), LT_EQ_RT, ((Node)yyVals[0+yyTop].value), p.src_line());
   return yyVal;
 };
 states[263] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -3534,15 +3533,15 @@ states[263] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[264] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.call_bin_op(((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), p.src_line());
+                    yyVal = p.call_bin_op(((Node)yyVals[-2+yyTop].value), EQ_EQ, ((Node)yyVals[0+yyTop].value), p.src_line());
   return yyVal;
 };
 states[265] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.call_bin_op(((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), p.src_line());
+                    yyVal = p.call_bin_op(((Node)yyVals[-2+yyTop].value), EQ_EQ_EQ, ((Node)yyVals[0+yyTop].value), p.src_line());
   return yyVal;
 };
 states[266] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.call_bin_op(((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), p.src_line());
+                    yyVal = p.call_bin_op(((Node)yyVals[-2+yyTop].value), BANG_EQ, ((Node)yyVals[0+yyTop].value), p.src_line());
   return yyVal;
 };
 states[267] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -3550,7 +3549,7 @@ states[267] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[268] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.call_bin_op(((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), p.src_line());
+                    yyVal = p.call_bin_op(((Node)yyVals[-2+yyTop].value), BANG_TILDE, ((Node)yyVals[0+yyTop].value), p.src_line());
   return yyVal;
 };
 states[269] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -3562,19 +3561,19 @@ states[270] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[271] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.call_bin_op(((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), p.src_line());
+                    yyVal = p.call_bin_op(((Node)yyVals[-2+yyTop].value), LT_LT, ((Node)yyVals[0+yyTop].value), p.src_line());
   return yyVal;
 };
 states[272] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.call_bin_op(((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), p.src_line());
+                    yyVal = p.call_bin_op(((Node)yyVals[-2+yyTop].value), GT_GT, ((Node)yyVals[0+yyTop].value), p.src_line());
   return yyVal;
 };
 states[273] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.logop(((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value));
+                    yyVal = p.logop(((Node)yyVals[-2+yyTop].value), AMPERSAND_AMPERSAND, ((Node)yyVals[0+yyTop].value));
   return yyVal;
 };
 states[274] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.logop(((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value));
+                    yyVal = p.logop(((Node)yyVals[-2+yyTop].value), OR_OR, ((Node)yyVals[0+yyTop].value));
   return yyVal;
 };
 states[275] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -3626,7 +3625,6 @@ states[280] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     yyVal = new DefsNode(((DefHolder)yyVals[-3+yyTop].value).line, (Node) ((DefHolder)yyVals[-3+yyTop].value).singleton, ((DefHolder)yyVals[-3+yyTop].value).name, ((ArgsNode)yyVals[-2+yyTop].value), p.getCurrentScope(), p.reduce_nodes(p.remove_begin(((Node)yyVals[0+yyTop].value))), yyVals[yyTop - count + 4].end());
                     if (p.isNextBreak) ((DefsNode)yyVal).setContainsNextBreak();
                     p.popCurrentScope();
-                    /* Changed from MRI (no more get_value)(combined two stmts)*/
                     /*% %*/
                     /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, bodystmt!($4, Qnil, Qnil, Qnil)) %*/
   return yyVal;
@@ -3637,8 +3635,8 @@ states[281] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     p.restore_defun(((DefHolder)yyVals[-5+yyTop].value));
                     Node body = p.reduce_nodes(p.remove_begin(p.rescued_expr(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-2+yyTop].value), ((Node)yyVals[0+yyTop].value))));
                     yyVal = new DefsNode(((DefHolder)yyVals[-5+yyTop].value).line, (Node) ((DefHolder)yyVals[-5+yyTop].value).singleton, ((DefHolder)yyVals[-5+yyTop].value).name, ((ArgsNode)yyVals[-4+yyTop].value), p.getCurrentScope(), body, yyVals[yyTop - count + 6].end());
-                    if (p.isNextBreak) ((DefsNode)yyVal).setContainsNextBreak();                    p.popCurrentScope();
-                    /* Changed from MRI (no more get_value)(combined two stmts)*/
+                    if (p.isNextBreak) ((DefsNode)yyVal).setContainsNextBreak();
+                    p.popCurrentScope();
                     /*% %*/
                     /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, bodystmt!(rescue_mod!($4, $6), Qnil, Qnil, Qnil)) %*/
   return yyVal;
@@ -4255,7 +4253,7 @@ states[379] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     if (p.isNextBreak) ((DefsNode)yyVal).setContainsNextBreak();
                     p.popCurrentScope();
                     /* Changed from MRI (no more get_value)*/
-                    /*% %*/
+                    /*% %*/                    
                     /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, $3) %*/
   return yyVal;
 };
@@ -6683,7 +6681,7 @@ states[817] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4669 "parse.y"
+					// line 4667 "parse.y"
 
 }
-					// line 14439 "-"
+					// line 14437 "-"

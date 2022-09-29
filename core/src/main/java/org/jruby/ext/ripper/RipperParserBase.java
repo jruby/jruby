@@ -604,19 +604,19 @@ public class RipperParserBase {
         return b;
     }
 
-    protected IRubyObject get_value(DefHolder holder) {
-        return holder.name;
+    protected IRubyObject get_value(NameHolder holder) {
+        return holder.value;
     }
 
     protected IRubyObject get_value(RubyArray holder) {
         return holder.eltOk(0);
     }
 
-    public void endless_method_name(RubyArray name) {
+    public void endless_method_name(NameHolder name) {
         // FIXME: IMPL
     }
 
-    public void restore_defun(RubyArray holder) {
+    public void restore_defun(NameHolder holder) {
         // FIXME:
         //lexer.getLexContext().restore(holder);
         //lexer.setCurrentArg(holder.current_arg);
@@ -873,6 +873,10 @@ public class RipperParserBase {
     }
 
     public RubySymbol get_id(IRubyObject _ignored) {
+        if (_ignored instanceof RubySymbol) {
+            return (RubySymbol) _ignored;
+        }
+
         return getRuntime().newSymbol(lexer.identValue);
     }
 

@@ -4,7 +4,7 @@
   SUBS = {
     'import_ripper' => [
          '',
-         'import org.jruby.util.KeyValuePair; import org.jruby.RubyArray;'
+         'import org.jruby.util.KeyValuePair; import org.jruby.RubyArray; import org.jruby.ext.ripper.NameHolder;'
     ],
     'program_production' => [
          '',
@@ -36,7 +36,7 @@
     'token_backref_type' => ['Node', 'IRubyObject'],
     'token_string_type' => ['Node', 'IRubyObject'],
     'token_regexp_type' => ['RegexpNode', 'IRubyObject'],
-    'prod_def_type' => ['DefHolder', 'RubyArray'],
+    'prod_def_type' => ['DefHolder', 'NameHolder'],
     'prod_undef_list_type' => ['Node', 'RubyArray'],
     'prod_bv_decls_type' => ['Node', 'RubyArray'],
     'prod_type' => ['Node', 'IRubyObject'],
@@ -143,6 +143,7 @@ import static org.jruby.lexer.LexingCommon.GT;
 import static org.jruby.lexer.LexingCommon.LBRACKET_RBRACKET;
 import static org.jruby.lexer.LexingCommon.LCURLY;
 import static org.jruby.lexer.LexingCommon.LT;
+import static org.jruby.lexer.LexingCommon.LT_LT;
 import static org.jruby.lexer.LexingCommon.MINUS;
 import static org.jruby.lexer.LexingCommon.PERCENT;
 import static org.jruby.lexer.LexingCommon.OR;
@@ -729,8 +730,7 @@ command_asgn    : lhs '=' lex_ctxt command_rhs {
                     p.restore_defun($1);
                     /*%%%*/
                     $$ = new DefsNode($1.line, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), @4.end());
-                    // Changed from MRI (no more get_value) combined two stmts
-                    /*% %*/
+                    /*% %*/                    
                     /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, bodystmt!($4, Qnil, Qnil, Qnil)) %*/
                     p.popCurrentScope();
                 }
@@ -740,8 +740,7 @@ command_asgn    : lhs '=' lex_ctxt command_rhs {
                     /*%%%*/
                     Node body = p.reduce_nodes(p.remove_begin(p.rescued_expr(@1.start(), $4, $6)));
                     $$ = new DefsNode($1.line, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), body, @6.end());
-                    // Changed from MRI (no more get_value) (combined two stmts)
-                    /*% %*/
+                    /*% %*/                    
                     /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, bodystmt!(rescue_mod!($4, $6), Qnil, Qnil, Qnil)) %*/
                     p.popCurrentScope();
                 }
@@ -830,7 +829,7 @@ def_name        : fname {
                     $$ = new DefHolder(name, p.getCurrentArg(), (LexContext) ctxt.clone());
                     // Changed from MRI
                     /*% 
-                        $$ = p.new_array($1); // FIXME: No ctxt. no current arg
+                        $$ = new NameHolder(ctxt, name, $1);
                     %*/
                     ctxt.in_def = true;
                     p.setCurrentArg(null);
@@ -855,7 +854,7 @@ defs_head       : k_def singleton dot_or_colon {
                     $5.setDotOrColon(p.extractByteList($3));
                     // Changed from MRI
                     /*%
-                       $$ = p.new_array($2, $3, $5);
+                       $<NameHolder>$.value = p.new_array($2, $3, $<NameHolder>$.value);
                     %*/
                 }
 
@@ -1531,127 +1530,127 @@ op               : '|' {
  
 // ByteList: reswords
 reswords        : keyword__LINE__ {
-                    $$ = Keyword.__LINE__.bytes;
+                    $$ = p.maybe_symbolize(Keyword.__LINE__.bytes);
                 }
                 | keyword__FILE__ {
-                    $$ = Keyword.__FILE__.bytes;
+                    $$ = p.maybe_symbolize(Keyword.__FILE__.bytes);
                 }
                 | keyword__ENCODING__ {
-                    $$ = Keyword.__ENCODING__.bytes;
+                    $$ = p.maybe_symbolize(Keyword.__ENCODING__.bytes);
                 }
                 | keyword_BEGIN {
-                    $$ = Keyword.LBEGIN.bytes;
+                    $$ = p.maybe_symbolize(Keyword.LBEGIN.bytes);
                 }
                 | keyword_END {
-                    $$ = Keyword.LEND.bytes;
+                    $$ = p.maybe_symbolize(Keyword.LEND.bytes);
                 }
                 | keyword_alias {
-                    $$ = Keyword.ALIAS.bytes;
+                    $$ = p.maybe_symbolize(Keyword.ALIAS.bytes);
                 }
                 | keyword_and {
-                    $$ = Keyword.AND.bytes;
+                    $$ = p.maybe_symbolize(Keyword.AND.bytes);
                 }
                 | keyword_begin {
-                    $$ = Keyword.BEGIN.bytes;
+                    $$ = p.maybe_symbolize(Keyword.BEGIN.bytes);
                 }
                 | keyword_break {
-                    $$ = Keyword.BREAK.bytes;
+                    $$ = p.maybe_symbolize(Keyword.BREAK.bytes);
                 }
                 | keyword_case {
-                    $$ = Keyword.CASE.bytes;
+                    $$ = p.maybe_symbolize(Keyword.CASE.bytes);
                 }
                 | keyword_class {
-                    $$ = Keyword.CLASS.bytes;
+                    $$ = p.maybe_symbolize(Keyword.CLASS.bytes);
                 }
                 | keyword_def {
-                    $$ = Keyword.DEF.bytes;
+                    $$ = p.maybe_symbolize(Keyword.DEF.bytes);
                 }
                 | keyword_defined {
-                    $$ = Keyword.DEFINED_P.bytes;
+                    $$ = p.maybe_symbolize(Keyword.DEFINED_P.bytes);
                 }
                 | keyword_do {
-                    $$ = Keyword.DO.bytes;
+                    $$ = p.maybe_symbolize(Keyword.DO.bytes);
                 }
                 | keyword_else {
-                     $$ = Keyword.ELSE.bytes;
+                    $$ = p.maybe_symbolize(Keyword.ELSE.bytes);
                 }
                 | keyword_elsif {
-                    $$ = Keyword.ELSIF.bytes;
+                    $$ = p.maybe_symbolize(Keyword.ELSIF.bytes);
                 }
                 | keyword_end {
-                    $$ = Keyword.END.bytes;
+                    $$ = p.maybe_symbolize(Keyword.END.bytes);
                 }
                 | keyword_ensure {
-                    $$ = Keyword.ENSURE.bytes;
+                    $$ = p.maybe_symbolize(Keyword.ENSURE.bytes);
                 }
                 | keyword_false {
-                    $$ = Keyword.FALSE.bytes;
+                    $$ = p.maybe_symbolize(Keyword.FALSE.bytes);
                 }
                 | keyword_for {
-                    $$ = Keyword.FOR.bytes;
+                    $$ = p.maybe_symbolize(Keyword.FOR.bytes);
                 }
                 | keyword_in {
-                    $$ = Keyword.IN.bytes;
+                    $$ = p.maybe_symbolize(Keyword.IN.bytes);
                 }
                 | keyword_module {
-                    $$ = Keyword.MODULE.bytes;
+                    $$ = p.maybe_symbolize(Keyword.MODULE.bytes);
                 }
                 | keyword_next {
-                    $$ = Keyword.NEXT.bytes;
+                    $$ = p.maybe_symbolize(Keyword.NEXT.bytes);
                 }
                 | keyword_nil {
-                    $$ = Keyword.NIL.bytes;
+                    $$ = p.maybe_symbolize(Keyword.NIL.bytes);
                 }
                 | keyword_not {
-                    $$ = Keyword.NOT.bytes;
+                    $$ = p.maybe_symbolize(Keyword.NOT.bytes);
                 }
                 | keyword_or {
-                    $$ = Keyword.OR.bytes;
+                    $$ = p.maybe_symbolize(Keyword.OR.bytes);
                 }
                 | keyword_redo {
-                    $$ = Keyword.REDO.bytes;
+                    $$ = p.maybe_symbolize(Keyword.REDO.bytes);
                 }
                 | keyword_rescue {
-                    $$ = Keyword.RESCUE.bytes;
+                    $$ = p.maybe_symbolize(Keyword.RESCUE.bytes);
                 }
                 | keyword_retry {
-                    $$ = Keyword.RETRY.bytes;
+                    $$ = p.maybe_symbolize(Keyword.RETRY.bytes);
                 }
                 | keyword_return {
-                    $$ = Keyword.RETURN.bytes;
+                    $$ = p.maybe_symbolize(Keyword.RETURN.bytes);
                 }
                 | keyword_self {
-                    $$ = Keyword.SELF.bytes;
+                    $$ = p.maybe_symbolize(Keyword.SELF.bytes);
                 }
                 | keyword_super {
-                    $$ = Keyword.SUPER.bytes;
+                    $$ = p.maybe_symbolize(Keyword.SUPER.bytes);
                 }
                 | keyword_then {
-                    $$ = Keyword.THEN.bytes;
+                    $$ = p.maybe_symbolize(Keyword.THEN.bytes);
                 }
                 | keyword_true {
-                    $$ = Keyword.TRUE.bytes;
+                    $$ = p.maybe_symbolize(Keyword.TRUE.bytes);
                 }
                 | keyword_undef {
-                    $$ = Keyword.UNDEF.bytes;
+                    $$ = p.maybe_symbolize(Keyword.UNDEF.bytes);
                 }
                 | keyword_when {
-                    $$ = Keyword.WHEN.bytes;
+                    $$ = p.maybe_symbolize(Keyword.WHEN.bytes);
                 }
                 | keyword_yield {
-                    $$ = Keyword.YIELD.bytes;
+                    $$ = p.maybe_symbolize(Keyword.YIELD.bytes);
                 }
                 | keyword_if {
-                    $$ = Keyword.IF.bytes;
+                    $$ = p.maybe_symbolize(Keyword.IF.bytes);
                 }
                 | keyword_unless {
-                    $$ = Keyword.UNLESS.bytes;
+                    $$ = p.maybe_symbolize(Keyword.UNLESS.bytes);
                 }
                 | keyword_while {
-                    $$ = Keyword.WHILE.bytes;
+                    $$ = p.maybe_symbolize(Keyword.WHILE.bytes);
                 }
                 | keyword_until {
-                    $$ = Keyword.UNTIL.bytes;
+                    $$ = p.maybe_symbolize(Keyword.UNTIL.bytes);
                 }
 
 arg             : lhs '=' lex_ctxt arg_rhs {
@@ -1784,16 +1783,16 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     $$ = p.call_bin_op($1, PERCENT, $3, p.src_line());
                 }
                 | arg tPOW arg {
-                    $$ = p.call_bin_op($1, $2, $3, p.src_line());
+                    $$ = p.call_bin_op($1, STAR_STAR, $3, p.src_line());
                 }
                 | tUMINUS_NUM simple_numeric tPOW arg {
                     $$ = p.call_uni_op(p.call_bin_op($2, $3, $4, p.src_line()), $1);
                 }
                 | tUPLUS arg {
-                    $$ = p.call_uni_op($2, $1);
+                    $$ = p.call_uni_op($2, PLUS_AT);
                 }
                 | tUMINUS arg {
-                    $$ = p.call_uni_op($2, $1);
+                    $$ = p.call_uni_op($2, MINUS_AT);
                 }
                 | arg '|' arg {
                     $$ = p.call_bin_op($1, OR, $3, p.src_line());
@@ -1805,25 +1804,25 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     $$ = p.call_bin_op($1, AMPERSAND, $3, p.src_line());
                 }
                 | arg tCMP arg {
-                    $$ = p.call_bin_op($1, $2, $3, p.src_line());
+                    $$ = p.call_bin_op($1, LT_EQ_RT, $3, p.src_line());
                 }
                 | rel_expr   %prec tCMP {
                     $$ = $1;
                 }
                 | arg tEQ arg {
-                    $$ = p.call_bin_op($1, $2, $3, p.src_line());
+                    $$ = p.call_bin_op($1, EQ_EQ, $3, p.src_line());
                 }
                 | arg tEQQ arg {
-                    $$ = p.call_bin_op($1, $2, $3, p.src_line());
+                    $$ = p.call_bin_op($1, EQ_EQ_EQ, $3, p.src_line());
                 }
                 | arg tNEQ arg {
-                    $$ = p.call_bin_op($1, $2, $3, p.src_line());
+                    $$ = p.call_bin_op($1, BANG_EQ, $3, p.src_line());
                 }
                 | arg tMATCH arg {
                     $$ = p.match_op($1, $3);
                 }
                 | arg tNMATCH arg {
-                    $$ = p.call_bin_op($1, $2, $3, p.src_line());
+                    $$ = p.call_bin_op($1, BANG_TILDE, $3, p.src_line());
                 }
                 | '!' arg {
                     $$ = p.call_uni_op(p.method_cond($2), BANG);
@@ -1832,16 +1831,16 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     $$ = p.call_uni_op($2, TILDE);
                 }
                 | arg tLSHFT arg {
-                    $$ = p.call_bin_op($1, $2, $3, p.src_line());
+                    $$ = p.call_bin_op($1, LT_LT, $3, p.src_line());
                 }
                 | arg tRSHFT arg {
-                    $$ = p.call_bin_op($1, $2, $3, p.src_line());
+                    $$ = p.call_bin_op($1, GT_GT, $3, p.src_line());
                 }
                 | arg tANDOP arg {
-                    $$ = p.logop($1, $2, $3);
+                    $$ = p.logop($1, AMPERSAND_AMPERSAND, $3);
                 }
                 | arg tOROP arg {
-                    $$ = p.logop($1, $2, $3);
+                    $$ = p.logop($1, OR_OR, $3);
                 }
                 | keyword_defined opt_nl {
                     p.getLexContext().in_defined = true;
@@ -1886,7 +1885,6 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     $$ = new DefsNode($1.line, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), @4.end());
                     if (p.isNextBreak) $<DefsNode>$.setContainsNextBreak();
                     p.popCurrentScope();
-                    // Changed from MRI (no more get_value)(combined two stmts)
                     /*% %*/
                     /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, bodystmt!($4, Qnil, Qnil, Qnil)) %*/
 		}
@@ -1896,8 +1894,8 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     p.restore_defun($1);
                     Node body = p.reduce_nodes(p.remove_begin(p.rescued_expr(@1.start(), $4, $6)));
                     $$ = new DefsNode($1.line, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), body, @6.end());
-                    if (p.isNextBreak) $<DefsNode>$.setContainsNextBreak();                    p.popCurrentScope();
-                    // Changed from MRI (no more get_value)(combined two stmts)
+                    if (p.isNextBreak) $<DefsNode>$.setContainsNextBreak();
+                    p.popCurrentScope();
                     /*% %*/
                     /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, bodystmt!(rescue_mod!($4, $6), Qnil, Qnil, Qnil)) %*/
                 }
@@ -2454,7 +2452,7 @@ primary         : literal
                     if (p.isNextBreak) $<DefsNode>$.setContainsNextBreak();
                     p.popCurrentScope();
                     // Changed from MRI (no more get_value)
-                    /*% %*/
+                    /*% %*/                    
                     /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, $3) %*/
                 }
                 | keyword_break {

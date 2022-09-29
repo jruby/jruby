@@ -806,6 +806,8 @@ public class RubyLexer extends LexingCommon {
         //System.out.println("TOKP: " + tokp + ", LEX_P: " + lex_p);
         IRubyObject value = parser.getRuntime().newString(lexb.makeShared(tokp, lex_p - tokp));
         String event = tokenToEventId(token);
+        // FIXME: identValue is a common value but this is really bytelist-based and not totally String-friendly
+        identValue = value.asJavaString();
         IRubyObject returnValue = parser.dispatch(event, value);
         flush();
         return returnValue;

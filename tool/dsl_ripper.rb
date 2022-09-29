@@ -216,7 +216,7 @@ class DSL
     elsif event == 'ID2VAL'
       "p.intern(#{id_value(args[0])})"
     elsif event == 'AREF'
-      "$1.eltOk(#{args[1]})"
+      "((RubyArray) $1.value).eltOk(#{args[1]})"
     else
       "#{event}(#{args.join(', ')})"
     end
