@@ -77,7 +77,7 @@ default_gems = [
     ['pp', '0.3.0'],
     ['prettyprint', '0.1.1'],
     ['pstore', '0.1.1'],
-    ['psych', '4.0.5'],
+    ['psych', '4.0.6'],
     ['racc', '1.6.0'],
     ['rake-ant', '1.0.5'],
     ['rdoc', '6.4.0'],
