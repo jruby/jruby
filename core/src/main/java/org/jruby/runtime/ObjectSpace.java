@@ -44,6 +44,7 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import org.jruby.RubyModule;
 import org.jruby.java.proxies.JavaProxy;
+import org.jruby.javasupport.JavaPackage;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.WeakIdentityHashMap;
 
@@ -131,6 +132,8 @@ public class ObjectSpace {
     }
 
     public void add(IRubyObject object) {
+        if (object instanceof JavaPackage)
+            return;
         if (true && object.getMetaClass() != null && !(object instanceof JavaProxy)) {
             // If the object is already frozen when we encounter it, it's pre-frozen.
             // Since this only (currently) applies to objects created outside the
