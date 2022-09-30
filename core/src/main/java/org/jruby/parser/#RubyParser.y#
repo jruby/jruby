@@ -823,13 +823,13 @@ expr            : command_call
 def_name        : fname {
                     p.pushLocalScope();
                     LexContext ctxt = p.getLexContext();
-                    RubySymbol name = p.get_id($1);
+                    ByteList name = $1.id;
                     p.numparam_name(name);
                     /*%%%*/
-                    $$ = new DefHolder(name, p.getCurrentArg(), (LexContext) ctxt.clone());
+                    $$ = new DefHolder(p.symbolID(name), p.getCurrentArg(), (LexContext) ctxt.clone());
                     // Changed from MRI
                     /*% 
-                        $$ = new NameHolder(ctxt, name, $1);
+                        $$ = new NameHolder(ctxt, p.symbolID(name), $1);
                     %*/
                     ctxt.in_def = true;
                     p.setCurrentArg(null);
@@ -2802,7 +2802,7 @@ bv_decls        : bvar {
                 }
 
 bvar            : tIDENTIFIER {
-                    p.new_bv($1);
+                    p.new_bv($1.id);
                     /*% ripper: get_value($1) %*/
                 }
                 | f_bad_arg {
@@ -3344,7 +3344,7 @@ p_kwarg         : p_kw {
 
 // KeyValuePair - [!null]
 p_kw            : p_kw_label p_expr {
-                    p.error_duplicate_pattern_key($1);
+                    p.error_duplicate_pattern_key($1.id);
                     /*%%%*/
                     Node label = p.asSymbol(@1.start(), $1);
 
@@ -3353,11 +3353,11 @@ p_kw            : p_kw_label p_expr {
                     /*% ripper: rb_ary_new_from_args(2, get_value($1), get_value($2)) %*/
                 }
                 | p_kw_label {
-                    p.error_duplicate_pattern_key($1);
-                    if ($1 != null && !p.is_local_id($1)) {
+                    p.error_duplicate_pattern_key($1.id);
+                    if ($1 != null && !p.is_local_id($1.id)) {
                         p.yyerror("key must be valid as local variables");
                     }
-                    p.error_duplicate_pattern_variable($1);
+                    p.error_duplicate_pattern_variable($1.id);
                     /*%%%*/
 
                     Node label = p.asSymbol(@1.start(), $1);
@@ -3974,7 +3974,7 @@ var_ref         : tIDENTIFIER { // mri:user_variable
                     $$ = p.declareIdentifier($1);
                     /*%  %*/
                     /*%
-                    if (p.id_is_var($1)) {
+                    if (p.id_is_var($1.id)) {
                         $$ = p.dispatch("on_var_ref", $1);
                     } else {
                         $$ = p.dispatch("on_vcall", $1);
@@ -3986,7 +3986,7 @@ var_ref         : tIDENTIFIER { // mri:user_variable
                     $$ = new InstVarNode(p.tokline(), p.symbolID($1));
                     /*%  %*/
                     /*%
-                    if (p.id_is_var($1)) {
+                    if (p.id_is_var($1.id)) {
                         $$ = p.dispatch("on_var_ref", $1);
                     } else {
                         $$ = p.dispatch("on_vcall", $1);
@@ -3998,7 +3998,7 @@ var_ref         : tIDENTIFIER { // mri:user_variable
                     $$ = new GlobalVarNode(p.tokline(), p.symbolID($1));
                     /*%  %*/
                     /*%
-                    if (p.id_is_var($1)) {
+                    if (p.id_is_var($1.id)) {
                         $$ = p.dispatch("on_var_ref", $1);
                     } else {
                         $$ = p.dispatch("on_vcall", $1);
@@ -4010,7 +4010,7 @@ var_ref         : tIDENTIFIER { // mri:user_variable
                     $$ = new ConstNode(p.tokline(), p.symbolID($1));
                     /*%  %*/
                     /*%
-                    if (p.id_is_var($1)) {
+                    if (p.id_is_var($1.id)) {
                         $$ = p.dispatch("on_var_ref", $1);
                     } else {
                         $$ = p.dispatch("on_vcall", $1);
@@ -4022,7 +4022,7 @@ var_ref         : tIDENTIFIER { // mri:user_variable
                     $$ = new ClassVarNode(p.tokline(), p.symbolID($1));
                     /*%  %*/
                     /*%
-                    if (p.id_is_var($1)) {
+                    if (p.id_is_var($1.id)) {
                         $$ = p.dispatch("on_var_ref", $1);
                     } else {
                         $$ = p.dispatch("on_vcall", $1);
@@ -4332,7 +4332,7 @@ f_norm_arg      : f_bad_arg {
                 }
 
 f_arg_asgn      : f_norm_arg {
-                    RubySymbol name = p.get_id($1);
+                    RubySymbol name = p.symbolID($1.id);
                     p.setCurrentArg(name);
                     /*%%%*/
                     $$ = p.arg_var($1);
@@ -4371,7 +4371,7 @@ f_arg           : f_arg_item {
 
 f_label 	: tLABEL {
                     p.arg_var(p.formal_argument($1));
-                    p.setCurrentArg(p.get_id($1));
+                    p.setCurrentArg(p.symbolID($1.id));
                     p.ordinalMaxNumParam();
                     p.getLexContext().in_argdef = false;
                     $$ = $1;
@@ -4453,7 +4453,7 @@ f_no_kwarg      : kwrest_mark keyword_nil {
                 }
 
 f_kwrest        : kwrest_mark tIDENTIFIER {
-                    p.shadowing_lvar($2);
+                    p.shadowing_lvar($2.id);
                     /*%%%*/
                     $$ = $2;
                     /*% %*/
@@ -4519,10 +4519,7 @@ restarg_mark    : '*' {
 
 // [!null]
 f_rest_arg      : restarg_mark tIDENTIFIER {
-                    if (!p.is_local_id($2)) {
-                        p.yyerror("rest argument must be local variable");
-                    }
-                    $$ = p.arg_var(p.shadowing_lvar($2));
+                    $$ = p.arg_var(p.shadowing_lvar($2.id));
                     /*%%%*/
                     $$ = new RestArgNode($<ArgumentNode>$);
                     /*% %*/
@@ -4545,10 +4542,7 @@ blkarg_mark     : '&' {
 
 // f_block_arg - Block argument def for function (foo(&block)) [!null]
 f_block_arg     : blkarg_mark tIDENTIFIER {
-                    if (!p.is_local_id($2)) {
-                        p.yyerror("block argument must be local variable");
-                    }
-                    $$ = p.arg_var(p.shadowing_lvar($2));
+                    $$ = p.arg_var(p.shadowing_lvar($2.id));
                     /*%%%*/
                     $$ = new BlockArgNode($<ArgumentNode>$);
                     /*% %*/

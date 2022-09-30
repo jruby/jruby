@@ -86,6 +86,8 @@ public abstract class LexingCommon {
     public long start = 0;
     public long end = 0;
 
+    private ByteList id;
+
     public static final ByteList BACKTICK = new ByteList(new byte[] {'`'}, USASCIIEncoding.INSTANCE);
     public static final ByteList EQ_EQ_EQ = new ByteList(new byte[] {'=', '=', '='}, USASCIIEncoding.INSTANCE);
     public static final ByteList EQ_EQ = new ByteList(new byte[] {'=', '='}, USASCIIEncoding.INSTANCE);
@@ -146,6 +148,18 @@ public abstract class LexingCommon {
 
     public int column() {
         return tokp - lex_pbeg;
+    }
+
+    protected void set_yylval_id(ByteList id) {
+        this.id = id;
+    }
+
+    protected void set_yylval_name(ByteList name) {
+        this.id = name;
+    }
+
+    public ByteList id() {
+        return id;
     }
 
     protected void updateTokenPosition() {

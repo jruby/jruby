@@ -5839,7 +5839,7 @@ states[674] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[675] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    if (p.id_is_var()) {
+                    if (p.id_is_var(((IRubyObject)yyVals[0+yyTop].value))) {
                         yyVal = p.dispatch("on_var_ref", ((IRubyObject)yyVals[0+yyTop].value));
                     } else {
                         yyVal = p.dispatch("on_vcall", ((IRubyObject)yyVals[0+yyTop].value));
@@ -5848,7 +5848,7 @@ states[675] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[676] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    if (p.id_is_var()) {
+                    if (p.id_is_var(((IRubyObject)yyVals[0+yyTop].value))) {
                         yyVal = p.dispatch("on_var_ref", ((IRubyObject)yyVals[0+yyTop].value));
                     } else {
                         yyVal = p.dispatch("on_vcall", ((IRubyObject)yyVals[0+yyTop].value));
@@ -5857,7 +5857,7 @@ states[676] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[677] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    if (p.id_is_var()) {
+                    if (p.id_is_var(((IRubyObject)yyVals[0+yyTop].value))) {
                         yyVal = p.dispatch("on_var_ref", ((IRubyObject)yyVals[0+yyTop].value));
                     } else {
                         yyVal = p.dispatch("on_vcall", ((IRubyObject)yyVals[0+yyTop].value));
@@ -5866,7 +5866,7 @@ states[677] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[678] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    if (p.id_is_var()) {
+                    if (p.id_is_var(((IRubyObject)yyVals[0+yyTop].value))) {
                         yyVal = p.dispatch("on_var_ref", ((IRubyObject)yyVals[0+yyTop].value));
                     } else {
                         yyVal = p.dispatch("on_vcall", ((IRubyObject)yyVals[0+yyTop].value));
@@ -5875,7 +5875,7 @@ states[678] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[679] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    if (p.id_is_var()) {
+                    if (p.id_is_var(((IRubyObject)yyVals[0+yyTop].value))) {
                         yyVal = p.dispatch("on_var_ref", ((IRubyObject)yyVals[0+yyTop].value));
                     } else {
                         yyVal = p.dispatch("on_vcall", ((IRubyObject)yyVals[0+yyTop].value));

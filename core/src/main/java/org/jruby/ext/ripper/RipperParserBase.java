@@ -44,6 +44,7 @@ import org.jruby.ast.DefHolder;
 import org.jruby.ast.Node;
 import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.yacc.LexContext;
+import org.jruby.parser.RubyParserBase;
 import org.jruby.parser.ScopedParserState;
 import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.StackState;
@@ -51,7 +52,6 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.KeyValuePair;
 import org.jruby.util.StringSupport;
 
 import static org.jruby.util.CommonByteLists.*;
@@ -198,10 +198,30 @@ public class RipperParserBase {
         throw new SyntaxException("identifier " + identifier + " is not valid", identifier);
     }    
     
-    public boolean id_is_var() {
-        String ident = lexer.getIdent().intern();
+    public boolean id_is_var(IRubyObject value) {
+        if (value instanceof RubyString) {
+            ByteList ident = ((RubyString) value).getByteList();
 
-        return getCurrentScope().isDefined(ident) >= 0;
+            // FIXME: Using Ruby Parser version...
+            RubyParserBase.IDType type = RubyParserBase.id_type(ident);
+
+            switch (type) {
+                case Constant:
+                case Global:
+                case Instance:
+                case Class:
+                    return true;
+            }
+
+            String id = getRuntime().newSymbol(ident).idString();
+
+            if (currentScope.isBlockScope() && isNumParamId(id)) return true;
+
+            return getCurrentScope().isDefined(id) >= 0;
+        } else {
+            //System.out.println("VALUE: " + value + " IDENT: " + lexer.getIdent());
+            return false;
+        }
     }
     
     public boolean is_local_id(IRubyObject id) {

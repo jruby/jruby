@@ -5855,7 +5855,7 @@ states[675] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     yyVal = p.declareIdentifier(((ByteList)yyVals[0+yyTop].value));
                     /*%  %*/
                     /*%
-                    if (p.id_is_var()) {
+                    if (p.id_is_var($1)) {
                         $$ = p.dispatch("on_var_ref", $1);
                     } else {
                         $$ = p.dispatch("on_vcall", $1);
@@ -5868,7 +5868,7 @@ states[676] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     yyVal = new InstVarNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)));
                     /*%  %*/
                     /*%
-                    if (p.id_is_var()) {
+                    if (p.id_is_var($1)) {
                         $$ = p.dispatch("on_var_ref", $1);
                     } else {
                         $$ = p.dispatch("on_vcall", $1);
@@ -5881,7 +5881,7 @@ states[677] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     yyVal = new GlobalVarNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)));
                     /*%  %*/
                     /*%
-                    if (p.id_is_var()) {
+                    if (p.id_is_var($1)) {
                         $$ = p.dispatch("on_var_ref", $1);
                     } else {
                         $$ = p.dispatch("on_vcall", $1);
@@ -5894,7 +5894,7 @@ states[678] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     yyVal = new ConstNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)));
                     /*%  %*/
                     /*%
-                    if (p.id_is_var()) {
+                    if (p.id_is_var($1)) {
                         $$ = p.dispatch("on_var_ref", $1);
                     } else {
                         $$ = p.dispatch("on_vcall", $1);
@@ -5907,7 +5907,7 @@ states[679] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     yyVal = new ClassVarNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)));
                     /*%  %*/
                     /*%
-                    if (p.id_is_var()) {
+                    if (p.id_is_var($1)) {
                         $$ = p.dispatch("on_var_ref", $1);
                     } else {
                         $$ = p.dispatch("on_vcall", $1);

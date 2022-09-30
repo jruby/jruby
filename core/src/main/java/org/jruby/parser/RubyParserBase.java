@@ -1629,11 +1629,11 @@ public abstract class RubyParserBase {
         return shadowing_lvar(identifier);
     }
 
-    enum IDType {
+    public enum IDType {
         Local, Global, Instance, AttrSet, Constant, Class;
     }
 
-    public IDType id_type(ByteList identifier) {
+    public static IDType id_type(ByteList identifier) {
         char first = identifier.charAt(0);
 
         if (Character.isUpperCase(first)) return Constant;
