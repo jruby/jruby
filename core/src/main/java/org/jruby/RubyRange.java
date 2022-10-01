@@ -1083,15 +1083,15 @@ public class RubyRange extends RubyObject {
 
         len1 = ((RubyInteger)end).op_minus(context, begin);
 
-        if (((RubyInteger)len1).isZero() || Numeric.f_negative_p(context, (RubyInteger)len1)) {
-            return RubyArray.newEmptyArray(context.runtime);
-        }
-
         if (isExclusive) {
             end = ((RubyInteger)end).op_minus(context, one);
             len = len1;
         } else {
             len = ((RubyInteger)len1).op_plus(context, one);
+        }
+
+        if (((RubyInteger)len).isZero() || Numeric.f_negative_p(context, (RubyInteger)len)) {
+            return RubyArray.newEmptyArray(context.runtime);
         }
 
         long n = RubyNumeric.num2long(arg);
