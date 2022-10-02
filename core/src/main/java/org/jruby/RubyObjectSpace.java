@@ -40,6 +40,7 @@ import java.util.Map;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.javasupport.JavaPackage;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
@@ -145,7 +146,7 @@ public class RubyObjectSpace {
             final ArrayList<IRubyObject> modules = new ArrayList<>(96);
             runtime.eachModule((module) -> {
                     if (rubyClass.isInstance(module)) {
-                        if (!(module instanceof IncludedModule || module instanceof PrependedModule)) {
+                        if (!(module instanceof IncludedModule || module instanceof PrependedModule || module == runtime.getJavaSupport().getJavaPackageClass() || module instanceof JavaPackage)) {
                             // do nothing for included wrappers or singleton classes
                             modules.add(module); // store the module to avoid concurrent modification exceptions
                         }
