@@ -1,1 +1,0 @@
-fails:Range#last returns the specified number if elements for single element inclusive range
