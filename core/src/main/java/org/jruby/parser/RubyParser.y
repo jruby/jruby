@@ -4,7 +4,7 @@
   SUBS = {
     'import_ripper' => [
          '',
-         'import org.jruby.util.KeyValuePair; import org.jruby.RubyArray; import org.jruby.ext.ripper.NameHolder;'
+         'import org.jruby.util.KeyValuePair; import org.jruby.RubyArray; import org.jruby.ext.ripper.Holder;'
     ],
     'program_production' => [
          '',
@@ -36,7 +36,7 @@
     'token_backref_type' => ['Node', 'IRubyObject'],
     'token_string_type' => ['Node', 'IRubyObject'],
     'token_regexp_type' => ['RegexpNode', 'IRubyObject'],
-    'prod_def_type' => ['DefHolder', 'NameHolder'],
+    'prod_def_type' => ['DefHolder', 'Holder'],
     'prod_undef_list_type' => ['Node', 'RubyArray'],
     'prod_bv_decls_type' => ['Node', 'RubyArray'],
     'prod_type' => ['Node', 'IRubyObject'],
@@ -822,14 +822,16 @@ expr            : command_call
 // [!null] - DefHolder
 def_name        : fname {
                     p.pushLocalScope();
+                    ByteList currentArg = p.getCurrentArg();
+                    p.setCurrentArg(null);
                     LexContext ctxt = p.getLexContext();
                     RubySymbol name = p.get_id($1);
                     p.numparam_name(name);
                     /*%%%*/
-                    $$ = new DefHolder(name, p.getCurrentArg(), (LexContext) ctxt.clone());
+                    $$ = new DefHolder(name, currentArg, (LexContext) ctxt.clone());
                     // Changed from MRI
                     /*% 
-                        $$ = new NameHolder(ctxt, name, $1);
+                        $$ = new Holder(ctxt, name, p.get_value($1));
                     %*/
                     ctxt.in_def = true;
                     p.setCurrentArg(null);
@@ -854,7 +856,7 @@ defs_head       : k_def singleton dot_or_colon {
                     $5.setDotOrColon(p.extractByteList($3));
                     // Changed from MRI
                     /*%
-                       $<NameHolder>$.value = p.new_array($2, $3, $<NameHolder>$.value);
+                       $<Holder>$.value = p.new_array($2, $3, $<Holder>$.value);
                     %*/
                 }
 
@@ -3974,7 +3976,7 @@ var_ref         : tIDENTIFIER { // mri:user_variable
                     $$ = p.declareIdentifier($1);
                     /*%  %*/
                     /*%
-                    if (p.id_is_var($1)) {
+                    if (p.id_is_var(@1.id)) {
                         $$ = p.dispatch("on_var_ref", $1);
                     } else {
                         $$ = p.dispatch("on_vcall", $1);
@@ -3986,7 +3988,7 @@ var_ref         : tIDENTIFIER { // mri:user_variable
                     $$ = new InstVarNode(p.tokline(), p.symbolID($1));
                     /*%  %*/
                     /*%
-                    if (p.id_is_var($1)) {
+                    if (p.id_is_var(@1.id)) {
                         $$ = p.dispatch("on_var_ref", $1);
                     } else {
                         $$ = p.dispatch("on_vcall", $1);
@@ -3998,7 +4000,7 @@ var_ref         : tIDENTIFIER { // mri:user_variable
                     $$ = new GlobalVarNode(p.tokline(), p.symbolID($1));
                     /*%  %*/
                     /*%
-                    if (p.id_is_var($1)) {
+                    if (p.id_is_var(@1.id)) {
                         $$ = p.dispatch("on_var_ref", $1);
                     } else {
                         $$ = p.dispatch("on_vcall", $1);
@@ -4010,7 +4012,7 @@ var_ref         : tIDENTIFIER { // mri:user_variable
                     $$ = new ConstNode(p.tokline(), p.symbolID($1));
                     /*%  %*/
                     /*%
-                    if (p.id_is_var($1)) {
+                    if (p.id_is_var(@1.id)) {
                         $$ = p.dispatch("on_var_ref", $1);
                     } else {
                         $$ = p.dispatch("on_vcall", $1);
@@ -4022,7 +4024,7 @@ var_ref         : tIDENTIFIER { // mri:user_variable
                     $$ = new ClassVarNode(p.tokline(), p.symbolID($1));
                     /*%  %*/
                     /*%
-                    if (p.id_is_var($1)) {
+                    if (p.id_is_var(@1.id)) {
                         $$ = p.dispatch("on_var_ref", $1);
                     } else {
                         $$ = p.dispatch("on_vcall", $1);

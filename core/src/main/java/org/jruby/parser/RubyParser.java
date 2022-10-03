@@ -1828,6 +1828,7 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
   public Object yyparse (RubyLexer yyLex) throws java.io.IOException {
     int yystate = 0;
     Object yyVal = null;
+    ByteList id = null;
     ProductionState[] yystates = new ProductionState[YYMAX];        // stack of states and values.
     initializeStates(yystates, 0, yystates.length);
     int yytoken = NEEDS_TOKEN;     // current token
@@ -1845,6 +1846,7 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
 
       yystates[yytop].state = yystate;
       yystates[yytop].value = yyVal;
+      yystates[yytop].id = id;
       yystates[yytop].start = start;
       yystates[yytop].end = end;
    //         printstates(yytop, yystates);
@@ -1867,6 +1869,7 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
                 if (yydebug != null) yydebug.shift(yystate, yyTable[yyn], yyErrorFlag-1);
                 yystate = yyTable[yyn];		// shift to yyn
                 yyVal = yyLex.value();
+                id = yyLex.id();
                 start = yyLex.start;
                 end = yyLex.end;
                 yytoken = NEEDS_TOKEN;
@@ -1898,6 +1901,7 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
                             if (yydebug != null) yydebug.shift(yystates[yytop].state, yyTable[yyn], 3);
                             yystate = yyTable[yyn];
                             yyVal = yyLex.value();
+                            id = yyLex.id();
                             continue yyLoop;
                         }
                         if (yydebug != null) yydebug.pop(yystates[yytop].state);
@@ -2396,14 +2400,16 @@ states[65] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
 };
 states[67] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.pushLocalScope();
+                    ByteList currentArg = p.getCurrentArg();
+                    p.setCurrentArg(null);
                     LexContext ctxt = p.getLexContext();
                     RubySymbol name = p.get_id(((ByteList)yyVals[0+yyTop].value));
                     p.numparam_name(name);
                     /*%%%*/
-                    yyVal = new DefHolder(name, p.getCurrentArg(), (LexContext) ctxt.clone());
+                    yyVal = new DefHolder(name, currentArg, (LexContext) ctxt.clone());
                     /* Changed from MRI*/
                     /*% 
-                        $$ = new NameHolder(ctxt, name, $1);
+                        $$ = new Holder(ctxt, name, p.get_value($1));
                     %*/
                     ctxt.in_def = true;
                     p.setCurrentArg(null);
@@ -2428,7 +2434,7 @@ states[70] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
                     ((DefHolder)yyVals[0+yyTop].value).setDotOrColon(p.extractByteList(((ByteList)yyVals[-2+yyTop].value)));
                     /* Changed from MRI*/
                     /*%
-                       $<NameHolder>$.value = p.new_array($2, $3, $<NameHolder>$.value);
+                       $<Holder>$.value = p.new_array($2, $3, $<Holder>$.value);
                     %*/
   return yyVal;
 };
@@ -5855,7 +5861,7 @@ states[675] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     yyVal = p.declareIdentifier(((ByteList)yyVals[0+yyTop].value));
                     /*%  %*/
                     /*%
-                    if (p.id_is_var($1)) {
+                    if (p.id_is_var(yyVals[yyTop - count + 1].id)) {
                         $$ = p.dispatch("on_var_ref", $1);
                     } else {
                         $$ = p.dispatch("on_vcall", $1);
@@ -5868,7 +5874,7 @@ states[676] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     yyVal = new InstVarNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)));
                     /*%  %*/
                     /*%
-                    if (p.id_is_var($1)) {
+                    if (p.id_is_var(yyVals[yyTop - count + 1].id)) {
                         $$ = p.dispatch("on_var_ref", $1);
                     } else {
                         $$ = p.dispatch("on_vcall", $1);
@@ -5881,7 +5887,7 @@ states[677] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     yyVal = new GlobalVarNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)));
                     /*%  %*/
                     /*%
-                    if (p.id_is_var($1)) {
+                    if (p.id_is_var(yyVals[yyTop - count + 1].id)) {
                         $$ = p.dispatch("on_var_ref", $1);
                     } else {
                         $$ = p.dispatch("on_vcall", $1);
@@ -5894,7 +5900,7 @@ states[678] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     yyVal = new ConstNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)));
                     /*%  %*/
                     /*%
-                    if (p.id_is_var($1)) {
+                    if (p.id_is_var(yyVals[yyTop - count + 1].id)) {
                         $$ = p.dispatch("on_var_ref", $1);
                     } else {
                         $$ = p.dispatch("on_vcall", $1);
@@ -5907,7 +5913,7 @@ states[679] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     yyVal = new ClassVarNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)));
                     /*%  %*/
                     /*%
-                    if (p.id_is_var($1)) {
+                    if (p.id_is_var(yyVals[yyTop - count + 1].id)) {
                         $$ = p.dispatch("on_var_ref", $1);
                     } else {
                         $$ = p.dispatch("on_vcall", $1);
@@ -6681,7 +6687,7 @@ states[817] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4667 "parse.y"
+					// line 4669 "parse.y"
 
 }
-					// line 14437 "-"
+					// line 14443 "-"

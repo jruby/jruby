@@ -137,6 +137,7 @@ t    this.yydebug = (org.jruby.parser.YYDebug) ayydebug;
 .  public Object yyparse (RubyLexer yyLex) throws java.io.IOException {
 .    int yystate = 0;
 .    Object yyVal = null;
+.    ByteList id = null;
 .    ProductionState[] yystates = new ProductionState[YYMAX];        // stack of states and values.
 .    initializeStates(yystates, 0, yystates.length);
 .    int yytoken = NEEDS_TOKEN;     // current token
@@ -156,6 +157,7 @@ t    this.yydebug = (org.jruby.parser.YYDebug) ayydebug;
 .
 .      yystates[yytop].state = yystate;
 .      yystates[yytop].value = yyVal;
+.      yystates[yytop].id = id;
 .      yystates[yytop].start = start;
 .      yystates[yytop].end = end;
 .   //         printstates(yytop, yystates);
@@ -178,6 +180,7 @@ t                if (yydebug != null) yydebug.lex(yystate, yytoken, yyName(yytok
 t                if (yydebug != null) yydebug.shift(yystate, yyTable[yyn], yyErrorFlag-1);
 .                yystate = yyTable[yyn];		// shift to yyn
 .                yyVal = yyLex.value();
+.                id = yyLex.id();
 .                start = yyLex.start;
 .                end = yyLex.end;
 .                yytoken = NEEDS_TOKEN;
@@ -209,6 +212,7 @@ t                    if (yydebug != null) yydebug.error("syntax error");
 t                            if (yydebug != null) yydebug.shift(yystates[yytop].state, yyTable[yyn], 3);
 .                            yystate = yyTable[yyn];
 .                            yyVal = yyLex.value();
+.                            id = yyLex.id();
 .                            continue yyLoop;
 .                        }
 t                        if (yydebug != null) yydebug.pop(yystates[yytop].state);

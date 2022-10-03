@@ -1,7 +1,10 @@
 package org.jruby.parser;
 
+import org.jruby.util.ByteList;
+
 public class ProductionState {
     public int state;
+    public ByteList id;
     public Object value;
     public long start;
     public long end;

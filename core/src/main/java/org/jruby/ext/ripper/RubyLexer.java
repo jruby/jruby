@@ -377,6 +377,22 @@ public class RubyLexer extends LexingCommon {
 //        throw new SyntaxException(lexb.toString(), message);
     }
 
+    // This is noop in MRI but they make a tuple type for things like tIDENTIFIER and we
+    // are storing this as a special value in each production
+    protected void set_yylval_id(ByteList id) {
+        this.id = id;
+    }
+
+    private ByteList id = null;
+
+    public ByteList id() {
+        return id;
+    }
+
+    protected void set_yylval_name(ByteList name) {
+        id = name;
+    }
+
     public int tokenize_ident(int result) {
         String value = createTokenString();
 
@@ -1254,7 +1270,7 @@ public class RubyLexer extends LexingCommon {
             setState(EXPR_END|EXPR_LABEL);
         }
 
-        yaccValue = getRuntime().newSymbol(createTokenByteList());
+        set_yylval_name(createTokenByteList());
         identValue = value.intern();
         return result;
     }

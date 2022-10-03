@@ -38,9 +38,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
-import org.jruby.ast.ArgumentNode;
-import org.jruby.ast.BlockArgNode;
-import org.jruby.ast.DefHolder;
 import org.jruby.ast.Node;
 import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.yacc.LexContext;
@@ -198,30 +195,23 @@ public class RipperParserBase {
         throw new SyntaxException("identifier " + identifier + " is not valid", identifier);
     }    
     
-    public boolean id_is_var(IRubyObject value) {
-        if (value instanceof RubyString) {
-            ByteList ident = ((RubyString) value).getByteList();
+    public boolean id_is_var(ByteList value) {
+        // FIXME: Using Ruby Parser version...
+        RubyParserBase.IDType type = RubyParserBase.id_type(value);
 
-            // FIXME: Using Ruby Parser version...
-            RubyParserBase.IDType type = RubyParserBase.id_type(ident);
-
-            switch (type) {
-                case Constant:
-                case Global:
-                case Instance:
-                case Class:
-                    return true;
-            }
-
-            String id = getRuntime().newSymbol(ident).idString();
-
-            if (currentScope.isBlockScope() && isNumParamId(id)) return true;
-
-            return getCurrentScope().isDefined(id) >= 0;
-        } else {
-            //System.out.println("VALUE: " + value + " IDENT: " + lexer.getIdent());
-            return false;
+        switch (type) {
+            case Constant:
+            case Global:
+            case Instance:
+            case Class:
+                return true;
         }
+
+        String id = getRuntime().newSymbol(value).idString();
+
+        if (currentScope.isBlockScope() && isNumParamId(id)) return true;
+
+        return getCurrentScope().isDefined(id) >= 0;
     }
     
     public boolean is_local_id(IRubyObject id) {
@@ -258,11 +248,11 @@ public class RipperParserBase {
     }
 
     protected IRubyObject call_uni_op(IRubyObject recv, IRubyObject id) {
-        return dispatch("on_unary", recv, id);
+        return dispatch("on_unary", id, recv);
     }
 
     protected IRubyObject call_uni_op(IRubyObject recv, ByteList id) {
-        return dispatch("on_unary", recv, intern(id));
+        return call_uni_op(recv, intern(id));
     }
 
     protected IRubyObject logop(IRubyObject left, ByteList id, IRubyObject right) {
@@ -622,7 +612,7 @@ public class RipperParserBase {
         return b;
     }
 
-    protected IRubyObject get_value(NameHolder holder) {
+    protected IRubyObject get_value(Holder holder) {
         return holder.value;
     }
 
@@ -630,11 +620,11 @@ public class RipperParserBase {
         return holder.eltOk(0);
     }
 
-    public void endless_method_name(NameHolder name) {
+    public void endless_method_name(Holder name) {
         // FIXME: IMPL
     }
 
-    public void restore_defun(NameHolder holder) {
+    public void restore_defun(Holder holder) {
         // FIXME:
         //lexer.getLexContext().restore(holder);
         //lexer.setCurrentArg(holder.current_arg);
