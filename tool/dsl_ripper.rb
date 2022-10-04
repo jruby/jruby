@@ -12,7 +12,7 @@
 $dollar = "$$"
 alias $$ $dollar
 
-Qnil = 'null'
+Qnil = 'p.nil()'
 $__1__ = '$1'
 $__2__ = '$2'
 $__3__ = '$3'
