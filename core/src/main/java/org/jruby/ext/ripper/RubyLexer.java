@@ -624,7 +624,7 @@ public class RubyLexer extends LexingCommon {
     }
     
     private int hereDocumentIdentifier() {
-        int c = nextc(); 
+        int c = nextc();
         int term;
         int indent = 0;
 
@@ -679,7 +679,6 @@ public class RubyLexer extends LexingCommon {
                 }
                 return 0;
             }
-            newtok(true);
             func |= str_dquote;
             do {
                 if (!tokadd_mbchar(c, markerValue)) return EOF;
