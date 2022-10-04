@@ -3317,7 +3317,7 @@ p_arg           : p_expr {
 
 // HashPatternNode - [!null]
 p_kwargs        : p_kwarg ',' p_any_kwrest {
-                    $$ = p.new_hash_pattern_tail(@1.start(), $1, $3);
+                    $$ = p.new_hash_pattern_tail(@1.start(), $1, @3.id);
                 }
 		| p_kwarg {
                     $$ = p.new_hash_pattern_tail(@1.start(), $1, (ByteList) null);
@@ -3326,7 +3326,7 @@ p_kwargs        : p_kwarg ',' p_any_kwrest {
                     $$ = p.new_hash_pattern_tail(@1.start(), $1, (ByteList) null);
                 }
                 | p_any_kwrest {
-                    $$ = p.new_hash_pattern_tail(@1.start(), null, $1);
+                    $$ = p.new_hash_pattern_tail(@1.start(), null, @1.id);
                 }
 
 // HashNode - [!null]
@@ -3346,7 +3346,7 @@ p_kwarg         : p_kw {
 
 // KeyValuePair - [!null]
 p_kw            : p_kw_label p_expr {
-                    p.error_duplicate_pattern_key($1);
+                    p.error_duplicate_pattern_key(@1.id);
                     /*%%%*/
                     Node label = p.asSymbol(@1.start(), $1);
 
@@ -3355,11 +3355,11 @@ p_kw            : p_kw_label p_expr {
                     /*% ripper: rb_ary_new_from_args(2, get_value($1), get_value($2)) %*/
                 }
                 | p_kw_label {
-                    p.error_duplicate_pattern_key($1);
-                    if ($1 != null && !p.is_local_id($1)) {
+                    p.error_duplicate_pattern_key(@1.id);
+                    if ($1 != null && !p.is_local_id(@1.id)) {
                         p.yyerror("key must be valid as local variables");
                     }
-                    p.error_duplicate_pattern_variable($1);
+                    p.error_duplicate_pattern_variable(@1.id);
                     /*%%%*/
 
                     Node label = p.asSymbol(@1.start(), $1);

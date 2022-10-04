@@ -1169,6 +1169,7 @@ public class RubyLexer extends LexingCommon {
             setState(EXPR_END|EXPR_LABEL);
         }
 
+        set_yylval_name(value);
         yaccValue = value;
         return result;
     }
@@ -1181,6 +1182,7 @@ public class RubyLexer extends LexingCommon {
             setState(EXPR_BEG);
             if ((c = nextc()) == '=') {
                 yaccValue = AMPERSAND_AMPERSAND;
+                set_yylval_id(AMPERSAND_AMPERSAND);
                 setState(EXPR_BEG);
                 return tOP_ASGN;
             }
@@ -1189,11 +1191,13 @@ public class RubyLexer extends LexingCommon {
             return tANDOP;
         case '=':
             yaccValue = AMPERSAND;
+            set_yylval_id(AMPERSAND);
             setState(EXPR_BEG);
             return tOP_ASGN;
         case '.':
             setState(EXPR_DOT);
             yaccValue = AMPERSAND_DOT;
+            set_yylval_id(AMPERSAND_DOT);
             return tANDDOT;
         }
         pushback(c);
@@ -1305,6 +1309,7 @@ public class RubyLexer extends LexingCommon {
         int c = nextc();
         if (c == '=') {
             setState(EXPR_BEG);
+            set_yylval_id(CARET);
             return tOP_ASGN;
         }
 
@@ -1325,6 +1330,7 @@ public class RubyLexer extends LexingCommon {
             }
             setState(EXPR_DOT);
             yaccValue = COLON_COLON;
+            set_yylval_id(COLON_COLON);
             return tCOLON2;
         }
 
@@ -1411,6 +1417,7 @@ public class RubyLexer extends LexingCommon {
         case '>':       /* $>: default output handle */
         case '\"':      /* $": already loaded files */
             yaccValue = new ByteList(new byte[] {'$', (byte) c}, USASCII_ENCODING);
+            set_yylval_name(new ByteList(new byte[] {'$', (byte) c}));
             return tGVAR;
 
 
@@ -1434,6 +1441,7 @@ public class RubyLexer extends LexingCommon {
             // Explicit reference to these vars as symbols...
             if (isLexState(last_state, EXPR_FNAME)) {
                 yaccValue = new ByteList(new byte[] {'$', (byte) c}, USASCII_ENCODING);
+                set_yylval_name(new ByteList(new byte[] {'$', (byte) c}));
                 return tGVAR;
             }
             
@@ -1448,6 +1456,7 @@ public class RubyLexer extends LexingCommon {
             pushback(c);
             if (isLexState(last_state, EXPR_FNAME)) {
                 yaccValue = createTokenByteList();
+                set_yylval_name(new ByteList(new byte[] {'$', (byte) c}));
                 return tGVAR;
             }
 
@@ -1510,6 +1519,7 @@ public class RubyLexer extends LexingCommon {
             }
             pushback(c);
             yaccValue = DOT_DOT;
+            set_yylval_id(DOT);
             return isBeg ? tBDOT2 : tDOT2;
         }
         
@@ -1543,6 +1553,7 @@ public class RubyLexer extends LexingCommon {
             if ((c = nextc()) == '=') {
                 setState(EXPR_BEG);
                 yaccValue = GT_GT;
+                set_yylval_id(GT_GT);
                 return tOP_ASGN;
             }
             pushback(c);
@@ -1600,6 +1611,7 @@ public class RubyLexer extends LexingCommon {
                 setState(EXPR_ARG|EXPR_LABELED);
                 nextc();
                 yaccValue = tempVal;
+                set_yylval_name(createTokenByteList());
                 return tLABEL;
             }
         }
@@ -1614,6 +1626,7 @@ public class RubyLexer extends LexingCommon {
                 if (isLexState(state, EXPR_FNAME)) {
                     setState(EXPR_ENDFN);
                     yaccValue = keyword.bytes;
+                    set_yylval_name(createTokenByteList());
                     return keyword.id0;
                 } else {
                     yaccValue = ruby_sourceline;
@@ -1787,6 +1800,7 @@ public class RubyLexer extends LexingCommon {
         if (c == '=') {
             setState(EXPR_BEG);
             yaccValue = MINUS;
+            set_yylval_id(MINUS);
             return tOP_ASGN;
         }
         if (c == '>') {
@@ -1827,6 +1841,7 @@ public class RubyLexer extends LexingCommon {
         
         pushback(c);
         yaccValue = PERCENT;
+        set_yylval_id(PERCENT);
         warn_balanced(c, spaceSeen, "%", "string literal");
         return '%';
     }
@@ -1840,6 +1855,7 @@ public class RubyLexer extends LexingCommon {
             if ((c = nextc()) == '=') {
                 setState(EXPR_BEG);
                 yaccValue = OR_OR;
+                set_yylval_id(OR_OR);
                 return tOP_ASGN;
             }
             pushback(c);
@@ -1853,6 +1869,7 @@ public class RubyLexer extends LexingCommon {
         case '=':
             setState(EXPR_BEG);
             yaccValue = OR;
+            set_yylval_id(OR);
             return tOP_ASGN;
         default:
             setState(isAfterOperator() ? EXPR_ARG : EXPR_BEG|EXPR_LABEL);
@@ -1879,6 +1896,7 @@ public class RubyLexer extends LexingCommon {
         if (c == '=') {
             setState(EXPR_BEG);
             yaccValue = PLUS;
+            set_yylval_id(PLUS);
             return tOP_ASGN;
         }
         
@@ -2038,6 +2056,7 @@ public class RubyLexer extends LexingCommon {
         
         if (c == '=') {
             setState(EXPR_BEG);
+            set_yylval_id(SLASH);
             return tOP_ASGN;
         }
         pushback(c);
@@ -2061,6 +2080,7 @@ public class RubyLexer extends LexingCommon {
             if ((c = nextc()) == '=') {
                 setState(EXPR_BEG);
                 yaccValue = STAR_STAR;
+                set_yylval_id(STAR_STAR);
                 return tOP_ASGN;
             }
 
@@ -2081,6 +2101,7 @@ public class RubyLexer extends LexingCommon {
         case '=':
             setState(EXPR_BEG);
             yaccValue = STAR;
+            set_yylval_id(STAR);
             return tOP_ASGN;
         default:
             pushback(c);

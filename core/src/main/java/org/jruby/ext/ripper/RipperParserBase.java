@@ -761,8 +761,7 @@ public class RipperParserBase {
         return value;
     }
 
-    public void error_duplicate_pattern_key(IRubyObject value) {
-        ByteList key = extractByteList(value);
+    public void error_duplicate_pattern_key(ByteList key) {
         // This is for bare one-line matches ({a: 1} => a:).
         if (keyTable == null) keyTable = new HashSet<>();
         if (keyTable.contains(key)) yyerror("duplicated key name");
@@ -770,8 +769,7 @@ public class RipperParserBase {
         keyTable.add(key);
     }
 
-    protected void error_duplicate_pattern_variable(IRubyObject value) {
-        ByteList variable = extractByteList(value);
+    protected void error_duplicate_pattern_variable(ByteList variable) {
         if (is_private_local_id(variable)) return;
         if (variableTable.contains(variable)) yyerror("duplicated variable name");
 

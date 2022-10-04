@@ -5257,7 +5257,7 @@ states[559] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[560] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.new_hash_pattern_tail(yyVals[yyTop - count + 1].start(), ((RubyArray)yyVals[-2+yyTop].value), ((IRubyObject)yyVals[0+yyTop].value));
+                    yyVal = p.new_hash_pattern_tail(yyVals[yyTop - count + 1].start(), ((RubyArray)yyVals[-2+yyTop].value), yyVals[yyTop - count + 3].id);
   return yyVal;
 };
 states[561] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -5269,7 +5269,7 @@ states[562] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[563] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.new_hash_pattern_tail(yyVals[yyTop - count + 1].start(), null, ((IRubyObject)yyVals[0+yyTop].value));
+                    yyVal = p.new_hash_pattern_tail(yyVals[yyTop - count + 1].start(), null, yyVals[yyTop - count + 1].id);
   return yyVal;
 };
 states[564] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -5281,16 +5281,16 @@ states[565] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[566] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    p.error_duplicate_pattern_key(((IRubyObject)yyVals[-1+yyTop].value));
+                    p.error_duplicate_pattern_key(yyVals[yyTop - count + 1].id);
 {                    yyVal = p.new_array(p.get_value(((IRubyObject)yyVals[-1+yyTop].value)),  p.get_value(((IRubyObject)yyVals[0+yyTop].value)));}
   return yyVal;
 };
 states[567] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    p.error_duplicate_pattern_key(((IRubyObject)yyVals[0+yyTop].value));
-                    if (((IRubyObject)yyVals[0+yyTop].value) != null && !p.is_local_id(((IRubyObject)yyVals[0+yyTop].value))) {
+                    p.error_duplicate_pattern_key(yyVals[yyTop - count + 1].id);
+                    if (((IRubyObject)yyVals[0+yyTop].value) != null && !p.is_local_id(yyVals[yyTop - count + 1].id)) {
                         p.yyerror("key must be valid as local variables");
                     }
-                    p.error_duplicate_pattern_variable(((IRubyObject)yyVals[0+yyTop].value));
+                    p.error_duplicate_pattern_variable(yyVals[yyTop - count + 1].id);
 {                    yyVal = p.new_array(p.get_value(((IRubyObject)yyVals[0+yyTop].value)),  null);}
   return yyVal;
 };

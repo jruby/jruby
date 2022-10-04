@@ -5188,7 +5188,7 @@ states[559] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[560] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.new_hash_pattern_tail(yyVals[yyTop - count + 1].start(), ((HashNode)yyVals[-2+yyTop].value), ((ByteList)yyVals[0+yyTop].value));
+                    yyVal = p.new_hash_pattern_tail(yyVals[yyTop - count + 1].start(), ((HashNode)yyVals[-2+yyTop].value), yyVals[yyTop - count + 3].id);
   return yyVal;
 };
 states[561] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -5200,7 +5200,7 @@ states[562] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[563] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.new_hash_pattern_tail(yyVals[yyTop - count + 1].start(), null, ((ByteList)yyVals[0+yyTop].value));
+                    yyVal = p.new_hash_pattern_tail(yyVals[yyTop - count + 1].start(), null, yyVals[yyTop - count + 1].id);
   return yyVal;
 };
 states[564] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -5219,7 +5219,7 @@ states[565] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[566] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    p.error_duplicate_pattern_key(((ByteList)yyVals[-1+yyTop].value));
+                    p.error_duplicate_pattern_key(yyVals[yyTop - count + 1].id);
                     /*%%%*/
                     Node label = p.asSymbol(yyVals[yyTop - count + 1].start(), ((ByteList)yyVals[-1+yyTop].value));
 
@@ -5229,11 +5229,11 @@ states[566] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[567] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    p.error_duplicate_pattern_key(((ByteList)yyVals[0+yyTop].value));
-                    if (((ByteList)yyVals[0+yyTop].value) != null && !p.is_local_id(((ByteList)yyVals[0+yyTop].value))) {
+                    p.error_duplicate_pattern_key(yyVals[yyTop - count + 1].id);
+                    if (((ByteList)yyVals[0+yyTop].value) != null && !p.is_local_id(yyVals[yyTop - count + 1].id)) {
                         p.yyerror("key must be valid as local variables");
                     }
-                    p.error_duplicate_pattern_variable(((ByteList)yyVals[0+yyTop].value));
+                    p.error_duplicate_pattern_variable(yyVals[yyTop - count + 1].id);
                     /*%%%*/
 
                     Node label = p.asSymbol(yyVals[yyTop - count + 1].start(), ((ByteList)yyVals[0+yyTop].value));
