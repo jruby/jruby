@@ -657,7 +657,10 @@ public class RubyLexer extends LexingCommon {
             int newline = 0;
             term = c;
             while ((c = nextc()) != EOF && c != term) {
-                if (!tokadd_mbchar(c, markerValue)) return EOF;
+                if (!tokadd_mbchar(c, markerValue)) {
+                    compile_error("unterminated here document identifier");
+                    return EOF;
+                }
                 if (newline == 0 && c == '\n') {
                     newline = 1;
                 } else if (newline > 0) {
@@ -1328,13 +1331,13 @@ public class RubyLexer extends LexingCommon {
             result = tIVAR;
         }
 
-        if (c == EOF || isSpace(c)) {
+        if (c == EOF || !isIdentifierChar(c)) {
             if (result == tIVAR) {
                 compile_error("`@' without identifiers is not allowed as an instance variable name");
             }
 
             compile_error("`@@' without identifiers is not allowed as a class variable name");
-        } else if (Character.isDigit(c) || !isIdentifierChar(c)) {
+        } else if (Character.isDigit(c)) {
             pushback(c);
             if (result == tIVAR) {
                 compile_error("`@" + ((char) c) + "' is not allowed as an instance variable name");
