@@ -3950,6 +3950,7 @@ numeric         : simple_numeric {
                     /*%%%*/
                     $$ = p.negateNumeric($2);
                     /*% %*/
+                    /*% ripper: unary!(ID2VAL(idUMinus), $2) %*/
                 }
 
 nonlocal_var    : tIVAR

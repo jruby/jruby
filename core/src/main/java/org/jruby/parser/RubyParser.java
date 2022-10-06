@@ -5838,6 +5838,7 @@ states[667] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     /*%%%*/
                     yyVal = p.negateNumeric(((NumericNode)yyVals[0+yyTop].value));
                     /*% %*/
+                    /*% ripper: unary!(ID2VAL(idUMinus), $2) %*/
   return yyVal;
 };
 states[671] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6687,7 +6688,7 @@ states[817] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4669 "parse.y"
+					// line 4670 "parse.y"
 
 }
-					// line 14443 "-"
+					// line 14444 "-"
