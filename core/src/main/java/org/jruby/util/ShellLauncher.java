@@ -1343,7 +1343,7 @@ public class ShellLauncher {
             if (hasGlobCharacter(originalArgs[i])) {
                 // FIXME: Encoding lost here
                 List<ByteList> globs = Dir.push_glob(runtime, runtime.getCurrentDirectory(),
-                        new ByteList(originalArgs[i].getBytes()), 0);
+                        new ByteList(originalArgs[i].getBytes()), 0, true);
 
                 for (ByteList glob: globs) {
                     expandedList.add(glob.toString());
