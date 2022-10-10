@@ -663,10 +663,10 @@ public class RipperParserBase {
 
         if (preArg != null) {
             if (preArgs != null) {
-                preArgs.push(preArg);
+                preArgs.unshift(preArg);
             } else {
                 preArgs = RubyArray.newArray(getRuntime());
-                preArgs.concat(preArg);
+                preArgs.add(preArg);
             }
         }
 
@@ -720,20 +720,16 @@ public class RipperParserBase {
         return dispatch("on_hshptn", constant, keywordArgs, keywordRestArgs);
     }
 
-    public RubyArray new_hash_pattern_tail(int _line, IRubyObject keywordArgs, ByteList keywordRestArg) {
+    public RubyArray new_hash_pattern_tail(int _line, IRubyObject keywordArgs, IRubyObject keywordRestValue, ByteList keywordRestArg) {
         IRubyObject restArg;
 
         if (keywordRestArg != null) {
-            restArg = dispatch("on_var_field", symbolID(keywordRestArg));
+            restArg = dispatch("on_var_field", keywordRestValue);
         } else {                                   // '**'
             restArg = context.nil;
         }
 
         return RubyArray.newArray(getRuntime(), keywordArgs, restArg);
-    }
-
-    public RubyArray new_hash_pattern_tail(int _line, IRubyObject keywordArgs, IRubyObject keywordRestArg) {
-        return new_hash_pattern_tail(_line, keywordArgs, extractByteList(keywordRestArg));
     }
 
     public IRubyObject makeNullNil(IRubyObject value) {

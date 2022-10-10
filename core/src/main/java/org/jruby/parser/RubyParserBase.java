@@ -1917,7 +1917,7 @@ public abstract class RubyParserBase {
 
     public static ByteList NIL = new ByteList(new byte[] {'n', 'i', 'l'});
 
-    public HashPatternNode new_hash_pattern_tail(int line, HashNode keywordArgs, ByteList keywordRestArg) {
+    public HashPatternNode new_hash_pattern_tail(int line, HashNode keywordArgs, ByteList _ignore, ByteList keywordRestArg) {
         Node restArg;
 
         if (keywordRestArg == KWNOREST) {          // '**nil'

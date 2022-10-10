@@ -406,12 +406,14 @@ nonascii:       hasNonAscii = true; // Label for comparison with MRI only
             }
             break;
         case 'x': /* hex constant */
-            buffer.append('\\');
-            buffer.append(c);
             c = lexer.nextc();
             if (!isHexChar(c)) {
-                lexer.compile_error("Invalid escape character syntax");
+                lexer.pushback(c);
+                lexer.compile_error("invalid hex escape");
+                break;
             }
+            buffer.append('\\');
+            buffer.append('x');
             buffer.append(c);
             c = lexer.nextc();
             if (isHexChar(c)) {

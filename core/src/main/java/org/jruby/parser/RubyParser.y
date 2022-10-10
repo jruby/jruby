@@ -796,7 +796,7 @@ expr            : command_call
                     /*%%%*/
                     $$ = p.newPatternCaseNode(@1.start(), $1, p.newIn(@1.start(), $5, null, null));
                     /*% %*/
-                    /*% ripper: case!($1, in!($4, Qnil, Qnil)) %*/
+                    /*% ripper: case!($1, in!($5, Qnil, Qnil)) %*/
                 }
                 | arg keyword_in {
                     p.value_expr($1);
@@ -814,7 +814,7 @@ expr            : command_call
                     /*%%%*/
                     $$ = p.newPatternCaseNode(@1.start(), $1, p.newIn(@1.start(), $5, new TrueNode(p.tokline()), new FalseNode(p.tokline())));
                     /*% %*/
-                    /*% ripper: case!($1, in!($4, Qnil, Qnil)) %*/
+                    /*% ripper: case!($1, in!($5, Qnil, Qnil)) %*/
                 }
 		| arg %prec tLBRACE_ARG
 
@@ -3220,7 +3220,7 @@ p_expr_basic    : p_value
                     $$ = p.new_hash_pattern(null, $3);
                 }
                 | tLBRACE rbrace {
-                    $$ = p.new_hash_pattern(null, p.new_hash_pattern_tail(@1.start(), null, (ByteList) null));
+                    $$ = p.new_hash_pattern(null, p.new_hash_pattern_tail(@1.start(), null, null, null));
                 }
                 | tLPAREN {
                     $$ = p.push_pktbl();
@@ -3317,16 +3317,16 @@ p_arg           : p_expr {
 
 // HashPatternNode - [!null]
 p_kwargs        : p_kwarg ',' p_any_kwrest {
-                    $$ = p.new_hash_pattern_tail(@1.start(), $1, @3.id);
+                    $$ = p.new_hash_pattern_tail(@1.start(), $1, $3, @3.id);
                 }
 		| p_kwarg {
-                    $$ = p.new_hash_pattern_tail(@1.start(), $1, (ByteList) null);
+                    $$ = p.new_hash_pattern_tail(@1.start(), $1, null, null);
                 }
                 | p_kwarg ',' {
-                    $$ = p.new_hash_pattern_tail(@1.start(), $1, (ByteList) null);
+                    $$ = p.new_hash_pattern_tail(@1.start(), $1, null, null);
                 }
                 | p_any_kwrest {
-                    $$ = p.new_hash_pattern_tail(@1.start(), null, @1.id);
+                    $$ = p.new_hash_pattern_tail(@1.start(), null, $1, @1.id);
                 }
 
 // HashNode - [!null]

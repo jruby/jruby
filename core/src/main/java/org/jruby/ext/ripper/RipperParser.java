@@ -2441,7 +2441,7 @@ states[62] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop,
                     LexContext ctxt = p.getLexContext();
                     ctxt.in_kwarg = ((Boolean)yyVals[-2+yyTop].value);
 {IRubyObject v1, v2, v3, v4, v5, v6, v7;
-                    v1 = ((IRubyObject)yyVals[-1+yyTop].value);
+                    v1 = ((IRubyObject)yyVals[0+yyTop].value);
                     v2 = p.nil();
                     v3 = p.nil();
                     v4 = p.dispatch("on_in", v1, v2, v3);
@@ -2469,7 +2469,7 @@ states[65] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop,
                     LexContext ctxt = p.getLexContext();
                     ctxt.in_kwarg = ((Boolean)yyVals[-2+yyTop].value);
 {IRubyObject v1, v2, v3, v4, v5, v6, v7;
-                    v1 = ((IRubyObject)yyVals[-1+yyTop].value);
+                    v1 = ((IRubyObject)yyVals[0+yyTop].value);
                     v2 = p.nil();
                     v3 = p.nil();
                     v4 = p.dispatch("on_in", v1, v2, v3);
@@ -5024,6 +5024,7 @@ states[503] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[504] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+  System.out.println("p_top_expr: " + ((IRubyObject)yyVals[-1+yyTop].value));
                     p.pop_pktbl(((Set)yyVals[-2+yyTop].value));
                     p.pop_pvtbl(((Set)yyVals[-3+yyTop].value));
                     p.getLexContext().in_kwarg = ((Boolean)yyVals[-4+yyTop].value);
@@ -5172,7 +5173,7 @@ states[538] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[539] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.new_hash_pattern(null, p.new_hash_pattern_tail(yyVals[yyTop - count + 1].start(), null, (ByteList) null));
+                    yyVal = p.new_hash_pattern(null, p.new_hash_pattern_tail(yyVals[yyTop - count + 1].start(), null, null, null));
   return yyVal;
 };
 states[540] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -5257,19 +5258,19 @@ states[559] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[560] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.new_hash_pattern_tail(yyVals[yyTop - count + 1].start(), ((RubyArray)yyVals[-2+yyTop].value), yyVals[yyTop - count + 3].id);
+                    yyVal = p.new_hash_pattern_tail(yyVals[yyTop - count + 1].start(), ((RubyArray)yyVals[-2+yyTop].value), ((IRubyObject)yyVals[0+yyTop].value), yyVals[yyTop - count + 3].id);
   return yyVal;
 };
 states[561] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.new_hash_pattern_tail(yyVals[yyTop - count + 1].start(), ((RubyArray)yyVals[0+yyTop].value), (ByteList) null);
+                    yyVal = p.new_hash_pattern_tail(yyVals[yyTop - count + 1].start(), ((RubyArray)yyVals[0+yyTop].value), null, null);
   return yyVal;
 };
 states[562] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.new_hash_pattern_tail(yyVals[yyTop - count + 1].start(), ((RubyArray)yyVals[-1+yyTop].value), (ByteList) null);
+                    yyVal = p.new_hash_pattern_tail(yyVals[yyTop - count + 1].start(), ((RubyArray)yyVals[-1+yyTop].value), null, null);
   return yyVal;
 };
 states[563] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.new_hash_pattern_tail(yyVals[yyTop - count + 1].start(), null, yyVals[yyTop - count + 1].id);
+                    yyVal = p.new_hash_pattern_tail(yyVals[yyTop - count + 1].start(), null, ((IRubyObject)yyVals[0+yyTop].value), yyVals[yyTop - count + 1].id);
   return yyVal;
 };
 states[564] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6536,7 +6537,7 @@ states[817] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 }
-					// line 4518 "ripper_RubyParser.out"
+					// line 4519 "ripper_RubyParser.out"
 
 }
-					// line 14292 "-"
+					// line 14293 "-"
