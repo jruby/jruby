@@ -183,11 +183,11 @@ public class RubyDir extends RubyObject implements Closeable {
 
 // ----- Ruby Class Methods ----------------------------------------------------
 
-    private static ArrayList<ByteList> dirGlobs(ThreadContext context, String cwd, IRubyObject[] args, int flags) {
+    private static ArrayList<ByteList> dirGlobs(ThreadContext context, String cwd, IRubyObject[] args, int flags, boolean sort) {
         ArrayList<ByteList> dirs = new ArrayList<>();
 
         for ( int i = 0; i < args.length; i++ ) {
-            dirs.addAll(Dir.push_glob(context.runtime, cwd, globArgumentAsByteList(context, RubyFile.get_path(context, args[i])), flags));
+            dirs.addAll(Dir.push_glob(context.runtime, cwd, globArgumentAsByteList(context, RubyFile.get_path(context, args[i])), flags, sort));
         }
 
         return dirs;
@@ -281,7 +281,7 @@ public class RubyDir extends RubyObject implements Closeable {
 
         if (args.length == 1) {
             String dir = base == null || base.isEmpty() ? runtime.getCurrentDirectory() : base;
-            dirs = Dir.push_glob(runtime, dir, globArgumentAsByteList(context, args[0]), 0);
+            dirs = Dir.push_glob(runtime, dir, globArgumentAsByteList(context, args[0]), 0, options.sort);
         } else {
             IRubyObject[] arefArgs;
             if (base != null) { // kwargs are present
@@ -292,10 +292,8 @@ public class RubyDir extends RubyObject implements Closeable {
             }
 
             String dir = base.isEmpty() ? runtime.getCurrentDirectory() : base;
-            dirs = dirGlobs(context, dir, arefArgs, 0);
+            dirs = dirGlobs(context, dir, arefArgs, 0, options.sort);
         }
-
-        if (options.sort) Collections.sort(dirs);
 
         return asRubyStringList(runtime, dirs);
     }
@@ -337,13 +335,11 @@ public class RubyDir extends RubyObject implements Closeable {
             String dir = base == null || base.isEmpty() ? runtime.getCurrentDirectory() : base;
 
             if (tmp.isNil()) {
-                dirs = Dir.push_glob(runtime, dir, globArgumentAsByteList(context, args[0]), options.flags);
+                dirs = Dir.push_glob(runtime, dir, globArgumentAsByteList(context, args[0]), options.flags, options.sort);
             } else {
-                dirs = dirGlobs(context, dir, ((RubyArray) tmp).toJavaArray(), options.flags);
+                dirs = dirGlobs(context, dir, ((RubyArray) tmp).toJavaArray(), options.flags, options.sort);
             }
         }
-
-        if (options.sort) Collections.sort(dirs);
 
         if (block.isGiven()) {
             for (int i = 0; i < dirs.size(); i++) {
