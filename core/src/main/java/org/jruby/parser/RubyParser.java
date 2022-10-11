@@ -2,7 +2,7 @@
 // skeleton Java 1.0 (c) 2002 ats@cs.rit.edu
 
 					// line 2 "parse.y"
-// We use ERB for ripper grammar and we need an alternative substitution value.
+// We ERB for ripper grammar and we need an alternative substitution value.
 /*
  **** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
@@ -4624,7 +4624,7 @@ states[459] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[460] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    p.new_bv(((ByteList)yyVals[0+yyTop].value));
+                    p.new_bv(yyVals[yyTop - count + 1].id);
                     /*% ripper: get_value($1) %*/
   return yyVal;
 };
@@ -4922,7 +4922,6 @@ states[503] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[504] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-  System.out.println("p_top_expr: " + ((Node)yyVals[-1+yyTop].value));
                     p.pop_pktbl(((Set)yyVals[-2+yyTop].value));
                     p.pop_pvtbl(((Set)yyVals[-3+yyTop].value));
                     p.getLexContext().in_kwarg = ((Boolean)yyVals[-4+yyTop].value);
@@ -5231,7 +5230,7 @@ states[566] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[567] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.error_duplicate_pattern_key(yyVals[yyTop - count + 1].id);
-                    if (((ByteList)yyVals[0+yyTop].value) != null && !p.is_local_id(yyVals[yyTop - count + 1].id)) {
+                    if (yyVals[yyTop - count + 1].id != null && !p.is_local_id(yyVals[yyTop - count + 1].id)) {
                         p.yyerror("key must be valid as local variables");
                     }
                     p.error_duplicate_pattern_variable(yyVals[yyTop - count + 1].id);
@@ -5244,10 +5243,15 @@ states[567] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[569] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+		    /*%%%*/
                     if (((Node)yyVals[-1+yyTop].value) == null || ((Node)yyVals[-1+yyTop].value) instanceof StrNode) {
                         yyVal = ((StrNode)yyVals[-1+yyTop].value).getValue();
                     }
-                    /* JRuby changed (removed)*/
+		    /*%
+                      if (true) {
+                        $$ = $2;
+                      }
+		    %*/
                     else {
                         p.yyerror("symbol literal with interpolation is not allowed");
                         yyVal = null;
@@ -6458,7 +6462,7 @@ states[765] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[766] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    if (!p.is_local_id(((ByteList)yyVals[0+yyTop].value))) {
+                    if (!p.is_local_id(yyVals[yyTop - count + 2].id)) {
                         p.yyerror("rest argument must be local variable");
                     }
                     yyVal = p.arg_var(p.shadowing_lvar(((ByteList)yyVals[0+yyTop].value)));
@@ -6484,7 +6488,7 @@ states[769] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[770] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    if (!p.is_local_id(((ByteList)yyVals[0+yyTop].value))) {
+                    if (!p.is_local_id(yyVals[yyTop - count + 2].id)) {
                         p.yyerror("block argument must be local variable");
                     }
                     yyVal = p.arg_var(p.shadowing_lvar(((ByteList)yyVals[0+yyTop].value)));
@@ -6689,7 +6693,7 @@ states[817] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4671 "parse.y"
+					// line 4675 "parse.y"
 
 }
-					// line 14445 "-"
+					// line 14449 "-"

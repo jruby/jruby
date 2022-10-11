@@ -191,9 +191,10 @@ public class RipperParserBase {
         return shadowing_lvar(identifier);
     }
     
-    protected void getterIdentifierError(String identifier) {
-        throw new SyntaxException("identifier " + identifier + " is not valid", identifier);
-    }    
+    protected void getterIdentifierError(ByteList identifier) {
+        // FIXME: Should work with any m17n encoding.
+        throw new SyntaxException("identifier " + identifier + " is not valid", getRuntime().newString(identifier).asJavaString());
+    }
     
     public boolean id_is_var(ByteList value) {
         // FIXME: Using Ruby Parser version...
@@ -213,11 +214,6 @@ public class RipperParserBase {
 
         return getCurrentScope().isDefined(id) >= 0;
     }
-    
-    public boolean is_local_id(IRubyObject id) {
-        String ident = id.asJavaString();
-        return lexer.isIdentifierChar(ident.charAt(0));
-    }    
     
     public IRubyObject intern(String value) {
         return context.runtime.newSymbol(value);
@@ -432,15 +428,11 @@ public class RipperParserBase {
         return RubyArray.newArray(context.runtime, key, value);
     }    
     
-    public IRubyObject new_bv(IRubyObject identifier) {
-        // FIXME: This should be a bytelist and not a string. (whole method needs to be rewritten)
-        String ident = lexer.getIdent();
-        RubyString string = getRuntime().newString(ident);
-
-        if (!is_local_id(string)) getterIdentifierError(ident);
+    public IRubyObject new_bv(ByteList identifier) {
+        if (!is_local_id(identifier)) getterIdentifierError(identifier);
 
         shadowing_lvar(identifier);
-        return arg_var(string.getByteList());
+        return arg_var(identifier);
     }
     
     public void popCurrentScope() {
@@ -723,6 +715,12 @@ public class RipperParserBase {
     public RubyArray new_hash_pattern_tail(int _line, IRubyObject keywordArgs, IRubyObject keywordRestValue, ByteList keywordRestArg) {
         IRubyObject restArg;
 
+        // To not make parser construct an array we will just detect the case of '**' with no arguments
+        // before it.
+        if (keywordArgs == null) {
+            keywordArgs = getRuntime().newEmptyArray();
+        }
+
         if (keywordRestArg != null) {
             restArg = dispatch("on_var_field", keywordRestValue);
         } else {                                   // '**'
@@ -772,7 +770,7 @@ public class RipperParserBase {
         variableTable.add(variable);
     }
 
-    public static boolean is_private_local_id(ByteList name) {
+    public boolean is_private_local_id(ByteList name) {
         if (name.realSize() == 1 && name.charAt(0) == '_') return true;
         if (!is_local_id(name)) return false;
 
@@ -780,8 +778,13 @@ public class RipperParserBase {
     }
 
     // ENEBO: Totally weird naming (in MRI is not allocated and is a local var name) [1.9]
-    public static boolean is_local_id(ByteList name) {
-        return org.jruby.lexer.yacc.RubyLexer.isIdentifierChar(name.charAt(0));
+    public boolean is_local_id(ByteList name) {
+        // FIXME: Using Ruby Parser version...
+        RubyParserBase.IDType type = RubyParserBase.id_type(name);
+
+        byte last = (byte) name.get(name.length() - 1);
+        // FIXME: MRI version of Local must handle this but I don't see where..so I am adding manual check of last char here
+        return type == RubyParserBase.IDType.Local && last != '?' && last != '=' && last != '!';
     }
 
     protected ByteList extractByteList(Object value) {

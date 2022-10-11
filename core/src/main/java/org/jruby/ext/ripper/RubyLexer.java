@@ -389,7 +389,15 @@ public class RubyLexer extends LexingCommon {
         return id;
     }
 
+    protected void set_yylval_noname() {
+        id = null;
+    }
+
     protected void set_yylval_name(ByteList name) {
+        id = name;
+    }
+
+    protected void set_yylval_val(ByteList name) {
         id = name;
     }
 
@@ -1330,6 +1338,7 @@ public class RubyLexer extends LexingCommon {
         } else {
             result = tIVAR;
         }
+        setState(isLexState(last_state, EXPR_FNAME) ? EXPR_ENDFN : EXPR_END);
 
         if (c == EOF || !isIdentifierChar(c)) {
             if (result == tIVAR) {
@@ -1337,18 +1346,21 @@ public class RubyLexer extends LexingCommon {
             }
 
             compile_error("`@@' without identifiers is not allowed as a class variable name");
+            set_yylval_noname();
+            setState(EXPR_END);
+            return result;
         } else if (Character.isDigit(c)) {
             pushback(c);
             if (result == tIVAR) {
                 compile_error("`@" + ((char) c) + "' is not allowed as an instance variable name");
             }
             compile_error("`@@" + ((char) c) + "' is not allowed as a class variable name");
+            set_yylval_noname();
+            setState(EXPR_END);
+            return result;
         }
 
         if (!tokadd_ident(c)) return EOF;
-
-        last_state = lex_state;
-        setState(EXPR_END);
 
         return tokenize_ident(result);
     }
@@ -1731,10 +1743,10 @@ public class RubyLexer extends LexingCommon {
         if (isLabelPossible(commandState)) {
             if (isLabelSuffix()) {
                 setState(EXPR_ARG|EXPR_LABELED);
-                nextc();
                 yaccValue = tempVal;
                 identValue = tempVal.intern();
                 set_yylval_name(createTokenByteList());
+                nextc();
                 return tLABEL;
             }
         }

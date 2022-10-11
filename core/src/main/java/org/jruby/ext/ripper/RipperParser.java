@@ -2,7 +2,7 @@
 // skeleton Java 1.0 (c) 2002 ats@cs.rit.edu
 
 					// line 2 "ripper_RubyParser.out"
-// We use ERB for ripper grammar and we need an alternative substitution value.
+// We ERB for ripper grammar and we need an alternative substitution value.
 /*
  **** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
@@ -4709,7 +4709,7 @@ states[459] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[460] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    p.new_bv(((IRubyObject)yyVals[0+yyTop].value));
+                    p.new_bv(yyVals[yyTop - count + 1].id);
 {                    yyVal = p.get_value(((IRubyObject)yyVals[0+yyTop].value));}
   return yyVal;
 };
@@ -5024,7 +5024,6 @@ states[503] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[504] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-  System.out.println("p_top_expr: " + ((IRubyObject)yyVals[-1+yyTop].value));
                     p.pop_pktbl(((Set)yyVals[-2+yyTop].value));
                     p.pop_pvtbl(((Set)yyVals[-3+yyTop].value));
                     p.getLexContext().in_kwarg = ((Boolean)yyVals[-4+yyTop].value);
@@ -5288,7 +5287,7 @@ states[566] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
 };
 states[567] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.error_duplicate_pattern_key(yyVals[yyTop - count + 1].id);
-                    if (((IRubyObject)yyVals[0+yyTop].value) != null && !p.is_local_id(yyVals[yyTop - count + 1].id)) {
+                    if (yyVals[yyTop - count + 1].id != null && !p.is_local_id(yyVals[yyTop - count + 1].id)) {
                         p.yyerror("key must be valid as local variables");
                     }
                     p.error_duplicate_pattern_variable(yyVals[yyTop - count + 1].id);
@@ -5296,10 +5295,10 @@ states[567] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[569] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    if (((IRubyObject)yyVals[-1+yyTop].value) == null || ((IRubyObject)yyVals[-1+yyTop].value) instanceof StrNode) {
-                        yyVal = ((StrNode)yyVals[-1+yyTop].value).getValue();
-                    }
-                    /* JRuby changed (removed)*/
+                      if (true) {
+                        yyVal = ((IRubyObject)yyVals[-1+yyTop].value);
+                      }
+
                     else {
                         p.yyerror("symbol literal with interpolation is not allowed");
                         yyVal = null;
@@ -6331,7 +6330,7 @@ states[765] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[766] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    if (!p.is_local_id(((IRubyObject)yyVals[0+yyTop].value))) {
+                    if (!p.is_local_id(yyVals[yyTop - count + 2].id)) {
                         p.yyerror("rest argument must be local variable");
                     }
                     yyVal = p.arg_var(p.shadowing_lvar(((IRubyObject)yyVals[0+yyTop].value)));
@@ -6357,7 +6356,7 @@ states[769] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[770] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    if (!p.is_local_id(((IRubyObject)yyVals[0+yyTop].value))) {
+                    if (!p.is_local_id(yyVals[yyTop - count + 2].id)) {
                         p.yyerror("block argument must be local variable");
                     }
                     yyVal = p.arg_var(p.shadowing_lvar(((IRubyObject)yyVals[0+yyTop].value)));
@@ -6537,7 +6536,7 @@ states[817] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 }
-					// line 4519 "ripper_RubyParser.out"
+					// line 4518 "ripper_RubyParser.out"
 
 }
-					// line 14293 "-"
+					// line 14292 "-"

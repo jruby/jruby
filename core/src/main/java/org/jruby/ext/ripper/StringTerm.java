@@ -191,6 +191,7 @@ public class StringTerm extends StrTerm {
             regexpFragments.add(buffer);
         }
         lexer.flush_string_content(encodingOut);
+        lexer.set_yylval_val(buffer);
         return RipperParser.tSTRING_CONTENT;
     }
 

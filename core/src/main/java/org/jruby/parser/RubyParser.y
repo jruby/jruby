@@ -1,5 +1,5 @@
 %{
-// We use ERB for ripper grammar and we need an alternative substitution value.
+// We ERB for ripper grammar and we need an alternative substitution value.
 /*@@=
   SUBS = {
     'import_ripper' => [
@@ -2804,7 +2804,7 @@ bv_decls        : bvar {
                 }
 
 bvar            : tIDENTIFIER {
-                    p.new_bv($1);
+                    p.new_bv(@1.id);
                     /*% ripper: get_value($1) %*/
                 }
                 | f_bad_arg {
@@ -3356,7 +3356,7 @@ p_kw            : p_kw_label p_expr {
                 }
                 | p_kw_label {
                     p.error_duplicate_pattern_key(@1.id);
-                    if ($1 != null && !p.is_local_id(@1.id)) {
+                    if (@1.id != null && !p.is_local_id(@1.id)) {
                         p.yyerror("key must be valid as local variables");
                     }
                     p.error_duplicate_pattern_variable(@1.id);
@@ -3371,10 +3371,15 @@ p_kw            : p_kw_label p_expr {
 // ByteList
 p_kw_label      : tLABEL
                 | tSTRING_BEG string_contents tLABEL_END {
+		    /*%%%*/
                     if ($2 == null || $2 instanceof StrNode) {
                         $$ = $<StrNode>2.getValue();
                     }
-                    // JRuby changed (removed)
+		    /*%
+                      if (true) {
+                        $$ = $2;
+                      }
+		    %*/
                     else {
                         p.yyerror("symbol literal with interpolation is not allowed");
                         $$ = null;
@@ -4522,7 +4527,7 @@ restarg_mark    : '*' {
 
 // [!null]
 f_rest_arg      : restarg_mark tIDENTIFIER {
-                    if (!p.is_local_id($2)) {
+                    if (!p.is_local_id(@2.id)) {
                         p.yyerror("rest argument must be local variable");
                     }
                     $$ = p.arg_var(p.shadowing_lvar($2));
@@ -4548,7 +4553,7 @@ blkarg_mark     : '&' {
 
 // f_block_arg - Block argument def for function (foo(&block)) [!null]
 f_block_arg     : blkarg_mark tIDENTIFIER {
-                    if (!p.is_local_id($2)) {
+                    if (!p.is_local_id(@2.id)) {
                         p.yyerror("block argument must be local variable");
                     }
                     $$ = p.arg_var(p.shadowing_lvar($2));
