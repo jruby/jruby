@@ -826,7 +826,7 @@ def_name        : fname {
                     p.setCurrentArg(null);
                     LexContext ctxt = p.getLexContext();
                     RubySymbol name = p.get_id($1);
-                    p.numparam_name(name);
+                    p.numparam_name(@1.id);
                     /*%%%*/
                     $$ = new DefHolder(name, currentArg, (LexContext) ctxt.clone());
                     // Changed from MRI
@@ -1090,82 +1090,94 @@ mlhs_post       : mlhs_item {
 mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                     /*%%%*/
                    $$ = p.assignableLabelOrIdentifier($1, null);
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
                 }
                 | tIVAR {
                     /*%%%*/
                    $$ = new InstAsgnNode(p.tokline(), p.symbolID($1), NilImplicitNode.NIL);
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
                 }
                 | tGVAR {
                     /*%%%*/
                    $$ = new GlobalAsgnNode(p.tokline(), p.symbolID($1), NilImplicitNode.NIL);
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
                 }
                 | tCONSTANT {
                     /*%%%*/
                     if (p.getLexContext().in_def) p.compile_error("dynamic constant assignment");
                     $$ = new ConstDeclNode(p.tokline(), p.symbolID($1), null, NilImplicitNode.NIL);
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
                 }
                 | tCVAR {
                     /*%%%*/
                     $$ = new ClassVarAsgnNode(p.tokline(), p.symbolID($1), NilImplicitNode.NIL);
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
                 } /*mri:user_variable*/
                 | /*mri:keyword_variable*/ keyword_nil {
                     /*%%%*/
                     p.compile_error("Can't assign to nil");
                     $$ = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
                 }
                 | keyword_self {
                     /*%%%*/
                     p.compile_error("Can't change the value of self");
                     $$ = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
                 }
                 | keyword_true {
                     /*%%%*/
                     p.compile_error("Can't assign to true");
                     $$ = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
                 }
                 | keyword_false {
                     /*%%%*/
                     p.compile_error("Can't assign to false");
                     $$ = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
                 }
                 | keyword__FILE__ {
                     /*%%%*/
                     p.compile_error("Can't assign to __FILE__");
                     $$ = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
                 }
                 | keyword__LINE__ {
                     /*%%%*/
                     p.compile_error("Can't assign to __LINE__");
                     $$ = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
                 }
                 | keyword__ENCODING__ {
                     /*%%%*/
                     p.compile_error("Can't assign to __ENCODING__");
                     $$ = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
                 } /*mri:keyword_variable*/
                 | primary_value '[' opt_call_args rbracket {
                     /*%%%*/
@@ -1230,83 +1242,96 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
 lhs             : /*mri:user_variable*/ tIDENTIFIER {
                     /*%%%*/
                     $$ = p.assignableLabelOrIdentifier($1, null);
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
+                    
                 }
                 | tIVAR {
                     /*%%%*/
                     $$ = new InstAsgnNode(p.tokline(), p.symbolID($1), NilImplicitNode.NIL);
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
                 }
                 | tGVAR {
                     /*%%%*/
                     $$ = new GlobalAsgnNode(p.tokline(), p.symbolID($1), NilImplicitNode.NIL);
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
                 }
                 | tCONSTANT {
                     /*%%%*/
                     if (p.getLexContext().in_def) p.compile_error("dynamic constant assignment");
 
                     $$ = new ConstDeclNode(p.tokline(), p.symbolID($1), null, NilImplicitNode.NIL);
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
                 }
                 | tCVAR {
                     /*%%%*/
                     $$ = new ClassVarAsgnNode(p.tokline(), p.symbolID($1), NilImplicitNode.NIL);
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
                 } /*mri:user_variable*/
                 | /*mri:keyword_variable*/ keyword_nil {
                     /*%%%*/
                     p.compile_error("Can't assign to nil");
                     $$ = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
                 }
                 | keyword_self {
                     /*%%%*/
                     p.compile_error("Can't change the value of self");
                     $$ = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
                 }
                 | keyword_true {
                     /*%%%*/
                     p.compile_error("Can't assign to true");
                     $$ = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
                 }
                 | keyword_false {
                     /*%%%*/
                     p.compile_error("Can't assign to false");
                     $$ = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
                 }
                 | keyword__FILE__ {
                     /*%%%*/
                     p.compile_error("Can't assign to __FILE__");
                     $$ = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
                 }
                 | keyword__LINE__ {
                     /*%%%*/
                     p.compile_error("Can't assign to __LINE__");
                     $$ = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
                 }
                 | keyword__ENCODING__ {
                     /*%%%*/
                     p.compile_error("Can't assign to __ENCODING__");
                     $$ = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
                 } /*mri:keyword_variable*/
                 | primary_value '[' opt_call_args rbracket {
                     /*%%%*/
@@ -2603,8 +2628,9 @@ for_var         : lhs
 f_marg          : f_norm_arg {
                     /*%%%*/
                     $$ = p.assignableInCurr($1, NilImplicitNode.NIL);
-                    /*% %*/
-                    /*% ripper: assignable(p, $1) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, $1);
+                    %*/
                 }
                 | tLPAREN f_margs rparen {
                     /*%%%*/
@@ -2659,10 +2685,12 @@ f_margs         : f_marg_list {
                 }
 
 f_rest_marg     : tSTAR f_norm_arg {
+                    ByteList id = @2.id;
                     /*%%%*/
-                    $$ = p.assignableInCurr($2, null);
-                    /*% %*/
-                    /*% ripper: assignable(p, $2) %*/
+                    $$ = p.assignableInCurr(id, null);
+                    /*%
+                      $$ = p.assignable(id, $2);
+                    %*/
                 }
                 | tSTAR {
                     /*%%%*/
@@ -3526,8 +3554,9 @@ p_variable      : tIDENTIFIER {
                     /*%%%*/
                     p.error_duplicate_pattern_variable($1);
                     $$ = p.assignableInCurr($1, null);
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
                 }
 
 p_var_ref       : '^' tIDENTIFIER {
@@ -4085,83 +4114,96 @@ var_ref         : tIDENTIFIER { // mri:user_variable
 var_lhs         : tIDENTIFIER { // mri:user_variable
                     /*%%%*/
                     $$ = p.assignableLabelOrIdentifier($1, null);
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
+                    
                 }
                 | tIVAR {
                     /*%%%*/
                     $$ = new InstAsgnNode(p.tokline(), p.symbolID($1), NilImplicitNode.NIL);
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
                 }
                 | tGVAR {
                     /*%%%*/
                     $$ = new GlobalAsgnNode(p.tokline(), p.symbolID($1), NilImplicitNode.NIL);
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
                 }
                 | tCONSTANT {
                     /*%%%*/
                     if (p.getLexContext().in_def) p.compile_error("dynamic constant assignment");
 
                     $$ = new ConstDeclNode(p.tokline(), p.symbolID($1), null, NilImplicitNode.NIL);
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
                 }
                 | tCVAR {
                     /*%%%*/
                     $$ = new ClassVarAsgnNode(p.tokline(), p.symbolID($1), NilImplicitNode.NIL);
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
                 } // mri:user_variable
                 | keyword_nil { // mri:keyword_variable
                     /*%%%*/
                     p.compile_error("Can't assign to nil");
                     $$ = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
                 }
                 | keyword_self {
                     /*%%%*/
                     p.compile_error("Can't change the value of self");
                     $$ = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
                 }
                 | keyword_true {
                     /*%%%*/
                     p.compile_error("Can't assign to true");
                     $$ = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
                 }
                 | keyword_false {
                     /*%%%*/
                     p.compile_error("Can't assign to false");
                     $$ = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
                 }
                 | keyword__FILE__ {
                     /*%%%*/
                     p.compile_error("Can't assign to __FILE__");
                     $$ = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
                 }
                 | keyword__LINE__ {
                     /*%%%*/
                     p.compile_error("Can't assign to __LINE__");
                     $$ = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
                 }
                 | keyword__ENCODING__ {
                     /*%%%*/
                     p.compile_error("Can't assign to __ENCODING__");
                     $$ = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(@1.id, p.var_field($1));
+                    %*/
                 } // mri:keyword_variable
 
 // [!null]
@@ -4335,17 +4377,14 @@ f_norm_arg      : f_bad_arg {
                     $$ = $1; // Not really reached
                 }
                 | tIDENTIFIER {
-                    $$ = p.formal_argument($1);
+                    $$ = p.formal_argument(@1.id);
                     p.ordinalMaxNumParam();
                 }
 
 f_arg_asgn      : f_norm_arg {
                     RubySymbol name = p.get_id($1);
                     p.setCurrentArg(name);
-                    /*%%%*/
-                    $$ = p.arg_var($1);
-                    /*% %*/
-                    /*% ripper: get_value($1) %*/
+                    $$ = p.arg_var(@1.id);
                 }
 
 f_arg_item      : f_arg_asgn {
@@ -4378,7 +4417,8 @@ f_arg           : f_arg_item {
                 }
 
 f_label 	: tLABEL {
-                    p.arg_var(p.formal_argument($1));
+                    p.formal_argument(@1.id);
+                    p.arg_var(@1.id);
                     p.setCurrentArg(p.get_id($1));
                     p.ordinalMaxNumParam();
                     p.getLexContext().in_argdef = false;
@@ -4391,31 +4431,35 @@ f_kw            : f_label arg_value {
                     p.getLexContext().in_argdef = true;
                     /*%%%*/
                     $$ = new KeywordArgNode(@2.start(), p.assignableKeyword($1, $2));
-                    /*% %*/
-                    /*% ripper: rb_assoc_new(get_value(assignable(p, $1)), get_value($2)) %*/
+                    /*%
+                      $$ = p.new_assoc(p.assignable(@1.id, $1), $2);
+                    %*/
                 }
                 | f_label {
                     p.setCurrentArg(null);
                     p.getLexContext().in_argdef = true;
                     /*%%%*/
                     $$ = new KeywordArgNode(p.src_line(), p.assignableKeyword($1, new RequiredKeywordArgumentValueNode()));
-                    /*% %*/
-                    /*% ripper: rb_assoc_new(get_value(assignable(p, $1)), 0) %*/
+                    /*%
+                      $$ = p.new_assoc(p.assignable(@1.id, $1), p.nil());
+                    %*/
                 }
 
 f_block_kw      : f_label primary_value {
                     p.getLexContext().in_argdef = true;
                     /*%%%*/
                     $$ = new KeywordArgNode(@2.start(), p.assignableKeyword($1, $2));
-                    /*% %*/
-                    /*% ripper: rb_assoc_new(get_value(assignable(p, $1)), get_value($2)) %*/
+                    /*%
+                      $$ = p.new_assoc(p.assignable(@1.id, $1), $2);
+                    %*/
                 }
                 | f_label {
                     p.getLexContext().in_argdef = true;
                     /*%%%*/
                     $$ = new KeywordArgNode(p.src_line(), p.assignableKeyword($1, new RequiredKeywordArgumentValueNode()));
-                    /*% %*/
-                    /*% ripper: rb_assoc_new(get_value(assignable(p, $1)), 0) %*/
+                    /*%
+                      $$ = p.new_assoc(p.assignable(@1.id, $1), p.nil());
+                    %*/
                 }
              
 
@@ -4461,7 +4505,7 @@ f_no_kwarg      : kwrest_mark keyword_nil {
                 }
 
 f_kwrest        : kwrest_mark tIDENTIFIER {
-                    p.shadowing_lvar($2);
+                    p.shadowing_lvar(@2.id);
                     /*%%%*/
                     $$ = $2;
                     /*% %*/
@@ -4479,8 +4523,10 @@ f_opt           : f_arg_asgn f_eq arg_value {
                     p.setCurrentArg(null);
                     p.getLexContext().in_argdef = true;
                     $$ = new OptArgNode(@3.start(), p.assignableLabelOrIdentifier($1.getName().getBytes(), $3));
-                    /*% %*/
-                    /*% ripper: rb_assoc_new(get_value(assignable(p, $1)), get_value($3)) %*/
+                    /*%
+                      $$ = p.new_assoc(p.assignable(@1.id, p.var_field($1)), $3);
+                    %*/
+
                 }
 
 f_block_opt     : f_arg_asgn f_eq primary_value {
@@ -4488,8 +4534,9 @@ f_block_opt     : f_arg_asgn f_eq primary_value {
                     p.setCurrentArg(null);
                     /*%%%*/
                     $$ = new OptArgNode(@3.start(), p.assignableLabelOrIdentifier($1.getName().getBytes(), $3));
-                    /*% %*/
-                    /*% ripper: rb_assoc_new(get_value(assignable(p, $1)), get_value($3)) %*/
+                    /*%
+                      $$ = p.new_assoc(p.assignable(@1.id, p.var_field($1)), $3);
+                    %*/
                 }
 
 f_block_optarg  : f_block_opt {
@@ -4530,7 +4577,7 @@ f_rest_arg      : restarg_mark tIDENTIFIER {
                     if (!p.is_local_id(@2.id)) {
                         p.yyerror("rest argument must be local variable");
                     }
-                    $$ = p.arg_var(p.shadowing_lvar($2));
+                    $$ = p.arg_var(p.shadowing_lvar(@2.id));
                     /*%%%*/
                     $$ = new RestArgNode($<ArgumentNode>$);
                     /*% %*/
@@ -4556,7 +4603,7 @@ f_block_arg     : blkarg_mark tIDENTIFIER {
                     if (!p.is_local_id(@2.id)) {
                         p.yyerror("block argument must be local variable");
                     }
-                    $$ = p.arg_var(p.shadowing_lvar($2));
+                    $$ = p.arg_var(p.shadowing_lvar(@2.id));
                     /*%%%*/
                     $$ = new BlockArgNode($<ArgumentNode>$);
                     /*% %*/

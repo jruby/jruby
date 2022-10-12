@@ -1,5 +1,6 @@
 package org.jruby.ext.ripper;
 
+import org.jruby.RubySymbol;
 import org.jruby.lexer.yacc.LexContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -8,10 +9,10 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class Holder {
     public Object context;
-    public IRubyObject name;
+    public RubySymbol name;
     public IRubyObject value;
 
-    public Holder(Object context, IRubyObject name, IRubyObject value) {
+    public Holder(Object context, RubySymbol name, IRubyObject value) {
         this.context = context;
         this.name = name;
         this.value = value;

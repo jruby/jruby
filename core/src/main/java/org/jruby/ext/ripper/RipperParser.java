@@ -2485,7 +2485,7 @@ states[67] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop,
                     p.setCurrentArg(null);
                     LexContext ctxt = p.getLexContext();
                     RubySymbol name = p.get_id(((IRubyObject)yyVals[0+yyTop].value));
-                    p.numparam_name(name);
+                    p.numparam_name(yyVals[yyTop - count + 1].id);
                         yyVal = new Holder(ctxt, name, p.get_value(((IRubyObject)yyVals[0+yyTop].value)));
 
                     ctxt.in_def = true;
@@ -2794,51 +2794,63 @@ states[110] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[111] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
   return yyVal;
 };
 states[112] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
   return yyVal;
 };
 states[113] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
   return yyVal;
 };
 states[114] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
   return yyVal;
 };
 states[115] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
   return yyVal;
 };
 states[116] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
   return yyVal;
 };
 states[117] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(((IRubyObject)yyVals[0+yyTop].value), p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
   return yyVal;
 };
 states[118] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(((IRubyObject)yyVals[0+yyTop].value), p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
   return yyVal;
 };
 states[119] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
   return yyVal;
 };
 states[120] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
   return yyVal;
 };
 states[121] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
   return yyVal;
 };
 states[122] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
   return yyVal;
 };
 states[123] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -2902,51 +2914,64 @@ states[129] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[130] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
+                    
   return yyVal;
 };
 states[131] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
   return yyVal;
 };
 states[132] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
   return yyVal;
 };
 states[133] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
   return yyVal;
 };
 states[134] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
   return yyVal;
 };
 states[135] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
   return yyVal;
 };
 states[136] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
   return yyVal;
 };
 states[137] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
   return yyVal;
 };
 states[138] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
   return yyVal;
 };
 states[139] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
   return yyVal;
 };
 states[140] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
   return yyVal;
 };
 states[141] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
   return yyVal;
 };
 states[142] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -4474,7 +4499,8 @@ states[414] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[415] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(((IRubyObject)yyVals[0+yyTop].value));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, ((IRubyObject)yyVals[0+yyTop].value));
+
   return yyVal;
 };
 states[416] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -4546,7 +4572,9 @@ states[423] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[424] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(((IRubyObject)yyVals[0+yyTop].value));}
+                    ByteList id = yyVals[yyTop - count + 2].id;
+                      yyVal = p.assignable(id, ((IRubyObject)yyVals[0+yyTop].value));
+
   return yyVal;
 };
 states[425] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -5443,7 +5471,8 @@ states[600] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[601] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
   return yyVal;
 };
 states[602] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -5944,51 +5973,64 @@ states[686] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[687] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
+                    
   return yyVal;
 };
 states[688] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
   return yyVal;
 };
 states[689] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
   return yyVal;
 };
 states[690] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
   return yyVal;
 };
 states[691] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
   return yyVal;
 };
 states[692] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
   return yyVal;
 };
 states[693] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
   return yyVal;
 };
 states[694] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
   return yyVal;
 };
 states[695] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
   return yyVal;
 };
 states[696] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
   return yyVal;
 };
 states[697] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
   return yyVal;
 };
 states[698] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.assignable(p.var_field(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[0+yyTop].value)));
+
   return yyVal;
 };
 states[699] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6189,14 +6231,14 @@ states[737] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[738] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.formal_argument(((IRubyObject)yyVals[0+yyTop].value));
+                    yyVal = p.formal_argument(yyVals[yyTop - count + 1].id);
                     p.ordinalMaxNumParam();
   return yyVal;
 };
 states[739] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     RubySymbol name = p.get_id(((IRubyObject)yyVals[0+yyTop].value));
                     p.setCurrentArg(name);
-{                    yyVal = p.get_value(((IRubyObject)yyVals[0+yyTop].value));}
+                    yyVal = p.arg_var(yyVals[yyTop - count + 1].id);
   return yyVal;
 };
 states[740] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6220,7 +6262,8 @@ states[743] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[744] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    p.arg_var(p.formal_argument(((IRubyObject)yyVals[0+yyTop].value)));
+                    p.formal_argument(yyVals[yyTop - count + 1].id);
+                    p.arg_var(yyVals[yyTop - count + 1].id);
                     p.setCurrentArg(p.get_id(((IRubyObject)yyVals[0+yyTop].value)));
                     p.ordinalMaxNumParam();
                     p.getLexContext().in_argdef = false;
@@ -6230,23 +6273,27 @@ states[744] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
 states[745] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.setCurrentArg(null);
                     p.getLexContext().in_argdef = true;
-{                    yyVal = p.new_assoc(p.get_value(p.assignable(((IRubyObject)yyVals[-1+yyTop].value))), p.get_value(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.new_assoc(p.assignable(yyVals[yyTop - count + 1].id, ((IRubyObject)yyVals[-1+yyTop].value)), ((IRubyObject)yyVals[0+yyTop].value));
+
   return yyVal;
 };
 states[746] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.setCurrentArg(null);
                     p.getLexContext().in_argdef = true;
-{                    yyVal = p.new_assoc(p.get_value(p.assignable(((IRubyObject)yyVals[0+yyTop].value))), null);}
+                      yyVal = p.new_assoc(p.assignable(yyVals[yyTop - count + 1].id, ((IRubyObject)yyVals[0+yyTop].value)), p.nil());
+
   return yyVal;
 };
 states[747] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.getLexContext().in_argdef = true;
-{                    yyVal = p.new_assoc(p.get_value(p.assignable(((IRubyObject)yyVals[-1+yyTop].value))), p.get_value(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.new_assoc(p.assignable(yyVals[yyTop - count + 1].id, ((IRubyObject)yyVals[-1+yyTop].value)), ((IRubyObject)yyVals[0+yyTop].value));
+
   return yyVal;
 };
 states[748] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.getLexContext().in_argdef = true;
-{                    yyVal = p.new_assoc(p.get_value(p.assignable(((IRubyObject)yyVals[0+yyTop].value))), null);}
+                      yyVal = p.new_assoc(p.assignable(yyVals[yyTop - count + 1].id, ((IRubyObject)yyVals[0+yyTop].value)), p.nil());
+
   return yyVal;
 };
 states[749] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6281,7 +6328,7 @@ states[755] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[756] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    p.shadowing_lvar(((IRubyObject)yyVals[0+yyTop].value));
+                    p.shadowing_lvar(yyVals[yyTop - count + 2].id);
 {IRubyObject v1, v2;
                     v1 = ((IRubyObject)yyVals[0+yyTop].value);
                     v2 = p.dispatch("on_kwrest_param", v1);
@@ -6296,13 +6343,16 @@ states[757] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[758] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-{                    yyVal = p.new_assoc(p.get_value(p.assignable(((IRubyObject)yyVals[-2+yyTop].value))), p.get_value(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.new_assoc(p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[-2+yyTop].value))), ((IRubyObject)yyVals[0+yyTop].value));
+
+
   return yyVal;
 };
 states[759] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.getLexContext().in_argdef = true;
                     p.setCurrentArg(null);
-{                    yyVal = p.new_assoc(p.get_value(p.assignable(((IRubyObject)yyVals[-2+yyTop].value))), p.get_value(((IRubyObject)yyVals[0+yyTop].value)));}
+                      yyVal = p.new_assoc(p.assignable(yyVals[yyTop - count + 1].id, p.var_field(((IRubyObject)yyVals[-2+yyTop].value))), ((IRubyObject)yyVals[0+yyTop].value));
+
   return yyVal;
 };
 states[760] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6333,7 +6383,7 @@ states[766] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
                     if (!p.is_local_id(yyVals[yyTop - count + 2].id)) {
                         p.yyerror("rest argument must be local variable");
                     }
-                    yyVal = p.arg_var(p.shadowing_lvar(((IRubyObject)yyVals[0+yyTop].value)));
+                    yyVal = p.arg_var(p.shadowing_lvar(yyVals[yyTop - count + 2].id));
 {IRubyObject v1, v2;
                     v1 = ((IRubyObject)yyVals[0+yyTop].value);
                     v2 = p.dispatch("on_rest_param", v1);
@@ -6359,7 +6409,7 @@ states[770] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
                     if (!p.is_local_id(yyVals[yyTop - count + 2].id)) {
                         p.yyerror("block argument must be local variable");
                     }
-                    yyVal = p.arg_var(p.shadowing_lvar(((IRubyObject)yyVals[0+yyTop].value)));
+                    yyVal = p.arg_var(p.shadowing_lvar(yyVals[yyTop - count + 2].id));
 {IRubyObject v1, v2;
                     v1 = ((IRubyObject)yyVals[0+yyTop].value);
                     v2 = p.dispatch("on_blockarg", v1);
@@ -6536,7 +6586,7 @@ states[817] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 }
-					// line 4518 "ripper_RubyParser.out"
+					// line 4568 "ripper_RubyParser.out"
 
 }
-					// line 14292 "-"
+					// line 14342 "-"

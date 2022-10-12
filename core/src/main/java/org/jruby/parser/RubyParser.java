@@ -2404,7 +2404,7 @@ states[67] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
                     p.setCurrentArg(null);
                     LexContext ctxt = p.getLexContext();
                     RubySymbol name = p.get_id(((ByteList)yyVals[0+yyTop].value));
-                    p.numparam_name(name);
+                    p.numparam_name(yyVals[yyTop - count + 1].id);
                     /*%%%*/
                     yyVal = new DefHolder(name, currentArg, (LexContext) ctxt.clone());
                     /* Changed from MRI*/
@@ -2677,93 +2677,105 @@ states[110] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[111] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                    yyVal = p.assignableLabelOrIdentifier(((ByteList)yyVals[0+yyTop].value), null);
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
+                    %*/
   return yyVal;
 };
 states[112] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                    yyVal = new InstAsgnNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
+                    %*/
   return yyVal;
 };
 states[113] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                    yyVal = new GlobalAsgnNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
+                    %*/
   return yyVal;
 };
 states[114] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     if (p.getLexContext().in_def) p.compile_error("dynamic constant assignment");
                     yyVal = new ConstDeclNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), null, NilImplicitNode.NIL);
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
+                    %*/
   return yyVal;
 };
 states[115] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new ClassVarAsgnNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
+                    %*/
   return yyVal;
 };
 states[116] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     p.compile_error("Can't assign to nil");
                     yyVal = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
+                    %*/
   return yyVal;
 };
 states[117] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     p.compile_error("Can't change the value of self");
                     yyVal = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable($1, p.var_field($1));
+                    %*/
   return yyVal;
 };
 states[118] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     p.compile_error("Can't assign to true");
                     yyVal = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable($1, p.var_field($1));
+                    %*/
   return yyVal;
 };
 states[119] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     p.compile_error("Can't assign to false");
                     yyVal = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
+                    %*/
   return yyVal;
 };
 states[120] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     p.compile_error("Can't assign to __FILE__");
                     yyVal = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
+                    %*/
   return yyVal;
 };
 states[121] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     p.compile_error("Can't assign to __LINE__");
                     yyVal = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
+                    %*/
   return yyVal;
 };
 states[122] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     p.compile_error("Can't assign to __ENCODING__");
                     yyVal = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
+                    %*/
   return yyVal;
 };
 states[123] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -2834,22 +2846,26 @@ states[129] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[130] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = p.assignableLabelOrIdentifier(((ByteList)yyVals[0+yyTop].value), null);
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
+                    %*/
+                    
   return yyVal;
 };
 states[131] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new InstAsgnNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
+                    %*/
   return yyVal;
 };
 states[132] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new GlobalAsgnNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
+                    %*/
   return yyVal;
 };
 states[133] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -2857,71 +2873,80 @@ states[133] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     if (p.getLexContext().in_def) p.compile_error("dynamic constant assignment");
 
                     yyVal = new ConstDeclNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), null, NilImplicitNode.NIL);
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
+                    %*/
   return yyVal;
 };
 states[134] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new ClassVarAsgnNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
+                    %*/
   return yyVal;
 };
 states[135] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     p.compile_error("Can't assign to nil");
                     yyVal = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
+                    %*/
   return yyVal;
 };
 states[136] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     p.compile_error("Can't change the value of self");
                     yyVal = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
+                    %*/
   return yyVal;
 };
 states[137] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     p.compile_error("Can't assign to true");
                     yyVal = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
+                    %*/
   return yyVal;
 };
 states[138] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     p.compile_error("Can't assign to false");
                     yyVal = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
+                    %*/
   return yyVal;
 };
 states[139] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     p.compile_error("Can't assign to __FILE__");
                     yyVal = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
+                    %*/
   return yyVal;
 };
 states[140] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     p.compile_error("Can't assign to __LINE__");
                     yyVal = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
+                    %*/
   return yyVal;
 };
 states[141] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     p.compile_error("Can't assign to __ENCODING__");
                     yyVal = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
+                    %*/
   return yyVal;
 };
 states[142] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -4400,8 +4425,9 @@ states[414] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[415] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = p.assignableInCurr(((ByteList)yyVals[0+yyTop].value), NilImplicitNode.NIL);
-                    /*% %*/
-                    /*% ripper: assignable(p, $1) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, $1);
+                    %*/
   return yyVal;
 };
 states[416] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -4461,10 +4487,12 @@ states[423] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[424] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+                    ByteList id = yyVals[yyTop - count + 2].id;
                     /*%%%*/
-                    yyVal = p.assignableInCurr(((ByteList)yyVals[0+yyTop].value), null);
-                    /*% %*/
-                    /*% ripper: assignable(p, $2) %*/
+                    yyVal = p.assignableInCurr(id, null);
+                    /*%
+                      $$ = p.assignable(id, $2);
+                    %*/
   return yyVal;
 };
 states[425] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -5408,8 +5436,9 @@ states[601] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     /*%%%*/
                     p.error_duplicate_pattern_variable(((ByteList)yyVals[0+yyTop].value));
                     yyVal = p.assignableInCurr(((ByteList)yyVals[0+yyTop].value), null);
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
+                    %*/
   return yyVal;
 };
 states[602] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -5980,22 +6009,26 @@ states[686] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[687] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = p.assignableLabelOrIdentifier(((ByteList)yyVals[0+yyTop].value), null);
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
+                    %*/
+                    
   return yyVal;
 };
 states[688] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new InstAsgnNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
+                    %*/
   return yyVal;
 };
 states[689] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new GlobalAsgnNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
+                    %*/
   return yyVal;
 };
 states[690] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6003,71 +6036,80 @@ states[690] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     if (p.getLexContext().in_def) p.compile_error("dynamic constant assignment");
 
                     yyVal = new ConstDeclNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), null, NilImplicitNode.NIL);
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
+                    %*/
   return yyVal;
 };
 states[691] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new ClassVarAsgnNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
+                    %*/
   return yyVal;
 };
 states[692] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     p.compile_error("Can't assign to nil");
                     yyVal = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
+                    %*/
   return yyVal;
 };
 states[693] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     p.compile_error("Can't change the value of self");
                     yyVal = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
+                    %*/
   return yyVal;
 };
 states[694] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     p.compile_error("Can't assign to true");
                     yyVal = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
+                    %*/
   return yyVal;
 };
 states[695] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     p.compile_error("Can't assign to false");
                     yyVal = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
+                    %*/
   return yyVal;
 };
 states[696] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     p.compile_error("Can't assign to __FILE__");
                     yyVal = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
+                    %*/
   return yyVal;
 };
 states[697] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     p.compile_error("Can't assign to __LINE__");
                     yyVal = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
+                    %*/
   return yyVal;
 };
 states[698] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     p.compile_error("Can't assign to __ENCODING__");
                     yyVal = null;
-                    /*% %*/
-                    /*% ripper: assignable(p, var_field(p, $1)) %*/
+                    /*%
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
+                    %*/
   return yyVal;
 };
 states[699] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6264,17 +6306,14 @@ states[737] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[738] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.formal_argument(((ByteList)yyVals[0+yyTop].value));
+                    yyVal = p.formal_argument(yyVals[yyTop - count + 1].id);
                     p.ordinalMaxNumParam();
   return yyVal;
 };
 states[739] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     RubySymbol name = p.get_id(((ByteList)yyVals[0+yyTop].value));
                     p.setCurrentArg(name);
-                    /*%%%*/
-                    yyVal = p.arg_var(((ByteList)yyVals[0+yyTop].value));
-                    /*% %*/
-                    /*% ripper: get_value($1) %*/
+                    yyVal = p.arg_var(yyVals[yyTop - count + 1].id);
   return yyVal;
 };
 states[740] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6308,7 +6347,8 @@ states[743] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[744] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    p.arg_var(p.formal_argument(((ByteList)yyVals[0+yyTop].value)));
+                    p.formal_argument(yyVals[yyTop - count + 1].id);
+                    p.arg_var(yyVals[yyTop - count + 1].id);
                     p.setCurrentArg(p.get_id(((ByteList)yyVals[0+yyTop].value)));
                     p.ordinalMaxNumParam();
                     p.getLexContext().in_argdef = false;
@@ -6320,8 +6360,9 @@ states[745] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     p.getLexContext().in_argdef = true;
                     /*%%%*/
                     yyVal = new KeywordArgNode(yyVals[yyTop - count + 2].start(), p.assignableKeyword(((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value)));
-                    /*% %*/
-                    /*% ripper: rb_assoc_new(get_value(assignable(p, $1)), get_value($2)) %*/
+                    /*%
+                      $$ = p.new_assoc(p.assignable(yyVals[yyTop - count + 1].id, $1), $2);
+                    %*/
   return yyVal;
 };
 states[746] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6329,24 +6370,27 @@ states[746] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     p.getLexContext().in_argdef = true;
                     /*%%%*/
                     yyVal = new KeywordArgNode(p.src_line(), p.assignableKeyword(((ByteList)yyVals[0+yyTop].value), new RequiredKeywordArgumentValueNode()));
-                    /*% %*/
-                    /*% ripper: rb_assoc_new(get_value(assignable(p, $1)), 0) %*/
+                    /*%
+                      $$ = p.new_assoc(p.assignable(yyVals[yyTop - count + 1].id, $1), p.nil());
+                    %*/
   return yyVal;
 };
 states[747] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.getLexContext().in_argdef = true;
                     /*%%%*/
                     yyVal = new KeywordArgNode(yyVals[yyTop - count + 2].start(), p.assignableKeyword(((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value)));
-                    /*% %*/
-                    /*% ripper: rb_assoc_new(get_value(assignable(p, $1)), get_value($2)) %*/
+                    /*%
+                      $$ = p.new_assoc(p.assignable(yyVals[yyTop - count + 1].id, $1), $2);
+                    %*/
   return yyVal;
 };
 states[748] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.getLexContext().in_argdef = true;
                     /*%%%*/
                     yyVal = new KeywordArgNode(p.src_line(), p.assignableKeyword(((ByteList)yyVals[0+yyTop].value), new RequiredKeywordArgumentValueNode()));
-                    /*% %*/
-                    /*% ripper: rb_assoc_new(get_value(assignable(p, $1)), 0) %*/
+                    /*%
+                      $$ = p.new_assoc(p.assignable(yyVals[yyTop - count + 1].id, $1), p.nil());
+                    %*/
   return yyVal;
 };
 states[749] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6393,7 +6437,7 @@ states[755] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[756] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    p.shadowing_lvar(((ByteList)yyVals[0+yyTop].value));
+                    p.shadowing_lvar(yyVals[yyTop - count + 2].id);
                     /*%%%*/
                     yyVal = ((ByteList)yyVals[0+yyTop].value);
                     /*% %*/
@@ -6412,8 +6456,10 @@ states[758] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     p.setCurrentArg(null);
                     p.getLexContext().in_argdef = true;
                     yyVal = new OptArgNode(yyVals[yyTop - count + 3].start(), p.assignableLabelOrIdentifier(((ArgumentNode)yyVals[-2+yyTop].value).getName().getBytes(), ((Node)yyVals[0+yyTop].value)));
-                    /*% %*/
-                    /*% ripper: rb_assoc_new(get_value(assignable(p, $1)), get_value($3)) %*/
+                    /*%
+                      $$ = p.new_assoc(p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1)), $3);
+                    %*/
+
   return yyVal;
 };
 states[759] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6421,8 +6467,9 @@ states[759] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     p.setCurrentArg(null);
                     /*%%%*/
                     yyVal = new OptArgNode(yyVals[yyTop - count + 3].start(), p.assignableLabelOrIdentifier(((ArgumentNode)yyVals[-2+yyTop].value).getName().getBytes(), ((Node)yyVals[0+yyTop].value)));
-                    /*% %*/
-                    /*% ripper: rb_assoc_new(get_value(assignable(p, $1)), get_value($3)) %*/
+                    /*%
+                      $$ = p.new_assoc(p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1)), $3);
+                    %*/
   return yyVal;
 };
 states[760] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6465,7 +6512,7 @@ states[766] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     if (!p.is_local_id(yyVals[yyTop - count + 2].id)) {
                         p.yyerror("rest argument must be local variable");
                     }
-                    yyVal = p.arg_var(p.shadowing_lvar(((ByteList)yyVals[0+yyTop].value)));
+                    yyVal = p.arg_var(p.shadowing_lvar(yyVals[yyTop - count + 2].id));
                     /*%%%*/
                     yyVal = new RestArgNode(((ArgumentNode)yyVal));
                     /*% %*/
@@ -6491,7 +6538,7 @@ states[770] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     if (!p.is_local_id(yyVals[yyTop - count + 2].id)) {
                         p.yyerror("block argument must be local variable");
                     }
-                    yyVal = p.arg_var(p.shadowing_lvar(((ByteList)yyVals[0+yyTop].value)));
+                    yyVal = p.arg_var(p.shadowing_lvar(yyVals[yyTop - count + 2].id));
                     /*%%%*/
                     yyVal = new BlockArgNode(((ArgumentNode)yyVal));
                     /*% %*/
@@ -6693,7 +6740,7 @@ states[817] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4675 "parse.y"
+					// line 4722 "parse.y"
 
 }
-					// line 14449 "-"
+					// line 14496 "-"

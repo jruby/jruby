@@ -31,6 +31,7 @@
 package org.jruby.ext.ripper;
 
 import org.jruby.lexer.LexerSource;
+import org.jruby.parser.RubyParser;
 import org.jruby.util.ByteList;
 
 import static org.jruby.lexer.LexingCommon.*;
@@ -113,13 +114,23 @@ public class HeredocTerm extends StrTerm {
         
         if (c == EOF) return error(lexer, len, str, eos);
 
+        boolean bol = lexer.was_bol();
         // Found end marker for this heredoc
-        if (lexer.was_bol() && lexer.whole_match_p(nd_lit, indent)) {
-            lexer.dispatchHeredocEnd();
-            lexer.heredoc_restore(this);
-            lexer.setStrTerm(null);
-            lexer.setState(EXPR_END);
-            return RipperParser.tSTRING_END;
+        if (bol) {
+            // if line_indent == -1 then we are after an interpolation in same line or there was a line continuation.
+            int line_indent = lexer.getHeredocLineIndent();
+
+            if (line_indent != -1) {
+                if (lexer.whole_match_p(nd_lit, indent)) {
+                    lexer.dispatchHeredocEnd();
+                    lexer.heredoc_restore(this);
+                    lexer.setStrTerm(null);
+                    lexer.setState(EXPR_END);
+                    return RubyParser.tSTRING_END;
+                }
+            } else {
+                lexer.setHeredocLineIndent(0);
+            }
         }
 
         if ((flags & STR_FUNC_EXPAND) == 0) {

@@ -1645,6 +1645,11 @@ public abstract class RubyParserBase {
                 return Global;
         }
 
+        byte last = (byte) identifier.get(identifier.length() - 1);
+        if (last == '=') {
+            return AttrSet;
+        }
+
         return Local;
     }
 

@@ -370,11 +370,17 @@ public class RubyLexer extends LexingCommon {
         lex_goto_eol();
         dispatchIgnoredScanEvent(tHEREDOC_END);
     }
-    
+
+    // yyerror1
     public void compile_error(String message) {
         parser.error();
         parser.dispatch("compile_error", getRuntime().newString(message));
-//        throw new SyntaxException(lexb.toString(), message);
+    }
+
+    // yyerror0
+    public void parse_error(String message) {
+        parser.error();
+        parser.dispatch("on_parse_error", getRuntime().newString(message));
     }
 
     // This is noop in MRI but they make a tuple type for things like tIDENTIFIER and we
@@ -662,21 +668,15 @@ public class RubyLexer extends LexingCommon {
                 func |= str_xquote;
             }
 
-            int newline = 0;
             term = c;
-            while ((c = nextc()) != EOF && c != term) {
-                if (!tokadd_mbchar(c, markerValue)) {
-                    compile_error("unterminated here document identifier");
+            while ((c = nextc()) != term) {
+                if (c == EOF || c == '\r' || c == '\n') {
+                    parse_error("unterminated here document identifier");
                     return EOF;
                 }
-                if (newline == 0 && c == '\n') {
-                    newline = 1;
-                } else if (newline > 0) {
-                    newline = 2;
-                }
-            }
 
-            if (c == EOF) compile_error("unterminated here document identifier");
+                tokadd_mbchar(c, markerValue);
+            }
 
             // c == term.  This differs from MRI in that we unwind term symbol so we can make
             // our marker with just tokp and lex_p info (e.g. we don't make second numberBuffer).
@@ -1317,7 +1317,7 @@ public class RubyLexer extends LexingCommon {
             if (isVerbose()) warning("`&' interpreted as argument prefix");
             c = tAMPER;
         } else if (isBEG()) {
-            c = tAMPER;
+            c = warn_balanced(c, spaceSeen, tAMPER, "&", "argument prefix");
         } else {
             c = '&';
         }
@@ -1447,7 +1447,7 @@ public class RubyLexer extends LexingCommon {
             pushback(c);
             setState(EXPR_BEG);
             yaccValue = COLON;
-            return ':';
+            return warn_balanced(c, spaceSeen, ':', ":", "symbol literal");
         }
         
         switch (c) {
@@ -1757,16 +1757,18 @@ public class RubyLexer extends LexingCommon {
             if (keyword != null) {
                 int state = lex_state; // Save state at time keyword is encountered
                 setState(keyword.state);
+                set_yylval_name(createTokenByteList());
 
                 if (isLexState(state, EXPR_FNAME)) {
                     identValue = tempVal;
-                    set_yylval_name(createTokenByteList());
                     return keyword.id0;
                 }
 
                 if (isLexState(lex_state, EXPR_BEG)) commandStart = true;
 
-                if (keyword.id0 == keyword_do) return doKeyword(state);
+                if (keyword.id0 == keyword_do) {
+                    return doKeyword(state);
+                }
 
                 if (isLexState(state, EXPR_BEG|EXPR_LABELED)) {
                     return keyword.id0;
@@ -1905,8 +1907,7 @@ public class RubyLexer extends LexingCommon {
             }
             pushback(c);
             yaccValue = LT_LT;
-            warn_balanced(c, spaceSeen, "<<", "here document");
-            return tLSHFT;
+            return warn_balanced(c, spaceSeen, tLSHFT, "<<", "here document");
         default:
             yaccValue = LT;
             pushback(c);
@@ -1950,8 +1951,8 @@ public class RubyLexer extends LexingCommon {
         setState(EXPR_BEG);
         pushback(c);
         yaccValue = MINUS;
-        warn_balanced(c, spaceSeen, "-", "unary operator");
-        return '-';
+
+        return warn_balanced(c, spaceSeen, '-', "-", "unary operator");
     }
 
     private int percent(boolean spaceSeen) {
@@ -1972,8 +1973,7 @@ public class RubyLexer extends LexingCommon {
 
         pushback(c);
         yaccValue = PERCENT;
-        warn_balanced(c, spaceSeen, "%", "string literal");
-        return '%';
+        return warn_balanced(c, spaceSeen, '%', "%%", "string literal");
     }
 
     private int pipe() {
@@ -2046,8 +2046,7 @@ public class RubyLexer extends LexingCommon {
         setState(EXPR_BEG);
         pushback(c);
         yaccValue = PLUS;
-        warn_balanced(c, spaceSeen, "+", "unary operator");
-        return '+';
+        return warn_balanced(c, spaceSeen, '+', "+", "unary operator");
     }
 
     // FIXME: This is a bit different than regular parser but the problem
@@ -2199,8 +2198,7 @@ public class RubyLexer extends LexingCommon {
 
         setState(isAfterOperator() ? EXPR_ARG : EXPR_BEG);
 
-        warn_balanced(c, spaceSeen, "/", "regexp literal");
-        return '/';
+        return warn_balanced(c, spaceSeen, '/', "/", "regexp literal");
     }
 
     private int star(boolean spaceSeen) {
@@ -2224,8 +2222,7 @@ public class RubyLexer extends LexingCommon {
             } else if (isBEG()) {
                 c = tDSTAR;
             } else {
-                warn_balanced(c, spaceSeen, "**", "argument prefix");
-                c = tPOW;
+                c = warn_balanced(c, spaceSeen, tPOW, "**", "argument prefix");
             }
             break;
         case '=':
@@ -2241,8 +2238,7 @@ public class RubyLexer extends LexingCommon {
             } else if (isBEG()) {
                 c = tSTAR;
             } else {
-                warn_balanced(c, spaceSeen, "*", "argument prefix");
-                c = '*';
+                c = warn_balanced(c, spaceSeen, '*', "*", "argument prefix");
             }
             yaccValue = STAR;
         }
@@ -2311,7 +2307,7 @@ public class RubyLexer extends LexingCommon {
                     pushback(c);
 
                     if (numberBuffer.length() == startLen) {
-                        compile_error("Hexadecimal number without hex-digits.");
+                        parse_error("Hexadecimal number without hex-digits.");
                     } else if (nondigit != 0) {
                         compile_error("Trailing '_' in number.");
                     }
@@ -2390,7 +2386,7 @@ public class RubyLexer extends LexingCommon {
                     }
                 case '8' :
                 case '9' :
-                    compile_error_pos("Illegal octal digit.");
+                    parse_error("Illegal octal digit.");
                 case '.' :
                 case 'e' :
                 case 'E' :

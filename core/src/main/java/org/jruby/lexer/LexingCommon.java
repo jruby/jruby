@@ -881,10 +881,12 @@ public abstract class LexingCommon {
         return yaccValue;
     }
 
-    protected void warn_balanced(int c, boolean spaceSeen, String op, String syn) {
+    protected int warn_balanced(int c, boolean spaceSeen, int token, String op, String syn) {
         if (!isLexState(last_state, EXPR_CLASS|EXPR_DOT|EXPR_FNAME|EXPR_ENDFN) && spaceSeen && !Character.isWhitespace(c)) {
             ambiguousOperator(op, syn);
         }
+
+        return token;
     }
 
     public boolean was_bol() {
@@ -915,6 +917,7 @@ public abstract class LexingCommon {
 
     protected abstract void ambiguousOperator(String op, String syn);
     public abstract void compile_error(String message);
+    public abstract void parse_error(String message);
     public abstract int nextc();
     protected abstract void setCompileOptionFlag(String name, ByteList value);
     protected abstract void setEncoding(ByteList name);
@@ -1303,14 +1306,14 @@ public abstract class LexingCommon {
         }
 
         // No hex value after the 'x'.
-        if (strict && count != i) compile_error(errorMessage);
+        if (strict && count != i) parse_error(errorMessage);
 
         if (i == 0) { // No hex digits read.
             if (peek('}')) { // \ u { } empty case
                 return -1;
             } else { // \ u { {gargbage} case
                 updateStartPosition(lex_p);
-                compile_error(errorMessage);
+                parse_error(errorMessage);
             }
         }
 
@@ -1370,7 +1373,7 @@ public abstract class LexingCommon {
                 }
                 return (char) (c & 0x9f);
             case EOF :
-                compile_error("Invalid escape character syntax");
+                parse_error("Invalid escape character syntax");
             default :
                 return c;
         }
@@ -1440,7 +1443,7 @@ public abstract class LexingCommon {
                     return 0;
                 }
                 if (codepoint > 0x10ffff) {
-                    compile_error("invalid Unicode codepoint (too large)");
+                    parse_error("invalid Unicode codepoint (too large)");
                 }
                 if (buffer != null) readUTF8EscapeIntoBuffer(codepoint, buffer, stringLiteral, encodingDetermined);
             } while (peek(' ') || peek('\t'));
@@ -1448,7 +1451,7 @@ public abstract class LexingCommon {
             c = nextc();
             if (c != '}') {
                 updateStartPosition(lex_p - 1);
-                compile_error("unterminated Unicode escape");
+                parse_error("unterminated Unicode escape");
             }
         } else { // handle \\uxxxx
             codepoint = scanHex(4, true, "Invalid Unicode escape");

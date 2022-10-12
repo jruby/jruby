@@ -38,6 +38,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.Node;
 import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.yacc.LexContext;
@@ -102,39 +103,11 @@ public class RipperParserBase {
         return dispatch("on_args_add_block", arg1, arg2);
     }
 
-    public IRubyObject arg_var(IRubyObject identifier) {
-        if (identifier instanceof RubySymbol) {
-            return arg_var(((RubySymbol) identifier).getBytes());
-        } else if (identifier instanceof RubyString) {
-            return arg_var(((RubyString) identifier).getByteList());
-        }
-
-        return null;
-    }
-
-    // FIXME: should only be one impl of this?
-    public IRubyObject arg_var(RubySymbol identifier) {
-        return arg_var(identifier.getBytes());
-    }
-
-    public IRubyObject arg_var(ByteList identifier) {
-        String name = lexer.getIdent();
-        StaticScope current = getCurrentScope();
-
-        // Multiple _ arguments are allowed.  To not screw with tons of arity
-        // issues in our runtime we will allocate unnamed bogus vars so things
-        // still work. MRI does not use name as intern'd value so they don't
-        // have this issue.
-        if (name == "_") {
-            int count = 0;
-            while (current.exists(name) >= 0) {
-                name = "_$" + count++;
-            }
-        }
-        
-        current.addVariableThisScope(name);
-                
-        return symbolID(identifier);
+    public RubySymbol arg_var(ByteList byteName) {
+        RubySymbol name = symbolID(byteName);
+        numparam_name(byteName);
+        getCurrentScope().addVariableThisScope(name.idString());
+        return name;
     }
 
     public IRubyObject assignableConstant(IRubyObject value) {
@@ -187,8 +160,8 @@ public class RipperParserBase {
         return context.nil;
     }
     
-    public IRubyObject formal_argument(IRubyObject identifier) {
-        return shadowing_lvar(identifier);
+    public IRubyObject formal_argument(ByteList identifier) {
+        return getRuntime().newSymbol(shadowing_lvar(identifier));
     }
     
     protected void getterIdentifierError(ByteList identifier) {
@@ -334,8 +307,13 @@ public class RipperParserBase {
         return value;
     }
 
-    protected IRubyObject assignable(IRubyObject value) {
-        // FIXME: Implement
+    protected IRubyObject assignable(ByteList name, IRubyObject value) {
+        return assignable(getRuntime().newSymbol(name), value);
+    }
+
+    protected IRubyObject assignable(IRubyObject name, IRubyObject value) {
+        currentScope.addVariableThisScope(((RubySymbol) name).idString());
+
         return value;
     }
 
@@ -434,23 +412,28 @@ public class RipperParserBase {
         shadowing_lvar(identifier);
         return arg_var(identifier);
     }
-    
+
     public void popCurrentScope() {
-        if (!currentScope.isBlockScope()) {
-            getCmdArgumentState().pop();
-            getConditionState().pop();
+        if (!currentScope.isBlockScope()) { // blocks are soft scopes. All others are roots of lvars we are leaving.
+            lexer.getCmdArgumentState().pop();
+            lexer.getConditionState().pop();
         }
+
+        //scopedParserState.warnUnusedVariables(getRuntime(), warnings, currentScope.getFile());
         currentScope = currentScope.getEnclosingScope();
+        scopedParserState = scopedParserState.getEnclosingScope();
     }
-    
+
     public void pushBlockScope() {
-        currentScope = getRuntime().getStaticScopeFactory().newBlockScope(currentScope);
+        currentScope = getRuntime().getStaticScopeFactory().newBlockScope(currentScope, lexer.getFile());
+        scopedParserState = new ScopedParserState(scopedParserState);
     }
-    
+
     public void pushLocalScope() {
-        currentScope = getRuntime().getStaticScopeFactory().newLocalScope(currentScope);
-        getCmdArgumentState().push0();
-        getConditionState().push0();
+        currentScope = getRuntime().getStaticScopeFactory().newLocalScope(currentScope, lexer.getFile());
+        scopedParserState = new ScopedParserState(scopedParserState, lexer.getCmdArgumentState().getStack(), lexer.getConditionState().getStack());
+        lexer.getCmdArgumentState().push0();
+        lexer.getConditionState().push0();
     }
 
     public int getHeredocIndent() {
@@ -462,37 +445,35 @@ public class RipperParserBase {
     }
 
     public IRubyObject heredoc_dedent(IRubyObject array) {
-        if (lexer.getHeredocIndent() <= 0) return null;
+        int indent = lexer.getHeredocIndent();
+        if (indent <= 0) return array;
 
-        return dispatch("on_heredoc_dedent", array, getRuntime().newFixnum(lexer.getHeredocIndent()));
+        lexer.setHeredocIndent(0);
+        return dispatch("on_heredoc_dedent", array, getRuntime().newFixnum(indent));
     }
     
     public void setCommandStart(boolean value) {
         lexer.commandStart = value;
     }
 
-    public IRubyObject shadowing_lvar(ByteList identifier) {
-        return shadowing_lvar(symbolID(identifier));
-    }
+    // 1.9
+    public ByteList shadowing_lvar(ByteList nameBytes) {
+        if (is_private_local_id(nameBytes)) return nameBytes;
 
-    public IRubyObject shadowing_lvar(IRubyObject identifier) {
-       String name = lexer.getIdent();
-
-        if (name == "_") return identifier;
+        RubySymbol name = symbolID(nameBytes);
+        String id = name.idString();
 
         StaticScope current = getCurrentScope();
-        if (current.isBlockScope()) {
-            if (current.exists(name) >= 0) yyerror("duplicated argument name");
+        if (current.exists(id) >= 0) yyerror("duplicated argument name");
 
-            if (current.isDefined(name) >= 0) {
-                lexer.warning("shadowing outer local variable - %s", name);
-            }
-        } else if (current.exists(name) >= 0) {
-            yyerror("duplicated argument name");
+        int slot = current.isDefined(id);
+        if (slot != -1) {
+            scopedParserState.addDefinedVariable(name, lexer.getRubySourceline());
+            scopedParserState.markUsedVariable(name, slot >> 16);
         }
 
-        return identifier;
-    }    
+        return nameBytes;
+    }
 
     public StackState getConditionState() {
         return lexer.getConditionState();
@@ -612,8 +593,13 @@ public class RipperParserBase {
         return holder.eltOk(0);
     }
 
-    public void endless_method_name(Holder name) {
-        // FIXME: IMPL
+    public void endless_method_name(Holder holder) {
+        ByteList name = holder.name.getBytes();
+        RubyParserBase.IDType type = RubyParserBase.id_type(name);
+
+        if (type == RubyParserBase.IDType.AttrSet) {
+            compile_error("setter method cannot be defined in an endless method definition");
+        }
     }
 
     public void restore_defun(Holder holder) {
@@ -636,8 +622,8 @@ public class RipperParserBase {
         return (RubySymbol) ident;
     }
 
-    public void numparam_name(IRubyObject name) {
-        String id = ((RubySymbol) name).idString();
+    public void numparam_name(ByteList name) {
+        String id = getRuntime().newSymbol(name).idString();
         if (isNumParamId(id)) compile_error(id + " is reserved for numbered parameter");
     }
 

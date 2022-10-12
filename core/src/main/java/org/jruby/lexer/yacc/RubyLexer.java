@@ -379,8 +379,14 @@ public class RubyLexer extends LexingCommon {
         throw new SyntaxException(getFile(), ruby_sourceline, prepareMessage(message, lexb, start, end));
     }
 
+    // yyerror1
     public void compile_error(String message) {
         throw new SyntaxException(getFile(), ruby_sourceline, prepareMessage(message, lex_lastline, start, end));
+    }
+
+    // yyerror0
+    public void parse_error(String message) {
+        compile_error(message);
     }
 
     // This is somewhat based off of parser_yyerror in MRI but we seemingly have some weird differences.
@@ -1213,8 +1219,7 @@ public class RubyLexer extends LexingCommon {
         } else if (isBEG()) {
             c = tAMPER;
         } else {
-            warn_balanced(c, spaceSeen, "&", "argument prefix");
-            c = '&';
+            c = warn_balanced(c, spaceSeen, '&', "&", "argument prefix");
         }
 
         setState(isAfterOperator() ? EXPR_ARG : EXPR_BEG);
@@ -1340,8 +1345,7 @@ public class RubyLexer extends LexingCommon {
             pushback(c);
             setState(EXPR_BEG);
             yaccValue = COLON;
-            warn_balanced(c, spaceSeen, ":", "symbol literal");
-            return ':';
+            return warn_balanced(c, spaceSeen, ':', ":", "symbol literal");
         }
         
         switch (c) {
@@ -1777,8 +1781,7 @@ public class RubyLexer extends LexingCommon {
             }
             pushback(c);
             yaccValue = LT_LT;
-            warn_balanced(c, spaceSeen, "<<", "here document");
-            return tLSHFT;
+            return warn_balanced(c, spaceSeen, tLSHFT, "<<", "here document");
         default:
             yaccValue = LT;
             pushback(c);
@@ -1822,8 +1825,8 @@ public class RubyLexer extends LexingCommon {
         setState(EXPR_BEG);
         pushback(c);
         yaccValue = MINUS;
-        warn_balanced(c, spaceSeen, "-", "unary operator");
-        return '-';
+
+        return warn_balanced(c, spaceSeen, '-', "-", "unary operator");
     }
 
     private int percent(boolean spaceSeen) {
@@ -1844,8 +1847,7 @@ public class RubyLexer extends LexingCommon {
         pushback(c);
         yaccValue = PERCENT;
         set_yylval_id(PERCENT);
-        warn_balanced(c, spaceSeen, "%", "string literal");
-        return '%';
+        return warn_balanced(c, spaceSeen, '%', "%", "string literal");
     }
 
     private int pipe() {
@@ -1916,8 +1918,8 @@ public class RubyLexer extends LexingCommon {
         setState(EXPR_BEG);
         pushback(c);
         yaccValue = PLUS;
-        warn_balanced(c, spaceSeen, "+", "unary operator");
-        return '+';
+
+        return warn_balanced(c, spaceSeen, '+', "+", "unary operator");
     }
     
     private int questionMark() throws IOException {
@@ -2070,8 +2072,7 @@ public class RubyLexer extends LexingCommon {
 
         setState(isAfterOperator() ? EXPR_ARG : EXPR_BEG);
 
-        warn_balanced(c, spaceSeen, "/", "regexp literal");
-        return '/';
+        return warn_balanced(c, spaceSeen, '/', "/", "regexp literal");
     }
 
     private int star(boolean spaceSeen) {
@@ -2096,8 +2097,7 @@ public class RubyLexer extends LexingCommon {
             } else if (isBEG()) {
                 c = tDSTAR;
             } else {
-                warn_balanced(c, spaceSeen, "**", "argument prefix");
-                c = tPOW;
+                c = warn_balanced(c, spaceSeen, tPOW, "**", "argument prefix");
             }
             break;
         case '=':
@@ -2114,8 +2114,7 @@ public class RubyLexer extends LexingCommon {
             } else if (isBEG()) {
                 c = tSTAR;
             } else {
-                warn_balanced(c, spaceSeen, "*", "argument prefix");
-                c = '*';
+                c = warn_balanced(c, spaceSeen, '*', "*", "argument prefix");
             }
             yaccValue = STAR;
         }
@@ -2208,7 +2207,7 @@ public class RubyLexer extends LexingCommon {
                     pushback(c);
 
                     if (numberBuffer.length() == startLen) {
-                        compile_error_pos("numeric literal without digits.");
+                        parse_error("numeric literal without digits.");
                     } else if (nondigit != 0) {
                         compile_error_pos("Trailing '_' in number.");
                     }
