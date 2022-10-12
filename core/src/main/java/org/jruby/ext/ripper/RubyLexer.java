@@ -1973,7 +1973,7 @@ public class RubyLexer extends LexingCommon {
 
         pushback(c);
         yaccValue = PERCENT;
-        return warn_balanced(c, spaceSeen, '%', "%%", "string literal");
+        return warn_balanced(c, spaceSeen, '%', "%", "string literal");
     }
 
     private int pipe() {
