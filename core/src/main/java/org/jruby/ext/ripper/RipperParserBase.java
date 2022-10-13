@@ -39,6 +39,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.ast.ArgumentNode;
+import org.jruby.ast.DefHolder;
 import org.jruby.ast.Node;
 import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.yacc.LexContext;
@@ -112,8 +113,8 @@ public class RipperParserBase {
 
     public IRubyObject assignableConstant(IRubyObject value) {
         if (isInDef()) {
-            value = dispatch("on_assign_error", value);
             error();
+            value = dispatch("on_assign_error", value);
         }
         return value;
     }
@@ -307,12 +308,44 @@ public class RipperParserBase {
         return value;
     }
 
-    protected IRubyObject assignable(ByteList name, IRubyObject value) {
-        return assignable(getRuntime().newSymbol(name), value);
+    private String assignableCheckValid(RubySymbol name) {
+        String id = name.idString();
+
+        switch(id) {
+            case "self": return "Can't change the value of self";
+            case "nil": return "Can't assign to nil";
+            case "true": return "Can't assign to true";
+            case "false": return "Can't assign to false";
+            case "__FILE__": return "Can't assign to __FILE__";
+            case "__LINE__": return "Can't assign to __LINE__";
+            case "__ENCODING__": return "Can't assign to __ENCODING__";
+        }
+
+        RubyParserBase.IDType type = RubyParserBase.id_type(name.getBytes());
+        switch(type) {
+            case Local:
+                if (currentScope.isBlockScope()) {
+                    if (maxNumParam > 0 && isNumParamId(id)) {
+                        return "Can't assign to numbered parameter " + id;
+                    }
+                }
+                break;
+            case Constant:
+                if (isInDef()) return "dynamic constant assignment";
+                break;
+        }
+
+        return null;
     }
 
-    protected IRubyObject assignable(IRubyObject name, IRubyObject value) {
-        currentScope.addVariableThisScope(((RubySymbol) name).idString());
+    protected IRubyObject assignable(ByteList name, IRubyObject value) {
+        RubySymbol symbol = getRuntime().newSymbol(name);
+        String error = assignableCheckValid(symbol);
+        if (error != null) {
+            return assign_error(error, getRuntime().newArray(getRuntime().newString(name)));
+        }
+
+        currentScope.addVariableThisScope(symbol.idString());
 
         return value;
     }
@@ -480,7 +513,7 @@ public class RipperParserBase {
     }
 
     public boolean isInDef() {
-        return inDefinition;
+        return lexer.getLexContext().in_def;
     }
 
     public boolean isInClass() {
@@ -503,8 +536,8 @@ public class RipperParserBase {
         return lexer.getCmdArgumentState();
     }
     
-    public void compile_error(String message) {
-        dispatch("on_parse_error", getRuntime().newString(message));
+    public IRubyObject compile_error(String message) {
+        return dispatch("on_parse_error", getRuntime().newString(message));
     }
 
     public void yyerror(String message) {
@@ -585,7 +618,7 @@ public class RipperParserBase {
         return b;
     }
 
-    protected IRubyObject get_value(Holder holder) {
+    protected IRubyObject get_value(DefHolder holder) {
         return holder.value;
     }
 
@@ -593,7 +626,7 @@ public class RipperParserBase {
         return holder.eltOk(0);
     }
 
-    public void endless_method_name(Holder holder) {
+    public void endless_method_name(DefHolder holder) {
         ByteList name = holder.name.getBytes();
         RubyParserBase.IDType type = RubyParserBase.id_type(name);
 
@@ -602,10 +635,9 @@ public class RipperParserBase {
         }
     }
 
-    public void restore_defun(Holder holder) {
-        // FIXME:
-        //lexer.getLexContext().restore(holder);
-        //lexer.setCurrentArg(holder.current_arg);
+    public void restore_defun(DefHolder holder) {
+        lexer.getLexContext().restore(holder);
+        lexer.setCurrentArg(holder.current_arg);
     }
 
     public RubySymbol symbolID(ByteList identifierValue) {

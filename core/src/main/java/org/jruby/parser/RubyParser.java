@@ -2409,7 +2409,7 @@ states[67] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
                     yyVal = new DefHolder(name, currentArg, (LexContext) ctxt.clone());
                     /* Changed from MRI*/
                     /*% 
-                        $$ = new Holder(ctxt, name, p.get_value($1));
+                        $$ = new DefHolder(name, currentArg, p.get_value($1), (LexContext) ctxt.clone());
                     %*/
                     ctxt.in_def = true;
                     p.setCurrentArg(null);
@@ -2434,7 +2434,7 @@ states[70] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
                     ((DefHolder)yyVals[0+yyTop].value).setDotOrColon(p.extractByteList(((ByteList)yyVals[-2+yyTop].value)));
                     /* Changed from MRI*/
                     /*%
-                       $<Holder>$.value = p.new_array($2, $3, $<Holder>$.value);
+                       $<DefHolder>$.value = p.new_array($2, $3, $<DefHolder>$.value);
                     %*/
   return yyVal;
 };
@@ -2729,7 +2729,7 @@ states[117] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     p.compile_error("Can't change the value of self");
                     yyVal = null;
                     /*%
-                      $$ = p.assignable($1, p.var_field($1));
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
                     %*/
   return yyVal;
 };
@@ -2738,7 +2738,7 @@ states[118] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     p.compile_error("Can't assign to true");
                     yyVal = null;
                     /*%
-                      $$ = p.assignable($1, p.var_field($1));
+                      $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
                     %*/
   return yyVal;
 };

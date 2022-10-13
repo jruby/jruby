@@ -4,7 +4,7 @@
   SUBS = {
     'import_ripper' => [
          '',
-         'import org.jruby.util.KeyValuePair; import org.jruby.RubyArray; import org.jruby.ext.ripper.Holder;'
+         'import org.jruby.util.KeyValuePair; import org.jruby.RubyArray;'
     ],
     'program_production' => [
          '',
@@ -36,7 +36,6 @@
     'token_backref_type' => ['Node', 'IRubyObject'],
     'token_string_type' => ['Node', 'IRubyObject'],
     'token_regexp_type' => ['RegexpNode', 'IRubyObject'],
-    'prod_def_type' => ['DefHolder', 'Holder'],
     'prod_undef_list_type' => ['Node', 'RubyArray'],
     'prod_bv_decls_type' => ['Node', 'RubyArray'],
     'prod_type' => ['Node', 'IRubyObject'],
@@ -249,7 +248,7 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
 %type <@@prod_type@@> literal
 %type <@@prod_numeric_type@@> numeric simple_numeric
 %type <@@prod_type@@> ssym dsym symbol cpath
-%type <@@prod_def_type@@> def_name defn_head defs_head
+%type <DefHolder> def_name defn_head defs_head
 %type <@@prod_type@@> top_compstmt top_stmts top_stmt begin_block
 %type <@@prod_type@@> bodystmt compstmt stmts stmt_or_begin stmt expr arg primary command command_call method_call
 %type <@@prod_type@@> expr_value expr_value_do arg_value primary_value 
@@ -831,7 +830,7 @@ def_name        : fname {
                     $$ = new DefHolder(name, currentArg, (LexContext) ctxt.clone());
                     // Changed from MRI
                     /*% 
-                        $$ = new Holder(ctxt, name, p.get_value($1));
+                        $$ = new DefHolder(name, currentArg, p.get_value($1), (LexContext) ctxt.clone());
                     %*/
                     ctxt.in_def = true;
                     p.setCurrentArg(null);
@@ -856,7 +855,7 @@ defs_head       : k_def singleton dot_or_colon {
                     $5.setDotOrColon(p.extractByteList($3));
                     // Changed from MRI
                     /*%
-                       $<Holder>$.value = p.new_array($2, $3, $<Holder>$.value);
+                       $<DefHolder>$.value = p.new_array($2, $3, $<DefHolder>$.value);
                     %*/
                 }
 
