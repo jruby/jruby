@@ -825,11 +825,12 @@ def_name        : fname {
                     p.setCurrentArg(null);
                     LexContext ctxt = p.getLexContext();
                     RubySymbol name = p.get_id($1);
-                    p.numparam_name(@1.id);
                     /*%%%*/
+                    p.numparam_name($1);
                     $$ = new DefHolder(name, currentArg, (LexContext) ctxt.clone());
                     // Changed from MRI
                     /*% 
+                    p.numparam_name(@1.id);
                         $$ = new DefHolder(name, currentArg, p.get_value($1), (LexContext) ctxt.clone());
                     %*/
                     ctxt.in_def = true;

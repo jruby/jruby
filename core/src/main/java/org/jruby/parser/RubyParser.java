@@ -2404,11 +2404,12 @@ states[67] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
                     p.setCurrentArg(null);
                     LexContext ctxt = p.getLexContext();
                     RubySymbol name = p.get_id(((ByteList)yyVals[0+yyTop].value));
-                    p.numparam_name(yyVals[yyTop - count + 1].id);
                     /*%%%*/
+                    p.numparam_name(((ByteList)yyVals[0+yyTop].value));
                     yyVal = new DefHolder(name, currentArg, (LexContext) ctxt.clone());
                     /* Changed from MRI*/
                     /*% 
+                    p.numparam_name(yyVals[yyTop - count + 1].id);
                         $$ = new DefHolder(name, currentArg, p.get_value($1), (LexContext) ctxt.clone());
                     %*/
                     ctxt.in_def = true;
@@ -6740,7 +6741,7 @@ states[817] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4722 "parse.y"
+					// line 4723 "parse.y"
 
 }
-					// line 14496 "-"
+					// line 14497 "-"
