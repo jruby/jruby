@@ -104,11 +104,10 @@ public class RipperParserBase {
         return dispatch("on_args_add_block", arg1, arg2);
     }
 
-    public RubySymbol arg_var(ByteList byteName) {
-        RubySymbol name = symbolID(byteName);
+    public RubyString arg_var(ByteList byteName) {
         numparam_name(byteName);
-        getCurrentScope().addVariableThisScope(name.idString());
-        return name;
+        getCurrentScope().addVariableThisScope(symbolID(byteName).idString());
+        return getRuntime().newString(byteName);
     }
 
     public IRubyObject assignableConstant(IRubyObject value) {
@@ -883,6 +882,10 @@ public class RipperParserBase {
 
     public IRubyObject nil() {
         return context.nil;
+    }
+
+    public IRubyObject fals() {
+        return context.fals;
     }
 
     public IRubyObject var_field(IRubyObject value) {

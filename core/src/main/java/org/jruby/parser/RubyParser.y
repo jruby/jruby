@@ -4457,7 +4457,7 @@ f_block_kw      : f_label primary_value {
                     /*%%%*/
                     $$ = new KeywordArgNode(p.src_line(), p.assignableKeyword($1, new RequiredKeywordArgumentValueNode()));
                     /*%
-                      $$ = p.new_assoc(p.assignable(@1.id, $1), p.nil());
+                      $$ = p.new_assoc(p.assignable(@1.id, $1), p.fals());
                     %*/
                 }
              
