@@ -341,9 +341,8 @@ public class RipperParserBase {
     protected IRubyObject assignable(ByteList name, IRubyObject value) {
         RubySymbol symbol = getRuntime().newSymbol(name);
         String error = assignableCheckValid(symbol);
-        if (error != null) {
-            return assign_error(error, getRuntime().newArray(getRuntime().newString(name)));
-        }
+
+        if (error != null) return assign_error(error, value);
 
         currentScope.addVariableThisScope(symbol.idString());
 
