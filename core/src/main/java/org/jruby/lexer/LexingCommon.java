@@ -254,7 +254,7 @@ public abstract class LexingCommon {
         return i;
     }
 
-    protected void flush() {
+    public void flush() {
         tokp = lex_p;
     }
 
@@ -1314,6 +1314,7 @@ public abstract class LexingCommon {
             } else { // \ u { {gargbage} case
                 updateStartPosition(lex_p);
                 parse_error(errorMessage);
+                flush();
             }
         }
 

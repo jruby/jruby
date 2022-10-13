@@ -1,0 +1,283 @@
+#	jay skeleton for Java
+
+#	character in column 1 determines outcome...
+#		# is a comment
+#		. is copied
+#		t is copied as //t if -t is set
+#	other lines are interpreted to call jay procedures
+
+ version	Java 1.0 (c) 2002 ats@cs.rit.edu
+.
+ prolog		## %{ ... %} prior to the first %%
+
+.  // %token constants
+ tokens	public static final int
+.
+.  /** number of final state.
+.    */
+ yyFinal	protected static final int yyFinal =
+.
+.  /** parser tables.
+.      Order is mandated by <i>jay</i>.
+.    */
+.  protected static final short[] yyLhs = {
+ yyLhs
+.    }, yyLen = {
+ yyLen
+.    }, yyDefRed = {
+ yyDefRed
+.    }, yyDgoto = {
+ yyDgoto
+.    }, yySindex = {
+ yySindex
+.    }, yyRindex = {
+ yyRindex
+.    }, yyGindex = {
+ yyGindex
+.    };
+.  protected static final short[] yyTable = {
+ yyTable
+.    };
+.  protected static final short[] yyCheck = {
+ yyCheck
+.    };
+.
+.  /** maps symbol value to printable name.
+.      @see #yyExpecting
+.    */
+.  protected static final String[] yyNames = {
+ yyNames-strings
+.    };
+.
+t  /** printable rules for debugging.
+t    */
+t  protected static final String [] yyRule = {
+ yyRule-strings
+t    };
+t
+t  protected org.jruby.parser.YYDebug yydebug;
+t
+t  /** index-checked interface to {@link #yyNames}.
+t      @param token single character or <tt>%token</tt> value.
+t      @return token name or <tt>[illegal]</tt> or <tt>[unknown]</tt>.
+t    */
+t  public static String yyName (int token) {
+t    if (token < 0 || token > yyNames.length) return "[illegal]";
+t    String name;
+t    if ((name = yyNames[token]) != null) return name;
+t    return "[unknown]";
+t  }
+t
+.
+.  /** computes list of expected tokens on error by tracing the tables.
+.      @param state for which to compute the list.
+.      @return list of token names.
+.    */
+.  protected String[] yyExpecting (int state) {
+.    int token, n, len = 0;
+.    boolean[] ok = new boolean[yyNames.length];
+.
+.    if ((n = yySindex[state]) != 0)
+.      for (token = n < 0 ? -n : 0;
+.           token < yyNames.length && n+token < yyTable.length; ++ token)
+.        if (yyCheck[n+token] == token && !ok[token] && yyNames[token] != null) {
+.          ++ len;
+.          ok[token] = true;
+.        }
+.    if ((n = yyRindex[state]) != 0)
+.      for (token = n < 0 ? -n : 0;
+.           token < yyNames.length && n+token < yyTable.length; ++ token)
+.        if (yyCheck[n+token] == token && !ok[token] && yyNames[token] != null) {
+.          ++ len;
+.          ok[token] = true;
+.        }
+.
+.    String result[] = new String[len];
+.    for (n = token = 0; n < len;  ++ token)
+.      if (ok[token]) result[n++] = yyNames[token];
+.    return result;
+.  }
+.
+.  /** the generated parser, with debugging messages.
+.      Maintains a dynamic state and value stack.
+.      @param yyLex scanner.
+.      @param ayydebug debug message writer implementing <tt>yyDebug</tt>, or <tt>null</tt>.
+.      @return result of the last reduction, if any.
+.    */
+.  public Object yyparse (RubyLexer yyLex, Object ayydebug)
+.				throws java.io.IOException {
+t    this.yydebug = (org.jruby.parser.YYDebug) ayydebug;
+.    return yyparse(yyLex);
+.  }
+.
+.  private static void initializeStates(ProductionState[] states, int start, int length) {
+.      for (int i = 0; i < length; i++) {
+.          states[start + i] = new ProductionState();
+.      }
+.  }
+.
+.  private static void printstates(int yytop, ProductionState[] yystates) {
+.     for (int i = 0; i <= yytop; i++) {
+.         System.out.println("yytop: " + i + ", S/E: " +
+.             ProductionState.column(yystates[i].start) + "/" +
+.             ProductionState.column(yystates[i].end) +
+.             yystates[i].value);
+.     }
+.  }
+.
+.  private static final int NEEDS_TOKEN = -1;
+.  private static final int DEFAULT = 0;
+.  private static final int YYMAX = 256;
+.
+.  /** the generated parser.
+.      Maintains a dynamic state and value stack.
+.      @param yyLex scanner.
+.      @return result of the last reduction, if any.
+.    */
+.  public Object yyparse (RubyLexer yyLex) throws java.io.IOException {
+.    int yystate = 0;
+.    Object yyVal = null;
+.    ByteList id = null;
+.    ProductionState[] yystates = new ProductionState[YYMAX];        // stack of states and values.
+.    initializeStates(yystates, 0, yystates.length);
+.    int yytoken = NEEDS_TOKEN;     // current token
+.    int yyErrorFlag = 0;           // #tokens to shift
+.    long start = 0;
+.    long end = 0;
+.
+ local		## %{ ... %} after the first %%
+
+.    yyLoop: for (int yytop = 0;; yytop++) {
+.      if (yytop + 1 >= yystates.length) {			// dynamically increase
+.          ProductionState[] newStates = new ProductionState[yystates.length+YYMAX];
+.          System.arraycopy(yystates, 0, newStates, 0, yystates.length);
+.          initializeStates(newStates, yystates.length, newStates.length - yystates.length);
+.          yystates = newStates;
+.      }
+.
+.      yystates[yytop].state = yystate;
+.      yystates[yytop].value = yyVal;
+.      yystates[yytop].id = id;
+.      yystates[yytop].start = start;
+.      yystates[yytop].end = end;
+.   //         printstates(yytop, yystates);
+.
+t      if (yydebug != null) yydebug.push(yystate, yyVal);
+.
+.      yyDiscarded: for (;;) {	// discarding a token does not change stack
+.        int yyn = yyDefRed[yystate];
+.        if (yyn == DEFAULT) {	//ja else [default] reduce (yyn)
+.            if (yytoken == NEEDS_TOKEN) {
+.                yytoken = yyLex.nextToken();
+t                if (yydebug != null) yydebug.lex(yystate, yytoken, yyName(yytoken), yyLex.value());
+.            }
+.
+.            yyn = yySindex[yystate];
+.            if (yyn != 0 &&
+.                (yyn += yytoken) >= 0 &&
+.                yyn < yyTable.length &&
+.                yyCheck[yyn] == yytoken) {
+t                if (yydebug != null) yydebug.shift(yystate, yyTable[yyn], yyErrorFlag-1);
+.                yystate = yyTable[yyn];		// shift to yyn
+.                yyVal = yyLex.value();
+.                id = yyLex.id();
+.                start = yyLex.start;
+.                end = yyLex.end;
+.                yytoken = NEEDS_TOKEN;
+.                if (yyErrorFlag > 0) --yyErrorFlag;
+.                continue yyLoop;
+.            }
+.
+.            yyn = yyRindex[yystate];
+.            if (yyn != 0 &&
+.                (yyn += yytoken) >= 0 &&
+.                 yyn < yyTable.length &&
+.                 yyCheck[yyn] == yytoken) {
+.                yyn = yyTable[yyn];			// reduce (yyn)
+.            } else {
+.                switch (yyErrorFlag) {
+.  
+.                case 0:
+.                    yyerror("syntax error", yyExpecting(yystate), yyNames[yytoken]);
+t                    if (yydebug != null) yydebug.error("syntax error");
+.                    // falls through...
+.                case 1: case 2:
+.                    yyErrorFlag = 3;
+.                    do {
+.                        yyn = yySindex[yystates[yytop].state];
+.                        if (yyn != 0 &&
+.                            (yyn += yyErrorCode) >= 0 &&
+.                            yyn < yyTable.length &&
+.                            yyCheck[yyn] == yyErrorCode) {
+t                            if (yydebug != null) yydebug.shift(yystates[yytop].state, yyTable[yyn], 3);
+.                            yystate = yyTable[yyn];
+.                            yyVal = yyLex.value();
+.                            id = yyLex.id();
+.                            continue yyLoop;
+.                        }
+t                        if (yydebug != null) yydebug.pop(yystates[yytop].state);
+.                    } while (--yytop >= 0);
+t                    if (yydebug != null) yydebug.reject();
+.                    yyerror("irrecoverable syntax error"); // throws
+.                case 3:
+.                    if (yytoken == 0) {
+t                        if (yydebug != null) yydebug.reject();
+.                        yyerror("irrecoverable syntax error at end-of-file");
+.                    }
+t                    if (yydebug != null) yydebug.discard(yystate, yytoken, yyName(yytoken), yyLex.value());
+.                    yytoken = NEEDS_TOKEN;
+.                    continue yyDiscarded; // leave stack alone
+.                }
+.            }
+.        }
+.
+t        if (yydebug != null) yydebug.reduce(yystate, yystates[yytop-yyLen[yyn]].state, yyn, yyRule[yyn], yyLen[yyn]);
+.
+.        ParserState parserState = states[yyn];
+.        if (parserState == null) {
+.            yyVal = yyLen[yyn] > 0 ? yystates[yytop - yyLen[yyn] + 1].value : null;
+.        } else {
+.            int count = yyLen[yyn];
+.            start = yystates[yytop - count + 1].start;
+.            end = yystates[yytop].end;
+.            yyVal = parserState.execute(this, yyVal, yystates, yytop, count, yytoken);
+.        }
+.// ACTIONS_BEGIN (line used by optimize_parser)
+
+ actions		## code from the actions within the grammar
+
+.// ACTIONS_END (line used by optimize_parser)
+.        yytop -= yyLen[yyn];
+.        yystate = yystates[yytop].state;
+.        int yyM = yyLhs[yyn];
+.        if (yystate == 0 && yyM == 0) {
+t            if (yydebug != null) yydebug.shift(0, yyFinal);
+.            yystate = yyFinal;
+.            if (yytoken == NEEDS_TOKEN) {
+.                yytoken = yyLex.nextToken();
+t                if (yydebug != null) yydebug.lex(yystate, yytoken,yyName(yytoken), yyLex.value());
+.            }
+.            if (yytoken == 0) {
+t                if (yydebug != null) yydebug.accept(yyVal);
+.                return yyVal;
+.            }
+.            continue yyLoop;
+.        }
+.        yyn = yyGindex[yyM];
+.        if (yyn != 0 &&
+.            (yyn += yystate) >= 0 &&
+.            yyn < yyTable.length &&
+.            yyCheck[yyn] == yystate) {
+.            yystate = yyTable[yyn];
+.        } else {
+.            yystate = yyDgoto[yyM];
+.        }
+.
+t        if (yydebug != null) yydebug.shift(yystates[yytop].state, yystate);
+.        continue yyLoop;
+.      }
+.    }
+.  }
+.
+.// ACTION_BODIES
+ epilog			## text following second %%

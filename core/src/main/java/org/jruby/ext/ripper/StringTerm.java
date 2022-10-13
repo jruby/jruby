@@ -410,7 +410,8 @@ nonascii:       hasNonAscii = true; // Label for comparison with MRI only
             c = lexer.nextc();
             if (!isHexChar(c)) {
                 lexer.pushback(c);
-                lexer.compile_error("invalid hex escape");
+                lexer.parse_error("invalid hex escape");
+                lexer.flush();
                 break;
             }
             buffer.append('\\');
