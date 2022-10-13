@@ -1623,7 +1623,7 @@ public abstract class RubyParserBase {
         return new ArgumentNode(lexer.getRubySourceline(), name, getCurrentScope().addVariableThisScope(name.idString()));
     }
 
-    public ByteList formal_argument(ByteList identifier) {
+    public ByteList formal_argument(ByteList identifier, Object _unused) {
         lexer.validateFormalIdentifier(identifier);
 
         return shadowing_lvar(identifier);

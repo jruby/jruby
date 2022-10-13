@@ -6306,7 +6306,7 @@ states[737] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[738] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.formal_argument(yyVals[yyTop - count + 1].id);
+                    yyVal = p.formal_argument(yyVals[yyTop - count + 1].id, ((ByteList)yyVals[0+yyTop].value));
                     p.ordinalMaxNumParam();
   return yyVal;
 };
@@ -6347,7 +6347,7 @@ states[743] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[744] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    p.formal_argument(yyVals[yyTop - count + 1].id);
+                    p.formal_argument(yyVals[yyTop - count + 1].id, ((ByteList)yyVals[0+yyTop].value));
                     p.arg_var(yyVals[yyTop - count + 1].id);
                     p.setCurrentArg(p.get_id(((ByteList)yyVals[0+yyTop].value)));
                     p.ordinalMaxNumParam();

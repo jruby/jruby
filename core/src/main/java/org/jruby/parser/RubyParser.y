@@ -4376,7 +4376,7 @@ f_norm_arg      : f_bad_arg {
                     $$ = $1; // Not really reached
                 }
                 | tIDENTIFIER {
-                    $$ = p.formal_argument(@1.id);
+                    $$ = p.formal_argument(@1.id, $1);
                     p.ordinalMaxNumParam();
                 }
 
@@ -4416,7 +4416,7 @@ f_arg           : f_arg_item {
                 }
 
 f_label 	: tLABEL {
-                    p.formal_argument(@1.id);
+                    p.formal_argument(@1.id, $1);
                     p.arg_var(@1.id);
                     p.setCurrentArg(p.get_id($1));
                     p.ordinalMaxNumParam();

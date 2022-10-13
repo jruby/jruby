@@ -160,9 +160,24 @@ public class RipperParserBase {
     IRubyObject new_nil_at() {
         return context.nil;
     }
+
+    private IRubyObject param_error(String message, IRubyObject lhs) {
+        error();
+        return dispatch("on_param_error", lhs);
+    }
     
-    public IRubyObject formal_argument(ByteList identifier) {
-        return getRuntime().newSymbol(shadowing_lvar(identifier));
+    public IRubyObject formal_argument(ByteList identifier, IRubyObject lhs) {
+        RubyParserBase.IDType type = RubyParserBase.id_type(identifier);
+        switch(type) {
+            case Constant: return 	param_error("formal argument cannot be a constant", lhs);
+            case Instance: return 	param_error("formal argument cannot be an instance variable", lhs);
+            case Global: return 	param_error("formal argument cannot be a global variable", lhs);
+            case Class: return 	param_error("formal argument cannot be a class variable", lhs);
+        }
+
+        shadowing_lvar(identifier);
+
+        return lhs;
     }
     
     protected void getterIdentifierError(ByteList identifier) {
