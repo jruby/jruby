@@ -346,7 +346,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>rexml</artifactId>
-      <version>3.1.9.1</version>
+      <version>3.2.5</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -583,7 +583,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/racc-1.5.2*</include>
           <include>specifications/rake-ant-1.0.4*</include>
           <include>specifications/rdoc-6.1.2.1*</include>
-          <include>specifications/rexml-3.1.9.1*</include>
+          <include>specifications/rexml-3.2.5*</include>
           <include>specifications/rss-0.2.7*</include>
           <include>specifications/scanf-1.0.0*</include>
           <include>specifications/shell-0.7*</include>
@@ -622,7 +622,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/racc-1.5.2*/**/*</include>
           <include>gems/rake-ant-1.0.4*/**/*</include>
           <include>gems/rdoc-6.1.2.1*/**/*</include>
-          <include>gems/rexml-3.1.9.1*/**/*</include>
+          <include>gems/rexml-3.2.5*/**/*</include>
           <include>gems/rss-0.2.7*/**/*</include>
           <include>gems/scanf-1.0.0*/**/*</include>
           <include>gems/shell-0.7*/**/*</include>
@@ -661,7 +661,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/racc-1.5.2*</include>
           <include>cache/rake-ant-1.0.4*</include>
           <include>cache/rdoc-6.1.2.1*</include>
-          <include>cache/rexml-3.1.9.1*</include>
+          <include>cache/rexml-3.2.5*</include>
           <include>cache/rss-0.2.7*</include>
           <include>cache/scanf-1.0.0*</include>
           <include>cache/shell-0.7*</include>
