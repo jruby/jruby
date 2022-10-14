@@ -2417,6 +2417,7 @@ states[67] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
   return yyVal;
 };
 states[68] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+                    ((DefHolder)yyVals[0+yyTop].value).line = yyVals[yyTop - count + 1].start();
                     yyVal = ((DefHolder)yyVals[0+yyTop].value);
   return yyVal;
 };
@@ -2428,9 +2429,9 @@ states[69] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
 };
 states[70] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.setState(EXPR_ENDFN|EXPR_LABEL);
+                    ((DefHolder)yyVals[0+yyTop].value).line = yyVals[yyTop - count + 1].start();
                     yyVal = ((DefHolder)yyVals[0+yyTop].value);
                     /*%%%*/
-                    ((DefHolder)yyVals[0+yyTop].value).line = yyVals[yyTop - count + 1].start();
                     ((DefHolder)yyVals[0+yyTop].value).setSingleton(((Node)yyVals[-3+yyTop].value));
                     ((DefHolder)yyVals[0+yyTop].value).setDotOrColon(p.extractByteList(((ByteList)yyVals[-2+yyTop].value)));
                     /* Changed from MRI*/
@@ -6741,7 +6742,7 @@ states[817] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4723 "parse.y"
+					// line 4724 "parse.y"
 
 }
-					// line 14497 "-"
+					// line 14498 "-"

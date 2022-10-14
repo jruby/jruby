@@ -839,6 +839,7 @@ def_name        : fname {
 
 // [!null] - DefHolder
 defn_head       : k_def def_name {
+                    $2.line = @1.start();
                     $$ = $2;
                 }
 
@@ -849,9 +850,9 @@ defs_head       : k_def singleton dot_or_colon {
                     ctxt.in_argdef = true;
                 } def_name {
                     p.setState(EXPR_ENDFN|EXPR_LABEL);
+                    $5.line = @1.start();
                     $$ = $5;
                     /*%%%*/
-                    $5.line = @1.start();
                     $5.setSingleton($2);
                     $5.setDotOrColon(p.extractByteList($3));
                     // Changed from MRI
