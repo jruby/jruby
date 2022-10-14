@@ -1,1 +1,0 @@
-wip:Dir#read returns all directory entries even when encoding conversion will fail

@@ -43,6 +43,7 @@ import jnr.posix.POSIX;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.common.RubyWarnings;
@@ -735,16 +736,14 @@ public class RubyGlobal {
         private static final ByteList PATH_BYTES = new ByteList(new byte[] {'P','A','T','H'}, USASCIIEncoding.INSTANCE, false);
 
         // MRI: env_name_new
+        // TODO: mri 3.1 does not use env_name_new
         protected static IRubyObject newName(ThreadContext context, IRubyObject key, IRubyObject valueArg) {
             if (valueArg.isNil()) return context.nil;
 
             RubyString value = (RubyString) valueArg;
             EncodingService encodingService = context.runtime.getEncodingService();
-            Encoding encoding = isPATH(context, (RubyString) key) ?
-                    encodingService.getFileSystemEncoding() :
-                    encodingService.getLocaleEncoding();
 
-            return newString(context, value, encoding);
+            return newString(context, value);
         }
 
         protected static IRubyObject newString(ThreadContext context, RubyString value, Encoding encoding) {
@@ -757,7 +756,9 @@ public class RubyGlobal {
 
         // MRI: env_str_new
         protected static IRubyObject newString(ThreadContext context, RubyString value) {
-            return newString(context, value, context.runtime.getEncodingService().getLocaleEncoding());
+            // env_encoding(void)
+            Encoding encoding = Platform.IS_WINDOWS ? UTF8Encoding.INSTANCE : context.runtime.getEncodingService().getLocaleEncoding();
+            return newString(context, value, encoding);
         }
 
         // MRI: env_str_new2
