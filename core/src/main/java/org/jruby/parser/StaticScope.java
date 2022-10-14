@@ -678,6 +678,7 @@ public class StaticScope implements Serializable {
         dupe.setModule(cref);
         dupe.setFile(file);
         dupe.setSignature(signature);
+        dupe.firstKeywordIndex = firstKeywordIndex;
 
         return dupe;
     }

@@ -27,7 +27,6 @@
 package org.jruby.ir.interpreter;
 
 import org.jruby.RubyModule;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.internal.runtime.methods.ExitableReturn;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.*;
@@ -64,13 +63,7 @@ public class ExitableInterpreterEngine extends InterpreterEngine {
         int exitIPC = interpreterContext.getExitIPC();
         Object exception = null;
 
-        boolean acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
         boolean   ruby2Keywords = interpreterContext.isRuby2Keywords();
-
-        if (acceptsKeywordArgument) {
-            args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, interpreterContext.getRequiredArgsCount(), ruby2Keywords);
-        }
-        IRRuntimeHelpers.markAsRuby2KeywordArg(interpreterContext.getStaticScope(), args);
 
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
@@ -110,7 +103,8 @@ public class ExitableInterpreterEngine extends InterpreterEngine {
             try {
                 switch (operation.opClass) {
                     case ARG_OP:
-                        receiveArg(context, instr, operation, args, acceptsKeywordArgument, ruby2Keywords, currDynScope, temp, exception, blockArg);
+                        receiveArg(context, instr, operation, self, args, ruby2Keywords,
+                                currScope, currDynScope, temp, exception, blockArg);
                         break;
                     case CALL_OP:
                         if (profile) Profiler.updateCallSite(instr, interpreterContext.getScope(), scopeVersion);
@@ -147,7 +141,7 @@ public class ExitableInterpreterEngine extends InterpreterEngine {
                         }
                         break;
                     case OTHER_OP:
-                        processOtherOp(context, block, instr, operation, currDynScope, currScope, temp, self, acceptsKeywordArgument);
+                        processOtherOp(context, block, instr, operation, currDynScope, currScope, temp, self);
                         break;
                 }
 
@@ -175,7 +169,7 @@ public class ExitableInterpreterEngine extends InterpreterEngine {
     }
 
     protected static void processOtherOp(ThreadContext context, Block block, Instr instr, Operation operation, DynamicScope currDynScope,
-                                         StaticScope currScope, Object[] temp, IRubyObject self, boolean acceptKwargs) {
+                                         StaticScope currScope, Object[] temp, IRubyObject self) {
         switch(operation) {
             case RECV_SELF:
                 break;
@@ -198,7 +192,7 @@ public class ExitableInterpreterEngine extends InterpreterEngine {
             case RUNTIME_HELPER: {
                 RuntimeHelperCall rhc = (RuntimeHelperCall)instr;
                 setResult(temp, currDynScope, rhc.getResult(),
-                        rhc.callHelper(context, currScope, currDynScope, self, temp, block, acceptKwargs));
+                        rhc.callHelper(context, currScope, currDynScope, self, temp, block));
                 break;
             }
             case CHECK_FOR_LJE:

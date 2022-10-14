@@ -218,6 +218,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     javaMethodName,
                     desc1.isStatic,
                     desc1.anno.notImplemented(),
+                    implementationClass.getRuntime().isBootingCore(),
                     desc1.declaringClass,
                     desc1.name,
                     desc1.returnClass,
@@ -275,7 +276,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
                     ClassWriter cw = createJavaMethodCtor(generatedClassPath, superClassString, info.getParameterDesc());
 
-                    addAnnotatedMethodInvoker(cw, superClassString, descs);
+                    addAnnotatedMethodInvoker(cw, superClassString, descs, info.isForward());
 
                     c = endClass(cw, generatedClassName);
                 }
@@ -333,6 +334,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     javaMethodName,
                     desc.isStatic,
                     desc.anno.notImplemented(),
+                    implementationClass.getRuntime().isBootingCore(),
                     desc.declaringClass,
                     desc.name,
                     desc.returnClass,
@@ -707,20 +709,28 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
-    private void addAnnotatedMethodInvoker(ClassWriter cw, String superClass, List<JavaMethodDescriptor> descs) {
+    private void addAnnotatedMethodInvoker(ClassWriter cw, String superClass, List<JavaMethodDescriptor> descs, boolean forward) {
         for (JavaMethodDescriptor desc: descs) {
             int specificArity = desc.calculateSpecificCallArity();
 
             SkinnyMethodAdapter mv = beginMethod(cw, "call", specificArity, desc.hasBlock);
             mv.visitCode();
-            createAnnotatedMethodInvocation(desc, mv, superClass, specificArity, desc.hasBlock);
+            createAnnotatedMethodInvocation(desc, mv, superClass, specificArity, desc.hasBlock, forward);
             mv.end();
         }
     }
 
-    private void createAnnotatedMethodInvocation(JavaMethodDescriptor desc, SkinnyMethodAdapter method, String superClass, int specificArity, boolean block) {
+    private void createAnnotatedMethodInvocation(JavaMethodDescriptor desc, SkinnyMethodAdapter method,
+                                                 String superClass, int specificArity, boolean block, boolean forward) {
         String typePath = desc.declaringClassPath;
         String javaMethodName = desc.name;
+
+        // Normal Ruby method which will consume arguments.
+        if (!forward) {
+            method.aload(1);
+            method.ldc(0);
+            method.putfield("org/jruby/runtime/ThreadContext", "callInfo", "I");
+        }
 
         checkArity(desc.anno, method, specificArity);
 

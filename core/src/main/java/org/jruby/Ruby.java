@@ -998,7 +998,9 @@ public final class Ruby implements Constantizable {
                 System.err.println("found class " + scriptClass.getName() + " for " + filename);
             }
 
-            return Compiler.getScriptFromClass(scriptClass);
+            Script script = Compiler.getScriptFromClass(scriptClass);
+
+            script.setFilename(filename);
         } catch (ClassNotFoundException cnfe) {
             // ignore and proceed to parse and execute
             if (Options.COMPILE_CACHE_CLASSES_LOGGING.load()) {
@@ -1082,6 +1084,8 @@ public final class Ruby implements Constantizable {
                 if (Options.JIT_LOGGING.load()) {
                     LOG.info("successfully compiled: {}", scriptNode.getFile());
                 }
+            } catch (RaiseException e) {
+                throw e;
             } catch (Throwable e) {
                 if (Options.JIT_LOGGING.load()) {
                     if (Options.JIT_LOGGING_VERBOSE.load()) {
@@ -1203,6 +1207,8 @@ public final class Ruby implements Constantizable {
             if (scriptAndCode != null && Options.JIT_LOGGING.load()) {
                 LOG.info("done compiling target script: {}", scriptNode.getFile());
             }
+        } catch (RaiseException e) {
+            throw e;
         } catch (Exception e) {
             if (Options.JIT_LOGGING.load()) {
                 if (Options.JIT_LOGGING_VERBOSE.load()) {
@@ -2589,7 +2595,7 @@ public final class Ruby implements Constantizable {
 
         try {
             // Get IR from .ir file
-            return IRReader.load(getIRManager(), new IRReaderStream(getIRManager(), IRFileExpert.getIRPersistedFile(file), new ByteList(file.getBytes())));
+            return IRReader.load(getIRManager(), new IRReaderStream(getIRManager(), IRFileExpert.getIRPersistedFile(file), file));
         } catch (IOException e) {
             // FIXME: What is something actually throws IOException
             return (ParseResult) parseFileAndGetAST(in, file, scope, lineNumber, false);
@@ -2610,7 +2616,7 @@ public final class Ruby implements Constantizable {
         if (!RubyInstanceConfig.IR_READING) return (ParseResult) parseFileFromMainAndGetAST(in, file, scope);
 
         try {
-            return IRReader.load(getIRManager(), new IRReaderStream(getIRManager(), IRFileExpert.getIRPersistedFile(file), new ByteList(file.getBytes())));
+            return IRReader.load(getIRManager(), new IRReaderStream(getIRManager(), IRFileExpert.getIRPersistedFile(file), file));
         } catch (IOException ex) {
             if (config.isVerbose()) {
                 LOG.info(ex);
@@ -3678,11 +3684,11 @@ public final class Ruby implements Constantizable {
 
     public RaiseException newArgumentError(String name, int got, int min, int max) {
         if (min == max) {
-            return newRaiseException(getArgumentError(), str(this, "wrong number of arguments calling `", ids(this, name),  ("` (given " + got + ", expected " + min + ")")));
+            return newRaiseException(getArgumentError(), str(this, "`", ids(this, name), "': wrong number of arguments (given " + got + ", expected " + min + ")"));
         } else if (max == UNLIMITED_ARGUMENTS) {
-            return newRaiseException(getArgumentError(), str(this, "wrong number of arguments calling `", ids(this, name),  ("` (given " + got + ", expected " + min + "+)")));
+            return newRaiseException(getArgumentError(), str(this, "`", ids(this, name), "': wrong number of arguments (given " + got + ", expected " + min + "+)"));
         } else {
-            return newRaiseException(getArgumentError(), str(this, "wrong number of arguments calling `", ids(this, name),  ("` (given " + got + ", expected " + min + ".." + max + ")")));
+            return newRaiseException(getArgumentError(), str(this, "`", ids(this, name), "': wrong number of arguments (given " + got + ", expected " + min + ".." + max + ")"));
         }
     }
 
@@ -3909,6 +3915,10 @@ public final class Ruby implements Constantizable {
 
     public RaiseException newErrnoEAFNOSUPPORTError(String message) {
         return newRaiseException(getErrno().getClass("EAFNOSUPPORT"), message);
+    }
+
+    public RaiseException newErrnoETIMEDOUTError() {
+        return newRaiseException(getErrno().getClass("ETIMEDOUT"), "Broken pipe");
     }
 
     public RaiseException newErrnoFromLastPOSIXErrno() {
@@ -4213,16 +4223,14 @@ public final class Ruby implements Constantizable {
         return loadError;
     }
 
-    public RaiseException newFrozenError(String objectType) {
-        return newFrozenError(objectType, false);
+    public RaiseException newFrozenError(String objectType, IRubyObject receiver) {
+        return RubyFrozenError.newFrozenError(getCurrentContext(), newString("can't modify frozen " + objectType), receiver)
+                .toThrowable();
     }
 
-    public RaiseException newFrozenError(RubyModule type) {
-        return newRaiseException(getFrozenError(), str(this, "can't modify frozen ", types(this, type)));
-    }
-
-    public RaiseException newFrozenError(String objectType, boolean runtimeError) {
-        return newRaiseException(getFrozenError(), str(this, "can't modify frozen ", ids(this, objectType)));
+    public RaiseException newFrozenError(IRubyObject receiver) {
+        return RubyFrozenError.newFrozenError(getCurrentContext(), newString("can't modify frozen " + receiver.getType()), receiver)
+                .toThrowable();
     }
 
     public RaiseException newSystemStackError(String message) {
@@ -5790,7 +5798,7 @@ public final class Ruby implements Constantizable {
      *
      * Access must be synchronized.
      */
-    private final ConcurrentHashMap<FStringEqual, WeakReference<RubyString>> dedupMap = new ConcurrentHashMap<>();
+    private final Map<FStringEqual, WeakReference<RubyString>> dedupMap = new ConcurrentWeakHashMap<>();
 
     private static final AtomicInteger RUNTIME_NUMBER = new AtomicInteger(0);
     private final int runtimeNumber = RUNTIME_NUMBER.getAndIncrement();
@@ -5855,6 +5863,21 @@ public final class Ruby implements Constantizable {
     @Deprecated
     public RaiseException newErrnoEADDRFromBindException(BindException be) {
         return newErrnoEADDRFromBindException(be, null);
+    }
+
+    @Deprecated
+    public RaiseException newFrozenError(String objectType) {
+        return newFrozenError(objectType, null);
+    }
+
+    @Deprecated
+    public RaiseException newFrozenError(RubyModule type) {
+        return newRaiseException(getFrozenError(), str(this, "can't modify frozen ", types(this, type)));
+    }
+
+    @Deprecated
+    public RaiseException newFrozenError(String objectType, boolean runtimeError) {
+        return newRaiseException(getFrozenError(), str(this, "can't modify frozen ", ids(this, objectType)));
     }
 
 }

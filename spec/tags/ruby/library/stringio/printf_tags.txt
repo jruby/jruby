@@ -23,3 +23,6 @@ fails:StringIO#printf formatting flags * raises ArgumentError when is mixed with
 fails:StringIO#printf formatting width specifies the minimum number of characters that will be written to the result
 fails:StringIO#printf formatting precision float types controls the number of decimal places displayed in fraction part
 fails:StringIO#printf formatting reference by name %{name} style supports flags, width and precision
+fails:StringIO#printf formatting other formats c raises TypeError if argument is nil
+fails:StringIO#printf formatting other formats c raises TypeError if converting to String with to_str returns non-String
+fails:StringIO#printf formatting other formats c raises TypeError if converting to Integer with to_int returns non-Integer

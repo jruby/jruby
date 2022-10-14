@@ -71,7 +71,7 @@ public class RubySignalException extends RubyException {
         int argc = args.length;
 
         if (argc > 0) {
-            sig = TypeConverter.checkIntegerType(runtime, args[0], "to_int");
+            sig = TypeConverter.checkToInteger(runtime, args[0], "to_int");
 
             if (sig.isNil()) {
                 sig = args[0];

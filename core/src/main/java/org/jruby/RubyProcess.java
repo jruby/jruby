@@ -35,13 +35,15 @@ import jnr.constants.platform.RLIM;
 import jnr.constants.platform.RLIMIT;
 import jnr.constants.platform.Sysconf;
 import jnr.ffi.byref.IntByReference;
+import jnr.posix.Group;
+import jnr.posix.Passwd;
+import jnr.posix.POSIX;
 import jnr.posix.RLimit;
 import jnr.posix.Times;
 import jnr.posix.Timeval;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
-import jnr.posix.POSIX;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.platform.Platform;
@@ -49,6 +51,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 
@@ -56,8 +59,12 @@ import static org.jruby.runtime.Helpers.throwException;
 import static org.jruby.runtime.Helpers.tryThrow;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.builtin.Variable;
+import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.runtime.marshal.CoreObjectType;
+import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ShellLauncher;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.util.TypeConverter;
@@ -69,11 +76,13 @@ import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.util.WindowsFFI.kernel32;
 import static org.jruby.util.WindowsFFI.Kernel32.*;
 
+import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.management.ThreadMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.function.ToIntFunction;
 
 /**
@@ -85,9 +94,9 @@ public class RubyProcess {
     public static RubyModule createProcessModule(Ruby runtime) {
         RubyModule process = runtime.defineModule("Process");
 
-        // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here. Confirm. JRUBY-415
-        RubyClass process_status = process.defineClassUnder("Status", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        RubyClass process_status = process.defineClassUnder("Status", runtime.getObject(), RubyProcess::newAllocatedProcessStatus);
         runtime.setProcStatus(process_status);
+        process_status.setMarshal(PROCESS_STATUS_MARSHAL);
 
         RubyModule process_uid = process.defineModuleUnder("UID");
         runtime.setProcUID(process_uid);
@@ -153,10 +162,47 @@ public class RubyProcess {
     public static final String CLOCK_UNIT_FLOAT_SECOND = "float_second";
     public static final String CLOCK_UNIT_HERTZ = "hertz";
 
+    private static final long PROCESS_STATUS_UNINITIALIZED = -1;
+
+    private static final ObjectMarshal PROCESS_STATUS_MARSHAL = new ObjectMarshal() {
+        @Override
+        public void marshalTo(Ruby runtime, Object obj, RubyClass type,
+                              MarshalStream marshalStream) throws IOException {
+            RubyStatus status = (RubyStatus) obj;
+
+            marshalStream.registerLinkTarget(status);
+            List<Variable<Object>> attrs = status.getVariableList();
+
+            attrs.add(new VariableEntry("status", runtime.newFixnum(status.status)));
+            attrs.add(new VariableEntry("pid", runtime.newFixnum(status.pid)));
+
+            marshalStream.dumpVariables(attrs);
+        }
+
+        @Override
+        public Object unmarshalFrom(Ruby runtime, RubyClass type, UnmarshalStream input) throws IOException {
+            RubyStatus status = (RubyStatus) input.entry(type.allocate());
+
+            input.ivar(null, status, null);
+
+            RubyFixnum pstatus = (RubyFixnum) status.removeInternalVariable("status");
+            RubyFixnum pid = (RubyFixnum) status.removeInternalVariable("pid");
+
+            status.status = pstatus.getLongValue();
+            status.pid = pid.getLongValue();
+
+            return status;
+        }
+    };
+
+    public static RubyStatus newAllocatedProcessStatus(Ruby runtime, RubyClass metaClass) {
+        return new RubyStatus(runtime, metaClass, 0, PROCESS_STATUS_UNINITIALIZED);
+    }
+
     @JRubyClass(name="Process::Status")
     public static class RubyStatus extends RubyObject {
-        private final long status;
-        private final long pid;
+        private long status;
+        private long pid; // pid or -1 to indicate status was allocate()d and is uninitalized.
 
         private static final long EXIT_SUCCESS = 0L;
         public RubyStatus(Ruby runtime, RubyClass metaClass, long status, long pid) {
@@ -282,8 +328,16 @@ public class RubyProcess {
             return to_s(getRuntime());
         }
 
+        boolean unitialized() {
+            return pid == PROCESS_STATUS_UNINITIALIZED;
+        }
+
         public IRubyObject inspect(Ruby runtime) {
-            return runtime.newString(pst_message("#<" + getMetaClass().getName() + ": ", pid, status) + ">");
+            if (unitialized()) {
+                return runtime.newString("#<" + getMetaClass().getName() + ": uninitialized>");
+            } else {
+                return runtime.newString(pst_message("#<" + getMetaClass().getName() + ": ", pid, status) + ">");
+            }
         }
 
         // MRI: pst_message
@@ -1106,7 +1160,17 @@ public class RubyProcess {
         return egid_set(context.runtime, arg);
     }
     public static IRubyObject egid_set(Ruby runtime, IRubyObject arg) {
-        checkErrno(runtime, runtime.getPosix().setegid((int)arg.convertToInteger().getLongValue()));
+        int gid;
+        if (arg instanceof RubyInteger || arg.checkStringType().isNil()) {
+            gid = (int)arg.convertToInteger().getLongValue();
+        } else {
+            Group group = runtime.getPosix().getgrnam(arg.asJavaString());
+            if (group == null) {
+                throw runtime.newArgumentError("can't find group for " + arg.inspect());
+            }
+            gid = (int)group.getGID();
+        }
+        checkErrno(runtime, runtime.getPosix().setegid(gid));
         return RubyFixnum.zero(runtime);
     }
 
@@ -1253,7 +1317,17 @@ public class RubyProcess {
         return euid_set(context.runtime, arg);
     }
     public static IRubyObject euid_set(Ruby runtime, IRubyObject arg) {
-        checkErrno(runtime, runtime.getPosix().seteuid((int)arg.convertToInteger().getLongValue()));
+        int uid;
+        if (arg instanceof RubyInteger || arg.checkStringType().isNil()) {
+            uid = (int)arg.convertToInteger().getLongValue();
+        } else {
+            Passwd password = runtime.getPosix().getpwnam(arg.asJavaString());
+            if (password == null) {
+                throw runtime.newArgumentError("can't find user for " + arg.inspect());
+            }
+            uid = (int)password.getUID();
+        }
+        checkErrno(runtime, runtime.getPosix().seteuid(uid));
         return RubyFixnum.zero(runtime);
     }
 

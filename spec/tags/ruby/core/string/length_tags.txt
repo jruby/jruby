@@ -1,1 +1,0 @@
-wip:String#length adds 1 (and not 2) for a incomplete surrogate in UTF-16

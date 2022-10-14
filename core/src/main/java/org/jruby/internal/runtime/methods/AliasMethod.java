@@ -34,6 +34,7 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.AbstractIRMethod;
+import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
@@ -170,4 +171,8 @@ public class AliasMethod extends DynamicMethod {
         }
     }
 
+    @Override
+    public boolean isNative() {
+        return entry.method.isNative();
+    }
 }

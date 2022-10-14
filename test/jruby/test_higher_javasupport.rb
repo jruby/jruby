@@ -901,7 +901,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
     compare_to_ignore_case concat contentEquals content_equals endsWith
     ends_with equals equalsIgnoreCase equals_ignore_case getBytes getChars
     getClass get_bytes get_chars get_class hashCode hash_code indexOf
-    index_of intern java_class java_object java_object= lastIndexOf last_index_of
+    index_of intern java_class java_object lastIndexOf last_index_of
     length matches notify notifyAll notify_all regionMatches region_matches replace
     replaceAll replaceFirst replace_all replace_first split startsWith starts_with
     subSequence sub_sequence substring toCharArray toLowerCase
@@ -1276,15 +1276,6 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert !defined?(OuterClass::ProtectedInstanceInnerClass)
     assert !defined?(OuterClass::DefaultInstanceInnerClass)
     assert !defined?(OuterClass::PrivateInstanceInnerClass)
-  end
-
-  # Test the new "import" syntax
-  def test_import
-
-    assert_nothing_raised {
-      import java.nio.ByteBuffer
-      ByteBuffer.allocate(10)
-    }
   end
 
   def test_java_exception_handling
@@ -1871,7 +1862,7 @@ CLASSDEF
       fail 'expected to raise'
     rescue ArgumentError => e
       msg = e.message
-      assert msg.start_with?("wrong number of arguments calling `length` (given 1, expected 0)"), msg
+      assert msg.start_with?("`length': wrong number of arguments (given 1, expected 0)"), msg
     end
 
     begin # array proxy class
@@ -1982,6 +1973,20 @@ CLASSDEF
     def checked_perms; @checked end
 
     def checkPermission( perm ); @checked << perm end
+  end
+
+  def test_method_bind_edge_cases # GH-7244
+    # exercise JI hitting the edge case with CHM's CollectionView (implements Collection)
+    # implementing most methods that are also present in the java.util.Set interface
+    # CHM's keySet than returns a KeySetView (extends CollectionView implements Set)
+    java.util.concurrent.ConcurrentHashMap.new.keySet.toArray # was failing prior to bug fix
+    map = java.util.concurrent.ConcurrentHashMap.new(1 => '11')
+    assert_equal 1, map.keySet.size
+    key_set = map.key_set
+    assert_equal false, key_set.isEmpty
+    key_set.remove(1)
+    assert key_set.empty?
+    key_set.clear
   end
 
   private

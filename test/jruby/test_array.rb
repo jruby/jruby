@@ -28,7 +28,7 @@ class TestArray < Test::Unit::TestCase
   def test_shared_ary_slice
     assert_equal [4,5,6], [1,2,3,4,5,6].slice(1,5).slice!(2,3)
   end
-  
+
   # JRUBY-4206
   def test_map
     methods = %w{map map! collect collect!}

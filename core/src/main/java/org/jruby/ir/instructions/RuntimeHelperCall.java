@@ -1,7 +1,6 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.RubyArray;
-import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
@@ -28,7 +27,7 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
         HANDLE_PROPAGATED_BREAK, HANDLE_NONLOCAL_RETURN, HANDLE_BREAK_AND_RETURNS_IN_LAMBDA,
         IS_DEFINED_BACKREF, IS_DEFINED_NTH_REF, IS_DEFINED_GLOBAL, IS_DEFINED_INSTANCE_VAR,
         IS_DEFINED_CLASS_VAR, IS_DEFINED_SUPER, IS_DEFINED_METHOD, IS_DEFINED_CALL,
-        IS_DEFINED_CONSTANT_OR_METHOD, MERGE_KWARGS, IS_HASH_EMPTY, ARRAY_LENGTH, MARK_KWARG;
+        IS_DEFINED_CONSTANT_OR_METHOD, MERGE_KWARGS, IS_HASH_EMPTY, HASH_CHECK, ARRAY_LENGTH;
 
         public static Methods fromOrdinal(int value) {
             return value < 0 || value >= values().length ? null : values()[value];
@@ -92,15 +91,13 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
     }
 
     public Object callHelper(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self,
-                             Object[] temp, Block block, boolean acceptsKwargs) {
+                             Object[] temp, Block block) {
         Operand[] operands = getOperands();
 
         if (helperMethod == Methods.IS_DEFINED_BACKREF) {
             return IRRuntimeHelpers.isDefinedBackref(
                     context,
                     (IRubyObject) operands[0].retrieve(context, self, currScope, currDynScope, temp));
-        } else if (helperMethod == Methods.MARK_KWARG) {
-            return IRRuntimeHelpers.markAsKwarg(context, (IRubyObject) operands[0].retrieve(context, self, currScope, currDynScope, temp));
         }
 
         switch (helperMethod) {
@@ -163,9 +160,11 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
                         (IRubyObject) operands[3].retrieve(context, self, currScope, currDynScope, temp));
             case MERGE_KWARGS:
                 return IRRuntimeHelpers.mergeKeywordArguments(context, (IRubyObject) arg1,
-                        (IRubyObject) getArgs()[1].retrieve(context, self, currScope, currDynScope, temp), acceptsKwargs);
+                        (IRubyObject) getArgs()[1].retrieve(context, self, currScope, currDynScope, temp));
             case IS_HASH_EMPTY:
                 return IRRuntimeHelpers.isHashEmpty(context, (IRubyObject) arg1);
+            case HASH_CHECK:
+                return IRRuntimeHelpers.hashCheck(context, (IRubyObject) arg1);
             case ARRAY_LENGTH:
                 return IRRuntimeHelpers.arrayLength((RubyArray) arg1);
         }

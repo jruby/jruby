@@ -8,6 +8,7 @@ import org.jruby.java.invokers.ConstructorInvoker;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaSupport;
+import org.jruby.javasupport.JavaSupportImpl;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -106,7 +107,7 @@ public class MethodGatherer {
             staticNames = new HashMap<>(STATIC_RESERVED_NAMES);
             instanceNames = new HashMap<>(INSTANCE_RESERVED_NAMES);
         } else {
-            JavaSupport javaSupport = runtime.getJavaSupport();
+            JavaSupportImpl javaSupport = (JavaSupportImpl) runtime.getJavaSupport();
 
             Map<String, AssignedName> staticAssignedNames = javaSupport.getStaticAssignedNames().get(superClass);
             staticNames = new HashMap<>(staticAssignedNames.size() + STATIC_RESERVED_NAMES.size());
@@ -128,7 +129,7 @@ public class MethodGatherer {
 
         assignStaticAliases();
 
-        JavaSupport javaSupport = runtime.getJavaSupport();
+        JavaSupportImpl javaSupport = (JavaSupportImpl) runtime.getJavaSupport();
 
         javaSupport.getStaticAssignedNames().get(javaClass).putAll(staticNames);
 
@@ -168,8 +169,7 @@ public class MethodGatherer {
         // same name+signature as subclass methods (see JRUBY-3130)
         for ( Class<?> klass = javaClass; klass != null; klass = klass.getSuperclass() ) {
             // only add if target class is public or source class is public, and package is exported
-            if (Modules.isExported(klass, Java.class) &&
-                    (isPublic || Modifier.isPublic(klass.getModifiers()))) {
+            if ((isPublic || Modifier.isPublic(klass.getModifiers())) && Modules.isExported(klass, Java.class)) {
                 // for each class, scan declared methods for new signatures
                 try {
                     // add methods, including static if this is the actual class,
@@ -200,11 +200,9 @@ public class MethodGatherer {
         }
     }
 
-    private static boolean methodsAreEquivalent(Method child, Method parent) {
+    private static boolean sameTypesAndAccessModifier(Method child, Method parent) {
         int childModifiers, parentModifiers;
-
-        return parent.getDeclaringClass().isAssignableFrom(child.getDeclaringClass())
-                && parent.getReturnType().isAssignableFrom(child.getReturnType())
+        return parent.getReturnType().isAssignableFrom(child.getReturnType())
                 && child.isVarArgs() == parent.isVarArgs()
                 && Modifier.isPublic(childModifiers = child.getModifiers()) == Modifier.isPublic(parentModifiers = parent.getModifiers())
                 && Modifier.isProtected(childModifiers) == Modifier.isProtected(parentModifiers)
@@ -212,6 +210,36 @@ public class MethodGatherer {
                 && Arrays.equals(child.getParameterTypes(), parent.getParameterTypes());
     }
 
+    private static boolean methodsAreEquivalent(Method child, Method parent) {
+        if (parent.getDeclaringClass().isAssignableFrom(child.getDeclaringClass())) {
+            return sameTypesAndAccessModifier(child, parent); // most cases will end here
+        }
+
+        if (!sameTypesAndAccessModifier(child, parent)) return false;
+
+        // reaching here - methods look the same but types are not assignable
+        // this could happen in a real-world case such as ConcurrentHashMap#keySet:
+        //  - parent: java.util.concurrent.ConcurrentHashMap$CollectionView
+        //  - child: java.util.Set.size
+        //
+        // 1. class CollectionView<K,V,E> implements Collection
+        // 2. class KeySetView<K,V> extends CollectionView implements Set
+        //
+        // both Collection and Set (which extends Collection) include: int size()
+        // the base class that includes size impl (CollectionView) only implements Collection
+        // ( parent.getDeclaringClass().isAssignableFrom(child.getDeclaringClass()) == false )
+
+        final String methodName = parent.getName();
+        for (Class superClass : child.getDeclaringClass().getInterfaces()) {
+            for (Method superMethod : FILTERED_DECLARED_METHODS.get(superClass).instanceMethods) {
+                if (methodName.equals(superMethod.getName()) && sameTypesAndAccessModifier(superMethod, child)) {
+                    return true; // very same (child) method only re-declared
+                }
+            }
+        }
+
+        return false;
+    }
     private static void addNewMethods(
             final HashMap<String, List<Method>> nameMethods,
             final Method[] methods,
@@ -322,6 +350,7 @@ public class MethodGatherer {
         }
     };
 
+    @SuppressWarnings("deprecation")
     protected void installInnerClasses(final Class<?> javaClass, final RubyModule proxy) {
         // setup constants for public inner classes
         Class<?>[] classes = JavaClass.getDeclaredClasses(javaClass);
@@ -445,6 +474,7 @@ public class MethodGatherer {
         getStaticInstallers().forEach(($, value) -> value.install(proxy));
     }
 
+    @SuppressWarnings("deprecation")
     void installConstructors(Class<?> javaClass, final RubyModule proxy) {
         Constructor[] constructors = JavaClass.getConstructors(javaClass);
 
@@ -531,8 +561,8 @@ public class MethodGatherer {
         return instanceInstallers == Collections.EMPTY_MAP ? this.instanceInstallers = new HashMap() : instanceInstallers;
     }
 
+    @SuppressWarnings("deprecation")
     void setupFieldsAndConstants(Class<?> javaClass) {
-        boolean isInterface = javaClass.isInterface();
         Field[] fields = JavaClass.getDeclaredFields(javaClass);
 
         for (Field field : fields) {

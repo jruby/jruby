@@ -664,8 +664,6 @@ public class VariableTableManager {
 
         VariableAccessor newVariableAccessor = builder.apply(newIndex);
 
-        fieldVariables += 1;
-
         final String[] newVariableNames = new String[newIndex + 1];
         ArraySupport.copy(myVariableNames, 0, newVariableNames, 0, newIndex);
         newVariableNames[newIndex] = name;

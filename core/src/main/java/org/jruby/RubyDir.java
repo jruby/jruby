@@ -187,7 +187,7 @@ public class RubyDir extends RubyObject implements Closeable {
         ArrayList<ByteList> dirs = new ArrayList<>();
 
         for ( int i = 0; i < args.length; i++ ) {
-            dirs.addAll(Dir.push_glob(context.runtime, cwd, globArgumentAsByteList(context, args[i]), flags));
+            dirs.addAll(Dir.push_glob(context.runtime, cwd, globArgumentAsByteList(context, RubyFile.get_path(context, args[i])), flags));
         }
 
         return dirs;
@@ -301,16 +301,19 @@ public class RubyDir extends RubyObject implements Closeable {
     }
 
     private static ByteList globArgumentAsByteList(ThreadContext context, IRubyObject arg) {
-        if (!(arg instanceof RubyString) && arg.respondsTo("to_path")) arg = arg.callMethod(context, "to_path");
-
-        RubyString checked = StringSupport.checkEmbeddedNulls(context.runtime, arg, "nul-separated glob pattern is unsupported");
-
-        // FIXME: It is possible this can just be EncodingUtils.strCompatAndValid() but the spec says specifically it must be ascii compat which is more constrained than that method.
-        if (!checked.getEncoding().isAsciiCompatible()) {
-            throw context.runtime.newEncodingCompatibilityError("incompatible character encodings: " + checked.getEncoding() + " and " + USASCIIEncoding.INSTANCE);
+        RubyString str;
+        if (!(arg instanceof RubyString)) {
+            str = RubyFile.get_path(context, arg);
+        } else if (StringSupport.strNullCheck(arg)[0] == null) {
+            throw context.runtime.newArgumentError("nul-separated glob pattern is deprecated");
+        } else {
+            str = (RubyString) arg;
+            // FIXME: It is possible this can just be EncodingUtils.strCompatAndValid() but the spec says specifically it must be ascii compat which is more constrained than that method.
+            if (!str.getEncoding().isAsciiCompatible()) {
+                throw context.runtime.newEncodingCompatibilityError("incompatible character encodings: " + str.getEncoding() + " and " + USASCIIEncoding.INSTANCE);
+            }
         }
-
-        return filePathConvert(context, checked).getByteList();
+        return filePathConvert(context, str).getByteList();
     }
 
     /**
@@ -1140,7 +1143,7 @@ public class RubyDir extends RubyObject implements Closeable {
         final RubyString homeKey = RubyString.newStringShared(runtime, HOME);
         final RubyHash env = runtime.getENV();
 
-        if (env.has_key_p(homeKey).isFalse()) {
+        if (!env.hasKey(homeKey)) {
             return Optional.empty();
         } else {
             return Optional.of(env.op_aref(runtime.getCurrentContext(), homeKey).toString());

@@ -1611,6 +1611,7 @@ public class PopenExecutor {
             val = checkExecRedirectFd(runtime, val, false);
             param = val;
             eargp.fd_dup2 = checkExecRedirect1(runtime, eargp.fd_dup2, key, param);
+            return;
         }
         throw runtime.newArgumentError("wrong exec redirect action");
     }

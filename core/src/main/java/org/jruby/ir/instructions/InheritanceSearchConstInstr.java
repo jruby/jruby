@@ -68,7 +68,6 @@ public class InheritanceSearchConstInstr extends OneOperandResultBaseInstr imple
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(getCurrentModule());
         e.encode(getName());
     }
 

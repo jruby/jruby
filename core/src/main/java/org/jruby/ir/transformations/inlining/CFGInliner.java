@@ -293,7 +293,7 @@ public class CFGInliner {
         cfg.addEdge(failurePathBB, afterInlineBB, CFG.EdgeType.REGULAR);
 
         // Inline any closure argument passed into the call.
-        Operand closureArg = call.getClosureArg(null);
+        Operand closureArg = call.getClosureArg(NullBlock.INSTANCE);
         List<Tuple<BasicBlock, YieldInstr>> yieldSites = ii.getYieldSites();
         if (closureArg != null && !yieldSites.isEmpty()) {
             // FIXME: Do we care if we have too many yields?

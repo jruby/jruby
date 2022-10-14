@@ -1,3 +1,0 @@
-wip:Queue#initialize adds all elements of the passed Enumerable to self
-wip:Queue#initialize uses #to_a on the provided Enumerable
-wip:Queue#initialize raises if the provided Enumerable does not respond to #to_a

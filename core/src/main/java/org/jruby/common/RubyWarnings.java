@@ -59,7 +59,9 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
     public static RubyModule createWarningModule(Ruby runtime) {
         categories.add(Category.EXPERIMENTAL);
-        categories.remove(Category.DEPRECATED);
+
+        // At time this is created globals/runtime has not setup warnings/verbosity in runtime yet.
+        if (!runtime.getInstanceConfig().isVerbose()) categories.remove(Category.DEPRECATED);
 
         RubyModule warning = runtime.defineModule("Warning");
 

@@ -17,23 +17,21 @@ end
 default_gems = [
     # treat RGs update special:
     # - we do not want bin/update_rubygems or bin/gem overrides
-    ['rubygems-update', '3.3.3', { bin: false, require_paths: ['lib'] }],
+    ['rubygems-update', '3.3.13', { bin: false, require_paths: ['lib'] }],
     ['abbrev', '0.1.0'],
     ['base64', '0.1.1'],
     ['benchmark', '0.2.0'],
     # https://github.com/ruby/bigdecimal/issues/169
     # ['bigdecimal', '3.1.1'],
-    ['bundler', '2.3.3'],
-    # https://github.com/ruby/cgi/pull/9
-    # ['cgi', '0.3.1'],
-    ['cgi', '0.2.0'],
-    ['csv', '3.1.9'],
+    ['bundler', '2.3.13'],
+    ['cgi', '0.3.3'],
+    ['csv', '3.2.5'],
     # https://github.com/ruby/date/issues/48
     # ['date', '3.2.2'],
     ['debug', '0.2.1'],
     ['delegate', '0.2.0'],
     ['did_you_mean', '1.6.1'],
-    ['digest', '3.1.0'], 
+    ['digest', '3.1.0'],
     ['drb', '2.1.0'],
     ['english', '0.7.1'],
     ['erb', '2.2.3'],
@@ -52,19 +50,17 @@ default_gems = [
     ['io-console', '0.5.11'],
     # https://github.com/ruby/io-nonblock/issues/4
     # ['io-nonblock', '0.1.0'],
-    ['io-wait', '0.2.2.pre1'],
-    ['ipaddr', '1.2.3'],
+    ['io-wait', '0.2.3'],
+    ['ipaddr', '1.2.4'],
     ['irb', '1.4.1'],
     ['jar-dependencies', '0.4.1'],
     ['jruby-readline', '1.3.7'],
-    ['jruby-openssl', '0.12.2'],
+    ['jruby-openssl', '0.13.0'],
     ['json', '2.6.1'],
-    ['logger', '1.5.0'],
+    ['logger', '1.5.1'],
     ['mutex_m', '0.1.1'],
-    # Depends on io-wait via net-protocol
-    # ['net-http', '0.2.0'],
-    # Depends on io-wait, https://github.com/ruby/io-wait/pull/2
-    # ['net-protocol', '0.1.1'],
+    ['net-http', '0.2.2'],
+    ['net-protocol', '0.1.1'],
     # Partial implementation in JRuby, unsure whether this is important
     # ['nkf', '0.1.1'],
     ['observer', '0.1.1'],
@@ -75,13 +71,13 @@ default_gems = [
     # ['open-uri', '0.2.0'],
     ['open-uri', '0.1.0'],
     ['optparse', '0.2.0'],
-    ['ostruct', '0.5.2'],
+    ['ostruct', '0.5.5'],
     # https://github.com/ruby/pathname/issues/17
     # ['pathname', '0.2.0'],
     ['pp', '0.3.0'],
     ['prettyprint', '0.1.1'],
     ['pstore', '0.1.1'],
-    ['psych', '4.0.3'],
+    ['psych', '4.0.5'],
     ['racc', '1.6.0'],
     ['rake-ant', '1.0.5'],
     ['rdoc', '6.4.0'],
@@ -100,10 +96,8 @@ default_gems = [
     # ['set', '1.0.2'],
     ['shellwords', '0.1.0'],
     ['singleton', '0.1.1'],
-    # https://github.com/ruby/stringio/pull/21
-    # ['stringio', '3.0.1'],
-    # https://github.com/ruby/strscan/pull/25
-    # ['strscan', '3.0.1'],
+    ['stringio', '3.0.2'],
+    ['strscan', '3.0.4'],
     # https://github.com/ruby/syslog/issues/1
     # ['syslog', '0.1.0'],
     # https://github.com/ruby/tempfile/issues/7
@@ -112,7 +106,7 @@ default_gems = [
     # ['time', '0.2.0'],
     ['time', '0.1.0'],
     # https://github.com/ruby/timeout/issues/11
-    # ['timeout', '0.2.0'],
+    ['timeout', '0.3.0'],
     # https://github.com/ruby/tmpdir/issues/13
     # ['tmpdir', '0.1.2'],
     ['tsort', '0.1.0'],
@@ -131,15 +125,10 @@ bundled_gems = [
     # ['debug', '1.4.0'],
     ['matrix', '0.4.2'],
     ['minitest', '5.15.0'],
-    # Depends on io-wait via net-protocol
-    # ['net-ftp', '0.1.3'],
-    # Depends on io-wait via net-protocol
-    # ['net-imap', '0.2.2'],
-    # Depends on io-wait via net-protocol
-    # ['net-pop', '0.1.1'],
-    # Depends on io-wait via net-protocol
-    # ['net-smtp', '0.3.1'],
-    # Depends on io-wait via net-protocol
+    ['net-ftp', '0.1.3'],
+    ['net-imap', '0.2.2'],
+    ['net-pop', '0.1.1'],
+    ['net-smtp', '0.3.1'],
     ['prime', '0.1.2'],
     ['power_assert', '2.0.1'],
     ['rake', '${rake.version}'],
@@ -343,7 +332,7 @@ project 'JRuby Lib Setup' do
 
         # copy bin files if the gem has any
         copy_gem_executables.call(spec, gem_home) if options[:bin]
-        
+
         # TODO: try avoiding these binstub of gems - should use a full gem location
         spec.executables.each do |f|
           bin = Dir.glob(File.join( gems, "#{gem_name}*", spec.bindir ))[0]

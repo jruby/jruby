@@ -120,7 +120,7 @@ public class RipperParserBase {
 
     public IRubyObject assignableIdentifier(IRubyObject value) {
         String ident = lexer.getIdent().intern();
-        getCurrentScope().assign(lexer.getRubySourceline(), context.runtime.newSymbol(lexer.getIdent()), null);
+        getCurrentScope().assign(lexer.getRubySourceline(), context.runtime.newSymbol(lexer.getIdent(), lexer.getEncoding()), null);
         return value;
     }
 

@@ -229,7 +229,7 @@ public class Option extends RubyObject {
         SocketOption option = SocketOption.SO_LINGER;
         int coercedVonoff;
 
-        if (!TypeConverter.checkIntegerType(context, vonoff).isNil()) {
+        if (!TypeConverter.checkToInteger(context, vonoff).isNil()) {
             coercedVonoff = vonoff.convertToInteger().getIntValue();
         } else {
             coercedVonoff = vonoff.isTrue() ? 1 : 0;

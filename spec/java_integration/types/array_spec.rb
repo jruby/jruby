@@ -281,6 +281,9 @@ describe "A Java primitive Array of type" do
 
       arr = Java::char[2].new; arr[1] = 'ō' # null char + multi-byte char
       expect(arr.inspect).to eql "#<Java::char[2]: ['\u0000', 'ō']>"
+
+      arr = ''.to_java.to_char_array
+      expect(arr.inspect).to eql "#<Java::char[0]: []>"
     end
 
     it 'handles equality to another array' do
@@ -1187,9 +1190,10 @@ describe "A Ruby class implementing an interface returning a Java Object[]" do
         return a.to_java
       end
     end
-    expect(ArrayReturningInterfaceConsumer.new.eat(Bar.new)).not_to eq(nil)
-    expect(ArrayReturningInterfaceConsumer.new.eat(Bar.new).java_object.class.name).to eq('Java::JavaArray')
-    expect(ArrayReturningInterfaceConsumer.new.eat(Bar.new).java_object.class).to eq(Java::JavaArray)
+
+    obj = ArrayReturningInterfaceConsumer.new.eat(Bar.new)
+    expect( obj ).not_to be nil
+    expect( obj.java_object ).to be_a(Java::JavaArray) # ArrayJavaProxy (compat)
   end
 end
 

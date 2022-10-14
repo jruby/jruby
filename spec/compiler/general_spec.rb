@@ -54,7 +54,7 @@ module PersistenceSpecUtils
     writer = org.jruby.ir.persistence.IRWriterStream.new(baos)
     org.jruby.ir.persistence.IRWriter.persist(writer, method)
 
-    reader = org.jruby.ir.persistence.IRReaderStream.new(manager, baos.to_byte_array, org.jruby.util.ByteList.new(filename.to_java.getBytes))
+    reader = org.jruby.ir.persistence.IRReaderStream.new(manager, baos.to_byte_array, filename.to_java)
     method = org.jruby.ir.persistence.IRReader.load(manager, reader)
 
     # interpret
@@ -779,24 +779,24 @@ modes.each do |mode|
 
     it "assigns the result of a terminated loop to LHS variable" do
       # variable assignment of various types from loop results
-      run("a = while true; break 1; end; a") {|result| expect(result).to eq 1 }
-      run("@a = while true; break 1; end; @a") {|result| expect(result).to eq 1 }
-      run("@@a = while true; break 1; end; @@a") {|result| expect(result).to eq 1 }
-      run("$a = while true; break 1; end; $a") {|result| expect(result).to eq 1 }
-      run("a = until false; break 1; end; a") {|result| expect(result).to eq 1 }
-      run("@a = until false; break 1; end; @a") {|result| expect(result).to eq 1 }
-      run("@@a = until false; break 1; end; @@a") {|result| expect(result).to eq 1 }
-      run("$a = until false; break 1; end; $a") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; a = while true; break 1; end; a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; @a = while true; break 1; end; @a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; @@a = while true; break 1; end; @@a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; $a = while true; break 1; end; $a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; a = until false; break 1; end; a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; @a = until false; break 1; end; @a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; @@a = until false; break 1; end; @@a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; $a = until false; break 1; end; $a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
 
       # same assignments but loop is within a begin
-      run("a = begin; while true; break 1; end; end; a") {|result| expect(result).to eq 1 }
-      run("@a = begin; while true; break 1; end; end; @a") {|result| expect(result).to eq 1 }
-      run("@@a = begin; while true; break 1; end; end; @@a") {|result| expect(result).to eq 1 }
-      run("$a = begin; while true; break 1; end; end; $a") {|result| expect(result).to eq 1 }
-      run("a = begin; until false; break 1; end; end; a") {|result| expect(result).to eq 1 }
-      run("@a = begin; until false; break 1; end; end; @a") {|result| expect(result).to eq 1 }
-      run("@@a = begin; until false; break 1; end; end; @@a") {|result| expect(result).to eq 1 }
-      run("$a = begin; until false; break 1; end; end; $a") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; a = begin; while true; break 1; end; end; a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; @a = begin; while true; break 1; end; end; @a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; @@a = begin; while true; break 1; end; end; @@a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; $a = begin; while true; break 1; end; end; $a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; a = begin; until false; break 1; end; end; a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; @a = begin; until false; break 1; end; end; @a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; @@a = begin; until false; break 1; end; end; @@a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; $a = begin; until false; break 1; end; end; $a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
 
       # other contexts that require while to preserve stack
       run("1 + while true; break 1; end") {|result| expect(result).to eq 2 }
@@ -1136,29 +1136,6 @@ modes.each do |mode|
       end
     end
 
-    it "handles circular optional argument assignment" do
-      begin
-        verbose = $VERBOSE
-        $VERBOSE = nil
-
-        run('def foo(a = a, b = b, c = c); [a.inspect, b.inspect, c.inspect]; end; foo') do |x|
-          expect(x).to eq(["nil", "nil", "nil"])
-        end
-        run('def foo; yield; end; foo {|a = a, b = b, c = c|; [a.inspect, b.inspect, c.inspect]}') do |x|
-          expect(x).to eq(["nil", "nil", "nil"])
-        end
-
-        run('def foo(a: a, b: b, c: c); [a.inspect, b.inspect, c.inspect]; end; foo') do |x|
-          expect(x).to eq(["nil", "nil", "nil"])
-        end
-        run('def foo; yield; end; foo {|a: a, b: b, c: c|; [a.inspect, b.inspect, c.inspect]}') do |x|
-          expect(x).to eq(["nil", "nil", "nil"])
-        end
-      ensure
-        $VERBOSE = verbose
-      end
-    end
-
     it "combines optional args and zsuper properly" do
       begin
         verbose = $VERBOSE
@@ -1371,6 +1348,11 @@ modes.each do |mode|
       run('javafx') {|x| expect(x).to eq(javafx)}
       run('org') {|x| expect(x).to eq(org)}
       run('com') {|x| expect(x).to eq(com)}
+    end
+
+    # See jruby/jruby#7246, test must loop twice to hit optimized dispatch
+    it "dispatches to Java using a block to implement an interface" do
+      run('ary = []; 2.times { java.util.ArrayList.new([1]).forEach { |e| ary << e } }; ary') {|ary| ary.should == [1, 1]}
     end
   end
 end

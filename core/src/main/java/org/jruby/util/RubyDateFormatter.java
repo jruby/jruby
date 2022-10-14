@@ -52,7 +52,6 @@ import org.jruby.RubyTime;
 import org.jruby.lexer.StrftimeLexer;
 import org.jruby.runtime.ThreadContext;
 
-import static org.jruby.ext.stringio.StringIO.NEWLINE;
 import static org.jruby.util.CommonByteLists.*;
 import static org.jruby.util.RubyDateFormatter.FieldType.*;
 
@@ -366,7 +365,7 @@ public class RubyDateFormatter {
                         addToPattern("e-");
                         if (!dateLibrary)
                             addToken(Token.formatter(new RubyTimeOutputFormatter(CARET, 0)));
-                        addToPattern("b-Y");
+                        addToPattern("^b-Y");
                         break;
                     case 'Z':
                         if (dateLibrary) {
@@ -431,6 +430,8 @@ public class RubyDateFormatter {
         final ByteList output = new ByteList(27, patternEncoding); // Typical length produced by logger by default
         final ByteList tmp = new ByteList(48);
 
+        boolean toUpper = false;
+
         for (int ti = 0; ti < compiledPatternLength; ti++) {
             Token token = compiledPattern[ti];
             CharSequence data = null;
@@ -444,6 +445,10 @@ public class RubyDateFormatter {
                     continue; // go to next token
                 case FORMAT_STRING:
                     data = (ByteList) token.getData();
+                    if ("^".equals(data.toString())) {
+                        toUpper = true;
+                        continue;
+                    }
                     break;
                 case FORMAT_WEEK_LONG:
                     // This is GROSS, but Java API's aren't ISO 8601 compliant at all
@@ -604,7 +609,12 @@ public class RubyDateFormatter {
                 if (data == null) {
                     formatter.format(output, value, type);
                 } else {
-                    formatter.format(output, data);
+                    if (toUpper) {
+                        formatter.format(output, data.toString().toUpperCase());
+                        toUpper = false;
+                    } else {
+                        formatter.format(output, data);
+                    }
                 }
             } catch (IndexOutOfBoundsException ioobe) {
                 throw runtime.newErrnoFromErrno(Errno.ERANGE, "strftime");

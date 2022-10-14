@@ -169,11 +169,6 @@ public class RubyGlobal {
         RubyInstanceConfig.Verbosity verbosity = runtime.getInstanceConfig().getVerbosity();
         runtime.defineVariable(new WarningGlobalVariable(runtime, "$-W", verbosity), GLOBAL);
 
-        final GlobalVariable kcodeGV;
-        kcodeGV = new NonEffectiveGlobalVariable(runtime, "$KCODE", runtime.getNil());
-
-        runtime.defineVariable(kcodeGV, GLOBAL);
-        runtime.defineVariable(new GlobalVariable.Copy(runtime, "$-K", kcodeGV), GLOBAL);
         IRubyObject defaultRS = runtime.newString(runtime.getInstanceConfig().getRecordSeparator());
         release.setFrozen(true);
         GlobalVariable rs = new StringGlobalVariable(runtime, "$/", defaultRS);
@@ -181,7 +176,7 @@ public class RubyGlobal {
         runtime.setRecordSeparatorVar(rs);
         globals.setDefaultSeparator(defaultRS);
         runtime.defineVariable(new StringGlobalVariable(runtime, "$\\", runtime.getNil()), GLOBAL);
-        runtime.defineVariable(new StringGlobalVariable(runtime, "$,", runtime.getNil()), GLOBAL);
+        runtime.defineVariable(new DeprecatedStringGlobalVariable(runtime, "$,", runtime.getNil()), GLOBAL);
 
         runtime.defineVariable(new LineNumberGlobalVariable(runtime, "$."), GLOBAL);
         runtime.defineVariable(new LastlineGlobalVariable(runtime, "$_"), FRAME);
@@ -216,7 +211,7 @@ public class RubyGlobal {
         runtime.defineVariable(new BacktraceGlobalVariable(runtime, "$@"), THREAD);
 
         initSTDIO(runtime, globals);
-
+        
         runtime.defineVariable(new LoadedFeatures(runtime, "$\""), GLOBAL);
         runtime.defineVariable(new LoadedFeatures(runtime, "$LOADED_FEATURES"), GLOBAL);
 
@@ -246,7 +241,7 @@ public class RubyGlobal {
         globals.defineReadonly("$-p",
                 new ValueAccessor(runtime.newBoolean(runtime.getInstanceConfig().isAssumePrinting())),
                 GLOBAL);
-        globals.defineReadonly("$-a",
+                globals.defineReadonly("$-a",
                 new ValueAccessor(runtime.newBoolean(runtime.getInstanceConfig().isSplit())),
                 GLOBAL);
         globals.defineReadonly("$-l",
@@ -255,6 +250,13 @@ public class RubyGlobal {
 
         // ARGF, $< object
         RubyArgsFile.initArgsFile(runtime);
+
+        String inplace = runtime.config.getInPlaceBackupExtension();
+        if (inplace != null) {
+            runtime.defineVariable(new ArgfGlobalVariable(runtime, "$-i", runtime.newString(inplace)), GLOBAL);
+        } else {
+            runtime.defineVariable(new ArgfGlobalVariable(runtime, "$-i", runtime.getNil()), GLOBAL);
+        }
 
         globals.alias("$-0", "$/");
 
@@ -746,7 +748,7 @@ public class RubyGlobal {
         }
 
         protected static IRubyObject newString(ThreadContext context, RubyString value, Encoding encoding) {
-            IRubyObject result = newExternalStringWithEncoding(context.runtime, value.getByteList(), encoding);
+            IRubyObject result = newExternalStringWithEncoding(context.runtime, value.strDup(context.runtime).getByteList(), encoding);
 
             result.setFrozen(true);
 
@@ -950,6 +952,37 @@ public class RubyGlobal {
                 throw runtime.newTypeError("value of " + name() + " must be a String");
             }
             return super.set(value);
+        }
+    }
+
+    public static class ArgfGlobalVariable extends GlobalVariable {
+        public ArgfGlobalVariable(Ruby runtime, String name, IRubyObject value) {
+            super(runtime, name, value);
+            set(value);
+        }
+
+        @Override
+        public IRubyObject set(IRubyObject value) {
+            RubyArgsFile.inplace_mode_set(runtime.getCurrentContext(), runtime.getArgsFile(), value);
+            if (value.isNil() || !value.isTrue()) {
+                runtime.getInstanceConfig().setInPlaceBackupExtension(null);
+            }
+            return super.set(value);
+        }
+    }
+
+    public static class DeprecatedStringGlobalVariable extends StringGlobalVariable {
+        public DeprecatedStringGlobalVariable(Ruby runtime, String name, IRubyObject value) {
+            super(runtime, name, value);
+        }
+
+        @Override
+        public IRubyObject set(IRubyObject value) {
+            IRubyObject result = super.set(value);
+
+            if (!value.isNil()) runtime.getWarnings().warnDeprecated(name);
+
+            return result;
         }
     }
 

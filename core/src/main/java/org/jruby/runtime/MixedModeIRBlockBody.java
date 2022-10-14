@@ -112,7 +112,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
     }
 
     @Override
-    protected IRubyObject commonYieldPath(ThreadContext context, Block block, Block.Type type, IRubyObject[] args, IRubyObject self, Block blockArg) {
+    protected IRubyObject commonYieldPath(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
         InterpreterContext ic = ensureInstrsReady();
 
         Binding binding = block.getBinding();

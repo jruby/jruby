@@ -31,6 +31,7 @@ package org.jruby.ext.fiber;
 import org.jruby.Ruby;
 import org.jruby.RubyThread;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.ext.fiber.ThreadFiber.FiberRequest;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -41,7 +42,7 @@ import java.util.concurrent.BlockingQueue;
  * A RubyThread-aware BlockingQueue wrapper used by Fiber for transferring values.
  */
 public class FiberQueue {
-    protected BlockingQueue<IRubyObject> queue;
+    protected BlockingQueue<FiberRequest> queue;
     protected final Ruby runtime;
 
     public FiberQueue(Ruby runtime) {
@@ -49,9 +50,9 @@ public class FiberQueue {
         this.queue = new ArrayBlockingQueue<>(1, false);
     }
 
-    final RubyThread.Task<FiberQueue, IRubyObject> takeTask = new RubyThread.Task<FiberQueue, IRubyObject>() {
+    final RubyThread.Task<FiberQueue, FiberRequest> takeTask = new RubyThread.Task<FiberQueue, FiberRequest>() {
         @Override
-        public IRubyObject run(ThreadContext context, FiberQueue queue) throws InterruptedException {
+        public FiberRequest run(ThreadContext context, FiberQueue queue) throws InterruptedException {
             return queue.getQueueSafe().take();
         }
 
@@ -74,8 +75,8 @@ public class FiberQueue {
         return queue == null;
     }
 
-    public BlockingQueue<IRubyObject> getQueueSafe() {
-        BlockingQueue<IRubyObject> queue = this.queue;
+    public BlockingQueue<FiberRequest> getQueueSafe() {
+        BlockingQueue<FiberRequest> queue = this.queue;
         checkShutdown();
         return queue;
     }
@@ -86,7 +87,7 @@ public class FiberQueue {
         }
     }
 
-    public IRubyObject pop(ThreadContext context) {
+    public FiberRequest pop(ThreadContext context) {
         try {
             return context.getThread().executeTaskBlocking(context, this, takeTask);
         } catch (InterruptedException ie) {
@@ -94,7 +95,7 @@ public class FiberQueue {
         }
     }
 
-    public void push(ThreadContext context, final IRubyObject arg) {
+    public void push(ThreadContext context, final FiberRequest arg) {
         checkShutdown();
         try {
             queue.put(arg);

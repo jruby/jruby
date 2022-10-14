@@ -33,6 +33,7 @@ import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
+import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
 import org.jruby.util.collections.IntHashMap;
 import org.jruby.util.log.Logger;
@@ -227,21 +228,6 @@ public class JVMVisitor extends IRVisitor {
             syntheticEndForStart.put(currentBlockStart, syntheticEnd);
         }
 
-        if (scope.receivesKeywordArgs()) {
-            // pre-frobnicate the args on the way in
-            m.loadContext();
-            m.loadArgs();
-            m.adapter.pushInt(staticScope.getSignature().required());
-            m.adapter.ldc(scope.isRuby2Keywords());
-            m.invokeIRHelper("frobnicateKwargsArgument", sig(IRubyObject[].class, ThreadContext.class, IRubyObject[].class, int.class, boolean.class));
-            m.storeArgs();
-        }
-
-        // FIXME: We would prefer a reference to live method vs staticscope.
-        m.adapter.aload(1);
-        m.loadArgs();
-        m.invokeIRHelper("markAsRuby2KeywordArg", sig(void.class, StaticScope.class, IRubyObject[].class));
-
         for (BasicBlock bb: bbs) {
             org.objectweb.asm.Label start = jvm.methodData().getLabel(bb.getLabel());
             Label rescueLabel = exceptionTable.get(bb);
@@ -326,7 +312,7 @@ public class JVMVisitor extends IRVisitor {
 
         // check arity
         org.jruby.runtime.Signature scopeSig = scope.getStaticScope().getSignature();
-        checkArity(scopeSig.required(), scopeSig.opt(), scopeSig.hasRest(), scopeSig.hasKwargs(), scopeSig.keyRest());
+        checkArity(scopeSig.required(), scopeSig.opt(), scopeSig.hasRest(), scopeSig.keyRest());
 
         // push leading args
         m.loadContext();
@@ -405,22 +391,22 @@ public class JVMVisitor extends IRVisitor {
                 jvm.cls(),
                 Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
                 "run",
-                sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, boolean.class), null, null);
+                sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class, boolean.class), null, null);
         method.start();
 
         // save self class
         method.aload(1);
         method.invokeinterface(p(IRubyObject.class), "getMetaClass", sig(RubyClass.class));
-        method.astore(3);
+        method.astore(4);
 
         // instantiate script scope
         registerScopeField(script, scopeField);
 
         // FIXME: duplicated from IRBytecodeAdapter6
         method.getstatic(clsName, scopeField, ci(StaticScope.class));
-        method.astore(4);
+        method.astore(5);
 
-        method.aload(4);
+        method.aload(5);
 
         org.objectweb.asm.Label after = new org.objectweb.asm.Label();
         method.ifnonnull(after);
@@ -428,22 +414,22 @@ public class JVMVisitor extends IRVisitor {
             method.ldc(staticScopeDescriptorMap.get(scopeField));
             method.aconst_null();
             method.invokestatic(p(Helpers.class), "restoreScope", sig(StaticScope.class, String.class, StaticScope.class));
-            method.astore(4);
+            method.astore(5);
 
             // set scope's module
-            method.aload(4);
+            method.aload(5);
             method.aload(0);
             method.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
             method.invokevirtual(p(Ruby.class), "getObject", sig(RubyClass.class));
             method.invokevirtual(p(StaticScope.class), "setModule", sig(void.class, RubyModule.class));
 
             // set scope's filename
-            method.aload(4);
-            method.ldc(script.getFile());
+            method.aload(5);
+            method.aload(2);
             method.invokevirtual(p(StaticScope.class), "setFile", sig(void.class, String.class));
 
             // wrapping logic for load
-            method.iload(2);
+            method.iload(3);
 
             org.objectweb.asm.Label nowrap = new org.objectweb.asm.Label();
             method.iffalse(nowrap);
@@ -451,29 +437,29 @@ public class JVMVisitor extends IRVisitor {
                 method.aload(0);
                 method.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
                 method.aload(1); // self
-                method.aload(4);
+                method.aload(5);
                 method.invokevirtual(p(Ruby.class), "setupWrappedToplevel", sig(StaticScope.class, IRubyObject.class, StaticScope.class));
-                method.astore(4); // update to new scope
+                method.astore(5); // update to new scope
 
                 // set scope's filename
-                method.aload(4);
-                method.ldc(script.getFile());
+                method.aload(5);
+                method.aload(2);
                 method.invokevirtual(p(StaticScope.class), "setFile", sig(void.class, String.class));
             }
             method.label(nowrap);
 
-            method.aload(4);
+            method.aload(5);
             method.putstatic(clsName, scopeField, ci(StaticScope.class));
         }
         method.label(after);
 
         // execute script method
         method.aload(0); // context
-        method.aload(4); // static scope
+        method.aload(5); // static scope
         method.aload(1); // self
         method.aconst_null(); // args
         method.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class)); // block
-        method.aload(3); // self class
+        method.aload(4); // self class
         method.aconst_null(); // call name
 
         method.invokestatic(clsName, scopeName, sig(signature.type().returnType(), signature.type().parameterArray()));
@@ -1089,14 +1075,13 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void BuildCompoundArrayInstr(BuildCompoundArrayInstr instr) {
+        jvmMethod().loadContext();
+        visit(instr.getAppendingArg());
+        visit(instr.getAppendedArg());
         if (instr.isArgsPush()) {
-            visit(instr.getAppendingArg());
-            visit(instr.getAppendedArg());
-            jvmMethod().invokeHelper("argsPush", RubyArray.class, IRubyObject.class, IRubyObject.class);
+            jvmAdapter().ldc(instr.usesKeywordRest());
+            jvmMethod().invokeHelper("argsPush", RubyArray.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, boolean.class);
         } else {
-            jvmMethod().loadContext();
-            visit(instr.getAppendingArg());
-            visit(instr.getAppendedArg());
             jvmMethod().invokeHelper("argsCat", RubyArray.class, ThreadContext.class, IRubyObject.class, IRubyObject.class);
         }
         jvmStoreLocal(instr.getResult());
@@ -1222,6 +1207,10 @@ public class JVMVisitor extends IRVisitor {
             }
         }
 
+        m.loadContext();
+        m.adapter.ldc(call.getFlags());
+        m.invokeIRHelper("setCallInfo", sig(void.class, ThreadContext.class, int.class));
+
         switch (call.getCallType()) {
             case FUNCTIONAL:
             case VARIABLE:
@@ -1256,20 +1245,34 @@ public class JVMVisitor extends IRVisitor {
         if (jvm.methodData().specificArity >= 0) {
             // no arity check in specific arity path
         } else {
-            checkArity(checkarityinstr.required, checkarityinstr.opt, checkarityinstr.rest, checkarityinstr.receivesKeywords, checkarityinstr.restKey);
+            checkArity(checkarityinstr.getKeywords(), checkarityinstr.required, checkarityinstr.opt, checkarityinstr.rest, checkarityinstr.restKey);
         }
     }
 
-    private void checkArity(int required, int opt, boolean rest, boolean receivesKeywords, int restKey) {
+    private void checkArity(int required, int opt, boolean rest, int restKey) {
         jvmMethod().loadContext();
         jvmMethod().loadStaticScope();
         jvmMethod().loadArgs();
+        jvmMethod().invokeIRHelper("undefined", sig(IRubyObject.class));
         jvmMethod().loadSelfBlock();
         jvmAdapter().invokedynamic(
                 "checkArity",
-                sig(void.class, ThreadContext.class, StaticScope.class, Object[].class, Block.class),
+                sig(void.class, ThreadContext.class, StaticScope.class, Object[].class, Object.class, Block.class),
                 Bootstrap.CHECK_ARITY,
-                required, opt, rest ? 1 : 0, receivesKeywords ? 1 : 0, restKey);
+                required, opt, rest ? 1 : 0, restKey);
+    }
+
+    private void checkArity(Operand keywords, int required, int opt, boolean rest, int restKey) {
+        jvmMethod().loadContext();
+        jvmMethod().loadStaticScope();
+        jvmMethod().loadArgs();
+        visit(keywords);
+        jvmMethod().loadSelfBlock();
+        jvmAdapter().invokedynamic(
+                "checkArity",
+                sig(void.class, ThreadContext.class, StaticScope.class, Object[].class, Object.class, Block.class),
+                Bootstrap.CHECK_ARITY,
+                required, opt, rest ? 1 : 0, restKey);
     }
 
     @Override
@@ -1287,7 +1290,7 @@ public class JVMVisitor extends IRVisitor {
         Operand[] args = classsuperinstr.getCallArgs();
         Operand definingModule = classsuperinstr.getDefiningModule();
         boolean[] splatMap = classsuperinstr.splatMap();
-        Operand closure = classsuperinstr.getClosureArg(null);
+        Operand closure = classsuperinstr.getClosureArg(NullBlock.INSTANCE);
 
         superCommon(name, classsuperinstr, args, definingModule, splatMap, closure);
     }
@@ -1548,10 +1551,12 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void GetClassVariableInstr(GetClassVariableInstr getclassvariableinstr) {
+        jvmMethod().loadContext();
+        jvmMethod().loadSelf();
         visit(getclassvariableinstr.getSource());
         jvmAdapter().checkcast(p(RubyModule.class));
         jvmAdapter().ldc(getclassvariableinstr.getId());
-        jvmAdapter().invokevirtual(p(RubyModule.class), "getClassVar", sig(IRubyObject.class, String.class));
+        jvmMethod().invokeIRHelper("getClassVariable", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class));
         jvmStoreLocal(getclassvariableinstr.getResult());
     }
 
@@ -1591,7 +1596,7 @@ public class JVMVisitor extends IRVisitor {
         Operand[] args = instancesuperinstr.getCallArgs();
         Operand definingModule = instancesuperinstr.getDefiningModule();
         boolean[] splatMap = instancesuperinstr.splatMap();
-        Operand closure = instancesuperinstr.getClosureArg(null);
+        Operand closure = instancesuperinstr.getClosureArg(NullBlock.INSTANCE);
 
         superCommon(name, instancesuperinstr, args, definingModule, splatMap, closure);
     }
@@ -1619,7 +1624,7 @@ public class JVMVisitor extends IRVisitor {
             visit(operand);
         }
 
-        boolean hasClosure = closure != null;
+        boolean hasClosure = closure != NullBlock.INSTANCE;
         boolean literalClosure = closure instanceof WrappedIRClosure;
         if (hasClosure) {
             m.loadContext();
@@ -1631,6 +1636,10 @@ public class JVMVisitor extends IRVisitor {
                 m.invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
             }
         }
+
+        m.loadContext();
+        m.adapter.ldc(instr.getFlags());
+        m.invokeIRHelper("setCallInfo", sig(void.class, ThreadContext.class, int.class));
 
         switch (operation) {
             case INSTANCE_SUPER:
@@ -2016,34 +2025,53 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void ReceiveKeywordsInstr(ReceiveKeywordsInstr instr) {
+        int argsLength = jvm.methodData().specificArity;
+        if (argsLength >= 0) {
+            if (argsLength > 0) {
+                jvmMethod().loadContext();
+                jvmMethod().loadStaticScope();
+                jvmAdapter().aload(3 + argsLength - 1); // 3 - 0-2 are not args // FIXME: This should get abstracted
+                jvmMethod().invokeIRHelper("receiveSpecificArityKeywords", sig(IRubyObject.class, ThreadContext.class, StaticScope.class, IRubyObject.class));
+                jvmAdapter().astore(3 + argsLength - 1); // 3 - 0-2 are not args // FIXME: This should get abstracted
+            }
+            jvmMethod().invokeIRHelper("undefined", sig(IRubyObject.class));
+        } else {
+            jvmMethod().loadContext();
+            jvmMethod().loadStaticScope();
+            jvmMethod().loadArgs();
+            jvmAdapter().ldc(instr.hasRestArg());
+            jvmAdapter().ldc(instr.acceptsKeywords());
+            jvmMethod().invokeIRHelper("receiveKeywords", sig(IRubyObject.class, ThreadContext.class, StaticScope.class, IRubyObject[].class, boolean.class, boolean.class));
+        }
+        jvmStoreLocal(instr.getResult());
+    }
+
+    @Override
     public void ReceiveKeywordArgInstr(ReceiveKeywordArgInstr instr) {
         jvmMethod().loadContext();
-        jvmMethod().loadArgs();
-        jvmAdapter().pushInt(instr.required);
+        visit(instr.getKeywords());
         jvmAdapter().ldc(instr.getId());
-        jvmAdapter().ldc(jvm.methodData().scope.receivesKeywordArgs());
-        jvmMethod().invokeIRHelper("receiveKeywordArg", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, int.class, String.class, boolean.class));
+        jvmMethod().invokeIRHelper("receiveKeywordArg", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class));
         jvmStoreLocal(instr.getResult());
     }
 
     @Override
     public void ReceiveKeywordRestArgInstr(ReceiveKeywordRestArgInstr instr) {
         jvmMethod().loadContext();
-        jvmMethod().loadArgs();
-        jvmAdapter().ldc(jvm.methodData().scope.receivesKeywordArgs());
-        jvmMethod().invokeIRHelper("receiveKeywordRestArg", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, boolean.class));
+        visit(instr.getKeywords());
+        jvmMethod().invokeIRHelper("receiveKeywordRestArg", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
         jvmStoreLocal(instr.getResult());
     }
 
     @Override
     public void ReceiveOptArgInstr(ReceiveOptArgInstr instr) {
-        jvmMethod().loadContext();
         jvmMethod().loadArgs();
+        visit(instr.getKeywords());
         jvmAdapter().pushInt(instr.requiredArgs);
         jvmAdapter().pushInt(instr.preArgs);
         jvmAdapter().pushInt(instr.getArgIndex());
-        jvmAdapter().ldc(jvm.methodData().scope.receivesKeywordArgs());
-        jvmMethod().invokeIRHelper("receiveOptArg", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, int.class, int.class, int.class, boolean.class));
+        jvmMethod().invokeIRHelper("receiveOptArg", sig(IRubyObject.class, IRubyObject[].class, IRubyObject.class, int.class, int.class, int.class));
         jvmStoreLocal(instr.getResult());
     }
 
@@ -2065,13 +2093,13 @@ public class JVMVisitor extends IRVisitor {
     public void ReceivePostReqdArgInstr(ReceivePostReqdArgInstr instr) {
         jvmMethod().loadContext();
         jvmMethod().loadArgs();
+        visit(instr.getKeywords());
         jvmAdapter().pushInt(instr.preReqdArgsCount);
         jvmAdapter().pushInt(instr.optArgsCount);
         jvmAdapter().pushBoolean(instr.restArg);
         jvmAdapter().pushInt(instr.postReqdArgsCount);
         jvmAdapter().pushInt(instr.getArgIndex());
-        jvmAdapter().ldc(jvm.methodData().scope.receivesKeywordArgs());
-        jvmMethod().invokeIRHelper("receivePostReqdArg", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, int.class, int.class, boolean.class, int.class, int.class, boolean.class));
+        jvmMethod().invokeIRHelper("receivePostReqdArg", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, IRubyObject.class, int.class, int.class, boolean.class, int.class, int.class));
         jvmStoreLocal(instr.getResult());
     }
 
@@ -2079,10 +2107,10 @@ public class JVMVisitor extends IRVisitor {
     public void ReceiveRestArgInstr(ReceiveRestArgInstr instr) {
         jvmMethod().loadContext();
         jvmMethod().loadArgs();
+        visit(instr.getKeywords());
         jvmAdapter().pushInt(instr.required);
         jvmAdapter().pushInt(instr.getArgIndex());
-        jvmAdapter().ldc(jvm.methodData().scope.receivesKeywordArgs());
-        jvmMethod().invokeIRHelper("receiveRestArg", sig(IRubyObject.class, ThreadContext.class, Object[].class, int.class, int.class, boolean.class));
+        jvmMethod().invokeIRHelper("receiveRestArg", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, IRubyObject.class, int.class, int.class));
         jvmStoreLocal(instr.getResult());
     }
 
@@ -2246,20 +2274,19 @@ public class JVMVisitor extends IRVisitor {
                 jvmMethod().loadContext();
                 visit(runtimehelpercall.getArgs()[0]);
                 visit(runtimehelpercall.getArgs()[1]);
-                jvmAdapter().ldc(jvm.methodData().scope.receivesKeywordArgs());
-                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "mergeKeywordArguments", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, boolean.class));
+                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "mergeKeywordArguments", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
+                jvmStoreLocal(runtimehelpercall.getResult());
+                break;
+            case HASH_CHECK:
+                jvmMethod().loadContext();
+                visit(runtimehelpercall.getArgs()[0]);
+                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "hashCheck", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
             case IS_HASH_EMPTY:
                 jvmMethod().loadContext();
                 visit(runtimehelpercall.getArgs()[0]);
                 jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isHashEmpty", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
-                jvmStoreLocal(runtimehelpercall.getResult());
-                break;
-            case MARK_KWARG:
-                jvmMethod().loadContext();
-                visit(runtimehelpercall.getArgs()[0]);
-                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "markAsKwarg", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
             default:
@@ -2420,7 +2447,7 @@ public class JVMVisitor extends IRVisitor {
         // this would be getDefiningModule but that is not used for unresolved super
         Operand definingModule = UndefinedValue.UNDEFINED;
         boolean[] splatMap = unresolvedsuperinstr.splatMap();
-        Operand closure = unresolvedsuperinstr.getClosureArg(null);
+        Operand closure = unresolvedsuperinstr.getClosureArg(NullBlock.INSTANCE);
 
         superCommon(name, unresolvedsuperinstr, args, definingModule, splatMap, closure);
     }
@@ -2464,7 +2491,7 @@ public class JVMVisitor extends IRVisitor {
         // this would be getDefiningModule but that is not used for unresolved super
         Operand definingModule = UndefinedValue.UNDEFINED;
         boolean[] splatMap = zsuperinstr.splatMap();
-        Operand closure = zsuperinstr.getClosureArg(null);
+        Operand closure = zsuperinstr.getClosureArg(NullBlock.INSTANCE);
 
         superCommon(name, zsuperinstr, args, definingModule, splatMap, closure);
     }
@@ -2593,7 +2620,9 @@ public class JVMVisitor extends IRVisitor {
 
         jvmMethod().loadContext();
         if (kwargs) {
+            jvmMethod().loadContext();
             visit(pairs.get(0).getValue());
+            jvmMethod().invokeIRHelper("keywordRestOnHash", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
             jvmAdapter().checkcast(p(RubyHash.class));
 
             iter.next();
@@ -2612,6 +2641,12 @@ public class JVMVisitor extends IRVisitor {
         } else {
             jvmMethod().getDynamicValueCompiler().hash(pairs.size());
         }
+
+        if (kwargs || !hash.literal) {
+            jvmMethod().loadContext();
+            jvmMethod().invokeIRHelper("markKeywordOnCallInfo", sig(void.class, ThreadContext.class));
+        }
+
     }
 
     @Override

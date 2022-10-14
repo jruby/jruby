@@ -2073,7 +2073,7 @@ public class RubyBigDecimal extends RubyNumeric {
     public IRubyObject to_r(ThreadContext context) {
         checkFloatDomain();
 
-        int scale = value.scale();
+        int scale = Math.abs(value.scale());
         BigInteger numerator = value.scaleByPowerOfTen(scale).toBigInteger();
         BigInteger denominator = BigInteger.TEN.pow(scale);
 

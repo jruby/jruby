@@ -58,6 +58,7 @@ import org.jruby.ir.Interp;
 import org.jruby.ir.JIT;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
+import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.proxy.ReifiedJavaProxy;
@@ -82,8 +83,8 @@ import org.jcodings.unicode.UnicodeEncoding;
 
 import static org.jruby.RubyBasicObject.UNDEF;
 import static org.jruby.RubyBasicObject.getMetaClass;
-import static org.jruby.runtime.Visibility.PRIVATE;
-import static org.jruby.runtime.Visibility.PROTECTED;
+import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_EMPTY;
+import static org.jruby.runtime.Visibility.*;
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
 import static org.jruby.util.CodegenUtils.params;
 import static org.jruby.util.CodegenUtils.sig;
@@ -1067,7 +1068,7 @@ public class Helpers {
             return true;
         }
 
-        if (catchable instanceof RubyClass && JavaClass.isProxyType(context, (RubyClass) catchable)) {
+        if (catchable instanceof RubyClass && Java.isProxyType((RubyClass) catchable)) {
             if ( ex instanceof ReifiedJavaProxy ) { // Ruby sub-class of a Java exception type
                 final IRubyObject target = ((ReifiedJavaProxy) ex).___jruby$rubyObject();
                 if ( target != null ) return ((RubyClass) catchable).isInstance(target);
@@ -1435,7 +1436,7 @@ public class Helpers {
                 if (size == 0) {
                     handle = Binder.from(IRubyObject[].class).getStatic(LOOKUP, IRubyObject.class, "NULL_ARRAY");
                 } else {
-                    handle = MethodHandles.publicLookup().findStatic(Helpers.class, "constructObjectArray", MethodType.methodType(IRubyObject[].class, CodegenUtils.params(IRubyObject.class, size)));
+                    handle = MethodHandles.lookup().findStatic(Helpers.class, "constructObjectArray", MethodType.methodType(IRubyObject[].class, CodegenUtils.params(IRubyObject.class, size)));
                 }
 
                 constructObjectArrayHandles[size] = handle;
@@ -1505,7 +1506,7 @@ public class Helpers {
                 if (size == 0) {
                     handle = Binder.from(RubyString[].class).getStatic(LOOKUP, RubyString.class, "NULL_ARRAY");
                 } else {
-                    handle = MethodHandles.publicLookup().findStatic(Helpers.class, "constructRubyStringArray", MethodType.methodType(RubyString[].class, CodegenUtils.params(RubyString.class, size)));
+                    handle = MethodHandles.lookup().findStatic(Helpers.class, "constructRubyStringArray", MethodType.methodType(RubyString[].class, CodegenUtils.params(RubyString.class, size)));
                 }
 
                 constructRubyStringArrayHandles[size] = handle;
@@ -2114,7 +2115,7 @@ public class Helpers {
         }
 
         if (receiver.isFrozen()) {
-            throw runtime.newFrozenError("object");
+            throw runtime.newFrozenError("object", receiver);
         }
 
         RubyClass rubyClass = receiver.getSingletonClass();
@@ -2435,7 +2436,15 @@ public class Helpers {
     }
 
     @JIT
-    public static RubyArray argsPush(IRubyObject first, IRubyObject second) {
+    public static RubyArray argsPush(ThreadContext context, IRubyObject first, IRubyObject second, boolean usesKeywords) {
+        boolean isEmptyKeywordRest = usesKeywords && second instanceof RubyHash && ((RubyHash) second).isEmpty();
+
+        if (isEmptyKeywordRest) {
+            RubyArray array = (RubyArray) first.dup();
+            context.callInfo |= CALL_KEYWORD_EMPTY;
+            return array;
+        }
+
         return ((RubyArray)first.dup()).append(second);
     }
 

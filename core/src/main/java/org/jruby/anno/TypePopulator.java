@@ -49,17 +49,17 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public abstract class TypePopulator {
 
-    public static void populateMethod(JavaMethod javaMethod, int arity, String simpleName, boolean isStatic, boolean notImplemented) {
-        javaMethod.setIsBuiltin(true);
+    public static void populateMethod(JavaMethod javaMethod, int arity, String simpleName, boolean isStatic, boolean notImplemented, boolean core) {
+        javaMethod.setIsBuiltin(core);
         javaMethod.setSignature(Signature.fromArityValue(arity));
         javaMethod.setJavaName(simpleName);
         javaMethod.setSingleton(isStatic);
         javaMethod.setNotImplemented(notImplemented);
     }
     
-    public static void populateMethod(JavaMethod javaMethod, int arity, String simpleName, boolean isStatic, boolean notImplemented,
+    public static void populateMethod(JavaMethod javaMethod, int arity, String simpleName, boolean isStatic, boolean notImplemented, boolean core,
             Class nativeTarget, String nativeName, Class nativeReturn, Class[] nativeArguments) {
-        javaMethod.setIsBuiltin(true);
+        javaMethod.setIsBuiltin(core);
         javaMethod.setSignature(Signature.fromArityValue(arity));
         javaMethod.setJavaName(simpleName);
         javaMethod.setSingleton(isStatic);

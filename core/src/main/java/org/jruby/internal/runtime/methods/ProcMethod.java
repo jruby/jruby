@@ -36,7 +36,9 @@ import org.jruby.RubyProc;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
@@ -100,7 +102,10 @@ public class ProcMethod extends DynamicMethod implements PositionAware, IRMethod
 
     @Override
     public void setRuby2Keywords() {
-        // Should never be called
+        BlockBody body = proc.getBlock().getBody();
+        if (body.isRubyBlock()) {
+            ((IRBlockBody) body).getScope().setRuby2Keywords();
+        }
     }
 
     public RubyProc getProc() {

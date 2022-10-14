@@ -222,8 +222,8 @@ public class JavaEmbedUtils {
      * @param returnType is the type we want it to conform to
      * @return the result of the invocation.
      */
-    public static Object invokeMethod(Ruby runtime, Object receiver, String method, Object[] args,
-            Class returnType) {
+    @SuppressWarnings("deprecation")
+    public static Object invokeMethod(Ruby runtime, Object receiver, String method, Object[] args, Class returnType) {
         IRubyObject rubyReceiver = receiver != null ? JavaUtil.convertJavaToRuby(runtime, receiver) : runtime.getTopSelf();
 
         IRubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(runtime, args);
@@ -259,6 +259,7 @@ public class JavaEmbedUtils {
     /**
      *  Convert a java object to a Ruby object.
      */
+    @SuppressWarnings("deprecation")
     public static IRubyObject javaToRuby(Ruby runtime, Object value) {
         if (value instanceof IRubyObject) return (IRubyObject) value;
 

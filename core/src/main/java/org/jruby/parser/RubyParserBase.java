@@ -853,7 +853,7 @@ public abstract class RubyParserBase {
         if (node instanceof MultipleAsgnNode || node instanceof LocalAsgnNode || node instanceof DAsgnNode || node instanceof GlobalAsgnNode || node instanceof InstAsgnNode) {
             Node valueNode = ((AssignableNode) node).getValueNode();
             if (isStaticContent(valueNode)) {
-                warnings.warn(ID.ASSIGNMENT_IN_CONDITIONAL, lexer.getFile(), valueNode.getLine(), "found = in conditional, should be ==");
+                warnings.warn(ID.ASSIGNMENT_IN_CONDITIONAL, lexer.getFile(), valueNode.getLine(), "found `= literal' in conditional, should be ==");
             }
             return true;
         } 
@@ -879,7 +879,7 @@ public abstract class RubyParserBase {
             return true;
         }
 
-        return node instanceof ILiteralNode || node instanceof NilNode || node instanceof TrueNode || node instanceof FalseNode;
+        return node instanceof LiteralValue || node instanceof NilNode || node instanceof TrueNode || node instanceof FalseNode;
     }
     
     protected Node makeNullNil(Node node) {
@@ -1311,9 +1311,7 @@ public abstract class RubyParserBase {
     }
 
     public DStrNode createDStrNode(int line) {
-        DStrNode dstr = new DStrNode(line, lexer.getEncoding());
-        if (getConfiguration().isFrozenStringLiteral()) dstr.setFrozen(true);
-        return dstr;
+        return new DStrNode(line, lexer.getEncoding());
     }
 
     public KeyValuePair<Node, Node> createKeyValue(Node key, Node value) {
@@ -1474,7 +1472,7 @@ public abstract class RubyParserBase {
                     return argsNode;
                 }
                 int slot = getCurrentScope().addVariableThisScope(FWD_REST.toString());
-                rest = new UnnamedRestArgNode(line, null, slot);
+                rest = new UnnamedRestArgNode(line, symbolID(FWD_REST), slot);
             }
 
             argsNode = new ArgsNode(line, pre, optional, rest, post,
@@ -1717,7 +1715,14 @@ public abstract class RubyParserBase {
             return new ArgsCatNode(pushNode.getLine(), pushNode.getFirstNode(),
                     new ArrayNode(body.getLine(), body).add(node2));
         }
-
+        if (node1 instanceof ArgsCatNode) {
+            ArgsCatNode pushNode = (ArgsCatNode) node1;
+            Node body = pushNode.getSecondNode();
+            if (body instanceof ListNode) {
+                ((ListNode) body).add(node2);
+                return node1;
+            }
+        }
         return new ArgsPushNode(position(node1, node2), node1, node2);
     }
 
@@ -2009,13 +2014,13 @@ public abstract class RubyParserBase {
 
     public Node new_args_forward_call(int line, Node leadingArgs) {
         RubySymbol splatName = symbolID(FWD_REST);
-        int splatLoc = getCurrentScope().exists(splatName.idString());
+        int splatLoc = getCurrentScope().isDefined(splatName.idString());
         Node splatNode = new SplatNode(line, new LocalVarNode(line, splatLoc, splatName));
         RubySymbol kwRestName = symbolID(FWD_KWREST);
-        int kwRestLoc = getCurrentScope().exists(kwRestName.idString());
+        int kwRestLoc = getCurrentScope().isDefined(kwRestName.idString());
         Node restNode = new LocalVarNode(line, kwRestLoc, kwRestName);
         RubySymbol blockName = symbolID(FWD_BLOCK);
-        int blockLoc = getCurrentScope().exists(blockName.idString());
+        int blockLoc = getCurrentScope().isDefined(blockName.idString());
         BlockPassNode block = new BlockPassNode(line, new LocalVarNode(line, blockLoc, blockName));
         Node args = leadingArgs != null ? rest_arg_append(leadingArgs, splatNode) : splatNode;
         args = arg_append(args, new HashNode(line, new KeyValuePair<>(null, restNode)));

@@ -38,6 +38,7 @@ import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.DelegatingDynamicMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.IRMethodArgs;
+import org.jruby.internal.runtime.methods.PartialDelegatingMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
@@ -50,6 +51,10 @@ import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
+
+import java.util.List;
+
+import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
 
 /** 
  * The RubyMethod class represents a RubyMethod object.
@@ -110,24 +115,34 @@ public class RubyMethod extends AbstractRubyMethod {
     /** Call the method.
      * 
      */
-    @JRubyMethod(name = {"call", "[]"})
+    @JRubyMethod(name = {"call", "[]"}, forward = true)
     public IRubyObject call(ThreadContext context, Block block) {
         return method.call(context, receiver, sourceModule, methodName, block);
     }
-    @JRubyMethod(name = {"call", "[]"})
+    @JRubyMethod(name = {"call", "[]"}, forward = true)
     public IRubyObject call(ThreadContext context, IRubyObject arg, Block block) {
+        arg = dupIfKeywordRestAtCallsite(context, arg);
+
         return method.call(context, receiver, sourceModule, methodName, arg, block);
     }
-    @JRubyMethod(name = {"call", "[]"})
+    @JRubyMethod(name = {"call", "[]"}, forward = true)
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        arg1 = dupIfKeywordRestAtCallsite(context, arg1);
+
         return method.call(context, receiver, sourceModule, methodName, arg0, arg1, block);
     }
-    @JRubyMethod(name = {"call", "[]"})
+    @JRubyMethod(name = {"call", "[]"}, forward = true)
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        arg2 = dupIfKeywordRestAtCallsite(context, arg2);
+
         return method.call(context, receiver, sourceModule, methodName, arg0, arg1, arg2, block);
     }
-    @JRubyMethod(name = {"call", "[]"}, rest = true)
+    @JRubyMethod(name = {"call", "[]"}, rest = true, forward = true)
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
+        if (args.length > 0) {
+            args[args.length - 1] = dupIfKeywordRestAtCallsite(context, args[args.length - 1]);
+        }
+
         return method.call(context, receiver, sourceModule, methodName, args, block);
     }
 
@@ -225,8 +240,10 @@ public class RubyMethod extends AbstractRubyMethod {
         body = new MethodBlockBody(runtime.getStaticScopeFactory().getDummyScope(), signature, entry, argsDesc,
                 receiver, originModule, originName, getFilename(), line == -1 ? -1 : line - 1);
         Block b = MethodBlockBody.createMethodBlock(body);
-        
-        return RubyProc.newProc(runtime, b, Block.Type.LAMBDA);
+
+        RubyProc proc = RubyProc.newProc(runtime, b, Block.Type.LAMBDA);
+        proc.setFromMethod();
+        return proc;
     }
 
     @JRubyMethod
@@ -253,8 +270,7 @@ public class RubyMethod extends AbstractRubyMethod {
 
         if (method instanceof AliasMethod || method instanceof DelegatingDynamicMethod) {
             definedClass = method.getRealMethod().getDefinedClass();
-        }
-        else {
+        } else {
             definedClass = method.getDefinedClass();
         }
 
@@ -277,24 +293,46 @@ public class RubyMethod extends AbstractRubyMethod {
                 sharp = ".";
             }
         } else {
-            str.catString(mklass.getName());
+            if (receiver instanceof RubyClass) {
+                str.catString("#<");
+                str.cat(mklass.rubyName());
+                str.catString(":");
+                str.cat(((RubyClass) receiver).rubyName());
+                str.catString(">");
+            } else {
+                str.cat(mklass.rubyName());
+            }
             if (definedClass != mklass) {
                 str.catString("(");
-                str.catString(definedClass.getName());
+                str.cat(definedClass.rubyName());
                 str.catString(")");
             }
         }
         str.catString(sharp);
-        str.catString(this.methodName);
+        str.cat(runtime.newSymbol(this.methodName).asString());
         if (!methodName.equals(method.getName())) {
             str.catString("(");
-            str.catString(method.getRealMethod().getName());
+            str.cat(runtime.newSymbol(method.getRealMethod().getName()).asString());
             str.catString(")");
         }
         if (method.isNotImplemented()) {
             str.catString(" (not-implemented)");
         }
-        str.catString("()");
+
+        str.catString("(");
+        ArgumentDescriptor[] descriptors = Helpers.methodToArgumentDescriptors(method);
+        if (descriptors.length > 0) {
+            RubyString desc = descriptors[0].asParameterName(context);
+
+            str.cat(desc);
+            for (int i = 1; i < descriptors.length; i++) {
+                desc = descriptors[i].asParameterName(context);
+
+                str.catString(", ");
+                str.cat(desc);
+            }
+        }
+        str.catString(")");
         String fileName = getFilename();
         if (fileName != null) { // Only Ruby Methods will have this info.
             str.catString(" ");
@@ -352,7 +390,18 @@ public class RubyMethod extends AbstractRubyMethod {
 
     @JRubyMethod
     public IRubyObject super_method(ThreadContext context) {
-        return super_method(context, receiver, sourceModule.getSuperClass());
+        RubyModule superClass = null;
+        if (method instanceof PartialDelegatingMethod || method instanceof AliasMethod) {
+            RubyModule definedClass = method.getRealMethod().getDefinedClass();
+            RubyModule module = sourceModule.findImplementer(definedClass);
+
+            if (module != null) {
+                superClass = module.getSuperClass();
+            }
+        } else {
+            superClass = sourceModule.getSuperClass();
+        }
+        return super_method(context, receiver, superClass);
     }
 
     @JRubyMethod

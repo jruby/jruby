@@ -193,3 +193,4 @@ fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET a
 fails:Addrinfo#initialize using separate arguments for a Unix socket returns an Addrinfo with the correct unix path
 fails:Addrinfo#initialize using separate arguments for a Unix socket returns an Addrinfo with the correct protocol family
 fails:Addrinfo#initialize using separate arguments for a Unix socket returns an Addrinfo with the correct address family
+fails:Addrinfo#initialize with a sockaddr string with a family and socket type returns the specified socket type

@@ -51,17 +51,19 @@ public class RubyRunnable implements ThreadedRunnable {
     private final Ruby runtime;
     private final RubyProc proc;
     private final IRubyObject[] arguments;
+    private final int callInfo;
     private final RubyThread rubyThread;
 
     private Thread javaThread;
     private static boolean warnedAboutTC = false;
 
-    public RubyRunnable(RubyThread rubyThread, IRubyObject[] args, Block currentBlock) {
+    public RubyRunnable(RubyThread rubyThread, IRubyObject[] args, Block currentBlock, int callInfo) {
         this.rubyThread = rubyThread;
         this.runtime = rubyThread.getRuntime();
 
         proc = runtime.newProc(Block.Type.THREAD, currentBlock);
         this.arguments = args;
+        this.callInfo = callInfo;
     }
 
     @Deprecated
@@ -77,6 +79,7 @@ public class RubyRunnable implements ThreadedRunnable {
     public void run() {
         javaThread = Thread.currentThread();
         ThreadContext context = runtime.getThreadService().registerNewThread(rubyThread);
+        context.callInfo = callInfo;
 
         // set thread context JRuby classloader here, for Ruby-owned thread
         ClassLoader oldContextClassLoader = null;

@@ -37,9 +37,11 @@ describe "Java static method names" do
                                       "getValues1",
                                       "get_values1",
                                       "setValues1",
+                                      "value_fs=",
                                       "set_values1")
 
     expect(class_methods).not_to have_strings_or_symbols("values1",
+                                          "valueFs=",
                                           "values1=")
   end
 
@@ -93,6 +95,7 @@ describe "Java instance method names" do
                                 "setValues2",
                                 "set_values2",
                                 "get_my_value",
+                                "value_f=",
                                 "my_value",
                                 "set_my_value",
                                 "my_value=",
@@ -104,6 +107,7 @@ describe "Java instance method names" do
 
     expect(members).not_to have_strings_or_symbols("values2",
                                     "values2=",
+                                    "valueF=",
                                     "get_myvalue",
                                     "set_myvalue",
                                     "myvalue=")

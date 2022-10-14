@@ -21,11 +21,8 @@ describe "String#delete_prefix" do
     r.should == s
   end
 
-  ruby_version_is ''...'2.7' do
-    it "taints resulting strings when other is tainted" do
-      'hello'.taint.delete_prefix('hell').should.tainted?
-      'hello'.taint.delete_prefix('').should.tainted?
-    end
+  it "does not remove partial bytes, only full characters" do
+    "\xe3\x81\x82".delete_prefix("\xe3").should == "\xe3\x81\x82"
   end
 
   it "doesn't set $~" do

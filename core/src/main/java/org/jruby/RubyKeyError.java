@@ -66,17 +66,17 @@ public class RubyKeyError extends RubyIndexError {
     }
 
     @JRubyMethod
+    public IRubyObject initialize(ThreadContext context) {
+        return context.nil;
+    }
+
+    @JRubyMethod
     public IRubyObject initialize(ThreadContext context, IRubyObject messageOrKwargs) {
         IRubyObject[] receiverKey = ArgsUtil.extractKeywordArgs(context, messageOrKwargs, VALID_KEYS);
 
         if (receiverKey == null) return initialize(context, messageOrKwargs, null);
 
         return initializeCommon(context, context.nil, receiverKey);
-    }
-
-    @JRubyMethod
-    public IRubyObject initialize(ThreadContext context) {
-        return context.nil;
     }
 
     @JRubyMethod

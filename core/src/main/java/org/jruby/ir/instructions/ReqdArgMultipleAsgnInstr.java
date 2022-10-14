@@ -22,14 +22,14 @@ public class ReqdArgMultipleAsgnInstr extends MultipleAsgnBase implements FixedA
     private final int preArgsCount;    // # of reqd args before rest-arg (-1 if we are fetching a pre-arg)
     private final int postArgsCount;   // # of reqd args after rest-arg  (-1 if we are fetching a pre-arg)
 
-    public ReqdArgMultipleAsgnInstr(Variable result, Operand array, int preArgsCount, int postArgsCount, int index) {
+    public ReqdArgMultipleAsgnInstr(Variable result, Operand array, int index, int preArgsCount, int postArgsCount) {
         super(Operation.MASGN_REQD, result, array, index);
         this.preArgsCount = preArgsCount;
         this.postArgsCount = postArgsCount;
     }
 
     public ReqdArgMultipleAsgnInstr(Variable result, Operand array, int index) {
-        this(result, array, -1, -1, index);
+        this(result, array, index, -1, -1);
     }
 
     public int getPreArgsCount() { return preArgsCount; }
@@ -56,16 +56,14 @@ public class ReqdArgMultipleAsgnInstr extends MultipleAsgnBase implements FixedA
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new ReqdArgMultipleAsgnInstr(ii.getRenamedVariable(result), getArray().cloneForInlining(ii), preArgsCount, postArgsCount, index);
+        return new ReqdArgMultipleAsgnInstr(ii.getRenamedVariable(result), getArray().cloneForInlining(ii), index, preArgsCount, postArgsCount);
     }
 
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(getArray());
         e.encode(getPreArgsCount());
         e.encode(getPostArgsCount());
-        e.encode(getIndex());
     }
 
     public static ReqdArgMultipleAsgnInstr decode(IRReaderDecoder d) {

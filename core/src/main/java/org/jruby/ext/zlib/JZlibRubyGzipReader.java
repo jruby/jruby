@@ -332,7 +332,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
                 return runtime.newString(buf);
             }
 
-            return RubyString.newEmptyString(runtime);
+            return RubyString.newEmptyBinaryString(runtime);
         } catch (IOException ioe) {
             String m = ioe.getMessage();
 

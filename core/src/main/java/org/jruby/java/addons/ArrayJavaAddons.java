@@ -4,7 +4,8 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyFixnum;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.javasupport.JavaArray;
+import org.jruby.java.proxies.ArrayJavaProxy;
+import org.jruby.java.util.ArrayUtils;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -13,8 +14,9 @@ public class ArrayJavaAddons {
     @JRubyMethod(name = "copy_data")
     public static IRubyObject copy_data(final ThreadContext context,
         final IRubyObject fromRuby, final IRubyObject toJava, final IRubyObject fillValue) {
-        JavaArray javaArray = (JavaArray) toJava.dataGetStruct();
-        final int javaLength = javaArray.getLength();
+
+        ArrayJavaProxy javaArray = assertJavaArrayProxy(context, toJava);
+        final int javaLength = javaArray.length();
         final Class<?> targetType = javaArray.getComponentType();
 
         Object fillJavaObject = null;
@@ -27,16 +29,21 @@ public class ArrayJavaAddons {
             fillJavaObject = fromRuby.toJava(targetType);
         }
 
+        final Ruby runtime = context.runtime;
+        final Object array = javaArray.getObject();
         int i = 0;
         if ( rubyArray != null ) {
             final int rubyLength = rubyArray.getLength();
             for (; i < rubyLength && i < javaLength; i++) {
-                javaArray.setWithExceptionHandling(i, rubyArray.eltInternal(i).toJava(targetType));
+                Object javaObject = rubyArray.eltInternal(i).toJava(targetType);
+                ArrayUtils.setWithExceptionHandlingDirect(runtime, array, i, javaObject);
             }
         }
 
         if ( i < javaLength && fillJavaObject != null ) {
-            javaArray.fillWithExceptionHandling(i, javaLength, fillJavaObject);
+            for (; i < javaLength; i++) {
+                ArrayUtils.setWithExceptionHandlingDirect(runtime, array, i, fillJavaObject);
+            }
         }
 
         return toJava;
@@ -45,28 +52,25 @@ public class ArrayJavaAddons {
     @JRubyMethod(name = { "copy_data", "copy_data_simple" })
     public static IRubyObject copy_data(final ThreadContext context,
         IRubyObject fromRuby, IRubyObject toJava) {
-        JavaArray javaArray = (JavaArray) toJava.dataGetStruct();
+        ArrayJavaProxy javaArray = assertJavaArrayProxy(context, toJava);
         RubyArray rubyArray = (RubyArray) fromRuby;
 
-        copyDataToJavaArray(rubyArray, javaArray, 0);
+        copyDataToJavaArray(context, rubyArray, javaArray, 0);
 
         return toJava;
     }
 
-    @Deprecated // not used
-    public static void copyDataToJavaArray(final ThreadContext context,
-        final RubyArray rubyArray, final JavaArray javaArray) {
-        copyDataToJavaArray(rubyArray, javaArray, 0);
-    }
-
-    private static void copyDataToJavaArray(
-        final RubyArray rubyArray, final JavaArray javaArray, int offset) {
-        int length = javaArray.getLength();
+    private static void copyDataToJavaArray(final ThreadContext context,
+        final RubyArray rubyArray, final ArrayJavaProxy javaArray, int offset) {
+        int length = javaArray.length();
         if ( length > rubyArray.getLength() ) length = rubyArray.getLength();
 
+        final Ruby runtime = context.runtime;
+        final Object array = javaArray.getObject();
         final Class<?> targetType = javaArray.getComponentType();
         for ( int i = offset; i < length; i++ ) {
-            javaArray.setWithExceptionHandling(i, rubyArray.eltInternal(i).toJava(targetType));
+            Object javaObject = rubyArray.eltInternal(i).toJava(targetType);
+            ArrayUtils.setWithExceptionHandlingDirect(runtime, array, i, javaObject);
         }
     }
 
@@ -120,4 +124,12 @@ public class ArrayJavaAddons {
 
         return dims;
     }
+
+    private static ArrayJavaProxy assertJavaArrayProxy(final ThreadContext context, final IRubyObject java_array) {
+        if (java_array instanceof ArrayJavaProxy) {
+            return (ArrayJavaProxy) java_array;
+        }
+        throw context.runtime.newTypeError("expected a Java array, got " + java_array.inspect());
+    }
+
 }

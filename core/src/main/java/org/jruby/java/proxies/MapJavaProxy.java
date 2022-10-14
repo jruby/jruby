@@ -244,7 +244,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         }
 
         @Override
-        public <T> void visitAll(ThreadContext context, VisitorWithState visitor, T state) {
+        public <T> void visitAll(ThreadContext context, VisitorWithStateI visitor) {
             final Ruby runtime = getRuntime();
             // NOTE: this is here to make maps act similar to Hash-es which allow modifications while
             // iterating (meant from the same thread) ... thus we avoid iterating entrySet() directly
@@ -254,20 +254,29 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
             for ( Map.Entry entry : entries ) {
                 IRubyObject key = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getKey());
                 IRubyObject value = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getValue());
-                visitor.visit(context, this, key, value, index++, state);
+                visitor.visit(context, this, key, value, index++);
             }
         }
 
         @Override
-        public RubyBoolean has_key_p(IRubyObject key) {
-            final Object convertedKey = key.toJava(Object.class);
-            return getRuntime().newBoolean( mapDelegate().containsKey(convertedKey) );
+        public <T> void visitAll(ThreadContext context, VisitorWithState visitor, T state) {
+            visitAll(context,
+                    (ctx, self, key, value, index) -> visitor.visit(ctx, self, key, value, index, state));
+        }
+
+        @Override
+        public boolean hasKey(IRubyObject key) {
+            return mapDelegate().containsKey(key);
+        }
+
+        @Override
+        public RubyBoolean has_key_p(ThreadContext context, IRubyObject key) {
+            return mapDelegate().containsKey(key.toJava(Object.class)) ? context.tru : context.fals;
         }
 
         @Override
         public RubyBoolean has_value_p(ThreadContext context, IRubyObject val) {
-            final Object convertedVal = val.toJava(Object.class);
-            return getRuntime().newBoolean( mapDelegate().containsValue(convertedVal) );
+            return mapDelegate().containsValue(val.toJava(Object.class)) ? context.tru : context.fals;
         }
 
         @Override

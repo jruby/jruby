@@ -7,6 +7,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -30,7 +31,9 @@ public class GetClassVariableInstr extends GetInstr implements FixedArityInstr {
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        return ((RubyModule) getSource().retrieve(context, self, currScope, currDynScope, temp)).getClassVar(getId());
+        RubyModule module = (RubyModule) getSource().retrieve(context, self, currScope, currDynScope, temp);
+
+        return IRRuntimeHelpers.getClassVariable(context, self, module, getId());
     }
 
     @Override

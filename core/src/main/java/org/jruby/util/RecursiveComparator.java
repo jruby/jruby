@@ -5,6 +5,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.RubyHash;
 import org.jruby.RubyArray;
+import org.jruby.RubyStruct;
 import org.jruby.Ruby;
 import org.jruby.runtime.invokedynamic.MethodNames;
 
@@ -26,7 +27,8 @@ public class RecursiveComparator {
             Set<Pair> seen;
 
             if (a instanceof RubyHash && b instanceof RubyHash ||
-                a instanceof RubyArray && b instanceof RubyArray) {
+                a instanceof RubyArray && b instanceof RubyArray ||
+                a instanceof RubyStruct && b instanceof RubyStruct) {
 
                 RecursiveComparator.Pair pair = new RecursiveComparator.Pair(a, b);
 
@@ -50,6 +52,10 @@ public class RecursiveComparator {
             if (a instanceof RubyArray) {
                 RubyArray array = (RubyArray) a;
                 return array.compare(context, (CallSite) invokable, b);
+            }
+            if (a instanceof RubyStruct) {
+                RubyStruct struct = (RubyStruct) a;
+                return struct.compare(context, (CallSite) invokable, b);
             }
             return ((CallSite) invokable).call(context, a, a, b);
         }

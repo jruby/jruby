@@ -34,6 +34,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -42,9 +43,10 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 import org.jruby.util.TypeConverter;
 
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.function.BiFunction;
 
-import static org.jruby.ast.util.ArgsUtil.hasExceptionOption;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import static org.jruby.util.Numeric.*;
@@ -441,9 +443,20 @@ public class RubyComplex extends RubyNumeric {
      */
     @JRubyMethod(name = "convert", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject convert(ThreadContext context, IRubyObject recv, IRubyObject a1, IRubyObject a2) {
-        boolean raise = a2 != null ? hasExceptionOption(context, a2, true) : true;
+        Ruby runtime = context.runtime;
 
-        return convertCommon(context, recv, a1, a2, raise);
+        IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(runtime, a2, false);
+
+        if (maybeKwargs.isNil()) {
+            return convertCommon(context, recv, a1, a2, true);
+        }
+
+        IRubyObject exception = ArgsUtil.extractKeywordArg(context, "exception", (RubyHash) maybeKwargs);
+        if (exception instanceof RubyBoolean) {
+            return convertCommon(context, recv, a1, null, exception.isTrue());
+        }
+
+        throw runtime.newArgumentError("`Complex': expected true or false as exception: " + exception); 
     }
 
     /** nucomp_s_convert
@@ -454,17 +467,17 @@ public class RubyComplex extends RubyNumeric {
         Ruby runtime = context.runtime;
 
         IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(runtime, kwargs, false);
-        boolean raise;
 
         if (maybeKwargs.isNil()) {
             throw runtime.newArgumentError("convert", 3, 1, 2);
         }
 
         IRubyObject exception = ArgsUtil.extractKeywordArg(context, "exception", (RubyHash) maybeKwargs);
+        if (exception instanceof RubyBoolean) {
+            return convertCommon(context, recv, a1, a2, exception.isTrue());
+        }
 
-        raise = exception.isNil() ? true : exception.isTrue();
-
-        return convertCommon(context, recv, a1, a2, raise);
+        throw runtime.newArgumentError("`Complex': expected true or false as exception: " + exception); 
     }
 
     // MRI: nucomp_s_convert
@@ -967,7 +980,11 @@ public class RubyComplex extends RubyNumeric {
      */
     @JRubyMethod(name = "hash")
     public IRubyObject hash(ThreadContext context) {
-        return f_xor(context, invokedynamic(context, real, HASH), invokedynamic(context, image, HASH));
+        Ruby runtime = context.runtime;
+        long realHash = RubyNumeric.fix2long(invokedynamic(context, real, HASH));
+        long imageHash = RubyNumeric.fix2long(invokedynamic(context, image, HASH));
+        byte [] bytes = ByteBuffer.allocate(16).putLong(realHash).putLong(imageHash).array();
+        return RubyFixnum.newFixnum(runtime, Helpers.multAndMix(runtime.getHashSeedK0(), Arrays.hashCode(bytes)));
     }
 
     @Override
@@ -1061,7 +1078,7 @@ public class RubyComplex extends RubyNumeric {
     /** nucomp_marshal_dump
      * 
      */
-    @JRubyMethod(name = "marshal_dump")
+    @JRubyMethod(name = "marshal_dump", visibility = Visibility.PRIVATE)
     public IRubyObject marshal_dump(ThreadContext context) {
         RubyArray dump = context.runtime.newArray(real, image);
         if (hasVariables()) dump.syncVariables(this);

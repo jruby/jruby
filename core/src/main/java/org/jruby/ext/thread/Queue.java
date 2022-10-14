@@ -34,6 +34,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyMarshal;
@@ -47,6 +48,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
+import org.jruby.util.TypeConverter;
 
 /*
  * Written by Doug Lea with assistance from members of JCP JSR-166
@@ -266,6 +268,23 @@ public class Queue extends RubyObject implements DataType {
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context) {
         this.capacity = Integer.MAX_VALUE;
+        return this;
+    }
+
+    @JRubyMethod(visibility = Visibility.PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject items) {
+        this.capacity = Integer.MAX_VALUE;
+        Ruby runtime = context.runtime;
+        IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, items, runtime.getArray(), context.sites.TypeConverter.to_a_checked);
+        if (!tmp.isNil()) {
+            RubyArray array = (RubyArray)tmp;
+            for (int i = 0; i < array.getLength(); i++) {
+                push(context, array.eltOk(i));
+            }
+        } else {
+            throw runtime.newTypeError("can't convert " + items.getMetaClass() + " into Array");
+        }
+
         return this;
     }
 

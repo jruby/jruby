@@ -109,7 +109,7 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
     }
 
     @Override
-    protected IRubyObject commonYieldPath(ThreadContext context, Block block, Block.Type type, IRubyObject[] args, IRubyObject self, Block blockArg) {
+    protected IRubyObject commonYieldPath(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
         if (callCount >= 0) promoteToFullBuild(context);
 
         InterpreterContext ic = ensureInstrsReady();

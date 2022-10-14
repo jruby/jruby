@@ -280,18 +280,16 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
         return container.getProvider().getRuntime().getTopSelf();
     }
 
+    @SuppressWarnings("deprecation")
     private static IRubyObject[] convertArgs(final Ruby runtime, final Object[] args) {
-        if (args.length > 0) {
-            IRubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(runtime, args);
-            for (int i = 0; i < rubyArgs.length; i++) {
-                IRubyObject obj = rubyArgs[i];
-                if (obj instanceof JavaObject) {
-                    rubyArgs[i] = Java.wrap(runtime, obj);
-                }
+        IRubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(runtime, args);
+        for (int i = 0; i < rubyArgs.length; i++) {
+            IRubyObject obj = rubyArgs[i];
+            if (obj instanceof JavaObject) {
+                rubyArgs[i] = Java.wrap(runtime, obj);
             }
-            return rubyArgs;
         }
-        return IRubyObject.NULL_ARRAY;
+        return rubyArgs;
     }
 
 }

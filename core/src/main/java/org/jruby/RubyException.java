@@ -231,11 +231,36 @@ public class RubyException extends RubyObject {
         return RubyString.newString(context.runtime, TraceType.printFullMessage(context, this, opts));
     }
 
-    @JRubyMethod(optional = 2, visibility = PRIVATE)
-    public IRubyObject initialize(IRubyObject[] args, Block block) {
-        if ( args.length == 1 ) setMessage(args[0]);
+    @JRubyMethod(visibility = PRIVATE)
+    public IRubyObject initialize(ThreadContext context) {
         // cause filled in at RubyKernel#raise ... Exception.new does not fill-in cause!
         return this;
+    }
+
+    @JRubyMethod(visibility = PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject arg0) {
+        setMessage(arg0);
+        // cause filled in at RubyKernel#raise ... Exception.new does not fill-in cause!
+        return this;
+    }
+
+    @JRubyMethod(visibility = PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        // cause filled in at RubyKernel#raise ... Exception.new does not fill-in cause!
+        return this;
+    }
+
+    public IRubyObject initialize(IRubyObject[] args, Block block) {
+        switch (args.length) {
+            case 0:
+                return initialize(getRuntime().getCurrentContext());
+            case 1:
+                return initialize(getRuntime().getCurrentContext(), args[0]);
+            case 2:
+                return initialize(getRuntime().getCurrentContext(), args[0], args[1]);
+            default:
+                throw getRuntime().newArgumentError(args.length, 0, 2);
+        }
     }
 
     @JRubyMethod

@@ -415,6 +415,9 @@ public class RubyNumeric extends RubyObject {
      *          conversion failed.
      */
     public static IRubyObject str2inum(Ruby runtime, RubyString str, int base, boolean strict, boolean exception) {
+        if (!str.getEncoding().isAsciiCompatible()) {
+            throw runtime.newEncodingCompatibilityError("ASCII incompatible encoding: " + str.getEncoding());
+        }
         ByteList s = str.getByteList();
         return ConvertBytes.byteListToInum(runtime, s, base, strict, exception);
     }
@@ -516,30 +519,21 @@ public class RubyNumeric extends RubyObject {
         return callCoerced(context, site, other, false);
     }
 
-    // beneath are rewritten coercions that reflect MRI logic, the aboves are used only by RubyBigDecimal
-
-    /** coerce_body
-     *
-     */
-    protected final IRubyObject coerceBody(ThreadContext context, IRubyObject other) {
-        return sites(context).coerce.call(context, other, other, this);
-    }
-
     /** do_coerce
      *
      */
     protected final RubyArray doCoerce(ThreadContext context, IRubyObject other, boolean err) {
-        if (!sites(context).respond_to_coerce.respondsTo(context, other, other)) {
+        IRubyObject ary = getMetaClass(other).finvokeChecked(context, other, sites(context).coerce_checked, this);
+
+        if (ary == null) {
             if (err) {
                 coerceFailed(context, other);
             }
             return null;
         }
         final IRubyObject $ex = context.getErrorInfo();
-        final IRubyObject result;
 
-        result = coerceBody(context, other);
-        return coerceResult(context.runtime, result, err);
+        return coerceResult(context.runtime, ary, err);
     }
 
     private static RubyArray coerceResult(final Ruby runtime, final IRubyObject result, final boolean err) {
@@ -713,6 +707,10 @@ public class RubyNumeric extends RubyObject {
     @Override
     @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
     public IRubyObject initialize_copy(IRubyObject arg) {
+        if (arg == this) return arg; // It cannot init copy it will still work if it is itself...fun times.
+
+        checkFrozen();
+
         final Ruby runtime = metaClass.runtime;
         throw runtime.newTypeError(str(runtime, "can't copy ", types(runtime, getType())));
     }
@@ -1165,6 +1163,7 @@ public class RubyNumeric extends RubyObject {
         if (inf) {
             for (;; i += diff) {
                 block.yield(context, RubyFixnum.newFixnum(runtime, i));
+                context.pollThreadEvents();
             }
         } else {
             // We must avoid integer overflows in "i += step".
@@ -1174,6 +1173,7 @@ public class RubyNumeric extends RubyObject {
                 if (end > tov) tov = end;
                 for (; i >= tov; i += diff) {
                     block.yield(context, RubyFixnum.newFixnum(runtime, i));
+                    context.pollThreadEvents();
                 }
                 if (i >= end) {
                     block.yield(context, RubyFixnum.newFixnum(runtime, i));
@@ -1183,6 +1183,7 @@ public class RubyNumeric extends RubyObject {
                 if (end < tov) tov = end;
                 for (; i <= tov; i += diff) {
                     block.yield(context, RubyFixnum.newFixnum(runtime, i));
+                    context.pollThreadEvents();
                 }
                 if (i <= end) {
                     block.yield(context, RubyFixnum.newFixnum(runtime, i));
@@ -1206,12 +1207,14 @@ public class RubyNumeric extends RubyObject {
             RubyFloat value = RubyFloat.newFloat(runtime, beg);
             for (;;) {
                 block.yield(context, value);
+                context.pollThreadEvents();
             }
         } else {
             for (i=0; i<n; i++) {
                 double d = i*unit+beg;
                 if (unit >= 0 ? end < d : d < end) d = end;
                 block.yield(context, RubyFloat.newFloat(runtime, d));
+                context.pollThreadEvents();
             }
         }
     }
@@ -1222,12 +1225,14 @@ public class RubyNumeric extends RubyObject {
         if (inf) {
             for (;; i = sites(context).op_plus.call(context, i, i, step)) {
                 block.yield(context, i);
+                context.pollThreadEvents();
             }
         } else {
             CallSite cmpSite = desc ? sites(context).op_lt : sites(context).op_gt;
 
             for (; !cmpSite.call(context, i, i, to).isTrue(); i = sites(context).op_plus.call(context, i, i, step)) {
                 block.yield(context, i);
+                context.pollThreadEvents();
             }
         }
     }
@@ -1335,11 +1340,13 @@ public class RubyNumeric extends RubyObject {
                 /* if unit is infinity, i*unit+beg is NaN */
                 if (n > 0) {
                     block.yield(context, dbl2num(context.runtime, beg));
+                    context.pollThreadEvents();
                 }
             } else if (unit == 0) {
                 IRubyObject val = dbl2num(context.runtime, beg);
                 for (;;) {
                     block.yield(context, val);
+                    context.pollThreadEvents();
                 }
             } else {
                 for (long i=0; i < n; i++) {
@@ -1348,6 +1355,7 @@ public class RubyNumeric extends RubyObject {
                         d = end;
                     }
                     block.yield(context, dbl2num(context.runtime, d));
+                    context.pollThreadEvents();
                 }
             }
 
@@ -1618,7 +1626,7 @@ public class RubyNumeric extends RubyObject {
         }
 
         IRubyObject ret = ArgsUtil.extractKeywordArg(context, (RubyHash) arg, "freeze");
-        if (ret != null && !ret.isTrue()) throw context.runtime.newArgumentError("can't unfreeze " + getType());
+        if (ret == context.fals) throw context.runtime.newArgumentError("can't unfreeze " + getType());
 
         return this;
     }

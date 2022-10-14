@@ -35,15 +35,11 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
-import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.javasupport.Java;
-import org.jruby.javasupport.JavaClass;
-import org.jruby.javasupport.JavaObject;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-@JRubyClass(name="Java::JavaProxyClass")
 public class JavaProxyReflectionObject extends RubyObject {
 
     public JavaProxyReflectionObject(Ruby runtime, RubyClass metaClass) {
@@ -65,7 +61,7 @@ public class JavaProxyReflectionObject extends RubyObject {
     public RubyBoolean op_eqq(final ThreadContext context, IRubyObject obj) {
         if ( ! ( obj instanceof JavaProxyReflectionObject ) ) {
             final Object wrappedObj = obj.dataGetStruct();
-            if ( ! ( wrappedObj instanceof JavaObject ) ) {
+            if ( ! ( wrappedObj instanceof RubyObject ) ) { // JavaObject || JavaProxy
                 return context.fals;
             }
             obj = (IRubyObject) wrappedObj;
@@ -85,7 +81,7 @@ public class JavaProxyReflectionObject extends RubyObject {
 
         if ( ! ( obj instanceof JavaProxyReflectionObject ) ) {
             final Object wrappedObj = obj.dataGetStruct();
-            if ( ! ( wrappedObj instanceof JavaObject ) ) {
+            if ( ! ( wrappedObj instanceof RubyObject ) ) { // JavaObject || JavaProxy
                 return context.fals;
             }
             obj = (IRubyObject) wrappedObj;

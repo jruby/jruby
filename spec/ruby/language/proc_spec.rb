@@ -223,13 +223,7 @@ describe "A Proc" do
       @p = proc { |*a, **kw| [a, kw] }
     end
 
-    ruby_version_is ""..."2.7" do
-      it 'autosplats keyword arguments' do
-        @p.call([1, {a: 1}]).should == [[1], {a: 1}]
-      end
-    end
-
-    ruby_version_is "2.7"..."3.0" do
+    ruby_version_is ""..."3.0" do
       it 'autosplats keyword arguments and warns' do
         -> {
           @p.call([1, {a: 1}]).should == [[1], {a: 1}]
@@ -241,6 +235,13 @@ describe "A Proc" do
       it 'does not autosplat keyword arguments' do
         @p.call([1, {a: 1}]).should == [[[1, {a: 1}]], {}]
       end
+    end
+  end
+
+  describe "taking |required keyword arguments, **kw| arguments" do
+    it "raises ArgumentError for missing required argument" do
+      p = proc { |a:, **kw| [a, kw] }
+      -> { p.call() }.should raise_error(ArgumentError)
     end
   end
 end

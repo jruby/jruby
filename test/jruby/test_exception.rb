@@ -22,4 +22,23 @@ class TestException < Test::Unit::TestCase
     end
   end
 
+  def raise_circular_cause
+    begin
+      raise "error 1"
+    rescue => e1
+      raise "error 2" rescue e2 = $!
+      raise e1, cause: e2
+    end
+  end
+
+  def test_circular_cause_handle
+    begin
+      raise_circular_cause
+    rescue => e
+      assert_match(/`raise_circular_cause'/, e.backtrace[0])
+      assert_equal(e.message, "error 1")
+      assert_equal(e.cause.message, "error 2")
+      assert_equal(e.cause.cause.message, "error 1")
+    end
+  end
 end

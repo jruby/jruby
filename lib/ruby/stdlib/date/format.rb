@@ -134,8 +134,10 @@ class Date
         g = 'T%02d' % (year - 1911)
       when 2424875...2447535
         g = 'S%02d' % (year - 1925)
-      else
+      when 2447535...2458605
         g = 'H%02d' % (year - 1988)
+      else
+        g = 'R%02d' % (year - 2018)
       end
       g + strftime('.%m.%d')
     end
@@ -169,8 +171,8 @@ class Date
   end
 
   def self._parse_jis(str, hash) # :nodoc:
-    if m = subs(str, /\b([mtsh])(\d+)\.(\d+)\.(\d+)/i)
-      era = { 'm'=>1867, 't'=>1911, 's'=>1925, 'h'=>1988 }[m[1].downcase]
+    if m = subs(str, /\b([mtshr])(\d+)\.(\d+)\.(\d+)/i)
+      era = { 'm'=>1867, 't'=>1911, 's'=>1925, 'h'=>1988, 'r'=>2018 }[m[1].downcase]
       hash[:year] = m[2].to_i + era
       hash[:mon] = m[3].to_i
       hash[:mday] = m[4].to_i
@@ -463,6 +465,7 @@ class Date
 
   def self._rfc3339(str, limit: 128) # :nodoc:
     check_limit(str, limit)
+    str = str.to_s if Symbol === str
 
     if /\A\s*-?\d{4}-\d{2}-\d{2} # allow minus, anyway
         (t|\s)
@@ -528,6 +531,7 @@ class Date
 
   def self._rfc2822(str, limit: 128) # :nodoc:
     check_limit(str, limit)
+    str = str.to_s if Symbol === str
 
     if m = match(/\A\s*(?:(?:#{Format::ABBR_DAYS.keys.join('|')})\s*,\s+)?
         \d{1,2}\s+
@@ -579,8 +583,9 @@ class Date
 
   def self._jisx0301(str, limit: 128) # :nodoc:
     check_limit(str, limit)
+    str = str.to_s if Symbol === str
 
-    if /\A\s*[mtsh]?\d{2}\.\d{2}\.\d{2}
+    if /\A\s*[mtshr]?\d{2}\.\d{2}\.\d{2}
         (t
         (\d{2}:\d{2}(:\d{2}([,.]\d*)?)?
         (z|[-+]\d{2}(:?\d{2})?)?)?)?\s*\z/ix.match?(str)
@@ -607,9 +612,10 @@ class Date
       # ok
     elsif Symbol === str
       str = str.to_s
-    else
-      raise TypeError.new("no implicit conversion of #{str.class} into String") unless str.respond_to?(:to_str)
+    elsif str.respond_to?(:to_str)
       str = str.to_str
+    else
+      raise TypeError, "no implicit conversion of #{str.class.name} into String"
     end
 
     limit = 2 ** 64 if limit.nil?

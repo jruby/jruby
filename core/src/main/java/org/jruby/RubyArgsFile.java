@@ -283,7 +283,7 @@ public class RubyArgsFile extends RubyObject {
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
 
         if (data.inPlace == null) return context.nil;
-        if (data.inPlace.isNil()) return context.runtime.newString("");
+        if (data.inPlace.isNil()) return context.nil;
 
         return data.inPlace.dup();
     }
@@ -296,7 +296,9 @@ public class RubyArgsFile extends RubyObject {
     private static IRubyObject setInplaceMode(ThreadContext context, IRubyObject recv, IRubyObject test) {
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
 
-        if (!test.isTrue()) {
+        if (test.isNil()) {
+            data.inPlace = context.nil;
+        } else if (!test.isTrue()) {
             data.inPlace = context.fals;
         } else {
             test = TypeConverter.convertToType(test, context.runtime.getString(), "to_str", false);
@@ -847,7 +849,7 @@ public class RubyArgsFile extends RubyObject {
         Ruby runtime = context.runtime;
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
         IRubyObject tmp, str, length;
-        long len = 0;
+            long len = 0;
 
         if (args.length > 0) {
             length = args[0];
@@ -889,8 +891,7 @@ public class RubyArgsFile extends RubyObject {
             } else if(args.length >= 1) {
                 final int strLen = ((RubyString) str).getByteList().length();
                 if (strLen < len) {
-                    len -= strLen;
-                    args[0] = runtime.newFixnum(len);
+                    args[0] = runtime.newFixnum(len - strLen);
                     continue;
                 }
             }

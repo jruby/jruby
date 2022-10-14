@@ -577,14 +577,14 @@ stmt            : keyword_alias fitem {
                 }
                 | stmt modifier_if expr_value {
                     /*%%%*/
-                    $$ = p.new_if(@1.start(), p.cond($3), p.remove_begin($1), null);
+                    $$ = p.new_if(@1.start(), $3, p.remove_begin($1), null);
                     p.fixpos($<Node>$, $3);
                     /*% %*/
                     /*% ripper: if_mod!($3, $1) %*/
                 }
                 | stmt modifier_unless expr_value {
                     /*%%%*/
-                    $$ = p.new_if(@1.start(), p.cond($3), null, p.remove_begin($1));
+                    $$ = p.new_if(@1.start(), $3, null, p.remove_begin($1));
                     p.fixpos($<Node>$, $3);
                     /*% %*/
                     /*% ripper: unless_mod!($3, $1) %*/
@@ -1878,7 +1878,7 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                 | arg '?' arg opt_nl ':' arg {
                     /*%%%*/
                     p.value_expr($1);
-                    $$ = p.new_if(@1.start(), p.cond($1), $3, $6);
+                    $$ = p.new_if(@1.start(), $1, $3, $6);
                     /*% %*/
                     /*% ripper: ifop!($1, $3, $6) %*/
                 }
@@ -2352,13 +2352,13 @@ primary         : literal
                 }
                 | k_if expr_value then compstmt if_tail k_end {
                     /*%%%*/
-                    $$ = p.new_if($1, p.cond($2), $4, $5);
+                    $$ = p.new_if($1, $2, $4, $5);
                     /*% %*/
                     /*% ripper: if!($2, $4, escape_Qundef($5)) %*/
                 }
                 | k_unless expr_value then compstmt opt_else k_end {
                     /*%%%*/
-                    $$ = p.new_if($1, p.cond($2), $5, $4);
+                    $$ = p.new_if($1, $2, $5, $4);
                     /*% %*/
                     /*% ripper: unless!($2, $4, escape_Qundef($5)) %*/
                 }
@@ -2607,7 +2607,7 @@ do              : term
 if_tail         : opt_else
                 | k_elsif expr_value then compstmt if_tail {
                     /*%%%*/
-                    $$ = p.new_if($1, p.cond($2), $4, $5);
+                    $$ = p.new_if($1, $2, $4, $5);
                     /*% %*/
                     /*% ripper: elsif!($2, $4, escape_Qundef($5)) %*/
                 }
@@ -3607,7 +3607,7 @@ opt_rescue      : k_rescue exc_list exc_var then compstmt opt_rescue {
                     /*%%%*/
                     Node node;
                     if ($3 != null) {
-                        node = p.appendToBlock(node_assign($3, new GlobalVarNode($1, p.symbolID(DOLLAR_BANG))), $5);
+                        node = p.appendToBlock(node_assign($3, new GlobalVarNode($1, p.symbolID(DOLLAR_BANG))), p.makeNullNil($5));
                         if ($5 != null) {
                             node.setLine($1);
                         }

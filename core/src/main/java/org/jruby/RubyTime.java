@@ -52,7 +52,6 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.TypeError;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.TimeSites;
@@ -60,7 +59,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
-import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.RubyDateFormatter;
 import org.jruby.util.Sprintf;
@@ -71,7 +69,6 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
-import java.text.NumberFormat;
 import java.time.*;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -350,7 +347,7 @@ public class RubyTime extends RubyObject {
                     }
                     v = tmp; break;
                 }
-                if (!(tmp = TypeConverter.checkIntegerType(context, v)).isNil()) {
+                if (!(tmp = TypeConverter.checkToInteger(context, v)).isNil()) {
                     v = tmp; // return tmp;
                 }
                 else {
@@ -601,7 +598,7 @@ public class RubyTime extends RubyObject {
         boolean zoneOk = zone.equals(dt.getZone());
         if (zoneOk && isTzRelative == this.isTzRelative) return this;
         if (isFrozen()) {
-            throw runtime.newFrozenError("Time", true);
+            throw runtime.newFrozenError("Time", this);
         }
         if (!zoneOk) dt = dt.withZone(zone);
         setIsTzRelative(isTzRelative);
@@ -951,7 +948,16 @@ public class RubyTime extends RubyObject {
     @JRubyMethod
     @Override
     public RubyArray to_a(ThreadContext context) {
-        return RubyArray.newArrayNoCopy(context.runtime, sec(), min(), hour(), mday(), month(), year(), wday(), yday(), isdst(), zone());
+        return RubyArray.newArrayNoCopy(
+            context.runtime,
+            sec(), min(), hour(),
+            mday(), month(), year(),
+            wday(), yday(), isdst(),
+            getTimezoneShortName(context.runtime));
+    }
+
+    private RubyString getTimezoneShortName(Ruby runtime) {
+        return RubyString.newString(runtime, dt.getZone().getShortName(dt.getMillis()));
     }
 
     @JRubyMethod
@@ -1417,7 +1423,7 @@ public class RubyTime extends RubyObject {
             return atOpts(context, recv, arg1, arg2, ms, context.nil);
         }
 
-        return atOpts(context, recv, arg1, context.nil, context.nil, maybeOpts);
+        return atOpts(context, recv, arg1, context.nil, null, maybeOpts);
     }
 
     @JRubyMethod(meta = true)
@@ -1428,7 +1434,7 @@ public class RubyTime extends RubyObject {
             return atOpts(context, recv, arg1, arg2, arg3, context.nil);
         }
 
-        return atOpts(context, recv, arg1, arg2, context.nil, arg3);
+        return atOpts(context, recv, arg1, arg2, null, arg3);
     }
 
     @JRubyMethod(required = 1, optional = 3, meta = true)
@@ -1450,7 +1456,7 @@ public class RubyTime extends RubyObject {
     private static IRubyObject atOpts(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject opts) {
         IRubyObject zone = ArgsUtil.extractKeywordArg(context, "in", opts);
 
-        if (arg2.isNil() && arg3.isNil()) {
+        if (arg2.isNil() && (arg3 == null || arg3.isNil())) {
             RubyTime time = at1(context, recv, arg1);
 
             time = time.gmtime();
@@ -1460,6 +1466,10 @@ public class RubyTime extends RubyObject {
             }
 
             return time;
+        }
+
+        if (arg3 == null) {
+            arg3 = context.runtime.newSymbol("microsecond");
         }
 
         return atMulti(context, (RubyClass) recv, arg1, arg2, arg3, zone);

@@ -90,7 +90,7 @@ public class JavaPackage extends RubyModule {
     final String packageName;
 
     private JavaPackage(final Ruby runtime, final CharSequence packageName) {
-        super(runtime, runtime.getJavaSupport().getJavaPackageClass());
+        super(runtime, runtime.getJavaSupport().getJavaPackageClass(), false); // java packages are phantom objects, and should never be added to objectspace
         this.packageName = packageName.toString();
     }
 

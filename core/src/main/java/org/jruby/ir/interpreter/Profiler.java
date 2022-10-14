@@ -5,6 +5,7 @@ import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.*;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.runtime.CallSite;
@@ -176,7 +177,7 @@ public class Profiler {
             String n = tgtMethod.getId();
             boolean inlineCall = true;
             if (isHotClosure) {
-                Operand clArg = call.getClosureArg(null);
+                Operand clArg = call.getClosureArg(NullBlock.INSTANCE);
                 inlineCall = (clArg instanceof WrappedIRClosure) && (((WrappedIRClosure)clArg).getClosure() == hc);
             }
 /*

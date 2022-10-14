@@ -489,8 +489,8 @@ class TestFile < Test::Unit::TestCase
     assert_equal("", File.extname("."))
     assert_equal("", File.extname("/."))
     assert_equal("", File.extname(".."))
-    assert_equal("", File.extname(".foo."))
-    assert_equal("", File.extname("foo."))
+    assert_equal(".", File.extname(".foo."))
+    assert_equal(".", File.extname("foo."))
   end
 
   def test_fnmatch
@@ -652,6 +652,13 @@ class TestFile < Test::Unit::TestCase
       assert_equal(result, 'falsetruefalse')
     ensure
       Dir.rmdir("dir_tmp") rescue nil
+    end
+  end
+
+  # ensure that uri:file: and file: URIs are treated the same by File.directory?
+  def test_uri_file_directory_query
+    ["uri:file://", "uri:file:/#{Dir.pwd}"].each do |uri|
+      assert(File.directory?(uri), uri)
     end
   end
 

@@ -59,6 +59,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.RangeError;
 import org.jruby.java.util.ArrayUtils;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
@@ -593,7 +594,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     protected final void modifyCheck() {
         if ((flags & TMPLOCK_OR_FROZEN_ARR_F) != 0) {
-            if ((flags & FROZEN_F) != 0) throw getRuntime().newFrozenError(metaClass);
+            if ((flags & FROZEN_F) != 0) throw getRuntime().newFrozenError(this);
             if ((flags & TMPLOCK_ARR_F) != 0) throw getRuntime().newTypeError("can't modify array during iteration");
         }
     }
@@ -1017,7 +1018,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (len < 0) throw runtime.newIndexError("negative length (" + len + ")");
         if (beg < 0 && (beg += realLength) < 0)
             throw runtime.newIndexError("index " + (beg - realLength) + " out of array");
-
         final RubyArray rplArr;
         final int rlen;
 
@@ -1726,12 +1726,22 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         } else if (arg0 instanceof RubyRange) {
             RubyRange range = (RubyRange) arg0;
             final Ruby runtime = metaClass.runtime;
-            int beg = checkInt(runtime, range.begLen0(realLength));
-            splice(runtime, beg, checkInt(runtime, range.begLen1(realLength, beg)), arg1);
+            int beg0 = checkLongForInt(runtime, range.begLen0(realLength));
+            int beg1 = checkLongForInt(runtime, range.begLen1(realLength, beg0));
+            splice(runtime, beg0, beg1, arg1);
         } else {
             asetFallback(arg0, arg1);
         }
         return arg1;
+    }
+
+    // stand in method for checkInt as it raises the wrong type of 
+    // exception to mri
+    private int checkLongForInt(final Ruby runtime, long value) {
+        if (((int)value) != value) {
+            throw runtime.newIndexError(String.format("index %d is too big", value));
+        }
+        return (int)value;
     }
 
     private void asetFallback(IRubyObject arg0, IRubyObject arg1) {
@@ -2624,6 +2634,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      *
      */
     public IRubyObject rindex(ThreadContext context, IRubyObject obj) {
+        unpack();
+        
         Ruby runtime = context.runtime;
         int i = realLength;
 
@@ -2880,6 +2892,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         unpack();
         modify();
 
+        boolean modified = false;
         final Ruby runtime = context.runtime;
         final int len = realLength; final int beg = begin;
 
@@ -2892,7 +2905,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                 // AIOOBE from the yield (see JRUBY-5434)
                 IRubyObject value = safeArrayRef(runtime, values, begin + i1);
 
-                if (!block.yield(context, value).isTrue()) continue;
+                if (!block.yield(context, value).isTrue()) {
+                    modified = true;
+                    continue;
+                }
 
                 if (i1 != i2) safeArraySet(runtime, values, beg + i2, value);
                 len1 = ++i2;
@@ -2900,6 +2916,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             return (i1 == i2) ? context.nil : this;
         }
         finally {
+            if (modified) checkFrozen();
             selectBangEnsure(runtime, len, beg, len0, len1);
         }
     }
@@ -3032,6 +3049,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         final Ruby runtime = context.runtime;
         final int beg = begin;
 
+        boolean modified = false;
+
         int len0 = 0, len1 = 0;
         try {
             int i1, i2;
@@ -3041,15 +3060,21 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                 // See JRUBY-5434
                 IRubyObject value = safeArrayRef(runtime, values, beg + i1);
 
-                if (block.yield(context, value).isTrue()) continue;
+                if (block.yield(context, value).isTrue()) {
+                    modified = true;
+                    continue;
+                }
 
-                if (i1 != i2) safeArraySet(runtime, values, beg + i2, value);
+                if (i1 != i2) {
+                    safeArraySet(runtime, values, beg + i2, value);
+                }
                 len1 = ++i2;
             }
 
             return (i1 == i2) ? context.nil : this;
         }
         finally {
+            if (modified) checkFrozen();
             selectBangEnsure(runtime, realLength, beg, len0, len1);
         }
     }

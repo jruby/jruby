@@ -33,6 +33,7 @@
 
 package org.jruby;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -44,8 +45,11 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.JavaSites;
+import org.jruby.runtime.JavaSites.StructSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -53,6 +57,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
+import org.jruby.util.RecursiveComparator;
+import org.jruby.util.RubyStringBuilder;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.runtime.Helpers.invokedynamic;
@@ -239,6 +245,7 @@ public class RubyStruct extends RubyObject {
             keywordInit = ret != null && ret.isTrue();
         }
 
+        Set<IRubyObject> tmpMemberSet = new HashSet<IRubyObject>();
         for (int i = (name == null && !nilName) ? 0 : 1; i < argc; i++) {
             IRubyObject arg = args[i];
             RubySymbol sym;
@@ -248,6 +255,11 @@ public class RubyStruct extends RubyObject {
                 sym = runtime.newSymbol(arg.convertToString().getByteList());
             } else {
                 sym = runtime.newSymbol(arg.asJavaString());
+            }
+            if (tmpMemberSet.contains(sym)) {
+                throw runtime.newArgumentError("duplicate member: " + sym);
+            } else {
+                tmpMemberSet.add(sym);
             }
 
             member.append(sym);
@@ -341,6 +353,11 @@ public class RubyStruct extends RubyObject {
             if (!keywordInit.isTrue()) return recv.inspect();
             return recv.inspect().convertToString().catString("(keyword_init: true)");
         }
+
+        @JRubyMethod(name = "keyword_init?")
+        public static IRubyObject keyword_init_p(IRubyObject self) {
+            return RubyStruct.getInternalVariable((RubyClass) self, KEYWORD_INIT_VAR);
+        }
     }
 
     /** Create new Structure.
@@ -414,6 +431,8 @@ public class RubyStruct extends RubyObject {
     }
 
     private void setupStructValuesFromHash(ThreadContext context, RubyHash kwArgs) {
+        Ruby runtime = context.runtime;
+
         RubyArray __members__ = __member__();
         Set<Map.Entry<IRubyObject, IRubyObject>> entries = kwArgs.directEntrySet();
 
@@ -421,9 +440,9 @@ public class RubyStruct extends RubyObject {
                 entry -> {
                     IRubyObject key = entry.getKey();
                     if (!(key instanceof RubySymbol))
-                        key = context.runtime.newSymbol(key.convertToString().getByteList());
+                        key = runtime.newSymbol(key.convertToString().getByteList());
                     IRubyObject index = __members__.index(context, key);
-                    if (index.isNil()) throw context.runtime.newArgumentError("unknown keywords: " + key);
+                    if (index.isNil()) throw runtime.newArgumentError(str(runtime, "unknown keywords: ", key));
                     values[index.convertToInteger().getIntValue()] = entry.getValue();
                 });
     }
@@ -589,8 +608,7 @@ public class RubyStruct extends RubyObject {
 
         if (other == this) return context.tru;
 
-        // recursion guard
-        return context.safeRecurse(EqualRecursive.INSTANCE, other, this, "==", true);
+        return RecursiveComparator.compare(context, sites(context).op_equal, this, other);
     }
 
     @JRubyMethod(name = "eql?", required = 1)
@@ -601,8 +619,26 @@ public class RubyStruct extends RubyObject {
             return context.fals;
         }
 
-        // recursion guard
-        return context.safeRecurse(EqlRecursive.INSTANCE, other, this, "eql?", true);
+        return RecursiveComparator.compare(context, sites(context).eql, this, other);
+    }
+
+    public RubyBoolean compare(ThreadContext context, CallSite site, IRubyObject other) {
+        if (!(other instanceof RubyStruct)) {
+            return context.fals;
+        }
+
+        RubyStruct struct = (RubyStruct) other;
+
+        if (values.length != struct.values.length) return context.fals;
+
+        for (int i = 0; i < values.length; i++) {
+            IRubyObject a = aref(i);
+            IRubyObject b = struct.aref(i);
+
+            if (!site.call(context, a, a, b).isTrue()) return context.fals;
+        }
+
+        return context.tru;
     }
 
     private static final byte[] STRUCT_BEG = { '#','<','s','t','r','u','c','t',' ' };
@@ -1018,6 +1054,10 @@ public class RubyStruct extends RubyObject {
         public IRubyObject call(ThreadContext context, RubyStruct self, IRubyObject obj, boolean recur) {
             return self.inspectStruct(context, recur);
         }
+    }
+
+    private static StructSites sites(ThreadContext context) {
+        return context.sites.Struct;
     }
 
     @Deprecated

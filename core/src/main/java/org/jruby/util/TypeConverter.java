@@ -275,8 +275,24 @@ public class TypeConverter {
                 className, '#' + methodName + " gives ", types(runtime, val.getType()), ")"));
     }
 
-    // rb_check_to_integer
+    // rb_check_integer_type
     public static IRubyObject checkIntegerType(ThreadContext context, IRubyObject obj) {
+        if (obj instanceof RubyInteger) return obj;
+
+        TypeConverterSites sites = sites(context);
+
+        IRubyObject conv = convertToType(context, obj, context.runtime.getInteger(), sites.to_int_checked, false);
+        if (conv.isNil()) {
+            return context.nil;
+        }
+        if (!(conv instanceof RubyInteger)) {
+            throw newTypeErrorMismatch(context.runtime, obj, context.runtime.getInteger(), "to_int", conv);
+        }
+        return conv;
+    }
+
+    // rb_check_to_integer
+    public static IRubyObject checkToInteger(ThreadContext context, IRubyObject obj) {
         if (obj instanceof RubyFixnum) return obj;
 
         TypeConverterSites sites = sites(context);
@@ -287,8 +303,8 @@ public class TypeConverter {
     }
 
     // rb_check_to_integer
-    public static IRubyObject checkIntegerType(Ruby runtime, IRubyObject obj, String method) {
-        if (method.equals("to_int")) return checkIntegerType(runtime.getCurrentContext(), obj);
+    public static IRubyObject checkToInteger(Ruby runtime, IRubyObject obj, String method) {
+        if (method.equals("to_int")) return checkToInteger(runtime.getCurrentContext(), obj);
 
         if (obj instanceof RubyFixnum) return obj;
 
@@ -418,35 +434,30 @@ public class TypeConverter {
         final Ruby runtime = context.runtime;
         IRubyObject tmp;
 
-        for (;;) {
-            switch (val.getMetaClass().getClassIndex()) {
-                case FLOAT:
-                    if (base != 0) return raiseIntegerBaseError(context, exception);
-                    RubyFloat flote = (RubyFloat) val;
-                    if (!exception && !Double.isFinite(flote.getDoubleValue())) return context.nil;
-                    return RubyNumeric.dbl2ival(context.runtime, flote.getValue());
-                case INTEGER:
-                    if (base != 0) return raiseIntegerBaseError(context, exception);
-                    return val;
-                case STRING:
-                    return RubyNumeric.str2inum(context.runtime, (RubyString) val, base, true, exception);
-                case NIL:
-                    if (base != 0) return raiseIntegerBaseError(context, exception);
-                    if (!exception) return context.nil;
-                    throw context.runtime.newTypeError("can't convert nil into Integer");
-                default: // MRI checks String sub-classes
-                    if (val instanceof RubyString) {
-                        return RubyNumeric.str2inum(context.runtime, (RubyString) val, base, true);
-                    }
-            }
+        if (base != 0) {
+            tmp = TypeConverter.checkStringType(context.runtime, val);
 
-            if (base != 0) {
-                tmp = TypeConverter.checkStringType(context.runtime, val);
-                if (tmp != context.nil) continue;
-                return raiseIntegerBaseError(context, exception);
+            if (!tmp.isNil()) {
+                val = tmp;
+            } else if (!exception) {
+                return context.nil;
+            } else {
+                //raise
+                return raiseIntegerBaseError(context, true);
             }
+        }
 
-            break;
+        if (val instanceof RubyFloat) {
+            RubyFloat f = (RubyFloat) val;
+            if (!exception && !Double.isFinite(f.getDoubleValue())) return context.nil;
+            return RubyNumeric.dbl2ival(context.runtime, f.getValue());
+        } else if (val instanceof RubyInteger) {
+            return val;
+        } else if (val instanceof RubyString) {
+            return RubyNumeric.str2inum(context.runtime, (RubyString) val, base, true, exception);
+        } else if (val.isNil()) {
+            if (!exception) return context.nil;
+            throw context.runtime.newTypeError("can't convert nil into Integer");
         }
 
         try {

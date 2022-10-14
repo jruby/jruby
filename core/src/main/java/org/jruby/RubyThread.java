@@ -72,6 +72,7 @@ import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
@@ -237,7 +238,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public RubyThread(Ruby runtime, RubyClass klass, Runnable runnable) {
         this(runtime, klass, true);
 
-        startThread(runtime.getCurrentContext(), runnable);
+        startThread(runtime.getCurrentContext(), runnable, "<internal>", -1);
     }
 
     private void executeInterrupts(ThreadContext context, boolean blockingTiming) {
@@ -556,7 +557,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * </pre>
      * <i>produces:</i> abxyzc
      */
-    @JRubyMethod(name = {"new", "fork"}, rest = true, meta = true)
+    @JRubyMethod(name = {"new", "fork"}, rest = true, meta = true, forward = true)
     public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
         return startThread(recv, args, true, block);
     }
@@ -607,24 +608,26 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return rubyThread;
     }
 
-    @JRubyMethod(rest = true, visibility = PRIVATE)
+    @JRubyMethod(rest = true, visibility = PRIVATE, forward = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
+        int callInfo = context.resetCallInfo();
         if (!block.isGiven()) throw context.runtime.newThreadError("must be called with a block");
         if (threadImpl != ThreadLike.DUMMY) throw context.runtime.newThreadError("already initialized thread");
 
-        startThread(context, new RubyRunnable(this, args, block));
+        BlockBody body = block.getBody();
+        startThread(context, new RubyRunnable(this, args, block, callInfo), body.getFile(), body.getLine());
 
         return context.nil;
     }
 
-    private Thread startThread(ThreadContext context, Runnable runnable) throws RaiseException, OutOfMemoryError {
+    private Thread startThread(ThreadContext context, Runnable runnable, String file, int line) throws RaiseException, OutOfMemoryError {
         final Ruby runtime = context.runtime;
         try {
             Thread thread = new Thread(runnable);
             thread.setDaemon(true);
 
-            this.file = context.getFile();
-            this.line = context.getLine();
+            this.file = file;
+            this.line = line;
 
             initThreadName(runtime, thread, file, line);
             
@@ -1308,7 +1311,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return inspect(metaClass.runtime.getCurrentContext());
     }
 
-    @JRubyMethod
+    @JRubyMethod(name = { "inspect", "to_s"})
     public RubyString inspect(ThreadContext context) {
         final Ruby runtime = context.runtime;
         RubyString result = runtime.newString("#<");
@@ -1323,7 +1326,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 result.cat(runtime.newSymbol(id).getBytes());
             }
             if (notEmpty(file) && line >= 0) {
-                result.cat('@');
+                result.cat(' ');
                 result.catString(file);
                 result.cat(':');
                 result.catString(Integer.toString(line + 1));
@@ -1477,7 +1480,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (!isAlive()) return context.nil;
 
 
-        pendingInterruptEnqueue(prepareRaiseException(context, args, Block.NULL_BLOCK));
+        pendingInterruptEnqueue(prepareRaiseException(context, args));
         interrupt();
 
         if (currentThread == this) {
@@ -1487,8 +1490,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return context.nil;
     }
 
-    private IRubyObject prepareRaiseException(ThreadContext context, IRubyObject[] args, Block block) {
+    public static IRubyObject prepareRaiseException(ThreadContext context, IRubyObject[] args) {
         final Ruby runtime = context.runtime;
+        IRubyObject errorInfo = context.getErrorInfo();
+
         if (args.length == 0) {
             if (errorInfo.isNil()) {
                 // We force RaiseException here to populate backtrace
@@ -1503,7 +1508,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         final RubyException exception;
         if (args.length == 1) {
             if (arg instanceof RubyString) {
-                tmp = runtime.getRuntimeError().newInstance(context, args, block);
+                tmp = runtime.getRuntimeError().newInstance(context, args, Block.NULL_BLOCK);
             }
             else if (arg instanceof ConcreteJavaProxy ) {
                 return arg;
@@ -1531,7 +1536,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             exception.set_backtrace(args[2]);
         }
 
-        IRubyObject cause = context.getErrorInfo();
+        IRubyObject cause = errorInfo;
         if (cause != exception) {
             exception.setCause(cause);
         }

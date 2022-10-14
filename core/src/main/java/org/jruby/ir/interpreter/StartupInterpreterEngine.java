@@ -1,17 +1,13 @@
 package org.jruby.ir.interpreter;
 
-import org.jruby.RubyHash;
 import org.jruby.RubyModule;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.CheckForLJEInstr;
 import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.GetFieldInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
-import org.jruby.ir.instructions.NopInstr;
 import org.jruby.ir.instructions.RuntimeHelperCall;
-import org.jruby.ir.instructions.SearchConstInstr;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
@@ -20,10 +16,6 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.VariableAccessor;
-import org.jruby.runtime.opto.ConstantCache;
-
-import static org.jruby.util.RubyStringBuilder.str;
-import static org.jruby.util.RubyStringBuilder.ids;
 
 /**
  * This interpreter is meant to interpret the instructions generated directly from IRBuild.
@@ -38,13 +30,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
         int       ipc       = 0;
         Object    exception = null;
 
-        boolean acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
         boolean   ruby2Keywords = interpreterContext.isRuby2Keywords();
-
-        if (acceptsKeywordArgument) {
-            args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, interpreterContext.getRequiredArgsCount(), ruby2Keywords);
-        }
-        IRRuntimeHelpers.markAsRuby2KeywordArg(interpreterContext.getStaticScope(), args);
 
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
@@ -72,7 +58,8 @@ public class StartupInterpreterEngine extends InterpreterEngine {
             try {
                 switch (operation.opClass) {
                     case ARG_OP:
-                        receiveArg(context, instr, operation, args, acceptsKeywordArgument, ruby2Keywords, currDynScope, temp, exception, blockArg);
+                        receiveArg(context, instr, operation, self, args, ruby2Keywords,
+                                currScope, currDynScope, temp, exception, blockArg);
                         break;
                     case CALL_OP:
                         if (profile) Profiler.updateCallSite(instr, interpreterContext.getScope(), scopeVersion);
@@ -108,7 +95,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                         }
                         break;
                     case OTHER_OP:
-                        processOtherOp(context, block, instr, operation, currDynScope, currScope, temp, self, acceptsKeywordArgument);
+                        processOtherOp(context, block, instr, operation, currDynScope, currScope, temp, self);
                         break;
                 }
 
@@ -136,7 +123,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
     }
 
     protected static void processOtherOp(ThreadContext context, Block block, Instr instr, Operation operation, DynamicScope currDynScope,
-                                         StaticScope currScope, Object[] temp, IRubyObject self, boolean acceptsKwargs) {
+                                         StaticScope currScope, Object[] temp, IRubyObject self) {
         switch(operation) {
             case RECV_SELF:
                 break;
@@ -159,7 +146,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
             case RUNTIME_HELPER: {
                 RuntimeHelperCall rhc = (RuntimeHelperCall)instr;
                 setResult(temp, currDynScope, rhc.getResult(),
-                        rhc.callHelper(context, currScope, currDynScope, self, temp, block, acceptsKwargs));
+                        rhc.callHelper(context, currScope, currDynScope, self, temp, block));
                 break;
             }
             case CHECK_FOR_LJE:

@@ -309,9 +309,10 @@ public class RubySet extends RubyObject implements Set {
         return this;
     }
 
-    @JRubyMethod(frame = true)
-    public IRubyObject initialize_clone(ThreadContext context, IRubyObject orig) {
-        sites(context).initialize_clone_super.call(context, this, this, orig);
+    @JRubyMethod(frame = true, forward = true, required = 1, optional = 1)
+    public IRubyObject initialize_clone(ThreadContext context, IRubyObject[] args) {
+        sites(context).initialize_clone_super.call(context, this, this, args);
+        IRubyObject orig = args[0];
         setHash((RubyHash) (((RubySet) orig).hash).rbClone(context));
         return this;
     }
@@ -1235,7 +1236,7 @@ public class RubySet extends RubyObject implements Set {
     }
 
     protected final void modifyCheck(final Ruby runtime) {
-        if ((flags & FROZEN_F) != 0) throw runtime.newFrozenError("Set");
+        if ((flags & FROZEN_F) != 0) throw runtime.newFrozenError("Set", this);
     }
 
     // java.util.Set

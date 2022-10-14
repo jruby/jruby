@@ -38,6 +38,7 @@ import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.internal.runtime.methods.*;
 import org.jruby.ir.JIT;
 import org.jruby.ir.interpreter.FullInterpreterContext;
+import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.java.invokers.SingletonMethodInvoker;
 import org.jruby.javasupport.JavaUtil;
@@ -81,6 +82,7 @@ import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.methodType;
 import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.runtime.Helpers.constructObjectArrayHandle;
+import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
 import static org.jruby.runtime.invokedynamic.InvokeDynamicSupport.findStatic;
 import static org.jruby.runtime.invokedynamic.InvokeDynamicSupport.findVirtual;
 import static org.jruby.util.CodegenUtils.p;
@@ -301,22 +303,22 @@ public class Bootstrap {
             Opcodes.H_INVOKESTATIC,
             p(Bootstrap.class),
             "checkArity",
-            sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class, int.class, int.class, int.class, int.class),
+            sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class, int.class, int.class, int.class),
             false);
 
     @JIT
-    public static CallSite checkArity(Lookup lookup, String name, MethodType type, int req, int opt, int rest, int key, int keyrest) {
-        return new ConstantCallSite(insertArguments(CHECK_ARITY_HANDLE, 4, req, opt, rest == 0 ? false : true, key == 0 ? false : true, keyrest));
+    public static CallSite checkArity(Lookup lookup, String name, MethodType type, int req, int opt, int rest, int keyrest) {
+        return new ConstantCallSite(insertArguments(CHECK_ARITY_HANDLE, 5, req, opt, rest == 0 ? false : true, keyrest));
     }
 
     private static final MethodHandle CHECK_ARITY_HANDLE =
             Binder
-                    .from(void.class, ThreadContext.class, StaticScope.class, Object[].class, Block.class, int.class, int.class, boolean.class, boolean.class, int.class)
+                    .from(void.class, ThreadContext.class, StaticScope.class, Object[].class, Object.class, Block.class, int.class, int.class, boolean.class, int.class)
                     .invokeStaticQuiet(LOOKUP, Bootstrap.class, "checkArity");
 
     @JIT
-    public static void checkArity(ThreadContext context, StaticScope scope, Object[] args, Block block, int req, int opt, boolean rest, boolean key, int keyrest) {
-        IRRuntimeHelpers.checkArity(context, scope, args, req, opt, rest, key, keyrest, block);
+    public static void checkArity(ThreadContext context, StaticScope scope, Object[] args, Object keywords, Block block, int req, int opt, boolean rest, int keyrest) {
+        IRRuntimeHelpers.checkArity(context, scope, args, keywords, req, opt, rest, keyrest, block);
     }
 
     public static CallSite array(Lookup lookup, String name, MethodType type) {
@@ -584,13 +586,13 @@ public class Bootstrap {
         return rubyEncoding;
     }
 
-    public static RubyHash hash(ThreadContext context, boolean isKeyword, IRubyObject[] pairs) {
+    public static RubyHash hash(ThreadContext context, boolean literal, IRubyObject[] pairs) {
         Ruby runtime = context.runtime;
         RubyHash hash = new RubyHash(runtime, pairs.length / 2 + 1);
-        hash.setKeywordArguments(isKeyword);
         for (int i = 0; i < pairs.length;) {
             hash.fastASetCheckString(runtime, pairs[i++], pairs[i++]);
         }
+        if (!literal) context.callInfo |= CALL_KEYWORD;
         return hash;
     }
 
@@ -692,7 +694,9 @@ public class Bootstrap {
         boolean wantsBlock = true;
         if (method instanceof NativeCallMethod) {
             DynamicMethod.NativeCall nativeCall = ((NativeCallMethod) method).getNativeCall();
-            if (nativeCall != null) {
+            // if it is a non-JI native call and does not want block, drop it
+            // JI calls may lazily convert blocks to an interface type (jruby/jruby#7246)
+            if (nativeCall != null && !nativeCall.isJava()) {
                 Class[] nativeSignature = nativeCall.getNativeSignature();
 
                 // no args or last arg not a block, do no pass block

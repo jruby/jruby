@@ -27,6 +27,10 @@ describe "String#upcase" do
     it "does not upcase non-ASCII characters" do
       "aßet".upcase(:ascii).should == "AßET"
     end
+
+    it "works with substrings" do
+      "prefix té"[-2..-1].upcase(:ascii).should == "Té"
+    end
   end
 
   describe "full Unicode case mapping adapted for Turkic languages" do
@@ -63,14 +67,6 @@ describe "String#upcase" do
 
   it "does not allow invalid options" do
     -> { "abc".upcase(:invalid_option) }.should raise_error(ArgumentError)
-  end
-
-  ruby_version_is ''...'2.7' do
-    it "taints result when self is tainted" do
-      "".taint.upcase.should.tainted?
-      "X".taint.upcase.should.tainted?
-      "x".taint.upcase.should.tainted?
-    end
   end
 
   ruby_version_is ''...'3.0' do

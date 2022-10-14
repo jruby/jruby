@@ -44,12 +44,6 @@ public class CopyInstr extends OneOperandResultBaseInstr implements FixedArityIn
     }
 
     @Override
-    public void encode(IRWriterEncoder e) {
-        super.encode(e);
-        e.encode(getSource());
-    }
-
-    @Override
     public void visit(IRVisitor visitor) {
         visitor.CopyInstr(this);
     }

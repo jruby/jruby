@@ -5,6 +5,7 @@ import org.jruby.RubySymbol;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
@@ -28,14 +29,15 @@ public class EQQInstr extends CallInstr implements FixedArityInstr {
     protected EQQInstr(IRScope scope, Variable result, Operand v1, Operand v2, boolean splattedValue, boolean isPotentiallyRefined, CallSite callSite,
                        long callSiteID) {
         super(scope, Operation.EQQ, CallType.FUNCTIONAL, result, scope.getManager().getRuntime().newSymbol("==="),
-                v1, new Operand[] { v2 }, null, isPotentiallyRefined, callSite, callSiteID);
+                v1, new Operand[] { v2 }, NullBlock.INSTANCE, 0, isPotentiallyRefined, callSite, callSiteID);
 
         this.splattedValue = splattedValue;
     }
 
     // normal constructor
     public EQQInstr(IRScope scope, Variable result, Operand v1, Operand v2, boolean splattedValue, boolean isPotentiallyRefined) {
-        super(scope, Operation.EQQ, CallType.FUNCTIONAL, result, scope.getManager().getRuntime().newSymbol("==="), v1, new Operand[] { v2 }, null, isPotentiallyRefined);
+        super(scope, Operation.EQQ, CallType.FUNCTIONAL, result, scope.getManager().getRuntime().newSymbol("==="), v1,
+                new Operand[] { v2 }, NullBlock.INSTANCE, 0, isPotentiallyRefined);
 
         assert result != null: "EQQInstr result is null";
 
@@ -75,6 +77,7 @@ public class EQQInstr extends CallInstr implements FixedArityInstr {
         d.decodeInt(); // we always know it is 1 arg (args count)
         Operand arg1 = d.decodeOperand();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("before result");
+        d.decodeInt(); // flags is always 0 but super.decode stores it anyways
         Variable result = d.decodeVariable();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call, result:  " + result);
 
@@ -85,6 +88,9 @@ public class EQQInstr extends CallInstr implements FixedArityInstr {
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         IRubyObject recv = (IRubyObject) getReceiver().retrieve(context, self, currScope, currDynScope, temp);
         IRubyObject value = (IRubyObject) getArg1().retrieve(context, self, currScope, currDynScope, temp);
+
+        // enebo: don't think we need to set callinfo?
+
         return IRRuntimeHelpers.isEQQ(context, recv, value, callSite, isSplattedValue());
     }
 

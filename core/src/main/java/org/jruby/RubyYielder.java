@@ -109,7 +109,7 @@ public class RubyYielder extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(rest = true)
+    @JRubyMethod(rest = true, forward = true)
     public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
         checkInit();
         return block.yieldValues(context, args);

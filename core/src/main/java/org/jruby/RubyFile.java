@@ -677,19 +677,30 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return runtime.newFixnum(count);
     }
 
-    @JRubyMethod(required = 1, meta = true)
-    public static IRubyObject dirname(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+    @JRubyMethod(required = 1, optional = 1, meta = true)
+    public static IRubyObject dirname(ThreadContext context, IRubyObject recv, IRubyObject [] args) {
         Ruby runtime = context.runtime;
-        RubyString filename = StringSupport.checkEmbeddedNulls(runtime, get_path(context, arg));
+        RubyString filename = StringSupport.checkEmbeddedNulls(runtime, get_path(context, args[0]));
+        int level = 1;
+        if (args.length == 2) {
+            level = RubyNumeric.num2int(args[1]);
+        }
 
         String jfilename = filename.asJavaString();
 
-        return runtime.newString(dirname(context, jfilename));
+        return runtime.newString(dirname(context, jfilename, level));
     }
 
     static final Pattern PROTOCOL_PATTERN = Pattern.compile(URI_PREFIX_STRING + ".*");
 
     public static String dirname(ThreadContext context, final String filename) {
+        return dirname(context, filename, 1);
+    }
+
+    public static String dirname(ThreadContext context, final String filename, int level) {
+        if (level < 0) {
+            throw context.runtime.newArgumentError("negative level: " + level);
+        }
         final RubyClass File = context.runtime.getFile();
         IRubyObject sep = File.getConstant("SEPARATOR");
         final String separator; final char separatorChar;
@@ -762,7 +773,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 if (startsWithDriveLetterOnWindows) {
                     return filename.substring(0, 2) + '.';
                 }
-                return ".";
+                return level == 0 ? name : ".";
             }
             if (index == 0) {
                 return filename.substring(0, 1);
@@ -784,6 +795,15 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 if (pathSectionCount > 2) index = name.lastIndexOf(separator);
             }
             result = filename.substring(0, index);
+            for (int i = level - 1; i > 0; i--) {
+                int _index = result.lastIndexOf(separator);
+                if (_index == 0) {
+                    result = separator;
+                    break;
+                } else if (_index != -1) {
+                    result = result.substring(0, _index);
+                }
+            }
         }
 
         // trim leading slashes
@@ -821,9 +841,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         String filename = basename(context, recv, arg).getUnicodeValue();
 
         int dotIndex = filename.lastIndexOf('.');
-        if (dotIndex > 0 && !(dotIndex == (filename.length() - 1) && Platform.IS_WINDOWS)) {
-            // Dot is not at beginning and not at end of filename.
-            return RubyString.newString(context.runtime, filename.substring(dotIndex));
+
+        if (dotIndex > 0) {
+            if (dotIndex < filename.length() - 1 ||
+                    !(Platform.IS_WINDOWS || filename.equals(".."))) {
+                // Dot is not at beginning and not at end of filename.
+                return RubyString.newString(context.runtime, filename.substring(dotIndex));
+            }
         }
 
         return RubyString.newEmptyString(context.runtime);
@@ -1129,7 +1153,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         Ruby runtime = context.runtime;
         RubyString filename = StringSupport.checkEmbeddedNulls(runtime, get_path(context, arg));
 
-        return runtime.newArray(dirname(context, recv, filename), basename(context, recv, filename));
+        return runtime.newArray(dirname(context, recv, new IRubyObject[]{ filename }), basename(context, recv, filename));
     }
 
     @JRubyMethod(required = 2, meta = true)
