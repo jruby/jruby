@@ -883,7 +883,7 @@ public class RubyDir extends RubyObject implements Closeable {
         final String[] snapshot = this.snapshot;
         if (pos >= snapshot.length) return getRuntime().getNil();
 
-        RubyString result = RubyString.newString(getRuntime(), snapshot[pos], encoding);
+        RubyString result = newExternalStringWithEncoding(getRuntime(), snapshot[pos], encoding);
         pos++;
         return result;
     }

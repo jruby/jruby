@@ -1777,7 +1777,7 @@ public class EncodingUtils {
         }
 
         if (name.equals("external")) {
-            // TODO: set filesystem encoding
+            context.runtime.setDefaultFilesystemEncoding(rbToEncoding(context, encoding));
         }
 
         return overridden;
