@@ -1385,7 +1385,7 @@ public class RubyTime extends RubyObject {
             time = time.gmtime();
 
             if (!zone.isNil()) {
-                timeZoneLocal(context, zone, time);
+                time = timeZoneLocal(context, zone, time);
             }
 
             return time;
@@ -1461,8 +1461,6 @@ public class RubyTime extends RubyObject {
 
     private static RubyTime atMulti(ThreadContext context, RubyClass recv, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject zone) {
         Ruby runtime = context.runtime;
-
-        RubyTime time = new RubyTime(runtime, recv, new DateTime(0L, getLocalTimeZone(runtime)));
         long millisecs;
         long nanosecs = 0;
 
@@ -1519,11 +1517,11 @@ public class RubyTime extends RubyObject {
 
         long nanosecOverflow = (nanosecs / 1000000);
 
+        RubyTime time = new RubyTime(runtime, recv, new DateTime(millisecs + nanosecOverflow, getLocalTimeZone(runtime)));
         time.setNSec(nanosecs % 1000000);
-        time.dt = time.dt.withMillis(millisecs + nanosecOverflow);
 
         if (!zone.isNil()) {
-            timeZoneLocal(context, zone, time);
+            time = timeZoneLocal(context, zone, time.gmtime());
         }
 
         return time;
