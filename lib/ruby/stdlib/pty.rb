@@ -1,6 +1,5 @@
 require 'ffi'
 require 'fcntl'
-require 'subspawn'
 
 module PTY
   module LibUtil
@@ -85,7 +84,7 @@ module PTY
           return status
         end
       end
-    rescue SystemCallError => e
+    rescue SystemCallError
       nil
     end
 
@@ -125,3 +124,6 @@ module PTY
     end
   end
 end
+
+require 'subspawn' # Load SubSpawn after we define PTY, or else it loads us!
+
