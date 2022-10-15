@@ -146,7 +146,9 @@ public class RubyObjectSpace {
             final ArrayList<IRubyObject> modules = new ArrayList<>(96);
             runtime.eachModule((module) -> {
                     if (rubyClass.isInstance(module)) {
-                        if (!(module instanceof IncludedModule || module instanceof PrependedModule || module == runtime.getJavaSupport().getJavaPackageClass() || module instanceof JavaPackage)) {
+                        if (!(module instanceof IncludedModule || module instanceof PrependedModule 
+                                || module == runtime.getJavaSupport().getJavaPackageClass() || module instanceof JavaPackage
+                                || (module instanceof MetaClass && (((MetaClass)module).getAttached() instanceof JavaPackage)))) {
                             // do nothing for included wrappers or singleton classes
                             modules.add(module); // store the module to avoid concurrent modification exceptions
                         }
