@@ -2,8 +2,19 @@
 package org.jruby.ext.ffi.jffi;
 
 import com.kenai.jffi.Library;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.CopyOption;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.HashMap;
+
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyFile;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
@@ -14,9 +25,11 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.ffi.InvalidMemoryIO;
 import org.jruby.ext.ffi.MemoryIO;
 import org.jruby.ext.ffi.Pointer;
+import org.jruby.ext.tempfile.Tempfile;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.JRubyClassLoader;
 
 @JRubyClass(name = "FFI::DynamicLibrary", parent = "Object")
 public class DynamicLibrary extends RubyObject {
@@ -25,6 +38,8 @@ public class DynamicLibrary extends RubyObject {
     @JRubyConstant public static final int RTLD_NOW    = 0x00002;
     @JRubyConstant public static final int RTLD_LOCAL  = 0x00004;
     @JRubyConstant public static final int RTLD_GLOBAL = 0x00008;
+
+    private static final String URI_CLASSLOADER_PREFIX = "uri:classloader:/";
     
     private final Library library;
     private final String name;
@@ -60,8 +75,21 @@ public class DynamicLibrary extends RubyObject {
     @JRubyMethod(name = {  "open" }, meta = true)
     public static final  IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject libraryName, IRubyObject libraryFlags) {
         final String libName = libraryName.isNil() ? null : libraryName.toString();
+        String loadName;
+        // TODO: jar:! uris?
+        if (libName.startsWith(URI_CLASSLOADER_PREFIX)) { // loading an internal library, we must extract it
+            String internalName = libName.substring(URI_CLASSLOADER_PREFIX.length());
+            try (InputStream internalStream = context.getRuntime().getClassLoader().getResourceAsStream(internalName)){
+                loadName = extractLibrary(internalName, internalStream);
+            } catch (IOException e) {
+                // let it fail normally, file not found
+                loadName = internalName;
+            }
+        }
+        else
+            loadName = libName;
         try {
-            Library library = Library.getCachedInstance(libName, getNativeLibraryFlags(libraryFlags));
+            Library library = Library.getCachedInstance(loadName, getNativeLibraryFlags(libraryFlags));
             if (library == null) {
                 throw new UnsatisfiedLinkError(Library.getLastError());
             }
@@ -72,6 +100,31 @@ public class DynamicLibrary extends RubyObject {
                     libName != null ? libName : "current process", ex.getMessage()));
         }
     }
+
+    private static HashMap<String, String> extractedLibraries = null;
+    private static synchronized String extractLibrary(String name, InputStream resourceAsStream) throws IOException {
+        if (resourceAsStream == null) return name;
+
+        // check the cache, don't need to extract this multiple times
+        if (extractedLibraries == null)
+            extractedLibraries = new HashMap<>();
+        else if (extractedLibraries.containsKey(name))
+            return extractedLibraries.get(name);
+
+        // not in cache, extract the file
+        String basename = new File(name).getName();
+        String[] names = basename.split("\\.");
+
+        // by putting the file into the jruby temp dir, it's automatically cleaned up
+        Path tempfile = Files.createTempFile(JRubyClassLoader.getTempDir().toPath(), names[0], "." + names[names.length - 1]);
+        Files.copy(resourceAsStream, tempfile, StandardCopyOption.REPLACE_EXISTING);
+
+        File file = tempfile.toFile();
+        file.setExecutable(true); // do this after we write the file, otherwise dlopen doesn't work
+        extractedLibraries.put(name, file.getAbsolutePath());
+        return file.getAbsolutePath();
+    }
+
     @JRubyMethod(name = {  "find_variable", "find_symbol" })
     public IRubyObject findVariable(ThreadContext context, IRubyObject symbolName) {
         final String sym = symbolName.toString();
