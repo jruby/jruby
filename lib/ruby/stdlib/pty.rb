@@ -1,5 +1,6 @@
 require 'ffi'
 require 'fcntl'
+require 'subspawn'
 
 module PTY
   module LibUtil
@@ -26,11 +27,7 @@ module PTY
 
   class << self
     def spawn(*args, &block)
-      if args.size > 0
-        exec_pty(args, &block)
-      else
-        exec_pty(get_shell, &block)
-      end
+      SubSpawn.pty_spawn(*args, &block)
     end
     alias :getpty :spawn
 
@@ -105,30 +102,6 @@ module PTY
       end
 
       [master.get_int(0), slave.get_int(0), name.get_string(0)]
-    end
-
-    def exec_pty(args)
-      master, slave = open
-
-      read, write = IO.pipe
-      pid = Process.spawn(*args, in: read, out: slave, err: slave, close_others: true, pgroup: true)
-      [read, slave].each(&:close)
-
-      master.close_on_exec = true
-      write.close_on_exec = true
-
-      ret = [master, write, pid]
-
-      if block_given?
-        begin
-          retval = yield(ret.dup)
-        ensure
-          ret[0, 2].reject(&:closed?).each(&:close)
-        end
-        retval
-      else
-        ret
-      end
     end
 
     def get_shell
