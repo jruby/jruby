@@ -1755,7 +1755,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         RubyString path = StringSupport.checkEmbeddedNulls(context.runtime, get_path(context, args[0]));
         RubyString wd = null;
         if (args.length == 2 && args[1] != context.nil) {
-            wd = StringSupport.checkEmbeddedNulls(context.runtime, get_path(context, args[1]));
+            if (args[1] instanceof RubyHash) {
+                // FIXME : do nothing when args[1] is Hash(e.g. {:mode=>0}, {:encoding=>"ascii-8bit"})
+            } else {
+                wd = StringSupport.checkEmbeddedNulls(context.runtime, get_path(context, args[1]));
+            }
         }
         return expandPathInternal(context, path, wd, expandUser, canonicalize);
     }
