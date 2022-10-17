@@ -227,6 +227,7 @@ public class RegexpOptions implements Cloneable {
         options.setExtended((joniOptions & RubyRegexp.RE_OPTION_EXTENDED) != 0);
         options.setFixed((joniOptions & RubyRegexp.RE_FIXED) != 0);
         options.setOnce((joniOptions & RubyRegexp.RE_OPTION_ONCE) != 0);
+        options.setEncodingNone((joniOptions & RubyRegexp.RE_NONE) != 0);
 
         return options;
     }
