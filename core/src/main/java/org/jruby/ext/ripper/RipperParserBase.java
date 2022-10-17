@@ -743,6 +743,10 @@ public class RipperParserBase {
         return dispatch("on_hshptn", constant, keywordArgs, keywordRestArgs);
     }
 
+    public IRubyObject none() {
+        return nil();
+    }
+
     public RubyArray new_hash_pattern_tail(int _line, IRubyObject keywordArgs, IRubyObject keywordRestValue, ByteList keywordRestArg) {
         IRubyObject restArg;
 

@@ -1927,6 +1927,10 @@ public abstract class RubyParserBase {
 
     public static ByteList NIL = new ByteList(new byte[] {'n', 'i', 'l'});
 
+    public HashNode none() {
+        return null;
+    }
+
     public HashPatternNode new_hash_pattern_tail(int line, HashNode keywordArgs, ByteList keywordRestArg, ByteList _ignore) {
         Node restArg;
 

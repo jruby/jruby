@@ -3249,7 +3249,7 @@ p_expr_basic    : p_value
                     $$ = p.new_hash_pattern(null, $3);
                 }
                 | tLBRACE rbrace {
-                    $$ = p.new_hash_pattern(null, p.new_hash_pattern_tail(@1.start(), null, null, null));
+                    $$ = p.new_hash_pattern(null, p.new_hash_pattern_tail(@1.start(), p.none(), null, null));
                 }
                 | tLPAREN {
                     $$ = p.push_pktbl();
