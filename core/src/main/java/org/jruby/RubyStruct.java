@@ -317,27 +317,27 @@ public class RubyStruct extends RubyObject {
 
     // For binding purposes on the newly created struct types
     public static class StructMethods {
-        @JRubyMethod(name = {"new", "[]"}, rest = true)
+        @JRubyMethod(name = {"new", "[]"}, rest = true, forward = true)
         public static IRubyObject newStruct(IRubyObject recv, IRubyObject[] args, Block block) {
             return RubyStruct.newStruct(recv, args, block);
         }
 
-        @JRubyMethod(name = {"new", "[]"})
+        @JRubyMethod(name = {"new", "[]"}, forward = true)
         public static IRubyObject newStruct(IRubyObject recv, Block block) {
             return RubyStruct.newStruct(recv, block);
         }
 
-        @JRubyMethod(name = {"new", "[]"})
+        @JRubyMethod(name = {"new", "[]"}, forward = true)
         public static IRubyObject newStruct(IRubyObject recv, IRubyObject arg0, Block block) {
             return RubyStruct.newStruct(recv, arg0, block);
         }
 
-        @JRubyMethod(name = {"new", "[]"})
+        @JRubyMethod(name = {"new", "[]"}, forward = true)
         public static IRubyObject newStruct(IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
             return RubyStruct.newStruct(recv, arg0, arg1, block);
         }
 
-        @JRubyMethod(name = {"new", "[]"})
+        @JRubyMethod(name = {"new", "[]"}, forward = true)
         public static IRubyObject newStruct(IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
             return RubyStruct.newStruct(recv, arg0, arg1, arg2, block);
         }
