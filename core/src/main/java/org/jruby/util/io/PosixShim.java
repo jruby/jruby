@@ -72,20 +72,8 @@ public class PosixShim {
             return ret;
         }
 
-        if (fd.chSelect != null) {
-            // For other channel types, we can't get at a native descriptor to lseek, and we can't use FileChannel
-            // .position, so we have to treat them as unseekable and raise EPIPE
-            //
-            // TODO: It's perhaps just a coincidence that all the channels for
-            // which we should raise are instanceof SelectableChannel, since
-            // stdio is not...so this bothers me slightly. -CON
-            //
-            // Original change made in 66b024fedbb2ee32316ccd9de8387931d07993ec
-            setErrno(Errno.EPIPE);
-            return -1;
-        }
-
-        return 0;
+        setErrno(Errno.EPIPE);
+        return -1;
     }
 
     public int write(ChannelFD fd, byte[] bytes, int offset, int length, boolean nonblock) {
