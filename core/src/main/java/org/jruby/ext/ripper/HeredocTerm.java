@@ -30,8 +30,8 @@
 
 package org.jruby.ext.ripper;
 
-import org.jcodings.Encoding;
 import org.jruby.lexer.LexerSource;
+import org.jruby.parser.RubyParser;
 import org.jruby.util.ByteList;
 
 import static org.jruby.lexer.LexingCommon.*;
@@ -76,7 +76,7 @@ public class HeredocTerm extends StrTerm {
         return flags;
     }
     
-    protected int error(RipperLexer lexer, int len, ByteList str, ByteList eos) {
+    protected int error(RubyLexer lexer, int len, ByteList str, ByteList eos) {
         lexer.compile_error("can't find string \"" + eos.toString() + "\" anywhere before EOF");
 
         if (lexer.delayed == null) {
@@ -97,15 +97,15 @@ public class HeredocTerm extends StrTerm {
         return restore(lexer);
     }
     
-    protected int restore(RipperLexer lexer) {
+    protected int restore(RubyLexer lexer) {
         lexer.heredoc_restore(this);
-        lexer.setStrTerm(new StringTerm(flags | STR_FUNC_TERM, 0, 0)); // Weird way of ending
+        lexer.setStrTerm(new StringTerm(flags | STR_FUNC_TERM, 0, 0, line)); // Weird way of ending
         
         return RipperParser.tSTRING_CONTENT;
     }
     
     @Override
-    public int parseString(RipperLexer lexer, LexerSource src) throws java.io.IOException {
+    public int parseString(RubyLexer lexer, LexerSource src) throws java.io.IOException {
         ByteList str = null;
         ByteList eos = nd_lit;
         int len = nd_lit.length() - 1;
@@ -114,13 +114,23 @@ public class HeredocTerm extends StrTerm {
         
         if (c == EOF) return error(lexer, len, str, eos);
 
+        boolean bol = lexer.was_bol();
         // Found end marker for this heredoc
-        if (lexer.was_bol() && lexer.whole_match_p(nd_lit, indent)) {
-            lexer.dispatchHeredocEnd();
-            lexer.heredoc_restore(this);
-            lexer.setStrTerm(null);
-            lexer.setState(EXPR_END);
-            return RipperParser.tSTRING_END;
+        if (bol) {
+            // if line_indent == -1 then we are after an interpolation in same line or there was a line continuation.
+            int line_indent = lexer.getHeredocLineIndent();
+
+            if (line_indent != -1) {
+                if (lexer.whole_match_p(nd_lit, indent)) {
+                    lexer.dispatchHeredocEnd();
+                    lexer.heredoc_restore(this);
+                    lexer.setStrTerm(null);
+                    lexer.setState(EXPR_END);
+                    return RubyParser.tSTRING_END;
+                }
+            } else {
+                lexer.setHeredocLineIndent(0);
+            }
         }
 
         if ((flags & STR_FUNC_EXPAND) == 0) {
@@ -185,12 +195,13 @@ public class HeredocTerm extends StrTerm {
                 }
             }
 
+            boolean encodingDetermined[] = new boolean[] { false };
             // MRI has extra pointer which makes our code look a little bit more strange in comparison
             do {
                 lexer.pushback(c);
 
-                StringTerm stringTerm = new StringTerm(flags, '\0', '\n');
-                if ((c = stringTerm.parseStringIntoBuffer(lexer, src, tok, lexer.getEncoding())) == EOF) {
+                StringTerm stringTerm = new StringTerm(flags, '\0', '\n', line);
+                if ((c = stringTerm.parseStringIntoBuffer(lexer, src, tok, lexer.getEncoding(), encodingDetermined)) == EOF) {
                     if (lexer.eofp) return error(lexer, len, str, eos);
                     return restore(lexer);
                 }

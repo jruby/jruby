@@ -35,5 +35,5 @@ import org.jruby.lexer.LexerSource;
  */
 public abstract class StrTerm {
     public abstract int getFlags();
-    public abstract int parseString(RipperLexer lexer, LexerSource src) throws java.io.IOException;
+    public abstract int parseString(RubyLexer lexer, LexerSource src) throws java.io.IOException;
 }

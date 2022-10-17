@@ -36,6 +36,7 @@
 
 package org.jruby.parser;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -57,7 +58,10 @@ import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.common.RubyWarnings;
 import org.jruby.ext.coverage.CoverageData;
+import org.jruby.lexer.yacc.LexContext;
 import org.jruby.lexer.yacc.RubyLexer;
+import org.jruby.lexer.yacc.StackState;
+import org.jruby.lexer.yacc.StrTerm;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -73,14 +77,14 @@ import static org.jruby.lexer.LexingCommon.AMPERSAND_AMPERSAND;
 import static org.jruby.lexer.LexingCommon.DOT;
 import static org.jruby.lexer.LexingCommon.OR_OR;
 import static org.jruby.lexer.yacc.RubyLexer.Keyword.*;
-import static org.jruby.parser.ParserSupport.IDType.*;
+import static org.jruby.parser.RubyParserBase.IDType.*;
 import static org.jruby.util.CommonByteLists.*;
 import static org.jruby.util.RubyStringBuilder.*;
 
 /** 
  *
  */
-public class ParserSupport {
+public abstract class RubyParserBase {
     // Parser states:
     protected StaticScope currentScope;
     protected ScopedParserState scopedParserState;
@@ -106,6 +110,10 @@ public class ParserSupport {
     private Node numParamCurrent = null;
     private Node numParamInner = null;
     private Node numParamOuter = null;
+
+    public RubyParserBase(IRubyWarnings warnings) {
+        this.warnings = warnings;
+    }
 
     public void reset() {
         lexer.getLexContext().reset();
@@ -280,7 +288,7 @@ public class ParserSupport {
                 if (numParamCurrent == null) numParamCurrent = newNode;
                 return newNode;
             }
-            if (currentScope.getType() != StaticScope.Type.BLOCK) numparam_name(name);
+            if (currentScope.getType() != StaticScope.Type.BLOCK) numparam_name(name.getBytes());
 
             return new VCallNode(node.getLine(), name);
         case CONSTDECLNODE: // CONSTANT
@@ -333,8 +341,13 @@ public class ParserSupport {
         return one != '0' && Character.isDigit(one); // _1..._9
     }
 
+    // FIXME: We probably only need one impl of this method.
     public void numparam_name(RubySymbol name) {
-        String id = name.idString();
+        numparam_name(name.getBytes());
+    }
+    public void numparam_name(ByteList name) {
+        // FIXME: probably make isNumParamId with ByteList.
+        String id = name.toString();
         if (isNumParamId(id)) compile_error(id + " is reserved for numbered parameter");
     }
 
@@ -375,7 +388,7 @@ public class ParserSupport {
     public AssignableNode assignableLabelOrIdentifier(ByteList byteName, Node value) {
         RubySymbol name = symbolID(byteName);
 
-        numparam_name(name);
+        numparam_name(byteName);
 
         if (warnOnUnusedVariables) addOrMarkVariable(name, currentScope.isDefined(name.idString()));
 
@@ -476,17 +489,17 @@ public class ParserSupport {
         return currentScope.assign(lexer.getRubySourceline(), name, makeNullNil(value));
     }
 
-    public Node getOperatorCallNode(Node firstNode, ByteList operator) {
-        value_expr(lexer, firstNode);
+    public Node call_uni_op(Node firstNode, ByteList operator) {
+        value_expr(firstNode);
 
         return new OperatorCallNode(firstNode.getLine(), firstNode, symbolID(operator), null, null, false);
     }
     
-    public Node getOperatorCallNode(Node firstNode, ByteList operator, Node secondNode) {
+    public Node call_bin_op(Node firstNode, ByteList operator, Node secondNode) {
         return getOperatorCallNodeInner(firstNode, operator, secondNode);
     }
 
-    public Node getOperatorCallNode(Node firstNode, ByteList operator, Node secondNode, int defaultPosition) {
+    public Node call_bin_op(Node firstNode, ByteList operator, Node secondNode, int defaultPosition) {
         firstNode = checkForNilNode(firstNode, defaultPosition);
         secondNode = checkForNilNode(secondNode, defaultPosition);
 
@@ -494,13 +507,17 @@ public class ParserSupport {
     }
 
     private Node getOperatorCallNodeInner(Node firstNode, ByteList operator, Node secondNode) {
-        value_expr(lexer, firstNode);
-        value_expr(lexer, secondNode);
+        value_expr(firstNode);
+        value_expr(secondNode);
 
         return new OperatorCallNode(firstNode.getLine(), firstNode, symbolID(operator), new ArrayNode(secondNode.getLine(), secondNode), null, false);
     }
 
-    public Node getMatchNode(Node firstNode, Node secondNode) {
+    public Node new_defined(long line, Node node) {
+        return new DefinedNode((int) line, node);
+    }
+
+    public Node match_op(Node firstNode, Node secondNode) {
         if (firstNode instanceof DRegexpNode) {
             return new Match2Node(firstNode.getLine(), firstNode, secondNode);
         } else if (firstNode instanceof RegexpNode) {
@@ -519,7 +536,7 @@ public class ParserSupport {
             return new Match3Node(firstNode.getLine(), firstNode, secondNode);
         }
 
-        return getOperatorCallNode(firstNode, CommonByteLists.EQUAL_TILDE, secondNode);
+        return call_bin_op(firstNode, CommonByteLists.EQUAL_TILDE, secondNode);
     }
 
     /**
@@ -530,7 +547,7 @@ public class ParserSupport {
      * @return an AttrAssignNode
      */
     public Node aryset(Node receiver, Node index) {
-        value_expr(lexer, receiver);
+        value_expr(receiver);
 
         return new_attrassign(receiver.getLine(), receiver, CommonByteLists.ASET_METHOD, index, false);
     }
@@ -624,7 +641,7 @@ public class ParserSupport {
         }
     }
 
-    public boolean value_expr(RubyLexer lexer, Node node) {
+    public boolean value_expr(Node node) {
         boolean conditional = false;
 
         while (node != null) {
@@ -641,7 +658,7 @@ public class ParserSupport {
                     node = ((BeginNode) node).getBodyNode();
                     break;
                 case IFNODE:
-                    if (!value_expr(lexer, ((IfNode) node).getThenBody())) return false;
+                    if (!value_expr(((IfNode) node).getThenBody())) return false;
                     node = ((IfNode) node).getElseBody();
                     break;
                 case ANDNODE: case ORNODE:
@@ -795,7 +812,7 @@ public class ParserSupport {
                     if (numParamCurrent == null) numParamCurrent = newNode;
                     return newNode;
                 }
-                if (currentScope.getType() != StaticScope.Type.BLOCK) numparam_name(name);
+                if (currentScope.getType() != StaticScope.Type.BLOCK) numparam_name(id);
 
                 return new VCallNode(loc, name);
             }
@@ -881,7 +898,7 @@ public class ParserSupport {
             case DSTRNODE:
             case EVSTRNODE:
             case STRNODE:
-                if (!method) warn(ID.VOID_VALUE_EXPRESSION, node.getLine(), "string literal in condition");
+                if (!method) warn(node.getLine(), "string literal in condition");
                 break;
             case DREGEXPNODE: {
                 int line = node.getLine();
@@ -909,7 +926,7 @@ public class ParserSupport {
                 if (!method && !configuration.isInlineSource()) {
                     if ((dotNode.getBeginNode() instanceof TrueNode && dotNode.getEndNode() instanceof FalseNode) ||
                             (dotNode.getBeginNode() instanceof FalseNode && dotNode.getEndNode() instanceof TrueNode)) {
-                        warn(ID.VOID_VALUE_EXPRESSION, node.getLine(), "range literal in condition");
+                        warn(node.getLine(), "range literal in condition");
                     }
 
                 }
@@ -922,7 +939,7 @@ public class ParserSupport {
             case SYMBOLNODE:
             case DSYMBOLNODE:
             case FIXNUMNODE:
-                if (!method) warn(ID.VOID_VALUE_EXPRESSION, node.getLine(), "literal in condition");
+                if (!method) warn(node.getLine(), "literal in condition");
                 break;
             case REGEXPNODE:
                 if (Options.PARSER_WARN_REGEX_CONDITION.load()) {
@@ -960,7 +977,7 @@ public class ParserSupport {
 
         if (node instanceof FixnumNode) {
             warnUnlessEOption(ID.LITERAL_IN_CONDITIONAL_RANGE, node, "integer literal in conditional range");
-            return getOperatorCallNode(node, EQ_EQ, new GlobalVarNode(node.getLine(), symbolID(DOLLAR_DOT)));
+            return call_bin_op(node, EQ_EQ, new GlobalVarNode(node.getLine(), symbolID(DOLLAR_DOT)));
         } 
 
         return node;
@@ -988,19 +1005,16 @@ public class ParserSupport {
         return one == null ? two.getLine() : one.getLine();
     }
 
-    public AndNode newAndNode(Node left, Node right) {
-        value_expr(lexer, left);
+    public Node logop(Node left, ByteList op, Node right) {
+        value_expr(left);
 
-        if (left == null && right == null) return new AndNode(lexer.getRubySourceline(), makeNullNil(left), makeNullNil(right));
-        
-        return new AndNode(position(left, right), makeNullNil(left), makeNullNil(right));
-    }
+        if (op == AMPERSAND_AMPERSAND) {
+            if (left == null && right == null) return new AndNode(lexer.getRubySourceline(), makeNullNil(left), makeNullNil(right));
 
-    public OrNode newOrNode(Node left, Node right) {
-        value_expr(lexer, left);
-
+            return new AndNode(position(left, right), makeNullNil(left), makeNullNil(right));
+        }
         if (left == null && right == null) return new OrNode(lexer.getRubySourceline(), makeNullNil(left), makeNullNil(right));
-        
+
         return new OrNode(position(left, right), makeNullNil(left), makeNullNil(right));
     }
 
@@ -1112,7 +1126,7 @@ public class ParserSupport {
             receiverNode.setValueNode(valueNode);
             return new OpAsgnAndNode(line, gettable2(receiverNode), receiverNode);
         } else {
-            receiverNode.setValueNode(getOperatorCallNode(gettable2(receiverNode), operatorName, valueNode));
+            receiverNode.setValueNode(call_bin_op(gettable2(receiverNode), operatorName, valueNode));
             receiverNode.setLine(line);
             return receiverNode;
         }
@@ -1154,7 +1168,7 @@ public class ParserSupport {
             node = new RescueNode(getPosition(head), head, rescue, rescueElse);
         } else if (rescueElse != null) {
             // FIXME: MRI removed this...
-            warn(ID.ELSE_WITHOUT_RESCUE, lexer.tokline, "else without rescue is useless");
+            warn(lexer.tokline, "else without rescue is useless");
             node = appendToBlock(head, rescue);
         }
         if (ensure != null) {
@@ -1290,10 +1304,6 @@ public class ParserSupport {
      */
     public void setConfiguration(ParserConfiguration configuration) {
         this.configuration = configuration;
-    }
-
-    public void setWarnings(IRubyWarnings warnings) {
-        this.warnings = warnings;
     }
 
     public void setLexer(RubyLexer lexer) {
@@ -1489,6 +1499,18 @@ public class ParserSupport {
         return new ArgsTailHolder(line, keywordArg, keywordRestArg, blockArg);
     }
 
+    protected ArgsTailHolder new_args_tail(int line, ListNode keywordArg,
+                                           ByteList keywordRestArgName, ByteList block) {
+        BlockArgNode blockArg = null;
+        if (block != null) {
+            ArgumentNode var = arg_var(block);
+            blockArg = new BlockArgNode(var);
+        }
+
+        return new_args_tail(line, keywordArg, keywordRestArgName, blockArg);
+    }
+
+
     public Node remove_duplicate_keys(HashNode hash) {
         List<Node> encounteredKeys = new ArrayList<>();
 
@@ -1544,13 +1566,17 @@ public class ParserSupport {
         return start != null ? start.getLine() : lexer.getRubySourceline();
     }
 
-    public void warn(ID id, int line, String message, Object... data) {
-        warnings.warn(id, lexer.getFile(), line, message);
+    public void warn(String message) {
+        warnings.warn(ID.USELESS_EXPRESSION, lexer.getFile(), src_line(), message);
+    }
+
+    public void warn(int line, String message) {
+        warnings.warn(ID.USELESS_EXPRESSION, lexer.getFile(), line, message);
     }
 
     // FIXME: Replace this with file/line version and stop using ISourcePosition
-    public void warning(ID id, int line, String message, Object... data) {
-        if (warnings.isVerbose()) warnings.warning(id, lexer.getFile(), line, message);
+    public void warning(int line, String message) {
+        if (warnings.isVerbose()) warnings.warning(ID.USELESS_EXPRESSION, lexer.getFile(), line, message);
     }
 
     // ENEBO: Totally weird naming (in MRI is not allocated and is a local var name) [1.9]
@@ -1579,9 +1605,14 @@ public class ParserSupport {
         return arg_var(identifier);
     }
 
+    // FIXME:
+    public ArgumentNode arg_var(RubySymbol name) {
+        return arg_var(name.getBytes());
+    }
+
     public ArgumentNode arg_var(ByteList byteName) {
         RubySymbol name = symbolID(byteName);
-        numparam_name(name);
+        numparam_name(byteName);
 
         if (warnOnUnusedVariables) {
             scopedParserState.addDefinedVariable(name, lexer.getRubySourceline());
@@ -1590,17 +1621,17 @@ public class ParserSupport {
         return new ArgumentNode(lexer.getRubySourceline(), name, getCurrentScope().addVariableThisScope(name.idString()));
     }
 
-    public ByteList formal_argument(ByteList identifier) {
+    public ByteList formal_argument(ByteList identifier, Object _unused) {
         lexer.validateFormalIdentifier(identifier);
 
         return shadowing_lvar(identifier);
     }
 
-    enum IDType {
+    public enum IDType {
         Local, Global, Instance, AttrSet, Constant, Class;
     }
 
-    public IDType id_type(ByteList identifier) {
+    public static IDType id_type(ByteList identifier) {
         char first = identifier.charAt(0);
 
         if (Character.isUpperCase(first)) return Constant;
@@ -1610,6 +1641,11 @@ public class ParserSupport {
                 return identifier.charAt(1) == '@' ? Class : Instance;
             case '$':
                 return Global;
+        }
+
+        byte last = (byte) identifier.get(identifier.length() - 1);
+        if (last == '=') {
+            return AttrSet;
         }
 
         return Local;
@@ -1729,7 +1765,7 @@ public class ParserSupport {
         throw getConfiguration().getRuntime().newSyntaxError(errorMessage + message);
     }
 
-    public Node newRegexpNode(int line, Node contents, RegexpNode end) {
+    public Node new_regexp(int line, Node contents, RegexpNode end) {
         Ruby runtime = configuration.getRuntime();
         RegexpOptions options = end.getOptions();
         Encoding encoding = lexer.getEncoding();
@@ -1889,10 +1925,9 @@ public class ParserSupport {
         return hashPatternNode;
     }
 
-    public static ByteList KWNOREST = new ByteList(new byte[] {});
     public static ByteList NIL = new ByteList(new byte[] {'n', 'i', 'l'});
 
-    public HashPatternNode new_hash_pattern_tail(int line, HashNode keywordArgs, ByteList keywordRestArg) {
+    public HashPatternNode new_hash_pattern_tail(int line, HashNode keywordArgs, ByteList keywordRestArg, ByteList _ignore) {
         Node restArg;
 
         if (keywordRestArg == KWNOREST) {          // '**nil'
@@ -2022,5 +2057,140 @@ public class ParserSupport {
 
     public void nd_set_first_loc(Node node, int line) {
         // FIXME: IMPL
+    }
+
+    /** The parse method use an lexer stream and parse it to an AST node
+     * structure
+     */
+    public RubyParserResult parse(ParserConfiguration configuration) throws IOException {
+        reset();
+        setConfiguration(configuration);
+        setResult(new RubyParserResult());
+
+        yyparse(lexer, configuration.isDebug() ? new YYDebug() : null);
+
+        return getResult();
+    }
+
+    protected abstract Object yyparse(RubyLexer lexer, Object yyDebug) throws IOException;
+
+    protected int tokline() {
+        return lexer.tokline;
+    }
+
+    protected LexContext getLexContext() {
+        return lexer.getLexContext();
+    }
+
+    protected int src_line() {
+        return lexer.getRubySourceline();
+    }
+
+    protected int getHeredocIndent() {
+        return lexer.getHeredocIndent();
+    }
+
+    protected void setHeredocIndent(int value) {
+        lexer.setHeredocIndent(value);
+    }
+
+    protected int getBraceNest() {
+        return lexer.getBraceNest();
+    }
+
+    protected void setBraceNest(int value) {
+        lexer.setBraceNest(value);
+    }
+
+    protected int getState() {
+        return lexer.getState();
+    }
+
+    protected void setState(int value) {
+        lexer.setState(value);
+    }
+
+    protected Encoding getEncoding() {
+        return lexer.getEncoding();
+    }
+
+    protected void setCommandStart(boolean value) {
+        lexer.commandStart = value;
+    }
+
+    protected ByteList getCurrentArg() {
+        return lexer.getCurrentArg();
+    }
+
+    protected void setCurrentArg(RubySymbol value) {
+        lexer.setCurrentArg(value == null ?  null : value.getBytes());
+    }
+
+    protected StrNode createStr(ByteList buffer, int flags) {
+        return lexer.createStr(buffer, flags);
+    }
+
+    protected StackState getCmdArgumentState() {
+        return lexer.getCmdArgumentState();
+    }
+
+    protected StackState getConditionState() {
+        return lexer.getConditionState();
+    }
+
+    protected int getLeftParenBegin() {
+        return lexer.getLeftParenBegin();
+    }
+
+    protected int getParenNest() {
+        return lexer.getParenNest();
+    }
+
+    protected ByteList extractByteList(Object value) {
+        if (value instanceof ByteList) return (ByteList) value;
+        if (value instanceof RubyString) return ((RubyString) value).getByteList();
+        if (value instanceof RubySymbol) return ((RubySymbol) value).getBytes();
+
+        throw new RuntimeException("Got unexpected object: " + value);
+    }
+
+    protected void setLeftParenBegin(int value) {
+        lexer.setLeftParenBegin(value);
+    }
+
+    protected String getFile() {
+        return lexer.getFile();
+    }
+
+    protected void heredoc_dedent(Node node) {
+        lexer.heredoc_dedent(node);
+    }
+
+    protected StrTerm getStrTerm() {
+        return lexer.getStrTerm();
+    }
+
+    protected void setStrTerm(StrTerm value) {
+        lexer.setStrTerm(value);
+    }
+
+    protected void setHeredocLineIndent(int indent) {
+        lexer.setHeredocLineIndent(indent);
+    }
+
+    public Ruby getRuntime() {
+        return lexer.getRuntime();
+    }
+
+    public Node nil() {
+        return NilImplicitNode.NIL;
+    }
+
+    public RubySymbol get_id(ByteList id) {
+        return symbolID(id);
+    }
+
+    public ByteList maybe_symbolize(ByteList value) {
+        return value;
     }
 }

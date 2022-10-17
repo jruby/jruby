@@ -53,7 +53,7 @@ end
 
 # We use this script to generate our normal parser and the parser for 
 # the ripper extension.
-package = ARGV[0] =~ /Ripper/ ? 'org.jruby.ext.ripper' : 'org.jruby.parser'
+package = ARGV[0] =~ /ripper/i ? 'org.jruby.ext.ripper' : 'org.jruby.parser'
 
 while gets
   break if /protected static final short\[\] yyTable = \{/ =~ $_
