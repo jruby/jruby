@@ -100,7 +100,7 @@ namespace :test do
 
     mri_suites = [:core, :extra, :stdlib]
     mri_suites = {
-      core: "--disable-gems -Xbacktrace.style=mri -Xdebug.fullTrace",
+      core: "-Xbacktrace.style=mri -Xdebug.fullTrace",
       extra: "--disable-gems -Xbacktrace.style=mri -Xdebug.fullTrace",
       stdlib: "-Xbacktrace.style=mri -Xdebug.fullTrace",
     }
