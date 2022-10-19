@@ -91,7 +91,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'Bundle-Description' =>  '${bundle.name} ${project.version} OSGi bundle',
               'Bundle-SymbolicName' =>  '${bundle.symbolic_name}'
             } ) do
-      dependency(groupId: 'biz.aQute.bnd', artifactId: 'biz.aQute.bndlib', version: '4.3.1')
+      dependency(groupId: 'biz.aQute.bnd', artifactId: 'biz.aQute.bndlib', version: '6.3.1')
       execute_goals( 'manifest',
                      :phase => 'prepare-package' )
     end
