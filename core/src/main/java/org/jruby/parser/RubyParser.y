@@ -3002,13 +3002,13 @@ method_call     : fcall paren_args {
 brace_block     : '{' brace_body '}' {
                     $$ = $2;
                     /*%%%*/
-                    // FIXME: empty pairs of comments are missing some pos stuff on MRI side
+                    $2.setLine(@1.end());
                     /*% %*/
                 }
                 | k_do do_body k_end {
                     $$ = $2;
                     /*%%%*/
-                    // FIXME: empty pairs of comments are missing some pos stuff on MRI side
+                    $2.setLine(@1.end());
                     /*% %*/
                 }
 

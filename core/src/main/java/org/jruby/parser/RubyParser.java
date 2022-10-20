@@ -4840,14 +4840,14 @@ states[484] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[485] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((IterNode)yyVals[-1+yyTop].value);
                     /*%%%*/
-                    /* FIXME: empty pairs of comments are missing some pos stuff on MRI side*/
+                    ((IterNode)yyVals[-1+yyTop].value).setLine(yyVals[yyTop - count + 1].end());
                     /*% %*/
   return yyVal;
 };
 states[486] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((IterNode)yyVals[-1+yyTop].value);
                     /*%%%*/
-                    /* FIXME: empty pairs of comments are missing some pos stuff on MRI side*/
+                    ((IterNode)yyVals[-1+yyTop].value).setLine(yyVals[yyTop - count + 1].end());
                     /*% %*/
   return yyVal;
 };
