@@ -258,30 +258,18 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         IRubyObject method = runtime.newSymbol("each");
         IRubyObject size = null;
 
-        if (block.isGiven()) {
-            Arity.checkArgumentCount(runtime, args, 0, 1);
-            if (args.length > 0) {
-                size = args[0];
-                args = ArraySupport.newCopy(args, 1, args.length - 1);
-
-                if ( ! (size.isNil() || size.respondsTo("call")) &&
-                     ! (size instanceof RubyFloat && ((RubyFloat) size).value == Float.POSITIVE_INFINITY) &&
-                     ! (size instanceof RubyInteger) ) {
-                    throw runtime.newTypeError(size, runtime.getInteger());
-                }
-            }
-            object = runtime.getGenerator().newInstance(context, IRubyObject.NULL_ARRAY, block);
-
-        } else {
-            Arity.checkArgumentCount(runtime, args, 1, -1);
-            runtime.getWarnings().warn("Enumerator.new without a block is deprecated; use Object#to_enum");
-            object = args[0];
+        Arity.checkArgumentCount(runtime, args, 0, 1);
+        if (args.length > 0) {
+            size = args[0];
             args = ArraySupport.newCopy(args, 1, args.length - 1);
-            if (args.length > 0) {
-                method = args[0];
-                args = ArraySupport.newCopy(args, 1, args.length - 1);
+
+            if ( ! (size.isNil() || size.respondsTo("call")) &&
+                 ! (size instanceof RubyFloat && ((RubyFloat) size).value == Float.POSITIVE_INFINITY) &&
+                 ! (size instanceof RubyInteger) ) {
+                throw runtime.newTypeError(size, runtime.getInteger());
             }
         }
+        object = runtime.getGenerator().newInstance(context, IRubyObject.NULL_ARRAY, block);
 
         return initialize(runtime, object, method, args, size, null, keywords);
     }
