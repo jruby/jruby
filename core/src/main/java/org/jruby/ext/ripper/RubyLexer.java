@@ -1096,6 +1096,10 @@ public class RubyLexer extends LexingCommon {
                         case '\13': /* '\v' */
                             spaceSeen = true;
                             continue;
+                        case '#':
+                            pushback(c);
+                            if (spaceSeen) dispatchScanEvent(tSP);
+                            continue loop;
                         case '&':
                         case '.': {
                             dispatchDelayedToken(tIGNORED_NL);

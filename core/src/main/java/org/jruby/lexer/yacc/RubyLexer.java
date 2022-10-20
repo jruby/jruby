@@ -1006,6 +1006,9 @@ public class RubyLexer extends LexingCommon {
                     case ' ': case '\t': case '\f': case '\r': case '\13': /* '\v' */
                         spaceSeen = true;
                         continue;
+                    case '#':
+                        pushback(c);
+                        continue loop;
                     case '&':
                     case '.': {
                         if (peek('.') == (c == '&')) {
