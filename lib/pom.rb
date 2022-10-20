@@ -24,9 +24,7 @@ default_gems = [
     # https://github.com/ruby/bigdecimal/issues/169
     # ['bigdecimal', '3.1.1'],
     ['bundler', '2.3.13'],
-    # https://github.com/ruby/cgi/pull/9
-    # ['cgi', '0.3.1'],
-    ['cgi', '0.2.0'],
+    ['cgi', '0.3.3'],
     ['csv', '3.2.5'],
     # https://github.com/ruby/date/issues/48
     # ['date', '3.2.2'],
@@ -57,7 +55,7 @@ default_gems = [
     ['irb', '1.4.1'],
     ['jar-dependencies', '0.4.1'],
     ['jruby-readline', '1.3.7'],
-    ['jruby-openssl', '0.13.0'],
+    ['jruby-openssl', '0.14.0'],
     ['json', '2.6.1'],
     ['logger', '1.5.1'],
     ['mutex_m', '0.1.1'],
@@ -79,7 +77,7 @@ default_gems = [
     ['pp', '0.3.0'],
     ['prettyprint', '0.1.1'],
     ['pstore', '0.1.1'],
-    ['psych', '4.0.5'],
+    ['psych', '4.0.6'],
     ['racc', '1.6.0'],
     ['rake-ant', '1.0.5'],
     ['rdoc', '6.4.0'],

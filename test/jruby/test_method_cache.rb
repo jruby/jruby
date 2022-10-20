@@ -37,8 +37,8 @@ class TestMethodCache < Test::Unit::TestCase
     end
 
     assert_equal(1, $test_simple_include1)
-    assert_equal(1, $test_simple_include2)
-    assert_equal(1, $test_simple_include3)
+    assert_equal(2, $test_simple_include2)
+    assert_equal(3, $test_simple_include3)
     assert_equal(4, $test_simple_include4)
   end
 
@@ -78,8 +78,8 @@ class TestMethodCache < Test::Unit::TestCase
     end
 
     assert_equal(1, $test_simple_include1)
-    assert_equal(1, $test_simple_include2)
-    assert_equal(1, $test_simple_include3)
+    assert_equal(2, $test_simple_include2)
+    assert_equal(3, $test_simple_include3)
     assert_equal(4, $test_simple_include4)
   end
 

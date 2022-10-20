@@ -59,8 +59,10 @@ module GC
       if all_stats.key?(all_stats_or_key)
         all_stats[all_stats_or_key]
       else
-        raise ArgumentError.new(format("Unknown key %s", all_stats_or_key).force_encoding("UTF-8"))
+        raise ArgumentError.new(format("unknown key: %s", all_stats_or_key).force_encoding("UTF-8"))
       end
+    elsif !all_stats_or_key.nil? && !all_stats_or_key.is_a?(Hash)
+      raise TypeError.new("non-hash or symbol given")
     else
       all_stats
     end

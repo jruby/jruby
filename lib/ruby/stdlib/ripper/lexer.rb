@@ -254,7 +254,9 @@ class Ripper
       # FIXME: Our callee impl is broken and returns same result as __method__
       #  which is old method name and not new one.
       define_method(event) { |tok|
-        @buf.push Elem.new([lineno(), column()], event, tok, state())
+        e = Elem.new([lineno(), column()], event, tok, state())
+        @buf.push e
+        e
       }
 #      alias_method event, :_push_token
     end

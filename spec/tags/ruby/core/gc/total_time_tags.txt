@@ -1,2 +1,2 @@
-wip:GC.total_time returns an Integer
-wip:GC.total_time increases as collections are run
+fails:GC.total_time returns an Integer
+fails:GC.total_time increases as collections are run

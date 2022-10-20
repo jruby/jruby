@@ -1,0 +1,1 @@
+fails:IO#set_encoding raises ArgumentError when too many arguments are given

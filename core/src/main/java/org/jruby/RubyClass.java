@@ -905,6 +905,12 @@ public class RubyClass extends RubyModule {
         return obj;
     }
 
+    public IRubyObject newInstance(ThreadContext context, IRubyObject arg0) {
+        IRubyObject obj = allocate();
+        baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, arg0);
+        return obj;
+    }
+
     @JRubyMethod(name = "new", forward = true)
     public IRubyObject newInstance(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         IRubyObject obj = allocate();

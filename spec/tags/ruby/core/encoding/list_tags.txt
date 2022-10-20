@@ -1,1 +1,0 @@
-wip:Encoding.list includes CESU-8 encoding

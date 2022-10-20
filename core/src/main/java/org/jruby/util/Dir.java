@@ -378,10 +378,10 @@ public class Dir {
         return idx;
     }
 
-    public static List<ByteList> push_glob(Ruby runtime, String cwd, ByteList globByteList, int flags) {
+    public static List<ByteList> push_glob(Ruby runtime, String cwd, ByteList globByteList, int flags, boolean sort) {
         if (globByteList.length() > 0) {
             final ArrayList<ByteList> result = new ArrayList<ByteList>();
-            push_braces(runtime, cwd, result, new GlobPattern(globByteList, flags));
+            push_braces(runtime, cwd, result, new GlobPattern(globByteList, flags), sort);
             return result;
         }
 
@@ -498,7 +498,7 @@ public class Dir {
     /*
      * Process {}'s (example: Dir.glob("{jruby,jython}/README*")
      */
-    private static int push_braces(Ruby runtime, String cwd, List<ByteList> result, GlobPattern pattern) {
+    private static int push_braces(Ruby runtime, String cwd, List<ByteList> result, GlobPattern pattern, boolean sort) {
         pattern.reset();
         int lbrace = pattern.indexOf((byte) '{'); // index of left-most brace
         int rbrace = pattern.findClosingIndexOf(lbrace);// index of right-most brace
@@ -520,7 +520,7 @@ public class Dir {
                     unescaped.append(b);
                 }
             }
-            return push_globs(runtime, cwd, result, unescaped, pattern.flags);
+            return push_globs(runtime, cwd, result, unescaped, pattern.flags, sort);
         }
 
         // Peel onion...make subpatterns out of outer layer of glob and recall with each subpattern
@@ -543,16 +543,22 @@ public class Dir {
             bytes.append(pattern.bytes, pattern.begin, lbrace - pattern.begin);
             bytes.append(pattern.bytes, middleRegionIndex, i - middleRegionIndex);
             bytes.append(pattern.bytes, rbrace + 1, pattern.end - (rbrace + 1));
-            int status = push_braces(runtime, cwd, result, new GlobPattern(bytes, pattern.flags));
+            int status = push_braces(runtime, cwd, result, new GlobPattern(bytes, pattern.flags), sort);
             if (status != 0) return status;
         }
 
         return 0; // All braces pushed..
     }
 
-    private static int push_globs(Ruby runtime, String cwd, List<ByteList> ary, ByteList pattern, int flags) {
+    private static int push_globs(Ruby runtime, String cwd, List<ByteList> ary, ByteList pattern, int flags, boolean sort) {
         flags |= FNM_SYSCASE;
-        return glob_helper(runtime, cwd, pattern, -1, flags, glob_caller, new GlobArgs(push_pattern, ary));
+        List<ByteList> tmpAry = new ArrayList<>();
+        int globRet = glob_helper(runtime, cwd, pattern, -1, flags, glob_caller, new GlobArgs(push_pattern, tmpAry));
+        if (sort) {
+            Collections.sort(tmpAry);
+        }
+        ary.addAll(tmpAry);
+        return globRet;
     }
 
     public static ArrayList<String> braces(String pattern, int flags, ArrayList<String> patterns) {

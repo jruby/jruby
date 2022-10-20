@@ -1,3 +1,1 @@
-wip:Dir.[] respects the order of {} expressions, expanding left most first
-wip:Dir.[] respects the optional nested {} expressions
 fails:Dir.[] matches directory with special characters in their name in complex patterns

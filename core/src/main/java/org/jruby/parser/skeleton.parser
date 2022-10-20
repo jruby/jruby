@@ -137,6 +137,7 @@ t    this.yydebug = (org.jruby.parser.YYDebug) ayydebug;
 .  public Object yyparse (RubyLexer yyLex) throws java.io.IOException {
 .    int yystate = 0;
 .    Object yyVal = null;
+.    ByteList id = null;
 .    ProductionState[] yystates = new ProductionState[YYMAX];        // stack of states and values.
 .    initializeStates(yystates, 0, yystates.length);
 .    int yytoken = NEEDS_TOKEN;     // current token
@@ -156,6 +157,7 @@ t    this.yydebug = (org.jruby.parser.YYDebug) ayydebug;
 .
 .      yystates[yytop].state = yystate;
 .      yystates[yytop].value = yyVal;
+.      yystates[yytop].id = id;
 .      yystates[yytop].start = start;
 .      yystates[yytop].end = end;
 .   //         printstates(yytop, yystates);
@@ -178,6 +180,7 @@ t                if (yydebug != null) yydebug.lex(yystate, yytoken, yyName(yytok
 t                if (yydebug != null) yydebug.shift(yystate, yyTable[yyn], yyErrorFlag-1);
 .                yystate = yyTable[yyn];		// shift to yyn
 .                yyVal = yyLex.value();
+.                id = yyLex.id();
 .                start = yyLex.start;
 .                end = yyLex.end;
 .                yytoken = NEEDS_TOKEN;
@@ -195,7 +198,7 @@ t                if (yydebug != null) yydebug.shift(yystate, yyTable[yyn], yyErr
 .                switch (yyErrorFlag) {
 .  
 .                case 0:
-.                    support.yyerror("syntax error", yyExpecting(yystate), yyNames[yytoken]);
+.                    yyerror("syntax error", yyExpecting(yystate), yyNames[yytoken]);
 t                    if (yydebug != null) yydebug.error("syntax error");
 .                    // falls through...
 .                case 1: case 2:
@@ -209,16 +212,17 @@ t                    if (yydebug != null) yydebug.error("syntax error");
 t                            if (yydebug != null) yydebug.shift(yystates[yytop].state, yyTable[yyn], 3);
 .                            yystate = yyTable[yyn];
 .                            yyVal = yyLex.value();
+.                            id = yyLex.id();
 .                            continue yyLoop;
 .                        }
 t                        if (yydebug != null) yydebug.pop(yystates[yytop].state);
 .                    } while (--yytop >= 0);
 t                    if (yydebug != null) yydebug.reject();
-.                    support.yyerror("irrecoverable syntax error"); // throws
+.                    yyerror("irrecoverable syntax error"); // throws
 .                case 3:
 .                    if (yytoken == 0) {
 t                        if (yydebug != null) yydebug.reject();
-.                        support.yyerror("irrecoverable syntax error at end-of-file");
+.                        yyerror("irrecoverable syntax error at end-of-file");
 .                    }
 t                    if (yydebug != null) yydebug.discard(yystate, yytoken, yyName(yytoken), yyLex.value());
 .                    yytoken = NEEDS_TOKEN;
@@ -236,7 +240,7 @@ t        if (yydebug != null) yydebug.reduce(yystate, yystates[yytop-yyLen[yyn]]
 .            int count = yyLen[yyn];
 .            start = yystates[yytop - count + 1].start;
 .            end = yystates[yytop].end;
-.            yyVal = parserState.execute(support, lexer, yyVal, yystates, yytop, count, yytoken);
+.            yyVal = parserState.execute(this, yyVal, yystates, yytop, count, yytoken);
 .        }
 .// ACTIONS_BEGIN (line used by optimize_parser)
 

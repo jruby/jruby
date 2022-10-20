@@ -1084,6 +1084,8 @@ public final class Ruby implements Constantizable {
                 if (Options.JIT_LOGGING.load()) {
                     LOG.info("successfully compiled: {}", scriptNode.getFile());
                 }
+            } catch (RaiseException e) {
+                throw e;
             } catch (Throwable e) {
                 if (Options.JIT_LOGGING.load()) {
                     if (Options.JIT_LOGGING_VERBOSE.load()) {
@@ -1205,6 +1207,8 @@ public final class Ruby implements Constantizable {
             if (scriptAndCode != null && Options.JIT_LOGGING.load()) {
                 LOG.info("done compiling target script: {}", scriptNode.getFile());
             }
+        } catch (RaiseException e) {
+            throw e;
         } catch (Exception e) {
             if (Options.JIT_LOGGING.load()) {
                 if (Options.JIT_LOGGING_VERBOSE.load()) {

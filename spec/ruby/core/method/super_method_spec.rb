@@ -43,17 +43,13 @@ describe "Method#super_method" do
     method.super_method.should == nil
   end
 
-  # jruby:7240
-  context "after changing an inherited methods visiblity" do
+  # https://github.com/jruby/jruby/issues/7240
+  context "after changing an inherited methods visibility" do
     it "calls the proper super method" do
-      MethodSpecs::InheritedMethods::C.send :public, :derp
-
-      MethodSpecs::InheritedMethods::C.new.derp.should == 500
+      MethodSpecs::InheritedMethods::C.new.derp.should == 'BA'
     end
-    
-    it "returns the expected super_method" do
-      MethodSpecs::InheritedMethods::C.send :public, :derp
 
+    it "returns the expected super_method" do
       method = MethodSpecs::InheritedMethods::C.new.method(:derp)
       method.super_method.owner.should == MethodSpecs::InheritedMethods::A
     end
@@ -61,8 +57,6 @@ describe "Method#super_method" do
 
   context "after aliasing an inherited method" do
     it "returns the expected super_method" do
-      MethodSpecs::InheritedMethods::C.alias_method :meow, :derp
-
       method = MethodSpecs::InheritedMethods::C.new.method(:meow)
       method.super_method.owner.should == MethodSpecs::InheritedMethods::A
     end

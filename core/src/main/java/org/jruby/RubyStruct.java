@@ -317,27 +317,27 @@ public class RubyStruct extends RubyObject {
 
     // For binding purposes on the newly created struct types
     public static class StructMethods {
-        @JRubyMethod(name = {"new", "[]"}, rest = true)
+        @JRubyMethod(name = {"new", "[]"}, rest = true, forward = true)
         public static IRubyObject newStruct(IRubyObject recv, IRubyObject[] args, Block block) {
             return RubyStruct.newStruct(recv, args, block);
         }
 
-        @JRubyMethod(name = {"new", "[]"})
+        @JRubyMethod(name = {"new", "[]"}, forward = true)
         public static IRubyObject newStruct(IRubyObject recv, Block block) {
             return RubyStruct.newStruct(recv, block);
         }
 
-        @JRubyMethod(name = {"new", "[]"})
+        @JRubyMethod(name = {"new", "[]"}, forward = true)
         public static IRubyObject newStruct(IRubyObject recv, IRubyObject arg0, Block block) {
             return RubyStruct.newStruct(recv, arg0, block);
         }
 
-        @JRubyMethod(name = {"new", "[]"})
+        @JRubyMethod(name = {"new", "[]"}, forward = true)
         public static IRubyObject newStruct(IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
             return RubyStruct.newStruct(recv, arg0, arg1, block);
         }
 
-        @JRubyMethod(name = {"new", "[]"})
+        @JRubyMethod(name = {"new", "[]"}, forward = true)
         public static IRubyObject newStruct(IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
             return RubyStruct.newStruct(recv, arg0, arg1, arg2, block);
         }
@@ -352,6 +352,11 @@ public class RubyStruct extends RubyObject {
             IRubyObject keywordInit = RubyStruct.getInternalVariable((RubyClass)recv, KEYWORD_INIT_VAR);
             if (!keywordInit.isTrue()) return recv.inspect();
             return recv.inspect().convertToString().catString("(keyword_init: true)");
+        }
+
+        @JRubyMethod(name = "keyword_init?")
+        public static IRubyObject keyword_init_p(IRubyObject self) {
+            return RubyStruct.getInternalVariable((RubyClass) self, KEYWORD_INIT_VAR);
         }
     }
 

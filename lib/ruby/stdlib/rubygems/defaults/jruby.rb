@@ -18,7 +18,7 @@ module Gem
     end
   end
 
-  unless RbConfig::CONFIG['host_os'].match? /linux/
+  unless RbConfig::CONFIG['host_os'].match?(/linux/)
     def self.platform_defaults
       return {
           'install' => '--env-shebang',

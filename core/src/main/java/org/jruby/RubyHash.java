@@ -63,10 +63,12 @@ import org.jruby.util.RecursiveComparator;
 import org.jruby.util.TypeConverter;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.AbstractCollection;
 import java.util.AbstractSet;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -1019,6 +1021,7 @@ public class RubyHash extends RubyObject implements Map {
         modify();
         final RubyHashEntry[] oldTable = table;
         final RubyHashEntry[] newTable = new RubyHashEntry[oldTable.length];
+        Set<Integer> rehashedIndexes = new HashSet<>();
         for (int j = 0; j < oldTable.length; j++) {
             RubyHashEntry entry = oldTable[j];
             oldTable[j] = null;
@@ -1041,6 +1044,8 @@ public class RubyHash extends RubyObject implements Map {
                     // replace entry if hash changed
                     if (oldHash != newHash) {
                         entry = new RubyHashEntry(entry, newHash);
+                        // memorize hash value
+                        rehashedIndexes.add(newHash);
                     }
 
                     entry.next = newEntry;
@@ -1050,6 +1055,28 @@ public class RubyHash extends RubyObject implements Map {
             }
         }
         table = newTable;
+
+        // When a hash is large and contains duplicate keys, sometimes the above logic can not remove duplicate key.
+        // searches duplicate keys and removes it.
+        for (int hash : rehashedIndexes) {
+            RubyHashEntry entry = table[bucketIndex(hash, newTable.length)];
+            while (entry != null) {
+                if (entry.hash == hash) {
+                    RubyHashEntry nextEntry = entry.next;
+                    while (nextEntry != null) {
+                        if (internalKeyExist(entry.hash, entry.key, nextEntry.hash, nextEntry.key)) {
+                            RubyHashEntry tmpNext = entry.nextAdded;
+                            RubyHashEntry tmpPrev = entry.prevAdded;
+                            tmpPrev.nextAdded = tmpNext;
+                            tmpPrev.prevAdded = tmpPrev;
+                            size--;
+                        }
+                        nextEntry = nextEntry.next;
+                    }
+                }
+            entry = entry.next;
+            }
+        }
         return this;
     }
 
@@ -1331,10 +1358,13 @@ public class RubyHash extends RubyObject implements Map {
         return context.runtime.newFixnum(hval[0]);
     }
 
+    private static final ThreadLocal<byte[]> HASH_16_BYTE = ThreadLocal.withInitial(() -> {return new byte[16];});
+
     private static final VisitorWithState<long[]> CalculateHashVisitor = new VisitorWithState<long[]>() {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, long[] hval) {
-            hval[0] += Helpers.safeHash(context, key).value ^ Helpers.safeHash(context, value).value;
+            ByteBuffer.wrap(HASH_16_BYTE.get()).putLong(Helpers.safeHash(context, key).value).putLong(Helpers.safeHash(context, value).value);
+            hval[0] ^= Helpers.multAndMix(context.runtime.getHashSeedK0(), Arrays.hashCode(HASH_16_BYTE.get()));
         }
     };
 
@@ -1552,10 +1582,6 @@ public class RubyHash extends RubyObject implements Map {
         return block.isGiven() ? each_pairCommon(context, block) : enumeratorizeWithSize(context, this, "each", RubyHash::size);
     }
 
-    public IRubyObject each19(final ThreadContext context, final Block block) {
-        return each(context, block);
-    }
-
     /** rb_hash_each_pair
      *
      */
@@ -1568,7 +1594,9 @@ public class RubyHash extends RubyObject implements Map {
     private static final VisitorWithState<Block> YieldKeyValueArrayVisitor = new VisitorWithState<Block>() {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Block block) {
-            if (block.getSignature().arityValue() > 1) {
+            if (block.type == Block.Type.LAMBDA) {
+                block.call(context, context.runtime.newArray(key, value));
+            } else if (block.getSignature().arityValue() > 1) {
                 block.yieldSpecific(context, key, value);
             } else {
                 block.yield(context, context.runtime.newArray(key, value));
@@ -1666,9 +1694,9 @@ public class RubyHash extends RubyObject implements Map {
 
         if (!isEmpty()) {
             RubyArray pairs = (RubyArray) flatten(context);
+            RubyHash newKeys = newHash(context.runtime);
             int length = pairs.size();
             boolean aborted = false; // If break happens in blocks we stop transforming but still leave rest as-is.
-            clear();
             for (int i = 0; i < length; i += 2) {
                 IRubyObject oldKey = pairs.eltOk(i);
                 IRubyObject newKey;
@@ -1681,7 +1709,7 @@ public class RubyHash extends RubyObject implements Map {
                             newKey = block.yield(context, oldKey);
                         } catch (IRBreakJump e) {
                             aborted = true;
-                            newKey = oldKey;
+                            continue;
                         }
                     } else {
                         newKey = ((RubyHash) transformHash).internalGet(oldKey);
@@ -1692,7 +1720,7 @@ public class RubyHash extends RubyObject implements Map {
                                     newKey = block.yield(context, oldKey);
                                 } catch (IRBreakJump e) {
                                     aborted = true;
-                                    newKey = oldKey;
+                                    continue;
                                 }
                             } else {
                                 newKey = oldKey;
@@ -1701,7 +1729,11 @@ public class RubyHash extends RubyObject implements Map {
                     }
                 }
 
+                if (!newKeys.hasKey(oldKey)) {
+                    fastDelete(oldKey);
+                }
                 fastASet(newKey, pairs.eltOk(i + 1));
+                newKeys.fastASet(newKey, null);
             }
         }
 
@@ -3011,5 +3043,10 @@ public class RubyHash extends RubyObject implements Map {
     @Deprecated
     public RubyHash rb_clear() {
         return rb_clear(getRuntime().getCurrentContext());
+    }
+
+    @Deprecated
+    public IRubyObject each19(final ThreadContext context, final Block block) {
+        return each(context, block);
     }
 }

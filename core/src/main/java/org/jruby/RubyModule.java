@@ -1120,6 +1120,25 @@ public class RubyModule extends RubyObject {
 
             doPrependModule(module);
 
+            if (this.isModule()) {
+                boolean doPrepend = true;
+                synchronized (getRuntime().getHierarchyLock()) {
+                    for (RubyClass includeClass : includingHierarchies) {
+                        RubyClass checkClass = includeClass;
+                        while (checkClass != null) {
+                            if (checkClass instanceof IncludedModule && checkClass.getOrigin() == module) {
+                                doPrepend = false;
+                            }
+                            checkClass = checkClass.superClass;
+                        }
+
+                        if (doPrepend) {
+                            includeClass.doPrependModule(module);
+                        }
+                    }
+                }
+            }
+
             invalidateCoreClasses();
             invalidateCacheDescendants();
             invalidateConstantCacheForModuleInclusion(module);
@@ -1161,6 +1180,26 @@ public class RubyModule extends RubyObject {
         checkForCyclicInclude(module);
 
         doIncludeModule(module);
+
+        if (this.isModule()) {
+            boolean doInclude = true;
+            synchronized (getRuntime().getHierarchyLock()) {
+                for (RubyClass includeClass : includingHierarchies) {
+                    RubyClass checkClass = includeClass;
+                    while (checkClass != null) {
+                        if (checkClass instanceof IncludedModule && checkClass.getOrigin() == module) {
+                            doInclude = false;
+                        }
+                        checkClass = checkClass.superClass;
+                    }
+
+                    if (doInclude) {
+                        includeClass.doIncludeModule(module);
+                    }
+                }
+            }
+        }
+
         invalidateCoreClasses();
         invalidateCacheDescendants();
         invalidateConstantCacheForModuleInclusion(module);
@@ -3579,25 +3618,29 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = {"module_eval", "class_eval"},
             reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            forward = true)
     public IRubyObject module_eval(ThreadContext context, Block block) {
         return specificEval(context, this, block, EvalType.MODULE_EVAL);
     }
     @JRubyMethod(name = {"module_eval", "class_eval"},
             reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            forward = true)
     public IRubyObject module_eval(ThreadContext context, IRubyObject arg0, Block block) {
         return specificEval(context, this, arg0, block, EvalType.MODULE_EVAL);
     }
     @JRubyMethod(name = {"module_eval", "class_eval"},
             reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            forward = true)
     public IRubyObject module_eval(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         return specificEval(context, this, arg0, arg1, block, EvalType.MODULE_EVAL);
     }
     @JRubyMethod(name = {"module_eval", "class_eval"},
             reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            forward = true)
     public IRubyObject module_eval(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         return specificEval(context, this, arg0, arg1, arg2, block, EvalType.MODULE_EVAL);
     }
@@ -3608,7 +3651,8 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = {"module_exec", "class_exec"},
             reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            forward = true)
     public IRubyObject module_exec(ThreadContext context, Block block) {
         if (block.isGiven()) {
             return yieldUnder(context, this, IRubyObject.NULL_ARRAY, block.cloneBlockAndFrame(), EvalType.MODULE_EVAL);
@@ -3619,7 +3663,8 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = {"module_exec", "class_exec"}, rest = true,
             reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            forward = true)
     public IRubyObject module_exec(ThreadContext context, IRubyObject[] args, Block block) {
         if (block.isGiven()) {
             return yieldUnder(context, this, args, block.cloneBlockAndFrame(), EvalType.MODULE_EVAL);
@@ -3674,7 +3719,7 @@ public class RubyModule extends RubyObject {
      *
      * @param baseModule The module to include, along with any modules it itself includes
      */
-    private void doIncludeModule(RubyModule baseModule) {
+    void doIncludeModule(RubyModule baseModule) {
         List<RubyModule> modulesToInclude = gatherModules(baseModule);
 
         RubyModule currentInclusionPoint = methodLocation;
@@ -3714,7 +3759,7 @@ public class RubyModule extends RubyObject {
      *
      * @param baseModule The module to prepend, along with any modules it itself includes
      */
-    private void doPrependModule(RubyModule baseModule) {
+    void doPrependModule(RubyModule baseModule) {
         List<RubyModule> modulesToInclude = gatherModules(baseModule);
 
         if (!hasPrepends()) { // Set up a new holder class to hold all this types original methods.
