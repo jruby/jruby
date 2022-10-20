@@ -1542,7 +1542,7 @@ public class RubyKernel {
         Block.Type type = block.type;
 
         if (type == Block.Type.PROC) {
-            context.runtime.getWarnings().warning("lambda without a literal block is deprecated; use the proc without lambda instead");
+            context.runtime.getWarnings().warnDeprecated("lambda without a literal block is deprecated; use the proc without lambda instead");
         } else {
             type = Block.Type.LAMBDA;
         }
