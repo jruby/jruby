@@ -899,9 +899,10 @@ modes.each do |mode|
       end
       "){}}.to_not raise_error
 
+      # Enumerator.new without a block
       expect {
         JRuby5871A.new("foo", :each_byte)
-      }.to_not raise_error
+      }.to raise_error(ArgumentError)
 
       expect{run("
       class JRuby5871B < #{enumerable}
@@ -911,9 +912,10 @@ modes.each do |mode|
       end
       "){}}.to_not raise_error
 
+      # Enumerator.new without a block
       expect {
         JRuby5871B.new("foo", :each_byte)
-      }.to_not raise_error
+      }.to raise_error(ArgumentError)
     end
 
     it "allows colon2 const assignment on LHS of masgn" do

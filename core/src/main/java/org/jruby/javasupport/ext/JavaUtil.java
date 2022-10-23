@@ -44,6 +44,7 @@ import org.jruby.util.RubyStringBuilder;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
+import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.javasupport.JavaUtil.convertJavaArrayToRuby;
 import static org.jruby.javasupport.JavaUtil.convertJavaToUsableRubyObject;
 import static org.jruby.javasupport.JavaUtil.inspectObject;
@@ -419,7 +420,7 @@ public abstract class JavaUtil {
         public static IRubyObject index(final ThreadContext context, final IRubyObject self, final Block block) {
             final Ruby runtime = context.runtime;
             if ( ! block.isGiven() ) { // list.index ... Enumerator.new(self, :index)
-                return runtime.getEnumerator().callMethod("new", self, runtime.newSymbol("index"));
+                return enumeratorize(context.runtime, self, "index");
             }
 
             final java.util.List list = unwrapIfJavaObject(self);
@@ -472,7 +473,7 @@ public abstract class JavaUtil {
         public static IRubyObject rindex(final ThreadContext context, final IRubyObject self, final Block block) {
             final Ruby runtime = context.runtime;
             if ( ! block.isGiven() ) { // list.rindex ... Enumerator.new(self, :rindex)
-                return runtime.getEnumerator().callMethod("new", self, runtime.newSymbol("rindex"));
+                return enumeratorize(context.runtime, self, "rindex");
             }
 
             final java.util.List list = unwrapIfJavaObject(self);
