@@ -30,11 +30,19 @@ import java.util.HashMap;
 import java.util.Map;
 import org.jruby.util.collections.IntList;
 
+import static org.jruby.ext.coverage.CoverageData.CoverageDataState.*;
+
 public class CoverageData {
-    public static final String STARTED = "";        // no load/require ruby file can be "" so we
-    private static final IntList SVALUE = new IntList();  // use it as a holder to know if start occurs
+    public enum CoverageDataState {
+        IDLE,
+        SUSPENDED,
+        RUNNING
+    };
+
     private volatile Map<String, IntList> coverage;
-    private volatile int mode;
+    private volatile int mode;                      // actual mode (currentMode == 0 is mode of LINES).
+    private volatile int currentMode;               // listed mode for sake of reporting.
+    private volatile CoverageDataState state = IDLE;
 
     public static final int NONE = 0;
     public static final int LINES = 1 << 0;
@@ -43,8 +51,18 @@ public class CoverageData {
     public static final int ONESHOT_LINES = 1 << 3;
     public static final int ALL = LINES | BRANCHES | METHODS;
 
+    /**
+     * Has coverage been setup?
+     */
     public boolean isCoverageEnabled() {
-        return mode != 0;
+        return state != IDLE;
+    }
+
+    /**
+     * Is coverage actively collecting info?
+     */
+    public boolean isRunning() {
+        return state == RUNNING;
     }
 
     public int getMode() {
@@ -66,44 +84,67 @@ public class CoverageData {
      * @param line
      */
     public synchronized void coverLine(String filename, int line) {
-        IntList lines = coverage.get(filename);
+        Map<String, IntList> coverage = this.coverage;
 
-        if (lines == null) return;
+        if (coverage != null) {
+            IntList lines = coverage.get(filename);
 
-        if (isOneshot()) {
-            lines.add(line);
-        } else {
-            if (lines.size() <= line) return;
-            lines.set(line, lines.get(line) + 1);
+            if (lines == null) return;
+
+            if (isOneshot()) {
+                lines.add(line);
+            } else {
+                if (lines.size() <= line) return;
+                lines.set(line, lines.get(line) + 1);
+            }
         }
     }
 
-    public synchronized void setCoverageEnabled(int mode) {
+    public synchronized void clearCoverage() {
         Map<String, IntList> coverage = this.coverage;
 
-        if (coverage == null) coverage = new HashMap<>();
-
-        if (mode != CoverageData.NONE) {
-            coverage.put(STARTED, SVALUE);
-        } else {
-            coverage.remove(STARTED);
+        if (coverage != null) {
+            Map<String, IntList> cov = coverage;
+            if ((mode & ONESHOT_LINES) != 0) {
+                for (IntList value: cov.values()) {
+                    value.clear();
+                }
+            } else {
+                for (IntList value: cov.values()) {
+                    for (int i = 0; i < value.size(); i++) {
+                        int v = value.get(i);
+                        if (v != -1) value.set(i, 0);
+                    }
+                }
+            }
         }
+    }
 
-        this.coverage = coverage;
+    public synchronized void resumeCoverage() {
+        setupLines();
+
+        this.state = RUNNING;
+    }
+
+    public synchronized void suspendCoverage() {
+        this.state = SUSPENDED;
+    }
+
+    public synchronized void setCoverage(int mode, int currentMode, CoverageDataState state) {
+        this.state = state;
         this.mode = mode;
+        this.currentMode = currentMode;
+        setupLines();
+    }
+
+    private void setupLines() {
+        Map<String, IntList> coverage = this.coverage;
+
+        if (coverage == null && ((mode & (LINES|ONESHOT_LINES)) != 0)) this.coverage = new HashMap<>();
     }
 
     public synchronized Map<String, IntList> resetCoverage() {
         Map<String, IntList> coverage = this.coverage;
-        coverage.remove(STARTED);
-
-        for (Map.Entry<String, IntList> entry : coverage.entrySet()) {
-            String key = entry.getKey();
-
-            // on reset we do not reset files where no execution ever happened but we do reset
-            // any files visited to be an empty array.  Why?  I don't know.  Matching MRI.
-            if (hasCodeBeenPartiallyCovered(entry.getValue())) coverage.put(key, SVALUE);
-        }
 
         this.coverage = null;
         this.mode = CoverageData.NONE;
@@ -138,5 +179,16 @@ public class CoverageData {
 
         return coverage;
     }
-    
+
+    public CoverageDataState getCurrentState() {
+        return state;
+    }
+
+    public void setCurrentState(CoverageDataState state) {
+        this.state = state;
+    }
+
+    public int getCurrentMode() {
+        return currentMode;
+    }
 }

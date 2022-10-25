@@ -614,9 +614,7 @@ public class IRRuntimeHelpers {
     public static void updateCoverage(ThreadContext context, String filename, int line) {
         CoverageData data = context.runtime.getCoverageData();
 
-        if (data.isCoverageEnabled()) {
-            data.coverLine(filename, line);
-        }
+        if (data.isRunning()) data.coverLine(filename, line);
     }
 
     @JIT @Interp
