@@ -48,7 +48,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @see org.jruby.IncludedModuleWrapper
  * @see org.jruby.RubyModule
  */
-public class PrependedModule extends RubyClass {
+public class PrependedModule extends RubyClass implements DelegatedModule {
     private RubyModule origin;
 
     public PrependedModule(Ruby runtime, RubyClass superClass, RubyModule prependedClass) {

@@ -837,7 +837,7 @@ public class RubyModule extends RubyObject {
     private RubyModule createNewRefinedModule(ThreadContext context, RubyModule klass) {
         Ruby runtime = context.runtime;
 
-        RubyModule newRefinement = new RubyModule(runtime);
+        RubyModule newRefinement = new RubyModule(runtime, runtime.getRefinement());
 
         RubyClass superClass = refinementSuperclass(runtime, klass);
         newRefinement.setSuperClass(superClass);
@@ -950,7 +950,7 @@ public class RubyModule extends RubyObject {
         // For each superClass of the refined module also use their refinements for the given cref
         if (superClass != null) usingModuleRecursive(cref, superClass);
 
-        if (module instanceof IncludedModule) {
+        if (module instanceof DelegatedModule) {
             module = module.getDelegate();
         } else if (module.isModule()) {
             // ok as is
