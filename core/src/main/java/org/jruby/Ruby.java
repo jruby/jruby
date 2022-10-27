@@ -343,6 +343,7 @@ public final class Ruby implements Constantizable {
         RubyObject.createObjectClass(this, objectClass);
         RubyModule.createModuleClass(this, moduleClass);
         RubyClass.createClassClass(this, classClass);
+        RubyModule.createRefinementClass(this, refinementClass);
 
         // set constants now that they're initialized
         basicObjectClass.setConstant("BasicObject", basicObjectClass);

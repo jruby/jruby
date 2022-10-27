@@ -84,6 +84,7 @@ ruby/test_range.rb
 ruby/test_rational.rb
 ruby/test_rational2.rb
 ruby/test_readpartial.rb
+ruby/test_refinement.rb
 ruby/test_regexp.rb
 ruby/test_require.rb
 ruby/test_require_lib.rb
@@ -126,9 +127,6 @@ ruby/test_yield.rb
 #ruby/test_optimization.rb
 #ruby/test_rubyvm.rb
 #ruby/test_rubyvm_mjit.rb
-
-# Disabled due to https://github.com/jruby/jruby/issues/6867
-#ruby/test_refinement.rb
 
 # Heavy subprocess tests, moved to mri.extra.index
 #ruby/test_settracefunc.rb
