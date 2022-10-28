@@ -112,6 +112,8 @@ public class JRubyFile extends JavaSecuredFile {
             if (pathname.startsWith("file:")) {
                 pathname = pathname.substring(5);
 
+                // Mostly for Windows to work as "//" is not a valid existing dir but this is more that the dir name should be.
+                if (pathname.equals("//")) pathname = "/";
                 if (pathname.length() == 0) return EmptyFileResource.INSTANCE;
             }
         }
