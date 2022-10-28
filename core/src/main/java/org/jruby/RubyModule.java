@@ -2937,7 +2937,7 @@ public class RubyModule extends RubyObject {
         addAccessor(context, TypeConverter.checkID(context.runtime, name), PUBLIC, false, true);
     }
 
-    @JRubyMethod(required = 1, rest = true)
+    @JRubyMethod(required = 1, rest = true, visibility = PRIVATE)
     public IRubyObject ruby2_keywords(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
 
