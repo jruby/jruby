@@ -2082,22 +2082,25 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     }
 
     // MRI: ary_join_0
-    protected RubyString joinStrings(RubyString sep, int max, RubyString result) {
+    protected int joinStrings(RubyString sep, int max, RubyString result) {
         IRubyObject first;
         if (max > 0 && (first = eltOk(0)) instanceof EncodingCapable) {
             result.setEncoding(((EncodingCapable) first).getEncoding());
         }
 
+        int i;
         try {
-            for (int i = 0; i < max; i++) {
+            for (i = 0; i < max; i++) {
+                IRubyObject val = eltInternal(i);
+                if (!(val instanceof RubyString)) break;
                 if (i > 0 && sep != null) result.cat19(sep);
-                result.append19(eltInternal(i));
+                result.append19(val);
             }
         } catch (ArrayIndexOutOfBoundsException e) {
             throw concurrentModification(getRuntime(), e);
         }
 
-        return result;
+        return i;
     }
 
     // MRI: ary_join_1
@@ -2183,7 +2186,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                 if (i > realLength) i = realLength;
                 len += (realLength - i) * 10;
                 RubyString result = RubyString.newStringLight(runtime, len, USASCIIEncoding.INSTANCE);
-                joinStrings(sepString, i, result);
+                i = joinStrings(sepString, i, result);
                 boolean[] first = new boolean[] { i == 0 };
                 return joinAny(context, sepString, i, result, first);
             }
@@ -2191,7 +2194,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             len += ((RubyString) tmp).getByteList().length();
         }
 
-        return joinStrings(sepString, realLength, RubyString.newStringLight(runtime, len));
+        RubyString result = RubyString.newStringLight(runtime, len);
+        joinStrings(sepString, realLength, result);
+
+        return result;
     }
 
     @JRubyMethod(name = "join")
