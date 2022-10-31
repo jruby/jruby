@@ -351,6 +351,7 @@ public final class Ruby implements Constantizable {
         objectClass.setConstant("Object", objectClass);
         objectClass.setConstant("Class", classClass);
         objectClass.setConstant("Module", moduleClass);
+        objectClass.setConstant("Refinement", refinementClass);
 
         // Initialize Kernel and include into Object
         RubyModule kernel = kernelModule = RubyKernel.createKernelModule(this);
