@@ -2031,7 +2031,7 @@ public class RubyKernel {
         return recv.getSingletonClass();
     }
 
-    @JRubyMethod(rest = true, forward = true)
+    @JRubyMethod(rest = true, forward = true, reads = SCOPE)
     public static IRubyObject public_send(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         if (args.length == 0) {
             throw context.runtime.newArgumentError("no method name given");
@@ -2047,7 +2047,7 @@ public class RubyKernel {
         args = ( length == 0 ) ? IRubyObject.NULL_ARRAY : ArraySupport.newCopy(args, 1, length);
 
         final RubyClass klass = RubyBasicObject.getMetaClass(recv);
-        CacheEntry entry = klass.searchWithCache(name);
+        CacheEntry entry = klass.searchWithRefinements(name, context.getCurrentStaticScope());
         DynamicMethod method = entry.method;
 
         if (method.isUndefined() || method.getVisibility() != PUBLIC) {
