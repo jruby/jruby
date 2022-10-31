@@ -2390,6 +2390,10 @@ public class RubyModule extends RubyObject {
         return newMethod(receiver, methodName, bound, visibility, false, true);
     }
 
+    public final IRubyObject newMethod(IRubyObject receiver, String methodName, StaticScope refinedScope, boolean bound, Visibility visibility) {
+        return newMethod(receiver, methodName, refinedScope, bound, visibility, false, true);
+    }
+
     public final IRubyObject newMethod(IRubyObject receiver, final String methodName, boolean bound, Visibility visibility, boolean respondToMissing) {
         return newMethod(receiver, methodName, bound, visibility, respondToMissing, true);
     }
@@ -3176,7 +3180,11 @@ public class RubyModule extends RubyObject {
         return instanceMethods(args, PUBLIC, false, false);
     }
 
-    @JRubyMethod(name = "instance_method", required = 1)
+    @JRubyMethod(name = "instance_method", required = 1, reads = SCOPE)
+    public IRubyObject instance_method(ThreadContext context, IRubyObject symbol) {
+        return newMethod(null, TypeConverter.checkID(symbol).idString(), context.getCurrentStaticScope(), false, null);
+    }
+
     public IRubyObject instance_method(IRubyObject symbol) {
         return newMethod(null, TypeConverter.checkID(symbol).idString(), false, null);
     }
