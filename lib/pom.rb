@@ -79,7 +79,7 @@ default_gems = [
     ['pstore', '0.1.1'],
     ['psych', '4.0.6'],
     ['racc', '1.6.0'],
-    ['rake-ant', '1.0.5'],
+    ['rake-ant', '1.0.6'],
     ['rdoc', '6.4.0'],
     # https://github.com/ruby/readline/issues/5
     # ['readline', '0.0.3'],
