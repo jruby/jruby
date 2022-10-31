@@ -550,7 +550,8 @@ public class RubyFloat extends RubyNumeric {
                 if (infinite.isNil()) {
                     return value > 0.0 ? RubyFixnum.one(runtime) : RubyFixnum.minus_one(runtime);
                 }
-                long sign = RubyFixnum.fix2long(infinite);
+
+                int sign = RubyComparable.cmpint(context, infinite, this, other);
 
                 if (sign > 0) {
                     return value > 0.0 ? RubyFixnum.zero(runtime) : RubyFixnum.minus_one(runtime);
