@@ -2394,6 +2394,10 @@ public class RubyModule extends RubyObject {
         return newMethod(receiver, methodName, bound, visibility, respondToMissing, true);
     }
 
+    public final IRubyObject newMethod(IRubyObject receiver, final String methodName, StaticScope scope, boolean bound, Visibility visibility, boolean respondToMissing) {
+        return newMethod(receiver, methodName, scope, bound, visibility, respondToMissing, true);
+    }
+
     public static class RespondToMissingMethod extends JavaMethod.JavaMethodNBlock {
         final String methodName;
 
@@ -2424,7 +2428,11 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject newMethod(IRubyObject receiver, final String methodName, boolean bound, Visibility visibility, boolean respondToMissing, boolean priv) {
-        CacheEntry entry = searchWithCache(methodName);
+        return newMethod(receiver, methodName, null, bound, visibility, respondToMissing, priv);
+    }
+
+    public IRubyObject newMethod(IRubyObject receiver, final String methodName, StaticScope scope, boolean bound, Visibility visibility, boolean respondToMissing, boolean priv) {
+        CacheEntry entry = scope == null ? searchWithCache(methodName) : searchWithRefinements(methodName, scope);
 
         if (entry.method.isUndefined() || (visibility != null && entry.method.getVisibility() != visibility)) {
             if (respondToMissing) { // 1.9 behavior
