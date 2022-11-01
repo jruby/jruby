@@ -11,7 +11,7 @@ load "#{__dir__}/ruby/default.mspec"
 # runs we change our noop version of GC.start to requesting we actually
 # perform a GC on the JVM.
 module GC
-  def start
+  def start(full_mark: true, immediate_sweep: true)
     java.lang.System.gc
   end
   module_function :start
@@ -26,6 +26,9 @@ TAGS_DIR = File.join(File.dirname(__FILE__), 'tags') unless defined?(TAGS_DIR)
 
 class MSpecScript
   set :prefix, 'spec/ruby'
+
+  # enable MRI-like backtraces for specs that expect that output
+  set :flags, ['-Xbacktrace.style=mri']
 
   jruby = RbConfig::CONFIG['ruby_install_name'] + RbConfig::CONFIG['EXEEXT']
   jruby = File.expand_path("../../bin/#{jruby}", __FILE__)
@@ -43,24 +46,29 @@ class MSpecScript
       SPEC_DIR + '/core/kernel/at_exit_spec.rb',
       SPEC_DIR + '/language/predefined_spec.rb',
       SPEC_DIR + '/language/predefined/data_spec.rb',
-      SPEC_DIR + '/language/magic_comment_spec.rb',
       SPEC_DIR + '/library/net/http',
-      # This requires --debug which slows down or changes other spec results
-      SPEC_DIR + '/core/tracepoint',
       *get(:command_line),
       *get(:security),
   ]
 
-  set :fast, [
-    *get(:language),
-    *get(:core),
-    *get(:library),
+  # Specs that require JRuby's --debug flag, which alters some behaviors
+  debug_specs = [
+      SPEC_DIR + '/core/tracepoint',
+      SPEC_DIR + '/core/objectspace/each_object', 
+  ]
 
-    # These all spawn sub-rubies, making them very slow to run
-    *slow_specs.map {|name| '^' + name},
+  set :fast, [
+      *get(:language),
+      *get(:core),
+      *get(:library),
+
+      # These all spawn sub-rubies, making them very slow to run
+      *slow_specs.map {|name| '^' + name},
+      *debug_specs.map {|name| '^' + name},
   ]
 
   set :slow, slow_specs
+  set :debug, debug_specs
 
   # Filter out ObjectSpace specs if ObjectSpace is disabled
   unless JRuby.objectspace
@@ -84,27 +92,33 @@ class MSpecScript
   get(:xtags) << 'hangs'
   get(:ci_xtags) << 'hangs'
 
+  # Specs we intend to pass but are still working on
+  get(:ci_xtags) << 'wip'
+
+  # Expected failures specific to a given Java version
   get(:ci_xtags) << "java#{ENV_JAVA['java.specification.version']}" # Java version
 
-  if (ENV["TRAVIS"] == "true")
-    get(:ci_xtags) << "travis" # Failing only on Travis
+  unless $stdin.tty?
+    get(:ci_xtags) << "tty" # Specs that require a tty and may fail in CI environments
   end
 
   get(:ci_xtags) << HOST_OS
 
+  instance_config = JRuby.runtime.instance_config
+
   if WINDOWS
     # Some specs on Windows will fail in we launch JRuby via
     # ruby_exe() in-process (see core/argf/gets_spec.rb)
-    JRuby.runtime.instance_config.run_ruby_in_process = false
+    instance_config.run_ruby_in_process = false
 
     # exclude specs tagged with 'windows' keyword
     get(:ci_xtags) << 'windows'
   end
 
-  # If running specs with jit threshold = 1 or force (AOT) compile, additional tags
-  if JRuby.runtime.instance_config.compile_mode.to_s == "FORCE" ||
-     JRuby.runtime.instance_config.jit_threshold == 1
-    get(:ci_xtags) << 'compiler'
+  # If running specs with jit threshold = 0 or force (AOT) compile, additional tags
+  if instance_config.compile_mode.to_s == "FORCE" ||
+      instance_config.jit_threshold == 0
+    get(:ci_xtags) << 'jit'
   end
 
   # This set of files is run by mspec ci

@@ -28,10 +28,10 @@ package org.jruby;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.JavaSites.FiberSites;
 import org.jruby.runtime.JavaSites.NumericSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -40,6 +40,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 
+import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 
 import static org.jruby.RubyNumeric.fixable;
@@ -62,6 +63,12 @@ import static org.jruby.runtime.Helpers.safeHash;
 @JRubyClass(name = "Enumerator::ArithmeticSequence", parent = "Enumerator")
 public class RubyArithmeticSequence extends RubyObject {
 
+    public static final String GENERATOR = "@__generator__";
+    public static final String LOOKAHEAD = "@__lookahead__";
+    public static final String FEEDVALUE = "@__feedvalue__";
+    public static final String OBJECT = "@__object__";
+    public static final String METHOD = "@__method__";
+    public static final String ARGS = "@__args__";
     private IRubyObject begin;
     private IRubyObject end;
     private IRubyObject step;
@@ -73,7 +80,7 @@ public class RubyArithmeticSequence extends RubyObject {
     public static RubyClass createArithmeticSequenceClass(Ruby runtime, RubyClass enumeratorModule) {
         RubyClass sequencec = runtime.defineClassUnder(
                 "ArithmeticSequence",
-                runtime.getObject(),
+                enumeratorModule,
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR,
                 enumeratorModule);
 
@@ -99,6 +106,12 @@ public class RubyArithmeticSequence extends RubyObject {
         this.generatedBy = generatedBy;
         this.method = method;
         this.args = args;
+        setInstanceVariable(OBJECT, generatedBy);
+        setInstanceVariable(METHOD, RubyString.newString(runtime, method));
+        setInstanceVariable(ARGS, args != null ? RubyArray.newArrayMayCopy(runtime, args) : RubyArray.newEmptyArray(runtime));
+        setInstanceVariable(GENERATOR, runtime.getNil());
+        setInstanceVariable(LOOKAHEAD, RubyArray.newArray(runtime, 4));
+        setInstanceVariable(FEEDVALUE, new RubyEnumerator.FeedValue(runtime));
     }
 
     public static RubyArithmeticSequence newArithmeticSequence(ThreadContext context, IRubyObject generatedBy, String method, IRubyObject [] args, IRubyObject begin, IRubyObject end, IRubyObject step, IRubyObject excludeEnd) {
@@ -176,6 +189,9 @@ public class RubyArithmeticSequence extends RubyObject {
         boolean x;
 
         if (num == null) {
+            if (b.isNil()) {
+                return context.nil;
+            }
             if (!e.isNil()) {
                 IRubyObject zero = int2fix(runtime, 0);
                 CallSite op_cmp = sites(context).op_cmp;
@@ -298,7 +314,7 @@ public class RubyArithmeticSequence extends RubyObject {
     }
 
     // arith_seq_eq
-    @JRubyMethod(name = "==")
+    @JRubyMethod(name = {"==", "eql?"})
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         if (!(other instanceof RubyArithmeticSequence)) {
@@ -393,10 +409,12 @@ public class RubyArithmeticSequence extends RubyObject {
                     }
                 }
 
+                int counter = 0;
                 while (argc > 0) {
-                    str.append(RubyObject.inspect(context, args[args.length - argc]).getByteList());
+                    str.append(RubyObject.inspect(context, args[counter]).getByteList());
                     str.append(',').append(' ');
-                    --argc;
+                    argc--;
+                    counter++;
                 }
                 
                 if (!kwds.isNil()) {
@@ -564,5 +582,59 @@ public class RubyArithmeticSequence extends RubyObject {
         }
 
         return len;
+    }
+
+    /**
+     * A size method suitable for lambda method reference implementation of {@link SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])}
+     *
+     * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
+     */
+    private static IRubyObject size(ThreadContext context, RubyArithmeticSequence self, IRubyObject[] args) {
+        return self.size(context);
+    }
+
+    private static FiberSites fiberSites(ThreadContext context) {
+        return context.sites.Fiber;
+    }
+
+    @JRubyMethod(name = "each_cons")
+    public IRubyObject each_cons(ThreadContext context, IRubyObject arg, final Block block) {
+        int size = (int) RubyNumeric.num2long(arg);
+        if (size <= 0) throw context.runtime.newArgumentError("invalid size");
+        return block.isGiven() ? RubyEnumerable.each_consCommon(context, this, size, block) :
+                enumeratorize(context.runtime, this, "each_cons", arg);
+    }
+
+    @JRubyMethod(name = "each_slice")
+    public IRubyObject each_slice(ThreadContext context, IRubyObject arg, final Block block) {
+        int size = (int) RubyNumeric.num2long(arg);
+        if (size <= 0) throw context.runtime.newArgumentError("invalid size");
+
+        return block.isGiven() ? RubyEnumerable.each_sliceCommon(context, this, size, block) :
+                enumeratorizeWithSize(context, this, "each_slice", new IRubyObject[]{arg}, RubyArithmeticSequence::size);
+    }
+
+    @JRubyMethod(required = 1)
+    public IRubyObject each_with_object(final ThreadContext context, IRubyObject arg, Block block) {
+        return block.isGiven() ? RubyEnumerable.each_with_objectCommon(context, this, block, arg) :
+                enumeratorizeWithSize(context, this, "each_with_object", new IRubyObject[]{arg}, RubyArithmeticSequence::size);
+    }
+
+    @JRubyMethod(name = "with_index")
+    public IRubyObject with_index(ThreadContext context, final Block block) {
+        return with_index(context, context.nil, block);
+    }
+
+    @JRubyMethod(name = "with_index")
+    public IRubyObject with_index(ThreadContext context, IRubyObject arg, final Block block) {
+        final Ruby runtime = context.runtime;
+        final int index = arg.isNil() ? 0 : RubyNumeric.num2int(arg);
+        if ( ! block.isGiven() ) {
+            return arg.isNil() ?
+                enumeratorizeWithSize(context, this, "with_index", RubyArithmeticSequence::size) :
+                    enumeratorizeWithSize(context, this, "with_index", new IRubyObject[]{runtime.newFixnum(index)}, RubyArithmeticSequence::size);
+        }
+
+        return RubyEnumerable.callEach(context, fiberSites(context).each, this, new RubyEnumerable.EachWithIndex(block, index));
     }
 }

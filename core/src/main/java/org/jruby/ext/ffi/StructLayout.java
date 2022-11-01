@@ -116,31 +116,31 @@ public final class StructLayout extends Type {
         charArrayClass.defineAnnotatedMethods(CharArrayProxy.class);
 
         RubyClass fieldClass = runtime.defineClassUnder("Field", runtime.getObject(),
-                FieldAllocator.INSTANCE, layoutClass);
+                Field::new, layoutClass);
         fieldClass.defineAnnotatedMethods(Field.class);
 
         RubyClass numberFieldClass = runtime.defineClassUnder("Number", fieldClass,
-                NumberFieldAllocator.INSTANCE, layoutClass);
+                NumberField::new, layoutClass);
 
         RubyClass enumFieldClass = runtime.defineClassUnder("Enum", fieldClass,
-                EnumFieldAllocator.INSTANCE, layoutClass);
+                EnumField::new, layoutClass);
 
         RubyClass stringFieldClass = runtime.defineClassUnder("String", fieldClass,
-                StringFieldAllocator.INSTANCE, layoutClass);
+                StringField::new, layoutClass);
 
         RubyClass pointerFieldClass = runtime.defineClassUnder("Pointer", fieldClass,
-                PointerFieldAllocator.INSTANCE, layoutClass);
+                PointerField::new, layoutClass);
 
         RubyClass functionFieldClass = runtime.defineClassUnder("Function", fieldClass,
-                FunctionFieldAllocator.INSTANCE, layoutClass);
+                FunctionField::new, layoutClass);
         functionFieldClass.defineAnnotatedMethods(FunctionField.class);
 
         RubyClass innerStructFieldClass = runtime.defineClassUnder("InnerStruct", fieldClass,
-                InnerStructFieldAllocator.INSTANCE, layoutClass);
+                InnerStructField::new, layoutClass);
         innerStructFieldClass.defineAnnotatedMethods(InnerStructField.class);
 
         RubyClass arrayFieldClass = runtime.defineClassUnder("Array", fieldClass,
-                ArrayFieldAllocator.INSTANCE, layoutClass);
+                ArrayField::new, layoutClass);
         arrayFieldClass.defineAnnotatedMethods(ArrayField.class);
 
         return layoutClass;
@@ -592,13 +592,6 @@ public final class StructLayout extends Type {
         }
     }
 
-    private static final class FieldAllocator implements ObjectAllocator {
-        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new Field(runtime, klass);
-        }
-        private static final ObjectAllocator INSTANCE = new FieldAllocator();
-    }
-
     @JRubyClass(name="FFI::StructLayout::Field", parent="Object")
     public static class Field extends RubyObject {
 
@@ -782,13 +775,6 @@ public final class StructLayout extends Type {
         }
     }
 
-    private static final class NumberFieldAllocator implements ObjectAllocator {
-        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new NumberField(runtime, klass);
-        }
-        private static final ObjectAllocator INSTANCE = new NumberFieldAllocator();
-    }
-
     @JRubyClass(name="FFI::StructLayout::Number", parent="FFI::StructLayout::Field")
     public static final class NumberField extends Field {
 
@@ -803,13 +789,6 @@ public final class StructLayout extends Type {
 
             return this;
         }
-    }
-
-    private static final class EnumFieldAllocator implements ObjectAllocator {
-        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new EnumField(runtime, klass);
-        }
-        private static final ObjectAllocator INSTANCE = new EnumFieldAllocator();
     }
 
     @JRubyClass(name="FFI::StructLayout::Enum", parent="FFI::StructLayout::Field")
@@ -827,13 +806,6 @@ public final class StructLayout extends Type {
         }
     }
 
-    private static final class StringFieldAllocator implements ObjectAllocator {
-        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new StringField(runtime, klass);
-        }
-        private static final ObjectAllocator INSTANCE = new StringFieldAllocator();
-    }
-
     @JRubyClass(name="FFI::StructLayout::String", parent="FFI::StructLayout::Field")
     static final class StringField extends Field {
         public StringField(Ruby runtime, RubyClass klass) {
@@ -841,25 +813,11 @@ public final class StructLayout extends Type {
         }
     }
 
-    private static final class PointerFieldAllocator implements ObjectAllocator {
-        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new PointerField(runtime, klass);
-        }
-        private static final ObjectAllocator INSTANCE = new PointerFieldAllocator();
-    }
-
     @JRubyClass(name="FFI::StructLayout::Pointer", parent="FFI::StructLayout::Field")
     public static final class PointerField extends Field {
         public PointerField(Ruby runtime, RubyClass klass) {
             super(runtime, klass, PointerFieldIO.INSTANCE);
         }
-    }
-
-    private static final class FunctionFieldAllocator implements ObjectAllocator {
-        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new FunctionField(runtime, klass);
-        }
-        private static final ObjectAllocator INSTANCE = new FunctionFieldAllocator();
     }
 
     @JRubyClass(name="FFI::StructLayout::Function", parent="FFI::StructLayout::Field")
@@ -884,13 +842,6 @@ public final class StructLayout extends Type {
         }
     }
 
-    private static final class InnerStructFieldAllocator implements ObjectAllocator {
-        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new InnerStructField(runtime, klass);
-        }
-        private static final ObjectAllocator INSTANCE = new InnerStructFieldAllocator();
-    }
-    
     @JRubyClass(name="FFI::StructLayout::InnerStruct", parent="FFI::StructLayout::Field")
     public static final class InnerStructField extends Field {
 
@@ -914,13 +865,6 @@ public final class StructLayout extends Type {
         }
     }
 
-    private static final class ArrayFieldAllocator implements ObjectAllocator {
-        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new ArrayField(runtime, klass);
-        }
-        private static final ObjectAllocator INSTANCE = new ArrayFieldAllocator();
-    }
-    
     @JRubyClass(name="FFI::StructLayout::Array", parent="FFI::StructLayout::Field")
     public static final class ArrayField extends Field {
 

@@ -3,6 +3,7 @@ require 'fileutils'
 require 'digest/sha1'
 require 'jruby'
 require 'jruby/compiler/java_class'
+require 'pathname'
 
 module JRuby::Compiler
   ByteArrayInputStream = java.io.ByteArrayInputStream
@@ -249,9 +250,12 @@ module JRuby::Compiler
           if class_filename.start_with?(options[:target]) # full-path
             target_file = class_filename
           else
-            target_file = File.join(options[:target], class_filename)
-          end
+            abs_class_filename = File.absolute_path(class_filename)
+            abs_basedir = File.absolute_path(options[:basedir])
+            relative_class_filename = Pathname.new(abs_class_filename).relative_path_from(abs_basedir)
 
+            target_file = File.join(options[:target], relative_class_filename)
+          end
           FileUtils.mkdir_p File.dirname(target_file)
 
           # write class

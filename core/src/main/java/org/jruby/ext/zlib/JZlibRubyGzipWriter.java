@@ -35,6 +35,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.joda.time.DateTime;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyIO;
 import org.jruby.RubyKernel;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
@@ -42,10 +43,8 @@ import org.jruby.RubyString;
 import org.jruby.RubyTime;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.ext.stringio.StringIO;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -62,13 +61,6 @@ import static org.jruby.runtime.Visibility.PRIVATE;
  */
 @JRubyClass(name = "Zlib::GzipWriter", parent = "Zlib::GzipFile")
 public class JZlibRubyGzipWriter extends RubyGzipFile {
-    protected static final ObjectAllocator GZIPWRITER_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new JZlibRubyGzipWriter(runtime, klass);
-        }
-    };
-
     @JRubyMethod(name = "new", rest = true, meta = true)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         JZlibRubyGzipWriter result = newInstance(recv, args);
@@ -278,13 +270,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
 
     @JRubyMethod(name = "puts", rest = true)
     public IRubyObject puts(ThreadContext context, IRubyObject[] args) {
-        final RubyClass StringIO = context.runtime.getClass("StringIO");
-        StringIO sio = (StringIO) StringIO.newInstance(context, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
-        
-        sio.puts(context, args);
-        write(sio.string(context));
-
-        return context.nil;
+        return RubyIO.puts(context, this, args);
     }
 
     @Override

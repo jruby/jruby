@@ -35,18 +35,14 @@
 package org.jruby;
 
 import java.io.FileDescriptor;
-import java.io.IOException;
 import java.nio.file.attribute.FileTime;
-import java.util.concurrent.TimeUnit;
 
 import jnr.posix.NanosecondFileStat;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import jnr.posix.FileStat;
-import jnr.posix.POSIX;
 import jnr.posix.util.Platform;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -73,16 +69,9 @@ public class RubyFileStat extends RubyObject {
         if (stat == null) throw getRuntime().newTypeError("uninitialized File::Stat");
     }
 
-    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyFileStat(runtime, klass);
-        }
-    };
-
     public static RubyClass createFileStatClass(Ruby runtime) {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here. Confirm. JRUBY-415
-        final RubyClass fileStatClass = runtime.getFile().defineClassUnder("Stat",runtime.getObject(), ALLOCATOR);
+        final RubyClass fileStatClass = runtime.getFile().defineClassUnder("Stat",runtime.getObject(), RubyFileStat::new);
 
         fileStatClass.includeModule(runtime.getModule("Comparable"));
         fileStatClass.defineAnnotatedMethods(RubyFileStat.class);
@@ -138,7 +127,19 @@ public class RubyFileStat extends RubyObject {
         file = JRubyFile.createResource(runtime, filename);
         stat = lstat ? file.lstat() : file.stat();
 
-        if (stat == null) throw runtime.newErrnoFromInt(file.errno(), filename);
+        if (stat == null) {
+            if (Platform.IS_WINDOWS) {
+                switch (file.errno()) {
+                    case 2:   // ERROR_FILE_NOT_FOUND
+                    case 3:   // ERROR_PATH_NOT_FOUND
+                    case 53:  // ERROR_BAD_NETPATH
+                    case 123: // ERROR_INVALID_NAME
+                        throw runtime.newErrnoENOENTError(filename);
+                }
+            }
+
+            throw runtime.newErrnoFromInt(file.errno(), filename);
+        }
     }
 
     public IRubyObject initialize(IRubyObject fname, Block unusedBlock) {
@@ -286,6 +287,7 @@ public class RubyFileStat extends RubyObject {
     @JRubyMethod(name = "gid")
     public IRubyObject gid() {
         checkInitialized();
+        if (Platform.IS_WINDOWS) return RubyFixnum.zero(getRuntime());
         return getRuntime().newFixnum(stat.gid());
     }
     
@@ -344,9 +346,9 @@ public class RubyFileStat extends RubyObject {
                 buf.append("blksize=").append(blockSize(context).inspect().toString()); } catch (Exception e) {} finally { buf.append(", "); }
             try { buf.append("blocks=").append(blocks().inspect().toString()); } catch (Exception e) {} finally { buf.append(", "); }
 
-            buf.append("atime=").append(atime()).append(", ");
-            buf.append("mtime=").append(mtime()).append(", ");
-            buf.append("ctime=").append(ctime());
+            buf.append("atime=").append(atime().inspect()).append(", ");
+            buf.append("mtime=").append(mtime().inspect()).append(", ");
+            buf.append("ctime=").append(ctime().inspect());
             if (Platform.IS_BSD || Platform.IS_MAC) {
                 buf.append(", ").append("birthtime=").append(birthtime());
             }
@@ -359,6 +361,7 @@ public class RubyFileStat extends RubyObject {
     @JRubyMethod(name = "uid")
     public IRubyObject uid() {
         checkInitialized();
+        if (Platform.IS_WINDOWS) return RubyFixnum.zero(getRuntime());
         return getRuntime().newFixnum(stat.uid());
     }
     

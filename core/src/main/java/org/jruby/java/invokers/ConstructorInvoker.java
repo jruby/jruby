@@ -2,7 +2,6 @@ package org.jruby.java.invokers;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Member;
-import java.util.List;
 import java.util.function.Supplier;
 
 import org.jruby.Ruby;
@@ -24,7 +23,7 @@ public final class ConstructorInvoker extends RubyToJavaInvoker {
 
     @Override
     protected JavaCallable createCallable(Ruby ruby, Member member) {
-        return JavaConstructor.create(ruby, (Constructor)member);
+        return JavaConstructor.wrap((Constructor) member);
     }
 
     @Override

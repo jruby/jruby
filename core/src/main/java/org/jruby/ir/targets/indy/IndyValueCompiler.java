@@ -5,6 +5,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
 import org.jruby.RubyEncoding;
+import org.jruby.RubyRange;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
@@ -23,6 +24,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
 
 import java.math.BigInteger;
+import java.util.function.Consumer;
 
 import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.p;
@@ -40,6 +42,15 @@ public class IndyValueCompiler implements ValueCompiler {
     public void pushRuntime() {
         compiler.loadContext();
         compiler.adapter.invokedynamic("runtime", sig(Ruby.class, ThreadContext.class), Bootstrap.contextValue());
+    }
+    public void pushArrayClass() {
+        compiler.loadContext();
+        compiler.invokeIRHelper("getArray", sig(RubyClass.class, ThreadContext.class));
+    }
+
+    public void pushHashClass() {
+        compiler.loadContext();
+        compiler.invokeIRHelper("getHash", sig(RubyClass.class, ThreadContext.class));
     }
 
     public void pushObjectClass() {
@@ -78,6 +89,13 @@ public class IndyValueCompiler implements ValueCompiler {
 
     public void pushByteList(ByteList bl) {
         compiler.adapter.invokedynamic("bytelist", sig(ByteList.class), Bootstrap.bytelist(), RubyEncoding.decodeRaw(bl), bl.getEncoding().toString());
+    }
+
+    public void pushRange(Runnable begin, Runnable end, boolean exclusive) {
+        compiler.loadContext();
+        begin.run();
+        end.run();
+        compiler.adapter.invokedynamic("range", sig(RubyRange.class, ThreadContext.class, IRubyObject.class, IRubyObject.class), RangeObjectSite.BOOTSTRAP, exclusive ? 1 : 0);
     }
 
     public void pushRegexp(ByteList source, int options) {

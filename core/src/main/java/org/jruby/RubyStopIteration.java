@@ -47,7 +47,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class RubyStopIteration extends RubyIndexError {
 
     static RubyClass define(Ruby runtime, RubyClass superClass) {
-        RubyClass StopIteration = runtime.defineClass("StopIteration", superClass, (runtime1, klass) -> new RubyStopIteration(runtime1, klass));
+        RubyClass StopIteration = runtime.defineClass("StopIteration", superClass, RubyStopIteration::new);
         StopIteration.defineAnnotatedMethods(RubyStopIteration.class);
         return StopIteration;
     }

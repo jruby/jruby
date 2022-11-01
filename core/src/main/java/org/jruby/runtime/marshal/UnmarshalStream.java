@@ -37,6 +37,10 @@ package org.jruby.runtime.marshal;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB.Entry;
 import org.jcodings.specific.ASCIIEncoding;
@@ -52,7 +56,6 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
@@ -64,6 +67,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
+import org.jruby.util.StringSupport;
+
+import static org.jruby.runtime.marshal.MarshalCommon.*;
+import static org.jruby.util.RubyStringBuilder.inspectIdentifierByteList;
+import static org.jruby.util.RubyStringBuilder.str;
 
 /**
  * Unmarshals objects from strings or streams in Ruby's marshal format.
@@ -71,13 +79,18 @@ import org.jruby.util.RegexpOptions;
  * @author Anders
  */
 public class UnmarshalStream extends InputStream {
+
     protected final Ruby runtime;
     private final UnmarshalCache cache;
-    private final IRubyObject proc;
+    private IRubyObject proc;
     private final InputStream inputStream;
-    private final boolean taint;
+    private final boolean freeze;
 
-    public UnmarshalStream(Ruby runtime, InputStream in, IRubyObject proc, boolean taint) throws IOException {
+    public UnmarshalStream(Ruby runtime, InputStream in, IRubyObject proc) throws IOException {
+        this(runtime, in, false, proc);
+    }
+
+    public UnmarshalStream(Ruby runtime, InputStream in, boolean freeze, IRubyObject proc) throws IOException {
         assert runtime != null;
         assert in != null;
 
@@ -88,7 +101,7 @@ public class UnmarshalStream extends InputStream {
         this.cache = new UnmarshalCache(runtime);
         this.proc = proc;
         this.inputStream = in;
-        this.taint = taint;
+        this.freeze = freeze;
 
         int major = in.read(); // Major
         int minor = in.read(); // Minor
@@ -104,12 +117,7 @@ public class UnmarshalStream extends InputStream {
 
     // r_object
     public IRubyObject unmarshalObject() throws IOException {
-        return unmarshalObject(new MarshalState(false));
-    }
-
-    // r_object
-    public IRubyObject unmarshalObject(boolean callProc) throws IOException {
-        return unmarshalObject(new MarshalState(false), callProc);
+        return object0(new MarshalState(false), false, null);
     }
 
     // introduced for keeping ivar read state recursively.
@@ -129,38 +137,6 @@ public class UnmarshalStream extends InputStream {
         }
     }
 
-    // r_object0
-    private IRubyObject unmarshalObject(MarshalState state) throws IOException {
-        return unmarshalObject(state, true);
-    }
-
-    // r_object0
-    private IRubyObject unmarshalObject(MarshalState state, boolean callProc) throws IOException {
-        final int type = readUnsignedByte();
-        final IRubyObject result;
-        if (cache.isLinkType(type)) {
-            result = cache.readLink(this, type);
-            if (callProc) return doCallProcForLink(result, type);
-        } else {
-            result = unmarshalObjectDirectly(type, state, callProc);
-        }
-
-        if (!(
-                result instanceof RubyNumeric ||
-                result instanceof RubyEncoding
-        )) {
-            result.setTaint(taint);
-        }
-
-        return result;
-    }
-
-    public void registerLinkTarget(IRubyObject newObject) {
-        if (MarshalStream.shouldBeRegistered(newObject)) {
-            cache.register(newObject);
-        }
-    }
-
     public static RubyModule getModuleFromPath(Ruby runtime, String path) {
         final RubyModule value = runtime.getClassFromPath(path, runtime.getArgumentError(), false);
         if (value == null) throw runtime.newArgumentError("undefined class/module " + path);
@@ -175,108 +151,428 @@ public class UnmarshalStream extends InputStream {
         return (RubyClass) value;
     }
 
-    private IRubyObject doCallProcForLink(IRubyObject result, int type) {
-        if (!proc.isNil() && type != ';') {
-            // return the result of the proc, but not for symbols
-            return Helpers.invoke(getRuntime().getCurrentContext(), proc, "call", result);
-        }
-        return result;
-    }
-
     private IRubyObject doCallProcForObj(IRubyObject result) {
-        if (!proc.isNil()) {
-            // return the result of the proc, but not for symbols
-            return Helpers.invoke(getRuntime().getCurrentContext(), proc, "call", result);
-        }
-        return result;
+        if (proc == null || proc.isNil()) return result;
+
+        return Helpers.invoke(getRuntime().getCurrentContext(), proc, "call", result);
     }
 
-    private IRubyObject unmarshalObjectDirectly(int type, MarshalState state, boolean callProc) throws IOException {
-        IRubyObject rubyObj;
-        switch (type) {
-            case 'I':
-                MarshalState childState = new MarshalState(true);
-                rubyObj = unmarshalObject(childState);
-                if (childState.isIvarWaiting()) {
-                    defaultVariablesUnmarshal(rubyObj);
+    private int r_byte() throws IOException {
+        return readUnsignedByte();
+    }
+
+    public void ivar(MarshalState state, IRubyObject object, boolean[] hasEncoding) throws IOException {
+        int count = unmarshalInt();
+        RubyClass clazz = object.getMetaClass().getRealClass();
+
+        // Keys may be "E", "encoding",or any valid ivar.  Weird code what happens with @encoding that happens to have
+        // a string of "US-ASCII"?
+        for (int i = 0; i < count; i++) {
+            RubySymbol key = symbol();
+            String id = key.idString();
+            IRubyObject value = object0(state, false, null);
+            Encoding encoding = symbolToEncoding(key, value);
+
+            if (encoding != null) {
+                if (object instanceof EncodingCapable) {
+                    ((EncodingCapable) object).setEncoding(encoding);
+                } else {
+                    throw runtime.newArgumentError(str(runtime, object, "is not enc_capable"));
                 }
-                return rubyObj;
-            case '0' :
-                rubyObj = runtime.getNil();
-                break;
-            case 'T' :
-                rubyObj = runtime.getTrue();
-                break;
-            case 'F' :
-                rubyObj = runtime.getFalse();
-                break;
-            case '"' :
-                rubyObj = RubyString.unmarshalFrom(this);
-                break;
-            case 'i' :
-                rubyObj = RubyFixnum.unmarshalFrom(this);
-                break;
-            case 'f' :
-                rubyObj = RubyFloat.unmarshalFrom(this);
-                break;
-            case '/':
-                rubyObj = unmarshalRegexp(state);
-                break;
-            case ':' :
-                rubyObj = RubySymbol.unmarshalFrom(this, state);
-                break;
-            case '[' :
-                rubyObj = RubyArray.unmarshalFrom(this);
-                break;
-            case '{' :
-                rubyObj = RubyHash.unmarshalFrom(this, false);
-                break;
-            case '}' :
-                // "hashdef" object, a hash with a default
-                rubyObj = RubyHash.unmarshalFrom(this, true);
-                break;
-            case 'c' :
-                rubyObj = RubyClass.unmarshalFrom(this);
-                break;
-            case 'm' :
-                rubyObj = RubyModule.unmarshalFrom(this);
-                break;
-            case 'e':
-                RubySymbol moduleName = (RubySymbol) unmarshalObject();
-                final RubyModule tp = getModuleFromPath(runtime, moduleName.asJavaString());
+                if (hasEncoding != null) hasEncoding[0] = true;
+            } else if (id.equals(RUBY2_KEYWORDS_FLAG)) {
+                if (object instanceof RubyHash) {
+                    ((RubyHash) object).setRuby2KeywordHash(true);
+                } else {
+                    throw runtime.newArgumentError(str(runtime, "ruby2_keywords flag is given but ", object, " is not a Hash"));
+                }
+            } else {
+                clazz.getVariableAccessorForWrite(key.idString()).set(object, value);
+            }
+        }
+    }
 
-                rubyObj = unmarshalObject();
+    public IRubyObject entry(IRubyObject value) {
+        cache.registerDataLink(value);
+        cache.markAsPartialObject(value);
 
-                tp.extend_object(rubyObj);
-                tp.callMethod(runtime.getCurrentContext(), "extended", rubyObj);
+        return value;
+    }
+
+    private IRubyObject leave(IRubyObject value, boolean partial) {
+        if (!partial) {
+            cache.noLongerPartial(value);
+            if (freeze) {
+                RubyClass metaClass = value.getMetaClass();
+                if (metaClass == runtime.getString()) {
+                    IRubyObject original = value;
+                    // FIXME: We need to modify original to be frozen but we also need it to be part of the deduped table.
+                    value = runtime.freezeAndDedupString((RubyString) value);
+                    if (value != original) {
+                        original.setFrozen(value.isFrozen());
+                    }
+                } else if (!value.isModule() && !value.isClass()) {
+                    value.setFrozen(true);
+                }
+            }
+            value = postProc(value);
+        }
+
+        return value;
+    }
+
+    private RubyModule mustBeModule(Ruby runtime, IRubyObject value, IRubyObject path) {
+        if (!value.isModule()) throw runtime.newArgumentError(str(runtime, path, " does not refer to module"));
+
+        return (RubyModule) value;
+    }
+
+    private IRubyObject object0(MarshalState state, boolean partial, List<RubyModule> extendedModules) throws IOException {
+        return objectFor(r_byte(), state, partial,  extendedModules);
+    }
+
+    private IRubyObject objectFor(int type, MarshalState state, boolean partial, List<RubyModule> extendedModules) throws IOException {
+        IRubyObject obj;
+
+        switch (type) {
+            case TYPE_LINK:
+                obj = objectForLink();
                 break;
-            case 'l' :
-                rubyObj = RubyBignum.unmarshalFrom(this);
+            case TYPE_IVAR:
+                obj = objectForIVar(state, partial, extendedModules);
                 break;
-            case 'S' :
-                rubyObj = RubyStruct.unmarshalFrom(this);
+            case TYPE_EXTENDED:
+                obj = objectForExtended(extendedModules);
                 break;
-            case 'o' :
-                rubyObj = defaultObjectUnmarshal();
+            case TYPE_UCLASS:
+                obj = objectForUClass(partial, extendedModules);
                 break;
-            case 'u' :
-                rubyObj = userUnmarshal(state);
+            case TYPE_NIL:
+                obj = objectForNil();
                 break;
-            case 'U' :
-                rubyObj = userNewUnmarshal();
+            case TYPE_TRUE:
+                obj = objectForTrue();
                 break;
-            case 'C' :
-                rubyObj = uclassUnmarshall();
+            case TYPE_FALSE:
+                obj = objectForFalse();
+                break;
+            case TYPE_FIXNUM:
+                obj = objectForFixnum();
+                break;
+            case TYPE_FLOAT:
+                obj = objectForFloat();
+                break;
+            case TYPE_BIGNUM:
+                obj = objectForBignum();
+                break;
+            case TYPE_STRING:
+                obj = objectForString(partial);
+                break;
+            case TYPE_REGEXP:
+                obj = objectForRegexp(state, partial);
+                break;
+            case TYPE_ARRAY:
+                obj = objectForArray(partial);
+                break;
+            case TYPE_HASH:
+                obj = objectForHash(partial);
+                break;
+            case TYPE_HASH_DEF:
+                obj = objectForHashDefault(partial);
+                break;
+            case TYPE_STRUCT:
+                obj = objectForStruct(partial);
+                break;
+            case TYPE_USERDEF:
+                obj = objectForUserDef(state, partial);
+                break;
+            case TYPE_USRMARSHAL:
+                obj = objectForUsrMarshal(state, partial, extendedModules);
+                break;
+            case TYPE_OBJECT:
+                obj = objectForObject(partial);
+                break;
+            case TYPE_DATA:
+                obj = objectForData(state, partial, extendedModules);
+                break;
+            case TYPE_MODULE_OLD:
+                obj = objectForModuleOld(state, partial);
+                break;
+            case TYPE_CLASS:
+                obj = objectForClass(partial);
+                break;
+            case TYPE_MODULE:
+                obj = objectForModule(partial);
+                break;
+            case TYPE_SYMBOL:
+                obj = objectForSymbol(state, partial);
+                break;
+            case TYPE_SYMLINK:
+                obj = objectForSymlink();
                 break;
             default :
                 throw getRuntime().newArgumentError("dump format error(" + (char)type + ")");
         }
 
-        if (callProc) {
-            return doCallProcForObj(rubyObj);
+        return obj;
+    }
+
+    private IRubyObject objectForModuleOld(MarshalState state, boolean partial) throws IOException {
+        String name = RubyString.byteListToString(unmarshalString());
+        RubyModule mod = UnmarshalStream.getModuleFromPath(getRuntime(), name);
+
+        prohibitIVar(state, "class/module", name);
+
+        return leave(entry(mod), partial);
+    }
+
+    public void prohibitIVar(MarshalState state, String label, String name) {
+        if (state != null && state.isIvarWaiting()) {
+            throw runtime.newTypeError("can't override instance variable of " + label + "`" + name + "'");
+        }
+    }
+
+    private RubySymbol objectForSymlink() throws IOException {
+        return symlink();
+    }
+
+    private IRubyObject objectForSymbol(MarshalState state, boolean partial) throws IOException {
+        IRubyObject obj = symreal(state);
+
+        if (state != null && state.isIvarWaiting()) state.setIvarWaiting(false);
+
+        return leave(obj, partial);
+    }
+
+    private IRubyObject objectForModule(boolean partial) throws IOException {
+        return leave(entry(RubyModule.unmarshalFrom(this)), partial);
+    }
+
+    private IRubyObject objectForClass(boolean partial) throws IOException {
+        return leave(entry(RubyClass.unmarshalFrom(this)), partial);
+    }
+
+    private IRubyObject objectForData(MarshalState state, boolean partial, List<RubyModule> extendedModules) throws IOException {
+        IRubyObject name = unique();
+        RubyClass klass = getClassFromPath(runtime, name.asJavaString());
+        IRubyObject obj = entry(klass.allocate());
+        // FIXME: Missing T_DATA error check?
+
+        if (!obj.respondsTo("_load_data")) throw runtime.newTypeError(str(runtime, name, " needs to have instance method _load_data"));
+
+        IRubyObject arg = object0(state, partial, extendedModules);
+        obj.callMethod(runtime.getCurrentContext(), "_load_data", arg);
+        return leave(obj, partial);
+    }
+
+    private IRubyObject objectForObject(boolean partial) throws IOException {
+        RubySymbol className = symbol();
+        RubyClass type = getClassFromPath(runtime, className.idString());
+
+        IRubyObject obj = (IRubyObject) type.unmarshal(this);
+        return leave(obj, partial);
+    }
+
+    private IRubyObject objectForUserDef(MarshalState state, boolean partial) throws IOException {
+        IRubyObject obj = userUnmarshal(state);
+
+        if (!partial) obj = postProc(obj);
+
+        return obj;
+    }
+
+    private IRubyObject objectForStruct(boolean partial) throws IOException {
+        return leave(RubyStruct.unmarshalFrom(this), partial);
+    }
+
+    private IRubyObject objectForHashDefault(boolean partial) throws IOException {
+        return leave(RubyHash.unmarshalFrom(this, true), partial);
+    }
+
+    private IRubyObject objectForHash(boolean partial) throws IOException {
+        return leave(RubyHash.unmarshalFrom(this, false), partial);
+    }
+
+    private IRubyObject objectForArray(boolean partial) throws IOException {
+        return leave(RubyArray.unmarshalFrom(this), partial);
+    }
+
+    private IRubyObject objectForRegexp(MarshalState state, boolean partial) throws IOException {
+        return leave(entry(unmarshalRegexp(state)), partial);
+    }
+
+    private IRubyObject objectForString(boolean partial) throws IOException {
+        return leave(entry(RubyString.unmarshalFrom(this)), partial);
+    }
+
+    private IRubyObject objectForBignum() throws IOException {
+        return leave(entry(RubyBignum.unmarshalFrom(this)), false);
+    }
+
+    private IRubyObject objectForFloat() throws IOException {
+        return leave(entry(RubyFloat.unmarshalFrom(this)), false);
+    }
+
+    private IRubyObject objectForFixnum() throws IOException {
+        return leave(RubyFixnum.unmarshalFrom(this), false);
+    }
+
+    private IRubyObject objectForFalse() {
+        return leave(runtime.getFalse(), false);
+    }
+
+    private IRubyObject objectForTrue() {
+        return leave(runtime.getTrue(), false);
+    }
+
+    private IRubyObject objectForNil() {
+        return leave(runtime.getNil(), false);
+    }
+
+    private IRubyObject objectForUClass(boolean partial, List<RubyModule> extendedModules) throws IOException {
+        RubyClass c = getClassFromPath(runtime, unique().asJavaString());
+
+        if (c.isSingleton()) throw runtime.newTypeError("singleton can't be loaded");
+
+        int type = r_byte();
+        if (c == runtime.getHash() && (type == TYPE_HASH || type == TYPE_HASH_DEF)) {
+            // FIXME: Missing logic to make the following methods use compare_by_identity (and construction of that)
+            return type == TYPE_HASH ? objectForHash(partial) : objectForHashDefault(partial);
         }
 
-        return rubyObj;
+        IRubyObject obj = objectFor(type, null, partial, extendedModules);
+        // if result is a module or type doesn't extend result's class...
+        if (obj.getMetaClass() == runtime.getModule() || !c.isKindOfModule(obj.getMetaClass())) {
+            // if allocators do not match, error
+            // Note: MRI is a bit different here, and tests TYPE(type.allocate()) != TYPE(result)
+            if (c.getAllocator() != obj.getMetaClass().getRealClass().getAllocator()) {
+                throw runtime.newArgumentError("dump format error (user class)");
+            }
+        }
+
+        ((RubyObject) obj).setMetaClass(c);
+        return obj;
+    }
+
+    private IRubyObject objectForExtended(List<RubyModule> extendedModules) throws IOException {
+        IRubyObject path = unique();
+        IRubyObject m = getModuleFromPath(runtime, path.asJavaString());
+
+        if (extendedModules == null) extendedModules = new ArrayList<>();
+
+        IRubyObject obj;
+        if (m instanceof RubyClass) {
+            obj = object0(null, true, null);
+            RubyClass cls = obj.getMetaClass();
+            if (cls != m || cls.isSingleton()) {
+                throw runtime.newArgumentError(str(runtime, "prepended class ", path, " differs from class ", cls));
+            }
+
+            cls = obj.getSingletonClass();
+
+            for (RubyModule mod: extendedModules) {
+                cls.prependModule(mod);
+            }
+        } else {
+            extendedModules.add(mustBeModule(runtime, m, path));
+
+            obj = object0(null, true, extendedModules);
+
+            appendExtendedModules(obj, extendedModules);
+        }
+
+        return obj;
+    }
+
+    private IRubyObject objectForIVar(MarshalState state, boolean partial, List<RubyModule> extendedModules) throws IOException {
+        MarshalState state1 = new MarshalState(true);
+        IRubyObject obj = object0(state1, true, extendedModules);
+
+        if (state1.ivarWaiting) ivar(state, obj, null);
+
+        return leave(obj, partial);
+    }
+
+    private IRubyObject objectForLink() throws IOException {
+        IRubyObject obj = cache.readDataLink(this);
+
+        if (!cache.isPartialObject(obj)) obj = postProc(obj);
+
+        return obj;
+    }
+
+    private IRubyObject postProc(IRubyObject value) {
+        return doCallProcForObj(value);
+    }
+
+    public RubySymbol symbol() throws IOException {
+        boolean ivar = false;
+
+        while (true) {
+            int type = r_byte();
+
+            switch (type) {
+                case TYPE_IVAR:
+                    ivar = true;
+                    continue;
+                case TYPE_SYMBOL: {
+                    MarshalState state1 = new MarshalState(ivar);
+                    return symreal(state1);
+                }
+                case TYPE_SYMLINK:
+                    if (ivar) throw runtime.newArgumentError("dump format error (symlink with encoding)");
+                    return symlink();
+                default:
+                    throw runtime.newArgumentError("dump format error for symbol(0x" + Integer.toHexString(type) + ")");
+            }
+        }
+    }
+
+    private RubySymbol symlink() throws IOException {
+        return (RubySymbol) cache.readSymbolLink(this);
+    }
+
+    private RubySymbol symreal(MarshalState state) throws IOException {
+        ByteList byteList = unmarshalString();
+        // FIXME: needs to onyl do this is only us-ascii
+        byteList.setEncoding(ASCIIEncoding.INSTANCE);
+        final UnmarshalStream input = this;
+        final IOException exception[] = new IOException[] { null };
+
+        RubySymbol symbol = RubySymbol.newSymbol(runtime, byteList,
+                (sym, newSym) -> {
+                    try {
+                        Encoding encoding = null;
+                        cache.registerSymbolLink(sym);
+
+                        if (state != null && state.isIvarWaiting()) {
+                            int num = input.unmarshalInt();
+                            for (int i = 0; i < num; i++) {
+                                RubySymbol sym2 = input.symbol();
+                                encoding = symbolToEncoding(sym2, input.unmarshalObject());
+                            }
+                        }
+
+                        if (encoding != null) {
+                            sym.getBytes().setEncoding(encoding);
+
+                            if (StringSupport.codeRangeScan(encoding, sym.getBytes()) == StringSupport.CR_BROKEN) {
+                                throw runtime.newArgumentError(str(runtime, "invalid byte sequence in " + encoding + ": ",
+                                        inspectIdentifierByteList(runtime, sym.getBytes())));
+                            }
+                        }
+                    } catch (IOException e) {
+                        exception[0] = e;
+                    }
+                });
+
+        if (exception[0] != null) throw exception[0];
+
+        return symbol;
+    }
+
+    public RubySymbol unique() throws IOException {
+        return symbol();
     }
 
     private IRubyObject unmarshalRegexp(MarshalState state) throws IOException {
@@ -285,18 +581,19 @@ public class UnmarshalStream extends InputStream {
         RegexpOptions reOpts = RegexpOptions.fromJoniOptions(opts);
 
         RubyRegexp regexp = (RubyRegexp) runtime.getRegexp().allocate();
-        registerLinkTarget(regexp);
 
         IRubyObject ivarHolder = null;
+        boolean[] hasEncoding = new boolean[] { false };
 
-        if (state.isIvarWaiting()) {
+        if (state != null && state.isIvarWaiting()) {
             RubyString tmpStr = RubyString.newString(runtime, byteList);
-            defaultVariablesUnmarshal(tmpStr);
+
+            ivar(state, tmpStr, hasEncoding);
             byteList = tmpStr.getByteList();
             state.setIvarWaiting(false);
             ivarHolder = tmpStr;
         }
-        if (byteList.getEncoding() == ASCIIEncoding.INSTANCE) {
+        if (!hasEncoding[0]) {
             /* 1.8 compatibility; remove escapes undefined in 1.8 */
             byte[] ptrBytes = byteList.unsafeBytes();
             int ptr = byteList.begin();
@@ -363,9 +660,7 @@ public class UnmarshalStream extends InputStream {
 
     public int readUnsignedByte() throws IOException {
         int result = read();
-        if (result == -1) {
-            throw new EOFException("Unexpected end of stream");
-        }
+        if (result == -1) throw new EOFException("Unexpected end of stream");
         return result;
     }
 
@@ -398,9 +693,9 @@ public class UnmarshalStream extends InputStream {
         int c = readSignedByte();
         if (c == 0) {
             return 0;
-        } else if (4 < c && c < 128) {
+        } else if (4 < c) {
             return c - 5;
-        } else if (-129 < c && c < -4) {
+        } else if (c < -4) {
             return c + 5;
         }
         long result;
@@ -420,101 +715,31 @@ public class UnmarshalStream extends InputStream {
         return (int) result;
     }
 
-    private IRubyObject defaultObjectUnmarshal() throws IOException {
-        RubySymbol className = (RubySymbol) unmarshalObject(false);
+    // MRI: sym2encidx
+    public Encoding symbolToEncoding(RubySymbol symbol, IRubyObject value) {
+        if (symbol.getEncoding() != USASCIIEncoding.INSTANCE) return null;
 
-        RubyClass type = getClassFromPath(runtime, className.idString());
+        String id = symbol.idString();
 
-        return (IRubyObject)type.unmarshal(this);
-    }
-
-    public void defaultVariablesUnmarshal(IRubyObject object) throws IOException {
-        int count = unmarshalInt();
-
-        RubyClass cls = object.getMetaClass().getRealClass();
-
-        for (int i = 0; i < count; i++) {
-
-            IRubyObject key = unmarshalObject(false);
-
-            if (object instanceof EncodingCapable) {
-
-                EncodingCapable strObj = (EncodingCapable)object;
-
-                Encoding enc = getEncodingFromUnmarshaled(key);
-
-                if (enc != null) {
-                    // got encoding, set it and forget it
-                    strObj.setEncoding(enc);
-                    continue;
-                }
-            }
-
-            String name = key.asJavaString();
-            IRubyObject value = unmarshalObject();
-
-            cls.getVariableAccessorForWrite(name).set(object, value);
-        }
-    }
-
-    public Encoding getEncodingFromUnmarshaled(IRubyObject key) throws IOException {
-        Encoding enc = null;
-
-        if (key.asJavaString().equals(MarshalStream.SYMBOL_ENCODING_SPECIAL)) {
-
-            // special case for USASCII and UTF8
-            if (unmarshalObject().isTrue()) {
-                enc = UTF8Encoding.INSTANCE;
-            } else {
-                enc = USASCIIEncoding.INSTANCE;
-            }
-
-        } else if (key.asJavaString().equals("encoding")) {
-
-            IRubyObject encodingNameObj = unmarshalObject(false);
-            String encodingNameStr = encodingNameObj.asJavaString();
+        if (id.equals("encoding")) {
+            String encodingNameStr = value.asJavaString();
             ByteList encodingName = new ByteList(ByteList.plain(encodingNameStr));
 
             Entry entry = runtime.getEncodingService().findEncodingOrAliasEntry(encodingName);
-            if (entry == null) {
-                throw runtime.newArgumentError("invalid encoding in marshaling stream: " + encodingName);
-            }
-            enc = entry.getEncoding();
+            if (entry == null) throw runtime.newArgumentError(str(runtime, "encoding ", value, " is not registered"));
+
+            return entry.getEncoding();
+        } else if (id.equals(SYMBOL_ENCODING_SPECIAL)) {
+            return value.isTrue() ? UTF8Encoding.INSTANCE : USASCIIEncoding.INSTANCE;
         }
 
-        return enc;
-    }
-
-    private IRubyObject uclassUnmarshall() throws IOException {
-        RubySymbol className = (RubySymbol)unmarshalObject(false);
-
-        RubyClass type = getClassFromPath(runtime, className.asJavaString());
-
-        // singleton, raise error
-        if (type.isSingleton()) throw runtime.newTypeError("singleton can't be loaded");
-
-        // All "C" marshalled objects descend from core classes, which are all at least RubyObject
-        RubyObject result = (RubyObject)unmarshalObject();
-
-        // if result is a module or type doesn't extend result's class...
-        if (result.getMetaClass() == runtime.getModule() || !type.isKindOfModule(result.getMetaClass())) {
-            // if allocators do not match, error
-            // Note: MRI is a bit different here, and tests TYPE(type.allocate()) != TYPE(result)
-            if (type.getAllocator() != result.getMetaClass().getRealClass().getAllocator()) {
-                throw runtime.newArgumentError("dump format error (user class)");
-            }
-        }
-
-        result.setMetaClass(type);
-
-        return result;
+        return null;
     }
 
     private IRubyObject userUnmarshal(MarshalState state) throws IOException {
-        String className = unmarshalObject(false).asJavaString();
-        ByteList marshaled = unmarshalString();
-        RubyClass classInstance = findClass(className);
-        RubyString data = RubyString.newString(runtime, marshaled);
+        String className = unique().asJavaString();
+        RubyClass classInstance = getClassFromPath(runtime, className);
+        RubyString data = RubyString.newString(runtime, unmarshalString());
         IRubyObject unmarshaled;
 
         // Special case Encoding so they are singletons
@@ -522,29 +747,50 @@ public class UnmarshalStream extends InputStream {
         if (classInstance == runtime.getEncoding()) {
             unmarshaled = RubyEncoding.find(runtime.getCurrentContext(), classInstance, data);
         } else {
-            if (state.isIvarWaiting()) {
-                defaultVariablesUnmarshal(data);
+            if (state != null && state.isIvarWaiting()) {
+                ivar(state, data, null);
                 state.setIvarWaiting(false);
             }
             unmarshaled = classInstance.smartLoadOldUser(data);
         }
 
-        registerLinkTarget(unmarshaled);
-
-        return unmarshaled;
+        return entry(unmarshaled);
     }
 
-    private IRubyObject userNewUnmarshal() throws IOException {
-        String className = unmarshalObject(false).asJavaString();
-        RubyClass classInstance = findClass(className);
-        IRubyObject result = classInstance.allocate();
-        registerLinkTarget(result);
+    // FIXME: This is missing a much more complicated set of logic in tracking old compatibility allocators. See MRI for more details
+    private IRubyObject objectForUsrMarshal(MarshalState state, boolean partial, List<RubyModule> extendedModules) throws IOException {
+        RubyClass classInstance = getClassFromPath(runtime, unique().asJavaString());
+        IRubyObject obj = classInstance.allocate();
+
+        if (extendedModules != null) appendExtendedModules(obj, extendedModules);
+
+        obj = entry(obj);
         IRubyObject marshaled = unmarshalObject();
-        return classInstance.smartLoadNewUser(result, marshaled);
+        obj = classInstance.smartLoadNewUser(obj, marshaled);
+        obj = fixupCompat(obj);
+        //obj = copyIVars(obj, marshaled);
+        obj = postProc(obj);
+
+        if (extendedModules != null) extendedModules.clear();
+
+        return obj;
     }
 
-    private RubyClass findClass(String className) {
-        return getClassFromPath(runtime, className);
+    private IRubyObject fixupCompat(IRubyObject obj) {
+
+        /* FIXME: we need to store allocators and then potentially use the ones associated with compat class values.
+        IRubyObject compatObj = shared.hasCompatValue(obj);
+        if (compatObj != null) {
+
+        }*/
+        return obj;
+    }
+
+    private void appendExtendedModules(IRubyObject obj, List<RubyModule> extendedModules) {
+        Collections.reverse(extendedModules);
+        for (RubyModule module: extendedModules) {
+            module.extend_object(obj);
+        }
     }
 
     public int read() throws IOException {
@@ -552,7 +798,29 @@ public class UnmarshalStream extends InputStream {
     }
 
     @Deprecated
+    public void defaultVariablesUnmarshal(MarshalState state, IRubyObject object) throws IOException {
+        ivar(state, object, null);
+    }
+
+    // r_object
+    @Deprecated
+    public IRubyObject unmarshalObject(boolean _callProc) throws IOException { // <-- 100% false by all callers
+        IRubyObject savedProc = this.proc;
+        try {
+            proc = null;
+            return object0(new MarshalState(false), false, null);
+        } finally {
+            proc = savedProc;
+        }
+    }
+
+    @Deprecated
     public UnmarshalStream(Ruby runtime, InputStream in, IRubyObject proc, boolean taint, boolean untrust) throws IOException {
-        this(runtime, in, proc, taint);
+        this(runtime, in, proc);
+    }
+
+    @Deprecated
+    public UnmarshalStream(Ruby runtime, InputStream in, IRubyObject proc, boolean taint) throws IOException {
+        this(runtime, in, proc);
     }
 }

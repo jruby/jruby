@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-require 'minitest_helper'
+require_relative 'helper'
 
 =begin
   TODO: test call-seq parsing
@@ -304,32 +304,6 @@ void Init_Blah(void) {
     assert_equal 'This should show up as an alias', methods.last.comment.text
   end
 
-  def test_do_classes_boot_class
-    content = <<-EOF
-/* Document-class: Foo
- * this is the Foo boot class
- */
-VALUE cFoo = boot_defclass("Foo", rb_cObject);
-    EOF
-
-    klass = util_get_class content, 'cFoo'
-    assert_equal "this is the Foo boot class", klass.comment.text
-    assert_equal 'Object', klass.superclass
-  end
-
-  def test_do_classes_boot_class_nil
-    content = <<-EOF
-/* Document-class: Foo
- * this is the Foo boot class
- */
-VALUE cFoo = boot_defclass("Foo", 0);
-    EOF
-
-    klass = util_get_class content, 'cFoo'
-    assert_equal "this is the Foo boot class", klass.comment.text
-    assert_nil klass.superclass
-  end
-
   def test_do_aliases_missing_class
     content = <<-EOF
 void Init_Blah(void) {
@@ -337,7 +311,7 @@ void Init_Blah(void) {
 }
     EOF
 
-    _, err = verbose_capture_io do
+    _, err = verbose_capture_output do
       refute util_get_class(content, 'cDate')
     end
 
@@ -511,7 +485,7 @@ void Init_foo(){
 
     @parser = util_parser content
 
-    @parser.do_classes
+    @parser.do_classes_and_modules
     @parser.do_constants
 
     klass = @parser.classes['cFoo']
@@ -581,8 +555,7 @@ void Init_curses(){
 
     @parser = util_parser content
 
-    @parser.do_modules
-    @parser.do_classes
+    @parser.do_classes_and_modules
     @parser.do_constants
 
     klass = @parser.classes['mCurses']
@@ -608,8 +581,7 @@ void Init_File(void) {
 
     @parser = util_parser content
 
-    @parser.do_modules
-    @parser.do_classes
+    @parser.do_classes_and_modules
     @parser.do_constants
 
     klass = @parser.classes['rb_mFConst']
@@ -657,7 +629,7 @@ void Init_Blah(void) {
 
     klass = nil
 
-    _, err = verbose_capture_io do
+    _, err = verbose_capture_output do
       klass = util_get_class content, 'cDate'
     end
 
@@ -680,7 +652,7 @@ void Init_Blah(void) {
 
     klass = nil
 
-    _, err = verbose_capture_io do
+    _, err = verbose_capture_output do
       klass = util_get_class content, 'cDate'
     end
 
@@ -703,7 +675,7 @@ void Init_Blah(void) {
 
     klass = nil
 
-    _, err = verbose_capture_io do
+    _, err = verbose_capture_output do
       klass = util_get_class content, 'cDate'
     end
 
@@ -770,7 +742,7 @@ void Init_Blah(void) {
     parser.missing_dependencies['y'] = ['y', :class, 'Y', 'Object', 'z']
     parser.missing_dependencies['z'] = ['z', :class, 'Z', 'Object', 'y']
 
-    _, err = verbose_capture_io do
+    _, err = verbose_capture_output do
       parser.do_missing
     end
 
@@ -1381,7 +1353,7 @@ commercial() -> Date <br />
   end
 
   def test_find_modifiers_yields
-    comment = RDoc::Comment.new <<-COMMENT
+    comment = RDoc::Comment.new <<-COMMENT, @top_level, :c
 /* :yields: a, b
  *
  * Blah
@@ -1628,6 +1600,39 @@ Init_IO(void) {
     assert_equal "Method Comment!   ", read_method.comment.text
     assert_equal "rb_io_s_read", read_method.c_function
     assert read_method.singleton
+    assert_nil read_method.section.title
+  end
+
+  def test_define_method_with_category
+    content = <<-EOF
+/* :category: Awesome Methods
+   Method Comment!
+ */
+static VALUE
+rb_io_s_read(argc, argv, io)
+    int argc;
+    VALUE *argv;
+    VALUE io;
+{
+}
+
+void
+Init_IO(void) {
+    /*
+     * a comment for class Foo on rb_define_class
+     */
+    VALUE rb_cIO = rb_define_class("IO", rb_cObject);
+    rb_define_singleton_method(rb_cIO, "read", rb_io_s_read, -1);
+}
+    EOF
+
+    klass = util_get_class content, 'rb_cIO'
+    read_method = klass.method_list.first
+    assert_equal "read", read_method.name
+    assert_equal "Method Comment!", read_method.comment.text.strip
+    assert_equal "rb_io_s_read", read_method.c_function
+    assert read_method.singleton
+    assert_equal "Awesome Methods", read_method.section.title
   end
 
   def test_define_method_dynamically
@@ -1956,6 +1961,39 @@ void d(void) {
 
     assert_equal %w[A A::B A::B::C],
                  @store.all_classes_and_modules.map { |m| m.full_name }.sort
+  end
+
+  def test_markup_format_default
+    content = <<-EOF
+void Init_Blah(void) {
+  cBlah = rb_define_class("Blah", rb_cObject);
+
+  /*
+   * This should be interpreted in the default format.
+   */
+  rb_attr(cBlah, rb_intern("default_format"), 1, 1, Qfalse);
+}
+    EOF
+
+    klass = util_get_class content, 'cBlah'
+    assert_equal("rdoc", klass.attributes.find {|a| a.name == "default_format"}.comment.format)
+  end
+
+  def test_markup_format_override
+    content = <<-EOF
+void Init_Blah(void) {
+  cBlah = rb_define_class("Blah", rb_cObject);
+
+  /*
+   * This should be interpreted in the default format.
+   */
+  rb_attr(cBlah, rb_intern("default_format"), 1, 1, Qfalse);
+}
+    EOF
+
+    @options.markup = "markdown"
+    klass = util_get_class content, 'cBlah'
+    assert_equal("markdown", klass.attributes.find {|a| a.name == "default_format"}.comment.format)
   end
 
   def util_get_class content, name = nil

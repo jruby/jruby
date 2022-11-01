@@ -29,10 +29,7 @@
 # - Open3.pipeline : run a pipeline and wait for its completion
 #
 
-# Because spawn does not yet work on Windows, we fall back on the older open3 there.
-require 'jruby/open3_windows' if JRuby::Util::ON_WINDOWS
-
-!defined?(Open3.popen3) && module Open3
+module Open3
 
   # Open stdin, stdout, and stderr streams and start external executable.
   # In addition, a thread to wait for the started process is created.
@@ -209,6 +206,13 @@ require 'jruby/open3_windows' if JRuby::Util::ON_WINDOWS
     opts[[:out, :err]] = out_w
 
     popen_run(cmd, opts, [in_r, out_w], [in_w, out_r], &block)
+  ensure
+    if block
+      in_r.close
+      in_w.close
+      out_r.close
+      out_w.close
+    end
   end
   module_function :popen2e
 
@@ -753,3 +757,6 @@ require 'jruby/open3_windows' if JRuby::Util::ON_WINDOWS
   end
 
 end
+
+# Because native spawn does not yet work on Windows, we fall back on ProcessBuilder there.
+require 'jruby/open3_windows' if JRuby::Util::ON_WINDOWS

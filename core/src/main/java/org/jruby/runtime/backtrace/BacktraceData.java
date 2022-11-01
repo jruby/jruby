@@ -21,13 +21,15 @@ public class BacktraceData implements Serializable {
     private final Stream<StackWalker.StackFrame> stackStream;
     private final Stream<BacktraceElement> rubyTrace;
     private final boolean fullTrace;
+    private final boolean rawTrace;
     private final boolean maskNative;
     private final boolean includeNonFiltered;
 
-    public BacktraceData(Stream<StackWalker.StackFrame> stackStream, Stream<BacktraceElement> rubyTrace, boolean fullTrace, boolean maskNative, boolean includeNonFiltered) {
+    public BacktraceData(Stream<StackWalker.StackFrame> stackStream, Stream<BacktraceElement> rubyTrace, boolean fullTrace, boolean rawTrace, boolean maskNative, boolean includeNonFiltered) {
         this.stackStream = stackStream;
         this.rubyTrace = rubyTrace;
         this.fullTrace = fullTrace;
+        this.rawTrace = rawTrace;
         this.maskNative = maskNative;
         this.includeNonFiltered = includeNonFiltered;
     }
@@ -35,6 +37,7 @@ public class BacktraceData implements Serializable {
     public static final BacktraceData EMPTY = new BacktraceData(
             Stream.empty(),
             Stream.empty(),
+            false,
             false,
             false,
             false);
@@ -71,6 +74,9 @@ public class BacktraceData implements Serializable {
         // loop over all elements in the Java stack trace
         Iterator<StackWalker.StackFrame> stackIter = stackStream.iterator();
         Iterator<BacktraceElement> backIter = rubyTrace.iterator();
+
+        // the previously encountered frame, for condensing varargs and actual
+        StackWalker.StackFrame previousElement = null;
         while (stackIter.hasNext() && trace.size() < count) {
             StackWalker.StackFrame element = stackIter.next();
 
@@ -81,28 +87,34 @@ public class BacktraceData implements Serializable {
             String methodName = element.getMethodName();
             String className = element.getClassName();
 
-            if (filename != null) {
+            // Only rewrite non-Java files when not in "raw" mode
+            if (!(rawTrace || filename == null || filename.endsWith(".java"))) {
+                List<String> mangledTuple = JavaNameMangler.decodeMethodTuple(methodName);
+                if (mangledTuple != null) {
+                    FrameType type = JavaNameMangler.decodeFrameTypeFromMangledName(mangledTuple.get(1));
+                    String decodedName = JavaNameMangler.decodeMethodName(type, mangledTuple);
 
-                // Don't process .java files
-                if (!filename.endsWith(".java")) {
-                    List<String> mangledTuple = JavaNameMangler.decodeMethodTuple(methodName);
-                    if (mangledTuple != null) {
-                        FrameType type = JavaNameMangler.decodeFrameTypeFromMangledName(mangledTuple.get(1));
-                        String decodedName = JavaNameMangler.decodeMethodName(type, mangledTuple);
+                    if (decodedName != null) {
+                        // skip varargs frames if we just handled the method's regular frame
+                        if (previousElement != null &&
+                                element.getMethodName().equals(previousElement.getMethodName() + JavaNameMangler.VARARGS_MARKER)) {
 
-                        if (decodedName != null) {
-                            // construct Ruby trace element
-                            RubyStackTraceElement rubyElement = new RubyStackTraceElement(className, decodedName, filename, line, false, type);
-
-                            // add duplicate if masking native and previous frame was native (Kernel#caller)
-                            if (maskNative && dupFrame) {
-                                dupFrame = false;
-                                trace.add(new RubyStackTraceElement(className, dupFrameName, filename, line, false, type));
-                            }
-                            trace.add(rubyElement);
+                            previousElement = null;
                             continue;
-
                         }
+
+                        // construct Ruby trace element
+                        RubyStackTraceElement rubyElement = new RubyStackTraceElement(className, decodedName, filename, line, false, type);
+
+                        // add duplicate if masking native and previous frame was native (Kernel#caller)
+                        if (maskNative && dupFrame) {
+                            dupFrame = false;
+                            trace.add(new RubyStackTraceElement(className, dupFrameName, filename, line, false, type));
+                        }
+                        trace.add(rubyElement);
+                        previousElement = element;
+                        continue;
+
                     }
                 }
             }

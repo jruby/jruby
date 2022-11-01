@@ -20,7 +20,7 @@ public class MemoryPointer extends Pointer {
     public static RubyClass createMemoryPointerClass(Ruby runtime, RubyModule module) {
         RubyClass memptrClass = module.defineClassUnder("MemoryPointer",
                 module.getClass("Pointer"),
-                Options.REIFY_FFI.load() ? new ReifyingAllocator(MemoryPointer.class) : MemoryPointerAllocator.INSTANCE);
+                Options.REIFY_FFI.load() ? new ReifyingAllocator(MemoryPointer.class) : MemoryPointer::new);
         memptrClass.defineAnnotatedMethods(MemoryPointer.class);
         memptrClass.defineAnnotatedConstants(MemoryPointer.class);
         memptrClass.setReifiedClass(MemoryPointer.class);
@@ -33,16 +33,6 @@ public class MemoryPointer extends Pointer {
 
         return memptrClass;
     }
-
-    private static final class MemoryPointerAllocator implements ObjectAllocator {
-        static final ObjectAllocator INSTANCE = new MemoryPointerAllocator();
-
-        public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-            return new MemoryPointer(runtime, klazz);
-        }
-    }
-
-
 
     public MemoryPointer(Ruby runtime, RubyClass klass) {
         super(runtime, klass);

@@ -25,12 +25,28 @@ ggg,hhh,iii
                  csv.shift)
     assert_equal(CSV::Row.new(headers, ["aaa", "bbb", "ccc"]),
                  csv.shift)
+    assert_equal(false, csv.eof?)
     error = assert_raise(CSV::MalformedCSVError) do
       csv.shift
     end
     assert_equal("Illegal quoting in line 3.",
                  error.message)
+    assert_equal(false, csv.eof?)
     assert_equal(CSV::Row.new(headers, ["ggg", "hhh", "iii"]),
                  csv.shift)
+    assert_equal(true, csv.eof?)
+  end
+
+  def test_ignore_invalid_line_cr_lf
+    data = <<-CSV
+"1","OK"\r
+"2",""NOT" OK"\r
+"3","OK"\r
+CSV
+    csv = CSV.new(data)
+
+    assert_equal(['1', 'OK'], csv.shift)
+    assert_raise(CSV::MalformedCSVError) { csv.shift }
+    assert_equal(['3', 'OK'], csv.shift)
   end
 end

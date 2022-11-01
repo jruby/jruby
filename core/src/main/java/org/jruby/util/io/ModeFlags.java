@@ -83,8 +83,19 @@ public class ModeFlags implements Cloneable {
      * to also capture what are oflags.
      */
     public static final int TEXT = 0x10000000;
-    /** delete shared file flag for windows */
+    /** delete shared file flag for windows, otherwise zero */
     public static final int SHARE_DELETE = Platform.IS_WINDOWS ? 0x20000000 : 0;
+    /** try to access special mode flag, failover to default SHARE_DELETE otherwise */
+    public static final OpenOption NOSHARE_DELETE;
+    static {
+        OpenOption noshareDelete = null;
+        try {
+            noshareDelete = ExtendedOpenOption.NOSHARE_DELETE;
+        } catch (NoClassDefFoundError ncdfe) {
+            // leave null
+        }
+        NOSHARE_DELETE = noshareDelete;
+    }
     /** accmode flag, used to mask the read/write mode */
     public static final int ACCMODE = RDWR | WRONLY | RDONLY;
     
@@ -278,7 +289,7 @@ public class ModeFlags implements Cloneable {
         if (includeTruncate && isTruncate()) size++;
 
         // extended
-        if (isShareDelete()) {
+        if (isShareDelete() || NOSHARE_DELETE == null) {
             // do nothing, NIO defaults to share delete
         } else if (Platform.IS_WINDOWS) {
             size++;
@@ -296,10 +307,10 @@ public class ModeFlags implements Cloneable {
         if (includeTruncate && isTruncate()) options[index++] = StandardOpenOption.TRUNCATE_EXISTING;
 
         // extended
-        if (isShareDelete()) {
+        if (isShareDelete() || NOSHARE_DELETE == null) {
             // do nothing, NIO defaults to share delete
         } else if (Platform.IS_WINDOWS) {
-            options[index++] = ExtendedOpenOption.NOSHARE_DELETE;
+            options[index++] = NOSHARE_DELETE;
         }
 
         return options;

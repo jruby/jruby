@@ -177,6 +177,50 @@ class SocketTest < Test::Unit::TestCase
     end
   end
 
+  if RbConfig::CONFIG['target_os'] == 'linux'
+    def test_tcp_socket_get_keep_idle
+      socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
+      assert_instance_of(Integer, socket.getsockopt(Socket::SOL_TCP, Socket::TCP_KEEPIDLE).int)
+    ensure
+      socket.close
+    end
+
+    def test_tcp_socket_get_keep_intvl
+      socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
+      assert_instance_of(Integer, socket.getsockopt(Socket::SOL_TCP, Socket::TCP_KEEPINTVL).int)
+    ensure
+      socket.close
+    end
+
+    def test_tcp_socket_get_keep_cnt
+      socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
+      assert_instance_of(Integer, socket.getsockopt(Socket::SOL_TCP, Socket::TCP_KEEPCNT).int)
+    ensure
+      socket.close
+    end
+
+    def test_tcp_socket_set_keep_idle
+      socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
+      assert_equal 0, socket.setsockopt(Socket::SOL_TCP, Socket::TCP_KEEPIDLE, 1)
+    ensure
+      socket.close
+    end
+
+    def test_tcp_socket_set_keep_intvl
+      socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
+      assert_equal 0, socket.setsockopt(Socket::SOL_TCP, Socket::TCP_KEEPINTVL, 1)
+    ensure
+      socket.close
+    end
+
+    def test_tcp_socket_set_keep_cnt
+      socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
+      assert_equal 0, socket.setsockopt(Socket::SOL_TCP, Socket::TCP_KEEPCNT, 1)
+    ensure
+      socket.close
+    end
+  end
+
   # JRUBY-4299
   def test_tcp_socket_reuse_addr
     socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)

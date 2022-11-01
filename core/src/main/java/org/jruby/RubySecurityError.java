@@ -42,7 +42,7 @@ public class RubySecurityError extends RubyException {
     }
 
     static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass SecurityErrorClass = runtime.defineClass("SecurityError", exceptionClass, (r, klass) -> new RubySecurityError(runtime, klass));
+        RubyClass SecurityErrorClass = runtime.defineClass("SecurityError", exceptionClass, RubySecurityError::new);
 
         return SecurityErrorClass;
     }

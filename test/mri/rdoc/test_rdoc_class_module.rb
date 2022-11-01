@@ -9,21 +9,24 @@ class TestRDocClassModule < XrefTestCase
     tl3 = @store.add_file 'three.rb'
 
     cm = RDoc::ClassModule.new 'Klass'
-    cm.add_comment '# comment 1', tl1
+    comment_tl1 = RDoc::Comment.new('# comment 1', @top_level, :ruby)
+    cm.add_comment comment_tl1, tl1
 
-    assert_equal [['comment 1', tl1]], cm.comment_location
-    assert_equal 'comment 1', cm.comment
+    assert_equal [[comment_tl1, tl1]], cm.comment_location
+    assert_equal 'comment 1', cm.comment.text
 
-    cm.add_comment '# comment 2', tl2
+    comment_tl2 = RDoc::Comment.new('# comment 2', @top_level, :ruby)
+    cm.add_comment comment_tl2, tl2
 
-    assert_equal [['comment 1', tl1], ['comment 2', tl2]], cm.comment_location
+    assert_equal [[comment_tl1, tl1], [comment_tl2, tl2]], cm.comment_location
     assert_equal "comment 1\n---\ncomment 2", cm.comment
 
-    cm.add_comment "# * comment 3", tl3
+    comment_tl3 = RDoc::Comment.new('# * comment 3', @top_level, :ruby)
+    cm.add_comment comment_tl3, tl3
 
-    assert_equal [['comment 1', tl1],
-                  ['comment 2', tl2],
-                  ['* comment 3', tl3]], cm.comment_location
+    assert_equal [[comment_tl1, tl1],
+                  [comment_tl2, tl2],
+                  [comment_tl3, tl3]], cm.comment_location
     assert_equal "comment 1\n---\ncomment 2\n---\n* comment 3", cm.comment
   end
 
@@ -39,11 +42,13 @@ class TestRDocClassModule < XrefTestCase
     tl1 = @store.add_file 'one.rb'
 
     cm = RDoc::ClassModule.new 'Klass'
-    cm.add_comment '# comment 1', tl1
-    cm.add_comment '# comment 2', tl1
+    comment1 = RDoc::Comment.new('# comment 1', @top_level, :ruby)
+    comment2 = RDoc::Comment.new('# comment 2', @top_level, :ruby)
+    cm.add_comment comment1, tl1
+    cm.add_comment comment2, tl1
 
-    assert_equal [['comment 1', tl1],
-                  ['comment 2', tl1]], cm.comment_location
+    assert_equal [[comment1, tl1],
+                  [comment2, tl1]], cm.comment_location
   end
 
   def test_add_comment_stopdoc
@@ -58,22 +63,22 @@ class TestRDocClassModule < XrefTestCase
   end
 
   def test_ancestors
-    assert_equal [@parent, "Object"], @child.ancestors
+    assert_equal [@parent, @object, "BasicObject"], @child.ancestors
   end
 
   def test_comment_equals
     cm = RDoc::ClassModule.new 'Klass'
-    cm.comment = '# comment 1'
+    cm.comment = RDoc::Comment.new('# comment 1', @top_level, :ruby)
 
-    assert_equal 'comment 1', cm.comment
+    assert_equal 'comment 1', cm.comment.to_s
 
-    cm.comment = '# comment 2'
+    cm.comment = RDoc::Comment.new('# comment 2', @top_level, :ruby)
 
-    assert_equal "comment 1\n---\ncomment 2", cm.comment
+    assert_equal "comment 1\n---\ncomment 2", cm.comment.to_s
 
-    cm.comment = "# * comment 3"
+    cm.comment = RDoc::Comment.new('# * comment 3', @top_level, :ruby)
 
-    assert_equal "comment 1\n---\ncomment 2\n---\n* comment 3", cm.comment
+    assert_equal "comment 1\n---\ncomment 2\n---\n* comment 3", cm.comment.to_s
   end
 
   def test_comment_equals_comment
@@ -84,7 +89,7 @@ class TestRDocClassModule < XrefTestCase
     assert_equal 'comment', cm.comment.text
   end
 
-  def test_docuent_self_or_methods
+  def test_document_self_or_methods
     assert @c1.document_self_or_methods
 
     @c1.document_self = false
@@ -124,7 +129,7 @@ class TestRDocClassModule < XrefTestCase
   end
 
   def test_each_ancestor
-    assert_equal [@parent], @child.each_ancestor.to_a
+    assert_equal [@parent, @object], @child.each_ancestor.to_a
   end
 
   def test_each_ancestor_cycle
@@ -233,7 +238,7 @@ class TestRDocClassModule < XrefTestCase
     assert_equal tl, loaded.method_list.first.file
   end
 
-  def test_marshal_dump_visibilty
+  def test_marshal_dump_visibility
     @store.path = Dir.tmpdir
     tl = @store.add_file 'file.rb'
 

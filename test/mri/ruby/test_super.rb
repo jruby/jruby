@@ -307,6 +307,29 @@ class TestSuper < Test::Unit::TestCase
     end
   end
 
+  def test_super_in_instance_eval_in_module
+    super_class = EnvUtil.labeled_class("Super\u{30af 30e9 30b9}") {
+      def foo
+        return [:super, self]
+      end
+    }
+    mod = EnvUtil.labeled_module("Mod\u{30af 30e9 30b9}") {
+      def foo
+        x = Object.new
+        x.instance_eval do
+          super()
+        end
+      end
+    }
+    sub_class = EnvUtil.labeled_class("Sub\u{30af 30e9 30b9}", super_class) {
+      include mod
+    }
+    obj = sub_class.new
+    assert_raise_with_message(TypeError, /Sub\u{30af 30e9 30b9}/) do
+      obj.foo
+    end
+  end
+
   def test_super_in_orphan_block
     super_class = EnvUtil.labeled_class("Super\u{30af 30e9 30b9}") {
       def foo
@@ -498,6 +521,43 @@ class TestSuper < Test::Unit::TestCase
     assert_equal(%w[B A], result, bug9721)
   end
 
+  # [Bug #18329]
+  def test_super_missing_prepended_module
+    a = Module.new do
+      def probe(*methods)
+        prepend(probing_module(methods))
+      end
+
+      def probing_module(methods)
+        Module.new do
+          methods.each do |method|
+            define_method(method) do |*args, **kwargs, &block|
+              super(*args, **kwargs, &block)
+            end
+          end
+        end
+      end
+    end
+
+    b = Class.new do
+      extend a
+
+      probe :danger!, :missing
+
+      def danger!; end
+    end
+
+    o = b.new
+    o.danger!
+    begin
+      original_gc_stress = GC.stress
+      GC.stress = true
+      2.times { o.missing rescue NoMethodError }
+    ensure
+      GC.stress = original_gc_stress
+    end
+  end
+
   def test_from_eval
     bug10263 = '[ruby-core:65122] [Bug #10263a]'
     a = Class.new do
@@ -559,5 +619,82 @@ class TestSuper < Test::Unit::TestCase
   end
   def test_super_with_modified_rest_parameter
     assert_equal [13], TestFor_super_with_modified_rest_parameter.new.foo
+  end
+
+  def test_super_with_define_method
+    superklass1 = Class.new do
+      def foo; :foo; end
+      def bar; :bar; end
+      def boo; :boo; end
+    end
+    superklass2 = Class.new(superklass1) do
+      alias baz boo
+      def boo; :boo2; end
+    end
+    subklass = Class.new(superklass2)
+    [:foo, :bar, :baz, :boo].each do |sym|
+      subklass.define_method(sym){ super() }
+    end
+    assert_equal :foo, subklass.new.foo
+    assert_equal :bar, subklass.new.bar
+    assert_equal :boo, subklass.new.baz
+    assert_equal :boo2, subklass.new.boo
+  end
+
+  def test_super_attr_writer # [Bug #16785]
+    writer_class = Class.new do
+      attr_writer :test
+    end
+    superwriter_class = Class.new(writer_class) do
+      def initialize
+        @test = 1 # index: 1
+      end
+
+      def test=(test)
+        super(test)
+      end
+    end
+    inherited_class = Class.new(superwriter_class) do
+      def initialize
+        @a = nil
+        @test = 2 # index: 2
+      end
+    end
+
+    superwriter = superwriter_class.new
+    superwriter.test = 3 # set ic->index of superwriter_class#test= to 1
+
+    inherited = inherited_class.new
+    inherited.test = 4 # it may set 4 to index=1 while it should be index=2
+
+    assert_equal 3, superwriter.instance_variable_get(:@test)
+    assert_equal 4, inherited.instance_variable_get(:@test)
+  end
+
+  def test_super_attr_reader
+    reader_class = Class.new do
+      attr_reader :test
+    end
+    superreader_class = Class.new(reader_class) do
+      def initialize
+        @test = 1 # index: 1
+      end
+
+      def test
+        super
+      end
+    end
+    inherited_class = Class.new(superreader_class) do
+      def initialize
+        @a = nil
+        @test = 2 # index: 2
+      end
+    end
+
+    superreader = superreader_class.new
+    assert_equal 1, superreader.test # set ic->index of superreader_class#test to 1
+
+    inherited = inherited_class.new
+    assert_equal 2, inherited.test # it may read index=1 while it should be index=2
   end
 end

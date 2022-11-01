@@ -49,12 +49,6 @@ public class GetGlobalVariableInstr extends OneOperandResultBaseInstr  implement
         return new GetGlobalVariableInstr(ii.getRenamedVariable(getResult()), getTarget().getName());
     }
 
-    @Override
-    public void encode(IRWriterEncoder e) {
-        super.encode(e);
-        e.encode(getTarget());
-    }
-
     public static GetGlobalVariableInstr decode(IRReaderDecoder d) {
         return new GetGlobalVariableInstr(d.decodeVariable(), (GlobalVariable) d.decodeOperand());
     }

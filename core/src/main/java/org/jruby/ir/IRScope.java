@@ -94,7 +94,7 @@ public abstract class IRScope implements ParseResult {
     private List<IRClosure> nestedClosures;
 
     // Index values to guarantee we don't assign same internal index twice
-    private int nextClosureIndex;
+    protected int nextClosureIndex;
 
     // List of all scopes this scope contains lexically.  This is not used
     // for execution, but is used during dry-runs for debugging.
@@ -127,11 +127,13 @@ public abstract class IRScope implements ParseResult {
     private boolean hasNonLocalReturns;
     private boolean receivesClosureArg;
     private boolean receivesKeywordArgs;
+    private boolean ruby2Keywords;
     private boolean accessesParentsLocalVariables;
     private boolean maybeUsingRefinements;
     private boolean canCaptureCallersBinding;
     private boolean canReceiveBreaks;  // may receive a break during execution (from itself of child scope).
     private boolean canReceiveNonLocalReturns;
+    private boolean usesSuper;
     private boolean usesZSuper;
     private boolean needsCodeCoverage;
     private boolean usesEval;
@@ -181,7 +183,12 @@ public abstract class IRScope implements ParseResult {
     }
 
     private void setupLexicalContainment() {
-        if (lexicalParent != null) lexicalParent.addChildScope(this);
+        // evals are transient and are not usable in persistance or analysis (unless
+        // the analysis was for the eval itself but in that case we would do this
+        // differently).
+        if (!(this instanceof IREvalScript)) {
+            if (lexicalParent != null) lexicalParent.addChildScope(this);
+        }
     }
 
     public int getScopeId() {
@@ -367,6 +374,16 @@ public abstract class IRScope implements ParseResult {
         return lineNumber;
     }
 
+    public int countForLoops() {
+        int count = 0;
+        
+        for (IRScope current = this; current != null && !current.isTopLocalVariableScope(); current = current.getLexicalParent()) {
+            if (current instanceof IRFor) count++;
+        }
+
+        return count;
+    }
+
     /**
      * Returns the top level scope
      */
@@ -400,6 +417,14 @@ public abstract class IRScope implements ParseResult {
     
     public boolean receivesKeywordArgs() {
         return receivesKeywordArgs;
+    }
+
+    public void setRuby2Keywords() {
+        ruby2Keywords = true;
+    }
+
+    public boolean isRuby2Keywords() {
+        return ruby2Keywords;
     }
 
     public void setReceivesClosureArg() {
@@ -482,7 +507,7 @@ public abstract class IRScope implements ParseResult {
 
         boolean usesEval = usesEval();
 
-        for (IRScope child : getLexicalScopes()) {
+        for (IRScope child : getClosures()) {
             usesEval |= child.anyUsesEval();
         }
 
@@ -491,6 +516,14 @@ public abstract class IRScope implements ParseResult {
 
     public void setUsesZSuper() {
         usesZSuper = true;
+    }
+
+    public void setUsesSuper() {
+        usesSuper = true;
+    }
+
+    public boolean usesSuper() {
+        return usesSuper;
     }
 
     public boolean usesZSuper() {

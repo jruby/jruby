@@ -51,6 +51,21 @@ public class Getline {
         return getlineCall(context, getline, self, enc_io, 3, arg0, arg1, arg2, block);
     }
 
+    public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline, Self self, Encoding enc_io, IRubyObject... args) {
+        switch (args.length) {
+            case 0:
+                return getlineCall(context, getline, self, enc_io);
+            case 1:
+                return getlineCall(context, getline, self, enc_io, args[0]);
+            case 2:
+                return getlineCall(context, getline, self, enc_io, args[0], args[1]);
+            case 3:
+                return getlineCall(context, getline, self, enc_io, args[0], args[1], args[2]);
+            default:
+                throw context.runtime.newArgumentError(args.length, 0, 3);
+        }
+    }
+
     public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline, Self self, Encoding enc_io, int argc, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         final IRubyObject nil = context.nil;
 

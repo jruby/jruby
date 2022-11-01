@@ -302,19 +302,19 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
   end
 
   def wait_for_accepted(server_thread)
-    timeout(2) do
+    Timeout.timeout(2) do
       Thread.pass while !server_thread[:accepted]
     end
   end
 
   def wait_for_sleep(t)
-    timeout(2) do
+    Timeout.timeout(2) do
       Thread.pass while t.status == 'run'
     end
   end
 
   def wait_for_terminate(t)
-    timeout(2) do
+    Timeout.timeout(2) do
       Thread.pass while t.alive?
     end
   end

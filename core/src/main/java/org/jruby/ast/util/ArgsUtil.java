@@ -42,6 +42,8 @@ import org.jruby.util.TypeConverter;
 
 import java.util.HashMap;
 
+import static org.jruby.util.TypeConverter.booleanExpected;
+
 /**
  *
  * @author  jpetersen
@@ -85,6 +87,19 @@ public final class ArgsUtil {
     
     public static int arrayLength(IRubyObject node) {
         return node instanceof RubyArray ? ((RubyArray) node).getLength() : 0;
+    }
+
+    // MRI: rb_opts_exception_p
+    public static boolean hasExceptionOption(ThreadContext context, IRubyObject options, boolean defaultValue) {
+        IRubyObject opts = getOptionsArg(context.runtime, options, false);
+
+        if (!opts.isNil()) {
+            IRubyObject value = extractKeywordArg(context, "exception", (RubyHash) opts);
+
+            if (value != null) return booleanExpected(context, value, "exception");
+        }
+
+        return defaultValue;
     }
     
     public static IRubyObject getOptionsArg(Ruby runtime, IRubyObject... args) {
@@ -139,7 +154,7 @@ public final class ArgsUtil {
         options.visitAll(context, new RubyHash.Visitor() {
             public void visit(IRubyObject key, IRubyObject value) {
                 if (!validKeySet.containsKey(key)) {
-                    throw context.runtime.newArgumentError("unknown keyword: " + key);
+                    throw context.runtime.newArgumentError("unknown keyword: " + key.inspect());
                 }
             }
         }, null);
@@ -162,6 +177,16 @@ public final class ArgsUtil {
         return null;
     }
 
+    public static IRubyObject extractKeywordArg(ThreadContext context, IRubyObject maybeKwargs, String validKey) {
+        IRubyObject options = ArgsUtil.getOptionsArg(context.runtime, maybeKwargs);
+
+        if (options instanceof RubyHash) {
+            return extractKeywordArg(context, (RubyHash) options, validKey);
+        }
+
+        return null;
+    }
+
     /**
      * Same as {@link #extractKeywordArgs(ThreadContext, RubyHash, String...)}.
      * @param context
@@ -172,12 +197,13 @@ public final class ArgsUtil {
     public static IRubyObject extractKeywordArg(ThreadContext context, final RubyHash options, String validKey) {
         if (options.isEmpty()) return null;
 
-        IRubyObject ret = options.fastARef(context.runtime.newSymbol(validKey));
+        RubySymbol testKey = context.runtime.newSymbol(validKey);
+        IRubyObject ret = options.fastARef(testKey);
 
         if (ret == null || options.size() > 1) { // other (unknown) keys in options
             options.visitAll(context, new RubyHash.Visitor() {
                 public void visit(IRubyObject key, IRubyObject value) {
-                    throw context.runtime.newArgumentError("unknown keyword: " + key);
+                    if (!key.equals(testKey)) throw context.runtime.newArgumentError("unknown keyword: " + key.inspect());
                 }
             }, null);
         }
@@ -229,4 +255,12 @@ public final class ArgsUtil {
         return extractKeywordArg(context, keyword, (RubyHash) opts);
     }
 
+    // FIXME: Remove this once invokers know about keyword arguments.
+    public static RubyHash extractKeywords(IRubyObject possiblyKeywordArg) {
+        if (possiblyKeywordArg instanceof RubyHash) {
+            return (RubyHash) possiblyKeywordArg;
+        }
+
+        return null;
+    }
 }

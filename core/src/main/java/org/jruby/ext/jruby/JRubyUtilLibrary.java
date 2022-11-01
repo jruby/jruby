@@ -83,7 +83,7 @@ public class JRubyUtilLibrary implements Library {
         final Ruby runtime = recv.getRuntime();
         boolean enabled = arg.isTrue();
         if (enabled) {
-            runtime.getWarnings().warn("ObjectSpace impacts performance. See http://wiki.jruby.org/PerformanceTuning#dont-enable-objectspace");
+            runtime.getWarnings().warn("ObjectSpace impacts performance. See https://github.com/jruby/jruby/wiki/PerformanceTuning#dont-enable-objectspace");
         }
         runtime.setObjectSpaceEnabled(enabled);
         return runtime.newBoolean(enabled);
@@ -97,6 +97,19 @@ public class JRubyUtilLibrary implements Library {
     @Deprecated
     public static IRubyObject getClassLoaderResources(IRubyObject recv, IRubyObject name) {
         return class_loader_resources(recv.getRuntime().getCurrentContext(), recv, name);
+    }
+
+    /**
+     * Loads a (Java) class.
+     * @param context
+     * @param recv
+     * @param name the class name
+     * @return Java class (wrapper) or raises a NameError if loading fails or class is not found
+     */
+    @JRubyMethod(meta = true)
+    public static IRubyObject load_java_class(ThreadContext context, IRubyObject recv, IRubyObject name) {
+        Class<?> klass = Java.getJavaClass(context.runtime, name.convertToString().asJavaString());
+        return Java.getInstance(context.runtime, klass);
     }
 
     /**
@@ -204,7 +217,7 @@ public class JRubyUtilLibrary implements Library {
     }
 
     private static boolean loadExtension(final Ruby runtime, final String className) {
-        Class<?> clazz = runtime.getJavaSupport().loadJavaClassQuiet(className);
+        Class<?> clazz = Java.getJavaClass(runtime, className);
         // 1. BasicLibraryService interface
         if (BasicLibraryService.class.isAssignableFrom(clazz)) {
             try {

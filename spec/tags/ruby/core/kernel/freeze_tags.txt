@@ -1,0 +1,1 @@
+fails:Kernel#freeze freezes an object's singleton class

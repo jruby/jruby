@@ -30,6 +30,8 @@
 package org.jruby.embed.jsr223;
 
 import java.io.Reader;
+import java.util.Objects;
+import java.util.function.Supplier;
 import javax.script.Bindings;
 import javax.script.Compilable;
 import javax.script.CompiledScript;
@@ -40,9 +42,14 @@ import javax.script.ScriptEngineFactory;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 import javax.script.SimpleScriptContext;
+
+import org.jruby.Ruby;
 import org.jruby.embed.EmbedEvalUnit;
 import org.jruby.embed.ScriptingContainer;
+import org.jruby.exceptions.NoMethodError;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaEmbedUtils;
+import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -62,94 +69,91 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
         this.context = new JRubyContext(container);
     }
 
+    @Override
     public CompiledScript compile(String script) throws ScriptException {
-        if (script == null) {
-            throw new NullPointerException("script is null");
+        Objects.requireNonNull(script, "script");
+        try {
+            return new JRubyCompiledScript(container, this, script);
+        } catch (RaiseException e) {
+            throw wrapRaiseException(e);
         }
-        return new JRubyCompiledScript(container, this, script);
     }
 
+    @Override
     public CompiledScript compile(Reader reader) throws ScriptException {
-        if (reader == null) {
-            throw new NullPointerException("reader is null");
+        Objects.requireNonNull(reader, "reader");
+        try {
+            return new JRubyCompiledScript(container, this, reader);
+        } catch (RaiseException e) {
+            throw wrapRaiseException(e);
         }
-        return new JRubyCompiledScript(container, this, reader);
     }
 
+    static Object doEval(ScriptingContainer container, ScriptContext context, Supplier<EmbedEvalUnit> unit) throws ScriptException {
+
+        if (Utils.isClearVariablesOn(context)) {
+            container.clear();
+        }
+        Utils.preEval(container, context);
+        try {
+            IRubyObject ret = unit.get().run();
+            return JavaEmbedUtils.rubyToJava(ret);
+        } catch (RaiseException e) {
+            throw wrapRaiseException(e);
+        } catch (Exception e) {
+            throw wrapException(e);
+        } finally {
+            Utils.postEval(container, context);
+            if (Utils.isTerminationOn(context)) {
+                container.terminate();
+            }
+        }
+    }
+
+    @Override
     public Object eval(String script, ScriptContext context) throws ScriptException {
-        if (script == null || context == null) {
-            throw new NullPointerException("either script or context is null");
-        }
+        Objects.requireNonNull(script, "script");
+        Objects.requireNonNull(context, "context");
         container.setScriptFilename(Utils.getFilename(context));
-        try {
-            if (Utils.isClearVariablesOn(context)) {
-                container.clear();
-            }
-            Utils.preEval(container, context);
-            EmbedEvalUnit unit = container.parse(script, Utils.getLineNumber(context));
-            IRubyObject ret = unit.run();
-            return JavaEmbedUtils.rubyToJava(ret);
-        } catch (Exception e) {
-            throw wrapException(e);
-        } finally {
-            Utils.postEval(container, context);
-            boolean termination = Utils.isTerminationOn(context);
-            if (termination) {
-                container.terminate();
-            }
-        }
+        return doEval(container, context, () -> container.parse(script, Utils.getLineNumber(context)));
     }
 
-    private ScriptException wrapException(Exception e) {
-        return new ScriptException(e);
-    }
-
+    @Override
     public Object eval(Reader reader, ScriptContext context) throws ScriptException {
-        if (reader == null || context == null) {
-            throw new NullPointerException("either reader or context is null");
-        }
-        String filename = Utils.getFilename(context);
-        try {
-            if (Utils.isClearVariablesOn(context)) {
-                container.clear();
-            }
-            Utils.preEval(container, context);
-            EmbedEvalUnit unit = container.parse(reader, filename, Utils.getLineNumber(context));
-            IRubyObject ret = unit.run();
-            return JavaEmbedUtils.rubyToJava(ret);
-        } catch (Exception e) {
-            throw wrapException(e);
-        } finally {
-            Utils.postEval(container, context);
-            boolean termination = Utils.isTerminationOn(context);
-            if (termination) {
-                container.terminate();
-            }
-        }
+        Objects.requireNonNull(reader, "reader");
+        Objects.requireNonNull(context, "context");
+        final String filename = Utils.getFilename(context);
+        return doEval(container, context, () -> container.parse(reader, filename, Utils.getLineNumber(context)));
     }
 
+    @Override
     public Object eval(String script, Bindings bindings) throws ScriptException {
+        Objects.requireNonNull(script, "script");
+        Objects.requireNonNull(bindings, "bindings");
         ScriptContext context = getScriptContext(bindings);
         return eval(script, context);
     }
 
+    @Override
     public Object eval(Reader reader, Bindings bindings) throws ScriptException {
+        Objects.requireNonNull(reader, "reader");
+        Objects.requireNonNull(bindings, "bindings");
         ScriptContext context = getScriptContext(bindings);
         return eval(reader, context);
     }
 
+    @Override
     public Object eval(String script) throws ScriptException {
         return eval(script, context);
     }
 
+    @Override
     public Object eval(Reader reader) throws ScriptException {
         return eval(reader, context);
     }
 
-    protected ScriptContext getScriptContext(Bindings bindings) {
-        if (bindings == null) {
-            throw new NullPointerException("null bindings in engine scope");
-        }
+    protected ScriptContext getScriptContext(final Bindings bindings) {
+        if (bindings == null) return context;
 
         ScriptContext newContext = new SimpleScriptContext();
         newContext.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
@@ -164,86 +168,83 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
         return newContext;
     }
 
+    @Override
     public Object get(String key) {
         return context.getAttribute(key, ScriptContext.ENGINE_SCOPE);
     }
 
+    @Override
     public void put(String key, Object value) {
         context.getBindings(ScriptContext.ENGINE_SCOPE).put(key, value);
     }
 
+    @Override
     public Bindings getBindings(int scope) {
         return context.getBindings(scope);
     }
 
+    @Override
     public void setBindings(Bindings bindings, int scope) {
         context.setBindings(bindings, scope);
     }
 
+    @Override
     public Bindings createBindings() {
         return new SimpleBindings();
     }
 
+    @Override
     public ScriptContext getContext() {
         return context;
     }
 
-    public void setContext(ScriptContext ctx) {
-        if (ctx == null) {
-            throw new NullPointerException("context is null");
-        }
-        context = ctx;
+    @Override
+    public void setContext(ScriptContext context) {
+        Objects.requireNonNull(context, "context");
+        this.context = context;
     }
 
+    @Override
     public ScriptEngineFactory getFactory() {
         return factory;
     }
 
-    public Object invokeMethod(Object receiver, String method, Object... args)
-            throws ScriptException, NoSuchMethodException {
-        if (method == null) {
-            throw new NullPointerException("method is null");
-        }
-        if (receiver == null) {
-            throw new NullPointerException("receiver is null");
-        }
+    @Override
+    public Object invokeMethod(Object receiver, String method, Object... args) throws ScriptException, NoSuchMethodException {
+        Objects.requireNonNull(method, "method");
+        Objects.requireNonNull(receiver, "receiver");
+        Utils.preEval(container, context);
         try {
-            Utils.preEval(container, context);
             if (args == null || args.length == 0) {
                 return container.callMethod(receiver, method, Object.class);
             }
             return container.callMethod(receiver, method, args, Object.class);
+        } catch (NoMethodError e) {
+            throw wrapMethodException(e);
+        } catch (RaiseException e) {
+            throw wrapRaiseException(e);
         } catch (Exception e) {
-            if (e.getCause() != null && e.getCause().getMessage() != null
-                    && e.getCause().getMessage().contains("undefined method")) {
-                throw wrapMethodException(e);
-            }
             throw wrapException(e);
         } finally {
             Utils.postEval(container, context);
         }
     }
 
-    private static NoSuchMethodException wrapMethodException(Exception e) {
-        return (NoSuchMethodException) new NoSuchMethodException(e.getCause().getMessage()).initCause(e);
-    }
-
-    public Object invokeFunction(String method, Object... args)
-            throws ScriptException, NoSuchMethodException {
-        if (method == null) {
-            throw new NullPointerException("method is null");
-        }
+    @Override
+    public Object invokeFunction(String method, Object... args) throws ScriptException, NoSuchMethodException {
+        Objects.requireNonNull(method, "method");
+        Utils.preEval(container, context);
         try {
-            Utils.preEval(container, context);
+            IRubyObject receiver = container.getProvider().getRuntime().getTopSelf();
             if (args == null || args.length == 0) {
-                return container.callMethod(container.getProvider().getRuntime().getTopSelf(), method, Object.class);
+                return container.callMethod(receiver, method, Object.class);
             }
-            return container.callMethod(container.getProvider().getRuntime().getTopSelf(), method, args, Object.class);
+            return container.callMethod(receiver, method, args, Object.class);
+        } catch (NoMethodError e) {
+            throw wrapMethodException(e);
+        } catch (RaiseException e) {
+            throw wrapRaiseException(e);
         } catch (Exception e) {
-            if (e.getCause() != null && e.getCause().getMessage() != null
-                    && e.getCause().getMessage().contains("undefined method")) {
-                throw wrapMethodException(e);
-            }
             throw wrapException(e);
         } finally {
             Utils.postEval(container, context);
@@ -257,4 +258,37 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
     public <T> T getInterface(Object receiver, Class<T> returnType) {
         return container.getInstance(receiver, returnType);
     }
+
+    private static ScriptException wrapException(Exception e) {
+        return new ScriptException(e);
+    }
+
+    private static ScriptException wrapRaiseException(RaiseException e) {
+        RubyStackTraceElement[] trace = e.getException().getBacktraceElements();
+
+        if (trace.length > 0) {
+            RubyStackTraceElement top = trace[0];
+
+            String file = top.getFileName();
+            int line = top.getLineNumber();
+
+            if (file == null) file = "<script>";
+
+            ScriptException se = new ScriptException("Error during evaluation of Ruby in " + file + " at line " + line + ": " + e.getMessage());
+            se.initCause(e);
+
+            // Exception is about to be propagated out to Java, so clear $!
+            Ruby runtime = e.getException().getRuntime();
+            runtime.getCurrentContext().setErrorInfo(runtime.getNil());
+
+            return se;
+        }
+
+        return new ScriptException(e);
+    }
+
+    private static NoSuchMethodException wrapMethodException(RaiseException e) {
+        return (NoSuchMethodException) new NoSuchMethodException(e.getMessage()).initCause(e);
+    }
+
 }

@@ -38,6 +38,7 @@ package org.jruby;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
@@ -66,8 +67,11 @@ import static org.jruby.util.Numeric.f_lcm;
  *
  * @author  jpetersen
  */
-@JRubyClass(name="Integer", parent="Numeric")
+@JRubyClass(name="Integer", parent="Numeric", overrides = {RubyFixnum.class, RubyBignum.class})
 public abstract class RubyInteger extends RubyNumeric {
+
+    private static final int BIT_SIZE = 64;
+    private static final long MAX = (1L << (BIT_SIZE - 1)) - 1;
 
     public static RubyClass createIntegerClass(Ruby runtime) {
         RubyClass integer = runtime.defineClass("Integer", runtime.getNumeric(),
@@ -152,6 +156,11 @@ public abstract class RubyInteger extends RubyNumeric {
         return num.convertToInteger().sqrt(context);
     }
 
+    @JRubyMethod(meta = true)
+    public static IRubyObject try_convert(ThreadContext context, IRubyObject self, IRubyObject num) {
+        return TypeConverter.checkIntegerType(context, num);
+    }
+
     public abstract IRubyObject sqrt(ThreadContext context);
 
     // floorSqrt :: unsigned long -> unsigned long
@@ -224,6 +233,7 @@ public abstract class RubyInteger extends RubyNumeric {
             long i;
             for (i = from; i < to; i++) {
                 block.yield(context, nil);
+                context.pollThreadEvents();
             }
             if (i <= to) {
                 block.yield(context, nil);
@@ -233,6 +243,7 @@ public abstract class RubyInteger extends RubyNumeric {
             long i;
             for (i = from; i < to; i++) {
                 block.yield(context, RubyFixnum.newFixnum(runtime, i));
+                context.pollThreadEvents();
             }
             if (i <= to) {
                 block.yield(context, RubyFixnum.newFixnum(runtime, i));
@@ -329,11 +340,11 @@ public abstract class RubyInteger extends RubyNumeric {
             IRubyObject i = RubyFixnum.zero(runtime);
             RubyFixnum one = RubyFixnum.one(runtime);
             while (true) {
-                if (!sites(context).op_lt.call(context, i, i, this).isTrue()) {
+                if (!((RubyInteger) i).op_lt(context, this).isTrue()) {
                     break;
                 }
                 block.yield(context, i);
-                i = sites(context).op_plus.call(context, i, i, one);
+                i = ((RubyInteger) i).op_plus(context, one);
             }
             return this;
         } else {
@@ -382,8 +393,53 @@ public abstract class RubyInteger extends RubyNumeric {
     @Deprecated
     public static final ByteList[] SINGLE_CHAR_BYTELISTS19 = SINGLE_CHAR_BYTELISTS;
 
-    static ByteList singleCharByteList(final byte index) {
+    public static ByteList singleCharByteList(final byte index) {
         return SINGLE_CHAR_BYTELISTS[index & 0xFF];
+    }
+
+    static final ByteList[] SINGLE_CHAR_UTF8_BYTELISTS;
+    static {
+        SINGLE_CHAR_UTF8_BYTELISTS = new ByteList[128];
+        for (int i = 0; i < 128; i++) {
+            ByteList bytes = new ByteList(new byte[] { (byte) i }, false);
+            SINGLE_CHAR_UTF8_BYTELISTS[i] = bytes;
+            bytes.setEncoding(UTF8Encoding.INSTANCE);
+        }
+    }
+
+    /**
+     * Return a low ASCII single-character bytelist with UTF-8 encoding, using cached values.
+     *
+     * The resulting ByteList should not be modified.
+     *
+     * @param index the byte
+     * @return a cached single-character ByteList
+     */
+    public static ByteList singleCharUTF8ByteList(final byte index) {
+        return SINGLE_CHAR_UTF8_BYTELISTS[index & 0xFF];
+    }
+
+    /**
+     * Return a single-character ByteList, possibly cached, corresponding to the given byte and encoding.
+     *
+     * Note this will return high ASCII non-UTF8 characters as ASCII-8BIT, rather than US-ASCII.
+     *
+     * @param b the byte
+     * @param enc the encoding
+     * @return a new single-character RubyString
+     */
+    public static RubyString singleCharString(Ruby runtime, byte b, RubyClass meta, Encoding enc) {
+        ByteList bytes;
+        if (enc == USASCIIEncoding.INSTANCE) {
+            bytes = singleCharByteList(b);
+        } else if ((b & 0xFF) < 0x80 && enc == RubyString.UTF8) {
+            bytes = singleCharUTF8ByteList(b);
+        } else {
+            return new RubyString(runtime, meta, new ByteList(new byte[]{b}, enc));
+        }
+
+        // use shared for cached bytelists
+        return RubyString.newStringShared(runtime, meta, bytes);
     }
 
     /** int_chr
@@ -643,19 +699,19 @@ public abstract class RubyInteger extends RubyNumeric {
 
     @JRubyMethod(name = "allbits?")
     public IRubyObject allbits_p(ThreadContext context, IRubyObject other) {
-        IRubyObject mask = TypeConverter.checkIntegerType(context, other);
+        IRubyObject mask = TypeConverter.checkToInteger(context, other);
         return ((RubyInteger) op_and(context, mask)).op_equal(context, mask);
     }
 
     @JRubyMethod(name = "anybits?")
     public IRubyObject anybits_p(ThreadContext context, IRubyObject other) {
-        IRubyObject mask = TypeConverter.checkIntegerType(context, other);
+        IRubyObject mask = TypeConverter.checkToInteger(context, other);
         return ((RubyInteger) op_and(context, mask)).zero_p(context).isTrue() ? context.fals : context.tru;
     }
 
     @JRubyMethod(name = "nobits?")
     public IRubyObject nobits_p(ThreadContext context, IRubyObject other) {
-        IRubyObject mask = TypeConverter.checkIntegerType(context, other);
+        IRubyObject mask = TypeConverter.checkToInteger(context, other);
         return ((RubyInteger) op_and(context, mask)).zero_p(context);
     }
 
@@ -821,6 +877,7 @@ public abstract class RubyInteger extends RubyNumeric {
 
         if (m instanceof RubyFixnum) {
             long mm = ((RubyFixnum) m).value;
+            if (mm == 1) return RubyFixnum.zero(runtime);
             RubyFixnum modulo = (RubyFixnum) modulo(context, m);
             if (mm <= HALF_LONG_MSB) {
                 return modulo.intPowTmp1(context, (RubyInteger) b, mm, negaFlg);
@@ -829,6 +886,7 @@ public abstract class RubyInteger extends RubyNumeric {
             }
         }
         if (m instanceof RubyBignum) {
+            if (((RubyBignum) m).value == BigInteger.ONE) return RubyFixnum.zero(runtime);
             return ((RubyInteger) modulo(context, m)).intPowTmp3(context, (RubyInteger) b, (RubyBignum) m, negaFlg);
         }
         // not reached
@@ -879,7 +937,75 @@ public abstract class RubyInteger extends RubyNumeric {
     public abstract IRubyObject op_xor(ThreadContext context, IRubyObject other);
 
     @JRubyMethod(name = "[]")
-    public abstract IRubyObject op_aref(ThreadContext context, IRubyObject other);
+    public IRubyObject op_aref(ThreadContext context, IRubyObject index) {
+        if (index instanceof RubyRange) {
+            RubyRange range = (RubyRange) index;
+            IRubyObject beg = range.begin(context);
+            IRubyObject end = range.end(context);
+            boolean isExclusive = range.isExcludeEnd();
+
+            if (!end.isNil()) end = end.convertToInteger();
+
+            if (beg.isNil()) {
+                if (!negativeInt(context, end)) {
+                    if (!isExclusive) {
+                        end = ((RubyInteger) end).op_plus(context, context.runtime.newFixnum(1));
+                    }
+
+                    RubyInteger mask = generateMask(context, end);
+                    if (((RubyInteger) op_and(context, mask)).isZero()) {
+                        return context.runtime.newFixnum(0);
+                    } else {
+                        throw context.runtime.newArgumentError("The beginless range for Integer#[] results in infinity");
+                    }
+                } else {
+                    return context.runtime.newFixnum(0);
+                }
+            }
+            beg = beg.convertToInteger();
+            IRubyObject num = op_rshift(context, beg);
+            long cmp = compareIndexes(context, beg, end);
+            if (!end.isNil() && cmp < 0) {
+                IRubyObject length = ((RubyInteger) end).op_minus(context, beg);
+                if (!isExclusive) {
+                    length = ((RubyInteger) length).op_plus(context, context.runtime.newFixnum(1));
+                }
+                RubyInteger mask = generateMask(context, length);
+                num = (((RubyInteger) num).op_and(context, mask));
+                return num;
+            } else if (cmp == 0) {
+                if (isExclusive) return context.runtime.newFixnum(0);
+                index = beg;
+            } else {
+                return num;
+            }
+        }
+
+        return op_aref_subclass(context, index);
+    }
+
+    private static long compareIndexes(ThreadContext context, IRubyObject beg, IRubyObject end) {
+        IRubyObject r = beg.callMethod(context, "<=>", end);
+
+        if (r.isNil()) return MAX;
+
+        JavaSites.IntegerSites sites = sites(context);
+        return RubyComparable.cmpint(context, sites.op_gt, sites.op_lt, r, beg, end);
+    }
+
+    protected abstract IRubyObject op_aref_subclass(ThreadContext context, IRubyObject index);
+
+    @JRubyMethod(name = "[]")
+    public IRubyObject op_aref(ThreadContext context, IRubyObject index, IRubyObject length) {
+        IRubyObject num = op_rshift(context, index);
+        IRubyObject mask = generateMask(context, length);
+        return ((RubyInteger) num).op_and(context, mask);
+    }
+
+    RubyInteger generateMask(ThreadContext context, IRubyObject length) {
+        RubyFixnum one = context.runtime.newFixnum(1);
+        return (RubyInteger) ((RubyInteger) one.op_lshift(context, length)).op_minus(context, one);
+    }
 
     @JRubyMethod(name = "<<")
     public abstract IRubyObject op_lshift(ThreadContext context, IRubyObject other);

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'minitest_helper'
+require_relative 'helper'
 require 'timeout'
 
 class TestRDocText < RDoc::TestCase
@@ -13,6 +13,7 @@ class TestRDocText < RDoc::TestCase
     @options = RDoc::Options.new
 
     @top_level = @store.add_file 'file.rb'
+    @language = nil
   end
 
   def test_self_encode_fallback
@@ -137,6 +138,8 @@ we don't worry too much.
 The comments associated with
     EXPECTED
 
+    @language = :ruby
+
     assert_equal expected, normalize_comment(text)
   end
 
@@ -155,6 +158,8 @@ we don't worry too much.
 The comments associated with
     EXPECTED
 
+    @language = :c
+
     assert_equal expected, normalize_comment(text)
   end
 
@@ -172,6 +177,8 @@ we don't worry too much.
 
 The comments associated with
     EXPECTED
+
+    @language = :c
 
     assert_equal expected, normalize_comment(text)
   end
@@ -200,6 +207,8 @@ The comments associated with
   end
 
   def test_parse_empty_newline
+    @language = :ruby
+
     assert_equal RDoc::Markup::Document.new, parse("#\n")
   end
 
@@ -476,6 +485,13 @@ The comments associated with
     assert_equal '‘a’ ‘', to_html("'a' '")
   end
 
+  def test_to_html_apostrophe_entity
+    assert_equal '‘a', to_html("&#39;a")
+    assert_equal 'a’', to_html("a&#39;")
+
+    assert_equal '‘a’ ‘', to_html("&#39;a&#39; &#39;")
+  end
+
   def test_to_html_backslash
     assert_equal 'S', to_html('\\S')
   end
@@ -486,6 +502,7 @@ The comments associated with
 
   def test_to_html_copyright
     assert_equal '©', to_html('(c)')
+    assert_equal '©', to_html('(C)')
   end
 
   def test_to_html_dash
@@ -498,6 +515,7 @@ The comments associated with
   def test_to_html_double_backtick
     assert_equal '“a',  to_html('``a')
     assert_equal '“a“', to_html('``a``')
+    assert_equal '“a”', to_html("``a''")
   end
 
   def test_to_html_double_quote
@@ -540,6 +558,7 @@ The comments associated with
 
   def test_to_html_registered_trademark
     assert_equal '®', to_html('(r)')
+    assert_equal '®', to_html('(R)')
   end
 
   def test_to_html_tt_tag
@@ -548,7 +567,7 @@ The comments associated with
   end
 
   def test_to_html_tt_tag_mismatch
-    _, err = verbose_capture_io do
+    _, err = verbose_capture_output do
       assert_equal '<tt>hi', to_html('<tt>hi')
     end
 

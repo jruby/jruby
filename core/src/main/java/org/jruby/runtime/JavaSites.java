@@ -9,6 +9,7 @@ import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.callsite.MulCallSite;
 import org.jruby.runtime.callsite.PlusCallSite;
 import org.jruby.runtime.callsite.RespondToCallSite;
+import org.jruby.runtime.callsite.SuperCallSite;
 
 /**
  * A collection of all call sites used for dynamic calls from JRuby's Java code.
@@ -49,6 +50,9 @@ public class JavaSites {
     public final RaiseExceptionSites RaiseException = new RaiseExceptionSites();
     public final ConditionVariableSites ConditionVariable = new ConditionVariableSites();
     public final FiberSites Fiber = new FiberSites();
+    public final MonitorSites Monitor = new MonitorSites();
+    public final SetSites Set = new SetSites();
+    public final StructSites Struct = new StructSites();
 
     public static class BasicObjectSites {
         public final CallSite respond_to = new FunctionalCachingCallSite("respond_to?");
@@ -174,6 +178,7 @@ public class JavaSites {
     public static class NumericSites {
         public final RespondToCallSite respond_to_coerce = new RespondToCallSite("coerce");
         public final CallSite coerce = new FunctionalCachingCallSite("coerce");
+        public final CheckedSites coerce_checked = new CheckedSites("coerce");
         public final CallSite op_cmp = new FunctionalCachingCallSite("<=>");
         public final CachingCallSite op_minus = new FunctionalCachingCallSite("-");
         public final CallSite op_quo = new FunctionalCachingCallSite("/");
@@ -247,6 +252,7 @@ public class JavaSites {
         public final CallSite op_le = new FunctionalCachingCallSite("<=");
         public final CallSite op_gt = new FunctionalCachingCallSite(">");
         public final CallSite op_lt = new FunctionalCachingCallSite("<");
+        public final CachingCallSite op_eqq = new FunctionalCachingCallSite("==");
         public final CachingCallSite basic_op_lt = new FunctionalCachingCallSite("<");
         public final CachingCallSite basic_op_gt = new FunctionalCachingCallSite(">");
         public final CallSite op_exp_complex = new FunctionalCachingCallSite("**");
@@ -276,6 +282,10 @@ public class JavaSites {
         public final CheckedSites checked_op_or = new CheckedSites("|");
         public final CheckedSites checked_op_xor = new CheckedSites("^");
         public final CallSite op_cmp = new FunctionalCachingCallSite("<=>");
+        public final CallSite op_ge = new FunctionalCachingCallSite(">=");
+        public final CallSite op_le = new FunctionalCachingCallSite("<=");
+        public final CallSite op_gt = new FunctionalCachingCallSite(">");
+        public final CallSite op_lt = new FunctionalCachingCallSite("<");
         public final CallSite fdiv = new FunctionalCachingCallSite("fdiv");
         public final CachingCallSite basic_op_lt = new FunctionalCachingCallSite("<");
         public final CachingCallSite basic_op_gt = new FunctionalCachingCallSite(">");
@@ -295,14 +305,19 @@ public class JavaSites {
         public final CallSite op_le = new FunctionalCachingCallSite("<=");
         public final CallSite op_gt = new FunctionalCachingCallSite(">");
         public final CallSite op_lt = new FunctionalCachingCallSite("<");
-        public final CallSite op_equal = new FunctionalCachingCallSite("==");
+        public final CachingCallSite op_equal = new FunctionalCachingCallSite("==");
         public final RespondToCallSite respond_to_infinite = new RespondToCallSite("infinite?");
         public final CallSite infinite = new FunctionalCachingCallSite("infinite?");
     }
 
+    public static class StructSites {
+        public final CallSite op_equal = new FunctionalCachingCallSite("==");
+        public final CallSite eql = new FunctionalCachingCallSite("eql?");
+    }
+
     public static class TimeSites {
         public final RespondToCallSite respond_to_cmp = new RespondToCallSite("<=>");
-        public final CallSite cmp = new FunctionalCachingCallSite("<=>");
+        public final CachingCallSite cmp = new FunctionalCachingCallSite("<=>");
 
         public final ThreadContext.RecursiveFunctionEx recursive_cmp = new ThreadContext.RecursiveFunctionEx<IRubyObject>() {
             @Override
@@ -508,6 +523,20 @@ public class JavaSites {
         public final CachingCallSite peek = new FunctionalCachingCallSite("peek");
         public final CachingCallSite next = new FunctionalCachingCallSite("next");
         public final CallSite each = new FunctionalCachingCallSite("each");
+    }
+
+    public static class MonitorSites {
+        public final CachingCallSite wait = new FunctionalCachingCallSite("wait");
+    }
+
+    public static class SetSites {
+        public final SuperCallSite initialize_dup_super = new SuperCallSite();
+        public final SuperCallSite initialize_clone_super = new SuperCallSite();
+        public final CallSite op_equal = new FunctionalCachingCallSite("==");
+        public final CallSite proper_subset = new FunctionalCachingCallSite("proper_subset?");
+        public final CallSite proper_superset = new FunctionalCachingCallSite("proper_superset?");
+        public final CallSite to_a = new FunctionalCachingCallSite("to_a");
+        public final CallSite ary_join = new FunctionalCachingCallSite("join");
     }
 
     public static class CheckedSites {

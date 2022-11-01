@@ -1,0 +1,1 @@
+wip:Module#deprecate_constant when accessing the deprecated module does not warn if Warning[:deprecated] is false

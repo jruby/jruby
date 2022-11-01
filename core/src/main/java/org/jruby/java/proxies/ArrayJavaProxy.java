@@ -17,6 +17,12 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ConvertBytes;
+import org.jruby.util.RubyStringBuilder;
+
+import static org.jruby.javasupport.ext.JavaLang.Character.inspectCharValue;
+import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.util.Inspector.*;
 
 public final class ArrayJavaProxy extends JavaProxy {
 
@@ -47,7 +53,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         return arrayJavaProxy;
     }
 
-    static ArrayJavaProxy newArray(final Ruby runtime, final Class<?> elementType, final int... dimensions) {
+    public static ArrayJavaProxy newArray(final Ruby runtime, final Class<?> elementType, final int... dimensions) {
         final Object array;
         try {
             array = Array.newInstance(elementType, dimensions);
@@ -58,12 +64,15 @@ public final class ArrayJavaProxy extends JavaProxy {
         return new ArrayJavaProxy(runtime, Java.getProxyClassForObject(runtime, array), array);
     }
 
+    @Override
+    @Deprecated
     protected JavaArray asJavaObject(final Object array) {
         return new JavaArray(getRuntime(), array);
     }
 
+    @Deprecated
     public final JavaArray getJavaArray() {
-        return (JavaArray) dataGetStruct();
+        return asJavaObject(this.object);
     }
 
     public Object get(final int index) {
@@ -439,7 +448,7 @@ public final class ArrayJavaProxy extends JavaProxy {
     public IRubyObject each(ThreadContext context, Block block) {
         final Ruby runtime = context.runtime;
         if ( ! block.isGiven() ) { // ... Enumerator.new(self, :each)
-            return runtime.getEnumerator().callMethod("new", this, runtime.newSymbol("each"));
+            return enumeratorizeWithSize(context, this, "each", ArrayJavaProxy::size);
         }
 
         final Object array = getObject();
@@ -455,19 +464,19 @@ public final class ArrayJavaProxy extends JavaProxy {
     @JRubyMethod
     public IRubyObject each_with_index(final ThreadContext context, final Block block) {
         final Ruby runtime = context.runtime;
-        if ( ! block.isGiven() ) { // ... Enumerator.new(self, :each)
-            return runtime.getEnumerator().callMethod("new", this, runtime.newSymbol("each_with_index"));
+        if ( ! block.isGiven() ) { // ... Enumerator.new(self, :each_with_index)
+            return enumeratorizeWithSize(context, this, "each_with_index", ArrayJavaProxy::size);
         }
 
-        final boolean arity2 = block.getSignature().arity() == Arity.TWO_ARGUMENTS;
-
+        final boolean twoArguments = block.getSignature().isTwoArguments();
         final Object array = getObject();
         final int length = Array.getLength(array);
 
         for ( int i = 0; i < length; i++ ) {
             IRubyObject element = ArrayUtils.arefDirect(runtime, array, converter, i);
             final RubyInteger index = RubyFixnum.newFixnum(runtime, i);
-            if ( arity2 ) {
+
+            if (twoArguments) {
                 block.yieldSpecific(context, element, index);
             } else {
                 block.yield(context, RubyArray.newArray(runtime, element, index));
@@ -482,31 +491,125 @@ public final class ArrayJavaProxy extends JavaProxy {
         return JavaUtil.convertJavaArrayToRubyWithNesting(context, array);
     }
 
+    public Class<?> getComponentType() {
+        return getObject().getClass().getComponentType();
+    }
+
     @JRubyMethod(name = "component_type")
     public IRubyObject component_type(ThreadContext context) {
-        Class<?> componentType = getObject().getClass().getComponentType();
-        final JavaClass javaClass = JavaClass.get(context.runtime, componentType);
-        return Java.getProxyClass(context.runtime, javaClass);
+        return Java.getProxyClass(context.runtime, getComponentType());
     }
 
+    private static final byte[] END_BRACKET_COLON_SPACE = new byte[] { ']', ':', ' ' };
+
+    // #<Java::long[3]: [1, 2, 0]>
+    // #<Java::int[0]: []>
+    // #<Java::JavaLang::String[1]: ["foo"]>
     @JRubyMethod
     public RubyString inspect(ThreadContext context) {
-        return RubyString.newString(context.runtime, arrayToString());
+        final Ruby runtime = context.runtime;
+
+        final Class<?> componentClass = getObject().getClass().getComponentType();
+        if (componentClass.isPrimitive()) {
+            return inspectPrimitiveArray(runtime, componentClass);
+        }
+
+        final Object[] ary = (Object[]) getObject();
+
+        RubyModule type = Java.getProxyClass(runtime, componentClass);
+        RubyString buf = inspectPrefixTypeOnly(context, type);
+        RubyStringBuilder.cat(runtime, buf, BEG_BRACKET); // [
+        RubyStringBuilder.cat(runtime, buf, ConvertBytes.intToCharBytes(ary.length));
+        RubyStringBuilder.cat(runtime, buf, END_BRACKET_COLON_SPACE); // ]:
+
+        if (ary.length == 0) {
+            RubyStringBuilder.cat(runtime, buf, EMPTY_ARRAY_BL);
+        } else if (runtime.isInspecting(ary)) {
+            RubyStringBuilder.cat(runtime, buf, RECURSIVE_ARRAY_BL);
+        } else {
+            try {
+                runtime.registerInspecting(ary);
+
+                RubyStringBuilder.cat(runtime, buf, BEG_BRACKET); // [
+                for (int i = 0; i < ary.length; i++) {
+                    RubyString s = JavaUtil.inspectObject(context, ary[i]);
+                    if (i > 0) {
+                        RubyStringBuilder.cat(runtime, buf, COMMA_SPACE); // ,
+                    } else {
+                        buf.setEncoding(s.getEncoding());
+                    }
+                    buf.cat19(s);
+                }
+                RubyStringBuilder.cat(runtime, buf, END_BRACKET); // ]
+            } finally {
+                runtime.unregisterInspecting(ary);
+            }
+        }
+
+        RubyStringBuilder.cat(runtime, buf, GT); // >
+        return buf;
     }
 
+    private RubyString inspectPrimitiveArray(final Ruby runtime, final Class<?> componentClass) {
+        final int len = Array.getLength(getObject());
+
+        final StringBuilder buffer = new StringBuilder(24);
+        final String name = componentClass.getName();
+        buffer.append("#<Java::").append(name).append('[').append(len).append("]: ");
+        switch (name.charAt(0)) {
+            case 'b':
+                if (componentClass == byte.class) buffer.append(Arrays.toString((byte[])getObject()));
+                else /* if (componentClass == boolean.class) */ buffer.append(Arrays.toString((boolean[])getObject()));
+                break;
+            case 's':
+                /* if (componentClass == short.class) */ buffer.append(Arrays.toString((short[])getObject()));
+                break;
+            case 'c':
+                /* if (componentClass == char.class) */
+                return inspectCharArrayPart(runtime, buffer, (char[])getObject(), len);
+            case 'i':
+                /* if (componentClass == int.class) */ buffer.append(Arrays.toString((int[])getObject()));
+                ///* if (componentClass == int.class) */ toString(buffer, (int[])getObject());
+                break;
+            case 'l':
+                /* if (componentClass == long.class) */ buffer.append(Arrays.toString((long[])getObject()));
+                break;
+            case 'f':
+                /* if (componentClass == float.class) */ buffer.append(Arrays.toString((float[])getObject()));
+                break;
+            case 'd':
+                /* if (componentClass == double.class) */ buffer.append(Arrays.toString((double[])getObject()));
+                break;
+        }
+        return RubyString.newUSASCIIString(runtime, buffer.append('>').toString());
+    }
+
+    // NOTE: special case as we want to inspect like a Character wrapper e.g. ['', 'a']
+    private static RubyString inspectCharArrayPart(final Ruby runtime, final StringBuilder buffer, final char[] ary, final int len) {
+        buffer.append('[');
+        if (len > 0) {
+            for (int i = 0; ; i++) {
+                inspectCharValue(buffer, ary[i]);
+                if (i == len - 1) break;
+                buffer.append(", ");
+            }
+        }
+        buffer.append(']');
+        return RubyString.newString(runtime, buffer.append('>'));
+    }
+
+    // long[1, 2, 0]
+    // int[]
+    // java.lang.String["foo"]
     @Override
     public String toString() {
-        return arrayToString().toString();
-    }
-
-    private StringBuilder arrayToString() {
         final StringBuilder buffer = new StringBuilder(24);
-        Class<?> componentClass = getObject().getClass().getComponentType();
-
-        buffer.append(componentClass.getName());
+        final Class<?> componentClass = getObject().getClass().getComponentType();
+        final String name = componentClass.getName();
+        buffer.append(name);
 
         if (componentClass.isPrimitive()) {
-            switch (componentClass.getName().charAt(0)) {
+            switch (name.charAt(0)) {
                 case 'b':
                     if (componentClass == byte.class) buffer.append(Arrays.toString((byte[])getObject()));
                     else /* if (componentClass == boolean.class) */ buffer.append(Arrays.toString((boolean[])getObject()));
@@ -519,6 +622,7 @@ public final class ArrayJavaProxy extends JavaProxy {
                     break;
                 case 'i':
                     /* if (componentClass == int.class) */ buffer.append(Arrays.toString((int[])getObject()));
+                    ///* if (componentClass == int.class) */ toString(buffer, (int[])getObject());
                     break;
                 case 'l':
                     /* if (componentClass == long.class) */ buffer.append(Arrays.toString((long[])getObject()));
@@ -534,7 +638,7 @@ public final class ArrayJavaProxy extends JavaProxy {
             buffer.append(Arrays.toString((Object[]) getObject()));
         }
 
-        return buffer.append('@').append(Integer.toHexString(inspectHashCode()));
+        return buffer.toString();
     }
 
     @Override
@@ -650,7 +754,6 @@ public final class ArrayJavaProxy extends JavaProxy {
 
         RubyObject dup = new ArrayJavaProxy(runtime, getMetaClass(), cloneObject(), converter);
 
-        if (isTaint()) dup.setTaint(true);
         initCopy(dup, this, "initialize_dup");
 
         return dup;
@@ -669,7 +772,6 @@ public final class ArrayJavaProxy extends JavaProxy {
         RubyObject clone = new ArrayJavaProxy(runtime, getMetaClass(), cloneObject(), converter);
         clone.setMetaClass(getSingletonClassClone());
 
-        if (isTaint()) clone.setTaint(true);
         initCopy(clone, this, "initialize_clone");
         if (isFrozen()) clone.setFrozen(true);
 
@@ -799,8 +901,8 @@ public final class ArrayJavaProxy extends JavaProxy {
         public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
             final Ruby runtime = context.runtime;
 
-            if ( ! ( arg0 instanceof JavaArray ) ) {
-                throw runtime.newTypeError(arg0, runtime.getJavaSupport().getJavaArrayClass());
+            if (!(arg0 instanceof ArrayJavaProxy)) {
+                throw runtime.newTypeError(arg0, "ArrayJavaProxy");
             }
 
             IRubyObject proxy = newMethod.call(context, self, clazz, "new_proxy");
@@ -808,5 +910,14 @@ public final class ArrayJavaProxy extends JavaProxy {
             return proxy;
         }
 
+    }
+
+    /**
+     * A size method suitable for lambda method reference implementation of {@link RubyEnumerator.SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])}
+     *
+     * @see RubyEnumerator.SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
+     */
+    protected static IRubyObject size(ThreadContext context, ArrayJavaProxy self, IRubyObject[] args) {
+        return self.length(context);
     }
 }

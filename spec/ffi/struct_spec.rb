@@ -59,7 +59,6 @@ module StructSpecsStructTests
         attach_function :ptr_ret_int32_t, :ptr_ret___int32_t, [ :pointer, :int ], :int
       end
       attach_function :ptr_from_address, [ :ulong ], :pointer
-      attach_function :string_equals, [ :string, :string ], :int
       [ 's8', 's16', 's32', 's64', 'f32', 'f64', 'long' ].each do |t|
         attach_function "struct_align_#{t}", [ :pointer ], StructTypes[t]
       end
@@ -365,17 +364,13 @@ module StructSpecsStructTests
     int_field_test(:int, [ 0, 0x7fffffff, -0x80000000, -1 ])
     int_field_test(:uint, [ 0, 0x7fffffff, 0x80000000, 0xffffffff ])
     int_field_test(:long_long, [ 0, 0x7fffffffffffffff, -0x8000000000000000, -1 ])
-    if RUBY_ENGINE != 'jruby' # https://github.com/jnr/jffi/issues/87
-      int_field_test(:ulong_long, [ 0, 0x7fffffffffffffff, 0x8000000000000000, 0xffffffffffffffff ])
-    end
+    int_field_test(:ulong_long, [ 0, 0x7fffffffffffffff, 0x8000000000000000, 0xffffffffffffffff ])
     if FFI::Platform::LONG_SIZE == 32
       int_field_test(:long, [ 0, 0x7fffffff, -0x80000000, -1 ])
       int_field_test(:ulong, [ 0, 0x7fffffff, 0x80000000, 0xffffffff ])
     else
       int_field_test(:long, [ 0, 0x7fffffffffffffff, -0x8000000000000000, -1 ])
-      if RUBY_ENGINE != 'jruby' # https://github.com/jruby/jruby/issues/6376
-        int_field_test(:ulong, [ 0, 0x7fffffffffffffff, 0x8000000000000000, 0xffffffffffffffff ])
-      end
+      int_field_test(:ulong, [ 0, 0x7fffffffffffffff, 0x8000000000000000, 0xffffffffffffffff ])
     end
 
     it ":float field r/w" do
@@ -1031,4 +1026,58 @@ describe "variable-length arrays" do
     expect { expect(s[:data][1]).to == 0x12345678 }.to raise_error(IndexError)
   end
 end
+
+describe "Struct order" do
+  before :all do
+    @struct = Class.new(FFI::Struct) do
+      layout :value, :int32
+    end
+  end
+
+  before :each do
+    @pointer = @struct.new
+    @pointer.pointer.write_bytes("\x1\x2\x3\x4")
+    @pointer
+  end
+
+  it "should return the system order by default" do
+    expect(@pointer.order).to eq(OrderHelper::ORDER)
+  end
+
+  it "should return a new struct if there is no change" do
+    expect(@pointer.order(OrderHelper::ORDER)).to_not be @pointer
+  end
+
+  it "should return a new struct if there is a change" do
+    expect(@pointer.order(OrderHelper::OTHER_ORDER)).to_not be @pointer
+  end
+
+  it "can be set to :little" do
+    expect(@pointer.order(:little).order).to eq(:little)
+  end
+
+  it "can be set to :big" do
+    expect(@pointer.order(:big).order).to eq(:big)
+  end
+
+  it "can be set to :network, which sets it to :big" do
+    expect(@pointer.order(:network).order).to eq(:big)
+  end
+
+  it "cannot be set to other symbols" do
+    expect { @pointer.order(:unknown) }.to raise_error(ArgumentError)
+  end
+
+  it "can be used to read in little order" do
+    expect(@pointer.order(:little)[:value]).to eq(67305985)
+  end
+
+  it "can be used to read in big order" do
+    expect(@pointer.order(:big)[:value]).to eq(16909060)
+  end
+
+  it "can be used to read in network order" do
+    expect(@pointer.order(:network)[:value]).to eq(16909060)
+  end
+end if RUBY_ENGINE != "truffleruby"
 end

@@ -60,7 +60,6 @@ import org.joni.Region;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
-import org.jruby.exceptions.EncodingError;
 import org.jruby.exceptions.JumpException;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
@@ -72,7 +71,6 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.StringSites;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -111,8 +109,6 @@ import static org.jruby.util.StringSupport.memsearch;
 import static org.jruby.util.StringSupport.memchr;
 import static org.jruby.util.StringSupport.nth;
 import static org.jruby.util.StringSupport.offset;
-import static org.jruby.util.StringSupport.memsearch;
-import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.util.StringSupport.searchNonAscii;
 
 /**
@@ -144,12 +140,14 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     private static final byte[] SCRUB_REPL_UTF32LE = new byte[]{(byte)0xFD, (byte)0xFF, (byte)0x00, (byte)0x00};
     private static final byte[] FORCE_ENCODING_BYTES = ".force_encoding(\"".getBytes();
 
+    public static RubyString[] NULL_ARRAY = {};
+
     private volatile int shareLevel = SHARE_LEVEL_NONE;
 
     private ByteList value;
 
     public static RubyClass createStringClass(Ruby runtime) {
-        RubyClass stringClass = runtime.defineClass("String", runtime.getObject(), STRING_ALLOCATOR);
+        RubyClass stringClass = runtime.defineClass("String", runtime.getObject(), RubyString::newAllocatedString);
 
         stringClass.setClassIndex(ClassIndex.STRING);
         stringClass.setReifiedClass(RubyString.class);
@@ -160,13 +158,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         return stringClass;
     }
-
-    private static final ObjectAllocator STRING_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return RubyString.newAllocatedString(runtime, klass);
-        }
-    };
 
     @Override
     public Encoding getEncoding() {
@@ -324,6 +315,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return enc;
     }
 
+    // rb_enc_check but only supports strings
     public static Encoding checkEncoding(final Ruby runtime, ByteList str1, ByteList str2) {
         Encoding enc = StringSupport.areCompatible(str1, str2);
         if (enc == null) {
@@ -493,6 +485,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return new RubyString(runtime, runtime.getString(), new ByteList(ByteList.plain(str), ASCIIEncoding.INSTANCE, false));
     }
 
+    public static RubyString newBinaryString(Ruby runtime, ByteList str) {
+        return new RubyString(runtime, runtime.getString(), str, ASCIIEncoding.INSTANCE, false);
+    }
+
     public static RubyString newUSASCIIString(Ruby runtime, String str) {
         return new RubyString(runtime, runtime.getString(), str, USASCIIEncoding.INSTANCE);
     }
@@ -585,42 +581,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return RubyString.newString(runtime,  new ByteList(RubyEncoding.encode(str, rubyInt), internal));
     }
 
-    // MRI: rb_external_str_with_enc
-    public static RubyString newExternalStringWithEncoding(Ruby runtime, String ptr, Encoding eenc) {
-        Encoding ienc;
-        RubyString str;
-
-        if (ptr == null || ptr.isEmpty()) {
-            return newEmptyString(runtime, eenc);
-        }
-
-        /* ASCII-8BIT case, no conversion */
-        if ((eenc == ASCIIEncoding.INSTANCE) ||
-                (eenc == USASCIIEncoding.INSTANCE && searchNonAscii(ptr) != -1)) {
-            return newBinaryString(runtime, ptr);
-        }
-        /* no default_internal or same encoding, no conversion */
-        ienc = runtime.getDefaultInternalEncoding();
-        if (ienc == null || eenc == ienc) {
-            return newString(runtime, ptr, eenc);
-        }
-        /* ASCII compatible, and ASCII only string, no conversion in
-         * default_internal */
-        if ((eenc == ASCIIEncoding.INSTANCE) ||
-                (eenc == USASCIIEncoding.INSTANCE) ||
-                (eenc.isAsciiCompatible() && searchNonAscii(ptr) == -1)) {
-            return newString(runtime, ptr, ienc);
-        }
-        /* convert from the given encoding to default_internal */
-        str = newEmptyString(runtime, ienc);
-        /* when the conversion failed for some reason, just ignore the
-         * default_internal and result in the given encoding as-is. */
-        try {
-            str.cat19(encodeBytelist(str, eenc), CR_UNKNOWN);
-        } catch (EncodingError.CompatibilityError ce) {
-            return newString(runtime, ptr, eenc);
-        }
-        return str;
+    @Deprecated
+    public static RubyString newExternalStringWithEncoding(Ruby runtime, String string, Encoding encoding) {
+        return EncodingUtils.newExternalStringWithEncoding(runtime, string, encoding);
     }
 
     // String construction routines by NOT byte[] buffer and making the target String shared
@@ -688,6 +651,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return newEmptyString(runtime, runtime.getString());
     }
 
+    public static RubyString newEmptyBinaryString(Ruby runtime) {
+        return newAllocatedString(runtime, runtime.getString());
+    }
+
     private static final ByteList EMPTY_ASCII8BIT_BYTELIST = new ByteList(ByteList.NULL_ARRAY, ASCIIEncoding.INSTANCE);
     private static final ByteList EMPTY_USASCII_BYTELIST = new ByteList(ByteList.NULL_ARRAY, USASCIIEncoding.INSTANCE);
 
@@ -731,7 +698,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         RubyString str = strDup(klass.runtime, klass);
         str.modify();
         str.setFrozen(true);
-        str.infectBy(this);
         return str;
     }
 
@@ -741,7 +707,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         RubyString str = strDup(klass.runtime, klass);
         str.modify(length);
         str.setFrozen(true);
-        str.infectBy(this);
         return str;
     }
 
@@ -881,7 +846,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         shareLevel = SHARE_LEVEL_BYTELIST;
         RubyString dup = new RubyString(runtime, clazz, value);
         dup.shareLevel = SHARE_LEVEL_BYTELIST;
-        dup.flags |= flags & (CR_MASK | TAINTED_F);
+        dup.flags |= flags & CR_MASK;
 
         return dup;
     }
@@ -912,7 +877,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             shared.shareLevel = SHARE_LEVEL_BUFFER;
         }
 
-        shared.infectBy(this);
         return shared;
     }
 
@@ -937,19 +901,21 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (len == 0) {
             shared = newEmptyString(runtime, meta, enc);
         } else if (len == 1) {
-            // as with the 1.8 makeShared, don't bother sharing for substrings that are a single byte
-            // to get a good speed boost in a number of common scenarios (note though that unlike 1.8,
-            // we can't take advantage of SINGLE_CHAR_BYTELISTS since our encoding may not be ascii, but the
-            // single byte copy is pretty much negligible)
-            ByteList bytes = new ByteList(new byte[] { (byte) value.get(index) }, enc);
-            shared = new RubyString(runtime, meta, bytes, enc);
+            byte b = (byte) value.get(index);
+
+            // only use cache for low ASCII bytes
+            if ((b & 0xFF) < 0x80) {
+                shared = RubyInteger.singleCharString(runtime, b, meta, enc);
+            } else {
+                ByteList bytes = new ByteList(new byte[]{(byte) value.get(index)}, enc);
+                shared = new RubyString(runtime, meta, bytes);
+            }
         } else {
             if (shareLevel == SHARE_LEVEL_NONE) shareLevel = SHARE_LEVEL_BUFFER;
             shared = new RubyString(runtime, meta, value.makeShared(index, len));
             shared.shareLevel = SHARE_LEVEL_BUFFER;
         }
         shared.copyCodeRangeForSubstr(this, enc); // no need to assign encoding, same bytelist shared
-        shared.infectBy(this);
         return shared;
     }
 
@@ -997,7 +963,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 }
             }
 
-            throw getRuntime().newFrozenError("String", runtimeError);
+            throw getRuntime().newFrozenError("String", this);
         }
     }
 
@@ -1212,13 +1178,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "-@") // -'foo' returns frozen string
     public final IRubyObject minus_at(ThreadContext context) {
-        Ruby runtime = context.runtime;
-
-        RubyString str = this;
-
-        if (!str.isBare(runtime) && !str.isFrozen()) str = str.strDup(runtime);
-
-        return runtime.freezeAndDedupString(str);
+        return context.runtime.freezeAndDedupString(this);
     }
 
     @JRubyMethod(name = "+@") // +'foo' returns modifiable string
@@ -1240,7 +1200,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (len > Integer.MAX_VALUE) throw context.runtime.newArgumentError("argument too big");
         RubyString resultStr = newStringNoCopy(context.runtime, StringSupport.addByteLists(value, str.value),
                 enc, CodeRangeSupport.codeRangeAnd(getCodeRange(), str.getCodeRange()));
-        resultStr.infectBy(flags | str.flags);
         return resultStr;
     }
 
@@ -1257,15 +1216,15 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private RubyString multiplyByteList(ThreadContext context, IRubyObject arg) {
+        Ruby runtime = context.runtime;
+
         int len = RubyNumeric.num2int(arg);
-        if (len < 0) throw context.runtime.newArgumentError("negative argument");
+        if (len < 0) throw runtime.newArgumentError("negative argument");
 
         // we limit to int because ByteBuffer can only allocate int sizes
-        if (len > 0 && Integer.MAX_VALUE / len < value.getRealSize()) {
-            throw context.runtime.newArgumentError("argument too big");
-        }
+        len = Helpers.multiplyBufferLength(runtime, value.getRealSize(), len);
 
-        ByteList bytes = new ByteList(len *= value.getRealSize());
+        ByteList bytes = new ByteList(len);
         if (len > 0) {
             bytes.setRealSize(len);
             int n = value.getRealSize();
@@ -1276,8 +1235,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             }
             System.arraycopy(bytes.getUnsafeBytes(), 0, bytes.getUnsafeBytes(), n, len - n);
         }
-        RubyString result = new RubyString(context.runtime, metaClass, bytes);
-        result.infectBy(this);
+        RubyString result = newString(context.runtime, bytes);
         return result;
     }
 
@@ -1294,15 +1252,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         ByteList out = new ByteList(value.getRealSize());
         out.setEncoding(value.getEncoding());
 
-        boolean tainted;
-
         // FIXME: Should we make this work with platform's locale,
         // or continue hardcoding US?
-        tainted = Sprintf.sprintf1_9(out, Locale.US, value, tmp);
+        Sprintf.sprintf1_9(out, Locale.US, value, tmp);
 
         RubyString str = newString(context.runtime, out);
 
-        str.setTaint(tainted || isTaint());
         return str;
     }
 
@@ -1369,9 +1324,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (obj instanceof RubyString) return (RubyString) obj;
         IRubyObject str = sites(context).to_s.call(context, obj, obj);
         if (!(str instanceof RubyString)) return (RubyString) obj.anyToString();
-        // taint string if it is not untainted and not frozen
         // TODO: MRI sets an fstring flag on fstrings and uses that flag here
-        if (obj.isTaint() && !str.isTaint() && !str.isFrozen()) str.setTaint(true);
         return (RubyString) str;
     }
 
@@ -1417,7 +1370,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     public final RubyString cat19(RubyString str2) {
         int str2_cr = cat19(str2.getByteList(), str2.getCodeRange());
 
-        infectBy(str2);
         str2.setCodeRange(str2_cr);
 
         return this;
@@ -1518,7 +1470,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         RubyString otherStr = other.convertToString();
         otherStr.shareLevel = shareLevel = SHARE_LEVEL_BYTELIST;
         value = otherStr.value;
-        infectBy(otherStr);
         return otherStr;
     }
 
@@ -1540,7 +1491,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "reverse")
     public IRubyObject reverse19(ThreadContext context) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.reverse_bang19(context);
         return str;
     }
@@ -1715,7 +1666,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      *
      */
 
-    @JRubyMethod(name = "=~", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "=~", writes = BACKREF)
     @Override
     public IRubyObject op_match(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyRegexp) return ((RubyRegexp) other).op_match(context, this);
@@ -1734,14 +1685,14 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return match19(context, pattern, Block.NULL_BLOCK);
     }
 
-    @JRubyMethod(name = "match", required = 1, reads = BACKREF)
+    @JRubyMethod(name = "match", required = 1, writes = BACKREF)
     public IRubyObject match19(ThreadContext context, IRubyObject pattern, Block block) {
         RubyRegexp coercedPattern = getPattern(context.runtime, pattern);
         IRubyObject result = sites(context).match.call(context, coercedPattern, coercedPattern, this);
         return block.isGiven() && result != context.nil ? block.yield(context, result) : result;
     }
 
-    @JRubyMethod(name = "match", reads = BACKREF)
+    @JRubyMethod(name = "match", writes = BACKREF)
     public IRubyObject match19(ThreadContext context, IRubyObject pattern, IRubyObject pos, Block block) {
         RubyRegexp coercedPattern = getPattern(context.runtime, pattern);
         IRubyObject result = sites(context).match.call(context, coercedPattern, coercedPattern, this, pos);
@@ -1860,21 +1811,21 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "upcase")
     public RubyString upcase(ThreadContext context) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.upcase_bang(context);
         return str;
     }
 
     @JRubyMethod(name = "upcase")
     public RubyString upcase(ThreadContext context, IRubyObject arg) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.upcase_bang(context, arg);
         return str;
     }
 
     @JRubyMethod(name = "upcase")
     public RubyString upcase(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.upcase_bang(context, arg0, arg1);
         return str;
     }
@@ -1934,21 +1885,21 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "downcase")
     public RubyString downcase(ThreadContext context) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.downcase_bang(context);
         return str;
     }
 
     @JRubyMethod(name = "downcase")
     public RubyString downcase(ThreadContext context, IRubyObject arg) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.downcase_bang(context, arg);
         return str;
     }
 
     @JRubyMethod(name = "downcase")
     public RubyString downcase(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.downcase_bang(context, arg0, arg1);
         return str;
     }
@@ -2007,21 +1958,21 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "swapcase")
     public RubyString swapcase(ThreadContext context) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.swapcase_bang(context);
         return str;
     }
 
     @JRubyMethod(name = "swapcase")
     public RubyString swapcase(ThreadContext context, IRubyObject arg) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.swapcase_bang(context, arg);
         return str;
     }
 
     @JRubyMethod(name = "swapcase")
     public RubyString swapcase(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.swapcase_bang(context, arg0, arg1);
         return str;
     }
@@ -2068,21 +2019,21 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "capitalize")
     public RubyString capitalize(ThreadContext context) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.capitalize_bang(context);
         return str;
     }
 
     @JRubyMethod(name = "capitalize")
     public RubyString capitalize(ThreadContext context, IRubyObject arg) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.capitalize_bang(context, arg);
         return str;
     }
 
     @JRubyMethod(name = "capitalize")
     public RubyString capitalize(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.capitalize_bang(context, arg0, arg1);
         return str;
     }
@@ -2125,10 +2076,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      */
     @JRubyMethod(name = "dump")
     public IRubyObject dump() {
-        final RubyClass metaClass = this.metaClass;
-        ByteList outBytes = StringSupport.dumpCommon(metaClass.runtime, value);
+        Ruby runtime = this.metaClass.runtime;
+        ByteList outBytes = StringSupport.dumpCommon(runtime, value);
 
-        final RubyString result = new RubyString(metaClass.runtime, metaClass, outBytes);
+        final RubyString result = newString(runtime, outBytes);
         Encoding enc = value.getEncoding();
 
         if (!enc.isAsciiCompatible()) {
@@ -2140,7 +2091,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         result.associateEncoding(enc);
         result.setCodeRange(CR_7BIT);
 
-        return result.infectBy(this);
+        return result;
     }
 
     @JRubyMethod(name = "undump")
@@ -2158,6 +2109,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         boolean[] binary = {false};
         int w;
 
+        if (!getEncoding().isAsciiCompatible()) {
+            throw runtime.newEncodingCompatibilityError("ASCII incompatible encoding: " + getEncoding().getCharsetName());
+        }
         scanForCodeRange();
         if (!isAsciiOnly()) {
             throw runtime.newRuntimeError("non-ASCII character detected");
@@ -2222,7 +2176,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             }
         }
 
-        undumped.infectBy(str);
         return undumped;
     }
 
@@ -2425,7 +2378,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     final RubyString inspect(final Ruby runtime) {
-        return (RubyString) inspect(runtime, value).infectBy(this);
+        return (RubyString) inspect(runtime, value);
     }
 
     @Deprecated
@@ -2494,7 +2447,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (p > prev) result.cat(pBytes, prev, p - prev);
         result.setEncodingAndCodeRange(USASCIIEncoding.INSTANCE, CR_7BIT);
 
-        result.infectBy(str);
         return result;
     }
 
@@ -2691,13 +2643,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             return this;
         }
         RubyString otherStr = other.convertToString();
-        infectBy(otherStr);
         return cat(otherStr.value);
     }
 
     public RubyString append(RubyString other) {
         modifyCheck();
-        infectBy(other);
         return cat(other.value);
     }
 
@@ -2917,8 +2867,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         RubyString result = RubyString.newStringNoCopy(context.runtime, cryptedString, 0, cryptedString.length - 1);
         result.associateEncoding(ascii8bit);
-        result.infectBy(this);
-        result.infectBy(otherStr);
         return result;
     }
 
@@ -2951,21 +2899,21 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      *
      */
 
-    @JRubyMethod(name = "sub", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "sub", writes = BACKREF)
     public IRubyObject sub(ThreadContext context, IRubyObject arg0, Block block) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.sub_bang(context, arg0, block);
         return str;
     }
 
-    @JRubyMethod(name = "sub", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "sub", writes = BACKREF)
     public IRubyObject sub(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.sub_bang(context, arg0, arg1, block);
         return str;
     }
 
-    @JRubyMethod(name = "sub!", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "sub!", writes = BACKREF)
     public IRubyObject sub_bang(ThreadContext context, IRubyObject arg0, Block block) {
         Ruby runtime = context.runtime;
         frozenCheck();
@@ -2974,7 +2922,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         throw runtime.newArgumentError(1, 2);
     }
 
-    @JRubyMethod(name = "sub!", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "sub!", writes = BACKREF)
     public IRubyObject sub_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         Ruby runtime = context.runtime;
         IRubyObject hash = TypeConverter.convertToTypeWithCheck(context, arg1, runtime.getHash(), sites(context).to_hash_checked);
@@ -3006,28 +2954,31 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         final int mBeg = StringSupport.index(getByteList(), pattern.getByteList(), 0, checkEncoding(pattern));
 
         if (mBeg > -1) {
-            final RubyString repl; final int tuFlags;
+            final RubyString repl;
             final Ruby runtime = context.runtime;
             final int mLen = pattern.size();
             final int mEnd = mBeg + mLen;
             final RubyMatchData match = new RubyMatchData(runtime);
+
             match.initMatchData(this, mBeg, pattern);
+
+            // set backref for user
             context.setBackRef(match);
 
             IRubyObject subStr = makeShared(runtime, mBeg, mLen);
             if (hash == null) {
-                tuFlags = 0;
                 repl = objAsString(context, block.yield(context, subStr));
             } else {
-                tuFlags = hash.flags;
                 repl = objAsString(context, hash.op_aref(context, subStr));
             }
 
             modifyCheck(bytes, len, enc);
 
-            return subBangCommon(context, mBeg, mEnd, repl, tuFlags | repl.flags);
+            return subBangCommon(context, mBeg, mEnd, repl, repl.flags);
         }
-        return context.setBackRef(context.nil);
+
+        // set backref for user
+        return context.clearBackRef();
     }
 
     private IRubyObject subBangIter(ThreadContext context, RubyRegexp regexp, RubyHash hash, Block block) {
@@ -3044,6 +2995,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (RubyRegexp.matcherSearch(context, matcher, begin, range, Option.NONE) >= 0) {
             RubyMatchData match = RubyRegexp.createMatchData(context, this, matcher, pattern);
             match.regexp = regexp;
+
+            // set backref for user
             context.setBackRef(match);
 
             final int mBeg = matcher.getBegin(), mEnd = matcher.getEnd();
@@ -3062,7 +3015,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
             return subBangCommon(context, mBeg, mEnd, repl, tuFlags | repl.flags);
         }
-        return context.setBackRef(context.nil);
+
+        // set backref for user
+        return context.clearBackRef();
     }
 
     private IRubyObject subBangNoIter(ThreadContext context, IRubyObject arg0, RubyString repl) {
@@ -3078,24 +3033,34 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (mBeg > -1) {
             final int mEnd = mBeg + pattern.size();
             final RubyMatchData match = new RubyMatchData(context.runtime);
+
             match.initMatchData(this, mBeg, pattern);
+
+            // set backref for user
             context.setBackRef(match);
+
             repl = RubyRegexp.regsub(context, repl, this, REPL_MOCK_REGEX, null, mBeg, mEnd);
 
             return subBangCommon(context, mBeg, mEnd, repl, repl.flags);
         }
-        return context.setBackRef(context.nil);
+
+        // set backref for user
+        return context.clearBackRef();
     }
 
     private IRubyObject subBangNoIter(ThreadContext context, RubyRegexp regexp, RubyString repl) {
         RubyMatchData match = subBangMatch(context, regexp, repl);
         if (match != null) {
             repl = RubyRegexp.regsub(context, repl, this, regexp.pattern, match.regs, match.begin, match.end);
+
+            // set backref for user
             context.setBackRef(match);
 
             return subBangCommon(context, match.begin, match.end, repl, repl.flags);
         }
-        return context.setBackRef(context.nil);
+
+        // set backref for user
+        return context.clearBackRef();
     }
 
     /**
@@ -3171,7 +3136,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         System.arraycopy(replValue.getUnsafeBytes(), replValue.getBegin(), value.getUnsafeBytes(), value.getBegin() + beg, replSize);
         value.setRealSize(size + replSize - plen);
         setCodeRange(cr);
-        return (RubyString) infectBy(tuFlags); // this
+        return (RubyString) this; // this
     }
 
     private Encoding subBangVerifyEncoding(ThreadContext context, final RubyString repl, final int beg, final int end) {
@@ -3208,7 +3173,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return gsub_bang(context, arg0, arg1, block);
     }
 
-    @JRubyMethod(name = "gsub", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "gsub", writes = BACKREF)
     public IRubyObject gsub(ThreadContext context, IRubyObject arg0, Block block) {
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "gsub", arg0);
 
@@ -3216,12 +3181,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     }
 
-    @JRubyMethod(name = "gsub", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "gsub", writes = BACKREF)
     public IRubyObject gsub(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         return gsubImpl(context, arg0, arg1, block, false);
     }
 
-    @JRubyMethod(name = "gsub!", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "gsub!", writes = BACKREF)
     public IRubyObject gsub_bang(ThreadContext context, IRubyObject arg0, Block block) {
         checkFrozen();
 
@@ -3230,7 +3195,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return gsubCommon(context, block, null, null, arg0, true, 0);
     }
 
-    @JRubyMethod(name = "gsub!", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "gsub!", writes = BACKREF)
     public IRubyObject gsub_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         checkFrozen();
 
@@ -3250,7 +3215,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         } else {
             hash = (RubyHash) tryHash;
             str = null;
-            tuFlags = hash.flags & TAINTED_F;
+            tuFlags = hash.flags;
         }
 
         return gsubCommon(context, block, str, hash, arg0, bang, tuFlags);
@@ -3295,12 +3260,14 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         int beg = StringSupport.index(getByteList(), pattern.getByteList(), 0, patternEnc);
         int begz;
         if (beg < 0) {
-            if (useBackref) context.setBackRef(context.nil);
-            return bang ? context.nil : strDup(runtime); /* bang: true, no match, no substitution */
+            // set backref for user
+            if (useBackref) context.clearBackRef();
+
+            return bang ? context.nil : strDup(runtime, runtime.getString()); /* bang: true, no match, no substitution */
         }
 
         int offset = 0; int cp = spBeg; //int n = 0;
-        RubyString dest = new RubyString(runtime, metaClass, new ByteList(spLen + 30));
+        RubyString dest = newString(runtime, new ByteList(spLen + 30));
         final Encoding str_enc = value.getEncoding();
         dest.setEncoding(str_enc);
         dest.setCodeRange(str_enc.isAsciiCompatible() ? CR_7BIT : CR_VALID);
@@ -3320,7 +3287,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                     match = new RubyMatchData(runtime);
                     match.initMatchData(this, begz, pattern);
 
+                    // set backref for user
                     if (useBackref) context.setBackRef(match);
+
                     val = objAsString(context, block.yield(context, pattern.strDup(runtime)));
                 }
                 modifyCheck(spBytes, spLen, str_enc);
@@ -3348,10 +3317,14 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         if (useBackref) {
             if (match != null) { // block given
+                // set backref for user
                 context.setBackRef(match);
             } else {
                 match = new RubyMatchData(runtime);
+
                 match.initMatchData(this, begz, pattern);
+
+                // set backref for user
                 context.setBackRef(match);
             }
         }
@@ -3359,9 +3332,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (bang) {
             view(dest.value);
             setCodeRange(dest.getCodeRange());
-            return infectBy(tuFlags);
+            return this;
         }
-        return dest.infectBy(tuFlags | flags);
+        return dest;
     }
 
     private IRubyObject gsubCommon(ThreadContext context, Block block, RubyString repl,
@@ -3378,12 +3351,14 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         int beg = RubyRegexp.matcherSearch(context, matcher, spBeg, spBeg + spLen, Option.NONE);
         if (beg < 0) {
-            if (useBackref) context.setBackRef(context.nil);
-            return bang ? context.nil : strDup(runtime); /* bang: true, no match, no substitution */
+            // set backref for user
+            if (useBackref) context.clearBackRef();
+
+            return bang ? context.nil : strDup(runtime, runtime.getString()); /* bang: true, no match, no substitution */
         }
 
         int offset = 0; int cp = spBeg; //int n = 0;
-        RubyString dest = new RubyString(runtime, metaClass, new ByteList(spLen + 30));
+        RubyString dest = newString(runtime, new ByteList(spLen + 30));
         final Encoding str_enc = value.getEncoding();
         dest.setEncoding(str_enc);
         dest.setCodeRange(str_enc.isAsciiCompatible() ? CR_7BIT : CR_VALID);
@@ -3397,13 +3372,16 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             if (repl != null) {     // string given
                 val = RubyRegexp.regsub(context, repl, this, pattern, matcher);
             } else {
-                final RubyString substr = makeShared(runtime, begz, endz - begz);
+                final RubyString substr = makeSharedString(runtime, begz, endz - begz);
                 if (hash != null) { // hash given
                     val = objAsString(context, hash.op_aref(context, substr));
                 } else {            // block given
                     match = RubyRegexp.createMatchData(context, this, matcher, pattern);
                     match.regexp = regexp;
+
+                    // set backref for user
                     if (useBackref) context.setBackRef(match);
+
                     val = objAsString(context, block.yield(context, substr));
                 }
                 modifyCheck(spBytes, spLen, str_enc);
@@ -3430,11 +3408,14 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (spLen > offset) dest.cat(spBytes, cp, spLen - offset, str_enc);
 
         if (useBackref) {
+            // set backref for user
             if (match != null) { // block given
                 context.setBackRef(match);
             } else {
                 match = RubyRegexp.createMatchData(context, this, matcher, pattern);
+
                 match.regexp = regexp;
+
                 context.setBackRef(match);
             }
         }
@@ -3442,26 +3423,28 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (bang) {
             view(dest.value);
             setCodeRange(dest.getCodeRange());
-            return infectBy(tuFlags);
+            return this;
         }
-        return dest.infectBy(tuFlags | flags);
+        return dest;
     }
 
     /** rb_str_index_m
      *
      */
-    @JRubyMethod(name = "index", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "index", writes = BACKREF)
     public IRubyObject index(ThreadContext context, IRubyObject arg0) {
         return indexCommon19(context, arg0, 0);
     }
 
-    @JRubyMethod(name = "index", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "index", writes = BACKREF)
     public IRubyObject index(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         int pos = RubyNumeric.num2int(arg1);
         if (pos < 0) {
             pos += strLength();
             if (pos < 0) {
-                if (arg0 instanceof RubyRegexp) context.setBackRef(context.nil);
+                // set backref for user
+                if (arg0 instanceof RubyRegexp) context.clearBackRef();
+
                 return context.nil;
             }
         }
@@ -3488,7 +3471,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                                       pos) - value.getBegin();
             pos = regSub.adjustStartPos(this, pos, false);
             pos = regSub.search(context, this, pos, false);
-            pos = subLength(pos);
+            if (pos >= 0) {
+                RubyMatchData match = context.getLocalMatch();
+                pos = subLength(match.begin(0));
+            }
         } else if (sub instanceof RubyString) {
             pos = StringSupport.index(this, (RubyString) sub, pos, this.checkEncoding((RubyString) sub));
             pos = subLength(pos);
@@ -3560,19 +3546,21 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     /** rb_str_rindex_m
      *
      */
-    @JRubyMethod(name = "rindex", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "rindex", writes = BACKREF)
     public IRubyObject rindex(ThreadContext context, IRubyObject arg0) {
         return rindexCommon(context, arg0, strLength());
     }
 
-    @JRubyMethod(name = "rindex", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "rindex", writes = BACKREF)
     public IRubyObject rindex(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         int pos = RubyNumeric.num2int(arg1);
         int length = strLength();
         if (pos < 0) {
             pos += length;
             if (pos < 0) {
-                if (arg0 instanceof RubyRegexp) context.setBackRef(context.nil);
+                // set backref for user
+                if (arg0 instanceof RubyRegexp) context.clearBackRef();
+
                 return context.nil;
             }
         }
@@ -3587,7 +3575,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                     value.getEncoding(), value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(),
                     pos, singleByteOptimizable());
             pos = regSub.search(context, this, pos, true);
-            pos = subLength(pos);
+            if (pos >= 0) {
+                RubyMatchData match = context.getLocalMatch();
+                pos = subLength(match.begin(0));
+            }
             if (pos >= 0) return RubyFixnum.newFixnum(context.runtime, pos);
         } else if (sub instanceof RubyString) {
             Encoding enc = checkEncoding((RubyString) sub);
@@ -3626,7 +3617,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         }
 
         int end = Math.min(length, beg + len);
-        return makeShared(runtime, beg, end - beg);
+        return makeSharedString(runtime, beg, end - beg);
     }
 
     /* str_byte_substr */
@@ -3645,7 +3636,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             len = 0;
         }
 
-        return makeShared(runtime, beg, len);
+        return makeSharedString(runtime, beg, len);
     }
 
     /* str_byte_aref */
@@ -3689,7 +3680,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             }
             if (beg + len > length) len = length - beg;
             if (len <= 0) len = beg = 0;
-            return makeShared(runtime, beg, len);
+            return makeSharedString(runtime, beg, len);
         } else {
             if (beg + len > length) len = length - beg;
             return multibyteSubstr19(runtime, enc, len, beg, length);
@@ -3712,7 +3703,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 if (p == -1) return runtime.getNil();
                 while (len-- > 0 && (p = enc.prevCharHead(bytes, s, p, e)) != -1) {} // nothing
                 if (p == -1) return runtime.getNil();
-                return makeShared(runtime, p - s, e - p);
+                return makeSharedString(runtime, p - s, e - p);
             } else {
                 beg += StringSupport.strLengthFromRubyString(this, enc);
                 if (beg < 0) return runtime.getNil();
@@ -3741,7 +3732,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         } else {
             len = StringSupport.offset(enc, bytes, p, end, len);
         }
-        return makeShared(runtime, p - s, len);
+        return makeSharedString(runtime, p - s, len);
     }
 
     private char multibyteCharAt(Encoding enc, int beg, int length) {
@@ -3779,18 +3770,17 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     /* rb_str_splice */
     private IRubyObject replaceInternal(int beg, int len, RubyString repl) {
         StringSupport.replaceInternal(beg, len, this, repl);
-        return infectBy(repl);
+        return this;
     }
 
     private void replaceInternal19(int beg, int len, RubyString repl) {
         StringSupport.replaceInternal19(getRuntime(), beg, len, this, repl);
-        infectBy(repl);
     }
 
     /** rb_str_aref, rb_str_aref_m
      *
      */
-    @JRubyMethod(name = {"[]", "slice"}, reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = {"[]", "slice"}, writes = BACKREF)
     public IRubyObject op_aref(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.runtime;
         if (arg instanceof RubyFixnum) {
@@ -3799,7 +3789,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             return subpat(context, (RubyRegexp) arg);
         } else if (arg instanceof RubyString) {
             RubyString str = (RubyString)arg;
-            return StringSupport.index(this, str, 0, this.checkEncoding(str)) != -1 ? str.strDup(runtime) : context.nil;
+            return StringSupport.index(this, str, 0, this.checkEncoding(str)) != -1 ? str.strDup(runtime, context.runtime.getString()) : context.nil;
         } else if (arg instanceof RubyRange) {
             int len = strLength();
             int[] begLen = ((RubyRange) arg).begLenInt(len, 0);
@@ -3817,7 +3807,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return op_aref(runtime, RubyNumeric.num2int(arg));
     }
 
-    @JRubyMethod(name = {"[]", "slice"}, reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = {"[]", "slice"}, writes = BACKREF)
     public IRubyObject op_aref(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
         Ruby runtime = context.runtime;
         if (arg1 instanceof RubyRegexp) return subpat(context, (RubyRegexp) arg1, arg2);
@@ -3854,12 +3844,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     private void subpatSet(ThreadContext context, RubyRegexp regexp, IRubyObject backref, IRubyObject repl) {
         Ruby runtime = context.runtime;
 
-        int result = regexp.search(context, this, 0, false);
+        int result = regexp.searchString(context, this, 0, false);
 
         if (result < 0) throw runtime.newIndexError("regexp not matched");
 
         // this cast should be ok, since nil matchdata will be < 0 above
-        RubyMatchData match = (RubyMatchData)context.getBackRef();
+        RubyMatchData match = context.getLocalMatch();
 
         int nth = backref == null ? 0 : subpatSetCheck(runtime, match.backrefNumber(context.runtime, backref), match.regs);
 
@@ -3877,25 +3867,42 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         // TODO: keep cr
         replaceInternal(start, end - start, replStr); // TODO: rb_str_splice_0
         associateEncoding(enc);
+
+        // set backref for user
+        context.setBackRef(match);
     }
 
     private IRubyObject subpat(ThreadContext context, RubyRegexp regex, IRubyObject backref) {
-        int result = regex.search(context, this, 0, false);
+        int result = regex.searchString(context, this, 0, false);
 
         if (result >= 0) {
-            RubyMatchData match = (RubyMatchData)context.getBackRef();
+            RubyMatchData match = context.getLocalMatch();
+
+            // set backref for user
+            context.setBackRef(match);
+
             return RubyRegexp.nth_match(match.backrefNumber(context.runtime, backref), match);
         }
+
+        context.clearBackRef();
 
         return context.nil;
     }
 
     private IRubyObject subpat(ThreadContext context, RubyRegexp regex) {
-        int result = regex.search(context, this, 0, false);
+        int result = regex.searchString(context, this, 0, false);
 
         if (result >= 0) {
-            return RubyRegexp.nth_match(0, context.getBackRef());
+            RubyMatchData match = context.getLocalMatch();
+
+            // set backref for user
+            context.setBackRef(match);
+
+            return RubyRegexp.nth_match(0, match);
         }
+
+        // set backref for user
+        context.clearBackRef();
 
         return context.nil;
     }
@@ -3903,7 +3910,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     /** rb_str_aset, rb_str_aset_m
      *
      */
-    @JRubyMethod(name = "[]=", reads = BACKREF)
+    @JRubyMethod(name = "[]=", writes = BACKREF)
     public IRubyObject op_aset(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         if (arg0 instanceof RubyFixnum) {
             return op_aset(context, RubyNumeric.fix2int((RubyFixnum)arg0), arg1);
@@ -3940,7 +3947,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return arg1;
     }
 
-    @JRubyMethod(name = "[]=", reads = BACKREF)
+    @JRubyMethod(name = "[]=", writes = BACKREF)
     public IRubyObject op_aset(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         if (arg0 instanceof RubyRegexp) {
             subpatSet(context, (RubyRegexp)arg0, arg1, arg2);
@@ -3967,7 +3974,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     /** rb_str_slice_bang
      *
      */
-    @JRubyMethod(name = "slice!", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "slice!", writes = BACKREF)
     public IRubyObject slice_bang(ThreadContext context, IRubyObject arg0) {
         IRubyObject result = op_aref19(context, arg0);
         if (result.isNil()) {
@@ -3978,7 +3985,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return result;
     }
 
-    @JRubyMethod(name = "slice!", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "slice!", writes = BACKREF)
     public IRubyObject slice_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         IRubyObject result = op_aref(context, arg0, arg1);
         if (result.isNil()) {
@@ -4004,12 +4011,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         Ruby runtime = context.runtime;
         final RubyString str;
         if (value.getRealSize() > 0) {
-            str = new RubyString(runtime, metaClass, StringSupport.succCommon(runtime, value));
+            str = new RubyString(runtime, runtime.getString(), StringSupport.succCommon(runtime, value));
             // TODO: rescan code range ?
         } else {
-            str = newEmptyString(runtime, getType(), value.getEncoding());
+            str = newEmptyString(runtime, runtime.getString(), value.getEncoding());
         }
-        return str.infectBy(this);
+        return str;
     }
 
     @JRubyMethod(name = {"succ!", "next!"})
@@ -4069,6 +4076,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 if (!excl && c == e) break;
                 c++;
                 if (excl && c == e) break;
+                context.pollThreadEvents();
             }
             return this;
         } else if (isAscii && ASCII.isDigit(value.getUnsafeBytes()[value.getBegin()]) && ASCII.isDigit(end.value.getUnsafeBytes()[end.value.getBegin()])) {
@@ -4079,6 +4087,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             while (s < send) {
                 if (!ASCII.isDigit(bytes[s] & 0xff)) return uptoCommonNoDigits(context, end, excl, block, asSymbol);
                 s++;
+                context.pollThreadEvents();
             }
             s = end.value.getBegin();
             send = s + end.value.getRealSize();
@@ -4087,6 +4096,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             while (s < send) {
                 if (!ASCII.isDigit(bytes[s] & 0xff)) return uptoCommonNoDigits(context, end, excl, block, asSymbol);
                 s++;
+                context.pollThreadEvents();
             }
 
             IRubyObject b = stringToInum(10);
@@ -4106,6 +4116,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                     RubyString str = RubyString.newStringNoCopy(runtime, to, USASCIIEncoding.INSTANCE, CR_7BIT);
                     block.yield(context, asSymbol ? runtime.newSymbol(str.toString()) : str);
                     bl++;
+                    context.pollThreadEvents();
                 }
             } else {
                 StringSites sites = sites(context);
@@ -4118,6 +4129,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                     RubyString str = RubyString.newStringNoCopy(runtime, to, USASCIIEncoding.INSTANCE, CR_7BIT);
                     block.yield(context, asSymbol ? runtime.newSymbol(str.toString()) : str);
                     b = sites.succ.call(context, b, b);
+                    context.pollThreadEvents();
                 }
             }
             return this;
@@ -4143,6 +4155,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             current = next.convertToString();
             if (excl && current.op_equal(context, end).isTrue()) break;
             if (current.getByteList().length() > end.getByteList().length() || current.getByteList().length() == 0) break;
+            context.pollThreadEvents();
         }
         return this;
     }
@@ -4170,6 +4183,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                     current = RubyString.newStringNoCopy(runtime, to, USASCIIEncoding.INSTANCE, CR_7BIT);
                     block.yield(context, current);
                     bl++;
+                    context.pollThreadEvents();
                 }
 
                 argsArr.eltSetOk(1, RubyFixnum.newFixnum(runtime, bl));
@@ -4185,6 +4199,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             if (next == null) break;
             current = next.convertToString();
             if (current.getByteList().length() == 0) break;
+            context.pollThreadEvents();
         }
 
         return this;
@@ -4338,7 +4353,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         for (int i = 1; i < match.numRegs(); i++) {
             int beg = match.begin(i);
             if (beg == -1) continue;
-            result.append(makeShared(runtime, beg, match.end(i) - beg));
+            result.append(makeSharedString(runtime, beg, match.end(i) - beg));
         }
     }
 
@@ -4347,15 +4362,15 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     public RubyArray split(ThreadContext context, IRubyObject arg0) {
-        return splitCommon(context, arg0, false, 0, 0, true);
+        return splitCommon(context, arg0, false, 0, 0);
     }
 
-    @JRubyMethod(name = "split", writes = BACKREF)
+    @JRubyMethod(name = "split")
     public IRubyObject splitWithBlock(ThreadContext context, Block block) {
         return splitWithBlock(context, context.nil, block);
     }
 
-    @JRubyMethod(name = "split", writes = BACKREF)
+    @JRubyMethod(name = "split")
     public IRubyObject splitWithBlock(ThreadContext context, IRubyObject arg0, Block block) {
         RubyArray array = split(context, arg0);
         if (!block.isGiven()) {
@@ -4373,18 +4388,18 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         final int lim = RubyNumeric.num2int(arg1);
         RubyArray array;
         if (lim <= 0) {
-            array = splitCommon(context, arg0, false, lim, 1, true);
+            array = splitCommon(context, arg0, false, lim, 1);
         } else if (lim == 1) {
             Ruby runtime = context.runtime;
-            array = value.getRealSize() == 0 ? runtime.newArray() : runtime.newArray(this.strDup(runtime));
+            array = value.getRealSize() == 0 ? runtime.newArray() : runtime.newArray(this.strDup(runtime, runtime.getString()));
         } else {
-            array = splitCommon(context, arg0, true, lim, 1, true);
+            array = splitCommon(context, arg0, true, lim, 1);
         }
 
         return array;
     }
 
-    @JRubyMethod(name = "split", writes = BACKREF)
+    @JRubyMethod(name = "split")
     public IRubyObject splitWithBlock(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         RubyArray array = split(context, arg0, arg1);
         if (!block.isGiven()) {
@@ -4400,20 +4415,70 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @Deprecated
     public RubyArray split19(IRubyObject spat, ThreadContext context, boolean useBackref) {
-        return splitCommon(context, spat, false, value.realSize(), 0, useBackref);
+        return splitCommon(context, spat, false, value.realSize(), 0);
     }
 
-    final RubyArray split(IRubyObject spat, ThreadContext context, boolean useBackref) {
-        return splitCommon(context, spat, false, value.realSize(), 0, useBackref);
+    /**
+     * Split for ext (Java) callers (does not write $~).
+     * @param delimiter
+     * @return splited entries
+     */
+    public RubyArray split(RubyRegexp delimiter) {
+        return doSplit(delimiter, 0);
+    }
+
+    /**
+     * Split for ext (Java) callers (does not write $~).
+     * @param delimiter
+     * @param limit
+     * @return splited entries
+     */
+    public RubyArray split(RubyRegexp delimiter, int limit) {
+        return doSplit(delimiter, limit);
+    }
+
+    /**
+     * Split for ext (Java) callers (does not write $~).
+     * @param delimiter
+     * @return splited entries
+     */
+    public RubyArray split(RubyString delimiter) {
+        return doSplit(delimiter, 0);
+    }
+
+    /**
+     * Split for ext (Java) callers (does not write $~).
+     * @param delimiter
+     * @param limit
+     * @return splited entries
+     */
+    public RubyArray split(RubyString delimiter, int limit) {
+        return doSplit(delimiter, limit);
+    }
+
+    private RubyArray doSplit(IRubyObject delimiter, final int limit) {
+        ThreadContext context = getRuntime().getCurrentContext();
+        if (limit == 1) {
+            Ruby runtime = context.runtime;
+            return isEmpty() ? runtime.newEmptyArray() : runtime.newArray(strDup(runtime, runtime.getString()));
+        }
+        return splitCommon(context, delimiter, limit > 0, limit, 1);
+    }
+
+    final RubyArray split(ThreadContext context, RubyRegexp spat, boolean useBackref) {
+        return splitCommon(context, spat, false, value.realSize(), 0);
     }
 
     // MRI: rb_str_split_m, overall structure
-    private RubyArray splitCommon(ThreadContext context, IRubyObject spat, final boolean limit, final int lim, final int i, boolean useBackref) {
+    private RubyArray splitCommon(ThreadContext context, IRubyObject spat, final boolean limit, final int lim, final int i) {
         final RubyArray result;
         if (spat == context.nil && (spat = context.runtime.getGlobalVariables().get("$;")) == context.nil) {
             result = awkSplit(context.runtime, limit, lim, i);
         } else {
             spat = getPatternQuoted(context, spat, false);
+            if (!context.runtime.getGlobalVariables().get("$;").isNil()) {
+                context.runtime.getWarnings().warn("$; is set to non-nil value");
+            }
             if (spat instanceof RubyString) {
                 ByteList spatValue = ((RubyString)spat).value;
                 int len = spatValue.getRealSize();
@@ -4422,7 +4487,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 if (len == 0) {
                     // headius FIXME: MRI has a single-entry global cache here to reduce this cost in a loop
                     RubyRegexp pattern = RubyRegexp.newRegexpFromStr(context.runtime, (RubyString) spat, 0);
-                    result = regexSplit(context, pattern, limit, lim, i, useBackref);
+                    result = regexSplit(context, pattern, limit, lim, i);
                 } else {
                     final int c;
                     byte[]bytes = spatValue.getUnsafeBytes();
@@ -4435,7 +4500,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                     result = c == ' ' ? awkSplit(context.runtime, limit, lim, i) : stringSplit(context, (RubyString)spat, limit, lim, i);
                 }
             } else {
-                result = regexSplit(context, (RubyRegexp) spat, limit, lim, i, useBackref);
+                result = regexSplit(context, (RubyRegexp) spat, limit, lim, i);
             }
         }
 
@@ -4448,30 +4513,33 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return result;
     }
 
-    // MRI: rb_str_split_m, when split_type = regexp
-    private RubyArray regexSplit(ThreadContext context, RubyRegexp pattern, boolean limit, int lim, int i, boolean useBackref) {
+    /**
+     * Call regexpSplit using a thread-local backref holder to avoid cross-thread pollution.
+     */
+    private RubyArray regexSplit(ThreadContext context, RubyRegexp pattern, boolean limit, int lim, int i) {
         Ruby runtime = context.runtime;
+
+        RubyArray result = runtime.newArray();
 
         int ptr = value.getBegin();
         int len = value.getRealSize();
         byte[] bytes = value.getUnsafeBytes();
-
-        RubyArray result = runtime.newArray();
         Encoding enc = value.getEncoding();
+
         boolean captures = pattern.getPattern().numberOfCaptures() != 0;
 
         int end, beg = 0;
         boolean lastNull = false;
         int start = beg;
-        IRubyObject[] holder = useBackref ? null : new IRubyObject[] { context.nil };
-        while ((end = pattern.search(context, this, start, false, holder)) >= 0) {
-            RubyMatchData match = (RubyMatchData) (useBackref ? context.getBackRef() : holder[0]);
+        while (pattern.searchString(context, this, start, false) >= 0) {
+            RubyMatchData match = context.getLocalMatch();
+            end = match.begin(0);
             if (start == end && match.begin(0) == match.end(0)) {
-                if (len == 0) {
-                    result.append(newEmptyString(runtime, metaClass).infectBy(this));
+                if (len == 0 && start != 0) {
+                    result.append(newEmptyString(runtime, metaClass));
                     break;
                 } else if (lastNull) {
-                    result.append(makeShared(runtime, beg, StringSupport.length(enc, bytes, ptr + beg, ptr + len)));
+                    result.append(makeSharedString(runtime, beg, StringSupport.length(enc, bytes, ptr + beg, ptr + len)));
                     beg = start;
                 } else {
                     if ((ptr + start) == ptr + len) {
@@ -4483,7 +4551,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                     continue;
                 }
             } else {
-                result.append(makeShared(runtime, beg, end - beg));
+                result.append(makeSharedString(runtime, beg, end - beg));
                 beg = match.end(0);
                 start = beg;
             }
@@ -4493,14 +4561,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             if (limit && lim <= ++i) break;
         }
 
-        // only this case affects backrefs
-        if (useBackref) {
-            context.setBackRef(context.nil);
-        } else {
-            holder[0] = context.nil;
-        }
+        if (len > 0 && (limit || len > beg || lim < 0)) result.append(makeSharedString(runtime, beg, len - beg));
 
-        if (len > 0 && (limit || len > beg || lim < 0)) result.append(makeShared(runtime, beg, len - beg));
         return result;
     }
 
@@ -4528,7 +4590,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             }
 
             if (skip) {
-                if (enc.isSpace(c)) {
+                // MRI uses rb_isspace
+                if (ASCII.isSpace(c)) {
                     b = p - ptr;
                 } else {
                     e = p - ptr;
@@ -4536,8 +4599,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                     if (limit && lim <= i) break;
                 }
             } else {
-                if (enc.isSpace(c)) {
-                    result.append(makeShared(runtime, b, e - b));
+                // MRI uses rb_isspace
+                if (ASCII.isSpace(c)) {
+                    result.append(makeSharedString(runtime, b, e - b));
                     skip = true;
                     b = p - ptr;
                     if (limit) i++;
@@ -4547,7 +4611,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             }
         }
 
-        if (len > 0 && (limit || len > b || lim < 0)) result.append(makeShared(runtime, b, len - b));
+        if (len > 0 && (limit || len > b || lim < 0)) result.append(makeSharedString(runtime, b, len - b));
         return result;
     }
 
@@ -4576,13 +4640,13 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 p = t;
                 continue;
             }
-            result.append(makeShared(runtime, p, e - p));
+            result.append(makeSharedString(runtime, p, e - p));
             p = e + pattern.getRealSize();
             if (limit && lim <= ++i) break;
         }
 
         if (value.getRealSize() > 0 && (limit || value.getRealSize() > p || lim < 0)) {
-            result.append(makeShared(runtime, p, value.getRealSize() - p));
+            result.append(makeSharedString(runtime, p, value.getRealSize() - p));
         }
 
         return result;
@@ -4652,7 +4716,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     /** rb_str_scan
      *
      */
-    @JRubyMethod(name = "scan", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "scan", writes = BACKREF)
     public IRubyObject scan(ThreadContext context, IRubyObject pat, Block block) {
         final RubyString str = this;
 
@@ -4670,7 +4734,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 if (ary == null) ary = context.runtime.newArray(4);
                 ary.append(result);
             }
-            if (last >= 0) patternSearch(context, pat, str, last, true);
+            if (last >= 0) patternSearch(context, pat, str, last);
             return ary == null ? context.runtime.newEmptyArray() : ary;
         }
 
@@ -4683,7 +4747,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             block.yieldSpecific(context, result);
             str.modifyCheck(pBytes, len);
         }
-        if (last >= 0) patternSearch(context, pat, str, last, true);
+        if (last >= 0) patternSearch(context, pat, str, last);
         return this;
     }
 
@@ -4696,8 +4760,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     // MRI: scan_once
     private static IRubyObject scanOnce(ThreadContext context, RubyString str, IRubyObject pat, int[] startp) {
-        if (patternSearch(context, pat, str, startp[0], true) >= 0) {
-            final RubyMatchData match = (RubyMatchData) context.getBackRef();
+        if (patternSearch(context, pat, str, startp[0]) >= 0) {
+            final RubyMatchData match = context.getLocalMatch();
             final int matchEnd = match.end(0);
             if (match.begin(0) == matchEnd) {
                 Encoding enc = str.getEncoding();
@@ -4731,36 +4795,39 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     // MRI: rb_pat_search
-    private static int patternSearch(ThreadContext context,
-        final IRubyObject pattern, RubyString str, final int pos,
-        final boolean setBackrefStr) {
+    private static int patternSearch(ThreadContext context, final IRubyObject pattern, RubyString str, final int pos) {
         if (pattern instanceof RubyString) {
             final RubyString strPattern = (RubyString) pattern;
             final int beg = str.strseqIndex(strPattern, pos, true);
-            if (setBackrefStr) {
-                if (beg >= 0) {
-                    setBackRefString(context, str, beg, strPattern).infectBy(pattern);
-                }
-                else {
-                    context.setBackRef(context.nil);
-                }
+            if (beg >= 0) {
+                context.setLocalMatch(setBackRefString(context, str, beg, strPattern));
+            } else {
+                context.clearLocalMatch();
+
+                // set backref for user
+                context.clearBackRef();
             }
             return beg;
         }
-        return ((RubyRegexp) pattern).search(context, str, pos, false);
+
+        int result = ((RubyRegexp) pattern).searchString(context, str, pos, false);
+
+        // set backref for user
+        if (result >= 0) {
+            context.setBackRef(context.getLocalMatch());
+        } else {
+            context.clearBackRef();
+        }
+
+        return result;
     }
 
     // MRI: rb_backref_set_string
     private static RubyMatchData setBackRefString(ThreadContext context, RubyString str, int pos, RubyString pattern) {
-        final IRubyObject m = context.getBackRef();
-        final RubyMatchData match;
-        if (m.isNil() || ((RubyMatchData) m).used()) {
-            match = new RubyMatchData(context.runtime);
-        } else {
-            match = (RubyMatchData) m;
-        }
-        match.initMatchData(str, pos, pattern); // MRI: match_set_string
+        final RubyMatchData match = RubyRegexp.createMatchData(context, str, pos, pattern);
+
         context.setBackRef(match);
+
         return match;
     }
 
@@ -4816,7 +4883,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     // MRI: rb_str_end_with, loop body
-    private boolean endWith(IRubyObject tmp) {
+    protected boolean endWith(IRubyObject tmp) {
         int p, s, e;
         Encoding enc;
 
@@ -4849,18 +4916,18 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     public IRubyObject delete_prefix(ThreadContext context, IRubyObject prefix) {
         int prefixlen = deletedPrefixLength(prefix);
 
-        if (prefixlen <= 0) return strDup(context.runtime);
+        if (prefixlen <= 0) return strDup(context.runtime, context.runtime.getString());
 
-        return makeShared(context.runtime, prefixlen, size() - prefixlen);
+        return makeSharedString(context.runtime, prefixlen, size() - prefixlen);
     }
 
     @JRubyMethod(name = "delete_suffix")
     public IRubyObject delete_suffix(ThreadContext context, IRubyObject suffix) {
         int suffixlen = deletedSuffixLength(suffix);
 
-        if (suffixlen <= 0) return strDup(context.runtime);
+        if (suffixlen <= 0) return strDup(context.runtime, context.runtime.getString());
 
-        return makeShared(context.runtime, 0, size() - suffixlen);
+        return makeSharedString(context.runtime, 0, size() - suffixlen);
     }
 
     @JRubyMethod(name = "delete_prefix!")
@@ -4978,7 +5045,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                                                    padCharLen,
                                                    padStr.singleByteOptimizable(),
                                                    enc, width, jflag);
-        if (result.strLength() > strLength()) result.infectBy(padStr);
+        if (result.strLength() > strLength()) {
+        }
         int cr = CodeRangeSupport.codeRangeAnd(getCodeRange(), padStr.getCodeRange());
         if (cr != CR_BROKEN) result.setCodeRange(cr);
         return result;
@@ -5040,8 +5108,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         res.setRealSize(p);
 
-        RubyString result = new RubyString(runtime, metaClass, res);
-        if (result.strLength() > strLength()) result.infectBy(this);
+        RubyString result = newString(runtime, res);
+        if (result.strLength() > strLength()) {
+        }
         result.associateEncoding(enc);
         return result;
     }
@@ -5114,15 +5183,14 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @JRubyMethod(reads = BACKREF, writes = BACKREF)
     public IRubyObject partition(ThreadContext context, IRubyObject arg, Block block) {
         Ruby runtime = context.runtime;
-        final int pos;
+        int pos;
         final RubyString sep;
         if (arg instanceof RubyRegexp) {
-            RubyRegexp regex = (RubyRegexp) arg;
+            if (((RubyRegexp) arg).search(context, this, 0, false) < 0) return partitionMismatch(runtime);
 
-            pos = regex.search(context, this, 0, false);
-            if (pos < 0) return partitionMismatch(runtime);
-            sep = (RubyString) subpat(context, regex);
-            if (pos == 0 && sep.value.getRealSize() == 0) return partitionMismatch(runtime);
+            RubyMatchData match = context.getLocalMatch();
+            pos = match.begin(0);
+            sep = makeSharedString(runtime, pos, match.end(0) - pos);
         } else {
             IRubyObject tmp = arg.checkStringType();
             if (tmp.isNil()) throw runtime.newTypeError("type mismatch: " + arg.getMetaClass().getName() + " given");
@@ -5132,18 +5200,18 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         }
 
         return RubyArray.newArrayNoCopy(runtime, new IRubyObject[] {
-                makeShared(runtime, 0, pos),
+                makeSharedString(runtime, 0, pos),
                 sep,
-                makeShared(runtime, pos + sep.value.getRealSize(), value.getRealSize() - pos - sep.value.getRealSize())
+                makeSharedString(runtime, pos + sep.value.getRealSize(), value.getRealSize() - pos - sep.value.getRealSize())
         });
     }
 
     private RubyArray partitionMismatch(Ruby runtime) {
         final Encoding enc = getEncoding();
-        return RubyArray.newArrayMayCopy(runtime, this.strDup(runtime), newEmptyString(runtime, enc), newEmptyString(runtime, enc));
+        return RubyArray.newArrayMayCopy(runtime, this.strDup(runtime, runtime.getString()), newEmptyString(runtime, enc), newEmptyString(runtime, enc));
     }
 
-    @JRubyMethod(name = "rpartition", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "rpartition", writes = BACKREF)
     public IRubyObject rpartition(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.runtime;
         final int pos;
@@ -5152,7 +5220,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             IRubyObject tmp = rindex(context, arg);
             if (tmp.isNil()) return rpartitionMismatch(runtime);
             pos = tmp.convertToInteger().getIntValue();
-            sep = (RubyString) RubyRegexp.nth_match(0, (RubyMatchData) context.getBackRef());
+            sep = (RubyString)RubyRegexp.nth_match(0, context.getLocalMatchOrNil());
         } else {
             IRubyObject tmp = arg.checkStringType();
             if (tmp.isNil()) throw runtime.newTypeError("type mismatch: " + arg.getMetaClass().getName() + " given");
@@ -5170,7 +5238,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     private IRubyObject rpartitionMismatch(Ruby runtime) {
         final Encoding enc = getEncoding();
-        return RubyArray.newArrayNoCopy(runtime, newEmptyString(runtime, enc), newEmptyString(runtime, enc), this.strDup(runtime));
+        return RubyArray.newArrayNoCopy(runtime, newEmptyString(runtime, enc), newEmptyString(runtime, enc), this.strDup(runtime, runtime.getString()));
     }
 
     /** rb_str_chop / rb_str_chop_bang
@@ -5186,8 +5254,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @JRubyMethod(name = "chop")
     public IRubyObject chop(ThreadContext context) {
         Ruby runtime = context.runtime;
-        if (value.getRealSize() == 0) return newEmptyString(runtime, metaClass, value.getEncoding()).infectBy(this);
-        return makeShared(runtime, 0, StringSupport.choppedLength(this));
+        if (value.getRealSize() == 0) return newEmptyString(runtime, runtime.getString(), value.getEncoding());
+        return makeSharedString(runtime, 0, StringSupport.choppedLength(this));
     }
 
     @JRubyMethod(name = "chop!")
@@ -5232,14 +5300,14 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "chomp")
     public RubyString chomp19(ThreadContext context) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.chomp_bang19(context);
         return str;
     }
 
     @JRubyMethod(name = "chomp")
     public RubyString chomp19(ThreadContext context, IRubyObject arg0) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.chomp_bang19(context, arg0);
         return str;
     }
@@ -5354,7 +5422,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "lstrip")
     public IRubyObject lstrip(ThreadContext context) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.lstrip_bang(context);
         return str;
     }
@@ -5381,7 +5449,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     private IRubyObject singleByteLStrip(ThreadContext context, byte[] bytes, int s, int end) {
         int p = s;
-        while (p < end && ASCII.isSpace(bytes[p] & 0xff)) p++;
+        while (p < end && (bytes[p] == 0 || ASCII.isSpace(bytes[p] & 0xff))) p++;
         if (p > s) {
             view(p - s, end - p);
             return this;
@@ -5395,7 +5463,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         while (p < end) {
             int c = codePoint(runtime, enc, bytes, p, end);
-            if (!ASCII.isSpace(c)) break;
+            if (!ASCII.isSpace(c) && c != 0) break;
             p += codeLength(enc, c);
         }
 
@@ -5419,7 +5487,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "rstrip")
     public IRubyObject rstrip(ThreadContext context) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.rstrip_bang(context);
         return str;
     }
@@ -5490,7 +5558,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "strip")
     public IRubyObject strip(ThreadContext context) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.strip_bang(context);
         return str;
     }
@@ -5585,14 +5653,14 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "delete")
     public IRubyObject delete(ThreadContext context, IRubyObject arg) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.delete_bang(context, arg);
         return str;
     }
 
     @JRubyMethod(name = "delete", required = 1, rest = true)
     public IRubyObject delete(ThreadContext context, IRubyObject[] args) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.delete_bang(context, args);
         return str;
     }
@@ -5678,21 +5746,21 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "squeeze")
     public IRubyObject squeeze(ThreadContext context) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.squeeze_bang(context);
         return str;
     }
 
     @JRubyMethod(name = "squeeze")
     public IRubyObject squeeze(ThreadContext context, IRubyObject arg) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.squeeze_bang(context, arg);
         return str;
     }
 
     @JRubyMethod(name = "squeeze", required = 1, rest = true)
     public IRubyObject squeeze(ThreadContext context, IRubyObject[] args) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.squeeze_bang(context, args);
         return str;
     }
@@ -5822,7 +5890,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "tr")
     public IRubyObject tr19(ThreadContext context, IRubyObject src, IRubyObject repl) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.trTrans19(context, src, repl, false);
         return str;
     }
@@ -5857,7 +5925,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "tr_s")
     public IRubyObject tr_s19(ThreadContext context, IRubyObject src, IRubyObject repl) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.trTrans19(context, src, repl, true);
         return str;
     }
@@ -5920,7 +5988,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             if (ptr < p && bytes[p - 1] == newline &&
                (rslen <= 1 ||
                 ByteList.memcmp(sepValue.getUnsafeBytes(), sepValue.getBegin(), rslen, bytes, p - rslen, rslen) == 0)) {
-                block.yield(context, makeShared(runtime, s - ptr, p - s).infectBy(this));
+                block.yield(context, makeShared(runtime, s - ptr, p - s));
                 modifyCheck(bytes, len);
                 s = p;
             }
@@ -5928,7 +5996,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         if (s != end) {
             if (p > end) p = end;
-            block.yield(context, makeShared(runtime, s - ptr, p - s).infectBy(this));
+            block.yield(context, makeShared(runtime, s - ptr, p - s));
         }
 
         return this;
@@ -5952,6 +6020,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @JRubyMethod(name = "lines")
     public IRubyObject lines(ThreadContext context, IRubyObject arg, Block block) {
         return StringSupport.rbStrEnumerateLines(this, context, "lines", arg, block, true);
+    }
+
+    @JRubyMethod(name = "lines")
+    public IRubyObject lines(ThreadContext context, IRubyObject arg, IRubyObject opts, Block block) {
+        return StringSupport.rbStrEnumerateLines(this, context, "lines", arg, opts, block, true);
     }
 
     /**
@@ -6048,7 +6121,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 for (int i = 0; i < len; i += n) {
                     n = StringSupport.encFastMBCLen(ptrBytes, ptr + i, ptr + len, enc);
                     IRubyObject substr = str.substr(runtime, i, n);
-                    substr.infectBy(str);
                     if (wantarray) ary[a++] = substr;
                     else block.yield(context, substr);
                 }
@@ -6057,7 +6129,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 for (int i = 0; i < len; i += n) {
                     n = StringSupport.length(enc, ptrBytes, ptr + i, ptr + len);
                     IRubyObject substr = str.substr(runtime, i, n);
-                    substr.infectBy(str);
                     if (wantarray) ary[a++] = substr;
                     else block.yield(context, substr);
                 }
@@ -6202,7 +6273,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             int len = matcher.match(ptr, end, Option.DEFAULT);
             if (len <= 0) break;
             RubyString result = newStringShared(runtime, ptrBytes, ptr, len, enc);
-            result.infectBy(str);
             if (wantarray) ary.append(result);
             else block.yield(context, result);
             ptr += len;
@@ -6329,9 +6399,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     public static RubyString unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
-        RubyString result = newString(input.getRuntime(), input.unmarshalString());
-        input.registerLinkTarget(result);
-        return result;
+        return newString(input.getRuntime(), input.unmarshalString());
     }
 
     /**
@@ -6343,8 +6411,35 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     @JRubyMethod
+    public RubyArray unpack(ThreadContext context, IRubyObject obj, IRubyObject opt, Block block) {
+        long offset = unpackOffset(context, opt);
+        return Pack.unpackWithBlock(context, this, stringValue(obj).value, offset, block);
+    }
+
+    @JRubyMethod
     public IRubyObject unpack1(ThreadContext context, IRubyObject obj, Block block) {
         return Pack.unpack1WithBlock(context, this, stringValue(obj).value, block);
+    }
+
+    @JRubyMethod
+    public IRubyObject unpack1(ThreadContext context, IRubyObject obj, IRubyObject opt, Block block) {
+        long offset = unpackOffset(context, opt);
+        return Pack.unpack1WithBlock(context, this, stringValue(obj).value, offset, block);
+    }
+
+    private static long unpackOffset(ThreadContext context, IRubyObject opt) {
+        if (!(opt instanceof RubyHash)) throw context.runtime.newArgumentError(2, 1);
+
+        RubyHash options = (RubyHash) opt;
+        long offset = 0;
+        if (options.size() == 1) {
+            IRubyObject offsetArg = options.fastARef(context.runtime.newSymbol("offset"));
+            if (offsetArg == null) throw context.runtime.newArgumentError("unknown keyword: " + options.keys().first().inspect());
+            offset = offsetArg.convertToInteger().getLongValue();
+        }
+        // FIXME: keyword arg processing incomplete.  We need a better system.
+
+        return offset;
     }
 
     @Deprecated // not used
@@ -6459,7 +6554,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @JRubyMethod
     public IRubyObject scrub(ThreadContext context, IRubyObject repl, Block block) {
         IRubyObject newStr = strScrub(context, repl, block);
-        if (newStr.isNil()) return strDup(context.runtime);
+        if (newStr.isNil()) return strDup(context.runtime, context.runtime.getString());
         return newStr;
     }
 
@@ -6602,7 +6697,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         byte[] repBytes;
         int rep;
         int replen;
-        boolean tainted = false;
 
         if (block.isGiven()) {
             if (repl != context.nil) {
@@ -6614,7 +6708,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         if (repl != context.nil) {
             repl = EncodingUtils.strCompatAndValid(context, repl, enc);
-            tainted |= repl.isTaint();
         }
 
         if (enc.isDummy()) return context.nil;
@@ -6697,7 +6790,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                     else {
                         repl = block.yieldSpecific(context, RubyString.newString(runtime, pBytes, p, clen, enc));
                         repl = EncodingUtils.strCompatAndValid(context, repl, enc);
-                        tainted |= repl.isTaint();
                         ((RubyString)buf).cat((RubyString)repl);
                         if (((RubyString)repl).getCodeRange() == CR_VALID)
                             cr = CR_VALID;
@@ -6729,7 +6821,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 else {
                     repl = block.yieldSpecific(context, RubyString.newString(runtime, pBytes, p, e - p, enc));
                     repl = EncodingUtils.strCompatAndValid(context, repl, enc);
-                    tainted |= repl.isTaint();
                     ((RubyString)buf).cat((RubyString)repl);
                     if (((RubyString)repl).getCodeRange() == CR_VALID)
                         cr = CR_VALID;
@@ -6811,7 +6902,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                     else {
                         repl = block.yieldSpecific(context, RubyString.newString(runtime, pBytes, p, clen, enc));
                         repl = EncodingUtils.strCompatAndValid(context, repl, enc);
-                        tainted |= repl.isTaint();
                         ((RubyString)buf).cat((RubyString)repl);
                     }
                     p += clen;
@@ -6835,14 +6925,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 else {
                     repl = block.yieldSpecific(context, RubyString.newString(runtime, pBytes, p, e - p, enc));
                     repl = EncodingUtils.strCompatAndValid(context, repl, enc);
-                    tainted |= repl.isTaint();
                     ((RubyString)buf).cat((RubyString)repl);
                 }
             }
             cr = CR_VALID;
         }
 
-        buf.setTaint(tainted | isTaint());
         ((RubyString)buf).setEncodingAndCodeRange(enc, cr);
         return buf;
     }
@@ -6901,7 +6989,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                             beg,
                             beg.getMetaClass(),
                             Signature.ONE_ARGUMENT,
-                            new IncludeUpToCallback(beg),
+                            new IncludeUpToCallback(val),
                             context), false);
         } catch (JumpException.SpecialJump e) {
             return context.tru;
@@ -6932,10 +7020,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     /**
-     * Is this a "bare" string, i.e. has no instance vars and class == String.
+     * Is this a "bare" string, i.e. has no instance vars, and class == String.
      */
-    private boolean isBare(Ruby runtime) {
-        return !hasVariables() && metaClass == runtime.getString();
+    public boolean isBare(Ruby runtime) {
+        return !hasInstanceVariables() && metaClass == runtime.getString();
     }
 
     private static StringSites sites(ThreadContext context) {
@@ -6954,7 +7042,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @Deprecated
     public RubyArray split19(ThreadContext context, IRubyObject arg0, boolean useBackref) {
-        return splitCommon(context, arg0, useBackref, flags, flags, useBackref);
+        return splitCommon(context, arg0, useBackref, flags, flags);
     }
 
     @Deprecated

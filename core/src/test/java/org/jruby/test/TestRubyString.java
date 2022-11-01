@@ -31,7 +31,11 @@ package org.jruby.test;
 
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.util.ByteList;
 
 /**
  * Test case for functionality in RubyArray
@@ -55,5 +59,25 @@ public class TestRubyString extends Base {
     public void testNewUnicodeString() throws Exception {
         RubyString str = RubyString.newUnicodeString(runtime, "hello");
         assertEquals(UTF8Encoding.INSTANCE, str.getByteList().getEncoding());
+    }
+
+    public void testSplit() throws RaiseException {
+        RubyString str = RubyString.newString(runtime, "JRuby is so awesome!");
+        RubyArray res = str.split(runtime.newString(" "));
+        assertEquals(4, res.size());
+        assertEquals("JRuby", res.get(0));
+        res = str.split(runtime.newString(" "), 2);
+        assertEquals(2, res.size());
+        assertEquals("JRuby", res.get(0));
+        assertEquals("is so awesome!", res.get(1));
+
+        RubyRegexp pat = RubyRegexp.newRegexp(runtime, ByteList.create("[ie]s"));
+        res = str.split(pat);
+        assertEquals(3, res.size());
+        assertEquals("JRuby ", res.get(0));
+        assertEquals(" so aw", res.get(1));
+        assertEquals("ome!", res.get(2));
+        res = str.split(pat, 4);
+        assertEquals(3, res.size());
     }
 }

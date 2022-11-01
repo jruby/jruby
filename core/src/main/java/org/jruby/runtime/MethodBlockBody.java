@@ -64,7 +64,7 @@ public class MethodBlockBody extends ContextAwareBlockBody {
 
     @Override
     protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject value) {
-        IRubyObject[] realArgs = Helpers.restructureBlockArgs(context, value, getSignature(), block.type, false);
+        IRubyObject[] realArgs = Helpers.restructureBlockArgs(context, value, getSignature(), block.type);
         return entry.method.call(context, receiver, entry.sourceModule, originName, realArgs, Block.NULL_BLOCK);
     }
 

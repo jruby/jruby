@@ -1,1 +1,1 @@
-fails:TracePoint#lineno returns the line number of the event
+debug:TracePoint#lineno returns the line number of the event

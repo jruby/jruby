@@ -1,7 +1,5 @@
 package org.jruby.runtime.backtrace;
 
-import org.jruby.lexer.yacc.ISourcePosition;
-
 public final class BacktraceElement implements Cloneable {
 
     public static final BacktraceElement[] EMPTY_ARRAY = new BacktraceElement[0];
@@ -23,13 +21,6 @@ public final class BacktraceElement implements Cloneable {
     @Override
     public BacktraceElement clone() {
         return new BacktraceElement(method, filename, line);
-    }
-
-    @Deprecated
-    public static void update(BacktraceElement backtrace, String method, ISourcePosition position) {
-        backtrace.method = method;
-        backtrace.filename = position.getFile();
-        backtrace.line = position.getLine();
     }
 
     public static void update(BacktraceElement backtrace, String method, String file, int line) {

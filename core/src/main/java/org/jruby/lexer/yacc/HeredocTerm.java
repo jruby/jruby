@@ -31,6 +31,7 @@
 package org.jruby.lexer.yacc;
 
 import org.jcodings.Encoding;
+import org.jruby.ast.Node;
 import org.jruby.parser.RubyParser;
 import org.jruby.util.ByteList;
 
@@ -98,12 +99,22 @@ public class HeredocTerm extends StrTerm {
 
         if (c == EOF) return error(lexer, len, str, eos);
 
+        boolean bol = lexer.was_bol();
         // Found end marker for this heredoc
-        if (lexer.was_bol() && lexer.whole_match_p(nd_lit, indent)) {
-            lexer.heredoc_restore(this);
-            lexer.setStrTerm(null);
-            lexer.setState(EXPR_END);
-            return RubyParser.tSTRING_END;
+        if (bol) {
+            // if line_indent == -1 then we are after an interpolation in same line or there was a line continuation.
+            int line_indent = lexer.getHeredocLineIndent();
+
+            if (line_indent != -1) {
+                if (lexer.whole_match_p(nd_lit, indent)) {
+                    lexer.heredoc_restore(this);
+                    lexer.setStrTerm(null);
+                    lexer.setState(EXPR_END);
+                    return RubyParser.tSTRING_END;
+                }
+            } else {
+                lexer.setHeredocLineIndent(0);
+            }
         }
 
         if ((flags & STR_FUNC_EXPAND) == 0) {
@@ -141,8 +152,7 @@ public class HeredocTerm extends StrTerm {
                 lexer.lex_goto_eol();
 
                 if (lexer.getHeredocIndent() > 0) {
-                    lexer.setValue(lexer.createStr(str, 0));
-                    return RubyParser.tSTRING_CONTENT;
+                    return flush(lexer, bol, str);
                 }
                 // MRI null checks str in this case but it is unconditionally non-null?
                 if (lexer.nextc() == -1) return error(lexer, len, null, eos);
@@ -153,7 +163,6 @@ public class HeredocTerm extends StrTerm {
             if (c == '#') {
                 int token = lexer.peekVariableName(RubyParser.tSTRING_DVAR, RubyParser.tSTRING_DBEG);
 
-                // FIXME: MRI does not have this code...but we fail some cases with it in MRI test_syntax.rb
                 int heredoc_line_indent = lexer.getHeredocLineIndent();
                 if (heredoc_line_indent != -1) {
                     if (lexer.getHeredocIndent() > heredoc_line_indent) {
@@ -167,24 +176,24 @@ public class HeredocTerm extends StrTerm {
                 tok.append('#');
             }
 
+            boolean encodingDetermined[] = new boolean[] { false };
             // MRI has extra pointer which makes our code look a little bit more strange in comparison
             do {
                 lexer.pushback(c);
 
-                if ((c = new StringTerm(flags, '\0', '\n', lexer.getRubySourceline()).parseStringIntoBuffer(lexer, tok, lexer.getEncoding())) == EOF) {
+                if ((c = new StringTerm(flags, '\0', '\n', lexer.getRubySourceline()).parseStringIntoBuffer(lexer, tok, lexer.getEncoding(), encodingDetermined)) == EOF) {
                     if (lexer.eofp) return error(lexer, len, str, eos);
                     return restore(lexer);
                 }
                 if (c != '\n') {
-                    lexer.setValue(lexer.createStr(tok, 0));
-                    return RubyParser.tSTRING_CONTENT;
+                    if (c == '\\') lexer.setHeredocLineIndent(-1);
+                    return flush(lexer, bol, tok);
                 }
                 tok.append(lexer.nextc());
 
                 if (lexer.getHeredocIndent() > 0) {
                     lexer.lex_goto_eol();
-                    lexer.setValue(lexer.createStr(tok, 0));
-                    return RubyParser.tSTRING_CONTENT;
+                    return flush(lexer, bol, tok);
                 }
 
                 if ((c = lexer.nextc()) == EOF) return error(lexer, len, str, eos);
@@ -193,7 +202,15 @@ public class HeredocTerm extends StrTerm {
         }
 
         lexer.pushback(c);
-        lexer.setValue(lexer.createStr(str, 0));
+        lexer.heredoc_restore(this);
+        lexer.setStrTerm(new StringTerm(flags | STR_FUNC_TERM, 0, 0, line));
+        return flush(lexer, bol, str);
+    }
+
+    private int flush(RubyLexer lexer, boolean bol, ByteList tok) {
+        Node node = lexer.createStr(tok, 0);
+        lexer.setValue(node);
+        if (bol) node.setNewline();
         return RubyParser.tSTRING_CONTENT;
     }
 }

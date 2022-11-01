@@ -7,6 +7,8 @@ import jnr.constants.Constant;
 import jnr.constants.ConstantSet;
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.Sysconf;
+import jnr.constants.platform.Confstr;
+import jnr.constants.platform.Pathconf;
 
 import org.jruby.RubyArray;
 import org.jruby.RubyHash;
@@ -20,6 +22,7 @@ import jnr.posix.POSIX;
 import jnr.posix.util.Platform;
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyIO;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
@@ -30,18 +33,50 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.SafePropertyAccessor;
+import org.jruby.util.io.OpenFile;
+import java.nio.ByteBuffer;
 
 @JRubyModule(name="Etc")
 public class RubyEtc {
+    public static class IOExt {
+        @JRubyMethod(required = 1)
+        public static synchronized IRubyObject pathconf(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+            Pathconf name = Pathconf.valueOf(RubyNumeric.num2long(arg));
+            RubyIO io = (RubyIO) recv;
+            OpenFile fptr = io.getOpenFileChecked();
+            POSIX posix = context.runtime.getPosix();
+            long ret = posix.fpathconf(fptr.getFileno(), name);
+            if (ret == -1) {
+                if (posix.errno() == 0) {
+                    return context.runtime.getNil();
+                } else if (posix.errno() == Errno.EOPNOTSUPP.intValue()) {
+                    throw context.runtime.newNotImplementedError("pathconf() function is unimplemented on this machine");
+                } else {
+                    throw context.runtime.newErrnoFromLastPOSIXErrno();
+                }
+            }
+            return context.runtime.newFixnum(ret);
+        }
+    }
+    
     public static RubyModule createEtcModule(Ruby runtime) {
         RubyModule etcModule = runtime.defineModule("Etc");
 
         runtime.setEtc(etcModule);
         
         etcModule.defineAnnotatedMethods(RubyEtc.class);
+        runtime.getIO().defineAnnotatedMethods(IOExt.class);
 
         if (!Platform.IS_WINDOWS) {
             for (Constant c : ConstantSet.getConstantSet("Sysconf")) {
+                String name = c.name().substring(1); // leading "_"
+                etcModule.setConstant(name, runtime.newFixnum(c.intValue()));
+            }
+            for (Constant c : ConstantSet.getConstantSet("Confstr")) {
+                String name = c.name().substring(1); // leading "_"
+                etcModule.setConstant(name, runtime.newFixnum(c.intValue()));
+            }
+            for (Constant c : ConstantSet.getConstantSet("Pathconf")) {
                 String name = c.name().substring(1); // leading "_"
                 etcModule.setConstant(name, runtime.newFixnum(c.intValue()));
             }
@@ -128,11 +163,15 @@ public class RubyEtc {
         Ruby runtime = context.runtime;
         Sysconf name = Sysconf.valueOf(RubyNumeric.num2long(arg));
         POSIX posix = runtime.getPosix();
+        posix.errno(0);
         long ret = posix.sysconf(name);
+
         if (ret == -1) {
-            if (posix.errno() == Errno.ENOENT.intValue()) {
-                return runtime.getNil();
-            } else if (posix.errno() == Errno.EOPNOTSUPP.intValue()) {
+            int errno = posix.errno();
+
+            if (errno == Errno.ENOENT.intValue() || errno == 0) {
+                return context.nil;
+            } else if (errno == Errno.EOPNOTSUPP.intValue()) {
                 throw runtime.newNotImplementedError("sysconf() function is unimplemented on this machine");
             } else {
                 throw runtime.newErrnoFromLastPOSIXErrno();
@@ -140,7 +179,37 @@ public class RubyEtc {
         }
         return RubyFixnum.newFixnum(runtime, ret);
     }
+    
+    @JRubyMethod(required = 1, module = true)
+    public static synchronized IRubyObject confstr(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        Confstr name = Confstr.valueOf(RubyNumeric.num2long(arg));
+        ByteBuffer buf;
 
+        POSIX posix = context.runtime.getPosix();
+        int n = posix.confstr(name, null, 0);
+        int ret = -1;
+
+        if (n > 0) {
+            buf = ByteBuffer.allocate(n);
+            ret = posix.confstr(name, buf, n);
+        } else {
+            buf = ByteBuffer.allocate(0);
+        }
+        
+        if (ret == -1) {
+            if (posix.errno() == 0) {
+                return context.runtime.getNil();
+            } else if (posix.errno() == Errno.EOPNOTSUPP.intValue()) {
+                throw context.runtime.newNotImplementedError("confstr() function is unimplemented on this machine");
+            } else {
+                throw context.runtime.newErrnoFromLastPOSIXErrno();
+            }
+        }
+
+        buf.flip();
+        ByteList bytes = new ByteList(buf.array(), 0, n - 1);
+        return RubyString.newString(context.runtime, bytes);
+    }
 
     @JRubyMethod(optional=1, module = true)
     public static synchronized IRubyObject getpwuid(IRubyObject recv, IRubyObject[] args) {
@@ -453,7 +522,6 @@ public class RubyEtc {
             if (commonAppData != null) tmp = ByteList.create(commonAppData);
         }
         RubyString ret = RubyString.newString(runtime, tmp, runtime.getDefaultExternalEncoding());
-        ret.untaint(context);
 
         return ret;
     }
@@ -469,7 +537,6 @@ public class RubyEtc {
             if (localAppData != null) tmp = ByteList.create(localAppData);
         }
         RubyString ret = RubyString.newString(runtime, tmp, runtime.getDefaultExternalEncoding());
-        ret.untaint(context);
 
         return ret;
     }

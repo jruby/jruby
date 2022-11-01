@@ -185,8 +185,8 @@ describe "Three different size Integer arguments" do
   module LibTest
     extend FFI::Library
     ffi_lib TestLibrary::PATH
-    
-    
+
+
     [ 's32', 'u32', 's64', 'u64' ].each do |rt|
       TYPES.each do |t1|
         TYPES.each do |t2|

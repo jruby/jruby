@@ -42,7 +42,7 @@ public class RubyIOError extends RubyStandardError {
     }
 
     static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass iOErrorClass = runtime.defineClass("IOError", exceptionClass, (r, klass) -> new RubyIOError(runtime, klass));
+        RubyClass iOErrorClass = runtime.defineClass("IOError", exceptionClass, RubyIOError::new);
 
         return iOErrorClass;
     }

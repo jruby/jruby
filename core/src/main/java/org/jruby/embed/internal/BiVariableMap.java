@@ -44,6 +44,7 @@ import org.jruby.RubyObject;
 import org.jruby.embed.LocalVariableBehavior;
 import org.jruby.embed.variable.BiVariable;
 import org.jruby.embed.variable.VariableInterceptor;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
@@ -230,11 +231,7 @@ public class BiVariableMap implements Map<String, Object> {
     }
 
     private RubyObject getReceiverObject(final Object receiver) {
-        if ( receiver instanceof RubyObject ) return (RubyObject) receiver;
-        //if ( receiver instanceof IRubyObject ) {
-        //    return (RubyObject) ( (IRubyObject) receiver ).getRuntime().getTopSelf();
-        //}
-        return getTopSelf();
+        return receiver instanceof RubyObject ? (RubyObject) receiver : getTopSelf();
     }
 
     private RubyObject getTopSelf() {
@@ -330,16 +327,15 @@ public class BiVariableMap implements Map<String, Object> {
     public Object put(Object receiver, String key, Object value) {
         checkKey(key);
         final RubyObject robj = getReceiverObject(receiver);
-        final String name = key.intern();
-        BiVariable var = getVariable(robj, name);
+        BiVariable var = getVariable(robj, key);
         Object oldValue = null;
         if ( var != null ) { // updates
             oldValue = var.getJavaObject();
             var.setJavaObject(robj.getRuntime(), value);
         }
         else { // creates new value
-            var = VariableInterceptor.getVariableInstance(provider.getLocalVariableBehavior(), robj, name, value);
-            if ( var != null ) update(name, var);
+            var = VariableInterceptor.getVariableInstance(provider.getLocalVariableBehavior(), robj, key, value);
+            if ( var != null ) update(key, var);
         }
         return oldValue;
     }
@@ -353,7 +349,7 @@ public class BiVariableMap implements Map<String, Object> {
     public String[] getLocalVarNames() {
         if ( variables == null ) return EMPTY_STRING_ARRAY;
 
-        List<String> localVarNames = new ArrayList<String>();
+        List<String> localVarNames = new ArrayList<>(variables.size());
         for ( final BiVariable var : variables ) {
             if ( var.getType() == BiVariable.Type.LocalVariable ) {
                 localVarNames.add( var.getName() );
@@ -371,7 +367,7 @@ public class BiVariableMap implements Map<String, Object> {
     public IRubyObject[] getLocalVarValues() {
         if ( variables == null ) return IRubyObject.NULL_ARRAY;
 
-        List<IRubyObject> localVarValues = new ArrayList<IRubyObject>();
+        List<IRubyObject> localVarValues = new ArrayList<>(variables.size());
         for ( final BiVariable var : variables ) {
             if ( var.getType() == BiVariable.Type.LocalVariable ) {
                 localVarValues.add( var.getRubyObject() );
@@ -380,8 +376,8 @@ public class BiVariableMap implements Map<String, Object> {
         return localVarValues.toArray( new IRubyObject[ localVarValues.size() ] );
     }
 
-    void inject(final ManyVarsDynamicScope scope, final int depth, final IRubyObject receiver) {
-        VariableInterceptor.inject(this, provider.getRuntime(), scope, depth, receiver);
+    void inject(final DynamicScope scope) {
+        VariableInterceptor.inject(this, scope);
     }
 
     void retrieve(final IRubyObject receiver) {
@@ -425,7 +421,7 @@ public class BiVariableMap implements Map<String, Object> {
         checkKey(key);
         final RubyObject robj = getReceiverObject(receiver);
         for ( int i = 0; i < size(); i++ ) {
-            if ( ((String) key).equals( varNames.get(i) ) ) {
+            if ( key.equals( varNames.get(i) ) ) {
                 final BiVariable var = variables.get(i);
                 if ( var.isReceiverIdentical(robj) ) {
                     varNames.remove(i);

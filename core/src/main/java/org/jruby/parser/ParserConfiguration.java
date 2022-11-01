@@ -53,7 +53,7 @@ public class ParserConfiguration {
     // We parse evals more often in source so assume an eval parse.
     private boolean isEvalParse = true;
     // Should we display extra debug information while parsing?
-    private boolean isDebug = false;
+    private boolean isDebug = true;
     // whether we should save the end-of-file data as DATA
     private boolean saveData = false;
 
@@ -188,6 +188,8 @@ public class ParserConfiguration {
      * Zero out coverable lines as they're encountered
      */
     public void coverLine(int i) {
+        // We had an overflow so we cannot mark whatever line this is as covered.
+        if (i < 0) return;
         if (isCoverageEnabled()) {
             growCoverageLines(i);
             coverage[i] = 0;

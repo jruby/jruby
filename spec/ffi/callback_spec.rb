@@ -49,6 +49,8 @@ module CallbackSpecs
       callback :cbVrU32, [ ], :uint
       callback :cbVrL, [ ], :long
       callback :cbVrUL, [ ], :ulong
+      callback :cbVrF, [ ], :float
+      callback :cbVrD, [ ], :double
       callback :cbVrS64, [ ], :long_long
       callback :cbVrU64, [ ], :ulong_long
       callback :cbVrP, [], :pointer
@@ -58,7 +60,7 @@ module CallbackSpecs
       callback :cbIrV, [ :int ], :void
       callback :cbLrV, [ :long ], :void
       callback :cbULrV, [ :ulong ], :void
-      callback :cbLrV, [ :long_long ], :void
+      callback :cbLLrV, [ :long_long ], :void
       callback :cbVrT, [ ], S8F32S32.by_value
       callback :cbTrV, [ S8F32S32.by_value ], :void
       callback :cbYrV, [ S8F32S32.ptr ], :void
@@ -70,6 +72,8 @@ module CallbackSpecs
       attach_function :testCallbackVrU16, :testClosureVrS, [ :cbVrU16 ], :ushort
       attach_function :testCallbackVrS32, :testClosureVrI, [ :cbVrS32 ], :int
       attach_function :testCallbackVrU32, :testClosureVrI, [ :cbVrU32 ], :uint
+      attach_function :testCallbackVrF, :testClosureVrF, [ :cbVrF ], :float
+      attach_function :testCallbackVrD, :testClosureVrD, [ :cbVrD ], :double
       attach_function :testCallbackVrL, :testClosureVrL, [ :cbVrL ], :long
       attach_function :testCallbackVrZ, :testClosureVrZ, [ :cbVrZ ], :bool
       attach_function :testCallbackVrUL, :testClosureVrL, [ :cbVrUL ], :ulong
@@ -86,7 +90,6 @@ module CallbackSpecs
       attach_variable :pVrS8, :gvar_pointer, :pointer
       attach_function :testGVarCallbackVrS8, :testClosureVrB, [ :pointer ], :char
       attach_function :testOptionalCallbackCrV, :testOptionalClosureBrV, [ :cbCrV, :char ], :void
-
     end
 
     it "returning :char (0)" do
@@ -261,6 +264,14 @@ module CallbackSpecs
       expect(LibTest.testCallbackVrZ { true }).to be true
     end
 
+    it "returning float" do
+      expect(LibTest.testCallbackVrF { 1.234567890123456789 }).to be_within(1E-7).of(1.234567890123456789)
+    end
+
+    it "returning double" do
+      expect(LibTest.testCallbackVrD { 1.234567890123456789 }).to be_within(1E-15).of(1.234567890123456789)
+    end
+
     it "returning :pointer (nil)" do
       expect(LibTest.testCallbackVrP { nil }).to be_null
     end
@@ -323,6 +334,42 @@ module CallbackSpecs
       proc = Proc.new { 0x1e }
       LibTest.cbVrS8 = proc
       expect(LibTest.testGVarCallbackVrS8(LibTest.pVrS8)).to eq(0x1e)
+    end
+
+    describe "with proc" do
+      it "should be usabel for different signatures" do
+        pr = proc { 42 }
+        expect(LibTest.testCallbackVrS8(pr)).to eq(42)
+        expect(LibTest.testCallbackVrS8(&pr)).to eq(42)
+        expect(LibTest.testCallbackVrU8(pr)).to eq(42)
+        expect(LibTest.testCallbackVrU8(&pr)).to eq(42)
+        expect(LibTest.testCallbackVrS16(pr)).to eq(42)
+        expect(LibTest.testCallbackVrS8(pr)).to eq(42)
+      end
+
+      if RUBY_ENGINE == "ruby"
+        it "stores function pointers as ivar in proc object" do
+          pr = proc { 42 }
+          expect(LibTest.testCallbackVrS8(pr)).to eq(42)
+          # A proc argument should implicit create a FFI::Function
+          func = pr.instance_variable_get(:@__ffi_callback__)
+          expect(func).to be_kind_of(FFI::Function)
+
+          expect(LibTest.testCallbackVrS8(&pr)).to eq(42)
+          # A proc argument should reuse FFI::Function for the same callback
+          expect(pr.instance_variable_get(:@__ffi_callback__)).to be(func)
+          expect(pr.instance_variable_defined?(:@__ffi_callback_table__)).to be_falsey
+
+          expect(LibTest.testCallbackVrU8(pr)).to eq(42)
+          expect(LibTest.testCallbackVrU8(&pr)).to eq(42)
+          # A second callback signature (FFI::FunctionInfo) is stored in a Hash table
+          expect(pr.instance_variable_get(:@__ffi_callback_table__).length).to eq(1)
+
+          expect(LibTest.testCallbackVrS16(pr)).to eq(42)
+          # A third callback signature should create another Hash entry
+          expect(pr.instance_variable_get(:@__ffi_callback_table__).length).to eq(2)
+        end
+      end
     end
 
     describe "When the callback is considered optional by the underlying library" do
@@ -410,6 +457,7 @@ module CallbackSpecs
           attach_function :testCallbackAsArgument_2, :testArgumentClosure, [ :cb_with_cb_argument, :int ], :int
         end).to be_an_instance_of FFI::Function
       end
+
       it 'should be able to use the callback argument' do
         module LibTest
           extend FFI::Library
@@ -433,6 +481,7 @@ module CallbackSpecs
         expect(callback_arg_called).to be true
         expect(callback_with_callback_arg_called).to be true
       end
+
       it 'function returns callable object' do
         module LibTest
           extend FFI::Library
@@ -878,20 +927,9 @@ module CallbackInteropSpecs
     if RUBY_ENGINE == 'ruby'
       it "C outside ffi call stack does not deadlock [#527]" do
         skip "not yet supported on TruffleRuby" if RUBY_ENGINE == "truffleruby"
-        path = File.join(File.dirname(__FILE__), "embed-test/embed-test.rb")
-        pid = spawn(RbConfig.ruby, "-Ilib", path, { [:out, :err] => "embed-test.log" })
-        begin
-          Timeout.timeout(10){ Process.wait(pid) }
-        rescue Timeout::Error
-          Process.kill(9, pid)
-          raise
-        else
-          if $?.exitstatus != 0
-            raise "external process failed:\n#{ File.read("embed-test.log") }"
-          end
-        end
 
-        expect(File.read("embed-test.log")).to match(/callback called with \["hello", 5, 0\]/)
+        out = external_run(RbConfig.ruby, "embed-test/embed-test.rb")
+        expect(out).to match(/callback called with \["hello", 5, 0\]/)
       end
     end
   end

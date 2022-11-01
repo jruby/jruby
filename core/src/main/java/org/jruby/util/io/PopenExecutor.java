@@ -3,6 +3,7 @@ package org.jruby.util.io;
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.OpenFlags;
+import jnr.constants.platform.RLIMIT;
 import jnr.enxio.channels.NativeDeviceChannel;
 import jnr.posix.SpawnAttribute;
 import jnr.posix.SpawnFileAction;
@@ -42,10 +43,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.jruby.RubyString.newString;
+
 /**
  * Port of MRI's popen+exec logic.
  */
 public class PopenExecutor {
+
+    public static final int SH_CHDIR_ARG_COUNT = 5;
+
     /**
      * Check properties and runtime state to determine whether a native popen is possible.
      *
@@ -68,7 +74,7 @@ public class PopenExecutor {
                 filenameByteList.getBegin() + filenameByteList.getRealSize(),
                 chlen,
                 filenameByteList.getEncoding()) == '|') {
-            return filenameStr.makeShared(context.runtime, chlen[0], filenameByteList.length() - 1).infectBy(filenameOrCommand);
+            return filenameStr.makeShared(context.runtime, chlen[0], filenameByteList.length() - 1);
         }
         return context.nil;
     }
@@ -149,16 +155,19 @@ public class PopenExecutor {
 
         prog = eargp.use_shell ? eargp.command_name : eargp.command_name;
 
-        if (eargp.chdir_given()) {
+        if (eargp.chdirGiven) {
             // we can'd do chdir with posix_spawn, so we should be set to use_shell and now
             // just need to add chdir to the cmd
-            prog = (RubyString)prog.strDup(runtime).prepend(context, RubyString.newString(runtime, "cd '" + eargp.chdir_dir + "'; "));
-            eargp.chdir_dir = null;
-            eargp.chdir_given_clear();
+            String script = "cd '" + eargp.chdir_dir + "'; ";
 
-            // create new pgroup to prevent orphaned processes when the parent is killed
-            eargp.attributes.add(SpawnAttribute.pgroup(0));
-            eargp.attributes.add(SpawnAttribute.flags((short)SpawnAttribute.SETPGROUP));
+            // use exec to eliminate extra sh process if we do not need to run command as a shell script
+            if (!searchForMetaChars(prog)) {
+                script = script + "exec ";
+            }
+
+            prog = (RubyString)prog.strDup(runtime).prepend(context, newString(runtime, script));
+            eargp.chdir_dir = null;
+            eargp.chdirGiven = false;
         }
 
         if (execargRunOptions(context, runtime, eargp, sarg, errmsg) < 0) {
@@ -166,10 +175,11 @@ public class PopenExecutor {
         }
 
         if (prog != null && !eargp.use_shell) {
-            String[] argv = eargp.argv_str.argv;
-            if (argv.length > 0) {
-                argv[0] = prog.toString();
-            }
+            // we handle argv[0] juggling in the spawn logic below
+//            String[] argv = eargp.argv_str.argv;
+//            if (argv.length > 0) {
+//                argv[0] = prog.toString();
+//            }
         }
         if (eargp.use_shell) {
             pid = procSpawnSh(runtime, prog.toString(), eargp);
@@ -247,13 +257,13 @@ public class PopenExecutor {
 
         if (argv.length > 0 && argv[0] != null) {
             // TODO: win32
-//            #if defined(_WIN32)
-//            DWORD flags = 0;
-//            if (eargp->new_pgroup_given && eargp->new_pgroup_flag) {
-//                flags = CREATE_NEW_PROCESS_GROUP;
-//            }
-//            pid = rb_w32_uaspawn_flags(P_NOWAIT, prog ? RSTRING_PTR(prog) : 0, argv, flags);
-//            #else
+            if (Platform.IS_WINDOWS) {
+                long flags = 0;
+                if (eargp.newPgroupGiven && eargp.newPgroupFlag) {
+//                    flags = CREATE_NEW_PROCESS_GROUP;
+                }
+//                pid = rb_w32_uaspawn_flags(P_NOWAIT, prog ? RSTRING_PTR(prog) : 0, argv, flags);
+            }
             pid = procSpawnCmdInternal(runtime, argv, prog, eargp);
         }
         return pid;
@@ -381,21 +391,26 @@ public class PopenExecutor {
             IRubyObject val = entry.getValue();
             String k;
 
-            k = StringSupport.checkEmbeddedNulls(runtime, key).toString();
+            RubyString keyString = StringSupport.checkEmbeddedNulls(runtime, key).export(context);
+
+            k = keyString.toString();
+
             if (k.indexOf('=') != -1)
                 throw runtime.newArgumentError("environment name contains a equal : " + k);
 
-            if (!val.isNil())
+            if (!val.isNil()) {
                 val = StringSupport.checkEmbeddedNulls(runtime, val);
+            }
 
-            key = key.convertToString().export(context);
-            if (!val.isNil()) val = val.convertToString().export(context);
+            if (!val.isNil()) {
+                val = ((RubyString) val).export(context);
+            }
 
-            if (key.convertToString().toString().equalsIgnoreCase("PATH")) {
+            if (k.equalsIgnoreCase("PATH")) {
                 pathArg.path_env = val;
             }
 
-            env.push(runtime.newArray(key, val));
+            env.push(runtime.newArray(keyString, val));
         }
 
         return env;
@@ -572,12 +587,12 @@ public class PopenExecutor {
         if (prog != null)
             cmd = StringSupport.checkEmbeddedNulls(runtime, prog).toString();
 
-        if (eargp.chdir_given()) {
+        if (eargp.chdirGiven) {
             // we can'd do chdir with posix_spawn, so we should be set to use_shell and now
             // just need to add chdir to the cmd
             cmd = "cd '" + eargp.chdir_dir + "'; " + cmd;
             eargp.chdir_dir = null;
-            eargp.chdir_given_clear();
+            eargp.chdirGiven = false;
         }
 
         if (eargp != null && !eargp.use_shell) {
@@ -624,7 +639,6 @@ public class PopenExecutor {
                 if (writePair[1] != -1) runtime.getPosix().close(writePair[1]);
                 if (pair[0] != -1) runtime.getPosix().close(pair[0]);
                 if (pair[1] != -1) runtime.getPosix().close(pair[1]);
-                execargParentEnd(runtime, eargp);
                 throw re;
             }
             execargRunOptions(context, runtime, eargp, sargp, null);
@@ -641,7 +655,6 @@ public class PopenExecutor {
             }
             if (eargp != null)
                 execargRunOptions(context, runtime, sargp, null, null);
-            execargParentEnd(runtime, eargp);
         }
         else {
             throw runtime.newNotImplementedError("spawn without exec args (probably a bug)");
@@ -873,7 +886,7 @@ public class PopenExecutor {
                     return -1;
 
                 // This always succeeds because we just defer it to posix_spawn.
-                redirectDup2(eargp, pairs[j].oldfd, pairs[j].newfd); /* async-signal-safe */
+                redirectDup2(runtime, eargp, pairs[j].oldfd, pairs[j].newfd); /* async-signal-safe */
                 pairs[j].oldfd = -1;
                 j = (int) pairs[j].older_index;
                 if (j != -1) pairs[j].num_newer--;
@@ -913,24 +926,20 @@ public class PopenExecutor {
             }
             else {
                 // This always succeeds because we just defer it to posix_spawn.
-                redirectDup2(eargp, pairs[i].oldfd, extra_fd); /* async-signal-safe */
+                redirectDup2(runtime, eargp, pairs[i].oldfd, extra_fd); /* async-signal-safe */
             }
             pairs[i].oldfd = extra_fd;
             j = pairs[i].older_index;
             pairs[i].older_index = -1;
             while (j != -1) {
                 // This always succeeds because we just defer it to posix_spawn.
-                redirectDup2(eargp, pairs[j].oldfd, pairs[j].newfd); /* async-signal-safe */
+                redirectDup2(runtime, eargp, pairs[j].oldfd, pairs[j].newfd); /* async-signal-safe */
                 pairs[j].oldfd = -1;
                 j = pairs[j].older_index;
             }
         }
         if (extra_fd != -1) {
-            ret = redirectClose(runtime, eargp, extra_fd, sargp != null); /* async-signal-safe */
-            if (ret == -1) {
-                if (errmsg != null) errmsg[0] = "close";
-                return -1;
-            }
+            redirectClose(runtime, eargp, extra_fd);
         }
 
         return 0;
@@ -956,23 +965,28 @@ public class PopenExecutor {
         return ret;
     }
 
-    static void redirectDup2(ExecArg eargp, int oldfd, int newfd)
+    static int redirectClearCloexec(Ruby runtime, int oldfd)
     {
+        int flags = runtime.getPosix().fcntl(oldfd, Fcntl.F_GETFD);
+        runtime.getPosix().fcntlInt(oldfd, Fcntl.F_SETFD, flags & ~FcntlLibrary.FD_CLOEXEC);
+
+        return oldfd;
+    }
+
+    static void redirectDup2(Ruby runtime, ExecArg eargp, int oldfd, int newfd)
+    {
+        // Clear cloexec for the oldfd if it is the same as newfd (inherit, no dup2 needed)
+        if (oldfd == newfd) {
+            redirectClearCloexec(runtime, oldfd);
+        }
         eargp.fileActions.add(SpawnFileAction.dup(oldfd, newfd));
     }
 
-    static int redirectClose(Ruby runtime, ExecArg eargp, int fd, boolean forChild)
-    {
-        if (forChild) {
-            eargp.fileActions.add(SpawnFileAction.close(fd));
-            return 0;
-        } else {
-            return runtime.getPosix().close(fd);
-        }
+    static void redirectClose(Ruby runtime, ExecArg eargp, int fd) {
+        eargp.fileActions.add(SpawnFileAction.close(fd));
     }
 
-    static void redirectOpen(ExecArg eargp, int fd, String pathname, int flags, int perm)
-    {
+    static void redirectOpen(ExecArg eargp, int fd, String pathname, int flags, int perm) {
         eargp.fileActions.add(SpawnFileAction.open(pathname, fd, flags, perm));
     }
 
@@ -1017,48 +1031,29 @@ public class PopenExecutor {
             sargp.redirect_fds = context.nil;
         }
 
-//        #ifdef HAVE_SETPGID
-        if (eargp.pgroup_given()) {
+        if (eargp.pgroupGiven) {
             if (run_exec_pgroup(runtime, eargp, sargp, errmsg) == -1) /* async-signal-safe */
                 return -1;
         }
-//        #endif
 
-//        #if defined(HAVE_SETRLIMIT) && defined(RLIM2NUM)
         obj = eargp.rlimit_limits;
         if (obj != null) {
             throw runtime.newNotImplementedError("setting rlimit in child is unsupported");
-//            if (run_exec_rlimit(runtime, (RubyArray)obj, sargp, errmsg) == -1) /* hopefully async-signal-safe */
-//                return -1;
         }
-//        #endif
 
-//        #if !defined(HAVE_FORK)
         boolean clearEnv = false;
-        if (eargp.unsetenv_others_given() && eargp.unsetenv_others_do()) {
-            // only way to do this is manually build a list of env assignments that clear all parent values
-            throw runtime.newNotImplementedError("clearing env in child is not supported");
-//            saveEnv(context, runtime, sargp);
-
-            // we can't clear env in parent process
-//            runtime.getENV().clear();
+        if (eargp.unsetenvOthersGiven && eargp.unsetenvOthersDo) {
+            // we handle this elsewhere by starting from a blank env
+            clearEnv = true;
         }
 
         RubyArray env = eargp.env_modification;
         if (env != null) {
             eargp.envp_str = ShellLauncher.getModifiedEnv(runtime, env, clearEnv);
         }
-//        #endif
 
-        if (eargp.umask_given()) {
+        if (eargp.umaskGiven) {
             throw runtime.newNotImplementedError("setting umask in child is unsupported");
-//            int mask = eargp.umask_mask;
-//            SpawnAttribute.
-//            int oldmask = runtime.getPosix().umask(mask); /* never fail */ /* async-signal-safe */
-//            if (sargp != null) {
-//                sargp.umask_given_set();
-//                sargp.umask_mask = oldmask;
-//            }
         }
 
         obj = eargp.fd_dup2;
@@ -1069,105 +1064,68 @@ public class PopenExecutor {
 
         obj = eargp.fd_close;
         if (obj != null) {
-            if (sargp != null)
-                runtime.getWarnings().warn("cannot close fd before spawn");
-            else {
-                if (run_exec_close(runtime, (RubyArray)obj, eargp, errmsg) == -1) /* async-signal-safe */
-                    return -1;
-            }
+            run_exec_close(runtime, (RubyArray)obj, eargp);
         }
 
         obj = eargp.fd_dup2_child;
         if (obj != null) {
-            if (run_exec_dup2_child(runtime, (RubyArray)obj, eargp, sargp, errmsg) == -1) /* async-signal-safe */
-                return -1;
+            run_exec_dup2_child(runtime, (RubyArray)obj, eargp);
         }
 
-        if (eargp.chdir_given()) {
+        if (eargp.chdirGiven) {
             // should have been set up in pipe_open, so we just raise here
             throw new RuntimeException("BUG: chdir not supported in posix_spawn; should have been made into chdir");
-            // we can't chdir in the parent
-//            if (sargp != null) {
-//                String cwd = runtime.getCurrentDirectory();
-//                sargp.chdir_given_set();
-//                sargp.chdir_dir = cwd;
-//            }
-//            if (chdir(RSTRING_PTR(eargp.chdir_dir)) == -1) { /* async-signal-safe */
-//                ERRMSG("chdir");
-//                return -1;
-//            }
         }
 
-//        #ifdef HAVE_SETGID
-        if (eargp.gid_given()) {
+        if (eargp.gidGiven) {
             throw runtime.newNotImplementedError("setgid in the child is not supported");
-            // we can't setgid in the parent
-//            if (setgid(eargp.gid) < 0) {
-//                ERRMSG("setgid");
-//                return -1;
-//            }
         }
-//        #endif
-//        #ifdef HAVE_SETUID
-        if (eargp.uid_given()) {
-            throw runtime.newNotImplementedError("setuid in the child is not supported");
-            // we can't setuid in the parent
-//            if (setuid(eargp.uid) < 0) {
-//                ERRMSG("setuid");
-//                return -1;
-//            }
-        }
-//        #endif
 
-//        if (sargp != null) {
-//            IRubyObject ary = sargp.fd_dup2;
-//            if (ary != null) {
-//                int len = runExecDup2TmpbufSize(((RubyArray)ary).size());
-//                run_exec_dup2_fd_pair[] tmpbuf = new run_exec_dup2_fd_pair[len];
-//                for (int i = 0; i < tmpbuf.length; i++) tmpbuf[i] = new run_exec_dup2_fd_pair();
-//                sargp.dup2_tmpbuf = tmpbuf;
-//            }
-//        }
+        if (eargp.uidGiven) {
+            throw runtime.newNotImplementedError("setuid in the child is not supported");
+        }
 
         return 0;
     }
 
-    /* This function should be async-signal-safe.  Actually it is. */
-    static int run_exec_close(Ruby runtime, RubyArray ary, ExecArg eargp, String[] errmsg) {
-        long i;
-        int ret;
-
-        for (i = 0; i < ary.size(); i++) {
+    static void run_exec_close(Ruby runtime, RubyArray ary, ExecArg eargp) {
+        for (int i = 0; i < ary.size(); i++) {
             RubyArray elt = (RubyArray)ary.eltOk(i);
             int fd = RubyNumeric.fix2int(elt.eltOk(0));
-            ret = redirectClose(runtime, eargp, fd, true); /* async-signal-safe */
-            if (ret == -1) {
-                if (errmsg != null) errmsg[0] = "close";
-                return -1;
-            }
+            redirectClose(runtime, eargp, fd);
         }
-        return 0;
     }
 
-    /* This function should be async-signal-safe when sargp is NULL.  Actually it is. */
-    static int run_exec_dup2_child(Ruby runtime, RubyArray ary, ExecArg eargp, ExecArg sargp, String[] errmsg) {
-        long i;
-        int ret;
+    static void run_exec_open(ThreadContext context, Ruby runtime, RubyArray<RubyArray> ary, ExecArg eargp) {
+        for (int i = 0; i < ary.size(); i++) {
+            RubyArray<RubyArray> elt = ary.eltOk(i);
+            int fd = RubyNumeric.fix2int(elt.eltOk(0));
+            RubyArray param = elt.eltOk(1);
+            IRubyObject vpath = param.eltOk(0);
+            int flags = RubyNumeric.num2int(param.eltOk(1));
+            int perm = RubyNumeric.num2int(param.eltOk(2));
+            IRubyObject fd2v = param.entry(3);
 
-        for (i = 0; i < ary.size(); i++) {
+            if (fd2v.isNil()) {
+                redirectOpen(eargp, fd, vpath.toString(), flags, perm);
+                param.store(3, elt.eltOk(0));
+            } else {
+                redirectDup2(runtime, eargp, RubyNumeric.num2int(fd2v), fd);
+            }
+        }
+    }
+
+    /**
+     * Add spawn configuration for duplicating descriptors in the child
+     */
+    static void run_exec_dup2_child(Ruby runtime, RubyArray ary, ExecArg eargp) {
+        for (int i = 0; i < ary.size(); i++) {
             RubyArray elt = (RubyArray)ary.eltOk(i);
             int newfd = RubyNumeric.fix2int(elt.eltOk(0));
             int oldfd = RubyNumeric.fix2int(elt.eltOk(1));
 
-            // Don't have to save in parent, since we let posix_spawn dup2
-//            if (saveRedirectFd(runtime, newfd, sargp, errmsg) < 0) /* async-signal-safe */
-//                return -1;
-
-            // This always succeeds
-            redirectDup2(eargp, oldfd, newfd); /* async-signal-safe */
-//            rb_update_max_fd(newfd);
+            redirectDup2(runtime, eargp, oldfd, newfd);
         }
-        return 0;
     }
 
     private static class run_exec_dup2_fd_pair {
@@ -1189,7 +1147,6 @@ public class PopenExecutor {
         try {
             execargParentStart1(context, runtime, eargp);
         } catch (RaiseException re) {
-            execargParentEnd(runtime, eargp);
             throw re;
         }
     }
@@ -1203,49 +1160,7 @@ public class PopenExecutor {
 
         ary = eargp.fd_open;
         if (ary != null) {
-            long i;
-            for (i = 0; i < ary.size(); i++) {
-                RubyArray<RubyArray> elt = ary.eltOk(i);
-                int fd = RubyNumeric.fix2int(elt.eltOk(0));
-                RubyArray param = elt.eltOk(1);
-                IRubyObject vpath = param.eltOk(0);
-                int flags = RubyNumeric.num2int(param.eltOk(1));
-                int perm = RubyNumeric.num2int(param.eltOk(2));
-                IRubyObject fd2v = param.entry(3);
-                int fd2;
-                if (fd2v.isNil()) {
-                    RubyIO.Sysopen open_data = new RubyIO.Sysopen();
-                    vpath = RubyFile.get_path(context, vpath);
-                    // TODO
-//                    vpath = rb_str_encode_ospath(vpath);
-                    while (true) {
-                        open_data.fname = vpath.toString();
-                        open_data.oflags = flags;
-                        open_data.perm = perm;
-                        ChannelFD ret;
-                        open_data.errno = Errno.EINTR;
-                        ret = open_func(runtime, open_data);
-//                    rb_thread_call_without_gvl2(open_func, (void *)&open_data, RUBY_UBF_IO, 0);
-                        if (ret == null) {
-                            if (open_data.errno == Errno.EINTR) {
-                                context.pollThreadEvents();
-                                continue;
-                            }
-                            throw runtime.newErrnoFromInt(open_data.errno.intValue(), vpath.toString());
-                        }
-                        // We're in the fully-native process logic, so this should be a native stream
-                        fd2 = ((ChannelFD) ret).realFileno;
-//                        rb_update_max_fd(fd2);
-                        param.store(3, runtime.newFixnum(fd2));
-                        context.pollThreadEvents();
-                        break;
-                    }
-                }
-                else {
-                    fd2 = RubyNumeric.num2int(fd2v);
-                }
-                execargAddopt(context, runtime, eargp, runtime.newFixnum(fd), runtime.newFixnum(fd2));
-            }
+            run_exec_open(context, runtime, ary, eargp);
         }
 
         ary = eargp.fd_dup2;
@@ -1257,7 +1172,7 @@ public class PopenExecutor {
         }
 
         IRubyObject envtbl;
-        unsetenv_others = eargp.unsetenv_others_given() && eargp.unsetenv_others_do();
+        unsetenv_others = eargp.unsetenvOthersGiven && eargp.unsetenvOthersDo;
         envopts = eargp.env_modification;
         if (unsetenv_others || envopts != null) {
             if (unsetenv_others) {
@@ -1291,30 +1206,6 @@ public class PopenExecutor {
         }
         buildEnvp(runtime, eargp, envtbl);
 //        RB_GC_GUARD(execarg_obj);
-    }
-
-    static void execargParentEnd(Ruby runtime, ExecArg eargp) {
-        int err = runtime.getPosix().errno();
-        RubyArray<RubyArray> ary;
-
-        ary = eargp.fd_open;
-        if (ary != null) {
-            long i;
-            for (i = 0; i < ary.size(); i++) {
-                RubyArray<RubyArray> elt = ary.eltOk(i);
-                RubyArray param = elt.eltOk(1);
-                IRubyObject fd2v;
-                int fd2;
-                fd2v = param.entry(3);
-                if (!fd2v.isNil()) {
-                    fd2 = RubyNumeric.fix2int(fd2v);
-                    parentRedirectClose(runtime, fd2);
-                    param.store(3, runtime.getNil());
-                }
-            }
-        }
-
-        runtime.getPosix().errno(err);
     }
 
     static ChannelFD open_func(Ruby runtime, RubyIO.Sysopen data) {
@@ -1426,11 +1317,7 @@ public class PopenExecutor {
 
     static int execargAddopt(ThreadContext context, Ruby runtime, ExecArg eargp, IRubyObject key, IRubyObject val) {
         String id;
-//        #if defined(HAVE_SETRLIMIT) && defined(NUM2RLIM)
-        int rtype;
-//        #endif
-
-//        rb_secure(2);
+        int rtype = 0;
 
         boolean redirect = false;
         switch (key.getType().getClassIndex()) {
@@ -1439,7 +1326,7 @@ public class PopenExecutor {
 //                #ifdef HAVE_SETPGID
                 if (id.equals("pgroup")) {
                     long pgroup;
-                    if (eargp.pgroup_given()) {
+                    if (eargp.pgroupGiven) {
                         throw runtime.newArgumentError("pgroup option specified twice");
                     }
                     if (val == null || !val.isTrue())
@@ -1452,25 +1339,20 @@ public class PopenExecutor {
                             throw runtime.newArgumentError("negative process group symbol : " + pgroup);
                         }
                     }
-                    eargp.pgroup_given_set();
+                    eargp.pgroupGiven = true;
                     eargp.pgroup_pgid = pgroup;
                 }
-                else
-//                #ifdef _WIN32
-//                if (id.equals("new_pgroup")) {
-//                    if (eargp.new_pgroup_given) {
-//                        throw runtime.newArgumentError("new_pgroup option specified twice");
-//                    }
-//                    eargp.new_pgroup_given = 1;
-//                    eargp.new_pgroup_flag = RTEST(val) ? 1 : 0;
-//                }
-//                else
-//                #endif
-//                #if defined(HAVE_SETRLIMIT) && defined(NUM2RLIM)
-                if (id.startsWith("rlimit_") &&  // TODO
-                        false) {
-//                        (rtype = rlimitTypeByLname(id.substring(7)) != -1)) {
-                    IRubyObject ary = eargp.rlimit_limits;
+                else if (Platform.IS_WINDOWS && id.equals("new_pgroup")) {
+                    if (eargp.newPgroupGiven) {
+                        throw runtime.newArgumentError("new_pgroup option specified twice");
+                    }
+                    eargp.newPgroupGiven = true;
+                    eargp.newPgroupFlag = val.isTrue();
+                }
+                else if (false &&  // unsupported
+                        RLIMIT.RLIMIT_AS.defined() && id.startsWith("rlimit_")) {
+//                        && (rtype = rlimitTypeByLname(id.substring(7)) != -1)) {
+                    IRubyObject ary;
                     IRubyObject tmp, softlim, hardlim;
                     if (eargp.rlimit_limits == null)
                         ary = eargp.rlimit_limits = runtime.newArray();
@@ -1494,44 +1376,42 @@ public class PopenExecutor {
                     tmp = RubyArray.newArray(runtime, runtime.newFixnum(rtype), softlim, hardlim);
                     ((RubyArray)ary).push(tmp);
                 }
-                else
-//                #endif
-                if (id.equals("unsetenv_others")) {
-                    if (eargp.unsetenv_others_given()) {
+                else if (id.equals("unsetenv_others")) {
+                    if (eargp.unsetenvOthersGiven) {
                         throw runtime.newArgumentError("unsetenv_others option specified twice");
                     }
-                    eargp.unsetenv_others_given_set();
-                    if (!val.isNil()) {
-                        eargp.unsetenv_others_do_set();
+                    eargp.unsetenvOthersGiven = true;
+                    if (val.isTrue()) {
+                        eargp.unsetenvOthersDo = true;
                     } else {
-                        eargp.unsetenv_others_do_clear();
+                        eargp.unsetenvOthersDo = false;
                     }
                 }
                 else if (id.equals("chdir")) {
-                    if (eargp.chdir_given()) {
+                    if (eargp.chdirGiven) {
                         throw runtime.newArgumentError("chdir option specified twice");
                     }
                     RubyString valTmp = RubyFile.get_path(context, val);
-                    eargp.chdir_given_set();
+                    eargp.chdirGiven = true;
                     eargp.chdir_dir = valTmp.toString();
                 }
                 else if (id.equals("umask")) {
                     int cmask = val.convertToInteger().getIntValue();
-                    if (eargp.umask_given()) {
+                    if (eargp.umaskGiven) {
                         throw runtime.newArgumentError("umask option specified twice");
                     }
-                    eargp.umask_given_set();
+                    eargp.umaskGiven = true;
                     eargp.umask_mask = cmask;
                 }
                 else if (id.equals("close_others")) {
-                    if (eargp.close_others_given()) {
+                    if (eargp.closeOthersGiven) {
                         throw runtime.newArgumentError("close_others option specified twice");
                     }
-                    eargp.close_others_given_set();
+                    eargp.closeOthersGiven = true;
                     if (!val.isNil()) {
-                        eargp.close_others_do_set();
+                        eargp.closeOthersDo = true;
                     } else {
-                        eargp.close_others_do_clear();
+                        eargp.closeOthersDo = false;
                     }
                 }
                 else if (id.equals("in")) {
@@ -1548,14 +1428,14 @@ public class PopenExecutor {
                 }
                 else if (id.equals("uid") && false) { // TODO
 //                    #ifdef HAVE_SETUID
-                    if (eargp.uid_given()) {
+                    if (eargp.uidGiven) {
                         throw runtime.newArgumentError("uid option specified twice");
                     }
 //                    checkUidSwitch();
                     {
 //                        PREPARE_GETPWNAM;
                         eargp.uid = val.convertToInteger().getIntValue();
-                        eargp.uid_given_set();
+                        eargp.uidGiven = true;
                     }
 //                    #else
 //                    rb_raise(rb_eNotImpError,
@@ -1564,14 +1444,14 @@ public class PopenExecutor {
                 }
                 else if (id.equals("gid") && false) { // TODO
 //                    #ifdef HAVE_SETGID
-                    if (eargp.gid_given()) {
+                    if (eargp.gidGiven) {
                         throw runtime.newArgumentError("gid option specified twice");
                     }
 //                    checkGidSwitch();
                     {
 //                        PREPARE_GETGRNAM;
                         eargp.gid = val.convertToInteger().getIntValue();
-                        eargp.gid_given_set();
+                        eargp.gidGiven = true;
                     }
 //                    #else
 //                    rb_raise(rb_eNotImpError,
@@ -1683,12 +1563,31 @@ public class PopenExecutor {
             case STRING:
                 path = val;
                 path = RubyFile.get_path(context, path);
-                if (key instanceof RubyIO)
+                if (key instanceof RubyIO) {
                     key = checkExecRedirectFd(runtime, key, true);
-                if (key instanceof RubyFixnum && (((RubyFixnum)key).getIntValue() == 1 || ((RubyFixnum)key).getIntValue() == 2))
+                }
+                if (key instanceof RubyFixnum && (((RubyFixnum)key).getIntValue() == 1 || ((RubyFixnum)key).getIntValue() == 2)) {
                     flags = runtime.newFixnum(OpenFlags.O_WRONLY.intValue()|OpenFlags.O_CREAT.intValue()|OpenFlags.O_TRUNC.intValue());
-                else
+                } else if (key instanceof RubyArray) {
+                    RubyArray keyAry = (RubyArray) key;
+                    int i;
+                    boolean allOut = true;
+                    for (i = 0; i < keyAry.size(); i++) {
+                        IRubyObject v = keyAry.eltOk(i);
+                        IRubyObject fd = checkExecRedirectFd(runtime, v, true);
+                        if (RubyNumeric.fix2int(fd) != 1 && RubyNumeric.fix2int(fd) != 2) {
+                            allOut = false;
+                            break;
+                        }
+                    }
+                    if (allOut) {
+                        flags = runtime.newFixnum(OpenFlags.O_WRONLY.intValue()|OpenFlags.O_CREAT.intValue()|OpenFlags.O_TRUNC.intValue());
+                    } else {
+                        flags = runtime.newFixnum(OpenFlags.O_RDONLY.intValue());
+                    }
+                } else {
                     flags = runtime.newFixnum(OpenFlags.O_RDONLY.intValue());
+                }
                 perm = runtime.newFixnum(0644);
                 param = RubyArray.newArray(runtime,
                         ((RubyString)path).strDup(runtime).export(context),
@@ -1712,6 +1611,7 @@ public class PopenExecutor {
             val = checkExecRedirectFd(runtime, val, false);
             param = val;
             eargp.fd_dup2 = checkExecRedirect1(runtime, eargp.fd_dup2, key, param);
+            return;
         }
         throw runtime.newArgumentError("wrong exec redirect action");
     }
@@ -1780,20 +1680,28 @@ public class PopenExecutor {
     // rb_execarg_new
     public static ExecArg execargNew(ThreadContext context, IRubyObject[] argv, boolean accept_shell, boolean allow_exc_opt) {
         ExecArg eargp = new ExecArg();
-        execargInit(context, argv, accept_shell, eargp);
-        if (!allow_exc_opt && eargp.exception_given) {
-            throw context.runtime.newArgumentError("exception option is not allowed");
-        }
+        execargInit(context, argv, accept_shell, eargp, allow_exc_opt);
         return eargp;
     }
 
     // rb_execarg_init
-    private static RubyString execargInit(ThreadContext context, IRubyObject[] argv, boolean accept_shell, ExecArg eargp) {
+    private static RubyString execargInit(ThreadContext context, IRubyObject[] argv, boolean accept_shell, ExecArg eargp, boolean allow_exc_opt) {
         RubyString prog, ret;
         IRubyObject[] env_opt = {context.nil, context.nil};
         IRubyObject[][] argv_p = {argv};
+        IRubyObject exception = context.nil;
         prog = execGetargs(context, argv_p, accept_shell, env_opt);
+        IRubyObject opt = env_opt[1];
+        RubyHash optHash;
+        RubySymbol exceptionSym = context.runtime.newSymbol("exception");
+        if (allow_exc_opt && !opt.isNil() && (optHash = ((RubyHash) opt)).has_key_p(context, exceptionSym).isTrue()) {
+            optHash = optHash.dupFast(context);
+            exception = optHash.delete(context, exceptionSym);
+        }
         execFillarg(context, prog, argv_p[0], env_opt[0], env_opt[1], eargp);
+        if (exception.isTrue()) {
+            eargp.exception = true;
+        }
         ret = eargp.use_shell ? eargp.command_name : eargp.command_name;
         return ret;
     }
@@ -1806,6 +1714,7 @@ public class PopenExecutor {
         int beg = 0;
         int end = argv_p[0].length;
 
+        // extract environment and options from args
         if (end >= 1) {
             hash = TypeConverter.checkHashType(runtime, argv_p[0][end - 1]);
             if (!hash.isNil()) {
@@ -1813,7 +1722,6 @@ public class PopenExecutor {
                 end--;
             }
         }
-
         if (end >= 1) {
             hash = TypeConverter.checkHashType(runtime, argv_p[0][0]);
             if (!hash.isNil()) {
@@ -1822,13 +1730,18 @@ public class PopenExecutor {
             }
         }
         argv_p[0] = Arrays.copyOfRange(argv_p[0], beg, end);
+
+        // try to extract program from args
         prog = checkArgv(context, argv_p[0]);
+
         if (prog == null) {
+            // use first arg as program name and clear argv if we can use sh
             prog = (RubyString)argv_p[0][0];
             if (accept_shell && (end - beg) == 1) {
                 argv_p[0] = IRubyObject.NULL_ARRAY;
             }
         }
+
         return prog;
     }
 
@@ -1842,23 +1755,28 @@ public class PopenExecutor {
         Arity.checkArgumentCount(runtime, argv, 1, Integer.MAX_VALUE);
 
         prog = null;
+
+        // if first parameter is an array, it is expected to be [program, $0 name]
         tmp = TypeConverter.checkArrayType(runtime, argv[0]);
         if (!tmp.isNil()) {
-            if (((RubyArray)tmp).size() != 2) {
+            RubyArray arrayArg = (RubyArray) tmp;
+            if (arrayArg.size() != 2) {
                 throw runtime.newArgumentError("wrong first argument");
             }
-            prog = ((RubyArray)tmp).eltOk(0).convertToString();
-            argv[0] = ((RubyArray)tmp).eltOk(1);
+            prog = arrayArg.eltOk(0).convertToString();
+            argv[0] = arrayArg.eltOk(1);
             StringSupport.checkEmbeddedNulls(runtime, prog);
             prog = prog.strDup(runtime);
             prog.setFrozen(true);
         }
+
+        // process all arguments
         for (i = 0; i < argv.length; i++) {
-            argv[i] = argv[i].convertToString();
-            argv[i] = ((RubyString)argv[i]).newFrozen();
+            argv[i] = argv[i].convertToString().newFrozen();
             StringSupport.checkEmbeddedNulls(runtime, argv[i]);
         }
-        //        security(name ? name : RSTRING_PTR(argv[0]));
+
+        // return program, or null if we did not yet determine it
         return prog;
     }
 
@@ -1911,20 +1829,35 @@ public class PopenExecutor {
 
             // if we're launching org.jruby.Main, adjust args to -C to new dir
             if ((arg = ShellLauncher.changeDirInsideJar(runtime, arg)) != null) {
-                prog = RubyString.newString(runtime, arg);
+                prog = newString(runtime, arg);
             } else if (virtualCWD.startsWith("uri:classloader:")) {
                 // can't switch to uri:classloader URL, so just run in cwd
-            } else if (!eargp.chdir_given()) {
+            } else if (!eargp.chdirGiven) {
                 // only if :chdir is not specified
-                eargp.chdir_given_set();
+                eargp.chdirGiven = true;
                 eargp.chdir_dir = virtualCWD;
             }
         }
 
-        // restructure command as a single string if chdir and has args
-        if (eargp.chdir_given() && argc > 1) {
-            RubyArray array = RubyArray.newArrayMayCopy(runtime, argv);
-            prog = (RubyString)array.join(context, RubyString.newString(runtime, " "));
+        // restructure chdir plus command as call to sh with arguments
+        if (eargp.chdirGiven && argc > 1) {
+            argc = argc + SH_CHDIR_ARG_COUNT;
+
+            IRubyObject[] newArgv = new IRubyObject[argc];
+
+            newArgv[0] = newString(runtime, "sh");
+            newArgv[1] = newString(runtime, "-c");
+            newArgv[2] = newString(runtime, "cd -- \"$1\"; shift; exec \"$@\"");
+            newArgv[3] = newString(runtime, "sh");
+            newArgv[4] = newString(runtime, eargp.chdir_dir);
+
+            System.arraycopy(argv, 0, newArgv, SH_CHDIR_ARG_COUNT, argv.length);
+
+            argv = newArgv;
+
+            prog = newString(runtime, "/bin/sh");
+
+            eargp.chdirGiven = false;
         }
 
         if (!env.isNil()) {
@@ -1933,7 +1866,7 @@ public class PopenExecutor {
 
         prog = prog.export(context);
         // need to use shell
-        eargp.use_shell = argc == 0 || eargp.chdir_given();
+        eargp.use_shell = argc == 0 || eargp.chdirGiven;
         if (eargp.use_shell)
             eargp.command_name = prog;
         else
@@ -1942,69 +1875,17 @@ public class PopenExecutor {
         if (!Platform.IS_WINDOWS) {
             if (eargp.use_shell) {
                 byte[] pBytes;
-                int p;
-                ByteList first = new ByteList(DUMMY_ARRAY, false);
-                boolean has_meta = false;
-                /*
-                 * meta characters:
-                 *
-                 * *    Pathname Expansion
-                 * ?    Pathname Expansion
-                 * {}   Grouping Commands
-                 * []   Pathname Expansion
-                 * <>   Redirection
-                 * ()   Grouping Commands
-                 * ~    Tilde Expansion
-                 * &    AND Lists, Asynchronous Lists
-                 * |    OR Lists, Pipelines
-                 * \    Escape Character
-                 * $    Parameter Expansion
-                 * ;    Sequential Lists
-                 * '    Single-Quotes
-                 * `    Command Substitution
-                 * "    Double-Quotes
-                 * \n   Lists
-                 *
-                 * #    Comment
-                 * =    Assignment preceding command name
-                 * %    (used in Parameter Expansion)
-                 */
-                ByteList progByteList = prog.getByteList();
-                pBytes = progByteList.unsafeBytes();
-                for (p = 0; p < progByteList.length(); p++){
-                    if (progByteList.get(p) == ' ' || progByteList.get(p) == '\t'){
-                        if (first.unsafeBytes() != DUMMY_ARRAY && first.length() == 0) first.setRealSize(p - first.begin());
-                    }
-                    else{
-                        if (first.unsafeBytes() == DUMMY_ARRAY) { first.setUnsafeBytes(pBytes); first.setBegin(p + progByteList.begin()); }
-                    }
-                    if (!has_meta && "*?{}[]<>()~&|\\$;'`\"\n#".indexOf(progByteList.get(p) & 0xFF) != -1)
-                        has_meta = true;
-                    if (first.length() == 0) {
-                        if (progByteList.get(p) == '='){
-                            has_meta = true;
-                        }
-                        else if (progByteList.get(p) == '/'){
-                            first.setRealSize(0x100); /* longer than any posix_sh_cmds */
-                        }
-                    }
-                    if (has_meta)
-                        break;
-                }
-                if (!has_meta && first.getUnsafeBytes() != DUMMY_ARRAY) {
-                    if (first.length() == 0) first.setRealSize(p - first.getBegin());
-                    if (first.length() > 0 && first.length() <= posix_sh_cmd_length &&
-                        Arrays.binarySearch(posix_sh_cmds, first.toString(), StringComparator.INSTANCE) >= 0)
-                        has_meta = true;
-                }
-                if (!has_meta && !eargp.chdir_given()) {
+
+                boolean has_meta = searchForMetaChars(prog);
+
+                if (!has_meta && !eargp.chdirGiven) {
                     /* avoid shell since no shell meta character found and no chdir needed. */
                     eargp.use_shell = false;
                 }
                 if (!eargp.use_shell) {
                     List<byte[]> argv_buf = new ArrayList<>();
                     pBytes = prog.getByteList().unsafeBytes();
-                    p = prog.getByteList().begin();
+                    int p = prog.getByteList().begin();
                     int pEnd = prog.getByteList().length() + p;
                     while (p < pEnd){
                         while (p < pEnd && (pBytes[p] == ' ' || pBytes[p] == '\t'))
@@ -2026,15 +1907,17 @@ public class PopenExecutor {
             }
         }
 
+        // if not using shell to launch, validate and get abspath for command
         if (!eargp.use_shell) {
             String abspath;
             abspath = dlnFindExeR(runtime, eargp.command_name.toString(), eargp.path_env);
             if (abspath != null)
-                eargp.command_abspath = StringSupport.checkEmbeddedNulls(runtime, RubyString.newString(runtime, abspath));
+                eargp.command_abspath = StringSupport.checkEmbeddedNulls(runtime, newString(runtime, abspath));
             else
                 eargp.command_abspath = null;
         }
 
+        // if not using shell and we have not prepared arg list, do that now
         if (!eargp.use_shell && eargp.argv_buf == null) {
             int i;
             ArrayList<byte[]> argv_buf = new ArrayList<>(argc);
@@ -2047,6 +1930,7 @@ public class PopenExecutor {
             eargp.argv_buf = argv_buf;
         }
 
+        // if not using shell, reassemble argv arguments as strings
         if (!eargp.use_shell) {
             ArgvStr argv_str = new ArgvStr();
             argv_str.argv = new String[eargp.argv_buf.size()];
@@ -2056,6 +1940,84 @@ public class PopenExecutor {
             }
             eargp.argv_str = argv_str;
         }
+    }
+
+    /**
+     * Search for meta characters in the command, to know whether we should use a shell to launch.
+     *
+     * meta characters:
+     *
+     * *    Pathname Expansion
+     * ?    Pathname Expansion
+     * {}   Grouping Commands
+     * []   Pathname Expansion
+     * <>   Redirection
+     * ()   Grouping Commands
+     * ~    Tilde Expansion
+     * &    AND Lists, Asynchronous Lists
+     * |    OR Lists, Pipelines
+     * \    Escape Character
+     * $    Parameter Expansion
+     * ;    Sequential Lists
+     * '    Single-Quotes
+     * `    Command Substitution
+     * "    Double-Quotes
+     * \n   Lists
+     *
+     * #    Comment
+     * =    Assignment preceding command name
+     * %    (used in Parameter Expansion)
+     */
+    private static boolean searchForMetaChars(RubyString prog) {
+        boolean has_meta = false;
+        ByteList first = new ByteList(DUMMY_ARRAY, false);
+        int p = 0;
+
+        ByteList progByteList = prog.getByteList();
+        byte[] pBytes = progByteList.unsafeBytes();
+
+        for (; p < progByteList.length(); p++){
+            if (progByteList.get(p) == ' ' || progByteList.get(p) == '\t'){
+                if (first.unsafeBytes() != DUMMY_ARRAY && first.length() == 0) {
+                    first.setRealSize(p - first.begin());
+                }
+            } else {
+                if (first.unsafeBytes() == DUMMY_ARRAY) {
+                    first.setUnsafeBytes(pBytes); first.setBegin(p + progByteList.begin());
+                }
+            }
+
+            if (!has_meta && "*?{}[]<>()~&|\\$;'`\"\n#".indexOf(progByteList.get(p) & 0xFF) != -1) {
+                has_meta = true;
+            }
+
+            if (first.length() == 0) {
+                if (progByteList.get(p) == '='){
+                    has_meta = true;
+                } else if (progByteList.get(p) == '/'){
+                    first.setRealSize(0x100); /* longer than any posix_sh_cmds */
+                }
+            }
+
+            if (has_meta) {
+                break;
+            }
+        }
+
+        if (!has_meta && first.getUnsafeBytes() != DUMMY_ARRAY) {
+            int length = first.length();
+
+            if (length == 0) {
+                first.setRealSize(p - first.getBegin());
+            }
+
+            if (length > 0 && length <= posix_sh_cmd_length &&
+                Arrays.binarySearch(posix_sh_cmds, first.toString(), StringComparator.INSTANCE) >= 0) {
+                has_meta = true;
+            }
+        }
+
+        return has_meta;
     }
 
     private static final class StringComparator implements Comparator<String> {
@@ -2089,7 +2051,6 @@ public class PopenExecutor {
         String[] envp_str;
         List<String> envp_buf;
         run_exec_dup2_fd_pair[] dup2_tmpbuf;
-        int flags;
         long pgroup_pgid = -1; /* asis(-1), new pgroup(0), specified pgroup (0<V). */
         IRubyObject rlimit_limits; /* null or [[rtype, softlim, hardlim], ...] */
         int umask_mask;
@@ -2105,140 +2066,21 @@ public class PopenExecutor {
         final List<SpawnFileAction> fileActions = new ArrayList();
         final List<SpawnAttribute> attributes = new ArrayList();
         IRubyObject path_env;
+
         boolean exception_given;
         boolean exception;
+        boolean pgroupGiven;
+        boolean umaskGiven;
+        boolean unsetenvOthersGiven;
+        boolean unsetenvOthersDo;
+        boolean closeOthersGiven;
+        boolean closeOthersDo;
+        boolean chdirGiven;
+        boolean newPgroupGiven;
+        boolean newPgroupFlag;
+        boolean uidGiven;
+        boolean gidGiven;
 
-        boolean pgroup_given() {
-            return (flags & 0x1) != 0;
-        }
-
-        boolean umask_given() {
-            return (flags & 0x2) != 0;
-        }
-
-        boolean unsetenv_others_given() {
-            return (flags & 0x4) != 0;
-        }
-
-        boolean unsetenv_others_do() {
-            return (flags & 0x8) != 0;
-        }
-
-        boolean close_others_given() {
-            return (flags & 0x10) != 0;
-        }
-
-        boolean close_others_do() {
-            return (flags & 0x20) != 0;
-        }
-
-        boolean chdir_given() {
-            return (flags & 0x40) != 0;
-        }
-
-        boolean new_pgroup_given() {
-            return (flags & 0x80) != 0;
-        }
-
-        boolean new_pgroup_flag() {
-            return (flags & 0x100) != 0;
-        }
-
-        boolean uid_given() {
-            return (flags & 0x200) != 0;
-        }
-
-        boolean gid_given() {
-            return (flags & 0x400) != 0;
-        }
-
-        void pgroup_given_set() {
-            flags |= 0x1;
-        }
-
-        void umask_given_set() {
-            flags |= 0x2;
-        }
-
-        void unsetenv_others_given_set() {
-            flags |= 0x4;
-        }
-
-        void unsetenv_others_do_set() {
-            flags |= 0x8;
-        }
-
-        void close_others_given_set() {
-            flags |= 0x10;
-        }
-
-        void close_others_do_set() {
-            flags |= 0x20;
-        }
-
-        void chdir_given_set() {
-            flags |= 0x40;
-        }
-
-        void new_pgroup_given_set() {
-            flags |= 0x80;
-        }
-
-        void new_pgroup_flag_set() {
-            flags |= 0x100;
-        }
-
-        void uid_given_set() {
-            flags |= 0x200;
-        }
-
-        void gid_given_set() {
-            flags |= 0x400;
-        }
-
-        void pgroup_given_clear() {
-            flags &= ~0x1;
-        }
-
-        void umask_given_clear() {
-            flags &= ~0x2;
-        }
-
-        void unsetenv_others_given_clear() {
-            flags &= ~0x4;
-        }
-
-        void unsetenv_others_do_clear() {
-            flags &= ~0x8;
-        }
-
-        void close_others_given_clear() {
-            flags &= ~0x10;
-        }
-
-        void close_others_do_clear() {
-            flags &= ~0x20;
-        }
-
-        void chdir_given_clear() {
-            flags &= ~0x40;
-        }
-
-        void new_pgroup_given_clear() {
-            flags &= ~0x80;
-        }
-
-        void new_pgroup_flag_clear() {
-            flags &= ~0x100;
-        }
-
-        void uid_given_clear() {
-            flags &= ~0x200;
-        }
-
-        void gid_given_clear() {
-            flags &= ~0x400;
-        }
     }
 
     private static final Comparator<run_exec_dup2_fd_pair> intcmp = new Comparator<run_exec_dup2_fd_pair>() {

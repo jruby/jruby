@@ -35,15 +35,12 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 public class MatchNode extends Node {
     private final Node regexpNode;
 
-    public MatchNode(ISourcePosition position, Node regexpNode) {
-        super(position, regexpNode.containsVariableAssignment());
-        
-        assert regexpNode != null : "regexpNode is not null";
+    public MatchNode(int line, Node regexpNode) {
+        super(line, regexpNode.containsVariableAssignment());
         
         this.regexpNode = regexpNode;
     }

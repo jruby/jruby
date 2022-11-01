@@ -35,8 +35,8 @@ project 'JRuby Artifacts' do
   # module to profile map
   map = { 'jruby' => [ :apps, :release, :main, :osgi, :j2ee, :snapshots ],
     'jruby-complete' => [ :release, :complete, :osgi, :'jruby_complete_jar_extended', :snapshots],
-    'jruby-jars' => [ :release, :'jruby-jars', :snapshots ],
-    'jruby-dist' => [ :release, :dist, :snapshots ]
+    'jruby-dist' => [ :release, :dist, :snapshots ],
+    'jruby-jars' => [ :release, :'jruby-jars', :snapshots ]
   }
 
   profile :all do

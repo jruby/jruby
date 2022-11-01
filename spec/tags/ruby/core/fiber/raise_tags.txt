@@ -1,0 +1,3 @@
+wip:Fiber#raise re-raises a previously rescued exception without overwriting the backtrace
+wip:Fiber#raise raises FiberError if Fiber is not born
+fails:Fiber#raise does not allow message and extra keyword arguments

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 ENV['RDOC_TEST'] = 'yes'
 
-require 'minitest_helper'
+require_relative 'helper'
 require File.expand_path '../xref_data', __FILE__
 
 class XrefTestCase < RDoc::TestCase
@@ -22,8 +22,13 @@ class XrefTestCase < RDoc::TestCase
 
     parser = RDoc::Parser::Ruby.new @xref_data, @file_name, XREF_DATA, @options,
                                     stats
+
+    @example_md = @store.add_file 'EXAMPLE.md'
+    @example_md.parser = RDoc::Parser::Markdown
+
     @top_levels = []
     @top_levels.push parser.scan
+    @top_levels.push @example_md
 
     generator = Object.new
     def generator.class_dir() nil end
@@ -64,6 +69,14 @@ class XrefTestCase < RDoc::TestCase
     @c9_b       = @xref_data.find_module_named 'C9::B'
     @c9_b_c_foo = @c9_b.method_list.first
     @c9_b_i_bar = @c9_b.method_list.last
+
+    @object         = @xref_data.find_module_named 'Object'
+    @c10_class      = @xref_data.find_module_named 'C10'
+    @c10_method     = @object.find_method_named 'C10'
+    @c11_class      = @xref_data.find_module_named 'C11'
+    @c10_c11_class  = @c10_class.find_module_named 'C11'
+    @c10_c11_method = @c10_class.find_method_named 'C11'
+    @c11_method     = @object.find_method_named 'C11'
 
     @m1    = @xref_data.find_module_named 'M1'
     @m1_m  = @m1.method_list.first

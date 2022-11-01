@@ -27,14 +27,28 @@ class Pathname
     proc {|a, b| a == b}
   end
 
+  if RUBY_ENGINE == 'jruby'
+    # additional matching for paths that considers URI components to be roots
+    URI_ROOT_PAT = "|.+!/|[a-z:]+://?"
+  else
+    URI_ROOT_PAT = ""
+  end
+  private_constant :URI_ROOT_PAT
 
   if File::ALT_SEPARATOR
     SEPARATOR_LIST = "#{Regexp.quote File::ALT_SEPARATOR}#{Regexp.quote File::SEPARATOR}"
-    SEPARATOR_PAT = /[#{SEPARATOR_LIST}]|.+!\/|[a-z:]+:\/\/?/
+    SEPARATOR_PAT = /[#{SEPARATOR_LIST}]#{URI_ROOT_PAT}/
   else
     SEPARATOR_LIST = "#{Regexp.quote File::SEPARATOR}"
-    SEPARATOR_PAT = /#{Regexp.quote File::SEPARATOR}|.+!\/|[a-z:]+:\/\/?/
+    SEPARATOR_PAT = /#{Regexp.quote File::SEPARATOR}#{URI_ROOT_PAT}/
   end
+
+  if File.dirname('A:') == 'A:.' # DOSish drive letter
+    ABSOLUTE_PATH = /\A(?:[A-Za-z]:|#{SEPARATOR_PAT})/o
+  else
+    ABSOLUTE_PATH = /\A#{SEPARATOR_PAT}/o
+  end
+  private_constant :ABSOLUTE_PATH
 
   # :startdoc:
 
@@ -208,7 +222,7 @@ class Pathname
   # pathnames which points to roots such as <tt>/usr/..</tt>.
   #
   def root?
-    !!(chop_basename(@path) == nil && /#{SEPARATOR_PAT}/o.match?(@path))
+    chop_basename(@path) == nil && /#{SEPARATOR_PAT}/o.match?(@path)
   end
 
   # Predicate method for testing whether a path is absolute.
@@ -223,7 +237,7 @@ class Pathname
   #   p.absolute?
   #       #=> false
   def absolute?
-    !relative?
+    ABSOLUTE_PATH.match? @path
   end
 
   # The opposite of Pathname#absolute?
@@ -238,11 +252,7 @@ class Pathname
   #   p.relative?
   #       #=> true
   def relative?
-    path = @path
-    while r = chop_basename(path)
-      path, = r
-    end
-    path == ''
+    !absolute?
   end
 
   #
@@ -503,6 +513,9 @@ class Pathname
   #
   # ArgumentError is raised when it cannot find a relative path.
   #
+  # Note that this method does not handle situations where the case sensitivity
+  # of the filesystem in use differs from the operating system default.
+  #
   def relative_path_from(base_directory)
     base_directory = Pathname.new(base_directory) unless base_directory.is_a? Pathname
     dest_directory = self.cleanpath.to_s
@@ -570,13 +583,14 @@ end
 
 
 class Pathname    # * FileUtils *
+  autoload(:FileUtils, 'fileutils')
+
   # Creates a full path, including any intermediate directories that don't yet
   # exist.
   #
   # See FileUtils.mkpath and FileUtils.mkdir_p
-  def mkpath
-    require 'fileutils'
-    FileUtils.mkpath(@path)
+  def mkpath(mode: nil)
+    FileUtils.mkpath(@path, mode: mode)
     nil
   end
 
@@ -586,7 +600,6 @@ class Pathname    # * FileUtils *
   def rmtree
     # The name "rmtree" is borrowed from File::Path of Perl.
     # File::Path provides "mkpath" and "rmtree".
-    require 'fileutils'
     FileUtils.rm_r(@path)
     nil
   end

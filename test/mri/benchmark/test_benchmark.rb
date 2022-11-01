@@ -34,12 +34,8 @@ class TestBenchmark < Test::Unit::TestCase
     end
   end
 
-  def capture_output
-    capture_io { yield }.first.gsub(/[ \-]\d\.\d{6}/, ' --time--')
-  end
-
   def capture_bench_output(type, *args, &block)
-    capture_output { bench(type, *args, &block) }
+    capture_output { bench(type, *args, &block) }.first.gsub(/[ \-]\d\.\d{6}/, ' --time--')
   end
 
   def test_tms_outputs_nicely
@@ -75,7 +71,7 @@ third  --time--   --time--   --time-- (  --time--)
 BENCH
   end
 
-  def test_benchmark_makes_extra_calcultations_with_an_Array_at_the_end_of_the_benchmark_and_show_the_result
+  def test_benchmark_makes_extra_calculations_with_an_Array_at_the_end_of_the_benchmark_and_show_the_result
     assert_equal(BENCHMARK_OUTPUT_WITH_TOTAL_AVG,
       capture_bench_output(:benchmark,
         Benchmark::CAPTION, 7,
@@ -85,7 +81,7 @@ BENCH
 
   def test_bm_returns_an_Array_of_the_times_with_the_labels
     [:bm, :bmbm].each do |meth|
-      capture_io do
+      capture_output do
         results = bench(meth)
         assert_instance_of(Array, results)
         assert_equal(labels.size, results.size)
@@ -158,5 +154,14 @@ BENCH
     sleeptime = 1.0
     realtime = Benchmark.realtime { sleep sleeptime }
     assert_operator sleeptime, :<, realtime
+  end
+
+  # Test that `to_h` returns a hash with the expected data.
+  def test_tms_to_h
+    tms = Benchmark::Tms.new(1.1, 2.2, 3.3, 4.4, 5.5, 'my label')
+    expected_hash = {
+      utime: 1.1, stime: 2.2, cutime: 3.3, cstime: 4.4, real: 5.5, label: 'my label'
+    }
+    assert_equal(expected_hash, tms.to_h)
   end
 end

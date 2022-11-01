@@ -3,6 +3,9 @@ package org.jruby.runtime;
 import java.io.EOFException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Array;
 
 import java.net.BindException;
@@ -29,9 +32,11 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import com.headius.invokebinder.Binder;
 import jnr.constants.platform.Errno;
 import org.jruby.*;
 import org.jruby.ast.ArgsNode;
@@ -43,6 +48,7 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.ast.RequiredKeywordArgumentValueNode;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.internal.runtime.methods.*;
@@ -52,9 +58,10 @@ import org.jruby.ir.Interp;
 import org.jruby.ir.JIT;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
+import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.javasupport.proxy.InternalJavaProxy;
+import org.jruby.javasupport.proxy.ReifiedJavaProxy;
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.StaticScopeFactory;
 import org.jruby.runtime.JavaSites.HelpersSites;
@@ -64,6 +71,7 @@ import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
+import org.jruby.util.CodegenUtils;
 import org.jruby.util.MurmurHash;
 import org.jruby.util.TypeConverter;
 
@@ -73,10 +81,12 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.unicode.UnicodeEncoding;
 
+import static org.jruby.RubyBasicObject.UNDEF;
 import static org.jruby.RubyBasicObject.getMetaClass;
-import static org.jruby.runtime.Visibility.PRIVATE;
-import static org.jruby.runtime.Visibility.PROTECTED;
+import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_EMPTY;
+import static org.jruby.runtime.Visibility.*;
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
+import static org.jruby.util.CodegenUtils.params;
 import static org.jruby.util.CodegenUtils.sig;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
@@ -93,6 +103,9 @@ import org.jruby.util.io.EncodingUtils;
 public class Helpers {
 
     public static final Pattern SEMICOLON_PATTERN = Pattern.compile(";");
+    public static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8; // safe max for new byte[], see GH-6671
+
+    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
     public static RubyClass getSingletonClass(Ruby runtime, IRubyObject receiver) {
         if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
@@ -276,6 +289,12 @@ public class Helpers {
             return Errno.EINVAL;
         } catch (IllegalArgumentException nrce) {
             return Errno.EINVAL;
+        } catch (IOException ioe) {
+            String message = ioe.getMessage();
+            // Raised on Windows for process launch with missing file
+            if (message.endsWith("The system cannot find the file specified")) {
+                return Errno.ENOENT;
+            }
         } catch (Throwable t2) {
             // fall through
         }
@@ -341,7 +360,7 @@ public class Helpers {
     /**
      * Construct an appropriate error (which may ultimately not be an IOError) for a given IOException.
      *
-     * If this method is used on an exception which can't be translated to a Ruby error using {@link #newErrorFromException(Ruby, Exception)}
+     * If this method is used on an exception which can't be translated to a Ruby error using {@link #newErrorFromException(Ruby, Throwable)}
      * then a RuntimeError will be returned, due to the unhandled exception type.
      *
      * @param runtime the current runtime
@@ -462,6 +481,111 @@ public class Helpers {
         default:
             throw new RuntimeException("unsupported arity: " + args);
         }
+    }
+
+    /**
+     * Calculate a buffer length based on the required length, expanding by 1.5x or to the maximum array size.
+     *
+     * @param length the required length
+     * @return a larger buffer length with extra room for growth, or else the max array size
+     * @throws OutOfMemoryError if the requested length is greated than the max array size
+     */
+    public static int calculateBufferLength(int length) {
+        if (length > MAX_ARRAY_SIZE) throw new OutOfMemoryError("Requested array size exceeds VM limit");
+
+        int newLength;
+        try {
+            // Try to allocate 1.5 * length but that might take us outside the range of int
+            newLength = Math.addExact(length, length >>> 1);
+        } catch (ArithmeticException e) {
+            newLength = MAX_ARRAY_SIZE;
+        }
+        return newLength;
+    }
+
+    /**
+     * Same as {@link #calculateBufferLength(int)} but raises a Ruby ArgumentError.
+     */
+    public static int calculateBufferLength(Ruby runtime, int length) {
+        if (length > MAX_ARRAY_SIZE) throw runtime.newArgumentError("argument too big");
+
+        int newLength;
+        try {
+            // Try to allocate 1.5 * length but that might take us outside the range of int
+            newLength = Math.addExact(length, length >>> 1);
+        } catch (ArithmeticException e) {
+            newLength = MAX_ARRAY_SIZE;
+        }
+        return newLength;
+    }
+
+    /**
+     * Calculate a buffer length based on a base size and a multiplier. If the resulting size exceeds MAX_ARRAY_SIZE,
+     * an {@link ArgumentError} will be thrown, similar to when asking the JVM to allocate a too-large array.
+     *
+     * @param base the base size
+     * @param multiplier the multiplier
+     * @return the multiplied size, if valid
+     * @throws ArgumentError if the requested length is greated than the max array size
+     */
+    public static int multiplyBufferLength(Ruby runtime, int base, int multiplier) {
+        try {
+            int newSize = Math.multiplyExact(base, multiplier);
+
+            if (newSize <= MAX_ARRAY_SIZE) {
+                return newSize;
+            }
+
+            // fall through to error below
+        } catch (ArithmeticException e) {
+            // fall through to error below
+        }
+
+        throw runtime.newArgumentError("argument too big");
+    }
+
+    /**
+     * Calculate a buffer length based on a base size and a extra size. If the resulting size exceeds MAX_ARRAY_SIZE
+     * and the extra size is nonzero, use the MAX_ARRAY_SIZE as the buffer length.
+     *
+     * @param runtime the runtime
+     * @param base the base size
+     * @param extra the extra buffer size
+     * @return the combined buffer size, or MAX_ARRAY_SIZE
+     * @throws ArgumentError if the original or combined size cannot be accommodated by MAX_ARRAY_SIZE
+     */
+    public static int addBufferLength(Ruby runtime, int base, int extra) {
+        try {
+            int newSize = Math.addExact(base, extra);
+
+            if (newSize <= MAX_ARRAY_SIZE) {
+                return newSize;
+            }
+
+            // can't accommodate all of extra buffer size, but do as much as we can
+            if (extra > 0) {
+                return MAX_ARRAY_SIZE;
+            }
+
+            // fall through to error below
+        } catch (ArithmeticException e) {
+            // fall through to error below
+        }
+
+        throw runtime.newArgumentError("argument too big");
+    }
+
+    /**
+     * Check that the buffer length requested is within the valid range of 0 to MAX_ARRAY_SIZE, or raise an argument
+     * error.
+     */
+    public static int validateBufferLength(Ruby runtime, int length) {
+        if (length < 0) {
+            throw runtime.newArgumentError("negative argument");
+        } else if (length > MAX_ARRAY_SIZE) {
+            throw runtime.newArgumentError("argument too big");
+        }
+        return length;
     }
 
     public static class MethodMissingMethod extends DynamicMethod {
@@ -792,7 +916,6 @@ public class Helpers {
     }
 
     private static Block getBlockFromProc(Block currentBlock, IRubyObject proc) {
-        // TODO: Add safety check for taintedness
         if (currentBlock != null && currentBlock.isGiven()) {
             RubyProc procObject = currentBlock.getProcObject();
             // The current block is already associated with proc.  No need to create a new one
@@ -804,14 +927,13 @@ public class Helpers {
         return ((RubyProc) proc).getBlock();
     }
 
-    public static Block getBlockFromBlockPassBody(IRubyObject proc, Block currentBlock) {
-        return getBlockFromBlockPassBody(proc.getRuntime(), proc, currentBlock);
-
+    @JIT
+    public static Block getImplicitBlockFromBlockBinding(Block block) {
+        return block.getFrame().getBlock();
     }
 
-    @Deprecated
-    public static IRubyObject backref(ThreadContext context) {
-        return RubyRegexp.getBackRef(context);
+    public static Block getBlockFromBlockPassBody(IRubyObject proc, Block currentBlock) {
+        return getBlockFromBlockPassBody(proc.getRuntime(), proc, currentBlock);
     }
 
     @Deprecated
@@ -847,7 +969,11 @@ public class Helpers {
     }
 
     public static IRubyObject breakLocalJumpError(Ruby runtime, IRubyObject value) {
-        throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, value, "unexpected break");
+        throw newLocalJumpErrorForBreak(runtime, value);
+    }
+
+    public static RaiseException newLocalJumpErrorForBreak(Ruby runtime, IRubyObject breakValue) {
+        return runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, breakValue, "unexpected break");
     }
 
     public static IRubyObject[] concatObjectArrays(IRubyObject[] array, IRubyObject[] add) {
@@ -942,9 +1068,9 @@ public class Helpers {
             return true;
         }
 
-        if (catchable instanceof RubyClass && JavaClass.isProxyType(context, (RubyClass) catchable)) {
-            if ( ex instanceof InternalJavaProxy ) { // Ruby sub-class of a Java exception type
-                final IRubyObject target = ((InternalJavaProxy) ex).___getInvocationHandler().getOrig();
+        if (catchable instanceof RubyClass && Java.isProxyType((RubyClass) catchable)) {
+            if ( ex instanceof ReifiedJavaProxy ) { // Ruby sub-class of a Java exception type
+                final IRubyObject target = ((ReifiedJavaProxy) ex).___jruby$rubyObject();
                 if ( target != null ) return ((RubyClass) catchable).isInstance(target);
             }
             return ((RubyClass) catchable).isInstance(wrappedEx);
@@ -1292,6 +1418,106 @@ public class Helpers {
         return new IRubyObject[] {one, two, three, four, five, six, seven, eight, nine, ten};
     }
 
+    private static final MethodHandle[] constructObjectArrayHandles = new MethodHandle[11];
+
+    public static MethodHandle constructObjectArrayHandle(int size) {
+        if (size < 0) throw new IllegalArgumentException("illegal size: " + size);
+
+        if (size > 10) {
+            return Binder
+                    .from(IRubyObject[].class, params(IRubyObject.class, size))
+                    .collect(0, IRubyObject[].class).identity();
+        }
+
+        MethodHandle handle = constructObjectArrayHandles[size];
+
+        if (handle == null) {
+            try {
+                if (size == 0) {
+                    handle = Binder.from(IRubyObject[].class).getStatic(LOOKUP, IRubyObject.class, "NULL_ARRAY");
+                } else {
+                    handle = MethodHandles.lookup().findStatic(Helpers.class, "constructObjectArray", MethodType.methodType(IRubyObject[].class, CodegenUtils.params(IRubyObject.class, size)));
+                }
+
+                constructObjectArrayHandles[size] = handle;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        return handle;
+    }
+    
+    public static RubyString[] constructRubyStringArray(RubyString one) {
+        return new RubyString[] {one};
+    }
+
+    public static RubyString[] constructRubyStringArray(RubyString one, RubyString two) {
+        return new RubyString[] {one, two};
+    }
+
+    public static RubyString[] constructRubyStringArray(RubyString one, RubyString two, RubyString three) {
+        return new RubyString[] {one, two, three};
+    }
+
+    public static RubyString[] constructRubyStringArray(RubyString one, RubyString two, RubyString three, RubyString four) {
+        return new RubyString[] {one, two, three, four};
+    }
+
+    public static RubyString[] constructRubyStringArray(RubyString one, RubyString two, RubyString three, RubyString four, RubyString five) {
+        return new RubyString[] {one, two, three, four, five};
+    }
+
+    public static RubyString[] constructRubyStringArray(RubyString one, RubyString two, RubyString three, RubyString four, RubyString five, RubyString six) {
+        return new RubyString[] {one, two, three, four, five, six};
+    }
+
+    public static RubyString[] constructRubyStringArray(RubyString one, RubyString two, RubyString three, RubyString four, RubyString five, RubyString six, RubyString seven) {
+        return new RubyString[] {one, two, three, four, five, six, seven};
+    }
+
+    public static RubyString[] constructRubyStringArray(RubyString one, RubyString two, RubyString three, RubyString four, RubyString five, RubyString six, RubyString seven, RubyString eight) {
+        return new RubyString[] {one, two, three, four, five, six, seven, eight};
+    }
+
+    public static RubyString[] constructRubyStringArray(RubyString one, RubyString two, RubyString three, RubyString four, RubyString five, RubyString six, RubyString seven, RubyString eight, RubyString nine) {
+        return new RubyString[] {one, two, three, four, five, six, seven, eight, nine};
+    }
+
+    public static RubyString[] constructRubyStringArray(RubyString one, RubyString two, RubyString three, RubyString four, RubyString five, RubyString six, RubyString seven, RubyString eight, RubyString nine, RubyString ten) {
+        return new RubyString[] {one, two, three, four, five, six, seven, eight, nine, ten};
+    }
+
+    private static final MethodHandle[] constructRubyStringArrayHandles = new MethodHandle[11];
+
+    public static MethodHandle constructRubyStringArrayHandle(int size) {
+        if (size < 0) throw new IllegalArgumentException("illegal size: " + size);
+
+        if (size > 10) {
+            return Binder
+                    .from(RubyString[].class, params(RubyString.class, size))
+                    .collect(0, RubyString[].class).identity();
+        }
+
+        MethodHandle handle = constructRubyStringArrayHandles[size];
+
+        if (handle == null) {
+            try {
+                if (size == 0) {
+                    handle = Binder.from(RubyString[].class).getStatic(LOOKUP, RubyString.class, "NULL_ARRAY");
+                } else {
+                    handle = MethodHandles.lookup().findStatic(Helpers.class, "constructRubyStringArray", MethodType.methodType(RubyString[].class, CodegenUtils.params(RubyString.class, size)));
+                }
+
+                constructRubyStringArrayHandles[size] = handle;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        return handle;
+    }
+
     public static RubyArray constructRubyArray(Ruby runtime, IRubyObject one) {
         return RubyArray.newArrayLight(runtime, one);
     }
@@ -1553,27 +1779,6 @@ public class Helpers {
 
     public static IRubyObject getLastLine(Ruby runtime, ThreadContext context) {
         return context.getLastLine();
-    }
-
-    public static IRubyObject setBackref(ThreadContext context, IRubyObject value) {
-        if (!(value instanceof RubyMatchData) && value != context.nil) {
-            throw context.runtime.newTypeError(value, context.runtime.getMatchData());
-        }
-        return context.setBackRef(value);
-    }
-
-    @Deprecated
-    public static IRubyObject setBackref(Ruby runtime, ThreadContext context, IRubyObject value) {
-        return setBackref(context, value);
-    }
-
-    public static IRubyObject getBackref(ThreadContext context) {
-        return RubyRegexp.getBackRef(context);
-    }
-
-    @Deprecated
-    public static IRubyObject getBackref(Ruby runtime, ThreadContext context) {
-        return RubyRegexp.getBackRef(context);
     }
 
     public static RubyArray arrayValue(IRubyObject value) {
@@ -1910,7 +2115,7 @@ public class Helpers {
         }
 
         if (receiver.isFrozen()) {
-            throw runtime.newFrozenError("object");
+            throw runtime.newFrozenError("object", receiver);
         }
 
         RubyClass rubyClass = receiver.getSingletonClass();
@@ -2034,7 +2239,6 @@ public class Helpers {
     public static IRubyObject getInstanceVariable(IRubyObject self, Ruby runtime, String internedName) {
         IRubyObject result = self.getInstanceVariables().getInstanceVariable(internedName);
         if (result != null) return result;
-        if (runtime.isVerbose()) warnAboutUninitializedIvar(runtime, internedName);
         return runtime.getNil();
     }
 
@@ -2042,10 +2246,6 @@ public class Helpers {
         IRubyObject result = self.getInstanceVariables().getInstanceVariable(internedName);
         if (result != null) return result;
         return context.nil;
-    }
-
-    private static void warnAboutUninitializedIvar(Ruby runtime, String id) {
-        runtime.getWarnings().warning(ID.IVAR_NOT_INITIALIZED, str(runtime, "instance variable ", ids(runtime, id), " not initialized"));
     }
 
     public static IRubyObject setInstanceVariable(IRubyObject value, IRubyObject self, String name) {
@@ -2160,7 +2360,7 @@ public class Helpers {
     }
 
     public static boolean isModuleAndHasConstant(IRubyObject left, String name) {
-        return left instanceof RubyModule && ((RubyModule) left).getConstantFromNoConstMissing(name, false) != null;
+        return left instanceof RubyModule && ((RubyModule) left).publicConstDefinedFrom(name);
     }
 
     @JIT @Interp
@@ -2236,7 +2436,15 @@ public class Helpers {
     }
 
     @JIT
-    public static RubyArray argsPush(IRubyObject first, IRubyObject second) {
+    public static RubyArray argsPush(ThreadContext context, IRubyObject first, IRubyObject second, boolean usesKeywords) {
+        boolean isEmptyKeywordRest = usesKeywords && second instanceof RubyHash && ((RubyHash) second).isEmpty();
+
+        if (isEmptyKeywordRest) {
+            RubyArray array = (RubyArray) first.dup();
+            context.callInfo |= CALL_KEYWORD_EMPTY;
+            return array;
+        }
+
         return ((RubyArray)first.dup()).append(second);
     }
 
@@ -2439,16 +2647,11 @@ public class Helpers {
     // . Array with multiple values and NO rest should extract args if there are more than one argument
 
     static IRubyObject[] restructureBlockArgs(ThreadContext context,
-        IRubyObject value, Signature signature, Block.Type type, boolean needsSplat) {
+        IRubyObject value, Signature signature, Block.Type type) {
 
         if (!type.checkArity && signature == Signature.NO_ARGUMENTS) return IRubyObject.NULL_ARRAY;
 
         if (value == null) return IRubyObject.NULL_ARRAY;
-
-        if (needsSplat) {
-            IRubyObject ary = Helpers.aryToAry(context, value);
-            if (ary instanceof RubyArray) return ((RubyArray) ary).toJavaArrayMaybeUnsafe();
-        }
 
         return new IRubyObject[] { value };
     }
@@ -2646,6 +2849,13 @@ public class Helpers {
         return newValues;
     }
 
+    public static <T> T[] arrayOf(T[] values, T last, IntFunction<T[]> allocator) {
+        T[] newValues = allocator.apply(values.length + 1);
+        newValues[values.length] = last;
+        System.arraycopy(values, 0, newValues, 0, values.length);
+        return newValues;
+    }
+
     public static <T> T[] arrayOf(Class<T> t, int size, T fill) {
         T[] ary = (T[])Array.newInstance(t, size);
         Arrays.fill(ary, fill);
@@ -2780,6 +2990,14 @@ public class Helpers {
         return scope.getStaticScope();
     }
 
+    // FIXME: to_path should not be called n times it should only be once and that means a cache which would
+    // also reduce all this casting and/or string creates.
+    // (mkristian) would it make sense to turn $LOAD_PATH into something like RubyClassPathVariable where we could cache
+    // the Strings ?
+    public static String javaStringFromPath(Ruby runtime, IRubyObject loadPathEntry) {
+        return RubyFile.get_path(runtime.getCurrentContext(), loadPathEntry).asJavaString();
+    }
+
     /**
      * This method is deprecated because it depends on having a Ruby frame pushed for checking method visibility,
      * and there's no way to enforce that. Most users of this method probably don't need to check visibility.
@@ -2829,5 +3047,21 @@ public class Helpers {
     @Deprecated
     public static IRubyObject invokeFrom(ThreadContext context, IRubyObject caller, IRubyObject self, String name, CallType callType) {
         return self.getMetaClass().invokeFrom(context, callType, caller, self, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+    }
+
+    @Deprecated
+    public static IRubyObject setBackref(Ruby runtime, ThreadContext context, IRubyObject value) {
+        if (!value.isNil() && !(value instanceof RubyMatchData)) throw runtime.newTypeError(value, runtime.getMatchData());
+        return context.setBackRef(value);
+    }
+
+    @Deprecated
+    public static IRubyObject getBackref(Ruby runtime, ThreadContext context) {
+        return context.getBackRef();
+    }
+
+    @Deprecated
+    public static IRubyObject backref(ThreadContext context) {
+        return context.getBackRef();
     }
 }

@@ -53,7 +53,7 @@ public class CallBlock19 extends BlockBody {
     public static Block newCallClosure(IRubyObject self, RubyModule imClass, Arity arity, BlockCallback callback, ThreadContext context) {
         Binding binding = context.currentBinding(self, Visibility.PUBLIC);
         BlockBody body = new CallBlock19(Signature.from(arity), callback, context);
-        
+
         return new Block(body, binding);
     }
 

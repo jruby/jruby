@@ -35,7 +35,6 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 
 /** 
@@ -53,8 +52,8 @@ public class SClassNode extends Node {
     private final Node bodyNode;
     private final int endLine;
 
-    public SClassNode(ISourcePosition position, Node recvNode, StaticScope scope, Node bodyNode, int endLine) {
-        super(position, recvNode.containsVariableAssignment() || bodyNode.containsVariableAssignment());
+    public SClassNode(int line, Node recvNode, StaticScope scope, Node bodyNode, int endLine) {
+        super(line, recvNode.containsVariableAssignment() || bodyNode.containsVariableAssignment());
         
         assert scope != null : "scope is not null";
         

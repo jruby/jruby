@@ -268,11 +268,11 @@ public class MethodIndex {
         if (needsScope) SCOPE_AWARE_METHODS.addAll(names);
     }
 
-    public static void addMethodReadFields(String name, FrameField[] reads) {
+    public static void addMethodReadFields(String name, FrameField... reads) {
         addMethodReadFieldsPacked(FrameField.pack(reads), name);
     }
 
-    public static void addMethodWriteFields(String name, FrameField[] write) {
+    public static void addMethodWriteFields(String name, FrameField... write) {
         addMethodWriteFieldsPacked(FrameField.pack(write), name);
     }
 

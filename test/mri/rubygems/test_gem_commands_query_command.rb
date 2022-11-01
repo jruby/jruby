@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-require 'rubygems/test_case'
+require_relative 'helper'
 require 'rubygems/commands/query_command'
 
 module TestGemCommandsQueryCommandSetup
@@ -213,7 +213,7 @@ pl (1)
   def test_execute_installed
     @cmd.handle_options %w[-n a --installed]
 
-    assert_raises Gem::MockGemUi::SystemExitException do
+    assert_raise Gem::MockGemUi::SystemExitException do
       use_ui @stub_ui do
         @cmd.execute
       end
@@ -226,7 +226,7 @@ pl (1)
   def test_execute_installed_inverse
     @cmd.handle_options %w[-n a --no-installed]
 
-    e = assert_raises Gem::MockGemUi::TermError do
+    e = assert_raise Gem::MockGemUi::TermError do
       use_ui @stub_ui do
         @cmd.execute
       end
@@ -241,7 +241,7 @@ pl (1)
   def test_execute_installed_inverse_not_installed
     @cmd.handle_options %w[-n not_installed --no-installed]
 
-    assert_raises Gem::MockGemUi::SystemExitException do
+    assert_raise Gem::MockGemUi::SystemExitException do
       use_ui @stub_ui do
         @cmd.execute
       end
@@ -254,7 +254,7 @@ pl (1)
   def test_execute_installed_no_name
     @cmd.handle_options %w[--installed]
 
-    e = assert_raises Gem::MockGemUi::TermError do
+    e = assert_raise Gem::MockGemUi::TermError do
       use_ui @stub_ui do
         @cmd.execute
       end
@@ -269,7 +269,7 @@ pl (1)
   def test_execute_installed_not_installed
     @cmd.handle_options %w[-n not_installed --installed]
 
-    e = assert_raises Gem::MockGemUi::TermError do
+    e = assert_raise Gem::MockGemUi::TermError do
       use_ui @stub_ui do
         @cmd.execute
       end
@@ -284,7 +284,7 @@ pl (1)
   def test_execute_installed_version
     @cmd.handle_options %w[-n a --installed --version 2]
 
-    assert_raises Gem::MockGemUi::SystemExitException do
+    assert_raise Gem::MockGemUi::SystemExitException do
       use_ui @stub_ui do
         @cmd.execute
       end
@@ -297,7 +297,7 @@ pl (1)
   def test_execute_installed_version_not_installed
     @cmd.handle_options %w[-n c --installed --version 2]
 
-    e = assert_raises Gem::MockGemUi::TermError do
+    e = assert_raise Gem::MockGemUi::TermError do
       use_ui @stub_ui do
         @cmd.execute
       end
@@ -458,7 +458,28 @@ pl (1 i386-linux)
     EOF
 
     assert_equal expected, @stub_ui.output
-    assert_equal "WARNING:  prereleases are always shown locally\n", @stub_ui.error
+  end
+
+  def test_execute_no_prerelease_local
+    spec_fetcher do |fetcher|
+      fetcher.legacy_platform
+    end
+
+    @cmd.handle_options %w[-l --no-prerelease]
+
+    use_ui @stub_ui do
+      @cmd.execute
+    end
+
+    expected = <<-EOF
+
+*** LOCAL GEMS ***
+
+a (2, 1)
+pl (1 i386-linux)
+    EOF
+
+    assert_equal expected, @stub_ui.output
   end
 
   def test_execute_remote
@@ -558,8 +579,8 @@ pl (1 i386-linux)
       @cmd.execute
     end
 
-    assert_match %r%^a %, @stub_ui.output
-    assert_match %r%^pl %, @stub_ui.output
+    assert_match %r{^a }, @stub_ui.output
+    assert_match %r{^pl }, @stub_ui.output
     assert_equal '', @stub_ui.error
   end
 
@@ -568,11 +589,11 @@ pl (1 i386-linux)
     @cmd.options[:domain] = :remote
 
     use_ui @stub_ui do
-      @cmd.send :show_gems, /a/i, false
+      @cmd.send :show_gems, /a/i
     end
 
-    assert_match %r%^a %,  @stub_ui.output
-    refute_match %r%^pl %, @stub_ui.output
+    assert_match %r{^a },  @stub_ui.output
+    refute_match %r{^pl }, @stub_ui.output
     assert_empty @stub_ui.error
   end
 
@@ -620,10 +641,10 @@ a (2 universal-darwin, 1 ruby x86-linux)
   end
 
   def test_execute_show_default_gems
-    spec_fetcher { |fetcher| fetcher.spec 'a', 2 }
+    spec_fetcher {|fetcher| fetcher.spec 'a', 2 }
 
     a1 = new_default_spec 'a', 1
-    install_default_specs a1
+    install_default_gems a1
 
     use_ui @stub_ui do
       @cmd.execute
@@ -642,7 +663,7 @@ EOF
   def test_execute_show_default_gems_with_platform
     a1 = new_default_spec 'a', 1
     a1.platform = 'java'
-    install_default_specs a1
+    install_default_gems a1
 
     use_ui @stub_ui do
       @cmd.execute
@@ -664,7 +685,7 @@ EOF
     end
 
     a1 = new_default_spec 'a', 1
-    install_default_specs a1
+    install_default_gems a1
 
     @cmd.handle_options %w[-l -d]
 
@@ -818,6 +839,10 @@ othergem (1.2.3)
     EOF
 
     assert_equal expected, @stub_ui.output
+  end
+
+  def test_depprecated
+    assert @cmd.deprecated?
   end
 
   private

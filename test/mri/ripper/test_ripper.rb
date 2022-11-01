@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 begin
   require 'ripper'
+  require 'stringio'
   require 'test/unit'
   ripper_test = true
   module TestRipper; end
@@ -63,6 +64,24 @@ class TestRipper::Ripper < Test::Unit::TestCase
     @ripper.yydebug = true
 
     assert_predicate @ripper, :yydebug
+  end
+
+  def test_yydebug_ident
+    out = StringIO.new
+    ripper = Ripper.new 'test_xxxx'
+    ripper.yydebug = true
+    ripper.debug_output = out
+    ripper.parse
+    assert_include out.string[/.*"local variable or method".*/], 'test_xxxx'
+  end
+
+  def test_yydebug_string
+    out = StringIO.new
+    ripper = Ripper.new '"woot"'
+    ripper.yydebug = true
+    ripper.debug_output = out
+    ripper.parse
+    assert_include out.string[/.*"literal content".*/], 'woot'
   end
 
   def test_regexp_with_option

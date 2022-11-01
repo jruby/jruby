@@ -1,59 +1,22 @@
-REMAPS = {
-  '"tUPLUS"' => '"unary+"',
-  '"tUMINUS"'=>  '"unary-"',
-  '"tPOW"' => '"\'**\'"',
-  '"tCMP"' => '"\'<=>\'"',
-  '"tEQ"' => '"\'==\'"',
-  '"tEQQ"' => '"\'===\'"',
-  '"tNEQ"' => '"\'!=\'"',
-  '"tGEQ"' => '"\'>=\'"',
-  '"tLEQ"' => '"\'<=\'"',
-  '"tANDOP"' => '"\'&&\'"',
-  '"tOROP"' => '"\'||\'"',
-  '"tMATCH"' => '"\'=~\'"',
-  '"tNMATCH"'=> '"\'!~\'"',
-  '"tDOT"' => '"\'.\'"',
-  '"tDOT2"' => '"\'..\'"',
-  '"tDOT3"' => '"\'...\'"',
-  '"tAREF"' => '"\'[]\'"',
-  '"tASET"' => '"\'[]=\'"',
-  '"tLSHFT"' => '"\'<<\'"',
-  '"tRSHFT"' => '"\'>>\'"',
-  '"tANDDOT"' => '"\'&.\'"',
-  '"tCOLON2"' => '"\'::\'"',
-  '"tCOLON3"' => '"\':: at EXPR_BEG\'"',
-  '"tASSOC"' => '"\'=>\'"',
-  '"tLPAREN"' => '"\'(\'"',
-  '"tLPAREN2"'=> '"\'( arg\'"',
-  '"tRPAREN"' => '"\')\'"',
-  '"tLPAREN_ARG"' => '"\'[\'"',
-  '"tLBRACK"' => '"\'{\'"',
-  '"tRBRACK"' => '"\'{ arg\'"',
-  '"tLBRACE"' => '"\'[\'"',
-  '"tLBRACE_ARG"' => '"\'[ args\'"', 
-  '"tSTAR"' => '"\'*\'"',
-  '"tSTAR2"' => '"\'*\'"',
-  '"tAMPER"' => '"\'&\'"',
-  '"tAMPER2"' => '"\'&\'"',
-  '"tTILDE"' => '"\'~\'"',
-  '"tPERCENT"' => '"\'%\'"',
-  '"tDIVIDE"' => '"\'/\'"',
-  '"tPLUS"' => '"\'+\'"',
-  '"tMINUS"' => '"\'-\'"',
-  '"tLT"' => '"\'<\'"',
-  '"tGT"' => '"\'>\'"',
-  '"tPIPE"' => '"\'|\'"',
-  '"tBANG"' => '"\'!\'"',
-  '"tCARET"' => '"\'^\'"',
-  '"tLCURLY"' => '"\'{\'"',
-  '"tRCURLY"' => '"\'}\'"',
-  '"tBACK_REF2"' => '"\'`\'"',
-  '"tSYMBEG"' => '"\':\'"',
-  '"tLAMBDA"'  => '"\'->\'"',
-  '"tDSTAR"' => '"\'**\'"',
-}
+def generate_yyname_remaps(file)
+  remaps = {}
+  File.readlines(file).each do |line|
+    if /%token\s+\S+\s*(?<name>\S+)[^{]*{{(?<replacement>.*)}}/ =~ line
+      replacement = if replacement.length == 1
+                      %Q{\"'#{replacement}'\"}
+                    else
+                      %Q{\"#{replacement}\"}
+                    end
+      name = %Q{"#{name}"}
+#      $stderr.puts "NAME #{name}(#{name.length}) = #{replacement.inspect}"
+      remaps[name] = replacement   
+    end
+  end
+  remaps
+end
 
-def get_numbers_until_end_block(table)
+def get_numbers_until_end_block
+  table = []
   while line = gets
     break if /\};/ =~ line
     next if /^\/\// =~ line
@@ -65,7 +28,7 @@ def get_numbers_until_end_block(table)
   table
 end
 
-def print_names_until_end_block
+def print_yynames_until_end_block(remaps)
   while line = gets
     if /\};/ =~ line
       print line
@@ -73,7 +36,16 @@ def print_names_until_end_block
     end
     next if /^\/\// =~ line
     new_line = line.split(/,/).map do |element|
-      REMAPS[element.strip] || element
+#      $stderr.puts "ELEMENT #{element.strip} #{element.strip.size}"
+      key = element.strip.gsub("\\\\", '\\')
+
+      # In .y we use '\\' which jay does realize is backslash in generated code
+      # but in yyNames it wraps the string in extra "" and then expands the number
+      # of \\ to make each \ its own backslash.  Part of me does not quite grok
+      # how it encodes the name like this yet the specification works on matching
+      # an incoming token.  Working around this by making it the key we need.
+      key = "\"\'\\\\'\"" if key == "\"'\\\\'\""
+      remaps[key] || element
     end.join(',')
     puts new_line
   end
@@ -81,21 +53,19 @@ end
 
 # We use this script to generate our normal parser and the parser for 
 # the ripper extension.
-if ARGV[0] =~ /Ripper/
-  package = 'org.jruby.ext.ripper'
-else
-  package = 'org.jruby.parser'
-end
+package = ARGV[0] =~ /ripper/i ? 'org.jruby.ext.ripper' : 'org.jruby.parser'
 
 while gets
   break if /protected static final short\[\] yyTable = \{/ =~ $_
   print $_
 end
 
-# A little hacky...gets before ARGV to shift off and open file
-yytable_prefix = ARGV.shift || ''
+yytable_prefix = ARGV.length == 1 ? '' : ARGV.shift
+original_grammar_file = ARGV.shift
+  
+remaps = generate_yyname_remaps original_grammar_file
 
-table4 = get_numbers_until_end_block([])
+table4 = get_numbers_until_end_block
 
 puts "    protected static final short[] yyTable = #{yytable_prefix}YyTables.yyTable();"
 
@@ -104,7 +74,7 @@ while gets
   print $_
 end
 
-check4 = get_numbers_until_end_block([])
+check4 = get_numbers_until_end_block
 
 puts "    protected static final short[] yyCheck = #{yytable_prefix}YyTables.yyCheck();"
 
@@ -113,7 +83,7 @@ while gets
   break if /protected static final String\[\] yyNames = \{/ =~ $_
 end
 
-print_names_until_end_block
+print_yynames_until_end_block remaps
 
 while gets
   print $_

@@ -35,7 +35,6 @@ import org.jruby.RubyFixnum;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.ChannelFD;
@@ -58,16 +57,10 @@ import java.nio.channels.SocketChannel;
 @JRubyClass(name="Socket", parent="BasicSocket", include="Socket::Constants")
 public class RubyServerSocket extends RubySocket {
     static void createServerSocket(Ruby runtime) {
-        RubyClass rb_cSocket = runtime.defineClass("ServerSocket", runtime.getClass("Socket"), SERVER_SOCKET_ALLOCATOR);
+        RubyClass rb_cSocket = runtime.defineClass("ServerSocket", runtime.getClass("Socket"), RubyServerSocket::new);
 
         rb_cSocket.defineAnnotatedMethods(RubyServerSocket.class);
     }
-
-    private static final ObjectAllocator SERVER_SOCKET_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyServerSocket(runtime, klass);
-        }
-    };
 
     public RubyServerSocket(Ruby runtime, RubyClass type) {
         super(runtime, type);
@@ -77,7 +70,7 @@ public class RubyServerSocket extends RubySocket {
     public IRubyObject listen(ThreadContext context, IRubyObject backlog) {
         context.runtime.getWarnings().warnOnce(
                 IRubyWarnings.ID.LISTEN_SERVER_SOCKET,
-                "pass backlog to #bind instead of #listen (http://wiki.jruby.org/ServerSocket)");
+                "pass backlog to #bind instead of #listen (https://github.com/jruby/jruby/wiki/ServerSocket)");
 
         return context.runtime.newFixnum(0);
     }

@@ -127,10 +127,10 @@ end
 #
 def Tempfile.create(basename="", tmpdir=nil, mode: 0, **options)
   tmpfile = nil
-  Dir::Tmpname.create(basename, tmpdir, options) do |tmpname, n, opts|
+  Dir::Tmpname.create(basename, tmpdir, **options) do |tmpname, n, opts|
     mode |= File::RDWR|File::CREAT|File::EXCL
     opts[:perm] = 0600
-    tmpfile = File.open(tmpname, mode, opts)
+    tmpfile = File.open(tmpname, mode, **opts)
   end
   if block_given?
     begin

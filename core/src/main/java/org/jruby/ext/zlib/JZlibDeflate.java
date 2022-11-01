@@ -54,11 +54,6 @@ public class JZlibDeflate extends ZStream {
     private int strategy;
     private byte[] collected;
     private int collectedIdx;
-    protected static final ObjectAllocator DEFLATE_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new JZlibDeflate(runtime, klass);
-        }
-    };
     private com.jcraft.jzlib.Deflater flater = null;
     private int flush = JZlib.Z_NO_FLUSH;
 
@@ -286,7 +281,7 @@ public class JZlibDeflate extends ZStream {
     private IRubyObject flush(int flush) {
         int last_flush = this.flush;
         this.flush = flush;
-        if (flush == JZlib.Z_NO_FLUSH) return RubyString.newEmptyString(getRuntime());
+        if (flush == JZlib.Z_NO_FLUSH) return RubyString.newEmptyBinaryString(getRuntime());
 
         run();
         this.flush = last_flush;

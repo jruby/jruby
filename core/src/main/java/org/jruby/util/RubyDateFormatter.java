@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -31,22 +32,15 @@
 
 package org.jruby.util;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.text.DateFormat;
 import java.text.DateFormatSymbols;
 import java.text.ParsePosition;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Locale;
 
 import jnr.constants.platform.Errno;
 import org.jcodings.Encoding;
-import org.jcodings.specific.ASCIIEncoding;
 import org.joda.time.Chronology;
 import org.joda.time.DateTime;
 import org.joda.time.chrono.GJChronology;
@@ -58,9 +52,14 @@ import org.jruby.RubyTime;
 import org.jruby.lexer.StrftimeLexer;
 import org.jruby.runtime.ThreadContext;
 
+import static org.jruby.util.CommonByteLists.*;
 import static org.jruby.util.RubyDateFormatter.FieldType.*;
 
 public class RubyDateFormatter {
+    private static final ByteList AM = new ByteList(new byte[] {'a', 'm'});
+    private static final ByteList PM = new ByteList(new byte[] {'p', 'm'});
+    private static final ByteList CAPITAL_AM = new ByteList(new byte[] {'A', 'M'});
+    private static final ByteList CAPITAL_PM = new ByteList(new byte[] {'P', 'M'});
 
     private static final String[] FORMAT_MONTHS;
     private static final String[] FORMAT_SHORT_MONTHS;
@@ -79,9 +78,7 @@ public class RubyDateFormatter {
     private final Ruby runtime;
     private final StrftimeLexer lexer;
 
-    enum Format {
-        /** encoding to give to output */
-        FORMAT_ENCODING,
+    public enum Format {
         /** raw string, no formatting */
         FORMAT_STRING,
         /** formatter */
@@ -180,20 +177,37 @@ public class RubyDateFormatter {
         }
     }
 
+    public static Token COLON_TOKEN = new Token(Format.FORMAT_STRING, COLON);
+    public static Token DASH_TOKEN = new Token(Format.FORMAT_STRING, DASH);
+    public static Token DOT_TOKEN = new Token(Format.FORMAT_STRING, DOT);
+    public static Token SLASH_TOKEN = new Token(Format.FORMAT_STRING, SLASH);
+
     public static class Token {
         private final Format format;
-        private final Object data;
+        protected Object data;
         
         protected Token(Format format) {
             this(format, null);
         }
 
-        protected Token(Format formatString, Object data) {
+        public Token(Format formatString, Object data) {
             this.format = formatString;
             this.data = data;
         }
 
-        public static Token str(String str) {
+        public static Token str(ByteList str) {
+            if (str.length() == 1) {
+                switch (str.charAt(0)) {
+                    case ':':
+                        return COLON_TOKEN;
+                    case '.':
+                        return DOT_TOKEN;
+                    case '-':
+                        return DASH_TOKEN;
+                    case '/':
+                        return SLASH_TOKEN;
+                }
+            }
             return new Token(Format.FORMAT_STRING, str);
         }
 
@@ -210,7 +224,7 @@ public class RubyDateFormatter {
         }
 
         public static Token formatter(RubyTimeOutputFormatter formatter) {
-            return new Token(Format.FORMAT_OUTPUT, formatter);
+            return formatter;
         }
 
         /**
@@ -241,51 +255,58 @@ public class RubyDateFormatter {
     public RubyDateFormatter(ThreadContext context) {
         super();
         this.runtime = context.runtime;
-        lexer = new StrftimeLexer((Reader) null);
+        lexer = new StrftimeLexer();
     }
 
-    private static void addToPattern(List<Token> compiledPattern, String str) {
+    private void addToPattern(String str) {
         for (int i = 0; i < str.length(); i++) {
             char c = str.charAt(i);
             if (('A' <= c && c <= 'Z') || ('a' <= c && c <= 'z')) {
-                compiledPattern.add(Token.format(c));
+                addToken(Token.format(c));
             } else {
-                compiledPattern.add(Token.str(Character.toString(c)));
+                addToken(Token.str(new ByteList(new byte[] { (byte) c }))); // FIXME broken patterns hsould pass in bytelists
             }
         }
     }
 
-    public List<Token> compilePattern(RubyString format, boolean dateLibrary) {
-        return compilePattern(format.getByteList(), dateLibrary);
+    private Token[] compiledPattern = new Token[256];
+    private int compiledPatternLength = 0;
+    private Encoding patternEncoding;
+
+    private void addToken(Token token) {
+        if (compiledPatternLength >= compiledPattern.length) growTokens();
+
+        compiledPattern[compiledPatternLength] = token;
+        compiledPatternLength++;
     }
 
-    public List<Token> compilePattern(ByteList pattern, boolean dateLibrary) {
-        Encoding enc = pattern.getEncoding();
-        if (!enc.isAsciiCompatible()) {
+    // This will never happen...
+    private void growTokens() {
+        Token[] newCompiledPattern = new Token[compiledPattern.length * 2];
+        System.arraycopy(compiledPattern, 0, newCompiledPattern, 0, compiledPattern.length);
+        compiledPattern = newCompiledPattern;
+    }
+
+    public void compilePattern(ByteList pattern, boolean dateLibrary) {
+        compiledPatternLength = 0;
+        patternEncoding = pattern.getEncoding();
+        if (!patternEncoding.isAsciiCompatible()) {
             throw runtime.newArgumentError("format should have ASCII compatible encoding");
         }
 
-        final List<Token> compiledPattern = new LinkedList<>();
-        if (enc != ASCIIEncoding.INSTANCE) { // default for ByteList
-            compiledPattern.add(new Token(Format.FORMAT_ENCODING, enc));
-        }
-
-        ByteArrayInputStream in = new ByteArrayInputStream(pattern.getUnsafeBytes(), pattern.getBegin(), pattern.getRealSize());
-        Reader reader = new InputStreamReader(in, runtime.getEncodingService().charsetForEncoding(pattern.getEncoding()));
-        lexer.yyreset(reader);
+        lexer.reset(pattern);
 
         Token token;
         RubyTimeOutputFormatter formatter = null;
-        try {
             while ((token = lexer.yylex()) != null) {
                 if (token.format == Format.FORMAT_OUTPUT) {
                     formatter = (RubyTimeOutputFormatter) token.data;
                 } else if (token.format != Format.FORMAT_SPECIAL) {
                     if (formatter != null) {
-                        compiledPattern.add(new Token(Format.FORMAT_OUTPUT, formatter));
+                        addToken(formatter);
                         formatter = null;
                     }
-                    compiledPattern.add(token);
+                    addToken(token);
                 } else {
                     char c = (Character) token.data;
 
@@ -294,75 +315,75 @@ public class RubyDateFormatter {
                         switch (c) {
                             default:
                                 // force most formats to use spaces for padding unless otherwise specified
-                                if (formatter.flags == "" || formatter.flags == null) {
-                                    compiledPattern.add(new Token(Format.FORMAT_OUTPUT, new RubyTimeOutputFormatter("_", formatter.width)));
+                                if (formatter.flags == ByteList.EMPTY_BYTELIST || formatter.flags == null) {
+                                    addToken(new RubyTimeOutputFormatter(UNDERSCORE, formatter.width));
                                     break;
                                 }
                                 // fall through
                             case 'Q':
                             case '+':
-                                compiledPattern.add(new Token(Format.FORMAT_OUTPUT, formatter));
+                                addToken(formatter);
                         }
                         formatter = null;
                     }
 
                     switch (c) {
                     case 'c':
-                        addToPattern(compiledPattern, "a b e H:M:S Y");
+                        addToPattern("a b e H:M:S Y");
                         break;
                     case 'D':
                     case 'x':
-                        addToPattern(compiledPattern, "m/d/y");
+                        addToPattern("m/d/y");
                         break;
                     case 'F':
-                        addToPattern(compiledPattern, "Y-m-d");
+                        addToPattern("Y-m-d");
                         break;
                     case 'n':
-                        compiledPattern.add(Token.str("\n"));
+                        addToken(Token.str(NEWLINE));
                         break;
                     case 'Q':
                         if (dateLibrary) {
-                            compiledPattern.add(new Token(Format.FORMAT_MICROSEC_EPOCH));
+                            addToken(new Token(Format.FORMAT_MICROSEC_EPOCH));
                         } else {
-                            compiledPattern.add(Token.str("%Q"));
+                            addToken(Token.str(PERCENT_Q));
                         }
                         break;
                     case 'R':
-                        addToPattern(compiledPattern, "H:M");
+                        addToPattern("H:M");
                         break;
                     case 'r':
-                        addToPattern(compiledPattern, "I:M:S p");
+                        addToPattern("I:M:S p");
                         break;
                     case 'T':
                     case 'X':
-                        addToPattern(compiledPattern, "H:M:S");
+                        addToPattern("H:M:S");
                         break;
                     case 't':
-                        compiledPattern.add(Token.str("\t"));
+                        addToken(Token.str(TAB));
                         break;
                     case 'v':
-                        addToPattern(compiledPattern, "e-");
+                        addToPattern("e-");
                         if (!dateLibrary)
-                            compiledPattern.add(Token.formatter(new RubyTimeOutputFormatter("^", 0)));
-                        addToPattern(compiledPattern, "b-Y");
+                            addToken(Token.formatter(new RubyTimeOutputFormatter(CARET, 0)));
+                        addToPattern("^b-Y");
                         break;
                     case 'Z':
                         if (dateLibrary) {
                             // +HH:MM in 'date', never zone name
-                            compiledPattern.add(Token.zoneOffsetColons(1));
+                            addToken(Token.zoneOffsetColons(1));
                         } else {
-                            compiledPattern.add(new Token(Format.FORMAT_ZONE_ID));
+                            addToken(new Token(Format.FORMAT_ZONE_ID));
                         }
                         break;
                     case '+':
                         if (!dateLibrary) {
-                            compiledPattern.add(Token.str("%+"));
+                            addToken(Token.str(PERCENT_PLUS));
                             break;
                         }
-                        addToPattern(compiledPattern, "a b e H:M:S ");
+                        addToPattern("a b e H:M:S ");
                         // %Z: +HH:MM in 'date', never zone name
-                        compiledPattern.add(Token.zoneOffsetColons(1));
-                        addToPattern(compiledPattern, " Y");
+                        addToken(Token.zoneOffsetColons(1));
+                        addToPattern(" Y");
                         break;
                     default:
                         throw new AssertionError("Unknown special char: " + c);
@@ -372,13 +393,8 @@ public class RubyDateFormatter {
 
             // if formatter is still set we didn't use it, add it as is
             if (formatter != null) {
-                compiledPattern.add(new Token(Format.FORMAT_OUTPUT, formatter));
+                addToken(formatter);
             }
-        } catch (IOException e) {
-            throw new AssertionError(e); // IOException never happens
-        }
-
-        return compiledPattern;
     }
 
     enum FieldType {
@@ -399,52 +415,56 @@ public class RubyDateFormatter {
     }
 
     /** Convenience method when using no pattern caching */
-    public RubyString compileAndFormat(RubyString pattern, boolean dateLibrary, DateTime dt, long nsec, RubyNumeric sub_millis) {
-        RubyString out = format(compilePattern(pattern, dateLibrary), dt, nsec, sub_millis);
-        out.setEncoding(pattern.getEncoding());
-        if (pattern.isTaint()) out.setTaint(true);
+    public RubyString compileAndFormat(ByteList pattern, boolean dateLibrary, DateTime dt, long nsec, RubyNumeric sub_millis) {
+        compilePattern(pattern, dateLibrary);
+        RubyString out = format(compiledPattern, dt, nsec, sub_millis);
         return out;
     }
 
-    public RubyString format(List<Token> compiledPattern, DateTime dt, long nsec, RubyNumeric sub_millis) {
+    public RubyString format(Token[] compiledPattern, DateTime dt, long nsec, RubyNumeric sub_millis) {
         return runtime.newString(formatToByteList(compiledPattern, dt, nsec, sub_millis));
     }
 
-    private ByteList formatToByteList(List<Token> compiledPattern, DateTime dt, long nsec, RubyNumeric sub_millis) {
+    private ByteList formatToByteList(Token[] compiledPattern, DateTime dt, long nsec, RubyNumeric sub_millis) {
         RubyTimeOutputFormatter formatter = RubyTimeOutputFormatter.DEFAULT_FORMATTER;
-        final ByteList toAppendTo = new ByteList(24);
+        final ByteList output = new ByteList(27, patternEncoding); // Typical length produced by logger by default
+        final ByteList tmp = new ByteList(48);
 
-        for (Token token: compiledPattern) {
-            CharSequence output = null;
+        boolean toUpper = false;
+
+        for (int ti = 0; ti < compiledPatternLength; ti++) {
+            Token token = compiledPattern[ti];
+            CharSequence data = null;
             long value = 0;
             FieldType type = TEXT;
             Format format = token.getFormat();
 
             switch (format) {
-                case FORMAT_ENCODING:
-                    toAppendTo.setEncoding((Encoding) token.getData());
-                    continue; // go to next token
                 case FORMAT_OUTPUT:
                     formatter = (RubyTimeOutputFormatter) token.getData();
                     continue; // go to next token
                 case FORMAT_STRING:
-                    output = token.getData().toString();
+                    data = (ByteList) token.getData();
+                    if ("^".equals(data.toString())) {
+                        toUpper = true;
+                        continue;
+                    }
                     break;
                 case FORMAT_WEEK_LONG:
                     // This is GROSS, but Java API's aren't ISO 8601 compliant at all
                     int v = (dt.getDayOfWeek() + 1) % 8;
-                    output = FORMAT_WEEKDAYS[v == 0 ? 1 : v];
+                    data = FORMAT_WEEKDAYS[v == 0 ? 1 : v];
                     break;
                 case FORMAT_WEEK_SHORT:
                     // This is GROSS, but Java API's aren't ISO 8601 compliant at all
                     v = (dt.getDayOfWeek() + 1) % 8;
-                    output = FORMAT_SHORT_WEEKDAYS[v == 0 ? 1 : v];
+                    data = FORMAT_SHORT_WEEKDAYS[v == 0 ? 1 : v];
                     break;
                 case FORMAT_MONTH_LONG:
-                    output = FORMAT_MONTHS[dt.getMonthOfYear() - 1];
+                    data = FORMAT_MONTHS[dt.getMonthOfYear() - 1];
                     break;
                 case FORMAT_MONTH_SHORT:
-                    output = FORMAT_SHORT_MONTHS[dt.getMonthOfYear() - 1];
+                    data = FORMAT_SHORT_MONTHS[dt.getMonthOfYear() - 1];
                     break;
                 case FORMAT_DAY:
                     type = NUMERIC2;
@@ -486,10 +506,10 @@ public class RubyDateFormatter {
                     value = dt.getMonthOfYear();
                     break;
                 case FORMAT_MERIDIAN:
-                    output = dt.getHourOfDay() < 12 ? "AM" : "PM";
+                    data = dt.getHourOfDay() < 12 ? CAPITAL_AM : CAPITAL_PM;
                     break;
                 case FORMAT_MERIDIAN_LOWER_CASE:
-                    output = dt.getHourOfDay() < 12 ? "am" : "pm";
+                    data = dt.getHourOfDay() < 12 ? AM : PM;
                     break;
                 case FORMAT_SECONDS:
                     type = NUMERIC2;
@@ -523,10 +543,11 @@ public class RubyDateFormatter {
                     // custom logic because this is so weird
                     value = dt.getZone().getOffset(dt.getMillis()) / 1000;
                     int colons = (Integer) token.getData();
-                    output = formatZone(colons, (int) value, formatter);
+                    data = formatZone(colons, (int) value, formatter);
                     break;
                 case FORMAT_ZONE_ID:
-                    output = RubyTime.getRubyTimeZoneName(runtime, dt);
+                    // Should be safe to assume all time zone labels will be ASCII 7bit.
+                    data = RubyTime.getRubyTimeZoneName(runtime, dt);
                     break;
                 case FORMAT_CENTURY:
                     type = NUMERIC;
@@ -545,24 +566,25 @@ public class RubyDateFormatter {
                     int defaultWidth = (format == Format.FORMAT_NANOSEC) ? 9 : 3;
                     int width = formatter.getWidth(defaultWidth);
 
-                    output = RubyTimeOutputFormatter.formatNumber(dt.getMillisOfSecond(), 3, '0');
+                    tmp.setRealSize(0);
+                    data = tmp;//new ByteList(width + width);
+                    RubyTimeOutputFormatter.formatNumber((ByteList) data, dt.getMillisOfSecond(), 3, '0');
                     if (width > 3) {
-                        StringBuilder buff = new StringBuilder(output.length() + 6).append(output);
                         if (sub_millis == null) { // Time
-                            buff.append(RubyTimeOutputFormatter.formatNumber(nsec, 6, '0'));
+                            RubyTimeOutputFormatter.formatNumber((ByteList) data, nsec, 6, '0');
                         } else { // Date, DateTime
-                            formatSubMillisGt3(runtime, buff, width, sub_millis);
+                            formatSubMillisGt3(runtime, (ByteList) data, width, sub_millis);
                         }
-                        output = buff;
                     }
 
-                    if (width < output.length()) {
-                        output = output.subSequence(0, width);
+                    if (width < data.length()) {
+                        ((ByteList) data).setRealSize(width);
                     } else {
-                        StringBuilder buff = new StringBuilder(width).append(output);
-                        // Not enough precision, fill with 0
-                        while (buff.length() < width) buff.append('0');
-                        output = buff;
+                        int padLength = width - data.length();
+                        // FIXME: length - width fill of 0's can be pre-calc'd
+                        for (int i = 0; i < padLength; i++) {  // Not enough precision, fill with 0
+                            ((ByteList) data).append('0');
+                        }
                     }
                     formatter = RubyTimeOutputFormatter.DEFAULT_FORMATTER; // no more formatting
                     break;
@@ -583,23 +605,29 @@ public class RubyDateFormatter {
                     throw new Error("FORMAT_SPECIAL is a special token only for the lexer.");
             }
 
-            final String formatted;
             try {
-                formatted = formatter.format(output, value, type);
+                if (data == null) {
+                    formatter.format(output, value, type);
+                } else {
+                    if (toUpper) {
+                        formatter.format(output, data.toString().toUpperCase());
+                        toUpper = false;
+                    } else {
+                        formatter.format(output, data);
+                    }
+                }
             } catch (IndexOutOfBoundsException ioobe) {
                 throw runtime.newErrnoFromErrno(Errno.ERANGE, "strftime");
             }
 
             // reset formatter
             formatter = RubyTimeOutputFormatter.DEFAULT_FORMATTER;
-
-            toAppendTo.append(formatted.getBytes(runtime.getEncodingService().charsetForEncoding(toAppendTo.getEncoding())));
         }
 
-        return toAppendTo;
+        return output;
     }
 
-    private static void formatSubMillisGt3(final Ruby runtime, final StringBuilder buff,
+    private static void formatSubMillisGt3(final Ruby runtime, final ByteList buff,
                                            final int width, RubyNumeric sub_millis) {
         final int prec = width - 3;
         final ThreadContext context = runtime.getCurrentContext();
@@ -608,7 +636,7 @@ public class RubyDateFormatter {
                 convertToInteger().op_mul(context, power);
         truncated = (RubyNumeric) truncated.idiv(context, sub_millis.denominator(context));
         long decimals = truncated.convertToInteger().getLongValue();
-        buff.append(RubyTimeOutputFormatter.formatNumber(decimals, prec, '0'));
+        RubyTimeOutputFormatter.formatNumber(buff, decimals, prec, '0');
     }
 
     /**
@@ -638,7 +666,7 @@ public class RubyDateFormatter {
         return value;
     }
 
-    private static StringBuilder formatZone(int colons, int value, RubyTimeOutputFormatter formatter) {
+    private static ByteList formatZone(int colons, int value, RubyTimeOutputFormatter formatter) {
         int seconds = Math.abs(value);
         int hours = seconds / 3600;
         seconds %= 3600;
@@ -649,31 +677,36 @@ public class RubyDateFormatter {
             hours = -hours;
         }
 
-        CharSequence mm = RubyTimeOutputFormatter.formatNumber(minutes, 2, '0');
-        CharSequence ss = RubyTimeOutputFormatter.formatNumber(seconds, 2, '0');
-
         char padder = formatter.getPadder('0');
         int defaultWidth = -1;
-        CharSequence after = null;
+        ByteList after = new ByteList(12);
 
         switch (colons) {
             case 0: // %z -> +hhmm
                 defaultWidth = 5;
-                after = mm;
+                RubyTimeOutputFormatter.formatNumber(after, minutes, 2, '0');
                 break;
             case 1: // %:z -> +hh:mm
                 defaultWidth = 6;
-                after = new StringBuilder(mm.length() + 1).append(':').append(mm);
+                after.append(':');
+                RubyTimeOutputFormatter.formatNumber(after, minutes, 2, '0');
                 break;
             case 2: // %::z -> +hh:mm:ss
                 defaultWidth = 9;
-                after = new StringBuilder(mm.length() + ss.length() + 2).append(':').append(mm).append(':').append(ss);
+                after.append(':');
+                RubyTimeOutputFormatter.formatNumber(after, minutes, 2, '0');
+                after.append(':');
+                RubyTimeOutputFormatter.formatNumber(after, seconds, 2, '0');
                 break;
             case 3: // %:::z -> +hh[:mm[:ss]]
-                StringBuilder sb = new StringBuilder(mm.length() + ss.length() + 2);
-                if (minutes != 0 || seconds != 0) sb.append(':').append(mm);
-                if (seconds != 0) sb.append(':').append(ss);
-                after = sb;
+                if (minutes != 0 || seconds != 0) {
+                    after.append(':');
+                    RubyTimeOutputFormatter.formatNumber(after, minutes, 2, '0');
+                }
+                if (seconds != 0) {
+                    after.append(':');
+                    RubyTimeOutputFormatter.formatNumber(after, seconds, 2, '0');
+                }
                 defaultWidth = after.length() + 3;
                 break;
         }
@@ -683,15 +716,11 @@ public class RubyDateFormatter {
         if (width < minWidth) {
             width = minWidth;
         }
+        ByteList result = new ByteList(width);
         width -= after.length();
-        StringBuilder before = RubyTimeOutputFormatter.formatSignedNumber(hours, width, padder);
-
-        if (value < 0 && hours == 0) { // the formatter could not handle this case
-            for (int i=0; i<before.length(); i++) { // replace('+', '-')
-                if (before.charAt(i) == '+') before.setCharAt(i, '-');
-            }
-        }
-        return new StringBuilder(before.length() + after.length()).append(before).append(after); // before + after
+        RubyTimeOutputFormatter.formatSignedNumber(result, hours, value, width, padder);
+        result.append(after); // before + after
+        return result;
     }
 
     /**

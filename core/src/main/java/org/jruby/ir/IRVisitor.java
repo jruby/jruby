@@ -11,6 +11,7 @@ import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Boolean;
+import org.jruby.ir.operands.Integer;
 
 /**
  * Superclass for IR visitors.
@@ -30,12 +31,13 @@ public abstract class IRVisitor {
 
     // standard instructions
     public void AliasInstr(AliasInstr aliasinstr) { error(aliasinstr); }
-    public void ArgScopeDepthInstr(ArgScopeDepthInstr instr) { error(instr); }
     public void ArrayDerefInstr(ArrayDerefInstr arrayderefinstr) { error(arrayderefinstr); }
+    public void AsFixnumInstr(AsFixnumInstr fixnum) { error(fixnum); }
     public void AsStringInstr(AsStringInstr asstring) { error(asstring); }
     public void AttrAssignInstr(AttrAssignInstr attrassigninstr) { error(attrassigninstr); }
     public void BFalseInstr(BFalseInstr bfalseinstr) { error(bfalseinstr); }
     public void BlockGivenInstr(BlockGivenInstr blockgiveninstr) { error(blockgiveninstr); }
+    public void BGTEInstr(BIntInstr bneinstr) { error(bneinstr); }
     public void BNEInstr(BNEInstr bneinstr) { error(bneinstr); }
     public void BNilInstr(BNilInstr bnilinstr) { error(bnilinstr); }
     public void BreakInstr(BreakInstr breakinstr) { error(breakinstr); }
@@ -70,6 +72,7 @@ public abstract class IRVisitor {
     public void InheritanceSearchConstInstr(InheritanceSearchConstInstr inheritancesearchconstinstr) { error(inheritancesearchconstinstr); }
     public void InstanceSuperInstr(InstanceSuperInstr instancesuperinstr) { error(instancesuperinstr); }
     public void Instr(Instr instr) { error(instr); }
+    public void IntegerMathInstr(IntegerMathInstr instr) { error(instr); }
     public void JumpInstr(JumpInstr jumpinstr) { error(jumpinstr); }
     public void LabelInstr(LabelInstr labelinstr) { error(labelinstr); }
     public void LexicalSearchConstInstr(LexicalSearchConstInstr lexicalsearchconstinstr) { error(lexicalsearchconstinstr); }
@@ -77,6 +80,7 @@ public abstract class IRVisitor {
     public void LoadLocalVarInstr(LoadLocalVarInstr loadlocalvarinstr) { error(loadlocalvarinstr); }
     public void LoadImplicitClosure(LoadImplicitClosureInstr loadimplicitclosureinstr) { error(loadimplicitclosureinstr); }
     public void LoadFrameClosure(LoadFrameClosureInstr loadframeclosureinstr) { error(loadframeclosureinstr); }
+    public void LoadBlockImplicitClosure(LoadBlockImplicitClosureInstr loadblockimplicitclosureinstr) { error(loadblockimplicitclosureinstr); }
     public void MatchInstr(MatchInstr matchInstr) { error(matchInstr); }
     public void ModuleVersionGuardInstr(ModuleVersionGuardInstr moduleversionguardinstr) { error(moduleversionguardinstr); }
     public void NonlocalReturnInstr(NonlocalReturnInstr nonlocalreturninstr) { error(nonlocalreturninstr); }
@@ -109,6 +113,7 @@ public abstract class IRVisitor {
     public void ReifyClosureInstr(ReifyClosureInstr reifyclosureinstr) { error(reifyclosureinstr); }
     public void ReceiveRubyExceptionInstr(ReceiveRubyExceptionInstr receiveexceptioninstr) { error(receiveexceptioninstr); }
     public void ReceiveJRubyExceptionInstr(ReceiveJRubyExceptionInstr receiveexceptioninstr) { error(receiveexceptioninstr); }
+    public void ReceiveKeywordsInstr(ReceiveKeywordsInstr receiveKeywordsInstr) { error(receiveKeywordsInstr); }
     public void ReceiveKeywordArgInstr(ReceiveKeywordArgInstr receiveKeywordArgInstr) { error(receiveKeywordArgInstr); }
     public void ReceiveKeywordRestArgInstr(ReceiveKeywordRestArgInstr receiveKeywordRestArgInstr) { error(receiveKeywordRestArgInstr); }
     public void ReceiveOptArgInstr(ReceiveOptArgInstr receiveoptarginstr) { error(receiveoptarginstr); }
@@ -162,6 +167,7 @@ public abstract class IRVisitor {
     public void Array(Array array) { error(array); }
     public void Bignum(Bignum bignum) { error(bignum); }
     public void Boolean(Boolean bool) { error(bool); }
+    public void BuiltinClass(BuiltinClass builtinClass) { error(builtinClass); }
     public void UnboxedBoolean(UnboxedBoolean bool) { error(bool); }
     public void ClosureLocalVariable(ClosureLocalVariable closurelocalvariable) { error(closurelocalvariable); }
     public void Complex(Complex complex) { error(complex); }
@@ -175,13 +181,14 @@ public abstract class IRVisitor {
     public void UnboxedFloat(org.jruby.ir.operands.UnboxedFloat flote) { error(flote); }
     public void GlobalVariable(GlobalVariable globalvariable) { error(globalvariable); }
     public void Hash(Hash hash) { error(hash); }
+    public void Integer(Integer integer) { error(integer); }
     public void IRException(IRException irexception) { error(irexception); }
     public void Label(Label label) { error(label); }
     public void LocalVariable(LocalVariable localvariable) { error(localvariable); }
     public void Nil(Nil nil) { error(nil); }
     public void NthRef(NthRef nthref) { error(nthref); }
     public void NullBlock(NullBlock nullblock) { error(nullblock); }
-    public void ObjectClass(ObjectClass objectclass) { error(objectclass); }
+    public void Range(Range range) { error(range); }
     public void Rational(Rational rational) { error(rational); }
     public void Regexp(Regexp regexp) { error(regexp); }
     public void Scope(Scope scope) { error(scope); }

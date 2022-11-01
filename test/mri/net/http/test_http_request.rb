@@ -1,7 +1,6 @@
 # frozen_string_literal: false
 require 'net/http'
 require 'test/unit'
-require 'stringio'
 
 class HTTPRequestTest < Test::Unit::TestCase
 
@@ -47,8 +46,9 @@ class HTTPRequestTest < Test::Unit::TestCase
     assert_not_predicate req, :response_body_permitted?
 
     expected = {
-      'accept'     => %w[*/*],
-      'user-agent' => %w[Ruby],
+      'accept'          => %w[*/*],
+      "accept-encoding" => %w[gzip;q=1.0,deflate;q=0.6,identity;q=0.3],
+      'user-agent'      => %w[Ruby],
     }
 
     assert_equal expected, req.to_hash
@@ -75,6 +75,7 @@ class HTTPRequestTest < Test::Unit::TestCase
     assert_equal "example.com", req['Host']
 
     assert_raise(ArgumentError){ Net::HTTP::Get.new(URI("urn:ietf:rfc:7231")) }
+    assert_raise(ArgumentError){ Net::HTTP::Get.new(URI("http://")) }
   end
 
   def test_header_set

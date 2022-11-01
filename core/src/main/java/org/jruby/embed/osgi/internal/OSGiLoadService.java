@@ -35,25 +35,22 @@ import org.jruby.RubyInstanceConfig.LoadServiceCreator;
 import org.jruby.embed.osgi.utils.OSGiFileLocator;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.load.Library;
+import org.jruby.runtime.load.LibrarySearcher;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.runtime.load.LoadServiceResource;
 import org.osgi.framework.Bundle;
 
 /**
  * @author hmalphettes
- * 
+ *
  * Load scripts and java classes directly from the OSGi bundles.
  * bundle:/symbolic.name/
  */
 public class OSGiLoadService extends LoadService {
-    
+
     public static final String OSGI_BUNDLE_CLASSPATH_SCHEME = "osgibundle:/";
-    
-    public static final LoadServiceCreator OSGI_DEFAULT = new LoadServiceCreator() {
-        public LoadService create(Ruby runtime) {
-            return new OSGiLoadService19(runtime);
-        }
-    };
+
+    public static final LoadServiceCreator OSGI_DEFAULT = runtime -> new OSGiLoadService(runtime);
 
     /**
      * Default constructor
@@ -63,18 +60,37 @@ public class OSGiLoadService extends LoadService {
     public OSGiLoadService(Ruby runtime) {
         super(runtime);
     }
-    
-    protected Library findLibraryBySearchState(SearchState state) {
-        Library library = super.findLibraryBySearchState(state);
-        if (library == null){
-            library = findLibraryWithClassloaders(state, state.searchFile, state.suffixType);
-            if (library != null) {
-                state.library = library;
-            }
+
+//    @Override
+    protected LibrarySearcher.FoundLibrary searchForRequire(String searchFile) {
+        String[] fileHolder = {searchFile};
+        SuffixType suffixType = LibrarySearcher.getSuffixTypeForRequire(fileHolder);
+        String baseName = fileHolder[0];
+
+        LibrarySearcher.FoundLibrary[] library = {null};
+        char found = librarySearcher.findLibraryForRequire(baseName, library);
+        if (found != 0) {
+            return library[0];
         }
-        return library;
+
+        return findLibraryWithClassloaders(searchFile, suffixType);
     }
-    
+
+    @Override
+    protected LibrarySearcher.FoundLibrary searchForLoad(String searchFile) {
+        String[] fileHolder = {searchFile};
+        SuffixType suffixType = LibrarySearcher.getSuffixTypeForLoad(fileHolder);
+        String baseName = fileHolder[0];
+
+        LibrarySearcher.FoundLibrary[] library = {null};
+        char found = librarySearcher.findLibraryForRequire(baseName, library);
+        if (found != 0) {
+            return library[0];
+        }
+
+        return findLibraryWithClassloaders(searchFile, suffixType);
+    }
+
     /**
      * Support for 'bundle:/' to look for libraries in osgi bundles
      * or classes or ruby files.
@@ -110,10 +126,66 @@ public class OSGiLoadService extends LoadService {
         }
         return super.findFileInClasspath(name);
     }
-    
+
     /**
      * Support for 'bundle:/' to look for libraries in osgi bundles.
      */
+    @Override
+    protected LibrarySearcher.FoundLibrary createLibrary(String baseName, String loadName, LoadServiceResource resource) {
+        if (resource == null) {
+            return null;
+        }
+        String file = loadName;
+        if (file.startsWith(OSGI_BUNDLE_CLASSPATH_SCHEME)) {
+            file = cleanupFindName(file);
+            StringTokenizer tokenizer = new StringTokenizer(file, "/", false);
+            tokenizer.nextToken();
+            String symname = tokenizer.nextToken();
+            Bundle bundle = OSGiFileLocator.getBundle(symname);
+            if (bundle != null) {
+                return new LibrarySearcher.FoundLibrary(baseName, loadName, new OSGiBundleLibrary(bundle));
+            }
+        }
+        return new LibrarySearcher.FoundLibrary(baseName, loadName, super.createLibrary(baseName, loadName, resource));
+    }
+    
+    /**
+     * Remove the extension when they are misleading.
+     * @param name
+     * @return
+     */
+    private String cleanupFindName(String name) {
+        if (name.endsWith(".jar")) {
+            return name.substring(0, name.length()-".jar".length());
+        } else if (name.endsWith(".class")) {
+            return name.substring(0, name.length()-".class".length());
+        } else {
+            return name;
+        }
+    }
+
+    @Override
+    protected String resolveLoadName(LoadServiceResource foundResource, String previousPath) {
+        String path = foundResource.getAbsolutePath();
+        if (Platform.IS_WINDOWS) {
+            path = path.replace('\\', '/');
+        }
+        return path;
+    }
+
+    @Override
+    @Deprecated
+    protected Library findLibraryBySearchState(SearchState state) {
+        Library library = super.findLibraryBySearchState(state);
+        if (library == null){
+            library = findLibraryWithClassloaders(state, state.searchFile, state.suffixType);
+            if (library != null) {
+                state.library = library;
+            }
+        }
+        return library;
+    }
+
     @Override
     @Deprecated
     protected Library createLibrary(SearchState state, LoadServiceResource resource) {
@@ -132,36 +204,6 @@ public class OSGiLoadService extends LoadService {
             }
         }
         return super.createLibrary(state, resource);
-    }
-    
-    /**
-     * Remove the extension when they are misleading.
-     * @param name
-     * @return
-     */
-    private String cleanupFindName(String name) {
-        if (name.endsWith(".jar")) {
-            return name.substring(0, name.length()-".jar".length());
-        } else if (name.endsWith(".class")) {
-            return name.substring(0, name.length()-".class".length());
-        } else {
-            return name;
-        }
-    }
-
-}
-class OSGiLoadService19 extends OSGiLoadService {
-    public OSGiLoadService19(Ruby runtime) {
-        super(runtime);
-    }
-
-    @Override
-    protected String resolveLoadName(LoadServiceResource foundResource, String previousPath) {
-        String path = foundResource.getAbsolutePath();
-        if (Platform.IS_WINDOWS) {
-            path = path.replace('\\', '/');
-        }
-        return path;
     }
 
 }

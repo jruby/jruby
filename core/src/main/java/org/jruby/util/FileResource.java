@@ -20,6 +20,7 @@ public interface FileResource {
 
     String absolutePath();
     String canonicalPath();
+    String path();
 
     boolean exists();
     boolean isDirectory();

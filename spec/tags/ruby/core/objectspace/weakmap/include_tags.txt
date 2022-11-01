@@ -1,2 +1,0 @@
-fails:ObjectSpace::WeakMap#include? recognizes keys in use
-fails:ObjectSpace::WeakMap#include? matches using identity semantics

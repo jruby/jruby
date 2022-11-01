@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -34,13 +35,15 @@ import org.joni.WarnCallback;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
+
+import static org.jruby.util.RubyStringBuilder.str;
 
 /**
  *
@@ -48,12 +51,18 @@ import org.jruby.util.TypeConverter;
 public class RubyWarnings implements IRubyWarnings, WarnCallback {
     private final Ruby runtime;
     private final Set<ID> oncelers = EnumSet.allOf(IRubyWarnings.ID.class);
+    private static final Set<Category> categories = EnumSet.allOf(Category.class);
 
     public RubyWarnings(Ruby runtime) {
         this.runtime = runtime;
     }
 
     public static RubyModule createWarningModule(Ruby runtime) {
+        categories.add(Category.EXPERIMENTAL);
+
+        // At time this is created globals/runtime has not setup warnings/verbosity in runtime yet.
+        if (!runtime.getInstanceConfig().isVerbose()) categories.remove(Category.DEPRECATED);
+
         RubyModule warning = runtime.defineModule("Warning");
 
         warning.defineAnnotatedMethods(RubyWarnings.class);
@@ -81,25 +90,15 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      * Prints a warning, unless $VERBOSE is nil.
      */
     @Override
-    @Deprecated
-    public void warn(ID id, ISourcePosition position, String message) {
-        if (!runtime.warningsEnabled()) return;
-
-        warn(id, position.getFile(), position.getLine(), message);
+    public void warn(ID id, String fileName, int lineNumber, String message) {
+        warn(fileName, lineNumber, message);
     }
 
-    /**
-     * Prints a warning, unless $VERBOSE is nil.
-     */
-    @Override
-    public void warn(ID id, String fileName, int lineNumber, String message) {
+    public void warn(String fileName, int lineNumber, String message) {
         if (!runtime.warningsEnabled()) return;
 
-        StringBuilder buffer = new StringBuilder(100);
-
-        buffer.append(fileName).append(':').append(lineNumber + 1).append(": ");
-        buffer.append("warning: ").append(message).append('\n');
-        RubyString errorString = runtime.newString(buffer.toString());
+        String buffer = fileName + ':' + (lineNumber + 1) + ": warning: " + message + '\n';
+        RubyString errorString = runtime.newString(buffer);
 
         writeWarningDyncall(runtime.getCurrentContext(), errorString);
     }
@@ -144,12 +143,17 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     public void warn(String filename, String message) {
         if (!runtime.warningsEnabled()) return;
 
-        StringBuilder buffer = new StringBuilder(100);
-
-        buffer.append(filename).append(": ").append(message).append('\n');
-        RubyString errorString = runtime.newString(buffer.toString());
+        RubyString errorString = runtime.newString(filename + ": " + message + '\n');
 
         writeWarningDyncall(runtime.getCurrentContext(), errorString);
+    }
+
+    public void warnExperimental(String filename, int line, String message) {
+        if (categories.contains(Category.EXPERIMENTAL)) warn(ID.MISCELLANEOUS, filename, line, message);
+    }
+
+    public void warnDeprecated(String name) {
+        if (categories.contains(Category.DEPRECATED)) warn(ID.MISCELLANEOUS, "`" + name + "' is deprecated");
     }
 
     public void warnOnce(ID id, String message) {
@@ -198,19 +202,45 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      * Prints a warning, only in verbose mode.
      */
     @Override
-    @Deprecated
-    public void warning(ID id, ISourcePosition position, String message) {
-        warning(id, position.getFile(), position.getLine(), message);
+    public void warning(ID id, String fileName, int lineNumber, String message) {
+        warning(fileName, lineNumber, message);
     }
 
-    /**
-     * Prints a warning, only in verbose mode.
-     */
-    @Override
-    public void warning(ID id, String fileName, int lineNumber, String message) {
+    public void warning(String fileName, int lineNumber, String message) {
         if (!runtime.warningsEnabled() || !runtime.isVerbose()) return;
 
-        warn(id, fileName, lineNumber, message);
+        warn(fileName, lineNumber, message);
+    }
+
+    @JRubyMethod(name = "[]")
+    public static IRubyObject op_aref(ThreadContext context, IRubyObject self, IRubyObject arg) {
+        Ruby runtime = context.runtime;
+        TypeConverter.checkType(context, arg, runtime.getSymbol());
+        String categoryId = ((RubySymbol) arg).idString();
+        Category category = Category.fromId(categoryId);
+
+        if (category == null) throw runtime.newArgumentError(str(runtime, "unknown category: ", arg));
+
+        return runtime.newBoolean(category != null && categories.contains(category));
+    }
+
+    @JRubyMethod(name = "[]=")
+    public static IRubyObject op_aset(ThreadContext context, IRubyObject self, IRubyObject arg, IRubyObject flag) {
+        TypeConverter.checkType(context, arg, context.runtime.getSymbol());
+        String categoryId = ((RubySymbol) arg).idString();
+        Category category = Category.fromId(categoryId);
+
+        if (category != null) {
+            if (flag.isTrue()) {
+                categories.add(category);
+            } else {
+                categories.remove(category);
+            }
+        } else {
+            throw context.runtime.newArgumentError(str(context.runtime, "unknown category: ", arg));
+        }
+
+        return flag;
     }
 
     @JRubyMethod
@@ -238,11 +268,27 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     public void warn(ID id, String fileName, String message) {
         if (!runtime.warningsEnabled()) return;
 
-        StringBuilder buffer = new StringBuilder(100);
-
-        buffer.append(fileName).append(' ');
-        buffer.append("warning: ").append(message).append('\n');
         IRubyObject errorStream = runtime.getGlobalVariables().get("$stderr");
-        errorStream.callMethod(runtime.getCurrentContext(), "write", runtime.newString(buffer.toString()));
+        String buffer = fileName + " warning: " + message + '\n';
+        errorStream.callMethod(runtime.getCurrentContext(), "write", runtime.newString(buffer));
+    }
+
+    public enum Category {
+        EXPERIMENTAL("experimental"), DEPRECATED("deprecated");
+
+        private String id;
+
+        Category(String id) {
+            this.id = id;
+        }
+
+        public static Category fromId(String id) {
+            switch (id) {
+                case "experimental": return EXPERIMENTAL;
+                case "deprecated": return DEPRECATED;
+            }
+
+            return null;
+        }
     }
 }

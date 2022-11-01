@@ -61,7 +61,7 @@ describe "Custom type definitions" do
         # enum() will insert a custom typedef called :foo for the enum
         enum :foo, [ :a, :b ]
         typedef :int, :bar
-        
+
         ffi_lib TestLibrary::PATH
         begin
           attach_function :ptr_ret_int32_t, [ :string, :foo ], :bar

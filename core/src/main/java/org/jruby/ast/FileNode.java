@@ -29,14 +29,13 @@
 
 package org.jruby.ast;
 
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.ByteList;
 
 /**
  * Represents __FILE__ nodes
  */
 public class FileNode extends StrNode implements SideEffectFree {
-    public FileNode(ISourcePosition position, ByteList value) {
-        super(position, value);
+    public FileNode(int line, ByteList value) {
+        super(line, value);
     }
 }

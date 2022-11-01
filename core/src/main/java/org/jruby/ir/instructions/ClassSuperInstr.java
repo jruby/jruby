@@ -6,6 +6,7 @@ import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
@@ -23,16 +24,19 @@ public class ClassSuperInstr extends CallInstr {
 
     // clone constructor
     protected ClassSuperInstr(IRScope scope, Variable result, Operand receiver, RubySymbol name, Operand[] args,
-                              Operand closure, boolean potentiallyRefined, CallSite callSite, long callSiteId) {
-        super(scope, Operation.CLASS_SUPER, CallType.SUPER, result, name, receiver, args, closure, potentiallyRefined, callSite, callSiteId);
+                              Operand closure, int flags, boolean potentiallyRefined, CallSite callSite,
+                              long callSiteId) {
+        super(scope, Operation.CLASS_SUPER, CallType.SUPER, result, name, receiver, args, closure, flags,
+                potentiallyRefined, callSite, callSiteId);
 
         isLiteralBlock = closure instanceof WrappedIRClosure;
     }
 
     // normal constructor
-    public ClassSuperInstr(IRScope scope, Variable result, Operand definingModule, RubySymbol name, Operand[] args, Operand closure,
-                           boolean isPotentiallyRefined) {
-        super(scope, Operation.CLASS_SUPER, CallType.SUPER, result, name, definingModule, args, closure, isPotentiallyRefined);
+    public ClassSuperInstr(IRScope scope, Variable result, Operand definingModule, RubySymbol name, Operand[] args,
+                           Operand closure, int flags, boolean isPotentiallyRefined) {
+        super(scope, Operation.CLASS_SUPER, CallType.SUPER, result, name, definingModule, args, closure, flags,
+                isPotentiallyRefined);
 
         isLiteralBlock = closure instanceof WrappedIRClosure;
     }
@@ -44,6 +48,7 @@ public class ClassSuperInstr extends CallInstr {
     @Override
     public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
         super.computeScopeFlags(scope, flags);
+        scope.setUsesSuper();
         flags.add(IRFlags.REQUIRES_CLASS); // for current class and method name
         flags.add(IRFlags.REQUIRES_METHODNAME); // for current class and method name
         return true;
@@ -52,8 +57,8 @@ public class ClassSuperInstr extends CallInstr {
     @Override
     public Instr clone(CloneInfo ii) {
         return new ClassSuperInstr(ii.getScope(), ii.getRenamedVariable(getResult()), getDefiningModule().cloneForInlining(ii),
-                name, cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii),
-                isPotentiallyRefined(), getCallSite(), getCallSiteId());
+                name, cloneCallArgs(ii), getClosureArg().cloneForInlining(ii),
+                getFlags(), isPotentiallyRefined(), getCallSite(), getCallSiteId());
     }
 
     public static ClassSuperInstr decode(IRReaderDecoder d) {
@@ -73,9 +78,10 @@ public class ClassSuperInstr extends CallInstr {
             args[i] = d.decodeOperand();
         }
 
-        Operand closure = hasClosureArg ? d.decodeOperand() : null;
+        Operand closure = hasClosureArg ? d.decodeOperand() : NullBlock.INSTANCE;
+        int flags = d.decodeInt();
 
-        return new ClassSuperInstr(d.getCurrentScope(), d.decodeVariable(), receiver, name, args, closure, d.getCurrentScope().maybeUsingRefinements());
+        return new ClassSuperInstr(d.getCurrentScope(), d.decodeVariable(), receiver, name, args, closure, flags, d.getCurrentScope().maybeUsingRefinements());
     }
 
     /*
@@ -90,6 +96,8 @@ public class ClassSuperInstr extends CallInstr {
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         IRubyObject[] args = prepareArguments(context, self, currScope, currDynScope, temp);
         Block block = prepareBlock(context, self, currScope, currDynScope, temp);
+
+        IRRuntimeHelpers.setCallInfo(context, getFlags());
 
         if (isLiteralBlock) {
             return IRRuntimeHelpers.unresolvedSuperIter(context, self, args, block);

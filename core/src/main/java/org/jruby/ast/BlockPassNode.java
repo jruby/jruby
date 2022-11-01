@@ -35,7 +35,6 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Explicit block argument (on caller side):
@@ -54,8 +53,8 @@ public class BlockPassNode extends Node {
      */
     private Node argsNode;
 
-    public BlockPassNode(ISourcePosition position, Node bodyNode) {
-        super(position, bodyNode != null && bodyNode.containsVariableAssignment());
+    public BlockPassNode(int line, Node bodyNode) {
+        super(line, bodyNode != null && bodyNode.containsVariableAssignment());
         this.bodyNode = bodyNode;
     }
 

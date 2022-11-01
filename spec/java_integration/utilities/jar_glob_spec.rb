@@ -19,14 +19,14 @@ describe 'Dir globs (Dir.glob and Dir.[])' do
     begin
       FileUtils.rm_rf 'glob_test'
     rescue Errno::ENOENT; end
-    
+
     FileUtils.mkdir_p 'glob_target'
     File.open('glob_target/bar.txt', 'w') {|file| file << 'Some text.'}
     `jar -cf glob-test.jar glob_target/bar.txt`
     FileUtils.mkdir_p 'glob_test'
     FileUtils.cp "glob-test.jar", 'glob_test/'
   end
-  
+
   after :all do
     FileUtils.rm    'glob_target/bar.txt',     :force => true
     FileUtils.rmdir 'glob_target'
@@ -39,7 +39,7 @@ describe 'Dir globs (Dir.glob and Dir.[])' do
     end
     FileUtils.rmdir 'glob_test'
   end
-  
+
   it "finds the contents inside a jar with Dir.[] in a dir inside the jar" do
     FileUtils.cd('glob_test') do
       expect(Dir["file:#{File.expand_path(Dir.pwd)}/glob-test.jar!/glob_target/**/*"]).to have_jar_entries([
@@ -47,7 +47,7 @@ describe 'Dir globs (Dir.glob and Dir.[])' do
       ])
     end
   end
-  
+
   it "finds the contents inside a jar with Dir.glob in a dir inside the jar" do
     FileUtils.cd('glob_test') do
       expect(Dir.glob("file:#{File.expand_path(Dir.pwd)}/glob-test.jar!/glob_target/**/*")).to have_jar_entries([
@@ -66,7 +66,7 @@ describe 'Dir globs (Dir.glob and Dir.[])' do
       ])
     end
   end
-    
+
   it "finds the contents inside a jar with Dir.glob at the root of the jar" do
     FileUtils.cd('glob_test') do
       expect(Dir.glob("file:#{File.expand_path(Dir.pwd)}/glob-test.jar!/**/*")).to have_jar_entries([
@@ -113,7 +113,7 @@ describe 'Dir globs (Dir.glob and Dir.[])' do
     puts File.mtime(jar_path)
 
     # Explicitly touch the file in case mtime and zip don't agree
-    `touch #{jar_path}`
+    FileUtils.touch jar_path
 
     after = Dir.glob("#{jar_path}!/**/*").size
 
@@ -179,14 +179,14 @@ describe "Dir.glob and Dir[] with multiple magic modifiers" do
     FileUtils.mkpath("jruby-4396/top/builtin/B")
     FileUtils.mkpath("jruby-4396/top/builtin/C")
     FileUtils.mkpath("jruby-4396/top/dir2/dir2a")
-    `touch            jruby-4396/top/dir2/dir2a/1`
-    `touch            jruby-4396/top/dir2/dir2a/2`
-    `touch            jruby-4396/top/dir2/dir2a/3`
+    FileUtils.touch("jruby-4396/top/dir2/dir2a/1")
+    FileUtils.touch("jruby-4396/top/dir2/dir2a/2")
+    FileUtils.touch("jruby-4396/top/dir2/dir2a/3")
     FileUtils.mkpath("jruby-4396/top/dir2/dir2b")
-    `touch            jruby-4396/top/dir2/dir2b/4`
-    `touch            jruby-4396/top/dir2/dir2b/5`
+    FileUtils.touch("jruby-4396/top/dir2/dir2b/4")
+    FileUtils.touch("jruby-4396/top/dir2/dir2b/5")
     FileUtils.mkpath("jruby-4396/top/dir2/dir2c")
-    `touch            jruby-4396/top/dir2/dir2c/6`
+    FileUtils.touch("jruby-4396/top/dir2/dir2c/6")
     FileUtils.cd('jruby-4396') { `jar -cvf top.jar top` }
   end
 
@@ -201,9 +201,8 @@ describe "Dir.glob and Dir[] with multiple magic modifiers" do
   end
 
   it "iterates over directories when there are more than one magic modifier" do
-    FileUtils.cd('jruby-4396') do      
+    FileUtils.cd('jruby-4396') do
       Dir.glob("file:#{File.expand_path(Dir.pwd)}/top.jar!top/dir2/**/*/**").size.should == 6
     end
   end
 end
-

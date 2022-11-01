@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-require 'minitest_helper'
+require_relative 'helper'
 
 class TestRDocRDoc < RDoc::TestCase
 
@@ -26,7 +26,7 @@ class TestRDocRDoc < RDoc::TestCase
     temp_dir do
       options.op_dir = 'ri'
 
-      capture_io do
+      capture_output do
         rdoc.document options
       end
 
@@ -53,7 +53,7 @@ class TestRDocRDoc < RDoc::TestCase
 
     out = nil
     temp_dir do
-      out, = capture_io do
+      out, = capture_output do
         rdoc.document options
       end
 
@@ -73,12 +73,17 @@ class TestRDocRDoc < RDoc::TestCase
     b = File.expand_path '../test_rdoc_text.rb', __FILE__
 
     assert_equal [a, b], @rdoc.gather_files([b, a, b])
+
+    assert_empty @rdoc.gather_files([b, a, b])
+
+    @rdoc.last_modified[a] -= 10
+    assert_equal [a, b], @rdoc.gather_files([b, a, b])
   end
 
   def test_handle_pipe
     $stdin = StringIO.new "hello"
 
-    out, = capture_io do
+    out, = capture_output do
       @rdoc.handle_pipe
     end
 
@@ -92,48 +97,13 @@ class TestRDocRDoc < RDoc::TestCase
 
     @rdoc.options.markup = 'rd'
 
-    out, = capture_io do
+    out, = capture_output do
       @rdoc.handle_pipe
     end
 
     assert_equal "\n<p>hello</p>\n", out
   ensure
     $stdin = STDIN
-  end
-
-  def test_load_options
-    temp_dir do
-      options = RDoc::Options.new
-      options.markup = 'tomdoc'
-      options.write_options
-
-      options = @rdoc.load_options
-
-      assert_equal 'tomdoc', options.markup
-    end
-  end
-
-  def test_load_options_invalid
-    temp_dir do
-      File.open '.rdoc_options', 'w' do |io|
-        io.write "a: !ruby.yaml.org,2002:str |\nfoo"
-      end
-
-      e = assert_raises RDoc::Error do
-        @rdoc.load_options
-      end
-
-      options_file = File.expand_path '.rdoc_options'
-      assert_equal "#{options_file} is not a valid rdoc options file", e.message
-    end
-  end
-
-  def load_options_no_file
-    temp_dir do
-      options = @rdoc.load_options
-
-      assert_kind_of RDoc::Options, options
-    end
   end
 
   def test_normalized_file_list
@@ -146,29 +116,29 @@ class TestRDocRDoc < RDoc::TestCase
       @rdoc.normalized_file_list [test_path, flag_file]
     end
 
-    files = files.map { |file| File.expand_path file }
+    files = files.map { |file, *| File.expand_path file }
 
     assert_equal [test_path], files
   end
 
   def test_normalized_file_list_not_modified
-    files = [__FILE__]
-
     @rdoc.last_modified[__FILE__] = File.stat(__FILE__).mtime
 
     files = @rdoc.normalized_file_list [__FILE__]
 
-    assert_empty files
+    files = files.collect {|file, mtime| file if mtime}.compact
+
+    assert_empty(files)
   end
 
   def test_normalized_file_list_non_file_directory
     dev = File::NULL
-    skip "#{dev} is not a character special" unless
+    omit "#{dev} is not a character special" unless
       File.chardev? dev
 
     files = nil
 
-    out, err = verbose_capture_io do
+    out, err = verbose_capture_output do
       files = @rdoc.normalized_file_list [dev]
     end
 
@@ -190,6 +160,10 @@ class TestRDocRDoc < RDoc::TestCase
       FileUtils.touch a
       FileUtils.touch b
       FileUtils.touch c
+      # Use Dir.glob to convert short path of Dir.tmpdir to long path.
+      a = Dir.glob(a).first
+      b = Dir.glob(b).first
+      c = Dir.glob(c).first
 
       dot_doc = File.expand_path('.document')
       FileUtils.touch dot_doc
@@ -203,7 +177,7 @@ class TestRDocRDoc < RDoc::TestCase
       @rdoc.normalized_file_list [File.realpath(dir)]
     end
 
-    files = files.map { |file| File.expand_path file }
+    files = files.map { |file, *| File.expand_path file }
 
     assert_equal expected_files, files
   end
@@ -217,6 +191,10 @@ class TestRDocRDoc < RDoc::TestCase
       FileUtils.touch a
       FileUtils.touch b
       FileUtils.touch c
+      # Use Dir.glob to convert short path of Dir.tmpdir to long path.
+      a = Dir.glob(a).first
+      b = Dir.glob(b).first
+      c = Dir.glob(c).first
 
       dot_doc = File.expand_path('.document')
       FileUtils.touch dot_doc
@@ -230,7 +208,7 @@ class TestRDocRDoc < RDoc::TestCase
       @rdoc.normalized_file_list [File.realpath(dir)]
     end
 
-    files = files.map { |file| File.expand_path file }
+    files = files.map { |file, *| File.expand_path file }
 
     assert_equal expected_files, files
   end
@@ -259,7 +237,7 @@ class TestRDocRDoc < RDoc::TestCase
 
     @rdoc.options.root = Pathname root
 
-    out, err = capture_io do
+    out, err = capture_output do
       Dir.chdir root do
         assert_nil @rdoc.parse_file 'binary.dat'
       end
@@ -281,7 +259,7 @@ class TestRDocRDoc < RDoc::TestCase
         io.puts ':include: test.txt'
       end
 
-      out, err = capture_io do
+      out, err = capture_output do
         top_level = @rdoc.parse_file 'include.txt'
       end
       assert_empty out
@@ -349,8 +327,8 @@ class TestRDocRDoc < RDoc::TestCase
   end
 
   def test_parse_file_forbidden
-    skip 'chmod not supported' if Gem.win_platform?
-    skip "assumes that euid is not root" if Process.euid == 0
+    omit 'chmod not supported' if Gem.win_platform?
+    omit "assumes that euid is not root" if Process.euid == 0
 
     @rdoc.store = RDoc::Store.new
 
@@ -363,7 +341,7 @@ class TestRDocRDoc < RDoc::TestCase
       begin
         top_level = :bug
 
-        _, err = capture_io do
+        _, err = capture_output do
           top_level = @rdoc.parse_file io.path
         end
 
@@ -420,6 +398,19 @@ class TestRDocRDoc < RDoc::TestCase
     end
   end
 
+  def test_remove_unparseable_CVE_2021_31799
+    omit 'for Un*x platforms' if Gem.win_platform?
+    temp_dir do
+      file_list = ['| touch evil.txt && echo tags']
+      file_list.each do |f|
+        FileUtils.touch f rescue omit
+      end
+
+      assert_equal file_list, @rdoc.remove_unparseable(file_list)
+      assert_equal file_list, Dir.children('.')
+    end
+  end
+
   def test_setup_output_dir
     Dir.mktmpdir {|d|
       path = File.join d, 'testdir'
@@ -463,7 +454,7 @@ class TestRDocRDoc < RDoc::TestCase
     Dir.mktmpdir {|path|
       File.open @rdoc.output_flag_file(path), 'w' do end
 
-      e = assert_raises RDoc::Error do
+      e = assert_raise RDoc::Error do
         @rdoc.setup_output_dir path, false
       end
 
@@ -475,7 +466,7 @@ class TestRDocRDoc < RDoc::TestCase
     tf = Tempfile.open 'test_rdoc_rdoc' do |tempfile|
       path = tempfile.path
 
-      e = assert_raises RDoc::Error do
+      e = assert_raise RDoc::Error do
         @rdoc.setup_output_dir path, false
       end
 
@@ -488,7 +479,7 @@ class TestRDocRDoc < RDoc::TestCase
 
   def test_setup_output_dir_exists_not_rdoc
     Dir.mktmpdir do |dir|
-      e = assert_raises RDoc::Error do
+      e = assert_raise RDoc::Error do
         @rdoc.setup_output_dir dir, false
       end
 

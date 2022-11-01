@@ -31,7 +31,6 @@ package org.jruby.ext.set;
 
 import org.jruby.*;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -48,19 +47,13 @@ import static org.jruby.RubyArray.DefaultComparator;
 public class RubySortedSet extends RubySet implements SortedSet {
 
     static RubyClass createSortedSetClass(final Ruby runtime) {
-        RubyClass SortedSet = runtime.defineClass("SortedSet", runtime.getClass("Set"), ALLOCATOR);
+        RubyClass SortedSet = runtime.defineClass("SortedSet", runtime.getClass("Set"), RubySortedSet::new);
 
         SortedSet.setReifiedClass(RubySortedSet.class);
         SortedSet.defineAnnotatedMethods(RubySortedSet.class);
 
         return SortedSet;
     }
-
-    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-        public RubySortedSet allocate(Ruby runtime, RubyClass klass) {
-            return new RubySortedSet(runtime, klass);
-        }
-    };
 
     private static class OrderComparator extends DefaultComparator {
 
@@ -164,9 +157,10 @@ public class RubySortedSet extends RubySet implements SortedSet {
         return this;
     }
 
-    @Override
-    public IRubyObject initialize_clone(ThreadContext context, IRubyObject orig) {
-        super.initialize_clone(context, orig);
+    @JRubyMethod(frame = true, forward = true, required = 1, optional = 1)
+    public IRubyObject initialize_clone(ThreadContext context, IRubyObject[] args) {
+        super.initialize_clone(context, args);
+        IRubyObject orig = args[0];
         if (this != orig) order.addAll(((RubySortedSet) orig).order);
         return this;
     }

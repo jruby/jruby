@@ -48,6 +48,7 @@ import org.jruby.javasupport.JavaCallable;
 import org.jruby.javasupport.JavaConstructor;
 import org.jruby.javasupport.ParameterTypes;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
@@ -171,24 +172,24 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
             this.javaCallables = callables;
             this.javaVarargsCallables = varargsCallables;
 
-            setArity(minArity, maxArity, minVarArgsArity);
+            setSignature(minArity, maxArity, minVarArgsArity);
             setupNativeCall();
 
             initialized = true;
         }
     }
 
-    private void setArity(final int minArity,  final int maxArity, final int minVarArgsArity) {
+    private void setSignature(final int minArity, final int maxArity, final int minVarArgsArity) {
         if ( minVarArgsArity == -1 ) { // no var-args
             if ( minArity == maxArity ) {
-                setArity( Arity.fixed(minArity) );
+                setSignature(Signature.from(minArity, 0, 0, 0, 0, Signature.Rest.NONE, -1));
             }
             else { // multiple overloads
-                setArity(Arity.required(minArity)); // but <= maxArity
+                setSignature(Signature.from(minArity, maxArity - minArity, 0, 0, 0, Signature.Rest.NONE, -1));
             }
         }
         else {
-            setArity( Arity.required(minVarArgsArity < minArity ? minVarArgsArity : minArity) );
+            setSignature(Signature.from(minVarArgsArity < minArity ? minVarArgsArity : minArity, 0, 0, 0, 0, Signature.Rest.NORM, -1));
         }
     }
 
@@ -295,7 +296,8 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
         return javaArgs;
     }
 
-    private static Object convertVarArgumentsOnly(final Class<?> varArrayType,
+    @SuppressWarnings("unchecked")
+    private static <T> Object convertVarArgumentsOnly(final Class<T> varArrayType,
         final int varStart, final IRubyObject[] args) {
         final int varCount = args.length - varStart;
 
@@ -310,8 +312,15 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
 
         final Class<?> compType = varArrayType.getComponentType();
         final Object varArgs = Array.newInstance(compType, varCount);
-        for ( int i = 0; i < varCount; i++ ) {
-            Array.set(varArgs, i, args[varStart + i].toJava(compType));
+        if (compType.isPrimitive()) {
+            for (int i = 0; i < varCount; i++) {
+                Array.set(varArgs, i, args[varStart + i].toJava(compType));
+            }
+        } else { // 10x speedup avoiding Array.set
+            T[] base = (T[]) varArgs;
+            for (int i = 0; i < varCount; i++) {
+                base[i] = (T) (args[varStart + i].toJava(compType));
+            }
         }
         return varArgs;
     }
@@ -334,6 +343,16 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
     static JavaProxy castJavaProxy(final IRubyObject self) {
         assert self instanceof JavaProxy : "Java methods can only be invoked on Java objects";
         return (JavaProxy) self;
+    }
+
+    static Object unwrapIfJavaProxy(final IRubyObject object) {
+        if (object instanceof JavaProxy) {
+            return ((JavaProxy) object).getObject();
+        }
+        // special case when target is a plain-old Ruby object
+        // e.g. in case of a `class Ruby; include java.some.Interface end`
+        // Interface's default methods will be set up as InstanceMethodInvokers
+        return object;
     }
 
     static <T extends AccessibleObject & Member> T setAccessible(T accessible) {
@@ -381,7 +400,16 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
         }
     }
 
-    protected T findCallable(IRubyObject self, String name, IRubyObject[] args, final int arity) {
+    /**
+     * Find the matching callable object given the target proxy wrapper, method name, arguments, and actual arity.
+     *
+     * @param self the proxy wrapper
+     * @param name the method name
+     * @param args the arguments
+     * @param arity the actual arity
+     * @return a suitable callable, or else raises an argument or name error
+     */
+    public T findCallable(IRubyObject self, String name, IRubyObject[] args, final int arity) {
         switch (arity) {
             case 0:
                 return findCallableArityZero(self, name);

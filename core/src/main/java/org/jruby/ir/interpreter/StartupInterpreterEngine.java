@@ -1,7 +1,6 @@
 package org.jruby.ir.interpreter;
 
 import org.jruby.RubyModule;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.CheckForLJEInstr;
 import org.jruby.ir.instructions.CopyInstr;
@@ -9,7 +8,6 @@ import org.jruby.ir.instructions.GetFieldInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.RuntimeHelperCall;
-import org.jruby.ir.instructions.SearchConstInstr;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
@@ -18,10 +16,6 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.VariableAccessor;
-import org.jruby.runtime.opto.ConstantCache;
-
-import static org.jruby.util.RubyStringBuilder.str;
-import static org.jruby.util.RubyStringBuilder.ids;
 
 /**
  * This interpreter is meant to interpret the instructions generated directly from IRBuild.
@@ -36,8 +30,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
         int       ipc       = 0;
         Object    exception = null;
 
-        boolean acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
-        if (acceptsKeywordArgument) args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, interpreterContext.getRequiredArgsCount());
+        boolean   ruby2Keywords = interpreterContext.isRuby2Keywords();
 
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
@@ -65,7 +58,8 @@ public class StartupInterpreterEngine extends InterpreterEngine {
             try {
                 switch (operation.opClass) {
                     case ARG_OP:
-                        receiveArg(context, instr, operation, args, acceptsKeywordArgument, currDynScope, temp, exception, blockArg);
+                        receiveArg(context, instr, operation, self, args, ruby2Keywords,
+                                currScope, currDynScope, temp, exception, blockArg);
                         break;
                     case CALL_OP:
                         if (profile) Profiler.updateCallSite(instr, interpreterContext.getScope(), scopeVersion);
@@ -144,10 +138,6 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                 VariableAccessor a = gfi.getAccessor(object);
                 Object result = a == null ? null : (IRubyObject)a.get(object);
                 if (result == null) {
-                    if (context.runtime.isVerbose()) {
-                        context.runtime.getWarnings().warning(IRubyWarnings.ID.IVAR_NOT_INITIALIZED,
-                                str(context.runtime, "instance variable ", ids(context.runtime, gfi.getId()), " not initialized"));
-                    }
                     result = context.nil;
                 }
                 setResult(temp, currDynScope, gfi.getResult(), result);
@@ -162,9 +152,15 @@ public class StartupInterpreterEngine extends InterpreterEngine {
             case CHECK_FOR_LJE:
                 ((CheckForLJEInstr) instr).check(context, currDynScope, block);
                 break;
+
             case LOAD_FRAME_CLOSURE:
                 setResult(temp, currDynScope, instr, context.getFrameBlock());
+                break;
+
+            case LOAD_BLOCK_IMPLICIT_CLOSURE:
+                setResult(temp, currDynScope, instr, Helpers.getImplicitBlockFromBlockBinding(block));
                 return;
+
             // ---------- All the rest ---------
             default:
                 setResult(temp, currDynScope, instr, instr.interpret(context, currScope, currDynScope, self, temp));

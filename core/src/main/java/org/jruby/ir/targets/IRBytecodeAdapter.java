@@ -8,6 +8,7 @@ import com.headius.invokebinder.Signature;
 import org.jruby.RubyModule;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.instructions.ClosureAcceptingInstr;
+import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.targets.indy.IndyArgumentsCompiler;
@@ -47,8 +48,6 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
 import java.lang.invoke.MethodType;
-import java.util.HashMap;
-import java.util.Map;
 
 import static org.jruby.util.CodegenUtils.*;
 
@@ -407,6 +406,15 @@ public class IRBytecodeAdapter {
         adapter = oldAdapter;
     }
 
+    public void updateLineNumber(int lineNumber) {
+        lastLine = lineNumber + 1;
+        adapter.line(lastLine);
+    }
+
+    public int getLastLine() {
+        return lastLine;
+    }
+
     public enum BlockPassType {
         NONE(false, false),
         GIVEN(true, false),
@@ -427,8 +435,7 @@ public class IRBytecodeAdapter {
             return literal;
         }
         public static BlockPassType fromIR(ClosureAcceptingInstr callInstr) {
-            Operand closure = callInstr.getClosureArg();
-            return closure != null ? ( callInstr.hasLiteralClosure() ? BlockPassType.LITERAL : BlockPassType.GIVEN) : BlockPassType.NONE;
+            return callInstr.getClosureArg() != NullBlock.INSTANCE ? ( callInstr.hasLiteralClosure() ? BlockPassType.LITERAL : BlockPassType.GIVEN) : BlockPassType.NONE;
         }
     }
 
@@ -450,4 +457,5 @@ public class IRBytecodeAdapter {
     protected final BlockCompiler blockCompiler;
     protected final ArgumentsCompiler argumentsCompiler;
     public int ipc = 0;  // counter for dumping instr index when in DEBUG
+    private int lastLine = -1;
 }

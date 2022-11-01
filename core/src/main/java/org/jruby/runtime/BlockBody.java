@@ -113,8 +113,7 @@ public abstract class BlockBody {
         if (canCallDirect()) {
             return yieldDirect(context, block, args, self);
         } else {
-            IRubyObject[] preppedValue = RubyProc.prepareArgs(context, block.type, this, args);
-            return doYield(context, block, preppedValue, self);
+            return doYield(context, block, args, self);
         }
     }
 
@@ -257,19 +256,18 @@ public abstract class BlockBody {
      */
     public abstract int getLine();
 
+    /**
+     * Is this block represented by Ruby code?
+     */
+    public boolean isRubyBlock() {
+        return false;
+    }
+
     public IRubyObject[] prepareArgumentsForCall(ThreadContext context, IRubyObject[] args, Block.Type type) {
         if (type == Block.Type.LAMBDA) {
             signature.checkArity(context.runtime, args);
-        } else {
-            // SSS FIXME: How is it even possible to "call" a NORMAL block?
-            // I thought only procs & lambdas can be called, and blocks are yielded to.
-            if (args.length == 1) {
-                // Convert value to arg-array, unwrapping where necessary
-                args = IRRuntimeHelpers.convertValueIntoArgArray(context, args[0], signature, args[0] instanceof RubyArray && type == Block.Type.NORMAL);
-            } else if (signature.arityValue() == 1 && !signature.restKwargs()) {
-                // discard excess arguments
-                args = args.length == 0 ? context.runtime.getSingleNilArray() : new IRubyObject[] { args[0] };
-            }
+        } else if (args.length == 1) {
+            args = IRRuntimeHelpers.convertValueIntoArgArray(context, args[0], signature);
         }
 
         return args;

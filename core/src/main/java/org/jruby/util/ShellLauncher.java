@@ -64,6 +64,7 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import jnr.posix.util.Platform;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.javasupport.Java;
 import org.jruby.runtime.Helpers;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
@@ -245,15 +246,17 @@ public class ShellLauncher {
                 if (mergeEnv instanceof Set) {
                     for (Map.Entry e : (Set<Map.Entry>)mergeEnv) {
                         // if the key is nil, raise TypeError
-                        if (e.getKey() == null) {
+                        Object key = e.getKey();
+                        if (key == null) {
                             throw runtime.newTypeError(runtime.getNil(), runtime.getStructClass());
                         }
                         // ignore if the value is nil
-                        if (e.getValue() == null) {
-                            hash.remove(e.getKey().toString());
+                        Object value = e.getValue();
+                        if (value == null) {
+                            hash.remove(key.toString());
                             continue;
                         }
-                        hash.put(e.getKey().toString(), e.getValue().toString());
+                        hash.put(key.toString(), value.toString());
                     }
                 } else if (mergeEnv instanceof RubyArray) {
                     for (int j = 0; j < mergeEnv.size(); j++) {
@@ -262,16 +265,21 @@ public class ShellLauncher {
                         if (e.size() != 2) {
                             throw runtime.newArgumentError("env assignments must come in pairs");
                         }
+
                         // if the key is nil, raise TypeError
-                        if (e.eltOk(0) == null) {
+                        IRubyObject key = e.eltOk(0);
+                        if (key == null || key.isNil()) {
                             throw runtime.newTypeError(runtime.getNil(), runtime.getStructClass());
                         }
+
                         // ignore if the value is nil
-                        if (e.eltOk(1) == null) {
-                            hash.remove(e.eltOk(0).toString());
+                        IRubyObject value = e.eltOk(1);
+                        if (value == null || value.isNil()) {
+                            hash.remove(key.toString());
                             continue;
                         }
-                        hash.put(e.eltOk(0).toString(), e.eltOk(1).toString());
+
+                        hash.put(key.toString(), value.toString());
                     }
                 }
             }
@@ -661,10 +669,22 @@ public class ShellLauncher {
         Field pid = null;
         try {
             up = Class.forName("java.lang.UNIXProcess");
-            pid = up.getDeclaredField("pid");
-            Java.trySetAccessible(pid);
-        } catch (Exception e) {
-            // ignore and try windows version
+        } catch (ClassNotFoundException e) {
+            try {
+                // Renamed in 11 (or earlier)
+                up = Class.forName("java.lang.ProcessImpl");
+            } catch (ClassNotFoundException e2) {
+                // ignore and try windows version
+            }
+        }
+
+        if (up != null) {
+            try {
+                pid = up.getDeclaredField("pid");
+                Java.trySetAccessible(pid);
+            } catch (NoSuchFieldException | SecurityException e) {
+                // ignore and try windows version
+            }
         }
         UNIXProcess = up;
         UNIXProcess_pid = pid;
@@ -811,33 +831,17 @@ public class ShellLauncher {
             }
 
             String[] args = parseCommandLine(runtime.getCurrentContext(), runtime, strings);
-            LaunchConfig lc = new LaunchConfig(runtime, strings, false);
-            boolean useShell = Platform.IS_WINDOWS ? lc.shouldRunInShell() : false;
+            LaunchConfig cfg = new LaunchConfig(runtime, strings, true);
+            boolean useShell = Platform.IS_WINDOWS ? cfg.shouldRunInShell() : false;
             if (addShell) for (String arg : args) useShell |= shouldUseShell(arg);
 
-            if (strings.length == 1) {
-                if (useShell) {
-                    // single string command, pass to sh to expand wildcards
-                    String[] argArray = new String[3];
-                    argArray[0] = shell;
-                    argArray[1] = shell.endsWith("sh") ? "-c" : "/c";
-                    argArray[2] = strings[0].asJavaString();
-                    childProcess = buildProcess(runtime, argArray, getCurrentEnv(runtime, env), pwd);
-                } else {
-                    childProcess = buildProcess(runtime, args, getCurrentEnv(runtime, env), pwd);
-                }
+            if (useShell) {
+                cfg.verifyExecutableForShell();
             } else {
-                if (useShell) {
-                    String[] argArray = new String[args.length + 2];
-                    argArray[0] = shell;
-                    argArray[1] = shell.endsWith("sh") ? "-c" : "/c";
-                    System.arraycopy(args, 0, argArray, 2, args.length);
-                    childProcess = buildProcess(runtime, argArray, getCurrentEnv(runtime, env), pwd);
-                } else {
-                    // direct invocation of the command
-                    childProcess = buildProcess(runtime, args, getCurrentEnv(runtime, env), pwd);
-                }
+                cfg.verifyExecutableForDirect();
             }
+
+            childProcess = buildProcess(runtime, cfg.execArgs, getCurrentEnv(runtime, env), pwd);
         } catch (SecurityException se) {
             throw runtime.newSecurityError(se.getLocalizedMessage());
         }
@@ -1174,8 +1178,10 @@ public class ShellLauncher {
 
         public void verifyExecutableForShell() {
             String cmdline = rawArgs[0].toString().trim();
-            if (doExecutableSearch && shouldVerifyPathExecutable(cmdline) && !cmdBuiltin) {
+            if (doExecutableSearch && args.length == rawArgs.length && shouldVerifyPathExecutable(cmdline) && !cmdBuiltin) {
                 verifyExecutable();
+                // replace cmdline with found executable
+                cmdline = executableFile.getAbsolutePath();
             }
 
             // now, prepare the exec args
@@ -1183,13 +1189,7 @@ public class ShellLauncher {
             execArgs = new String[3];
             execArgs[0] = shell;
             execArgs[1] = shell.endsWith("sh") ? "-c" : "/c";
-
-            if (Platform.IS_WINDOWS) {
-                // that's how MRI does it too
-                execArgs[2] = "\"" + cmdline + "\"";
-            } else {
-                execArgs[2] = cmdline;
-            }
+            execArgs[2] = cmdline;
         }
 
         public void verifyExecutableForDirect() {
@@ -1311,7 +1311,26 @@ public class ShellLauncher {
     }
 
     public static Process run(Ruby runtime, IRubyObject[] rawArgs, boolean doExecutableSearch) throws IOException {
-        return run(runtime, rawArgs, doExecutableSearch, false);
+        RubyHash env = null;
+        RubyHash opts = null;
+        String dir = runtime.getCurrentDirectory();
+
+        if (rawArgs.length > 0 && rawArgs[0] instanceof RubyHash) {
+            // peel off env hash
+            env = (RubyHash) rawArgs[0];
+            rawArgs = Arrays.copyOfRange(rawArgs, 1, rawArgs.length);
+        }
+
+        if (rawArgs.length > 0 && rawArgs[rawArgs.length - 1] instanceof RubyHash) {
+            // use opts hash for chdir
+            opts = (RubyHash) rawArgs[rawArgs.length - 1];
+            rawArgs = Arrays.copyOfRange(rawArgs, 0, rawArgs.length - 1);
+
+            IRubyObject chdir = ArgsUtil.extractKeywordArg(runtime.getCurrentContext(), "chdir", opts);
+            if (!chdir.isNil()) dir = chdir.asJavaString();
+        }
+
+        return run(runtime, env, dir, rawArgs, doExecutableSearch, false);
     }
 
     private static boolean hasGlobCharacter(String word) {
@@ -1324,7 +1343,7 @@ public class ShellLauncher {
             if (hasGlobCharacter(originalArgs[i])) {
                 // FIXME: Encoding lost here
                 List<ByteList> globs = Dir.push_glob(runtime, runtime.getCurrentDirectory(),
-                        new ByteList(originalArgs[i].getBytes()), 0);
+                        new ByteList(originalArgs[i].getBytes()), 0, true);
 
                 for (ByteList glob: globs) {
                     expandedList.add(glob.toString());
@@ -1341,16 +1360,19 @@ public class ShellLauncher {
     }
 
     public static Process run(Ruby runtime, IRubyObject[] rawArgs, boolean doExecutableSearch, boolean forceExternalProcess) throws IOException {
+        return run(runtime, Collections.EMPTY_MAP, runtime.getCurrentDirectory(), rawArgs, doExecutableSearch, forceExternalProcess);
+    }
+
+    public static Process run(Ruby runtime, Map env, String dir, IRubyObject[] rawArgs, boolean doExecutableSearch, boolean forceExternalProcess) throws IOException {
         Process aProcess;
-        String virtualCWD = runtime.getCurrentDirectory();
-        File pwd = new File(virtualCWD);
+        File pwd = new File(dir);
         LaunchConfig cfg = new LaunchConfig(runtime, rawArgs, doExecutableSearch);
 
         try {
             if (!forceExternalProcess && cfg.shouldRunInProcess()) {
                 log(runtime, "Launching in-process");
                 ScriptThreadProcess ipScript = new ScriptThreadProcess(runtime,
-                        expandGlobs(runtime, cfg.getExecArgs()), getCurrentEnv(runtime), pwd);
+                        expandGlobs(runtime, cfg.getExecArgs()), getCurrentEnv(runtime, env), pwd);
                 ipScript.start();
                 return ipScript;
             } else {
@@ -1364,7 +1386,7 @@ public class ShellLauncher {
                     cfg.verifyExecutableForDirect();
                 }
                 String[] args = cfg.getExecArgs();
-                if (virtualCWD.startsWith("uri:classloader:")) {
+                if (dir.startsWith("uri:classloader:")) {
                     // system commands can't run with a URI for the current dir, so the best we can use is user.dir
                     pwd = new File(System.getProperty("user.dir"));
 
@@ -1372,10 +1394,10 @@ public class ShellLauncher {
                     // change to the current directory inside the jar
                     if (args[args.length - 1].contains("org.jruby.Main")) {
                         args[args.length - 1] = args[args.length - 1].replace("org.jruby.Main",
-                                "org.jruby.Main -C " + virtualCWD);
+                                "org.jruby.Main -C " + dir);
                     }
                 }
-                aProcess = buildProcess(runtime, args, getCurrentEnv(runtime), pwd);
+                aProcess = buildProcess(runtime, args, getCurrentEnv(runtime, env), pwd);
             }
         } catch (SecurityException se) {
             throw runtime.newSecurityError(se.getLocalizedMessage());
@@ -1629,7 +1651,7 @@ public class ShellLauncher {
     }
 
     private static String getShell(Ruby runtime) {
-        return RbConfigLibrary.jrubyShell();
+        return findPathExecutable(runtime, RbConfigLibrary.jrubyShell()).getAbsolutePath();
     }
 
     public static boolean shouldUseShell(String command) {

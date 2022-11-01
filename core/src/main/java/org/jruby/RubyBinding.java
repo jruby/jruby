@@ -36,12 +36,10 @@ package org.jruby;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -64,18 +62,9 @@ public class RubyBinding extends RubyObject {
     private RubyBinding(Ruby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
     }
-    
-    private static final ObjectAllocator BINDING_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            RubyBinding instance = new RubyBinding(runtime, klass);
-            
-            return instance;
-        }
-    };
-    
+
     public static RubyClass createBindingClass(Ruby runtime) {
-        RubyClass bindingClass = runtime.defineClass("Binding", runtime.getObject(), BINDING_ALLOCATOR);
+        RubyClass bindingClass = runtime.defineClass("Binding", runtime.getObject(), RubyBinding::new);
 
         bindingClass.setClassIndex(ClassIndex.BINDING);
         bindingClass.setReifiedClass(RubyBinding.class);

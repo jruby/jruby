@@ -6,8 +6,10 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.CallInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Float;
+import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.CallSite;
@@ -21,17 +23,18 @@ public class OneFloatArgNoBlockCallInstr extends CallInstr {
 
     // clone constructor
     protected OneFloatArgNoBlockCallInstr(IRScope scope, CallType callType, Variable result, RubySymbol name,
-                                          Operand receiver, Operand[] args, boolean potentiallyRefined,
+                                          Operand receiver, Operand[] args, int flags, boolean potentiallyRefined,
                                           CallSite callSite, long callSiteId) {
-        super(scope, Operation.CALL_1D, callType, result, name, receiver, args, null, potentiallyRefined, callSite, callSiteId);
+        super(scope, Operation.CALL_1D, callType, result, name, receiver, args, NullBlock.INSTANCE, flags, potentiallyRefined,
+                callSite, callSiteId);
 
         this.flote = ((Float) args[0]).value;
     }
 
     // normal constructor
-    public OneFloatArgNoBlockCallInstr(IRScope scope, CallType callType, Variable result, RubySymbol name, Operand receiver, Operand[] args,
-                                       boolean potentiallyRefined) {
-        super(scope, Operation.CALL_1D, callType, result, name, receiver, args, null, potentiallyRefined);
+    public OneFloatArgNoBlockCallInstr(IRScope scope, CallType callType, Variable result, RubySymbol name,
+                                       Operand receiver, Operand[] args, int flags, boolean potentiallyRefined) {
+        super(scope, Operation.CALL_1D, callType, result, name, receiver, args, NullBlock.INSTANCE, flags, potentiallyRefined);
 
         assert args.length == 1;
 
@@ -41,7 +44,8 @@ public class OneFloatArgNoBlockCallInstr extends CallInstr {
     @Override
     public Instr clone(CloneInfo ii) {
         return new OneFloatArgNoBlockCallInstr(ii.getScope(), getCallType(), ii.getRenamedVariable(result), getName(),
-                getReceiver().cloneForInlining(ii), cloneCallArgs(ii), isPotentiallyRefined(), getCallSite(), getCallSiteId());
+                getReceiver().cloneForInlining(ii), cloneCallArgs(ii), getFlags(), isPotentiallyRefined(),
+                getCallSite(), getCallSiteId());
     }
 
     public double getFloatArg() {
@@ -51,6 +55,9 @@ public class OneFloatArgNoBlockCallInstr extends CallInstr {
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope dynamicScope, IRubyObject self, Object[] temp) {
         IRubyObject object = (IRubyObject) getReceiver().retrieve(context, self, currScope, dynamicScope, temp);
+
+        IRRuntimeHelpers.setCallInfo(context, getFlags());
+
         return getCallSite().call(context, self, object, flote);
     }
 }

@@ -28,8 +28,43 @@
 
 package org.jruby.ext.socket;
 
+import jnr.constants.platform.AddressFamily;
+import jnr.constants.platform.AddressInfo;
+import jnr.constants.platform.Errno;
+import jnr.constants.platform.INAddr;
+import jnr.constants.platform.IP;
+import jnr.constants.platform.IPProto;
+import jnr.constants.platform.NameInfo;
+import jnr.constants.platform.ProtocolFamily;
+import jnr.constants.platform.Shutdown;
+import jnr.constants.platform.Sock;
+import jnr.constants.platform.SocketLevel;
+import jnr.constants.platform.SocketMessage;
+import jnr.constants.platform.SocketOption;
+import jnr.constants.platform.TCP;
+import jnr.netdb.Protocol;
+import jnr.unixsocket.UnixSocketAddress;
+import jnr.unixsocket.UnixSocketChannel;
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyBoolean;
+import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyModule;
+import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Helpers;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.io.ChannelFD;
+import org.jruby.util.io.Sockaddr;
+
 import java.io.IOException;
 import java.net.DatagramSocket;
+import java.net.Inet6Address;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
@@ -45,53 +80,21 @@ import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
-
-import jnr.constants.platform.AddressFamily;
-import jnr.constants.platform.AddressInfo;
-import jnr.constants.platform.Errno;
-import jnr.constants.platform.INAddr;
-import jnr.constants.platform.IP;
-import jnr.constants.platform.IPProto;
-import jnr.constants.platform.NameInfo;
-import jnr.constants.platform.ProtocolFamily;
-import jnr.constants.platform.Shutdown;
-import jnr.constants.platform.Sock;
-import jnr.constants.platform.SocketLevel;
-import jnr.constants.platform.SocketOption;
-import jnr.constants.platform.SocketMessage;
-import jnr.constants.platform.TCP;
-import jnr.netdb.Protocol;
-import jnr.unixsocket.UnixSocketAddress;
-import jnr.unixsocket.UnixSocketChannel;
-
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.RubyBoolean;
-import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyModule;
-import org.jruby.anno.JRubyClass;
-import org.jruby.anno.JRubyMethod;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.Helpers;
-import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.io.ChannelFD;
-import org.jruby.util.io.Sockaddr;
-
-import static org.jruby.runtime.Helpers.arrayOf;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 @JRubyClass(name="Socket", parent="BasicSocket", include="Socket::Constants")
 public class RubySocket extends RubyBasicSocket {
+
     static void createSocket(Ruby runtime) {
-        RubyClass rb_cSocket = runtime.defineClass("Socket", runtime.getClass("BasicSocket"), SOCKET_ALLOCATOR);
+        RubyClass rb_cSocket = runtime.defineClass("Socket", runtime.getClass("BasicSocket"), RubySocket::new);
 
         RubyModule rb_mConstants = rb_cSocket.defineModuleUnder("Constants");
         // we don't have to define any that we don't support; see socket.c
@@ -141,13 +144,6 @@ public class RubySocket extends RubyBasicSocket {
 
         rb_cSocket.defineAnnotatedMethods(RubySocket.class);
     }
-
-    private static final ObjectAllocator SOCKET_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubySocket(runtime, klass);
-        }
-    };
 
     public RubySocket(Ruby runtime, RubyClass type) {
         super(runtime, type);
@@ -288,8 +284,8 @@ public class RubySocket extends RubyBasicSocket {
                 }
             }
         }
-        catch (SocketException|RuntimeException ex) {
-            if ( ex instanceof RaiseException ) throw (RaiseException) ex;
+        catch (SocketException | RuntimeException ex) {
+            if ( ex instanceof RaiseException) throw (RaiseException) ex;
             throw SocketUtils.sockerr_with_trace(context.runtime, "getifaddrs: " + ex.toString(), ex.getStackTrace());
         }
         return list;
@@ -563,7 +559,7 @@ public class RubySocket extends RubyBasicSocket {
                         if (!blocking || result) return result;
 
                         while (!context.getThread().select(channel, this, SelectionKey.OP_CONNECT)) {
-                            context.pollThreadEvents();
+                            context.blockingThreadPoll();
                         }
                     }
                 } finally {
@@ -627,7 +623,7 @@ public class RubySocket extends RubyBasicSocket {
     }
 
     static RaiseException buildSocketException(final Ruby runtime, final SocketException ex,
-        final String caller, final SocketAddress addr) {
+                                               final String caller, final SocketAddress addr) {
 
         final Errno errno = Helpers.errnoFromException(ex);
         final String callerWithAddr = caller + " for " + formatAddress(addr);
@@ -726,5 +722,5 @@ public class RubySocket extends RubyBasicSocket {
     protected Protocol soProtocol = Protocol.getProtocolByNumber(0);
 
     private static final String JRUBY_SERVER_SOCKET_ERROR =
-            "use ServerSocket for servers (http://wiki.jruby.org/ServerSocket)";
+            "use ServerSocket for servers (https://github.com/jruby/jruby/wiki/ServerSocket)";
 }// RubySocket

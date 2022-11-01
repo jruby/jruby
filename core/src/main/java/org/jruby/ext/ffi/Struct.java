@@ -22,13 +22,6 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
     private volatile Object[] referenceCache;
     private volatile IRubyObject[] valueCache;
 
-    private static final class Allocator implements ObjectAllocator {
-        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new Struct(runtime, klass);
-        }
-        private static final ObjectAllocator INSTANCE = new Allocator();
-    }
-
     /**
      * Registers the StructLayout class in the JRuby runtime.
      * @param runtime The JRuby runtime to register the new class in.
@@ -37,7 +30,7 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
     public static RubyClass createStructClass(Ruby runtime, RubyModule module) {
         
         RubyClass structClass = runtime.defineClassUnder("Struct", runtime.getObject(),
-                Options.REIFY_FFI.load() ? new ReifyingAllocator(Struct.class): Allocator.INSTANCE, module);
+                Options.REIFY_FFI.load() ? new ReifyingAllocator(Struct.class): Struct::new, module);
         structClass.defineAnnotatedMethods(Struct.class);
         structClass.defineAnnotatedConstants(Struct.class);
         structClass.setReifiedClass(Struct.class);
@@ -244,7 +237,7 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
         return obj instanceof RubyFixnum ? (RubyFixnum) obj : RubyFixnum.zero(context.runtime);
     }
 
-    @JRubyMethod(name = { "alignment", "align" }, meta = true)
+    @JRubyMethod(name = "alignment", meta = true)
     public static IRubyObject alignment(ThreadContext context, IRubyObject structClass) {
         return getStructLayout(context.runtime, structClass).alignment(context);
     }

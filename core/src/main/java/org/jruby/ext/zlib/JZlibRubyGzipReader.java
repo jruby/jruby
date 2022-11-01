@@ -71,13 +71,6 @@ import static org.jruby.runtime.Visibility.PRIVATE;
 public class JZlibRubyGzipReader extends RubyGzipFile {
     @JRubyClass(name = "Zlib::GzipReader::Error", parent = "Zlib::GzipReader")
     public static class Error {}
-    
-    protected static final ObjectAllocator GZIPREADER_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-        return new JZlibRubyGzipReader(runtime, klass);
-        }
-    };
 
     @JRubyMethod(name = "new", rest = true, meta = true)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
@@ -340,7 +333,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
                 return runtime.newString(buf);
             }
 
-            return RubyString.newEmptyString(runtime);
+            return RubyString.newEmptyBinaryString(runtime);
         } catch (IOException ioe) {
             String m = ioe.getMessage();
 

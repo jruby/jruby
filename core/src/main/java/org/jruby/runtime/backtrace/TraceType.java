@@ -171,6 +171,7 @@ public class TraceType {
                         stackStream,
                         Stream.empty(),
                         true,
+                        true,
                         false,
                         false);
             }
@@ -186,6 +187,7 @@ public class TraceType {
                         context.getBacktrace(),
                         true,
                         false,
+                        false,
                         false);
             }
         },
@@ -198,6 +200,7 @@ public class TraceType {
                 return new BacktraceData(
                         stackStream,
                         context.getBacktrace(),
+                        false,
                         false,
                         false,
                         true);
@@ -213,6 +216,7 @@ public class TraceType {
                         stackStream,
                         context.getBacktrace(),
                         false,
+                        false,
                         context.runtime.getInstanceConfig().getBacktraceMask(),
                         false);
             }
@@ -226,6 +230,7 @@ public class TraceType {
                 return new BacktraceData(
                         stackStream,
                         context.getBacktrace(),
+                        false,
                         false,
                         true,
                         false);
@@ -449,15 +454,25 @@ public class TraceType {
     }
 
     private static void renderBacktraceJRuby(Ruby runtime, RubyStackTraceElement[] frames, StringBuilder buffer, boolean color) {
+        int optionBacktraceLimit = Integer.MAX_VALUE;
+        int maxBacktraceLines =  frames.length;
+
         // find longest method name
         int longestMethod = 0;
         for (RubyStackTraceElement frame : frames) {
             longestMethod = Math.max(longestMethod, frame.getMethodName().length());
         }
 
+        if (runtime != null) {
+            optionBacktraceLimit = runtime.getInstanceConfig().getBacktraceLimit();
+            maxBacktraceLines =  (optionBacktraceLimit > frames.length) ? frames.length : optionBacktraceLimit;
+        }
+
         // backtrace lines
         boolean first = true;
-        for (RubyStackTraceElement frame : frames) {
+        for (int i=0; i < maxBacktraceLines; i++) {
+            RubyStackTraceElement frame = frames[i];
+
             if (color) {
                 if (first) {
                     buffer.append(FIRST_COLOR);
@@ -487,8 +502,12 @@ public class TraceType {
                 buffer.append(CLEAR_COLOR);
             }
 
-            buffer
-                    .append('\n');
+            buffer.append('\n');
+        }
+
+        if (runtime != null && (frames.length > optionBacktraceLimit)) {
+            String suppressedLines = String.valueOf(frames.length - optionBacktraceLimit);
+            buffer.append("... " + suppressedLines + " levels...\n");
         }
     }
 

@@ -1,1 +1,1 @@
-fails(not implemented, jruby/jruby#6149):TracePoint#self return the trace object from event
+debug:TracePoint#self return the trace object from event

@@ -36,14 +36,19 @@ import java.util.ArrayList;
 import static org.jruby.RubyEnumerator.enumeratorize;
 
 import java.util.Iterator;
+import java.util.Map;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.javasupport.JavaPackage;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
+import static org.jruby.util.Inspector.inspectPrefix;
+
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.Inspector;
+import org.jruby.util.Numeric;
 import org.jruby.util.collections.WeakValuedIdentityMap;
 
 @JRubyModule(name="ObjectSpace")
@@ -98,9 +103,21 @@ public class RubyObjectSpace {
             return runtime.getTrue();
         } else if (longId == 8) {
             return runtime.getNil();
-        } else if (longId % 2 != 0) {
-            // odd
+        } else if ((longId & 0b01) == 0b01) {
+            // fixnum
             return runtime.newFixnum((longId - 1) / 2);
+        } else if ((longId & 0b11) == 0b10) {
+            // flonum
+            double d = 0.0;
+            if (longId != 0x8000000000000002L) {
+                long b63 = (longId >>> 63);
+                /* e: xx1... -> 011... */
+                /*    xx0... -> 100... */
+                /*      ^b63           */
+                long longBits = Numeric.rotr((2 - b63) | (longId & ~0x03), 3);
+                d = Double.longBitsToDouble(longBits);
+            }
+            return runtime.newFloat(d);
         } else {
             if (runtime.isObjectSpaceEnabled()) {
                 IRubyObject object = runtime.getObjectSpace().id2ref(longId);
@@ -129,7 +146,9 @@ public class RubyObjectSpace {
             final ArrayList<IRubyObject> modules = new ArrayList<>(96);
             runtime.eachModule((module) -> {
                     if (rubyClass.isInstance(module)) {
-                        if (!(module instanceof IncludedModule)) {
+                        if (!(module instanceof IncludedModule || module instanceof PrependedModule 
+                                || module == runtime.getJavaSupport().getJavaPackageClass() || module instanceof JavaPackage
+                                || (module instanceof MetaClass && (((MetaClass)module).getAttached() instanceof JavaPackage)))) {
                             // do nothing for included wrappers or singleton classes
                             modules.add(module); // store the module to avoid concurrent modification exceptions
                         }
@@ -173,18 +192,14 @@ public class RubyObjectSpace {
         return block.isGiven() ? each_objectInternal(context, recv, args, block) : enumeratorize(context.runtime, recv, "each_object", args);
     }
 
-    @JRubyMethod(name = "garbage_collect", module = true, visibility = PRIVATE)
-    public static IRubyObject garbage_collect(ThreadContext context, IRubyObject recv) {
-        return RubyGC.start(context, recv);
+    @JRubyMethod(name = "garbage_collect", module = true, visibility = PRIVATE, optional = 1)
+    public static IRubyObject garbage_collect(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return RubyGC.start(context, recv, args);
     }
 
     public static class WeakMap extends RubyObject {
         static void createWeakMap(Ruby runtime, RubyModule objectspaceModule) {
-            RubyClass weakMap = objectspaceModule.defineClassUnder("WeakMap", runtime.getObject(), new ObjectAllocator() {
-                public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                    return new WeakMap(runtime, klazz);
-                }
-            });
+            RubyClass weakMap = objectspaceModule.defineClassUnder("WeakMap", runtime.getObject(), WeakMap::new);
 
             weakMap.defineAnnotatedMethods(WeakMap.class);
         }
@@ -202,13 +217,105 @@ public class RubyObjectSpace {
 
         @JRubyMethod(name = "[]=")
         public IRubyObject op_aref(ThreadContext context, IRubyObject key, IRubyObject value) {
+            Ruby runtime = context.runtime;
+
             map.put(key, value);
-            return context.runtime.newFixnum(System.identityHashCode(value));
+
+            return runtime.newFixnum(System.identityHashCode(value));
         }
 
         @JRubyMethod(name = "key?")
         public IRubyObject key_p(ThreadContext context, IRubyObject key) {
             return RubyBoolean.newBoolean(context, map.get(key) != null);
+        }
+
+        @JRubyMethod(name = "keys")
+        public IRubyObject keys(ThreadContext context) {
+            return context.runtime.newArrayNoCopy(
+                    map.entrySet()
+                            .stream()
+                            .filter(entry -> entry.getValue() != null)
+                            .map(entry -> entry.getKey())
+                            .toArray(IRubyObject[]::new));
+        }
+
+        @JRubyMethod(name = "values")
+        public IRubyObject values(ThreadContext context) {
+            return context.runtime.newArrayNoCopy(
+                    map.values()
+                            .stream()
+                            .filter(ref -> ref != null)
+                            .toArray(IRubyObject[]::new));
+        }
+
+        @JRubyMethod(name = {"length", "size"})
+        public IRubyObject size(ThreadContext context) {
+            return context.runtime.newFixnum(map.size());
+        }
+
+        @JRubyMethod(name = {"include?", "member?"})
+        public IRubyObject member_p(ThreadContext context, IRubyObject key) {
+            return RubyBoolean.newBoolean(context, map.containsKey(key));
+        }
+
+        @JRubyMethod(name = {"each", "each_pair"})
+        public IRubyObject each(ThreadContext context, Block block) {
+            map.forEach((key, value) -> {
+                if (value != null) {
+                    block.yieldSpecific(context, key, value);
+                }
+            });
+
+            return this;
+        }
+
+        @JRubyMethod(name = "each_key")
+        public IRubyObject each_key(ThreadContext context, Block block) {
+            for (Map.Entry<IRubyObject, IRubyObject> entry : map.entrySet()) {
+                if (entry.getValue() != null) {
+                    block.yieldSpecific(context, entry.getKey());
+                }
+            }
+
+            return this;
+        }
+
+        @JRubyMethod(name = "each_value")
+        public IRubyObject each_value(ThreadContext context, Block block) {
+            for (Map.Entry<IRubyObject, IRubyObject> entry : map.entrySet()) {
+                IRubyObject value = entry.getValue();
+                if (value != null) {
+                    block.yieldSpecific(context, value);
+                }
+            }
+
+            return this;
+        }
+
+        @JRubyMethod(name = "inspect")
+        public IRubyObject inspect(ThreadContext context) {
+            Ruby runtime = context.runtime;
+
+            RubyString part = inspectPrefix(runtime.getCurrentContext(), metaClass.getRealClass(), inspectHashCode());
+            int base = part.length();
+
+            map.entrySet().forEach(entry -> {
+                if (entry.getValue() != null) {
+                    if (part.length() == base) {
+                        part.cat(Inspector.COLON_SPACE);
+                    } else {
+                        part.cat(Inspector.COMMA_SPACE);
+                    }
+
+                    part.cat(entry.getKey().inspect().convertToString());
+                    part.cat(Inspector.SPACE_HASHROCKET_SPACE);
+                    part.cat(entry.getValue().inspect().convertToString());
+                }
+            });
+
+            part.cat(Inspector.GT);
+
+            return part;
         }
 
         private final WeakValuedIdentityMap<IRubyObject, IRubyObject> map = new WeakValuedIdentityMap<IRubyObject, IRubyObject>();

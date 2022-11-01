@@ -1,1 +1,0 @@
-fails:Net::HTTP#proxy_port when self is no proxy class instance returns nil

@@ -8,11 +8,13 @@ import org.jruby.util.ByteList;
 public class IREvalScript extends IRClosure {
     private String fileName;
 
-    private static final ByteList EVAL_ = new ByteList(new byte[] {'E', 'V', 'A', 'L', '_'});
+    private static final ByteList EVAL = new ByteList(new byte[] {'E', 'V', 'A', 'L'});
 
     public IREvalScript(IRManager manager, IRScope lexicalParent, String fileName,
             int lineNumber, StaticScope staticScope, EvalType evalType) {
-        super(manager, lexicalParent, lineNumber, staticScope, EVAL_);
+        // ALL eval scopes are not really closures and are always new scopes.  We should not reference an eval
+        // by a TemporaryClosureVariable ever.
+        super(manager, lexicalParent, lineNumber, staticScope, 0, EVAL);
 
         this.fileName = fileName;
 
@@ -28,6 +30,13 @@ public class IREvalScript extends IRClosure {
                 staticScope.setScopeType(s.getScopeType());
             }
         }
+    }
+
+    @Override
+    public int getNextClosureId() {
+        nextClosureIndex++;
+
+        return nextClosureIndex;
     }
 
     @Override

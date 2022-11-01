@@ -42,7 +42,7 @@ public class RubyLoadError extends RubyScriptError {
     }
 
     static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass LoadErrorClass = runtime.defineClass("LoadError", exceptionClass, (r, klass) -> new RubyLoadError(runtime, klass));
+        RubyClass LoadErrorClass = runtime.defineClass("LoadError", exceptionClass, RubyLoadError::new);
         LoadErrorClass.addReadAttribute(runtime.getCurrentContext(), "path");
         return LoadErrorClass;
     }

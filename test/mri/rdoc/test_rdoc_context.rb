@@ -125,7 +125,7 @@ class TestRDocContext < XrefTestCase
 
     basic = @c1.find_module_named 'BasicObject'
 
-    assert_equal 'Object', basic.superclass
+    assert_equal @object, basic.superclass
   end
 
   def test_add_class_object
@@ -232,7 +232,7 @@ class TestRDocContext < XrefTestCase
     meth2.record_location @store.add_file 'second.rb'
     meth2.comment = comment 'second'
 
-    _, err = verbose_capture_io do
+    _, err = verbose_capture_output do
       @context.add_method meth2
     end
 
@@ -260,7 +260,7 @@ class TestRDocContext < XrefTestCase
     meth2.record_location @store.add_file 'second.rb'
     meth2.comment = comment 'second'
 
-    _, err = verbose_capture_io do
+    _, err = verbose_capture_output do
       @context.add_method meth2
     end
 

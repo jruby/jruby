@@ -54,6 +54,7 @@ public final class Kernel {
     }
 
     private static final class JavaPackageMethod extends JavaMethod.JavaMethodZero {
+        private IRubyObject pkg;
 
         JavaPackageMethod(RubyModule implClass, String name) {
             super(implClass, PUBLIC, name);
@@ -61,7 +62,11 @@ public final class Kernel {
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-            return get_pkg(context, name);
+            IRubyObject pkg = this.pkg;
+            if (pkg == null) {
+                this.pkg = pkg = get_pkg(context, name);
+            }
+            return pkg;
         }
     }
 

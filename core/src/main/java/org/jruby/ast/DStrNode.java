@@ -36,7 +36,6 @@ package org.jruby.ast;
 import org.jcodings.Encoding;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * A string which contains some dynamic elements which needs to be evaluated (introduced by #).
@@ -44,8 +43,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class DStrNode extends DNode implements ILiteralNode {
     private boolean frozen;
 
-    public DStrNode(ISourcePosition position, Encoding encoding) {
-        super(position, encoding);
+    public DStrNode(int line, Encoding encoding) {
+        super(line, encoding);
     }
 
     @Override

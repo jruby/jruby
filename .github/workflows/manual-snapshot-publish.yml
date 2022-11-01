@@ -1,0 +1,14 @@
+name: JRuby snapshot deploy
+
+on: workflow_dispatch
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    permissions:
+      contents: none
+    uses: jruby/jruby/.github/workflows/snapshot-publish.yml@6cd0d4d96d9406635183d81cf91acc82cd78245f
+    secrets:
+      SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+      SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}

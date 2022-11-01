@@ -50,12 +50,6 @@ public class ToAryInstr extends OneOperandResultBaseInstr implements FixedArityI
         return new ToAryInstr((Variable) result.cloneForInlining(ii), getArray().cloneForInlining(ii));
     }
 
-    @Override
-    public void encode(IRWriterEncoder e) {
-        super.encode(e);
-        e.encode(getArray());
-    }
-
     public static ToAryInstr decode(IRReaderDecoder d) {
         return new ToAryInstr(d.decodeVariable(), d.decodeOperand());
     }

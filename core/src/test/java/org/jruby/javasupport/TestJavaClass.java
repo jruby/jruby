@@ -1,6 +1,5 @@
 package org.jruby.javasupport;
 
-import org.jruby.runtime.builtin.IRubyObject;
 import org.junit.Test;
 
 import org.jruby.*;
@@ -8,6 +7,7 @@ import org.jruby.*;
 public class TestJavaClass extends junit.framework.TestCase {
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testGet() {
         Ruby runtime = Ruby.newInstance();
         requireJava(runtime);

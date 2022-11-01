@@ -1,2 +1,5 @@
 fails:Kernel#warn :uplevel keyword argument does not prepend caller information if line number is too big
 fails:Kernel#warn :uplevel keyword argument does not prepend caller information if the uplevel argument is too large
+wip:Kernel#warn calls Warning.warn with category: nil if Warning.warn accepts keyword arguments
+wip:Kernel#warn calls Warning.warn with given category keyword converted to a symbol
+wip:Kernel#warn :uplevel keyword argument raises if :category keyword is not nil and not convertible to symbol

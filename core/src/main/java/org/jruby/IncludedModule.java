@@ -4,7 +4,7 @@ import java.util.Map;
 
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class IncludedModule extends RubyClass {
+public class IncludedModule extends RubyClass implements DelegatedModule {
     public IncludedModule(Ruby runtime, RubyClass superClass, RubyModule origin) {
         super(runtime, superClass, false);
         this.origin = origin;
@@ -39,6 +39,12 @@ public class IncludedModule extends RubyClass {
         return origin.getName();
     }
 
+    @Override
+    public RubyModule getOrigin() {
+        return origin;
+    }
+
+    @Deprecated
     @Override
     public RubyModule getNonIncludedClass() {
         return origin;

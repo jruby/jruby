@@ -10,6 +10,8 @@ import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.InlineCloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
+import org.jruby.parser.StaticScope;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -19,7 +21,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * based on how many arguments have already been accounted for by parameters
  * present earlier in the list.
  */
-public class ReceivePostReqdArgInstr extends ReceiveArgBase implements FixedArityInstr {
+public class ReceivePostReqdArgInstr extends ReceiveIndexedArgBase implements FixedArityInstr {
     /** The method/block parameter list has these many required parameters before opt+rest args*/
     public final int preReqdArgsCount;
 
@@ -32,8 +34,8 @@ public class ReceivePostReqdArgInstr extends ReceiveArgBase implements FixedArit
     /** The method/block parameter list has these many required parameters after opt+rest args*/
     public final int postReqdArgsCount;
 
-    public ReceivePostReqdArgInstr(Variable result, int argIndex, int preReqdArgsCount, int optArgCount, boolean restArg, int postReqdArgsCount) {
-        super(Operation.RECV_POST_REQD_ARG, result, argIndex);
+    public ReceivePostReqdArgInstr(Variable result, Variable keywords, int argIndex, int preReqdArgsCount, int optArgCount, boolean restArg, int postReqdArgsCount) {
+        super(Operation.RECV_POST_REQD_ARG, result, keywords, argIndex);
         this.preReqdArgsCount = preReqdArgsCount;
         this.optArgsCount = optArgCount;
         this.restArg = restArg;
@@ -48,7 +50,7 @@ public class ReceivePostReqdArgInstr extends ReceiveArgBase implements FixedArit
     @Override
     public Instr clone(CloneInfo info) {
         if (info instanceof SimpleCloneInfo) {
-            return new ReceivePostReqdArgInstr(info.getRenamedVariable(result), argIndex, preReqdArgsCount, optArgsCount, restArg, postReqdArgsCount);
+            return new ReceivePostReqdArgInstr(info.getRenamedVariable(result), info.getRenamedVariable(getKeywords()), argIndex, preReqdArgsCount, optArgsCount, restArg, postReqdArgsCount);
         }
 
         InlineCloneInfo ii = (InlineCloneInfo) info;
@@ -66,13 +68,12 @@ public class ReceivePostReqdArgInstr extends ReceiveArgBase implements FixedArit
             return new CopyInstr(ii.getRenamedVariable(result), argVal);
         }
 
-        return new ReqdArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgs(), preReqdArgsCount, postReqdArgsCount, argIndex);
+        return new ReqdArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgs(), argIndex, preReqdArgsCount, postReqdArgsCount);
     }
 
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(getArgIndex());
         e.encode(preReqdArgsCount);
         e.encode(optArgsCount);
         e.encode(restArg);
@@ -80,12 +81,15 @@ public class ReceivePostReqdArgInstr extends ReceiveArgBase implements FixedArit
     }
 
     public static ReceivePostReqdArgInstr decode(IRReaderDecoder d) {
-        return new ReceivePostReqdArgInstr(d.decodeVariable(), d.decodeInt(), d.decodeInt(), d.decodeInt(), d.decodeBoolean(), d.decodeInt());
+        return new ReceivePostReqdArgInstr(d.decodeVariable(), d.decodeVariable(), d.decodeInt(), d.decodeInt(), d.decodeInt(), d.decodeBoolean(), d.decodeInt());
     }
 
-    public IRubyObject receivePostReqdArg(ThreadContext context, IRubyObject[] args, boolean acceptsKeywordArgument) {
-        return IRRuntimeHelpers.receivePostReqdArg(context, args, preReqdArgsCount, optArgsCount, restArg,
-                postReqdArgsCount, argIndex, acceptsKeywordArgument);
+    public IRubyObject receivePostReqdArg(ThreadContext context, IRubyObject self, DynamicScope currDynScope, StaticScope currScope,
+                                          Object[] temp, IRubyObject[] args) {
+        IRubyObject keywords = (IRubyObject) getKeywords().retrieve(context, self, currScope, currDynScope, temp);
+
+        return IRRuntimeHelpers.receivePostReqdArg(context, args, keywords, preReqdArgsCount, optArgsCount, restArg,
+                postReqdArgsCount, argIndex);
     }
 
     @Override

@@ -37,7 +37,6 @@ import org.jcodings.Encoding;
 
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
 
@@ -48,8 +47,8 @@ public class RegexpNode extends Node implements ILiteralNode {
     private final ByteList value;
     private final RegexpOptions options;
 
-    public RegexpNode(ISourcePosition position, ByteList value, RegexpOptions options) {
-        super(position, false);
+    public RegexpNode(int line, ByteList value, RegexpOptions options) {
+        super(line, false);
 
         this.value = value;
         this.options = options;

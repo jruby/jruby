@@ -571,7 +571,7 @@ abstract public class AbstractMemory extends MemoryObject {
      *
      * @return The value read from the address.
      */
-    @JRubyMethod(name = { "read_int" })
+    @JRubyMethod(name = { "read_int", "read_int32" })
     public IRubyObject read_int(ThreadContext context) {
         return Util.newSigned32(context.runtime, getMemoryIO().getInt(0));
     }
@@ -2077,7 +2077,12 @@ abstract public class AbstractMemory extends MemoryObject {
 
     @JRubyMethod(name = "order", required = 1)
     public final IRubyObject order(ThreadContext context, IRubyObject byte_order) {
-        return order(context.runtime, Util.parseByteOrder(context.runtime, byte_order));
+        ByteOrder newOrder = Util.parseByteOrder(context.runtime, byte_order);
+        if (getMemoryIO().order().equals(newOrder)) {
+            return this; // no change
+        } else {
+            return order(context.runtime, newOrder);
+        }
     }
 
     @JRubyMethod(name = "to_ptr")

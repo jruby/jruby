@@ -40,6 +40,9 @@ import org.jruby.embed.internal.LocalContextProvider;
 import org.jruby.embed.internal.SingleThreadLocalContextProvider;
 import org.jruby.embed.internal.SingletonLocalContextProvider;
 import org.jruby.embed.internal.ThreadSafeLocalContextProvider;
+import org.jruby.exceptions.NoMethodError;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.SyntaxError;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -71,6 +74,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
@@ -532,22 +536,17 @@ public class ScriptingContainerTest {
     @Test
     public void testParse_3args_1() throws FileNotFoundException {
         logger1.info("parse(reader, filename, lines)");
-        Reader reader = null;
         String filename = "";
-        int[] lines = null;
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setError(pstream);
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
-        EmbedEvalUnit expResult = null;
-        EmbedEvalUnit result = instance.parse(reader, filename, lines);
-        assertEquals(expResult, result);
 
         filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/iteration.rb";
-        reader = new FileReader(filename);
+        FileReader reader = new FileReader(filename);
         instance.put("@t", 2);
-        result = instance.parse(reader, filename);
+        EmbedEvalUnit result = instance.parse(reader, filename);
         IRubyObject ret = result.run();
         String expStringResult =
             "Trick or Treat!\nTrick or Treat!\n\nHmmm...I'd like trick.";
@@ -561,8 +560,7 @@ public class ScriptingContainerTest {
         try {
             instance.parse(reader, filename, 2);
         } catch (Exception e) {
-            logger1.info(sw.toString());
-            assertTrue(sw.toString().contains(filename + ":7:"));
+            assertTrue(e.toString().contains(filename + ":7:"));
         }
 
         instance.getVarMap().clear();
@@ -580,7 +578,7 @@ public class ScriptingContainerTest {
         int[] lines = null;
 
         String[] paths = {basedir + "/lib", basedir + "/lib/ruby/stdlib"};
-        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE, LocalVariableBehavior.TRANSIENT, true, false);
         instance.setLoadPaths(Arrays.asList(paths));
         instance.setError(pstream);
         instance.setOutput(pstream);
@@ -590,9 +588,9 @@ public class ScriptingContainerTest {
 
         try {
             result = instance.parse(type, filename, lines);
-        } catch (Throwable t) {
-            assertTrue(t.getCause() instanceof FileNotFoundException);
-            t.printStackTrace(new PrintStream(outStream));
+        } catch (Exception e) {
+            assertTrue(e.getClass().toString(), e instanceof FileNotFoundException);
+            e.printStackTrace(new PrintStream(outStream));
         }
 
         filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/next_year.rb";
@@ -627,8 +625,7 @@ public class ScriptingContainerTest {
         try {
             instance.parse(PathType.RELATIVE, filename, 2);
         } catch (Exception e) {
-            logger1.info(sw.toString());
-            assertTrue(sw.toString().contains(filename + ":7:"));
+            assertTrue(e.toString().contains(filename + ":7:"));
         }
 
         instance.getVarMap().clear();
@@ -680,8 +677,7 @@ public class ScriptingContainerTest {
         try {
             instance.parse(istream, filename, 2);
         } catch (Exception e) {
-            logger1.info(sw.toString());
-            assertTrue(sw.toString().contains(filename + ":7:"));
+            assertTrue(e.toString().contains(filename + ":7:"));
         }
 
         instance.getVarMap().clear();
@@ -704,10 +700,8 @@ public class ScriptingContainerTest {
         Object result = instance.runScriptlet(script);
         assertEquals(expResult, result);
         script = "";
-        expResult = "";
         result = instance.runScriptlet(script);
-        // Maybe bug. This should return "", but RubyNil.
-        //assertEquals(expResult, result);
+        assertNull(result);
 
         script = "# -*- coding: utf-8 -*-\n" +
                  "def say_something()" +
@@ -737,22 +731,18 @@ public class ScriptingContainerTest {
     @Test
     public void testRunScriptlet_Reader_String() throws FileNotFoundException {
         logger1.info("runScriptlet(reader, filename)");
-        Reader reader = null;
         String filename = "";
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setError(pstream);
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
-        Object expResult = null;
-        Object result = instance.runScriptlet(reader, filename);
-        assertEquals(expResult, result);
 
         filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/iteration.rb";
-        reader = new FileReader(filename);
+        Reader reader = new FileReader(filename);
         instance.put("@t", 3);
-        result = instance.runScriptlet(reader, filename);
-        expResult =
+        Object result = instance.runScriptlet(reader, filename);
+        Object expResult =
             "Trick or Treat!\nTrick or Treat!\nTrick or Treat!\n\nHmmm...I'd like trick.";
         assertEquals(expResult, result);
 
@@ -813,8 +803,9 @@ public class ScriptingContainerTest {
         Object result;
         try {
             result = instance.parse(type, filename);
-        } catch (Throwable e) {
-            assertTrue(e.getCause() instanceof FileNotFoundException);
+        } catch (Exception e) {
+            assertTrue(e.toString(), e instanceof ParseFailedException);
+            assertTrue(Objects.toString(e.getCause()), e.getCause() instanceof FileNotFoundException);
             e.printStackTrace(new PrintStream(outStream));
         }
 
@@ -910,19 +901,21 @@ public class ScriptingContainerTest {
     public void testCallMethod_3args() {
         logger1.info("callMethod(receiver, methodName, returnType)");
         Object receiver = null;
-        String methodName = "";
         Class<Object> returnType = null;
         String[] paths = {basedir + "/lib/ruby/stdlib"};
-        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE, LocalVariableBehavior.TRANSIENT, true, false);
         instance.setLoadPaths(Arrays.asList(paths));
         instance.setError(pstream);
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
 
-        Object expResult = null;
-        Object result = instance.callMethod(receiver, methodName, returnType);
-        assertEquals(expResult, result);
+        try {
+            Object result = instance.callMethod(receiver, "", returnType);
+            fail("expected to raise NoMethodError, but got result: " + result);
+        } catch (NoMethodError ex) {
+            // pass
+        }
 
         String filename = "src/test/ruby/org/jruby/embed/ruby/next_year_1.rb";
         receiver = instance.runScriptlet(PathType.RELATIVE, filename);
@@ -955,28 +948,21 @@ public class ScriptingContainerTest {
     @Test
     public void testCallMethod_4args_1() {
         logger1.info("callMethod(receiver, methodName, singleArg, returnType)");
-        Object receiver = null;
-        String methodName = "";
-        Object singleArg = null;
-        Class<Object> returnType = null;
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setError(pstream);
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
-        Object expResult = null;
-        Object result = instance.callMethod(receiver, methodName, singleArg, returnType);
-        assertEquals(expResult, result);
 
         String filename = "src/test/ruby/org/jruby/embed/ruby/list_printer_1.rb";
-        receiver = instance.runScriptlet(PathType.RELATIVE, filename);
-        methodName = "print_list";
+        Object receiver = instance.runScriptlet(PathType.RELATIVE, filename);
+        String methodName = "print_list";
         String[] hellos = {"你好", "こんにちは", "Hello", "Здравствуйте"};
-        singleArg = Arrays.asList(hellos);
+        Object singleArg = Arrays.asList(hellos);
         StringWriter sw = new StringWriter();
         instance.setWriter(sw);
         instance.callMethod(receiver, methodName, singleArg, null);
-        expResult = "Hello >> Здравствуйте >> こんにちは >> 你好: 4 in total";
+        Object expResult = "Hello >> Здравствуйте >> こんにちは >> 你好: 4 in total";
         assertEquals(expResult, sw.toString().trim());
 
         instance.getVarMap().clear();
@@ -989,23 +975,16 @@ public class ScriptingContainerTest {
     @Test
     public void testCallMethod_4args_2() {
         logger1.info("callMethod(receiver, methodName, args, returnType)");
-        Object receiver = null;
-        String methodName = "";
-        Object[] args = null;
-        Class<Object> returnType = null;
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setError(pstream);
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
-        Object expResult = null;
-        Object result = instance.callMethod(receiver, methodName, args, returnType);
-        assertEquals(expResult, result);
 
         String filename = "src/test/ruby/org/jruby/embed/ruby/quadratic_formula.rb";
-        receiver = instance.runScriptlet(PathType.RELATIVE, filename);
-        methodName = "solve";
-        args = new Double[]{12.0, -21.0, -6.0};
+        Object receiver = instance.runScriptlet(PathType.RELATIVE, filename);
+        String methodName = "solve";
+        Object[] args = new Double[]{12.0, -21.0, -6.0};
         List<Double> solutions = instance.callMethod(receiver, methodName, args, List.class);
         assertEquals(2, solutions.size());
         assertEquals(new Double(-0.25), solutions.get(0));
@@ -1013,10 +992,9 @@ public class ScriptingContainerTest {
 
         args = new Double[]{1.0, 1.0, 1.0};
         try {
-            solutions = instance.callMethod(receiver, methodName, args, List.class);
+            instance.callMethod(receiver, methodName, args, List.class);
         } catch (RuntimeException e) {
-            Throwable t = e.getCause();
-            assertTrue(t.getMessage().contains("RangeError"));
+            assertTrue(e.getMessage().contains("RangeError"));
         }
 
         instance.getVarMap().clear();
@@ -1060,8 +1038,14 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
 
         // Verify that empty message name returns null
-        Object result = instance.callMethod(null, "", returnType, unit);
-        assertEquals(null, result);
+        try {
+            Object result = instance.callMethod(null, "", returnType, unit);
+            fail("expected to raise NoMethodError, but got result: " + result);
+        } catch (InvokeFailedException ex) {
+            assertTrue(Objects.toString(ex.getCause()), ex.getCause() instanceof NoMethodError);
+        } catch (NoMethodError ex) {
+            // pass
+        }
 
         String text =
             "songs:\n"+
@@ -1092,22 +1076,18 @@ public class ScriptingContainerTest {
     @Test
     public void testCallMethod_without_returnType() {
         logger1.info("callMethod no returnType");
-        Object receiver = null;
-        String methodName = "";
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setError(pstream);
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
-        Object expResult = null;
-        Object result = instance.callMethod(receiver, methodName);
-        assertEquals(expResult, result);
+
         String script =
                 "def say_something\n" +
                   "return \"Oh, well. I'm stucked\"" +
                 "end";
-        receiver = instance.runScriptlet(script);
-        methodName = "say_something";
+        Object receiver = instance.runScriptlet(script);
+        String methodName = "say_something";
         String something = (String)instance.callMethod(receiver, methodName);
         assertEquals("Oh, well. I'm stucked", something);
 
@@ -2260,14 +2240,15 @@ public class ScriptingContainerTest {
         instance.terminate();
 
         filename = "["+this.getClass().getCanonicalName()+"]";
-        instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
+        instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD, LocalVariableBehavior.TRANSIENT, true, false);
         instance.setScriptFilename(filename);
         StringWriter sw = new StringWriter();
         instance.setErrorWriter(sw);
         try {
             instance.runScriptlet("puts \"Hello");
         } catch (RuntimeException e) {
-            assertTrue(sw.toString().contains(filename));
+            assertTrue(e instanceof SyntaxError);
+            assertTrue(e.toString().contains(filename));
         }
 
         instance.terminate();
@@ -2664,45 +2645,47 @@ public class ScriptingContainerTest {
         container.terminate();
     }
 
-    /**
-     * Verifies thread cleanup when using {@code org.jruby.ext.timeout.Timeout} in an embedded environment
-     */
-    @Test
-    public void testTimeoutCleanup() {
-        // memorize threads alive prior to creating a scripting container
-        Set<Long> preTestThreadsIds = new HashSet<>();
-        for (Thread thread : Thread.getAllStackTraces().keySet()) {
-            preTestThreadsIds.add(thread.getId());
-        }
-        // create a scripting container and run a basic script that uses the timeout module, expecting an exception
-        ScriptingContainer container = new ScriptingContainer();
-        container.setErrorWriter(writer);
-        String script = "require 'timeout'\n" +
-                "Timeout::timeout(0.1) { sleep(5) }";
-        EvalFailedException thrown = null;
-        try {
-            container.parse(script).run();
-        } catch (EvalFailedException caught) {
-            thrown = caught;
-        }
-        // assert exception
-        assertNotNull("Timeout module did not interrupt sleep as expected", thrown);
-        assertEquals("(Error) execution expired", thrown.getMessage());
-        // find any thread(s) launched due to script execution
-        Set<Long> spawnedThreadIds = new HashSet<>();
-        for (Thread thread : Thread.getAllStackTraces().keySet()) {
-            if (!preTestThreadsIds.remove(thread.getId())) {
-                spawnedThreadIds.add(thread.getId());
-            }
-        }
-        // terminate container
-        container.terminate();
-        // verify any spawned threads have been terminated
-        for (Thread thread : Thread.getAllStackTraces().keySet()) {
-            assertFalse("Timeout module left dangling threads after ScriptingContainer termination",
-                    spawnedThreadIds.contains(thread.getId()));
-        }
-    }
+// Temporarily disabled until we can address https://github.com/ruby/timeout/pull/21
+// See https://github.com/jruby/jruby/issues/7349
+//    /**
+//     * Verifies thread cleanup when using {@code org.jruby.ext.timeout.Timeout} in an embedded environment
+//     */
+//    @Test
+//    public void testTimeoutCleanup() {
+//        // memorize threads alive prior to creating a scripting container
+//        Set<Long> preTestThreadsIds = new HashSet<>();
+//        for (Thread thread : Thread.getAllStackTraces().keySet()) {
+//            preTestThreadsIds.add(thread.getId());
+//        }
+//        // create a scripting container and run a basic script that uses the timeout module, expecting an exception
+//        ScriptingContainer container = new ScriptingContainer();
+//        container.setErrorWriter(writer);
+//        String script = "require 'timeout'\n" +
+//                "Timeout::timeout(0.1) { sleep(5) }";
+//        EvalFailedException thrown = null;
+//        try {
+//            container.parse(script).run();
+//        } catch (EvalFailedException caught) {
+//            thrown = caught;
+//        }
+//        // assert exception
+//        assertNotNull("Timeout module did not interrupt sleep as expected", thrown);
+//        assertEquals("(Error) execution expired", thrown.getMessage());
+//        // find any thread(s) launched due to script execution
+//        Set<Long> spawnedThreadIds = new HashSet<>();
+//        for (Thread thread : Thread.getAllStackTraces().keySet()) {
+//            if (!preTestThreadsIds.remove(thread.getId())) {
+//                spawnedThreadIds.add(thread.getId());
+//            }
+//        }
+//        // terminate container
+//        container.terminate();
+//        // verify any spawned threads have been terminated
+//        for (Thread thread : Thread.getAllStackTraces().keySet()) {
+//            assertFalse("Timeout module left dangling threads after ScriptingContainer termination",
+//                    spawnedThreadIds.contains(thread.getId()));
+//        }
+//    }
 
 // NOTE: test makes no sense on 9K
 //    @Test

@@ -42,7 +42,7 @@ public class RubyInterruptedRegexpError extends RubyRegexpError {
     }
 
     static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass interruptedRegexpErrorClass = runtime.defineClass("InterruptedRegexpError", exceptionClass, (r, klass) -> new RubyInterruptedRegexpError(runtime, klass));
+        RubyClass interruptedRegexpErrorClass = runtime.defineClass("InterruptedRegexpError", exceptionClass, RubyInterruptedRegexpError::new);
 
         return interruptedRegexpErrorClass;
     }

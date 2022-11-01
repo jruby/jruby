@@ -115,6 +115,7 @@ public class Options {
     public static final Option<Boolean>  IR_PRINT_ALL = bool(IR, "ir.print.all", false, "Enable ir.print and include IR executed during JRuby's boot phase.");
     public static final Option<Boolean>  IR_PRINT = bool(IR, "ir.print", IR_PRINT_ALL.load(), "Print the final IR to be run before starting to execute each body of code.");
     public static final Option<Boolean>  IR_PRINT_COLOR = bool(IR, "ir.print.color", false, "Print the final IR with color highlighting.");
+    public static final Option<Boolean>  IR_STRING_FREEZE = bool(IR, "ir.string.freeze", true, "Compile \"foo\".freeze as a constant frozen string value instead of a call.");
 
     public static final Option<Boolean> NATIVE_ENABLED = bool(NATIVE, "native.enabled", true, "Enable/disable native code, including POSIX features and C exts.");
     public static final Option<Boolean> NATIVE_VERBOSE = bool(NATIVE, "native.verbose", false, "Enable verbose logging of native extension loading.");
@@ -138,7 +139,7 @@ public class Options {
     public static final Option<Boolean> MANAGEMENT_ENABLED = bool(MISCELLANEOUS, "management.enabled", false, "Set whether JMX management is enabled.");
     public static final Option<Boolean> JUMP_BACKTRACE = bool(MISCELLANEOUS, "jump.backtrace", false, "Make non-local flow jumps generate backtraces.");
     public static final Option<Boolean> PROCESS_NOUNWRAP = bool(MISCELLANEOUS, "process.noUnwrap", false, "Do not unwrap process streams (issue on some recent JVMs).");
-    public static final Option<Boolean> REIFY_CLASSES = bool(MISCELLANEOUS, "reify.classes", false, "Before instantiation, stand up a real Java class for every Ruby class.");
+    public static final Option<Boolean> REIFY_CLASSES = bool(MISCELLANEOUS, "reify.classes", false, "Generate a real Java class and methods for every Ruby class.");
     public static final Option<Boolean> REIFY_FFI = bool(MISCELLANEOUS, "reify.ffi", false, "Reify FFI memory structures.");
     public static final Option<Boolean> REIFY_LOGERRORS = bool(MISCELLANEOUS, "reify.logErrors", false, "Log errors during reification (reify.classes=true).");
     public static final Option<Boolean> BACKTRACE_COLOR = bool(MISCELLANEOUS, "backtrace.color", false, "Enable colorized backtraces.");
@@ -147,14 +148,15 @@ public class Options {
     public static final Option<Boolean> NATIVE_EXEC = bool(MISCELLANEOUS, "native.exec", true, "Do a true process-obliterating native exec for Kernel#exec.");
     public static final Option<Boolean> CONSISTENT_HASHING = bool(MISCELLANEOUS, "consistent.hashing", false, "Generate consistent object hashes across JVMs");
     public static final Option<Boolean> VOLATILE_VARIABLES = bool(MISCELLANEOUS, "volatile.variables", false, "Always ensure volatile semantics for instance variables.");
-    public static final Option<Boolean> REIFY_VARIABLES = bool(MISCELLANEOUS, "reify.variables", !(REIFY_CLASSES.load() || VOLATILE_VARIABLES.load()), "Attempt to expand instance vars into Java fields");
+    public static final Option<Boolean> REIFY_VARIABLES = bool(MISCELLANEOUS, "reify.variables", !(REIFY_CLASSES.load() || VOLATILE_VARIABLES.load()), "Expand instance vars into Java fields");
     public static final Option<Integer> REIFY_VARIABLES_MAX = integer(MISCELLANEOUS, "reify.variables.max", 50, "Maximum number of reified instance variable fields");
     public static final Option<Boolean> REIFY_VARIABLES_NAME = bool(MISCELLANEOUS, "reify.variables.name", false, "Reify variables into a class named after the Ruby class");
     public static final Option<String> PREFERRED_PRNG = string(MISCELLANEOUS, "preferred.prng", "NativePRNGNonBlocking", "Set the preferred JDK-supported random number generator to use.");
     public static final Option<Boolean> USE_FIXNUM_CACHE = bool(MISCELLANEOUS, "fixnum.cache", true, "Use a cache of low-valued Fixnum objects.");
     public static final Option<Integer> FIXNUM_CACHE_RANGE = integer(MISCELLANEOUS, "fixnum.cache.size", 256, "Values to retrieve from Fixnum cache, in the range -X..(X-1).");
     public static final Option<Boolean> PACKED_ARRAYS = bool(MISCELLANEOUS, "packed.arrays", true, "Toggle whether to use \"packed\" arrays for small tuples.");
-    public static final Option<Boolean> REGEXP_INTERRUPTIBLE = bool(MISCELLANEOUS, "regexp.interruptible", false, "Allow regexp operations to be interuptible from Ruby.");
+    public static final Option<Boolean> REGEXP_INTERRUPTIBLE = bool(MISCELLANEOUS, "regexp.interruptible", true, "Allow regexp operations to be interuptible from Ruby.");
+    public static final Option<Integer> JAR_CACHE_EXPIRATION = integer(MISCELLANEOUS, "jar.cache.expiration", 750, "The time (ms) between checks if a JAR file containing resources has been updated.");
 
     public static final Option<Boolean> DEBUG_LOADSERVICE = bool(DEBUG, "debug.loadService", false, "Log require/load file searches.");
     public static final Option<Boolean> DEBUG_LOADSERVICE_TIMING = bool(DEBUG, "debug.loadService.timing", false, "Log require/load parse+evaluate times.");
@@ -199,6 +201,7 @@ public class Options {
     public static final Option<Boolean> CLI_VERSION = bool(CLI, "cli.version", false, "Print version to stderr. Same as --version.");
     public static final Option<Boolean> CLI_BYTECODE = bool(CLI, "cli.bytecode", false, "Print target script bytecode to stderr. Same as --bytecode.");
     public static final Option<Boolean> CLI_COPYRIGHT = bool(CLI, "cli.copyright", false, "Print copyright to stderr. Same as --copyright but runs script.");
+    public static final Option<Integer> CLI_BACKTRACE_LIMIT =  integer(CLI, "cli.backtracelimit", Integer.MAX_VALUE,"Backtrace limit");
     public static final Option<Boolean> CLI_CHECK_SYNTAX = bool(CLI, "cli.check.syntax", false, "Check syntax of target script. Same as -c but runs script.");
     public static final Option<String> CLI_AUTOSPLIT_SEPARATOR = string(CLI, "cli.autosplit.separator", "Set autosplit separator. Same as -F.");
     public static final Option<KCode> CLI_KCODE = enumeration(CLI, "cli.kcode", KCode.class, KCode.NONE, "Set kcode character set. Same as -K (1.8).");

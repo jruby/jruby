@@ -29,8 +29,10 @@
 
 package org.jruby.anno;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
@@ -40,24 +42,25 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.MethodIndex;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public abstract class TypePopulator {
 
-    public static void populateMethod(JavaMethod javaMethod, int arity, String simpleName, boolean isStatic, boolean notImplemented) {
-        javaMethod.setIsBuiltin(true);
-        javaMethod.setArity(Arity.createArity(arity));
+    public static void populateMethod(JavaMethod javaMethod, int arity, String simpleName, boolean isStatic, boolean notImplemented, boolean core) {
+        javaMethod.setIsBuiltin(core);
+        javaMethod.setSignature(Signature.fromArityValue(arity));
         javaMethod.setJavaName(simpleName);
         javaMethod.setSingleton(isStatic);
         javaMethod.setNotImplemented(notImplemented);
     }
     
-    public static void populateMethod(JavaMethod javaMethod, int arity, String simpleName, boolean isStatic, boolean notImplemented,
+    public static void populateMethod(JavaMethod javaMethod, int arity, String simpleName, boolean isStatic, boolean notImplemented, boolean core,
             Class nativeTarget, String nativeName, Class nativeReturn, Class[] nativeArguments) {
-        javaMethod.setIsBuiltin(true);
-        javaMethod.setArity(Arity.createArity(arity));
+        javaMethod.setIsBuiltin(core);
+        javaMethod.setSignature(Signature.fromArityValue(arity));
         javaMethod.setJavaName(simpleName);
         javaMethod.setSingleton(isStatic);
         javaMethod.setNotImplemented(notImplemented);
@@ -85,10 +88,17 @@ public abstract class TypePopulator {
         private final Class clazz;
         private final RubyModule.MethodClumper clumper;
 
+        final List<String> classAndSubs = new ArrayList<>();
+
         public ReflectiveTypePopulator(Class clazz) {
             this.clazz = clazz;
             this.clumper = new RubyModule.MethodClumper();
             clumper.clump(clazz);
+
+            classAndSubs.add(clazz.getCanonicalName());
+
+            Optional.ofNullable((JRubyClass) clazz.getAnnotation(JRubyClass.class))
+                    .ifPresent(classAnno -> AnnotationHelper.addSubclassNames(classAndSubs, classAnno));
         }
 
         public void populate(final RubyModule target, final Class clazz) {
@@ -118,16 +128,18 @@ public abstract class TypePopulator {
             }
         }
 
-        private static void addBoundMethodsUnlessOmitted(final Ruby runtime, final String name, final List<JavaMethodDescriptor> methods) {
+        private void addBoundMethodsUnlessOmitted(final Ruby runtime, final String name, final List<JavaMethodDescriptor> methods) {
             final int size = methods.size();
-            if ( size == 1 ) {
-                final JavaMethodDescriptor desc = methods.get(0);
-                if (!desc.anno.omit()) runtime.addBoundMethod(desc.declaringClassName, desc.name, name);
-                return;
-            }
+            final List<String> classAndSubs = this.classAndSubs;
+
             for ( int i=0; i<size; i++ ) {
                 final JavaMethodDescriptor desc = methods.get(i);
-                if (!desc.anno.omit()) runtime.addBoundMethod(desc.declaringClassName, desc.name, name);
+                if (!desc.anno.omit()) {
+                    String javaName = desc.name;
+                    for (int j = 0; j < classAndSubs.size(); j++) {
+                        runtime.addBoundMethod(classAndSubs.get(j), javaName, name);
+                    }
+                }
             }
         }
     }

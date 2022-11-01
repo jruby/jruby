@@ -341,7 +341,7 @@ public abstract class InvokeSite extends MutableCallSite {
                 binder = binder.insert(argOffset, "args", IRubyObject.NULL_ARRAY);
             } else {
                 binder = binder
-                        .collect("args", "arg[0-9]+");
+                        .collect("args", "arg[0-9]+", Helpers.constructObjectArrayHandle(arity));
             }
         }
 
@@ -526,7 +526,9 @@ public abstract class InvokeSite extends MutableCallSite {
         DynamicMethod method = entry.method;
 
         if (method instanceof PartialDelegatingMethod) {
-            mh = getHandle(self, new CacheEntry(((PartialDelegatingMethod) method).getDelegate(), entry.sourceModule, entry.token));
+            PartialDelegatingMethod delegate = (PartialDelegatingMethod) method;
+            DynamicMethod innerMethod = delegate.getRealMethod();
+            mh = getHandle(self, new CacheEntry(innerMethod, entry.sourceModule, entry.token));
         } else if (method instanceof AliasMethod) {
             AliasMethod alias = (AliasMethod) method;
             DynamicMethod innerMethod = alias.getRealMethod();

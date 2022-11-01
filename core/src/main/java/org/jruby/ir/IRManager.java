@@ -65,6 +65,9 @@ public class IRManager {
     private final Nil nil = new Nil();
     private final Boolean tru = new Boolean(true);
     private final Boolean fals = new Boolean(false);
+    private final BuiltinClass arrayClass = new BuiltinClass(BuiltinClass.Type.ARRAY);
+    private final BuiltinClass hashClass = new BuiltinClass(BuiltinClass.Type.HASH);
+    private final BuiltinClass objectClass = new BuiltinClass(BuiltinClass.Type.OBJECT);
     private final StandardError standardError = new StandardError();
     public final ToggleBacktraceInstr needsBacktrace = new ToggleBacktraceInstr(true);
     public final ToggleBacktraceInstr needsNoBacktrace = new ToggleBacktraceInstr(false);
@@ -106,6 +109,18 @@ public class IRManager {
 
     public StandardError getStandardError() {
         return standardError;
+    }
+
+    public BuiltinClass getArrayClass() {
+        return arrayClass;
+    }
+
+    public BuiltinClass getObjectClass() {
+        return objectClass;
+    }
+
+    public BuiltinClass getHashClass() {
+        return hashClass;
     }
 
     public org.jruby.ir.operands.Boolean getTrue() {
@@ -260,7 +275,9 @@ public class IRManager {
     public LineNumberInstr newLineNumber(int line) {
         if (line >= lineNumbers.length-1) growLineNumbersPool(line);
 
-        if (line < 0) line = 0;
+        // We do not cache negative line numbers as they are very rare...
+        if (line < 0) return new LineNumberInstr((line));
+
         LineNumberInstr tempVar = lineNumbers[line];
 
         if (tempVar == null) {

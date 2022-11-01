@@ -1,8 +1,6 @@
 require 'test/unit'
 require 'tempfile'
 
-return
-
 class TestISeq < Test::Unit::TestCase
   ISeq = RubyVM::InstructionSequence
 
@@ -12,13 +10,16 @@ class TestISeq < Test::Unit::TestCase
   end
 
   def compile(src, line = nil, opt = nil)
+    unless line
+      line = caller_locations(1).first.lineno
+    end
     EnvUtil.suppress_warning do
       ISeq.new(src, __FILE__, __FILE__, line, opt)
     end
   end
 
-  def lines src
-    body = compile(src).to_a[13]
+  def lines src, lines = nil
+    body = compile(src, lines).to_a[13]
     body.find_all{|e| e.kind_of? Integer}
   end
 
@@ -27,24 +28,22 @@ class TestISeq < Test::Unit::TestCase
   end
 
   def test_to_a_lines
-    src = <<-EOS
+    assert_equal [__LINE__+1, __LINE__+2, __LINE__+4], lines(<<-EOS, __LINE__+1)
     p __LINE__ # 1
     p __LINE__ # 2
                # 3
     p __LINE__ # 4
     EOS
-    assert_equal [1, 2, 4], lines(src)
 
-    src = <<-EOS
+    assert_equal [__LINE__+2, __LINE__+4], lines(<<-EOS, __LINE__+1)
                # 1
     p __LINE__ # 2
                # 3
     p __LINE__ # 4
                # 5
     EOS
-    assert_equal [2, 4], lines(src)
 
-    src = <<-EOS
+    assert_equal [__LINE__+3, __LINE__+4, __LINE__+7, __LINE__+9], lines(<<~EOS, __LINE__+1)
     1 # should be optimized out
     2 # should be optimized out
     p __LINE__ # 3
@@ -55,10 +54,9 @@ class TestISeq < Test::Unit::TestCase
     8 # should be optimized out
     9
     EOS
-    assert_equal [3, 4, 7, 9], lines(src)
   end
 
-  def test_unsupport_type
+  def test_unsupported_type
     ary = compile("p").to_a
     ary[9] = :foobar
     assert_raise_with_message(TypeError, /:foobar/) {ISeq.load(ary)}
@@ -84,6 +82,91 @@ class TestISeq < Test::Unit::TestCase
     end;
   end if defined?(RubyVM::InstructionSequence.load)
 
+  def test_cdhash_after_roundtrip
+    # CDHASH was not built properly when loading from binary and
+    # was causing opt_case_dispatch to clobber its stack canary
+    # for its "leaf" instruction attribute.
+    iseq = compile(<<~EOF, __LINE__+1)
+      case Class.new(String).new("foo")
+      when "foo"
+        42
+      end
+    EOF
+    assert_equal(42, ISeq.load_from_binary(iseq.to_binary).eval)
+  end
+
+  def test_super_with_block
+    iseq = compile(<<~EOF, __LINE__+1)
+      def (Object.new).touch(*) # :nodoc:
+        foo { super }
+      end
+      42
+    EOF
+    assert_equal(42, ISeq.load_from_binary(iseq.to_binary).eval)
+  end
+
+  def test_super_with_block_hash_0
+    iseq = compile(<<~EOF, __LINE__+1)
+      # [Bug #18250] `req` specifically cause `Assertion failed: (key != 0), function hash_table_raw_insert`
+      def (Object.new).touch(req, *)
+        foo { super }
+      end
+      42
+    EOF
+    assert_equal(42, ISeq.load_from_binary(iseq.to_binary).eval)
+  end
+
+  def test_super_with_block_and_kwrest
+    iseq = compile(<<~EOF, __LINE__+1)
+      def (Object.new).touch(**) # :nodoc:
+        foo { super }
+      end
+      42
+    EOF
+    assert_equal(42, ISeq.load_from_binary(iseq.to_binary).eval)
+  end
+
+  def test_lambda_with_ractor_roundtrip
+    iseq = compile(<<~EOF, __LINE__+1)
+      x = 42
+      y = nil.instance_eval{ lambda { x } }
+      Ractor.make_shareable(y)
+      y.call
+    EOF
+    assert_equal(42, ISeq.load_from_binary(iseq.to_binary).eval)
+  end
+
+  def test_super_with_anonymous_block
+    iseq = compile(<<~EOF, __LINE__+1)
+      def (Object.new).touch(&) # :nodoc:
+        foo { super }
+      end
+      42
+    EOF
+    assert_equal(42, ISeq.load_from_binary(iseq.to_binary).eval)
+  end
+
+  def test_ractor_unshareable_outer_variable
+    name = "\u{2603 26a1}"
+    y = nil.instance_eval do
+      eval("proc {#{name} = nil; proc {|x| #{name} = x}}").call
+    end
+    assert_raise_with_message(ArgumentError, /\(#{name}\)/) do
+      Ractor.make_shareable(y)
+    end
+    y = nil.instance_eval do
+      eval("proc {#{name} = []; proc {|x| #{name}}}").call
+    end
+    assert_raise_with_message(Ractor::IsolationError, /`#{name}'/) do
+      Ractor.make_shareable(y)
+    end
+    obj = Object.new
+    def obj.foo(*) nil.instance_eval{ ->{super} } end
+    assert_raise_with_message(Ractor::IsolationError, /hidden variable/) do
+      Ractor.make_shareable(obj.foo)
+    end
+  end
+
   def test_disasm_encoding
     src = "\u{3042} = 1; \u{3042}; \u{3043}"
     asm = compile(src).disasm
@@ -100,6 +183,22 @@ class TestISeq < Test::Unit::TestCase
     assert_include(RubyVM::InstructionSequence.of(obj.method(name)).disasm, name)
   end
 
+  def test_compile_file_encoding
+    Tempfile.create(%w"test_iseq .rb") do |f|
+      f.puts "{ '\u00de' => 'Th', '\u00df' => 'ss', '\u00e0' => 'a' }"
+      f.close
+
+      EnvUtil.with_default_external(Encoding::US_ASCII) do
+        assert_warn('') {
+          load f.path
+        }
+        assert_nothing_raised(SyntaxError) {
+          RubyVM::InstructionSequence.compile_file(f.path)
+        }
+      end
+    end
+  end
+
   LINE_BEFORE_METHOD = __LINE__
   def method_test_line_trace
 
@@ -110,16 +209,16 @@ class TestISeq < Test::Unit::TestCase
   end
 
   def test_line_trace
-    iseq = compile \
-  %q{ a = 1
+    iseq = compile(<<~EOF, __LINE__+1)
+      a = 1
       b = 2
       c = 3
       # d = 4
       e = 5
       # f = 6
       g = 7
+    EOF
 
-    }
     assert_equal([1, 2, 3, 5, 7], iseq.line_trace_all)
     iseq.line_trace_specify(1, true) # line 2
     iseq.line_trace_specify(3, true) # line 5
@@ -189,8 +288,8 @@ class TestISeq < Test::Unit::TestCase
     s1, s2, s3, s4 = compile(code, line, {frozen_string_literal: true}).eval
     assert_predicate(s1, :frozen?)
     assert_predicate(s2, :frozen?)
-    assert_predicate(s3, :frozen?)
-    assert_predicate(s4, :frozen?)
+    assert_not_predicate(s3, :frozen?)
+    assert_not_predicate(s4, :frozen?)
   end
 
   # Safe call chain is not optimized when Coverage is running.
@@ -248,9 +347,12 @@ class TestISeq < Test::Unit::TestCase
       end
     end
     assert_equal([m1, e1.message], [m2, e2.message], feature11951)
-    e1, e2 = e1.message.lines
-    assert_send([e1, :start_with?, __FILE__])
-    assert_send([e2, :start_with?, __FILE__])
+    message = e1.message.each_line
+    message.with_index(1) do |line, i|
+      next if /^ / =~ line
+      assert_send([line, :start_with?, __FILE__],
+                  proc {message.map {|l, j| (i == j ? ">" : " ") + l}.join("")})
+    end
   end
 
   def test_compile_file_error
@@ -258,7 +360,7 @@ class TestISeq < Test::Unit::TestCase
       f.puts "end"
       f.close
       path = f.path
-      assert_in_out_err(%W[- #{path}], "#{<<-"begin;"}\n#{<<-"end;"}", /unexpected end/, [], success: true)
+      assert_in_out_err(%W[- #{path}], "#{<<-"begin;"}\n#{<<-"end;"}", /unexpected `end'/, [], success: true)
       begin;
         path = ARGV[0]
         begin
@@ -282,10 +384,26 @@ class TestISeq < Test::Unit::TestCase
 
   def test_inspect
     %W[foo \u{30d1 30b9}].each do |name|
-      assert_match /@#{name}/, ISeq.compile("", name).inspect, name
+      assert_match(/@#{name}/, ISeq.compile("", name).inspect, name)
       m = ISeq.compile("class TestISeq::Inspect; def #{name}; end; instance_method(:#{name}); end").eval
-      assert_match /:#{name}@/, ISeq.of(m).inspect, name
+      assert_match(/:#{name}@/, ISeq.of(m).inspect, name)
     end
+  end
+
+  def anon_star(*); end
+
+  def test_anon_param_in_disasm
+    iseq = RubyVM::InstructionSequence.of(method(:anon_star))
+    param_names = iseq.to_a[iseq.to_a.index(:method) + 1]
+    assert_equal [2], param_names
+  end
+
+  def anon_block(&); end
+
+  def test_anon_block_param_in_disasm
+    iseq = RubyVM::InstructionSequence.of(method(:anon_block))
+    param_names = iseq.to_a[iseq.to_a.index(:method) + 1]
+    assert_equal [:&], param_names
   end
 
   def strip_lineno(source)
@@ -386,7 +504,7 @@ class TestISeq < Test::Unit::TestCase
       type = ary[9]
       name = ary[5]
       line = ary[13].first
-      case ary[9]
+      case type
       when :method
         assert_equal "foo", name
         assert_equal 3, line
@@ -424,12 +542,38 @@ class TestISeq < Test::Unit::TestCase
     a1 = iseq.to_a
     a2 = iseq2.to_a
     assert_equal(a1, a2, message(mesg) {diff iseq.disassemble, iseq2.disassemble})
+    if iseq2.script_lines
+      assert_kind_of(Array, iseq2.script_lines)
+    else
+      assert_nil(iseq2.script_lines)
+    end
     iseq2
   end
 
   def test_to_binary_with_objects
     assert_iseq_to_binary("[]"+100.times.map{|i|"<</#{i}/"}.join)
     assert_iseq_to_binary("@x ||= (1..2)")
+  end
+
+  def test_to_binary_pattern_matching
+    code = "case foo; in []; end"
+    iseq = compile(code)
+    assert_include(iseq.disasm, "TypeError")
+    assert_include(iseq.disasm, "NoMatchingPatternError")
+    EnvUtil.suppress_warning do
+      assert_iseq_to_binary(code, "[Feature #14912]")
+    end
+  end
+
+  def test_to_binary_dumps_nokey
+    iseq = assert_iseq_to_binary(<<-RUBY)
+      o = Object.new
+      class << o
+        def foo(**nil); end
+      end
+      o
+    RUBY
+    assert_equal([[:nokey]], iseq.eval.singleton_method(:foo).parameters)
   end
 
   def test_to_binary_line_info
@@ -443,6 +587,11 @@ class TestISeq < Test::Unit::TestCase
         attr_reader :i
       end
     end;
+
+    # cleanup
+    ::Object.class_eval do
+      remove_const :P
+    end
   end
 
   def collect_from_binary_tracepoint_lines(tracepoint_type, filename)
@@ -451,7 +600,7 @@ class TestISeq < Test::Unit::TestCase
         class B
           2.times {
             def self.foo
-              a = 'good day'
+              _a = 'good day'
               raise
             rescue
               'dear reader'
@@ -463,12 +612,13 @@ class TestISeq < Test::Unit::TestCase
     RUBY
 
     iseq_bin = iseq.to_binary
+    iseq = ISeq.load_from_binary(iseq_bin)
     lines = []
     TracePoint.new(tracepoint_type){|tp|
       next unless tp.path == filename
       lines << tp.lineno
     }.enable{
-      ISeq.load_from_binary(iseq_bin).eval
+      EnvUtil.suppress_warning {iseq.eval}
     }
 
     lines
@@ -535,5 +685,61 @@ class TestISeq < Test::Unit::TestCase
       # ISeq objects should be same for same src
       assert_equal iseq1.object_id, iseq2.object_id
     }
+  end
+
+  def test_iseq_builtin_to_a
+    invokebuiltin = eval(EnvUtil.invoke_ruby(['-e', <<~EOS], '', true).first)
+      insns = RubyVM::InstructionSequence.of([].method(:pack)).to_a.last
+      p insns.find { |insn| insn.is_a?(Array) && insn[0] == :opt_invokebuiltin_delegate_leave }
+    EOS
+    assert_not_nil(invokebuiltin)
+    assert_equal([:func_ptr, :argc, :index, :name], invokebuiltin[1].keys)
+  end
+
+  def test_iseq_builtin_load
+    Tempfile.create(["builtin", ".iseq"]) do |f|
+      f.binmode
+      f.write(RubyVM::InstructionSequence.of(1.method(:abs)).to_binary)
+      f.close
+      assert_separately(["-", f.path], "#{<<~"begin;"}\n#{<<~'end;'}")
+      begin;
+        bin = File.binread(ARGV[0])
+        assert_raise(ArgumentError) do
+          RubyVM::InstructionSequence.load_from_binary(bin)
+        end
+      end;
+    end
+  end
+
+  def test_iseq_option_debug_level
+    assert_raise(TypeError) {ISeq.compile("", debug_level: "")}
+    assert_ruby_status([], "#{<<~"begin;"}\n#{<<~'end;'}")
+    begin;
+      RubyVM::InstructionSequence.compile("", debug_level: 5)
+    end;
+  end
+
+  def test_mandatory_only
+    assert_separately [], <<~RUBY
+      at0 = Time.at(0)
+      assert_equal at0, Time.public_send(:at, 0, 0)
+    RUBY
+  end
+
+  def test_mandatory_only_redef
+    assert_separately ['-W0'], <<~RUBY
+      r = Ractor.new{
+        Float(10)
+        module Kernel
+          undef Float
+          def Float(n)
+            :new
+          end
+        end
+        GC.start
+        Float(30)
+      }
+      assert_equal :new, r.take
+    RUBY
   end
 end

@@ -39,12 +39,6 @@ public class UndefMethodInstr extends OneOperandResultBaseInstr implements Fixed
         return new UndefMethodInstr((Variable)result.cloneForInlining(ii), getMethodName().cloneForInlining(ii));
     }
 
-    @Override
-    public void encode(IRWriterEncoder e) {
-        super.encode(e);
-        e.encode(getMethodName());
-    }
-
     public static UndefMethodInstr decode(IRReaderDecoder d) {
         return new UndefMethodInstr(d.decodeVariable(), d.decodeOperand());
     }

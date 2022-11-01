@@ -21,6 +21,15 @@ describe FFI::Function do
     expect(fn.call).to eql 5
   end
 
+  context 'when called with a block' do
+    it 'creates a thread for dispatching callbacks and sets its name' do
+      skip 'this is MRI-specific' if RUBY_ENGINE == 'truffleruby' || RUBY_ENGINE == 'jruby'
+      FFI::Function.new(:int, []) { 5 } # Trigger initialization
+
+      expect(Thread.list.map(&:name)).to include('FFI Callback Dispatcher')
+    end
+  end
+
   it 'raises an error when passing a wrong signature' do
     expect { FFI::Function.new([], :int).new { } }.to raise_error TypeError
   end

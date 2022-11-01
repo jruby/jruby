@@ -13,15 +13,145 @@
 # if you're writing a server in Ruby.  For the details of the syslog(8)
 # architecture and constants, see the syslog(3) manual page of your
 # platform.
-begin
-  require 'ffi'
-  require "#{File.join(FFI::Platform::CONF_DIR, 'syslog.rb')}"
-rescue LoadError => ex
+require 'ffi'
+JRuby::Util.load_ext("org.jruby.ext.syslog.SyslogLibrary")
+if FFI::Platform::IS_WINDOWS
   raise LoadError, "Syslog not supported on this platform"
 end
 
 module Syslog
   include Constants
+
+  module Level
+    if defined? LOG_EMERG
+      LOG_EMERG = Syslog::Constants::LOG_EMERG
+
+      def emerg(*args)
+        Syslog.log(LOG_EMERG, *args)
+      end
+    end
+    if defined? LOG_ALERT
+      LOG_ALERT = Syslog::Constants::LOG_ALERT
+
+      def alert(*args)
+        Syslog.log(LOG_ALERT, *args)
+      end
+    end
+    if defined? LOG_CRIT
+      LOG_CRIT = Syslog::Constants::LOG_CRIT
+
+      def crit(*args)
+        Syslog.log(LOG_CRIT, *args)
+      end
+    end
+    if defined? LOG_ERR
+      LOG_ERR = Syslog::Constants::LOG_ERR
+
+      def err(*args)
+        Syslog.log(LOG_ERR, *args)
+      end
+    end
+    if defined? LOG_WARNING
+      LOG_WARNING = Syslog::Constants::LOG_WARNING
+
+      def warning(*args)
+        Syslog.log(LOG_WARNING, *args)
+      end
+    end
+    if defined? LOG_NOTICE
+      LOG_NOTICE = Syslog::Constants::LOG_NOTICE
+
+      def notice(*args)
+        Syslog.log(LOG_NOTICE, *args)
+      end
+    end
+    if defined? LOG_INFO
+      LOG_INFO = Syslog::Constants::LOG_INFO
+
+      def info(*args)
+        Syslog.log(LOG_INFO, *args)
+      end
+    end
+    if defined? LOG_DEBUG
+      LOG_DEBUG = Syslog::Constants::LOG_DEBUG
+
+      def debug(*args)
+        syslog_write(LOG_DEBUG, *args)
+      end
+    end
+  end
+
+  module Facility
+    if defined? LOG_AUTH
+      LOG_AUTH = Syslog::Constants::LOG_AUTH
+    end
+    if defined? LOG_AUTHPRIV
+      LOG_AUTHPRIV = Syslog::Constants::LOG_AUTHPRIV
+    end
+    if defined? LOG_CONSOLE
+      LOG_CONSOLE = Syslog::Constants::LOG_CONSOLE
+    end
+    if defined? LOG_CRON
+      LOG_CRON = Syslog::Constants::LOG_CRON
+    end
+    if defined? LOG_DAEMON
+      LOG_DAEMON = Syslog::Constants::LOG_DAEMON
+    end
+    if defined? LOG_FTP
+      LOG_FTP = Syslog::Constants::LOG_FTP
+    end
+    if defined? LOG_KERN
+      LOG_KERN = Syslog::Constants::LOG_KERN
+    end
+    if defined? LOG_LPR
+      LOG_LPR = Syslog::Constants::LOG_LPR
+    end
+    if defined? LOG_MAIL
+      LOG_MAIL = Syslog::Constants::LOG_MAIL
+    end
+    if defined? LOG_NEWS
+      LOG_NEWS = Syslog::Constants::LOG_NEWS
+    end
+    if defined? LOG_NTP
+      LOG_NTP = Syslog::Constants::LOG_NTP
+    end
+    if defined? LOG_SECURITY
+      LOG_SECURITY = Syslog::Constants::LOG_SECURITY
+    end
+    if defined? LOG_SYSLOG
+      LOG_SYSLOG = Syslog::Constants::LOG_SYSLOG
+    end
+    if defined? LOG_USER
+      LOG_USER = Syslog::Constants::LOG_USER
+    end
+    if defined? LOG_UUCP
+      LOG_UUCP = Syslog::Constants::LOG_UUCP
+    end
+    if defined? LOG_LOCAL0
+      LOG_LOCAL0 = Syslog::Constants::LOG_LOCAL0
+    end
+    if defined? LOG_LOCAL1
+      LOG_LOCAL1 = Syslog::Constants::LOG_LOCAL1
+    end
+    if defined? LOG_LOCAL2
+      LOG_LOCAL2 = Syslog::Constants::LOG_LOCAL2
+    end
+    if defined? LOG_LOCAL3
+      LOG_LOCAL3 = Syslog::Constants::LOG_LOCAL3
+    end
+    if defined? LOG_LOCAL4
+      LOG_LOCAL4 = Syslog::Constants::LOG_LOCAL4
+    end
+    if defined? LOG_LOCAL5
+      LOG_LOCAL5 = Syslog::Constants::LOG_LOCAL5
+    end
+    if defined? LOG_LOCAL6
+      LOG_LOCAL6 = Syslog::Constants::LOG_LOCAL6
+    end
+    if defined? LOG_LOCAL7
+      LOG_LOCAL7 = Syslog::Constants::LOG_LOCAL7
+    end
+  end
   
   module Foreign
     extend FFI::Library

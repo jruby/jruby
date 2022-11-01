@@ -31,22 +31,29 @@ package org.jruby.javasupport.ext;
 import org.jruby.*;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.Java;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.Inspector;
+import org.jruby.util.RubyStringBuilder;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
+import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.javasupport.JavaUtil.convertJavaArrayToRuby;
 import static org.jruby.javasupport.JavaUtil.convertJavaToUsableRubyObject;
+import static org.jruby.javasupport.JavaUtil.inspectObject;
 import static org.jruby.javasupport.JavaUtil.unwrapIfJavaObject;
 import static org.jruby.javasupport.JavaUtil.unwrapJavaObject;
 import static org.jruby.runtime.Helpers.invokedynamic;
+import static org.jruby.runtime.Visibility.PUBLIC;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
+import static org.jruby.util.Inspector.*;
 
 /**
  * Java::JavaUtil package extensions.
@@ -60,6 +67,12 @@ public abstract class JavaUtil {
         JavaExtensions.put(runtime, java.util.Iterator.class, (proxyClass) -> Iterator.define(runtime, proxyClass));
         JavaExtensions.put(runtime, java.util.Collection.class, (proxyClass) -> Collection.define(runtime, proxyClass));
         JavaExtensions.put(runtime, java.util.List.class, (proxyClass) -> List.define(runtime, proxyClass));
+        JavaExtensions.put(runtime, java.util.Date.class, (dateClass) -> {
+            dateClass.addMethod("inspect", new JavaLang.InspectValueWithTypePrefix(dateClass));
+        });
+        JavaExtensions.put(runtime, java.util.TimeZone.class, (proxyClass) -> {
+            proxyClass.addMethod("inspect", new InspectTimeZone(proxyClass));
+        });
     }
 
     @JRubyModule(name = "Java::JavaUtil::Enumeration", include = "Enumerable")
@@ -247,6 +260,44 @@ public abstract class JavaUtil {
             return to_a(context, self).join(context, sep);
         }
 
+        // #<Java::JavaUtil::ArrayList: [1, 2, 3]>
+        @JRubyMethod(name = "inspect")
+        public static RubyString inspect(final ThreadContext context, final IRubyObject self) {
+            final Ruby runtime = context.runtime;
+            final java.util.Collection coll = unwrapIfJavaObject(self);
+
+            RubyString buf = inspectPrefix(context, self.getMetaClass());
+            RubyStringBuilder.cat(runtime, buf, Inspector.SPACE);
+
+            if (runtime.isInspecting(coll)) {
+                RubyStringBuilder.cat(runtime, buf, RECURSIVE_ARRAY_BL);
+            } else {
+                RubyStringBuilder.cat(runtime, buf, BEG_BRACKET); // [
+                try {
+                    runtime.registerInspecting(coll);
+                    inspectElements(context, buf, coll);
+                } finally {
+                    runtime.unregisterInspecting(coll);
+                }
+                RubyStringBuilder.cat(runtime, buf, END_BRACKET); // ]
+            }
+
+            return RubyStringBuilder.cat(runtime, buf, GT); // >
+        }
+
+        static void inspectElements(final ThreadContext context, final RubyString buf, final java.util.Collection coll) {
+            int i = 0;
+            for (Object elem : coll) {
+                RubyString s = inspectObject(context, elem);
+                if (i++ > 0) {
+                    RubyStringBuilder.cat(context.runtime, buf, Inspector.COMMA_SPACE); // ,
+                } else {
+                    buf.setEncoding(s.getEncoding());
+                }
+                buf.cat19(s);
+            }
+        }
+
     }
 
     @JRubyModule(name = "Java::JavaUtil::List")
@@ -369,7 +420,7 @@ public abstract class JavaUtil {
         public static IRubyObject index(final ThreadContext context, final IRubyObject self, final Block block) {
             final Ruby runtime = context.runtime;
             if ( ! block.isGiven() ) { // list.index ... Enumerator.new(self, :index)
-                return runtime.getEnumerator().callMethod("new", self, runtime.newSymbol("index"));
+                return enumeratorize(context.runtime, self, "index");
             }
 
             final java.util.List list = unwrapIfJavaObject(self);
@@ -422,7 +473,7 @@ public abstract class JavaUtil {
         public static IRubyObject rindex(final ThreadContext context, final IRubyObject self, final Block block) {
             final Ruby runtime = context.runtime;
             if ( ! block.isGiven() ) { // list.rindex ... Enumerator.new(self, :rindex)
-                return runtime.getEnumerator().callMethod("new", self, runtime.newSymbol("rindex"));
+                return enumeratorize(context.runtime, self, "rindex");
             }
 
             final java.util.List list = unwrapIfJavaObject(self);
@@ -579,6 +630,22 @@ public abstract class JavaUtil {
 
     }
 
+    private static class InspectTimeZone extends JavaMethod.JavaMethodZero {
+
+        InspectTimeZone(RubyModule implClass) {
+            super(implClass, PUBLIC, "inspect");
+        }
+
+        @Override
+        public IRubyObject call(final ThreadContext context, final IRubyObject self, final RubyModule clazz, final String name) {
+            // NOTE: might need work but showing type here is a bit confusing as
+            // java.util.TimeZone's impl type is Java::SunUtilCalendar::ZoneInfo
+            java.util.TimeZone tz = unwrapIfJavaObject(self);
+            return RubyString.newString(context.runtime, tz.getID());
+            // also the toString format is very verbose to use:
+            // sun.util.calendar.ZoneInfo[id=\"Europe/Prague\",offset=3600000,dstSavings=3600000,useDaylight=true,transitions=141,lastRule=java.util.SimpleTimeZone[...]]
+        }
+    }
     private static java.util.Collection tryNewEqualInstance(final java.util.Collection coll) {
         final Class<? extends java.util.Collection> klass = coll.getClass();
         // most collections provide a <init>(Collection<? extends E> coll)

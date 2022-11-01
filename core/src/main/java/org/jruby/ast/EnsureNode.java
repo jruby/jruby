@@ -35,7 +35,6 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  *	An 'ensure' statement.
@@ -44,10 +43,8 @@ public class EnsureNode extends Node {
     private final Node bodyNode;
     private final Node ensureNode;
 
-    public EnsureNode(ISourcePosition position, Node bodyNode, Node ensureNode) {
-        super(position, bodyNode.containsVariableAssignment() || ensureNode != null && ensureNode.containsVariableAssignment());
-
-        assert bodyNode != null : "bodyNode is not null";
+    public EnsureNode(int line, Node bodyNode, Node ensureNode) {
+        super(line, bodyNode.containsVariableAssignment() || ensureNode != null && ensureNode.containsVariableAssignment());
 
         this.bodyNode = bodyNode;
         this.ensureNode = ensureNode;

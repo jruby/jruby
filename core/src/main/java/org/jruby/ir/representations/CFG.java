@@ -43,6 +43,9 @@ public class CFG {
     /** Exit BB */
     private BasicBlock exitBB;
 
+    /** List of bbs that have a 'return' instruction */
+    List<BasicBlock> returnBBs = new ArrayList<>();
+
     /** BB that traps all exception-edges out of the cfg where we could add any cleanup/ensure code (ex: pop frames, etc.) */
     private BasicBlock globalEnsureBB;
 
@@ -212,9 +215,6 @@ public class CFG {
         // Map of label & basic blocks which are waiting for a bb with that label
         Map<Label, List<BasicBlock>> forwardRefs = new HashMap<>();
 
-        // List of bbs that have a 'return' instruction
-        List<BasicBlock> returnBBs = new ArrayList<>();
-
         // List of bbs that have a 'throw' instruction
         List<BasicBlock> exceptionBBs = new ArrayList<>();
 
@@ -335,9 +335,25 @@ public class CFG {
         // System.out.println("\nGraph:\n" + toStringGraph());
         // System.out.println("\nInstructions:\n" + toStringInstrs());
 
-        optimize(returnBBs); // remove useless cfg edges & orphaned bbs
+        optimize(); // remove useless cfg edges & orphaned bbs
 
         return graph;
+    }
+
+    // A branch may have become something else...let's fix up the CFG
+    public void fixupEdges(BasicBlock bb) {
+        Instr lastInstr = bb.getLastInstr();
+        if (lastInstr instanceof BranchInstr) {
+            // We assume branches will not turn into other branches so we ignore this
+        } else if (bb.getLastInstr() instanceof JumpTargetInstr) { // this is really a jump branch already covered
+            for (Edge<BasicBlock> edge: getOutgoingEdges(bb)) {
+                if (edge.getType() == EdgeType.FALL_THROUGH) graph.removeEdge(edge);
+            }
+        } else {
+            for (Edge<BasicBlock> edge: getOutgoingEdges(bb)) {
+                if (edge.getType() == EdgeType.REGULAR) graph.removeEdge(edge);
+            }
+        }
     }
 
     private void addEdge(BasicBlock src, Label targetLabel, Map<Label, List<BasicBlock>> forwardRefs) {
@@ -508,6 +524,7 @@ public class CFG {
         graph.removeVertexFor(b);
         bbMap.remove(b.getLabel());
         rescuerMap.remove(b);
+        returnBBs.remove(b);
     }
 
     /**
@@ -551,7 +568,7 @@ public class CFG {
         }
     }
 
-    public void optimize(List<BasicBlock> returnBBs) {
+    public void optimize() {
         // Propagate returns backwards where possible.
         // If:
         // - there is an edge from BB: x -> r, and

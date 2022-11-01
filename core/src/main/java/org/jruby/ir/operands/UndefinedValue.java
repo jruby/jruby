@@ -84,25 +84,6 @@ public class UndefinedValue extends Operand implements IRubyObject {
     public boolean isTrue() { throw undefinedOperation(); }
 
     /**
-     * RubyMethod isTaint.
-     * @return boolean
-     */
-    public boolean isTaint() { throw undefinedOperation(); }
-
-    /**
-     * RubyMethod setTaint.
-     * @param b
-     */
-    public void setTaint(boolean b) { throw undefinedOperation(); }
-
-    /**
-     * Infect this object using the taint of another object
-     * @param obj
-     * @return
-     */
-    public IRubyObject infectBy(IRubyObject obj) { throw undefinedOperation(); }
-
-    /**
      * RubyMethod isFrozen.
      * @return boolean
      */
@@ -113,18 +94,6 @@ public class UndefinedValue extends Operand implements IRubyObject {
      * @param b
      */
     public void setFrozen(boolean b) { throw undefinedOperation(); }
-
-    /**
-     * RubyMethod isUntrusted.
-     * @return boolean
-     */
-    public boolean isUntrusted() { throw undefinedOperation(); }
-
-    /**
-     * RubyMethod setUntrusted.
-     * @param b
-     */
-    public void setUntrusted(boolean b) { throw undefinedOperation(); }
 
     /**
      *
@@ -403,4 +372,19 @@ public class UndefinedValue extends Operand implements IRubyObject {
 
     @Deprecated
     public Object dataGetStructChecked() { throw undefinedOperation(); }
+
+    @Deprecated
+    public boolean isTaint() { throw undefinedOperation(); }
+
+    @Deprecated
+    public void setTaint(boolean b) { throw undefinedOperation(); }
+
+    @Deprecated
+    public IRubyObject infectBy(IRubyObject obj) { throw undefinedOperation(); }
+
+    @Deprecated
+    public boolean isUntrusted() { throw undefinedOperation(); }
+
+    @Deprecated
+    public void setUntrusted(boolean b) { throw undefinedOperation(); }
 }

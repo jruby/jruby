@@ -31,6 +31,7 @@ package org.jruby.ext.fiber;
 import org.jruby.Ruby;
 import org.jruby.RubyThread;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.ext.fiber.ThreadFiber.FiberRequest;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -41,7 +42,7 @@ import java.util.concurrent.BlockingQueue;
  * A RubyThread-aware BlockingQueue wrapper used by Fiber for transferring values.
  */
 public class FiberQueue {
-    protected BlockingQueue<IRubyObject> queue;
+    protected BlockingQueue<FiberRequest> queue;
     protected final Ruby runtime;
 
     public FiberQueue(Ruby runtime) {
@@ -49,31 +50,14 @@ public class FiberQueue {
         this.queue = new ArrayBlockingQueue<>(1, false);
     }
 
-    final RubyThread.Task<FiberQueue, IRubyObject> takeTask = new RubyThread.Task<FiberQueue, IRubyObject>() {
+    final RubyThread.Task<FiberQueue, FiberRequest> takeTask = new RubyThread.Task<FiberQueue, FiberRequest>() {
         @Override
-        public IRubyObject run(ThreadContext context, FiberQueue queue) throws InterruptedException {
+        public FiberRequest run(ThreadContext context, FiberQueue queue) throws InterruptedException {
             return queue.getQueueSafe().take();
         }
 
         @Override
         public void wakeup(RubyThread thread, FiberQueue data) {
-            thread.getNativeThread().interrupt();
-        }
-    };
-
-    final RubyThread.Task<IRubyObject[], IRubyObject> putTask = new RubyThread.Task<IRubyObject[], IRubyObject>() {
-        @Override
-        public IRubyObject run(ThreadContext context, IRubyObject[] args) throws InterruptedException {
-            final BlockingQueue<IRubyObject> queue = getQueueSafe();
-            if(args.length == 2 && args[1].isTrue() && queue.remainingCapacity() == 0) {
-                throw context.runtime.newThreadError("queue full");
-            }
-            queue.put(args[0]);
-            return context.nil;
-        }
-
-        @Override
-        public void wakeup(RubyThread thread, IRubyObject[] data) {
             thread.getNativeThread().interrupt();
         }
     };
@@ -91,8 +75,8 @@ public class FiberQueue {
         return queue == null;
     }
 
-    public BlockingQueue<IRubyObject> getQueueSafe() {
-        BlockingQueue<IRubyObject> queue = this.queue;
+    public BlockingQueue<FiberRequest> getQueueSafe() {
+        BlockingQueue<FiberRequest> queue = this.queue;
         checkShutdown();
         return queue;
     }
@@ -103,33 +87,21 @@ public class FiberQueue {
         }
     }
 
-    public IRubyObject pop(ThreadContext context) {
-        return pop(context, true);
+    public FiberRequest pop(ThreadContext context) {
+        try {
+            return context.getThread().executeTaskBlocking(context, this, takeTask);
+        } catch (InterruptedException ie) {
+            throw context.runtime.newThreadError("interrupted in FiberQueue.pop");
+        }
     }
 
-    public IRubyObject pop(ThreadContext context, IRubyObject arg0) {
-        return pop(context, !arg0.isTrue());
-    }
-
-    public void push(ThreadContext context, final IRubyObject[] args) {
+    public void push(ThreadContext context, final FiberRequest arg) {
         checkShutdown();
         try {
-            context.getThread().executeTask(context, args, putTask);
+            queue.put(arg);
         } catch (InterruptedException ie) {
             throw context.runtime.newThreadError("interrupted in FiberQueue.push");
         }
     }
 
-    private IRubyObject pop(ThreadContext context, boolean should_block) {
-        final BlockingQueue<IRubyObject> queue = getQueueSafe();
-        if (!should_block && queue.size() == 0) {
-            throw RaiseException.from(context.runtime, context.runtime.getThreadError(), "queue empty");
-        }
-        try {
-            return context.getThread().executeTask(context, this, takeTask);
-        } catch (InterruptedException ie) {
-            throw context.runtime.newThreadError("interrupted in FiberQueue.pop");
-        }
-    }
-    
 }

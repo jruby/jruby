@@ -31,6 +31,7 @@ public class AsStringInstr extends ZeroOperandArgNoBlockCallInstr {
                 scope.getManager().getRuntime().newSymbol(TO_S),
                 nonNull(source),
                 Operand.EMPTY_ARRAY,
+                0,
                 isPotentiallyRefined);
     }
 
@@ -43,6 +44,7 @@ public class AsStringInstr extends ZeroOperandArgNoBlockCallInstr {
                 scope.getManager().getRuntime().newSymbol(TO_S),
                 nonNull(source),
                 Operand.EMPTY_ARRAY,
+                0,
                 isPotentiallyRefined,
                 callSite,
                 callSiteId);

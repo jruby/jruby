@@ -24,12 +24,7 @@ import static org.jruby.util.RubyStringBuilder.str;
 
 public class TracePoint extends RubyObject {
     public static void createTracePointClass(Ruby runtime) {
-        RubyClass tracePoint = runtime.defineClass("TracePoint", runtime.getObject(), new ObjectAllocator() {
-            @Override
-            public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                return new TracePoint(runtime, klazz);
-            }
-        });
+        RubyClass tracePoint = runtime.defineClass("TracePoint", runtime.getObject(), TracePoint::new);
         
         tracePoint.defineAnnotatedMethods(TracePoint.class);
     }

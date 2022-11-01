@@ -25,30 +25,28 @@ class CGIUtilTest < Test::Unit::TestCase
 
 
   def test_cgi_escape
-    assert_equal('%26%3C%3E%22+%E3%82%86%E3%82%93%E3%82%86%E3%82%93', CGI::escape(@str1))
-    assert_equal('%26%3C%3E%22+%E3%82%86%E3%82%93%E3%82%86%E3%82%93'.ascii_only?, CGI::escape(@str1).ascii_only?) if defined?(::Encoding)
+    assert_equal('%26%3C%3E%22+%E3%82%86%E3%82%93%E3%82%86%E3%82%93', CGI.escape(@str1))
+    assert_equal('%26%3C%3E%22+%E3%82%86%E3%82%93%E3%82%86%E3%82%93'.ascii_only?, CGI.escape(@str1).ascii_only?) if defined?(::Encoding)
   end
 
   def test_cgi_escape_with_unreserved_characters
     assert_equal("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~",
-                 CGI::escape("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"),
+                 CGI.escape("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"),
                  "should not escape any unreserved characters, as per RFC3986 Section 2.3")
   end
 
   def test_cgi_escape_with_invalid_byte_sequence
-    assert_nothing_raised(ArgumentError) do
-      assert_equal('%C0%3C%3C', CGI::escape("\xC0\<\<".dup.force_encoding("UTF-8")))
-    end
+    assert_equal('%C0%3C%3C', CGI.escape("\xC0\<\<".dup.force_encoding("UTF-8")))
   end
 
   def test_cgi_escape_preserve_encoding
-    assert_equal(Encoding::US_ASCII, CGI::escape("\xC0\<\<".dup.force_encoding("US-ASCII")).encoding)
-    assert_equal(Encoding::ASCII_8BIT, CGI::escape("\xC0\<\<".dup.force_encoding("ASCII-8BIT")).encoding)
-    assert_equal(Encoding::UTF_8, CGI::escape("\xC0\<\<".dup.force_encoding("UTF-8")).encoding)
+    assert_equal(Encoding::US_ASCII, CGI.escape("\xC0\<\<".dup.force_encoding("US-ASCII")).encoding)
+    assert_equal(Encoding::ASCII_8BIT, CGI.escape("\xC0\<\<".dup.force_encoding("ASCII-8BIT")).encoding)
+    assert_equal(Encoding::UTF_8, CGI.escape("\xC0\<\<".dup.force_encoding("UTF-8")).encoding)
   end
 
   def test_cgi_unescape
-    str = CGI::unescape('%26%3C%3E%22+%E3%82%86%E3%82%93%E3%82%86%E3%82%93')
+    str = CGI.unescape('%26%3C%3E%22+%E3%82%86%E3%82%93%E3%82%86%E3%82%93')
     assert_equal(@str1, str)
     return unless defined?(::Encoding)
 
@@ -57,9 +55,9 @@ class CGIUtilTest < Test::Unit::TestCase
   end
 
   def test_cgi_unescape_preserve_encoding
-    assert_equal(Encoding::US_ASCII, CGI::unescape("%C0%3C%3C".dup.force_encoding("US-ASCII")).encoding)
-    assert_equal(Encoding::ASCII_8BIT, CGI::unescape("%C0%3C%3C".dup.force_encoding("ASCII-8BIT")).encoding)
-    assert_equal(Encoding::UTF_8, CGI::unescape("%C0%3C%3C".dup.force_encoding("UTF-8")).encoding)
+    assert_equal(Encoding::US_ASCII, CGI.unescape("%C0%3C%3C".dup.force_encoding("US-ASCII")).encoding)
+    assert_equal(Encoding::ASCII_8BIT, CGI.unescape("%C0%3C%3C".dup.force_encoding("ASCII-8BIT")).encoding)
+    assert_equal(Encoding::UTF_8, CGI.unescape("%C0%3C%3C".dup.force_encoding("UTF-8")).encoding)
   end
 
   def test_cgi_unescape_accept_charset
@@ -73,23 +71,23 @@ class CGIUtilTest < Test::Unit::TestCase
   end
 
   def test_cgi_pretty
-    assert_equal("<HTML>\n  <BODY>\n  </BODY>\n</HTML>\n",CGI::pretty("<HTML><BODY></BODY></HTML>"))
-    assert_equal("<HTML>\n\t<BODY>\n\t</BODY>\n</HTML>\n",CGI::pretty("<HTML><BODY></BODY></HTML>","\t"))
+    assert_equal("<HTML>\n  <BODY>\n  </BODY>\n</HTML>\n",CGI.pretty("<HTML><BODY></BODY></HTML>"))
+    assert_equal("<HTML>\n\t<BODY>\n\t</BODY>\n</HTML>\n",CGI.pretty("<HTML><BODY></BODY></HTML>","\t"))
   end
 
   def test_cgi_escapeHTML
-    assert_equal("&#39;&amp;&quot;&gt;&lt;", CGI::escapeHTML("'&\"><"))
+    assert_equal("&#39;&amp;&quot;&gt;&lt;", CGI.escapeHTML("'&\"><"))
   end
 
   def test_cgi_escape_html_duplicated
     orig = "Ruby".dup.force_encoding("US-ASCII")
-    str = CGI::escapeHTML(orig)
+    str = CGI.escapeHTML(orig)
     assert_equal(orig, str)
     assert_not_same(orig, str)
   end
 
   def assert_cgi_escape_html_preserve_encoding(str, encoding)
-    assert_equal(encoding, CGI::escapeHTML(str.dup.force_encoding(encoding)).encoding)
+    assert_equal(encoding, CGI.escapeHTML(str.dup.force_encoding(encoding)).encoding)
   end
 
   def test_cgi_escape_html_preserve_encoding
@@ -99,26 +97,36 @@ class CGIUtilTest < Test::Unit::TestCase
     end
   end
 
-  def test_cgi_escape_html_preserve_tainted
-    assert_not_predicate CGI::escapeHTML("'&\"><"),           :tainted?
-    assert_predicate     CGI::escapeHTML("'&\"><".dup.taint), :tainted?
-    assert_not_predicate CGI::escapeHTML("Ruby"),             :tainted?
-    assert_predicate     CGI::escapeHTML("Ruby".dup.taint),   :tainted?
+  def test_cgi_escape_html_dont_freeze
+    assert_not_predicate CGI.escapeHTML("'&\"><".dup),    :frozen?
+    assert_not_predicate CGI.escapeHTML("'&\"><".freeze), :frozen?
+    assert_not_predicate CGI.escapeHTML("Ruby".dup),      :frozen?
+    assert_not_predicate CGI.escapeHTML("Ruby".freeze),   :frozen?
   end
 
-  def test_cgi_escape_html_dont_freeze
-    assert_not_predicate CGI::escapeHTML("'&\"><".dup),    :frozen?
-    assert_not_predicate CGI::escapeHTML("'&\"><".freeze), :frozen?
-    assert_not_predicate CGI::escapeHTML("Ruby".dup),      :frozen?
-    assert_not_predicate CGI::escapeHTML("Ruby".freeze),   :frozen?
+  def test_cgi_escape_html_large
+    ulong_max, size_max = RbConfig::LIMITS.values_at("ULONG_MAX", "SIZE_MAX")
+    return unless ulong_max < size_max # Platforms not concerned
+
+    size = (ulong_max / 6 + 1)
+    begin
+      str = '"' * size
+      escaped = CGI.escapeHTML(str)
+    rescue NoMemoryError
+      omit "Not enough memory"
+    rescue => e
+    end
+    assert_raise_with_message(ArgumentError, /overflow/, ->{"length = #{escaped.length}"}) do
+      raise e if e
+    end
   end
 
   def test_cgi_unescapeHTML
-    assert_equal("'&\"><", CGI::unescapeHTML("&#39;&amp;&quot;&gt;&lt;"))
+    assert_equal("'&\"><", CGI.unescapeHTML("&#39;&amp;&quot;&gt;&lt;"))
   end
 
   def test_cgi_unescapeHTML_invalid
-    assert_equal('&<&amp>&quot&abcdefghijklmn', CGI::unescapeHTML('&&lt;&amp&gt;&quot&abcdefghijklmn'))
+    assert_equal('&<&amp>&quot&abcdefghijklmn', CGI.unescapeHTML('&&lt;&amp&gt;&quot&abcdefghijklmn'))
   end
 
   Encoding.list.each do |enc|
@@ -129,10 +137,10 @@ class CGIUtilTest < Test::Unit::TestCase
       next
     else
       define_method("test_cgi_escapeHTML:#{enc.name}") do
-        assert_equal(escaped, CGI::escapeHTML(unescaped))
+        assert_equal(escaped, CGI.escapeHTML(unescaped))
       end
       define_method("test_cgi_unescapeHTML:#{enc.name}") do
-        assert_equal(unescaped, CGI::unescapeHTML(escaped))
+        assert_equal(unescaped, CGI.unescapeHTML(escaped))
       end
     end
   end
@@ -146,16 +154,16 @@ class CGIUtilTest < Test::Unit::TestCase
       next
     else
       define_method("test_cgi_escape:#{enc.name}") do
-        assert_equal(escaped, CGI::escape(unescaped))
+        assert_equal(escaped, CGI.escape(unescaped))
       end
       define_method("test_cgi_unescape:#{enc.name}") do
-        assert_equal(unescaped, CGI::unescape(escaped, enc))
+        assert_equal(unescaped, CGI.unescape(escaped, enc))
       end
     end
   end
 
   def test_cgi_unescapeHTML_uppercasecharacter
-    assert_equal("\xE3\x81\x82\xE3\x81\x84\xE3\x81\x86", CGI::unescapeHTML("&#x3042;&#x3044;&#X3046;"))
+    assert_equal("\xE3\x81\x82\xE3\x81\x84\xE3\x81\x86", CGI.unescapeHTML("&#x3042;&#x3044;&#X3046;"))
   end
 
   def test_cgi_include_escape
@@ -196,5 +204,34 @@ class CGIUtilTest < Test::Unit::TestCase
     assert_equal('&lt;BR&gt;<A HREF="url"></A>', unescapeElement(escapeHTML('<BR><A HREF="url"></A>'), ["A", "IMG"]))
     assert_equal('&lt;BR&gt;<A HREF="url"></A>', unescape_element(escapeHTML('<BR><A HREF="url"></A>'), "A", "IMG"))
     assert_equal('&lt;BR&gt;<A HREF="url"></A>', unescape_element(escapeHTML('<BR><A HREF="url"></A>'), ["A", "IMG"]))
+  end
+end
+
+class CGIUtilPureRubyTest < Test::Unit::TestCase
+  def setup
+    CGI::Escape.module_eval do
+      alias _escapeHTML escapeHTML
+      remove_method :escapeHTML
+      alias _unescapeHTML unescapeHTML
+      remove_method :unescapeHTML
+    end
+  end
+
+  def teardown
+    CGI::Escape.module_eval do
+      alias escapeHTML _escapeHTML
+      remove_method :_escapeHTML
+      alias unescapeHTML _unescapeHTML
+      remove_method :_unescapeHTML
+    end
+  end
+
+  def test_cgi_escapeHTML_with_invalid_byte_sequence
+    assert_equal("&lt;\xA4??&gt;", CGI.escapeHTML(%[<\xA4??>]))
+  end
+
+  def test_cgi_unescapeHTML_with_invalid_byte_sequence
+    input = "\xFF&"
+    assert_equal(input, CGI.unescapeHTML(input))
   end
 end

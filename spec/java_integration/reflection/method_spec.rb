@@ -10,7 +10,7 @@ java_import 'java_integration.fixtures.PackageStaticMethod'
 describe "A JavaMethod" do
   describe "given a private Java class method" do
     before(:each) do
-      @method = PrivateStaticMethod.java_class.declared_method_smart :thePrivateMethod
+      @method = PrivateStaticMethod.java_class.declared_method :thePrivateMethod
       @method.accessible = true
     end
       
@@ -29,7 +29,7 @@ describe "A JavaMethod" do
   
   describe "given a protected Java class method" do
     before(:each) do
-      @method = ProtectedStaticMethod.java_class.declared_method_smart :theProtectedMethod
+      @method = ProtectedStaticMethod.java_class.declared_method :theProtectedMethod
       @method.accessible = true
     end
   
@@ -48,7 +48,7 @@ describe "A JavaMethod" do
   
   describe "given a package scope Java class method" do
     before(:each) do
-      @method = PackageStaticMethod.java_class.declared_method_smart :thePackageScopeMethod
+      @method = PackageStaticMethod.java_class.declared_method :thePackageScopeMethod
       @method.accessible = true    
     end
     
@@ -67,42 +67,42 @@ describe "A JavaMethod" do
 
   it "should provide the ability to invoke private Java instance methods on a Ruby object" do
     o = PrivateInstanceMethod.new
-    method = PrivateInstanceMethod.java_class.declared_method_smart :thePrivateMethod
+    method = PrivateInstanceMethod.java_class.declared_method :thePrivateMethod
     method.accessible = true
     expect { method.invoke(o) }.not_to raise_error
   end
   
   it "should provide the ability to invoke protected Java instance methods on a Ruby object" do
     o = ProtectedInstanceMethod.new
-    method = ProtectedInstanceMethod.java_class.declared_method_smart :theProtectedMethod
+    method = ProtectedInstanceMethod.java_class.declared_method :theProtectedMethod
     method.accessible = true
     expect { method.invoke(o) }.not_to raise_error
   end
   
   it "should provide the ability to invoke package scope Java instance methods on a Ruby object" do
     o = PackageInstanceMethod.new
-    method = PackageInstanceMethod.java_class.declared_method_smart :thePackageScopeMethod
+    method = PackageInstanceMethod.java_class.declared_method :thePackageScopeMethod
     method.accessible = true
     expect { method.invoke(o) }.not_to raise_error
   end
   
   it "should provide the ability to invoke private Java instance methods on a JavaObject" do
     o = PrivateInstanceMethod.new
-    method = PrivateInstanceMethod.java_class.declared_method_smart :thePrivateMethod
+    method = PrivateInstanceMethod.java_class.declared_method :thePrivateMethod
     method.accessible = true
     expect { method.invoke(o.java_object) }.not_to raise_error
   end
   
   it "should provide the ability to invoke protected Java instance methods on a JavaObject" do
     o = ProtectedInstanceMethod.new
-    method = ProtectedInstanceMethod.java_class.declared_method_smart :theProtectedMethod
+    method = ProtectedInstanceMethod.java_class.declared_method :theProtectedMethod
     method.accessible = true
     expect { method.invoke(o.java_object) }.not_to raise_error
   end
   
   it "should provide the ability to invoke package scope Java instance methods on a JavaObject" do
     o = PackageInstanceMethod.new
-    method = PackageInstanceMethod.java_class.declared_method_smart :thePackageScopeMethod
+    method = PackageInstanceMethod.java_class.declared_method :thePackageScopeMethod
     method.accessible = true
     expect { method.invoke(o.java_object) }.not_to raise_error
   end

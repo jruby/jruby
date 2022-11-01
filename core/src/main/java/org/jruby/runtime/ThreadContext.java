@@ -44,6 +44,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyContinuation;
+import org.jruby.RubyMatchData;
 import org.jruby.RubyProc;
 import org.jruby.exceptions.CatchThrow;
 import org.jruby.RubyInstanceConfig;
@@ -51,18 +52,15 @@ import org.jruby.RubyModule;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyThread;
 import org.jruby.ast.executable.RuntimeCache;
-import org.jruby.exceptions.TypeError;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.fiber.ThreadFiber;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.ir.JIT;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.backtrace.BacktraceData;
 import org.jruby.runtime.backtrace.BacktraceElement;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.backtrace.TraceType;
-import org.jruby.runtime.backtrace.TraceType.Gather;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.profile.ProfileCollection;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
@@ -79,7 +77,6 @@ import java.util.IdentityHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -112,6 +109,16 @@ public final class ThreadContext {
 
     // Is this thread currently with in a function trace?
     private boolean isWithinTrace;
+
+    // FIXME: This should get stuffed into call path OR call site should be passed through callpath and have
+    //     this in it.
+    // Call info state.
+    public final static int CALL_SPLATS =        1 << 0;
+    public final static int CALL_KEYWORD =       1 << 1;
+    public final static int CALL_KEYWORD_REST =  1 << 2;
+    public final static int CALL_KEYWORD_EMPTY = 1 << 3; // **{} is passed to call
+
+    public int callInfo;
 
     private RubyThread thread;
     private static final WeakReference<ThreadFiber> NULL_FIBER_REF = new WeakReference<ThreadFiber>(null);
@@ -168,6 +175,8 @@ public final class ThreadContext {
     private RubyModule privateConstantReference;
 
     public final JavaSites sites;
+
+    private RubyMatchData matchData;
 
     @SuppressWarnings("deprecation")
     public SecureRandom getSecureRandom() {
@@ -446,7 +455,7 @@ public final class ThreadContext {
         // if this is a fiber, search prev for tag
         ThreadFiber fiber = getFiber();
         ThreadFiber prev;
-        if (fiber != null && (prev = fiber.getData().getPrev()) != null) {
+        if (fiber != null && (prev = fiber.getData().getPrev()) != null && prev != fiber) {
             return prev.getThread().getContext().getActiveCatch(tag);
         }
 
@@ -565,12 +574,40 @@ public final class ThreadContext {
     }
 
     /**
-     * Set the $~ (backref) "global" to the given value.
+     * Set the $~ (backref) "global" to nil.
+     *
+     * @return nil
+     */
+    public IRubyObject clearBackRef() {
+        return getCurrentFrame().setBackRef(nil);
+    }
+
+    /**
+     * Update the current frame's backref using the current thread-local match, or clear it if that match is null.
+     *
+     * @return The current match, or nil
+     */
+    public IRubyObject updateBackref() {
+        RubyMatchData match = matchData;
+
+        if (match == null) {
+            return clearBackRef();
+        }
+
+        match.use();
+
+        return getCurrentFrame().setBackRef(match);
+    }
+
+    /**
+     * Set the $~ (backref) "global" to the given RubyMatchData value. The value will be marked as "in use" since it
+     * can now be seen across threads that share the current frame.
      *
      * @param match the value to set
      * @return the value passed in
      */
-    public IRubyObject setBackRef(IRubyObject match) {
+    public IRubyObject setBackRef(RubyMatchData match) {
+        match.use();
         return getCurrentFrame().setBackRef(match);
     }
 
@@ -714,12 +751,6 @@ public final class ThreadContext {
         b.line = line;
     }
 
-    public void setFileAndLine(ISourcePosition position) {
-        BacktraceElement b = backtrace[backtraceIndex];
-        b.filename = position.getFile();
-        b.line = position.getLine();
-    }
-
     public Visibility getCurrentVisibility() {
         return getCurrentFrame().getVisibility();
     }
@@ -740,6 +771,15 @@ public final class ThreadContext {
 
     public void callThreadPoll() {
         if ((callNumber++ & CALL_POLL_COUNT) == 0) pollThreadEvents();
+    }
+
+    /**
+     * Poll for thread events that should be fired before a blocking call.
+     *
+     * See vm_check_ints_blocking and RUBY_VM_CHECK_INTS_BLOCKING in CRuby.
+     */
+    public void blockingThreadPoll() {
+        thread.blockingThreadPoll(this);
     }
 
     public static void callThreadPoll(ThreadContext context) {
@@ -895,7 +935,7 @@ public final class ThreadContext {
     public static String createRawBacktraceStringFromThrowable(final Throwable ex, final boolean color) {
         return WALKER.walk(ex.getStackTrace(), stream ->
             TraceType.printBacktraceJRuby(null,
-                    new BacktraceData(stream, Stream.empty(), true, false, false).getBacktraceWithoutRuby(),
+                    new BacktraceData(stream, Stream.empty(), true, true, false, false).getBacktraceWithoutRuby(),
                     ex.getClass().getName(),
                     ex.getLocalizedMessage(),
                     color));
@@ -920,17 +960,6 @@ public final class ThreadContext {
         pushFrame();
         getCurrentFrame().setSelf(self);
         getCurrentFrame().setVisibility(Visibility.PUBLIC);
-    }
-
-    public void preBsfApply(String[] names) {
-        // FIXME: I think we need these pushed somewhere?
-        StaticScope staticScope = runtime.getStaticScopeFactory().newLocalScope(null);
-        staticScope.setVariables(names);
-        pushFrame();
-    }
-
-    public void postBsfApply() {
-        popFrame();
     }
 
     public void preMethodFrameAndScope(RubyModule clazz, String name, IRubyObject self, Block block,
@@ -1390,5 +1419,65 @@ public final class ThreadContext {
     public Encoding[] encodingHolder() {
         if (encodingHolder == null) encodingHolder = new Encoding[1];
         return encodingHolder;
+    }
+
+    /**
+     * Set the thread-local MatchData specific to this context. This is different from the frame backref since frames
+     * may be shared by several executing contexts at once (see jruby/jruby#4868).
+     *
+     * @param localMatch the new thread-local MatchData or null
+     */
+    public void setLocalMatch(RubyMatchData localMatch) {
+        matchData = localMatch;
+    }
+
+    /**
+     * Set the thread-local MatchData specific to this context to null.
+     *
+     * @see #setLocalMatch(RubyMatchData)
+     */
+    public void clearLocalMatch() {
+        matchData = null;
+    }
+
+    /**
+     * Get the thread-local MatchData specific to this context. This is different from the frame backref since frames
+     * may be shared by several executing contexts at once (see jruby/jruby#4868).
+     *
+     * @return the current thread-local MatchData, or null if none
+     */
+    public RubyMatchData getLocalMatch() {
+        return matchData;
+    }
+
+    /**
+     * Get the thread-local MatchData specific to this context or nil if none.
+     *
+     * @see #getLocalMatch()
+     *
+     * @return the current thread-local MatchData, or nil if none
+     */
+    public IRubyObject getLocalMatchOrNil() {
+        RubyMatchData matchData = this.matchData;
+        if (matchData != null) return matchData;
+        return nil;
+    }
+
+    /**
+     * Reset call info state and return the value of call info right before
+     * it is reset.
+     * @return the old call info
+     */
+    public int resetCallInfo() {
+        int callInfo = this.callInfo;
+        this.callInfo = 0;
+        return callInfo;
+    }
+
+    @Deprecated
+    public IRubyObject setBackRef(IRubyObject match) {
+        if (match.isNil()) return clearBackRef();
+
+        return setBackRef((RubyMatchData) match);
     }
 }

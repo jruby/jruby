@@ -41,34 +41,27 @@ package org.jruby;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.SignalException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.main.DripMain;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.cli.OutputStrings;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-import java.io.File;
-import java.io.FileDescriptor;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintStream;
+import java.io.*;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.Properties;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Class used to launch the interpreter.
@@ -273,22 +266,35 @@ public class Main {
             runtime = Ruby.newInstance(config);
         }
 
+        Status status = null;
         try {
-            doSetContextClassLoader(runtime);
+            try {
+                doSetContextClassLoader(runtime);
 
-            if (in == null) {
-                // no script to run, return success
-                return new Status();
-            } else if (config.getShouldCheckSyntax()) {
-                // check syntax only and exit
-                return doCheckSyntax(runtime, in, filename);
-            } else {
-                // proceed to run the script
-                return doRunFromMain(runtime, in, filename);
+                if (in == null) {
+                    // no script to run, return success
+                    return new Status();
+                } else if (config.getShouldCheckSyntax()) {
+                    // check syntax only and exit
+                    return doCheckSyntax(runtime, in, filename);
+                } else {
+                    // proceed to run the script
+                    doRunFromMain(runtime, in, filename);
+                }
+                status = new Status();
+            } finally {
+                try {
+                    runtime.tearDown();
+                } catch (RaiseException rj) {
+                    status = new Status(handleRaiseException(rj));
+                }
             }
-        } finally {
-            runtime.tearDown();
+        } catch (RaiseException rj) {
+            int ret = handleRaiseException(rj);
+            if (status == null) status = new Status(ret);
         }
+
+        return status;
     }
 
     private Status handleUnsupportedClassVersion(UnsupportedClassVersionError ex) {
@@ -386,15 +392,10 @@ public class Main {
         return new Status(mee.getStatus());
     }
 
-    private Status doRunFromMain(Ruby runtime, InputStream in, String filename) {
-        try {
-            doCheckSecurityManager();
+    private void doRunFromMain(Ruby runtime, InputStream in, String filename) {
+        doCheckSecurityManager();
 
-            runtime.runFromMain(in, filename);
-        } catch (RaiseException rj) {
-            return new Status(handleRaiseException(rj));
-        }
-        return new Status();
+        runtime.runFromMain(in, filename);
     }
 
     private Status doCheckSyntax(Ruby runtime, InputStream in, String filename) throws RaiseException {
@@ -460,9 +461,41 @@ public class Main {
 
     private void doPrintUsage(boolean force) {
         if (config.getShouldPrintUsage() || force) {
-            config.getOutput().print(OutputStrings.getBasicUsageHelp());
-            config.getOutput().print(OutputStrings.getFeaturesHelp());
+            String rubyPager = getRubyPagerEnv();
+
+            if (rubyPager == null) {
+                config.getOutput().print(OutputStrings.getBasicUsageHelp());
+                config.getOutput().print(OutputStrings.getFeaturesHelp());
+            } else {
+                try {
+                    ProcessBuilder builder = new ProcessBuilder(rubyPager);
+                    builder.environment().put("LESS", "-R");
+
+                    builder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+                    builder.redirectError(ProcessBuilder.Redirect.INHERIT);
+
+                    Process process = builder.start();
+                    OutputStream in = process.getOutputStream();
+
+                    String fullHelp = OutputStrings.getBasicUsageHelp() + OutputStrings.getFeaturesHelp();
+                    in.write(fullHelp.getBytes(StandardCharsets.UTF_8));
+
+                    in.flush();
+                    in.close();
+                    process.waitFor();
+                } catch (InterruptedException | IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
+    }
+
+    private String getRubyPagerEnv() {
+        String rubyPager = System.getenv("RUBY_PAGER");
+        if (rubyPager == null)
+            rubyPager = System.getenv("PAGER");
+
+        return rubyPager;
     }
 
     private void doShowCopyright() {
@@ -516,7 +549,24 @@ public class Main {
             }
             return 0;
         }
-        System.err.print(runtime.getInstanceConfig().getTraceType().printBacktrace(raisedException, runtime.getPosix().isatty(FileDescriptor.err)));
+
+        TraceType traceType = runtime.getInstanceConfig().getTraceType();
+        boolean isatty = runtime.getPosix().isatty(FileDescriptor.err);
+
+        System.err.print(traceType.printBacktrace(raisedException, isatty));
+
+        Set<Object> shownCauses = new HashSet<Object>();
+        shownCauses.add(raisedException);
+
+        for (
+                Object cause = raisedException.getCause();
+                cause != null && cause instanceof RubyException && !shownCauses.contains(cause);
+                cause = ((RubyException) cause).getCause()) {
+
+            System.err.print(traceType.printBacktrace((RubyException) cause, isatty));
+            shownCauses.add(cause);
+        }
+
         return 1;
     }
 

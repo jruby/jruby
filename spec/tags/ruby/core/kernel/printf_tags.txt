@@ -1,6 +1,4 @@
 fails:Kernel.printf formatting io is specified integer formats u converts argument as a decimal number
-fails:Kernel.printf formatting io is specified float formats g otherwise cuts fraction part to have only 6 digits at all
-fails:Kernel.printf formatting io is specified float formats G otherwise cuts fraction part to have only 6 digits at all
 fails:Kernel.printf formatting io is specified float formats a converts floating point argument as [-]0xh.hhhhp[+-]dd
 fails:Kernel.printf formatting io is specified float formats a displays Float::INFINITY as Inf
 fails:Kernel.printf formatting io is specified float formats a displays Float::NAN as NaN
@@ -26,8 +24,6 @@ fails:Kernel.printf formatting io is specified width specifies the minimum numbe
 fails:Kernel.printf formatting io is specified precision float types controls the number of decimal places displayed in fraction part
 fails:Kernel.printf formatting io is specified reference by name %{name} style supports flags, width and precision
 fails:Kernel.printf formatting io is not specified integer formats u converts argument as a decimal number
-fails:Kernel.printf formatting io is not specified float formats g otherwise cuts fraction part to have only 6 digits at all
-fails:Kernel.printf formatting io is not specified float formats G otherwise cuts fraction part to have only 6 digits at all
 fails:Kernel.printf formatting io is not specified float formats a converts floating point argument as [-]0xh.hhhhp[+-]dd
 fails:Kernel.printf formatting io is not specified float formats a displays Float::INFINITY as Inf
 fails:Kernel.printf formatting io is not specified float formats a displays Float::NAN as NaN
@@ -52,3 +48,9 @@ fails:Kernel.printf formatting io is not specified flags * raises ArgumentError 
 fails:Kernel.printf formatting io is not specified width specifies the minimum number of characters that will be written to the result
 fails:Kernel.printf formatting io is not specified precision float types controls the number of decimal places displayed in fraction part
 fails:Kernel.printf formatting io is not specified reference by name %{name} style supports flags, width and precision
+fails:Kernel.printf formatting io is specified other formats c raises TypeError if argument is nil
+fails:Kernel.printf formatting io is specified other formats c raises TypeError if converting to String with to_str returns non-String
+fails:Kernel.printf formatting io is specified other formats c raises TypeError if converting to Integer with to_int returns non-Integer
+fails:Kernel.printf formatting io is not specified other formats c raises TypeError if argument is nil
+fails:Kernel.printf formatting io is not specified other formats c raises TypeError if converting to String with to_str returns non-String
+fails:Kernel.printf formatting io is not specified other formats c raises TypeError if converting to Integer with to_int returns non-Integer

@@ -163,7 +163,7 @@ public class RubyException extends RubyObject {
         return exceptionClass;
     }
 
-    public static final ObjectAllocator EXCEPTION_ALLOCATOR = (runtime, klass) -> new RubyException(runtime, klass);
+    public static final ObjectAllocator EXCEPTION_ALLOCATOR = RubyException::new;
 
     private static final ObjectMarshal<RubyException> EXCEPTION_MARSHAL = new ObjectMarshal<RubyException>() {
         @Override
@@ -177,14 +177,10 @@ public class RubyException extends RubyObject {
         }
 
         @Override
-        public RubyException unmarshalFrom(Ruby runtime, RubyClass type,
-                                           UnmarshalStream unmarshalStream) throws IOException {
-            RubyException exc = (RubyException) type.allocate();
+        public RubyException unmarshalFrom(Ruby runtime, RubyClass type, UnmarshalStream input) throws IOException {
+            RubyException exc = (RubyException) input.entry(type.allocate());
 
-            unmarshalStream.registerLinkTarget(exc);
-            // FIXME: Can't just pull these off the wire directly? Or maybe we should
-            // just use real vars all the time for these?
-            unmarshalStream.defaultVariablesUnmarshal(exc);
+            input.ivar(null, exc, null);
 
             exc.setMessage((IRubyObject) exc.removeInternalVariable("mesg"));
             exc.set_backtrace((IRubyObject) exc.removeInternalVariable("bt"));
@@ -235,11 +231,36 @@ public class RubyException extends RubyObject {
         return RubyString.newString(context.runtime, TraceType.printFullMessage(context, this, opts));
     }
 
-    @JRubyMethod(optional = 2, visibility = PRIVATE)
-    public IRubyObject initialize(IRubyObject[] args, Block block) {
-        if ( args.length == 1 ) setMessage(args[0]);
+    @JRubyMethod(visibility = PRIVATE)
+    public IRubyObject initialize(ThreadContext context) {
         // cause filled in at RubyKernel#raise ... Exception.new does not fill-in cause!
         return this;
+    }
+
+    @JRubyMethod(visibility = PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject arg0) {
+        setMessage(arg0);
+        // cause filled in at RubyKernel#raise ... Exception.new does not fill-in cause!
+        return this;
+    }
+
+    @JRubyMethod(visibility = PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        // cause filled in at RubyKernel#raise ... Exception.new does not fill-in cause!
+        return this;
+    }
+
+    public IRubyObject initialize(IRubyObject[] args, Block block) {
+        switch (args.length) {
+            case 0:
+                return initialize(getRuntime().getCurrentContext());
+            case 1:
+                return initialize(getRuntime().getCurrentContext(), args[0]);
+            case 2:
+                return initialize(getRuntime().getCurrentContext(), args[0], args[1]);
+            default:
+                throw getRuntime().newArgumentError(args.length, 0, 2);
+        }
     }
 
     @JRubyMethod
@@ -344,7 +365,7 @@ public class RubyException extends RubyObject {
      */
     @Override
     public <T> T toJava(Class<T> target) {
-        if (target != Object.class && target.isAssignableFrom(RaiseException.class)) {
+        if (target.isAssignableFrom(RaiseException.class)) {
             return target.cast(toThrowable());
         }
         return super.toJava(target);

@@ -35,14 +35,13 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Represents 'self' keyword
  */
 public class SelfNode extends Node implements SideEffectFree {
-    public SelfNode(ISourcePosition position) {
-        super(position, false);
+    public SelfNode(int line) {
+        super(line, false);
     }
 
     public NodeType getNodeType() {

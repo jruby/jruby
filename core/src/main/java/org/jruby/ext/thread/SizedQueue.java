@@ -60,16 +60,15 @@ public class SizedQueue extends Queue {
         initialize(runtime.getCurrentContext(), runtime.newFixnum(max));
     }
 
-    public static void setup(Ruby runtime) {
-        RubyClass cSizedQueue = runtime.getThread().defineClassUnder("SizedQueue", runtime.getClass("Queue"), new ObjectAllocator() {
+    public static RubyClass setup(RubyClass threadClass, RubyClass queueClass, RubyClass objectClass) {
+        RubyClass cSizedQueue = threadClass.defineClassUnder("SizedQueue", queueClass, SizedQueue::new);
 
-            public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-                return new SizedQueue(runtime, klass);
-            }
-        });
         cSizedQueue.setReifiedClass(SizedQueue.class);
         cSizedQueue.defineAnnotatedMethods(SizedQueue.class);
-        runtime.getObject().setConstant("SizedQueue", cSizedQueue);
+
+        objectClass.setConstant("SizedQueue", cSizedQueue);
+
+        return cSizedQueue;
     }
 
     @JRubyMethod
@@ -138,7 +137,11 @@ public class SizedQueue extends Queue {
         boolean should_block = shouldBlock(context, argv);
 
         try {
-            return context.getThread().executeTask(context, argv[0], should_block ? blockingPushTask : nonblockingPushTask);
+            if (should_block) {
+                return context.getThread().executeTaskBlocking(context, argv[0], blockingPushTask);
+            } else {
+                return context.getThread().executeTask(context, argv[0], nonblockingPushTask);
+            }
         } catch (InterruptedException ie) {
             throw createInterruptedError(context, "push");
         }

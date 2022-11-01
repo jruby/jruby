@@ -2,6 +2,7 @@ package org.jruby.util.io;
 
 import com.headius.backport9.modules.Module;
 import com.headius.backport9.modules.Modules;
+import jnr.constants.platform.Fcntl;
 import jnr.enxio.channels.NativeSelectableChannel;
 import jnr.ffi.LibraryLoader;
 import jnr.ffi.Pointer;
@@ -87,8 +88,17 @@ public class FilenoUtil {
         // It appears to happen for openpty, and in theory could happen for any IO call that produces
         // a new descriptor.
         if (fd != null && !fd.ch.isOpen() && !isFake(fileno)) {
-            FileStat stat = posix.allocateStat();
-            if (posix.fstat(fileno, stat) >= 0) {
+            int ret;
+
+            if (Platform.IS_WINDOWS) {
+                // no fcntl on Windows
+                FileStat stat = posix.allocateStat();
+                ret = posix.fstat(fileno, stat);
+            } else {
+                ret = posix.fcntl(fileno, Fcntl.F_GETFD);
+            }
+
+            if (ret >= 0) {
                 // found ChannelFD is closed, but actual fileno is open; clear it.
                 filenoMap.remove(fileno);
                 fd = null;

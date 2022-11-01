@@ -64,6 +64,11 @@ class RegularFileResource implements FileResource {
     }
 
     @Override
+    public String path() {
+        return file.getPath();
+    }
+
+    @Override
     public long length() {
         return file.length();
     }
@@ -330,22 +335,10 @@ class RegularFileResource implements FileResource {
                 throw new ResourceException.FileIsDirectory(absolutePath());
             case ENOTDIR:
                 throw new ResourceException.FileIsNotDirectory(absolutePath());
-            case EMFILE:
             default:
-                throw new InternalIOException(errno.description());
+                throw new ResourceException.ErrnoException(errno, absolutePath());
 
         }
-    }
-
-    static class InternalIOException extends IOException {
-
-        InternalIOException(final String message) {
-            super(message);
-        }
-
-        @Override
-        public Throwable fillInStackTrace() { return this; }
-
     }
 
 }

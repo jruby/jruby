@@ -44,6 +44,7 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import org.jruby.RubyModule;
 import org.jruby.java.proxies.JavaProxy;
+import org.jruby.javasupport.JavaPackage;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.WeakIdentityHashMap;
 
@@ -76,8 +77,8 @@ public class ObjectSpace {
     }
 
     public static long calculateObjectId(Object object) {
-        // Fixnums get all the odd IDs, so we use identityHashCode * 2
-        return maxId.getAndIncrement() * 2;
+        // Fixnums get all the 0b01 id's, flonums get the 0b10 id's, so we use next ID * 4
+        return maxId.getAndIncrement() * 4;
     }
 
     public long createAndRegisterObjectId(IRubyObject rubyObject) {
@@ -131,6 +132,8 @@ public class ObjectSpace {
     }
 
     public void add(IRubyObject object) {
+        if (object instanceof JavaPackage)
+            return;
         if (true && object.getMetaClass() != null && !(object instanceof JavaProxy)) {
             // If the object is already frozen when we encounter it, it's pre-frozen.
             // Since this only (currently) applies to objects created outside the

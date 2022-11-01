@@ -535,7 +535,11 @@ public final class StringSupport {
                 p += cl;
             } else {
                 cr = CR_BROKEN;
-                p++;
+                if (p + enc.minLength() <= end) {
+                    p += enc.minLength();
+                } else {
+                    p = end;
+                }
             }
         }
         return pack(c, cr == 0 ? CR_7BIT : cr);
@@ -792,8 +796,14 @@ public final class StringSupport {
      * @param runtime
      * @param value
      */
-    public static final void checkStringSafety(Ruby runtime, IRubyObject value) {
+    public static void checkStringSafety(Ruby runtime, IRubyObject value) {
         RubyString s = value.asString();
+
+        if (s.getCodeRange() != CR_7BIT) {
+            checkStringSafetyMBC(runtime, s);
+            return;
+        }
+
         ByteList bl = s.getByteList();
         final byte[] array = bl.getUnsafeBytes();
         final int end = bl.length();
@@ -801,6 +811,21 @@ public final class StringSupport {
             if (array[i] == (byte) 0) {
                 throw runtime.newArgumentError("string contains null byte");
             }
+        }
+    }
+
+    public static void checkStringSafetyMBC(Ruby runtime, RubyString value) {
+        ByteList bl = value.getByteList();
+        final byte[] bytes = bl.getUnsafeBytes();
+        int len = bl.realSize();
+        int end = bl.begin() + len;
+        Encoding enc = bl.getEncoding();
+        int cl;
+
+        for (int p = bl.begin(); p < end; p += cl) {
+            cl = preciseLength(enc, bytes, p, end);
+            if (cl <= 0) return;
+            if (codePoint(enc, bytes, p, end) == 0) throw runtime.newArgumentError("string contains null byte");
         }
     }
 
@@ -870,8 +895,24 @@ public final class StringSupport {
         return -1;
     }
 
-    // StringValueCStr, rb_string_value_cstr without trailing null addition
+    // MRI: StringValueCStr, rb_string_value_cstr without trailing null addition
     public static RubyString checkEmbeddedNulls(Ruby runtime, IRubyObject ptr) {
+        Object[] checked = strNullCheck(ptr);
+
+        if (checked[0] == null) {
+            if ((boolean)checked[1]) {
+                throw runtime.newArgumentError("string contains null char");
+            }
+            throw runtime.newArgumentError("string contains null byte");
+        }
+
+        return (RubyString) checked[0];
+    }
+
+    // MRI: str_null_check without trailing null check (JVM arrays do not null terminate)
+    // This function returns Java Object Array, with index0 is RubyString and index1 is Boolean.
+    // Boolean corresponds to int *w arg of str_null_check.
+    public static Object [] strNullCheck(IRubyObject ptr) {
         final RubyString s = ptr.convertToString();
         ByteList sByteList = s.getByteList();
         byte[] sBytes = sByteList.unsafeBytes();
@@ -882,17 +923,16 @@ public final class StringSupport {
 
         if (minlen > 1) {
             if (strNullChar(sBytes, beg, len, minlen, enc) != -1) {
-                throw runtime.newArgumentError("string contains null char");
+                return new Object[] {null, true};
             }
-            return strFillTerm(s, sBytes, beg, len, minlen);
+            return new Object[] {strFillTerm(s, sBytes, beg, len, minlen), true};
         }
+
         if (memchr(sBytes, beg, '\0', len) != -1) {
-            throw runtime.newArgumentError("string contains null byte");
+            return new Object[] {null, false};
         }
-        //if (s[len]) {
-        //    s = str_fill_term(str, s, len, minlen);
-        //}
-        return s;
+
+        return new Object[] {s, false};
     }
 
     // MRI: str_null_char
@@ -1803,8 +1843,6 @@ public final class StringSupport {
         }
 
         replaceInternal19(beg, len, source, repl);
-
-        if (repl.isTaint()) source.setTaint(true);
     }
 
     public static boolean isAsciiOnly(CodeRangeable string) {

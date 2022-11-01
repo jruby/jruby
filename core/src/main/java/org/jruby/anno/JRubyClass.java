@@ -46,4 +46,5 @@ public @interface JRubyClass {
     //This parameter should only be used to point out if something is a Module instead of a Class
     String parent() default "Object";
     String[] include() default {};
+    Class[] overrides() default {};
 }

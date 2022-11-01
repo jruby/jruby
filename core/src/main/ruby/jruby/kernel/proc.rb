@@ -32,21 +32,30 @@ class Proc
     Proc.__make_curry_proc__(self, [], curried_arity || arity)
   end
 
-  # From https://github.com/marcandre/backports, MIT license
+  # From https://github.com/marcandre/backports, MIT license (with modifications)
   def <<(g)
-    if lambda?
-      lambda { |*args, &blk| call(g.call(*args, &blk)) }
+    lambda = if g.kind_of? Proc
+               g.lambda?
+             else
+               raise TypeError, "callable object is expected" unless g.respond_to?(:call)
+               true
+             end
+
+    if lambda
+      lambda { |*args, **kw, &blk| call(g.call(*args, **kw, &blk)) }
     else
-      proc { |*args, &blk| call(g.call(*args, &blk)) }
+      proc { |*args, **kw, &blk| call(g.call(*args, **kw, &blk)) }
     end
   end
 
-  # From https://github.com/marcandre/backports, MIT license
+  # From https://github.com/marcandre/backports, MIT license (with modifications)
   def >>(g)
+    raise TypeError, "callable object is expected" unless g.respond_to?(:call)
+
     if lambda?
-      lambda { |*args, &blk| g.call(call(*args, &blk)) }
+      lambda { |*args, **kw, &blk| g.call(call(*args, **kw, &blk)) }
     else
-      proc { |*args, &blk| g.call(call(*args, &blk)) }
+      proc { |*args, **kw, &blk| g.call(call(*args, **kw, &blk)) }
     end
   end
 

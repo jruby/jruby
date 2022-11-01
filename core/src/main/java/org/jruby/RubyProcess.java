@@ -35,13 +35,15 @@ import jnr.constants.platform.RLIM;
 import jnr.constants.platform.RLIMIT;
 import jnr.constants.platform.Sysconf;
 import jnr.ffi.byref.IntByReference;
+import jnr.posix.Group;
+import jnr.posix.Passwd;
+import jnr.posix.POSIX;
 import jnr.posix.RLimit;
 import jnr.posix.Times;
 import jnr.posix.Timeval;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
-import jnr.posix.POSIX;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.platform.Platform;
@@ -49,6 +51,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 
@@ -56,8 +59,12 @@ import static org.jruby.runtime.Helpers.throwException;
 import static org.jruby.runtime.Helpers.tryThrow;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.builtin.Variable;
+import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.runtime.marshal.CoreObjectType;
+import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ShellLauncher;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.util.TypeConverter;
@@ -69,11 +76,13 @@ import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.util.WindowsFFI.kernel32;
 import static org.jruby.util.WindowsFFI.Kernel32.*;
 
+import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.management.ThreadMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.function.ToIntFunction;
 
 /**
@@ -85,9 +94,9 @@ public class RubyProcess {
     public static RubyModule createProcessModule(Ruby runtime) {
         RubyModule process = runtime.defineModule("Process");
 
-        // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here. Confirm. JRUBY-415
-        RubyClass process_status = process.defineClassUnder("Status", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        RubyClass process_status = process.defineClassUnder("Status", runtime.getObject(), RubyProcess::newAllocatedProcessStatus);
         runtime.setProcStatus(process_status);
+        process_status.setMarshal(PROCESS_STATUS_MARSHAL);
 
         RubyModule process_uid = process.defineModuleUnder("UID");
         runtime.setProcUID(process_uid);
@@ -105,10 +114,17 @@ public class RubyProcess {
         process_sys.defineAnnotatedMethods(Sys.class);
 
         runtime.loadConstantSet(process, jnr.constants.platform.PRIO.class);
-        runtime.loadConstantSet(process, jnr.constants.platform.RLIM.class);
-        for (RLIMIT r : RLIMIT.values()) {
-            if (!r.defined()) continue;
-            process.defineConstant(r.name(), runtime.newFixnum(r.intValue()));
+
+        if (Platform.IS_WINDOWS) {
+            // mark rlimit methods as not implemented and skip defining the constants (GH-6491)
+            process.getSingletonClass().retrieveMethod("getrlimit").setNotImplemented(true);
+            process.getSingletonClass().retrieveMethod("setrlimit").setNotImplemented(true);
+        } else {
+            runtime.loadConstantSet(process, jnr.constants.platform.RLIM.class);
+            for (RLIMIT r : RLIMIT.values()) {
+                if (!r.defined()) continue;
+                process.defineConstant(r.name(), runtime.newFixnum(r.intValue()));
+            }
         }
 
         process.defineConstant("WNOHANG", runtime.newFixnum(1));
@@ -146,10 +162,47 @@ public class RubyProcess {
     public static final String CLOCK_UNIT_FLOAT_SECOND = "float_second";
     public static final String CLOCK_UNIT_HERTZ = "hertz";
 
+    private static final long PROCESS_STATUS_UNINITIALIZED = -1;
+
+    private static final ObjectMarshal PROCESS_STATUS_MARSHAL = new ObjectMarshal() {
+        @Override
+        public void marshalTo(Ruby runtime, Object obj, RubyClass type,
+                              MarshalStream marshalStream) throws IOException {
+            RubyStatus status = (RubyStatus) obj;
+
+            marshalStream.registerLinkTarget(status);
+            List<Variable<Object>> attrs = status.getVariableList();
+
+            attrs.add(new VariableEntry("status", runtime.newFixnum(status.status)));
+            attrs.add(new VariableEntry("pid", runtime.newFixnum(status.pid)));
+
+            marshalStream.dumpVariables(attrs);
+        }
+
+        @Override
+        public Object unmarshalFrom(Ruby runtime, RubyClass type, UnmarshalStream input) throws IOException {
+            RubyStatus status = (RubyStatus) input.entry(type.allocate());
+
+            input.ivar(null, status, null);
+
+            RubyFixnum pstatus = (RubyFixnum) status.removeInternalVariable("status");
+            RubyFixnum pid = (RubyFixnum) status.removeInternalVariable("pid");
+
+            status.status = pstatus.getLongValue();
+            status.pid = pid.getLongValue();
+
+            return status;
+        }
+    };
+
+    public static RubyStatus newAllocatedProcessStatus(Ruby runtime, RubyClass metaClass) {
+        return new RubyStatus(runtime, metaClass, 0, PROCESS_STATUS_UNINITIALIZED);
+    }
+
     @JRubyClass(name="Process::Status")
     public static class RubyStatus extends RubyObject {
-        private final long status;
-        private final long pid;
+        private long status;
+        private long pid; // pid or -1 to indicate status was allocate()d and is uninitalized.
 
         private static final long EXIT_SUCCESS = 0L;
         public RubyStatus(Ruby runtime, RubyClass metaClass, long status, long pid) {
@@ -275,8 +328,16 @@ public class RubyProcess {
             return to_s(getRuntime());
         }
 
+        boolean unitialized() {
+            return pid == PROCESS_STATUS_UNINITIALIZED;
+        }
+
         public IRubyObject inspect(Ruby runtime) {
-            return runtime.newString(pst_message("#<" + getMetaClass().getName() + ": ", pid, status) + ">");
+            if (unitialized()) {
+                return runtime.newString("#<" + getMetaClass().getName() + ": uninitialized>");
+            } else {
+                return runtime.newString(pst_message("#<" + getMetaClass().getName() + ": ", pid, status) + ">");
+            }
         }
 
         // MRI: pst_message
@@ -627,6 +688,15 @@ public class RubyProcess {
     public static IRubyObject setrlimit(ThreadContext context, IRubyObject recv, IRubyObject resource, IRubyObject rlimCur, IRubyObject rlimMax) {
         Ruby runtime = context.runtime;
 
+        if (Platform.IS_WINDOWS) {
+            throw runtime.newNotImplementedError("Process#setrlimit is not implemented on Windows");
+        }
+
+        if (!runtime.getPosix().isNative()) {
+            runtime.getWarnings().warn("Process#setrlimit not supported on this platform");
+            return context.nil;
+        }
+
         RLimit rlim = runtime.getPosix().getrlimit(0);
 
         if (rlimMax == context.nil)
@@ -900,6 +970,8 @@ public class RubyProcess {
 
         pid = waitpid(runtime, pid, flags);
 
+        checkErrno(runtime, pid, ECHILD);
+
         if (pid == 0) {
             return runtime.getNil();
         }
@@ -907,6 +979,7 @@ public class RubyProcess {
         return runtime.newFixnum(pid);
     }
 
+    // MRI: rb_waitpid
     public static long waitpid(Ruby runtime, long pid, int flags) {
         int[] status = new int[1];
         POSIX posix = runtime.getPosix();
@@ -915,8 +988,6 @@ public class RubyProcess {
         posix.errno(0);
 
         int res = pthreadKillable(context, ctx -> posix.waitpid(pid, status, flags));
-
-        raiseErrnoIfSet(runtime, ECHILD);
 
         if (res > 0) {
             context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, status[0], res));
@@ -966,7 +1037,7 @@ public class RubyProcess {
         do try {
             final long threadID = (long) NATIVE_THREAD_CURRENT.invokeExact();
 
-            return context.getThread().executeTask(context, blockingCall, new RubyThread.Task<ToIntFunction<ThreadContext>, Integer>() {
+            return context.getThread().executeTaskBlocking(context, blockingCall, new RubyThread.Task<ToIntFunction<ThreadContext>, Integer>() {
 
                 @Override
                 public Integer run(ThreadContext context, ToIntFunction<ThreadContext> blockingCall) {
@@ -976,7 +1047,7 @@ public class RubyProcess {
                 @Override
                 public void wakeup(RubyThread thread, ToIntFunction<ThreadContext> blockingCall) {
                     try {
-                        NATIVE_THREAD_SIGNAL.invokeExact(null, threadID);
+                        NATIVE_THREAD_SIGNAL.invokeExact(threadID);
                     } catch (Throwable t) {
                         throwException(t);
                     }
@@ -1023,7 +1094,7 @@ public class RubyProcess {
 
         int pid = pthreadKillable(context, ctx -> posix.wait(status));
 
-        raiseErrnoIfSet(runtime, ECHILD);
+        checkErrno(runtime, pid, ECHILD);
 
         context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, status[0], pid));
         return runtime.newFixnum(pid);
@@ -1089,7 +1160,17 @@ public class RubyProcess {
         return egid_set(context.runtime, arg);
     }
     public static IRubyObject egid_set(Ruby runtime, IRubyObject arg) {
-        checkErrno(runtime, runtime.getPosix().setegid((int)arg.convertToInteger().getLongValue()));
+        int gid;
+        if (arg instanceof RubyInteger || arg.checkStringType().isNil()) {
+            gid = (int)arg.convertToInteger().getLongValue();
+        } else {
+            Group group = runtime.getPosix().getgrnam(arg.asJavaString());
+            if (group == null) {
+                throw runtime.newArgumentError("can't find group for " + arg.inspect());
+            }
+            gid = (int)group.getGID();
+        }
+        checkErrno(runtime, runtime.getPosix().setegid(gid));
         return RubyFixnum.zero(runtime);
     }
 
@@ -1236,7 +1317,17 @@ public class RubyProcess {
         return euid_set(context.runtime, arg);
     }
     public static IRubyObject euid_set(Ruby runtime, IRubyObject arg) {
-        checkErrno(runtime, runtime.getPosix().seteuid((int)arg.convertToInteger().getLongValue()));
+        int uid;
+        if (arg instanceof RubyInteger || arg.checkStringType().isNil()) {
+            uid = (int)arg.convertToInteger().getLongValue();
+        } else {
+            Passwd password = runtime.getPosix().getpwnam(arg.asJavaString());
+            if (password == null) {
+                throw runtime.newArgumentError("can't find user for " + arg.inspect());
+            }
+            uid = (int)password.getUID();
+        }
+        checkErrno(runtime, runtime.getPosix().seteuid(uid));
         return RubyFixnum.zero(runtime);
     }
 
@@ -1293,7 +1384,11 @@ public class RubyProcess {
         return getrlimit(context.runtime, arg);
     }
     public static IRubyObject getrlimit(Ruby runtime, IRubyObject arg) {
-        if (!runtime.getPosix().isNative() || Platform.IS_WINDOWS) {
+        if (Platform.IS_WINDOWS) {
+            throw runtime.newNotImplementedError("Process#getrlimit is not implemented on Windows");
+        }
+
+        if (!runtime.getPosix().isNative()) {
             runtime.getWarnings().warn("Process#getrlimit not supported on this platform");
             RubyFixnum max = runtime.newFixnum(Long.MAX_VALUE);
             return runtime.newArray(max, max);
@@ -1441,18 +1536,16 @@ public class RubyProcess {
 
     @JRubyMethod(name = "detach", required = 1, module = true, visibility = PRIVATE)
     public static IRubyObject detach(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        final int pid = (int)arg.convertToInteger().getLongValue();
+        final long pid = arg.convertToInteger().getLongValue();
         Ruby runtime = context.runtime;
 
-        BlockCallback callback = new BlockCallback() {
-            @Override
-            public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
-                int[] status = new int[1];
-                Ruby runtime = context.runtime;
-                int result = checkErrno(runtime, runtime.getPosix().waitpid(pid, status, 0));
+        BlockCallback callback = (ctx, args, block) -> {
+            // push a dummy frame to avoid AIOOB if an exception fires
+            ctx.pushFrame();
 
-                return RubyStatus.newProcessStatus(runtime, status[0], pid);
-            }
+            while (waitpid(ctx.runtime, pid, 0) == 0) {}
+
+            return last_status(ctx, recv);
         };
 
         return RubyThread.startWaiterThread(
@@ -1680,15 +1773,15 @@ public class RubyProcess {
     };
 
     private static int checkErrno(Ruby runtime, int result) {
-        return checkErrno(runtime, result, IGNORE);
+        return (int) checkErrno(runtime, result, IGNORE);
     }
 
-    private static int checkErrno(Ruby runtime, int result, NonNativeErrno nonNative) {
+    private static long checkErrno(Ruby runtime, long result, NonNativeErrno nonNative) {
         if (result == -1) {
             if (runtime.getPosix().isNative()) {
                 raiseErrnoIfSet(runtime, nonNative);
             } else {
-                nonNative.handle(runtime, result);
+                nonNative.handle(runtime, (int) result);
             }
         }
         return result;

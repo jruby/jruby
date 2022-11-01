@@ -32,7 +32,6 @@
 package org.jruby.common;
 
 import org.jruby.Ruby;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 // FIXME: Document difference between warn and warning (or rename one better)
 /**
@@ -110,11 +109,9 @@ public interface IRubyWarnings {
     Ruby getRuntime();
     boolean isVerbose();
 
-    @Deprecated void warn(ID id, ISourcePosition position, String message);
     void warn(ID id, String fileName, int lineNumber, String message);
     void warn(ID id, String fileName, String message);
     void warn(ID id, String message);
     void warning(ID id, String message);
-    @Deprecated void warning(ID id, ISourcePosition position, String message);
     void warning(ID id, String fileName, int lineNumber, String message);
 }

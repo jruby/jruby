@@ -54,12 +54,20 @@ public class IRClosure extends IRScope {
 
         this.closureId = lexicalParent.getNextClosureId();
         ByteList name = prefix.dup();
-        name.append(Integer.toString(closureId).getBytes());
+        name.append(java.lang.Integer.toString(closureId).getBytes());
         setByteName(name);
     }
 
     protected IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, ByteList prefix) {
         this(manager, lexicalParent, lineNumber, staticScope, prefix, CoverageData.NONE);
+    }
+
+    // Used by IREvalScript
+    protected IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, int closureId, ByteList fullName) {
+        super(manager, lexicalParent, null, lineNumber, staticScope);
+
+        this.closureId = closureId;
+        super.setByteName(fullName);
     }
 
     /** Used by cloning code for inlining */
@@ -181,7 +189,8 @@ public class IRClosure extends IRScope {
         // We want variable scoping to be the same as a method and not see outside itself.
         if (source == null ||
             accessesParentsLocalVariables() ||  // Built methods cannot search down past method scope
-            receivesClosureArg() ||            // we pass in captured block at define_method as block so explicits ones not supported
+            receivesClosureArg() ||             // we pass in captured block at define_method as block so explicits ones not supported
+            usesZSuper() ||                     // methods defined from closures cannot use zsuper
             !isNestedClosuresSafeForMethodConversion()) {
             source = null;
             return null;
@@ -325,7 +334,7 @@ public class IRClosure extends IRScope {
             ByteList fullName = lexicalParent.getByteName();
             fullName = fullName != null ? fullName.dup() : new ByteList();
             fullName.append(CLOSURE_CLONE);
-            fullName.append(Integer.toString(id).getBytes());
+            fullName.append(java.lang.Integer.toString(id).getBytes());
             clonedClosure = new IRClosure(this, lexicalParent, id, fullName);
         }
 

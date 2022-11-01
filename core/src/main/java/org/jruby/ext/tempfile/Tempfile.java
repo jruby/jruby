@@ -57,15 +57,8 @@ import java.io.IOException;
  */
 @JRubyClass(name="Tempfile", parent="File")
 public class Tempfile extends RubyFile implements Finalizable {
-    private static final ObjectAllocator TEMPFILE_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new Tempfile(runtime, klass);
-        }
-    };
-
     public static RubyClass createTempfileClass(Ruby runtime) {
-        RubyClass tempfileClass = runtime.defineClass("Tempfile", runtime.getFile(), TEMPFILE_ALLOCATOR);
+        RubyClass tempfileClass = runtime.defineClass("Tempfile", runtime.getFile(), Tempfile::new);
 
         tempfileClass.defineAnnotatedMethods(Tempfile.class);
 
@@ -83,7 +76,7 @@ public class Tempfile extends RubyFile implements Finalizable {
         super(runtime, type);
     }
 
-    @JRubyMethod(optional = 4, visibility = Visibility.PRIVATE)
+    @JRubyMethod(optional = 4, visibility = Visibility.PRIVATE, forward = true)
     @Override
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block unused) {
         if (args.length == 0) {
@@ -239,7 +232,7 @@ public class Tempfile extends RubyFile implements Finalizable {
         return open(context, recv, args, block);
     }
 
-    @JRubyMethod(optional = 4, meta = true)
+    @JRubyMethod(optional = 4, meta = true, forward = true)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         RubyClass klass = (RubyClass) recv;
         Tempfile tempfile = (Tempfile) klass.newInstance(context, args, block);

@@ -33,16 +33,14 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
-public class ArgsPushNode extends Node {
+public class ArgsPushNode extends Node implements TwoValueNode {
     private Node firstNode;
     private Node secondNode;
 
-    public ArgsPushNode(ISourcePosition position, Node firstNode, Node secondNode) {
-        super(position, firstNode.containsVariableAssignment() || secondNode.containsVariableAssignment());
+    public ArgsPushNode(int line, Node firstNode, Node secondNode) {
+        super(line, firstNode.containsVariableAssignment() || secondNode.containsVariableAssignment());
 
-        assert firstNode != null : "ArgsPushNode.first == null";
         assert secondNode != null : "ArgsPushNode.second == null";
 
         this.firstNode = firstNode;

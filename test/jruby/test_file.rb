@@ -104,6 +104,15 @@ class TestFile < Test::Unit::TestCase
     assert_raise(TypeError) { File.expand_path(nil, nil) }
   end
 
+  def test_copy_file_and_preserve
+    FileUtils.touch("original")
+    FileUtils.copy_file('original', 'copy', true)
+    assert(File.exist?('original'))
+    assert(File.exist?('copy'))
+  ensure
+    FileUtils.rm_rf %w[ original copy ]
+  end
+
   # JRUBY-1116: these are currently broken on windows
   # what are these testing anyway?!?!
   if WINDOWS
@@ -480,8 +489,8 @@ class TestFile < Test::Unit::TestCase
     assert_equal("", File.extname("."))
     assert_equal("", File.extname("/."))
     assert_equal("", File.extname(".."))
-    assert_equal("", File.extname(".foo."))
-    assert_equal("", File.extname("foo."))
+    assert_equal(".", File.extname(".foo."))
+    assert_equal(".", File.extname("foo."))
   end
 
   def test_fnmatch
@@ -643,6 +652,13 @@ class TestFile < Test::Unit::TestCase
       assert_equal(result, 'falsetruefalse')
     ensure
       Dir.rmdir("dir_tmp") rescue nil
+    end
+  end
+
+  # ensure that uri:file: and file: URIs are treated the same by File.directory?
+  def test_uri_file_directory_query
+    ["uri:file://", "uri:file:/#{Dir.pwd}"].each do |uri|
+      assert(File.directory?(uri), uri)
     end
   end
 
@@ -1331,16 +1347,6 @@ class TestFile < Test::Unit::TestCase
     ensure
       File.unlink(filename)
     end
-  end
-
-  # JRUBY-5286
-  def test_file_path_is_tainted
-    filename = 'test.txt'
-    io = File.new(filename, 'w')
-    assert io.path.tainted?
-  ensure
-    io.close
-    File.unlink(filename)
   end
 
   # jruby/jruby#2331

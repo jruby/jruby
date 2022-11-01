@@ -10,7 +10,7 @@ module Coverage
 
     visitor = org.jruby.ast.visitor.NodeVisitor.impl do |name, node|
       if node.newline?
-        lines[node.position.line] = 0
+        lines[node.line] = 0
       end
 
       node.child_nodes.each {|child| child && child.accept(visitor)}

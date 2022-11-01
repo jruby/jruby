@@ -1,11 +1,9 @@
-# coding: UTF-8
 # frozen_string_literal: true
 
-require 'rubygems/test_case'
+require_relative 'helper'
 require 'rubygems/ext'
 
 class TestGemExtExtConfBuilder < Gem::TestCase
-
   def setup
     super
 
@@ -17,8 +15,12 @@ class TestGemExtExtConfBuilder < Gem::TestCase
   end
 
   def test_class_build
+    if java_platform?
+      pend("failing on jruby")
+    end
+
     if vc_windows? && !nmake_found?
-      skip("test_class_build skipped - nmake not found")
+      pend("test_class_build skipped - nmake not found")
     end
 
     File.open File.join(@ext, 'extconf.rb'), 'w' do |extconf|
@@ -27,12 +29,9 @@ class TestGemExtExtConfBuilder < Gem::TestCase
 
     output = []
 
-    Dir.chdir @ext do
-      result =
-        Gem::Ext::ExtConfBuilder.build 'extconf.rb', @dest_path, output
+    result = Gem::Ext::ExtConfBuilder.build 'extconf.rb', @dest_path, output, [], nil, @ext
 
-      assert_same result, output
-    end
+    assert_same result, output
 
     assert_match(/^current directory:/, output[0])
     assert_match(/^#{Gem.ruby}.* extconf.rb/, output[1])
@@ -42,9 +41,14 @@ class TestGemExtExtConfBuilder < Gem::TestCase
     assert_contains_make_command '', output[7]
     assert_contains_make_command 'install', output[10]
     assert_empty Dir.glob(File.join(@ext, 'siteconf*.rb'))
+    assert_empty Dir.glob(File.join(@ext, '.gem.*'))
   end
 
   def test_class_build_rbconfig_make_prog
+    if java_platform?
+      pend("failing on jruby")
+    end
+
     configure_args do
 
       File.open File.join(@ext, 'extconf.rb'), 'w' do |extconf|
@@ -53,9 +57,7 @@ class TestGemExtExtConfBuilder < Gem::TestCase
 
       output = []
 
-      Dir.chdir @ext do
-        Gem::Ext::ExtConfBuilder.build 'extconf.rb', @dest_path, output
-      end
+      Gem::Ext::ExtConfBuilder.build 'extconf.rb', @dest_path, output, [], nil, @ext
 
       assert_equal "creating Makefile\n", output[2]
       assert_contains_make_command 'clean', output[4]
@@ -64,9 +66,16 @@ class TestGemExtExtConfBuilder < Gem::TestCase
     end
   end
 
-  def test_class_build_env_make
-    env_make = ENV.delete 'MAKE'
+  def test_class_build_env_MAKE
+    env_make = ENV.delete 'make'
+    ENV['make'] = nil
+
+    env_MAKE = ENV.delete 'MAKE'
     ENV['MAKE'] = 'anothermake'
+
+    if java_platform?
+      pend("failing on jruby")
+    end
 
     configure_args '' do
       File.open File.join(@ext, 'extconf.rb'), 'w' do |extconf|
@@ -75,22 +84,21 @@ class TestGemExtExtConfBuilder < Gem::TestCase
 
       output = []
 
-      assert_raises Gem::InstallError do
-        Dir.chdir @ext do
-          Gem::Ext::ExtConfBuilder.build 'extconf.rb', @dest_path, output
-        end
+      assert_raise Gem::InstallError do
+        Gem::Ext::ExtConfBuilder.build 'extconf.rb', @dest_path, output, [], nil, @ext
       end
 
       assert_equal "creating Makefile\n",   output[2]
       assert_contains_make_command 'clean', output[4]
     end
   ensure
-    ENV['MAKE'] = env_make
+    ENV['MAKE'] = env_MAKE
+    ENV['make'] = env_make
   end
 
   def test_class_build_extconf_fail
     if vc_windows? && !nmake_found?
-      skip("test_class_build_extconf_fail skipped - nmake not found")
+      pend("test_class_build_extconf_fail skipped - nmake not found")
     end
 
     File.open File.join(@ext, 'extconf.rb'), 'w' do |extconf|
@@ -101,10 +109,8 @@ class TestGemExtExtConfBuilder < Gem::TestCase
 
     output = []
 
-    error = assert_raises Gem::InstallError do
-      Dir.chdir @ext do
-        Gem::Ext::ExtConfBuilder.build 'extconf.rb', @dest_path, output
-      end
+    error = assert_raise Gem::InstallError do
+      Gem::Ext::ExtConfBuilder.build 'extconf.rb', @dest_path, output, [], nil, @ext
     end
 
     assert_equal 'extconf failed, exit code 1', error.message
@@ -113,12 +119,12 @@ class TestGemExtExtConfBuilder < Gem::TestCase
     assert_match(File.join(@dest_path, 'mkmf.log'), output[4])
     assert_includes(output, "To see why this extension failed to compile, please check the mkmf.log which can be found here:\n")
 
-    assert_path_exists File.join @dest_path, 'mkmf.log'
+    assert_path_exist File.join @dest_path, 'mkmf.log'
   end
 
   def test_class_build_extconf_success_without_warning
     if vc_windows? && !nmake_found?
-      skip("test_class_build_extconf_fail skipped - nmake not found")
+      pend("test_class_build_extconf_fail skipped - nmake not found")
     end
 
     File.open File.join(@ext, 'extconf.rb'), 'w' do |extconf|
@@ -129,18 +135,16 @@ class TestGemExtExtConfBuilder < Gem::TestCase
 
     output = []
 
-    Dir.chdir @ext do
-      Gem::Ext::ExtConfBuilder.build 'extconf.rb', @dest_path, output
-    end
+    Gem::Ext::ExtConfBuilder.build 'extconf.rb', @dest_path, output, [], nil, @ext
 
     refute_includes(output, "To see why this extension failed to compile, please check the mkmf.log which can be found here:\n")
 
-    assert_path_exists File.join @dest_path, 'mkmf.log'
+    assert_path_exist File.join @dest_path, 'mkmf.log'
   end
 
   def test_class_build_unconventional
     if vc_windows? && !nmake_found?
-      skip("test_class_build skipped - nmake not found")
+      pend("test_class_build skipped - nmake not found")
     end
 
     File.open File.join(@ext, 'extconf.rb'), 'w' do |extconf|
@@ -171,9 +175,7 @@ end
 
     output = []
 
-    Dir.chdir @ext do
-      Gem::Ext::ExtConfBuilder.build 'extconf.rb', @dest_path, output
-    end
+    Gem::Ext::ExtConfBuilder.build 'extconf.rb', @dest_path, output, [], nil, @ext
 
     assert_contains_make_command 'clean', output[4]
     assert_contains_make_command '', output[7]
@@ -183,7 +185,7 @@ end
 
   def test_class_make
     if vc_windows? && !nmake_found?
-      skip("test_class_make skipped - nmake not found")
+      pend("test_class_make skipped - nmake not found")
     end
 
     output = []
@@ -197,9 +199,7 @@ end
       makefile.puts "install:"
     end
 
-    Dir.chdir @ext do
-      Gem::Ext::ExtConfBuilder.make @ext, output
-    end
+    Gem::Ext::ExtConfBuilder.make @ext, output, @ext
 
     assert_contains_make_command 'clean', output[1]
     assert_contains_make_command '', output[4]
@@ -207,10 +207,8 @@ end
   end
 
   def test_class_make_no_Makefile
-    error = assert_raises Gem::InstallError do
-      Dir.chdir @ext do
-        Gem::Ext::ExtConfBuilder.make @ext, ['output']
-      end
+    error = assert_raise Gem::InstallError do
+      Gem::Ext::ExtConfBuilder.make @ext, ['output'], @ext
     end
 
     assert_equal 'Makefile not found', error.message
@@ -229,5 +227,4 @@ end
       RbConfig::CONFIG.delete 'configure_args'
     end
   end
-
 end

@@ -32,27 +32,28 @@ package org.jruby.embed.internal;
 import org.jruby.Ruby;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
-import org.jruby.RubyNil;
 import org.jruby.RubyObject;
 import org.jruby.RubyObjectAdapter;
 import org.jruby.RubyString;
-import org.jruby.embed.AttributeName;
 import org.jruby.embed.EmbedEvalUnit;
 import org.jruby.embed.EmbedRubyObjectAdapter;
 import org.jruby.embed.InvokeFailedException;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.embed.variable.BiVariable;
 import org.jruby.embed.variable.InstanceVariable;
-import org.jruby.exceptions.RaiseException;
+import org.jruby.internal.runtime.methods.InvokeDynamicMethodFactory;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.scope.ManyVarsDynamicScope;
+
+import static org.jruby.embed.internal.EmbedEvalUnitImpl.isSharingVariables;
+import static org.jruby.embed.internal.EmbedRubyRuntimeAdapterImpl.createLocalVarScope;
 
 /**
  * Implementation of {@link EmbedRubyObjectAdapter}. Users get an instance of this
@@ -64,17 +65,24 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
 
     private final RubyObjectAdapter adapter = JavaEmbedUtils.newObjectAdapter();
     private final ScriptingContainer container;
+    private final boolean wrapExceptions;
 
-    public static enum MethodType {
-        CALLMETHOD_NOARG,
+    @Deprecated // not used
+    public enum MethodType {
         CALLMETHOD,
-        CALLMETHOD_WITHBLOCK,
         CALLSUPER,
-        CALLSUPER_WITHBLOCK
+        CALLMETHOD_NOARG,
+        CALLMETHOD_WITHBLOCK,
+        CALLSUPER_WITHBLOCK,
     }
 
     public EmbedRubyObjectAdapterImpl(ScriptingContainer container) {
+        this(container, false);
+    }
+
+    public EmbedRubyObjectAdapterImpl(ScriptingContainer container, boolean wrapExceptions) {
         this.container = container;
+        this.wrapExceptions = wrapExceptions;
     }
 
     public boolean isKindOf(IRubyObject value, RubyModule rubyModule) {
@@ -97,7 +105,7 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
         BiVariableMap map = container.getVarMap();
         synchronized (map) {
             if (map.containsKey(variableName)) {
-                BiVariable bv = map.getVariable((RubyObject)container.getProvider().getRuntime().getTopSelf(), variableName);
+                BiVariable bv = map.getVariable((RubyObject) getTopSelf(), variableName);
                 bv.setRubyObject(value);
             } else {
                 InstanceVariable iv = new InstanceVariable(obj, variableName, value);
@@ -111,7 +119,7 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
         BiVariableMap map = container.getVarMap();
         synchronized (map) {
             if (map.containsKey(variableName)) {
-                BiVariable bv = map.getVariable((RubyObject)container.getProvider().getRuntime().getTopSelf(), variableName);
+                BiVariable bv = map.getVariable((RubyObject) getTopSelf(), variableName);
                 return bv.getRubyObject();
             }
         }
@@ -143,226 +151,145 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
     }
 
     public <T> T callMethod(Object receiver, String methodName, Class<T> returnType) {
-        try {
-            RubyObject rubyReceiver = getReceiverObject(receiver);
-            return call(MethodType.CALLMETHOD_NOARG, returnType, rubyReceiver, methodName, null, null);
-        } catch (InvokeFailedException e) {
-            throw e;
-        } catch (Throwable e) {
-            throw new InvokeFailedException(e);
-        }
+        return doInvokeMethod(returnType, getReceiverObject(receiver), methodName, Block.NULL_BLOCK, null);
     }
 
     public <T> T callMethod(Object receiver, String methodName, Object singleArg, Class<T> returnType) {
-        try {
-            RubyObject rubyReceiver = getReceiverObject(receiver);
-            return call(MethodType.CALLMETHOD, returnType, rubyReceiver, methodName, null, null, singleArg);
-        } catch (InvokeFailedException e) {
-            throw e;
-        } catch (Throwable e) {
-            throw new InvokeFailedException(e);
-        }
+        return doInvokeMethod(returnType, getReceiverObject(receiver), methodName, Block.NULL_BLOCK, null, singleArg);
     }
 
     public <T> T callMethod(Object receiver, String methodName, Object[] args, Class<T> returnType) {
-        try {
-            RubyObject rubyReceiver = getReceiverObject(receiver);
-            return call(MethodType.CALLMETHOD, returnType, rubyReceiver, methodName, null, null, args);
-        } catch (InvokeFailedException e) {
-            throw e;
-        } catch (Throwable e) {
-            throw new InvokeFailedException(e);
-        }
+        return doInvokeMethod(returnType, getReceiverObject(receiver), methodName, Block.NULL_BLOCK, null, args);
     }
 
     public <T> T callMethod(Object receiver, String methodName, Object[] args, Block block, Class<T> returnType) {
-        try {
-            RubyObject rubyReceiver = getReceiverObject(receiver);
-            return call(MethodType.CALLMETHOD_WITHBLOCK, returnType, rubyReceiver, methodName, block, null, args);
-        } catch (InvokeFailedException e) {
-            throw e;
-        } catch (Throwable e) {
-            throw new InvokeFailedException(e);
-        }
+        return doInvokeMethod(returnType, getReceiverObject(receiver), methodName, block, null, args);
     }
 
     public <T> T callMethod(Object receiver, String methodName, Class<T> returnType, EmbedEvalUnit unit) {
-        try {
-            RubyObject rubyReceiver = getReceiverObject(receiver);
-            return call(MethodType.CALLMETHOD_NOARG, returnType, rubyReceiver, methodName, null, unit);
-        } catch (InvokeFailedException e) {
-            throw e;
-        } catch (Throwable e) {
-            throw new InvokeFailedException(e);
-        }
+        return doInvokeMethod(returnType, getReceiverObject(receiver), methodName, Block.NULL_BLOCK, unit);
     }
 
     public <T> T callMethod(Object receiver, String methodName, Object[] args, Class<T> returnType, EmbedEvalUnit unit) {
-        try {
-            RubyObject rubyReceiver = getReceiverObject(receiver);
-            return call(MethodType.CALLMETHOD, returnType, rubyReceiver, methodName, null, unit, args);
-        } catch (InvokeFailedException e) {
-            throw e;
-        } catch (Throwable e) {
-            throw new InvokeFailedException(e);
-        }
+        return doInvokeMethod(returnType, getReceiverObject(receiver), methodName, Block.NULL_BLOCK, unit, args);
     }
 
     public <T> T callMethod(Object receiver, String methodName, Object[] args, Block block, Class<T> returnType, EmbedEvalUnit unit) {
-        try {
-            RubyObject rubyReceiver = getReceiverObject(receiver);
-            return call(MethodType.CALLMETHOD_WITHBLOCK, returnType, rubyReceiver, methodName, block, unit, args);
-        } catch (InvokeFailedException e) {
-            throw e;
-        } catch (Throwable e) {
-            throw new InvokeFailedException(e);
-        }
+        return doInvokeMethod(returnType, getReceiverObject(receiver), methodName, block, unit, args);
     }
 
     public <T> T callSuper(Object receiver, Object[] args, Class<T> returnType) {
-        try {
-            RubyObject rubyReceiver = getReceiverObject(receiver);
-            return call(MethodType.CALLSUPER, returnType, rubyReceiver, null, null, null, args);
-        } catch (InvokeFailedException e) {
-            throw e;
-        } catch (Throwable e) {
-            throw new InvokeFailedException(e);
-        }
+        return doInvokeSuper(returnType, getReceiverObject(receiver), Block.NULL_BLOCK, null, args);
     }
 
     public <T> T callSuper(Object receiver, Object[] args, Block block, Class<T> returnType) {
-        try {
-            RubyObject rubyReceiver = getReceiverObject(receiver);
-            return call(MethodType.CALLSUPER_WITHBLOCK, returnType, rubyReceiver, null, block, null, args);
-        } catch (InvokeFailedException e) {
-            throw e;
-        } catch (Throwable e) {
-            throw new InvokeFailedException(e);
-        }
+        return doInvokeSuper(returnType, getReceiverObject(receiver), block, null, args);
     }
 
     public Object callMethod(Object receiver, String methodName, Object... args) {
-        try {
-            RubyObject rubyReceiver = getReceiverObject(receiver);
-            if (args.length == 0) {
-                return call(MethodType.CALLMETHOD_NOARG, Object.class, rubyReceiver, methodName, null, null);
-            } else {
-                return call(MethodType.CALLMETHOD, Object.class, rubyReceiver, methodName, null, null, args);
-            }
-        } catch (InvokeFailedException e) {
-            throw e;
-        } catch (Throwable e) {
-            throw new InvokeFailedException(e);
-        }
+        return doInvokeMethod(Object.class, getReceiverObject(receiver), methodName, Block.NULL_BLOCK, null, args);
     }
 
     public Object callMethod(Object receiver, String methodName, Block block, Object... args) {
-        try {
-            if (args.length == 0) {
-                throw new IllegalArgumentException("needs at least one argument in a method");
-            }
-            RubyObject rubyReceiver = getReceiverObject(receiver);
-            return call(MethodType.CALLMETHOD_WITHBLOCK, Object.class, rubyReceiver, methodName, block, null, args);
-        } catch (InvokeFailedException e) {
-            throw e;
-        } catch (Throwable e) {
-            throw new InvokeFailedException(e);
-        }
+        return doInvokeMethod(Object.class, getReceiverObject(receiver), methodName, block, null, args);
     }
 
     public <T> T runRubyMethod(Class<T> returnType, Object receiver, String methodName, Block block, Object... args) {
-        try {
-            RubyObject rubyReceiver = (RubyObject)JavaEmbedUtils.javaToRuby(container.getProvider().getRuntime(), receiver);
-            if (args.length == 0) {
-                return call(MethodType.CALLMETHOD_NOARG, returnType, rubyReceiver, methodName, block, null);
-            } else {
-                return call(MethodType.CALLMETHOD, returnType, rubyReceiver, methodName, block, null, args);
-            }
-        } catch (InvokeFailedException e) {
-            throw e;
-        } catch (Throwable e) {
-            throw new InvokeFailedException(e);
-        }
+        assert block != null;
+        IRubyObject rubyReceiver = JavaEmbedUtils.javaToRuby(container.getProvider().getRuntime(), receiver);
+        return doInvokeMethod(returnType, rubyReceiver, methodName, block, null, args);
     }
 
-    private <T> T call(MethodType type, Class<T> returnType, RubyObject rubyReceiver, String methodName, Block block, EmbedEvalUnit unit, Object... args) {
-        if (methodName == null || methodName.length()==0) {
-            return null;
-        }
-        Ruby runtime = container.getProvider().getRuntime();
-
-        boolean sharing_variables = true;
-        Object obj = container.getAttribute(AttributeName.SHARING_VARIABLES);
-        if (obj != null && obj instanceof Boolean && ((Boolean) obj) == false) {
-            sharing_variables = false;
-        }
+    private <T> T doInvokeSuper(Class<T> returnType, IRubyObject rubyReceiver, Block block, EmbedEvalUnit unit, Object... args) {
+        final Ruby runtime = container.getProvider().getRuntime();
+        final ThreadContext context = runtime.getCurrentContext();
+        final boolean sharing_variables = isSharingVariables(container);
 
         if (sharing_variables) {
-            ManyVarsDynamicScope scope;
-            if (unit != null && unit.getScope() != null) scope = unit.getScope();
-            else scope = EmbedRubyRuntimeAdapterImpl.getManyVarsDynamicScope(container, 0);
-            container.getVarMap().inject(scope, 0, rubyReceiver);
-            runtime.getCurrentContext().pushScope(scope);
+            beforeSharingVariablesCall(context, unit);
         }
 
         try {
-            IRubyObject result = callEachType(type, rubyReceiver, methodName, block, args);
+            IRubyObject result = Helpers.invokeSuper(context, rubyReceiver, convertArgs(runtime, args), block);
             if (sharing_variables) {
                 container.getVarMap().retrieve(rubyReceiver);
             }
-            if (!(result instanceof RubyNil) && returnType != null) {
+            if (returnType != null) {
                 Object ret = JavaEmbedUtils.rubyToJava(runtime, result, returnType);
-                return ret != null ? returnType.cast(ret) : null;
+                return returnType.cast(ret);
             }
             return null;
-        } catch (RaiseException e) {
-            runtime.printError(e.getException());
-            throw new InvokeFailedException(e.getMessage(), e);
-        } catch (Throwable e) {
-            throw new InvokeFailedException(e);
+        } catch (Exception e) {
+            if (e instanceof InvokeFailedException) throw e;
+            if (wrapExceptions) throw new InvokeFailedException(e);
+            Helpers.throwException(e); return null; // never returns
         } finally {
             if (sharing_variables) {
-                runtime.getCurrentContext().popScope();
+                afterSharingVariablesCall(context);
             }
         }
     }
 
-    private RubyObject getReceiverObject(Object receiver) {
-        Ruby runtime = container.getProvider().getRuntime();
-        if (receiver == null || !(receiver instanceof IRubyObject)) {
-            return (RubyObject)runtime.getTopSelf();
+    private <T> T doInvokeMethod(Class<T> returnType, IRubyObject rubyReceiver, String methodName, Block block, EmbedEvalUnit unit, Object... args) {
+        final Ruby runtime = container.getProvider().getRuntime();
+        final ThreadContext context = runtime.getCurrentContext();
+        final boolean sharing_variables = isSharingVariables(container);
+
+        if (sharing_variables) {
+            beforeSharingVariablesCall(context, unit);
         }
-        else if (receiver instanceof RubyObject) return (RubyObject)receiver;
-        else return (RubyObject)((IRubyObject)receiver).getRuntime().getTopSelf();
+        try {
+            IRubyObject result = Helpers.invoke(context, rubyReceiver, methodName, convertArgs(runtime, args), block);
+            if (sharing_variables) {
+                container.getVarMap().retrieve(rubyReceiver);
+            }
+            if (returnType != null) {
+                Object ret = JavaEmbedUtils.rubyToJava(runtime, result, returnType);
+                return returnType.cast(ret);
+            }
+            return null;
+        } catch (Exception e) {
+            if (e instanceof InvokeFailedException) throw e;
+            if (wrapExceptions) throw new InvokeFailedException(e);
+            Helpers.throwException(e); return null; // never returns
+        } finally {
+            if (sharing_variables) {
+                afterSharingVariablesCall(context);
+            }
+        }
     }
 
-    private IRubyObject callEachType(MethodType type, IRubyObject rubyReceiver, String methodName, Block block, Object... args) {
-        Ruby runtime = rubyReceiver.getRuntime();
-        IRubyObject[] rubyArgs = null;
-        if (args != null && args.length > 0) {
-            rubyArgs = JavaUtil.convertJavaArrayToRuby(runtime, args);
-            for (int i = 0; i < rubyArgs.length; i++) {
-                IRubyObject obj = rubyArgs[i];
-                if (obj instanceof JavaObject) {
-                    rubyArgs[i] = Java.wrap(runtime, obj);
-                }
+    private void beforeSharingVariablesCall(final ThreadContext context, EmbedEvalUnit unit) {
+        DynamicScope scope;
+        if (unit != null && unit.getLocalVarScope() != null) scope = unit.getLocalVarScope();
+        else scope = createLocalVarScope(context.runtime, container.getVarMap().getLocalVarNames());
+        container.getVarMap().inject(scope);
+        context.pushScope(scope);
+    }
+
+    private void afterSharingVariablesCall(final ThreadContext context) {
+        context.popScope();
+    }
+
+    private IRubyObject getReceiverObject(Object receiver) {
+        if (receiver instanceof IRubyObject) return (IRubyObject) receiver;
+        return getTopSelf();
+    }
+
+    private IRubyObject getTopSelf() {
+        return container.getProvider().getRuntime().getTopSelf();
+    }
+
+    @SuppressWarnings("deprecation")
+    private static IRubyObject[] convertArgs(final Ruby runtime, final Object[] args) {
+        IRubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(runtime, args);
+        for (int i = 0; i < rubyArgs.length; i++) {
+            IRubyObject obj = rubyArgs[i];
+            if (obj instanceof JavaObject) {
+                rubyArgs[i] = Java.wrap(runtime, obj);
             }
         }
-        ThreadContext context = runtime.getCurrentContext();
-            switch (type) {
-                case CALLMETHOD_NOARG:
-                    return Helpers.invoke(context, rubyReceiver, methodName);
-                case CALLMETHOD:
-                    return Helpers.invoke(context, rubyReceiver, methodName, rubyArgs);
-                case CALLMETHOD_WITHBLOCK:
-                    return Helpers.invoke(context, rubyReceiver, methodName, rubyArgs, block);
-                case CALLSUPER:
-                    return Helpers.invokeSuper(context, rubyReceiver, rubyArgs, Block.NULL_BLOCK);
-                case CALLSUPER_WITHBLOCK:
-                    return Helpers.invokeSuper(context, rubyReceiver, rubyArgs, block);
-                default:
-                    break;
-            }
-        return null;
+        return rubyArgs;
     }
+
 }

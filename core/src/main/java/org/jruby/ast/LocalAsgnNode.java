@@ -38,7 +38,6 @@ import java.util.List;
 import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * An assignment to a local variable.
@@ -51,8 +50,8 @@ public class LocalAsgnNode extends AssignableNode implements INameNode, IScopedN
     // is what index in the right scope to set the value.
     private final int location;
 
-    public LocalAsgnNode(ISourcePosition position, RubySymbol name, int location, Node valueNode) {
-        super(position, valueNode, true);
+    public LocalAsgnNode(int line, RubySymbol name, int location, Node valueNode) {
+        super(line, valueNode, true);
         this.name = name;
         this.location = location;
     }

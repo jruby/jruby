@@ -1,14 +1,18 @@
 # frozen_string_literal: true
-require 'rubygems/test_case'
+require_relative 'helper'
 require 'rubygems/security'
 
-unless defined?(OpenSSL::SSL)
+unless Gem::HAVE_OPENSSL
   warn 'Skipping Gem::Security tests.  openssl not found.'
 end
 
-class TestGemSecurity < Gem::TestCase
+if Gem.java_platform?
+  warn 'Skipping Gem::Security tests on jruby.'
+end
 
+class TestGemSecurity < Gem::TestCase
   CHILD_KEY = load_key 'child'
+  EC_KEY = load_key 'private_ec', 'Foo bar'
 
   ALTERNATE_CERT = load_cert 'child'
   CHILD_CERT     = load_cert 'child'
@@ -36,16 +40,16 @@ class TestGemSecurity < Gem::TestCase
     assert_equal    name.to_s,             cert.subject.to_s
 
     assert_equal 3, cert.extensions.length,
-                 cert.extensions.map { |e| e.to_a.first }
+                 cert.extensions.map {|e| e.to_a.first }
 
-    constraints = cert.extensions.find { |ext| ext.oid == 'basicConstraints' }
+    constraints = cert.extensions.find {|ext| ext.oid == 'basicConstraints' }
     assert_equal 'CA:FALSE', constraints.value
 
-    key_usage = cert.extensions.find { |ext| ext.oid == 'keyUsage' }
+    key_usage = cert.extensions.find {|ext| ext.oid == 'keyUsage' }
     assert_equal 'Digital Signature, Key Encipherment, Data Encipherment',
                  key_usage.value
 
-    key_ident = cert.extensions.find { |ext| ext.oid == 'subjectKeyIdentifier' }
+    key_ident = cert.extensions.find {|ext| ext.oid == 'subjectKeyIdentifier' }
     assert_equal 59, key_ident.value.length
     assert_equal '5F:43:6E:F6:9A:8E:45:25:E9:22:E3:7D:37:5E:A4:D5:36:02:85:1B',
                  key_ident.value
@@ -81,28 +85,55 @@ class TestGemSecurity < Gem::TestCase
     assert_equal    name.to_s,             cert.issuer.to_s
 
     assert_equal 5, cert.extensions.length,
-                 cert.extensions.map { |e| e.to_a.first }
+                 cert.extensions.map {|e| e.to_a.first }
 
-    constraints = cert.extensions.find { |ext| ext.oid == 'subjectAltName' }
+    constraints = cert.extensions.find {|ext| ext.oid == 'subjectAltName' }
     assert_equal 'email:nobody@example', constraints.value
 
-    constraints = cert.extensions.find { |ext| ext.oid == 'basicConstraints' }
+    constraints = cert.extensions.find {|ext| ext.oid == 'basicConstraints' }
     assert_equal 'CA:FALSE', constraints.value
 
-    key_usage = cert.extensions.find { |ext| ext.oid == 'keyUsage' }
+    key_usage = cert.extensions.find {|ext| ext.oid == 'keyUsage' }
     assert_equal 'Digital Signature, Key Encipherment, Data Encipherment',
                  key_usage.value
 
-    key_ident = cert.extensions.find { |ext| ext.oid == 'subjectKeyIdentifier' }
+    key_ident = cert.extensions.find {|ext| ext.oid == 'subjectKeyIdentifier' }
     assert_equal 59, key_ident.value.length
     assert_equal '5F:43:6E:F6:9A:8E:45:25:E9:22:E3:7D:37:5E:A4:D5:36:02:85:1B',
                  key_ident.value
   end
 
   def test_class_create_key
-    key = @SEC.create_key 1024
+    key = @SEC.create_key 'rsa'
 
     assert_kind_of OpenSSL::PKey::RSA, key
+  end
+
+  def test_class_create_key_downcases
+    key = @SEC.create_key 'DSA'
+
+    assert_kind_of OpenSSL::PKey::DSA, key
+  end
+
+  def test_class_create_key_raises_unknown_algorithm
+    e = assert_raise Gem::Security::Exception do
+      @SEC.create_key 'NOT_RSA'
+    end
+
+    assert_equal "NOT_RSA algorithm not found. RSA, DSA, and EC algorithms are supported.",
+                 e.message
+  end
+
+  def test_class_get_public_key_rsa
+    pkey_pem = PRIVATE_KEY.public_key.to_pem
+
+    assert_equal pkey_pem, @SEC.get_public_key(PRIVATE_KEY).to_pem
+  end
+
+  def test_class_get_public_key_ec
+    pkey = @SEC.get_public_key(EC_KEY)
+
+    assert_respond_to pkey, :to_pem
   end
 
   def test_class_email_to_name
@@ -132,7 +163,7 @@ class TestGemSecurity < Gem::TestCase
   end
 
   def test_class_re_sign_not_self_signed
-    e = assert_raises Gem::Security::Exception do
+    e = assert_raise Gem::Security::Exception do
       Gem::Security.re_sign CHILD_CERT, CHILD_KEY
     end
 
@@ -146,7 +177,7 @@ class TestGemSecurity < Gem::TestCase
   end
 
   def test_class_re_sign_wrong_key
-    e = assert_raises Gem::Security::Exception do
+    e = assert_raise Gem::Security::Exception do
       Gem::Security.re_sign ALTERNATE_CERT, PRIVATE_KEY
     end
 
@@ -165,7 +196,7 @@ class TestGemSecurity < Gem::TestCase
 
   def test_class_sign
     issuer = PUBLIC_CERT.subject
-    signee = OpenSSL::X509::Name.parse "/CN=signee/DC=example"
+    signee = OpenSSL::X509::Name.new([["CN", "signee"], ["DC", "example"]])
 
     key  = PRIVATE_KEY
     cert = OpenSSL::X509::Certificate.new
@@ -184,20 +215,20 @@ class TestGemSecurity < Gem::TestCase
     assert_in_delta Time.now + 60,         signed.not_after, 10
 
     assert_equal 4, signed.extensions.length,
-                 signed.extensions.map { |e| e.to_a.first }
+                 signed.extensions.map {|e| e.to_a.first }
 
-    constraints = signed.extensions.find { |ext| ext.oid == 'issuerAltName' }
+    constraints = signed.extensions.find {|ext| ext.oid == 'issuerAltName' }
     assert_equal 'email:nobody@example', constraints.value, 'issuerAltName'
 
-    constraints = signed.extensions.find { |ext| ext.oid == 'basicConstraints' }
+    constraints = signed.extensions.find {|ext| ext.oid == 'basicConstraints' }
     assert_equal 'CA:FALSE', constraints.value
 
-    key_usage = signed.extensions.find { |ext| ext.oid == 'keyUsage' }
+    key_usage = signed.extensions.find {|ext| ext.oid == 'keyUsage' }
     assert_equal 'Digital Signature, Key Encipherment, Data Encipherment',
                  key_usage.value
 
     key_ident =
-      signed.extensions.find { |ext| ext.oid == 'subjectKeyIdentifier' }
+      signed.extensions.find {|ext| ext.oid == 'subjectKeyIdentifier' }
     assert_equal 59, key_ident.value.length
     assert_equal '5F:43:6E:F6:9A:8E:45:25:E9:22:E3:7D:37:5E:A4:D5:36:02:85:1B',
                  key_ident.value
@@ -223,23 +254,23 @@ class TestGemSecurity < Gem::TestCase
     assert_equal "sha256WithRSAEncryption", signed.signature_algorithm
 
     assert_equal 5, signed.extensions.length,
-                 signed.extensions.map { |e| e.to_a.first }
+                 signed.extensions.map {|e| e.to_a.first }
 
-    constraints = signed.extensions.find { |ext| ext.oid == 'issuerAltName' }
+    constraints = signed.extensions.find {|ext| ext.oid == 'issuerAltName' }
     assert_equal 'email:nobody@example', constraints.value, 'issuerAltName'
 
-    constraints = signed.extensions.find { |ext| ext.oid == 'subjectAltName' }
+    constraints = signed.extensions.find {|ext| ext.oid == 'subjectAltName' }
     assert_equal 'email:signee@example', constraints.value, 'subjectAltName'
 
-    constraints = signed.extensions.find { |ext| ext.oid == 'basicConstraints' }
+    constraints = signed.extensions.find {|ext| ext.oid == 'basicConstraints' }
     assert_equal 'CA:FALSE', constraints.value
 
-    key_usage = signed.extensions.find { |ext| ext.oid == 'keyUsage' }
+    key_usage = signed.extensions.find {|ext| ext.oid == 'keyUsage' }
     assert_equal 'Digital Signature, Key Encipherment, Data Encipherment',
                  key_usage.value
 
     key_ident =
-      signed.extensions.find { |ext| ext.oid == 'subjectKeyIdentifier' }
+      signed.extensions.find {|ext| ext.oid == 'subjectKeyIdentifier' }
     assert_equal 59, key_ident.value.length
     assert_equal '5F:43:6E:F6:9A:8E:45:25:E9:22:E3:7D:37:5E:A4:D5:36:02:85:1B',
                  key_ident.value
@@ -256,13 +287,13 @@ class TestGemSecurity < Gem::TestCase
   end
 
   def test_class_write
-    key = @SEC.create_key 1024
+    key = @SEC.create_key 'rsa'
 
     path = File.join @tempdir, 'test-private_key.pem'
 
     @SEC.write key, path
 
-    assert_path_exists path
+    assert_path_exist path
 
     key_from_file = File.read path
 
@@ -270,7 +301,7 @@ class TestGemSecurity < Gem::TestCase
   end
 
   def test_class_write_encrypted
-    key = @SEC.create_key 1024
+    key = @SEC.create_key 'rsa'
 
     path = File.join @tempdir, 'test-private_encrypted_key.pem'
 
@@ -278,15 +309,15 @@ class TestGemSecurity < Gem::TestCase
 
     @SEC.write key, path, 0600, passphrase
 
-    assert_path_exists path
+    assert_path_exist path
 
-    key_from_file =  OpenSSL::PKey::RSA.new File.read(path), passphrase
+    key_from_file = OpenSSL::PKey::RSA.new File.read(path), passphrase
 
     assert_equal key.to_pem, key_from_file.to_pem
   end
 
   def test_class_write_encrypted_cipher
-    key = @SEC.create_key 1024
+    key = @SEC.create_key 'rsa'
 
     path = File.join @tempdir, 'test-private_encrypted__with_non_default_cipher_key.pem'
 
@@ -296,7 +327,7 @@ class TestGemSecurity < Gem::TestCase
 
     @SEC.write key, path, 0600, passphrase, cipher
 
-    assert_path_exists path
+    assert_path_exist path
 
     key_file_contents = File.read(path)
 
@@ -306,5 +337,4 @@ class TestGemSecurity < Gem::TestCase
 
     assert_equal key.to_pem, key_from_file.to_pem
   end
-
-end if defined?(OpenSSL::SSL)
+end if Gem::HAVE_OPENSSL && !Gem.java_platform?

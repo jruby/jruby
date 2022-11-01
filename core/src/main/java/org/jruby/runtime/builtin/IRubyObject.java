@@ -90,25 +90,6 @@ public interface IRubyObject {
     boolean isTrue();
     
     /**
-     * RubyMethod isTaint.
-     * @return boolean
-     */
-    boolean isTaint();
-    
-    /**
-     * RubyMethod setTaint.
-     * @param taint the taint flag
-     */
-    void setTaint(boolean taint);
-    
-    /**
-     * Infect this object using the taint of another object.
-     * @param obj
-     * @return infected (self)
-     */
-    IRubyObject infectBy(IRubyObject obj);
-    
-    /**
      * RubyMethod isFrozen.
      * @return boolean
      */
@@ -418,4 +399,13 @@ public interface IRubyObject {
     default RubyInteger convertToInteger(int convertMethodIndex, String convertMethod) {
         return convertToInteger(convertMethod);
     }
+
+    @Deprecated
+    boolean isTaint();
+
+    @Deprecated
+    void setTaint(boolean taint);
+
+    @Deprecated
+    IRubyObject infectBy(IRubyObject obj);
 }

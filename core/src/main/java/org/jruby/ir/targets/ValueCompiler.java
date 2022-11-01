@@ -5,6 +5,7 @@ import org.jruby.ir.instructions.CallBase;
 import org.jruby.util.ByteList;
 
 import java.math.BigInteger;
+import java.util.function.Consumer;
 
 public interface ValueCompiler {
     /**
@@ -13,6 +14,20 @@ public interface ValueCompiler {
      * Stack required: none
      */
     public abstract void pushRuntime();
+
+    /**
+     * Push the Array class on the stack.
+     *
+     * Stack required: none
+     */
+    void pushArrayClass();
+
+    /**
+     * Push the Hash class on the stack.
+     *
+     * Stack required: none
+     */
+    void pushHashClass();
 
     /**
      * Push the Object class on the stack.
@@ -62,6 +77,17 @@ public interface ValueCompiler {
      * @param bl ByteList to push
      */
     void pushByteList(ByteList bl);
+
+    /**
+     * Build and save a literal range.
+     * <p>
+     * Stack required: context
+     *
+     * @param begin a runnable that will emit code for the begin value
+     * @param end a runnable that will emit code for the end value
+     * @param exclusive whether this is an exclusive range
+     */
+    void pushRange(Runnable begin, Runnable end, boolean exclusive);
 
     /**
      * Build and save a literal regular expression.

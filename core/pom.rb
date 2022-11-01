@@ -43,25 +43,24 @@ project 'JRuby Base' do
 
   # exclude jnr-ffi to avoid problems with shading and relocation of the asm packages
   jar 'com.github.jnr:jnr-netdb:1.2.0', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-enxio:0.32.0', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-unixsocket:0.38.1', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-posix:3.1.1', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-constants:0.10.0', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-ffi:2.2.0'
+  jar 'com.github.jnr:jnr-enxio:0.32.13', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-unixsocket:0.38.17', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-posix:3.1.15', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-constants:0.10.3', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-ffi:2.2.11'
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
-  jar 'org.jruby.joni:joni:2.1.40'
-  jar 'org.jruby.jcodings:jcodings:1.0.55'
+  jar 'org.jruby.joni:joni:2.1.43'
+  jar 'org.jruby.jcodings:jcodings:1.0.57'
   jar 'org.jruby:dirgra:0.3'
 
-  jar 'com.headius:invokebinder:1.11'
-  jar 'com.headius:options:1.4'
+  jar 'com.headius:invokebinder:1.12'
+  jar 'com.headius:options:1.6'
 
-  jar 'bsf:bsf:2.4.0', :scope => 'provided'
   jar 'com.jcraft:jzlib:1.1.3'
-  jar 'com.martiansoftware:nailgun-server:0.9.1'
   jar 'junit:junit', :scope => 'test'
+  jar 'org.awaitility:awaitility', :scope => 'test'
   jar 'org.apache.ant:ant:${ant.version}', :scope => 'provided'
   jar 'org.osgi:org.osgi.core:5.0.0', :scope => 'provided'
 
@@ -75,9 +74,9 @@ project 'JRuby Base' do
 
   jar 'me.qmx.jitescript:jitescript:0.4.1', :exclusions => ['org.ow2.asm:asm-all']
 
-  jar 'com.headius:backport9:1.10'
+  jar 'com.headius:backport9:1.12'
 
-  jar 'javax.annotation:javax.annotation-api:1.3.1', scope: 'compile'
+  jar 'jakarta.annotation:jakarta.annotation-api:2.0.0', scope: 'provided'
 
   plugin_management do
     plugin( 'org.eclipse.m2e:lifecycle-mapping:1.0.0',
@@ -172,7 +171,7 @@ project 'JRuby Base' do
   plugin( :compiler,
           'encoding' => 'utf-8',
           'debug' => 'true',
-          'verbose' => 'true',
+          'verbose' => 'false',
           'fork' => 'true',
           'compilerArgs' => { 'arg' => '-J-Xmx1G' },
           'showWarnings' => 'true',
@@ -241,10 +240,10 @@ project 'JRuby Base' do
               'JDK_JAVA_OPTIONS' => '--add-modules java.scripting'
           },
           includes: [
-              'org/jruby/test/**/*Test*.java',
-              'org/jruby/embed/**/*Test*.java',
-              'org/jruby/util/**/*Test*.java',
-              'org/jruby/runtime/**/*Test*.java'
+            'org/jruby/test/**/*Test*.java',
+            'org/jruby/embed/**/*Test*.java',
+            'org/jruby/util/**/*Test*.java',
+            'org/jruby/runtime/**/*Test*.java'
           ],
           'additionalClasspathElements' => [ '${basedir}/src/test/ruby' ] )
 
@@ -284,7 +283,7 @@ project 'JRuby Base' do
                   ])
   end
 
-  copy_goal = [:exec, :executable => '/bin/sh', :arguments => ['-c', 'cp ${jruby.basedir}/bin/jruby.bash ${jruby.basedir}/bin/jruby']]
+  copy_goal = [:exec, :executable => '/bin/sh', :arguments => ['-c', 'cp ${jruby.basedir}/bin/jruby.sh ${jruby.basedir}/bin/jruby']]
 
   profile :clean do
     activation do
@@ -301,7 +300,7 @@ project 'JRuby Base' do
     end
   end
 
-  profile 'jruby.bash' do
+  profile 'jruby.sh' do
 
     activation do
       file( :missing => '../bin/jruby' )

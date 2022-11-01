@@ -1,2 +1,2 @@
 fails:NoMethodError#dup copies the name, arguments and receiver
-fails(not implemented, jruby/jruby#6161):NoMethodError.new accepts a :receiver keyword argument
+wip:NoMethodError#message uses #name to display the receiver if it is a class or a module

@@ -48,7 +48,6 @@ import org.jruby.RubyString;
 import org.jruby.RubyTime;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -56,7 +55,6 @@ import org.jruby.util.ByteList;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.math.MathContext;
 import java.math.RoundingMode;
 import java.time.*;
 
@@ -75,21 +73,14 @@ import java.time.*;
 public class RubyDateTime extends RubyDate {
 
     static RubyClass createDateTimeClass(Ruby runtime, RubyClass Date) {
-        RubyClass DateTime = runtime.defineClass("DateTime", Date, ALLOCATOR);
+        RubyClass DateTime = runtime.defineClass("DateTime", Date, RubyDateTime::new);
         DateTime.setReifiedClass(RubyDateTime.class);
         DateTime.defineAnnotatedMethods(RubyDateTime.class);
         return DateTime;
     }
 
-    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyDateTime(runtime, klass, defaultDateTime, 0);
-        }
-    };
-
     protected RubyDateTime(Ruby runtime, RubyClass klass) {
-        super(runtime, klass);
+        this(runtime, klass, defaultDateTime);
     }
 
     public RubyDateTime(Ruby runtime, RubyClass klass, DateTime dt) {

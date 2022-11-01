@@ -95,6 +95,11 @@ public abstract class AbstractNodeVisitor<T> implements NodeVisitor<T> {
     }
 
     @Override
+    public T visitArrayPatternNode(ArrayPatternNode node) {
+        return defaultVisit(node);
+    }
+
+    @Override
     public T visitAttrAssignNode(AttrAssignNode node) {
         return defaultVisit(node);
     }
@@ -260,6 +265,11 @@ public abstract class AbstractNodeVisitor<T> implements NodeVisitor<T> {
     }
 
     @Override
+    public T visitFindPatternNode(FindPatternNode node) {
+        return defaultVisit(node);
+    }
+
+    @Override
     public T visitFixnumNode(FixnumNode node) {
         return defaultVisit(node);
     }
@@ -291,6 +301,16 @@ public abstract class AbstractNodeVisitor<T> implements NodeVisitor<T> {
 
     @Override
     public T visitHashNode(HashNode node) {
+        return defaultVisit(node);
+    }
+
+    @Override
+    public T visitHashPatternNode(HashPatternNode node) {
+        return defaultVisit(node);
+    }
+
+    @Override
+    public T visitInNode(InNode node) {
         return defaultVisit(node);
     }
 
@@ -380,6 +400,11 @@ public abstract class AbstractNodeVisitor<T> implements NodeVisitor<T> {
     }
 
     @Override
+    public T visitNilRestArgNode(NilRestArgNode node) {
+        return defaultVisit(node);
+    }
+
+    @Override
     public T visitNextNode(NextNode node) {
         return defaultVisit(node);
     }
@@ -391,6 +416,11 @@ public abstract class AbstractNodeVisitor<T> implements NodeVisitor<T> {
 
     @Override
     public T visitNthRefNode(NthRefNode node) {
+        return defaultVisit(node);
+    }
+
+    @Override
+    public T visitOperatorCallNode(OperatorCallNode node) {
         return defaultVisit(node);
     }
 
@@ -426,6 +456,11 @@ public abstract class AbstractNodeVisitor<T> implements NodeVisitor<T> {
 
     @Override
     public T visitOrNode(OrNode node) {
+        return defaultVisit(node);
+    }
+
+    @Override
+    public T visitPatternCaseNode(PatternCaseNode node) {
         return defaultVisit(node);
     }
 

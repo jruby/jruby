@@ -32,7 +32,9 @@ package org.jruby.runtime.marshal;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.jruby.Ruby;
 import org.jruby.RubySymbol;
@@ -40,36 +42,36 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class UnmarshalCache {
     private final Ruby runtime;
-    private final List<IRubyObject> links = new ArrayList<IRubyObject>();
-    private final List<RubySymbol> symbols = new ArrayList<RubySymbol>();
+    private final List<IRubyObject> links = new ArrayList<>();
+    private final List<RubySymbol> symbols = new ArrayList<>();
+    private final Set<IRubyObject> partials = new HashSet<>();
 
     public UnmarshalCache(Ruby runtime) {
         this.runtime = runtime;
     }
 
-    public void register(IRubyObject value) {
-        selectCache(value).add(value);
+    public boolean isPartialObject(IRubyObject value) {
+        return partials.contains(value.id());
     }
 
-    private List selectCache(IRubyObject value) {
-        return (value instanceof RubySymbol) ? symbols : links;
+    public void markAsPartialObject(IRubyObject value) {
+        partials.add(value.id());
     }
 
-    public boolean isLinkType(int c) {
-        return c == ';' || c == '@';
+    public void noLongerPartial(IRubyObject value) {
+        partials.remove(value.id());
     }
 
-    public IRubyObject readLink(UnmarshalStream input, int type) throws IOException {
-        int i = input.unmarshalInt();
-        if (type == '@') {
-            return linkedByIndex(i);
+    public IRubyObject readSymbolLink(UnmarshalStream input) throws IOException {
+        try {
+            return symbols.get(input.unmarshalInt());
+        } catch (IndexOutOfBoundsException e) {
+            throw runtime.newTypeError("bad symbol");
         }
-
-        assert type == ';';
-        return symbolByIndex(i);
     }
 
-    private IRubyObject linkedByIndex(int index) {
+    public IRubyObject readDataLink(UnmarshalStream input) throws IOException {
+        int index = input.unmarshalInt();
         try {
             return links.get(index);
         } catch (IndexOutOfBoundsException e) {
@@ -77,11 +79,33 @@ public class UnmarshalCache {
         }
     }
 
-    private RubySymbol symbolByIndex(int index) {
-        try {
-            return symbols.get(index);
-        } catch (IndexOutOfBoundsException e) {
-            throw runtime.newTypeError("bad symbol");
-        }
+    public void registerDataLink(IRubyObject value) {
+        links.add(value);
+    }
+
+    public void registerSymbolLink(RubySymbol value) {
+        symbols.add(value);
+    }
+
+    // Deprecated: Use readSymbolLink OR readDataLink directly
+    @Deprecated
+    public IRubyObject readLink(UnmarshalStream input, int type) throws IOException {
+        return type == '@' ? readDataLink(input) : readSymbolLink(input);
+    }
+
+    // Deprecated: Use registerDataLink or registerSymbolLink directly.
+    @Deprecated
+    public void register(IRubyObject value) {
+        selectCache(value).add(value);
+    }
+
+    @Deprecated
+    public boolean isLinkType(int c) {
+        return c == ';' || c == '@';
+    }
+
+    @Deprecated
+    private List selectCache(IRubyObject value) {
+        return (value instanceof RubySymbol) ? symbols : links;
     }
 }

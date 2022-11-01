@@ -111,4 +111,27 @@ describe "FFI::Platform.unix?" do
       expect(FFI::Platform.unix?).to be true
     end
   end
+
+  describe "FFI::Platform::LITTLE_ENDIAN" do
+    it "returns 1234" do
+      expect(FFI::Platform::LITTLE_ENDIAN).to eq(1234)
+    end
+  end
+
+  describe "FFI::Platform::BIG_ENDIAN" do
+    it "returns 4321" do
+      expect(FFI::Platform::BIG_ENDIAN).to eq(4321)
+    end
+  end
+
+  describe "FFI::Platform::BYTE_ORDER" do
+    it "returns the current byte order" do
+      if [1234].pack("I") == [1234].pack("N")
+        order = FFI::Platform::BIG_ENDIAN
+      else
+        order = FFI::Platform::LITTLE_ENDIAN
+      end
+      expect(FFI::Platform::BYTE_ORDER).to eq(order)
+    end
+  end
 end

@@ -44,7 +44,7 @@ rvm use system
 
 After building lib/jruby.jar, JRuby can be run with the `bin/jruby` executable. If the `jruby-launcher` gem installed successfully, this will be a native
 executable for your platform; otherwise, it will be a copy of the
-`bin/jruby.bash` bash script.
+`bin/jruby.sh` shell script.
 
 RubyGems is installed by default, and available in `bin/gem`. It will
 attempt to locate the `jruby` executable using `/usr/bin/env`, so you
@@ -194,7 +194,7 @@ mvn -Pdist -Dinvoker.skip=false
 
 #### Just Like CI
 
-JRuby runs CI tests on TravisCI. See [.travis.yml](https://github.com/jruby/jruby/blob/master/.travis.yml).
+JRuby runs CI tests on GitHub CI. See [.github/workflows](https://github.com/jruby/jruby/blob/master/.github/workflows).
 
 #### Maven integration tests - -Pjruby-complete or -Pmain
 

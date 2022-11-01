@@ -33,14 +33,13 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Captures END statements (END {...})
  */
 public class PostExeNode extends IterNode {
-    public PostExeNode(ISourcePosition position, Node body, int endLine) {
-        super(position, new ArgsNode(position, null, null, null, null, null, null, null), body, null, endLine);
+    public PostExeNode(int line, Node body, int endLine) {
+        super(line, new ArgsNode(line, null, null, null, null, null, null, null), body, null, endLine);
     }
 
     public NodeType getNodeType() {

@@ -11,7 +11,7 @@ describe "The Ruby methods representing Java static methods" do
   it "should be inspectable" do
     method = MethodNames.instance_method("lowercase2")
     
-    expect(method.inspect).to eq("#<UnboundMethod: Java::Java_integrationFixtures::MethodNames#lowercase2>")
+    expect(method.inspect).to eq("#<UnboundMethod: Java::Java_integrationFixtures::MethodNames#lowercase2()>")
   end
 end
 
@@ -24,7 +24,7 @@ describe "The Ruby methods representing Java instance methods" do
   it "should be inspectable" do
     method = MethodNames.instance_method("lowercase2")
     
-    expect(method.inspect).to eq("#<UnboundMethod: Java::Java_integrationFixtures::MethodNames#lowercase2>")
+    expect(method.inspect).to eq("#<UnboundMethod: Java::Java_integrationFixtures::MethodNames#lowercase2()>")
   end
 end
 
@@ -37,6 +37,6 @@ describe "The 'new' method for an imported Java type" do
   it "should be inspectable" do
     method = MethodNames.method("new")
     
-    expect(method.inspect).to eq("#<Method: Java::Java_integrationFixtures::MethodNames(ConcreteJavaProxy).new>")
+    expect(method.inspect).to eq("#<Method: Java::Java_integrationFixtures::MethodNames(ConcreteJavaProxy).new()>")
   end
 end

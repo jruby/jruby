@@ -42,7 +42,7 @@ public class RubyNoMemoryError extends RubyException {
     }
 
     static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass NoMemoryErrorClass = runtime.defineClass("NoMemoryError", exceptionClass, (r, klass) -> new RubyNoMemoryError(runtime, klass));
+        RubyClass NoMemoryErrorClass = runtime.defineClass("NoMemoryError", exceptionClass, RubyNoMemoryError::new);
 
         return NoMemoryErrorClass;
     }

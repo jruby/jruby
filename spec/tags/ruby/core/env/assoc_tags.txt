@@ -1,2 +1,0 @@
-fails:ENV.assoc returns the key element coerced with #to_str
-fails:ENV.assoc raises TypeError if the argument is not a String and does not respond to #to_str

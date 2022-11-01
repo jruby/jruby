@@ -40,7 +40,6 @@ package org.jruby.ast;
  *  the callable node during construction.
  */
 public interface BlockAcceptingNode {
-    public Node getIterNode();
-    
-    public Node setIterNode(Node iterNode);
+    Node getIterNode();
+    Node setIterNode(Node iterNode);
 }

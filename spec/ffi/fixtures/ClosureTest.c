@@ -6,12 +6,37 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdarg.h>
 #ifndef _WIN32
 # include <pthread.h>
 #else
 # include <windows.h>
 # include <process.h>
 #endif
+
+double testClosureVrDva(double d, ...) {
+    va_list args;
+    double (*closure)(void);
+
+    va_start(args, d);
+    closure = va_arg(args, double (*)(void));
+    va_end(args);
+
+    return d + closure();
+}
+
+long testClosureVrILva(int i, long l, ...) {
+    va_list args;
+    int (*cl1)(int);
+    long (*cl2)(long);
+
+    va_start(args, l);
+    cl1 = va_arg(args, int (*)(int));
+    cl2 = va_arg(args, long (*)(long));
+    va_end(args);
+
+    return cl1(i) + cl2(l);
+}
 
 #define R(T, rtype) rtype testClosureVr##T(rtype (*closure)(void)) { \
     return closure != NULL ? (*closure)() : (rtype) 0; \

@@ -14,7 +14,7 @@ require_relative "../helper"
 class TestCSVParseGeneral < Test::Unit::TestCase
   extend DifferentOFS
 
-  BIG_DATA = "123456789\n" * 1024
+  BIG_DATA = "123456789\n" * 512
 
   def test_mastering_regex_example
     ex = %Q{Ten Thousand,10000, 2710 ,,"10,000","It's ""10 Grand"", baby",10K}
@@ -233,11 +233,25 @@ line,5,jkl
     assert_equal([["a"]], CSV.parse("a\r\n"))
   end
 
+  def test_seeked_string_io
+    input_with_bom = StringIO.new("\ufeffあ,い,う\r\na,b,c\r\n")
+    input_with_bom.read(3)
+    assert_equal([
+                   ["あ", "い", "う"],
+                   ["a", "b", "c"],
+                 ],
+                 CSV.new(input_with_bom).each.to_a)
+  end
+
   private
-  def assert_parse_errors_out(*args)
+  def assert_parse_errors_out(data, **options)
     assert_raise(CSV::MalformedCSVError) do
-      Timeout.timeout(0.2) do
-        CSV.parse(*args)
+      timeout = 0.2
+      if defined?(RubyVM::MJIT.enabled?) and RubyVM::MJIT.enabled?
+        timeout = 5  # for --jit-wait
+      end
+      Timeout.timeout(timeout) do
+        CSV.parse(data, **options)
         fail("Parse didn't error out")
       end
     end

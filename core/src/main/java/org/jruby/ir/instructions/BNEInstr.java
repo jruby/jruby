@@ -2,6 +2,7 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
@@ -28,6 +29,16 @@ public class BNEInstr extends TwoOperandBranchInstr implements FixedArityInstr {
     @Override
     public Instr clone(CloneInfo ii) {
         return new BNEInstr(ii.getRenamedLabel(getJumpTarget()), getArg1().cloneForInlining(ii), getArg2().cloneForInlining(ii));
+    }
+
+    // FIXME: Add !op_equal logic here for various immutable literal types
+    @Override
+    public Instr simplifyBranch(FullInterpreterContext fic) {
+        if (getArg1().equals(getArg2())) {
+            return NopInstr.NOP;
+        } else {
+            return super.simplifyBranch(fic);
+        }
     }
 
     public static BNEInstr decode(IRReaderDecoder d) {

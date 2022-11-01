@@ -2,6 +2,8 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.interpreter.FullInterpreterContext;
+import org.jruby.ir.operands.ImmutableLiteral;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
@@ -20,6 +22,17 @@ public class BUndefInstr extends OneOperandBranchInstr  implements FixedArityIns
     @Override
     public Instr clone(CloneInfo ii) {
         return new BUndefInstr(ii.getRenamedLabel(getJumpTarget()), getArg1().cloneForInlining(ii));
+    }
+
+    @Override
+    public Instr simplifyBranch(FullInterpreterContext fic) {
+        if (getArg1().equals(UndefinedValue.UNDEFINED)) {
+            return new JumpInstr(getJumpTarget());
+        } else if (getArg1() instanceof ImmutableLiteral) {
+            return NopInstr.NOP;
+        } else {
+            return super.simplifyBranch(fic);
+        }
     }
 
     public static BUndefInstr decode(IRReaderDecoder d) {

@@ -34,6 +34,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyMarshal;
@@ -43,11 +44,11 @@ import org.jruby.RubyThread;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
+import org.jruby.util.TypeConverter;
 
 /*
  * Written by Doug Lea with assistance from members of JCP JSR-166
@@ -244,25 +245,46 @@ public class Queue extends RubyObject implements DataType {
         last = head = new Node(null);
     }
 
-    public static void setup(Ruby runtime) {
-        RubyClass cQueue = runtime.getThread().defineClassUnder("Queue", runtime.getObject(), new ObjectAllocator() {
+    public static RubyClass setup(RubyClass threadClass, RubyClass objectClass) {
+        RubyClass cQueue = threadClass.defineClassUnder("Queue", objectClass, Queue::new);
 
-            public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-                return new Queue(runtime, klass);
-            }
-        });
         cQueue.undefineMethod("initialize_copy");
         cQueue.setReifiedClass(Queue.class);
         cQueue.defineAnnotatedMethods(Queue.class);
-        runtime.getObject().setConstant("Queue", cQueue);
 
-        RubyClass cClosedQueueError = cQueue.defineClassUnder("ClosedQueueError", runtime.getStopIteration(), runtime.getStopIteration().getAllocator());
-        runtime.getObject().setConstant("ClosedQueueError", cClosedQueueError);
+        objectClass.setConstant("Queue", cQueue);
+
+        return cQueue;
+    }
+
+    public static RubyClass setupError(RubyClass cQueue, RubyClass stopIteration, RubyClass objectClass) {
+        RubyClass cClosedQueueError = cQueue.defineClassUnder("ClosedQueueError", stopIteration, stopIteration.getAllocator());
+
+        objectClass.setConstant("ClosedQueueError", cClosedQueueError);
+
+        return cClosedQueueError;
     }
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context) {
         this.capacity = Integer.MAX_VALUE;
+        return this;
+    }
+
+    @JRubyMethod(visibility = Visibility.PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject items) {
+        this.capacity = Integer.MAX_VALUE;
+        Ruby runtime = context.runtime;
+        IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, items, runtime.getArray(), context.sites.TypeConverter.to_a_checked);
+        if (!tmp.isNil()) {
+            RubyArray array = (RubyArray)tmp;
+            for (int i = 0; i < array.getLength(); i++) {
+                push(context, array.eltOk(i));
+            }
+        } else {
+            throw runtime.newTypeError("can't convert " + items.getMetaClass() + " into Array");
+        }
+
         return this;
     }
 
@@ -338,7 +360,7 @@ public class Queue extends RubyObject implements DataType {
     public IRubyObject pop(ThreadContext context) {
         initializedCheck();
         try {
-            return context.getThread().executeTask(context, this, BLOCKING_POP_TASK);
+            return context.getThread().executeTaskBlocking(context, this, BLOCKING_POP_TASK);
         } catch (InterruptedException ie) {
             // FIXME: is this the right thing to do?
             throw createInterruptedError(context, "pop");
@@ -346,10 +368,19 @@ public class Queue extends RubyObject implements DataType {
     }
 
     @JRubyMethod(name = {"pop", "deq", "shift"})
-    public IRubyObject pop(ThreadContext context, IRubyObject arg0) {
+    public IRubyObject pop(ThreadContext context, IRubyObject nonblock) {
         initializedCheck();
         try {
-            return context.getThread().executeTask(context, this, !arg0.isTrue() ? BLOCKING_POP_TASK : NONBLOCKING_POP_TASK);
+            if (nonblock.isTrue()) {
+                IRubyObject result = pollInternal();
+                if (result == null) {
+                    throw context.runtime.newThreadError("queue empty");
+                } else {
+                    return result;
+                }
+            } else {
+                return context.getThread().executeTaskBlocking(context, this, BLOCKING_POP_TASK);
+            }
         } catch (InterruptedException ie) {
             throw createInterruptedError(context, "pop");
         }
@@ -580,20 +611,13 @@ public class Queue extends RubyObject implements DataType {
 
     private static final RubyThread.Task<Queue, IRubyObject> BLOCKING_POP_TASK = new RubyThread.Task<Queue, IRubyObject>() {
         public IRubyObject run(ThreadContext context, Queue queue) throws InterruptedException {
-            return queue.takeInternal(context);
-        }
-        public void wakeup(RubyThread thread, Queue queue) {
-            thread.getNativeThread().interrupt();
-        }
-    };
-
-    private static final RubyThread.Task<Queue, IRubyObject> NONBLOCKING_POP_TASK = new RubyThread.Task<Queue, IRubyObject>() {
-        public IRubyObject run(ThreadContext context, Queue queue) throws InterruptedException {
-            IRubyObject result = queue.pollInternal();
-            if (result == null) {
-                throw context.runtime.newThreadError("queue empty");
-            } else {
-                return result;
+            while (true) {
+                try {
+                    return queue.takeInternal(context);
+                } catch (InterruptedException ie) {
+                    // only thread event can interrupt us
+                    context.blockingThreadPoll();
+                }
             }
         }
         public void wakeup(RubyThread thread, Queue queue) {
@@ -602,7 +626,7 @@ public class Queue extends RubyObject implements DataType {
     };
 
     public IRubyObject raiseClosedError(ThreadContext context) {
-        throw context.runtime.newRaiseException(context.runtime.getClass("ClosedQueueError"), "queue closed");
+        throw context.runtime.newRaiseException(context.runtime.getClosedQueueError(), "queue closed");
     }
 
     protected RaiseException createInterruptedError(ThreadContext context, String methodName) {

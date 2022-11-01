@@ -55,6 +55,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class RubyGC {
     private static volatile boolean gcDisabled = false;
     private static volatile boolean stress = false;
+    private static volatile boolean autoCompact = false;
 
     public static RubyModule createGCModule(Ruby runtime) {
         RubyModule result = runtime.defineModule("GC");
@@ -64,13 +65,13 @@ public class RubyGC {
         return result;        
     }
 
-    @JRubyMethod(module = true, visibility = PRIVATE)
-    public static IRubyObject start(ThreadContext context, IRubyObject recv) {
+    @JRubyMethod(module = true, visibility = PRIVATE, optional = 1)
+    public static IRubyObject start(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return context.nil;
     }
 
-    @JRubyMethod
-    public static IRubyObject garbage_collect(ThreadContext context, IRubyObject recv) {
+    @JRubyMethod(optional = 1)
+    public static IRubyObject garbage_collect(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return context.nil;
     }
 
@@ -113,6 +114,29 @@ public class RubyGC {
         } catch (Throwable t) {
             return RubyFixnum.minus_one(context.runtime);
         }
+    }
+
+    @JRubyMethod(module = true, visibility = PRIVATE)
+    public static IRubyObject auto_compact(ThreadContext context, IRubyObject recv) {
+        emptyImplementationWarning(context.runtime, ID.GC_ENABLE_UNIMPLEMENTED, "GC.auto_compact");
+
+        return RubyBoolean.newBoolean(context, autoCompact);
+    }
+
+    @JRubyMethod(name = "auto_compact=", module = true, visibility = PRIVATE)
+    public static IRubyObject auto_compact_set(ThreadContext context, IRubyObject recv, IRubyObject autoCompact) {
+        emptyImplementationWarning(context.runtime, ID.GC_ENABLE_UNIMPLEMENTED, "GC.auto_compact=");
+
+        RubyGC.autoCompact = autoCompact.isTrue();
+
+        return autoCompact;
+    }
+
+    @JRubyMethod(module = true, visibility = PRIVATE)
+    public static IRubyObject compact(ThreadContext context, IRubyObject recv) {
+        emptyImplementationWarning(context.runtime, ID.GC_ENABLE_UNIMPLEMENTED, "GC.compact");
+
+        return context.nil;
     }
 
     private static void emptyImplementationWarning(Ruby runtime, ID id, String name) {

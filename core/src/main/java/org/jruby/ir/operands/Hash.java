@@ -5,12 +5,14 @@ import org.jruby.RubyHash;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.KeyValuePair;
+import org.jruby.util.TypeConverter;
 
 import java.util.Arrays;
 import java.util.List;
@@ -23,20 +25,18 @@ import java.util.Map;
 // that actually build the hash
 public class Hash extends Operand {
     final public KeyValuePair<Operand, Operand>[] pairs;
+    /** Is this a literal Hash */
+    final public boolean literal;
 
-    // Is this a hash used to represent a keyword hash to be setup for ZSuper?
-    // SSS FIXME: Quick hack for now - this should probably be done with an overloaded operand.
-    final public boolean isKWArgsHash;
-
-    public Hash(List<KeyValuePair<Operand, Operand>> pairs, boolean isKWArgsHash) {
-        this(pairs.toArray(new KeyValuePair[pairs.size()]), isKWArgsHash);
+    public Hash(List<KeyValuePair<Operand, Operand>> pairs, boolean literal) {
+        this(pairs.toArray(new KeyValuePair[pairs.size()]), literal);
     }
 
-    protected Hash(KeyValuePair<Operand, Operand>[] pairs, boolean isKWArgsHash) {
+    protected Hash(KeyValuePair<Operand, Operand>[] pairs, boolean literal) {
         super();
 
         this.pairs = pairs;
-        this.isKWArgsHash = isKWArgsHash;
+        this.literal = literal;
     }
 
     @Override
@@ -45,7 +45,7 @@ public class Hash extends Operand {
     }
 
     public Hash(List<KeyValuePair<Operand, Operand>> pairs) {
-        this(pairs, false);
+        this(pairs, true);
     }
 
     public boolean isBlank() {
@@ -71,7 +71,7 @@ public class Hash extends Operand {
                                 pair.getValue().getSimplifiedOperand(valueMap, force)))
                 .toArray(n -> new KeyValuePair[n]);
 
-        return new Hash(newPairs, isKWArgsHash);
+        return new Hash(newPairs, literal);
     }
 
     /** Append the list of variables used in this operand to the input list */
@@ -91,7 +91,7 @@ public class Hash extends Operand {
                                 ((DepthCloneable) pair.getValue()).cloneForDepth(newDepth)))
                 .toArray(n -> new KeyValuePair[n]);
 
-        return new Hash(newPairs, isKWArgsHash);
+        return new Hash(newPairs, literal);
     }
 
     @Override
@@ -106,7 +106,11 @@ public class Hash extends Operand {
                                 pair.getValue().cloneForInlining(ii)))
                 .toArray(n -> new KeyValuePair[n]);
 
-        return new Hash(newPairs, isKWArgsHash);
+        return new Hash(newPairs, literal);
+    }
+
+    public boolean isKeywordRest() {
+        return pairs.length > 0 && pairs[0].getKey().equals(Symbol.KW_REST_ARG_DUMMY);
     }
 
     @Override
@@ -116,14 +120,17 @@ public class Hash extends Operand {
         KeyValuePair<Operand, Operand>[] pairs = this.pairs;
         int index = 0;
 
-        if (isKWArgsHash && pairs[0].getKey().equals(Symbol.KW_REST_ARG_DUMMY)) {
+        if (isKeywordRest()) {
             // Dup the rest args hash and use that as the basis for inserting the non-rest args
-            hash = ((RubyHash) pairs[0].getValue().retrieve(context, self, currScope, currDynScope, temp)).dupFast(context);
+            IRubyObject rest = (IRubyObject) pairs[0].getValue().retrieve(context, self, currScope, currDynScope, temp);
+            TypeConverter.checkType(context, rest, context.runtime.getHash());
+            hash = ((RubyHash) rest).dupFast(context);
             // Skip the first pair
             index++;
         } else {
             hash = RubyHash.newHash(runtime);
         }
+
 
         for (int i = index; i < pairs.length; i++) {
             KeyValuePair<Operand, Operand> pair = pairs[i];
@@ -133,6 +140,9 @@ public class Hash extends Operand {
             hash.fastASetCheckString(runtime, key, value);
         }
 
+        // We mask this after we populate the hash just in case those retrieves are something which can transfer
+        // control to another call (which would reset callInfo if we set this above).
+        if (isKeywordRest() || !literal) IRRuntimeHelpers.markKeywordOnCallInfo(context);
         return hash;
     }
 
@@ -149,7 +159,7 @@ public class Hash extends Operand {
             e.encode(pair.getKey());
             e.encode(pair.getValue());
         }
-        e.encode(isKWArgsHash);
+        e.encode(literal);
     }
 
     public static Hash decode(IRReaderDecoder d) {
@@ -177,6 +187,7 @@ public class Hash extends Operand {
             }
         }
         builder.append("}");
+        builder.append("(" +  (literal ? "literal" : "keyword") + ")");
         return builder.toString();
     }
 

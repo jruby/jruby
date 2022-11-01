@@ -51,7 +51,7 @@ public class RubyLocalJumpError extends RubyStandardError {
         }
     }
     
-    private static final ObjectAllocator LOCALJUMPERROR_ALLOCATOR = (runtime, klass) -> new RubyLocalJumpError(runtime, klass);
+    private static final ObjectAllocator LOCALJUMPERROR_ALLOCATOR = RubyLocalJumpError::new;
 
     public static RubyClass define(Ruby runtime, RubyClass standardErrorClass) {
         RubyClass nameErrorClass = runtime.defineClass("LocalJumpError", standardErrorClass, LOCALJUMPERROR_ALLOCATOR);

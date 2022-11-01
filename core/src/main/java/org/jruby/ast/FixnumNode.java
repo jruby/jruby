@@ -33,10 +33,12 @@
 package org.jruby.ast;
 
 import java.util.List;
+import java.util.Objects;
 
+import org.jruby.Ruby;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /** 
  * Represents an integer literal.
@@ -44,8 +46,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class FixnumNode extends NumericNode implements ILiteralNode, SideEffectFree {
     private long value;
 
-    public FixnumNode(ISourcePosition position, long value) {
-        super(position);
+    public FixnumNode(int line, long value) {
+        super(line);
         this.value = value;
     }
 
@@ -59,7 +61,7 @@ public class FixnumNode extends NumericNode implements ILiteralNode, SideEffectF
 
     @Override
     public NumericNode negate() {
-        return new FixnumNode(getPosition(), -value);
+        return new FixnumNode(getLine(), -value);
     }
 
     /**
@@ -81,5 +83,23 @@ public class FixnumNode extends NumericNode implements ILiteralNode, SideEffectF
     @Override
     public String toStringExtraInfo() {
         return "long: " + value;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        FixnumNode that = (FixnumNode) o;
+        return value == that.value;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(value);
+    }
+
+    @Override
+    public IRubyObject literalValue(Ruby runtime) {
+        return runtime.newFixnum(value);
     }
 }

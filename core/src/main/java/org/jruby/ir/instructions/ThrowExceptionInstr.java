@@ -15,8 +15,6 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-// Right now, this is primarily used by the JRuby implementation.
-// Ruby exceptions go through RubyKernel.raise (or RubyThread.raise).
 public class ThrowExceptionInstr extends OneOperandInstr implements FixedArityInstr {
     public ThrowExceptionInstr(Operand exception) {
         super(Operation.THROW, exception);
@@ -56,7 +54,7 @@ public class ThrowExceptionInstr extends OneOperandInstr implements FixedArityIn
         }
 
         // should never get here
-        throw new RuntimeException("Control shouldn't have reached here in ThrowExceptionInstr.  excObj is: " + excObj);
+        throw new RuntimeException("Control shouldn't have reached here in ThrowEx");
     }
 
     @Override

@@ -25,11 +25,21 @@ namespace :test do
   desc "Compile test code"
   task :compile do
     mkdir_p "test/target/test-classes"
+    mkdir_p "test/target/test-classes-isolated/java_integration/fixtures/isolated"
+    mkdir_p "test/target/test-interfaces-isolated/java_integration/fixtures/isolated"
+
     classpath = %w[lib/jruby.jar test/target/junit.jar test/target/annotation-api.jar].join(File::PATH_SEPARATOR)
     # try detecting javac - so we use the same Java versions as we're running (JAVA_HOME) with :
     java_home = [ ENV_JAVA['java.home'], File.join(ENV_JAVA['java.home'], '..') ] # in case of jdk/jre
     javac = java_home.map { |home| File.expand_path('bin/javac', home) }.find { |javac| File.exist?(javac) } || 'javac'
     sh "#{javac} -cp #{classpath} -d test/target/test-classes #{Dir['spec/java_integration/fixtures/**/*.java'].to_a.join(' ')}"
+    # move the objects that need to be in separate class loaders
+    mv "test/target/test-classes/java_integration/fixtures/isolated/classes",
+       "test/target/test-classes-isolated/java_integration/fixtures/isolated",
+       force: true
+    mv "test/target/test-classes/java_integration/fixtures/isolated/interfaces",
+       "test/target/test-interfaces-isolated/java_integration/fixtures/isolated",
+       force: true
   end
 
   short_tests = ['jruby', 'mri']
@@ -89,8 +99,13 @@ namespace :test do
     }
 
     mri_suites = [:core, :extra, :stdlib]
+    mri_suites = {
+      core: "-Xbacktrace.style=mri -Xdebug.fullTrace",
+      extra: "--disable-gems -Xbacktrace.style=mri -Xdebug.fullTrace",
+      stdlib: "-Xbacktrace.style=mri -Xdebug.fullTrace",
+    }
 
-    mri_suites.each do |suite|
+    mri_suites.each do |suite, extra_jruby_opts|
       files = File.readlines("test/mri.#{suite}.index").grep(/^[^#]\w+/).map(&:chomp).join(' ')
 
       namespace suite do
@@ -98,8 +113,8 @@ namespace :test do
         jruby_opts.each do |task, opts|
 
           task task do
-            ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} --disable-gems -Xbacktrace.style=mri -Xdebug.fullTrace #{opts}"
-            ruby "test/mri/runner.rb -j#{AVAILABLE_PROCESSORS} #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{files}"
+            ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} #{extra_jruby_opts} #{opts}"
+            ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{files}"
           end
         end
       end

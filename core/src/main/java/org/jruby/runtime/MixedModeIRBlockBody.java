@@ -112,9 +112,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
     }
 
     @Override
-    protected IRubyObject commonYieldPath(ThreadContext context, Block block, Block.Type type, IRubyObject[] args, IRubyObject self, Block blockArg) {
-        if (callCount >= 0) promoteToFullBuild(context);
-
+    protected IRubyObject commonYieldPath(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
         InterpreterContext ic = ensureInstrsReady();
 
         Binding binding = block.getBinding();
@@ -139,6 +137,9 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
         }
         finally {
             postYield(context, ic, binding, oldVis, prevFrame);
+
+            // trigger JIT on the trailing edge, so we make a best effort to not interpret again after jitting
+            if (callCount >= 0) promoteToFullBuild(context);
         }
     }
 

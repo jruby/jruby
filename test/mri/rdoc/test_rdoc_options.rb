@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-require 'minitest_helper'
+require_relative 'helper'
 
 class TestRDocOptions < RDoc::TestCase
 
@@ -17,10 +17,10 @@ class TestRDocOptions < RDoc::TestCase
   end
 
   def test_check_files
-    skip "assumes UNIX permission model" if /mswin|mingw/ =~ RUBY_PLATFORM
-    skip "assumes that euid is not root" if Process.euid == 0
+    omit "assumes UNIX permission model" if /mswin|mingw/ =~ RUBY_PLATFORM
+    omit "assumes that euid is not root" if Process.euid == 0
 
-    out, err = capture_io do
+    out, err = capture_output do
       temp_dir do
         FileUtils.touch 'unreadable'
         FileUtils.chmod 0, 'unreadable'
@@ -40,7 +40,7 @@ class TestRDocOptions < RDoc::TestCase
   def test_check_files_warn
     @options.verbosity = 2
 
-    out, err = verbose_capture_io do
+    out, err = verbose_capture_output do
       @options.files = %w[nonexistent]
 
       @options.check_files
@@ -66,7 +66,7 @@ class TestRDocOptions < RDoc::TestCase
     expected = {
       'charset'              => 'UTF-8',
       'encoding'             => encoding,
-      'exclude'              => [],
+      'exclude'              => %w[~\z \.orig\z \.rej\z \.bak\z \.gemspec\z],
       'hyperlink_all'        => false,
       'line_numbers'         => false,
       'locale'               => nil,
@@ -145,7 +145,7 @@ class TestRDocOptions < RDoc::TestCase
 
     @options.encoding = Encoding::IBM437
 
-    options = YAML.load YAML.dump @options
+    options = YAML.safe_load(YAML.dump(@options), permitted_classes: [RDoc::Options, Symbol])
 
     assert_equal Encoding::IBM437, options.encoding
   end
@@ -161,7 +161,7 @@ rdoc_include:
 - /etc
     YAML
 
-    options = YAML.load yaml
+    options = YAML.safe_load(yaml, permitted_classes: [RDoc::Options, Symbol])
 
     assert_empty options.rdoc_include
     assert_empty options.static_path
@@ -218,7 +218,7 @@ rdoc_include:
   end
 
   def test_parse_dash_p
-    out, err = capture_io do
+    out, err = capture_output do
       @options.parse %w[-p]
     end
 
@@ -230,7 +230,7 @@ rdoc_include:
   end
 
   def test_parse_dash_p_files
-    out, err = capture_io do
+    out, err = capture_output do
       @options.parse ['-p', File.expand_path(__FILE__)]
     end
 
@@ -253,7 +253,7 @@ rdoc_include:
     dep_hash = RDoc::Options::DEPRECATED
     options = dep_hash.keys.sort
 
-    out, err = capture_io do
+    out, err = capture_output do
       @options.parse options
     end
 
@@ -278,7 +278,7 @@ rdoc_include:
   end
 
   def test_parse_encoding_invalid
-    out, err = capture_io do
+    out, err = capture_output do
       @options.parse %w[--encoding invalid]
     end
 
@@ -288,7 +288,7 @@ rdoc_include:
   end
 
   def test_parse_formatter
-    e = assert_raises OptionParser::InvalidOption do
+    e = assert_raise OptionParser::InvalidOption do
       @options.parse %w[--format darkfish --format ri]
     end
 
@@ -296,8 +296,22 @@ rdoc_include:
                  e.message
   end
 
+  def test_parse_force_update
+    @options.parse %w[--force-update]
+
+    assert @options.force_update
+
+    @options.parse %w[--no-force-update]
+
+    assert !@options.force_update
+
+    @options.parse %w[-U]
+
+    assert @options.force_update
+  end
+
   def test_parse_formatter_ri
-    e = assert_raises OptionParser::InvalidOption do
+    e = assert_raise OptionParser::InvalidOption do
       @options.parse %w[--format darkfish --ri]
     end
 
@@ -306,7 +320,7 @@ rdoc_include:
 
     @options = RDoc::Options.new
 
-    e = assert_raises OptionParser::InvalidOption do
+    e = assert_raise OptionParser::InvalidOption do
       @options.parse %w[--format darkfish -r]
     end
 
@@ -315,7 +329,7 @@ rdoc_include:
   end
 
   def test_parse_formatter_ri_site
-    e = assert_raises OptionParser::InvalidOption do
+    e = assert_raise OptionParser::InvalidOption do
       @options.parse %w[--format darkfish --ri-site]
     end
 
@@ -324,7 +338,7 @@ rdoc_include:
 
     @options = RDoc::Options.new
 
-    e = assert_raises OptionParser::InvalidOption do
+    e = assert_raise OptionParser::InvalidOption do
       @options.parse %w[--format darkfish -R]
     end
 
@@ -333,7 +347,7 @@ rdoc_include:
   end
 
   def test_parse_h
-    out, = capture_io do
+    out, = capture_output do
       begin
         @options.parse %w[-h]
       rescue SystemExit
@@ -345,7 +359,7 @@ rdoc_include:
   end
 
   def test_parse_help
-    out, = capture_io do
+    out, = capture_output do
       begin
         @options.parse %w[--help]
       rescue SystemExit
@@ -365,7 +379,7 @@ rdoc_include:
       end
     end
 
-    out, = capture_io do
+    out, = capture_output do
       begin
         @options.parse %w[--help]
       rescue SystemExit
@@ -392,7 +406,7 @@ rdoc_include:
   end
 
   def test_parse_ignore_invalid
-    out, err = capture_io do
+    out, err = capture_output do
       @options.parse %w[--ignore-invalid --bogus]
     end
 
@@ -403,7 +417,7 @@ rdoc_include:
   end
 
   def test_parse_ignore_invalid_default
-    out, err = capture_io do
+    out, err = capture_output do
       @options.parse %w[--bogus --main BLAH]
     end
 
@@ -416,8 +430,8 @@ rdoc_include:
   end
 
   def test_parse_ignore_invalid_no
-    out, err = capture_io do
-      assert_raises SystemExit do
+    out, err = capture_output do
+      assert_raise SystemExit do
         @options.parse %w[--no-ignore-invalid --bogus=arg --bobogus --visibility=extended]
       end
     end
@@ -429,8 +443,8 @@ rdoc_include:
   end
 
   def test_parse_ignore_invalid_no_quiet
-    out, err = capture_io do
-      assert_raises SystemExit do
+    out, err = capture_output do
+      assert_raise SystemExit do
         @options.parse %w[--quiet --no-ignore-invalid --bogus=arg --bobogus --visibility=extended]
       end
     end
@@ -442,7 +456,7 @@ rdoc_include:
   end
 
   def test_ignore_needless_arg
-    out, err = capture_io do
+    out, err = capture_output do
       @options.parse %w[--ri=foo]
     end
 
@@ -452,7 +466,7 @@ rdoc_include:
   end
 
   def test_ignore_missing_arg
-    out, err = capture_io do
+    out, err = capture_output do
       @options.parse %w[--copy-files]
     end
 
@@ -462,7 +476,7 @@ rdoc_include:
   end
 
   def test_parse_main
-    out, err = capture_io do
+    out, err = capture_output do
       @options.parse %w[--main MAIN]
     end
 
@@ -473,7 +487,7 @@ rdoc_include:
   end
 
   def test_parse_markup
-    out, err = capture_io do
+    out, err = capture_output do
       @options.parse %w[--markup tomdoc]
     end
 
@@ -486,15 +500,21 @@ rdoc_include:
   def test_parse_page_dir
     assert_nil @options.page_dir
 
-    out, err = capture_io do
+    out, err = capture_output do
       @options.parse %W[--page-dir #{Dir.tmpdir}]
     end
 
     assert_empty out
     assert_empty err
 
-    expected =
-      Pathname(Dir.tmpdir).expand_path.relative_path_from @options.root
+    expected = nil
+    begin
+      expected =
+        Pathname(Dir.tmpdir).expand_path.relative_path_from @options.root
+    rescue ArgumentError
+      # On Windows, sometimes crosses different drive letters.
+      expected = Pathname(Dir.tmpdir).expand_path
+    end
 
     assert_equal expected,     @options.page_dir
     assert_equal [Dir.tmpdir], @options.files
@@ -508,7 +528,7 @@ rdoc_include:
       abs_page_dir = File.join dir, 'pages'
       FileUtils.mkdir abs_page_dir
 
-      out, err = capture_io do
+      out, err = capture_output do
         @options.parse %W[--page-dir #{abs_page_dir} --root #{abs_root}]
       end
 
@@ -530,7 +550,7 @@ rdoc_include:
   def test_parse_root
     assert_equal Pathname(Dir.pwd), @options.root
 
-    out, err = capture_io do
+    out, err = capture_output do
       @options.parse %W[--root #{Dir.tmpdir}]
     end
 
@@ -548,13 +568,13 @@ rdoc_include:
     @options.parse %w[-w2]
     assert_equal 2, @options.tab_width
 
-    _, err = capture_io do
+    _, err = capture_output do
       @options.parse %w[-w=2]
     end
 
     assert_match 'invalid options', err
 
-    _, err = capture_io do
+    _, err = capture_output do
       @options.parse %w[-w0]
     end
 
@@ -562,7 +582,7 @@ rdoc_include:
   end
 
   def test_parse_template
-    out, err = capture_io do
+    out, err = capture_output do
       @options.parse %w[--template darkfish]
     end
 
@@ -575,7 +595,7 @@ rdoc_include:
   end
 
   def test_parse_template_nonexistent
-    out, err = capture_io do
+    out, err = capture_output do
       @options.parse %w[--template NONEXISTENT]
     end
 
@@ -598,7 +618,7 @@ rdoc_include:
 
       FileUtils.mkdir_p template_dir
 
-      out, err = capture_io do
+      out, err = capture_output do
         @options.parse %w[--template load_path]
       end
 
@@ -610,6 +630,21 @@ rdoc_include:
     assert_equal template_dir, @options.template_dir
   ensure
     $LOAD_PATH.replace orig_LOAD_PATH
+  end
+
+  def test_parse_template_stylesheets
+    css = nil
+    Dir.mktmpdir do |dir|
+      css = File.join(dir, "hoge.css")
+      File.write(css, "")
+      out, err = capture_output do
+        @options.parse %W[--template-stylesheets #{css}]
+      end
+
+      assert_empty out
+      assert_empty err
+    end
+    assert_include @options.template_stylesheets, css
   end
 
   def test_parse_visibility
@@ -631,7 +666,7 @@ rdoc_include:
     FileUtils.mkdir_p tmpdir
 
     Dir.chdir tmpdir do
-      e = assert_raises SystemExit do
+      e = assert_raise SystemExit do
         @options.parse %w[--write-options]
       end
 
@@ -644,7 +679,7 @@ rdoc_include:
   end
 
   def test_parse_extension_alias
-    out, err = capture_io do
+    out, err = capture_output do
       @options.parse %w[--extension foobar=rdoc]
     end
 
@@ -706,7 +741,7 @@ rdoc_include:
   end
 
   def test_warn
-    out, err = capture_io do
+    out, err = capture_output do
       @options.warn "warnings off"
     end
 
@@ -715,7 +750,7 @@ rdoc_include:
 
     @options.verbosity = 2
 
-    out, err = verbose_capture_io do
+    out, err = verbose_capture_output do
       @options.warn "warnings on"
     end
 
@@ -729,12 +764,12 @@ rdoc_include:
 
       assert File.exist? '.rdoc_options'
 
-      assert_equal @options, YAML.load(File.read('.rdoc_options'))
+      assert_equal @options, YAML.safe_load(File.read('.rdoc_options'), permitted_classes: [RDoc::Options, Symbol])
     end
   end
 
   def test_version
-    out, _ = capture_io do
+    out, _ = capture_output do
       begin
         @options.parse %w[--version]
       rescue SystemExit
@@ -743,7 +778,7 @@ rdoc_include:
 
     assert out.include?(RDoc::VERSION)
 
-    out, _ = capture_io do
+    out, _ = capture_output do
       begin
         @options.parse %w[-v]
       rescue SystemExit
@@ -756,5 +791,63 @@ rdoc_include:
   def test_visibility
     @options.visibility = :all
     assert_equal :private, @options.visibility
+  end
+
+  def test_load_options
+    temp_dir do
+      options = RDoc::Options.new
+      options.markup = 'tomdoc'
+      options.write_options
+
+      options = RDoc::Options.load_options
+
+      assert_equal 'tomdoc', options.markup
+    end
+  end
+
+  def test_load_options_invalid
+    temp_dir do
+      File.open '.rdoc_options', 'w' do |io|
+        io.write "a: !ruby.yaml.org,2002:str |\nfoo"
+      end
+
+      e = assert_raise RDoc::Error do
+        RDoc::Options.load_options
+      end
+
+      options_file = File.expand_path '.rdoc_options'
+      assert_equal "#{options_file} is not a valid rdoc options file", e.message
+    end
+  end
+
+  def test_load_options_empty_file
+    temp_dir do
+      File.open '.rdoc_options', 'w' do |io|
+      end
+
+      options = RDoc::Options.load_options
+
+      assert_equal 'rdoc', options.markup
+    end
+  end
+
+  def test_load_options_partial_override
+    temp_dir do
+      File.open '.rdoc_options', 'w' do |io|
+        io.write "markup: Markdown"
+      end
+
+      options = RDoc::Options.load_options
+
+      assert_equal 'Markdown', options.markup
+    end
+  end
+
+  def load_options_no_file
+    temp_dir do
+      options = RDoc::Options.load_options
+
+      assert_kind_of RDoc::Options, options
+    end
   end
 end

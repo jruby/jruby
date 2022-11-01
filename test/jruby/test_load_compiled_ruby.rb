@@ -5,7 +5,12 @@ class TestLoadCompiledRuby < Test::Unit::TestCase
   FILENAME = 'test_load_compiled_ruby_script.rb'
   COMPILED = 'test_load_compiled_ruby_script.class'
 
-  def test_load_compiled_ruby; require 'jruby/jrubyc'
+  def test_load_compiled_ruby
+    unless org.jruby.util.cli.Options::AOT_LOADCLASSES.load
+      omit "loading .class not enabled; this test will be skipped"
+    end
+
+    require 'jruby/jrubyc'
     begin
       File.open(FILENAME, 'w') do |f|
         f.write('$test_load_compiled_ruby = true')

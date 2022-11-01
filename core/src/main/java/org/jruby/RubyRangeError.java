@@ -42,7 +42,7 @@ public class RubyRangeError extends RubyStandardError {
     }
 
     static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass rangeErrorClass = runtime.defineClass("RangeError", exceptionClass, (r, klass) -> new RubyRangeError(runtime, klass));
+        RubyClass rangeErrorClass = runtime.defineClass("RangeError", exceptionClass, RubyRangeError::new);
 
         return rangeErrorClass;
     }

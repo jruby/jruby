@@ -1,6 +1,7 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.Ruby;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
@@ -67,7 +68,6 @@ public class InheritanceSearchConstInstr extends OneOperandResultBaseInstr imple
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(getCurrentModule());
         e.encode(getName());
     }
 

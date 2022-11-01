@@ -52,12 +52,7 @@ import static org.jruby.lexer.LexingCommon.*;
 
 public class RubyRipper extends RubyObject {
     public static void initRipper(Ruby runtime) {
-        RubyClass ripper = runtime.defineClass("Ripper", runtime.getObject(), new ObjectAllocator() {
-            @Override
-            public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                return new RubyRipper(runtime, klazz);
-            }
-        });
+        RubyClass ripper = runtime.defineClass("Ripper", runtime.getObject(), RubyRipper::new);
         
         ripper.defineConstant("SCANNER_EVENT_TABLE", createScannerEventTable(runtime, ripper));
         ripper.defineConstant("PARSER_EVENT_TABLE", createParserEventTable(runtime, ripper));
@@ -68,7 +63,7 @@ public class RubyRipper extends RubyObject {
 
     private static void defineLexStateConstants(Ruby runtime, RubyClass ripper) {
         for (int i = 0; i < lexStateNames.length; i++) {
-            ripper.defineConstant(lexStateNames[i], runtime.newFixnum(lexStateValues[i]));
+            ripper.defineConstant("EXPR_" + lexStateNames[i], runtime.newFixnum(lexStateValues[i]));
         }
     }
     
@@ -138,18 +133,20 @@ public class RubyRipper extends RubyObject {
         hash.fastASet(runtime.newSymbol("BEGIN"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("END"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("alias"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("alias_error"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newSymbol("alias_error"), runtime.newFixnum(2));
         hash.fastASet(runtime.newSymbol("aref"), runtime.newFixnum(2));
         hash.fastASet(runtime.newSymbol("aref_field"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("arg_ambiguous"), runtime.newFixnum(0));
+        hash.fastASet(runtime.newSymbol("arg_ambiguous"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("arg_paren"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("args_add"), runtime.newFixnum(2));
         hash.fastASet(runtime.newSymbol("args_add_block"), runtime.newFixnum(2));
         hash.fastASet(runtime.newSymbol("args_add_star"), runtime.newFixnum(2));
+        hash.fastASet(runtime.newSymbol("args_forward"), runtime.newFixnum(0));
         hash.fastASet(runtime.newSymbol("args_new"), runtime.newFixnum(0));
         hash.fastASet(runtime.newSymbol("array"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newSymbol("aryptn"), runtime.newFixnum(4));
         hash.fastASet(runtime.newSymbol("assign"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("assign_error"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newSymbol("assign_error"), runtime.newFixnum(2));
         hash.fastASet(runtime.newSymbol("assoc_new"), runtime.newFixnum(2));
         hash.fastASet(runtime.newSymbol("assoc_splat"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("assoclist_from_args"), runtime.newFixnum(1));
@@ -157,8 +154,6 @@ public class RubyRipper extends RubyObject {
         hash.fastASet(runtime.newSymbol("begin"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("binary"), runtime.newFixnum(3));
         hash.fastASet(runtime.newSymbol("block_var"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("block_var_add_block"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("block_var_add_star"), runtime.newFixnum(2));
         hash.fastASet(runtime.newSymbol("blockarg"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("bodystmt"), runtime.newFixnum(4));
         hash.fastASet(runtime.newSymbol("brace_block"), runtime.newFixnum(2));
@@ -166,7 +161,7 @@ public class RubyRipper extends RubyObject {
         hash.fastASet(runtime.newSymbol("call"), runtime.newFixnum(3));
         hash.fastASet(runtime.newSymbol("case"), runtime.newFixnum(2));
         hash.fastASet(runtime.newSymbol("class"), runtime.newFixnum(3));
-        hash.fastASet(runtime.newSymbol("class_name_error"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newSymbol("class_name_error"), runtime.newFixnum(2));
         hash.fastASet(runtime.newSymbol("command"), runtime.newFixnum(2));
         hash.fastASet(runtime.newSymbol("command_call"), runtime.newFixnum(4));
         hash.fastASet(runtime.newSymbol("const_path_field"), runtime.newFixnum(2));
@@ -182,15 +177,18 @@ public class RubyRipper extends RubyObject {
         hash.fastASet(runtime.newSymbol("else"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("elsif"), runtime.newFixnum(3));
         hash.fastASet(runtime.newSymbol("ensure"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("excessed_comma"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newSymbol("excessed_comma"), runtime.newFixnum(0));
         hash.fastASet(runtime.newSymbol("fcall"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("field"), runtime.newFixnum(3));
+        hash.fastASet(runtime.newSymbol("fndptn"), runtime.newFixnum(4));
         hash.fastASet(runtime.newSymbol("for"), runtime.newFixnum(3));
         hash.fastASet(runtime.newSymbol("hash"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("heredoc_dedent"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newSymbol("heredoc_dedent"), runtime.newFixnum(2));
+        hash.fastASet(runtime.newSymbol("hshptn"), runtime.newFixnum(3));
         hash.fastASet(runtime.newSymbol("if"), runtime.newFixnum(3));
         hash.fastASet(runtime.newSymbol("if_mod"), runtime.newFixnum(2));
         hash.fastASet(runtime.newSymbol("ifop"), runtime.newFixnum(3));
+        hash.fastASet(runtime.newSymbol("in"), runtime.newFixnum(3));
         hash.fastASet(runtime.newSymbol("kwrest_param"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("lambda"), runtime.newFixnum(2));
         hash.fastASet(runtime.newSymbol("magic_comment"), runtime.newFixnum(2));
@@ -208,9 +206,10 @@ public class RubyRipper extends RubyObject {
         hash.fastASet(runtime.newSymbol("mrhs_new"), runtime.newFixnum(0));
         hash.fastASet(runtime.newSymbol("mrhs_new_from_args"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("next"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newSymbol("nokw_param"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("opassign"), runtime.newFixnum(3));
         hash.fastASet(runtime.newSymbol("operator_ambiguous"), runtime.newFixnum(2));
-        hash.fastASet(runtime.newSymbol("param_error"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newSymbol("param_error"), runtime.newFixnum(2));
         hash.fastASet(runtime.newSymbol("params"), runtime.newFixnum(7));
         hash.fastASet(runtime.newSymbol("paren"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("parse_error"), runtime.newFixnum(1));
@@ -338,7 +337,12 @@ public class RubyRipper extends RubyObject {
 
         return state == 0 ? context.nil : context.runtime.newFixnum(parser.getState());
     }
-    
+
+    @JRubyMethod
+    public IRubyObject token(ThreadContext context) {
+        return context.runtime.newString(parser.lexer.tokenByteList());
+    }
+
     @JRubyMethod
     public IRubyObject parse(ThreadContext context) {
         parseStarted = true;
@@ -431,9 +435,9 @@ public class RubyRipper extends RubyObject {
     // Number of expr states which represent a distinct value.  unions expr values occur after these.
     private static int singleStateLexStateNames = 13; // EXPR_BEG -> EXPR_FITEM
     private static String[] lexStateNames = new String[] {
-            "EXPR_BEG", "EXPR_END", "EXPR_ENDARG", "EXPR_ENDFN", "EXPR_ARG", "EXPR_CMDARG", "EXPR_MID",
-            "EXPR_FNAME", "EXPR_DOT", "EXPR_CLASS", "EXPR_LABEL", "EXPR_LABELED", "EXPR_FITEM", // end of single states
-            "EXPR_VALUE", "EXPR_BEG_ANY", "EXPR_ARG_ANY", "EXPR_END_ANY"
+            "BEG", "END", "ENDARG", "ENDFN", "ARG", "CMDARG", "MID",
+            "FNAME", "DOT", "CLASS", "LABEL", "LABELED", "FITEM", // end of single states
+            "VALUE", "BEG_ANY", "ARG_ANY", "END_ANY"
     };
 
     private static int[] lexStateValues = new int[] {

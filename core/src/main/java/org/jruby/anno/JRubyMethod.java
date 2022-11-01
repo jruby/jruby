@@ -68,6 +68,10 @@ public @interface JRubyMethod {
      */
     boolean module() default false;
     /**
+     * Whether this method will forwards its arguments (and call state) onto another method).
+     */
+    boolean forward() default false;
+    /**
      * Whether this method expects to have a call frame allocated for it.
      */
     boolean frame() default false;
@@ -100,6 +104,11 @@ public @interface JRubyMethod {
      * Whether this method should show up as defined in response to respond_to? calls
      */
     boolean notImplemented() default false;
+
+    /**
+     * A list of classes that implement an abstract JRubyMethod, for backtrace purposes.
+     */
+    Class[] implementers() default {};
 
     @Deprecated
     boolean scope() default false;

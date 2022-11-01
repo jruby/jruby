@@ -356,11 +356,10 @@ class TestIO < Test::Unit::TestCase
   def test_multithreaded_writes
     f = File.open("__temp1", "w")
     @to_close << f
-    threads = []
-    100.times {
-      threads << Thread.new { 100.times { f.print('.') } }
-    }
-    threads.each {|thread| thread.join}
+    100.times.map {
+      Thread.new { 100.times { f.print('.') } }
+    }.each(&:join)
+    f.flush
     f.close
     assert_equal 100*100, File.size("__temp1")
   ensure

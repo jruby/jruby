@@ -18,6 +18,7 @@ class TestMatrix < Test::Unit::TestCase
     @a3  = Matrix[[4, 1, -3], [0, 3, 7], [11, -4, 2]]
     @a5  = Matrix[[2, 0, 9, 3, 9], [8, 7, 0, 1, 9], [7, 5, 6, 6, 5], [0, 7, 8, 3, 0], [7, 8, 2, 3, 1]]
     @b3  = Matrix[[-7, 7, -10], [9, -3, -2], [-1, 3, 9]]
+    @rot = Matrix[[0, -1, 0], [1, 0, 0], [0, 0, -1]]
   end
 
   def test_matrix
@@ -447,6 +448,12 @@ class TestMatrix < Test::Unit::TestCase
     assert_equal(Matrix[[67,96],[48,99]], Matrix[[7,6],[3,9]] ** 2)
     assert_equal(Matrix.I(5), Matrix.I(5) ** -1)
     assert_raise(Matrix::ErrOperationNotDefined) { Matrix.I(5) ** Object.new }
+
+    m = Matrix[[0,2],[1,0]]
+    exp = 0b11101000
+    assert_equal(Matrix.scalar(2, 1 << (exp/2)), m ** exp)
+    exp = 0b11101001
+    assert_equal(Matrix[[0, 2 << (exp/2)], [1 << (exp/2), 0]], m ** exp)
   end
 
   def test_det
@@ -581,6 +588,11 @@ class TestMatrix < Test::Unit::TestCase
       [1, 1]
     end
     assert_equal(1, s1 ** o)
+  end
+
+  def test_abs
+    s1 = @a3.abs
+    assert_equal(s1, Matrix[[4, 1, 3], [0, 3, 7], [11, 4, 2]])
   end
 
   def test_hstack
@@ -786,5 +798,35 @@ class TestMatrix < Test::Unit::TestCase
     vectors = m.eigensystem.eigenvectors
     assert_in_epsilon(vectors[0][0], vectors[0][1])
     assert_in_epsilon(-4 * vectors[1][0], vectors[1][1])
+  end
+
+  def test_unitary?
+    assert_equal true, @rot.unitary?
+    assert_equal true, ((0+1i) * @rot).unitary?
+    assert_equal false, @a3.unitary?
+    assert_raise(Matrix::ErrDimensionMismatch) { @m1.unitary? }
+  end
+
+  def test_orthogonal
+    assert_equal true, @rot.orthogonal?
+    assert_equal false, ((0+1i) * @rot).orthogonal?
+    assert_equal false, @a3.orthogonal?
+    assert_raise(Matrix::ErrDimensionMismatch) { @m1.orthogonal? }
+  end
+
+  def test_adjoint
+    assert_equal(Matrix[[(1-2i), 1], [(0-1i), 2], [0, 3]], @c1.adjoint)
+    assert_equal(Matrix.empty(0,2), @e1.adjoint)
+  end
+
+  def test_ractor
+    assert_ractor(<<~RUBY, require: 'matrix')
+      obj1 = Matrix[[1, 2], [3, 4]].freeze
+
+      obj2 = Ractor.new obj1 do |obj|
+        obj
+      end.take
+      assert_same obj1, obj2
+    RUBY
   end
 end

@@ -33,9 +33,11 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.RubyStringBuilder;
 
 import static org.jruby.javasupport.JavaUtil.convertJavaToUsableRubyObject;
 import static org.jruby.javasupport.JavaUtil.unwrapJavaObject;
+import static org.jruby.util.Inspector.*;
 
 /**
  * Java::JavaLangReflect package extensions.
@@ -84,9 +86,22 @@ public abstract class JavaUtilRegex {
             return RubyBoolean.newBoolean(context, i);
         }
 
+        @JRubyMethod(name = "inspect")
+        public static IRubyObject inspect(final ThreadContext context, final IRubyObject self) {
+            final java.util.regex.Pattern regex = unwrapJavaObject(self);
+
+            RubyString buf = inspectPrefix(context, self.getMetaClass());
+            RubyStringBuilder.cat(context.runtime, buf, SPACE);
+            RubyStringBuilder.cat(context.runtime, buf, SLASH);
+            RubyStringBuilder.cat(context.runtime, buf, regex.toString());
+            RubyStringBuilder.cat(context.runtime, buf, SLASH);
+            RubyStringBuilder.cat(context.runtime, buf, GT); // >
+            return buf;
+        }
+
         private static java.util.regex.Matcher matcher(final IRubyObject self, final IRubyObject str) {
             final java.util.regex.Pattern regex = unwrapJavaObject(self);
-            return regex.matcher((CharSequence) str.toJava(CharSequence.class));
+            return regex.matcher(str.toJava(CharSequence.class));
         }
 
     }
@@ -206,7 +221,7 @@ public abstract class JavaUtilRegex {
                 final int group = ((RubyInteger) idx).getIntValue();
                 return context.runtime.newString( matcher.group(group) );
             }
-            return to_a(context, self).aref(idx); // Range
+            return to_a(context, self).aref(context, idx); // Range
         }
 
         @JRubyMethod(name = "[]", required = 2)

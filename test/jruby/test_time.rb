@@ -119,8 +119,6 @@ class TestTime < Test::Unit::TestCase
     time =  Time.new(2000, 1, 1, 0, 0, 0, 0)
     assert_false time.utc?
     assert_false time.clone.utc?
-    assert_false time.succ.utc?
-    assert_false time.succ.utc?
     assert_false (time + 1).utc?
     assert_false (time - 1).utc?
   end
@@ -198,7 +196,7 @@ class TestTimeNilOps < Test::Unit::TestCase
       fail "bleh"
     rescue NoMethodError=>x
       assert x
-      assert_equal "undefined method `*' for #{t}:Time", x.message
+      assert_equal "undefined method `*' for #{t.inspect}:Time", x.message
     end
   end
 
@@ -209,8 +207,14 @@ class TestTimeNilOps < Test::Unit::TestCase
       fail "bleh"
     rescue NoMethodError=>x
       assert x
-      assert_equal "undefined method `/' for #{t}:Time", x.message
+      assert_equal "undefined method `/' for #{t.inspect}:Time", x.message
     end
   end
 
+  def test_strptime_type_error
+    assert_raise(TypeError) { Time.strptime(0, '%Y-%m-%d') }
+    assert_raise(TypeError) { Time.strptime(nil, '%Y-%m-%d') }
+    assert_raise(TypeError) { Time.strptime('2020-01-01', 0) }
+    assert_raise(TypeError) { Time.strptime('2020-01-01', nil) }
+  end
 end

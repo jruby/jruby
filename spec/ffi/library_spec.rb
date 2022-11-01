@@ -88,6 +88,31 @@ describe "Library" do
       }.to raise_error(LoadError)
     end
 
+    it "interprets INPUT() in loader scripts", unless: FFI::Platform.windows? do
+      path = File.dirname(TestLibrary::PATH)
+      file = File.basename(TestLibrary::PATH)
+      script = File.join(path, "ldscript.so")
+      File.write script, "INPUT(#{file});\n"
+
+      m = Module.new do |m|
+        m.extend FFI::Library
+        ffi_lib script
+      end
+      expect(m.ffi_libraries.map(&:name)).to eq([file])
+    end
+
+    it "raises LoadError on garbage in library file" do
+      path = File.dirname(TestLibrary::PATH)
+      garbage = File.join(path, "garbage.so")
+      File.binwrite garbage, "\xDE\xAD\xBE\xEF"
+
+      expect {
+        Module.new do |m|
+          m.extend FFI::Library
+          ffi_lib garbage
+        end
+      }.to raise_error(LoadError)
+    end
   end
 
   unless RbConfig::CONFIG['target_os'] =~ /mswin|mingw/

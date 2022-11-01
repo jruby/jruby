@@ -38,7 +38,6 @@ import java.util.List;
 import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /** 
  * Represents a method call with self as an implicit receiver.
@@ -48,12 +47,12 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
     protected Node argsNode;
     protected Node iterNode;
 
-    public FCallNode(ISourcePosition position, RubySymbol name) {
-        this(position, name, null, null);
+    public FCallNode(int line, RubySymbol name) {
+        this(line, name, null, null);
     }
 
-    public FCallNode(ISourcePosition position, RubySymbol name, Node argsNode, Node iterNode) {
-        super(position, argsNode != null && argsNode.containsVariableAssignment() || iterNode != null && iterNode.containsVariableAssignment());
+    public FCallNode(int line, RubySymbol name, Node argsNode, Node iterNode) {
+        super(line, argsNode != null && argsNode.containsVariableAssignment() || iterNode != null && iterNode.containsVariableAssignment());
         this.name = name;
         this.argsNode = argsNode;
         this.iterNode = iterNode;

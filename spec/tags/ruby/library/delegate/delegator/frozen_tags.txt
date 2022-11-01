@@ -1,0 +1,1 @@
+wip:Delegator when frozen creates a frozen clone

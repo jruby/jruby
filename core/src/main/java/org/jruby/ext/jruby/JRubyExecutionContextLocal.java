@@ -57,7 +57,7 @@ public abstract class JRubyExecutionContextLocal extends RubyObject {
             }
             default_proc = block.getProcObject();
             if (default_proc == null) {
-                default_proc = RubyProc.newProc(context.runtime, block, block.type);
+                default_proc = RubyProc.newProc(context.runtime, block, block.type == Block.Type.LAMBDA ? block.type : Block.Type.PROC);
             }
         } else {
             if (args.length == 1) {

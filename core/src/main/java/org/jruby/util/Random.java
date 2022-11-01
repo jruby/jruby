@@ -159,8 +159,16 @@ public class Random {
     }
 
     public double genrandReal() {
-        int a = genrandInt32() >>> 5;
-        int b = genrandInt32() >>> 6;
+        int a = genrandInt32();
+        int b = genrandInt32();
+        return intPairToRealExclusive(a, b);
+    }
+
+    // TODO: check the latest mri's int_pair_to_real_exclusive in random.c
+    // This implementation is until mri 2.7.x
+    public static double intPairToRealExclusive(int a, int b) {
+        a >>>= 5;
+        b >>>= 6;
         return (a * 67108864.0 + b) * (1.0 / 9007199254740992.0);
     }
 
@@ -175,7 +183,7 @@ public class Random {
 
     // c: ldexp((a<< 32)|b) * ((1<<53)+1) >> 64, -53)
     // TODO: not enough prec...
-    private double intPairToRealInclusive(int a, int b) {
+    public static double intPairToRealInclusive(int a, int b) {
         BigInteger c = BigInteger.valueOf(a & 0xffffffffL);
         BigInteger d = BigInteger.valueOf(b & 0xffffffffL);
         return c.shiftLeft(32).or(d).multiply(INTPAIR_CONST).shiftRight(64).doubleValue()

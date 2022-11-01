@@ -26,9 +26,12 @@ describe "A Java Throwable" do
     expect(ex.to_s).to eq ex.message
   end
 
-  it "implements inspect as toString" do
+  it "implements inspect to be Ruby-like" do
     ex = java.lang.Exception.new('hello')
-    expect(ex.inspect).to eq "java.lang.Exception: hello"
+    expect(ex.inspect).to eq '#<Java::JavaLang::Exception: hello>'
+
+    ex = java.lang.AssertionError.new
+    expect(ex.inspect).to eq '#<Java::JavaLang::AssertionError: >'
   end
 
   it "implements full_message" do
@@ -181,11 +184,10 @@ describe "Rescuing a Java exception using Exception" do
 
     it 'has Throwable extensions' do
       throwable = RubyThrowable.new 'foo'
-      expect( throwable.backtrace ).to_not be nil
       expect( throwable.backtrace ).to_not be_empty
 
       expect( throwable.message ).to eql 'foo'
-      expect( throwable.to_s ).to eql 'foo'
+      expect( throwable.inspect ).to eql '#<RubyThrowable: foo>'
     end
 
   end

@@ -162,12 +162,18 @@ public class ProfilingDynamicMethod extends DelegatingDynamicMethod implements I
     }
 
     public Signature getSignature() {
-        return delegate instanceof IRMethodArgs ?
-                ((IRMethodArgs) delegate).getSignature() : Signature.from(delegate.getArity());
+        return delegate.getSignature();
     }
 
     public ArgumentDescriptor[] getArgumentDescriptors() {
         return delegate instanceof IRMethodArgs ?
                 ((IRMethodArgs) delegate).getArgumentDescriptors() : Helpers.methodToArgumentDescriptors(delegate);
+    }
+
+    @Override
+    public void setRuby2Keywords() {
+        if (delegate instanceof IRMethodArgs) {
+            ((IRMethodArgs) delegate).setRuby2Keywords();
+        }
     }
 }

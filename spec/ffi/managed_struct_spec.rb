@@ -23,7 +23,7 @@ describe "Managed Struct" do
       layout :i, :int
       def self.release
       end
-    end    
+    end
 
     expect(WhatClassAmI.new(ManagedStructTestLib.ptr_from_address(0x12345678)).class).to eq(WhatClassAmI)
   end

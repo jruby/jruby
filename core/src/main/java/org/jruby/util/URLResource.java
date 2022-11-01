@@ -53,7 +53,13 @@ public class URLResource implements FileResource, DummyResourceStat.FileResource
         return uri;
     }
 
+    @Override
     public String canonicalPath() {
+        return uri;
+    }
+
+    @Override
+    public String path() {
         return uri;
     }
 

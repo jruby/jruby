@@ -6,6 +6,7 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ir.Operation;
+import org.jruby.ir.instructions.ArgReceiver;
 import org.jruby.ir.instructions.BreakInstr;
 import org.jruby.ir.instructions.CheckArityInstr;
 import org.jruby.ir.instructions.CheckForLJEInstr;
@@ -17,7 +18,6 @@ import org.jruby.ir.instructions.NonlocalReturnInstr;
 import org.jruby.ir.instructions.PopBlockFrameInstr;
 import org.jruby.ir.instructions.PushBlockFrameInstr;
 import org.jruby.ir.instructions.PushMethodFrameInstr;
-import org.jruby.ir.instructions.ReceiveArgBase;
 import org.jruby.ir.instructions.ReceivePostReqdArgInstr;
 import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.ir.instructions.RestoreBindingVisibilityInstr;
@@ -25,9 +25,7 @@ import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnBase;
 import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.instructions.SaveBindingVisibilityInstr;
-import org.jruby.ir.instructions.SearchConstInstr;
 import org.jruby.ir.instructions.ToggleBacktraceInstr;
-import org.jruby.ir.instructions.TraceInstr;
 import org.jruby.ir.instructions.boxing.AluInstr;
 import org.jruby.ir.instructions.boxing.BoxBooleanInstr;
 import org.jruby.ir.instructions.boxing.BoxFixnumInstr;
@@ -65,8 +63,6 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callsite.ProfilingCachingCallSite;
-import org.jruby.runtime.opto.ConstantCache;
 
 /**
  * Base full interpreter.  Subclasses can use utility methods here and override what they want.  This method requires
@@ -115,11 +111,8 @@ public class InterpreterEngine {
         int       n         = instrs.length;
         int       ipc       = 0;
         Object    exception = null;
-        boolean   acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
-
-        if (acceptsKeywordArgument) {
-            args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, interpreterContext.getRequiredArgsCount());
-        }
+        boolean   usesKeywords = interpreterContext.receivesKeywordArguments();
+        boolean   ruby2Keywords = interpreterContext.isRuby2Keywords();
 
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
@@ -153,7 +146,7 @@ public class InterpreterEngine {
                         interpretFloatOp((AluInstr) instr, operation, floats, booleans);
                         break;
                     case ARG_OP:
-                        receiveArg(context, instr, operation, args, acceptsKeywordArgument, currDynScope, temp, exception, blockArg);
+                        receiveArg(context, instr, operation, self, args, ruby2Keywords, currScope, currDynScope, temp, exception, blockArg);
                         break;
                     case CALL_OP:
                         if (profile) Profiler.updateCallSite(instr, interpreterContext.getScope(), scopeVersion);
@@ -191,7 +184,7 @@ public class InterpreterEngine {
                             args = IRRuntimeHelpers.prepareFixedBlockArgs(context, block, args);
                             break;
                         case PREPARE_BLOCK_ARGS:
-                            args = IRRuntimeHelpers.prepareBlockArgs(context, block, args, acceptsKeywordArgument);
+                            args = IRRuntimeHelpers.prepareBlockArgs(context, block, args, usesKeywords, ruby2Keywords);
                             break;
                         default:
                             processBookKeepingOp(context, block, instr, operation, name, args, self, blockArg, implClass, currDynScope, temp, currScope);
@@ -262,7 +255,9 @@ public class InterpreterEngine {
         }
     }
 
-    protected static void receiveArg(ThreadContext context, Instr i, Operation operation, IRubyObject[] args, boolean acceptsKeywordArgument, DynamicScope currDynScope, Object[] temp, Object exception, Block blockArg) {
+    protected static void receiveArg(ThreadContext context, Instr i, Operation operation, IRubyObject self,
+                                     IRubyObject[] args, boolean ruby2Keywords, StaticScope currScope,
+                                     DynamicScope currDynScope, Object[] temp, Object exception, Block blockArg) {
         Object result;
         ResultInstr instr = (ResultInstr)i;
 
@@ -273,7 +268,7 @@ public class InterpreterEngine {
                 setResult(temp, currDynScope, instr.getResult(), result);
                 return;
             case RECV_POST_REQD_ARG:
-                result = ((ReceivePostReqdArgInstr)instr).receivePostReqdArg(context, args, acceptsKeywordArgument);
+                result = ((ReceivePostReqdArgInstr)instr).receivePostReqdArg(context, self, currDynScope, currScope, temp, args);
                 setResult(temp, currDynScope, instr.getResult(), result);
                 return;
             case RECV_RUBY_EXC:
@@ -286,7 +281,7 @@ public class InterpreterEngine {
                 setResult(temp, currDynScope, instr.getResult(), blockArg);
                 return;
             default:
-                result = ((ReceiveArgBase)instr).receiveArg(context, args, acceptsKeywordArgument);
+                result = ((ArgReceiver) instr).receiveArg(context, self, currDynScope, currScope, temp, args, ruby2Keywords);
                 setResult(temp, currDynScope, instr.getResult(), result);
         }
     }
@@ -298,6 +293,7 @@ public class InterpreterEngine {
             case CALL_1F: {
                 OneFixnumArgNoBlockCallInstr call = (OneFixnumArgNoBlockCallInstr)instr;
                 IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);
+                IRRuntimeHelpers.setCallInfo(context, call.getFlags());
                 result = call.getCallSite().call(context, self, r, call.getFixnumArg());
                 setResult(temp, currDynScope, call.getResult(), result);
                 break;
@@ -305,6 +301,7 @@ public class InterpreterEngine {
             case CALL_1D: {
                 OneFloatArgNoBlockCallInstr call = (OneFloatArgNoBlockCallInstr)instr;
                 IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);
+                IRRuntimeHelpers.setCallInfo(context, call.getFlags());
                 result = call.getCallSite().call(context, self, r, call.getFloatArg());
                 setResult(temp, currDynScope, call.getResult(), result);
                 break;
@@ -313,6 +310,7 @@ public class InterpreterEngine {
                 OneOperandArgNoBlockCallInstr call = (OneOperandArgNoBlockCallInstr)instr;
                 IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);
                 IRubyObject o = (IRubyObject)call.getArg1().retrieve(context, self, currScope, currDynScope, temp);
+                IRRuntimeHelpers.setCallInfo(context, call.getFlags());
                 result = call.getCallSite().call(context, self, r, o);
                 setResult(temp, currDynScope, call.getResult(), result);
                 break;
@@ -322,6 +320,7 @@ public class InterpreterEngine {
                 IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);
                 IRubyObject o1 = (IRubyObject)call.getArg1().retrieve(context, self, currScope, currDynScope, temp);
                 IRubyObject o2 = (IRubyObject)call.getArg2().retrieve(context, self, currScope, currDynScope, temp);
+                IRRuntimeHelpers.setCallInfo(context, call.getFlags());
                 result = call.getCallSite().call(context, self, r, o1, o2);
                 setResult(temp, currDynScope, call.getResult(), result);
                 break;
@@ -333,6 +332,7 @@ public class InterpreterEngine {
                 IRubyObject o = (IRubyObject)call.getArg1().retrieve(context, self, currScope, currDynScope, temp);
                 Block preparedBlock = call.prepareBlock(context, self, currScope, currDynScope, temp);
                 CallSite callSite = call.getCallSite();
+                IRRuntimeHelpers.setCallInfo(context, call.getFlags());
                 result = call.hasLiteralClosure() ?
                         callSite.callIter(context, self, r, o, preparedBlock) :
                         callSite.call(context, self, r, o, preparedBlock);
@@ -342,6 +342,7 @@ public class InterpreterEngine {
             case CALL_0O: {
                 ZeroOperandArgNoBlockCallInstr call = (ZeroOperandArgNoBlockCallInstr)instr;
                 IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);
+                IRRuntimeHelpers.setCallInfo(context, call.getFlags());
                 result = call.getCallSite().call(context, self, r);
                 setResult(temp, currDynScope, call.getResult(), result);
                 break;
@@ -350,6 +351,7 @@ public class InterpreterEngine {
                 OneOperandArgNoBlockNoResultCallInstr call = (OneOperandArgNoBlockNoResultCallInstr)instr;
                 IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);
                 IRubyObject o = (IRubyObject)call.getArg1().retrieve(context, self, currScope, currDynScope, temp);
+                IRRuntimeHelpers.setCallInfo(context, call.getFlags());
                 call.getCallSite().call(context, self, r, o);
                 break;
             }
@@ -407,7 +409,7 @@ public class InterpreterEngine {
                 context.callThreadPoll();
                 break;
             case CHECK_ARITY:
-                ((CheckArityInstr) instr).checkArity(context, currScope, args, block);
+                ((CheckArityInstr) instr).checkArity(context, self, currScope, currDynScope, args, block, temp);
                 break;
             case LINE_NUM:
                 LineNumberInstr line = (LineNumberInstr) instr;
@@ -531,6 +533,10 @@ public class InterpreterEngine {
 
             case LOAD_FRAME_CLOSURE:
                 setResult(temp, currDynScope, instr, context.getFrameBlock());
+                break;
+
+            case LOAD_BLOCK_IMPLICIT_CLOSURE:
+                setResult(temp, currDynScope, instr, Helpers.getImplicitBlockFromBlockBinding(block));
                 return;
 
             // ---------- All the rest ---------

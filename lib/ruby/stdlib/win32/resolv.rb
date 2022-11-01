@@ -114,19 +114,6 @@ module Win32
   end
 end
 
-if [nil].pack("p").size <= 4 # 32bit env
-  begin
-    f = Fiddle
-    osid = f::Handle.new["rb_w32_osid"]
-  rescue f::DLError # not ix86, cannot be Windows 9x
-  else
-    if f::Function.new(osid, [], f::TYPE_INT).call < 2  # VER_PLATFORM_WIN32_NT
-      require_relative 'resolv9x'
-      return
-    end
-  end
-end
-
 module Win32
 #====================================================================
 # Windows NT

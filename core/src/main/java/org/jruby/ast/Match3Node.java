@@ -35,7 +35,6 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Used when a Regexp literal is the RHS of a match call.  E.g., "abc" =~ /.+/
@@ -44,10 +43,9 @@ public class Match3Node extends Node {
     private final Node receiverNode;
     private final Node valueNode;
 
-    public Match3Node(ISourcePosition position, Node receiverNode, Node valueNode) {
-        super(position, receiverNode.containsVariableAssignment() || valueNode.containsVariableAssignment());
+    public Match3Node(int line, Node receiverNode, Node valueNode) {
+        super(line, receiverNode.containsVariableAssignment() || valueNode.containsVariableAssignment());
         
-        assert receiverNode != null : "receiverNode is not null";
         assert valueNode != null : "valueNode is not null";
 
         this.receiverNode = receiverNode;

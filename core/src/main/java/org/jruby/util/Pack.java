@@ -62,14 +62,14 @@ public class Pack {
     private static final UTF8Encoding UTF8 = UTF8Encoding.INSTANCE;
     /** Native pack type.
      **/
-    private static final String NATIVE_CODES = "sSiIlL";
-    private static final String MAPPED_CODES = "sSiIqQ";
+    private static final String NATIVE_CODES = "sSiIlLjJ";
+    private static final String MAPPED_CODES = "sSiIqQjJ";
     
-    private static final char BE = '>' - 1; // 61, only 1 char "free" b/w q and s
+    private static final char BE = '>' + 127; // 189, bumped up to avoid collisions with LE
     private static final char LE = '<'; // 60
     private static final String ENDIANESS_CODES = new String(new char[] {
-            's' + BE, 'S' + BE/*n*/, 'i' + BE, 'I' + BE, 'l' + BE, 'L' + BE/*N*/, 'q' + BE, 'Q' + BE,
-            's' + LE, 'S' + LE/*v*/, 'i' + LE, 'I' + LE, 'l' + LE, 'L' + LE/*V*/, 'q' + LE, 'Q' + LE});
+            's' + BE, 'S' + BE/*n*/, 'i' + BE, 'I' + BE, 'l' + BE, 'L' + BE/*N*/, 'q' + BE, 'Q' + BE, 'j' + BE, 'J' + BE,
+            's' + LE, 'S' + LE/*v*/, 'i' + LE, 'I' + LE, 'l' + LE, 'L' + LE/*V*/, 'q' + LE, 'Q' + LE, 'j' + LE, 'J' + LE});
     private static final String UNPACK_IGNORE_NULL_CODES = "cC";
     private static final String PACK_IGNORE_NULL_CODES = "cCiIlLnNqQsSvV";
     private static final String PACK_IGNORE_NULL_CODES_WITH_MODIFIERS = "lLsS";
@@ -84,7 +84,7 @@ public class Pack {
     private static final byte[] b64_table;
     public static final byte[] sHexDigits;
     public static final int[] b64_xtable = new int[256];
-    private static final Converter[] converters = new Converter[256];
+    private static final Converter[] converters = new Converter[512];
 
     private static long num2quad(IRubyObject arg) {
         if (arg.isNil()) return 0L;
@@ -383,7 +383,7 @@ public class Pack {
         converters['l' + BE] = tmp; // long, native
 
         // 64-bit number, native (as bignum)
-        converters['Q'] = new QuadConverter(8, "Integer") {
+        tmp = new QuadConverter(8, "Integer") {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
                 long l = Platform.BYTE_ORDER == Platform.BIG_ENDIAN ? decodeLongBigEndian(enc) : decodeLongLittleEndian(enc);
 
@@ -395,8 +395,11 @@ public class Pack {
                 encodeLongByByteOrder(result, num2quad(o));
             }
         };
+        converters['Q'] = tmp;
+        converters['J'] = tmp;
+
         // 64-bit number, little endian (as bignum)
-        converters['Q' + LE] = new QuadConverter(8, "Integer") {
+        tmp = new QuadConverter(8, "Integer") {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
                 long l = decodeLongLittleEndian(enc);
                 return RubyBignum.bignorm(runtime,BigInteger.valueOf(l).and(new BigInteger("FFFFFFFFFFFFFFFF", 16)));
@@ -407,8 +410,12 @@ public class Pack {
                 encodeLongLittleEndian(result, num2quad(o));
             }
         };
+        converters['Q' + LE] = tmp;
+        converters['J' + LE] = tmp;
+
         // 64-bit number, big endian (as bignum)
-        converters['Q' + BE] = new QuadConverter(8, "Integer") {
+
+        tmp = new QuadConverter(8, "Integer") {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
                 long l = decodeLongBigEndian(enc);
                 return RubyBignum.bignorm(runtime,BigInteger.valueOf(l).and(new BigInteger("FFFFFFFFFFFFFFFF", 16)));
@@ -419,8 +426,11 @@ public class Pack {
                 encodeLongBigEndian(result, num2quad(o));
             }
         };
+        converters['Q' + BE] = tmp;
+        converters['J' + BE] = tmp;
+
         // 64-bit number, native (as fixnum)
-        converters['q'] = new QuadConverter(8, "Integer") {
+        tmp = new QuadConverter(8, "Integer") {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
                 return runtime.newFixnum(Platform.BYTE_ORDER == Platform.BIG_ENDIAN ? 
                         decodeLongBigEndian(enc) : decodeLongLittleEndian(enc));
@@ -431,8 +441,11 @@ public class Pack {
                 encodeLongByByteOrder(result, num2quad(o));
             }
         };
+        converters['q'] = tmp;
+        converters['j'] = tmp;
+
         // 64-bit number, little-endian (as fixnum)
-        converters['q' + LE] = new QuadConverter(8, "Integer") {
+        tmp = new QuadConverter(8, "Integer") {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
                 return runtime.newFixnum(decodeLongLittleEndian(enc));
             }
@@ -442,8 +455,11 @@ public class Pack {
                 encodeLongLittleEndian(result, num2quad(o));
             }
         };
+        converters['q' + LE] = tmp;
+        converters['j' + LE] = tmp;
+
         // 64-bit number, big-endian (as fixnum)
-        converters['q' + BE] = new QuadConverter(8, "Integer") {
+        tmp = new QuadConverter(8, "Integer") {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
                 return runtime.newFixnum(decodeLongBigEndian(enc));
             }
@@ -453,6 +469,8 @@ public class Pack {
                 encodeLongBigEndian(result, num2quad(o));
             }
         };
+        converters['q' + BE] = tmp;
+        converters['j' + BE] = tmp;
     }
 
     public static int unpackInt_i(ByteBuffer enc) {
@@ -806,7 +824,11 @@ public class Pack {
      * @see RubyArray#pack
      **/
     public static RubyArray unpackWithBlock(ThreadContext context, RubyString encoded, ByteList formatString, Block block) {
-        return (RubyArray) unpackInternal(context, encoded, formatString, block.isGiven() ? UNPACK_BLOCK : UNPACK_ARRAY, block);
+        return (RubyArray) unpackInternal(context, encoded, formatString, block.isGiven() ? UNPACK_BLOCK : UNPACK_ARRAY, 0, block);
+    }
+
+    public static RubyArray unpackWithBlock(ThreadContext context, RubyString encoded, ByteList formatString, long offset, Block block) {
+        return (RubyArray) unpackInternal(context, encoded, formatString, block.isGiven() ? UNPACK_BLOCK : UNPACK_ARRAY, offset, block);
     }
 
     private static RubyString unpackBase46Strict(Ruby runtime, ByteList input) {
@@ -874,6 +896,10 @@ public class Pack {
     }
 
     public static IRubyObject unpack1WithBlock(ThreadContext context, RubyString encoded, ByteList formatString, Block block) {
+        return unpack1WithBlock(context, encoded, formatString, 0, block);
+    }
+
+    public static IRubyObject unpack1WithBlock(ThreadContext context, RubyString encoded, ByteList formatString, long offset, Block block) {
         int formatLength = formatString.realSize();
 
         // Strict m0 is commmonly used in cookie handling so it has a fast path.
@@ -889,17 +915,27 @@ public class Pack {
             }
         }
 
-        return unpackInternal(context, encoded, formatString, UNPACK_1, block);
+        return unpackInternal(context, encoded, formatString, UNPACK_1, offset, block);
     }
 
-    private static IRubyObject unpackInternal(ThreadContext context, RubyString encoded, ByteList formatString, int mode, Block block) {
+    private static IRubyObject unpackInternal(ThreadContext context, RubyString encoded, ByteList formatString, int mode, long offset, Block block) {
         final Ruby runtime = context.runtime;
         final RubyArray result = (mode == UNPACK_BLOCK) || (mode == UNPACK_1) ? null : runtime.newArray();
         final ByteList encodedString = encoded.getByteList();
-        final boolean tainted = encoded.isTaint();
+
+        int len = encodedString.realSize();
+        int beg = encodedString.begin();
+        if (offset < 0) throw context.runtime.newArgumentError("offset can't be negative");
+        if (offset > 0) {
+            if (offset > len) throw context.runtime.newArgumentError("offset outside of string");
+            beg += offset;
+            len -= offset;
+        }
+
+
         // FIXME: potentially could just use ByteList here?
         ByteBuffer format = ByteBuffer.wrap(formatString.getUnsafeBytes(), formatString.begin(), formatString.length());
-        ByteBuffer encode = ByteBuffer.wrap(encodedString.getUnsafeBytes(), encodedString.begin(), encodedString.length());
+        ByteBuffer encode = ByteBuffer.wrap(encodedString.getUnsafeBytes(), beg, len);
         int next = safeGet(format);
         IRubyObject value = null; // UNPACK_1
 
@@ -933,7 +969,7 @@ public class Pack {
                 next = next == '>' ? BE : LE;
                 int index = ENDIANESS_CODES.indexOf(type + next);
                 if (index == -1) {
-                    throw runtime.newArgumentError("'" + (char)next + "' allowed only after types sSiIlLqQ");
+                    throw runtime.newArgumentError("'" + (char)next + "' allowed only after types sSiIlLqQjJ");
                 }
                 type = ENDIANESS_CODES.charAt(index);
                 next = safeGet(format);
@@ -979,34 +1015,34 @@ public class Pack {
                 case '%':
                     throw runtime.newArgumentError("% is not supported");
                 case 'A':
-                    value = unpack_A(context, block, result, tainted, encode, occurrences, mode);
+                    value = unpack_A(context, block, result, encode, occurrences, mode);
                     break;
                 case 'Z':
-                    value = unpack_Z(context, block, result, tainted, encode, occurrences, mode);
+                    value = unpack_Z(context, block, result, encode, occurrences, mode);
                     break;
                 case 'a':
-                    value = unpack_a(context, block, result, tainted, encode, occurrences, mode);
+                    value = unpack_a(context, block, result, encode, occurrences, mode);
                     break;
                 case 'b':
-                    value = unpack_b(context, block, result, tainted, encode, occurrences, mode);
+                    value = unpack_b(context, block, result, encode, occurrences, mode);
                     break;
                 case 'B':
-                    value = unpack_B(context, block, result, tainted, encode, occurrences, mode);
+                    value = unpack_B(context, block, result, encode, occurrences, mode);
                     break;
                 case 'h':
-                    value = unpack_h(context, block, result, tainted, encode, occurrences, mode);
+                    value = unpack_h(context, block, result, encode, occurrences, mode);
                     break;
                 case 'H':
-                    value = unpack_H(context, block, result, tainted, encode, occurrences, mode);
+                    value = unpack_H(context, block, result, encode, occurrences, mode);
                     break;
                 case 'u':
-                    value = unpack_u(context, block, result, tainted, encode, mode);
+                    value = unpack_u(context, block, result, encode, mode);
                     break;
                 case 'm':
-                    value = unpack_m(context, block, runtime, result, tainted, encode, occurrences, mode);
+                    value = unpack_m(context, block, runtime, result, encode, occurrences, mode);
                     break;
                 case 'M':
-                    value = unpack_M(context, block, result, tainted, encode, mode);
+                    value = unpack_M(context, block, result, encode, mode);
                     break;
                 case 'U':
                     value = unpack_U(context, block, runtime, result, encode, occurrences, mode);
@@ -1132,7 +1168,7 @@ public class Pack {
         return context.nil;
     }
 
-    private static IRubyObject unpack_M(ThreadContext context, Block block, RubyArray result, boolean tainted, ByteBuffer encode, int mode) {
+    private static IRubyObject unpack_M(ThreadContext context, Block block, RubyArray result, ByteBuffer encode, int mode) {
         byte[] lElem = new byte[Math.max(encode.remaining(),0)];
         int index = 0;
         for(;;) {
@@ -1162,10 +1198,10 @@ public class Pack {
                 lElem[index++] = value;
             }
         }
-        return appendOrYield(context, block, result, new ByteList(lElem, 0, index, ASCII, false), mode, tainted);
+        return appendOrYield(context, block, result, new ByteList(lElem, 0, index, ASCII, false), mode);
     }
 
-    private static IRubyObject unpack_m(ThreadContext context, Block block, Ruby runtime, RubyArray result, boolean tainted, ByteBuffer encode, int occurrences, int mode) {
+    private static IRubyObject unpack_m(ThreadContext context, Block block, Ruby runtime, RubyArray result, ByteBuffer encode, int occurrences, int mode) {
         int length = encode.remaining()*3/4;
         byte[] lElem = new byte[length];
         int a = -1, b = -1, c = 0, d;
@@ -1177,7 +1213,7 @@ public class Pack {
         } else {
             index = unpack_m_nonzeroOccurrences(encode, lElem, a, b, c, index);
         }
-        return appendOrYield(context, block, result, new ByteList(lElem, 0, index, ASCII, false), mode, tainted);
+        return appendOrYield(context, block, result, new ByteList(lElem, 0, index, ASCII, false), mode);
     }
 
     private static int unpack_m_nonzeroOccurrences(ByteBuffer encode, byte[] lElem, int a, int b, int c, int index) {
@@ -1299,7 +1335,7 @@ public class Pack {
         return index;
     }
 
-    private static IRubyObject unpack_u(ThreadContext context, Block block, RubyArray result, boolean tainted, ByteBuffer encode, int mode) {
+    private static IRubyObject unpack_u(ThreadContext context, Block block, RubyArray result, ByteBuffer encode, int mode) {
         int length = encode.remaining() * 3 / 4;
         byte[] lElem = new byte[length];
         int index = 0;
@@ -1362,10 +1398,10 @@ public class Pack {
                 }
             }
         }
-        return appendOrYield(context, block, result, new ByteList(lElem, 0, index, ASCII, false), mode, tainted);
+        return appendOrYield(context, block, result, new ByteList(lElem, 0, index, ASCII, false), mode);
     }
 
-    private static IRubyObject unpack_H(ThreadContext context, Block block, RubyArray result, boolean tainted, ByteBuffer encode, int occurrences, int mode) {
+    private static IRubyObject unpack_H(ThreadContext context, Block block, RubyArray result, ByteBuffer encode, int occurrences, int mode) {
         if (occurrences == IS_STAR || occurrences > encode.remaining() * 2) {
             occurrences = encode.remaining() * 2;
         }
@@ -1379,10 +1415,10 @@ public class Pack {
             }
             lElem[lCurByte] = sHexDigits[(bits >>> 4) & 15];
         }
-        return appendOrYield(context, block, result, new ByteList(lElem, USASCII, false), mode, tainted);
+        return appendOrYield(context, block, result, new ByteList(lElem, USASCII, false), mode);
     }
 
-    private static IRubyObject unpack_h(ThreadContext context, Block block, RubyArray result, boolean tainted, ByteBuffer encode, int occurrences, int mode) {
+    private static IRubyObject unpack_h(ThreadContext context, Block block, RubyArray result, ByteBuffer encode, int occurrences, int mode) {
         if (occurrences == IS_STAR || occurrences > encode.remaining() * 2) {
             occurrences = encode.remaining() * 2;
         }
@@ -1396,10 +1432,10 @@ public class Pack {
             }
             lElem[lCurByte] = sHexDigits[bits & 15];
         }
-        return appendOrYield(context, block, result, new ByteList(lElem, USASCII, false), mode, tainted);
+        return appendOrYield(context, block, result, new ByteList(lElem, USASCII, false), mode);
     }
 
-    private static IRubyObject unpack_B(ThreadContext context, Block block, RubyArray result, boolean tainted, ByteBuffer encode, int occurrences, int mode) {
+    private static IRubyObject unpack_B(ThreadContext context, Block block, RubyArray result, ByteBuffer encode, int occurrences, int mode) {
         if (occurrences == IS_STAR || occurrences > encode.remaining() * 8) {
             occurrences = encode.remaining() * 8;
         }
@@ -1414,10 +1450,10 @@ public class Pack {
             lElem[lCurByte] = (bits & 128) != 0 ? (byte)'1' : (byte)'0';
         }
 
-        return appendOrYield(context, block, result, new ByteList(lElem, ASCII, false), mode, tainted);
+        return appendOrYield(context, block, result, new ByteList(lElem, ASCII, false), mode);
     }
 
-    private static IRubyObject unpack_b(ThreadContext context, Block block, RubyArray result, boolean tainted, ByteBuffer encode, int occurrences, int mode) {
+    private static IRubyObject unpack_b(ThreadContext context, Block block, RubyArray result, ByteBuffer encode, int occurrences, int mode) {
         if (occurrences == IS_STAR || occurrences > encode.remaining() * 8) {
             occurrences = encode.remaining() * 8;
         }
@@ -1431,19 +1467,19 @@ public class Pack {
             }
             lElem[lCurByte] = (bits & 1) != 0 ? (byte)'1' : (byte)'0';
         }
-        return appendOrYield(context, block, result, new ByteList(lElem, USASCII, false), mode, tainted);
+        return appendOrYield(context, block, result, new ByteList(lElem, USASCII, false), mode);
     }
 
-    private static IRubyObject unpack_a(ThreadContext context, Block block, RubyArray result, boolean tainted, ByteBuffer encode, int occurrences, int mode) {
+    private static IRubyObject unpack_a(ThreadContext context, Block block, RubyArray result, ByteBuffer encode, int occurrences, int mode) {
         if (occurrences == IS_STAR || occurrences > encode.remaining()) {
             occurrences = encode.remaining();
         }
         byte[] potential = new byte[occurrences];
         encode.get(potential);
-        return appendOrYield(context, block, result, new ByteList(potential, ASCII, false), mode,tainted);
+        return appendOrYield(context, block, result, new ByteList(potential, ASCII, false), mode);
     }
 
-    private static IRubyObject unpack_Z(ThreadContext context, Block block, RubyArray result, boolean tainted, ByteBuffer encode, int occurrences, int mode) {
+    private static IRubyObject unpack_Z(ThreadContext context, Block block, RubyArray result, ByteBuffer encode, int occurrences, int mode) {
         boolean isStar = (occurrences == IS_STAR);
 
         if (occurrences == IS_STAR || occurrences > encode.remaining()) {
@@ -1462,7 +1498,7 @@ public class Pack {
             t++;
         }
 
-        IRubyObject value = appendOrYield(context, block, result, new ByteList(potential, 0, t, ASCII, false), mode, tainted);
+        IRubyObject value = appendOrYield(context, block, result, new ByteList(potential, 0, t, ASCII, false), mode);
         if (mode == UNPACK_1) {
              return value;
         }
@@ -1487,7 +1523,7 @@ public class Pack {
         return context.nil;
     }
 
-    private static IRubyObject unpack_A(ThreadContext context, Block block, RubyArray result, boolean tainted, ByteBuffer encode, int occurrences, int mode) {
+    private static IRubyObject unpack_A(ThreadContext context, Block block, RubyArray result, ByteBuffer encode, int occurrences, int mode) {
         if (occurrences == IS_STAR || occurrences > encode.remaining()) {
             occurrences = encode.remaining();
         }
@@ -1502,7 +1538,7 @@ public class Pack {
             }
         }
 
-        return appendOrYield(context, block, result, new ByteList(potential, 0, occurrences, ASCII, false), mode, tainted);
+        return appendOrYield(context, block, result, new ByteList(potential, 0, occurrences, ASCII, false), mode);
     }
 
     private static void unpack_at(Ruby runtime, ByteList encodedString, ByteBuffer encode, int occurrences) {
@@ -1539,9 +1575,8 @@ public class Pack {
         }
     }
 
-    private static IRubyObject appendOrYield(ThreadContext context, Block block, RubyArray result, ByteList item, int mode, boolean taint) {
+    private static IRubyObject appendOrYield(ThreadContext context, Block block, RubyArray result, ByteList item, int mode) {
         RubyString itemStr = RubyString.newString(context.runtime, item);
-        if (taint) itemStr.setTaint(true);
         if (mode == UNPACK_1) {
             return itemStr;
         } else {
@@ -1837,7 +1872,7 @@ public class Pack {
      */
     public static RubyString pack(Ruby runtime, RubyArray list, ByteList formatString) {
         RubyString buffer = runtime.newString();
-        return packCommon(runtime.getCurrentContext(), list, formatString, false, executor(), buffer);
+        return packCommon(runtime.getCurrentContext(), list, formatString, executor(), buffer);
     }
 
     @Deprecated
@@ -1854,8 +1889,7 @@ public class Pack {
     }
 
     public static RubyString pack(ThreadContext context, RubyArray list, RubyString formatString, RubyString buffer) {
-        RubyString pack = packCommon(context, list, formatString.getByteList(), formatString.isTaint(), executor(), buffer);
-        return (RubyString) pack.infectBy(formatString);
+        return packCommon(context, list, formatString.getByteList(), executor(), buffer);
     }
 
     /**
@@ -1870,12 +1904,11 @@ public class Pack {
         int idx;
     }
 
-    private static RubyString packCommon(ThreadContext context, RubyArray list, ByteList formatString, boolean tainted, ConverterExecutor executor, RubyString buffer) {
+    private static RubyString packCommon(ThreadContext context, RubyArray list, ByteList formatString, ConverterExecutor executor, RubyString buffer) {
         ByteBuffer format = ByteBuffer.wrap(formatString.getUnsafeBytes(), formatString.begin(), formatString.length());
 
         buffer.modify();
         ByteList result = buffer.getByteList();
-        boolean taintOutput = tainted;
         PackInts packInts = new PackInts(list.size(), 0);
         int type;
         int next = safeGet(format);
@@ -1972,7 +2005,7 @@ public class Pack {
                 case 'b':
                 case 'H':
                 case 'h':
-                    taintOutput = pack_h(context, list, result, taintOutput, packInts, type, occurrences, isStar);
+                    pack_h(context, list, result, packInts, type, occurrences, isStar);
                     break;
                 case 'x':
                     grow(result, sNil10, occurrences);
@@ -1985,10 +2018,10 @@ public class Pack {
                     break;
                 case 'u':
                 case 'm':
-                    taintOutput = pack_m(context, list, result, taintOutput, packInts, (char) type, occurrences, ignoreStar);
+                    pack_m(context, list, result, packInts, (char) type, occurrences, ignoreStar);
                     break;
                 case 'M':
-                    taintOutput = pack_M(context, list, result, taintOutput, packInts, occurrences);
+                    pack_M(context, list, result, packInts, occurrences);
                     break;
                 case 'U':
                     pack_U(context, list, result, packInts, occurrences);
@@ -1998,8 +2031,6 @@ public class Pack {
                     break;
             }
         }
-
-        if (taintOutput) buffer.setTaint(true);
 
         switch (enc_info) {
             case 1:
@@ -2083,12 +2114,11 @@ public class Pack {
         }
     }
 
-    private static boolean pack_M(ThreadContext context, RubyArray list, ByteList result, boolean taintOutput, PackInts packInts, int occurrences) {
+    private static void pack_M(ThreadContext context, RubyArray list, ByteList result, PackInts packInts, int occurrences) {
         ByteList lCurElemString;
         if (packInts.listSize-- <= 0) throw context.runtime.newArgumentError(sTooFew);
 
         IRubyObject from = list.eltInternal(packInts.idx++);
-        if (from.isTaint()) taintOutput = true;
         lCurElemString = from == context.nil ? ByteList.EMPTY_BYTELIST : from.asString().getByteList();
 
         if (occurrences <= 1) {
@@ -2096,10 +2126,9 @@ public class Pack {
         }
 
         PackUtils.qpencode(result, lCurElemString, occurrences);
-        return taintOutput;
     }
 
-    private static boolean pack_h(ThreadContext context, RubyArray list, ByteList result, boolean taintOutput, PackInts packInts, int type, int occurrences, boolean isStar) {
+    private static void pack_h(ThreadContext context, RubyArray list, ByteList result, PackInts packInts, int type, int occurrences, boolean isStar) {
         ByteList lCurElemString;
         if (packInts.listSize-- <= 0) {
             throw context.runtime.newArgumentError(sTooFew);
@@ -2107,7 +2136,6 @@ public class Pack {
 
         IRubyObject from = list.eltInternal(packInts.idx++);
         lCurElemString = from == context.nil ? ByteList.EMPTY_BYTELIST : from.convertToString().getByteList();
-        if (from.isTaint()) taintOutput = true;
 
         if (isStar) {
             occurrences = lCurElemString.length();
@@ -2116,19 +2144,16 @@ public class Pack {
         }
 
         pack_h_inner(result, type, lCurElemString, occurrences);
-        return taintOutput;
     }
 
-    private static boolean pack_m(ThreadContext context, RubyArray list, ByteList result, boolean taintOutput, PackInts packInts, char type, int occurrences, boolean ignoreStar) {
+    private static void pack_m(ThreadContext context, RubyArray list, ByteList result, PackInts packInts, char type, int occurrences, boolean ignoreStar) {
         ByteList lCurElemString;
         if (packInts.listSize-- <= 0) throw context.runtime.newArgumentError(sTooFew);
 
         IRubyObject from = list.eltInternal(packInts.idx++);
         if (from == context.nil) throw context.runtime.newTypeError(from, "Integer");
         lCurElemString = from.convertToString().getByteList();
-        if (from.isTaint()) taintOutput = true;
         encodeUM(context.runtime, lCurElemString, occurrences, ignoreStar, type, result);
-        return taintOutput;
     }
 
     private static void pack_at(ByteList result, int occurrences) {

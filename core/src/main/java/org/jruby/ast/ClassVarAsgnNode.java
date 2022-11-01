@@ -37,7 +37,6 @@ import java.util.List;
 import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Class variable assignment node.
@@ -49,8 +48,8 @@ public class ClassVarAsgnNode extends AssignableNode implements INameNode {
      * @param name id of the class variable to assign to
      * @param valueNode  Node used to compute the new value when the assignment is evaled
      */
-    public ClassVarAsgnNode(ISourcePosition position, RubySymbol name, Node valueNode) {
-        super(position, valueNode, valueNode != null && valueNode.containsVariableAssignment());
+    public ClassVarAsgnNode(int line, RubySymbol name, Node valueNode) {
+        super(line, valueNode, valueNode != null && valueNode.containsVariableAssignment());
         
         this.name = name;
     }

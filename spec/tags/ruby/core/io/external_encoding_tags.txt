@@ -1,0 +1,1 @@
+fails:IO#external_encoding raises an IOError on closed stream

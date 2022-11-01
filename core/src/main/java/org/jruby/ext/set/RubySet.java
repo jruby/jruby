@@ -59,7 +59,7 @@ import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 public class RubySet extends RubyObject implements Set {
 
     static RubyClass createSetClass(final Ruby runtime) {
-        RubyClass Set = runtime.defineClass("Set", runtime.getObject(), ALLOCATOR);
+        RubyClass Set = runtime.defineClass("Set", runtime.getObject(), RubySet::new);
 
         Set.setReifiedClass(RubySet.class);
 
@@ -98,12 +98,6 @@ public class RubySet extends RubyObject implements Set {
         this.hash = (RubyHash) getInstanceVariable("@hash");
     }
 
-    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-        public RubySet allocate(Ruby runtime, RubyClass klass) {
-            return new RubySet(runtime, klass);
-        }
-    };
-
     RubyHash hash; // @hash
 
     protected RubySet(Ruby runtime, RubyClass klass) {
@@ -132,13 +126,40 @@ public class RubySet extends RubyObject implements Set {
         setInstanceVariable("@hash", hash); // MRI compat with set.rb
     }
 
-    RubySet newSet(final Ruby runtime) {
-        RubySet set = new RubySet(runtime, getMetaClass());
+    /**
+     * Construct a new Set with the same class as this one.
+     *
+     * @param runtime the current runtime
+     * @return a new Set
+     */
+    RubySet newSetFast(final Ruby runtime) {
+        return newSet(runtime, getMetaClass());
+    }
+
+    /**
+     * Construct a new Set. The Set class will be retrieved from the global namespace.
+     *
+     * @param runtime the current runtime
+     * @return a new Set
+     */
+    public static RubySet newSet(final Ruby runtime) {
+        return newSet(runtime, (RubyClass) runtime.getClassFromPath("Set"));
+    }
+
+    /**
+     * Construct a new Set.
+     *
+     * @param runtime the current runtime
+     * @param metaclass the class to assign to the new set
+     * @return a new Set
+     */
+    public static RubySet newSet(final Ruby runtime, final RubyClass metaclass) {
+        RubySet set = new RubySet(runtime, metaclass);
         set.allocHash(runtime);
         return set;
     }
 
-    private RubySet newSet(final ThreadContext context, final RubyClass metaClass, final RubyArray elements) {
+    private static RubySet newSet(final ThreadContext context, final RubyClass metaClass, final RubyArray elements) {
         final RubySet set = new RubySet(context.runtime, metaClass);
         return set.initSet(context, elements.toJavaArrayMaybeUnsafe(), 0, elements.size());
     }
@@ -259,7 +280,7 @@ public class RubySet extends RubyObject implements Set {
     private static abstract class EachBody extends JavaInternalBlockBody {
 
         EachBody(final Ruby runtime) {
-            super(runtime, Signature.ONE_REQUIRED);
+            super(runtime, Signature.ONE_ARGUMENT);
         }
 
         @Override
@@ -281,16 +302,17 @@ public class RubySet extends RubyObject implements Set {
 
     }
 
-    @JRubyMethod
+    @JRubyMethod(frame = true)
     public IRubyObject initialize_dup(ThreadContext context, IRubyObject orig) {
-        super.initialize_copy(orig);
+        sites(context).initialize_dup_super.call(context, this, this, orig);
         setHash((RubyHash) (((RubySet) orig).hash).dup(context));
         return this;
     }
 
-    @JRubyMethod
-    public IRubyObject initialize_clone(ThreadContext context, IRubyObject orig) {
-        super.initialize_copy(orig);
+    @JRubyMethod(frame = true, forward = true, required = 1, optional = 1)
+    public IRubyObject initialize_clone(ThreadContext context, IRubyObject[] args) {
+        sites(context).initialize_clone_super.call(context, this, this, args);
+        IRubyObject orig = args[0];
         setHash((RubyHash) (((RubySet) orig).hash).rbClone(context));
         return this;
     }
@@ -301,22 +323,6 @@ public class RubySet extends RubyObject implements Set {
         final RubyHash hash = this.hash;
         if ( hash != null ) hash.freeze(context);
         return super.freeze(context);
-    }
-
-    @Override
-    @JRubyMethod
-    public IRubyObject taint(ThreadContext context) {
-        final RubyHash hash = this.hash;
-        if ( hash != null ) hash.taint(context);
-        return super.taint(context);
-    }
-
-    @Override
-    @JRubyMethod
-    public IRubyObject untaint(ThreadContext context) {
-        final RubyHash hash = this.hash;
-        if ( hash != null ) hash.untaint(context);
-        return super.untaint(context);
     }
 
     @JRubyMethod(name = "size", alias = "length")
@@ -464,7 +470,7 @@ public class RubySet extends RubyObject implements Set {
     // Returns a new set that is a copy of the set, flattening each containing set recursively.
     @JRubyMethod
     public RubySet flatten(final ThreadContext context) {
-        return newSet(context.runtime).flatten_merge(context, this);
+        return newSetFast(context.runtime).flatten_merge(context, this);
     }
 
     @JRubyMethod(name = "flatten!")
@@ -932,7 +938,7 @@ public class RubySet extends RubyObject implements Set {
             final IRubyObject key = block.yield(context, i);
             IRubyObject set;
             if ( ( set = h.fastARef(key) ) == null ) {
-                h.fastASet(key, set = newSet(runtime));
+                h.fastASet(key, set = newSetFast(runtime));
             }
             ((RubySet) set).invokeAdd(context, i);
         }
@@ -1019,7 +1025,7 @@ public class RubySet extends RubyObject implements Set {
                 @Override
                 protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject css) {
                     // set.add( self.class.new(css) ) :
-                    set.addImpl(runtime, RubySet.this.newSet(context, Set, (RubyArray) css));
+                    set.addImpl(runtime, newSet(context, Set, (RubyArray) css));
                     return context.nil;
                 }
             })
@@ -1082,6 +1088,57 @@ public class RubySet extends RubyObject implements Set {
             return set.callMethod(context, "each", IRubyObject.NULL_ARRAY, block);
         }
 
+    }
+
+    @JRubyMethod(name = "<=>")
+    public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
+        /*
+          def <=>(set)
+            return unless set.is_a?(Set)
+
+            case size <=> set.size
+            when -1 then -1 if proper_subset?(set)
+            when +1 then +1 if proper_superset?(set)
+            else 0 if self.==(set)
+            end
+          end
+         */
+        if (!(other instanceof RubySet)) return context.nil;
+
+        RubySet otherSet = (RubySet) other;
+
+        int size = size();
+        int otherSize = otherSet.size();
+
+        if (size < otherSize) {
+            if (sites(context).proper_subset.call(context, this, this, other).isTrue()) {
+                return RubyFixnum.minus_one(context.runtime);
+            }
+        } else if (size > otherSize){
+            if (sites(context).proper_superset.call(context, this, this, other).isTrue()) {
+                return RubyFixnum.one(context.runtime);
+            }
+        } else {
+            if (sites(context).op_equal.call(context, this, this, other).isTrue()) {
+                return RubyFixnum.zero(context.runtime);
+            }
+        }
+
+        return context.nil;
+    }
+
+    @JRubyMethod(name = "join")
+    public IRubyObject join(ThreadContext context, IRubyObject sep) {
+        return sites(context).ary_join.call(
+                context,
+                this,
+                sites(context).to_a.call(context, this, this),
+                sep);
+    }
+
+    @JRubyMethod(name = "join")
+    public IRubyObject join(ThreadContext context) {
+        return join(context, context.nil);
     }
 
     static RubyModule getTSort(final Ruby runtime) {
@@ -1149,19 +1206,16 @@ public class RubySet extends RubyObject implements Set {
 
         str.cat((byte) '{');
 
-        boolean tainted = isTaint(); boolean notFirst = false;
+        boolean notFirst = false;
 
         for ( IRubyObject elem : elementsOrdered() ) {
             final RubyString s = inspect(context, elem);
-            if ( s.isTaint() ) tainted = true;
             if ( notFirst ) str.cat((byte) ',').cat((byte) ' ');
             else str.setEncoding( s.getEncoding() ); notFirst = true;
             str.cat19( s );
         }
 
         str.cat((byte) '}');
-
-        if ( tainted ) str.setTaint(true);
     }
 
     // pp (in __jruby/set.rb__)
@@ -1182,7 +1236,7 @@ public class RubySet extends RubyObject implements Set {
     }
 
     protected final void modifyCheck(final Ruby runtime) {
-        if ((flags & FROZEN_F) != 0) throw runtime.newFrozenError("Set");
+        if ((flags & FROZEN_F) != 0) throw runtime.newFrozenError("Set", this);
     }
 
     // java.util.Set
@@ -1279,6 +1333,24 @@ public class RubySet extends RubyObject implements Set {
 
     final IRubyObject toRuby(Object obj) {
         return JavaUtil.convertJavaToUsableRubyObject(getRuntime(), obj);
+    }
+
+    @Deprecated
+    @Override
+    @JRubyMethod
+    public IRubyObject taint(ThreadContext context) {
+        return this;
+    }
+
+    @Deprecated
+    @Override
+    @JRubyMethod
+    public IRubyObject untaint(ThreadContext context) {
+        return this;
+    }
+
+    private static JavaSites.SetSites sites(ThreadContext context) {
+        return context.sites.Set;
     }
 
 }

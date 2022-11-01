@@ -40,11 +40,13 @@ public enum Operation {
     B_TRUE(OpFlags.f_is_jump_or_branch),
     B_FALSE(OpFlags.f_is_jump_or_branch),
     B_SWITCH(OpFlags.f_is_jump_or_branch),
+    B_INT(OpFlags.f_is_jump_or_branch),
 
     /** argument receive in methods and blocks **/
     RECV_SELF(0),
     RECV_PRE_REQD_ARG(OpFlags.f_is_arg_receive),
     RECV_POST_REQD_ARG(OpFlags.f_is_arg_receive),
+    RECV_KW(OpFlags.f_is_arg_receive),
     RECV_KW_ARG(OpFlags.f_is_arg_receive),
     RECV_KW_REST_ARG(OpFlags.f_is_arg_receive),
     RECV_REST_ARG(OpFlags.f_is_arg_receive),
@@ -56,6 +58,7 @@ public enum Operation {
     /** Instruction to reify an passed-in block to a Proc for def foo(&b) */
     REIFY_CLOSURE(0),
     LOAD_FRAME_CLOSURE(0),
+    LOAD_BLOCK_IMPLICIT_CLOSURE(0),
 
     /* By default, call instructions cannot be deleted even if their results
      * aren't used by anyone unless we know more about what the call is,
@@ -144,7 +147,6 @@ public enum Operation {
     COVERAGE(OpFlags.f_is_book_keeping_op | OpFlags.f_is_debug_op | OpFlags.f_has_side_effect),
 
     /** JRuby-impl instructions **/
-    ARG_SCOPE_DEPTH(0),
     BINDING_LOAD(OpFlags.f_is_load),
     BINDING_STORE(OpFlags.f_is_store | OpFlags.f_has_side_effect),
     BUILD_BACKREF(OpFlags.f_can_raise_exception),
@@ -159,6 +161,8 @@ public enum Operation {
     CLASS_VAR_MODULE(0),
     COPY(0),
     GET_ENCODING(0),
+    INT_MATH(0),
+    AS_FIXNUM(0),
     MASGN_OPT(0),
     MASGN_REQD(0),
     MASGN_REST(0),

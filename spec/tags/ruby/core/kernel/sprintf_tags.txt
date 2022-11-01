@@ -1,7 +1,5 @@
 fails(compiler):Kernel#sprintf passes some tests for negative %u
 fails:Kernel#sprintf integer formats u converts argument as a decimal number
-fails:Kernel#sprintf float formats g otherwise cuts fraction part to have only 6 digits at all
-fails:Kernel#sprintf float formats G otherwise cuts fraction part to have only 6 digits at all
 fails:Kernel#sprintf float formats a converts floating point argument as [-]0xh.hhhhp[+-]dd
 fails:Kernel#sprintf float formats a displays Float::INFINITY as Inf
 fails:Kernel#sprintf float formats a displays Float::NAN as NaN
@@ -27,8 +25,6 @@ fails:Kernel#sprintf width specifies the minimum number of characters that will 
 fails:Kernel#sprintf precision float types controls the number of decimal places displayed in fraction part
 fails:Kernel#sprintf reference by name %{name} style supports flags, width and precision
 fails:Kernel.sprintf integer formats u converts argument as a decimal number
-fails:Kernel.sprintf float formats g otherwise cuts fraction part to have only 6 digits at all
-fails:Kernel.sprintf float formats G otherwise cuts fraction part to have only 6 digits at all
 fails:Kernel.sprintf float formats a converts floating point argument as [-]0xh.hhhhp[+-]dd
 fails:Kernel.sprintf float formats a displays Float::INFINITY as Inf
 fails:Kernel.sprintf float formats a displays Float::NAN as NaN
@@ -53,3 +49,11 @@ fails:Kernel.sprintf flags * raises ArgumentError when is mixed with width
 fails:Kernel.sprintf width specifies the minimum number of characters that will be written to the result
 fails:Kernel.sprintf precision float types controls the number of decimal places displayed in fraction part
 fails:Kernel.sprintf reference by name %{name} style supports flags, width and precision
+fails:Kernel#sprintf other formats c raises TypeError if argument is nil
+fails:Kernel#sprintf other formats c raises TypeError if converting to String with to_str returns non-String
+fails:Kernel#sprintf other formats c raises TypeError if converting to Integer with to_int returns non-Integer
+fails:Kernel.sprintf other formats c raises TypeError if argument is nil
+fails:Kernel.sprintf other formats c raises TypeError if converting to String with to_str returns non-String
+fails:Kernel.sprintf other formats c raises TypeError if converting to Integer with to_int returns non-Integer
+fails:Kernel#sprintf %c raises error when a codepoint isn't representable in an encoding of a format string
+fails:Kernel.sprintf %c raises error when a codepoint isn't representable in an encoding of a format string

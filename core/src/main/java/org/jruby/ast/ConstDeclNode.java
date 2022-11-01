@@ -37,7 +37,6 @@ import java.util.List;
 import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Declaration (and assignment) of a Constant.
@@ -46,9 +45,9 @@ public class ConstDeclNode extends AssignableNode implements INameNode {
     private final RubySymbol name;
     private final INameNode constNode;
 
-    // TODO: Split this into two sub-classes so that name and constNode can be specified separately.
-    public ConstDeclNode(ISourcePosition position, RubySymbol name, INameNode constNode, Node valueNode) {
-        super(position, valueNode, valueNode != null && valueNode.containsVariableAssignment());
+    // FIXME: Split this into two sub-classes so that name and constNode can be specified separately.
+    public ConstDeclNode(int line, RubySymbol name, INameNode constNode, Node valueNode) {
+        super(line, valueNode, valueNode != null && valueNode.containsVariableAssignment());
         
         this.name = name;        
         this.constNode = constNode;

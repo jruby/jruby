@@ -316,14 +316,93 @@ public class TestRaiseException extends Base {
         assertTrue("missing org.jruby.RubyHash.default ... in : \n" + fullTrace, hash_default);
     }
 
-    public void testRubyExceptionWithoutCause() {
+    public void testRubyExceptionUsingEmbedAdapter() {
         try {
             RubyRuntimeAdapter evaler = JavaEmbedUtils.newRuntimeAdapter();
 
             evaler.eval(runtime, "no_method_with_this_name");
-            fail("Expected ScriptException");
+            fail("expected to throw");
         } catch (RaiseException re) {
             assertEquals("(NameError) undefined local variable or method `no_method_with_this_name' for main:Object", re.getMessage());
+        }
+    }
+
+    public void testRaiseExceptionWithoutCause() {
+        try {
+            runtime.evalScriptlet("raise RuntimeError, 'foo'");
+            fail("expected to throw");
+        } catch (RaiseException re) {
+            assertTrue(re.getMessage().contains("foo"));
+
+            assertNull(re.getCause());
+            assertFalse(printStackTrace(re).contains("Caused by:"));
+        }
+    }
+
+    public void testManuallySetExceptionCause() {
+        try {
+            runtime.evalScriptlet("raise RuntimeError, 'foo'");
+            fail("expected to throw");
+        } catch (RaiseException re) {
+            assertTrue(re.getMessage().contains("foo"));
+            re.initCause(new IllegalArgumentException("TEST-CAUSE"));
+
+            assertNotNull(re.getCause());
+            assertEquals("TEST-CAUSE", re.getCause().getMessage());
+            assertTrue(printStackTrace(re).contains("Caused by:"));
+        }
+    }
+
+    public void testRubyExceptionCause() {
+        try {
+            runtime.evalScriptlet("begin; raise NameError, 'foo'; rescue => e; raise 'bar'; end");
+            fail("expected to throw");
+        } catch (RaiseException re) {
+            assertTrue(re.getMessage().contains("bar"));
+
+            assertTrue(printStackTrace(re).contains("Caused by:"));
+            assertNotNull(re.getCause());
+            assertTrue(re.getCause() instanceof org.jruby.exceptions.NameError);
+        }
+    }
+
+    public void testJavaExceptionCause() {
+        try {
+            runtime.evalScriptlet("begin; raise java.io.IOException.new('foo'); rescue => e; raise 'bar'; end");
+            fail("expected to throw");
+        } catch (RaiseException re) {
+            assertTrue(re.getMessage().contains("bar"));
+
+            assertNotNull(re.getCause());
+            assertTrue(re.getCause() instanceof java.io.IOException);
+            assertEquals("foo", re.getCause().getMessage());
+        }
+    }
+
+    public void testOverrideSetExceptionCause() {
+        try {
+            runtime.evalScriptlet("raise 'foo'");
+            fail("expected to throw");
+        } catch (RaiseException re) {
+            assertTrue(re.getMessage().contains("foo"));
+            re.initCause(new IllegalArgumentException("TEST-CAUSE"));
+
+            assertNotNull(re.getCause());
+            assertEquals("TEST-CAUSE", re.getCause().getMessage());
+            assertTrue(printStackTrace(re).contains("Caused by:"));
+        }
+    }
+
+    public void testOverrideExceptionCause() {
+        try {
+            runtime.evalScriptlet("begin; raise NameError, 'foo'; rescue => e; raise 'bar'; end");
+            fail("expected to throw");
+        } catch (RaiseException re) {
+            assertTrue(re.getMessage().contains("bar"));
+            re.initCause(new IllegalArgumentException("TEST-CAUSE"));
+
+            assertTrue(printStackTrace(re).contains("Caused by: java.lang.IllegalArgumentException"));
+            assertTrue(re.getCause() instanceof IllegalArgumentException);
         }
     }
 
@@ -364,7 +443,7 @@ public class TestRaiseException extends Base {
         }
     }
 
-    public void testNewRaiseExceptioin() {
+    public void testNewRaiseException() {
         Ruby ruby = Ruby.newInstance();
 
         try {

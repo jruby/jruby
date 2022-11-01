@@ -1,0 +1,21 @@
+name: Nightly Master Snapshot
+
+on:
+  schedule:
+    - cron: '30 6 * * *'
+
+env:
+  JAVA_OPTS: '-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xms60M -Xmx1G -XX:InitialCodeCacheSize=40M -XX:ReservedCodeCacheSize=120M'
+
+permissions:
+  contents: read
+
+jobs:
+  publish-snapshot:
+    permissions:
+      contents: none
+    if: ${{ github.ref == 'refs/heads/master' }}
+    uses: jruby/jruby/.github/workflows/snapshot-publish.yml@6cd0d4d96d9406635183d81cf91acc82cd78245f
+    secrets:
+      SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+      SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}

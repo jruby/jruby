@@ -37,7 +37,6 @@ package org.jruby.javasupport;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import org.jruby.Ruby;
@@ -49,7 +48,6 @@ import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.anno.JRubyClass;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
@@ -58,11 +56,18 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.JRubyObjectInputStream;
 
+import static org.jruby.javasupport.JavaUtil.unwrapJava;
+
 /**
+ * Java::JavaObject wrapping is no longer used with JRuby.
+ * The (automatic) Java proxy wrapping has been the preferred method for a while.
+ * Just keep using <code>java.lang.Object.new</code> as usual, without the manual
+ * <code>JavaObject.wrap java_object</code>.
  *
+ * @deprecated since 9.4
  * @author  jpetersen
  */
-@JRubyClass(name="Java::JavaObject")
+@Deprecated // @JRubyClass(name="Java::JavaObject")
 public class JavaObject extends RubyObject {
 
     private static final Object NULL_LOCK = new Object();
@@ -75,6 +80,10 @@ public class JavaObject extends RubyObject {
         dataWrapStruct(value);
     }
 
+    private JavaObject(Ruby runtime, RubyClass klazz) {
+        this(runtime, klazz, null);
+    }
+
     @Override
     public final Object dataGetStruct() {
         return objectAccessor.get(this);
@@ -85,10 +94,7 @@ public class JavaObject extends RubyObject {
         objectAccessor.set(this, object);
     }
 
-    protected JavaObject(Ruby runtime, Object value) {
-        this(runtime, runtime.getJavaSupport().getJavaObjectClass(), value);
-    }
-
+    @Deprecated
     public static JavaObject wrap(final Ruby runtime, final Object value) {
         if ( value != null ) {
             if ( value instanceof Class ) {
@@ -98,13 +104,13 @@ public class JavaObject extends RubyObject {
                 return new JavaArray(runtime, value);
             }
         }
-        return new JavaObject(runtime, value);
+        return new JavaObject(runtime, runtime.getJavaSupport().getJavaModule().getClass("JavaObject"), value);
     }
 
     @JRubyMethod(meta = true)
     public static IRubyObject wrap(final ThreadContext context,
         final IRubyObject self, final IRubyObject object) {
-        final Object objectValue = unwrapObject(object, NEVER);
+        final Object objectValue = unwrapJava(object, NEVER);
 
         if ( objectValue == NEVER ) return context.nil;
 
@@ -142,7 +148,7 @@ public class JavaObject extends RubyObject {
     public boolean equals(final Object other) {
         final Object otherValue;
         if ( other instanceof IRubyObject ) {
-            otherValue = unwrapObject((IRubyObject) other, NEVER);
+            otherValue = unwrapJava((IRubyObject) other, NEVER);
         }
         else {
             otherValue = other;
@@ -172,44 +178,23 @@ public class JavaObject extends RubyObject {
     }
 
     public static IRubyObject to_s(Ruby runtime, Object dataStruct) {
-        if (dataStruct != null) {
-            final String stringValue = dataStruct.toString();
-            if ( stringValue == null ) return runtime.getNil();
-            return RubyString.newUnicodeString(runtime, stringValue);
-        }
-        return RubyString.newEmptyString(runtime);
+        return JavaProxyMethods.to_s(runtime, dataStruct);
     }
 
     @JRubyMethod(name = {"==", "eql?"}, required = 1)
     public IRubyObject op_equal(final IRubyObject other) {
-        return equals(getRuntime(), getValue(), other);
+        return JavaProxyMethods.equals(getRuntime(), getValue(), other);
     }
 
     public static RubyBoolean op_equal(JavaProxy self, IRubyObject other) {
-        return equals(self.getRuntime(), self.getObject(), other);
-    }
-
-    private static RubyBoolean equals(final Ruby runtime,
-        final Object thisValue, final IRubyObject other) {
-
-        final Object otherValue = unwrapObject(other, NEVER);
-
-        if ( otherValue == NEVER ) { // not a wrapped object
-            return runtime.getFalse();
-        }
-
-        if ( thisValue == null ) {
-            return runtime.newBoolean(otherValue == null);
-        }
-
-        return runtime.newBoolean(thisValue.equals(otherValue));
+        return JavaProxyMethods.equals(self.getRuntime(), self.getObject(), other);
     }
 
     @JRubyMethod(name = "equal?", required = 1)
     public IRubyObject same(final IRubyObject other) {
         final Ruby runtime = getRuntime();
         final Object thisValue = getValue();
-        final Object otherValue = unwrapObject(other, NEVER);
+        final Object otherValue = unwrapJava(other, NEVER);
 
         if ( otherValue == NEVER ) { // not a wrapped object
             return runtime.getFalse();
@@ -220,25 +205,19 @@ public class JavaObject extends RubyObject {
         return runtime.newBoolean(thisValue == otherValue);
     }
 
-    private static Object unwrapObject(
-        final IRubyObject wrapped, final Object defaultValue) {
-        if ( wrapped instanceof JavaObject ) {
-            return ((JavaObject) wrapped).getValue();
-        }
-        if ( wrapped instanceof JavaProxy ) {
-            return ((JavaProxy) wrapped).getObject();
-        }
-        return defaultValue;
-    }
-
     @JRubyMethod
     public RubyString java_type() {
         return getRuntime().newString(getJavaClass().getName());
     }
 
-    @JRubyMethod
+    @Deprecated
     public JavaClass java_class() {
         return JavaClass.get(getRuntime(), getJavaClass());
+    }
+
+    @JRubyMethod
+    public IRubyObject get_java_class() {
+        return Java.getInstance(getRuntime(), getJavaClass());
     }
 
     @JRubyMethod
@@ -312,10 +291,6 @@ public class JavaObject extends RubyObject {
         return super.toJava(target);
     }
 
-    private static final ObjectAllocator JAVA_OBJECT_ALLOCATOR = new ObjectAllocator() {
-        public JavaObject allocate(Ruby runtime, RubyClass klazz) {
-            return new JavaObject(runtime, klazz, null);
-        }
-    };
+    private static final ObjectAllocator JAVA_OBJECT_ALLOCATOR = JavaObject::new;
 
 }

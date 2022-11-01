@@ -1,8 +1,6 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.internal.runtime.methods.InterpretedIRBodyMethod;
 import org.jruby.ir.IRClassBody;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
@@ -87,7 +85,7 @@ public class DefineClassInstr extends TwoOperandResultBaseInstr implements Fixed
         if (!hasExplicitCallProtocol) pre(ic, context, clazz, null, clazz);
 
         try {
-            ThreadContext.pushBacktrace(context, id, ic.getFileName(), context.getLine());
+            ThreadContext.pushBacktrace(context, id, ic.getFileName(), ic.getLine());
             return ic.getEngine().interpret(context, null, clazz, ic, clazz.getMethodLocation(), id, Block.NULL_BLOCK);
         } finally {
             body.cleanupAfterExecution();

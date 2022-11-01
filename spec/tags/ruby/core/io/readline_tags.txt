@@ -1,0 +1,2 @@
+fails:IO#readline when passed separator and limit reads limit bytes till the separator
+fails:IO#readline when passed chomp raises exception when options passed as Hash

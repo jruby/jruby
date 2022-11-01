@@ -2,7 +2,6 @@ package org.jruby.ast;
 
 import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.InvalidSourcePosition;
 
 /**
  * Marker to indicate that rather than assigning nil (where in multiple
@@ -14,7 +13,7 @@ import org.jruby.lexer.yacc.InvalidSourcePosition;
  */
 public class RequiredKeywordArgumentValueNode extends Node implements InvisibleNode {
     public RequiredKeywordArgumentValueNode() {
-        super(InvalidSourcePosition.INSTANCE, false);
+        super(-1, false);
     }
 
     @Override

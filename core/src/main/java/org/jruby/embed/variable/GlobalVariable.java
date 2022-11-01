@@ -137,7 +137,7 @@ public class GlobalVariable extends AbstractVariable {
 
     static {
         final String[] NAMES = {
-            "$DEBUG", "$F", "$FILENAME", "$KCODE", "$LOAD_PATH", "$SAFE", "$VERBOSE", "$CLASSPATH", "$LOADED_FEATURES",
+            "$DEBUG", "$F", "$FILENAME", "$LOAD_PATH", "$VERBOSE", "$CLASSPATH", "$LOADED_FEATURES",
             "$PROGRAM_NAME", "$FIELD_SEPARATOR", "$ERROR_POSITION", "$DEFAULT_OUTPUT", "$PREMATCH", "$RS", "$MATCH",
             "$LAST_READ_LINE", "$FS", "$INPUT_RECORD_SEPARATOR", "$PID", "$NR", "$ERROR_INFO", "$PROCESS_ID",
             "$OUTPUT_RECORD_SEPARATOR", "$INPUT_LINE_NUMBER", "$LAST_PAREN_MATCH", "$LAST_MATCH_INFO", "$CHILD_STATUS",

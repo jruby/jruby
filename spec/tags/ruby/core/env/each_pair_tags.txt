@@ -1,1 +1,0 @@
-fails:ENV.each_pair with encoding transcodes from the locale encoding to Encoding.default_internal if set

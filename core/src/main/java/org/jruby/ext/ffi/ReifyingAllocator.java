@@ -10,10 +10,10 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 class ReifyingAllocator implements ObjectAllocator {
-    private final Class klass;
-    private final Constructor cons;
+    private final Class<? extends IRubyObject> klass;
+    private final Constructor<? extends IRubyObject> cons;
 
-    public ReifyingAllocator(Class klass) {
+    public ReifyingAllocator(Class<? extends IRubyObject> klass) {
         this.klass = klass;
         try {
             this.cons = klass.getDeclaredConstructor(Ruby.class, RubyClass.class);
@@ -24,8 +24,8 @@ class ReifyingAllocator implements ObjectAllocator {
 
     public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
         try {
-            if (klazz.getReifiedClass() == this.klass) {
-                return (IRubyObject) cons.newInstance(runtime, klazz);
+            if (klazz.getReifiedRubyClass() == this.klass) {
+                return cons.newInstance(runtime, klazz);
             }
 
             reifyWithAncestors(klazz);
@@ -44,10 +44,10 @@ class ReifyingAllocator implements ObjectAllocator {
         
         RubyClass realSuper = klazz.getSuperClass().getRealClass();
 
-        if (realSuper.getReifiedClass() == null) reifyWithAncestors(realSuper);
+        if (realSuper.getReifiedRubyClass() == null) reifyWithAncestors(realSuper);
         synchronized (klazz) {
             klazz.reify();
-            klazz.setAllocator(new ReifyingAllocator(klazz.getReifiedClass()));
+            klazz.setAllocator(new ReifyingAllocator(klazz.getReifiedRubyClass()));
         }
     }
 }

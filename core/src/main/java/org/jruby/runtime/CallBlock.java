@@ -52,6 +52,7 @@ public class CallBlock extends BlockBody {
         return new Block(body, binding);
     }
 
+    // Put back because fishwife 1.10.1 still relies on this.
     @Deprecated
     public static Block newCallClosure(IRubyObject self, RubyModule imClass, Arity arity, BlockCallback callback, ThreadContext context) {
         return newCallClosure(self, imClass, Signature.from(arity), callback, context);

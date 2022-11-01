@@ -37,7 +37,7 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.lexer.LexingCommon;
 import org.jruby.runtime.Helpers;
 
 /**
@@ -66,17 +66,17 @@ public class ArgsNode extends Node {
     /**
      * Construct a new ArgsNode with no keyword arguments.
      */
-    public ArgsNode(ISourcePosition position, ListNode pre, ListNode optionalArguments,
+    public ArgsNode(int line, ListNode pre, ListNode optionalArguments,
                     RestArgNode rest, ListNode post, BlockArgNode blockArgNode) {
-        this(position, pre, optionalArguments, rest, post, null, null, blockArgNode);
+        this(line, pre, optionalArguments, rest, post, null, null, blockArgNode);
     }
 
     /**
      * Construct a new ArgsNode with keyword arguments.
      */
-    public ArgsNode(ISourcePosition position, ListNode pre, ListNode optionalArguments,
+    public ArgsNode(int line, ListNode pre, ListNode optionalArguments,
             RestArgNode rest, ListNode post, ListNode keywords, KeywordRestArgNode keyRest, BlockArgNode blockArgNode) {
-        super(position, pre != null && pre.containsVariableAssignment() ||
+        super(line, pre != null && pre.containsVariableAssignment() ||
                         optionalArguments != null && optionalArguments.containsVariableAssignment() ||
                         rest != null && rest.containsVariableAssignment() ||
                         post != null && post.containsVariableAssignment() ||
@@ -91,7 +91,7 @@ public class ArgsNode extends Node {
         int size = preSize + optSize + postSize + keywordsSize;
 
         args = size > 0 ? new Node[size] : NO_ARGS;
-        optIndex = (short) (preSize != 0 ? preSize : 0);
+        optIndex = (short) preSize;
         postIndex = (short) (optSize != 0 ? optIndex + optSize : optIndex);
         keywordsIndex = (short) (postSize != 0 ? postIndex + postSize : postIndex);
 
@@ -103,6 +103,10 @@ public class ArgsNode extends Node {
         this.restArgNode = rest;
         this.blockArgNode = blockArgNode;
         this.keyRest = keyRest;
+    }
+
+    public boolean isEmpty() {
+        return args.length == 0;
     }
 
     public Node[] getArgs() {
@@ -126,26 +130,14 @@ public class ArgsNode extends Node {
         return NodeType.ARGSNODE;
     }
 
-    public boolean hasKwargs() {
-        boolean keywords = getKeywordCount() > 0;
-        return keywords || keyRest != null;
-    }
-    
-    public int countKeywords() {
-        if (hasKwargs()) {
-            boolean keywords = args.length - keywordsIndex > 0;
-            if (keywords) {
-                // Rest keyword argument
-                return 0;
-            }
-            return args.length - keywordsIndex;
-        } else {
-            return 0;
-        }
+    public boolean cannotAcceptKwargs() {
+        return keyRest.equals(LexingCommon.NIL);
     }
 
-    public boolean hasRestArg() {
-        return restArgNode != null;
+    public boolean hasKwargs() {
+        boolean keywords = getKeywordCount() > 0;
+        return keywords ||
+                keyRest != null && !cannotAcceptKwargs();
     }
 
     /**
@@ -161,7 +153,7 @@ public class ArgsNode extends Node {
      * Gets the required arguments at the beginning of the argument definition
      */
     public ListNode getPre() {
-        return new ListNode(getPosition()).addAll(args, 0, getPreCount());
+        return new ListNode(getLine()).addAll(args, 0, getPreCount());
     }
 
     public int getRequiredArgsCount() {
@@ -173,11 +165,7 @@ public class ArgsNode extends Node {
     }
 
     public ListNode getPost() {
-        return new ListNode(getPosition()).addAll(args, postIndex, getPostCount());
-    }
-
-    public int getMaxArgumentsCount() {
-        return hasRestArg() ? -1 : getRequiredArgsCount() + getOptionalArgsCount();
+        return new ListNode(getLine()).addAll(args, postIndex, getPostCount());
     }
 
     /**
@@ -185,7 +173,7 @@ public class ArgsNode extends Node {
      * @return Returns a ListNode
      */
     public ListNode getOptArgs() {
-        return new ListNode(getPosition()).addAll(args, optIndex, getOptionalArgsCount());
+        return new ListNode(getLine()).addAll(args, optIndex, getOptionalArgsCount());
     }
 
     /**
@@ -194,6 +182,11 @@ public class ArgsNode extends Node {
      */
     public RestArgNode getRestArgNode() {
         return restArgNode;
+    }
+
+    // Used by jrubyc/jit (Ruby code)
+    public boolean hasRestArg() {
+        return restArgNode != null;
     }
 
     /**
@@ -214,7 +207,7 @@ public class ArgsNode extends Node {
     }
 
     public ListNode getKeywords() {
-        return new ListNode(getPosition()).addAll(args, keywordsIndex, getKeywordCount());
+        return new ListNode(getLine()).addAll(args, keywordsIndex, getKeywordCount());
     }
 
     public KeywordRestArgNode getKeyRest() {

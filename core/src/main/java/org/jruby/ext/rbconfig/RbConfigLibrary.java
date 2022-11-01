@@ -103,6 +103,7 @@ public class RbConfigLibrary implements Library {
         String architecture = Platform.ARCH;
         if (architecture == null) architecture = "unknown";
         if ("amd64".equals(architecture)) architecture = "x86_64";
+        if ("aarch64".equals(architecture) && Platform.IS_MAC) architecture = "arm64";
 
         return architecture;
     }
@@ -277,7 +278,7 @@ public class RbConfigLibrary implements Library {
         setConfig(context, CONFIG, "target_cpu", arch);
 
         String jrubyJarFile = "jruby.jar";
-        URL jrubyPropertiesUrl = Ruby.getClassLoader().getResource("/org/jruby/Ruby.class");
+        URL jrubyPropertiesUrl = Ruby.getClassLoader().getResource("org/jruby/Ruby.class");
         if (jrubyPropertiesUrl != null) {
             Pattern jarFile = Pattern.compile("jar:file:.*?([a-zA-Z0-9.\\-]+\\.jar)!" + "/org/jruby/Ruby.class");
             Matcher jarMatcher = jarFile.matcher(jrubyPropertiesUrl.toString());
@@ -424,8 +425,11 @@ public class RbConfigLibrary implements Library {
         String ldflags = ""; // + soflags;
         String dldflags = "";
         String ldsharedflags = " -shared ";
+        String arch = getArchitecture();
+        String archflags = "";
 
-        String archflags = " -m" + (IS_64_BIT ? "64" : "32");
+        if (arch.equals("x86_64") || arch.equals("i386"))
+            archflags += " -m" + (IS_64_BIT ? "64" : "32");
 
         String hdr_dir = newFile(normalizedHome, "lib/native/include/").getPath();
 
@@ -440,7 +444,7 @@ public class RbConfigLibrary implements Library {
         } else if (Platform.IS_MAC) {
             ldsharedflags = " -dynamic -bundle -undefined dynamic_lookup ";
             cflags = " -DTARGET_RT_MAC_CFM=0 " + cflags;
-            archflags = " -arch " + getArchitecture();
+            archflags = " -arch " + arch;
             cppflags = " -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE " + cppflags;
             setConfig(context, mkmfHash, "DLEXT", "bundle");
 	        setConfig(context, mkmfHash, "EXEEXT", "");
@@ -504,9 +508,18 @@ public class RbConfigLibrary implements Library {
         return SafePropertyAccessor.getProperty("jruby.script", "jruby").replace('\\', '/');
     }
 
-    // TODO: note lack of command.com support for Win 9x...
+    // This differs from MRI where they always return /bin/sh on windows even though that is
+    // not going to be a useful value on windows.
     public static String jrubyShell() {
-        return SafePropertyAccessor.getProperty("jruby.shell", Platform.IS_WINDOWS ? "cmd.exe" : "/bin/sh").replace('\\', '/');
+        if (Platform.IS_WINDOWS) {
+            // We ignore what the launcher provides since it is hardcoded as 'cmd.exe'.  MRI in all
+            // invocations just defers to what COMSPEC returns so we will as well.
+            String comspec = SafePropertyAccessor.getenv("COMSPEC");
+            // FIXME: Why do we forward slash in rbconfig and not in place which uses it and expects / vs \?
+            return comspec == null ? "cmd.exe" : comspec.replace('\\', '/');
+        } else {
+            return SafePropertyAccessor.getProperty("jruby.shell", "/bin/sh");
+        }
     }
 
     private static String getRubyEnv(RubyHash envHash, String var, String default_value) {

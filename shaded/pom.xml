@@ -2,17 +2,17 @@
 <!--
 
 
-DO NOT MODIFIY - GENERATED CODE
+DO NOT MODIFY - GENERATED CODE
 
 
 -->
-<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>9.3.0.0-SNAPSHOT</version>
+    <version>9.4.0.0-SNAPSHOT</version>
   </parent>
   <artifactId>jruby-core</artifactId>
   <name>JRuby Core</name>
@@ -34,7 +34,7 @@ DO NOT MODIFIY - GENERATED CODE
         <artifactId>maven-shade-plugin</artifactId>
         <executions>
           <execution>
-            <id>create lib/jruby.jar</id>
+            <id>create shaded jar</id>
             <phase>package</phase>
             <goals>
               <goal>shade</goal>
@@ -48,8 +48,11 @@ DO NOT MODIFIY - GENERATED CODE
                   <pattern>org.objectweb</pattern>
                   <shadedPattern>org.jruby.org.objectweb</shadedPattern>
                 </relocation>
+                <relocation>
+                  <pattern>me.qmx.jitescript</pattern>
+                  <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
+                </relocation>
               </relocations>
-              <outputFile>${jruby.basedir}/lib/jruby.jar</outputFile>
               <transformers>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <mainClass>org.jruby.Main</mainClass>
@@ -58,10 +61,51 @@ DO NOT MODIFIY - GENERATED CODE
                   </manifestEntries>
                 </transformer>
               </transformers>
-              <createSourcesJar>${create.sources.jar}</createSourcesJar>
+              <createSourcesJar>true</createSourcesJar>
             </configuration>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>com.coderplus.maven.plugins</groupId>
+        <artifactId>copy-rename-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>copy to lib/jruby.jar</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <configuration>
+              <sourceFile>target/jruby-core-${project.version}.jar</sourceFile>
+              <destinationFile>${jruby.basedir}/lib/jruby.jar</destinationFile>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <encoding>utf-8</encoding>
+          <verbose>true</verbose>
+          <fork>false</fork>
+          <compilerArgs>
+            <arg>-J-Xmx1G</arg>
+          </compilerArgs>
+          <showWarnings>true</showWarnings>
+          <showDeprecation>true</showDeprecation>
+          <source>${base.java.version}</source>
+          <source>1.8</source>
+          <target>${base.javac.version}</target>
+          <target>1.8</target>
+          <useIncrementalCompilation>false</useIncrementalCompilation>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-source-plugin</artifactId>
+        <configuration>
+          <skipSource>true</skipSource>
+        </configuration>
       </plugin>
     </plugins>
   </build>
@@ -102,7 +146,7 @@ DO NOT MODIFIY - GENERATED CODE
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                       <mainClass>org.jruby.Main</mainClass>
                       <manifestEntries>
-                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                        <Automatic-Module-Name>org.jruby.dist</Automatic-Module-Name>
                       </manifestEntries>
                     </transformer>
                   </transformers>
@@ -112,6 +156,7 @@ DO NOT MODIFIY - GENERATED CODE
                       <excludes>**/module-info.class</excludes>
                     </filter>
                   </filters>
+                  <createSourcesJar>true</createSourcesJar>
                 </configuration>
               </execution>
             </executions>
@@ -155,7 +200,7 @@ DO NOT MODIFIY - GENERATED CODE
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                       <mainClass>org.jruby.Main</mainClass>
                       <manifestEntries>
-                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                        <Automatic-Module-Name>org.jruby.dist</Automatic-Module-Name>
                       </manifestEntries>
                     </transformer>
                   </transformers>
@@ -165,6 +210,7 @@ DO NOT MODIFIY - GENERATED CODE
                       <excludes>**/module-info.class</excludes>
                     </filter>
                   </filters>
+                  <createSourcesJar>true</createSourcesJar>
                 </configuration>
               </execution>
             </executions>
@@ -208,7 +254,7 @@ DO NOT MODIFIY - GENERATED CODE
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                       <mainClass>org.jruby.Main</mainClass>
                       <manifestEntries>
-                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                        <Automatic-Module-Name>org.jruby.dist</Automatic-Module-Name>
                       </manifestEntries>
                     </transformer>
                   </transformers>
@@ -218,6 +264,7 @@ DO NOT MODIFIY - GENERATED CODE
                       <excludes>**/module-info.class</excludes>
                     </filter>
                   </filters>
+                  <createSourcesJar>true</createSourcesJar>
                 </configuration>
               </execution>
             </executions>
@@ -261,7 +308,7 @@ DO NOT MODIFIY - GENERATED CODE
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                       <mainClass>org.jruby.Main</mainClass>
                       <manifestEntries>
-                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                        <Automatic-Module-Name>org.jruby.dist</Automatic-Module-Name>
                       </manifestEntries>
                     </transformer>
                   </transformers>
@@ -271,6 +318,7 @@ DO NOT MODIFIY - GENERATED CODE
                       <excludes>**/module-info.class</excludes>
                     </filter>
                   </filters>
+                  <createSourcesJar>true</createSourcesJar>
                 </configuration>
               </execution>
             </executions>
@@ -314,7 +362,7 @@ DO NOT MODIFIY - GENERATED CODE
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                       <mainClass>org.jruby.Main</mainClass>
                       <manifestEntries>
-                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                        <Automatic-Module-Name>org.jruby.dist</Automatic-Module-Name>
                       </manifestEntries>
                     </transformer>
                   </transformers>
@@ -324,6 +372,7 @@ DO NOT MODIFIY - GENERATED CODE
                       <excludes>**/module-info.class</excludes>
                     </filter>
                   </filters>
+                  <createSourcesJar>true</createSourcesJar>
                 </configuration>
               </execution>
             </executions>
@@ -367,7 +416,7 @@ DO NOT MODIFIY - GENERATED CODE
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                       <mainClass>org.jruby.Main</mainClass>
                       <manifestEntries>
-                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                        <Automatic-Module-Name>org.jruby.dist</Automatic-Module-Name>
                       </manifestEntries>
                     </transformer>
                   </transformers>
@@ -377,6 +426,7 @@ DO NOT MODIFIY - GENERATED CODE
                       <excludes>**/module-info.class</excludes>
                     </filter>
                   </filters>
+                  <createSourcesJar>true</createSourcesJar>
                 </configuration>
               </execution>
             </executions>
@@ -420,7 +470,7 @@ DO NOT MODIFIY - GENERATED CODE
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                       <mainClass>org.jruby.Main</mainClass>
                       <manifestEntries>
-                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                        <Automatic-Module-Name>org.jruby.dist</Automatic-Module-Name>
                       </manifestEntries>
                     </transformer>
                   </transformers>
@@ -430,6 +480,7 @@ DO NOT MODIFIY - GENERATED CODE
                       <excludes>**/module-info.class</excludes>
                     </filter>
                   </filters>
+                  <createSourcesJar>true</createSourcesJar>
                 </configuration>
               </execution>
             </executions>
@@ -473,7 +524,7 @@ DO NOT MODIFIY - GENERATED CODE
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                       <mainClass>org.jruby.Main</mainClass>
                       <manifestEntries>
-                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                        <Automatic-Module-Name>org.jruby.dist</Automatic-Module-Name>
                       </manifestEntries>
                     </transformer>
                   </transformers>
@@ -483,6 +534,7 @@ DO NOT MODIFIY - GENERATED CODE
                       <excludes>**/module-info.class</excludes>
                     </filter>
                   </filters>
+                  <createSourcesJar>true</createSourcesJar>
                 </configuration>
               </execution>
             </executions>
@@ -526,7 +578,7 @@ DO NOT MODIFIY - GENERATED CODE
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                       <mainClass>org.jruby.Main</mainClass>
                       <manifestEntries>
-                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                        <Automatic-Module-Name>org.jruby.dist</Automatic-Module-Name>
                       </manifestEntries>
                     </transformer>
                   </transformers>
@@ -536,6 +588,7 @@ DO NOT MODIFIY - GENERATED CODE
                       <excludes>**/module-info.class</excludes>
                     </filter>
                   </filters>
+                  <createSourcesJar>true</createSourcesJar>
                 </configuration>
               </execution>
             </executions>

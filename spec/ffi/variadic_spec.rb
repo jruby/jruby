@@ -13,11 +13,16 @@ describe "Function with variadic arguments" do
     enum :enum_type2, [:c3, 42, :c4]
     attach_function :pack_varargs, [ :buffer_out, :string, :varargs ], :void
     attach_function :pack_varargs2, [ :buffer_out, :enum_type1, :string, :varargs ], :enum_type1
+    callback :cbVrD, [ ], :double
+    callback :cbVrI, [:int], :int
+    callback :cbVrL, [:long], :long
 
     attach_function :testBlockingOpen, [ ], :pointer
     attach_function :testBlockingRWva, [ :pointer, :char, :varargs ], :char, :blocking => true
     attach_function :testBlockingWRva, [ :pointer, :char, :varargs ], :char, :blocking => true
     attach_function :testBlockingClose, [ :pointer ], :void
+    attach_function :testCallbackVrDva, :testClosureVrDva, [ :double, :varargs ], :double
+    attach_function :testCallbackVrILva, :testClosureVrILva, [ :int, :long, :varargs ], :long
   end
 
   it "takes enum arguments" do
@@ -75,6 +80,17 @@ describe "Function with variadic arguments" do
       LibTest.pack_varargs(buf, "f", :double, v.to_f)
       expect(buf.get_float64(0)).to eq(v)
     end
+  end
+
+  it "call variadic with callback argument" do
+    pr = proc { 42.0 }
+    expect(LibTest.testCallbackVrDva(3.0, :cbVrD, pr)).to be_within(0.0000001).of(45.0)
+  end
+
+  it "call variadic with several callback arguments" do
+    pr1 = proc { |i| i + 1 }
+    pr2 = proc { |l| l + 2 }
+    expect(LibTest.testCallbackVrILva(5, 6, :cbVrI, pr1, :cbVrL, pr2)).to eq(14)
   end
 
   module Varargs

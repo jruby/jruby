@@ -4,9 +4,6 @@ import org.jruby.Ruby;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.ir.targets.GlobalVariableCompiler;
 import org.jruby.ir.targets.IRBytecodeAdapter;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.JavaNameMangler;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
@@ -20,7 +17,7 @@ public class NormalGlobalVariableCompiler implements GlobalVariableCompiler {
     }
 
     @Override
-    public void getGlobalVariable(String name, String file, int line) {
+    public void getGlobalVariable(String name, String file) {
         compiler.getValueCompiler().pushRuntime();
         compiler.invokeVirtual(Type.getType(Ruby.class), Method.getMethod("org.jruby.internal.runtime.GlobalVariables getGlobalVariables()"));
         compiler.adapter.ldc(name);
@@ -28,7 +25,7 @@ public class NormalGlobalVariableCompiler implements GlobalVariableCompiler {
     }
 
     @Override
-    public void setGlobalVariable(String name, String file, int line) {
+    public void setGlobalVariable(String name, String file) {
         compiler.getValueCompiler().pushRuntime();
         compiler.invokeVirtual(Type.getType(Ruby.class), Method.getMethod("org.jruby.internal.runtime.GlobalVariables getGlobalVariables()"));
         compiler.adapter.swap();

@@ -3,3 +3,8 @@ windows:IO#readlines when passed a string that starts with a | gets data from th
 windows:IO#readlines when passed no arguments updates self's position
 windows:IO#readlines when passed a separator updates self's position based on the number of characters read
 fails:IO.readlines when passed a string that starts with a | gets data from a fork when passed -
+critical(hangs):IO.readlines when passed name, object when the object is an Integer when passed limit raises ArgumentError when passed 0 as a limit
+critical(hangs):IO#readlines when passed limit raises ArgumentError when passed 0 as a limit
+fails:IO#readlines when passed chomp raises exception when options passed as Hash
+fails:IO.readlines when passed name, object when the object is an options Hash raises TypeError exception
+fails:IO.readlines when passed name, object, object when the second object is an options Hash raises TypeError exception

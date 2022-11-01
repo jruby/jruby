@@ -34,7 +34,6 @@ package org.jruby.ast;
 
 import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /** 
  * Represents an until statement.
@@ -44,18 +43,17 @@ public class UntilNode extends Node {
     private final Node bodyNode;
     private final boolean evaluateAtStart;
 
-    public UntilNode(ISourcePosition position, Node conditionNode, Node bodyNode) {
-        this(position, conditionNode, bodyNode, true);
+    public UntilNode(int line, Node conditionNode, Node bodyNode) {
+        this(line, conditionNode, bodyNode, true);
     }
 
     public NodeType getNodeType() {
         return NodeType.UNTILNODE;
     }
 
-    public UntilNode(ISourcePosition position, Node conditionNode, Node bodyNode, boolean evaluateAtStart) {
-        super(position, conditionNode.containsVariableAssignment() || bodyNode.containsVariableAssignment());
+    public UntilNode(int line, Node conditionNode, Node bodyNode, boolean evaluateAtStart) {
+        super(line, conditionNode.containsVariableAssignment() || bodyNode.containsVariableAssignment());
         
-        assert conditionNode != null : "conditionNode is not null";
         assert bodyNode != null : "bodyNode is not null";
         
         this.conditionNode = conditionNode;

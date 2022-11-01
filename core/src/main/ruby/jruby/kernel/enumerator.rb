@@ -54,6 +54,14 @@ class Enumerator
     nil
   end
 
+  def +(other)
+    obj = Enumerator::Chain.new(self, other)
+    if self.instance_of?(Enumerator::Lazy) || other.instance_of?(Enumerator::Lazy)
+      return Enumerator::Lazy.send :__from, obj, :each, []
+    end
+    obj
+  end
+
   class FiberGenerator
     class State
       attr_reader :to_proc
@@ -417,6 +425,17 @@ class Enumerator
           end
         end
       end
+    end
+
+    def eager
+      Enumerator.send :__from, self, :each, [], self.size
+    end
+
+    def compact
+      Lazy.new(self) do |yielder, *values|
+        values = values.first unless values.size > 1
+        yielder.yield(values) unless values.nil?
+      end.__set_inspect :compact
     end
 
     protected

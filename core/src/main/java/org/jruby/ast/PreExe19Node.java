@@ -30,15 +30,14 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 
 /**
  * A pre-execution construction (BEGIN { ... }).
  */
 public class PreExe19Node extends PreExeNode {
-    public PreExe19Node(ISourcePosition position, StaticScope scope, Node body, int endLine) {
-        super(position, scope, body, endLine);
+    public PreExe19Node(int line, StaticScope scope, Node body, int endLine) {
+        super(line, scope, body, endLine);
     }
 
     @Override

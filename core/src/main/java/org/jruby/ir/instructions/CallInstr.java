@@ -12,6 +12,7 @@ import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.TwoOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
 import org.jruby.ir.operands.Hash;
+import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
@@ -29,61 +30,46 @@ import java.util.List;
 public class CallInstr extends CallBase implements ResultInstr {
     protected transient Variable result;
 
-    public static CallInstr createWithKwargs(IRScope scope, CallType callType, Variable result, RubySymbol name,
-                                             Operand receiver, Operand[] args, Operand closure,
-                                             List<KeyValuePair<Operand, Operand>> kwargs) {
-        // FIXME: This is obviously total nonsense but this will be on an optimized path and we will not be constructing
-        // a new hash like this unless the eventual caller needs an ordinary hash.
-        Operand[] newArgs = new Operand[args.length + 1];
-        System.arraycopy(args, 0, newArgs, 0, args.length);
-        newArgs[args.length] = new Hash(kwargs, true);
-
-        return create(scope, callType, result, name, receiver, newArgs, closure);
-    }
-
-    public static CallInstr create(IRScope scope, Variable result, RubySymbol name, Operand receiver, Operand[] args, Operand closure) {
-        return create(scope, CallType.NORMAL, result, name, receiver, args, closure);
-    }
-
-    public static CallInstr create(IRScope scope, CallType callType, Variable result, RubySymbol name, Operand receiver, Operand[] args, Operand closure) {
+    public static CallInstr create(IRScope scope, CallType callType, Variable result, RubySymbol name, Operand receiver,
+                                   Operand[] args, Operand closure, int flags) {
         boolean isPotentiallyRefined = scope.maybeUsingRefinements();
 
         if (!containsArgSplat(args)) {
-            boolean hasClosure = closure != null;
+            boolean hasClosure = closure != NullBlock.INSTANCE;
 
             if (args.length == 0 && !hasClosure) {
-                return new ZeroOperandArgNoBlockCallInstr(scope, callType, result, name, receiver, args, isPotentiallyRefined);
+                return new ZeroOperandArgNoBlockCallInstr(scope, callType, result, name, receiver, args, flags, isPotentiallyRefined);
             } else if (args.length == 1) {
-                if (hasClosure) return new OneOperandArgBlockCallInstr(scope, callType, result, name, receiver, args, closure, isPotentiallyRefined);
+                if (hasClosure) return new OneOperandArgBlockCallInstr(scope, callType, result, name, receiver, args, closure, flags, isPotentiallyRefined);
                 if (!isPotentiallyRefined) {
                     // These instructions use primitive call paths that are not implemented for RefinedCallSite.
                     if (isAllFixnums(args)) {
-                        return new OneFixnumArgNoBlockCallInstr(scope, callType, result, name, receiver, args, isPotentiallyRefined);
+                        return new OneFixnumArgNoBlockCallInstr(scope, callType, result, name, receiver, args, flags, isPotentiallyRefined);
                     }
                     if (isAllFloats(args)) {
-                        return new OneFloatArgNoBlockCallInstr(scope, callType, result, name, receiver, args, isPotentiallyRefined);
+                        return new OneFloatArgNoBlockCallInstr(scope, callType, result, name, receiver, args, flags, isPotentiallyRefined);
                     }
                 }
 
-                return new OneOperandArgNoBlockCallInstr(scope, callType, result, name, receiver, args, isPotentiallyRefined);
+                return new OneOperandArgNoBlockCallInstr(scope, callType, result, name, receiver, args, flags, isPotentiallyRefined);
             } else if (args.length == 2 && !hasClosure) {
-                return new TwoOperandArgNoBlockCallInstr(scope, callType, result, name, receiver, args, isPotentiallyRefined);
+                return new TwoOperandArgNoBlockCallInstr(scope, callType, result, name, receiver, args, flags, isPotentiallyRefined);
             }
         }
 
-        return new CallInstr(scope, callType, result, name, receiver, args, closure, isPotentiallyRefined);
+        return new CallInstr(scope, callType, result, name, receiver, args, closure, flags, isPotentiallyRefined);
     }
 
 
-    public CallInstr(IRScope scope, CallType callType, Variable result, RubySymbol name, Operand receiver, Operand[] args, Operand closure,
-                     boolean potentiallyRefined) {
-        this(scope, Operation.CALL, callType, result, name, receiver, args, closure, potentiallyRefined);
+    public CallInstr(IRScope scope, CallType callType, Variable result, RubySymbol name, Operand receiver, Operand[] args,
+                     Operand closure, int flags, boolean potentiallyRefined) {
+        this(scope, Operation.CALL, callType, result, name, receiver, args, closure, flags, potentiallyRefined);
     }
 
     // clone constructor
     protected CallInstr(IRScope scope, Operation op, CallType callType, Variable result, RubySymbol name, Operand receiver,
-                                Operand[] args, Operand closure, boolean potentiallyRefined, CallSite callSite, long callSiteId) {
-        super(scope, op, callType, name, receiver, args, closure, potentiallyRefined, callSite, callSiteId);
+                                Operand[] args, Operand closure, int flags, boolean potentiallyRefined, CallSite callSite, long callSiteId) {
+        super(scope, op, callType, name, receiver, args, closure, flags, potentiallyRefined, callSite, callSiteId);
 
         assert result != null;
 
@@ -92,8 +78,8 @@ public class CallInstr extends CallBase implements ResultInstr {
 
     // normal constructor
     protected CallInstr(IRScope scope, Operation op, CallType callType, Variable result, RubySymbol name, Operand receiver,
-                        Operand[] args, Operand closure, boolean potentiallyRefined) {
-        super(scope, op, callType, name, receiver, args, closure, potentiallyRefined);
+                        Operand[] args, Operand closure, int flags, boolean potentiallyRefined) {
+        super(scope, op, callType, name, receiver, args, closure, flags, potentiallyRefined);
 
         assert result != null;
 
@@ -128,12 +114,13 @@ public class CallInstr extends CallBase implements ResultInstr {
             args[i] = d.decodeOperand();
         }
 
-        Operand closure = hasClosureArg ? d.decodeOperand() : null;
+        Operand closure = hasClosureArg ? d.decodeOperand() : NullBlock.INSTANCE;
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("before result");
+        int flags = d.decodeInt();
         Variable result = d.decodeVariable();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call, result:  "+ result);
 
-        return create(d.getCurrentScope(), callType, result, name, receiver, args, closure);
+        return create(d.getCurrentScope(), callType, result, name, receiver, args, closure, flags);
     }
 
     public Variable getResult() {
@@ -153,7 +140,8 @@ public class CallInstr extends CallBase implements ResultInstr {
     public Instr clone(CloneInfo ii) {
         return new CallInstr(ii.getScope(), getOperation(), getCallType(), ii.getRenamedVariable(result), getName(),
                 getReceiver().cloneForInlining(ii), cloneCallArgs(ii),
-                getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii), isPotentiallyRefined(),
+                getClosureArg().cloneForInlining(ii),
+                getFlags(), isPotentiallyRefined(),
                 getCallSite(), getCallSiteId());
     }
 

@@ -1,11 +1,15 @@
 package org.jruby.util.collections;
 
 public class IntList {
-
-    private int[] ints = new int[10];
+    private int[] ints;
     private int size;
 
+    public IntList(int initialCapacity) {
+        ints = new int[initialCapacity];
+    }
+
     public IntList() {
+        this(10);
     }
 
     public IntList(int[] start) {
@@ -41,6 +45,10 @@ public class IntList {
             }
         }
         return false;
+    }
+
+    public void clear() {
+        size = 0;
     }
 
     public int[] toIntArray() {

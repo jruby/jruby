@@ -1,3 +1,6 @@
-fails:ObjectSpace.define_finalizer calls finalizer on process termination
 fails:ObjectSpace.define_finalizer calls finalizer at exit even if it is self-referencing
 fails:ObjectSpace.define_finalizer raises ArgumentError trying to define a finalizer on a non-reference
+fails:ObjectSpace.define_finalizer calls a finalizer defined in a finalizer running at exit
+wip:ObjectSpace.define_finalizer warns if the finalizer has the object as the receiver
+wip:ObjectSpace.define_finalizer warns if the finalizer is a method bound to the receiver
+wip:ObjectSpace.define_finalizer warns if the finalizer was a block in the receiver

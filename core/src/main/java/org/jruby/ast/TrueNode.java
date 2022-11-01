@@ -34,14 +34,13 @@ package org.jruby.ast;
 
 import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Represents 'true'.
  */
 public class TrueNode extends Node implements SideEffectFree {
-    public TrueNode(ISourcePosition position) {
-        super(position, false);
+    public TrueNode(int line) {
+        super(line, false);
     }
 
     public NodeType getNodeType() {

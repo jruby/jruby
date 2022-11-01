@@ -2,7 +2,10 @@
 
 require 'test/unit'
 require 'open3'
-require_relative 'lib/jit_support'
+
+if RUBY_ENGINE == 'ruby'
+  require_relative 'lib/jit_support'
+end
 
 class TestOpen3 < Test::Unit::TestCase
   RUBY = EnvUtil.rubybin
@@ -77,7 +80,7 @@ class TestOpen3 < Test::Unit::TestCase
   end
 
   def test_env
-    result = Open3.popen3({'A' => 'B', 'C' => 'D'}, RUBY, '-e' 'p ENV["A"]') do |i, out, err, thr|
+    Open3.popen3({'A' => 'B', 'C' => 'D'}, RUBY, '-e' 'p ENV["A"]') do |i, out, err, thr|
       output = out.read
       assert_equal("\"B\"\n", output)
     end
@@ -92,7 +95,7 @@ class TestOpen3 < Test::Unit::TestCase
   end
 
   def test_numeric_file_descriptor3
-    skip "passing FDs bigger than 2 is not supported on Windows" if /mswin|mingw/ =~ RUBY_PLATFORM
+    skip "passing FDs bigger than 2 is not supported on Windows" if /mswin|mingw/ =~ RbConfig::CONFIG['host_os']
     with_pipe {|r, w|
       Open3.popen3(RUBY, '-e', 'IO.open(3).puts "foo"', 3 => w) {|i,o,e,t|
         assert_equal("foo\n", r.gets, "[GH-808] [ruby-core:67347] [Bug #10699]")
@@ -127,7 +130,11 @@ class TestOpen3 < Test::Unit::TestCase
           i.close
           STDERR.reopen(old)
           assert_equal("zo", o.read)
-          assert_equal("ze", JITSupport.remove_mjit_logs(r.read))
+          if defined?(JITSupport)
+            assert_equal("ze", JITSupport.remove_mjit_logs(r.read))
+          else
+            assert_equal("ze", r.read)
+          end
         }
       }
     }
@@ -147,6 +154,17 @@ class TestOpen3 < Test::Unit::TestCase
         }
       }
     }
+  end
+
+  def test_popen2e_noblock
+    i, o, t = Open3.popen2e(RUBY, '-e', 'STDOUT.print STDIN.read')
+    i.print "baz"
+    i.close
+    assert_equal("baz", o.read)
+  ensure
+    i.close
+    o.close
+    t.join
   end
 
   def test_capture3
@@ -320,5 +338,6 @@ class TestOpen3 < Test::Unit::TestCase
     command = [RUBY, '-e', 'puts "test_integer_and_symbol_key"']
     out, status = Open3.capture2(*command, :chdir => '.', 2 => IO::NULL)
     assert_equal("test_integer_and_symbol_key\n", out)
+    assert_predicate(status, :success?)
   end
 end

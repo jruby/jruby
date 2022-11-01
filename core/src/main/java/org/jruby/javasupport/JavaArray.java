@@ -34,16 +34,19 @@ package org.jruby.javasupport;
 import java.lang.reflect.Array;
 
 import org.jruby.Ruby;
-import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
-import org.jruby.RubyModule;
-import org.jruby.anno.JRubyClass;
 import org.jruby.java.util.ArrayUtils;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
-@JRubyClass(name="Java::JavaArray", parent="Java::JavaObject")
+/**
+ * Java::JavaArray wrapping is no longer used with JRuby.
+ * The (automatic) Java proxy wrapping has been the preferred method for a while and
+ * works with arrays, use <code>java.lang.Object[2].new</code> as usual.
+ *
+ * @deprecated since 9.4
+ */
+@Deprecated // @JRubyClass(name="Java::JavaArray", parent="Java::JavaObject")
 public class JavaArray extends JavaObject {
 
     private final JavaUtil.JavaConverter javaConverter;
@@ -52,14 +55,6 @@ public class JavaArray extends JavaObject {
         super(runtime, runtime.getJavaSupport().getJavaArrayClass(), array);
         assert array.getClass().isArray();
         javaConverter = JavaUtil.getJavaConverter(array.getClass().getComponentType());
-    }
-
-    public static RubyClass createJavaArrayClass(final Ruby runtime, final RubyModule Java) {
-        return createJavaArrayClass(runtime, Java, Java.getClass("JavaObject"));
-    }
-
-    static RubyClass createJavaArrayClass(final Ruby runtime, RubyModule Java, RubyClass JavaObject) {
-        return Java.defineClassUnder("JavaArray", JavaObject, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
     }
 
     public Class getComponentType() {

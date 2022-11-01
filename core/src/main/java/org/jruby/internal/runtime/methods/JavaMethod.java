@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -31,6 +32,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.RubyEvent;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -41,7 +43,7 @@ import static org.jruby.util.StringSupport.split;
 /**
  */
 public abstract class JavaMethod extends DynamicMethod implements Cloneable, MethodArgs2, NativeCallMethod {
-    protected Arity arity = Arity.OPTIONAL;
+    protected Signature signature = Signature.OPTIONAL;
     private String javaName;
     private boolean isSingleton;
     protected StaticScope staticScope;
@@ -86,12 +88,6 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
 
     public JavaMethod(RubyModule implementationClass, Visibility visibility, String name) {
         super(implementationClass, visibility, name);
-    }
-
-    public void init(RubyModule implementationClass, Arity arity, Visibility visibility, StaticScope staticScope) {
-        this.staticScope = staticScope;
-        setArity(arity);
-        super.init(implementationClass, visibility);
     }
 
     public DynamicMethod dup() {
@@ -201,13 +197,22 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         if (enabled) context.trace(RubyEvent.RETURN, name, getImplementationClass());
     }
 
+    @Deprecated
     public void setArity(Arity arity) {
-        this.arity = arity;
+        this.signature = Signature.from(arity);
     }
 
-    @Override
+    public void setSignature(Signature signature) {
+        this.signature = signature;
+    }
+
+    @Deprecated @Override
     public Arity getArity() {
-        return arity;
+        return getSignature().arity();
+    }
+
+    public Signature getSignature() {
+        return signature;
     }
 
     public void setJavaName(String javaName) {
@@ -656,9 +661,13 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             return call(context, self, clazz, name, args[0], block);
         }
 
-        @Override
+        @Deprecated @Override
         public Arity getArity() {
             return Arity.ONE_ARGUMENT;
+        }
+
+        public Signature getSignature() {
+            return Signature.ONE_ARGUMENT;
         }
     }
 
@@ -1099,9 +1108,13 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             if (args.length != 0) return raiseArgumentError(this, context, name, args.length, 0, 0);
             return call(context, self, clazz, name);
         }
-        @Override
+        @Deprecated @Override
         public Arity getArity() {
             return Arity.NO_ARGUMENTS;
+        }
+
+        public Signature getSignature() {
+            return Signature.NO_ARGUMENTS;
         }
     }
 
@@ -1216,9 +1229,13 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             return call(context, self, clazz, name, args[0]);
         }
 
-        @Override
+        @Deprecated @Override
         public Arity getArity() {
             return Arity.ONE_ARGUMENT;
+        }
+
+        public Signature getSignature() {
+            return Signature.ONE_ARGUMENT;
         }
     }
 
@@ -1297,9 +1314,13 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             return call(context, self, clazz, name, args[0], args[1]);
         }
 
-        @Override
+        @Deprecated @Override
         public Arity getArity() {
             return Arity.TWO_ARGUMENTS;
+        }
+
+        public Signature getSignature() {
+            return Signature.TWO_ARGUMENTS;
         }
     }
 
@@ -1349,9 +1370,13 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             return call(context, self, clazz, name, args[0], args[1], args[2]);
         }
 
-        @Override
+        @Deprecated @Override
         public Arity getArity() {
             return Arity.THREE_ARGUMENTS;
+        }
+
+        public Signature getSignature() {
+            return Signature.THREE_ARGUMENTS;
         }
     }
 
@@ -1363,11 +1388,6 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     @Deprecated
     public JavaMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, String name) {
         super(implementationClass, visibility, name);
-    }
-
-    @Deprecated
-    public void init(RubyModule implementationClass, Arity arity, Visibility visibility, StaticScope staticScope, CallConfiguration callConfig) {
-        init(implementationClass, arity, visibility, staticScope);
     }
 
     @Deprecated

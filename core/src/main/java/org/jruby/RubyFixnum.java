@@ -155,7 +155,23 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
 
     @Override
     public IRubyObject equal_p(ThreadContext context, IRubyObject obj) {
-        return RubyBoolean.newBoolean(context, this == obj || eql(obj));
+        long value = this.value;
+
+        if (fixnumable(value)) {
+            return RubyBoolean.newBoolean(context, this == obj || eql(obj));
+        }
+
+        return super.equal_p(context, obj);
+    }
+
+    /**
+     * Determine whether the given long value is in fixnum range.
+     *
+     * @param value the value in question
+     * @return true if the value is in fixnum range, false otherwise
+     */
+    private static boolean fixnumable(long value) {
+        return value <= Long.MAX_VALUE / 2 && value >= Long.MIN_VALUE / 2;
     }
 
     @Override
@@ -1236,11 +1252,11 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return newFixnum(context.runtime, value ^ other);
     }
 
-    /** fix_aref
+    /** rb_fix_aref
      *
      */
     @Override
-    public IRubyObject op_aref(ThreadContext context, IRubyObject other) {
+    protected IRubyObject op_aref_subclass(ThreadContext context, IRubyObject other) {
         if (!(other instanceof RubyFixnum) && !((other = fixCoerce(other)) instanceof RubyFixnum)) {
             BigInteger big = ((RubyBignum) other).value;
             other = RubyBignum.bignorm(context.runtime, big);
@@ -1386,16 +1402,13 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
 
     @Override
     public IRubyObject id() {
-        if (value <= Long.MAX_VALUE / 2 && value >= Long.MIN_VALUE / 2) {
+        long value = this.value;
+
+        if (fixnumable(value)) {
             return newFixnum(metaClass.runtime, 2 * value + 1);
         }
 
         return super.id();
-    }
-
-    @Override
-    public IRubyObject taint(ThreadContext context) {
-        return this;
     }
 
     // Piece of mri rb_to_id
@@ -1497,11 +1510,14 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return context.sites.Fixnum;
     }
 
-    /** rb_fix_induced_from
-     *
-     */
     @Deprecated
     public static IRubyObject induced_from(IRubyObject recv, IRubyObject other) {
         return RubyNumeric.num2fix(other);
+    }
+
+    @Deprecated
+    @Override
+    public IRubyObject taint(ThreadContext context) {
+        return this;
     }
 }

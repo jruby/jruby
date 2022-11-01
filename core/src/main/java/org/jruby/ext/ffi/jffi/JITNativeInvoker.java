@@ -141,10 +141,6 @@ abstract public class JITNativeInvoker extends NativeInvoker {
         }
     }
 
-    Signature getSignature() {
-        return signature;
-    }
-
     CallContext getCallContext() {
         return callContext;
     }

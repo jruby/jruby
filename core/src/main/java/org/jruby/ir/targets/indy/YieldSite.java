@@ -75,11 +75,13 @@ public class YieldSite extends MutableCallSite {
 
     public IRubyObject yield(ThreadContext context, Block block, IRubyObject arg) throws Throwable {
         if (Options.INVOKEDYNAMIC_YIELD.load()) {
-            if (++bindCount >= MAX_REBIND) {
+            if (bindCount >= MAX_REBIND) {
                 if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
                     LOG.info("yield \tdisabled due to polymorphism:" + Bootstrap.logBlock(block));
                 }
             } else {
+                bindCount++;
+
                 BlockBody body = block.getBody();
                 MethodHandle target;
 
@@ -117,11 +119,13 @@ public class YieldSite extends MutableCallSite {
 
     public IRubyObject yieldSpecific(ThreadContext context, Block block) throws Throwable {
         if (Options.INVOKEDYNAMIC_YIELD.load()) {
-            if (++bindCount >= MAX_REBIND) {
+            if (bindCount >= MAX_REBIND) {
                 if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
                     LOG.info("yield \tdisabled due to polymorphism:" + Bootstrap.logBlock(block));
                 }
             } else {
+                bindCount++;
+
                 BlockBody body = block.getBody();
                 MethodHandle target;
 

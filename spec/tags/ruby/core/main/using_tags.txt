@@ -1,0 +1,2 @@
+fails:main.using raises error when called from method in wrapped script
+fails:main.using raises error when called on toplevel from module

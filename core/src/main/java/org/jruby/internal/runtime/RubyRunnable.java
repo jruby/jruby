@@ -35,7 +35,9 @@ import org.jruby.RubyThread;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.ThreadKill;
+import org.jruby.ir.runtime.IRBreakJump;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -49,17 +51,19 @@ public class RubyRunnable implements ThreadedRunnable {
     private final Ruby runtime;
     private final RubyProc proc;
     private final IRubyObject[] arguments;
+    private final int callInfo;
     private final RubyThread rubyThread;
 
     private Thread javaThread;
     private static boolean warnedAboutTC = false;
 
-    public RubyRunnable(RubyThread rubyThread, IRubyObject[] args, Block currentBlock) {
+    public RubyRunnable(RubyThread rubyThread, IRubyObject[] args, Block currentBlock, int callInfo) {
         this.rubyThread = rubyThread;
         this.runtime = rubyThread.getRuntime();
 
         proc = runtime.newProc(Block.Type.THREAD, currentBlock);
         this.arguments = args;
+        this.callInfo = callInfo;
     }
 
     @Deprecated
@@ -75,6 +79,7 @@ public class RubyRunnable implements ThreadedRunnable {
     public void run() {
         javaThread = Thread.currentThread();
         ThreadContext context = runtime.getThreadService().registerNewThread(rubyThread);
+        context.callInfo = callInfo;
 
         // set thread context JRuby classloader here, for Ruby-owned thread
         ClassLoader oldContextClassLoader = null;
@@ -108,6 +113,8 @@ public class RubyRunnable implements ThreadedRunnable {
             } catch (MainExitException mee) {
                 // Someone called exit!, so we need to kill the main thread
                 runtime.getThreadService().getMainThread().kill();
+            } catch (IRBreakJump irbj) {
+                rubyThread.exceptionRaised(Helpers.newLocalJumpErrorForBreak(runtime, irbj.breakValue));
             } catch (Throwable t) {
                 rubyThread.exceptionRaised(t);
             } finally {

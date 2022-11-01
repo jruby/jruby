@@ -35,16 +35,14 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 public class OpAsgnAndNode extends Node implements BinaryOperatorNode {
     private final Node firstNode;
     private final Node secondNode;
 
-    public OpAsgnAndNode(ISourcePosition position, Node headNode, Node valueNode) {
-        super(position, headNode.containsVariableAssignment() || valueNode.containsVariableAssignment());
+    public OpAsgnAndNode(int line, Node headNode, Node valueNode) {
+        super(line, headNode.containsVariableAssignment() || valueNode.containsVariableAssignment());
         
-        assert headNode != null : "headNode is not null";
         assert valueNode != null : "valueNode is not null";
         
         firstNode = headNode;

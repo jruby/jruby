@@ -39,10 +39,12 @@ import java.io.IOException;
 import jnr.posix.FileStat;
 import jnr.posix.util.Platform;
 
+import static org.jruby.RubyArgsFile.Next.NextFile;
+import static org.jruby.RubyArgsFile.Next.Stream;
 import static org.jruby.RubyEnumerator.enumeratorize;
+import static org.jruby.anno.FrameField.LASTLINE;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
-import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariable;
@@ -50,11 +52,12 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.JavaSites;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.io.Getline;
 
 public class RubyArgsFile extends RubyObject {
 
@@ -63,7 +66,7 @@ public class RubyArgsFile extends RubyObject {
     }
 
     public static void initArgsFile(final Ruby runtime) {
-        RubyClass argfClass = runtime.defineClass("ARGFClass", runtime.getObject(), ARGF_ALLOCATOR);
+        RubyClass argfClass = runtime.defineClass("ARGFClass", runtime.getObject(), RubyArgsFile::new);
         argfClass.includeModule(runtime.getEnumerable());
 
         argfClass.defineAnnotatedMethods(RubyArgsFile.class);
@@ -91,13 +94,6 @@ public class RubyArgsFile extends RubyObject {
         }
     }
 
-    private static final ObjectAllocator ARGF_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyArgsFile(runtime, klass);
-        }
-    };
-
     @JRubyMethod(name = "initialize", visibility = PRIVATE, rest = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         final Ruby runtime = context.runtime;
@@ -122,18 +118,25 @@ public class RubyArgsFile extends RubyObject {
         return this;
     }
 
+    public enum Next {
+        Stream,   // We are only getting from $stdin
+        SameFile, // We are continuing to interact with the same file
+        NextFile  // Time to advance to the next file.
+    };
+
     public static final class ArgsFileData {
 
         private final Ruby runtime;
         private RubyArray argv;
         public IRubyObject currentFile;
         private boolean inited = false;
-        public int next_p = 0;
+        public Next next_p = NextFile;
         public boolean binmode = false;
+        private IRubyObject inPlace; // false, nil, String
 
         public ArgsFileData(Ruby runtime, RubyArray argv) {
             this.runtime = runtime;
-            this.argv = argv;
+            setArgs(argv);
             this.currentFile = runtime.getNil();
         }
 
@@ -142,29 +145,32 @@ public class RubyArgsFile extends RubyObject {
             runtime.setCurrentLine(linenumber);
         }
 
+        // ARGF.class.new
         void setArgs(RubyArray argv) {
             inited = false;
             this.argv = argv;
+            this.inPlace = runtime.getFalse();
         }
 
         public boolean next_argv(ThreadContext context) {
             if (!inited) {
-                next_p = argv.getLength() > 0 ? 1 : -1;
+                next_p = argv.getLength() > 0 ? NextFile : Stream;
                 inited = true;
                 runtime.setCurrentLine(0);
             } else {
                 if (argv.isNil()) {
-                    next_p = -1;
-                } else if (next_p == -1 && argv.getLength() > 0) {
-                    next_p = 1;
+                    next_p = Stream;
+                } else if (next_p == Stream && argv.getLength() > 0) {
+                    next_p = NextFile;
                 }
             }
 
             IRubyObject $FILENAME = runtime.getGlobalVariables().get("$FILENAME");
 
-            if (next_p == 1) {
+            if (next_p == NextFile) {
                 if (argv.getLength() > 0) {
-                    final RubyString filename = argv.shift(context).convertToString();
+                    RubyString filename = TypeConverter.convertToType(argv.shift(context), context.runtime.getString(), "to_path").convertToString();
+                    StringSupport.checkStringSafety(runtime, filename);
                     if ( ! filename.op_equal(context, $FILENAME).isTrue() ) {
                         runtime.defineReadonlyVariable("$FILENAME", filename, GlobalVariable.Scope.GLOBAL);
                     }
@@ -173,7 +179,9 @@ public class RubyArgsFile extends RubyObject {
                         currentFile = runtime.getGlobalVariables().get("$stdin");
                     } else {
                         currentFile = RubyFile.open(context, runtime.getFile(), new IRubyObject[]{ filename }, Block.NULL_BLOCK);
-                        String extension = runtime.getInstanceConfig().getInPlaceBackupExtension();
+                        String extension = null;
+                        if (inPlace.isTrue()) extension = inPlace.asJavaString();
+                        if (extension == null) extension = runtime.getInstanceConfig().getInPlaceBackupExtension();
                         if (extension != null) {
                             if (Platform.IS_WINDOWS) {
                                 inplaceEditWindows(context, filename.asJavaString(), extension);
@@ -183,17 +191,18 @@ public class RubyArgsFile extends RubyObject {
                         }
                         if (binmode) ((RubyIO) currentFile).binmode();
                     }
-                    next_p = 0;
+                    next_p = Next.SameFile;
                 } else {
-                    next_p = 1;
+                    next_p = NextFile;
                     return false;
                 }
-            } else if (next_p == -1) {
+            } else if (next_p == Stream) {
                 currentFile = runtime.getGlobalVariables().get("$stdin");
                 if (!filenameEqlDash((RubyString) $FILENAME)) {
                     runtime.defineReadonlyVariable("$FILENAME", runtime.newString("-"), GlobalVariable.Scope.GLOBAL);
                 }
             }
+
             return true;
         }
 
@@ -269,6 +278,47 @@ public class RubyArgsFile extends RubyObject {
         recv.getRuntime().setCurrentLine(newLineNumber);
     }
 
+    @JRubyMethod
+    public static IRubyObject inplace_mode(ThreadContext context, IRubyObject recv) {
+        ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
+
+        if (data.inPlace == null) return context.nil;
+        if (data.inPlace.isNil()) return context.nil;
+
+        return data.inPlace.dup();
+    }
+
+    @JRubyMethod(name = "inplace_mode=")
+    public static IRubyObject inplace_mode_set(ThreadContext context, IRubyObject recv, IRubyObject test) {
+        return setInplaceMode(context, recv, test);
+    }
+
+    private static IRubyObject setInplaceMode(ThreadContext context, IRubyObject recv, IRubyObject test) {
+        ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
+
+        if (test.isNil()) {
+            data.inPlace = context.nil;
+        } else if (!test.isTrue()) {
+            data.inPlace = context.fals;
+        } else {
+            test = TypeConverter.convertToType(test, context.runtime.getString(), "to_str", false);
+            if (test.isNil() || ((RubyString) test).length() == 0) {
+                data.inPlace = context.nil;
+            } else {
+                StringSupport.checkStringSafety(context.runtime, test);
+                test.setFrozen(true);
+                data.inPlace = test;
+            }
+        }
+
+        return recv;
+    }
+
+    @JRubyMethod(name = "inplace_mode=")
+    public IRubyObject inplace_mode_set(ThreadContext context, IRubyObject test) {
+        return setInplaceMode(context, this, test);
+    }
+
     @JRubyMethod(name = "argv")
     public static IRubyObject argv(ThreadContext context, IRubyObject recv) {
         return ArgsFileData.getArgsFileData(context.runtime).argv;
@@ -311,29 +361,50 @@ public class RubyArgsFile extends RubyObject {
 
     // MRI: argf_getline
     private static IRubyObject argf_getline(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
+        Ruby runtime = context.runtime;
+
+        IRubyObject line;
+
+        ArgsFileData data = ArgsFileData.getArgsFileData(runtime);
 
         while (true) {
             if (!data.next_argv(context)) return context.nil;
 
-            IRubyObject line = data.currentFile.callMethod(context, "gets", args);
+            RubyIO currentFile = (RubyIO) data.currentFile;
 
-            if (line.isNil() && data.next_p != -1) {
-                argf_close(context, data.currentFile);
-                data.next_p = 1;
-                continue;
+            if (isGenericInput(runtime, data)) {
+                line = data.currentFile.callMethod(context, "gets", args);
+            } else {
+                if (args.length == 0 && runtime.getRecordSeparatorVar().get() == runtime.getGlobalVariables().getDefaultSeparator()) {
+                    line = (currentFile).gets(context);
+                } else {
+                    line = Getline.getlineCall(context, GETLINE, currentFile, currentFile.getReadEncoding(), args);
+                }
+
+                if (line.isNil() && data.next_p != Stream) {
+                    argf_close(context, data.currentFile);
+                    data.next_p = NextFile;
+                    continue;
+                }
             }
 
             return line;
         }
     }
 
+    private static boolean isGenericInput(Ruby runtime, ArgsFileData data) {
+        return data.currentFile == runtime.getGlobalVariables().get("$stdin") && !(data.currentFile instanceof RubyFile);
+    }
+
+    private static final Getline.Callback<RubyIO, IRubyObject> GETLINE =
+            (context, self, rs, limit, chomp, block) -> self.getlineImpl(context, rs, limit, chomp);
+
     // ARGF methods
 
     /** Read a line.
      *
      */
-    @JRubyMethod(name = "gets", optional = 1, writes = FrameField.LASTLINE)
+    @JRubyMethod(name = "gets", optional = 1, writes = LASTLINE)
     public static IRubyObject gets(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return context.setLastLine(argf_getline(context, recv, args));
     }
@@ -341,7 +412,7 @@ public class RubyArgsFile extends RubyObject {
     /** Read a line.
      *
      */
-    @JRubyMethod(name = "readline", optional = 1)
+    @JRubyMethod(name = "readline", optional = 1, writes = LASTLINE)
     public static IRubyObject readline(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         IRubyObject line = gets(context, recv, args);
 
@@ -429,7 +500,6 @@ public class RubyArgsFile extends RubyObject {
                 int n = runtime.getKCode().getEncoding().length(c);
                 IRubyObject file = data.currentFile;
                 RubyString str = runtime.newString();
-                str.setTaint(true);
                 str.cat(c);
 
                 while(--n > 0) {
@@ -453,12 +523,13 @@ public class RubyArgsFile extends RubyObject {
 
     @JRubyMethod
     public static IRubyObject each_codepoint(ThreadContext context, IRubyObject recv, Block block) {
-        if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, recv, "each_line");
+        if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, recv, "each_codepoint");
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
 
         CallSite each_codepoint = sites(context).each_codepoint;
         while (data.next_argv(context)) {
             each_codepoint.call(context, recv, data.currentFile, block);
+            data.next_p = NextFile;
         }
 
         return context.nil;
@@ -488,7 +559,7 @@ public class RubyArgsFile extends RubyObject {
             if (!data.next_argv(context)) return recv;
 
             data.currentFile.callMethod(context, "each", NULL_ARRAY, block);
-            data.next_p = 1;
+            data.next_p = NextFile;
         }
 
         IRubyObject str;
@@ -535,9 +606,9 @@ public class RubyArgsFile extends RubyObject {
         Ruby runtime = recv.getRuntime();
         ArgsFileData data = ArgsFileData.getArgsFileData(runtime);
 
-        if (data.inited && data.next_p == 0) {
+        if (data.inited && data.next_p == Next.SameFile) {
             argf_close(runtime.getCurrentContext(), data.currentFile);
-            data.next_p = 1;
+            data.next_p = NextFile;
         }
 
         return recv;
@@ -561,7 +632,7 @@ public class RubyArgsFile extends RubyObject {
 
         argf_close(context, data.currentFile);
 
-        if (data.next_p != -1) data.next_p = 1;
+        if (data.next_p != Stream) data.next_p = NextFile;
 
         context.runtime.setCurrentLine(0);
 
@@ -687,7 +758,7 @@ public class RubyArgsFile extends RubyObject {
             if (bt != context.nil) return bt;
 
             argf_close(context, data.currentFile);
-            data.next_p = 1;
+            data.next_p = NextFile;
         }
     }
 
@@ -729,10 +800,10 @@ public class RubyArgsFile extends RubyObject {
 
         IRubyObject res = ((RubyIO) data.currentFile).getPartial(context, args, nonBlocking, noException);
         if (res == context.nil) {
-            if (data.next_p == -1) return RubyIO.nonblockEOF(runtime, noException);
+            if (data.next_p == Stream) return RubyIO.nonblockEOF(runtime, noException);
 
             argf_close(context, data.currentFile);
-            data.next_p = 1;
+            data.next_p = NextFile;
 
             if (data.argv.isEmpty()) return RubyIO.nonblockEOF(runtime, noException);
 
@@ -769,7 +840,7 @@ public class RubyArgsFile extends RubyObject {
             if (bt != context.nil) return bt;
 
             argf_close(context, data.currentFile);
-            data.next_p = 1;
+            data.next_p = NextFile;
         }
     }
 
@@ -778,7 +849,7 @@ public class RubyArgsFile extends RubyObject {
         Ruby runtime = context.runtime;
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
         IRubyObject tmp, str, length;
-        long len = 0;
+            long len = 0;
 
         if (args.length > 0) {
             length = args[0];
@@ -812,16 +883,15 @@ public class RubyArgsFile extends RubyObject {
             }
 
             if (tmp == context.nil || length == context.nil) {
-                if(data.next_p != -1) {
+                if(data.next_p != Stream) {
                     argf_close(context, data.currentFile);
-                    data.next_p = 1;
+                    data.next_p = NextFile;
                     continue;
                 }
             } else if(args.length >= 1) {
                 final int strLen = ((RubyString) str).getByteList().length();
                 if (strLen < len) {
-                    len -= strLen;
-                    args[0] = runtime.newFixnum(len);
+                    args[0] = runtime.newFixnum(len - strLen);
                     continue;
                 }
             }

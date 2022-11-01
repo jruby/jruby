@@ -18,11 +18,15 @@ module Gem
     end
   end
 
-  def self.platform_defaults
-    return {
-        'install' => '--env-shebang',
-        'update' => '--env-shebang'
-    }
+  unless RbConfig::CONFIG['host_os'].match?(/linux/)
+    def self.platform_defaults
+      return {
+          'install' => '--env-shebang',
+          'update' => '--env-shebang',
+          'setup' => '--env-shebang',
+          'pristine' => '--env-shebang'
+      }
+    end
   end
 
   # Default home directory path to be used if an alternate value is not

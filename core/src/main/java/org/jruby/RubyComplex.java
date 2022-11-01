@@ -26,38 +26,6 @@
 
 package org.jruby;
 
-import static org.jruby.util.Numeric.f_abs;
-import static org.jruby.util.Numeric.f_add;
-import static org.jruby.util.Numeric.f_arg;
-import static org.jruby.util.Numeric.f_conjugate;
-import static org.jruby.util.Numeric.f_denominator;
-import static org.jruby.util.Numeric.f_div;
-import static org.jruby.util.Numeric.f_equal;
-import static org.jruby.util.Numeric.f_exact_p;
-import static org.jruby.util.Numeric.f_expt;
-import static org.jruby.util.Numeric.f_gt_p;
-import static org.jruby.util.Numeric.f_inspect;
-import static org.jruby.util.Numeric.f_lcm;
-import static org.jruby.util.Numeric.f_mul;
-import static org.jruby.util.Numeric.f_negate;
-import static org.jruby.util.Numeric.f_negative_p;
-import static org.jruby.util.Numeric.f_numerator;
-import static org.jruby.util.Numeric.f_one_p;
-import static org.jruby.util.Numeric.f_quo;
-import static org.jruby.util.Numeric.f_real_p;
-import static org.jruby.util.Numeric.f_reciprocal;
-import static org.jruby.util.Numeric.f_sub;
-import static org.jruby.util.Numeric.f_to_f;
-import static org.jruby.util.Numeric.f_to_i;
-import static org.jruby.util.Numeric.f_to_r;
-import static org.jruby.util.Numeric.f_to_s;
-import static org.jruby.util.Numeric.f_xor;
-import static org.jruby.util.Numeric.f_zero_p;
-import static org.jruby.util.Numeric.k_exact_p;
-import static org.jruby.util.Numeric.k_inexact_p;
-import static org.jruby.util.Numeric.num_pow;
-import static org.jruby.util.Numeric.safe_mul;
-
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -66,8 +34,8 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -75,10 +43,13 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 import org.jruby.util.TypeConverter;
 
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.function.BiFunction;
 
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
+import static org.jruby.util.Numeric.*;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
 
@@ -90,12 +61,12 @@ public class RubyComplex extends RubyNumeric {
 
     public static RubyClass createComplexClass(Ruby runtime) {
         final String[] UNDEFINED = new String[]{
-                "<", "<=", "<=>", ">", ">=",
+                "<", "<=", ">", ">=",
                 "between?", "divmod", "floor", "ceil", "modulo",
                 "round", "step", "truncate", "positive?", "negative?"
         };
 
-        RubyClass complexc = runtime.defineClass("Complex", runtime.getNumeric(), COMPLEX_ALLOCATOR);
+        RubyClass complexc = runtime.defineClass("Complex", runtime.getNumeric(), RubyComplex::new);
 
         complexc.setClassIndex(ClassIndex.COMPLEX);
         complexc.setReifiedClass(RubyComplex.class);
@@ -116,14 +87,6 @@ public class RubyComplex extends RubyNumeric {
         return complexc;
     }
 
-    private static final ObjectAllocator COMPLEX_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            RubyFixnum zero = RubyFixnum.zero(runtime);
-            return new RubyComplex(runtime, klass, zero, zero);
-        }
-    };
-
     /** internal
      * 
      */
@@ -134,6 +97,15 @@ public class RubyComplex extends RubyNumeric {
         this.flags |= FROZEN_F;
     }
 
+    private RubyComplex(Ruby runtime, RubyClass clazz) {
+        super(runtime, clazz);
+
+        RubyFixnum zero = RubyFixnum.zero(runtime);
+
+        this.real = zero;
+        this.image = zero;
+        this.flags |= FROZEN_F;
+    }
 
     @Override
     public ClassIndex getNativeClassIndex() {
@@ -473,21 +445,18 @@ public class RubyComplex extends RubyNumeric {
     public static IRubyObject convert(ThreadContext context, IRubyObject recv, IRubyObject a1, IRubyObject a2) {
         Ruby runtime = context.runtime;
 
-        boolean raise = true;
+        IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(runtime, a2, false);
 
-        if (a2 != null) {
-            IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(runtime, a2, false);
-
-            if (!maybeKwargs.isNil()) {
-                a2 = null;
-
-                IRubyObject exception = ArgsUtil.extractKeywordArg(context, "exception", (RubyHash) maybeKwargs);
-
-                raise = exception.isNil() ? true : exception.isTrue();
-            }
+        if (maybeKwargs.isNil()) {
+            return convertCommon(context, recv, a1, a2, true);
         }
 
-        return convertCommon(context, recv, a1, a2, raise);
+        IRubyObject exception = ArgsUtil.extractKeywordArg(context, "exception", (RubyHash) maybeKwargs);
+        if (exception instanceof RubyBoolean) {
+            return convertCommon(context, recv, a1, null, exception.isTrue());
+        }
+
+        throw runtime.newArgumentError("`Complex': expected true or false as exception: " + exception); 
     }
 
     /** nucomp_s_convert
@@ -498,17 +467,17 @@ public class RubyComplex extends RubyNumeric {
         Ruby runtime = context.runtime;
 
         IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(runtime, kwargs, false);
-        boolean raise;
 
         if (maybeKwargs.isNil()) {
             throw runtime.newArgumentError("convert", 3, 1, 2);
         }
 
         IRubyObject exception = ArgsUtil.extractKeywordArg(context, "exception", (RubyHash) maybeKwargs);
+        if (exception instanceof RubyBoolean) {
+            return convertCommon(context, recv, a1, a2, exception.isTrue());
+        }
 
-        raise = exception.isNil() ? true : exception.isTrue();
-
-        return convertCommon(context, recv, a1, a2, raise);
+        throw runtime.newArgumentError("`Complex': expected true or false as exception: " + exception); 
     }
 
     // MRI: nucomp_s_convert
@@ -578,6 +547,24 @@ public class RubyComplex extends RubyNumeric {
         }
 
         return newInstance(context, recv, a1, a2, true);
+    }
+
+    // MRI: nucomp_real_p
+    private boolean nucomp_real_p(ThreadContext context) {
+        return f_zero_p(context, image);
+    }
+
+    @JRubyMethod(name="<=>")
+    public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
+        if (nucomp_real_p(context) && k_numeric_p(other)) {
+            if (other instanceof RubyComplex && ((RubyComplex) other).nucomp_real_p(context)) {
+                return real.callMethod(context, "<=>", ((RubyComplex) other).real);
+            } else if (f_real_p(context, other)) {
+                return real.callMethod(context, "<=>", other);
+            }
+        }
+
+        return context.nil;
     }
 
     /** nucomp_real
@@ -993,7 +980,11 @@ public class RubyComplex extends RubyNumeric {
      */
     @JRubyMethod(name = "hash")
     public IRubyObject hash(ThreadContext context) {
-        return f_xor(context, invokedynamic(context, real, HASH), invokedynamic(context, image, HASH));
+        Ruby runtime = context.runtime;
+        long realHash = RubyNumeric.fix2long(invokedynamic(context, real, HASH));
+        long imageHash = RubyNumeric.fix2long(invokedynamic(context, image, HASH));
+        byte [] bytes = ByteBuffer.allocate(16).putLong(realHash).putLong(imageHash).array();
+        return RubyFixnum.newFixnum(runtime, Helpers.multAndMix(runtime.getHashSeedK0(), Arrays.hashCode(bytes)));
     }
 
     @Override
@@ -1087,7 +1078,7 @@ public class RubyComplex extends RubyNumeric {
     /** nucomp_marshal_dump
      * 
      */
-    @JRubyMethod(name = "marshal_dump")
+    @JRubyMethod(name = "marshal_dump", visibility = Visibility.PRIVATE)
     public IRubyObject marshal_dump(ThreadContext context) {
         RubyArray dump = context.runtime.newArray(real, image);
         if (hasVariables()) dump.syncVariables(this);

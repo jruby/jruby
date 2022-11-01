@@ -638,6 +638,14 @@ EXPECTED
     end;
   end
 
+  def test_bug_18343
+    bug18343 = '[ruby-core:106096] [Bug #18343]'
+    assert_separately(%W[- #{bug18343}], <<-'end;')
+      bug = ARGV.shift
+      assert_raise(ArgumentError, bug){[0].pack('c', {})}
+    end;
+  end
+
   def test_pack_unpack_m0
     assert_equal("", [""].pack("m0"))
     assert_equal("AA==", ["\0"].pack("m0"))
@@ -764,7 +772,7 @@ EXPECTED
 
     $VERBOSE = true
 
-    _, err = capture_io do
+    _, err = capture_output do
       assert_equal "\000", [0].pack("*U")
     end
 
@@ -783,7 +791,7 @@ EXPECTED
 
     $VERBOSE = true
 
-    _, err = capture_io do
+    _, err = capture_output do
       assert_equal [0], "\000".unpack("*U")
     end
 
@@ -870,19 +878,29 @@ EXPECTED
     assert_equal "01000001", "A".unpack1("B*")
   end
 
-  def test_pack_infection
-    tainted_array_string = ["123456"]
-    tainted_array_string.first.taint
-    ['a', 'A', 'Z', 'B', 'b', 'H', 'h', 'u', 'M', 'm', 'P', 'p'].each do |f|
-      assert_predicate(tainted_array_string.pack(f), :tainted?)
-    end
+  def test_unpack1_offset
+    assert_equal 65, "ZA".unpack1("C", offset: 1)
+    assert_equal "01000001", "YZA".unpack1("B*", offset: 2)
+    assert_nil "abc".unpack1("C", offset: 3)
+    assert_raise_with_message(ArgumentError, /offset can't be negative/) {
+      "a".unpack1("C", offset: -1)
+    }
+    assert_raise_with_message(ArgumentError, /offset outside of string/) {
+      "a".unpack1("C", offset: 2)
+    }
+    assert_nil "a".unpack1("C", offset: 1)
   end
 
-  def test_unpack_infection
-    tainted_string = "123456"
-    tainted_string.taint
-    ['a', 'A', 'Z', 'B', 'b', 'H', 'h', 'u', 'M', 'm'].each do |f|
-      assert_predicate(tainted_string.unpack(f).first, :tainted?)
-    end
+  def test_unpack_offset
+    assert_equal [65], "ZA".unpack("C", offset: 1)
+    assert_equal ["01000001"], "YZA".unpack("B*", offset: 2)
+    assert_equal [nil, nil, nil], "abc".unpack("CCC", offset: 3)
+    assert_raise_with_message(ArgumentError, /offset can't be negative/) {
+      "a".unpack("C", offset: -1)
+    }
+    assert_raise_with_message(ArgumentError, /offset outside of string/) {
+      "a".unpack("C", offset: 2)
+    }
+    assert_equal [nil], "a".unpack("C", offset: 1)
   end
 end

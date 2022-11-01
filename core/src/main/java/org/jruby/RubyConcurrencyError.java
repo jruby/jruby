@@ -29,6 +29,8 @@ package org.jruby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ConcurrencyError;
+import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * The Java representation of a Ruby ConcurrencyError.
@@ -42,7 +44,7 @@ public class RubyConcurrencyError extends RubyThreadError {
     }
 
     static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass concurrencyErrorClass = runtime.defineClass("ConcurrencyError", exceptionClass, (r, klass) -> new RubyConcurrencyError(runtime, klass));
+        RubyClass concurrencyErrorClass = runtime.defineClass("ConcurrencyError", exceptionClass, RubyConcurrencyError::new);
 
         return concurrencyErrorClass;
     }

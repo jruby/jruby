@@ -1,9 +1,9 @@
 # frozen_string_literal: true
-# frozen_string_literal: false
 require 'fiddle.so' unless RUBY_ENGINE == 'jruby'
 require 'fiddle/jruby' if RUBY_ENGINE == 'jruby'
-require 'fiddle/function'
 require 'fiddle/closure'
+require 'fiddle/function'
+require 'fiddle/version'
 
 module Fiddle
   if WINDOWS
@@ -12,7 +12,7 @@ module Fiddle
     def self.win32_last_error
       if RUBY_ENGINE == 'jruby'
         errno = FFI.errno
-        errno = nil if errno == 0
+        errno == 0 ? nil : errno
       else
         Thread.current[:__FIDDLE_WIN32_LAST_ERROR__]
       end
@@ -21,9 +21,32 @@ module Fiddle
     # Sets the last win32 +Error+ of the current executing +Thread+ to +error+
     def self.win32_last_error= error
       if RUBY_ENGINE == 'jruby'
-        FFI.errno = error || 0
+        errno = FFI.errno
+        errno == 0 ? nil : errno
       else
         Thread.current[:__FIDDLE_WIN32_LAST_ERROR__] = error
+      end
+    end
+
+    # Returns the last win32 socket +Error+ of the current executing
+    # +Thread+ or nil if none
+    def self.win32_last_socket_error
+      if RUBY_ENGINE == 'jruby'
+        errno = FFI.errno
+        errno == 0 ? nil : errno
+      else
+        Thread.current[:__FIDDLE_WIN32_LAST_SOCKET_ERROR__]
+      end
+    end
+
+    # Sets the last win32 socket +Error+ of the current executing
+    # +Thread+ to +error+
+    def self.win32_last_socket_error= error
+      if RUBY_ENGINE == 'jruby'
+        errno = FFI.errno
+        errno == 0 ? nil : errno
+      else
+        Thread.current[:__FIDDLE_WIN32_LAST_SOCKET_ERROR__] = error
       end
     end
   end
@@ -32,7 +55,7 @@ module Fiddle
   def self.last_error
     if RUBY_ENGINE == 'jruby'
       errno = FFI.errno
-      errno = nil if errno == 0
+      errno == 0 ? nil : errno
       errno
     else
       Thread.current[:__FIDDLE_LAST_ERROR__]

@@ -18,7 +18,7 @@ describe "Literal Regexps" do
     /Hello/.should be_kind_of(Regexp)
   end
 
-  ruby_version_is "2.8" do
+  ruby_version_is "3.0" do
     it "is frozen" do
       /Hello/.should.frozen?
     end
@@ -96,7 +96,6 @@ describe "Literal Regexps" do
     /./.match("\0").to_a.should == ["\0"]
   end
 
-
   it "supports | (alternations)" do
     /a|b/.match("a").to_a.should == ["a"]
   end
@@ -115,10 +114,11 @@ describe "Literal Regexps" do
     /foo.(?<=\d)/.match("fooA foo1").to_a.should == ["foo1"]
   end
 
-  # https://bugs.ruby-lang.org/issues/13671
-  it "raises a RegexpError for lookbehind with specific characters" do
-    r =  Regexp.new("(?<!dss)", Regexp::IGNORECASE)
-    -> { r =~ "✨" }.should raise_error(RegexpError)
+  ruby_bug "#13671", ""..."3.3" do # https://bugs.ruby-lang.org/issues/13671
+    it "handles a lookbehind with ss characters" do
+      r =  Regexp.new("(?<!dss)", Regexp::IGNORECASE)
+      r.should =~ "✨"
+    end
   end
 
   it "supports (?<! ) (negative lookbehind)" do
@@ -158,26 +158,6 @@ describe "Literal Regexps" do
     pattern.should =~ 'F'
     pattern.should_not =~ 'fooF'
     pattern.should_not =~ 'T'
-  end
-
-  escapable_terminators =  ['!', '"', '#', '%', '&', "'", ',', '-', ':', ';', '@', '_', '`']
-
-  it "supports escaping characters when used as a terminator" do
-    escapable_terminators.each do |c|
-      ref = "(?-mix:#{c})"
-      pattern = eval("%r" + c + "\\" + c + c)
-      pattern.to_s.should == ref
-    end
-  end
-
-  it "treats an escaped non-escapable character normally when used as a terminator" do
-    all_terminators = [*("!".."/"), *(":".."@"), *("[".."`"), *("{".."~")]
-    special_cases = ['(', '{', '[', '<', '\\', '=', '~']
-    (all_terminators - special_cases - escapable_terminators).each do |c|
-      ref = "(?-mix:\\#{c})"
-      pattern = eval("%r" + c + "\\" + c + c)
-      pattern.to_s.should == ref
-    end
   end
 
   it "support handling unicode 9.0 characters with POSIX bracket expressions" do

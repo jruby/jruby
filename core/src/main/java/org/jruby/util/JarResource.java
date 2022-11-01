@@ -113,6 +113,11 @@ abstract class JarResource implements FileResource, DummyResourceStat.FileResour
     }
 
     @Override
+    public String path() {
+        return absolutePath();
+    }
+
+    @Override
     public boolean exists() {
         // If a jar resource got created, then it always corresponds to some kind of resource
         return true;

@@ -60,6 +60,8 @@ public class Dir {
     public final static int FNM_DOTMATCH = 0x04;
     public final static int FNM_CASEFOLD = 0x08;
 
+    public final static int FNM_GLOB_SKIPDOT = 0x80;
+
     public final static int FNM_SYSCASE = CASEFOLD_FILESYSTEM ? FNM_CASEFOLD : 0;
 
     public final static int FNM_NOMATCH = 1;
@@ -376,10 +378,10 @@ public class Dir {
         return idx;
     }
 
-    public static List<ByteList> push_glob(Ruby runtime, String cwd, ByteList globByteList, int flags) {
+    public static List<ByteList> push_glob(Ruby runtime, String cwd, ByteList globByteList, int flags, boolean sort) {
         if (globByteList.length() > 0) {
             final ArrayList<ByteList> result = new ArrayList<ByteList>();
-            push_braces(runtime, cwd, result, new GlobPattern(globByteList, flags));
+            push_braces(runtime, cwd, result, new GlobPattern(globByteList, flags), sort);
             return result;
         }
 
@@ -496,15 +498,15 @@ public class Dir {
     /*
      * Process {}'s (example: Dir.glob("{jruby,jython}/README*")
      */
-    private static int push_braces(Ruby runtime, String cwd, List<ByteList> result, GlobPattern pattern) {
+    private static int push_braces(Ruby runtime, String cwd, List<ByteList> result, GlobPattern pattern, boolean sort) {
         pattern.reset();
         int lbrace = pattern.indexOf((byte) '{'); // index of left-most brace
         int rbrace = pattern.findClosingIndexOf(lbrace);// index of right-most brace
 
         // No, mismatched or escaped braces..Move along..nothing to see here
         if (lbrace == -1 || rbrace == -1 ||
-                lbrace > 0 && pattern.bytes[lbrace-1] == '\\' ||
-                rbrace > 0 && pattern.bytes[rbrace-1] == '\\') {
+                lbrace > 0 && pattern.bytes[lbrace-1] == '\\' && (lbrace <= 1 || pattern.bytes[lbrace-2] != '\\') ||
+                rbrace > 0 && pattern.bytes[rbrace-1] == '\\' && (rbrace <= 1 || pattern.bytes[rbrace-2] != '\\')) {
             ByteList unescaped = new ByteList(pattern.bytes.length - 1);
             unescaped.setEncoding(pattern.enc);
             for (int i = pattern.begin; i < pattern.end; i++) {
@@ -518,7 +520,7 @@ public class Dir {
                     unescaped.append(b);
                 }
             }
-            return push_globs(runtime, cwd, result, unescaped, pattern.flags);
+            return push_globs(runtime, cwd, result, unescaped, pattern.flags, sort);
         }
 
         // Peel onion...make subpatterns out of outer layer of glob and recall with each subpattern
@@ -541,16 +543,22 @@ public class Dir {
             bytes.append(pattern.bytes, pattern.begin, lbrace - pattern.begin);
             bytes.append(pattern.bytes, middleRegionIndex, i - middleRegionIndex);
             bytes.append(pattern.bytes, rbrace + 1, pattern.end - (rbrace + 1));
-            int status = push_braces(runtime, cwd, result, new GlobPattern(bytes, pattern.flags));
+            int status = push_braces(runtime, cwd, result, new GlobPattern(bytes, pattern.flags), sort);
             if (status != 0) return status;
         }
 
         return 0; // All braces pushed..
     }
 
-    private static int push_globs(Ruby runtime, String cwd, List<ByteList> ary, ByteList pattern, int flags) {
+    private static int push_globs(Ruby runtime, String cwd, List<ByteList> ary, ByteList pattern, int flags, boolean sort) {
         flags |= FNM_SYSCASE;
-        return glob_helper(runtime, cwd, pattern, -1, flags, glob_caller, new GlobArgs(push_pattern, ary));
+        List<ByteList> tmpAry = new ArrayList<>();
+        int globRet = glob_helper(runtime, cwd, pattern, -1, flags, glob_caller, new GlobArgs(push_pattern, tmpAry));
+        if (sort) {
+            Collections.sort(tmpAry);
+        }
+        ary.addAll(tmpAry);
+        return globRet;
     }
 
     public static ArrayList<String> braces(String pattern, int flags, ArrayList<String> patterns) {
@@ -750,9 +758,34 @@ public class Dir {
             if (cwd == null) cwd = "C:";
             cwd = cwd + "/";
         }
+
         FileResource file = JRubyFile.createResource(runtime, cwd, fileName);
+
         if (file.exists()) {
-            return func.call(bytes, begin, end - begin, enc, arg);
+            byte[] newBytes;
+            
+            // get the real filename (case-sensitive)
+            if(file.isFile() && cwd != null) {
+                String path = file.isSymLink() ? file.absolutePath() : file.canonicalPath();
+
+                // compensate for missing slash
+                if (fileName.endsWith("/")) {
+                    path += "/";
+                }
+
+                if(fileName.contains("./")) {
+                    newBytes = ("./" + path.substring((path.length() - end + 2))).getBytes();
+                } else {
+                    int tempBegin = path.length() - fileName.length();
+                    newBytes = path.substring(tempBegin).getBytes();
+                }
+
+                end = newBytes.length;
+            } else {
+                newBytes = bytes;
+            }
+
+            return func.call(newBytes, begin, end - begin, enc, arg);
         }
 
         return 0;
@@ -767,7 +800,7 @@ public class Dir {
 
     private static int glob_helper(Ruby runtime, String cwd,
         byte[] path, int begin, int end, Encoding enc, int sub,
-        final int flags, GlobFunc<GlobArgs> func, GlobArgs arg) {
+        int flags, GlobFunc<GlobArgs> func, GlobArgs arg) {
         int status = 0;
 
         int ptr = sub != -1 ? sub : begin;
@@ -844,11 +877,24 @@ public class Dir {
                         break mainLoop;
                     }
 
+                    boolean skipdot = (flags & FNM_GLOB_SKIPDOT) != 0;
+                    flags |= FNM_GLOB_SKIPDOT;
+
                     final String[] files = files(resource);
 
                     for ( int i = 0; i < files.length; i++ ) {
                         final String file = files[i];
                         final byte[] fileBytes = getBytesInUTF8(file);
+
+                        if (file.charAt(0) == '.') {
+                            int length = file.length();
+                            if (length == 1) {
+                                if (recursive && (flags & FNM_DOTMATCH) == 0) continue;
+                                if (skipdot) continue;
+                            } else if (length == 2 && file.charAt(1) == '.') {
+                                continue;
+                            }
+                        }
                         if (recursive) {
                             if ( fnmatch(STAR, 0, 1, fileBytes, 0, fileBytes.length, flags) != 0) {
                                 continue;

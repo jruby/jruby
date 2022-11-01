@@ -43,7 +43,7 @@ public class WindowsFFI {
         public static final int ERROR_INVALID_PARAMETER = 0x57;
         public static final int PROCESS_TERMINATE  = 0x0001;
         public static final int STILL_ACTIVE = 259;
-        
+
         int GetProcessId(@intptr_t long handle);
         jnr.ffi.Pointer OpenProcess(int dwDesiredAccess, int bInheritHandle, int dwProcessId);
         int CloseHandle(jnr.ffi.Pointer handle);

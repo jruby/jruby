@@ -2,17 +2,17 @@
 <!--
 
 
-DO NOT MODIFIY - GENERATED CODE
+DO NOT MODIFY - GENERATED CODE
 
 
 -->
-<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>9.3.0.0-SNAPSHOT</version>
+    <version>9.4.0.0-SNAPSHOT</version>
   </parent>
   <artifactId>jruby-base</artifactId>
   <name>JRuby Base</name>
@@ -23,7 +23,7 @@ DO NOT MODIFIY - GENERATED CODE
     <build.dir>target</build.dir>
     <build.lib.dir>test/target</build.lib.dir>
     <create.sources.jar>false</create.sources.jar>
-    <install4j.executable>/Applications/install4j7/bin/install4jc</install4j.executable>
+    <install4j.executable>/Applications/install4j9/bin/install4jc</install4j.executable>
     <installer.gems>${jruby.win32ole.gem}</installer.gems>
     <jay.bin>jay</jay.bin>
     <jflex.bin>jflex</jflex.bin>
@@ -55,10 +55,9 @@ DO NOT MODIFIY - GENERATED CODE
     <test.results.dir>${build.dir}/test-results</test.results.dir>
     <tzdata.scope>provided</tzdata.scope>
     <tzdata.version>2019c</tzdata.version>
-    <version.ruby>2.6.5</version.ruby>
-    <version.ruby.major>2.6</version.ruby.major>
+    <version.ruby>3.1.0</version.ruby>
+    <version.ruby.major>3.1</version.ruby.major>
     <version.ruby.minor>0</version.ruby.minor>
-    <version.ruby.revision>67812</version.ruby.revision>
   </properties>
   <dependencies>
     <dependency>
@@ -90,7 +89,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-enxio</artifactId>
-      <version>0.32.0</version>
+      <version>0.32.13</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
@@ -101,7 +100,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-unixsocket</artifactId>
-      <version>0.38.1</version>
+      <version>0.38.17</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
@@ -112,7 +111,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-posix</artifactId>
-      <version>3.1.1</version>
+      <version>3.1.15</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
@@ -123,7 +122,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-constants</artifactId>
-      <version>0.10.0</version>
+      <version>0.10.3</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
@@ -134,7 +133,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-ffi</artifactId>
-      <version>2.2.0</version>
+      <version>2.2.11</version>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
@@ -150,12 +149,12 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>org.jruby.joni</groupId>
       <artifactId>joni</artifactId>
-      <version>2.1.40</version>
+      <version>2.1.43</version>
     </dependency>
     <dependency>
       <groupId>org.jruby.jcodings</groupId>
       <artifactId>jcodings</artifactId>
-      <version>1.0.55</version>
+      <version>1.0.57</version>
     </dependency>
     <dependency>
       <groupId>org.jruby</groupId>
@@ -165,18 +164,12 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.headius</groupId>
       <artifactId>invokebinder</artifactId>
-      <version>1.11</version>
+      <version>1.12</version>
     </dependency>
     <dependency>
       <groupId>com.headius</groupId>
       <artifactId>options</artifactId>
-      <version>1.4</version>
-    </dependency>
-    <dependency>
-      <groupId>bsf</groupId>
-      <artifactId>bsf</artifactId>
-      <version>2.4.0</version>
-      <scope>provided</scope>
+      <version>1.6</version>
     </dependency>
     <dependency>
       <groupId>com.jcraft</groupId>
@@ -184,13 +177,13 @@ DO NOT MODIFIY - GENERATED CODE
       <version>1.1.3</version>
     </dependency>
     <dependency>
-      <groupId>com.martiansoftware</groupId>
-      <artifactId>nailgun-server</artifactId>
-      <version>0.9.1</version>
-    </dependency>
-    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.awaitility</groupId>
+      <artifactId>awaitility</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -243,13 +236,13 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.headius</groupId>
       <artifactId>backport9</artifactId>
-      <version>1.10</version>
+      <version>1.12</version>
     </dependency>
     <dependency>
-      <groupId>javax.annotation</groupId>
-      <artifactId>javax.annotation-api</artifactId>
-      <version>1.3.1</version>
-      <scope>compile</scope>
+      <groupId>jakarta.annotation</groupId>
+      <artifactId>jakarta.annotation-api</artifactId>
+      <version>2.0.0</version>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
   <build>
@@ -506,7 +499,7 @@ DO NOT MODIFIY - GENERATED CODE
         <configuration>
           <encoding>utf-8</encoding>
           <debug>true</debug>
-          <verbose>true</verbose>
+          <verbose>false</verbose>
           <fork>true</fork>
           <compilerArgs>
             <arg>-J-Xmx1G</arg>
@@ -671,7 +664,7 @@ DO NOT MODIFIY - GENERATED CODE
                   <executable>/bin/sh</executable>
                   <arguments>
                     <argument>-c</argument>
-                    <argument>cp ${jruby.basedir}/bin/jruby.bash ${jruby.basedir}/bin/jruby</argument>
+                    <argument>cp ${jruby.basedir}/bin/jruby.sh ${jruby.basedir}/bin/jruby</argument>
                   </arguments>
                 </configuration>
               </execution>
@@ -681,7 +674,7 @@ DO NOT MODIFIY - GENERATED CODE
       </build>
     </profile>
     <profile>
-      <id>jruby.bash</id>
+      <id>jruby.sh</id>
       <activation>
         <os>
           <family>unix</family>
@@ -702,7 +695,7 @@ DO NOT MODIFIY - GENERATED CODE
                   <executable>/bin/sh</executable>
                   <arguments>
                     <argument>-c</argument>
-                    <argument>cp ${jruby.basedir}/bin/jruby.bash ${jruby.basedir}/bin/jruby</argument>
+                    <argument>cp ${jruby.basedir}/bin/jruby.sh ${jruby.basedir}/bin/jruby</argument>
                   </arguments>
                 </configuration>
               </execution>

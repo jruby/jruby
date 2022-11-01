@@ -95,7 +95,7 @@ public class IRReader implements IRPersistenceValues {
         ByteList name = null;
         IRScope parent = null;
         if (type == IRScopeType.SCRIPT_BODY) {
-            file = decoder.decodeString();
+            file = decoder.getFilename();
             if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeHeader: script file = " + file);
         } else {
             name = decoder.decodeByteList();
@@ -122,12 +122,11 @@ public class IRReader implements IRPersistenceValues {
     private static StaticScope decodeStaticScope(IRReaderDecoder decoder, StaticScope parentScope) {
         StaticScope.Type type = decoder.decodeStaticScopeType();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeStaticScope: type = " + type);
-        String file = decoder.decodeString();
         String[] ids = decoder.decodeStringArray();
         int firstKeywordIndex = decoder.decodeInt();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeStaticScope: keyword index = " + firstKeywordIndex);
 
-        StaticScope scope = StaticScopeFactory.newStaticScope(parentScope, type, file, ids, firstKeywordIndex);
+        StaticScope scope = StaticScopeFactory.newStaticScope(parentScope, type, decoder.getFilename(), ids, firstKeywordIndex);
 
         Signature signature = decoder.decodeSignature();
         scope.setSignature(signature);

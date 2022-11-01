@@ -33,15 +33,12 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 public class SplatNode extends Node {
     protected final Node node;
 
-    public SplatNode(ISourcePosition position, Node node) {
-        super(position, node.containsVariableAssignment());
-
-        assert node != null : "node is not null";
+    public SplatNode(int line, Node node) {
+        super(line, node.containsVariableAssignment());
 
         this.node = node;
     }

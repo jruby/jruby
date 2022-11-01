@@ -20,7 +20,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class DefineModuleInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
     private final IRModuleBody body;
 
-    public DefineModuleInstr(Variable result, IRModuleBody body, Operand container) {
+    public DefineModuleInstr(Variable result, Operand container, IRModuleBody body) {
         super(Operation.DEF_MODULE, result, container);
 
         assert result != null : "DefineModuleInstr result is null";
@@ -44,18 +44,17 @@ public class DefineModuleInstr extends OneOperandResultBaseInstr implements Fixe
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new DefineModuleInstr(ii.getRenamedVariable(result), body, getContainer().cloneForInlining(ii));
+        return new DefineModuleInstr(ii.getRenamedVariable(result), getContainer().cloneForInlining(ii), body);
     }
 
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getNewIRModuleBody());
-        e.encode(getContainer());
     }
 
     public static DefineModuleInstr decode(IRReaderDecoder d) {
-        return new DefineModuleInstr(d.decodeVariable(), (IRModuleBody) d.decodeScope(), d.decodeOperand());
+        return new DefineModuleInstr(d.decodeVariable(), d.decodeOperand(), (IRModuleBody) d.decodeScope());
     }
 
     @Override
@@ -77,7 +76,7 @@ public class DefineModuleInstr extends OneOperandResultBaseInstr implements Fixe
         if (!hasExplicitCallProtocol) pre(ic, context, clazz, null, clazz);
 
         try {
-            ThreadContext.pushBacktrace(context, id, ic.getFileName(), context.getLine());
+            ThreadContext.pushBacktrace(context, id, ic.getFileName(), ic.getLine());
             return ic.getEngine().interpret(context, null, clazz, ic, clazz.getMethodLocation(), id, Block.NULL_BLOCK);
         } finally {
             body.cleanupAfterExecution();

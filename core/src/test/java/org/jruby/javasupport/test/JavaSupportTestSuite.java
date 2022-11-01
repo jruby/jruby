@@ -36,7 +36,6 @@ public class JavaSupportTestSuite extends TestSuite {
 
         public static Test suite() {
             TestSuite suite = new TestSuite();
-            suite.addTest(new TestSuite(TestBSF.class));
             suite.addTest(new TestSuite(TestNativeException.class));
             return suite;
         }

@@ -2,6 +2,7 @@ require 'test/unit'
 require 'test/jruby/test_helper'
 
 require 'fileutils'
+require 'tmpdir'
 
 class TestCommandLineSwitches < Test::Unit::TestCase
   include TestHelper
@@ -112,9 +113,9 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     end
   end
 
-  def test_dash_little_v_version_verbose_T_taint_d_debug_K_kcode_r_require_b_benchmarks_a_splitsinput_I_loadpath_C_cwd_F_delimeter_J_javaprop_19
-    e_line = 'puts $VERBOSE, $SAFE, $DEBUG, Encoding.default_external, $F.join(59.chr), $LOAD_PATH.join(44.chr), Dir.pwd, Java::java::lang::System.getProperty(:foo.to_s)'
-    args = "-v -T3 -d -a -n -Ihello -C .. -F, -e #{q + e_line + q}"
+  def test_dash_little_v_version_verbose_d_debug_K_kcode_r_require_b_benchmarks_a_splitsinput_I_loadpath_C_cwd_F_delimeter_J_javaprop_19
+    e_line = 'puts $VERBOSE, $DEBUG, Encoding.default_external, $F.join(59.chr), $LOAD_PATH.join(44.chr), Dir.pwd, Java::java::lang::System.getProperty(:foo.to_s)'
+    args = "-v -d -a -n -Ihello -C .. -F, -e #{q + e_line + q}"
     # the options at the end will add -J-Dfoo=bar to the args
     lines = jruby_with_pipe("echo 1,2,3", args, :foo => 'bar').split("\n")
     assert_equal 0, $?.exitstatus, "failed execution with output:\n#{lines}"
@@ -122,14 +123,13 @@ class TestCommandLineSwitches < Test::Unit::TestCase
 
     assert_match(/jruby \d+(\.\d+\.\d+)?/, lines[0])
     assert_match(/true$/, lines[1])
-    assert_equal "0", lines[2]
-    assert_equal "true", lines[3]
-    assert_equal "UTF-8", lines[4]
-    assert_equal "1;2;3", lines[5].rstrip
-    assert_match(/^hello/, lines[6])
+    assert_equal "true", lines[2]
+    assert_equal "UTF-8", lines[3]
+    assert_equal "1;2;3", lines[4].rstrip
+    assert_match(/^hello/, lines[5])
     # The gsub is for windows
-    assert_equal "#{parent_dir}", lines[7].gsub('\\', '/')
-    assert_equal "bar", lines[8]
+    assert_equal "#{parent_dir}", lines[6].gsub('\\', '/')
+    assert_equal "bar", lines[7]
 
     e_line = 'puts Gem'
     args = " -rrubygems -e #{q + e_line + q}"
@@ -347,5 +347,48 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     assert_equal 0, $?.exitstatus
   ensure
     ENV['RUBYOPT'] = rubyopt
+  end
+
+  # jruby/jruby#6637: symlinked `java` command interferes with JAVA_HOME determination
+  def test_symlinked_java_resolves_home
+    Dir.mktmpdir do |tmpdir|
+      tmp_java = File.join(tmpdir, "java")
+      real_home = ENV_JAVA['java.home']
+      real_java = File.join(real_home, 'bin', 'java')
+
+      FileUtils.symlink real_java, tmp_java
+
+      old_env = ENV.dup
+      ENV.delete "JAVA_HOME"
+      ENV["JAVACMD"] = tmp_java
+
+      found_home = jruby('-e "print ENV_JAVA[\'java.home\']"').chomp
+
+      assert_equal 0, $?.exitstatus
+      assert_equal real_home, found_home
+    ensure
+      ENV.replace(old_env)
+    end
+  end
+
+  # jruby/jruby#6638: JAVA_HOME with spaces broken by lack of quoting in jruby.bash
+  def test_java_home_with_spaces
+    Dir.mktmpdir do |tmpdir|
+      tmp_home = File.join(tmpdir, "this is my jdk")
+      real_home = ENV_JAVA['java.home']
+
+      FileUtils.symlink real_home, tmp_home
+
+      old_env = ENV.dup
+      ENV.delete "JAVACMD"
+      ENV["JAVA_HOME"] = tmp_home
+
+      found_home = jruby('-e "puts ENV_JAVA[\'java.home\']"').chomp
+
+      assert_equal 0, $?.exitstatus
+      assert_equal real_home, found_home
+    ensure
+      ENV.replace(old_env)
+    end
   end
 end

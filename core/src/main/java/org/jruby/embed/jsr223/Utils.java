@@ -62,10 +62,7 @@ public class Utils {
      */
     static int getLineNumber(ScriptContext context) {
         Object obj = context.getAttribute(AttributeName.LINENUMBER.toString(), ScriptContext.ENGINE_SCOPE);
-        if (obj instanceof Integer) {
-            return (Integer) obj;
-        }
-        return 0;
+        return obj instanceof Integer ? (Integer) obj : 0;
     }
 
     /**
@@ -79,13 +76,17 @@ public class Utils {
     }
 
     static String getFilename(ScriptContext context) {
+        return getFilename(context, "<script>");
+    }
+
+    static String getFilename(ScriptContext context, String defaultName) {
         Object filename = context.getAttribute(ScriptEngine.FILENAME);
-        return filename != null ? (String)filename : "<script>";
+        return filename != null ? (String) filename : defaultName;
     }
 
     static boolean isTerminationOn(ScriptContext context) {
         Object obj = context.getAttribute(AttributeName.TERMINATION.toString());
-        if (obj != null && obj instanceof Boolean && ((Boolean) obj) == true) {
+        if (obj instanceof Boolean && ((Boolean) obj).booleanValue()) {
             return true;
         }
         return false;
@@ -93,7 +94,7 @@ public class Utils {
     
     static boolean isClearVariablesOn(ScriptContext context) {
         Object obj = context.getAttribute(AttributeName.CLEAR_VARAIBLES.toString());
-        if (obj != null && obj instanceof Boolean && ((Boolean) obj) == true) {
+        if (obj instanceof Boolean && ((Boolean) obj).booleanValue()) {
             return true;
         }
         return false;
@@ -217,7 +218,7 @@ public class Utils {
         if (Utils.isRubyVariable(container, adjustedKey)) {
             boolean sharing_variables = true;
             Object obj = context.getAttribute(AttributeName.SHARING_VARIABLES.toString(), ScriptContext.ENGINE_SCOPE);
-            if (obj != null && obj instanceof Boolean && ((Boolean) obj) == false) {
+            if (obj instanceof Boolean && ((Boolean) obj) == false) {
                 sharing_variables = false;
             }
             if (sharing_variables || "ARGV".equals(adjustedKey)) {

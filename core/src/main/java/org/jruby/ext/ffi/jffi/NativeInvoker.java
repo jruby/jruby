@@ -19,14 +19,12 @@ abstract public class NativeInvoker extends DynamicMethod {
     protected final com.kenai.jffi.Function function;
     private final int cbIndex;
     private final NativeCallbackFactory cbFactory;
-    private final Signature signature;
 
 
     public NativeInvoker(RubyModule implementationClass, com.kenai.jffi.Function function, Signature signature) {
         super(implementationClass, Visibility.PUBLIC, "ffi"+function.getFunctionAddress());
         this.arity = Arity.fixed(signature.getParameterCount());
         this.function = function;
-        this.signature = signature;
 
         int cbIndex = -1;
         NativeCallbackFactory cbFactory = null;
@@ -54,10 +52,6 @@ abstract public class NativeInvoker extends DynamicMethod {
     @Override
     public final boolean isNative() {
         return true;
-    }
-
-    Signature getSignature() {
-        return signature;
     }
 
     CallContext getCallContext() {

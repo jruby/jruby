@@ -1,7 +1,7 @@
 # JRuby - an implementation of the Ruby language on the JVM
 
-Master: [![Build Status](https://travis-ci.org/jruby/jruby.svg?branch=master)](https://travis-ci.org/jruby/jruby)
-9.1 branch: [![Build Status](https://travis-ci.org/jruby/jruby.svg?branch=jruby-9.1)](https://travis-ci.org/jruby/jruby/branches)
+Master: [![JRuby CI](https://github.com/jruby/jruby/actions/workflows/ci.yml/badge.svg)](https://github.com/jruby/jruby/actions/workflows/ci.yml), [![JRuby CI (Windows)](https://github.com/jruby/jruby/actions/workflows/ci-windows.yml/badge.svg)](https://github.com/jruby/jruby/actions/workflows/ci-windows.yml)
+9.3 branch: [![JRuby CI](https://github.com/jruby/jruby/actions/workflows/ci.yml/badge.svg?branch=jruby-9.3)](https://github.com/jruby/jruby/actions/workflows/ci.yml), [![JRuby CI (Windows)](https://github.com/jruby/jruby/actions/workflows/ci-windows.yml/badge.svg?branch=jruby-9.3)](https://github.com/jruby/jruby/actions/workflows/ci-windows.yml)
 
 ## About
 
@@ -20,7 +20,7 @@ on the JVM and access powerful JVM libraries such as highly tuned concurrency
 primitives, you can use it to embed Ruby as a scripting language in your Java
 program, or many other possibilities.
 
-We're a welcoming community - you can talk to us on [#jruby on Freenode](http://richard.esplins.org/siwi/2011/07/08/getting-started-freenode-irc/).
+We're a welcoming community - you can talk to us on [#jruby on Libera](https://libera.chat/).
 There are core team members in the EU and US time zones.
 
 Visit the [JRuby website](https://www.jruby.org/) and the [JRuby wiki](https://github.com/jruby/jruby/wiki)
@@ -46,11 +46,11 @@ $ rbenv install jruby
 Note: if you do not regularly git update rbenv this list of versions may be out of date.
 
 We recommend always selecting the latest version of JRuby from the list. 
-You can install that particular version (9.1.17.0 is just for illustration):
+You can install that particular version (9.2.13.0 is just for illustration):
 
 
 ```
-$ rbenv install jruby-9.1.17.0
+$ rbenv install jruby-9.2.13.0
 ```
 
 For [`rvm`](https://rvm.io) you can simply do:
@@ -92,6 +92,14 @@ Project Contact: Thomas E Enebo <tom.enebo@gmail.com>
 
 ## License
 
-JRuby is licensed to you under three licenses - the EPL 2.0, GPL 2 and LGPL 2.1.
+JRuby is licensed under a tri EPL/GPL/LGPL license. You can use it,
+redistribute it and/or modify it under the terms of the:
+
+  Eclipse Public License version 2.0
+    OR
+  GNU General Public License version 2
+    OR
+  GNU Lesser General Public License version 2.1
+
 Some components have other licenses and copyright. See the [COPYING](COPYING)
 file for more specifics.

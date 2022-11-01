@@ -325,11 +325,6 @@ public class ArgumentProcessor {
                     disallowedInRubyOpts(argument);
                     runBinScript();
                     break FOR;
-                case 'T':
-                    {
-                        grabOptionalValue();
-                        break FOR;
-                    }
                 case 'U':
                     config.setInternalEncoding("UTF-8");
                     break;
@@ -585,6 +580,10 @@ public class ArgumentProcessor {
                         config.setParserDebug(true);
                     } else if (argument.equals("--verbose")) {
                         config.setVerbosity(RubyInstanceConfig.Verbosity.TRUE);
+                        break FOR;
+                    } else if (argument.startsWith("--backtrace-limit=")) {
+                        String limit = valueListFor(argument, "backtrace-limit")[0];
+                        config.setBacktraceLimit(Integer.parseInt(limit));
                         break FOR;
                     } else {
                         if (argument.equals("--")) {

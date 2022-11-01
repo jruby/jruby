@@ -51,7 +51,7 @@ public class RubyPathname extends RubyObject {
     
     static void createPathnameClass(Ruby runtime) {
         RubyClass cPathname = runtime.defineClass("Pathname", runtime.getObject(),
-                PATHNAME_ALLOCATOR);
+                RubyPathname::new);
 
         cPathname.defineAnnotatedMethods(RubyPathname.class);
 
@@ -89,40 +89,15 @@ public class RubyPathname extends RubyObject {
         IRubyObject[] addArg(IRubyObject[] args, RubyString path);
     }
 
-    private static final ReturnValueMapper IDENTITY_MAPPER = new ReturnValueMapper() {
-        @Override
-        public IRubyObject map(ThreadContext context, RubyClass klazz, IRubyObject value) {
-            return value;
-        }
-    };
+    private static final ReturnValueMapper IDENTITY_MAPPER = (context, klazz, value) -> value;
 
-    private static final ReturnValueMapper SINGLE_PATH_MAPPER = new ReturnValueMapper() {
-        @Override
-        public IRubyObject map(ThreadContext context, RubyClass klazz, IRubyObject value) {
-            return newInstance(context, klazz, value);
-        }
-    };
+    private static final ReturnValueMapper SINGLE_PATH_MAPPER = (context, klazz, value) -> newInstance(context, klazz, value);
 
-    private static final ReturnValueMapper ARRAY_OF_PATHS_MAPPER = new ReturnValueMapper() {
-        @Override
-        public IRubyObject map(ThreadContext context, RubyClass klazz, IRubyObject value) {
-            return mapToPathnames(context, klazz, value);
-        }
-    };
+    private static final ReturnValueMapper ARRAY_OF_PATHS_MAPPER = (context, klazz, value) -> mapToPathnames(context, klazz, value);
 
-    private static final AddArg UNSHIFT_PATH = new AddArg() {
-        @Override
-        public IRubyObject[] addArg(IRubyObject[] args, RubyString path) {
-            return insert(args, 0, path);
-        }
-    };
+    private static final AddArg UNSHIFT_PATH = (args, path) -> insert(args, 0, path);
 
-    private static final AddArg APPEND_PATH = new AddArg() {
-        @Override
-        public IRubyObject[] addArg(IRubyObject[] args, RubyString path) {
-            return insert(args, args.length, path);
-        }
-    };
+    private static final AddArg APPEND_PATH = (args, path) -> insert(args, args.length, path);
 
     private static void defineDelegateMethodsGeneric(RubyClass cPathname, final RubyModule klass,
             final ReturnValueMapper mapper, final AddArg addArg, String... methods) {
@@ -162,16 +137,11 @@ public class RubyPathname extends RubyObject {
     public static class PathnameKernelMethods {
         @JRubyMethod(name = "Pathname", module = true, visibility = Visibility.PRIVATE)
         public static IRubyObject newPathname(IRubyObject recv, IRubyObject path) {
+            if (path instanceof RubyPathname) return path;
+
             return RubyPathname.newInstance(recv.getRuntime().getCurrentContext(), path);
         }
     }
-
-    private static final ObjectAllocator PATHNAME_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyPathname(runtime, klass);
-        }
-    };
 
     public RubyPathname(Ruby runtime, RubyClass metaClass) {
         super(runtime, metaClass);
@@ -197,7 +167,6 @@ public class RubyPathname extends RubyObject {
             throw context.runtime.newArgumentError("pathname contains null byte");
         }
 
-        infectBy(str);
         this.setPath((RubyString) str.dup());
         return this;
     }
@@ -219,20 +188,6 @@ public class RubyPathname extends RubyObject {
     public IRubyObject freeze(ThreadContext context) {
         getPath().freeze(context);
         return super.freeze(context);
-    }
-
-    @Override
-    @JRubyMethod
-    public IRubyObject taint(ThreadContext context) {
-        getPath().taint(context);
-        return super.taint(context);
-    }
-
-    @Override
-    @JRubyMethod
-    public IRubyObject untaint(ThreadContext context) {
-        getPath().untaint(context);
-        return super.untaint(context);
     }
 
     @Override
@@ -298,10 +253,10 @@ public class RubyPathname extends RubyObject {
 
     @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {
-        return context.runtime.newString("<Pathname:" + getPath() + ">");
+        return context.runtime.newString("#<Pathname:" + getPath() + ">");
     }
 
-    @JRubyMethod(required = 1, optional = 1, reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(required = 1, optional = 1, writes = BACKREF)
     public IRubyObject sub(ThreadContext context, IRubyObject[] args, Block block) {
         IRubyObject result = sites(context).sub.call(context, this, getPath(), args, block);
         return newInstance(context, result);
@@ -348,7 +303,7 @@ public class RubyPathname extends RubyObject {
         return newInstance(context, context.runtime.getDir().callMethod("getwd"));
     }
 
-    @JRubyMethod(required = 1, optional = 1, meta = true)
+    @JRubyMethod(required = 1, optional = 2, meta = true)
     public static IRubyObject glob(ThreadContext context, IRubyObject recv, IRubyObject[] args,
             Block block) {
         // TODO: yield block while iterating
@@ -473,5 +428,19 @@ public class RubyPathname extends RubyObject {
 
     private static JavaSites.PathnameSites sites(ThreadContext context) {
         return context.sites.Pathname;
+    }
+
+    @Deprecated
+    @Override
+    @JRubyMethod
+    public IRubyObject taint(ThreadContext context) {
+        return this;
+    }
+
+    @Deprecated
+    @Override
+    @JRubyMethod
+    public IRubyObject untaint(ThreadContext context) {
+        return this;
     }
 }

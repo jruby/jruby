@@ -55,6 +55,7 @@ def mspec(mspec_options = {}, java_options = {}, &code)
   java_options[:dir] ||= BASE_DIR
   java_options[:maxmemory] ||= JRUBY_LAUNCH_MEMORY
 
+  mspec_options[:command] ||= 'ci'
   mspec_options[:compile_mode] ||= 'OFF'
   mspec_options[:jit_threshold] ||= 20
   mspec_options[:jit_max] ||= -1
@@ -62,6 +63,7 @@ def mspec(mspec_options = {}, java_options = {}, &code)
   mspec_options[:thread_pooling] ||= false
   mspec_options[:reflection] ||= false
   mspec_options[:format] ||= "m"
+  mspec_options[:timeout] ||= 120
   ms = mspec_options
 
   # We can check this property to see whether we failed the run or not
@@ -83,7 +85,7 @@ def mspec(mspec_options = {}, java_options = {}, &code)
     # add . to load path so mspec config is found
     arg :line => "-I ."
 
-    arg :line => "#{MSPEC_BIN} ci"
+    arg :line => "#{MSPEC_BIN} #{ms[:command]}"
     arg :line => "-T -J-ea"
     arg :line => "-T -J-Djruby.launch.inproc=false"
     arg :line => "-T -J-Djruby.compile.mode=#{ms[:compile_mode]}"
@@ -95,9 +97,13 @@ def mspec(mspec_options = {}, java_options = {}, &code)
     arg :line => "-T -J-Demma.coverage.out.file=#{TEST_RESULTS_DIR}/coverage.emma"
     arg :line => "-T -J-Demma.coverage.out.merge=true"
     arg :line => "-T -J-Demma.verbosity.level=silent"
-    arg :line => "-T -J-XX:MaxMetaspaceSize=512M"
+    arg :line => "-T -J-XX:MaxMetaspaceSize=768M"
     arg :line => "-f #{ms[:format]}"
+    arg :line => "--timeout #{ms[:timeout]}"
     arg :line => "-B #{ms[:spec_config]}" if ms[:spec_config]
+    (ms[:tags] || []).each do |tag|
+      arg :line => "-g #{tag}"
+    end
     arg :line => "#{ms[:spec_target]}" if ms[:spec_target]
   end
 end

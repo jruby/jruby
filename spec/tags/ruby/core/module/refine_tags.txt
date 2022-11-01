@@ -5,3 +5,7 @@ fails(not implemented, jruby/jruby#6161):Module#refine for methods accessed indi
 fails(not implemented, jruby/jruby#6161):Module#refine for methods accessed indirectly is honored by Kernel#public_send
 fails(not implemented, jruby/jruby#6161):Module#refine for methods accessed indirectly is honored by Kernel#respond_to?
 fails:Module#refine when super is called in a refinement looks in the lexical scope refinements before other active refinements
+wip:Module#refine for methods accessed indirectly is honored by Kernel#method
+wip:Module#refine for methods accessed indirectly is honored by Kernel#public_method
+wip:Module#refine for methods accessed indirectly is honored by Kernel#instance_method
+fails:Module#refine applies refinements to calls in the refine block

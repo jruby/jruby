@@ -35,7 +35,6 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Visibility;
-import org.jruby.util.ArraySupport;
 
 /**
  * The Java representation of a Ruby NoMethodError.
@@ -46,7 +45,7 @@ import org.jruby.util.ArraySupport;
 public class RubyNoMethodError extends RubyNameError {
     private IRubyObject args;
 
-    private static final ObjectAllocator ALLOCATOR = (runtime, klass) -> new RubyNoMethodError(runtime, klass);
+    private static final ObjectAllocator ALLOCATOR = RubyNoMethodError::new;
 
     static RubyClass define(Ruby runtime, RubyClass nameErrorClass) {
         RubyClass noMethodErrorClass = runtime.defineClass("NoMethodError", nameErrorClass, ALLOCATOR);
@@ -91,17 +90,25 @@ public class RubyNoMethodError extends RubyNameError {
         return newError;
     }
 
-    @JRubyMethod(rest = true, visibility = Visibility.PRIVATE)
     @Override
-    public IRubyObject initialize(IRubyObject[] args, Block block) {
-        if (args.length > 2) {
-            this.args = args[ args.length - 1 ];
-            args = ArraySupport.newCopy(args, args.length - 1);
+    public IRubyObject initializeOptions(IRubyObject[] args, RubyHash options, Block block) {
+        int argc = args.length;
+        if (argc > 3) {
+            argc--;
+            if (args[argc].isTrue() && !args[argc].isNil()) {
+               this.privateCall = true;
+            } else {
+               this.privateCall = false;
+            }
+        }
+
+        if (argc > 2) {
+            this.args = args[ --argc ];
         } else {
             this.args = getRuntime().getNil();
         }
 
-        super.initialize(args, block);
+        super.initializeOptions(args, options, block);
         return this;
     }
     

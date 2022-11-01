@@ -31,13 +31,18 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.PartialDelegatingMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
+
+import static org.jruby.util.RubyStringBuilder.str;
 
 /**
  * An unbound method representation (e.g. when retrieving an instance method from a class - isn't bound to any instance).
@@ -117,7 +122,7 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
     public RubyMethod bind(ThreadContext context, IRubyObject aReceiver) {
         RubyClass receiverClass = aReceiver.getMetaClass();
         
-        receiverClass.checkValidBindTargetFrom(context, (RubyModule) owner(context));
+        receiverClass.checkValidBindTargetFrom(context, (RubyModule) owner(context), true);
         
         return RubyMethod.newMethod(implementationModule, methodName, receiverClass, originName, entry, aReceiver);
     }
@@ -126,6 +131,17 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
     @Override
     public RubyUnboundMethod rbClone() {
         return newUnboundMethod(implementationModule, methodName, originModule, originName, entry);
+    }
+
+    @JRubyMethod(required =  1, rest = true, forward = true)
+    public IRubyObject bind_call(ThreadContext context, IRubyObject[] args, Block block) {
+        IRubyObject receiver = args[0];
+        IRubyObject[] newArgs = new IRubyObject[args.length - 1];
+        System.arraycopy(args, 1, newArgs, 0, args.length - 1);
+
+        receiver.getMetaClass().checkValidBindTargetFrom(context, (RubyModule) owner(context), true);
+
+        return method.call(context, receiver, implementationModule, methodName, newArgs, block);
     }
 
     @JRubyMethod(name = {"inspect", "to_s"})
@@ -151,15 +167,30 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
         if ( realName != null && ! methodName.equals(realName) ) {
             str.append('(').append(realName).append(')');
         }
+        str.append('(').append(')');
+        String filename = getFilename();
+        if (filename != null) {
+            str.append(' ').append(getFilename()).append(':').append(getLine());
+        }
         str.append('>');
 
         RubyString res = RubyString.newString(getRuntime(), str);
-        res.setTaint(isTaint());
         return res;
     }
 
     @JRubyMethod
-    public IRubyObject super_method(ThreadContext context ) {
-        return super_method(context, null, sourceModule.getSuperClass());
+    public IRubyObject super_method(ThreadContext context) {
+        RubyModule superClass = null;
+        if (method instanceof PartialDelegatingMethod || method instanceof AliasMethod) {
+            RubyModule definedClass = method.getRealMethod().getDefinedClass();
+            RubyModule module = sourceModule.findImplementer(definedClass);
+
+            if (module != null) {
+                superClass = module.getSuperClass();
+            }
+        } else {
+            superClass = sourceModule.getSuperClass();
+        }
+        return super_method(context, null, superClass);
     }
 }

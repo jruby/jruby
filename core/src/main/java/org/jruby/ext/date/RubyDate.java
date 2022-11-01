@@ -99,34 +99,24 @@ public class RubyDate extends RubyObject {
     static final int REFORM_BEGIN_YEAR = 1582;
     static final int REFORM_END_YEAR = 1930;
 
-    protected RubyDate(Ruby runtime, RubyClass klass) {
-        super(runtime, klass);
-    }
-
     DateTime dt;
     int off; // @of (in seconds)
     long start = ITALY; // @sg
     long subMillisNum = 0, subMillisDen = 1; // @sub_millis
 
     static RubyClass createDateClass(Ruby runtime) {
-        RubyClass Date = runtime.defineClass("Date", runtime.getObject(), ALLOCATOR);
+        RubyClass Date = runtime.defineClass("Date", runtime.getObject(), RubyDate::new);
         Date.setReifiedClass(RubyDate.class);
         Date.includeModule(runtime.getComparable());
         Date.defineAnnotatedMethods(RubyDate.class);
         Date.setConstant("ITALY", runtime.newFixnum(ITALY));
         Date.setConstant("ENGLAND", runtime.newFixnum(ENGLAND));
+        Date.setConstant("VERSION", runtime.newString("3.2.2"));
         return Date;
     }
 
     // Julian Day Number day 0 ... `def self.civil(y=-4712, m=1, d=1, sg=ITALY)`
     static final DateTime defaultDateTime = new DateTime(-4712 - 1, 1, 1, 0, 0, CHRONO_ITALY_UTC);
-
-    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyDate(runtime, klass, defaultDateTime);
-        }
-    };
 
     static RubyClass getDate(final Ruby runtime) {
         return (RubyClass) runtime.getObject().getConstantAt("Date");
@@ -134,6 +124,10 @@ public class RubyDate extends RubyObject {
 
     static RubyClass getDateTime(final Ruby runtime) {
         return (RubyClass) runtime.getObject().getConstantAt("DateTime");
+    }
+
+    protected RubyDate(Ruby runtime, RubyClass klass) {
+        this(runtime, klass, defaultDateTime);
     }
 
     public RubyDate(Ruby runtime, RubyClass klass, DateTime dt) {
@@ -592,12 +586,16 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod(name = "valid_jd?", meta = true)
     public static IRubyObject valid_jd_p(ThreadContext context, IRubyObject self, IRubyObject jd) {
-        return jd == context.nil ? context.fals : context.tru; // @see _valid_jd_p
+        return validJDArg(context, jd) ? context.tru : context.fals; // @see _valid_jd_p
     }
 
     @JRubyMethod(name = "valid_jd?", meta = true)
     public static IRubyObject valid_jd_p(ThreadContext context, IRubyObject self, IRubyObject jd, IRubyObject sg) {
-        return jd == context.nil ? context.fals : context.tru; // @see _valid_jd_p
+        return validJDArg(context, jd) ? context.tru : context.fals; // @see _valid_jd_p
+    }
+
+    private static boolean validJDArg(ThreadContext context, IRubyObject jd) {
+        return jd != context.nil && jd != context.fals && !(jd instanceof RubySymbol);
     }
 
     // Is +jd+ a valid Julian Day Number?
@@ -1399,7 +1397,7 @@ public class RubyDate extends RubyObject {
         final Ruby runtime = context.runtime;
         return context.runtime.newArrayNoCopy(new IRubyObject[] {
                 ajd(context),
-                RubyFixnum.newFixnum(runtime, off),
+                RubyRational.newRationalCanonicalize(context, off, DAY_IN_SECONDS),
                 RubyFixnum.newFixnum(runtime, start)
         });
     }
@@ -1668,9 +1666,8 @@ public class RubyDate extends RubyObject {
         RubyRational subMillis = this.subMillisNum == 0 ? null :
                 RubyRational.newRational(context.runtime, this.subMillisNum, this.subMillisDen);
         RubyString format = context.getRubyDateFormatter().compileAndFormat(
-                fmt.convertToString(), true, this.dt, 0, subMillis
+                fmt.convertToString().getByteList(), true, this.dt, 0, subMillis
         );
-        if (fmt.isTaint()) format.setTaint(true);
         return format;
     }
 
@@ -1685,7 +1682,8 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod(meta = true)
     public static IRubyObject _strptime(ThreadContext context, IRubyObject self, IRubyObject string, IRubyObject format) {
-        format = TypeConverter.checkStringType(context.runtime, format);
+        string = string.convertToString();
+        format = format.convertToString();
         return parse(context, string, ((RubyString) format).decodeString());
     }
 

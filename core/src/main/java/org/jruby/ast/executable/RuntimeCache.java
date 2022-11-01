@@ -151,11 +151,7 @@ public class RuntimeCache {
         IRubyObject value = getValue(context, index, name, object);
         if (value != null) return value;
 
-        Ruby runtime = context.runtime;
-        if (runtime.isVerbose()) {
-            warnAboutUninitializedIvar(runtime, name);
-        }
-        return runtime.getNil();
+        return context.runtime.getNil();
     }
 
     public final IRubyObject getVariableDefined(ThreadContext context, int index, String name, IRubyObject object) {
@@ -169,11 +165,6 @@ public class RuntimeCache {
             variableReaders[index] = variableAccessor = cls.getVariableAccessorForRead(name);
         }
         return (IRubyObject)variableAccessor.get(object);
-    }
-
-    private void warnAboutUninitializedIvar(Ruby runtime, String name) {
-        runtime.getWarnings().warning(ID.IVAR_NOT_INITIALIZED,
-                str(runtime, "instance variable ", ids(runtime, name), " not initialized"));
     }
 
     public final IRubyObject setVariable(int index, String name, IRubyObject object, IRubyObject value) {

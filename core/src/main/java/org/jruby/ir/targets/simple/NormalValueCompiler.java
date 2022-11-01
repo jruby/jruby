@@ -9,6 +9,7 @@ import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyProc;
+import org.jruby.RubyRange;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
@@ -40,6 +41,7 @@ import java.lang.invoke.MethodType;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.p;
@@ -55,6 +57,16 @@ public class NormalValueCompiler implements ValueCompiler {
     public void pushRuntime() {
         compiler.loadContext();
         compiler.adapter.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
+    }
+
+    public void pushArrayClass() {
+        compiler.loadContext();
+        compiler.invokeIRHelper("getArray", sig(RubyClass.class, ThreadContext.class));
+    }
+
+    public void pushHashClass() {
+        compiler.loadContext();
+        compiler.invokeIRHelper("getHash", sig(RubyClass.class, ThreadContext.class));
     }
 
     public void pushObjectClass() {
@@ -112,6 +124,16 @@ public class NormalValueCompiler implements ValueCompiler {
             compiler.adapter.ldc(bl.toString());
             compiler.adapter.ldc(bl.getEncoding().toString());
             compiler.invokeIRHelper("newByteListFromRaw", sig(ByteList.class, Ruby.class, String.class, String.class));
+        });
+    }
+
+    public void pushRange(Runnable begin, Runnable end, boolean exclusive) {
+        cacheValuePermanentlyLoadContext("range", RubyRange.class, null, () -> {
+            compiler.loadContext();
+            begin.run();
+            end.run();
+            compiler.adapter.pushBoolean(exclusive);
+            compiler.adapter.invokestatic(p(RubyRange.class), "newRange", sig(RubyRange.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, boolean.class));
         });
     }
 

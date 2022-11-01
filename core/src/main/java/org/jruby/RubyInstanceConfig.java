@@ -60,10 +60,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 
 /**
@@ -691,17 +691,17 @@ public class RubyInstanceConfig {
         this.loader = loader;
     }
 
-    private final List<String> extraLoadPaths = new LinkedList<>();
+    private final List<String> extraLoadPaths = new CopyOnWriteArrayList<>();
     public List<String> getExtraLoadPaths() {
         return extraLoadPaths;
     }
 
-    private final List<String> extraGemPaths = new LinkedList<>();
+    private final List<String> extraGemPaths = new CopyOnWriteArrayList<>();
     public List<String> getExtraGemPaths() {
         return extraGemPaths;
     }
 
-    private final List<Loader> extraLoaders = new LinkedList<>();
+    private final List<Loader> extraLoaders = new CopyOnWriteArrayList<>();
     public List<Loader> getExtraLoaders() {
         return extraLoaders;
     }
@@ -899,6 +899,14 @@ public class RubyInstanceConfig {
      */
     public void setVerbosity(Verbosity verbosity) {
         this.verbosity = verbosity;
+    }
+
+    public void setBacktraceLimit(Integer limit) {
+        this.backtraceLimit = limit;
+    }
+
+    public Integer getBacktraceLimit(){
+        return this.backtraceLimit;
     }
 
     /**
@@ -1537,6 +1545,7 @@ public class RubyInstanceConfig {
     private KCode kcode = Options.CLI_KCODE.load();
     private String recordSeparator = Options.CLI_RECORD_SEPARATOR.load();
     private boolean shouldCheckSyntax = Options.CLI_CHECK_SYNTAX.load();
+    private Integer backtraceLimit = Options.CLI_BACKTRACE_LIMIT.load();
     private String inputFieldSeparator = Options.CLI_AUTOSPLIT_SEPARATOR.load();
     private boolean managementEnabled = false;
     private String inPlaceBackupExtension = Options.CLI_BACKUP_EXTENSION.load();
@@ -1752,10 +1761,10 @@ public class RubyInstanceConfig {
     public static final boolean ERRNO_BACKTRACE = Options.ERRNO_BACKTRACE.load();
     public static final boolean STOPITERATION_BACKTRACE = Options.STOPITERATION_BACKTRACE.load();
 
-    public static final boolean IR_DEBUG = Options.IR_DEBUG.load();
+    public static boolean IR_DEBUG = Options.IR_DEBUG.load(); // ast tool can toggle this
     public static final String IR_DEBUG_IGV = Options.IR_DEBUG_IGV.load();
     public static final boolean IR_PROFILE = Options.IR_PROFILE.load();
-    public static final boolean IR_COMPILER_DEBUG = Options.IR_COMPILER_DEBUG.load();
+    public static boolean IR_COMPILER_DEBUG = Options.IR_COMPILER_DEBUG.load(); // ast tool can toggle this
     public static final boolean IR_WRITING = Options.IR_WRITING.load();
     public static final boolean IR_READING = Options.IR_READING.load();
     public static final boolean IR_READING_DEBUG = Options.IR_READING_DEBUG.load();

@@ -1,2 +1,1 @@
 critical(hangs):Readline.readline returns the input string
-critical(hangs):Readline.readline taints the returned strings

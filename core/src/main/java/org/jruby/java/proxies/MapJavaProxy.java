@@ -42,7 +42,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -51,7 +50,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+
+import org.jruby.util.RubyStringBuilder;
 import org.jruby.util.TypeConverter;
+
+import static org.jruby.util.Inspector.*;
 
 /**
  * A proxy for wrapping <code>java.util.Map</code> instances.
@@ -70,15 +73,9 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         super(runtime, klazz, map);
     }
 
-    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-        public MapJavaProxy allocate(Ruby runtime, RubyClass klazz) {
-            return new MapJavaProxy(runtime, klazz);
-        }
-    };
-
     public static RubyClass createMapJavaProxy(final Ruby runtime) {
         RubyClass MapJavaProxy = runtime.defineClass(
-            "MapJavaProxy", runtime.getJavaSupport().getConcreteProxyClass(), ALLOCATOR
+            "MapJavaProxy", runtime.getJavaSupport().getConcreteProxyClass(), MapJavaProxy::new
         );
         // this is done while proxy class is created.
         // See org.jruby.javasuppoer.java.createProxyClass()
@@ -125,7 +122,26 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
 
         @Override
         public IRubyObject inspect(ThreadContext context) {
-            return super.inspect(context);
+            final Ruby runtime = context.runtime;
+            final Map map = mapDelegate();
+
+            RubyString buf = inspectPrefix(context, receiver.getMetaClass());
+            RubyStringBuilder.cat(runtime, buf, SPACE);
+
+            if (size() == 0) {
+                RubyStringBuilder.cat(runtime, buf, EMPTY_HASH_BL);
+            } else if (runtime.isInspecting(map)) {
+                RubyStringBuilder.cat(runtime, buf, RECURSIVE_HASH_BL);
+            } else {
+                try {
+                    runtime.registerInspecting(map);
+                    buf.cat19(inspectHash(context));
+                } finally {
+                    runtime.unregisterInspecting(map);
+                }
+            }
+
+            return RubyStringBuilder.cat(runtime, buf, GT);
         }
 
         @Override
@@ -228,7 +244,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         }
 
         @Override
-        public <T> void visitAll(ThreadContext context, VisitorWithState visitor, T state) {
+        public <T> void visitAll(ThreadContext context, VisitorWithStateI visitor) {
             final Ruby runtime = getRuntime();
             // NOTE: this is here to make maps act similar to Hash-es which allow modifications while
             // iterating (meant from the same thread) ... thus we avoid iterating entrySet() directly
@@ -238,20 +254,29 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
             for ( Map.Entry entry : entries ) {
                 IRubyObject key = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getKey());
                 IRubyObject value = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getValue());
-                visitor.visit(context, this, key, value, index++, state);
+                visitor.visit(context, this, key, value, index++);
             }
         }
 
         @Override
-        public RubyBoolean has_key_p(IRubyObject key) {
-            final Object convertedKey = key.toJava(Object.class);
-            return getRuntime().newBoolean( mapDelegate().containsKey(convertedKey) );
+        public <T> void visitAll(ThreadContext context, VisitorWithState visitor, T state) {
+            visitAll(context,
+                    (ctx, self, key, value, index) -> visitor.visit(ctx, self, key, value, index, state));
+        }
+
+        @Override
+        public boolean hasKey(IRubyObject key) {
+            return mapDelegate().containsKey(key);
+        }
+
+        @Override
+        public RubyBoolean has_key_p(ThreadContext context, IRubyObject key) {
+            return mapDelegate().containsKey(key.toJava(Object.class)) ? context.tru : context.fals;
         }
 
         @Override
         public RubyBoolean has_value_p(ThreadContext context, IRubyObject val) {
-            final Object convertedVal = val.toJava(Object.class);
-            return getRuntime().newBoolean( mapDelegate().containsValue(convertedVal) );
+            return mapDelegate().containsValue(val.toJava(Object.class)) ? context.tru : context.fals;
         }
 
         @Override
@@ -438,12 +463,10 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         return (RubyProc) newProc;
     }
 
-    /** rb_hash_to_s
-     *
-     */
+    // NOTE: keep Map#to_s -> toString as with other Java types
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s(ThreadContext context) {
-        return getOrCreateRubyHashMap(context.runtime).to_s(context);
+        return RubyString.newString(context.runtime, getMapObject().toString());
     }
 
     /** rb_hash_rehash

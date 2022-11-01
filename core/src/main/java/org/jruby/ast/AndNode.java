@@ -35,7 +35,6 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /** 
  * Represents a && (and) operator.
@@ -44,10 +43,9 @@ public class AndNode extends Node implements BinaryOperatorNode {
     private final Node firstNode;
     private final Node secondNode;
 
-    public AndNode(ISourcePosition position, Node firstNode, Node secondNode) {
-        super(position, firstNode.containsVariableAssignment() || secondNode.containsVariableAssignment());
+    public AndNode(int line, Node firstNode, Node secondNode) {
+        super(line, firstNode.containsVariableAssignment() || secondNode.containsVariableAssignment());
         
-        assert firstNode != null : "AndNode.first == null";
         assert secondNode != null : "AndNode.second == null";
         
         this.firstNode = firstNode;

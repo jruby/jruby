@@ -35,14 +35,11 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
-import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.javasupport.JavaClass;
-import org.jruby.javasupport.JavaObject;
+import org.jruby.javasupport.Java;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-@JRubyClass(name="Java::JavaProxyClass")
 public class JavaProxyReflectionObject extends RubyObject {
 
     public JavaProxyReflectionObject(Ruby runtime, RubyClass metaClass) {
@@ -64,7 +61,7 @@ public class JavaProxyReflectionObject extends RubyObject {
     public RubyBoolean op_eqq(final ThreadContext context, IRubyObject obj) {
         if ( ! ( obj instanceof JavaProxyReflectionObject ) ) {
             final Object wrappedObj = obj.dataGetStruct();
-            if ( ! ( wrappedObj instanceof JavaObject ) ) {
+            if ( ! ( wrappedObj instanceof RubyObject ) ) { // JavaObject || JavaProxy
                 return context.fals;
             }
             obj = (IRubyObject) wrappedObj;
@@ -84,7 +81,7 @@ public class JavaProxyReflectionObject extends RubyObject {
 
         if ( ! ( obj instanceof JavaProxyReflectionObject ) ) {
             final Object wrappedObj = obj.dataGetStruct();
-            if ( ! ( wrappedObj instanceof JavaObject ) ) {
+            if ( ! ( wrappedObj instanceof RubyObject ) ) { // JavaObject || JavaProxy
                 return context.fals;
             }
             obj = (IRubyObject) wrappedObj;
@@ -125,8 +122,8 @@ public class JavaProxyReflectionObject extends RubyObject {
     }
 
     @JRubyMethod
-    public JavaClass java_class() {
-        return JavaClass.get(getRuntime(), getJavaClass());
+    public IRubyObject java_class() {
+        return Java.getInstance(getRuntime(), getJavaClass());
     }
 
     @JRubyMethod
@@ -157,8 +154,12 @@ public class JavaProxyReflectionObject extends RubyObject {
         return RubyArray.newArrayMayCopy(getRuntime(), elements);
     }
 
-    final RubyArray toRubyArray(final Class<?>[] classes) {
-        return JavaClass.toRubyArray(getRuntime(), classes);
+    static RubyArray toClassArray(final Ruby runtime, final Class<?>[] classes) {
+        IRubyObject[] javaClasses = new IRubyObject[classes.length];
+        for ( int i = classes.length; --i >= 0; ) {
+            javaClasses[i] = Java.getProxyClass(runtime, classes[i]);
+        }
+        return RubyArray.newArrayMayCopy(runtime, javaClasses);
     }
 
 }

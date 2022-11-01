@@ -31,20 +31,18 @@
 
 package org.jruby.ast;
 
-import org.jruby.lexer.yacc.ISourcePosition;
-
 /**
  * Base class of any node which can be assigned to.
  */
 public abstract class AssignableNode extends Node {
     private Node valueNode;
     
-    public AssignableNode(ISourcePosition position) {
-        super(position, true);
+    public AssignableNode(int line) {
+        super(line, true);
     }
     
-    public AssignableNode(ISourcePosition position, Node valueNode, boolean containsAssignment) {
-        super(position, containsAssignment);
+    public AssignableNode(int line, Node valueNode, boolean containsAssignment) {
+        super(line, containsAssignment);
         
         this.valueNode = valueNode;
     }

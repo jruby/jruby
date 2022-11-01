@@ -25,6 +25,7 @@ import org.jruby.parser.StaticScope;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.Integer;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -50,18 +51,18 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
     private final List<IRScope> scopes;
     private IRScope currentScope; // FIXME: This is not thread-safe and more than a little gross
     /** Filename to use for the script */
-    private final ByteList filename;
+    private final String filename;
     private RubySymbol[] constantPool;
 
-    public IRReaderStream(IRManager manager, byte[] bytes, ByteList filename) {
+    public IRReaderStream(IRManager manager, byte[] bytes, String filename) {
         this(ByteBuffer.wrap(bytes), manager, new ArrayList<>(), null, filename, null);
     }
 
-    public IRReaderStream(IRManager manager, File file, ByteList filename) {
+    public IRReaderStream(IRManager manager, File file, String filename) {
         this(readingIntoBuffer(file), manager, new ArrayList<>(), null, filename, null);
     }
 
-    private IRReaderStream(ByteBuffer buf, IRManager manager, List<IRScope> scopes, IRScope currentScope, ByteList filename, RubySymbol[] constantPool) {
+    private IRReaderStream(ByteBuffer buf, IRManager manager, List<IRScope> scopes, IRScope currentScope, String filename, RubySymbol[] constantPool) {
         this.buf = buf;
         this.manager = manager;
         this.scopes = scopes;
@@ -84,7 +85,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
     }
 
     @Override
-    public ByteList getFilename() {
+    public String getFilename() {
         return filename;
     }
 
@@ -253,7 +254,6 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
 
         switch (operation) {
             case ALIAS: return AliasInstr.decode(this);
-            case ARG_SCOPE_DEPTH: return ArgScopeDepthInstr.decode(this);
             case ARRAY_DEREF: return ArrayDerefInstr.decode(this);
             case ATTR_ASSIGN: return AttrAssignInstr.decode(this);
             case AS_STRING: return AsStringInstr.decode(this);
@@ -307,6 +307,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case LAMBDA: return BuildLambdaInstr.decode(this);
             case LEXICAL_SEARCH_CONST: return LexicalSearchConstInstr.decode(this);
             case LOAD_FRAME_CLOSURE: return LoadFrameClosureInstr.decode(this);
+            case LOAD_BLOCK_IMPLICIT_CLOSURE: return LoadBlockImplicitClosureInstr.decode(this);
             case LOAD_IMPLICIT_CLOSURE: return LoadImplicitClosureInstr.decode(this);
             case LINE_NUM: return LineNumberInstr.decode(this);
             case MASGN_OPT: return OptArgMultipleAsgnInstr.decode(this);
@@ -332,6 +333,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case REIFY_CLOSURE: return ReifyClosureInstr.decode(this);
             case RECV_RUBY_EXC: return ReceiveRubyExceptionInstr.decode(this);
             case RECV_JRUBY_EXC: return ReceiveJRubyExceptionInstr.decode(this);
+            case RECV_KW: return ReceiveKeywordsInstr.decode(this);
             case RECV_KW_ARG: return ReceiveKeywordArgInstr.decode(this);
             case RECV_KW_REST_ARG: return ReceiveKeywordRestArgInstr.decode(this);
             case RECV_OPT_ARG: return ReceiveOptArgInstr.decode(this);
@@ -358,7 +360,8 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case ZSUPER: return ZSuperInstr.decode(this);
         }
 
-        throw new IllegalArgumentException("Unhandled operation: " + operation);
+        illegalArgument("Unhandled operation: " + operation);
+        return null; /* not reached */
     }    
 
     @Override
@@ -438,7 +441,9 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
         if (value == TRUE) return true;
         if (value == FALSE) return false;
 
-        throw new IllegalArgumentException("Value (" + ((int) value) + ", " + (char) value + ") is not a boolean.");
+
+        illegalArgument("Value (" + ((int) value) + ", " + (char) value + ") is not a boolean. " + getFilename() + ", " + getCurrentScope());
+        return false; /* not reached */
     }
 
     @Override
@@ -513,6 +518,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case ARRAY: return Array.decode(this);
             case BIGNUM: return Bignum.decode(this);
             case BOOLEAN: return org.jruby.ir.operands.Boolean.decode(this);
+            case BUILTIN_CLASS: return BuiltinClass.decode(this);
             case COMPLEX: return Complex.decode(this);
             case CURRENT_SCOPE: return CurrentScope.decode(this);
             case DYNAMIC_SYMBOL: return DynamicSymbol.decode(this);
@@ -528,7 +534,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case NIL: return manager.getNil();
             case NTH_REF: return NthRef.decode(this);
             case NULL_BLOCK: return NullBlock.decode(this);
-            case OBJECT_CLASS: return new ObjectClass();
+            case RANGE: return Range.decode(this);
             case RATIONAL: return Rational.decode(this);
             case REGEXP: return Regexp.decode(this);
             case SCOPE_MODULE: return ScopeModule.decode(this);
@@ -548,6 +554,11 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case WRAPPED_IR_CLOSURE: return WrappedIRClosure.decode(this);
         }
 
-        return null;
+        throw new RuntimeException("failed to deserialize operand of type: " + type);
+    }
+
+    private void illegalArgument(String message) {
+        System.out.println("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
+        throw new IllegalArgumentException(message + "\nfile: " + getFilename() + "\nscope: " + getCurrentScope());
     }
 }

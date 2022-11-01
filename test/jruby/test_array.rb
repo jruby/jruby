@@ -28,7 +28,7 @@ class TestArray < Test::Unit::TestCase
   def test_shared_ary_slice
     assert_equal [4,5,6], [1,2,3,4,5,6].slice(1,5).slice!(2,3)
   end
-  
+
   # JRUBY-4206
   def test_map
     methods = %w{map map! collect collect!}
@@ -100,35 +100,6 @@ class TestArray < Test::Unit::TestCase
     assert_equal [[1, 3, 5]], res
     (res = arr.transpose).delete_at(2)
     assert_equal [[1, 3, 5], [2, 4, 6]], res
-  end
-
-  class MyArray < Array; end
-
-  def test_array_instance_methods_on_subclass
-    @arr = MyArray.new([1,2,3])
-    @arr2 = MyArray.new([[1,2],[2,3],[3,3]])
-
-    assert_equal(Array, @arr2.transpose.class)
-    assert_equal(Array, @arr.compact.class)
-    assert_equal(Array, @arr.reverse.class)
-    assert_equal(MyArray, @arr2.flatten.class)
-    assert_equal(MyArray, @arr.uniq.class)
-    assert_equal(Array, @arr.sort.class)
-    assert_equal(MyArray, @arr[1,2].class)
-    assert_equal(MyArray, @arr[1..2].class)
-    assert_equal(Array, @arr.to_a.class)
-    assert_equal(MyArray, @arr.to_ary.class)
-    assert_equal(MyArray, @arr.slice(1,2).class)
-    assert_equal(MyArray, @arr.slice!(1,2).class)
-    assert_equal(MyArray, (@arr*0).class)
-    assert_equal(MyArray, (@arr*2).class)
-    assert_equal(MyArray, @arr.replace([1,2,3]).class)
-    assert_equal(Array, @arr.last(2).class)
-    assert_equal(Array, @arr.first(2).class)
-    assert_equal(Enumerator, @arr.collect.class)
-    assert_equal(Array, @arr.collect{true}.class)
-    assert_equal(Array, @arr.zip([1,2,3]).class)
-    assert_equal(MyArray, @arr.dup.class)
   end
 
   LONGP = 9223372036854775807

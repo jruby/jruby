@@ -1,3 +1,1 @@
-fails:Time#succ returns a new time one second later than time
-fails:Time#succ returns a new instance
 fails:Time#succ is obsolete

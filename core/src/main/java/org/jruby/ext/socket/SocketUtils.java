@@ -41,7 +41,9 @@ import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -71,7 +73,6 @@ import static jnr.constants.platform.ProtocolFamily.PF_INET;
 import static jnr.constants.platform.ProtocolFamily.PF_INET6;
 import static jnr.constants.platform.Sock.SOCK_DGRAM;
 import static jnr.constants.platform.Sock.SOCK_STREAM;
-import org.jruby.runtime.Helpers;
 
 /**
  * Socket class methods for addresses, structures, and so on.
@@ -177,7 +178,7 @@ public class SocketUtils {
         final Ruby runtime = context.runtime;
         final List<IRubyObject> l = new ArrayList<IRubyObject>();
 
-        buildAddrinfoList(context, args, new AddrinfoCallback() {
+        buildAddrinfoList(context, args, true, new AddrinfoCallback() {
             @Override
             public void addrinfo(InetAddress address, int port, Sock sock, Boolean reverse) {
                 boolean is_ipv6 = address instanceof Inet6Address;
@@ -229,7 +230,7 @@ public class SocketUtils {
         final Ruby runtime = context.runtime;
         final List<Addrinfo> l = new ArrayList<Addrinfo>();
 
-        buildAddrinfoList(context, args, new AddrinfoCallback() {
+        buildAddrinfoList(context, args, false, new AddrinfoCallback() {
             @Override
             public void addrinfo(InetAddress address, int port, Sock sock, Boolean reverse) {
                 boolean sock_stream = true;
@@ -272,7 +273,8 @@ public class SocketUtils {
                 Boolean reverse);
     }
 
-    public static void buildAddrinfoList(ThreadContext context, IRubyObject[] args, AddrinfoCallback callback) {
+    // FIXME: timeout is not actually implemented and while this original method dualed nice betwee Socket/AddrInfo they now deviate on 7th arg.
+    public static void buildAddrinfoList(ThreadContext context, IRubyObject[] args, boolean processLastArgAsReverse, AddrinfoCallback callback) {
         Ruby runtime = context.runtime;
         IRubyObject host = args[0];
         IRubyObject port = args[1];
@@ -284,9 +286,17 @@ public class SocketUtils {
         IRubyObject flags = args.length > 5 ? args[5] : context.nil;
         IRubyObject reverseArg = args.length > 6 ? args[6] : context.nil;
 
-        // The Ruby Socket.getaddrinfo function supports boolean/nil/Symbol values for the
-        // reverse_lookup parameter. We need to massage all valid inputs to true/false/null.
-        Boolean reverseLookup = RubyIPSocket.doReverseLookup(context, reverseArg);
+        Boolean reverseLookup = null;
+        IRubyObject timeout = context.nil;
+        if (processLastArgAsReverse) {
+            // The Ruby Socket.getaddrinfo function supports boolean/nil/Symbol values for the
+            // reverse_lookup parameter. We need to massage all valid inputs to true/false/null.
+             reverseLookup = RubyIPSocket.doReverseLookup(context, reverseArg);
+        } else {
+            if (reverseArg != context.nil) {
+                timeout = ArgsUtil.extractKeywordArg(context, "timeout", reverseArg);
+            }
+        }
 
         AddressFamily addressFamily = family.isNil() ? null : addressFamilyFromArg(family);
 
@@ -404,7 +414,7 @@ public class SocketUtils {
 
         }
 
-        jnr.netdb.Service serv = jnr.netdb.Service.getServiceByPort(Integer.parseInt(port), null);
+        Service serv = Service.getServiceByPort(Integer.parseInt(port), null);
 
         if (serv != null) {
 
@@ -429,8 +439,8 @@ public class SocketUtils {
             RubyArray list = RubyArray.newArray(runtime);
             RubyClass addrInfoCls = runtime.getClass("Addrinfo");
 
-            for (Enumeration<NetworkInterface> networkIfcs = NetworkInterface.getNetworkInterfaces() ; networkIfcs.hasMoreElements() ; ) {
-                for (Enumeration<InetAddress> addresses = networkIfcs.nextElement().getInetAddresses() ; addresses.hasMoreElements() ; ) {
+            for (Enumeration<NetworkInterface> networkIfcs = NetworkInterface.getNetworkInterfaces(); networkIfcs.hasMoreElements() ; ) {
+                for (Enumeration<InetAddress> addresses = networkIfcs.nextElement().getInetAddresses(); addresses.hasMoreElements() ; ) {
                     list.append(new Addrinfo(runtime, addrInfoCls, addresses.nextElement()));
                 }
             }
@@ -448,7 +458,7 @@ public class SocketUtils {
         String addressString = Helpers.byteListToString(address);
         return getRubyInetAddresses(addressString);
     }
-    
+
     public static InetAddress[] getRubyInetAddresses(String addressString) throws UnknownHostException {
         InetAddress specialAddress = specialAddress(addressString);
         if (specialAddress != null) {
@@ -457,17 +467,29 @@ public class SocketUtils {
             return InetAddress.getAllByName(addressString);
         }
     }
-    
+
     public static InetAddress getRubyInetAddress(String addressString) throws UnknownHostException {
         InetAddress specialAddress = specialAddress(addressString);
         if (specialAddress != null) {
             return specialAddress;
         } else {
             return InetAddress.getByName(addressString);
-
         }
     }
-    
+
+    public static InetAddress getRubyInetAddress(String host, String node) throws UnknownHostException {
+        InetAddress specialAddress = specialAddress(host);
+        if (specialAddress != null) {
+            return specialAddress;
+        } else {
+            return InetAddress.getByAddress(host, InetAddress.getByName(node).getAddress());
+        }
+    }
+
+    public static InetAddress getRubyInetAddress(byte[] addressBytes) throws UnknownHostException {
+        return InetAddress.getByAddress(addressBytes);
+    }
+
     private static InetAddress specialAddress(String addressString) throws UnknownHostException {
         if (addressString.equals(BROADCAST)) {
             return InetAddress.getByAddress(INADDR_BROADCAST);
@@ -677,7 +699,7 @@ public class SocketUtils {
         IRubyObject maybeStr = TypeConverter.checkStringType(runtime, port);
         if (!maybeStr.isNil()) {
             RubyString portStr = maybeStr.convertToString();
-            jnr.netdb.Service serv = jnr.netdb.Service.getServiceByName(portStr.toString(), null);
+            Service serv = Service.getServiceByName(portStr.toString(), null);
 
             if (serv != null) return serv.getPort();
 

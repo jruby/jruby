@@ -58,7 +58,7 @@ import static org.jruby.runtime.Visibility.PRIVATE;
 @JRubyClass(name="Java::JavaPackage", parent="Module")
 public class JavaPackage extends RubyModule {
 
-    static RubyModule createJavaPackageClass(final Ruby runtime, final RubyModule Java) {
+    static RubyClass createJavaPackageClass(final Ruby runtime, final RubyModule Java) {
         RubyClass superClass = new BlankSlateWrapper(runtime, runtime.getModule(), runtime.getKernel());
         RubyClass JavaPackage = RubyClass.newClass(runtime, superClass);
         JavaPackage.setMetaClass(runtime.getModule());
@@ -66,9 +66,7 @@ public class JavaPackage extends RubyModule {
         ((MetaClass) JavaPackage.makeMetaClass(superClass)).setAttached(JavaPackage);
 
         JavaPackage.setBaseName("JavaPackage");
-
         JavaPackage.setParent(Java);
-        Java.setConstant("JavaPackage", JavaPackage); // Java::JavaPackage
         // JavaPackage.setReifiedClass(JavaPackage.class);
 
         JavaPackage.defineAnnotatedMethods(JavaPackage.class);
@@ -92,8 +90,12 @@ public class JavaPackage extends RubyModule {
     final String packageName;
 
     private JavaPackage(final Ruby runtime, final CharSequence packageName) {
-        super(runtime, runtime.getJavaSupport().getJavaPackageClass());
+        super(runtime, runtime.getJavaSupport().getJavaPackageClass(), false); // java packages are phantom objects, and should never be added to objectspace
         this.packageName = packageName.toString();
+    }
+
+    public String getPackageName() {
+        return packageName;
     }
 
     // NOTE: name is Ruby name not pkg.name ~ maybe it should be just like with JavaClass?
@@ -187,8 +189,7 @@ public class JavaPackage extends RubyModule {
 
     RubyModule relativeJavaProxyClass(final Ruby runtime, final IRubyObject name) {
         final String fullName = packageRelativeName( name.toString() ).toString();
-        final JavaClass javaClass = JavaClass.forNameVerbose(runtime, fullName);
-        return Java.getProxyClass(runtime, javaClass);
+        return Java.getProxyClass(runtime, Java.getJavaClass(runtime, fullName));
     }
 
     @JRubyMethod(name = "respond_to?")
@@ -306,7 +307,7 @@ public class JavaPackage extends RubyModule {
             final String subPackageName = JavaPackage.buildPackageName(pkg, name).toString();
 
             final Ruby runtime = pkg.getRuntime();
-            JavaClass javaClass = JavaClass.forNameVerbose(runtime, subPackageName);
+            Class<?> javaClass = Java.getJavaClass(runtime, subPackageName);
             return (RubyClass) Java.getProxyClass(runtime, javaClass);
         }
 
@@ -314,7 +315,7 @@ public class JavaPackage extends RubyModule {
             final String subPackageName = JavaPackage.buildPackageName(pkg, name).toString();
 
             final Ruby runtime = pkg.getRuntime();
-            JavaClass javaClass = JavaClass.forNameVerbose(runtime, subPackageName);
+            Class<?> javaClass = Java.getJavaClass(runtime, subPackageName);
             return Java.getInterfaceModule(runtime, javaClass);
         }
 
@@ -374,10 +375,14 @@ public class JavaPackage extends RubyModule {
                 }
             }
 
-            @Override
+            @Deprecated @Override
             public Arity getArity() { return Arity.NO_ARGUMENTS; }
 
+            public Signature getSignature() {
+                return Signature.NO_ARGUMENTS;
+            }
         }
+
         private static String handlesMethod(final String name) {
             // FIXME: We should consider pure-bytelist search here.
             switch (name) {

@@ -40,7 +40,6 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.JavaSites;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -51,6 +50,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 import org.jruby.util.TypeConverter;
 
+import static org.jruby.ast.util.ArgsUtil.hasExceptionOption;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import static org.jruby.util.Numeric.*;
@@ -62,7 +62,7 @@ import static org.jruby.util.Numeric.*;
 public class RubyRational extends RubyNumeric {
     
     public static RubyClass createRationalClass(Ruby runtime) {
-        RubyClass rationalc = runtime.defineClass("Rational", runtime.getNumeric(), RATIONAL_ALLOCATOR);
+        RubyClass rationalc = runtime.defineClass("Rational", runtime.getNumeric(), RubyRational::new);
 
         rationalc.setClassIndex(ClassIndex.RATIONAL);
         rationalc.setReifiedClass(RubyRational.class);
@@ -78,18 +78,17 @@ public class RubyRational extends RubyNumeric {
         return rationalc;
     }
 
-    private static final ObjectAllocator RATIONAL_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            RubyFixnum zero = RubyFixnum.zero(runtime);
-            return new RubyRational(runtime, klass, zero, zero);
-        }
-    };
-
     private RubyRational(Ruby runtime, RubyClass clazz, RubyInteger num, RubyInteger den) {
         super(runtime, clazz);
         this.num = num;
         this.den = den;
+    }
+
+    private RubyRational(Ruby runtime, RubyClass clazz) {
+        super(runtime, clazz);
+        RubyFixnum zero = RubyFixnum.zero(runtime);
+        this.num = zero;
+        this.den = zero;
     }
 
     /** rb_rational_raw
@@ -401,10 +400,7 @@ public class RubyRational extends RubyNumeric {
             }
         } else {
             a2 = nil;
-
-            IRubyObject exception = ArgsUtil.extractKeywordArg(context, "exception", (RubyHash) maybeKwargs);
-
-            raise = exception.isNil() ? true : exception.isTrue();
+            raise = hasExceptionOption(context, maybeKwargs, raise);
 
             if (a1 == nil) {
                 if (raise) throw runtime.newTypeError("can't convert nil into Rational");
@@ -1119,9 +1115,6 @@ public class RubyRational extends RubyNumeric {
         Ruby runtime = context.runtime;
 
         opts = ArgsUtil.getOptionsArg(runtime, opts);
-        if (!opts.isNil()) {
-            n = context.nil;
-        }
 
         RoundingMode mode = RubyNumeric.getRoundingMode(context, opts);
 
@@ -1420,7 +1413,7 @@ public class RubyRational extends RubyNumeric {
     /** nurat_marshal_dump
      * 
      */
-    @JRubyMethod(name = "marshal_dump")
+    @JRubyMethod(name = "marshal_dump", visibility = Visibility.PRIVATE)
     public IRubyObject marshal_dump(ThreadContext context) {
         RubyArray dump = context.runtime.newArray(num, den);
         if (hasVariables()) dump.syncVariables(this);
@@ -1495,11 +1488,11 @@ public class RubyRational extends RubyNumeric {
             IRubyObject de = match.at(3);
             IRubyObject re = match.post_match(context);
             
-            RubyArray a = nu.split(RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.an_e_pat), context, false);
+            RubyArray a = nu.split(context, RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.an_e_pat), false);
             RubyString ifp = (RubyString)a.eltInternal(0);
             IRubyObject exp = a.size() != 2 ? nil : a.eltInternal(1);
             
-            a = ifp.split(RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.a_dot_pat), context, false);
+            a = ifp.split(context, RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.a_dot_pat), false);
             IRubyObject ip = a.eltInternal(0);
             IRubyObject fp = a.size() != 2 ? nil : a.eltInternal(1);
             

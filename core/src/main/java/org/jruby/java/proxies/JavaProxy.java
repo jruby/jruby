@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -15,8 +16,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.function.Predicate;
 
-import com.headius.backport9.modules.Module;
-import com.headius.backport9.modules.Modules;
 import org.jruby.AbstractRubyMethod;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -29,6 +28,7 @@ import org.jruby.RubyObject;
 import org.jruby.RubyUnboundMethod;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.java.invokers.InstanceFieldGetter;
 import org.jruby.java.invokers.InstanceFieldSetter;
 import org.jruby.java.invokers.InstanceMethodInvoker;
@@ -37,6 +37,7 @@ import org.jruby.java.invokers.StaticFieldGetter;
 import org.jruby.java.invokers.StaticFieldSetter;
 import org.jruby.java.invokers.StaticMethodInvoker;
 import org.jruby.javasupport.Java;
+import org.jruby.javasupport.JavaArray;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaMethod;
 import org.jruby.javasupport.JavaObject;
@@ -44,10 +45,10 @@ import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.binding.MethodGatherer;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.builtin.InternalVariables;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
@@ -57,7 +58,6 @@ import static org.jruby.runtime.Helpers.arrayOf;
 
 public class JavaProxy extends RubyObject {
 
-    private transient JavaObject javaObject;
     Object object;
 
     public JavaProxy(Ruby runtime, RubyClass klazz) {
@@ -69,36 +69,81 @@ public class JavaProxy extends RubyObject {
         this.object = object;
     }
 
-    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-            return new JavaProxy(runtime, klazz);
-        }
-    };
-
     public static RubyClass createJavaProxy(ThreadContext context) {
         final Ruby runtime = context.runtime;
 
-        RubyClass JavaProxy = runtime.defineClass("JavaProxy", runtime.getObject(), ALLOCATOR);
+        RubyClass JavaProxy = runtime.defineClass("JavaProxy", runtime.getObject(), JavaProxy::new);
 
-        JavaProxy.getSingletonClass().addReadWriteAttribute(context, "java_class");
         JavaProxy.defineAnnotatedMethods(JavaProxy.class);
         JavaProxy.includeModule(runtime.getModule("JavaProxyMethods"));
 
         return JavaProxy;
     }
 
-    @Override
-    public final Object dataGetStruct() {
-        if (javaObject == null) {
-            javaObject = asJavaObject(object);
+    @Deprecated // Java::JavaObject compatibility
+    @JRubyMethod(meta = true)
+    public static IRubyObject wrap(final ThreadContext context, final IRubyObject self, final IRubyObject object) {
+        final Object value = JavaUtil.unwrapJava(object, null);
+        if (value == null) return context.nil;
+
+        final Ruby runtime = context.runtime;
+        if (value instanceof Class) {
+            return Java.getProxyClass(runtime, (Class<?>) value);
         }
-        return javaObject;
+        if (value.getClass().isArray()) {
+            return new ArrayJavaProxy(runtime, runtime.getClass("ArrayJavaProxy"), value);
+        }
+        return new ConcreteJavaProxy(runtime, runtime.getClass("ConcreteJavaProxy"), value);
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject java_class(final IRubyObject self) {
+        return getJavaClass((RubyClass) self);
+    }
+
+    //public static boolean isJavaProxy(final RubyClass target) {
+    //    return target.getRealClass().hasInternalVariable("java_class");
+    //}
+
+    /**
+     * @param target (Java) proxy module/class
+     * @return a java.lang.Class instance proxy (e.g. a java.lang.Integer.class wrapper)
+     */
+    public static IRubyObject getJavaClass(final RubyModule target) {
+        return (JavaProxy) target.getInternalVariable("java_class");
+    }
+
+    public static void setJavaClass(final RubyClass target, final Class<?> javaClass) {
+        setJavaClass(target.getClassRuntime(), target, javaClass);
+    }
+
+    public static void setJavaClass(final IRubyObject target, final Class<?> javaClass) {
+        setJavaClass(target.getRuntime(), target.getInternalVariables(), javaClass);
+    }
+
+    static void setJavaClass(final Ruby runtime, final InternalVariables target, final Class<?> javaClass) {
+        setJavaClass(target, Java.getInstance(runtime, javaClass));
+    }
+
+    private static void setJavaClass(final InternalVariables target, final IRubyObject javaClass) {
+        target.setInternalVariable("java_class", javaClass);
     }
 
     @Override
+    public final Object dataGetStruct() {
+        return object;
+    }
+
+    @Override
+    @SuppressWarnings("deprecation")
     public final void dataWrapStruct(Object object) {
-        this.javaObject = (JavaObject) object;
-        this.object = javaObject.getValue();
+        if (object instanceof JavaObject) {
+            this.object = ((JavaObject) object).getValue();
+        } else if (object instanceof JavaProxy) {
+            this.object = ((JavaProxy) object).object;
+        } else {
+            this.object = object;
+        }
     }
 
     public final Object getObject() {
@@ -111,6 +156,8 @@ public class JavaProxy extends RubyObject {
 
     public Object unwrap() { return getObject(); }
 
+    @Deprecated // not used
+    @SuppressWarnings("deprecation")
     protected JavaObject asJavaObject(final Object object) {
         return JavaObject.wrap(getRuntime(), object);
     }
@@ -120,16 +167,10 @@ public class JavaProxy extends RubyObject {
         return getObject().getClass();
     }
 
-    static JavaClass java_class(final ThreadContext context, final RubyModule module) {
-        return (JavaClass) JavaClass.java_class(context, module);
-    }
-
     @JRubyMethod(meta = true, frame = true) // framed for invokeSuper
     public static IRubyObject inherited(ThreadContext context, IRubyObject recv, IRubyObject subclass) {
-        IRubyObject subJavaClass = JavaClass.java_class(context, (RubyClass) subclass);
-        if (subJavaClass.isNil()) {
-            subJavaClass = JavaClass.java_class(context, (RubyClass) recv);
-            Helpers.invoke(context, subclass, "java_class=", subJavaClass);
+        if (getJavaClass((RubyClass) subclass) == null) {
+            setJavaClass((RubyClass) subclass, getJavaClass((RubyClass) recv));
         }
         return Helpers.invokeSuper(context, recv, subclass, Block.NULL_BLOCK);
     }
@@ -141,17 +182,17 @@ public class JavaProxy extends RubyObject {
 
     @JRubyMethod(name = "[]", meta = true, rest = true)
     public static IRubyObject op_aref(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        final JavaClass javaClass = java_class(context, (RubyModule) self);
+        final Class<?> type = JavaUtil.getJavaClass((RubyModule) self);
         if ( args.length > 0 ) { // construct new array proxy (ArrayJavaProxy)
-            return new ArrayJavaProxyCreator(context, javaClass, args); // e.g. Byte[64]
+            return new ArrayJavaProxyCreator(context, type, args); // e.g. Byte[64]
         }
-        return Java.get_proxy_class(javaClass, Helpers.invoke(context, javaClass, "array_class"));
+        final Class<?> arrayType = Array.newInstance(type, 0).getClass();
+        return Java.getProxyClass(context.runtime, arrayType);
     }
 
     @JRubyMethod(meta = true)
     public static IRubyObject new_array(ThreadContext context, IRubyObject self, IRubyObject len) {
-        final JavaClass javaClass = java_class(context, (RubyModule) self);
-        final Class<?> componentType = javaClass.javaClass();
+        final Class<?> componentType = JavaUtil.getJavaClass((RubyModule) self);
         final int length = (int) len.convertToInteger().getLongValue();
         return ArrayJavaProxy.newArray(context.runtime, componentType, length);
     }
@@ -287,10 +328,14 @@ public class JavaProxy extends RubyObject {
         }
 
         // We could not find all of them print out first one (we could print them all?)
-        if ( ! fieldMap.isEmpty() ) {
-            throw JavaClass.undefinedFieldError(context.runtime, topModule.getName(), fieldMap.keySet().iterator().next());
+        if (!fieldMap.isEmpty()) {
+            throw undefinedFieldError(context, topModule.getName(), fieldMap.keySet().iterator().next());
         }
 
+    }
+
+    private static RaiseException undefinedFieldError(ThreadContext context, String javaClassName, String name) {
+        return context.runtime.newNameError("undefined field '" + name + "' for class '" + javaClassName + "'", name);
     }
 
     @JRubyMethod(meta = true, rest = true)
@@ -553,8 +598,8 @@ public class JavaProxy extends RubyObject {
         }
     }
 
-    private static final String NONPERSISTENT_IVAR_MESSAGE = "instance vars on non-persistent Java type {0} (http://wiki.jruby.org/Persistence)";
-    private static final String NONPERSISTENT_SINGLETON_MESSAGE = "singleton on non-persistent Java type {0} (http://wiki.jruby.org/Persistence)";
+    private static final String NONPERSISTENT_IVAR_MESSAGE = "instance vars on non-persistent Java type {0} (https://github.com/jruby/jruby/wiki/Persistence)";
+    private static final String NONPERSISTENT_SINGLETON_MESSAGE = "singleton on non-persistent Java type {0} (https://github.com/jruby/jruby/wiki/Persistence)";
 
     public static class ClassMethods {
 
@@ -697,14 +742,16 @@ public class JavaProxy extends RubyObject {
 
         private static Method getMethodFromClass(final ThreadContext context, final IRubyObject proxyClass,
             final String name, final Class... argTypes) {
-            final Class<?> clazz = JavaClass.getJavaClass(context, (RubyModule) proxyClass);
+            final Class<?> clazz = JavaUtil.getJavaClass((RubyModule) proxyClass);
             try {
                 return clazz.getMethod(name, argTypes);
             }
-            catch (NoSuchMethodException nsme) {
+            catch (NoSuchMethodException e) {
                 String prettyName = name + CodegenUtils.prettyParams(argTypes);
                 String errorName = clazz.getName() + '.' + prettyName;
-                throw context.runtime.newNameError("Java method not found: " + errorName, name);
+                RaiseException ex = context.runtime.newNameError("Java method not found: " + errorName, name);
+                ex.initCause(e);
+                throw ex;
             }
         }
 

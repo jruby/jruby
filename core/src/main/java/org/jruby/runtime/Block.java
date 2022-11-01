@@ -38,19 +38,23 @@
 // using arities: src/org/jruby/runtime/Block.arities.erb
 ////////////////////////////////////////////////////////////////////////////////
 
-
 package org.jruby.runtime;
 
 import java.util.Objects;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+
 import org.jruby.EvalType;
 import org.jruby.RubyProc;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.func.FunctionOneOrTwoOrThree;
+import org.jruby.util.func.TriFunction;
 
 /**
  *  Internal live representation of a block ({...} or do ... end).
  */
-public class Block {
+public class Block implements FunctionOneOrTwoOrThree<ThreadContext, IRubyObject, IRubyObject, IRubyObject> {
     public enum Type {
         NORMAL(false), PROC(false), LAMBDA(true), THREAD(false);
 
@@ -184,20 +188,50 @@ public class Block {
         return body.yield(context, this, value);
     }
 
+    /**
+     * @see Function#apply(Object)
+     */
+    public IRubyObject apply(ThreadContext context) {
+        return call(context);
+    }
+
+    /**
+     * @see BiFunction#apply(Object, Object)
+     */
+    public IRubyObject apply(ThreadContext context, IRubyObject arg0) {
+        return call(context, arg0);
+    }
+
+    /**
+     * @see TriFunction#apply(Object, Object, Object)
+     */
+    public IRubyObject apply(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        return call(context, arg0, arg1);
+    }
+
+    // PROC/NORMAL/THREAD will spread a single argument array if the block expects more than one required argument.
+    // This should be the only argument massaging in yield.  This handles all argument conversion logic except
+    // for the generic Block#yield(IRubyObject value).
+    private static IRubyObject[] maybeSpreadArgs(ThreadContext context, IRubyObject[] args, Block block) {
+        return block.type != Type.LAMBDA && args.length == 1 && block.getSignature().isSpreadable() ?
+                IRRuntimeHelpers.toAry(context, args) :
+                args;
+    }
+
     public IRubyObject yieldNonArray(ThreadContext context, IRubyObject value, IRubyObject self) {
-        return body.yield(context, this, new IRubyObject[] { value }, self);
+        IRubyObject[] args = maybeSpreadArgs(context, new IRubyObject[] { value }, this);
+
+        return body.yield(context, this, args, self);
     }
 
     public IRubyObject yieldArray(ThreadContext context, IRubyObject value, IRubyObject self) {
-        // SSS FIXME: Later on, we can move this code into IR insructions or
-        // introduce a specialized entry-point when we know that this block has
-        // explicit call protocol IR instructions.
-        IRubyObject[] args = IRRuntimeHelpers.singleBlockArgToArray(value);
+        IRubyObject[] args = maybeSpreadArgs(context, IRRuntimeHelpers.singleBlockArgToArray(value), this);
+
         return body.yield(context, this, args, self);
     }
 
     public IRubyObject yieldValues(ThreadContext context, IRubyObject[] args) {
-        return body.yield(context, this, args, null);
+        return body.yield(context, this, maybeSpreadArgs(context, args, this), null);
     }
 
     public Block cloneBlock() {

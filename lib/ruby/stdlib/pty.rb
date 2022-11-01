@@ -50,6 +50,14 @@ module PTY
         true
       end
 
+      slave.define_singleton_method(:inspect) do
+        "#<File:#{slave_name}>"
+      end
+
+      master.define_singleton_method(:inspect) do
+        "#<IO:masterpty:#{slave_name}>"
+      end
+
       fds = [master, slave]
       fds.each do |fd|
         fd.sync = true

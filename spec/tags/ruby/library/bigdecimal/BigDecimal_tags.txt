@@ -4,6 +4,4 @@ fails:Kernel#BigDecimal when interacting with Rational BigDecimal precision is t
 fails:Kernel#BigDecimal when interacting with Rational BigDecimal maximum precision is nine more than precision except for abnormals
 fails:Kernel#BigDecimal when interacting with Rational BigDecimal(Rational, BigDecimal.precs[0]) produces the result we expect
 fails:Kernel#BigDecimal when interacting with Rational produces the expected result
-fails(not implemented, jruby/jruby#6161):Kernel#BigDecimal does not ignores trailing garbage
-fails(not implemented, jruby/jruby#6161):Kernel#BigDecimal process underscores as Float()
 fails:Kernel#BigDecimal with exception: false returns nil for invalid strings

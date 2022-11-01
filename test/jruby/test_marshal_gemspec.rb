@@ -6,7 +6,7 @@ require 'yaml'
 class TestMarshalGemspec < Test::Unit::TestCase
   def setup
     require 'yaml'
-    @gemspec = YAML::load <<-YAML
+    @gemspec = YAML::load(<<-YAML, aliases: true, permitted_classes: [Symbol, Time, Gem::Specification, Gem::Version, Gem::Dependency, Gem::Requirement])
 --- !ruby/object:Gem::Specification 
 name: activerecord-jdbcderby-adapter
 version: !ruby/object:Gem::Version 

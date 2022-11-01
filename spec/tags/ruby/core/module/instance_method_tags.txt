@@ -1,1 +1,1 @@
-fails:Module#instance_method sets the NameError#name attribute to the name of the missing method
+fails:Module#instance_method raises TypeError when passed non-String name and #to_str returns non-String value

@@ -6,6 +6,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.specialized.OneArgOperandAttrAssignInstr;
+import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Self;
 import org.jruby.ir.persistence.IRReaderDecoder;
@@ -18,36 +19,39 @@ import org.jruby.runtime.builtin.IRubyObject;
 // Instruction representing Ruby code of the form: "a[i] = 5"
 // which is equivalent to: a.[]=(i,5)
 public class AttrAssignInstr extends NoResultCallInstr {
-    public static AttrAssignInstr create(IRScope scope, Operand obj, RubySymbol attr, Operand[] args, Operand block, boolean isPotentiallyRefined) {
-        if (block == null && args.length == 1 && !containsArgSplat(args)) {
-            return new OneArgOperandAttrAssignInstr(scope, obj, attr, args, isPotentiallyRefined);
+    public static AttrAssignInstr create(IRScope scope, Operand obj, RubySymbol attr, Operand[] args, Operand block, int flags, boolean isPotentiallyRefined) {
+        if (block == NullBlock.INSTANCE && args.length == 1 && !containsArgSplat(args)) {
+            return new OneArgOperandAttrAssignInstr(scope, obj, attr, args, flags, isPotentiallyRefined);
         }
 
-        return new AttrAssignInstr(scope, obj, attr, args, block, isPotentiallyRefined);
+        return new AttrAssignInstr(scope, obj, attr, args, block, flags, isPotentiallyRefined);
     }
-    public static AttrAssignInstr create(IRScope scope, Operand obj, RubySymbol attr, Operand[] args, boolean isPotentiallyRefined) {
+    public static AttrAssignInstr create(IRScope scope, Operand obj, RubySymbol attr, Operand[] args, int flags, boolean isPotentiallyRefined) {
         if (!containsArgSplat(args) && args.length == 1) {
-            return new OneArgOperandAttrAssignInstr(scope, obj, attr, args, isPotentiallyRefined);
+            return new OneArgOperandAttrAssignInstr(scope, obj, attr, args, flags, isPotentiallyRefined);
         }
 
-        return new AttrAssignInstr(scope, obj, attr, args, null, isPotentiallyRefined);
+        return new AttrAssignInstr(scope, obj, attr, args, NullBlock.INSTANCE, flags, isPotentiallyRefined);
     }
 
     // clone constructor
     protected AttrAssignInstr(IRScope scope, CallType callType, RubySymbol name, Operand receiver,
-                                Operand[] args, boolean potentiallyRefined, CallSite callSite, long callSiteId) {
-        super(scope, Operation.ATTR_ASSIGN, callType, name, receiver, args, null, potentiallyRefined, callSite, callSiteId);
+                              Operand[] args, int flags, boolean potentiallyRefined, CallSite callSite,
+                              long callSiteId) {
+        super(scope, Operation.ATTR_ASSIGN, callType, name, receiver, args, NullBlock.INSTANCE, flags, potentiallyRefined, callSite, callSiteId);
     }
 
     // normal constructor
-    public AttrAssignInstr(IRScope scope, Operand obj, RubySymbol attr, Operand[] args, Operand block, boolean isPotentiallyRefined) {
-        super(scope, Operation.ATTR_ASSIGN, obj instanceof Self ? CallType.FUNCTIONAL : CallType.NORMAL, attr, obj, args, block, isPotentiallyRefined);
+    public AttrAssignInstr(IRScope scope, Operand obj, RubySymbol attr, Operand[] args, Operand block, int flags,
+                           boolean isPotentiallyRefined) {
+        super(scope, Operation.ATTR_ASSIGN, obj instanceof Self ? CallType.FUNCTIONAL : CallType.NORMAL, attr, obj,
+                args, block, flags, isPotentiallyRefined);
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
         return new AttrAssignInstr(ii.getScope(), getCallType(), getName(), getReceiver().cloneForInlining(ii),
-                cloneCallArgs(ii), isPotentiallyRefined(), getCallSite(), getCallSiteId());
+                cloneCallArgs(ii), getFlags(), isPotentiallyRefined(), getCallSite(), getCallSiteId());
     }
 
     @Override
@@ -57,10 +61,11 @@ public class AttrAssignInstr extends NoResultCallInstr {
         e.encode(getReceiver());
         e.encode(getName());
         e.encode(getCallArgs());
+        e.encode(getFlags());
     }
 
     public static AttrAssignInstr decode(IRReaderDecoder d) {
-        return create(d.getCurrentScope(), d.decodeOperand(), d.decodeSymbol(), d.decodeOperandArray(), d.getCurrentScope().maybeUsingRefinements());
+        return create(d.getCurrentScope(), d.decodeOperand(), d.decodeSymbol(), d.decodeOperandArray(), d.decodeInt(), d.getCurrentScope().maybeUsingRefinements());
     }
 
     @Override

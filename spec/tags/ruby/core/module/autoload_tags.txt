@@ -1,25 +1,4 @@
-fails:Module#autoload does not load the file when referring to the constant in defined?
-fails:Module#autoload shares the autoload request across dup'ed copies of modules
-fails:Module#autoload returns 'constant' on referring the constant with defined?()
-fails:Module#autoload does not load the file when referring to the constant in defined?
-fails:Module#autoload returns 'constant' on referring the constant with defined?()
-fails(hangs):Module#autoload during the autoload before the constant is assigned returns nil in autoload thread and 'constant' otherwise for defined?
-fails:Module#autoload calls main.require(path) to load the file
-fails:Module#autoload does not remove the constant from Module#constants if load fails and keeps it as an autoload
-fails:Module#autoload does not remove the constant from Module#constants if load raises a RuntimeError and keeps it as an autoload
-fails:Module#autoload interacting with defined? does not load the file when referring to the constant in defined?
-fails:Module#autoload during the autoload before the constant is assigned returns false in autoload thread and true otherwise for Module#const_defined?
-fails:Module#autoload during the autoload before the constant is assigned returns nil in autoload thread and returns the path in other threads for Module#autoload?
-fails:Module#autoload after autoloading searches for the constant like the original lookup in the included modules
-fails:Module#autoload after autoloading searches for the constant like the original lookup in the included modules of the superclass
-fails:Module#autoload after autoloading searches for the constant like the original lookup in the prepended modules
-fails:Module#autoload the autoload is removed when the same file is required directly without autoload with a full path
-fails:Module#autoload the autoload is removed when the same file is required directly without autoload with a relative path
-fails(hangs):Module#autoload the autoload is removed when the same file is required directly without autoload in a nested require
-fails:Module#autoload the autoload is triggered when the same file is required directly with a full path
-fails:Module#autoload the autoload is triggered when the same file is required directly with a relative path
-fails:Module#autoload the autoload is triggered when the same file is required directly in a nested require
-critical(hangs intermittently, #5717):Module#autoload (concurrently) blocks a second thread while a first is doing the autoload
-critical(hangs intermittently, #5717):Module#autoload (concurrently) blocks others threads while doing an autoload
-fails:Module#autoload the autoload is triggered when the same file is required directly does not raise an error if the autoload constant was not defined
-fails:Module#autoload considers an autoload constant as loaded when autoload is called for/from the current file
+fails(conflicting state changes for failed load and autoload):Module#autoload does not remove the constant from Module#constants if load raises a RuntimeError and keeps it as an autoload
+hangs(incompatible locking in autoload):Module#autoload during the autoload before the constant is assigned returns nil in autoload thread and returns the path in other threads for Module#autoload?
+wip:Module#autoload removes the constant from Module#constants if the loaded file does not define it
+wip:Module#autoload after autoloading searches for the constant like the original lookup looks up in parent scope after failed autoload

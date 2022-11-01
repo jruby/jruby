@@ -119,19 +119,12 @@ public class AddCallProtocolInstructions extends CompilerPass {
 
                 // Add the right kind of arg preparation instruction
                 Signature sig = ((IRClosure)fic.getScope()).getSignature();
-                int arityValue = sig.arityValue();
-                if (arityValue == 0) {
+                if (sig.isNoArguments()) {
                     prologueBB.addInstr(PrepareNoBlockArgsInstr.INSTANCE);
+                } else if (sig.isOneArgument() && !sig.hasKwargs()) { // no kwargs and just a single required argument
+                    prologueBB.addInstr(PrepareSingleBlockArgInstr.INSTANCE);
                 } else {
-                    if (sig.isFixed()) {
-                        if (arityValue == 1) {
-                            prologueBB.addInstr(PrepareSingleBlockArgInstr.INSTANCE);
-                        } else {
-                            prologueBB.addInstr(PrepareBlockArgsInstr.INSTANCE);
-                        }
-                    } else {
-                        prologueBB.addInstr(PrepareBlockArgsInstr.INSTANCE);
-                    }
+                    prologueBB.addInstr(PrepareBlockArgsInstr.INSTANCE);
                 }
             } else {
                 if (needsFrame) {

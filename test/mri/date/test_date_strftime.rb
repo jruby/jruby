@@ -48,7 +48,7 @@ class TestDateStrftime < Test::Unit::TestCase
     '%t'=>["\t",{}],
     '%u'=>['6',{:cwday=>6}],
     '%V'=>['05',{:cweek=>5}],
-    '%v'=>[' 3-Feb-2001',{:mday=>3,:mon=>2,:year=>2001}],
+    '%v'=>[' 3-FEB-2001',{:mday=>3,:mon=>2,:year=>2001}],
     '%z'=>['+0000',{:zone=>'+0000',:offset=>0}],
     '%+'=>['Sat Feb  3 00:00:00 +00:00 2001',
       {:wday=>6,:mon=>2,:mday=>3,
@@ -186,11 +186,14 @@ class TestDateStrftime < Test::Unit::TestCase
     (-24..24).collect{|x| '%+.2d' % x}.each do |hh|
       %w(00 30).each do |mm|
 	r = hh + mm
-	if r[-4,4] == '2430'
-	  r = '+0000'
-	end
+	next if r.end_with?('2430')
 	d = DateTime.parse(s + hh + mm)
 	assert_equal(r, d.strftime('%z'))
+      end
+    end
+    %w[+2430 -2430].each do |r|
+      assert_warning(/invalid offset/) do
+        DateTime.parse(s + r)
       end
     end
   end

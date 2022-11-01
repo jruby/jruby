@@ -30,7 +30,6 @@
 package org.jruby.ast;
 
 import org.jruby.RubySymbol;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Represents a bare class declaration (e.g. class Foo/module Foo).  This is slightly misnamed
@@ -38,7 +37,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * In JRuby 2, we will rename this.
  */
 public class Colon2ImplicitNode extends Colon2Node {
-    public Colon2ImplicitNode(ISourcePosition position, RubySymbol name) {
-        super(position, null, name);
+    public Colon2ImplicitNode(int line, RubySymbol name) {
+        super(line, null, name);
     }
 }

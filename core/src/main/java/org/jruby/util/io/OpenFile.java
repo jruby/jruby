@@ -28,8 +28,8 @@ import org.jcodings.transcode.EConvResult;
 import org.jruby.Finalizable;
 import org.jruby.Ruby;
 import org.jruby.RubyArgsFile;
-import org.jruby.RubyBasicObject;
 import org.jruby.RubyBignum;
+import org.jruby.RubyEncoding;
 import org.jruby.RubyException;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyIO;
@@ -53,7 +53,7 @@ public class OpenFile implements Finalizable {
     // RB_IO_FPTR_NEW, minus fields that Java already initializes the same way
     public OpenFile(IRubyObject nil) {
         runtime = nil.getRuntime();
-        writeconvAsciicompat = nil;
+        writeconvAsciicompat = null;
         writeconvPreEcopts = nil;
         encs.ecopts = nil;
         posix = new PosixShim(runtime);
@@ -112,7 +112,7 @@ public class OpenFile implements Finalizable {
         public void finalize(Ruby runtime, OpenFile fptr, boolean noraise);
     }
 
-    private ChannelFD fd = null;
+    private ChannelFD fd;
     private int mode;
     private long pid = -1;
     private Process process;
@@ -134,7 +134,7 @@ public class OpenFile implements Finalizable {
 
     public EConv readconv;
     public EConv writeconv;
-    public IRubyObject writeconvAsciicompat;
+    public Encoding writeconvAsciicompat;
     public int writeconvPreEcflags;
     public IRubyObject writeconvPreEcopts;
     public boolean writeconvInitialized;
@@ -976,7 +976,6 @@ public class OpenFile implements Finalizable {
     public void makeWriteConversion(ThreadContext context) {
         if (writeconvInitialized) return;
 
-        byte[] senc;
         byte[] denc;
         Encoding enc;
         int ecflags;
@@ -996,30 +995,34 @@ public class OpenFile implements Finalizable {
             if (writeconv == null) {
                 throw EncodingUtils.econvOpenExc(context, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, ecflags);
             }
-            writeconvAsciicompat = context.nil;
+            writeconvAsciicompat = null;
         }
         else {
+            byte[] senc;
+            Encoding sEncoding;
+
             enc = encs.enc2 != null ? encs.enc2 : encs.enc;
             Encoding tmpEnc = EncodingUtils.econvAsciicompatEncoding(enc);
             senc = tmpEnc == null ? null : tmpEnc.getName();
-            if (senc == null && (encs.ecflags & EConvFlags.STATEFUL_DECORATOR_MASK) == 0) {
+            sEncoding = tmpEnc == null ? null : tmpEnc;
+            if (sEncoding == null && (encs.ecflags & EConvFlags.STATEFUL_DECORATOR_MASK) == 0) {
                 /* single conversion */
                 writeconvPreEcflags = ecflags;
                 writeconvPreEcopts = ecopts;
                 writeconv = null;
-                writeconvAsciicompat = context.nil;
+                writeconvAsciicompat = null;
             }
             else {
                 /* double conversion */
                 writeconvPreEcflags = ecflags & ~EConvFlags.STATEFUL_DECORATOR_MASK;
                 writeconvPreEcopts = ecopts;
-                if (senc != null) {
+                if (sEncoding != null) {
                     denc = enc.getName();
-                    writeconvAsciicompat = RubyString.newString(context.runtime, senc);
+                    writeconvAsciicompat = sEncoding;
                 }
                 else {
                     senc = denc = EMPTY_BYTE_ARRAY;
-                    writeconvAsciicompat = RubyString.newString(context.runtime, enc.getName());
+                    writeconvAsciicompat = enc;
                 }
                 ecflags = encs.ecflags & (EConvFlags.ERROR_HANDLER_MASK | EConvFlags.STATEFUL_DECORATOR_MASK);
                 ecopts = encs.ecopts;
@@ -1310,62 +1313,54 @@ public class OpenFile implements Finalizable {
         return 0;
     }
 
-    public static class InternalReadStruct {
-        InternalReadStruct(OpenFile fptr, ChannelFD fd, byte[] bufBytes, int buf, int count) {
-            this.fptr = fptr;
-            this.fd = fd;
-            this.bufBytes = bufBytes;
-            this.buf = buf;
-            this.capa = count;
-        }
-
-        public final OpenFile fptr;
-        public final ChannelFD fd;
-        public final byte[] bufBytes;
-        public final int buf;
-        public final int capa;
-        public Selector selector;
-    }
-
-    final static RubyThread.Task<InternalReadStruct, Integer> readTask = new RubyThread.Task<InternalReadStruct, Integer>() {
+    final static RubyThread.ReadWrite<OpenFile> READ_TASK = new RubyThread.ReadWrite<OpenFile>() {
         @Override
-        public Integer run(ThreadContext context, InternalReadStruct iis) throws InterruptedException {
-            ChannelFD fd = iis.fd;
-            OpenFile fptr = iis.fptr;
+        public int run(ThreadContext context, OpenFile fptr, byte[] buffer, int start, int length) throws InterruptedException {
+            ChannelFD fd = fptr.fd;
+
+            if (fd == null) {
+                // stream was closed on its way in, raise appropriate error
+                throw context.runtime.newErrnoEBADFError();
+            }
 
             assert fptr.lockedByMe();
 
             fptr.unlock();
             try {
-                return fptr.posix.read(fd, iis.bufBytes, iis.buf, iis.capa, fptr.nonblock);
+                return fptr.posix.read(fd, buffer, start, length, fptr.nonblock);
             } finally {
                 fptr.lock();
             }
         }
 
         @Override
-        public void wakeup(RubyThread thread, InternalReadStruct data) {
+        public void wakeup(RubyThread thread, OpenFile data) {
             thread.getNativeThread().interrupt();
         }
     };
 
-    final static RubyThread.Task<InternalWriteStruct, Integer> writeTask = new RubyThread.Task<InternalWriteStruct, Integer>() {
+    final static RubyThread.ReadWrite<OpenFile> WRITE_TASK = new RubyThread.ReadWrite<OpenFile>() {
         @Override
-        public Integer run(ThreadContext context, InternalWriteStruct iis) throws InterruptedException {
-            OpenFile fptr = iis.fptr;
+        public int run(ThreadContext context, OpenFile fptr, byte[] bytes, int start, int length) throws InterruptedException {
+            ChannelFD fd = fptr.fd;
+
+            if (fd == null) {
+                // stream was closed on its way in, raise appropriate error
+                throw context.runtime.newErrnoEBADFError();
+            }
 
             assert fptr.lockedByMe();
 
             fptr.unlock();
             try {
-                return iis.fptr.posix.write(iis.fd, iis.bufBytes, iis.buf, iis.capa, iis.fptr.nonblock);
+                return fptr.posix.write(fd, bytes, start, length, fptr.nonblock);
             } finally {
                 fptr.lock();
             }
         }
 
         @Override
-        public void wakeup(RubyThread thread, InternalWriteStruct data) {
+        public void wakeup(RubyThread thread, OpenFile data) {
             // FIXME: NO! This will kill many native channels. Must be nonblocking to interrupt.
             thread.getNativeThread().interrupt();
         }
@@ -1373,8 +1368,6 @@ public class OpenFile implements Finalizable {
 
     // rb_read_internal
     public static int readInternal(ThreadContext context, OpenFile fptr, ChannelFD fd, byte[] bufBytes, int buf, int count) {
-        InternalReadStruct iis = new InternalReadStruct(fptr, fd, bufBytes, buf, count);
-
         // if we can do selection and this is not a non-blocking call, do selection
 
         /*
@@ -1388,11 +1381,16 @@ public class OpenFile implements Finalizable {
             working with any native descriptor.
          */
 
+        if (fd == null) {
+            // stream was closed on its way in, raise appropriate error
+            throw context.runtime.newErrnoEBADFError();
+        }
+
         fptr.unlock();
         try {
             if (fd.chSelect != null
                     && fd.chNative == null // MRI does not select for rb_read_internal on native descriptors
-                    && !iis.fptr.nonblock) {
+                    && !fptr.nonblock) {
                 context.getThread().select(fd.chSelect, fptr, SelectionKey.OP_READ);
             }
         } finally {
@@ -1400,7 +1398,7 @@ public class OpenFile implements Finalizable {
         }
 
         try {
-            return context.getThread().executeTask(context, iis, readTask);
+            return context.getThread().executeReadWrite(context, fptr, bufBytes, buf, count, READ_TASK);
         } catch (InterruptedException ie) {
             throw context.runtime.newConcurrencyError("IO operation interrupted");
         }
@@ -1551,18 +1549,25 @@ public class OpenFile implements Finalizable {
     }
 
     // io_shift_cbuf
-    public IRubyObject shiftCbuf(ThreadContext context, final int len, final IRubyObject strp) {
+    public RubyString shiftCbuf(ThreadContext context, final int len, final IRubyObject strp) {
+        RubyString str = null;
+        if (strp != null) {
+            if (strp.isNil()) {
+                str = RubyString.newStringLight(context.runtime, len);
+            } else {
+                str = (RubyString) strp;
+            }
+            EncodingUtils.encAssociateIndex(str, encs.enc);
+        }
+        return shiftCbuf(len, str);
+    }
+
+    // io_shift_cbuf with string or null
+    public RubyString shiftCbuf(final int len, final RubyString str) {
         boolean locked = lock();
         try {
-            IRubyObject str = null;
-            if (strp != null) {
-                str = strp;
-                if (str.isNil()) {
-                    str = RubyString.newString(context.runtime, cbuf.ptr, cbuf.off, len);
-                } else {
-                    ((RubyString) str).cat(cbuf.ptr, cbuf.off, len);
-                }
-                str.setTaint(true);
+            if (str != null) {
+                str.cat(cbuf.ptr, cbuf.off, len);
                 EncodingUtils.encAssociateIndex(str, encs.enc);
             }
             cbuf.off += len;
@@ -1684,7 +1689,7 @@ public class OpenFile implements Finalizable {
                     v = fillCbuf(context, 0);
                     if (!v.equals(MORE_CHAR_SUSPENDED) && !v.equals(MORE_CHAR_FINISHED)) {
                         if (cbuf.len != 0) {
-                            str = shiftCbuf(context, cbuf.len, str);
+                            shiftCbuf(context, cbuf.len, str);
                         }
                         throw (RaiseException) v;
                     }
@@ -1703,16 +1708,16 @@ public class OpenFile implements Finalizable {
             cr = 0;
 
             if (siz == 0) siz = BUFSIZ;
-            str = EncodingUtils.setStrBuf(runtime, str, siz);
             for (; ; ) {
                 READ_CHECK(context);
-                n = fread(context, str, bytes, siz - bytes);
+                str = EncodingUtils.setStrBuf(context.runtime, str, siz);
+                ByteList strByteList = ((RubyString) str).getByteList();
+                n = fread(context, strByteList.unsafeBytes(), strByteList.begin() + bytes, siz - bytes);
                 if (n == 0 && bytes == 0) {
                     ((RubyString) str).resize(0);
                     break;
                 }
                 bytes += n;
-                ByteList strByteList = ((RubyString) str).getByteList();
                 strByteList.setRealSize(bytes);
                 //if (cr != StringSupport.CR_BROKEN) {
                     final int beg = strByteList.begin();
@@ -1777,36 +1782,12 @@ public class OpenFile implements Finalizable {
         return len - n;
     }
 
-    private static class BufreadArg {
-        byte[] strPtrBytes;
-        int strPtr;
-        int len;
-        OpenFile fptr;
-    }
-
-    static IRubyObject bufreadCall(ThreadContext context, BufreadArg p) {
-        p.len = p.fptr.ioBufread(context, p.strPtrBytes, p.strPtr, p.len);
-        return RubyBasicObject.UNDEF;
-    }
-
-    // io_fread
-    public int fread(ThreadContext context, IRubyObject str, int offset, int size) {
-        int len;
-        BufreadArg arg = new BufreadArg();
-
-        str = EncodingUtils.setStrBuf(context.runtime, str, offset + size);
-        ByteList strByteList = ((RubyString)str).getByteList();
-        arg.strPtrBytes = strByteList.unsafeBytes();
-        arg.strPtr = strByteList.begin() + offset;
-        arg.len = size;
-        arg.fptr = this;
-        // we don't support string locking
-//        rb_str_locktmp_ensure(str, bufread_call, (VALUE)&arg);
-        bufreadCall(context, arg);
-        len = arg.len;
+    // io_fread with target buffer
+    public int fread(ThreadContext context, byte[] buffer, int offset, int size) {
+        size = ioBufread(context, buffer, offset, size);
         // should be errno
-        if (len < 0) throw context.runtime.newErrnoFromErrno(posix.getErrno(), pathv);
-        return len;
+        if (size < 0) throw context.runtime.newErrnoFromErrno(posix.getErrno(), pathv);
+        return size;
     }
 
     public void ungetbyte(ThreadContext context, IRubyObject str) {
@@ -2079,56 +2060,67 @@ public class OpenFile implements Finalizable {
     }
 
     // MRI: io_fwrite
-    public long fwrite(ThreadContext context, IRubyObject str, boolean nosync) {
+    public long fwrite(ThreadContext context, RubyString str, boolean nosync) {
         // The System.console null check is our poor-man's isatty for Windows. See jruby/jruby#3292
         if (Platform.IS_WINDOWS && isStdio() && System.console() != null) {
-            return rbW32WriteConsole((RubyString)str);
+            return rbW32WriteConsole(str);
         }
 
         str = doWriteconv(context, str);
-        ByteList strByteList = ((RubyString)str).getByteList();
-        return binwrite(context, str, strByteList.unsafeBytes(), strByteList.begin(), strByteList.length(), nosync);
+        ByteList strByteList = str.getByteList();
+        return binwriteInt(context, strByteList.unsafeBytes(), strByteList.begin(), strByteList.length(), nosync);
+    }
+
+    // MRI: io_fwrite with source bytes
+    public int fwrite(ThreadContext context, byte[] bytes, int start, int length, Encoding encoding, boolean nosync) {
+        // The System.console null check is our poor-man's isatty for Windows. See jruby/jruby#3292
+        if (Platform.IS_WINDOWS && isStdio() && System.console() != null) {
+            return rbW32WriteConsole(bytes, start, length, encoding);
+        }
+
+        ByteList str = doWriteconv(context, bytes, start, length, encoding);
+
+        if (str != null) {
+            bytes = str.unsafeBytes();
+            start = str.begin();
+            length = str.realSize();
+        }
+
+        return binwriteInt(context, bytes, start, length, nosync);
     }
 
     // MRI: rb_w32_write_console
     public static long rbW32WriteConsole(RubyString buffer) {
+        ByteList bl = buffer.getByteList();
+        return rbW32WriteConsole(bl.unsafeBytes(), bl.begin(), bl.realSize(), bl.getEncoding());
+    }
+
+    // MRI: rb_w32_write_console
+    public static int rbW32WriteConsole(byte[] bytes, int start, int length, Encoding encoding) {
         // The actual port in MRI uses win32 APIs, but System.console seems to do what we want. See jruby/jruby#3292.
         // FIXME: This assumes the System.console() is the right one to write to. Can you have multiple active?
-        System.console().printf("%s", buffer.asJavaString());
+        System.console().printf("%s", RubyEncoding.decode(bytes, start, length, encoding.getCharset()));
 
-        return buffer.size();
+        return length;
     }
 
     // do_writeconv
-    public IRubyObject doWriteconv(ThreadContext context, IRubyObject str) {
+    public RubyString doWriteconv(ThreadContext context, RubyString str) {
         boolean locked = lock();
         try {
             if (needsWriteConversion(context)) {
-                IRubyObject common_encoding = context.nil;
                 SET_BINARY_MODE();
 
                 makeWriteConversion(context);
 
-                if (writeconv != null) {
-                    int fmode = mode;
-                    if (!writeconvAsciicompat.isNil())
-                        common_encoding = writeconvAsciicompat;
-                    else if (EncodingUtils.MODE_BTMODE(fmode, EncodingUtils.DEFAULT_TEXTMODE, 0, 1) != 0 && !((RubyString) str).getEncoding().isAsciiCompatible()) {
-                        throw context.runtime.newArgumentError("ASCII incompatible string written for text mode IO without encoding conversion: %s" + ((RubyString) str).getEncoding().toString());
-                    }
-                } else {
-                    if (encs.enc2 != null)
-                        common_encoding = context.runtime.getEncodingService().convertEncodingToRubyEncoding(encs.enc2);
-                    else if (encs.enc != EncodingUtils.ascii8bitEncoding(context.runtime))
-                        common_encoding = context.runtime.getEncodingService().convertEncodingToRubyEncoding(encs.enc);
-                }
+                Encoding common_encoding = getCommonEncodingForWriteConv(context, str.getEncoding());
 
-                if (!common_encoding.isNil()) {
-                    str = EncodingUtils.rbStrEncode(context, str, common_encoding, writeconvPreEcflags, writeconvPreEcopts);
+                if (common_encoding != null) {
+                    str = (RubyString) EncodingUtils.rbStrEncode(context, str, runtime.getEncodingService().convertEncodingToRubyEncoding(common_encoding), writeconvPreEcflags, writeconvPreEcopts);
                 }
 
                 if (writeconv != null) {
-                    str = context.runtime.newString(EncodingUtils.econvStrConvert(context, writeconv, ((RubyString) str).getByteList(), EConvFlags.PARTIAL_INPUT));
+                    str = context.runtime.newString(EncodingUtils.econvStrConvert(context, writeconv, str.getByteList(), EConvFlags.PARTIAL_INPUT));
                 }
             }
             //        #if defined(RUBY_TEST_CRLF_ENVIRONMENT) || defined(_WIN32)
@@ -2154,25 +2146,83 @@ public class OpenFile implements Finalizable {
         return str;
     }
 
-    private static class BinwriteArg {
-        OpenFile fptr;
-        IRubyObject str;
-        byte[] ptrBytes;
-        int ptr;
-        int length;
+    protected Encoding getCommonEncodingForWriteConv(ThreadContext context, Encoding strEncoding) {
+        Encoding common_encoding = null;
+        if (writeconv != null) {
+            int fmode = mode;
+            if (writeconvAsciicompat != null)
+                common_encoding = writeconvAsciicompat;
+            else if (EncodingUtils.MODE_BTMODE(fmode, EncodingUtils.DEFAULT_TEXTMODE, 0, 1) != 0 && !strEncoding.isAsciiCompatible()) {
+                throw context.runtime.newArgumentError("ASCII incompatible string written for text mode IO without encoding conversion: %s" + strEncoding.toString());
+            }
+        } else {
+            if (encs.enc2 != null)
+                common_encoding = encs.enc2;
+            else if (encs.enc != EncodingUtils.ascii8bitEncoding(context.runtime))
+                common_encoding = encs.enc;
+        }
+        return common_encoding;
+    }
+
+    // do_writeconv with source bytes
+    public ByteList doWriteconv(ThreadContext context, byte[] bytes, int start, int length, Encoding encoding) {
+        boolean locked = lock();
+
+        ByteList newBytes = null;
+        try {
+            if (needsWriteConversion(context)) {
+                SET_BINARY_MODE();
+
+                makeWriteConversion(context);
+
+                Encoding common_encoding = getCommonEncodingForWriteConv(context, encoding);
+
+                if (common_encoding != null) {
+                    newBytes = EncodingUtils.rbByteEncode(context, bytes, start, length, encoding, CR_UNKNOWN, common_encoding, writeconvPreEcflags, writeconvPreEcopts);
+                }
+
+                if (writeconv != null) {
+                    if (newBytes != null) {
+                        newBytes = EncodingUtils.econvStrConvert(context, writeconv, newBytes, EConvFlags.PARTIAL_INPUT);
+                    } else {
+                        newBytes = EncodingUtils.econvByteConvert(context, writeconv, bytes, start, length, EConvFlags.PARTIAL_INPUT);
+                    }
+                }
+            }
+            //        #if defined(RUBY_TEST_CRLF_ENVIRONMENT) || defined(_WIN32)
+            //        #define fmode (fptr->mode)
+            //        else if (MODE_BTMODE(DEFAULT_TEXTMODE,0,1)) {
+            //        if ((fptr->mode & FMODE_READABLE) &&
+            //                !(fptr->encs.ecflags & ECONV_NEWLINE_DECORATOR_MASK)) {
+            //            setmode(fptr->fd, O_BINARY);
+            //        }
+            //        else {
+            //            setmode(fptr->fd, O_TEXT);
+            //        }
+            //        if (!rb_enc_asciicompat(rb_enc_get(str))) {
+            //            rb_raise(rb_eArgError, "ASCII incompatible string written for text mode IO without encoding conversion: %s",
+            //                    rb_enc_name(rb_enc_get(str)));
+            //        }
+            //    }
+            //        #undef fmode
+            //        #endif
+        } finally {
+            if (locked) unlock();
+        }
+        return newBytes;
     }
 
     // io_binwrite
-    public long binwrite(ThreadContext context, IRubyObject str, byte[] ptrBytes, int ptr, int len, boolean nosync) {
+    public int binwriteInt(ThreadContext context, byte[] ptrBytes, int ptr, int len, boolean nosync) {
         int n, r, offset = 0;
 
         /* don't write anything if current thread has a pending interrupt. */
-        context.pollThreadEvents();
+        context.blockingThreadPoll();
 
         boolean locked = lock();
         try {
             if ((n = len) <= 0) return n;
-            if (wbuf.ptr == null && !(!nosync && (mode & SYNC) != 0)) {
+            if (wbuf.ptr == null && (nosync || (mode & SYNC) == 0)) {
                 wbuf.off = 0;
                 wbuf.len = 0;
                 wbuf.capa = IO_WBUF_CAPA_MIN;
@@ -2186,8 +2236,6 @@ public class OpenFile implements Finalizable {
             //              if the write buffer does not have enough capacity to store all incoming data...unbuffered write
             if ((!nosync && (mode & (SYNC | TTY)) != 0) ||
                     (wbuf.ptr != null && wbuf.capa <= wbuf.len + len)) {
-                BinwriteArg arg = new BinwriteArg();
-
                 if (wbuf.len != 0 && wbuf.len + len <= wbuf.capa) {
                     if (wbuf.capa < wbuf.off + wbuf.len + len) {
                         System.arraycopy(wbuf.ptr, wbuf.off, wbuf.ptr, 0, wbuf.len);
@@ -2198,29 +2246,27 @@ public class OpenFile implements Finalizable {
                     n = 0;
                 }
 
-                if (io_fflush(context) < 0) return -1L;
+                if (io_fflush(context) < 0) return -1;
                 if (n == 0) return len;
 
                 checkClosed();
-                arg.fptr = this;
-                arg.str = str;
+                OpenFile fptr = this;
                 retry:
                 while (true) {
-                    arg.ptrBytes = ptrBytes;
-                    arg.ptr = ptr + offset;
-                    arg.length = n;
+                    int start = ptr + offset;
+                    int length = n;
                     if (write_lock != null) {
                         // FIXME: not interruptible by Ruby
                         //                r = rb_mutex_synchronize(fptr->write_lock, io_binwrite_string, (VALUE)&arg);
                         write_lock.writeLock().lock();
                         try {
-                            r = binwriteString(context, arg);
+                            r = binwriteString(fptr, ptrBytes, start, length);
                         } finally {
                             write_lock.writeLock().unlock();
                         }
                     } else {
                         int l = writableLength(n);
-                        r = writeInternal(context, this, fd, ptrBytes, ptr + offset, l);
+                        r = writeInternal(context, this, ptrBytes, ptr + offset, l);
                     }
                     /* xxx: other threads may modify given string. */
                     if (r == n) return len;
@@ -2234,7 +2280,7 @@ public class OpenFile implements Finalizable {
                         if (offset < len)
                             continue retry;
                     }
-                    return -1L;
+                    return -1;
                 }
             }
 
@@ -2252,34 +2298,15 @@ public class OpenFile implements Finalizable {
     }
 
     // io_binwrite_string
-    static int binwriteString(ThreadContext context, BinwriteArg arg) {
-        BinwriteArg p = arg;
-        int l = p.fptr.writableLength(p.length);
-        return p.fptr.writeInternal2(p.fptr.fd, p.ptrBytes, p.ptr, l);
-    }
-
-    public static class InternalWriteStruct {
-        InternalWriteStruct(OpenFile fptr, ChannelFD fd, byte[] bufBytes, int buf, int count) {
-            this.fptr = fptr;
-            this.fd = fd;
-            this.bufBytes = bufBytes;
-            this.buf = buf;
-            this.capa = count;
-        }
-
-        public final OpenFile fptr;
-        public final ChannelFD fd;
-        public final byte[] bufBytes;
-        public final int buf;
-        public final int capa;
+    static int binwriteString(OpenFile fptr, byte[] bytes, int start, int length) {
+        int l = fptr.writableLength(length);
+        return fptr.writeInternal2(fptr.fd, bytes, start, l);
     }
 
     // rb_write_internal
-    public static int writeInternal(ThreadContext context, OpenFile fptr, ChannelFD fd, byte[] bufBytes, int buf, int count) {
-        InternalWriteStruct iis = new InternalWriteStruct(fptr, fd, bufBytes, buf, count);
-
+    public static int writeInternal(ThreadContext context, OpenFile fptr, byte[] bufBytes, int buf, int count) {
         try {
-            return context.getThread().executeTask(context, iis, writeTask);
+            return context.getThread().executeReadWrite(context, fptr, bufBytes, buf, count, WRITE_TASK);
         } catch (InterruptedException ie) {
             throw context.runtime.newConcurrencyError("IO operation interrupted");
         }
@@ -2354,7 +2381,7 @@ public class OpenFile implements Finalizable {
                             if (write_lock != null && write_lock.isWriteLockedByCurrentThread())
                                 r = writeInternal2(fd, dsBytes, ds, dpPtr.p - ds);
                             else
-                                r = writeInternal(context, this, fd, dsBytes, ds, dpPtr.p - ds);
+                                r = writeInternal(context, this, dsBytes, ds, dpPtr.p - ds);
                             if (r == dpPtr.p - ds)
                                 break outer;
                             if (0 <= r) {
@@ -2542,7 +2569,7 @@ public class OpenFile implements Finalizable {
 //        #endif
         int ret = 0;
         try {
-            ret = context.getThread().executeTask(context, this, new RubyThread.Task<OpenFile, Integer>() {
+            ret = context.getThread().executeTaskBlocking(context, this, new RubyThread.Task<OpenFile, Integer>() {
                 @Override
                 public Integer run(ThreadContext context, OpenFile openFile) throws InterruptedException {
                     return posix.flock(fd, lockMode);
@@ -2754,5 +2781,10 @@ public class OpenFile implements Finalizable {
 
     public boolean lockedByMe() {
         return lock.isHeldByCurrentThread();
+    }
+
+    @Deprecated
+    public long binwrite(ThreadContext context, byte[] ptrBytes, int ptr, int len, boolean nosync) {
+        return binwriteInt(context, ptrBytes, ptr, len, nosync);
     }
 }

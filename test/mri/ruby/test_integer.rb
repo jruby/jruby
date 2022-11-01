@@ -10,7 +10,46 @@ class TestInteger < Test::Unit::TestCase
     self.class.bdsize(x)
   end
 
+  FIXNUM_MIN = RbConfig::LIMITS['FIXNUM_MIN']
+  FIXNUM_MAX = RbConfig::LIMITS['FIXNUM_MAX']
+
   def test_aref
+
+    [
+      *-16..16,
+      *(FIXNUM_MIN-2)..(FIXNUM_MIN+2),
+      *(FIXNUM_MAX-2)..(FIXNUM_MAX+2),
+    ].each do |n|
+      (-64..64).each do |idx|
+        assert_equal((n >> idx) & 1, n[idx])
+      end
+      [*-66..-62, *-34..-30, *-5..5, *30..34, *62..66].each do |idx|
+        (0..100).each do |len|
+          assert_equal((n >> idx) & ((1 << len) - 1), n[idx, len], "#{ n }[#{ idx }, #{ len }]")
+        end
+        (0..100).each do |len|
+          assert_equal((n >> idx) & ((1 << (len + 1)) - 1), n[idx..idx+len], "#{ n }[#{ idx }..#{ idx+len }]")
+          assert_equal((n >> idx) & ((1 << len) - 1), n[idx...idx+len], "#{ n }[#{ idx }...#{ idx+len }]")
+        end
+
+        # endless
+        assert_equal((n >> idx), n[idx..], "#{ n }[#{ idx }..]")
+        assert_equal((n >> idx), n[idx...], "#{ n }[#{ idx }...#]")
+
+        # beginless
+        if idx >= 0 && n & ((1 << (idx + 1)) - 1) != 0
+          assert_raise(ArgumentError, "#{ n }[..#{ idx }]") { n[..idx] }
+        else
+          assert_equal(0, n[..idx], "#{ n }[..#{ idx }]")
+        end
+        if idx >= 0 && n & ((1 << idx) - 1) != 0
+          assert_raise(ArgumentError, "#{ n }[...#{ idx }]") { n[...idx] }
+        else
+          assert_equal(0, n[...idx], "#{ n }[...#{ idx }]")
+        end
+      end
+    end
+
     # assert_equal(1, (1 << 0x40000000)[0x40000000], "[ruby-dev:31271]")
     # assert_equal(0, (-1 << 0x40000001)[0x40000000], "[ruby-dev:31271]")
     big_zero = 0x40000000.coerce(0)[0]
@@ -153,6 +192,12 @@ class TestInteger < Test::Unit::TestCase
     end;
   end
 
+  def test_Integer_with_invalid_exception
+    assert_raise(ArgumentError) {
+      Integer("0", exception: 1)
+    }
+  end
+
   def test_Integer_with_exception_keyword
     assert_nothing_raised(ArgumentError) {
       assert_equal(nil, Integer("1z", exception: false))
@@ -215,6 +260,7 @@ class TestInteger < Test::Unit::TestCase
     assert_equal("a", "a".ord.chr)
     assert_raise(RangeError) { (-1).chr }
     assert_raise(RangeError) { 0x100.chr }
+    assert_raise_with_message(RangeError, "3000000000 out of char range") { 3_000_000_000.chr }
   end
 
   def test_upto
@@ -251,6 +297,31 @@ class TestInteger < Test::Unit::TestCase
     (2**32).times do |i|
       break if i == 2
     end
+  end
+
+  def test_times_bignum_redefine_plus_lt
+    assert_separately([], "#{<<-"begin;"}\n#{<<~"end;"}")
+    begin;
+      called = false
+      Integer.class_eval do
+        alias old_plus +
+        undef +
+        define_method(:+){|x| called = true; 1}
+        alias old_lt <
+        undef <
+        define_method(:<){|x| called = true}
+      end
+      big = 2**65
+      big.times{break 0}
+      Integer.class_eval do
+        undef +
+        alias + old_plus
+        undef <
+        alias < old_lt
+      end
+      bug18377 = "[ruby-core:106361]"
+      assert_equal(false, called, bug18377)
+    end;
   end
 
   def assert_int_equal(expected, result, mesg = nil)
@@ -530,6 +601,8 @@ class TestInteger < Test::Unit::TestCase
     assert_equal([0, 9, 8, 7, 6, 5, 4, 3, 2, 1], 1234567890.digits)
     assert_equal([90, 78, 56, 34, 12], 1234567890.digits(100))
     assert_equal([10, 5, 6, 8, 0, 10, 8, 6, 1], 1234567890.digits(13))
+    assert_equal((2 ** 1024).to_s(7).chars.map(&:to_i).reverse, (2 ** 1024).digits(7))
+    assert_equal([0] * 100 + [1], (2 ** (128 * 100)).digits(2 ** 128))
   end
 
   def test_digits_for_negative_numbers
@@ -595,6 +668,9 @@ class TestInteger < Test::Unit::TestCase
       failures << n  unless root*root <= n && (root+1)*(root+1) > n
     end
     assert_empty(failures, bug13440)
+
+    x = 0xffff_ffff_ffff_ffff
+    assert_equal(x, Integer.sqrt(x ** 2), "[ruby-core:95453]")
   end
 
   def test_fdiv
@@ -610,5 +686,22 @@ class TestInteger < Test::Unit::TestCase
     def o.coerce(x); [self, x]; end
     def o.fdiv(x); 1; end
     assert_equal(1.0, 1.fdiv(o))
+  end
+
+  def test_try_convert
+    assert_equal(1, Integer.try_convert(1))
+    assert_equal(1, Integer.try_convert(1.0))
+    assert_nil Integer.try_convert("1")
+    o = Object.new
+    assert_nil Integer.try_convert(o)
+    def o.to_i; 1; end
+    assert_nil Integer.try_convert(o)
+    o = Object.new
+    def o.to_int; 1; end
+    assert_equal(1, Integer.try_convert(o))
+
+    o = Object.new
+    def o.to_int; Object.new; end
+    assert_raise_with_message(TypeError, /can't convert Object to Integer/) {Integer.try_convert(o)}
   end
 end

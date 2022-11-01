@@ -51,7 +51,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -96,10 +95,10 @@ public class RubyDigest {
         mDigest.defineAnnotatedMethods(RubyDigest.class);
         RubyModule mDigestInstance = mDigest.defineModuleUnder("Instance");
         mDigestInstance.defineAnnotatedMethods(DigestInstance.class);
-        RubyClass cDigestClass = mDigest.defineClassUnder("Class", runtime.getObject(), DigestClass.DIGEST_CLASS_ALLOCATOR);
+        RubyClass cDigestClass = mDigest.defineClassUnder("Class", runtime.getObject(), DigestClass::new);
         cDigestClass.defineAnnotatedMethods(DigestClass.class);
         cDigestClass.includeModule(mDigestInstance);
-        RubyClass cDigestBase = mDigest.defineClassUnder("Base", cDigestClass, DigestBase.DIGEST_BASE_ALLOCATOR);
+        RubyClass cDigestBase = mDigest.defineClassUnder("Base", cDigestClass, DigestBase::new);
         cDigestBase.defineAnnotatedMethods(DigestBase.class);
     }
 
@@ -365,12 +364,6 @@ public class RubyDigest {
 
     @JRubyClass(name="Digest::Class")
     public static class DigestClass extends RubyObject {
-        protected static final ObjectAllocator DIGEST_CLASS_ALLOCATOR = new ObjectAllocator() {
-            public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-                return new DigestClass(runtime, klass);
-            }
-        };
-
         public DigestClass(Ruby runtime, RubyClass type) {
             super(runtime, type);
         }
@@ -404,12 +397,6 @@ public class RubyDigest {
 
     @JRubyClass(name="Digest::Base")
     public static class DigestBase extends RubyObject {
-        protected static final ObjectAllocator DIGEST_BASE_ALLOCATOR = new ObjectAllocator() {
-            public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-                return new DigestBase(runtime, klass);
-            }
-        };
-
         private MessageDigest algo;
         private int blockLength = 0;
 

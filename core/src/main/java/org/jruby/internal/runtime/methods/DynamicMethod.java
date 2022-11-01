@@ -38,10 +38,13 @@ import java.util.Collections;
 
 import org.jruby.MetaClass;
 import org.jruby.PrependedModule;
+import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.RubySymbol;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -129,10 +132,22 @@ public abstract class DynamicMethod {
         return serialNumber;
     }
 
+    /**
+     * Whether this method is a builtin method, i.e. a method built-in to JRuby and
+     * loaded during its core boot process.
+     *
+     * @return true if this is a core built-in method, false otherwise
+     */
     public boolean isBuiltin() {
         return (flags & BUILTIN_FLAG) == BUILTIN_FLAG;
     }
 
+    /**
+     * Force this method to be treated as a core built-in method if true,
+     * or as a normal non-core method otherwise.
+     *
+     * @param isBuiltin true if this is a core built-in method, false otherwise
+     */
     public void setIsBuiltin(boolean isBuiltin) {
         if (isBuiltin) {
             flags |= BUILTIN_FLAG;
@@ -223,7 +238,24 @@ public abstract class DynamicMethod {
         return call(context, self, klazz, name, new IRubyObject[] {arg0, arg1, arg2}, block);
     }
 
+    /**
+     * Will call respond_to?/respond_to_missing? on object and name
+     */
+    public boolean callRespondTo(ThreadContext context, IRubyObject self, String respondToMethodName, RubyModule klazz, RubySymbol name) {
+        Signature signature = getSignature();
 
+        if (signature.isFixed()) {
+            int required = signature.required();
+
+            if (required == 1) {
+                return call(context, self, klazz, respondToMethodName, name).isTrue();
+            } else if (required != 2) {
+                throw context.runtime.newArgumentError(respondToMethodName + " " + "must accept 1 or 2 arguments (requires " + required + ")");
+            }
+        }
+
+        return call(context, self, klazz, respondToMethodName, name, context.runtime.getTrue()).isTrue();
+    }
 
     /**
      * Duplicate this method, returning DynamicMethod referencing the same code
@@ -285,7 +317,7 @@ public abstract class DynamicMethod {
         // For visibility we need real meta class and not anonymous one from class << self
         if (cls instanceof MetaClass) cls = ((MetaClass) cls).getRealClass();
 
-        if (cls instanceof PrependedModule) cls = ((PrependedModule) cls).getNonIncludedClass();
+        if (cls instanceof PrependedModule) cls = ((PrependedModule) cls).getOrigin();
 
         return cls;
     }
@@ -389,8 +421,18 @@ public abstract class DynamicMethod {
      *
      * @return The arity of the method, as reported to Ruby consumers.
      */
+    @Deprecated
     public Arity getArity() {
         return Arity.optional();
+    }
+
+    /**
+     * Retrieve the signature of this method.
+     *
+     * @return the signature
+     */
+    public Signature getSignature() {
+        return Signature.OPTIONAL;
     }
 
     /**

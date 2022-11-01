@@ -42,6 +42,7 @@ import java.io.OutputStream;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
@@ -98,11 +99,9 @@ public class RubyMarshal {
             }
             
             ByteArrayOutputStream stringOutput = new ByteArrayOutputStream();
-            boolean taint = dumpToStream(runtime, objectToDump, stringOutput, depthLimit);
+            dumpToStream(runtime, objectToDump, stringOutput, depthLimit);
             RubyString result = RubyString.newString(runtime, new ByteList(stringOutput.toByteArray(), false));
             
-            if (taint) result.setTaint(true);
-
             return result;
         } catch (IOException ioe) {
             throw runtime.newIOErrorFromException(ioe);
@@ -114,28 +113,38 @@ public class RubyMarshal {
         return dump(recv.getRuntime().getCurrentContext(), recv, args, unusedBlock);
     }
 
-    @JRubyMethod(name = {"load", "restore"}, required = 1, optional = 1, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = {"load", "restore"}, required = 1, optional = 2, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject load(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         Ruby runtime = context.runtime;
         IRubyObject in = args[0];
-        IRubyObject proc = args.length == 2 ? args[1] : context.nil;
+        boolean freeze = false;
+        IRubyObject proc = null;
+
+        if (args.length > 1) {
+            RubyHash kwargs = ArgsUtil.extractKeywords(args[args.length - 1]);
+            if (kwargs != null) {
+                IRubyObject[] options = ArgsUtil.extractKeywordArgs(context, kwargs, "freeze");
+                freeze = options[0] != null ? options[0].isTrue(): false;
+                if (args.length > 2) proc = args[1];
+            } else {
+                proc = args[1];
+            }
+        }
 
         final IRubyObject str = in.checkStringType();
         try {
-            InputStream rawInput; boolean tainted;
+            InputStream rawInput;
             if (str != context.nil) {
-                tainted = in.isTaint();
                 ByteList bytes = ((RubyString) str).getByteList();
                 rawInput = new ByteArrayInputStream(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
             } else if (sites(context).respond_to_getc.respondsTo(context, in, in) &&
                         sites(context).respond_to_read.respondsTo(context, in, in)) {
-                tainted = true;
                 rawInput = inputStream(context, in);
             } else {
                 throw runtime.newTypeError("instance of IO needed");
             }
 
-            return new UnmarshalStream(runtime, rawInput, proc, tainted).unmarshalObject();
+            return new UnmarshalStream(runtime, rawInput, freeze, proc).unmarshalObject();
         } catch (EOFException e) {
             if (str != context.nil) throw runtime.newArgumentError("marshal data too short");
 
@@ -155,11 +164,10 @@ public class RubyMarshal {
         return new IOOutputStream(out, true, false); // respond_to?(:write) already checked
     }
 
-    private static boolean dumpToStream(Ruby runtime, IRubyObject object, OutputStream rawOutput, int depthLimit)
+    private static void dumpToStream(Ruby runtime, IRubyObject object, OutputStream rawOutput, int depthLimit)
         throws IOException {
         MarshalStream output = new MarshalStream(runtime, rawOutput, depthLimit);
         output.dumpObject(object);
-        return output.isTainted();
     }
 
     private static void setBinmodeIfPossible(ThreadContext context, IRubyObject io) {

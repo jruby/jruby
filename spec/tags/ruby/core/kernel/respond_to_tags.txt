@@ -1,0 +1,1 @@
+fails:Kernel#respond_to? throws a type error if argument can't be coerced into a Symbol

@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -37,11 +38,7 @@ public class StackState implements Cloneable {
     private long stack = 0;
 
     public void reset() {
-        reset(0);
-    }
-
-    public void reset(long backup) {
-        stack = backup;
+        stack = 0;
     }
 
     public long getStack() {
@@ -49,7 +46,7 @@ public class StackState implements Cloneable {
     }
 
     // PUSH(1)
-    public long begin() {
+    public long push1() {
         long old = stack;
         stack <<= 1;
         stack |= 1;
@@ -57,23 +54,17 @@ public class StackState implements Cloneable {
     }
 
     // POP
-    public void end() {
+    public void pop() {
         stack >>= 1;
     }
 
     // PUSH(0).  If you look at original macro: stack |= (n&1) => stack |= 0 => no-change.
-    public void stop() {
+    public void push0() {
         stack <<= 1;
-    }
-
-    // LEXPOP
-    public void restart() {
-        stack |= (stack & 1) << 1;
-        stack >>= 1;
     }
     
     // SET_P
-    public boolean isInState() {
+    public boolean set_p() {
         return (stack & 1) != 0;
     }
 }

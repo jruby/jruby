@@ -83,7 +83,7 @@ public abstract class MethodInstaller extends NamedInstaller {
                     }
                 } else if (rubyCasedName.startsWith("set_")) {
                     rubyPropertyName = rubyCasedName.substring(4); // TODO do not add foo? for setFoo (returning boolean)
-                    if (argCount == 1 && resultType == void.class) {  // setFoo(Foo) => foo=(Foo)
+                    if (argCount == 1) {  // setFoo(Foo) => foo=(Foo)
                         addUnassignedAlias(javaPropertyName + '=', assignedNames, Priority.ALIAS);
                         addUnassignedAlias(rubyPropertyName + '=', assignedNames, Priority.ALIAS);
                     }
