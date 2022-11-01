@@ -2437,6 +2437,18 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return getMetaClass().newMethod(this, symbol.idString(), true, null, true);
     }
 
+    /**
+     * Like {@link #method(IRubyObject)} but using the given refinement scope to search for the method.
+     *
+     * @param name the name of the method
+     * @param refinedScope the static scope for the caller method
+     * @return
+     */
+    public IRubyObject method(IRubyObject name, StaticScope refinedScope) {
+        final RubySymbol symbol = TypeConverter.checkID(name);
+        return getMetaClass().newMethod(this, symbol.idString(), refinedScope, true, null, true);
+    }
+
     @Deprecated
     public IRubyObject method19(IRubyObject name) {
         return method(name);

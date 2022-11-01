@@ -2031,7 +2031,7 @@ public class RubyKernel {
         return recv.getSingletonClass();
     }
 
-    @JRubyMethod(rest = true, forward = true)
+    @JRubyMethod(rest = true, forward = true, reads = SCOPE)
     public static IRubyObject public_send(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         if (args.length == 0) {
             throw context.runtime.newArgumentError("no method name given");
@@ -2047,7 +2047,7 @@ public class RubyKernel {
         args = ( length == 0 ) ? IRubyObject.NULL_ARRAY : ArraySupport.newCopy(args, 1, length);
 
         final RubyClass klass = RubyBasicObject.getMetaClass(recv);
-        CacheEntry entry = klass.searchWithCache(name);
+        CacheEntry entry = klass.searchWithRefinements(name, context.getCurrentStaticScope());
         DynamicMethod method = entry.method;
 
         if (method.isUndefined() || method.getVisibility() != PUBLIC) {
@@ -2245,14 +2245,9 @@ public class RubyKernel {
         return ((RubyBasicObject)self).singleton_method(symbol);
     }
 
-    @JRubyMethod(name = "method", required = 1)
-    public static IRubyObject method(IRubyObject self, IRubyObject symbol) {
-        return ((RubyBasicObject)self).method(symbol);
-    }
-
-    @Deprecated
-    public static IRubyObject method19(IRubyObject self, IRubyObject symbol) {
-        return method(self, symbol);
+    @JRubyMethod(name = "method", required = 1, reads = SCOPE)
+    public static IRubyObject method(ThreadContext context, IRubyObject self, IRubyObject symbol) {
+        return ((RubyBasicObject)self).method(symbol, context.getCurrentStaticScope());
     }
 
     @JRubyMethod(name = "to_s")
@@ -2529,5 +2524,15 @@ public class RubyKernel {
     @JRubyMethod(name = {"untaint", "trust"})
     public static IRubyObject untaint(ThreadContext context, IRubyObject self) {
         return self;
+    }
+
+    @Deprecated
+    public static IRubyObject method(IRubyObject self, IRubyObject symbol) {
+        return ((RubyBasicObject)self).method(symbol);
+    }
+
+    @Deprecated
+    public static IRubyObject method19(IRubyObject self, IRubyObject symbol) {
+        return method(self, symbol);
     }
 }

@@ -74,6 +74,7 @@ import org.jruby.embed.Extension;
 import org.jruby.exceptions.LoadError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.RuntimeError;
+import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.AttrReaderMethod;
 import org.jruby.internal.runtime.methods.AttrWriterMethod;
@@ -837,7 +838,7 @@ public class RubyModule extends RubyObject {
     private RubyModule createNewRefinedModule(ThreadContext context, RubyModule klass) {
         Ruby runtime = context.runtime;
 
-        RubyModule newRefinement = new RubyModule(runtime);
+        RubyModule newRefinement = new RubyModule(runtime, runtime.getRefinement());
 
         RubyClass superClass = refinementSuperclass(runtime, klass);
         newRefinement.setSuperClass(superClass);
@@ -950,7 +951,7 @@ public class RubyModule extends RubyObject {
         // For each superClass of the refined module also use their refinements for the given cref
         if (superClass != null) usingModuleRecursive(cref, superClass);
 
-        if (module instanceof IncludedModule) {
+        if (module instanceof DelegatedModule) {
             module = module.getDelegate();
         } else if (module.isModule()) {
             // ok as is
@@ -2389,8 +2390,16 @@ public class RubyModule extends RubyObject {
         return newMethod(receiver, methodName, bound, visibility, false, true);
     }
 
+    public final IRubyObject newMethod(IRubyObject receiver, String methodName, StaticScope refinedScope, boolean bound, Visibility visibility) {
+        return newMethod(receiver, methodName, refinedScope, bound, visibility, false, true);
+    }
+
     public final IRubyObject newMethod(IRubyObject receiver, final String methodName, boolean bound, Visibility visibility, boolean respondToMissing) {
         return newMethod(receiver, methodName, bound, visibility, respondToMissing, true);
+    }
+
+    public final IRubyObject newMethod(IRubyObject receiver, final String methodName, StaticScope scope, boolean bound, Visibility visibility, boolean respondToMissing) {
+        return newMethod(receiver, methodName, scope, bound, visibility, respondToMissing, true);
     }
 
     public static class RespondToMissingMethod extends JavaMethod.JavaMethodNBlock {
@@ -2423,7 +2432,11 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject newMethod(IRubyObject receiver, final String methodName, boolean bound, Visibility visibility, boolean respondToMissing, boolean priv) {
-        CacheEntry entry = searchWithCache(methodName);
+        return newMethod(receiver, methodName, null, bound, visibility, respondToMissing, priv);
+    }
+
+    public IRubyObject newMethod(IRubyObject receiver, final String methodName, StaticScope scope, boolean bound, Visibility visibility, boolean respondToMissing, boolean priv) {
+        CacheEntry entry = scope == null ? searchWithCache(methodName) : searchWithRefinements(methodName, scope);
 
         if (entry.method.isUndefined() || (visibility != null && entry.method.getVisibility() != visibility)) {
             if (respondToMissing) { // 1.9 behavior
@@ -3167,7 +3180,11 @@ public class RubyModule extends RubyObject {
         return instanceMethods(args, PUBLIC, false, false);
     }
 
-    @JRubyMethod(name = "instance_method", required = 1)
+    @JRubyMethod(name = "instance_method", required = 1, reads = SCOPE)
+    public IRubyObject instance_method(ThreadContext context, IRubyObject symbol) {
+        return newMethod(null, TypeConverter.checkID(symbol).idString(), context.getCurrentStaticScope(), false, null);
+    }
+
     public IRubyObject instance_method(IRubyObject symbol) {
         return newMethod(null, TypeConverter.checkID(symbol).idString(), false, null);
     }
@@ -5859,6 +5876,62 @@ public class RubyModule extends RubyObject {
 
     public void setRefinements(Map<RubyModule, RubyModule> refinements) {
         this.refinements = refinements;
+    }
+
+    public static RubyClass createRefinementClass(Ruby runtime, RubyClass refinementClass) {
+        refinementClass.setClassIndex(ClassIndex.REFINEMENT);
+        refinementClass.setReifiedClass(RubyModule.class);
+
+        refinementClass.defineAnnotatedMethods(RefinementMethods.class);
+
+        return refinementClass;
+    }
+
+    public static class RefinementMethods {
+        @JRubyMethod(required = 1, rest = true, visibility = PRIVATE)
+        public static IRubyObject import_methods(ThreadContext context, IRubyObject self, IRubyObject[] modules) {
+            Ruby runtime = context.runtime;
+
+            RubyModule selfModule = (RubyModule) self;
+
+            for (IRubyObject _module : modules) {
+                if (!(_module instanceof RubyModule)) {
+                    throw runtime.newTypeError(_module, runtime.getModule());
+                }
+
+                RubyModule module = (RubyModule) _module;
+
+                if (module.getSuperClass() != runtime.getObject()) {
+                    runtime.getWarnings().warn(module.getName() + " has ancestors, but Refinement#import_methods doesn't import their methods");
+                }
+            }
+
+            for (IRubyObject _module : modules) {
+                RubyModule module = (RubyModule) _module;
+
+                for (Map.Entry<String, DynamicMethod> entry: module.getMethods().entrySet()) {
+                    refinementImportMethodsIter(runtime, selfModule, module, entry);
+                }
+            }
+
+            return self;
+        }
+
+        // MRI: refinement_import_methods_i
+        private static void refinementImportMethodsIter(Ruby runtime, RubyModule selfModule, RubyModule module, Map.Entry<String, DynamicMethod> entry) {
+            DynamicMethod method = entry.getValue();
+
+            if (!(method instanceof AbstractIRMethod)) {
+                throw runtime.newArgumentError("Can't import method which is not defined with Ruby code: " + module.getName() + "#" + entry.getKey());
+            }
+
+            DynamicMethod dup = entry.getValue().dup();
+
+            // maybe insufficient if we have already compiled assuming no refinements
+            ((AbstractIRMethod) dup).getIRScope().setIsMaybeUsingRefinements();
+
+            selfModule.addMethod(entry.getKey(), dup);
+        }
     }
 
     private volatile Map<String, Autoload> autoloads = Collections.EMPTY_MAP;
