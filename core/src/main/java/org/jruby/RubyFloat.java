@@ -547,17 +547,18 @@ public class RubyFloat extends RubyNumeric {
             FloatSites sites = sites(context);
             if (Double.isInfinite(value) && sites.respond_to_infinite.respondsTo(context, other, other, true)) {
                 IRubyObject infinite = sites.infinite.call(context, other, other);
-                if (infinite.isNil()) {
-                    return value > 0.0 ? RubyFixnum.one(runtime) : RubyFixnum.minus_one(runtime);
+                if (infinite.isTrue()) {
+                    int sign = RubyComparable.cmpint(context, infinite, this, other);
+
+                    if (sign > 0) {
+                        return value > 0.0 ? RubyFixnum.zero(runtime) : RubyFixnum.minus_one(runtime);
+                    } else {
+                        return value < 0.0 ? RubyFixnum.zero(runtime) : RubyFixnum.one(runtime);
+                    }
+
                 }
 
-                int sign = RubyComparable.cmpint(context, infinite, this, other);
-
-                if (sign > 0) {
-                    return value > 0.0 ? RubyFixnum.zero(runtime) : RubyFixnum.minus_one(runtime);
-                } else {
-                    return value < 0.0 ? RubyFixnum.zero(runtime) : RubyFixnum.one(runtime);
-                }
+                return value > 0.0 ? RubyFixnum.one(runtime) : RubyFixnum.minus_one(runtime);
             }
             return coerceCmp(context, sites.op_cmp, other);
         }
