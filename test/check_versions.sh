@@ -61,7 +61,7 @@ function check {
 
 }
 
-check lib/target/jruby-stdlib-$jar_version.jar 14
+check lib/target/jruby-stdlib-$jar_version.jar 15
 check maven/jruby-jars/pkg/jruby-jars-$gem_version.gem 30
 check maven/jruby-jars/lib/jruby-core-$jar_version-complete.jar 16
 check maven/jruby-jars/lib/jruby-stdlib-$jar_version.jar 15
