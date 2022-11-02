@@ -34,6 +34,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyEnumerator;
 import org.jruby.RubyException;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
@@ -394,11 +395,11 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         return newStr(getRuntime(), val);
     }
 
-    private IRubyObject readAll() throws IOException {
+    private RubyString readAll() throws IOException {
         return readAll(-1);
     }
 
-    private IRubyObject readAll(int limit) throws IOException {
+    private RubyString readAll(int limit) throws IOException {
         ByteList val = newReadByteList(10);
         int rest = limit == -1 ? BUFF_SIZE : limit;
         byte[] buffer = new byte[rest];
@@ -731,6 +732,66 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         }
 
         return context.nil;
+    }
+
+    /**
+     * Document-method: Zlib::GzipReader.zcat
+     *
+     * call-seq:
+     *   Zlib::GzipReader.zcat(io, options = {}, &block) => nil
+     *   Zlib::GzipReader.zcat(io, options = {}) => string
+     *
+     * Decompresses all gzip data in the +io+, handling multiple gzip
+     * streams until the end of the +io+.  There should not be any non-gzip
+     * data after the gzip streams.
+     *
+     * If a block is given, it is yielded strings of uncompressed data,
+     * and the method returns +nil+.
+     * If a block is not given, the method returns the concatenation of
+     * all uncompressed data in all gzip streams.
+     */
+    @JRubyMethod(required = 1, optional = 1, meta = true)
+    public static IRubyObject zcat(ThreadContext context, IRubyObject klass, IRubyObject[] args, Block block) {
+        Ruby runtime = context.runtime;
+
+        IRubyObject io, unused;
+        JZlibRubyGzipReader obj;
+        RubyString buf = null, tmpbuf;
+        long pos;
+
+        io = args[0];
+
+        try {
+            do {
+                obj = (JZlibRubyGzipReader) ((RubyClass) klass).newInstance(context, args, block);
+                if (block.isGiven()) {
+                    obj.each(context, IRubyObject.NULL_ARRAY, block);
+                }
+                else {
+                    if (buf == null) {
+                        buf = RubyString.newEmptyString(runtime);
+                    }
+                    tmpbuf = obj.readAll();
+                    buf.cat(tmpbuf);
+                }
+
+                obj.read(context, IRubyObject.NULL_ARRAY);
+                pos = io.callMethod(context, "pos").convertToInteger().getLongValue();
+                unused = obj.unused();
+                obj.finish();
+                if (!unused.isNil()) {
+                    pos -= unused.callMethod(context, "length").convertToInteger().getLongValue();
+                    io.callMethod(context, "pos=", RubyFixnum.newFixnum(runtime, pos));
+                }
+            } while (pos < io.callMethod(context, "size").convertToInteger().getLongValue());
+        } catch (IOException ioe) {
+            throw runtime.newIOErrorFromException(ioe);
+        }
+
+        if (block.isGiven()) {
+            return context.nil;
+        }
+        return buf;
     }
 
     private void fixBrokenTrailingCharacter(ByteList result) throws IOException {
