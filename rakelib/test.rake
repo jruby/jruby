@@ -120,11 +120,9 @@ namespace :test do
       end
 
       # WIP tests in separate, interpreter-only runs suffixed with "_wip"
-      namespace suite.to_s + "_wip" do
-        task task do
-          ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} #{extra_jruby_opts} #{jruby_opts[:int]}"
-          ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{files}"
-        end
+      task suite.to_s + "_wip" do
+        ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} #{extra_jruby_opts} #{jruby_opts[:int]}"
+        ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{files}"
       end
 
       # add int shortcut names
