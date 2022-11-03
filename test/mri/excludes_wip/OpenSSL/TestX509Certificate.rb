@@ -1,0 +1,8 @@
+exclude :"test_eq", "work in progress"
+exclude :"test_extension", "work in progress"
+exclude :"test_invalid_extension", "work in progress"
+exclude :"test_load_file_certificate_der", "work in progress"
+exclude :"test_load_file_empty_pem", "work in progress"
+exclude :"test_load_file_fullchain_garbage", "work in progress"
+exclude :"test_load_file_fullchain_pem", "work in progress"
+exclude :"test_read_der_then_pem", "work in progress"
