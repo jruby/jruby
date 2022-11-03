@@ -34,7 +34,7 @@ cls_to_file.each do |cls, path|
   end
   FileUtils.mkdir_p(target)
 
-  File.open(File.join(target, path[-1]), 'w+') do |file|
+  File.open(File.join(target, path[-1]), 'a') do |file|
     cls_to_method[cls].sort.each do |method|
       file.puts "exclude :\"#{method}\", \"#{comment}\""
     end
