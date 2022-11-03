@@ -1,2 +1,0 @@
-hangs(excessive memory use):Enumerator::Lazy#filter_map maps only truthy results
-hangs(excessive memory use):Enumerator::Lazy#filter_map does not map false results
