@@ -21,7 +21,7 @@ module org.jruby.base {
     requires java.management;
     requires org.jruby.dirgra;
     requires static java.xml.ws.annotation;
-    requires jzlib;
+    requires org.jruby.jzlib;
     requires static java.scripting;
     requires static java.sql;
     requires static java.compiler;
@@ -29,4 +29,5 @@ module org.jruby.base {
     requires ant;
     requires static slf4j.api;
     requires static org.osgi.core;
+    requires jakarta.annotation;
 }
