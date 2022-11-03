@@ -246,6 +246,14 @@ class Enumerator
       end.__set_inspect :filter
     end
 
+    def filter_map
+      _block_error(:filter_map) unless block_given?
+      Lazy.new(self) do |yielder, *values|
+        v = yield(*values)
+        yielder << v if v
+      end.__set_inspect :filter_map
+    end
+
     def reject
       _block_error(:reject) unless block_given?
       Lazy.new(self) do |yielder, *values|
