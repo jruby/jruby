@@ -900,6 +900,19 @@ public final class ThreadContext {
     }
 
     /**
+     * Return the trace of level or null.
+     */
+    public RubyStackTraceElement getSingleBacktraceExact(int level) {
+        runtime.incrementWarningCount();
+
+        RubyStackTraceElement[] trace = WALKER.walk(stream -> getPartialTrace(level, 1, stream));
+
+        if (RubyInstanceConfig.LOG_WARNINGS) TraceType.logWarning(trace);
+
+        return trace.length <= level ? null : trace[level];
+    }
+
+    /**
      * Same as calling getSingleBacktrace(0);
      *
      * @see #getSingleBacktrace(int)

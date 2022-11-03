@@ -2519,6 +2519,7 @@ public final class Ruby implements Constantizable {
         this.verbose = verbose.isTrue();
         this.verboseValue = verbose;
         warningsEnabled = !verbose.isNil();
+        getWarnings().adjustCategories(verbose.isTrue());
     }
 
     /** Getter for property isDebug.
