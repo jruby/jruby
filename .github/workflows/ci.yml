@@ -303,6 +303,37 @@ jobs:
       - name: rake ${{ matrix.target }}
         run: bin/jruby --dev -S rake ${{ matrix.target }}
 
+  rake-test-wip-8:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        target: ['test:mri:core_wip', 'test:mri:stdlib_wip', 'test:mri:extra_wip']
+      fail-fast: false
+
+    name: rake ${{ matrix.target }} (Java 8)
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: set up java 8
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'zulu'
+          java-version: '8'
+      - name: bootstrap
+        run: mvn -Pbootstrap clean package
+      - name: bundle install
+        run: bin/jruby --dev -S bundle install
+      - name: rake ${{ matrix.target }}
+        run: bin/jruby --dev -S rake ${{ matrix.target }}
+
   test-versions:
     runs-on: ubuntu-latest
 
