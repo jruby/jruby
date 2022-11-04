@@ -1,6 +1,5 @@
 package org.jruby.ir.passes;
 
-import org.apache.tools.ant.util.CollectionUtils;
 import org.jruby.ir.*;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.interpreter.FullInterpreterContext;
@@ -15,7 +14,6 @@ import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.runtime.Visibility;
 
-import java.util.EnumSet;
 import java.util.ListIterator;
 
 public class AddCallProtocolInstructions extends CompilerPass {
