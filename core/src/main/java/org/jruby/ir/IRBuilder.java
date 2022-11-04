@@ -1384,10 +1384,11 @@ public class IRBuilder {
         });
 
         Variable length = addResultInstr(new RuntimeHelperCall(temp(), ARRAY_LENGTH, new Operand[]{deconstructed}));
-        Operand argsNum = new Integer(pattern.getArgs().size());
+        int fixedArgsLength = pattern.getArgs().size();
+        Operand argsNum = new Integer(fixedArgsLength);
 
-        label("size_check_end", sizeCheck -> {
-            addInstr(new BIntInstr(sizeCheck, BIntInstr.Op.LTE, argsNum, length));
+        label("size_check_end", sizeCheckEnd -> {
+            addInstr(new BIntInstr(sizeCheckEnd, BIntInstr.Op.LTE, argsNum, length));
             copy(result, fals());
             jump(testEnd);
         });
@@ -1395,11 +1396,10 @@ public class IRBuilder {
         Variable limit = addResultInstr(new IntegerMathInstr(SUBTRACT, temp(), length, argsNum));
         Variable i = copy(new Integer(0));
 
-        for_loop(after -> addInstr(new BIntInstr(after, BIntInstr.Op.GTE, i, limit)),
+        for_loop(after -> addInstr(new BIntInstr(after, BIntInstr.Op.GT, i, limit)),
                 after -> addInstr(new IntegerMathInstr(ADD, i, i, new Integer(1))),
                 (after, bottom) -> {
-                    int argsLength = pattern.getArgs().size();
-                    times(argsLength, (end_times, j) -> {
+                    times(fixedArgsLength, (end_times, j) -> {
                         Node pat = pattern.getArgs().get(j.value);
                         Operand deconstructIndex = addResultInstr(new IntegerMathInstr(ADD, temp(), i, new Integer(j.value)));
                         Operand deconstructFixnum = as_fixnum(deconstructIndex);
@@ -1409,7 +1409,7 @@ public class IRBuilder {
                     });
 
                     Node pre = pattern.getPreRestArg();
-                    if (pre != null) {
+                    if (pre != null && !(pre instanceof StarNode)) {
                         Operand iFixnum = as_fixnum(i);
                         Operand test = call(temp(), deconstructed, "[]", manager.newFixnum(0), iFixnum);
                         buildPatternMatch(result, deconstructed, pre, test, false);
@@ -1417,7 +1417,7 @@ public class IRBuilder {
                     }
 
                     Node post = pattern.getPostRestArg();
-                    if (post != null) {
+                    if (post != null && !(post instanceof StarNode)) {
                         Operand deconstructIndex = addResultInstr(new IntegerMathInstr(ADD, createTemporaryVariable(), i, argsNum));
                         Operand deconstructFixnum = as_fixnum(deconstructIndex);
                         Operand lengthFixnum = as_fixnum(length);
@@ -1439,17 +1439,13 @@ public class IRBuilder {
             cond_ne(testEnd, result, tru());
         }
 
-        label("deconstruct_check_end", deconstructCheck -> {
-            cond_ne(deconstructCheck, deconstructed, buildNil(), () -> {
-                call(result, obj, "respond_to?", new Symbol(symbol("deconstruct")));
-                cond_ne(testEnd, result, tru());
+        call(result, obj, "respond_to?", new Symbol(symbol("deconstruct")));
+        cond_ne(testEnd, result, tru());
 
-                call(deconstructed, obj, "deconstruct");
-                label("array_check_end", arrayCheck -> {
-                    addInstr(new EQQInstr(scope, result, manager.getArrayClass(), deconstructed, false, false));
-                    cond(arrayCheck, result, tru(), () -> type_error("deconstruct must return Array"));
-                });
-            });
+        call(deconstructed, obj, "deconstruct");
+        label("array_check_end", arrayCheck -> {
+            addInstr(new EQQInstr(scope, result, manager.getArrayClass(), deconstructed, false, false));
+            cond(arrayCheck, result, tru(), () -> type_error("deconstruct must return Array"));
         });
 
         Operand minArgsCount = new Integer(pattern.minimumArgsNum());
@@ -5167,5 +5163,12 @@ public class IRBuilder {
                 flags.contains(BINDING_HAS_ESCAPED);
     }
 
+    /*
+     * Give the ability to print a debug message to stdout.  Not to ever be used outside
+     * of debugging an issue with IR.
+     */
+    private void debug(String message, Operand... operands) {
+        addInstr(new DebugOutputInstr(message, operands));
+    }
 
 }
