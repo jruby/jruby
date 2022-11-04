@@ -702,7 +702,7 @@ append java_args -Djruby.home="$JRUBY_HOME" \
     -Djruby.shell="$JRUBY_SHELL"
 
 if $use_modules; then
-    append java_args "--module" "org.jruby.base/$java_class"
+    append java_args "-m" "org.jruby.base/$java_class"
 else
     append java_args "$java_class"
 fi
