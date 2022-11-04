@@ -460,20 +460,22 @@ CP_DELIMITER=":"
 
 # add main jruby jar to the classpath
 JRUBY_ALREADY_ADDED=false
-for j in "$JRUBY_HOME"/lib/jruby.jar "$JRUBY_HOME"/lib/jruby-complete.jar; do
-    if [ ! -e "$j" ]; then
-        continue
-    fi
+if [ "$use_modules" ]; then
+    module_path="$JRUBY_HOME/lib/modules"
     if [ "$JRUBY_CP" ]; then
-        JRUBY_CP="$JRUBY_CP$CP_DELIMITER$j"
+        JRUBY_CP="$JRUBY_CP$CP_DELIMITER$module_path"
     else
-        JRUBY_CP="$j"
+        JRUBY_CP="$module_path"
     fi
-    if $JRUBY_ALREADY_ADDED; then
-        echo "WARNING: more than one JRuby JAR found in lib directory" 1>&2
-    fi
-    JRUBY_ALREADY_ADDED=true
-done
+else
+    for j in "$JRUBY_HOME"/lib/modules/*.jar; do
+        if [ "$JRUBY_CP" ]; then
+            JRUBY_CP="$JRUBY_CP$CP_DELIMITER$j"
+            else
+            JRUBY_CP="$j"
+        fi
+    done
+fi
 
 if $cygwin; then
     JRUBY_CP="$(cygpath -p -w "$JRUBY_CP")"
@@ -487,9 +489,6 @@ if [ "$JRUBY_PARENT_CLASSPATH" ]; then
 else
     # add other jars in lib to CP for command-line execution
     for j in "$JRUBY_HOME"/lib/*.jar; do
-        case "${j#"$JRUBY_HOME/lib/"}" in
-            jruby.jar|jruby-complete.jar) continue
-        esac
         if [ "$CP" ]; then
             CP="$CP$CP_DELIMITER$j"
         else
@@ -695,7 +694,7 @@ prepend java_args "$JAVACMD" $JAVA_OPTS "$JFFI_OPTS"
 if $NO_BOOTCLASSPATH || $VERIFY_JRUBY; then
     if $use_modules; then
         # Use module path instead of classpath for the jruby libs
-        append java_args --module-path "$JRUBY_CP" -classpath "$CLASSPATH"
+        append java_args -p "$JRUBY_CP" -classpath "$CLASSPATH"
     else
         append java_args -classpath "$JRUBY_CP$CP_DELIMITER$CLASSPATH"
     fi
@@ -708,8 +707,14 @@ fi
 append java_args -Djruby.home="$JRUBY_HOME" \
     -Djruby.lib="$JRUBY_HOME/lib" \
     -Djruby.script=jruby \
-    -Djruby.shell="$JRUBY_SHELL" \
-    "$java_class"
+    -Djruby.shell="$JRUBY_SHELL"
+
+if $use_modules; then
+    append java_args "--module" "org.jruby.base/$java_class"
+else
+    append java_args "$java_class"
+fi
+
 extend java_args ruby_args
 
 eval set -- "$java_args"
