@@ -48,6 +48,8 @@ import org.jruby.util.ByteList;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.IOEncodable;
 
+import java.time.ZonedDateTime;
+
 /**
  *
  */
@@ -135,7 +137,7 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
     
     public RubyGzipFile(Ruby runtime, RubyClass type) {
         super(runtime, type);
-        mtime = RubyTime.newTime(runtime, new DateTime());
+        mtime = RubyTime.newTime(runtime, ZonedDateTime.now());
         enc = null;
         enc2 = null;
     }

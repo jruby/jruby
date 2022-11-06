@@ -188,6 +188,7 @@ import java.lang.ref.WeakReference;
 import java.net.BindException;
 import java.nio.charset.Charset;
 import java.security.SecureRandom;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -4595,8 +4596,13 @@ public final class Ruby implements Constantizable {
         return fiberExecutor;
     }
 
+    @Deprecated
     public Map<String, DateTimeZone> getTimezoneCache() {
         return timeZoneCache;
+    }
+
+    public Map<String, ZoneId> getZoneIdCache() {
+        return zoneIdCache;
     }
 
     @Deprecated
@@ -5625,6 +5631,7 @@ public final class Ruby implements Constantizable {
     private final ConcurrentWeakHashMap<RubyModule, Object> allModules = new ConcurrentWeakHashMap<>(128);
 
     private final Map<String, DateTimeZone> timeZoneCache = new HashMap<>();
+    private final Map<String, ZoneId> zoneIdCache = new HashMap<>();
     /**
      * A list of "external" finalizers (the ones, registered via ObjectSpace),
      * weakly referenced, to be executed on tearDown.

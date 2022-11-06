@@ -2194,7 +2194,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
-    @SuppressWarnings("deprecated")
+    @SuppressWarnings("deprecation")
     public synchronized void interrupt() {
         setInterrupt();
 

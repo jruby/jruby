@@ -38,6 +38,9 @@ import org.jruby.anno.JRubyModule;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.time.Instant;
+import java.time.ZonedDateTime;
+
 import static org.jruby.javasupport.JavaUtil.unwrapIfJavaObject;
 
 /**
@@ -75,7 +78,7 @@ public class JavaTime {
             long millis = val.getEpochSecond() * 1000 + (nano / 1_000_000);
             nano = nano % 1_000_000;
             final Ruby runtime = context.runtime;
-            return RubyTime.newTime(runtime, new DateTime(millis, RubyTime.getLocalTimeZone(runtime)), nano);
+            return RubyTime.newTime(runtime, java.time.ZonedDateTime.ofInstant(java.time.Instant.ofEpochMilli(millis), RubyTime.getLocalZoneId(runtime)), nano);
         }
 
     }
@@ -88,6 +91,7 @@ public class JavaTime {
             return proxy;
         }
 
+        @SuppressWarnings("deprecation")
         @JRubyMethod(name = "to_time")
         public static IRubyObject to_time(ThreadContext context, IRubyObject self) {
             java.time.LocalDateTime val = unwrapIfJavaObject(self);
@@ -114,6 +118,7 @@ public class JavaTime {
             return proxy;
         }
 
+        @SuppressWarnings("deprecation")
         @JRubyMethod(name = "to_time")
         public static IRubyObject to_time(ThreadContext context, IRubyObject self) {
             java.time.OffsetDateTime val = unwrapIfJavaObject(self);
@@ -158,6 +163,7 @@ public class JavaTime {
 
     }
 
+    @Deprecated
     private static RubyTime toTime(final Ruby runtime,
                                    int year, int month, int day, int hour, int min, int sec, int nano,
                                    DateTimeZone zone) {
@@ -180,6 +186,7 @@ public class JavaTime {
      * @param id
      * @return a (joda) date-time zone from Java time's zone id
      */
+    @Deprecated
     private static DateTimeZone convertZone(final String id) {
         if ("Z".equals(id)) { // special Java time case JODA does not handle (for UTC)
             return DateTimeZone.UTC;
