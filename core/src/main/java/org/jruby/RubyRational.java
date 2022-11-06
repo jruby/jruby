@@ -184,7 +184,7 @@ public class RubyRational extends RubyNumeric {
     private static RubyInteger intCheck(ThreadContext context, IRubyObject num) {
         if (num instanceof RubyInteger) return (RubyInteger) num;
         if (!(num instanceof RubyNumeric) || !integer_p(context).call(context, num, num).isTrue()) { // num.integer?
-            throw context.runtime.newTypeError("can't convert " + num.getMetaClass().getName() + " into Rational");
+            throw context.runtime.newTypeError("not a integer");
         }
         return num.convertToInteger();
     }
@@ -1425,6 +1425,7 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = "marshal_load")
     public IRubyObject marshal_load(ThreadContext context, IRubyObject arg) {
+        checkFrozen();
         RubyArray load = arg.convertToArray();
         IRubyObject num = load.size() > 0 ? load.eltInternal(0) : context.nil;
         IRubyObject den = load.size() > 1 ? load.eltInternal(1) : context.nil;
@@ -1434,6 +1435,8 @@ public class RubyRational extends RubyNumeric {
             num = f_negate(context, num);
             den = f_negate(context, den);
         }
+        intCheck(context, num);
+        intCheck(context, den);
 
         this.num = (RubyInteger) num;
         this.den = (RubyInteger) den;
