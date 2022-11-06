@@ -1529,7 +1529,7 @@ public class RubyRational extends RubyNumeric {
             }
 
             if (de != nil) {
-                v = f_div(context, v, f_to_i(context, de));
+                v = f_div(context, v, f_to_r(context, de));
             }
             return new IRubyObject[] { v, re };
         }
