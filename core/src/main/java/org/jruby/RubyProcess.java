@@ -666,12 +666,16 @@ public class RubyProcess {
 
     @JRubyMethod(name = "groups", module = true, visibility = PRIVATE)
     public static IRubyObject groups(IRubyObject recv) {
-        long[] groups = Platform.getPlatform().getGroups(recv);
-        RubyArray ary = RubyArray.newArray(recv.getRuntime(), groups.length);
-        for(int i = 0; i < groups.length; i++) {
-            ary.push(RubyFixnum.newFixnum(recv.getRuntime(), groups[i]));
+        final Ruby runtime = recv.getRuntime();
+        long[] groups = runtime.getPosix().getgroups();
+        if (groups == null) { // not-implemented for the given platform (e.g. Windows)
+            throw runtime.newNotImplementedError("groups() function is unimplemented on this machine");
         }
-        return ary;
+        IRubyObject[] ary = new IRubyObject[groups.length];
+        for(int i = 0; i < groups.length; i++) {
+            ary[i] = RubyFixnum.newFixnum(runtime, groups[i]);
+        }
+        return RubyArray.newArrayNoCopy(runtime, ary);
     }
 
     @JRubyMethod(name = "last_status", module = true, visibility = PRIVATE)
