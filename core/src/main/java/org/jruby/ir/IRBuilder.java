@@ -1404,7 +1404,7 @@ public class IRBuilder {
                         Operand deconstructIndex = addResultInstr(new IntegerMathInstr(ADD, temp(), i, new Integer(j.value)));
                         Operand deconstructFixnum = as_fixnum(deconstructIndex);
                         Operand test = call(temp(), deconstructed, "[]", deconstructFixnum);
-                        buildPatternMatch(result, deconstructed, pat, test, false);
+                        buildPatternMatch(result, copy(buildNil()), pat, test, false);
                         cond_ne(bottom, result, tru());
                     });
 
@@ -1412,7 +1412,7 @@ public class IRBuilder {
                     if (pre != null && !(pre instanceof StarNode)) {
                         Operand iFixnum = as_fixnum(i);
                         Operand test = call(temp(), deconstructed, "[]", manager.newFixnum(0), iFixnum);
-                        buildPatternMatch(result, deconstructed, pre, test, false);
+                        buildPatternMatch(result, copy(buildNil()), pre, test, false);
                         cond_ne(bottom, result, tru());
                     }
 
@@ -1422,7 +1422,7 @@ public class IRBuilder {
                         Operand deconstructFixnum = as_fixnum(deconstructIndex);
                         Operand lengthFixnum = as_fixnum(length);
                         Operand test = call(temp(), deconstructed, "[]", deconstructFixnum, lengthFixnum);
-                        buildPatternMatch(result, deconstructed, post, test, false);
+                        buildPatternMatch(result, copy(buildNil()), post, test, false);
                         cond_ne(bottom, result, tru());
                     }
                     jump(after);
@@ -1468,8 +1468,7 @@ public class IRBuilder {
                 Variable elt = call(temp(), deconstructed, "[]", fix(i));
                 Node arg = preArgs.get(i);
 
-                Variable dd = addResultInstr(new CopyInstr(temp(), buildNil()));
-                buildPatternEach(testEnd, result, dd, elt, arg, inAlteration);
+                buildPatternEach(testEnd, result, copy(buildNil()), elt, arg, inAlteration);
                 cond_ne(testEnd, result, tru());
             }
         }
@@ -1481,8 +1480,8 @@ public class IRBuilder {
                 Variable min = copy(fix(preArgsSize));
                 Variable max = as_fixnum(restNum);
                 Variable elt = call(temp(), deconstructed, "[]", min, max);
-                Variable dd = copy(buildNil());
-                buildPatternMatch(result, dd, pattern.getRestArg(), elt, inAlteration);
+
+                buildPatternMatch(result, copy(buildNil()), pattern.getRestArg(), elt, inAlteration);
                 cond_ne(testEnd, result, tru());
             }
         }
@@ -1494,8 +1493,8 @@ public class IRBuilder {
                 Variable j = addResultInstr(new IntegerMathInstr(ADD, temp(), new Integer(i + preArgsSize), restNum));
                 Variable k = as_fixnum(j);
                 Variable elt = call(temp(), deconstructed, "[]", k);
-                Variable dd = addResultInstr(new CopyInstr(temp(), buildNil()));
-                buildPatternEach(testEnd, result, dd, elt, postArgs.get(i), inAlteration);
+
+                buildPatternEach(testEnd, result, copy(buildNil()), elt, postArgs.get(i), inAlteration);
                 addInstr(BNEInstr.create(matchElementCheck, result, buildFalse()));
                 addInstr(new JumpInstr(testEnd));
                 addInstr(new LabelInstr(matchElementCheck));
@@ -1554,8 +1553,7 @@ public class IRBuilder {
 
                 String method = pattern.hasRestArg() ? "delete" : "[]";
                 Operand value = call(temp(), d, method, key);
-                Variable deconstructedKey = copy(buildNil());
-                buildPatternEach(testEnd, result, deconstructedKey, value, pair.getValue(), inAlteration);
+                buildPatternEach(testEnd, result, copy(buildNil()), value, pair.getValue(), inAlteration);
                 cond_ne(testEnd, result, tru());
             }
         } else {
@@ -1568,8 +1566,7 @@ public class IRBuilder {
                 call(result, d, "empty?");
                 cond_ne(testEnd, result, tru());
             } else if (pattern.isNamedRestArg()) {
-                Variable deconstructedKey = copy(buildNil());
-                buildPatternEach(testEnd, result, deconstructedKey, d, pattern.getRestArg(), inAlteration);
+                buildPatternEach(testEnd, result, copy(buildNil()), d, pattern.getRestArg(), inAlteration);
                 cond_ne(testEnd, result, tru());
             }
         }
