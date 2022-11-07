@@ -184,7 +184,7 @@ public class RubyRational extends RubyNumeric {
     private static RubyInteger intCheck(ThreadContext context, IRubyObject num) {
         if (num instanceof RubyInteger) return (RubyInteger) num;
         if (!(num instanceof RubyNumeric) || !integer_p(context).call(context, num, num).isTrue()) { // num.integer?
-            throw context.runtime.newTypeError("not a integer");
+            throw context.runtime.newTypeError("not an integer");
         }
         return num.convertToInteger();
     }
