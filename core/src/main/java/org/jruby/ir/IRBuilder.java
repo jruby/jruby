@@ -1442,11 +1442,15 @@ public class IRBuilder {
         call(result, obj, "respond_to?", new Symbol(symbol("deconstruct")));
         cond_ne(testEnd, result, tru());
 
-        call(deconstructed, obj, "deconstruct");
-        label("array_check_end", arrayCheck -> {
-            addInstr(new EQQInstr(scope, result, manager.getArrayClass(), deconstructed, false, false));
-            cond(arrayCheck, result, tru(), () -> type_error("deconstruct must return Array"));
-        });
+        label("deconstruct_cache_end", (deconstruct_cache_end) ->
+            cond_ne(deconstruct_cache_end, deconstructed, buildNil(), () -> {
+                call(deconstructed, obj, "deconstruct");
+                label("array_check_end", arrayCheck -> {
+                    addInstr(new EQQInstr(scope, result, manager.getArrayClass(), deconstructed, false, false));
+                    cond(arrayCheck, result, tru(), () -> type_error("deconstruct must return Array"));
+                });
+            })
+        );
 
         Operand minArgsCount = new Integer(pattern.minimumArgsNum());
         Variable length = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), ARRAY_LENGTH, new Operand[]{deconstructed}));
@@ -1550,7 +1554,8 @@ public class IRBuilder {
 
                 String method = pattern.hasRestArg() ? "delete" : "[]";
                 Operand value = call(temp(), d, method, key);
-                buildPatternEach(testEnd, result, deconstructed, value, pair.getValue(), inAlteration);
+                Variable deconstructedKey = copy(buildNil());
+                buildPatternEach(testEnd, result, deconstructedKey, value, pair.getValue(), inAlteration);
                 cond_ne(testEnd, result, tru());
             }
         } else {
@@ -1563,7 +1568,8 @@ public class IRBuilder {
                 call(result, d, "empty?");
                 cond_ne(testEnd, result, tru());
             } else if (pattern.isNamedRestArg()) {
-                buildPatternEach(testEnd, result, deconstructed, d, pattern.getRestArg(), inAlteration);
+                Variable deconstructedKey = copy(buildNil());
+                buildPatternEach(testEnd, result, deconstructedKey, d, pattern.getRestArg(), inAlteration);
                 cond_ne(testEnd, result, tru());
             }
         }
@@ -1601,7 +1607,7 @@ public class IRBuilder {
         addInstr(createBranch(value, test, label));
     }
 
-    // if/else
+    // if with body
     private void cond(Label endLabel, Operand value, Operand test, RunIt body) {
         addInstr(createBranch(value, test, endLabel));
         body.apply();
