@@ -2,3 +2,5 @@ fails:Kernel#load when passed true for 'wrap' sets the enclosing scope to an ano
 fails:Kernel#load when passed true for 'wrap' includes modules included in main's singleton class in self's class
 fails:Kernel.load when passed true for 'wrap' sets the enclosing scope to an anonymous module
 fails:Kernel.load when passed true for 'wrap' includes modules included in main's singleton class in self's class
+fails:Kernel#load when passed a module for 'wrap' sets the enclosing scope to the supplied module
+fails:Kernel.load when passed a module for 'wrap' sets the enclosing scope to the supplied module

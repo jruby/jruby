@@ -1,0 +1,3 @@
+fails:Time.now :in keyword argument could be UTC offset as a String in '+HH:MM or '-HH:MM' format
+fails:Time.now :in keyword argument could be UTC offset as a number of seconds
+fails:Time.now :in keyword argument could be a timezone object

@@ -1,0 +1,2 @@
+fails:Thread#native_thread_id returns an integer when the thread is alive
+fails:Thread#native_thread_id returns nil when the thread is not running
