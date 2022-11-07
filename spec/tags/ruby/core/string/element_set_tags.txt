@@ -1,0 +1,1 @@
+fails:String#[]= with a Range index raises a RangeError if negative Range begin is out of range

@@ -1,0 +1,1 @@
+fails:Struct#initialize warns about passing only keyword arguments
