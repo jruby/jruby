@@ -1370,13 +1370,13 @@ public class IRBuilder {
             cond_ne(testEnd, result, tru());
         }
 
-        label(deconstructCheck -> {
+        label("deconstruct_end", deconstructCheck -> {
             cond_ne(deconstructCheck, deconstructed, buildNil(), () -> {
                 call(result, obj, "respond_to?", new Symbol(symbol("deconstruct")));
                 cond_ne(testEnd, result, tru());
 
                 call(deconstructed, obj, "deconstruct");
-                label(arrayCheck -> {
+                label("array_check_end", arrayCheck -> {
                     addInstr(new EQQInstr(scope, result, manager.getArrayClass(), deconstructed, false, false));
                     cond(arrayCheck, result, tru(), () -> type_error("deconstruct must return Array"));
                 });
@@ -1384,10 +1384,11 @@ public class IRBuilder {
         });
 
         Variable length = addResultInstr(new RuntimeHelperCall(temp(), ARRAY_LENGTH, new Operand[]{deconstructed}));
-        Operand argsNum = new Integer(pattern.getArgs().size());
+        int fixedArgsLength = pattern.getArgs().size();
+        Operand argsNum = new Integer(fixedArgsLength);
 
-        label(sizeCheck -> {
-            addInstr(new BIntInstr(sizeCheck, BIntInstr.Op.LTE, argsNum, length));
+        label("size_check_end", sizeCheckEnd -> {
+            addInstr(new BIntInstr(sizeCheckEnd, BIntInstr.Op.LTE, argsNum, length));
             copy(result, fals());
             jump(testEnd);
         });
@@ -1395,34 +1396,33 @@ public class IRBuilder {
         Variable limit = addResultInstr(new IntegerMathInstr(SUBTRACT, temp(), length, argsNum));
         Variable i = copy(new Integer(0));
 
-        for_loop(after -> addInstr(new BIntInstr(after, BIntInstr.Op.GTE, i, limit)),
+        for_loop(after -> addInstr(new BIntInstr(after, BIntInstr.Op.GT, i, limit)),
                 after -> addInstr(new IntegerMathInstr(ADD, i, i, new Integer(1))),
                 (after, bottom) -> {
-                    int argsLength = pattern.getArgs().size();
-                    times(argsLength, (end_times, j) -> {
+                    times(fixedArgsLength, (end_times, j) -> {
                         Node pat = pattern.getArgs().get(j.value);
                         Operand deconstructIndex = addResultInstr(new IntegerMathInstr(ADD, temp(), i, new Integer(j.value)));
                         Operand deconstructFixnum = as_fixnum(deconstructIndex);
                         Operand test = call(temp(), deconstructed, "[]", deconstructFixnum);
-                        buildPatternMatch(result, deconstructed, pat, test, false);
+                        buildPatternMatch(result, copy(buildNil()), pat, test, false);
                         cond_ne(bottom, result, tru());
                     });
 
                     Node pre = pattern.getPreRestArg();
-                    if (pre != null) {
+                    if (pre != null && !(pre instanceof StarNode)) {
                         Operand iFixnum = as_fixnum(i);
                         Operand test = call(temp(), deconstructed, "[]", manager.newFixnum(0), iFixnum);
-                        buildPatternMatch(result, deconstructed, pre, test, false);
+                        buildPatternMatch(result, copy(buildNil()), pre, test, false);
                         cond_ne(bottom, result, tru());
                     }
 
                     Node post = pattern.getPostRestArg();
-                    if (post != null) {
+                    if (post != null && !(post instanceof StarNode)) {
                         Operand deconstructIndex = addResultInstr(new IntegerMathInstr(ADD, createTemporaryVariable(), i, argsNum));
                         Operand deconstructFixnum = as_fixnum(deconstructIndex);
                         Operand lengthFixnum = as_fixnum(length);
                         Operand test = call(temp(), deconstructed, "[]", deconstructFixnum, lengthFixnum);
-                        buildPatternMatch(result, deconstructed, post, test, false);
+                        buildPatternMatch(result, copy(buildNil()), post, test, false);
                         cond_ne(bottom, result, tru());
                     }
                     jump(after);
@@ -1439,22 +1439,22 @@ public class IRBuilder {
             cond_ne(testEnd, result, tru());
         }
 
-        label(deconstructCheck -> {
-            cond_ne(deconstructCheck, deconstructed, buildNil(), () -> {
-                call(result, obj, "respond_to?", new Symbol(symbol("deconstruct")));
-                cond_ne(testEnd, result, tru());
+        call(result, obj, "respond_to?", new Symbol(symbol("deconstruct")));
+        cond_ne(testEnd, result, tru());
 
+        label("deconstruct_cache_end", (deconstruct_cache_end) ->
+            cond_ne(deconstruct_cache_end, deconstructed, buildNil(), () -> {
                 call(deconstructed, obj, "deconstruct");
-                label(arrayCheck -> {
+                label("array_check_end", arrayCheck -> {
                     addInstr(new EQQInstr(scope, result, manager.getArrayClass(), deconstructed, false, false));
                     cond(arrayCheck, result, tru(), () -> type_error("deconstruct must return Array"));
                 });
-            });
-        });
+            })
+        );
 
         Operand minArgsCount = new Integer(pattern.minimumArgsNum());
         Variable length = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), ARRAY_LENGTH, new Operand[]{deconstructed}));
-        label(minArgsCheck -> {
+        label("min_args_check_end", minArgsCheck -> {
             BIntInstr.Op compareOp = pattern.hasRestArg() ? BIntInstr.Op.GTE : BIntInstr.Op.EQ;
             addInstr(new BIntInstr(minArgsCheck, compareOp, length, minArgsCount));
             addInstr(new CopyInstr(result, fals()));
@@ -1468,8 +1468,7 @@ public class IRBuilder {
                 Variable elt = call(temp(), deconstructed, "[]", fix(i));
                 Node arg = preArgs.get(i);
 
-                Variable dd = addResultInstr(new CopyInstr(temp(), buildNil()));
-                buildPatternEach(testEnd, result, dd, elt, arg, inAlteration);
+                buildPatternEach(testEnd, result, copy(buildNil()), elt, arg, inAlteration);
                 cond_ne(testEnd, result, tru());
             }
         }
@@ -1481,8 +1480,8 @@ public class IRBuilder {
                 Variable min = copy(fix(preArgsSize));
                 Variable max = as_fixnum(restNum);
                 Variable elt = call(temp(), deconstructed, "[]", min, max);
-                Variable dd = copy(buildNil());
-                buildPatternMatch(result, dd, pattern.getRestArg(), elt, inAlteration);
+
+                buildPatternMatch(result, copy(buildNil()), pattern.getRestArg(), elt, inAlteration);
                 cond_ne(testEnd, result, tru());
             }
         }
@@ -1490,12 +1489,12 @@ public class IRBuilder {
         ListNode postArgs = pattern.getPostArgs();
         if (postArgs != null) {
             for (int i = 0; i < postArgs.size(); i++) {
-                Label matchElementCheck = getNewLabel();
+                Label matchElementCheck = getNewLabel("match_post_args_element(i)_end");
                 Variable j = addResultInstr(new IntegerMathInstr(ADD, temp(), new Integer(i + preArgsSize), restNum));
                 Variable k = as_fixnum(j);
                 Variable elt = call(temp(), deconstructed, "[]", k);
-                Variable dd = addResultInstr(new CopyInstr(temp(), buildNil()));
-                buildPatternEach(testEnd, result, dd, elt, postArgs.get(i), inAlteration);
+
+                buildPatternEach(testEnd, result, copy(buildNil()), elt, postArgs.get(i), inAlteration);
                 addInstr(BNEInstr.create(matchElementCheck, result, buildFalse()));
                 addInstr(new JumpInstr(testEnd));
                 addInstr(new LabelInstr(matchElementCheck));
@@ -1535,7 +1534,7 @@ public class IRBuilder {
                                   Operand obj, boolean inAlteration) {
         Variable d = deconstructHashPatternKeys(testEnd, pattern, result, obj);
 
-        label(endHashCheck -> {
+        label("hash_check_end", endHashCheck -> {
             addInstr(new EQQInstr(scope, result, manager.getHashClass(), d, false, true));
             cond(endHashCheck, result, tru(), () -> type_error("deconstruct_keys must return Hash"));
         });
@@ -1554,7 +1553,7 @@ public class IRBuilder {
 
                 String method = pattern.hasRestArg() ? "delete" : "[]";
                 Operand value = call(temp(), d, method, key);
-                buildPatternEach(testEnd, result, deconstructed, value, pair.getValue(), inAlteration);
+                buildPatternEach(testEnd, result, copy(buildNil()), value, pair.getValue(), inAlteration);
                 cond_ne(testEnd, result, tru());
             }
         } else {
@@ -1567,7 +1566,7 @@ public class IRBuilder {
                 call(result, d, "empty?");
                 cond_ne(testEnd, result, tru());
             } else if (pattern.isNamedRestArg()) {
-                buildPatternEach(testEnd, result, deconstructed, d, pattern.getRestArg(), inAlteration);
+                buildPatternEach(testEnd, result, copy(buildNil()), d, pattern.getRestArg(), inAlteration);
                 cond_ne(testEnd, result, tru());
             }
         }
@@ -1605,7 +1604,7 @@ public class IRBuilder {
         addInstr(createBranch(value, test, label));
     }
 
-    // if/else
+    // if with body
     private void cond(Label endLabel, Operand value, Operand test, RunIt body) {
         addInstr(createBranch(value, test, endLabel));
         body.apply();
@@ -1653,9 +1652,9 @@ public class IRBuilder {
 
     // Standard for loop in IR.  'test' is responsible for jumping if it fails.
     private void for_loop(Consumer<Label> test, Consumer<Label> increment, Consume2<Label, Label> body) {
-        Label top = getNewLabel();
-        Label bottom = getNewLabel();
-        label(after -> {
+        Label top = getNewLabel("for_top");
+        Label bottom = getNewLabel("for_bottom");
+        label("for_end", after -> {
             addInstr(new LabelInstr(top));
             test.accept(after);
             body.apply(after, bottom);
@@ -1667,26 +1666,21 @@ public class IRBuilder {
 
     // Create an unrolled loop of expressions passing in the label which marks the end of these tests.
     private void times(int times, Consume2<Label, Integer> body) {
-        label(end -> {
+        label("times_end", end -> {
             for (int i = 0; i < times; i++) {
                 body.apply(end, new Integer(i));
             }
         });
     }
-    private void label(Consumer<Label> block) {
-        Label label = getNewLabel();
+
+    private void label(String labelName, Consumer<Label> block) {
+        Label label = getNewLabel(labelName);
         block.accept(label);
         addInstr(new LabelInstr(label));
     }
 
-    private void label(Object data, Consume2<Label, Object> block) {
-        Label label = getNewLabel();
-        block.apply(label, data);
-        addInstr(new LabelInstr(label));
-    }
-
     private void buildPatternMatch(Variable result, Variable deconstructed, Node arg, Operand obj, boolean inAlternation) {
-        label(testEnd -> buildPatternEach(testEnd, result, deconstructed, obj, arg, inAlternation));
+        label("pattern_end", testEnd -> buildPatternEach(testEnd, result, deconstructed, obj, arg, inAlternation));
     }
 
     private Variable buildPatternEach(Label testEnd, Variable result, Variable deconstructed, Operand value,
@@ -1718,7 +1712,7 @@ public class IRBuilder {
                 unless = true;
                 buildPatternMatch(result, deconstructed, ifNode.getElseBody(), value, inAlternation);
             }
-            label(conditionalEnd -> {
+            label("if_else_end", conditionalEnd -> {
                 cond_ne(conditionalEnd, result, tru());
                 Operand ifResult = build(ifNode.getCondition());
                 if (unless) {
@@ -1751,10 +1745,10 @@ public class IRBuilder {
             addInstr(new CopyInstr(variable, value));
         } else if (exprNodes instanceof OrNode) {
             OrNode orNode = (OrNode) exprNodes;
-            label(firstCase -> {
+            label("or_lhs_end", firstCase -> {
                 buildPatternEach(firstCase, result, deconstructed, value, orNode.getFirstNode(), true);
             });
-            label(secondCase -> {
+            label("or_rhs_end", secondCase -> {
                 cond(secondCase, result, tru(), () -> buildPatternEach(testEnd, result, deconstructed, value, orNode.getSecondNode(), true));
             });
         } else {
@@ -1771,7 +1765,7 @@ public class IRBuilder {
         Variable result = temp();
         Operand value = build(patternCase.getCaseNode());
 
-        label(end -> {
+        label("pattern_case_end", end -> {
             List<Label> labels = new ArrayList<>();
             Map<Label, Node> bodies = new HashMap<>();
 
@@ -3523,7 +3517,7 @@ public class IRBuilder {
     }
 
     private void if_not(Operand testVariable, Operand testValue, VoidCodeBlock ifBlock) {
-        label((endLabel) -> {
+        label("if_not_end", (endLabel) -> {
             addInstr(createBranch(testVariable, testValue, endLabel));
             ifBlock.run();
         });
@@ -5021,6 +5015,10 @@ public class IRBuilder {
         return scope.getNewLabel();
     }
 
+    private Label getNewLabel(String labelName) {
+        return scope.getNewLabel(labelName);
+    }
+
     private String getFileName() {
         return scope.getFile();
     }
@@ -5168,5 +5166,12 @@ public class IRBuilder {
                 flags.contains(BINDING_HAS_ESCAPED);
     }
 
+    /*
+     * Give the ability to print a debug message to stdout.  Not to ever be used outside
+     * of debugging an issue with IR.
+     */
+    private void debug(String message, Operand... operands) {
+        addInstr(new DebugOutputInstr(message, operands));
+    }
 
 }
