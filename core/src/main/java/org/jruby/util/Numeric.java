@@ -822,7 +822,7 @@ public class Numeric {
             String WS = "\\s*";
             String DIGITS = "(?:\\d(?:_\\d|\\d)*)";
             String NUMERATOR = "(?:" + DIGITS + "?\\.)?" + DIGITS + "(?:[eE][-+]?" + DIGITS + ")?";
-            String DENOMINATOR = DIGITS;
+            String DENOMINATOR = "(?:" + DIGITS + "?\\.)?" + DIGITS + "(?:[eE][-+]?" + DIGITS + ")?";
             String PATTERN = "\\A" + WS + "([-+])?(" + NUMERATOR + ")(?:\\/(" + DENOMINATOR + "))?" + WS;
             rat_pat = new Regex(PATTERN.getBytes(), 0, PATTERN.length(), 0, ASCIIEncoding.INSTANCE, WarnCallback.NONE);
             an_e_pat = new Regex("[Ee]".getBytes(), 0, 4, 0, ASCIIEncoding.INSTANCE, WarnCallback.NONE);

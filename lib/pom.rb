@@ -17,13 +17,13 @@ end
 default_gems = [
     # treat RGs update special:
     # - we do not want bin/update_rubygems or bin/gem overrides
-    ['rubygems-update', '3.3.13', { bin: false, require_paths: ['lib'] }],
+    ['rubygems-update', '3.3.25', { bin: false, require_paths: ['lib'] }],
     ['abbrev', '0.1.0'],
     ['base64', '0.1.1'],
     ['benchmark', '0.2.0'],
     # https://github.com/ruby/bigdecimal/issues/169
     # ['bigdecimal', '3.1.1'],
-    ['bundler', '2.3.13'],
+    ['bundler', '2.3.25'],
     ['cgi', '0.3.3'],
     ['csv', '3.2.5'],
     # https://github.com/ruby/date/issues/48
