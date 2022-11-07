@@ -6387,10 +6387,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     public IRubyObject to_r(ThreadContext context) {
         Ruby runtime = context.runtime;
 
-        RubyRegexp underscore_pattern = RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.underscores_pat);
-        RubyString s = gsubFast(context, underscore_pattern, runtime.newString(UNDERSCORE), Block.NULL_BLOCK);
-
-        IRubyObject[] ary = RubyRational.str_to_r_internal(context, s);
+        IRubyObject[] ary = RubyRational.str_to_r_internal(context, this);
 
         IRubyObject first = ary[0];
         if ( first != context.nil ) return first;
