@@ -362,6 +362,15 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return StringSupport.areComparable(this, otherString) && value.equal(otherString.value);
     }
 
+    /**
+     * Does this string contain \0 anywhere (per byte search).
+     * @return true if it does
+     */
+    public boolean hasNul() {
+        ByteList bytes = getByteList();
+        return memchr(bytes.unsafeBytes(), bytes.begin(), '\0', bytes.realSize()) != -1;
+    }
+
     // mri: rb_must_asciicompat
     public void verifyAsciiCompatible() {
         if (!getEncoding().isAsciiCompatible()) throw getRuntime().newEncodingCompatibilityError("ASCII incompatible encoding: " + getEncoding());
@@ -2112,18 +2121,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         RubyString undumped = newString(runtime, sBytes, s[0], 0, enc[0]);
         boolean[] utf8 = {false};
         boolean[] binary = {false};
-        int w;
 
-        if (!getEncoding().isAsciiCompatible()) {
-            throw runtime.newEncodingCompatibilityError("ASCII incompatible encoding: " + getEncoding().getCharsetName());
-        }
+        verifyAsciiCompatible();
         scanForCodeRange();
-        if (!isAsciiOnly()) {
-            throw runtime.newRuntimeError("non-ASCII character detected");
-        }
-        if (memchr(sBytes, s[0], '\0', strByteList.realSize()) != -1) {
-            throw runtime.newRuntimeError("string contains null byte");
-        }
+        if (!isAsciiOnly()) throw runtime.newRuntimeError("non-ASCII character detected");
+        if (hasNul()) throw runtime.newRuntimeError("string contains null byte");
         if (sLen < 2) return invalidFormat(runtime);
         if (sBytes[s[0]] != '"') return invalidFormat(runtime);
 
