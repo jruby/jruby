@@ -236,13 +236,14 @@ public class RubyStruct extends RubyObject {
         }
 
         RubyArray member = runtime.newArray();
+        IRubyObject keywordInitValue = runtime.getNil();
 
         int argc = args.length;
         final IRubyObject opts = args[args.length - 1];
         if (opts instanceof RubyHash) {
             argc--;
-            IRubyObject ret = ArgsUtil.extractKeywordArg(runtime.getCurrentContext(), (RubyHash) opts, "keyword_init");
-            keywordInit = ret != null && ret.isTrue();
+            keywordInitValue = ArgsUtil.extractKeywordArg(runtime.getCurrentContext(), (RubyHash) opts, "keyword_init");
+            keywordInit = keywordInitValue != null && keywordInitValue.isTrue();
         }
 
         Set<IRubyObject> tmpMemberSet = new HashSet<IRubyObject>();
@@ -289,7 +290,7 @@ public class RubyStruct extends RubyObject {
 
         newStruct.setInternalVariable(SIZE_VAR, member.length());
         newStruct.setInternalVariable(MEMBER_VAR, member);
-        newStruct.setInternalVariable(KEYWORD_INIT_VAR, keywordInit ? runtime.getTrue() : runtime.getFalse());
+        newStruct.setInternalVariable(KEYWORD_INIT_VAR, keywordInitValue);
 
         newStruct.getSingletonClass().defineAnnotatedMethods(StructMethods.class);
 
