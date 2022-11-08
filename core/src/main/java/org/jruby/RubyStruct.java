@@ -219,7 +219,6 @@ public class RubyStruct extends RubyObject {
     public static RubyClass newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
         String name = null;
         boolean nilName = false;
-        boolean keywordInit = false;
         Ruby runtime = recv.getRuntime();
 
         if (args.length > 0) {
@@ -243,7 +242,6 @@ public class RubyStruct extends RubyObject {
         if (opts instanceof RubyHash) {
             argc--;
             keywordInitValue = ArgsUtil.extractKeywordArg(runtime.getCurrentContext(), (RubyHash) opts, "keyword_init");
-            keywordInit = keywordInitValue != null && keywordInitValue.isTrue();
         }
 
         Set<IRubyObject> tmpMemberSet = new HashSet<IRubyObject>();
@@ -412,20 +410,19 @@ public class RubyStruct extends RubyObject {
         }
     }
 
-    private void checkForKeywords(ThreadContext context) {
-        if ((context.callInfo & ThreadContext.CALL_KEYWORD) != 0) {
+    private void checkForKeywords(ThreadContext context, boolean keywordInit) {
+        if ((context.callInfo & ThreadContext.CALL_KEYWORD) != 0 && !keywordInit) {
             context.runtime.getWarnings().warn("Passing only keyword arguments to Struct#initialize will behave differently from Ruby 3.2. Please use a Hash literal like .new({k: v}) instead of .new(k: v).");
         }
     }
 
     @JRubyMethod(rest = true, visibility = PRIVATE, forward = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
-        checkForKeywords(context);
+        IRubyObject keywordInit = RubyStruct.getInternalVariable(classOf(), KEYWORD_INIT_VAR);
+        checkForKeywords(context, !keywordInit.isNil());
         context.resetCallInfo();
         modify();
         checkSize(args.length);
-
-        IRubyObject keywordInit = RubyStruct.getInternalVariable(classOf(), KEYWORD_INIT_VAR);
 
         if (keywordInit.isTrue()) {
             if (args.length != 1) throw context.runtime.newArgumentError(args.length, 0);
@@ -465,11 +462,11 @@ public class RubyStruct extends RubyObject {
 
     @JRubyMethod(visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject arg0) {
-        checkForKeywords(context);
+        IRubyObject keywordInit = RubyStruct.getInternalVariable(classOf(), KEYWORD_INIT_VAR);
+        checkForKeywords(context, !keywordInit.isNil());
         context.resetCallInfo();
         Ruby runtime = context.runtime;
 
-        IRubyObject keywordInit = RubyStruct.getInternalVariable(classOf(), KEYWORD_INIT_VAR);
         if (keywordInit.isTrue()) {
             IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(runtime, arg0);
 
