@@ -3621,7 +3621,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     /* str_byte_substr */
-    private IRubyObject byteSubstr(Ruby runtime, int beg, int len) {
+    private IRubyObject byteSubstr(Ruby runtime, long beg, long len) {
         int length = value.length();
 
         if (len < 0 || beg > length) return runtime.getNil();
@@ -3630,13 +3630,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             beg += length;
             if (beg < 0) return runtime.getNil();
         }
+
         if (beg + len > length) len = length - beg;
+        if (len <= 0) len = 0;
 
-        if (len <= 0) {
-            len = 0;
-        }
-
-        return makeSharedString(runtime, beg, len);
+        // above boundary checks confirms we can safely cast to int for beg + len.
+        return makeSharedString(runtime, (int) beg, (int) len);
     }
 
     /* str_byte_aref */
@@ -3647,7 +3646,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             int[] begLen = ((RubyRange) idx).begLenInt(getByteList().length(), 0);
             return begLen == null ? runtime.getNil() : byteSubstr(runtime, begLen[0], begLen[1]);
         } else if (idx instanceof RubyFixnum) {
-            index = RubyNumeric.fix2int((RubyFixnum)idx);
+            long i = RubyNumeric.num2long(((RubyFixnum) idx));
+            if (i > RubyFixnum.MAX || i < RubyFixnum.MIN) return runtime.getNil();
+            index = (int) i;
         } else {
             ThreadContext context = runtime.getCurrentContext();
             StringSites sites = sites(context);
@@ -3816,7 +3817,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod
     public IRubyObject byteslice(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
-        return byteSubstr(context.runtime, RubyNumeric.num2int(arg1), RubyNumeric.num2int(arg2));
+        return byteSubstr(context.runtime, RubyNumeric.num2long(arg1), RubyNumeric.num2long(arg2));
     }
 
     @JRubyMethod
