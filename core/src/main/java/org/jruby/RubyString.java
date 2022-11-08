@@ -362,6 +362,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return StringSupport.areComparable(this, otherString) && value.equal(otherString.value);
     }
 
+    // mri: rb_must_asciicompat
+    public void verifyAsciiCompatible() {
+        if (!getEncoding().isAsciiCompatible()) throw getRuntime().newEncodingCompatibilityError("ASCII incompatible encoding: " + getEncoding());
+    }
+
     public RubyString(Ruby runtime, RubyClass rubyClass) {
         this(runtime, rubyClass, ByteList.NULL_ARRAY);
     }

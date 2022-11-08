@@ -259,9 +259,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
         TypeConverter.checkType(context, arg, runtime.getString());
         RubyString str = (RubyString) arg;
-        if (!str.getEncoding().isAsciiCompatible()) {
-            throw runtime.newEncodingCompatibilityError("ASCII incompatible encoding: " + str.getEncoding());
-        }
+        str.verifyAsciiCompatible();
         writeWarningToError(runtime.getCurrentContext(), str);
         return context.nil;
     }
