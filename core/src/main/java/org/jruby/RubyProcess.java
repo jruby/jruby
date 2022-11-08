@@ -1736,6 +1736,11 @@ public class RubyProcess {
         return RubyKernel.fork(context, recv, block);
     }
 
+    @JRubyMethod(module = true, visibility = PRIVATE, notImplemented = true)
+    public static IRubyObject _fork(ThreadContext context, IRubyObject recv, Block block) {
+        throw context.runtime.newNotImplementedError("fork is not available on this platform");
+    }
+
     @JRubyMethod(name = "fork", module = true, visibility = PRIVATE, notImplemented = true)
     public static IRubyObject fork19(ThreadContext context, IRubyObject recv, Block block) {
         return RubyKernel.fork(context, recv, block);
