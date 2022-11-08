@@ -215,7 +215,7 @@ public class RubyStruct extends RubyObject {
      * MRI: rb_struct_s_def / make_struct
      *
      */
-    @JRubyMethod(name = "new", required = 1, rest = true, meta = true)
+    @JRubyMethod(name = "new", required = 1, rest = true, meta = true, forward = true)
     public static RubyClass newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
         String name = null;
         boolean nilName = false;
@@ -411,8 +411,16 @@ public class RubyStruct extends RubyObject {
         }
     }
 
-    @JRubyMethod(rest = true, visibility = PRIVATE)
+    private void checkForKeywords(ThreadContext context) {
+        if ((context.callInfo & ThreadContext.CALL_KEYWORD) != 0) {
+            context.runtime.getWarnings().warn("Passing only keyword arguments to Struct#initialize will behave differently from Ruby 3.2. Please use a Hash literal like .new({k: v}) instead of .new(k: v).");
+        }
+    }
+
+    @JRubyMethod(rest = true, visibility = PRIVATE, forward = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+        checkForKeywords(context);
+        context.resetCallInfo();
         modify();
         checkSize(args.length);
 
@@ -456,6 +464,8 @@ public class RubyStruct extends RubyObject {
 
     @JRubyMethod(visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject arg0) {
+        checkForKeywords(context);
+        context.resetCallInfo();
         Ruby runtime = context.runtime;
 
         IRubyObject keywordInit = RubyStruct.getInternalVariable(classOf(), KEYWORD_INIT_VAR);
