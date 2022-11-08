@@ -3213,7 +3213,7 @@ states[188] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[189] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                     yyVal = ((ByteList)yyVals[0+yyTop].value);
+                     yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[190] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {

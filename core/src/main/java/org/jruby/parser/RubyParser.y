@@ -347,7 +347,7 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
 %token <Integer> '\f'                   /* {{escaped form feed}} */
 %token <Integer> '\r'                   /* {{escaped carriage return}} */
 %token <Integer> '\v'                   /* {{escaped vertical tab}} */
-%token <ByteList> tUPLUS               /* {{unary+}} */
+%token <@@token_type@@> tUPLUS               /* {{unary+}} */
 %token <@@token_type@@> tUMINUS              /* {{unary-}} */
 %token <@@token_type@@> tPOW                 /* {{**}} */
 %token <@@token_type@@> tCMP                 /* {{<=>}} */
