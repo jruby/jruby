@@ -1,1 +1,0 @@
-fails:StructClass#keyword_init? returns nil for a struct that did not explicitly specify keyword_init
