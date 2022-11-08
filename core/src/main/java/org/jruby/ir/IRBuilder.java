@@ -4648,7 +4648,7 @@ public class IRBuilder {
         return new MutableString(strNode.getValue(), strNode.getCodeRange(), scope.getFile(), line);
     }
 
-    private Operand buildSuperInstr(Operand block) {
+    private Operand buildZSuper(Operand block) {
         List<Operand> callArgs = new ArrayList<>(5);
         List<KeyValuePair<Operand, Operand>> keywordArgs = new ArrayList<>(3);
         determineZSuperCallArgs(scope, this, callArgs, keywordArgs);
@@ -4884,6 +4884,7 @@ public class IRBuilder {
             determineZSuperCallArgs(superScope, superBuilder, callArgs, keywordArgs);
 
             if (keywordArgs.size() == 1 && keywordArgs.get(0).getKey().equals(Symbol.KW_REST_ARG_DUMMY)) {
+                flags[0] |= (CALL_KEYWORD | CALL_KEYWORD_REST);
                 Operand keywordRest = ((DepthCloneable) keywordArgs.get(0).getValue()).cloneForDepth(depthFromSuper);
                 Operand[] args = adjustVariableDepth(callArgs.toArray(new Operand[callArgs.size()]), depthFromSuper);
                 Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { keywordRest }));
@@ -4937,7 +4938,7 @@ public class IRBuilder {
         Operand block = setupCallClosure(zsuperNode.getIterNode());
         if (block == NullBlock.INSTANCE) block = getYieldClosureVariable();
 
-        return scope instanceof IRMethod ? buildSuperInstr(block) : buildZSuperIfNest(block);
+        return scope instanceof IRMethod ? buildZSuper(block) : buildZSuperIfNest(block);
     }
 
     /*
