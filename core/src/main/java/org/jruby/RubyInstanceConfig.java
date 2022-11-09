@@ -905,7 +905,7 @@ public class RubyInstanceConfig {
         this.backtraceLimit = limit;
     }
 
-    public Integer getBacktraceLimit(){
+    public Integer getBacktraceLimit() {
         return this.backtraceLimit;
     }
 

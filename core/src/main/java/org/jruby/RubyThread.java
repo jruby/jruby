@@ -464,11 +464,23 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         RubyClass backtrace = threadClass.defineClassUnder("Backtrace", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         RubyClass location = backtrace.defineClassUnder("Location", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
 
+        backtrace.defineAnnotatedMethods(Backtrace.class);
         location.defineAnnotatedMethods(Location.class);
 
         runtime.setLocation(location);
 
         return threadClass;
+    }
+
+    public static class Backtrace extends RubyObject {
+        public Backtrace(Ruby runtime, RubyClass metaClass) {
+            super(runtime, metaClass);
+        }
+
+        @JRubyMethod(module = true)
+        public static IRubyObject limit(ThreadContext context, IRubyObject self) {
+            return context.runtime.newFixnum(context.runtime.getInstanceConfig().getBacktraceLimit());
+        }
     }
 
     public static class Location extends RubyObject {
