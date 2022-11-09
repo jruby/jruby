@@ -56,6 +56,7 @@ public class RubyGC {
     private static volatile boolean gcDisabled = false;
     private static volatile boolean stress = false;
     private static volatile boolean autoCompact = false;
+    private static volatile boolean measureTotalTime = false;
 
     public static RubyModule createGCModule(Ruby runtime) {
         RubyModule result = runtime.defineModule("GC");
@@ -73,6 +74,26 @@ public class RubyGC {
     @JRubyMethod(optional = 1)
     public static IRubyObject garbage_collect(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return context.nil;
+    }
+
+    @JRubyMethod(module = true, visibility = PRIVATE)
+    public static IRubyObject measure_total_time(ThreadContext context, IRubyObject self) {
+        // JVM just keeps track of this so we do not have a toggle here.  If we need to show incremental time
+        // from a particular point we will need to record time and do some extra math.
+        return context.runtime.newBoolean(measureTotalTime);
+    }
+
+    @JRubyMethod(module = true, name = "measure_total_time=", visibility = PRIVATE)
+    public static IRubyObject measure_total_time_set(ThreadContext context, IRubyObject self, IRubyObject value) {
+        // JVM just keeps track of this so we do not have a toggle here.  If we need to show incremental time
+        // from a particular point we will need to record time and do some extra math.
+        measureTotalTime = value.isTrue();
+        return context.nil;
+    }
+
+    @JRubyMethod(module = true, visibility = PRIVATE)
+    public static IRubyObject total_time(ThreadContext context, IRubyObject self) {
+        return context.runtime.newFixnum(getCollectionTime());
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)

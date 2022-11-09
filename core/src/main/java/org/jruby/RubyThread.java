@@ -1480,7 +1480,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     @JRubyMethod
     public IRubyObject native_thread_id(ThreadContext context) {
         if (!isAlive()) return context.nil;
-        
+
         String encodedString = ManagementFactory.getRuntimeMXBean().getName();
         int atIndex = encodedString.indexOf('@');
 
