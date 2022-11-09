@@ -389,14 +389,14 @@ public class RubyComplex extends RubyNumeric {
     @JRubyMethod(name = "polar", meta = true, required = 1, optional = 1)
     public static IRubyObject polar(ThreadContext context, IRubyObject clazz, IRubyObject... args) {
         IRubyObject abs = args[0];
-        IRubyObject arg;
-        if (args.length < 2) {
-            arg = RubyFixnum.zero(context.runtime);
-        } else {
-            arg = args[1];
-        }
+        IRubyObject arg = args.length < 2 ? RubyFixnum.zero(context.runtime) : args[1];
+
         realCheck(context, abs, true);
         realCheck(context, arg, true);
+
+        if (abs instanceof RubyComplex) abs = ((RubyComplex) abs).getReal();
+        if (arg instanceof RubyComplex) arg = ((RubyComplex) arg).getReal();
+
         return f_complex_polar(context, (RubyClass) clazz, abs, arg);
     }
 
