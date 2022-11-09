@@ -1652,60 +1652,53 @@ public class RubyTime extends RubyObject {
         return context.nil;
     }
 
-    @JRubyMethod(name = "initialize", visibility = PRIVATE)
-    public IRubyObject initialize(ThreadContext context, IRubyObject year) {
-        IRubyObject nil = context.nil;
-
-        TimeArgs timeArgs = new TimeArgs(context, year, nil, nil, nil, nil, nil, nil, false);
-
-        timeArgs.initializeTime(context, this, getLocalTimeZone(context.runtime));
-
-        return nil;
-    }
-
-    @JRubyMethod(name = "initialize", visibility = PRIVATE)
-    public IRubyObject initialize(ThreadContext context, IRubyObject year, IRubyObject month) {
-        IRubyObject nil = context.nil;
-
-        TimeArgs timeArgs = new TimeArgs(context, year, month, nil, nil, nil, nil, nil, false);
-
-        timeArgs.initializeTime(context, this, getLocalTimeZone(context.runtime));
-
-        return nil;
-    }
-
-    @JRubyMethod(name = "initialize", visibility = PRIVATE)
-    public IRubyObject initialize(ThreadContext context, IRubyObject year, IRubyObject month, IRubyObject day) {
-        IRubyObject nil = context.nil;
-
-        TimeArgs timeArgs = new TimeArgs(context, year, month, day, nil, nil, nil, nil, false);
-
-        timeArgs.initializeTime(context, this, getLocalTimeZone(context.runtime));
-
-        return nil;
-    }
-
-    @JRubyMethod(name = "initialize", optional = 7, visibility = PRIVATE)
+    @JRubyMethod(name = "initialize", optional = 7, visibility = PRIVATE, forward = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+        boolean keywords = (context.callInfo & ThreadContext.CALL_KEYWORD) != 0;
+        context.resetCallInfo();
+        IRubyObject zone = null;
+        context.resetCallInfo();
         IRubyObject nil = context.nil;
+
+        if (keywords) {
+            IRubyObject in = ArgsUtil.extractKeywordArg(context, (RubyHash) args[args.length - 1], "in");
+            if (in != null && args.length > 7) {
+                throw context.runtime.newArgumentError("timezone argument given as positional and keyword arguments");
+            }
+            zone = in;
+        } else if (args.length > 6) {
+            zone = args[6];
+        }
 
         switch (args.length) {
             case 0:
                 return initialize(context);
             case 1:
-                return initialize(context, args[0]);
+                return zone != null ?
+                        initialize(context, nil, nil, nil, nil, nil, nil, zone) :
+                        initialize(context, args[0], nil, nil, nil, nil, nil);
             case 2:
-                return initialize(context, args[0], args[1]);
+                return zone != null ?
+                        initialize(context, args[0], nil, nil, nil, nil, nil, zone) :
+                        initialize(context, args[0], args[1], nil, nil, nil, nil);
             case 3:
-                return initialize(context, args[0], args[1], args[2]);
+                return zone != null ?
+                        initialize(context, args[0], args[1], nil, nil, nil, nil, zone) :
+                        initialize(context, args[0], args[1], args[2], nil, nil, nil);
             case 4:
-                return initialize(context, args[0], args[1], args[2], args[3], nil, nil);
+                return zone != null ?
+                        initialize(context, args[0], args[1], args[2], nil, nil, nil, zone) :
+                        initialize(context, args[0], args[1], args[2], args[3], nil, nil);
             case 5:
-                return initialize(context, args[0], args[1], args[2], args[3], args[4], nil);
+                return zone != null ?
+                        initialize(context, args[0], args[1], args[2], args[3], nil, nil, zone) :
+                        initialize(context, args[0], args[1], args[2], args[3], args[4], nil);
             case 6:
-                return initialize(context, args[0], args[1], args[2], args[3], args[4], args[5]);
+                return zone != null ?
+                        initialize(context, args[0], args[1], args[2], args[3], args[4], nil, zone) :
+                        initialize(context, args[0], args[1], args[2], args[3], args[4], args[5]);
             case 7:
-                return initialize(context, args[0], args[1], args[2], args[3], args[4], args[5], args[6]);
+                return initialize(context, args[0], args[1], args[2], args[3], args[4], args[5], zone);
             default:
                 throw context.runtime.newArgumentError(args.length, 0, 7);
         }
