@@ -1187,6 +1187,8 @@ public class RubyKernel {
     }
 
     private static IRubyObject callerInternal(ThreadContext context, IRubyObject recv, IRubyObject level, IRubyObject length) {
+        if (length != null && length.isNil()) length = null;  // caller(0, nil) should act like caller(0)
+
         if (length == null) {
             // use Java 8 version of walker to reduce overhead (GH-5857)
             return withLevelAndLength(context, level, length, 1,
