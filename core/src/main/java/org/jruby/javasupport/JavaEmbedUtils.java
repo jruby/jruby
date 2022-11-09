@@ -43,7 +43,6 @@ import org.jruby.ast.Node;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.UriLikePathHelper;
 
 /**
  * Utility functions to help embedders out.   These function consolidate logic that is
@@ -223,7 +222,7 @@ public class JavaEmbedUtils {
      * @return the result of the invocation.
      */
     @SuppressWarnings("deprecation")
-    public static Object invokeMethod(Ruby runtime, Object receiver, String method, Object[] args, Class returnType) {
+    public static <T> T invokeMethod(Ruby runtime, Object receiver, String method, Object[] args, Class<T> returnType) {
         IRubyObject rubyReceiver = receiver != null ? JavaUtil.convertJavaToRuby(runtime, receiver) : runtime.getTopSelf();
 
         IRubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(runtime, args);
@@ -243,7 +242,12 @@ public class JavaEmbedUtils {
     /**
      * Convert a Ruby object to a Java object.
      */
-    public static Object rubyToJava(Ruby runtime, IRubyObject value, Class type) {
+    public static <T> T rubyToJava(IRubyObject value, Class<T> type) {
+        return value.toJava(type);
+    }
+
+    // @Deprecated
+    public static <T> T rubyToJava(Ruby runtime, IRubyObject value, Class<T> type) {
         return value.toJava(type);
     }
 
@@ -252,8 +256,8 @@ public class JavaEmbedUtils {
      * @param value to be converted
      * @return the converted object
      */
-    public static Object rubyToJava(IRubyObject value) {
-        return value.toJava(Object.class);
+    public static <T> T rubyToJava(IRubyObject value) {
+        return (T) value.toJava(Object.class);
     }
 
     /**
