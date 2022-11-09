@@ -34,6 +34,7 @@
 package org.jruby;
 
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.lang.ref.WeakReference;
 import java.nio.channels.Channel;
 import java.nio.channels.SelectableChannel;
@@ -1474,6 +1475,27 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     @Deprecated
     public IRubyObject raise(IRubyObject[] args, Block block) {
         return raise(getRuntime().getCurrentContext(), args, block);
+    }
+
+    @JRubyMethod
+    public IRubyObject native_thread_id(ThreadContext context) {
+        if (!isAlive()) return context.nil;
+        
+        String encodedString = ManagementFactory.getRuntimeMXBean().getName();
+        int atIndex = encodedString.indexOf('@');
+
+        // Undocumented format: 1761769@localhost.localdomain
+        if (atIndex != -1) {
+            try {
+                int id = Integer.parseInt(encodedString.substring(0, atIndex));
+
+                return context.runtime.newFixnum(id);
+            } catch (NumberFormatException e) {
+                // if we fail to parse this we will just act like we don't support it
+            }
+        }
+
+        return context.nil;  // Not supported or failed to extract id
     }
 
     private IRubyObject genericRaise(ThreadContext context, RubyThread currentThread, IRubyObject... args) {
