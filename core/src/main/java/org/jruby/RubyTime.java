@@ -1417,7 +1417,7 @@ public class RubyTime extends RubyObject {
         return at1(context, recv, arg);
     }
 
-    @JRubyMethod(meta = true)
+    @JRubyMethod(meta = true, forward = true)
     public static IRubyObject at(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
         RubySymbol ms = context.runtime.newSymbol("microsecond");
 
@@ -1430,7 +1430,7 @@ public class RubyTime extends RubyObject {
         return atOpts(context, recv, arg1, context.nil, null, maybeOpts);
     }
 
-    @JRubyMethod(meta = true)
+    @JRubyMethod(meta = true, forward = true)
     public static IRubyObject at(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
         IRubyObject maybeOpts = ArgsUtil.getOptionsArg(context.runtime, arg3);
 
@@ -2153,7 +2153,8 @@ public class RubyTime extends RubyObject {
         if (zoneLocalTime(context, zone, time)) return time;
 
         if ((dtz = getTimeZoneFromUtcOffset(context, off)) == null) {
-            if ((zone = time.findTimezone(context, zone)).isNil()) throw invalidUTCOffset(context.runtime);
+            zone = time.findTimezone(context, zone);
+            if (zone == null || zone.isNil()) throw invalidUTCOffset(context.runtime);
             if (!zoneLocalTime(context, zone, time)) throw invalidUTCOffset(context.runtime);
             return time;
         } else if (dtz == DateTimeZone.UTC) {
