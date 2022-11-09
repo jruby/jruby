@@ -1383,7 +1383,7 @@ public class RubyTime extends RubyObject {
     /* Time class methods */
 
     /**
-     * @deprecated Use {@link #newInstance(ThreadContext, IRubyObject)}
+     * @deprecated Use {@link #newInstance(ThreadContext, IRubyObject, IRubyObject[])}
      */
     @Deprecated
     public static IRubyObject s_new(IRubyObject recv, IRubyObject[] args, Block block) {
@@ -1394,17 +1394,21 @@ public class RubyTime extends RubyObject {
     }
 
     /**
-     * @deprecated Use {@link #newInstance(ThreadContext, IRubyObject)}
+     * @deprecated Use {@link #newInstance(ThreadContext, IRubyObject, IRubyObject[])}
      */
     @Deprecated
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        return newInstance(context, recv);
+        return newInstance(context, recv, args);
     }
 
-    @JRubyMethod(name = "now", meta = true)
-    public static RubyTime newInstance(ThreadContext context, IRubyObject recv) {
+    @JRubyMethod(name = "now", meta = true, optional = 1, forward = true)
+    public static RubyTime newInstance(ThreadContext context, IRubyObject recv, IRubyObject args[]) {
         RubyTime obj = allocateInstance((RubyClass) recv);
-        obj.getMetaClass().getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, recv, obj);
+        if (args.length == 1) {
+            obj.getMetaClass().getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, recv, obj, args);
+        } else {
+            obj.getMetaClass().getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, recv, obj);
+        }
         return obj;
     }
 
@@ -1617,13 +1621,43 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context) {
-        Ruby runtime = context.runtime;
+        return initializeNow(context, context.nil);
+    }
 
-        DateTimeZone dtz = getLocalTimeZone(runtime);
+    private IRubyObject initializeNow(ThreadContext context, IRubyObject zone) {
+        Ruby runtime = context.runtime;
         long msecs;
         long nsecs;
-        POSIX posix = runtime.getPosix();
+        DateTimeZone dtz;
+        boolean maybeZoneObj = false;
 
+        if (zone.isNil()) {
+            dtz = getLocalTimeZone(runtime);
+        } else if (zone == runtime.newSymbol("dst")) {
+            dtz = getLocalTimeZone(runtime);
+        } else if (zone == runtime.newSymbol("std")) {
+            dtz = getLocalTimeZone(runtime);
+        } else if (maybeTimezoneObject(zone)) {
+            maybeZoneObj = true;
+            this.zone = zone;
+            dtz = DateTimeZone.UTC;
+        } else {
+            dtz = getTimeZoneFromUtcOffset(context, zone);
+            if (dtz != null) {
+                this.setIsTzRelative(true);
+            } else {
+                if ((zone = findTimezone(context, zone)) != null) {
+                    maybeZoneObj = true;
+                    this.zone = zone;
+
+                    dtz = DateTimeZone.UTC;
+                } else {
+                    throw invalidUTCOffset(runtime);
+                }
+            }
+        }
+
+        POSIX posix = runtime.getPosix();
         if (posix.isNative()) {
             // FIXME: we should have a pure Java fallback in jnr-posix and Windows is missing gettimeofday impl
             try {
@@ -1648,6 +1682,19 @@ public class RubyTime extends RubyObject {
 
         this.dt = dt;
         this.setNSec(nsecs);
+
+        if (maybeZoneObj) {
+            if (zoneTimeLocal(context, zone, this)) {
+                return this;
+            } else {
+                dtz = getTimeZoneFromUtcOffset(context, zone);
+                if (dtz != null) {
+                    this.dt = dt.withZoneRetainFields(dtz);
+                } else if ((zone = findTimezone(context, zone)) == null || !zoneTimeLocal(context, zone, this)) {
+                    throw invalidUTCOffset(runtime);
+                }
+            }
+        }
 
         return context.nil;
     }
@@ -1675,7 +1722,7 @@ public class RubyTime extends RubyObject {
                 return initialize(context);
             case 1:
                 return zone != null ?
-                        initialize(context, nil, nil, nil, nil, nil, nil, zone) :
+                        initializeNow(context, zone) :
                         initialize(context, args[0], nil, nil, nil, nil, nil);
             case 2:
                 return zone != null ?
