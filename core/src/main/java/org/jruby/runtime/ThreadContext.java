@@ -830,8 +830,7 @@ public final class ThreadContext {
 
         int traceLength = safeLength(level, length, fullTrace);
 
-        // MRI started returning [] instead of nil some time after 1.9 (#4891)
-        if (traceLength < 0) return runtime.newEmptyArray();
+        if (traceLength < 0) return runtime.getNil();
 
         final IRubyObject[] traceArray = new IRubyObject[traceLength];
 

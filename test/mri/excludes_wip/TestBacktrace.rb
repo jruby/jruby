@@ -1,4 +1,3 @@
-exclude :"test_caller_lev", "work in progress"
 exclude :"test_caller_lev_and_n", "work in progress"
 exclude :"test_caller_limit_cfunc_iseq_no_pc", "work in progress"
 exclude :"test_caller_location_inspect_cfunc_iseq_no_pc", "work in progress"
