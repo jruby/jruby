@@ -234,7 +234,7 @@ public class RubyRange extends RubyObject {
             beg += len;
             if (beg < 0) {
                 if (err != 0) {
-                    throw getRuntime().newRangeError(beg + ".." + (isExclusive ? "." : "") + end + " out of range");
+                    throw getRuntime().newRangeError(this.begin + ".." + (isExclusive ? "." : "") + this.end + " out of range");
                 }
                 return null;
             }
@@ -243,7 +243,7 @@ public class RubyRange extends RubyObject {
         if (err == 0 || err == 2) {
             if (beg > len) {
                 if (err != 0) {
-                    throw getRuntime().newRangeError(beg + ".." + (isExclusive ? "." : "") + end + " out of range");
+                    throw getRuntime().newRangeError(this.begin + ".." + (isExclusive ? "." : "") + this.end + " out of range");
                 }
                 return null;
             }
