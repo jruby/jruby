@@ -2714,10 +2714,17 @@ public class RubyModule extends RubyObject {
     }
 
     public boolean hasModuleInPrepends(RubyModule type) {
-        RubyModule stopClass = getPrependCeiling();
-        for (RubyModule module = this; module != stopClass; module = module.getSuperClass()) {
+        RubyModule methodLocation = this.methodLocation;
+
+        // only check if we have prepends, to allow include and prepend of same module
+        if (this == methodLocation) {
+            return false;
+        }
+
+        for (RubyModule module = this.getSuperClass(); module != methodLocation; module = module.getSuperClass()) {
             if (type == module.getOrigin()) return true;
         }
+
         return false;
     }
 
@@ -3778,6 +3785,7 @@ public class RubyModule extends RubyObject {
      */
     void doPrependModule(RubyModule baseModule) {
         List<RubyModule> modulesToInclude = gatherModules(baseModule);
+        RubyModule startOrigin = methodLocation;
 
         if (!hasPrepends()) { // Set up a new holder class to hold all this types original methods.
             RubyClass origin = new PrependedModule(getRuntime(), getSuperClass(), this);
@@ -3799,24 +3807,37 @@ public class RubyModule extends RubyObject {
         ModuleLoop: for (RubyModule nextModule : modulesToInclude) {
             checkForCyclicPrepend(nextModule);
 
+            boolean startSeen = false;
             boolean superclassSeen = false;
+
+            if (startOrigin == this) {
+                startSeen = true;
+            }
 
             // scan prepend section of hierarchy for module, from superClass to the next concrete superClass
             RubyModule stopClass = getPrependCeiling();
-            for (RubyClass nextClass = getSuperClass(); nextClass != stopClass; nextClass = nextClass.getSuperClass()) {
-                if (nextClass.isIncluded()) {
-                    // does the class equal the module
-                    if (nextClass.getDelegate() == nextModule.getDelegate()) {
-                        // next in hierarchy is an included version of the module we're attempting,
-                        // so we skip including it
-
-                        // if we haven't encountered a real superclass, use the found module as the new inclusion point
-                        if (!superclassSeen) inclusionPoint = nextClass;
-
-                        continue ModuleLoop;
+            if (startOrigin != this) {
+                for (RubyClass nextClass = getSuperClass(); nextClass != stopClass; nextClass = nextClass.getSuperClass()) {
+                    if (startOrigin == nextClass) {
+                        break;
                     }
-                } else {
-                    superclassSeen = true;
+                    if (this == nextClass) {
+                        startSeen = true;
+                    }
+                    if (nextClass.isIncluded()) {
+                        // does the class equal the module
+                        if (nextClass.getDelegate() == nextModule.getDelegate()) {
+                            // next in hierarchy is an included version of the module we're attempting,
+                            // so we skip including it
+
+                            // if we haven't encountered a real superclass, use the found module as the new inclusion point
+                            if (!superclassSeen && startSeen) inclusionPoint = nextClass;
+
+                            continue ModuleLoop;
+                        }
+                    } else {
+                        superclassSeen = true;
+                    }
                 }
             }
 
