@@ -30,6 +30,7 @@
 package org.jruby.util.cli;
 
 import org.jruby.RubyInstanceConfig;
+import org.jruby.common.RubyWarnings;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.profile.builtin.ProfileOutput;
 import org.jruby.util.JRubyFile;
@@ -239,6 +240,7 @@ public class ArgumentProcessor {
                 case 'd':
                     config.setDebug(true);
                     config.setVerbosity(RubyInstanceConfig.Verbosity.TRUE);
+                    config.getWarningCategories().add(RubyWarnings.Category.DEPRECATED);
                     break;
                 case 'e':
                     disallowedInRubyOpts(argument);
@@ -330,16 +332,19 @@ public class ArgumentProcessor {
                     break;
                 case 'v':
                     config.setVerbosity(RubyInstanceConfig.Verbosity.TRUE);
+                    config.getWarningCategories().add(RubyWarnings.Category.DEPRECATED);
                     config.setShowVersion(true);
                     break;
                 case 'w':
                     config.setVerbosity(RubyInstanceConfig.Verbosity.TRUE);
+                    config.getWarningCategories().add(RubyWarnings.Category.DEPRECATED);
                     break;
                 case 'W':
                     {
                         String temp = grabOptionalValue();
                         if (temp == null) {
                             config.setVerbosity(RubyInstanceConfig.Verbosity.TRUE);
+                            config.getWarningCategories().add(RubyWarnings.Category.DEPRECATED);
                         } else {
                             if (temp.equals("0")) {
                                 config.setVerbosity(RubyInstanceConfig.Verbosity.NIL);
@@ -347,10 +352,30 @@ public class ArgumentProcessor {
                                 config.setVerbosity(RubyInstanceConfig.Verbosity.FALSE);
                             } else if (temp.equals("2")) {
                                 config.setVerbosity(RubyInstanceConfig.Verbosity.TRUE);
+                                config.getWarningCategories().add(RubyWarnings.Category.DEPRECATED);
                             } else {
-                                MainExitException mee = new MainExitException(1, getArgumentError(" -W must be followed by either 0, 1, 2 or nothing"));
-                                mee.setUsageError(true);
-                                throw mee;
+                                switch (temp) {
+                                    case ":deprecated":
+                                        config.getWarningCategories().add(RubyWarnings.Category.DEPRECATED);
+                                        break;
+                                    case ":no-deprecated":
+                                        config.getWarningCategories().remove(RubyWarnings.Category.DEPRECATED);
+                                        break;
+                                    case ":experimental":
+                                        config.getWarningCategories().add(RubyWarnings.Category.EXPERIMENTAL);
+                                        break;
+                                    case ":no-experimental":
+                                        config.getWarningCategories().remove(RubyWarnings.Category.EXPERIMENTAL);
+                                        break;
+                                    default:
+                                        if (temp.charAt(0) == ':') {
+                                            config.getError().println("warning: unknown warning category: " + temp.substring(1));
+                                        } else {
+                                            MainExitException mee = new MainExitException(1, getArgumentError(" -W must be followed by either 0, 1, 2 or a valid category"));
+                                            mee.setUsageError(true);
+                                            throw mee;
+                                        }
+                                }
                             }
                         }
                         break FOR;

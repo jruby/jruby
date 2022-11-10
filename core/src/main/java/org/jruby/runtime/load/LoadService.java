@@ -772,7 +772,7 @@ public class LoadService {
     /**
      * Replaces findLibraryBySearchState but split off for require. Needed for OSGiLoadService to override.
      */
-    protected char searchForRequire(String file, LibrarySearcher.FoundLibrary[] path) {
+    public char searchForRequire(String file, LibrarySearcher.FoundLibrary[] path) {
         return librarySearcher.findLibraryForRequire(file, path);
     }
 

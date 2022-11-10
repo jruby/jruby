@@ -31,6 +31,7 @@ package org.jruby;
 
 import jnr.posix.util.Platform;
 
+import org.jruby.common.RubyWarnings;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.backtrace.TraceType;
@@ -57,6 +58,8 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -931,6 +934,15 @@ public class RubyInstanceConfig {
     }
 
     /**
+     * Get the set of enabled warning categories.
+     *
+     * @return the set of enabled warning categories
+     */
+    public Set<RubyWarnings.Category> getWarningCategories() {
+        return warningCategories;
+    }
+
+    /**
      * @see Options#CLI_PARSER_DEBUG
      */
     public boolean isParserDebug() {
@@ -1586,6 +1598,8 @@ public class RubyInstanceConfig {
     private boolean allowUppercasePackageNames = Options.JI_UPPER_CASE_PACKAGE_NAME_ALLOWED.load();
 
     private boolean forceStdin = false;
+
+    private final Set<RubyWarnings.Category> warningCategories = Collections.synchronizedSet(EnumSet.of(RubyWarnings.Category.EXPERIMENTAL));
 
     ////////////////////////////////////////////////////////////////////////////
     // Support classes, etc.
