@@ -1475,6 +1475,8 @@ public class RubyRational extends RubyNumeric {
     };
 
     static IRubyObject[] str_to_r_internal(final ThreadContext context, final RubyString str) {
+        str.verifyAsciiCompatible();
+
         final Ruby runtime = context.runtime;
         final IRubyObject nil = context.nil;
 
