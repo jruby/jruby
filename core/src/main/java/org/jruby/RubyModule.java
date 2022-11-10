@@ -3284,6 +3284,10 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "include", required = 1, rest = true)
     public RubyModule include(IRubyObject[] modules) {
+        if (this.isRefinement()) {
+            getRuntime().getWarnings().warnDeprecated("deprecated method to be removed: Refinement#include");
+        }
+
         for (IRubyObject module: modules) {
             if (!module.isModule()) throw getRuntime().newTypeError(module, getRuntime().getModule());
         }
@@ -4437,6 +4441,10 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "prepend", required = 1, rest = true)
     public IRubyObject prepend(ThreadContext context, IRubyObject[] modules) {
+        if (this.isRefinement()) {
+            context.runtime.getWarnings().warnDeprecated("deprecated method to be removed: Refinement#prepend");
+        }
+
         // MRI checks all types first:
         for (int i = modules.length; --i >= 0; ) {
             IRubyObject obj = modules[i];
