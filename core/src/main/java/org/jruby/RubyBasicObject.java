@@ -1778,11 +1778,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * filename and line of the string under evaluation.
      */
     public IRubyObject specificEval(ThreadContext context, RubyModule mod, Block block, EvalType evalType) {
-        if (block.isGiven()) {
-            return yieldUnder(context, mod, block, evalType);
-        } else {
-            throw context.runtime.newArgumentError("block not supplied");
-        }
+        if (!block.isGiven()) throw context.runtime.newArgumentError(0, 1, 3);
+
+        return yieldUnder(context, mod, block, evalType);
     }
 
     /** specific_eval
@@ -2536,6 +2534,22 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject instance_eval(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         return specificEval(context, getInstanceEvalClass(), arg0, arg1, arg2, block, EvalType.INSTANCE_EVAL);
+    }
+
+    // This is callable and will work but the rest = true is put so we can match the expected arity error message
+    // Just relying on annotations will give us: got n expected 0..3 when we want got n expected 1..3.
+    @JRubyMethod(name = "instance_eval", rest = true,
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
+    public IRubyObject instance_eval(ThreadContext context, IRubyObject[] args, Block block) {
+        switch(args.length) {
+            case 0: return instance_eval(context, block);
+            case 1: return instance_eval(context, args[0], block);
+            case 2: return instance_eval(context, args[0], args[1], block);
+            case 3: return instance_eval(context, args[0], args[1], args[2], block);
+        }
+
+        throw context.runtime.newArgumentError(args.length, 1, 3);
     }
 
     @Deprecated
