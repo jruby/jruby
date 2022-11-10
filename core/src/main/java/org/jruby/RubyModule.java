@@ -3678,7 +3678,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = {"module_eval", "class_eval"}, rest = true,
             reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
             writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
-    public IRubyObject instance_eval(ThreadContext context, IRubyObject[] args, Block block) {
+    public IRubyObject module_eval(ThreadContext context, IRubyObject[] args, Block block) {
         switch(args.length) {
             case 0: return module_eval(context, block);
             case 1: return module_eval(context, args[0], block);
@@ -3687,10 +3687,6 @@ public class RubyModule extends RubyObject {
         }
 
         throw context.runtime.newArgumentError(args.length, 1, 3);
-    }
-    @Deprecated
-    public IRubyObject module_eval(ThreadContext context, IRubyObject[] args, Block block) {
-        return specificEval(context, this, args, block, EvalType.MODULE_EVAL);
     }
 
     @JRubyMethod(name = {"module_exec", "class_exec"},
