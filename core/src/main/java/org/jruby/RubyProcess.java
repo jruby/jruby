@@ -225,17 +225,17 @@ public class RubyProcess {
             return RubyBoolean.newBoolean(getRuntime(), PosixShim.WAIT_MACROS.WIFSTOPPED(status));
         }
 
-        @JRubyMethod(name = {"signaled?"})
+        @JRubyMethod(name = "signaled?")
         public IRubyObject signaled() {
             return RubyBoolean.newBoolean(getRuntime(), PosixShim.WAIT_MACROS.WIFSIGNALED(status));
         }
 
-        @JRubyMethod(name = {"exited?"})
+        @JRubyMethod(name = "exited?")
         public IRubyObject exited() {
             return RubyBoolean.newBoolean(getRuntime(), PosixShim.WAIT_MACROS.WIFEXITED(status));
         }
 
-        @JRubyMethod(name = {"stopsig"})
+        @JRubyMethod
         public IRubyObject stopsig() {
             if (PosixShim.WAIT_MACROS.WIFSTOPPED(status)) {
                 return RubyFixnum.newFixnum(getRuntime(), PosixShim.WAIT_MACROS.WSTOPSIG(status));
@@ -243,7 +243,7 @@ public class RubyProcess {
             return getRuntime().getNil();
         }
 
-        @JRubyMethod(name = {"termsig"})
+        @JRubyMethod
         public IRubyObject termsig() {
             if (PosixShim.WAIT_MACROS.WIFSIGNALED(status)) {
                 return RubyFixnum.newFixnum(getRuntime(), PosixShim.WAIT_MACROS.WTERMSIG(status));
@@ -273,7 +273,7 @@ public class RubyProcess {
             return invokedynamic(context, runtime.newFixnum(status), MethodNames.OP_EQUAL, other);
         }
 
-        @JRubyMethod(name = {"to_i"})
+        @JRubyMethod
         public IRubyObject to_i(ThreadContext context) {
             return to_i(context.runtime);
         }
@@ -296,7 +296,7 @@ public class RubyProcess {
             return RubyBoolean.newBoolean(context, PosixShim.WAIT_MACROS.WEXITSTATUS(status) == EXIT_SUCCESS);
         }
 
-        @JRubyMethod(name = {"coredump?"})
+        @JRubyMethod(name = "coredump?")
         public IRubyObject coredump_p() {
             return RubyBoolean.newBoolean(getRuntime(), PosixShim.WAIT_MACROS.WCOREDUMP(status));
         }
