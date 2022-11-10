@@ -90,7 +90,7 @@ public class DescriptorInfo {
 
             if (frame && !desc.anno.frame())
                 throw new RuntimeException("Unbalanced frame property on method " + desc.declaringClassName + '.' + desc.name);
-            forward |= desc.anno.forward();
+            forward |= desc.anno.keywords();
             frame |= desc.anno.frame();
             block |= desc.hasBlock;
         }

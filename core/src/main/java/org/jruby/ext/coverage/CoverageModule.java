@@ -46,7 +46,7 @@ import static org.jruby.ext.coverage.CoverageData.LINES;
  * Implementation of Ruby 1.9.2's "Coverage" module
  */
 public class CoverageModule {
-    @JRubyMethod(module = true, optional = 1, forward = true)
+    @JRubyMethod(module = true, optional = 1, keywords = true)
     public static IRubyObject setup(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         int mode = 0;
@@ -126,14 +126,14 @@ public class CoverageModule {
         return context.nil;
     }
 
-    @JRubyMethod(module = true, optional = 1, forward = true)
+    @JRubyMethod(module = true, optional = 1, keywords = true)
     public static IRubyObject start(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         setup(context, self, args);
         resume(context, self);
         return context.nil;
     }
 
-    @JRubyMethod(module = true, optional = 1, forward = true)
+    @JRubyMethod(module = true, optional = 1, keywords = true)
     public static IRubyObject result(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         CoverageData data = runtime.getCoverageData();

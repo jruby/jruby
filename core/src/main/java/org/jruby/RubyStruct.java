@@ -48,7 +48,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.StructSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -58,7 +57,6 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.RecursiveComparator;
-import org.jruby.util.RubyStringBuilder;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.runtime.Helpers.invokedynamic;
@@ -215,7 +213,7 @@ public class RubyStruct extends RubyObject {
      * MRI: rb_struct_s_def / make_struct
      *
      */
-    @JRubyMethod(name = "new", required = 1, rest = true, meta = true, forward = true)
+    @JRubyMethod(name = "new", required = 1, rest = true, meta = true, keywords = true)
     public static RubyClass newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
         String name = null;
         boolean nilName = false;
@@ -316,27 +314,27 @@ public class RubyStruct extends RubyObject {
 
     // For binding purposes on the newly created struct types
     public static class StructMethods {
-        @JRubyMethod(name = {"new", "[]"}, rest = true, forward = true)
+        @JRubyMethod(name = {"new", "[]"}, rest = true, keywords = true)
         public static IRubyObject newStruct(IRubyObject recv, IRubyObject[] args, Block block) {
             return RubyStruct.newStruct(recv, args, block);
         }
 
-        @JRubyMethod(name = {"new", "[]"}, forward = true)
+        @JRubyMethod(name = {"new", "[]"}, keywords = true)
         public static IRubyObject newStruct(IRubyObject recv, Block block) {
             return RubyStruct.newStruct(recv, block);
         }
 
-        @JRubyMethod(name = {"new", "[]"}, forward = true)
+        @JRubyMethod(name = {"new", "[]"}, keywords = true)
         public static IRubyObject newStruct(IRubyObject recv, IRubyObject arg0, Block block) {
             return RubyStruct.newStruct(recv, arg0, block);
         }
 
-        @JRubyMethod(name = {"new", "[]"}, forward = true)
+        @JRubyMethod(name = {"new", "[]"}, keywords = true)
         public static IRubyObject newStruct(IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
             return RubyStruct.newStruct(recv, arg0, arg1, block);
         }
 
-        @JRubyMethod(name = {"new", "[]"}, forward = true)
+        @JRubyMethod(name = {"new", "[]"}, keywords = true)
         public static IRubyObject newStruct(IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
             return RubyStruct.newStruct(recv, arg0, arg1, arg2, block);
         }
@@ -416,7 +414,7 @@ public class RubyStruct extends RubyObject {
         }
     }
 
-    @JRubyMethod(rest = true, visibility = PRIVATE, forward = true)
+    @JRubyMethod(rest = true, visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         IRubyObject keywordInit = RubyStruct.getInternalVariable(classOf(), KEYWORD_INIT_VAR);
         checkForKeywords(context, !keywordInit.isNil());

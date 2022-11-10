@@ -2004,7 +2004,7 @@ public class RubyKernel {
         return recv;
     }
 
-    @JRubyMethod(name = {"to_enum", "enum_for"}, optional = 1, rest = true, forward = true)
+    @JRubyMethod(name = {"to_enum", "enum_for"}, optional = 1, rest = true, keywords = true)
     public static IRubyObject obj_to_enum(final ThreadContext context, IRubyObject self, IRubyObject[] args, final Block block) {
         // to_enum is a bit strange in that it will propagate the arguments it passes to each element it calls.  We are determining
         // whether we have recieved keywords so we can propagate this info.
@@ -2052,7 +2052,7 @@ public class RubyKernel {
         return recv.getSingletonClass();
     }
 
-    @JRubyMethod(rest = true, forward = true, reads = SCOPE)
+    @JRubyMethod(rest = true, keywords = true, reads = SCOPE)
     public static IRubyObject public_send(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         if (args.length == 0) {
             throw context.runtime.newArgumentError("no method name given");
@@ -2281,19 +2281,19 @@ public class RubyKernel {
         return ((RubyBasicObject)self).extend(args);
     }
 
-    @JRubyMethod(name = "send", omit = true, forward = true)
+    @JRubyMethod(name = "send", omit = true, keywords = true)
     public static IRubyObject send(ThreadContext context, IRubyObject self, IRubyObject arg0, Block block) {
         return ((RubyBasicObject)self).send(context, arg0, block);
     }
-    @JRubyMethod(name = "send", omit = true, forward = true)
+    @JRubyMethod(name = "send", omit = true, keywords = true)
     public static IRubyObject send(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) {
         return ((RubyBasicObject)self).send(context, arg0, arg1, block);
     }
-    @JRubyMethod(name = "send", omit = true, forward = true)
+    @JRubyMethod(name = "send", omit = true, keywords = true)
     public static IRubyObject send(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         return ((RubyBasicObject)self).send(context, arg0, arg1, arg2, block);
     }
-    @JRubyMethod(name = "send", required = 1, rest = true, omit = true, forward = true)
+    @JRubyMethod(name = "send", required = 1, rest = true, omit = true, keywords = true)
     public static IRubyObject send(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
         return ((RubyBasicObject)self).send(context, args, block);
     }

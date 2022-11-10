@@ -1401,7 +1401,7 @@ public class RubyTime extends RubyObject {
         return newInstance(context, recv, args);
     }
 
-    @JRubyMethod(name = "now", meta = true, optional = 1, forward = true)
+    @JRubyMethod(name = "now", meta = true, optional = 1, keywords = true)
     public static RubyTime newInstance(ThreadContext context, IRubyObject recv, IRubyObject args[]) {
         RubyTime obj = allocateInstance((RubyClass) recv);
         if (args.length == 1) {
@@ -1417,7 +1417,7 @@ public class RubyTime extends RubyObject {
         return at1(context, recv, arg);
     }
 
-    @JRubyMethod(meta = true, forward = true)
+    @JRubyMethod(meta = true, keywords = true)
     public static IRubyObject at(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
         RubySymbol ms = context.runtime.newSymbol("microsecond");
 
@@ -1430,7 +1430,7 @@ public class RubyTime extends RubyObject {
         return atOpts(context, recv, arg1, context.nil, null, maybeOpts);
     }
 
-    @JRubyMethod(meta = true, forward = true)
+    @JRubyMethod(meta = true, keywords = true)
     public static IRubyObject at(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
         IRubyObject maybeOpts = ArgsUtil.getOptionsArg(context.runtime, arg3);
 
@@ -1699,7 +1699,7 @@ public class RubyTime extends RubyObject {
         return context.nil;
     }
 
-    @JRubyMethod(name = "initialize", optional = 7, visibility = PRIVATE, forward = true)
+    @JRubyMethod(name = "initialize", optional = 7, visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         boolean keywords = (context.callInfo & ThreadContext.CALL_KEYWORD) != 0;
         context.resetCallInfo();
