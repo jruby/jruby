@@ -55,6 +55,7 @@ import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 
+import static org.jruby.RubyNumeric.fix2long;
 import static org.jruby.runtime.Helpers.throwException;
 import static org.jruby.runtime.Helpers.tryThrow;
 import static org.jruby.runtime.Visibility.*;
@@ -213,6 +214,15 @@ public class RubyProcess {
 
         public static RubyStatus newProcessStatus(Ruby runtime, long status, long pid) {
             return new RubyStatus(runtime, runtime.getProcStatus(), status, pid);
+        }
+
+        @JRubyMethod(module = true, optional = 2)
+        public static IRubyObject wait(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+            long pid = args.length > 0 ? args[0].convertToInteger().getLongValue() : -1;
+            int flags = args.length > 1 ? (int) args[1].convertToInteger().getLongValue() : 0;
+
+            return waitpidStatus(context, pid, flags);
+            //checkErrno(runtime, pid, ECHILD);
         }
 
         @JRubyMethod(name = "&")
@@ -981,6 +991,18 @@ public class RubyProcess {
         }
 
         return runtime.newFixnum(pid);
+    }
+
+    static IRubyObject waitpidStatus(ThreadContext context, long pid, int flags) {
+        Ruby runtime = context.runtime;
+        int[] status = new int[1];
+        POSIX posix = runtime.getPosix();
+
+        posix.errno(0);
+
+        int res = pthreadKillable(context, ctx -> posix.waitpid(pid, status, flags));
+
+        return RubyProcess.RubyStatus.newProcessStatus(runtime, status[0], res);
     }
 
     // MRI: rb_waitpid
