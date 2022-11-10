@@ -60,6 +60,7 @@ import org.jruby.util.RecursiveComparator;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.runtime.Helpers.invokedynamic;
+import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import static org.jruby.RubyEnumerator.SizeFn;
@@ -409,7 +410,7 @@ public class RubyStruct extends RubyObject {
     }
 
     private void checkForKeywords(ThreadContext context, boolean keywordInit) {
-        if ((context.callInfo & ThreadContext.CALL_KEYWORD) != 0 && !keywordInit) {
+        if (hasKeywords(context.resetCallInfo()) && !keywordInit) {
             context.runtime.getWarnings().warn("Passing only keyword arguments to Struct#initialize will behave differently from Ruby 3.2. Please use a Hash literal like .new({k: v}) instead of .new(k: v).");
         }
     }

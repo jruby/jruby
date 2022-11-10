@@ -81,6 +81,7 @@ import java.util.regex.Pattern;
 
 import static org.jruby.RubyComparable.invcmp;
 import static org.jruby.runtime.Helpers.invokedynamic;
+import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -1701,8 +1702,7 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = "initialize", optional = 7, visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
-        boolean keywords = (context.callInfo & ThreadContext.CALL_KEYWORD) != 0;
-        context.resetCallInfo();
+        boolean keywords = hasKeywords(context.resetCallInfo());
         IRubyObject zone = null;
         context.resetCallInfo();
         IRubyObject nil = context.nil;

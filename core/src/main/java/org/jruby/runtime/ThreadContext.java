@@ -1486,6 +1486,10 @@ public final class ThreadContext {
         return callInfo;
     }
 
+    public static boolean hasKeywords(int callInfo) {
+        return (callInfo & CALL_KEYWORD) != 0;
+    }
+
     @Deprecated
     public IRubyObject setBackRef(IRubyObject match) {
         if (match.isNil()) return clearBackRef();

@@ -41,6 +41,7 @@ import org.jruby.util.collections.IntList;
 
 import static org.jruby.ext.coverage.CoverageData.CoverageDataState.*;
 import static org.jruby.ext.coverage.CoverageData.LINES;
+import static org.jruby.runtime.ThreadContext.hasKeywords;
 
 /**
  * Implementation of Ruby 1.9.2's "Coverage" module
@@ -58,7 +59,7 @@ public class CoverageModule {
         }
 
         if (args.length != 0) {
-            boolean keyword = (context.callInfo & ThreadContext.CALL_KEYWORD) != 0;
+            boolean keyword = hasKeywords(context.resetCallInfo());
 
             if (keyword) {
                 RubyHash keywords = (RubyHash) TypeConverter.convertToType(args[0], runtime.getHash(), "to_hash");
@@ -145,7 +146,7 @@ public class CoverageModule {
         boolean stop = true;
         boolean clear = true;
 
-        if (args.length > 0 && (context.callInfo & ThreadContext.CALL_KEYWORD) != 0) {
+        if (args.length > 0 && hasKeywords(context.resetCallInfo())) {
             RubyHash keywords = (RubyHash) TypeConverter.convertToType(args[0], runtime.getHash(), "to_hash");
             stop = ArgsUtil.extractKeywordArg(context, "stop", keywords).isTrue();
             clear = ArgsUtil.extractKeywordArg(context, "clear", keywords).isTrue();
