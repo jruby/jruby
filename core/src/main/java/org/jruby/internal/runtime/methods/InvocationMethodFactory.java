@@ -43,7 +43,6 @@ import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 import org.jruby.util.ClassDefiningJRubyClassLoader;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.log.Logger;
@@ -276,7 +275,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
                     ClassWriter cw = createJavaMethodCtor(generatedClassPath, superClassString, info.getParameterDesc());
 
-                    addAnnotatedMethodInvoker(cw, superClassString, descs, info.isForward());
+                    addAnnotatedMethodInvoker(cw, superClassString, descs, info.acceptsKeywords());
 
                     c = endClass(cw, generatedClassName);
                 }
@@ -709,24 +708,24 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
-    private void addAnnotatedMethodInvoker(ClassWriter cw, String superClass, List<JavaMethodDescriptor> descs, boolean forward) {
+    private void addAnnotatedMethodInvoker(ClassWriter cw, String superClass, List<JavaMethodDescriptor> descs, boolean acceptsKeywords) {
         for (JavaMethodDescriptor desc: descs) {
             int specificArity = desc.calculateSpecificCallArity();
 
             SkinnyMethodAdapter mv = beginMethod(cw, "call", specificArity, desc.hasBlock);
             mv.visitCode();
-            createAnnotatedMethodInvocation(desc, mv, superClass, specificArity, desc.hasBlock, forward);
+            createAnnotatedMethodInvocation(desc, mv, superClass, specificArity, desc.hasBlock, acceptsKeywords);
             mv.end();
         }
     }
 
     private void createAnnotatedMethodInvocation(JavaMethodDescriptor desc, SkinnyMethodAdapter method,
-                                                 String superClass, int specificArity, boolean block, boolean forward) {
+                                                 String superClass, int specificArity, boolean block, boolean acceptsKeywords) {
         String typePath = desc.declaringClassPath;
         String javaMethodName = desc.name;
 
-        // Normal Ruby method which will consume arguments.
-        if (!forward) {
+        // If a native method does not accept keywords then we wipe callInfo.
+        if (!acceptsKeywords) {
             method.aload(1);
             method.ldc(0);
             method.putfield("org/jruby/runtime/ThreadContext", "callInfo", "I");

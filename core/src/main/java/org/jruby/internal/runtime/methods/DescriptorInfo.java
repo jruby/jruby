@@ -12,7 +12,8 @@ import java.util.List;
 public class DescriptorInfo {
     private int min;
     private int max;
-    private boolean forward; // Will this method forward call state forward (send, new ... things with just delegate to another method)
+    // Will this method be able to potentially process or forward keywords.  Gives access to ThreadContext#callInfo.
+    private boolean keywords;
     private boolean frame;
     private boolean rest;
     private boolean block;
@@ -32,7 +33,7 @@ public class DescriptorInfo {
     public DescriptorInfo(List<? extends MethodDescriptor> descs) {
         min = Integer.MAX_VALUE;
         max = 0;
-        forward = false;
+        keywords = false;
         frame = false;
         rest = false;
         block = false;
@@ -90,7 +91,7 @@ public class DescriptorInfo {
 
             if (frame && !desc.anno.frame())
                 throw new RuntimeException("Unbalanced frame property on method " + desc.declaringClassName + '.' + desc.name);
-            forward |= desc.anno.keywords();
+            keywords |= desc.anno.keywords();
             frame |= desc.anno.frame();
             block |= desc.hasBlock;
         }
@@ -139,8 +140,8 @@ public class DescriptorInfo {
         return false;
     }
 
-    public boolean isForward() {
-        return forward;
+    public boolean acceptsKeywords() {
+        return keywords;
     }
 
     public boolean isFrame() {
