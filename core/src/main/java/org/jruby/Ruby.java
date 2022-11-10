@@ -201,6 +201,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -487,6 +488,7 @@ public final class Ruby implements Constantizable {
 
         TracePoint.createTracePointClass(this);
 
+        warningCategories = config.getWarningCategories();
         warningModule = RubyWarnings.createWarningModule(this);
 
         // Initialize exceptions
@@ -2538,6 +2540,15 @@ public final class Ruby implements Constantizable {
      */
     public void setDebug(IRubyObject debug) {
         this.debug = debug.isTrue();
+    }
+
+    /**
+     * Get the current enabled warning categories.
+     *
+     * @return a set of the currently-enabled warning categories
+     */
+    public Set<RubyWarnings.Category> getWarningCategories() {
+        return warningCategories;
     }
 
     public JavaSupport getJavaSupport() {
@@ -5391,6 +5402,9 @@ public final class Ruby implements Constantizable {
 
     private boolean verbose, warningsEnabled, debug;
     private IRubyObject verboseValue;
+
+    // Set of categories we care about (set defined when creating warnings).
+    private final Set<RubyWarnings.Category> warningCategories;
 
     private RubyThreadGroup defaultThreadGroup;
 

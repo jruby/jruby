@@ -54,19 +54,12 @@ import static org.jruby.util.RubyStringBuilder.str;
 public class RubyWarnings implements IRubyWarnings, WarnCallback {
     private final Ruby runtime;
     private final Set<ID> oncelers = EnumSet.allOf(IRubyWarnings.ID.class);
-    // Set of categories we care about (set defined when creating warnings).
-    private static final Set<Category> categories = EnumSet.allOf(Category.class);
 
     public RubyWarnings(Ruby runtime) {
         this.runtime = runtime;
     }
 
     public static RubyModule createWarningModule(Ruby runtime) {
-        categories.add(Category.EXPERIMENTAL);
-
-        // At time this is created globals/runtime has not setup warnings/verbosity in runtime yet.
-        if (!runtime.isVerbose()) categories.remove(Category.DEPRECATED);
-
         RubyModule warning = runtime.defineModule("Warning");
 
         warning.defineAnnotatedMethods(RubyWarnings.class);
@@ -125,8 +118,12 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     }
 
     public static IRubyObject warnWithCategory(ThreadContext context, IRubyObject errorString, IRubyObject category) {
-        RubySymbol cat = (RubySymbol) TypeConverter.convertToType(category, context.runtime.getSymbol(), "to_sym");
-        if (categories.contains(Category.fromId(cat.idString()))) warn(context, null, errorString);
+        Ruby runtime = context.runtime;
+
+        RubySymbol cat = (RubySymbol) TypeConverter.convertToType(category, runtime.getSymbol(), "to_sym");
+
+        if (runtime.getWarningCategories().contains(Category.fromId(cat.idString()))) warn(context, null, errorString);
+
         return context.nil;
     }
 
@@ -159,11 +156,11 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     }
 
     public void warnExperimental(String filename, int line, String message) {
-        if (categories.contains(Category.EXPERIMENTAL)) warn(ID.MISCELLANEOUS, filename, line, message);
+        if (runtime.getWarningCategories().contains(Category.EXPERIMENTAL)) warn(ID.MISCELLANEOUS, filename, line, message);
     }
 
     public void warnDeprecated(String name) {
-        if (categories.contains(Category.DEPRECATED)) warn(ID.MISCELLANEOUS, "`" + name + "' is deprecated");
+        if (runtime.getWarningCategories().contains(Category.DEPRECATED)) warn(ID.MISCELLANEOUS, "`" + name + "' is deprecated");
     }
 
     public void warnOnce(ID id, String message) {
@@ -231,23 +228,25 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
         if (category == null) throw runtime.newArgumentError(str(runtime, "unknown category: ", arg));
 
-        return runtime.newBoolean(category != null && categories.contains(category));
+        return runtime.newBoolean(category != null && runtime.getWarningCategories().contains(category));
     }
 
     @JRubyMethod(name = "[]=")
     public static IRubyObject op_aset(ThreadContext context, IRubyObject self, IRubyObject arg, IRubyObject flag) {
-        TypeConverter.checkType(context, arg, context.runtime.getSymbol());
+        Ruby runtime = context.runtime;
+
+        TypeConverter.checkType(context, arg, runtime.getSymbol());
         String categoryId = ((RubySymbol) arg).idString();
         Category category = Category.fromId(categoryId);
 
         if (category != null) {
             if (flag.isTrue()) {
-                categories.add(category);
+                runtime.getWarningCategories().add(category);
             } else {
-                categories.remove(category);
+                runtime.getWarningCategories().remove(category);
             }
         } else {
-            throw context.runtime.newArgumentError(str(context.runtime, "unknown category: ", arg));
+            throw runtime.newArgumentError(str(runtime, "unknown category: ", arg));
         }
 
         return flag;
@@ -299,9 +298,9 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     // When runtime verbose is toggled we change the categories to reflect that.
     public void adjustCategories(boolean isVerbose) {
         if (isVerbose) {
-            categories.add(Category.DEPRECATED);
+            runtime.getWarningCategories().add(Category.DEPRECATED);
         } else {
-            categories.remove(Category.DEPRECATED);
+            runtime.getWarningCategories().remove(Category.DEPRECATED);
         }
     }
 
