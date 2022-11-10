@@ -37,6 +37,7 @@ import org.jcodings.constants.CharacterType;
 import org.jcodings.exception.EncodingError;
 import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.IntHash;
 import org.joni.Matcher;
@@ -1940,14 +1941,65 @@ public final class StringSupport {
 
         if (enc1 == enc2) return enc1;
 
-        if (str2.getByteList().getRealSize() == 0) return enc1;
-        if (str1.getByteList().getRealSize() == 0) {
-            return (enc1.isAsciiCompatible() && isAsciiOnly(str2)) ? enc1 : enc2;
+        str1.scanForCodeRange();
+        str2.scanForCodeRange();
+        return encCompatibleLatter(str1, str2, enc1, enc2);
+    }
+    
+    private static Encoding encCompatibleLatter(CodeRangeable str1, CodeRangeable str2, Encoding enc1, Encoding enc2) {
+        boolean isstr1, isstr2;
+
+        isstr2 = str2 instanceof RubyString;
+        if (isstr2 && ((RubyString) str2).size() == 0) {
+            return enc1;
+        }
+        isstr1 = str1 instanceof RubyString;
+        if (isstr1 && isstr2 && ((RubyString) str1).size() == 0) {
+            return (enc1.isAsciiCompatible() && ((RubyString) str2).isAsciiOnly()) ? enc1 : enc2;
+        }
+        if (!enc1.isAsciiCompatible() || !enc2.isAsciiCompatible()) {
+            return null;
         }
 
-        if (!enc1.isAsciiCompatible() || !enc2.isAsciiCompatible()) return null;
+        /* objects whose encoding is the same of contents */
+        if (!isstr2 && enc2 == USASCIIEncoding.INSTANCE) {
+            return enc1;
+        }
+        if (!isstr1 && enc1 == USASCIIEncoding.INSTANCE) {
+            return enc2;
+        }
 
-        return RubyEncoding.areCompatible(enc1, str1.scanForCodeRange(), enc2, str2.scanForCodeRange());
+        if (!isstr1) {
+            CodeRangeable tmp = str1;
+            Encoding enc0 = enc1;
+            str1 = str2;
+            str2 = tmp;
+            enc1 = enc2;
+            enc2 = enc0;
+            boolean tmp2 = isstr1;
+            isstr1 = isstr2;
+            isstr2 = tmp2;
+        }
+        if (isstr1) {
+            int cr1, cr2;
+
+            cr1 = str1.getCodeRange();
+            if (isstr2) {
+                cr2 = str2.getCodeRange();
+                if (cr1 != cr2) {
+                    /* may need to handle ENC_CODERANGE_BROKEN */
+                    if (cr1 == CR_7BIT) return enc2;
+                    if (cr2 == CR_7BIT) return enc1;
+                }
+                if (cr2 == CR_7BIT) {
+                    return enc1;
+                }
+            }
+            if (cr1 == CR_7BIT) {
+                return enc2;
+            }
+        }
+        return null;
     }
 
     public static Encoding areCompatible(ByteList str1, ByteList str2) {
