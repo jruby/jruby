@@ -3668,6 +3668,22 @@ public class RubyModule extends RubyObject {
     public IRubyObject module_eval(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         return specificEval(context, this, arg0, arg1, arg2, block, EvalType.MODULE_EVAL);
     }
+
+    // This is callable and will work but the rest = true is put so we can match the expected arity error message
+    // Just relying on annotations will give us: got n expected 0..3 when we want got n expected 1..3.
+    @JRubyMethod(name = {"module_eval", "class_eval"}, rest = true,
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
+    public IRubyObject instance_eval(ThreadContext context, IRubyObject[] args, Block block) {
+        switch(args.length) {
+            case 0: return module_eval(context, block);
+            case 1: return module_eval(context, args[0], block);
+            case 2: return module_eval(context, args[0], args[1], block);
+            case 3: return module_eval(context, args[0], args[1], args[2], block);
+        }
+
+        throw context.runtime.newArgumentError(args.length, 1, 3);
+    }
     @Deprecated
     public IRubyObject module_eval(ThreadContext context, IRubyObject[] args, Block block) {
         return specificEval(context, this, args, block, EvalType.MODULE_EVAL);
