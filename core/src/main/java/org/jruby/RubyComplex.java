@@ -849,11 +849,11 @@ public class RubyComplex extends RubyNumeric {
      */
     @JRubyMethod(name = "coerce")
     public IRubyObject coerce(ThreadContext context, IRubyObject other) {
+        if (other instanceof RubyComplex) return context.runtime.newArray(other, this);
+
         if (other instanceof RubyNumeric && f_real_p(context, other)) {
             return context.runtime.newArray(newComplexBang(context, getMetaClass(), (RubyNumeric) other), this);
         }
-
-        if (other instanceof RubyComplex) return context.runtime.newArray(other, this);
 
         Ruby runtime = context.runtime;
         throw runtime.newTypeError(str(runtime, types(runtime, other.getMetaClass()), " can't be coerced into ", types(runtime, getMetaClass())));
