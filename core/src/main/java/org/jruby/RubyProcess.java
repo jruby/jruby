@@ -55,6 +55,7 @@ import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 
+import static org.jruby.RubyNumeric.fix2long;
 import static org.jruby.runtime.Helpers.throwException;
 import static org.jruby.runtime.Helpers.tryThrow;
 import static org.jruby.runtime.Visibility.*;
@@ -215,6 +216,15 @@ public class RubyProcess {
             return new RubyStatus(runtime, runtime.getProcStatus(), status, pid);
         }
 
+        @JRubyMethod(module = true, optional = 2)
+        public static IRubyObject wait(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+            long pid = args.length > 0 ? args[0].convertToInteger().getLongValue() : -1;
+            int flags = args.length > 1 ? (int) args[1].convertToInteger().getLongValue() : 0;
+
+            return waitpidStatus(context, pid, flags);
+            //checkErrno(runtime, pid, ECHILD);
+        }
+
         @JRubyMethod(name = "&")
         public IRubyObject op_and(IRubyObject arg) {
             return getRuntime().newFixnum(status & arg.convertToInteger().getLongValue());
@@ -225,17 +235,17 @@ public class RubyProcess {
             return RubyBoolean.newBoolean(getRuntime(), PosixShim.WAIT_MACROS.WIFSTOPPED(status));
         }
 
-        @JRubyMethod(name = {"signaled?"})
+        @JRubyMethod(name = "signaled?")
         public IRubyObject signaled() {
             return RubyBoolean.newBoolean(getRuntime(), PosixShim.WAIT_MACROS.WIFSIGNALED(status));
         }
 
-        @JRubyMethod(name = {"exited?"})
+        @JRubyMethod(name = "exited?")
         public IRubyObject exited() {
             return RubyBoolean.newBoolean(getRuntime(), PosixShim.WAIT_MACROS.WIFEXITED(status));
         }
 
-        @JRubyMethod(name = {"stopsig"})
+        @JRubyMethod
         public IRubyObject stopsig() {
             if (PosixShim.WAIT_MACROS.WIFSTOPPED(status)) {
                 return RubyFixnum.newFixnum(getRuntime(), PosixShim.WAIT_MACROS.WSTOPSIG(status));
@@ -243,7 +253,7 @@ public class RubyProcess {
             return getRuntime().getNil();
         }
 
-        @JRubyMethod(name = {"termsig"})
+        @JRubyMethod
         public IRubyObject termsig() {
             if (PosixShim.WAIT_MACROS.WIFSIGNALED(status)) {
                 return RubyFixnum.newFixnum(getRuntime(), PosixShim.WAIT_MACROS.WTERMSIG(status));
@@ -273,7 +283,7 @@ public class RubyProcess {
             return invokedynamic(context, runtime.newFixnum(status), MethodNames.OP_EQUAL, other);
         }
 
-        @JRubyMethod(name = {"to_i"})
+        @JRubyMethod
         public IRubyObject to_i(ThreadContext context) {
             return to_i(context.runtime);
         }
@@ -296,7 +306,7 @@ public class RubyProcess {
             return RubyBoolean.newBoolean(context, PosixShim.WAIT_MACROS.WEXITSTATUS(status) == EXIT_SUCCESS);
         }
 
-        @JRubyMethod(name = {"coredump?"})
+        @JRubyMethod(name = "coredump?")
         public IRubyObject coredump_p() {
             return RubyBoolean.newBoolean(getRuntime(), PosixShim.WAIT_MACROS.WCOREDUMP(status));
         }
@@ -981,6 +991,18 @@ public class RubyProcess {
         }
 
         return runtime.newFixnum(pid);
+    }
+
+    static IRubyObject waitpidStatus(ThreadContext context, long pid, int flags) {
+        Ruby runtime = context.runtime;
+        int[] status = new int[1];
+        POSIX posix = runtime.getPosix();
+
+        posix.errno(0);
+
+        int res = pthreadKillable(context, ctx -> posix.waitpid(pid, status, flags));
+
+        return RubyProcess.RubyStatus.newProcessStatus(runtime, status[0], res);
     }
 
     // MRI: rb_waitpid

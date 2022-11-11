@@ -3284,6 +3284,10 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "include", required = 1, rest = true)
     public RubyModule include(IRubyObject[] modules) {
+        if (this.isRefinement()) {
+            getRuntime().getWarnings().warnDeprecated("deprecated method to be removed: Refinement#include");
+        }
+
         for (IRubyObject module: modules) {
             if (!module.isModule()) throw getRuntime().newTypeError(module, getRuntime().getModule());
         }
@@ -3674,7 +3678,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = {"module_eval", "class_eval"}, rest = true,
             reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
             writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
-    public IRubyObject instance_eval(ThreadContext context, IRubyObject[] args, Block block) {
+    public IRubyObject module_eval(ThreadContext context, IRubyObject[] args, Block block) {
         switch(args.length) {
             case 0: return module_eval(context, block);
             case 1: return module_eval(context, args[0], block);
@@ -3683,10 +3687,6 @@ public class RubyModule extends RubyObject {
         }
 
         throw context.runtime.newArgumentError(args.length, 1, 3);
-    }
-    @Deprecated
-    public IRubyObject module_eval(ThreadContext context, IRubyObject[] args, Block block) {
-        return specificEval(context, this, args, block, EvalType.MODULE_EVAL);
     }
 
     @JRubyMethod(name = {"module_exec", "class_exec"},
@@ -4437,6 +4437,10 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "prepend", required = 1, rest = true)
     public IRubyObject prepend(ThreadContext context, IRubyObject[] modules) {
+        if (this.isRefinement()) {
+            context.runtime.getWarnings().warnDeprecated("deprecated method to be removed: Refinement#prepend");
+        }
+
         // MRI checks all types first:
         for (int i = modules.length; --i >= 0; ) {
             IRubyObject obj = modules[i];
