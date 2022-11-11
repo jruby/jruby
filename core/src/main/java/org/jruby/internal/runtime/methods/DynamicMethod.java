@@ -75,6 +75,8 @@ public abstract class DynamicMethod {
     protected final String name;
     /** An arbitrarily-typed "method handle" for use by compilers and call sites */
     protected Object handle;
+    /** How many times has this method been aliased. */
+    protected int aliasCount;
 
     private static final int BUILTIN_FLAG = 0b1;
     private static final int NOTIMPL_FLAG = 0b10;
@@ -622,5 +624,13 @@ public abstract class DynamicMethod {
     @Deprecated
     protected DynamicMethod(RubyModule implementationClass, Visibility visibility) {
         this(implementationClass, visibility, "(anonymous)");
+    }
+
+    public void adjustAliasCount(int delta) {
+        this.aliasCount += delta;
+    }
+
+    public int getAliasCount() {
+        return this.aliasCount;
     }
 }
