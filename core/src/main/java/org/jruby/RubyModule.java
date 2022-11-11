@@ -2064,7 +2064,7 @@ public class RubyModule extends RubyObject {
         DynamicMethod method = getMethods().get(name);
         if (method != null && entry.method.getRealMethod() != method.getRealMethod()) {
             // warn if overwriting an existing method on this module
-            runtime.getWarnings().warning("method redefined; discarding old " + name);
+            if (entry.method.getRealMethod().getAliasCount() != 0) runtime.getWarnings().warning("method redefined; discarding old " + name);
 
             if (method instanceof PositionAware) {
                 PositionAware posAware = (PositionAware) method;
