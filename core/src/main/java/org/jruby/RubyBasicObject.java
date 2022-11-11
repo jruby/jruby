@@ -1534,14 +1534,13 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public List<String> getInstanceVariableNameList() {
-        Map<String, VariableAccessor> ivarAccessors = metaClass.getVariableAccessorsForRead();
-        ArrayList<String> list = new ArrayList<>(ivarAccessors.size());
-        for (Map.Entry<String, VariableAccessor> entry : ivarAccessors.entrySet()) {
-            final String key = entry.getKey();
-            final Object value = entry.getValue().get(this);
-            if (!(value instanceof IRubyObject) || !IdUtil.isInstanceVariable(key)) continue;
-            list.add(key);
+        String[] names = metaClass.getVariableTableManager().getVariableNames();
+        List<String> list = new ArrayList<>(names.length);
+
+        for (String name: names) {
+            list.add(name);
         }
+
         return list;
     }
 

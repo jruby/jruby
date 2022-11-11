@@ -52,6 +52,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -5872,17 +5873,18 @@ public class RubyModule extends RubyObject {
         return super.toJava(target);
     }
 
-    public Set<String> discoverInstanceVariables() {
-        HashSet<String> set = new HashSet();
-        RubyModule cls = this;
-        while (cls != null) {
-            Map<String, DynamicMethod> methods = cls.getOrigin().getMethodLocation().getMethods();
+    private Set<String> discoverInstanceVariablesInner(RubyModule cls, Set<String> set) {
+        if (cls == null) return set;
 
-            methods.forEach((name, method) -> set.addAll(method.getInstanceVariableNames()));
+        discoverInstanceVariablesInner(cls.getSuperClass(), set);
+        Map<String, DynamicMethod> methods = cls.getOrigin().getMethodLocation().getMethods();
+        methods.forEach((name, method) -> set.addAll(method.getInstanceVariableNames()));
 
-            cls = cls.getSuperClass();
-        }
         return set;
+    }
+
+    public Set<String> discoverInstanceVariables() {
+        return discoverInstanceVariablesInner(this, new LinkedHashSet());
     }
 
     public boolean isRefinement() {
