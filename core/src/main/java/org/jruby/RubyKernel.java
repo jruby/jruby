@@ -79,6 +79,7 @@ import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.callsite.CachingCallSite;
+import org.jruby.runtime.load.LoadService;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
@@ -1084,14 +1085,14 @@ public class RubyKernel {
     public static IRubyObject load(ThreadContext context, IRubyObject recv, IRubyObject path, Block block) {
         Ruby runtime = context.runtime;
         RubyString pathStr = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, path));
-        return loadCommon(runtime, pathStr, false, block);
+        return loadCommon(runtime, pathStr, false);
     }
 
     @JRubyMethod(name = "load", module = true, visibility = PRIVATE)
     public static IRubyObject load(ThreadContext context, IRubyObject recv, IRubyObject path, IRubyObject wrap, Block block) {
         Ruby runtime = context.runtime;
         RubyString pathStr = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, path));
-        return loadCommon(runtime, pathStr, wrap.isTrue(), block);
+        return loadCommon(runtime, pathStr, wrap);
     }
 
     public static IRubyObject load(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
@@ -1113,8 +1114,21 @@ public class RubyKernel {
         return load(context, recv, args, block);
     }
 
-    private static IRubyObject loadCommon(Ruby runtime, RubyString path, boolean wrap, Block block) {
+    private static IRubyObject loadCommon(Ruby runtime, RubyString path, boolean wrap) {
         runtime.getLoadService().load(path.toString(), wrap);
+
+        return runtime.getTrue();
+    }
+
+    private static IRubyObject loadCommon(Ruby runtime, RubyString path, IRubyObject wrap) {
+        String file = path.toString();
+        LoadService loadService = runtime.getLoadService();
+
+        if (wrap.isNil() || wrap instanceof RubyBoolean) {
+            loadService.load(file, wrap.isTrue());
+        } else {
+            loadService.load(file, wrap);
+        }
 
         return runtime.getTrue();
     }

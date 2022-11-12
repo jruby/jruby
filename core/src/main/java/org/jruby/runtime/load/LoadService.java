@@ -63,6 +63,7 @@ import org.jruby.RubyDir;
 import org.jruby.RubyFile;
 import org.jruby.RubyHash;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.RubyThread;
@@ -338,6 +339,26 @@ public class LoadService {
             }
 
             return runtime.newArray(ext, name);
+        }
+    }
+
+    private final ThreadLocal<IRubyObject> wrapperSelf = new ThreadLocal<>();
+
+    public IRubyObject getWrapperSelf() {
+        return wrapperSelf.get();
+    }
+
+    public void load(String file, IRubyObject wrapWith) {
+        if (wrapWith == null || wrapWith.isNil()) {
+            load(file, false);
+            return;
+        }
+
+        wrapperSelf.set(wrapWith);
+        try {
+            load(file, true);
+        } finally {
+            wrapperSelf.remove();
         }
     }
 

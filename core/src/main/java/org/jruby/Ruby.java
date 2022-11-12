@@ -2905,7 +2905,17 @@ public final class Ruby implements Constantizable {
     static final String ROOT_FRAME_NAME = "(root)";
 
     public void loadFile(String scriptName, InputStream in, boolean wrap) {
-        IRubyObject self = wrap ? getTopSelf().rbClone() : getTopSelf();
+        IRubyObject self;
+
+        if (wrap) {
+            self = loadService.getWrapperSelf();
+
+            if (self == null || self.isNil()) {
+                self = getTopSelf().rbClone();
+            }
+        } else {
+            self = getTopSelf();
+        }
 
         if (!wrap && Options.COMPILE_CACHE_CLASSES.load()) {
             Script script = tryScriptFromClass(scriptName);
