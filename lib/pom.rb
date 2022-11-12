@@ -98,6 +98,7 @@ default_gems = [
     ['singleton', '0.1.1'],
     ['stringio', '3.0.2'],
     ['strscan', '3.0.4'],
+    ['subspawn', '0.1.0'],
     # https://github.com/ruby/syslog/issues/1
     # ['syslog', '0.1.0'],
     # https://github.com/ruby/tempfile/issues/7

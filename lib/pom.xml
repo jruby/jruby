@@ -709,6 +709,19 @@ DO NOT MODIFY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>subspawn</artifactId>
+      <version>0.1.0</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>time</artifactId>
       <version>0.1.0</version>
       <type>gem</type>
@@ -1027,6 +1040,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/singleton-0.1.1*</include>
           <include>specifications/stringio-3.0.2*</include>
           <include>specifications/strscan-3.0.4*</include>
+          <include>specifications/subspawn-0.1.0*</include>
           <include>specifications/time-0.1.0*</include>
           <include>specifications/timeout-0.3.0*</include>
           <include>specifications/tsort-0.1.0*</include>
@@ -1098,6 +1112,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/singleton-0.1.1*/**/*</include>
           <include>gems/stringio-3.0.2*/**/*</include>
           <include>gems/strscan-3.0.4*/**/*</include>
+          <include>gems/subspawn-0.1.0*/**/*</include>
           <include>gems/time-0.1.0*/**/*</include>
           <include>gems/timeout-0.3.0*/**/*</include>
           <include>gems/tsort-0.1.0*/**/*</include>
@@ -1169,6 +1184,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/singleton-0.1.1*</include>
           <include>cache/stringio-3.0.2*</include>
           <include>cache/strscan-3.0.4*</include>
+          <include>cache/subspawn-0.1.0*</include>
           <include>cache/time-0.1.0*</include>
           <include>cache/timeout-0.3.0*</include>
           <include>cache/tsort-0.1.0*</include>
