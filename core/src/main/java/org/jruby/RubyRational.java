@@ -36,6 +36,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
@@ -451,53 +452,110 @@ public class RubyRational extends RubyNumeric {
             if (k_exact_p(a2c.getImage()) && f_zero_p(context, a2c.getImage())) a2 = a2c.getReal();
         }
 
-        // NOTE: MRI (2.4) bypasses any custom Integer#to_r or Float#to_r implementation
-
-        if (a1 instanceof RubyInteger) { // don't fallback to respond_to?(:to_r) bellow
-            a1 = ((RubyInteger) a1).to_r(context);
+        if (a1 instanceof RubyInteger) {
+            // do nothing
         } else if (a1 instanceof RubyFloat) {
             a1 = ((RubyFloat) a1).to_r(context); // f_to_r
         } else if (a1 instanceof RubyString) {
             a1 = str_to_r_strict(context, (RubyString) a1, raise);
             if (!raise && a1.isNil()) return a1;
-        } else {
-            if (a1 instanceof RubyObject && sites(context).respond_to_to_r.respondsTo(context, a1, a1)) {
-                a1 = f_to_r(context, a1);
+        } else if (a1 instanceof RubyObject && !a1.respondsTo("to_r")) {
+            try {
+                IRubyObject tmp = TypeConverter.checkToInteger(context, a1);
+                if (!tmp.isNil()) {
+                    a1 = tmp;
+                }
+            } catch (RaiseException re) {
+                context.setErrorInfo(context.nil);
             }
         }
 
-        if (a2 instanceof RubyFloat) {
+        if (a2 instanceof RubyInteger) {
+            // do nothing
+        } else if (a2 instanceof RubyFloat) {
             a2 = ((RubyFloat) a2).to_r(context); // f_to_r
         } else if (a2 instanceof RubyString) {
             a2 = str_to_r_strict(context, (RubyString) a2, raise);
             if (!raise && a2.isNil()) return a2;
+        } else if (!a2.isNil() & a2 instanceof RubyObject && !a2.respondsTo("to_r")) {
+            try {
+                IRubyObject tmp = TypeConverter.checkToInteger(context, a2);
+                if (!tmp.isNil()) {
+                    a2 = tmp;
+                }
+            } catch (RaiseException re) {
+                context.setErrorInfo(context.nil);
+            }
         }
 
         if (a1 instanceof RubyRational) {
             if (a2 == context.nil || (k_exact_p(a2) && f_one_p(context, a2))) return a1;
         }
 
+        RubyClass rationalClazz = context.runtime.getRational();
         if (a2 == context.nil) {
             if (!(a1 instanceof RubyNumeric && f_integer_p(context, (RubyNumeric) a1))) {
-                if (raise) {
-                    RubyClass rational = context.runtime.getRational();
-                    IRubyObject ret = TypeConverter.convertToTypeWithCheck(context, a1, rational, sites(context).to_r_checked);
-                    if (ret.isNil()) {
-                        throw TypeConverter.newTypeError(a1, rational, "to_r", ret);
+                if (!raise) {
+                    try {
+                        IRubyObject ret = TypeConverter.convertToType(context, a1, rationalClazz, sites(context).to_r_checked);
+                        return ret;
+                    } catch (RaiseException re) {
+                        context.setErrorInfo(context.nil);
+                        return context.nil;
                     }
-                    return ret;
-                } else {
-                    return TypeConverter.convertToType(context, a1, context.runtime.getRational(), sites(context).to_r_checked, raise);
+                }
+                return TypeConverter.convertToType(context, a1, rationalClazz, sites(context).to_r_checked);
+            }
+        } else {
+            if (!(a1 instanceof RubyNumeric)) {
+                try {
+                    a1 = TypeConverter.convertToType(context, a1, rationalClazz, sites(context).to_r_checked);
+                } catch (RaiseException re) {
+                    if (!raise) {
+                        context.setErrorInfo(context.nil);
+                    } else {
+                        throw re;
+                    }
                 }
             }
-            return newInstance(context, clazz, a1, raise);
-        } else {
+
+            if (!(a2 instanceof RubyNumeric)) {
+                try {
+                    a2 = TypeConverter.convertToType(context, a2, rationalClazz, sites(context).to_r_checked);
+                } catch (RaiseException re) {
+                    if (!raise) {
+                        context.setErrorInfo(context.nil);
+                    } else {
+                        throw re;
+                    }
+                }
+            }
+
             if ((a1 instanceof RubyNumeric && a2 instanceof RubyNumeric) &&
                 (!f_integer_p(context, (RubyNumeric) a1) || !f_integer_p(context, (RubyNumeric) a2))) {
+
+                try {
+                    IRubyObject tmp = TypeConverter.convertToType(context, a1, rationalClazz, sites(context).to_r_checked, true);
+                    a1 = tmp instanceof RubyRational ? tmp : context.nil;
+                } catch(RaiseException e) {
+                    context.setErrorInfo(context.nil);
+                }
+
                 return f_div(context, a1, a2);
             }
-            return newInstance(context, clazz, a1, a2, raise);
         }
+
+        a1 = intCheck(context, a1);
+
+        if (a2.isNil()) {
+            a2 = RubyFixnum.one(context.runtime);
+        } else if (!(a2 instanceof RubyInteger) && !raise) {
+            return context.nil;
+        } else {
+            a2 = intCheck(context, a2);
+        }
+
+        return newInstance(context, clazz, a1, a2, raise);
     }
 
     /** nurat_numerator
@@ -1474,7 +1532,7 @@ public class RubyRational extends RubyNumeric {
         }
     };
 
-    static IRubyObject[] str_to_r_internal(final ThreadContext context, final RubyString str) {
+    static IRubyObject[] str_to_r_internal(final ThreadContext context, final RubyString str, boolean raise) {
         str.verifyAsciiCompatible();
 
         final Ruby runtime = context.runtime;
@@ -1484,8 +1542,13 @@ public class RubyRational extends RubyNumeric {
 
         if (bytes.getRealSize() == 0) return new IRubyObject[] { nil, str };
 
-        IRubyObject m = RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.rat_pat).match_m(context, str, false);
-        
+        IRubyObject m = context.nil;
+        try {
+            m = RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.rat_pat).match_m(context, str, false);
+        } catch(RaiseException re) {
+            context.setErrorInfo(context.nil);
+            return new IRubyObject[]{context.nil};
+        }
         if (m != nil) {
             RubyMatchData match = (RubyMatchData) m;
             IRubyObject si = match.at(1);
@@ -1527,11 +1590,22 @@ public class RubyRational extends RubyNumeric {
             }
 
             if (exp != nil) {
-                v = f_mul(context, v, f_expt(context, RubyFixnum.newFixnum(runtime, 10), (RubyInteger) f_to_i(context, exp)));
+                IRubyObject denExp = (RubyInteger) f_to_i(context, exp);
+                if (denExp instanceof RubyFixnum) {
+                    v = f_mul(context, v, f_expt(context, RubyFixnum.newFixnum(runtime, 10), denExp));
+                } else if (f_negative_p(context, denExp)) {
+                    v = dbl2num(runtime, 0.0);
+                } else {
+                    v = dbl2num(runtime, Double.POSITIVE_INFINITY);
+                }
             }
 
             if (de != nil) {
-                v = f_div(context, v, f_to_r(context, de));
+                IRubyObject denominator = f_to_r(context, de);
+                if (!raise && f_zero_p(context, denominator)) {
+                    return new IRubyObject[] { nil, str };
+                }
+                v = f_div(context, v, denominator);
             }
             return new IRubyObject[] { v, re };
         }
@@ -1539,7 +1613,7 @@ public class RubyRational extends RubyNumeric {
     }
     
     private static IRubyObject str_to_r_strict(ThreadContext context, RubyString str, boolean raise) {
-        IRubyObject[] ary = str_to_r_internal(context, str);
+        IRubyObject[] ary = str_to_r_internal(context, str, raise);
         IRubyObject nil = context.nil;
         if (ary[0] == nil || ary[1].convertToString().getByteList().length() > 0) {
             if (raise) {
