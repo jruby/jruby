@@ -6,7 +6,6 @@ import com.kenai.jffi.Library;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -14,7 +13,6 @@ import java.util.HashMap;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
-import org.jruby.RubyFile;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
@@ -25,11 +23,12 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.ffi.InvalidMemoryIO;
 import org.jruby.ext.ffi.MemoryIO;
 import org.jruby.ext.ffi.Pointer;
-import org.jruby.ext.tempfile.Tempfile;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.FileResource;
 import org.jruby.util.JRubyClassLoader;
+import org.jruby.util.JRubyFile;
 
 @JRubyClass(name = "FFI::DynamicLibrary", parent = "Object")
 public class DynamicLibrary extends RubyObject {
@@ -38,8 +37,6 @@ public class DynamicLibrary extends RubyObject {
     @JRubyConstant public static final int RTLD_NOW    = 0x00002;
     @JRubyConstant public static final int RTLD_LOCAL  = 0x00004;
     @JRubyConstant public static final int RTLD_GLOBAL = 0x00008;
-
-    private static final String URI_CLASSLOADER_PREFIX = "uri:classloader:/";
     
     private final Library library;
     private final String name;
@@ -76,14 +73,18 @@ public class DynamicLibrary extends RubyObject {
     public static final  IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject libraryName, IRubyObject libraryFlags) {
         final String libName = libraryName.isNil() ? null : libraryName.toString();
         String loadName;
-        // TODO: jar:! uris?
-        if (libName.startsWith(URI_CLASSLOADER_PREFIX)) { // loading an internal library, we must extract it
-            String internalName = libName.substring(URI_CLASSLOADER_PREFIX.length());
-            try (InputStream internalStream = context.getRuntime().getClassLoader().getResourceAsStream(internalName)){
-                loadName = extractLibrary(internalName, internalStream);
+        if (libName.contains(":") && !new File(libName).isAbsolute()) { // windows is C:\\ ..., but otherwise we may have an URI
+            // Use internal logic to parse the URI
+            FileResource resource = JRubyFile.createResource(context, libName);
+            if (JRubyFile.isResourceRegularFile(resource))
+            {
+                loadName = resource.absolutePath();
+            }
+            else try (InputStream internalStream = resource.openInputStream()){
+                loadName = extractLibrary(resource.path(), internalStream);
             } catch (IOException e) {
                 // let it fail normally, file not found
-                loadName = internalName;
+                loadName = resource.absolutePath();
             }
         }
         else
