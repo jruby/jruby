@@ -173,37 +173,4 @@ public class OSGiLoadService extends LoadService {
         return path;
     }
 
-    @Override
-    @Deprecated
-    protected Library findLibraryBySearchState(SearchState state) {
-        Library library = super.findLibraryBySearchState(state);
-        if (library == null){
-            library = findLibraryWithClassloaders(state, state.searchFile, state.suffixType);
-            if (library != null) {
-                state.library = library;
-            }
-        }
-        return library;
-    }
-
-    @Override
-    @Deprecated
-    protected Library createLibrary(SearchState state, LoadServiceResource resource) {
-        if (resource == null) {
-            return null;
-        }
-        String file = state.loadName;
-        if (file.startsWith(OSGI_BUNDLE_CLASSPATH_SCHEME)) {
-            file = cleanupFindName(file);
-            StringTokenizer tokenizer = new StringTokenizer(file, "/", false);
-            tokenizer.nextToken();
-            String symname = tokenizer.nextToken();
-            Bundle bundle = OSGiFileLocator.getBundle(symname);
-            if (bundle != null) {
-                return new OSGiBundleLibrary(bundle);
-            }
-        }
-        return super.createLibrary(state, resource);
-    }
-
 }
