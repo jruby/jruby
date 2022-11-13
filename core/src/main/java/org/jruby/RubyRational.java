@@ -513,6 +513,7 @@ public class RubyRational extends RubyNumeric {
                 } catch (RaiseException re) {
                     if (!raise) {
                         context.setErrorInfo(context.nil);
+                        return context.nil;
                     } else {
                         throw re;
                     }
@@ -525,6 +526,7 @@ public class RubyRational extends RubyNumeric {
                 } catch (RaiseException re) {
                     if (!raise) {
                         context.setErrorInfo(context.nil);
+                        return context.nil;
                     } else {
                         throw re;
                     }
