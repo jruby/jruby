@@ -6395,7 +6395,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     public IRubyObject to_r(ThreadContext context) {
         Ruby runtime = context.runtime;
 
-        IRubyObject[] ary = RubyRational.str_to_r_internal(context, this);
+        IRubyObject[] ary = RubyRational.str_to_r_internal(context, this, true);
 
         IRubyObject first = ary[0];
         if ( first != context.nil ) return first;
