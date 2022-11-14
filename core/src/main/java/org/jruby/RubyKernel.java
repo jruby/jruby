@@ -107,6 +107,7 @@ import static org.jruby.anno.FrameField.SCOPE;
 import static org.jruby.anno.FrameField.SELF;
 import static org.jruby.anno.FrameField.VISIBILITY;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
+import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PROTECTED;
 import static org.jruby.runtime.Visibility.PUBLIC;
@@ -252,8 +253,9 @@ public class RubyKernel {
         return open(context, recv, args, block);
     }
 
-    @JRubyMethod(name = "open", required = 1, optional = 3, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "open", required = 1, optional = 3, module = true, visibility = PRIVATE, keywords = true)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        boolean keywords = hasKeywords(context.resetCallInfo());
         Ruby runtime = context.runtime;
         //        symbol to_open = 0;
         boolean redirect = false;
@@ -282,6 +284,7 @@ public class RubyKernel {
             }
         }
         if (redirect) {
+            if (keywords) context.callInfo = ThreadContext.CALL_KEYWORD;
             IRubyObject io = args[0].callMethod(context, "to_open", Arrays.copyOfRange(args, 1, args.length));
 
             RubyIO.ensureYieldClose(context, io, block);
