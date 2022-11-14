@@ -2905,17 +2905,7 @@ public final class Ruby implements Constantizable {
     static final String ROOT_FRAME_NAME = "(root)";
 
     public void loadFile(String scriptName, InputStream in, boolean wrap) {
-        IRubyObject self;
-
-        if (wrap) {
-            self = loadService.getWrapperSelf();
-
-            if (self == null || self.isNil()) {
-                self = getTopSelf().rbClone();
-            }
-        } else {
-            self = getTopSelf();
-        }
+        IRubyObject self = wrap ? getTopSelf().rbClone() : getTopSelf();
 
         if (!wrap && Options.COMPILE_CACHE_CLASSES.load()) {
             Script script = tryScriptFromClass(scriptName);
@@ -2977,8 +2967,13 @@ public final class Ruby implements Constantizable {
     }
 
     public StaticScope setupWrappedToplevel(IRubyObject self, StaticScope top) {
+        RubyModule wrapper = loadService.getWrapperSelf();
+
+        if (wrapper == null || wrapper.isNil()) {
+            wrapper = RubyModule.newModule(this);
+        }
+
         // toss an anonymous module into the search path
-        RubyModule wrapper = RubyModule.newModule(this);
         ((RubyBasicObject) self).extend(new IRubyObject[] {wrapper});
         StaticScope newTop = staticScopeFactory.newLocalScope(null);
         top.setPreviousCRefScope(newTop);

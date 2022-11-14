@@ -342,23 +342,27 @@ public class LoadService {
         }
     }
 
-    private final ThreadLocal<IRubyObject> wrapperSelf = new ThreadLocal<>();
+    private final ThreadLocal<RubyModule> wrapperSelf = new ThreadLocal<>();
 
-    public IRubyObject getWrapperSelf() {
+    public RubyModule getWrapperSelf() {
         return wrapperSelf.get();
     }
 
     public void load(String file, IRubyObject wrapWith) {
-        if (wrapWith == null || wrapWith.isNil()) {
+        if (wrapWith == null || !wrapWith.isTrue()) {
             load(file, false);
             return;
         }
 
-        wrapperSelf.set(wrapWith);
-        try {
+        if (wrapWith instanceof RubyModule) {
+            wrapperSelf.set((RubyModule) wrapWith);
+            try {
+                load(file, true);
+            } finally {
+                wrapperSelf.remove();
+            }
+        } else {
             load(file, true);
-        } finally {
-            wrapperSelf.remove();
         }
     }
 
