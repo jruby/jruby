@@ -1133,8 +1133,10 @@ public class IRRuntimeHelpers {
                                 return self instanceof RubyModule ? (RubyModule) self : self.getMetaClass();
 
                             case INSTANCE_METHOD:
-                            case SCRIPT_BODY:
                                 return self.getMetaClass();
+
+                            case SCRIPT_BODY:
+                                return currDynScope.getStaticScope().getModule();
 
                             default:
                                 throw new RuntimeException("Should not get here! scopeType is " + scopeType);

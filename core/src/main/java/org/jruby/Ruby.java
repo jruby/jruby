@@ -2967,8 +2967,13 @@ public final class Ruby implements Constantizable {
     }
 
     public StaticScope setupWrappedToplevel(IRubyObject self, StaticScope top) {
+        RubyModule wrapper = loadService.getWrapperSelf();
+
+        if (wrapper == null || wrapper.isNil()) {
+            wrapper = RubyModule.newModule(this);
+        }
+
         // toss an anonymous module into the search path
-        RubyModule wrapper = RubyModule.newModule(this);
         ((RubyBasicObject) self).extend(new IRubyObject[] {wrapper});
         StaticScope newTop = staticScopeFactory.newLocalScope(null);
         top.setPreviousCRefScope(newTop);
