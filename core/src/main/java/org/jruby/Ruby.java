@@ -2133,6 +2133,15 @@ public final class Ruby implements Constantizable {
         return bignumClass;
     }
 
+
+    public RubyClass getDateError() {
+        return this.dateErrorClass;
+    }
+
+    public void setDateError(RubyClass dateError) {
+        this.dateErrorClass = dateError;
+    }
+
     public RubyClass getDir() {
         return dirClass;
     }
@@ -5456,6 +5465,7 @@ public final class Ruby implements Constantizable {
     private final RubyClass timeClass;
     private final RubyClass bignumClass;
     private final RubyClass dirClass;
+    private RubyClass dateErrorClass;
     private final RubyClass fileClass;
     private final RubyClass fileStatClass;
     private final RubyClass ioClass;
