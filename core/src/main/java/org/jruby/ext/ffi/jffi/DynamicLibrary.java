@@ -74,7 +74,7 @@ public class DynamicLibrary extends RubyObject {
         final String libName = libraryName.isNil() ? null : libraryName.toString();
         String loadName;
         // Look for potential URI's, excluding Windows paths (C:\\...)
-        if (libName.contains(":") && !new File(libName).isAbsolute()) {
+        if (libName != null && libName.contains(":") && !new File(libName).isAbsolute()) {
             // Use internal logic to parse the URI
             FileResource resource = JRubyFile.createResource(context, libName);
             if (JRubyFile.isResourceRegularFile(resource)) {
