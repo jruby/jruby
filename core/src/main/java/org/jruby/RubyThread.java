@@ -1877,27 +1877,22 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "backtrace")
     public IRubyObject backtrace(ThreadContext context) {
-        return backtraceInternal(context, null, null);
+        return backtrace(context, null, null);
     }
 
     @JRubyMethod(name = "backtrace")
     public IRubyObject backtrace(ThreadContext context, IRubyObject level) {
-        return backtraceInternal(context, level, null);
+        return backtrace(context, level, null);
     }
 
     @JRubyMethod(name = "backtrace")
     public IRubyObject backtrace(ThreadContext context, IRubyObject level, IRubyObject length) {
-        return backtraceInternal(context, level, length);
-    }
-
-    private IRubyObject backtraceInternal(ThreadContext callerContext, IRubyObject level, IRubyObject length) {
-        ThreadContext context = getContext();
         Thread nativeThread = getNativeThread();
 
         // context can be nil if we have not started or GC has claimed our context
         // nativeThread can be null if the thread has terminated and GC has claimed it
         // nativeThread may have finished
-        if (context == null || nativeThread == null || !nativeThread.isAlive()) return callerContext.nil;
+        if (context == null || nativeThread == null || !nativeThread.isAlive()) return context.nil;
 
         return RubyKernel.withLevelAndLength(
                 context, level, length, 0,
@@ -1906,27 +1901,22 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod
     public IRubyObject backtrace_locations(ThreadContext context) {
-        return backtraceLocationsInternal(context, null, null);
+        return backtrace_locations(context, null, null);
     }
 
     @JRubyMethod
     public IRubyObject backtrace_locations(ThreadContext context, IRubyObject level) {
-        return backtraceLocationsInternal(context, level, null);
+        return backtrace_locations(context, level, null);
     }
 
     @JRubyMethod
     public IRubyObject backtrace_locations(ThreadContext context, IRubyObject level, IRubyObject length) {
-        return backtraceLocationsInternal(context, level, length);
-    }
-
-    private IRubyObject backtraceLocationsInternal(ThreadContext callerContext, IRubyObject level, IRubyObject length) {
-        ThreadContext context = getContext();
         Thread nativeThread = getNativeThread();
 
         // context can be nil if we have not started or GC has claimed our context
         // nativeThread can be null if the thread has terminated and GC has claimed it
         // nativeThread may have finished
-        if (context == null || nativeThread == null || !nativeThread.isAlive()) return callerContext.nil;
+        if (context == null || nativeThread == null || !nativeThread.isAlive()) return context.nil;
 
         return RubyKernel.withLevelAndLength(
                 context, level, length, 0,

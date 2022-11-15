@@ -583,6 +583,44 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         return RubyFixnum.one(context.runtime);
     }
 
+    @JRubyMethod(name = "backtrace")
+    public IRubyObject backtrace(ThreadContext context) {
+        return backtrace(context, null, null);
+    }
+
+    @JRubyMethod(name = "backtrace")
+    public IRubyObject backtrace(ThreadContext context, IRubyObject level) {
+        return backtrace(context, level, null);
+    }
+
+    @JRubyMethod(name = "backtrace")
+    public IRubyObject backtrace(ThreadContext context, IRubyObject level, IRubyObject length) {
+        ThreadFiber threadFiber = data.fiber.get();
+
+        if (threadFiber == null) return context.nil;
+
+        return threadFiber.thread.backtrace(context, level, length);
+    }
+
+    @JRubyMethod(name = "backtrace_locations")
+    public IRubyObject backtrace_locations(ThreadContext context) {
+        return backtrace_locations(context, null, null);
+    }
+
+    @JRubyMethod(name = "backtrace_locations")
+    public IRubyObject backtrace_locations(ThreadContext context, IRubyObject level) {
+        return backtrace_locations(context, level, null);
+    }
+
+    @JRubyMethod(name = "backtrace_locations")
+    public IRubyObject backtrace_locations(ThreadContext context, IRubyObject level, IRubyObject length) {
+        ThreadFiber threadFiber = data.fiber.get();
+
+        if (threadFiber == null) return context.nil;
+
+        return threadFiber.thread.backtrace_locations(context, level, length);
+    }
+
     public FiberData getData() {
         return data;
     }
