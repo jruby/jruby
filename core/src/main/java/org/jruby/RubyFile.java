@@ -840,13 +840,40 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     public static IRubyObject extname(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         String filename = basename(context, recv, arg).getUnicodeValue();
 
-        int dotIndex = filename.lastIndexOf('.');
+        int dotIndex = filename.indexOf('.');
 
-        if (dotIndex > 0) {
-            if (dotIndex < filename.length() - 1 ||
-                    !(Platform.IS_WINDOWS || filename.equals(".."))) {
-                // Dot is not at beginning and not at end of filename.
+        if (dotIndex >= 0) {
+            int length = filename.length();
+
+            if (dotIndex == length - 1 && length != 1) {
                 return RubyString.newString(context.runtime, filename.substring(dotIndex));
+            }
+
+            int e = dotIndex;
+
+            // skip through whole sequence of '........'
+            for (e = e + 1; e < length; e++) {
+                if (filename.charAt(e) != '.') {
+                    e = e - 1;
+                    break;
+                }
+            }
+
+            if (e == length) { // all dots
+                return RubyString.newEmptyString(context.runtime);
+            }
+
+            for (int i = e; i < length; i++) {
+                char c = filename.charAt(i);
+                if (c == '.' || c == ' ') {
+                    e = i;
+                }
+            }
+
+            if (e == 0) {
+                return RubyString.newEmptyString(context.runtime);
+            } else {
+                return RubyString.newString(context.runtime, filename.substring(e));
             }
         }
 
@@ -1755,7 +1782,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         RubyString path = StringSupport.checkEmbeddedNulls(context.runtime, get_path(context, args[0]));
         RubyString wd = null;
         if (args.length == 2 && args[1] != context.nil) {
-            wd = StringSupport.checkEmbeddedNulls(context.runtime, get_path(context, args[1]));
+            if (args[1] instanceof RubyHash) {
+                // FIXME : do nothing when args[1] is Hash(e.g. {:mode=>0}, {:encoding=>"ascii-8bit"})
+            } else {
+                wd = StringSupport.checkEmbeddedNulls(context.runtime, get_path(context, args[1]));
+            }
         }
         return expandPathInternal(context, path, wd, expandUser, canonicalize);
     }

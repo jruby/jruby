@@ -185,7 +185,7 @@ public class RubyTimeOutputFormatter extends RubyDateFormatter.Token {
         }
     }
 
-    private static final int SMALLBUF = 100;
+    private static final int SMALLBUF = 10000;
 
     // sequence is assumed to be clean 7bit ASCII
     private static void padding(ByteList out, int len, final int width, final char padder) {

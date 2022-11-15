@@ -465,7 +465,7 @@ public class TraceType {
 
         if (runtime != null) {
             optionBacktraceLimit = runtime.getInstanceConfig().getBacktraceLimit();
-            maxBacktraceLines =  (optionBacktraceLimit > frames.length) ? frames.length : optionBacktraceLimit;
+            maxBacktraceLines =  (optionBacktraceLimit > frames.length || optionBacktraceLimit == -1) ? frames.length : optionBacktraceLimit;
         }
 
         // backtrace lines

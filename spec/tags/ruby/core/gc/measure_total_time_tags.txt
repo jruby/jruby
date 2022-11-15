@@ -1,1 +1,1 @@
-wip:GC.measure_total_time can set and get a boolean value
+fails:GC.measure_total_time can set and get a boolean value

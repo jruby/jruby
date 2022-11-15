@@ -614,9 +614,7 @@ public class IRRuntimeHelpers {
     public static void updateCoverage(ThreadContext context, String filename, int line) {
         CoverageData data = context.runtime.getCoverageData();
 
-        if (data.isCoverageEnabled()) {
-            data.coverLine(filename, line);
-        }
+        if (data.isRunning()) data.coverLine(filename, line);
     }
 
     @JIT @Interp
@@ -1135,8 +1133,10 @@ public class IRRuntimeHelpers {
                                 return self instanceof RubyModule ? (RubyModule) self : self.getMetaClass();
 
                             case INSTANCE_METHOD:
-                            case SCRIPT_BODY:
                                 return self.getMetaClass();
+
+                            case SCRIPT_BODY:
+                                return currDynScope.getStaticScope().getModule();
 
                             default:
                                 throw new RuntimeException("Should not get here! scopeType is " + scopeType);

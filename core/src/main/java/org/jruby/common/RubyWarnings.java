@@ -33,16 +33,19 @@ import java.util.EnumSet;
 import java.util.Set;
 import org.joni.WarnCallback;
 import org.jruby.Ruby;
+import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
 
+import static org.jruby.util.RubyStringBuilder.cat;
 import static org.jruby.util.RubyStringBuilder.str;
 
 /**
@@ -51,18 +54,12 @@ import static org.jruby.util.RubyStringBuilder.str;
 public class RubyWarnings implements IRubyWarnings, WarnCallback {
     private final Ruby runtime;
     private final Set<ID> oncelers = EnumSet.allOf(IRubyWarnings.ID.class);
-    private static final Set<Category> categories = EnumSet.allOf(Category.class);
 
     public RubyWarnings(Ruby runtime) {
         this.runtime = runtime;
     }
 
     public static RubyModule createWarningModule(Ruby runtime) {
-        categories.add(Category.EXPERIMENTAL);
-
-        // At time this is created globals/runtime has not setup warnings/verbosity in runtime yet.
-        if (!runtime.getInstanceConfig().isVerbose()) categories.remove(Category.DEPRECATED);
-
         RubyModule warning = runtime.defineModule("Warning");
 
         warning.defineAnnotatedMethods(RubyWarnings.class);
@@ -120,6 +117,16 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         sites(context).write.call(context, warning, errorStream, errorString);
     }
 
+    public static IRubyObject warnWithCategory(ThreadContext context, IRubyObject errorString, IRubyObject category) {
+        Ruby runtime = context.runtime;
+
+        RubySymbol cat = (RubySymbol) TypeConverter.convertToType(category, runtime.getSymbol(), "to_sym");
+
+        if (runtime.getWarningCategories().contains(Category.fromId(cat.idString()))) warn(context, null, errorString);
+
+        return context.nil;
+    }
+
     @Override
     public void warn(ID id, String message) {
         if (!runtime.warningsEnabled()) return;
@@ -149,11 +156,11 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     }
 
     public void warnExperimental(String filename, int line, String message) {
-        if (categories.contains(Category.EXPERIMENTAL)) warn(ID.MISCELLANEOUS, filename, line, message);
+        if (runtime.getWarningCategories().contains(Category.EXPERIMENTAL)) warn(ID.MISCELLANEOUS, filename, line, message);
     }
 
     public void warnDeprecated(String name) {
-        if (categories.contains(Category.DEPRECATED)) warn(ID.MISCELLANEOUS, "`" + name + "' is deprecated");
+        if (runtime.getWarningCategories().contains(Category.DEPRECATED)) warn(ID.MISCELLANEOUS, "`" + name + "' is deprecated");
     }
 
     public void warnOnce(ID id, String message) {
@@ -221,39 +228,54 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
         if (category == null) throw runtime.newArgumentError(str(runtime, "unknown category: ", arg));
 
-        return runtime.newBoolean(category != null && categories.contains(category));
+        return runtime.newBoolean(category != null && runtime.getWarningCategories().contains(category));
     }
 
     @JRubyMethod(name = "[]=")
     public static IRubyObject op_aset(ThreadContext context, IRubyObject self, IRubyObject arg, IRubyObject flag) {
-        TypeConverter.checkType(context, arg, context.runtime.getSymbol());
+        Ruby runtime = context.runtime;
+
+        TypeConverter.checkType(context, arg, runtime.getSymbol());
         String categoryId = ((RubySymbol) arg).idString();
         Category category = Category.fromId(categoryId);
 
         if (category != null) {
             if (flag.isTrue()) {
-                categories.add(category);
+                runtime.getWarningCategories().add(category);
             } else {
-                categories.remove(category);
+                runtime.getWarningCategories().remove(category);
             }
         } else {
-            throw context.runtime.newArgumentError(str(context.runtime, "unknown category: ", arg));
+            throw runtime.newArgumentError(str(runtime, "unknown category: ", arg));
         }
 
         return flag;
     }
 
-    @JRubyMethod
+    // This used to be jrubymethod but leave recv behind for backwards compat
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         Ruby runtime = context.runtime;
 
         TypeConverter.checkType(context, arg, runtime.getString());
         RubyString str = (RubyString) arg;
-        if (!str.getEncoding().isAsciiCompatible()) {
-            throw runtime.newEncodingCompatibilityError("ASCII incompatible encoding: " + str.getEncoding());
-        }
+        str.verifyAsciiCompatible();
         writeWarningToError(runtime.getCurrentContext(), str);
         return context.nil;
+    }
+
+    @JRubyMethod(required = 1, optional = 1)
+    public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        if (args.length > 1) {
+            IRubyObject opts = TypeConverter.checkHashType(context.runtime, args[1]);
+            IRubyObject ret = ArgsUtil.extractKeywordArg(context, (RubyHash) opts, "category");
+            if (ret.isNil()) {
+                return warn(context, recv, args[0]);
+            } else {
+                return warnWithCategory(context, args[0], ret);
+            }
+        } else {
+            return warn(context, recv, args[0]);
+        }
     }
 
     private static JavaSites.WarningSites sites(ThreadContext context) {
@@ -271,6 +293,15 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         IRubyObject errorStream = runtime.getGlobalVariables().get("$stderr");
         String buffer = fileName + " warning: " + message + '\n';
         errorStream.callMethod(runtime.getCurrentContext(), "write", runtime.newString(buffer));
+    }
+
+    // When runtime verbose is toggled we change the categories to reflect that.
+    public void adjustCategories(boolean isVerbose) {
+        if (isVerbose) {
+            runtime.getWarningCategories().add(Category.DEPRECATED);
+        } else {
+            runtime.getWarningCategories().remove(Category.DEPRECATED);
+        }
     }
 
     public enum Category {

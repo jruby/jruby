@@ -62,6 +62,7 @@ import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.util.Numeric.f_gcd;
 import static org.jruby.util.Numeric.f_lcm;
+import static org.jruby.util.Numeric.f_zero_p;
 
 /** Implementation of the Integer class.
  *
@@ -732,7 +733,15 @@ public abstract class RubyInteger extends RubyNumeric {
     @Override
     @JRubyMethod(name = "fdiv")
     public IRubyObject fdiv(ThreadContext context, IRubyObject y) {
-        return fdivDouble(context, y);
+        RubyInteger x = this;
+        if (y instanceof RubyInteger && !f_zero_p(context, y)) {
+            IRubyObject gcd = gcd(context, y);
+            if (!f_zero_p(context, gcd)) {
+                x = (RubyInteger)x.idiv(context, gcd);
+                y = ((RubyInteger)y).idiv(context, gcd);
+            }
+        }
+        return x.fdivDouble(context, y);
     }
 
     public abstract IRubyObject fdivDouble(ThreadContext context, IRubyObject y);

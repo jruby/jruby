@@ -12,6 +12,8 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
+
 public class IntegerMathInstr extends TwoOperandResultBaseInstr {
     public enum Op {
         ADD, SUBTRACT, MULTIPLY, DIVIDE;
@@ -48,6 +50,9 @@ public class IntegerMathInstr extends TwoOperandResultBaseInstr {
         e.encode(op.ordinal());
     }
 
+    public String[] toStringNonOperandArgs() {
+        return new String[] { "op:", op.name()};
+    }
 
     @Override
     public void visit(IRVisitor visitor) {

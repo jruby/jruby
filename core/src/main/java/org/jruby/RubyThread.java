@@ -34,6 +34,7 @@
 package org.jruby;
 
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.lang.ref.WeakReference;
 import java.nio.channels.Channel;
 import java.nio.channels.SelectableChannel;
@@ -463,11 +464,23 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         RubyClass backtrace = threadClass.defineClassUnder("Backtrace", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         RubyClass location = backtrace.defineClassUnder("Location", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
 
+        backtrace.defineAnnotatedMethods(Backtrace.class);
         location.defineAnnotatedMethods(Location.class);
 
         runtime.setLocation(location);
 
         return threadClass;
+    }
+
+    public static class Backtrace extends RubyObject {
+        public Backtrace(Ruby runtime, RubyClass metaClass) {
+            super(runtime, metaClass);
+        }
+
+        @JRubyMethod(module = true)
+        public static IRubyObject limit(ThreadContext context, IRubyObject self) {
+            return context.runtime.newFixnum(context.runtime.getInstanceConfig().getBacktraceLimit());
+        }
     }
 
     public static class Location extends RubyObject {
@@ -557,7 +570,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * </pre>
      * <i>produces:</i> abxyzc
      */
-    @JRubyMethod(name = {"new", "fork"}, rest = true, meta = true, forward = true)
+    @JRubyMethod(name = {"new", "fork"}, rest = true, meta = true, keywords = true)
     public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
         return startThread(recv, args, true, block);
     }
@@ -608,7 +621,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return rubyThread;
     }
 
-    @JRubyMethod(rest = true, visibility = PRIVATE, forward = true)
+    @JRubyMethod(rest = true, visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
         int callInfo = context.resetCallInfo();
         if (!block.isGiven()) throw context.runtime.newThreadError("must be called with a block");
@@ -1474,6 +1487,27 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     @Deprecated
     public IRubyObject raise(IRubyObject[] args, Block block) {
         return raise(getRuntime().getCurrentContext(), args, block);
+    }
+
+    @JRubyMethod
+    public IRubyObject native_thread_id(ThreadContext context) {
+        if (!isAlive()) return context.nil;
+
+        String encodedString = ManagementFactory.getRuntimeMXBean().getName();
+        int atIndex = encodedString.indexOf('@');
+
+        // Undocumented format: 1761769@localhost.localdomain
+        if (atIndex != -1) {
+            try {
+                int id = Integer.parseInt(encodedString.substring(0, atIndex));
+
+                return context.runtime.newFixnum(id);
+            } catch (NumberFormatException e) {
+                // if we fail to parse this we will just act like we don't support it
+            }
+        }
+
+        return context.nil;  // Not supported or failed to extract id
     }
 
     private IRubyObject genericRaise(ThreadContext context, RubyThread currentThread, IRubyObject... args) {

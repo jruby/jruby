@@ -32,7 +32,6 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -94,7 +93,7 @@ public class RubyGenerator extends RubyObject {
     }
 
     // generator_each
-    @JRubyMethod(rest = true, forward = true)
+    @JRubyMethod(rest = true, keywords = true)
     public IRubyObject each(ThreadContext context, IRubyObject[] args, Block block) {
         return proc.call(context, ArraySupport.newCopy(RubyYielder.newYielder(context, block), args));
     }

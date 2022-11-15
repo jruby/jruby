@@ -52,8 +52,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 
-import java.util.List;
-
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
 
 /** 
@@ -115,29 +113,29 @@ public class RubyMethod extends AbstractRubyMethod {
     /** Call the method.
      * 
      */
-    @JRubyMethod(name = {"call", "[]"}, forward = true)
+    @JRubyMethod(name = {"call", "[]"}, keywords = true)
     public IRubyObject call(ThreadContext context, Block block) {
         return method.call(context, receiver, sourceModule, methodName, block);
     }
-    @JRubyMethod(name = {"call", "[]"}, forward = true)
+    @JRubyMethod(name = {"call", "[]"}, keywords = true)
     public IRubyObject call(ThreadContext context, IRubyObject arg, Block block) {
         arg = dupIfKeywordRestAtCallsite(context, arg);
 
         return method.call(context, receiver, sourceModule, methodName, arg, block);
     }
-    @JRubyMethod(name = {"call", "[]"}, forward = true)
+    @JRubyMethod(name = {"call", "[]"}, keywords = true)
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         arg1 = dupIfKeywordRestAtCallsite(context, arg1);
 
         return method.call(context, receiver, sourceModule, methodName, arg0, arg1, block);
     }
-    @JRubyMethod(name = {"call", "[]"}, forward = true)
+    @JRubyMethod(name = {"call", "[]"}, keywords = true)
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         arg2 = dupIfKeywordRestAtCallsite(context, arg2);
 
         return method.call(context, receiver, sourceModule, methodName, arg0, arg1, arg2, block);
     }
-    @JRubyMethod(name = {"call", "[]"}, rest = true, forward = true)
+    @JRubyMethod(name = {"call", "[]"}, rest = true, keywords = true)
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
         if (args.length > 0) {
             args[args.length - 1] = dupIfKeywordRestAtCallsite(context, args[args.length - 1]);

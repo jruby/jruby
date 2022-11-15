@@ -35,18 +35,13 @@
 package org.jruby.runtime.load;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URI;
 import java.net.URL;
 import java.security.AccessControlException;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
@@ -54,20 +49,17 @@ import java.util.function.Function;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.zip.ZipException;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyDir;
 import org.jruby.RubyFile;
 import org.jruby.RubyHash;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.RubyThread;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.ast.executable.Script;
 import org.jruby.exceptions.CatchThrow;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.LoadError;
@@ -341,6 +333,30 @@ public class LoadService {
         }
     }
 
+    private final ThreadLocal<RubyModule> wrapperSelf = new ThreadLocal<>();
+
+    public RubyModule getWrapperSelf() {
+        return wrapperSelf.get();
+    }
+
+    public void load(String file, IRubyObject wrapWith) {
+        if (wrapWith == null || !wrapWith.isTrue()) {
+            load(file, false);
+            return;
+        }
+
+        if (wrapWith instanceof RubyModule) {
+            wrapperSelf.set((RubyModule) wrapWith);
+            try {
+                load(file, true);
+            } finally {
+                wrapperSelf.remove();
+            }
+        } else {
+            load(file, true);
+        }
+    }
+
     public void load(String file, boolean wrap) {
         long startTime = loadTimer.startLoad(file);
         int currentLine = runtime.getCurrentLine();
@@ -413,8 +429,6 @@ public class LoadService {
     }
 
     final RequireLocks requireLocks = new RequireLocks();
-
-    enum LockResult { LOCKED, CIRCULAR }
 
     final class RequireLocks {
         final class RequireLock extends ReentrantLock {
@@ -659,47 +673,6 @@ public class LoadService {
         return library instanceof JarredScript && file.endsWith(".jar");
     }
 
-    @Deprecated
-    public static class SearchState {
-        public Library library;
-        public String loadName;
-        public SuffixType suffixType;
-        public String searchFile;
-
-        public SearchState(String file) {
-            loadName = file;
-        }
-
-        @Deprecated
-        public void prepareRequireSearch(final String file) {
-            String[] fileHolder = {file};
-            suffixType = LibrarySearcher.getSuffixTypeForRequire(fileHolder);
-            searchFile = fileHolder[0];
-        }
-
-        @Deprecated
-        public void prepareLoadSearch(final String file) {
-            String[] fileHolder = {file};
-            suffixType = LibrarySearcher.getSuffixTypeForLoad(fileHolder);
-            searchFile = fileHolder[0];
-        }
-
-        public void setLoadName(String loadName) {
-            this.loadName = loadName;
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder sb = new StringBuilder();
-            sb.append(this.getClass().getName()).append(": ");
-            sb.append("library=").append(library.toString());
-            sb.append(", loadName=").append(loadName);
-            sb.append(", suffixType=").append(suffixType.toString());
-            sb.append(", searchFile=").append(searchFile);
-            return sb.toString();
-        }
-    }
-
     protected boolean tryLoadingLibraryOrScript(Ruby runtime, Library library, String searchFile) {
         // attempt to load the found library
         try {
@@ -772,7 +745,7 @@ public class LoadService {
     /**
      * Replaces findLibraryBySearchState but split off for require. Needed for OSGiLoadService to override.
      */
-    protected char searchForRequire(String file, LibrarySearcher.FoundLibrary[] path) {
+    public char searchForRequire(String file, LibrarySearcher.FoundLibrary[] path) {
         return librarySearcher.findLibraryForRequire(file, path);
     }
 
@@ -823,60 +796,6 @@ public class LoadService {
 
     protected String getLoadPathEntry(IRubyObject entry) {
         return RubyFile.get_path(runtime.getCurrentContext(), entry).asJavaString();
-    }
-
-    public JarFile getJarFile(String jarFileName) {
-        JarFile jarFile = jarFiles.get(jarFileName);
-        if(null == jarFile) {
-            try {
-                jarFile = new JarFile(jarFileName);
-                jarFiles.put(jarFileName, jarFile);
-            } catch (ZipException ignored) {
-                if (runtime.getInstanceConfig().isDebug()) {
-                    LOG.info("ZipException trying to access " + jarFileName, ignored);
-                }
-            } catch (FileNotFoundException ignored) {
-            } catch (IOException e) {
-                throw runtime.newIOErrorFromException(e);
-            }
-        }
-        return jarFile;
-    }
-
-    protected boolean loadPathLooksLikeJarURL(String loadPathEntry) {
-        return loadPathEntry.startsWith("jar:") || loadPathEntry.endsWith(".jar") || (loadPathEntry.startsWith("file:") && loadPathEntry.indexOf("!") != -1);
-    }
-
-    protected boolean loadPathLooksLikeClasspathURL(String loadPathEntry) {
-        return loadPathEntry.startsWith("classpath:");
-    }
-
-    private String[] splitJarUrl(String loadPathEntry) {
-        String unescaped = loadPathEntry;
-
-        try {
-            unescaped = new URI(loadPathEntry).getSchemeSpecificPart();
-        } catch (URISyntaxException e) {
-            // Fall back to using the original string
-        }
-
-        int idx = unescaped.indexOf('!');
-        if (idx == -1) {
-            return new String[]{unescaped, ""};
-        }
-
-        String filename = unescaped.substring(0, idx);
-        String entry = idx + 2 < unescaped.length() ? unescaped.substring(idx + 2) : "";
-
-        if (filename.startsWith("jar:")) {
-            filename = filename.substring(4);
-        }
-
-        if (filename.startsWith("file:")) {
-            filename = filename.substring(5);
-        }
-
-        return new String[]{filename, entry};
     }
 
     /**
@@ -1048,10 +967,6 @@ public class LoadService {
         return path;
     }
 
-    private String expandRelativeJarPath(String path) {
-        return path.replaceAll("/[^/]+/\\.\\.|[^/]+/\\.\\./|\\./","").replace("^\\\\","/");
-    }
-
     protected String resolveLoadName(LoadServiceResource foundResource, String previousPath) {
         if (canGetAbsolutePath) {
             try {
@@ -1067,653 +982,6 @@ public class LoadService {
             }
         }
         return resolveLoadName(foundResource, previousPath);
-    }
-
-    //<editor-fold desc="Deprecated" defaultstate="collapsed">
-    @Deprecated
-    protected String getFileName(JRubyFile file, String namePlusSuffix) {
-        return file.getAbsolutePath();
-    }
-
-    @Deprecated
-    public void addBuiltinLibrary(String name, Library library) {
-        builtinLibraries.put(name, library);
-    }
-
-    @Deprecated
-    public void removeBuiltinLibrary(String name) {
-        builtinLibraries.remove(name);
-    }
-
-    @Deprecated
-    public List<String> getBuiltinLibraries() {
-        return builtinLibraries.keySet().stream().collect(Collectors.toList());
-    }
-
-    @Deprecated
-    protected final Map<String, Library> builtinLibraries = new HashMap<>(36);
-
-    /**
-     * This method did require the specified file without getting a lock.
-     * Now we offer safe version only. Use {@link LoadService#require(String)} instead.
-     */
-    @Deprecated
-    public boolean smartLoad(String file) {
-        return require(file);
-    }
-
-    @Deprecated
-    protected void addLoadedFeature(String name) {
-        addLoadedFeature(name, name);
-    }
-
-    @Deprecated
-    public interface LoadSearcher {
-        /**
-         * @param state
-         * @return true if trySearch should be called.
-         */
-        public boolean shouldTrySearch(SearchState state);
-
-        /**
-         * @param state
-         * @return false if loadSearch must be bail-out.
-         */
-        public boolean trySearch(SearchState state);
-    }
-
-    @Deprecated
-    public class BailoutSearcher implements LoadSearcher {
-        public boolean shouldTrySearch(SearchState state) {
-            return state.library == null;
-        }
-
-        protected boolean trySearch(String file, SuffixType suffixType) {
-            for (String suffix : suffixType.getSuffixes()) {
-                String searchName = file + suffix;
-                if (featureAlreadyLoaded(searchName)) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        public boolean trySearch(SearchState state) {
-            return trySearch(state.searchFile, state.suffixType);
-        }
-    }
-
-    @Deprecated
-    public class SourceBailoutSearcher extends BailoutSearcher {
-        public boolean shouldTrySearch(SearchState state) {
-            // JRUBY-5032: Load extension files if they are required
-            // explicitly, and even if an rb file of the same name
-            // has already been loaded (effectively skipping the search for a source file).
-            return !extensionPattern.matcher(state.loadName).find();
-        }
-
-        // According to Rubyspec, source files should be loaded even if an equally named
-        // extension is loaded already. So we use the bailout search twice, once only
-        // for source files and once for whatever suffix type the state determines
-        public boolean trySearch(SearchState state) {
-            return super.trySearch(state.searchFile, SuffixType.Source);
-        }
-    }
-
-    @Deprecated
-    public class NormalSearcher implements LoadSearcher {
-        public boolean shouldTrySearch(SearchState state) {
-            return state.library == null;
-        }
-
-        public boolean trySearch(SearchState state) {
-            state.library = findLibraryWithoutCWD(state, state.searchFile, state.suffixType);
-            return true;
-        }
-    }
-
-    @Deprecated
-    public class ClassLoaderSearcher implements LoadSearcher {
-        public boolean shouldTrySearch(SearchState state) {
-            return state.library == null;
-        }
-
-        public boolean trySearch(SearchState state) {
-            state.library = findLibraryWithClassloaders(state, state.searchFile, state.suffixType);
-            return true;
-        }
-    }
-
-    @Deprecated
-    public class ExtensionSearcher implements LoadSearcher {
-        public boolean shouldTrySearch(SearchState state) {
-            return (state.library == null || state.library instanceof JarredScript) && state.searchFile.length() > 0;
-        }
-
-        public boolean trySearch(SearchState state) {
-            debugLogTry("jarWithExtension", state.searchFile);
-
-            // This code exploits the fact that all .jar files will be found for the JarredScript feature.
-            // This is where the basic extension mechanism gets fixed
-            Library oldLibrary = state.library;
-            state.library = ClassExtensionLibrary.tryFind(runtime, state.searchFile);
-            debugLogFound("jarWithExtension", state.searchFile);
-
-            // If there was a good library before, we go back to that
-            if(state.library == null && oldLibrary != null) {
-                state.library = oldLibrary;
-            }
-            return true;
-        }
-    }
-
-    @Deprecated
-    public class ScriptClassSearcher implements LoadSearcher {
-        public class ScriptClassLibrary implements Library {
-            private final Script script;
-
-            public ScriptClassLibrary(Script script) {
-                this.script = script;
-            }
-
-            public void load(Ruby runtime, boolean wrap) {
-                runtime.loadScript(script, wrap);
-            }
-        }
-
-        public boolean shouldTrySearch(SearchState state) {
-            return state.library == null;
-        }
-
-        public boolean trySearch(SearchState state) throws RaiseException {
-            // no library or extension found, try to load directly as a class
-            Script script;
-            String className = buildClassName(state.searchFile);
-            int lastSlashIndex = className.lastIndexOf('/');
-            if (lastSlashIndex > -1 && lastSlashIndex < className.length() - 1 && !Character.isJavaIdentifierStart(className.charAt(lastSlashIndex + 1))) {
-                if (lastSlashIndex == -1) {
-                    className = '_' + className;
-                } else {
-                    className = className.substring(0, lastSlashIndex + 1) + '_' + className.substring(lastSlashIndex + 1);
-                }
-            }
-            className = className.replace('/', '.');
-            try {
-                Class scriptClass = Class.forName(className);
-                script = (Script) scriptClass.newInstance();
-            } catch (Exception cnfe) {
-                return true;
-            }
-            state.library = new ScriptClassLibrary(script);
-            return true;
-        }
-    }
-
-    @Deprecated // no longer used
-    protected String buildClassName(String className) {
-        // Remove any relative prefix, e.g. "./foo/bar" becomes "foo/bar".
-        className = className.replaceFirst("^\\.\\/", "");
-        final int lastDot = className.lastIndexOf('.');
-        if (lastDot != -1) {
-            className = className.substring(0, lastDot);
-        }
-        className = className.replace("-", "_minus_").replace('.', '_');
-        return className;
-    }
-
-    @Deprecated
-    protected Library findBuiltinLibrary(SearchState state, String baseName, SuffixType suffixType) {
-        for (String suffix : suffixType.getSuffixes()) {
-            String namePlusSuffix = baseName + suffix;
-            debugLogTry( "builtinLib",  namePlusSuffix );
-            if (builtinLibraries.containsKey(namePlusSuffix)) {
-                state.setLoadName(namePlusSuffix);
-                Library lib = builtinLibraries.get(namePlusSuffix);
-                debugLogFound( "builtinLib", namePlusSuffix );
-                return lib;
-            }
-        }
-        return null;
-    }
-
-    @Deprecated
-    protected Library findLibraryWithoutCWD(SearchState state, String baseName, SuffixType suffixType) {
-        Library library = null;
-
-        switch (suffixType) {
-            case Both:
-                library = findBuiltinLibrary(state, baseName, SuffixType.Source);
-                if (library == null) library = createLibrary(state, tryResourceFromJarURL(state, baseName, SuffixType.Source));
-                if (library == null) library = createLibrary(state, tryResourceFromLoadPathOrURL(state, baseName, SuffixType.Source));
-                // If we fail to find as a normal Ruby script, we try to find as an extension,
-                // checking for a builtin first.
-                if (library == null) library = findBuiltinLibrary(state, baseName, SuffixType.Extension);
-                if (library == null) library = createLibrary(state, tryResourceFromJarURL(state, baseName, SuffixType.Extension));
-                if (library == null) library = createLibrary(state, tryResourceFromLoadPathOrURL(state, baseName, SuffixType.Extension));
-                break;
-            case Source:
-            case Extension:
-                // Check for a builtin first.
-                library = findBuiltinLibrary(state, baseName, suffixType);
-                if (library == null) library = createLibrary(state, tryResourceFromJarURL(state, baseName, suffixType));
-                if (library == null) library = createLibrary(state, tryResourceFromLoadPathOrURL(state, baseName, suffixType));
-                break;
-            case Neither:
-                library = createLibrary(state, tryResourceFromJarURL(state, baseName, SuffixType.Neither));
-                if (library == null) library = createLibrary(state, tryResourceFromLoadPathOrURL(state, baseName, SuffixType.Neither));
-                break;
-        }
-
-        return library;
-    }
-
-    @Deprecated
-    protected LoadServiceResource tryResourceFromCWD(SearchState state, String baseName,SuffixType suffixType) throws RaiseException {
-        LoadServiceResource foundResource = null;
-
-        for (String suffix : suffixType.getSuffixes()) {
-            String namePlusSuffix = baseName + suffix;
-            // check current directory; if file exists, retrieve URL and return resource
-            try {
-                JRubyFile file = JRubyFile.create(runtime.getCurrentDirectory(), RubyFile.expandUserPath(runtime.getCurrentContext(), namePlusSuffix));
-                debugLogTry("resourceFromCWD", file.toString());
-                if (file.isFile() && file.isAbsolute() && file.canRead()) {
-                    boolean absolute = true;
-                    foundResource = new LoadServiceResource(file, getFileName(file, namePlusSuffix), absolute);
-                    debugLogFound(foundResource);
-                    state.setLoadName(resolveLoadName(foundResource, namePlusSuffix));
-                    break;
-                }
-            } catch (IllegalArgumentException illArgEx) {
-            } catch (SecurityException secEx) {
-            }
-        }
-
-        return foundResource;
-    }
-
-    /**
-     * Try loading the resource from the current dir by appending suffixes and
-     * passing it to tryResourceAsIs to have the ./ replaced by CWD.
-     */
-    @Deprecated
-    protected LoadServiceResource tryResourceFromDotSlash(SearchState state, String baseName, SuffixType suffixType) throws RaiseException {
-        LoadServiceResource foundResource = null;
-
-        for (String suffix : suffixType.getSuffixes()) {
-            String namePlusSuffix = baseName + suffix;
-
-            foundResource = tryResourceAsIs(namePlusSuffix, "resourceFromDotSlash");
-
-            if (foundResource != null) break;
-        }
-
-        return foundResource;
-    }
-
-    @Deprecated
-    protected LoadServiceResource tryResourceFromHome(SearchState state, String baseName, SuffixType suffixType) throws RaiseException {
-        LoadServiceResource foundResource = null;
-
-        Optional<String> maybeHome = RubyDir.getHomeFromEnv(runtime);
-        if (!maybeHome.isPresent()) return null;
-
-        String home = maybeHome.get();
-        String path = baseName.substring(2);
-
-        for (String suffix : suffixType.getSuffixes()) {
-            String namePlusSuffix = path + suffix;
-            // check home directory; if file exists, retrieve URL and return resource
-            try {
-                JRubyFile file = JRubyFile.create(home, RubyFile.expandUserPath(runtime.getCurrentContext(), namePlusSuffix));
-                debugLogTry("resourceFromHome", file.toString());
-                if (file.isFile() && file.isAbsolute() && file.canRead()) {
-                    boolean absolute = true;
-
-                    state.setLoadName(file.getPath());
-                    foundResource = new LoadServiceResource(file, state.loadName, absolute);
-                    debugLogFound(foundResource);
-                    break;
-                }
-            } catch (IllegalArgumentException illArgEx) {
-            } catch (SecurityException secEx) {
-            }
-        }
-
-        return foundResource;
-    }
-
-    @Deprecated
-    protected LoadServiceResource tryResourceFromJarURL(SearchState state, String baseName, SuffixType suffixType) {
-        // if a jar or file URL, return load service resource directly without further searching
-        LoadServiceResource foundResource = null;
-        if (baseName.startsWith("jar:file:")) {
-            return tryResourceFromJarURL(state, baseName.replaceFirst("jar:", ""), suffixType);
-        } else if (baseName.startsWith("jar:")) {
-            for (String suffix : suffixType.getSuffixes()) {
-                String namePlusSuffix = baseName + suffix;
-                try {
-                    URI resourceUri = new URI("jar", namePlusSuffix.substring(4), null);
-                    URL url = resourceUri.toURL();
-                    debugLogTry("resourceFromJarURL", url.toString());
-                    if (url.openStream() != null) {
-                        foundResource = new LoadServiceResource(url, namePlusSuffix);
-                        debugLogFound(foundResource);
-                    }
-                } catch (FileNotFoundException e) {
-                } catch (URISyntaxException e) {
-                    throw runtime.newIOError(e.getMessage());
-                } catch (MalformedURLException e) {
-                    throw runtime.newIOErrorFromException(e);
-                } catch (IOException e) {
-                    throw runtime.newIOErrorFromException(e);
-                }
-                if (foundResource != null) {
-                    state.setLoadName(resolveLoadName(foundResource, namePlusSuffix));
-                    break; // end suffix iteration
-                }
-            }
-        } else if(baseName.startsWith("file:") && baseName.indexOf("!/") != -1) {
-            for (String suffix : suffixType.getSuffixes()) {
-                String namePlusSuffix = baseName + suffix;
-                try {
-                    String jarFile = namePlusSuffix.substring(5, namePlusSuffix.indexOf("!/"));
-                    JarFile file = new JarFile(jarFile);
-                    String expandedFilename = expandRelativeJarPath(namePlusSuffix.substring(namePlusSuffix.indexOf("!/") + 2));
-
-                    debugLogTry("resourceFromJarURL", expandedFilename);
-                    if(file.getJarEntry(expandedFilename) != null) {
-                        URI resourceUri = new URI("jar", "file:" + jarFile + "!/" + expandedFilename, null);
-                        foundResource = new LoadServiceResource(resourceUri.toURL(), namePlusSuffix);
-                        debugLogFound(foundResource);
-                    }
-                } catch (URISyntaxException e) {
-                    throw runtime.newIOError(e.getMessage());
-                } catch (MalformedURLException e) {
-                    throw runtime.newIOErrorFromException(e);
-                } catch(Exception e) {}
-                if (foundResource != null) {
-                    state.setLoadName(resolveLoadName(foundResource, namePlusSuffix));
-                    break; // end suffix iteration
-                }
-            }
-        }
-
-        return foundResource;
-    }
-
-    @Deprecated
-    protected LoadServiceResource tryResourceFromLoadPathOrURL(SearchState state, String baseName, SuffixType suffixType) {
-        LoadServiceResource foundResource = null;
-
-        // if it's a ./ baseName, use ./ logic
-        if (baseName.startsWith("./")) {
-            foundResource = tryResourceFromDotSlash(state, baseName, suffixType);
-
-            if (foundResource != null) {
-                state.setLoadName(resolveLoadName(foundResource, foundResource.getName()));
-            }
-
-            // not found, don't bother with load path
-            return foundResource;
-        }
-
-        // if it's a ~/ baseName use HOME logic
-        if (baseName.startsWith("~/")) {
-            foundResource = tryResourceFromHome(state, baseName, suffixType);
-
-            if (foundResource != null) {
-                state.setLoadName(resolveLoadName(foundResource, foundResource.getName()));
-            }
-
-            // not found, don't bother with load path
-            return foundResource;
-        }
-
-        // if given path is absolute, just try it as-is (with extensions) and no load path
-        if (new File(baseName).isAbsolute() || baseName.startsWith("../")) {
-            for (String suffix : suffixType.getSuffixes()) {
-                String namePlusSuffix = baseName + suffix;
-                foundResource = tryResourceAsIs(namePlusSuffix);
-
-                if (foundResource != null) {
-                    state.setLoadName(resolveLoadName(foundResource, namePlusSuffix));
-                    return foundResource;
-                }
-            }
-
-            return null;
-        }
-
-        Outer: for (int i = 0; i < loadPath.size(); i++) {
-            // TODO this is really inefficient, and potentially a problem every time anyone require's something.
-            // we should try to make LoadPath a special array object.
-            String loadPathEntry = getLoadPathEntry(loadPath.eltInternal(i));
-
-            if (loadPathEntry.equals(".") || loadPathEntry.equals("")) {
-                foundResource = tryResourceFromCWD(state, baseName, suffixType);
-
-                if (foundResource != null) {
-                    String ss = foundResource.getName();
-                    if(ss.startsWith("./")) {
-                        ss = ss.substring(2);
-                    }
-                    state.setLoadName(resolveLoadName(foundResource, ss));
-                    break Outer;
-                }
-            } else {
-                boolean looksLikeJarURL = loadPathLooksLikeJarURL(loadPathEntry);
-                boolean looksLikeClasspathURL = loadPathLooksLikeClasspathURL(loadPathEntry);
-                for (String suffix : suffixType.getSuffixes()) {
-                    String namePlusSuffix = baseName + suffix;
-
-                    if (looksLikeJarURL) {
-                        foundResource = tryResourceFromJarURLWithLoadPath(namePlusSuffix, loadPathEntry);
-                    } else if (looksLikeClasspathURL) {
-                        foundResource = findFileInClasspath(loadPathEntry + "/" + namePlusSuffix);
-                    } else {
-                        foundResource = tryResourceFromLoadPath(namePlusSuffix, loadPathEntry);
-                    }
-
-                    if (foundResource != null) {
-                        String ss = namePlusSuffix;
-                        if(ss.startsWith("./")) {
-                            ss = ss.substring(2);
-                        }
-                        state.setLoadName(resolveLoadName(foundResource, ss));
-                        break Outer; // end suffix iteration
-                    }
-                }
-            }
-        }
-
-        return foundResource;
-    }
-
-    @Deprecated
-    protected LoadServiceResource tryResourceFromJarURLWithLoadPath(String namePlusSuffix, String loadPathEntry) {
-        LoadServiceResource foundResource = null;
-
-        String[] urlParts = splitJarUrl(loadPathEntry);
-        String jarFileName = urlParts[0];
-        String entryPath = urlParts[1];
-
-        JarFile current = getJarFile(jarFileName);
-        if (current != null ) {
-            String canonicalEntry = (entryPath.length() > 0 ? entryPath + "/" : "") + namePlusSuffix;
-            debugLogTry("resourceFromJarURLWithLoadPath", current.getName() + "!/" + canonicalEntry);
-            if (current.getJarEntry(canonicalEntry) != null) {
-                try {
-                    URI resourceUri = new URI("jar", "file:" + jarFileName + "!/" + canonicalEntry, null);
-                    foundResource = new LoadServiceResource(resourceUri.toURL(), resourceUri.getSchemeSpecificPart());
-                    debugLogFound(foundResource);
-                } catch (URISyntaxException e) {
-                    throw runtime.newIOError(e.getMessage());
-                } catch (MalformedURLException e) {
-                    throw runtime.newIOErrorFromException(e);
-                }
-            }
-        }
-
-        return foundResource;
-    }
-
-    @Deprecated
-    protected LoadServiceResource tryResourceFromLoadPath( String namePlusSuffix,String loadPathEntry) throws RaiseException {
-        LoadServiceResource foundResource = null;
-
-        try {
-            if (!Ruby.isSecurityRestricted()) {
-                String reportedPath = loadPathEntry + "/" + namePlusSuffix;
-                boolean absolute = true;
-                // we check length == 0 for 'load', which does not use load path
-                if (!new File(reportedPath).isAbsolute()) {
-                    absolute = false;
-                    // prepend ./ if . is not already there, since we're loading based on CWD
-                    if (reportedPath.charAt(0) != '.') {
-                        reportedPath = "./" + reportedPath;
-                    }
-                    loadPathEntry = JRubyFile.create(runtime.getCurrentDirectory(), loadPathEntry).getAbsolutePath();
-                }
-                JRubyFile actualPath = JRubyFile.create(loadPathEntry, RubyFile.expandUserPath(runtime.getCurrentContext(), namePlusSuffix));
-                if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
-                    debugLogTry("resourceFromLoadPath", "'" + actualPath.toString() + "' " + actualPath.isFile() + " " + actualPath.canRead());
-                }
-                if (actualPath.canRead()) {
-                    foundResource = new LoadServiceResource(actualPath, reportedPath, absolute);
-                    debugLogFound(foundResource);
-                }
-            }
-        } catch (SecurityException secEx) {
-        }
-
-        return foundResource;
-    }
-
-    @Deprecated
-    protected LoadServiceResource tryResourceAsIs(String namePlusSuffix) throws RaiseException {
-        return tryResourceAsIs(namePlusSuffix, "resourceAsIs");
-    }
-
-    @Deprecated
-    protected LoadServiceResource tryResourceAsIs(String namePlusSuffix, String debugName) throws RaiseException {
-        LoadServiceResource foundResource = null;
-
-        try {
-            if (!Ruby.isSecurityRestricted()) {
-                String reportedPath = namePlusSuffix;
-                File actualPath;
-
-                if (new File(reportedPath).isAbsolute()) {
-                    // it's an absolute path, use it as-is
-                    actualPath = new File(RubyFile.expandUserPath(runtime.getCurrentContext(), namePlusSuffix));
-                } else {
-                    // replace leading ./ with current directory
-                    if (reportedPath.charAt(0) == '.' && reportedPath.charAt(1) == '/') {
-                        reportedPath = reportedPath.replaceFirst("\\./", runtime.getCurrentDirectory());
-                    }
-
-                    actualPath = JRubyFile.create(runtime.getCurrentDirectory(), RubyFile.expandUserPath(runtime.getCurrentContext(), namePlusSuffix));
-                }
-
-                debugLogTry(debugName, actualPath.toString());
-
-                if (reportedPath.contains("..")) {
-                    // try to canonicalize if path contains ..
-                    try {
-                        actualPath = actualPath.getCanonicalFile();
-                    } catch (IOException ioe) {
-                    }
-                }
-
-                if (actualPath.isFile() && actualPath.canRead()) {
-                    foundResource = new LoadServiceResource(actualPath, reportedPath);
-                    debugLogFound(foundResource);
-                }
-            }
-        } catch (SecurityException secEx) {
-        }
-
-        return foundResource;
-    }
-
-    @Deprecated
-    public void removeInternalLoadedFeature(String name) {
-        loadedFeatures.deleteString(runtime.getCurrentContext(), name);
-    }
-
-    @Deprecated
-    protected void reraiseRaiseExceptions(Throwable e) throws RaiseException {
-        if (e instanceof RaiseException) {
-            throw (RaiseException) e;
-        }
-    }
-
-    @Deprecated
-    public SearchState findFileForLoad(String file) {
-        SearchState state = new SearchState(file);
-
-        findLibraryBySearchState(state);
-
-        return state;
-    }
-
-    @Deprecated
-    protected Library createLibrary(SearchState state, LoadServiceResource resource) {
-        if (resource == null) {
-            return null;
-        }
-        String file = resource.getName();
-        String location = state.loadName;
-        if (file.endsWith(".so") || file.endsWith(".dll") || file.endsWith(".bundle")) {
-            throw runtime.newLoadError("C extensions are not supported, can't load `" + resource.getName() + "'", resource.getName());
-        } else if (file.endsWith(".jar")) {
-            return new JarredScript(resource, state.searchFile);
-        } else if (file.endsWith(".class")) {
-            return new JavaCompiledScript(resource);
-        } else {
-            return new ExternalScript(resource, location);
-        }
-    }
-
-    @Deprecated
-    protected Library findLibraryWithClassloaders(SearchState state, String baseName, SuffixType suffixType) {
-        for (String suffix : suffixType.getSuffixes()) {
-            String file = baseName + suffix;
-            LoadServiceResource resource = findFileInClasspath(file);
-            if (resource != null) {
-                state.setLoadName(resolveLoadName(resource, file));
-                return createLibrary(state, resource);
-            }
-        }
-        return null;
-    }
-
-    @Deprecated
-    protected boolean tryLoadingLibraryOrScript(Ruby runtime, SearchState state) {
-        return tryLoadingLibraryOrScript(runtime, state.library, state.searchFile);
-    }
-
-    @Deprecated
-    protected boolean isJarfileLibrary(SearchState state, final String file) {
-        return isJarfileLibrary(state.library, file);
-    }
-
-    @Deprecated
-    protected Library findLibraryBySearchState(SearchState state) {
-        return librarySearcher.findLibrary(state.searchFile, state.suffixType);
-    }
-
-    @Deprecated
-    public void provide(String shortName, String fullName) {
-        provide(fullName);
-    }
-
-    @Deprecated
-    protected void addLoadedFeature(String shortName, String name) {
-        RubyString strName = runtime.newString(name);
-        loadedFeatures.append(strName);
-        librarySearcher.addFeatureToIndex(strName.toString(), runtime.freezeAndDedupString(strName));
     }
     //</editor-fold>
 }

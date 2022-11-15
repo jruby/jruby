@@ -389,14 +389,14 @@ public class RubyComplex extends RubyNumeric {
     @JRubyMethod(name = "polar", meta = true, required = 1, optional = 1)
     public static IRubyObject polar(ThreadContext context, IRubyObject clazz, IRubyObject... args) {
         IRubyObject abs = args[0];
-        IRubyObject arg;
-        if (args.length < 2) {
-            arg = RubyFixnum.zero(context.runtime);
-        } else {
-            arg = args[1];
-        }
+        IRubyObject arg = args.length < 2 ? RubyFixnum.zero(context.runtime) : args[1];
+
         realCheck(context, abs, true);
         realCheck(context, arg, true);
+
+        if (abs instanceof RubyComplex) abs = ((RubyComplex) abs).getReal();
+        if (arg instanceof RubyComplex) arg = ((RubyComplex) arg).getReal();
+
         return f_complex_polar(context, (RubyClass) clazz, abs, arg);
     }
 
@@ -849,11 +849,11 @@ public class RubyComplex extends RubyNumeric {
      */
     @JRubyMethod(name = "coerce")
     public IRubyObject coerce(ThreadContext context, IRubyObject other) {
+        if (other instanceof RubyComplex) return context.runtime.newArray(other, this);
+
         if (other instanceof RubyNumeric && f_real_p(context, other)) {
             return context.runtime.newArray(newComplexBang(context, getMetaClass(), (RubyNumeric) other), this);
         }
-
-        if (other instanceof RubyComplex) return context.runtime.newArray(other, this);
 
         Ruby runtime = context.runtime;
         throw runtime.newTypeError(str(runtime, types(runtime, other.getMetaClass()), " can't be coerced into ", types(runtime, getMetaClass())));
@@ -1272,6 +1272,14 @@ public class RubyComplex extends RubyNumeric {
 
     // MRI: string_to_c_strict
     private static IRubyObject str_to_c_strict(ThreadContext context, RubyString str, boolean raise) {
+        str.verifyAsciiCompatible();
+
+        if (str.hasNul()) {
+            if (!raise) return context.nil;
+
+            throw context.runtime.newArgumentError("string contains null byte");
+        }
+
         IRubyObject[] ary = str_to_c_internal(context, str);
         if (ary[0] == context.nil || ary[1].convertToString().getByteList().length() > 0) {
             if (raise) {

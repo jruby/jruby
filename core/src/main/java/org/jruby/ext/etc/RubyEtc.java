@@ -163,11 +163,15 @@ public class RubyEtc {
         Ruby runtime = context.runtime;
         Sysconf name = Sysconf.valueOf(RubyNumeric.num2long(arg));
         POSIX posix = runtime.getPosix();
+        posix.errno(0);
         long ret = posix.sysconf(name);
+
         if (ret == -1) {
-            if (posix.errno() == Errno.ENOENT.intValue()) {
-                return runtime.getNil();
-            } else if (posix.errno() == Errno.EOPNOTSUPP.intValue()) {
+            int errno = posix.errno();
+
+            if (errno == Errno.ENOENT.intValue() || errno == 0) {
+                return context.nil;
+            } else if (errno == Errno.EOPNOTSUPP.intValue()) {
                 throw runtime.newNotImplementedError("sysconf() function is unimplemented on this machine");
             } else {
                 throw runtime.newErrnoFromLastPOSIXErrno();

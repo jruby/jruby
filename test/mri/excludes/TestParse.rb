@@ -4,3 +4,8 @@ exclude :test_negative_line_number, "JVM emits negative like some overflow (JIT 
 exclude :test_string, "lots of very specific error messages in which we differ a little"
 exclude :test_truncated_source_line, "2.5 truncates long source lines...we dont yet"
 exclude :test_void_expr_stmts_value, "We pass the last invalid next but the test harness runs with eval for JRbuy which then changes semantics"
+exclude :test_shareable_constant_value_unshareable_literal, "Ractor not supported yet"
+exclude :test_shareable_constant_value_unfrozen, "Ractor not supported yet"
+exclude :test_shareable_constant_value_nested, "Ractor not supported yet"
+exclude :test_shareable_constant_value_nonliteral, "Ractor not supported yet"
+exclude :test_shareable_constant_value_simple, "Ractor not supported yet"

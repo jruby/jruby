@@ -22,7 +22,6 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ArraySupport;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -101,7 +100,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         return context.nil;
     }
     
-    @JRubyMethod(rest = true, forward = true)
+    @JRubyMethod(rest = true, keywords = true)
     public IRubyObject resume(ThreadContext context, IRubyObject[] values) {
         Ruby runtime = context.runtime;
 

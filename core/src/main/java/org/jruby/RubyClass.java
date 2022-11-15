@@ -891,14 +891,14 @@ public class RubyClass extends RubyModule {
     /** rb_class_new_instance
     *
     */
-    @JRubyMethod(name = "new", forward = true)
+    @JRubyMethod(name = "new", keywords = true)
     public IRubyObject newInstance(ThreadContext context, Block block) {
         IRubyObject obj = allocate();
         baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, block);
         return obj;
     }
 
-    @JRubyMethod(name = "new", forward = true)
+    @JRubyMethod(name = "new", keywords = true)
     public IRubyObject newInstance(ThreadContext context, IRubyObject arg0, Block block) {
         IRubyObject obj = allocate();
         baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, arg0, block);
@@ -911,21 +911,21 @@ public class RubyClass extends RubyModule {
         return obj;
     }
 
-    @JRubyMethod(name = "new", forward = true)
+    @JRubyMethod(name = "new", keywords = true)
     public IRubyObject newInstance(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         IRubyObject obj = allocate();
         baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, arg0, arg1, block);
         return obj;
     }
 
-    @JRubyMethod(name = "new", forward = true)
+    @JRubyMethod(name = "new", keywords = true)
     public IRubyObject newInstance(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         IRubyObject obj = allocate();
         baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, arg0, arg1, arg2, block);
         return obj;
     }
 
-    @JRubyMethod(name = "new", rest = true, forward = true)
+    @JRubyMethod(name = "new", rest = true, keywords = true)
     public IRubyObject newInstance(ThreadContext context, IRubyObject[] args, Block block) {
         IRubyObject obj = allocate();
         baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, args, block);

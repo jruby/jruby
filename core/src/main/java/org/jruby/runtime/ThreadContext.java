@@ -830,8 +830,7 @@ public final class ThreadContext {
 
         int traceLength = safeLength(level, length, fullTrace);
 
-        // MRI started returning [] instead of nil some time after 1.9 (#4891)
-        if (traceLength < 0) return runtime.newEmptyArray();
+        if (traceLength < 0) return runtime.getNil();
 
         final IRubyObject[] traceArray = new IRubyObject[traceLength];
 
@@ -897,6 +896,19 @@ public final class ThreadContext {
         if (RubyInstanceConfig.LOG_WARNINGS) TraceType.logWarning(trace);
 
         return trace.length == 0 ? null : trace[trace.length - 1];
+    }
+
+    /**
+     * Return the trace of level or null.
+     */
+    public RubyStackTraceElement getSingleBacktraceExact(int level) {
+        runtime.incrementWarningCount();
+
+        RubyStackTraceElement[] trace = WALKER.walk(stream -> getPartialTrace(level, 1, stream));
+
+        if (RubyInstanceConfig.LOG_WARNINGS) TraceType.logWarning(trace);
+
+        return trace.length <= level ? null : trace[level];
     }
 
     /**
@@ -1472,6 +1484,10 @@ public final class ThreadContext {
         int callInfo = this.callInfo;
         this.callInfo = 0;
         return callInfo;
+    }
+
+    public static boolean hasKeywords(int callInfo) {
+        return (callInfo & CALL_KEYWORD) != 0;
     }
 
     @Deprecated

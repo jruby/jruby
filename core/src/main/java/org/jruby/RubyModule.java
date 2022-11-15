@@ -74,6 +74,7 @@ import org.jruby.embed.Extension;
 import org.jruby.exceptions.LoadError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.RuntimeError;
+import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.AttrReaderMethod;
 import org.jruby.internal.runtime.methods.AttrWriterMethod;
@@ -837,7 +838,7 @@ public class RubyModule extends RubyObject {
     private RubyModule createNewRefinedModule(ThreadContext context, RubyModule klass) {
         Ruby runtime = context.runtime;
 
-        RubyModule newRefinement = new RubyModule(runtime);
+        RubyModule newRefinement = new RubyModule(runtime, runtime.getRefinement());
 
         RubyClass superClass = refinementSuperclass(runtime, klass);
         newRefinement.setSuperClass(superClass);
@@ -950,7 +951,7 @@ public class RubyModule extends RubyObject {
         // For each superClass of the refined module also use their refinements for the given cref
         if (superClass != null) usingModuleRecursive(cref, superClass);
 
-        if (module instanceof IncludedModule) {
+        if (module instanceof DelegatedModule) {
             module = module.getDelegate();
         } else if (module.isModule()) {
             // ok as is
@@ -2063,7 +2064,7 @@ public class RubyModule extends RubyObject {
         DynamicMethod method = getMethods().get(name);
         if (method != null && entry.method.getRealMethod() != method.getRealMethod()) {
             // warn if overwriting an existing method on this module
-            runtime.getWarnings().warning("method redefined; discarding old " + name);
+            if (method.getRealMethod().getAliasCount() == 0) runtime.getWarnings().warning("method redefined; discarding old " + name);
 
             if (method instanceof PositionAware) {
                 PositionAware posAware = (PositionAware) method;
@@ -2389,8 +2390,16 @@ public class RubyModule extends RubyObject {
         return newMethod(receiver, methodName, bound, visibility, false, true);
     }
 
+    public final IRubyObject newMethod(IRubyObject receiver, String methodName, StaticScope refinedScope, boolean bound, Visibility visibility) {
+        return newMethod(receiver, methodName, refinedScope, bound, visibility, false, true);
+    }
+
     public final IRubyObject newMethod(IRubyObject receiver, final String methodName, boolean bound, Visibility visibility, boolean respondToMissing) {
         return newMethod(receiver, methodName, bound, visibility, respondToMissing, true);
+    }
+
+    public final IRubyObject newMethod(IRubyObject receiver, final String methodName, StaticScope scope, boolean bound, Visibility visibility, boolean respondToMissing) {
+        return newMethod(receiver, methodName, scope, bound, visibility, respondToMissing, true);
     }
 
     public static class RespondToMissingMethod extends JavaMethod.JavaMethodNBlock {
@@ -2423,7 +2432,11 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject newMethod(IRubyObject receiver, final String methodName, boolean bound, Visibility visibility, boolean respondToMissing, boolean priv) {
-        CacheEntry entry = searchWithCache(methodName);
+        return newMethod(receiver, methodName, null, bound, visibility, respondToMissing, priv);
+    }
+
+    public IRubyObject newMethod(IRubyObject receiver, final String methodName, StaticScope scope, boolean bound, Visibility visibility, boolean respondToMissing, boolean priv) {
+        CacheEntry entry = scope == null ? searchWithCache(methodName) : searchWithRefinements(methodName, scope);
 
         if (entry.method.isUndefined() || (visibility != null && entry.method.getVisibility() != visibility)) {
             if (respondToMissing) { // 1.9 behavior
@@ -2701,10 +2714,17 @@ public class RubyModule extends RubyObject {
     }
 
     public boolean hasModuleInPrepends(RubyModule type) {
-        RubyModule stopClass = getPrependCeiling();
-        for (RubyModule module = this; module != stopClass; module = module.getSuperClass()) {
+        RubyModule methodLocation = this.methodLocation;
+
+        // only check if we have prepends, to allow include and prepend of same module
+        if (this == methodLocation) {
+            return false;
+        }
+
+        for (RubyModule module = this.getSuperClass(); module != methodLocation; module = module.getSuperClass()) {
             if (type == module.getOrigin()) return true;
         }
+
         return false;
     }
 
@@ -2937,7 +2957,7 @@ public class RubyModule extends RubyObject {
         addAccessor(context, TypeConverter.checkID(context.runtime, name), PUBLIC, false, true);
     }
 
-    @JRubyMethod(required = 1, rest = true)
+    @JRubyMethod(required = 1, rest = true, visibility = PRIVATE)
     public IRubyObject ruby2_keywords(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
 
@@ -3167,7 +3187,11 @@ public class RubyModule extends RubyObject {
         return instanceMethods(args, PUBLIC, false, false);
     }
 
-    @JRubyMethod(name = "instance_method", required = 1)
+    @JRubyMethod(name = "instance_method", required = 1, reads = SCOPE)
+    public IRubyObject instance_method(ThreadContext context, IRubyObject symbol) {
+        return newMethod(null, TypeConverter.checkID(symbol).idString(), context.getCurrentStaticScope(), false, null);
+    }
+
     public IRubyObject instance_method(IRubyObject symbol) {
         return newMethod(null, TypeConverter.checkID(symbol).idString(), false, null);
     }
@@ -3260,6 +3284,10 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "include", required = 1, rest = true)
     public RubyModule include(IRubyObject[] modules) {
+        if (this.isRefinement()) {
+            getRuntime().getWarnings().warnDeprecated("deprecated method to be removed: Refinement#include");
+        }
+
         for (IRubyObject module: modules) {
             if (!module.isModule()) throw getRuntime().newTypeError(module, getRuntime().getModule());
         }
@@ -3618,36 +3646,53 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = {"module_eval", "class_eval"},
             reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            keywords = true)
     public IRubyObject module_eval(ThreadContext context, Block block) {
         return specificEval(context, this, block, EvalType.MODULE_EVAL);
     }
     @JRubyMethod(name = {"module_eval", "class_eval"},
             reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            keywords = true)
     public IRubyObject module_eval(ThreadContext context, IRubyObject arg0, Block block) {
         return specificEval(context, this, arg0, block, EvalType.MODULE_EVAL);
     }
     @JRubyMethod(name = {"module_eval", "class_eval"},
             reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            keywords = true)
     public IRubyObject module_eval(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         return specificEval(context, this, arg0, arg1, block, EvalType.MODULE_EVAL);
     }
     @JRubyMethod(name = {"module_eval", "class_eval"},
             reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            keywords = true)
     public IRubyObject module_eval(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         return specificEval(context, this, arg0, arg1, arg2, block, EvalType.MODULE_EVAL);
     }
-    @Deprecated
+
+    // This is callable and will work but the rest = true is put so we can match the expected arity error message
+    // Just relying on annotations will give us: got n expected 0..3 when we want got n expected 1..3.
+    @JRubyMethod(name = {"module_eval", "class_eval"}, rest = true,
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject module_eval(ThreadContext context, IRubyObject[] args, Block block) {
-        return specificEval(context, this, args, block, EvalType.MODULE_EVAL);
+        switch(args.length) {
+            case 0: return module_eval(context, block);
+            case 1: return module_eval(context, args[0], block);
+            case 2: return module_eval(context, args[0], args[1], block);
+            case 3: return module_eval(context, args[0], args[1], args[2], block);
+        }
+
+        throw context.runtime.newArgumentError(args.length, 1, 3);
     }
 
     @JRubyMethod(name = {"module_exec", "class_exec"},
             reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            keywords = true)
     public IRubyObject module_exec(ThreadContext context, Block block) {
         if (block.isGiven()) {
             return yieldUnder(context, this, IRubyObject.NULL_ARRAY, block.cloneBlockAndFrame(), EvalType.MODULE_EVAL);
@@ -3658,7 +3703,8 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = {"module_exec", "class_exec"}, rest = true,
             reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            keywords = true)
     public IRubyObject module_exec(ThreadContext context, IRubyObject[] args, Block block) {
         if (block.isGiven()) {
             return yieldUnder(context, this, args, block.cloneBlockAndFrame(), EvalType.MODULE_EVAL);
@@ -3755,6 +3801,7 @@ public class RubyModule extends RubyObject {
      */
     void doPrependModule(RubyModule baseModule) {
         List<RubyModule> modulesToInclude = gatherModules(baseModule);
+        RubyModule startOrigin = methodLocation;
 
         if (!hasPrepends()) { // Set up a new holder class to hold all this types original methods.
             RubyClass origin = new PrependedModule(getRuntime(), getSuperClass(), this);
@@ -3776,24 +3823,37 @@ public class RubyModule extends RubyObject {
         ModuleLoop: for (RubyModule nextModule : modulesToInclude) {
             checkForCyclicPrepend(nextModule);
 
+            boolean startSeen = false;
             boolean superclassSeen = false;
+
+            if (startOrigin == this) {
+                startSeen = true;
+            }
 
             // scan prepend section of hierarchy for module, from superClass to the next concrete superClass
             RubyModule stopClass = getPrependCeiling();
-            for (RubyClass nextClass = getSuperClass(); nextClass != stopClass; nextClass = nextClass.getSuperClass()) {
-                if (nextClass.isIncluded()) {
-                    // does the class equal the module
-                    if (nextClass.getDelegate() == nextModule.getDelegate()) {
-                        // next in hierarchy is an included version of the module we're attempting,
-                        // so we skip including it
-
-                        // if we haven't encountered a real superclass, use the found module as the new inclusion point
-                        if (!superclassSeen) inclusionPoint = nextClass;
-
-                        continue ModuleLoop;
+            if (startOrigin != this) {
+                for (RubyClass nextClass = getSuperClass(); nextClass != stopClass; nextClass = nextClass.getSuperClass()) {
+                    if (startOrigin == nextClass) {
+                        break;
                     }
-                } else {
-                    superclassSeen = true;
+                    if (this == nextClass) {
+                        startSeen = true;
+                    }
+                    if (nextClass.isIncluded()) {
+                        // does the class equal the module
+                        if (nextClass.getDelegate() == nextModule.getDelegate()) {
+                            // next in hierarchy is an included version of the module we're attempting,
+                            // so we skip including it
+
+                            // if we haven't encountered a real superclass, use the found module as the new inclusion point
+                            if (!superclassSeen && startSeen) inclusionPoint = nextClass;
+
+                            continue ModuleLoop;
+                        }
+                    } else {
+                        superclassSeen = true;
+                    }
                 }
             }
 
@@ -4377,6 +4437,10 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "prepend", required = 1, rest = true)
     public IRubyObject prepend(ThreadContext context, IRubyObject[] modules) {
+        if (this.isRefinement()) {
+            context.runtime.getWarnings().warnDeprecated("deprecated method to be removed: Refinement#prepend");
+        }
+
         // MRI checks all types first:
         for (int i = modules.length; --i >= 0; ) {
             IRubyObject obj = modules[i];
@@ -5853,6 +5917,62 @@ public class RubyModule extends RubyObject {
 
     public void setRefinements(Map<RubyModule, RubyModule> refinements) {
         this.refinements = refinements;
+    }
+
+    public static RubyClass createRefinementClass(Ruby runtime, RubyClass refinementClass) {
+        refinementClass.setClassIndex(ClassIndex.REFINEMENT);
+        refinementClass.setReifiedClass(RubyModule.class);
+
+        refinementClass.defineAnnotatedMethods(RefinementMethods.class);
+
+        return refinementClass;
+    }
+
+    public static class RefinementMethods {
+        @JRubyMethod(required = 1, rest = true, visibility = PRIVATE)
+        public static IRubyObject import_methods(ThreadContext context, IRubyObject self, IRubyObject[] modules) {
+            Ruby runtime = context.runtime;
+
+            RubyModule selfModule = (RubyModule) self;
+
+            for (IRubyObject _module : modules) {
+                if (!(_module instanceof RubyModule)) {
+                    throw runtime.newTypeError(_module, runtime.getModule());
+                }
+
+                RubyModule module = (RubyModule) _module;
+
+                if (module.getSuperClass() != runtime.getObject()) {
+                    runtime.getWarnings().warn(module.getName() + " has ancestors, but Refinement#import_methods doesn't import their methods");
+                }
+            }
+
+            for (IRubyObject _module : modules) {
+                RubyModule module = (RubyModule) _module;
+
+                for (Map.Entry<String, DynamicMethod> entry: module.getMethods().entrySet()) {
+                    refinementImportMethodsIter(runtime, selfModule, module, entry);
+                }
+            }
+
+            return self;
+        }
+
+        // MRI: refinement_import_methods_i
+        private static void refinementImportMethodsIter(Ruby runtime, RubyModule selfModule, RubyModule module, Map.Entry<String, DynamicMethod> entry) {
+            DynamicMethod method = entry.getValue();
+
+            if (!(method instanceof AbstractIRMethod)) {
+                throw runtime.newArgumentError("Can't import method which is not defined with Ruby code: " + module.getName() + "#" + entry.getKey());
+            }
+
+            DynamicMethod dup = entry.getValue().dup();
+
+            // maybe insufficient if we have already compiled assuming no refinements
+            ((AbstractIRMethod) dup).getIRScope().setIsMaybeUsingRefinements();
+
+            selfModule.addMethod(entry.getKey(), dup);
+        }
     }
 
     private volatile Map<String, Autoload> autoloads = Collections.EMPTY_MAP;

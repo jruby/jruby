@@ -52,7 +52,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
@@ -1647,7 +1646,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return method_missing(context, recv, args, block);
     }
 
-    @JRubyMethod(name = "__send__", omit = true, forward = true)
+    @JRubyMethod(name = "__send__", omit = true, keywords = true)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, Block block) {
         String name = RubySymbol.checkID(arg0);
 
@@ -1655,7 +1654,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         return getMetaClass().finvokeWithRefinements(context, this, staticScope, name, block);
     }
-    @JRubyMethod(name = "__send__", omit = true, forward = true)
+    @JRubyMethod(name = "__send__", omit = true, keywords = true)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         String name = RubySymbol.checkID(arg0);
 
@@ -1664,7 +1663,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         arg1 = dupIfKeywordRestAtCallsite(context, arg1);
         return getMetaClass().finvokeWithRefinements(context, this, staticScope, name, arg1, block);
     }
-    @JRubyMethod(name = "__send__", omit = true, forward = true)
+    @JRubyMethod(name = "__send__", omit = true, keywords = true)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         String name = RubySymbol.checkID(arg0);
 
@@ -1674,7 +1673,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         return getMetaClass().finvokeWithRefinements(context, this, staticScope, name, arg1, arg2, block);
     }
-    @JRubyMethod(name = "__send__", required = 1, rest = true, omit = true, forward = true)
+    @JRubyMethod(name = "__send__", required = 1, rest = true, omit = true, keywords = true)
     public IRubyObject send(ThreadContext context, IRubyObject[] args, Block block) {
         int callInfo = context.callInfo;
 
@@ -1779,11 +1778,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * filename and line of the string under evaluation.
      */
     public IRubyObject specificEval(ThreadContext context, RubyModule mod, Block block, EvalType evalType) {
-        if (block.isGiven()) {
-            return yieldUnder(context, mod, block, evalType);
-        } else {
-            throw context.runtime.newArgumentError("block not supplied");
-        }
+        if (!block.isGiven()) throw context.runtime.newArgumentError(0, 1, 3);
+
+        return yieldUnder(context, mod, block, evalType);
     }
 
     /** specific_eval
@@ -2437,6 +2434,18 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return getMetaClass().newMethod(this, symbol.idString(), true, null, true);
     }
 
+    /**
+     * Like {@link #method(IRubyObject)} but using the given refinement scope to search for the method.
+     *
+     * @param name the name of the method
+     * @param refinedScope the static scope for the caller method
+     * @return
+     */
+    public IRubyObject method(IRubyObject name, StaticScope refinedScope) {
+        final RubySymbol symbol = TypeConverter.checkID(name);
+        return getMetaClass().newMethod(this, symbol.idString(), refinedScope, true, null, true);
+    }
+
     @Deprecated
     public IRubyObject method19(IRubyObject name) {
         return method(name);
@@ -2527,6 +2536,22 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return specificEval(context, getInstanceEvalClass(), arg0, arg1, arg2, block, EvalType.INSTANCE_EVAL);
     }
 
+    // This is callable and will work but the rest = true is put so we can match the expected arity error message
+    // Just relying on annotations will give us: got n expected 0..3 when we want got n expected 1..3.
+    @JRubyMethod(name = "instance_eval", rest = true,
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
+    public IRubyObject instance_eval(ThreadContext context, IRubyObject[] args, Block block) {
+        switch(args.length) {
+            case 0: return instance_eval(context, block);
+            case 1: return instance_eval(context, args[0], block);
+            case 2: return instance_eval(context, args[0], args[1], block);
+            case 3: return instance_eval(context, args[0], args[1], args[2], block);
+        }
+
+        throw context.runtime.newArgumentError(args.length, 1, 3);
+    }
+
     @Deprecated
     public IRubyObject instance_eval19(ThreadContext context, Block block) {
         return specificEval(context, getInstanceEvalClass(), block, EvalType.INSTANCE_EVAL);
@@ -2562,7 +2587,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     k = Klass.new
      *     k.instance_exec(5) {|x| @secret+x }   #=> 104
      */
-    @JRubyMethod(name = "instance_exec", optional = 3, rest = true, forward = true,
+    @JRubyMethod(name = "instance_exec", optional = 3, rest = true, keywords = true,
             reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
             writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject instance_exec(ThreadContext context, IRubyObject[] args, Block block) {

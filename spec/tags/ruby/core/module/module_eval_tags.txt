@@ -1,2 +1,0 @@
-fails:Module#module_eval raises an ArgumentError when no arguments and no block are given
-fails:Module#module_eval raises an ArgumentError when more than 3 arguments are given

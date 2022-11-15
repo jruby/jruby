@@ -32,7 +32,6 @@ package org.jruby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.internal.runtime.methods.AliasMethod;
-import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.PartialDelegatingMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.runtime.Block;
@@ -133,7 +132,7 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
         return newUnboundMethod(implementationModule, methodName, originModule, originName, entry);
     }
 
-    @JRubyMethod(required =  1, rest = true, forward = true)
+    @JRubyMethod(required =  1, rest = true, keywords = true)
     public IRubyObject bind_call(ThreadContext context, IRubyObject[] args, Block block) {
         IRubyObject receiver = args[0];
         IRubyObject[] newArgs = new IRubyObject[args.length - 1];

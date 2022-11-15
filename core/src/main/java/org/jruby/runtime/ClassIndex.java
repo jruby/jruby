@@ -71,6 +71,7 @@ public enum ClassIndex {
     CONTINUATION,
     BASICOBJECT,
     BIGDECIMAL,
+    REFINEMENT,
     // insert new values here
     MAX_CLASSES;
 }

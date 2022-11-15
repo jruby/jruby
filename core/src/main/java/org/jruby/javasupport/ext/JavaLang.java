@@ -52,6 +52,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
+import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyModule.undefinedMethodMessage;
 import static org.jruby.javasupport.JavaUtil.convertJavaToUsableRubyObject;
 import static org.jruby.javasupport.JavaUtil.isJavaObject;
@@ -102,7 +103,7 @@ public abstract class JavaLang {
         public static IRubyObject each(final ThreadContext context, final IRubyObject self, final Block block) {
             final Ruby runtime = context.runtime;
             if ( ! block.isGiven() ) { // ... Enumerator.new(self, :each)
-                return runtime.getEnumerator().callMethod("new", self, runtime.newSymbol("each"));
+                return enumeratorize(context.runtime, self, "each");
             }
             java.lang.Iterable iterable = unwrapIfJavaObject(self);
             java.util.Iterator iterator = iterable.iterator();
@@ -116,8 +117,8 @@ public abstract class JavaLang {
         @JRubyMethod
         public static IRubyObject each_with_index(final ThreadContext context, final IRubyObject self, final Block block) {
             final Ruby runtime = context.runtime;
-            if ( ! block.isGiven() ) { // ... Enumerator.new(self, :each)
-                return runtime.getEnumerator().callMethod("new", self, runtime.newSymbol("each_with_index"));
+            if ( ! block.isGiven() ) { // ... Enumerator.new(self, :each_with_index)
+                return enumeratorize(context.runtime, self, "each_with_index");
             }
             java.lang.Iterable iterable = unwrapIfJavaObject(self);
             java.util.Iterator iterator = iterable.iterator();

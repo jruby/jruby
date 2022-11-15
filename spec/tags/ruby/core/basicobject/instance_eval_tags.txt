@@ -1,3 +1,1 @@
-fails:BasicObject#instance_eval raises an ArgumentError when no arguments and no block are given
-fails:BasicObject#instance_eval raises an ArgumentError when more than 3 arguments are given
 fails:BasicObject#instance_eval raises ArgumentError if returned value is not Integer

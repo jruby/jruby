@@ -73,22 +73,22 @@ public class DynamicLibrary extends RubyObject {
     public static final  IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject libraryName, IRubyObject libraryFlags) {
         final String libName = libraryName.isNil() ? null : libraryName.toString();
         String loadName;
-        if (libName.contains(":") && !new File(libName).isAbsolute()) { // windows is C:\\ ..., but otherwise we may have an URI
+        // Look for potential URI's, excluding Windows paths (C:\\...)
+        if (libName.contains(":") && !new File(libName).isAbsolute()) {
             // Use internal logic to parse the URI
             FileResource resource = JRubyFile.createResource(context, libName);
-            if (JRubyFile.isResourceRegularFile(resource))
-            {
+            if (JRubyFile.isResourceRegularFile(resource)) {
                 loadName = resource.absolutePath();
-            }
-            else try (InputStream internalStream = resource.openInputStream()){
+            } else try (InputStream internalStream = resource.openInputStream()){
                 loadName = extractLibrary(resource.path(), internalStream);
             } catch (IOException e) {
                 // let it fail normally, file not found
                 loadName = resource.absolutePath();
             }
         }
-        else
-            loadName = libName;
+        else {
+            loadName = libName; // not a uri, must be a file path
+        }
         try {
             Library library = Library.getCachedInstance(loadName, getNativeLibraryFlags(libraryFlags));
             if (library == null) {
@@ -107,10 +107,11 @@ public class DynamicLibrary extends RubyObject {
         if (resourceAsStream == null) return name;
 
         // check the cache, don't need to extract this multiple times
-        if (extractedLibraries == null)
+        if (extractedLibraries == null) {
             extractedLibraries = new HashMap<>();
-        else if (extractedLibraries.containsKey(name))
+        } else if (extractedLibraries.containsKey(name)) {
             return extractedLibraries.get(name);
+        }
 
         // not in cache, extract the file
         String basename = new File(name).getName();

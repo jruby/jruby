@@ -74,18 +74,6 @@ public class LibrarySearcher {
         return expandedLoadPath.pathEntries;
     }
 
-    @Deprecated
-    public FoundLibrary findBySearchState(LoadService.SearchState state) {
-        FoundLibrary[] lib = {null};
-        char found = findLibraryForRequire(state.searchFile, lib);
-        if (found != 0) {
-            state.searchFile = lib[0].searchName;
-            state.library = lib[0];
-            state.setLoadName(lib[0].getLoadName());
-        }
-        return lib[0];
-    }
-
     // MRI: search_required
     public synchronized char findLibraryForRequire(String file, FoundLibrary[] path) {
         // check loaded features

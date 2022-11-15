@@ -68,9 +68,12 @@ public @interface JRubyMethod {
      */
     boolean module() default false;
     /**
-     * Whether this method will forwards its arguments (and call state) onto another method).
+     * Whether this method may recieve keyword arguments.  Methods may directly process the keywords
+     * or decide to pass them on to a subcall.  This will determine whether ThreadContext#callInfo
+     * will get reset before the call begins or not.  If keywords is true then it is the methods
+     * job to reset or not reset callInfo.
      */
-    boolean forward() default false;
+    boolean keywords() default false;
     /**
      * Whether this method expects to have a call frame allocated for it.
      */

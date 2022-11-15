@@ -21,6 +21,7 @@ import org.jruby.util.ConvertBytes;
 import org.jruby.util.RubyStringBuilder;
 
 import static org.jruby.javasupport.ext.JavaLang.Character.inspectCharValue;
+import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.util.Inspector.*;
 
 public final class ArrayJavaProxy extends JavaProxy {
@@ -447,7 +448,7 @@ public final class ArrayJavaProxy extends JavaProxy {
     public IRubyObject each(ThreadContext context, Block block) {
         final Ruby runtime = context.runtime;
         if ( ! block.isGiven() ) { // ... Enumerator.new(self, :each)
-            return runtime.getEnumerator().callMethod("new", this, runtime.newSymbol("each"));
+            return enumeratorizeWithSize(context, this, "each", ArrayJavaProxy::size);
         }
 
         final Object array = getObject();
@@ -463,8 +464,8 @@ public final class ArrayJavaProxy extends JavaProxy {
     @JRubyMethod
     public IRubyObject each_with_index(final ThreadContext context, final Block block) {
         final Ruby runtime = context.runtime;
-        if ( ! block.isGiven() ) { // ... Enumerator.new(self, :each)
-            return runtime.getEnumerator().callMethod("new", this, runtime.newSymbol("each_with_index"));
+        if ( ! block.isGiven() ) { // ... Enumerator.new(self, :each_with_index)
+            return enumeratorizeWithSize(context, this, "each_with_index", ArrayJavaProxy::size);
         }
 
         final boolean twoArguments = block.getSignature().isTwoArguments();
@@ -909,5 +910,14 @@ public final class ArrayJavaProxy extends JavaProxy {
             return proxy;
         }
 
+    }
+
+    /**
+     * A size method suitable for lambda method reference implementation of {@link RubyEnumerator.SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])}
+     *
+     * @see RubyEnumerator.SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
+     */
+    protected static IRubyObject size(ThreadContext context, ArrayJavaProxy self, IRubyObject[] args) {
+        return self.length(context);
     }
 }

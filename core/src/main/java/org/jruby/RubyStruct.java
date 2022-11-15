@@ -48,7 +48,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.StructSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -58,10 +57,10 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.RecursiveComparator;
-import org.jruby.util.RubyStringBuilder;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.runtime.Helpers.invokedynamic;
+import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import static org.jruby.RubyEnumerator.SizeFn;
@@ -215,11 +214,10 @@ public class RubyStruct extends RubyObject {
      * MRI: rb_struct_s_def / make_struct
      *
      */
-    @JRubyMethod(name = "new", required = 1, rest = true, meta = true)
+    @JRubyMethod(name = "new", required = 1, rest = true, meta = true, keywords = true)
     public static RubyClass newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
         String name = null;
         boolean nilName = false;
-        boolean keywordInit = false;
         Ruby runtime = recv.getRuntime();
 
         if (args.length > 0) {
@@ -236,13 +234,13 @@ public class RubyStruct extends RubyObject {
         }
 
         RubyArray member = runtime.newArray();
+        IRubyObject keywordInitValue = runtime.getNil();
 
         int argc = args.length;
         final IRubyObject opts = args[args.length - 1];
         if (opts instanceof RubyHash) {
             argc--;
-            IRubyObject ret = ArgsUtil.extractKeywordArg(runtime.getCurrentContext(), (RubyHash) opts, "keyword_init");
-            keywordInit = ret != null && ret.isTrue();
+            keywordInitValue = ArgsUtil.extractKeywordArg(runtime.getCurrentContext(), (RubyHash) opts, "keyword_init");
         }
 
         Set<IRubyObject> tmpMemberSet = new HashSet<IRubyObject>();
@@ -289,7 +287,7 @@ public class RubyStruct extends RubyObject {
 
         newStruct.setInternalVariable(SIZE_VAR, member.length());
         newStruct.setInternalVariable(MEMBER_VAR, member);
-        newStruct.setInternalVariable(KEYWORD_INIT_VAR, keywordInit ? runtime.getTrue() : runtime.getFalse());
+        newStruct.setInternalVariable(KEYWORD_INIT_VAR, keywordInitValue);
 
         newStruct.getSingletonClass().defineAnnotatedMethods(StructMethods.class);
 
@@ -317,27 +315,27 @@ public class RubyStruct extends RubyObject {
 
     // For binding purposes on the newly created struct types
     public static class StructMethods {
-        @JRubyMethod(name = {"new", "[]"}, rest = true)
+        @JRubyMethod(name = {"new", "[]"}, rest = true, keywords = true)
         public static IRubyObject newStruct(IRubyObject recv, IRubyObject[] args, Block block) {
             return RubyStruct.newStruct(recv, args, block);
         }
 
-        @JRubyMethod(name = {"new", "[]"})
+        @JRubyMethod(name = {"new", "[]"}, keywords = true)
         public static IRubyObject newStruct(IRubyObject recv, Block block) {
             return RubyStruct.newStruct(recv, block);
         }
 
-        @JRubyMethod(name = {"new", "[]"})
+        @JRubyMethod(name = {"new", "[]"}, keywords = true)
         public static IRubyObject newStruct(IRubyObject recv, IRubyObject arg0, Block block) {
             return RubyStruct.newStruct(recv, arg0, block);
         }
 
-        @JRubyMethod(name = {"new", "[]"})
+        @JRubyMethod(name = {"new", "[]"}, keywords = true)
         public static IRubyObject newStruct(IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
             return RubyStruct.newStruct(recv, arg0, arg1, block);
         }
 
-        @JRubyMethod(name = {"new", "[]"})
+        @JRubyMethod(name = {"new", "[]"}, keywords = true)
         public static IRubyObject newStruct(IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
             return RubyStruct.newStruct(recv, arg0, arg1, arg2, block);
         }
@@ -411,12 +409,19 @@ public class RubyStruct extends RubyObject {
         }
     }
 
-    @JRubyMethod(rest = true, visibility = PRIVATE)
+    private void checkForKeywords(ThreadContext context, boolean keywordInit) {
+        if (hasKeywords(context.resetCallInfo()) && !keywordInit) {
+            context.runtime.getWarnings().warn("Passing only keyword arguments to Struct#initialize will behave differently from Ruby 3.2. Please use a Hash literal like .new({k: v}) instead of .new(k: v).");
+        }
+    }
+
+    @JRubyMethod(rest = true, visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+        IRubyObject keywordInit = RubyStruct.getInternalVariable(classOf(), KEYWORD_INIT_VAR);
+        checkForKeywords(context, !keywordInit.isNil());
+        context.resetCallInfo();
         modify();
         checkSize(args.length);
-
-        IRubyObject keywordInit = RubyStruct.getInternalVariable(classOf(), KEYWORD_INIT_VAR);
 
         if (keywordInit.isTrue()) {
             if (args.length != 1) throw context.runtime.newArgumentError(args.length, 0);
@@ -456,9 +461,11 @@ public class RubyStruct extends RubyObject {
 
     @JRubyMethod(visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject arg0) {
+        IRubyObject keywordInit = RubyStruct.getInternalVariable(classOf(), KEYWORD_INIT_VAR);
+        checkForKeywords(context, !keywordInit.isNil());
+        context.resetCallInfo();
         Ruby runtime = context.runtime;
 
-        IRubyObject keywordInit = RubyStruct.getInternalVariable(classOf(), KEYWORD_INIT_VAR);
         if (keywordInit.isTrue()) {
             IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(runtime, arg0);
 

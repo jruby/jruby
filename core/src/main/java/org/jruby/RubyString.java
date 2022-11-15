@@ -362,6 +362,20 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return StringSupport.areComparable(this, otherString) && value.equal(otherString.value);
     }
 
+    /**
+     * Does this string contain \0 anywhere (per byte search).
+     * @return true if it does
+     */
+    public boolean hasNul() {
+        ByteList bytes = getByteList();
+        return memchr(bytes.unsafeBytes(), bytes.begin(), '\0', bytes.realSize()) != -1;
+    }
+
+    // mri: rb_must_asciicompat
+    public void verifyAsciiCompatible() {
+        if (!getEncoding().isAsciiCompatible()) throw getRuntime().newEncodingCompatibilityError("ASCII incompatible encoding: " + getEncoding());
+    }
+
     public RubyString(Ruby runtime, RubyClass rubyClass) {
         this(runtime, rubyClass, ByteList.NULL_ARRAY);
     }
@@ -2107,18 +2121,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         RubyString undumped = newString(runtime, sBytes, s[0], 0, enc[0]);
         boolean[] utf8 = {false};
         boolean[] binary = {false};
-        int w;
 
-        if (!getEncoding().isAsciiCompatible()) {
-            throw runtime.newEncodingCompatibilityError("ASCII incompatible encoding: " + getEncoding().getCharsetName());
-        }
+        verifyAsciiCompatible();
         scanForCodeRange();
-        if (!isAsciiOnly()) {
-            throw runtime.newRuntimeError("non-ASCII character detected");
-        }
-        if (memchr(sBytes, s[0], '\0', strByteList.realSize()) != -1) {
-            throw runtime.newRuntimeError("string contains null byte");
-        }
+        if (!isAsciiOnly()) throw runtime.newRuntimeError("non-ASCII character detected");
+        if (hasNul()) throw runtime.newRuntimeError("string contains null byte");
         if (sLen < 2) return invalidFormat(runtime);
         if (sBytes[s[0]] != '"') return invalidFormat(runtime);
 
@@ -3621,7 +3628,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     /* str_byte_substr */
-    private IRubyObject byteSubstr(Ruby runtime, int beg, int len) {
+    private IRubyObject byteSubstr(Ruby runtime, long beg, long len) {
         int length = value.length();
 
         if (len < 0 || beg > length) return runtime.getNil();
@@ -3630,13 +3637,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             beg += length;
             if (beg < 0) return runtime.getNil();
         }
+
         if (beg + len > length) len = length - beg;
+        if (len <= 0) len = 0;
 
-        if (len <= 0) {
-            len = 0;
-        }
-
-        return makeSharedString(runtime, beg, len);
+        // above boundary checks confirms we can safely cast to int for beg + len.
+        return makeSharedString(runtime, (int) beg, (int) len);
     }
 
     /* str_byte_aref */
@@ -3647,7 +3653,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             int[] begLen = ((RubyRange) idx).begLenInt(getByteList().length(), 0);
             return begLen == null ? runtime.getNil() : byteSubstr(runtime, begLen[0], begLen[1]);
         } else if (idx instanceof RubyFixnum) {
-            index = RubyNumeric.fix2int((RubyFixnum)idx);
+            long i = RubyNumeric.num2long(((RubyFixnum) idx));
+            if (i > RubyFixnum.MAX || i < RubyFixnum.MIN) return runtime.getNil();
+            index = (int) i;
         } else {
             ThreadContext context = runtime.getCurrentContext();
             StringSites sites = sites(context);
@@ -3816,7 +3824,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod
     public IRubyObject byteslice(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
-        return byteSubstr(context.runtime, RubyNumeric.num2int(arg1), RubyNumeric.num2int(arg2));
+        return byteSubstr(context.runtime, RubyNumeric.num2long(arg1), RubyNumeric.num2long(arg2));
     }
 
     @JRubyMethod
@@ -6387,10 +6395,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     public IRubyObject to_r(ThreadContext context) {
         Ruby runtime = context.runtime;
 
-        RubyRegexp underscore_pattern = RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.underscores_pat);
-        RubyString s = gsubFast(context, underscore_pattern, runtime.newString(UNDERSCORE), Block.NULL_BLOCK);
-
-        IRubyObject[] ary = RubyRational.str_to_r_internal(context, s);
+        IRubyObject[] ary = RubyRational.str_to_r_internal(context, this, true);
 
         IRubyObject first = ary[0];
         if ( first != context.nil ) return first;

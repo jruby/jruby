@@ -201,6 +201,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -324,22 +325,26 @@ public final class Ruby implements Constantizable {
         objectClass = RubyClass.createBootstrapClass(this, "Object", basicObjectClass, RubyObject.OBJECT_ALLOCATOR);
         moduleClass = RubyClass.createBootstrapClass(this, "Module", objectClass, RubyModule.MODULE_ALLOCATOR);
         classClass = RubyClass.createBootstrapClass(this, "Class", moduleClass, RubyClass.CLASS_ALLOCATOR);
+        refinementClass = RubyClass.createBootstrapClass(this, "Refinement", moduleClass, RubyModule.MODULE_ALLOCATOR);
 
         basicObjectClass.setMetaClass(classClass);
         objectClass.setMetaClass(basicObjectClass);
         moduleClass.setMetaClass(classClass);
         classClass.setMetaClass(classClass);
+        refinementClass.setMetaClass(classClass);
 
         RubyClass metaClass;
         metaClass = basicObjectClass.makeMetaClass(classClass);
         metaClass = objectClass.makeMetaClass(metaClass);
         metaClass = moduleClass.makeMetaClass(metaClass);
         classClass.makeMetaClass(metaClass);
+        refinementClass.makeMetaClass(metaClass);
 
         RubyBasicObject.createBasicObjectClass(this, basicObjectClass);
         RubyObject.createObjectClass(this, objectClass);
         RubyModule.createModuleClass(this, moduleClass);
         RubyClass.createClassClass(this, classClass);
+        RubyModule.createRefinementClass(this, refinementClass);
 
         // set constants now that they're initialized
         basicObjectClass.setConstant("BasicObject", basicObjectClass);
@@ -347,6 +352,7 @@ public final class Ruby implements Constantizable {
         objectClass.setConstant("Object", objectClass);
         objectClass.setConstant("Class", classClass);
         objectClass.setConstant("Module", moduleClass);
+        objectClass.setConstant("Refinement", refinementClass);
 
         // Initialize Kernel and include into Object
         RubyModule kernel = kernelModule = RubyKernel.createKernelModule(this);
@@ -482,6 +488,7 @@ public final class Ruby implements Constantizable {
 
         TracePoint.createTracePointClass(this);
 
+        warningCategories = config.getWarningCategories();
         warningModule = RubyWarnings.createWarningModule(this);
 
         // Initialize exceptions
@@ -579,6 +586,7 @@ public final class Ruby implements Constantizable {
         loadService.provide("rational.rb");
         loadService.provide("complex.rb");
         loadService.provide("thread.rb");
+        loadService.provide("ruby2_keywords.rb");
 
         // Load preludes
         initRubyPreludes();
@@ -1859,6 +1867,10 @@ public final class Ruby implements Constantizable {
         return moduleClass;
     }
 
+    public RubyClass getRefinement() {
+        return refinementClass;
+    }
+
     public RubyClass getClassClass() {
         return classClass;
     }
@@ -2512,6 +2524,7 @@ public final class Ruby implements Constantizable {
         this.verbose = verbose.isTrue();
         this.verboseValue = verbose;
         warningsEnabled = !verbose.isNil();
+        getWarnings().adjustCategories(verbose.isTrue());
     }
 
     /** Getter for property isDebug.
@@ -2530,6 +2543,15 @@ public final class Ruby implements Constantizable {
      */
     public void setDebug(IRubyObject debug) {
         this.debug = debug.isTrue();
+    }
+
+    /**
+     * Get the current enabled warning categories.
+     *
+     * @return a set of the currently-enabled warning categories
+     */
+    public Set<RubyWarnings.Category> getWarningCategories() {
+        return warningCategories;
     }
 
     public JavaSupport getJavaSupport() {
@@ -2948,8 +2970,13 @@ public final class Ruby implements Constantizable {
     }
 
     public StaticScope setupWrappedToplevel(IRubyObject self, StaticScope top) {
+        RubyModule wrapper = loadService.getWrapperSelf();
+
+        if (wrapper == null || wrapper.isNil()) {
+            wrapper = RubyModule.newModule(this);
+        }
+
         // toss an anonymous module into the search path
-        RubyModule wrapper = RubyModule.newModule(this);
         ((RubyBasicObject) self).extend(new IRubyObject[] {wrapper});
         StaticScope newTop = staticScopeFactory.newLocalScope(null);
         top.setPreviousCRefScope(newTop);
@@ -5384,6 +5411,9 @@ public final class Ruby implements Constantizable {
     private boolean verbose, warningsEnabled, debug;
     private IRubyObject verboseValue;
 
+    // Set of categories we care about (set defined when creating warnings).
+    private final Set<RubyWarnings.Category> warningCategories;
+
     private RubyThreadGroup defaultThreadGroup;
 
     /**
@@ -5395,6 +5425,7 @@ public final class Ruby implements Constantizable {
     private final RubyClass basicObjectClass;
     private final RubyClass objectClass;
     private final RubyClass moduleClass;
+    private final RubyClass refinementClass;
     private final RubyClass classClass;
     private final RubyClass nilClass;
     private final RubyClass trueClass;
