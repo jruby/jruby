@@ -2,6 +2,15 @@
 package org.jruby.ext.ffi.jffi;
 
 import com.kenai.jffi.Library;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.HashMap;
+
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -17,6 +26,9 @@ import org.jruby.ext.ffi.Pointer;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.FileResource;
+import org.jruby.util.JRubyClassLoader;
+import org.jruby.util.JRubyFile;
 
 @JRubyClass(name = "FFI::DynamicLibrary", parent = "Object")
 public class DynamicLibrary extends RubyObject {
@@ -60,8 +72,25 @@ public class DynamicLibrary extends RubyObject {
     @JRubyMethod(name = {  "open" }, meta = true)
     public static final  IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject libraryName, IRubyObject libraryFlags) {
         final String libName = libraryName.isNil() ? null : libraryName.toString();
+        String loadName;
+        // Look for potential URI's, excluding Windows paths (C:\\...)
+        if (libName.contains(":") && !new File(libName).isAbsolute()) {
+            // Use internal logic to parse the URI
+            FileResource resource = JRubyFile.createResource(context, libName);
+            if (JRubyFile.isResourceRegularFile(resource)) {
+                loadName = resource.absolutePath();
+            } else try (InputStream internalStream = resource.openInputStream()){
+                loadName = extractLibrary(resource.path(), internalStream);
+            } catch (IOException e) {
+                // let it fail normally, file not found
+                loadName = resource.absolutePath();
+            }
+        }
+        else {
+            loadName = libName; // not a uri, must be a file path
+        }
         try {
-            Library library = Library.getCachedInstance(libName, getNativeLibraryFlags(libraryFlags));
+            Library library = Library.getCachedInstance(loadName, getNativeLibraryFlags(libraryFlags));
             if (library == null) {
                 throw new UnsatisfiedLinkError(Library.getLastError());
             }
@@ -72,6 +101,32 @@ public class DynamicLibrary extends RubyObject {
                     libName != null ? libName : "current process", ex.getMessage()));
         }
     }
+
+    private static HashMap<String, String> extractedLibraries = null;
+    private static synchronized String extractLibrary(String name, InputStream resourceAsStream) throws IOException {
+        if (resourceAsStream == null) return name;
+
+        // check the cache, don't need to extract this multiple times
+        if (extractedLibraries == null) {
+            extractedLibraries = new HashMap<>();
+        } else if (extractedLibraries.containsKey(name)) {
+            return extractedLibraries.get(name);
+        }
+
+        // not in cache, extract the file
+        String basename = new File(name).getName();
+        String[] names = basename.split("\\.");
+
+        // by putting the file into the jruby temp dir, it's automatically cleaned up
+        Path tempfile = Files.createTempFile(JRubyClassLoader.getTempDir().toPath(), names[0], "." + names[names.length - 1]);
+        Files.copy(resourceAsStream, tempfile, StandardCopyOption.REPLACE_EXISTING);
+
+        File file = tempfile.toFile();
+        file.setExecutable(true); // do this after we write the file, otherwise dlopen doesn't work
+        extractedLibraries.put(name, file.getAbsolutePath());
+        return file.getAbsolutePath();
+    }
+
     @JRubyMethod(name = {  "find_variable", "find_symbol" })
     public IRubyObject findVariable(ThreadContext context, IRubyObject symbolName) {
         final String sym = symbolName.toString();

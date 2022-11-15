@@ -113,7 +113,7 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
         super.addURL(url);
     }
 
-    private static synchronized File getTempDir() {
+    public static synchronized File getTempDir() {
         if (tempDir != null) return tempDir;
 
         tempDir = new File(tempDir(), tempDirName());
