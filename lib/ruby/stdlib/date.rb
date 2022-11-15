@@ -436,7 +436,7 @@ class Date
   private_class_method :valid_time_frags?
 
   def self.new_by_frags(elem, sg) # :nodoc:
-    raise ArgumentError, 'invalid date' unless elem
+    raise Date::Error, 'invalid date' unless elem
 
     # fast path
     if !elem.key?(:jd) && !elem.key?(:yday) &&
@@ -447,7 +447,7 @@ class Date
     elem = rewrite_frags(elem)
     elem = complete_frags(elem)
     unless jd = valid_date_frags?(elem, sg)
-      raise ArgumentError, 'invalid date'
+      raise Date::Error, 'invalid date'
     end
     new!(jd_to_ajd(jd, 0, 0), 0, sg)
   end
@@ -635,7 +635,7 @@ class DateTime < Date
   def self.ordinal(y=-4712, d=1, h=0, min=0, s=0, of=0, sg=ITALY)
     unless (jd = _valid_ordinal?(y, d, sg)) &&
            (fr = _valid_time?(h, min, s))
-      raise ArgumentError, 'invalid date'
+      raise Date::Error, 'invalid date'
     end
     if String === of
       of = Rational(zone_to_diff(of) || 0, 86400)
@@ -662,7 +662,7 @@ class DateTime < Date
   def self.commercial(y=-4712, w=1, d=1, h=0, min=0, s=0, of=0, sg=ITALY)
     unless (jd = _valid_commercial?(y, w, d, sg)) &&
            (fr = _valid_time?(h, min, s))
-      raise ArgumentError, 'invalid date'
+      raise Date::Error, 'invalid date'
     end
     if String === of
       of = Rational(zone_to_diff(of) || 0, 86400)
@@ -671,7 +671,7 @@ class DateTime < Date
   end
 
   def self.new_by_frags(elem, sg) # :nodoc:
-    raise ArgumentError, 'invalid date' unless elem
+    raise Date::Error, 'invalid date' unless elem
     
 
     # More work to do if not :civil
@@ -688,7 +688,7 @@ class DateTime < Date
       jd = valid_date_frags?(elem, sg)
     end
     unless jd && (fr = valid_time_frags?(elem))
-      raise ArgumentError, 'invalid date'
+      raise Date::Error, 'invalid date'
     end
     fr += (elem[:sec_fraction] || 0) / 86400
     of = Rational(elem[:offset] || 0, 86400)

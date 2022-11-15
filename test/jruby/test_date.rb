@@ -153,7 +153,7 @@ class TestDate < Test::Unit::TestCase
     begin
       Date.new(1900, 1, 0)
       fail 'expected to fail'
-    rescue ArgumentError => e
+    rescue Date::Error => e
       assert_equal('invalid date', e.message)
     end
   end
@@ -257,7 +257,7 @@ class TestDate < Test::Unit::TestCase
       d = DateTime.new(*args)
       assert_equal([ 2020, 12, 23, 8 + 5, 0, 0, 0 ], [ d.year, d.mon, d.mday, d.hour, d.min, d.sec, d.sec_fraction ])
     else
-      assert_raise(ArgumentError) { DateTime.new(*args) }
+      assert_raise(Date::Error) { DateTime.new(*args) }
     end
 
     args = [ 2018, 10, 7.to_r / 3, 5, 0, Rational(10, 3) ]
@@ -315,15 +315,15 @@ class TestDate < Test::Unit::TestCase
     y = Rational(2005/2); m = -Rational(5/2); d = Rational(31/3);
 
     #assert_raise(ArgumentError) { DateTime.new(y, m, d, Rational(43, 2), -17, -35) }
-    assert_raise(ArgumentError) { DateTime.new(y, m, d, 10, -17, -80) }
-    assert_raise(ArgumentError) { DateTime.new(y, m, d, 10, 67) }
+    assert_raise(Date::Error) { DateTime.new(y, m, d, 10, -17, -80) }
+    assert_raise(Date::Error) { DateTime.new(y, m, d, 10, 67) }
     begin
       DateTime.new(y, m, d, 25); fail 'expected to raise!'
-    rescue ArgumentError => ex
+    rescue Date::Error => ex
       assert_equal('invalid date', ex.message)
     end
 
-    assert_raise(ArgumentError) { DateTime.new(2001, 2, 11.to_r / 13, Rational(10, 3), Rational(200, 21)) }
+    assert_raise(Date::Error) { DateTime.new(2001, 2, 11.to_r / 13, Rational(10, 3), Rational(200, 21)) }
   end
 
   def test_sec_fraction
@@ -754,9 +754,9 @@ class TestDate < Test::Unit::TestCase
     d = DateTime.new(2025, 12, 31, 24)
     assert_equal([2026, 1, 1, 0, 0, 0, 0], [d.year, d.mon, d.mday, d.hour, d.min, d.sec, d.offset])
 
-    assert_raises(ArgumentError) { DateTime.new(2025, 12, 31, 24, 1) }
+    assert_raises(Date::Error) { DateTime.new(2025, 12, 31, 24, 1) }
     DateTime.new(1008, 12, 31, 24, 0)
-    assert_raises(ArgumentError) { DateTime.new(2025, 11, 30, 24, 0, 30) }
+    assert_raises(Date::Error) { DateTime.new(2025, 11, 30, 24, 0, 30) }
     DateTime.new(2025, 11, 30, 24, 0, 0)
   end
 

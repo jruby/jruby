@@ -112,6 +112,10 @@ public class RubyDate extends RubyObject {
         Date.setConstant("ITALY", runtime.newFixnum(ITALY));
         Date.setConstant("ENGLAND", runtime.newFixnum(ENGLAND));
         Date.setConstant("VERSION", runtime.newString("3.2.2"));
+
+        RubyClass dateError = runtime.defineClassUnder("Error", runtime.getArgumentError(), runtime.getArgumentError().getAllocator(), Date);
+        runtime.setDateError(dateError);
+
         return Date;
     }
 
@@ -361,14 +365,17 @@ public class RubyDate extends RubyObject {
         return new RubyDate(context.runtime, (RubyClass) self, civilImpl(context, year));
     }
 
+    static RaiseException newDateError(ThreadContext context, String message) {
+        throw context.runtime.newRaiseException(context.runtime.getDateError(), message);
+    }
+
     static DateTime civilImpl(ThreadContext context, IRubyObject year) {
         int y = getYear(year);
         final DateTime dt;
         try {
             dt = defaultDateTime.withYear(y);
-        }
-        catch (IllegalArgumentException ex) {
-            throw context.runtime.newArgumentError("invalid date");
+        } catch (IllegalArgumentException ex) {
+            throw newDateError(context, "invalid date");
         }
         return dt;
     }
@@ -390,7 +397,7 @@ public class RubyDate extends RubyObject {
             dt = defaultDateTime.withMillis(millis);
         }
         catch (IllegalArgumentException ex) {
-            throw context.runtime.newArgumentError("invalid date");
+            throw newDateError(context, "invalid date");
         }
         return dt;
     }
@@ -449,7 +456,7 @@ public class RubyDate extends RubyObject {
         }
         catch (IllegalArgumentException ex) {
             debug(context, "invalid date", ex);
-            throw context.runtime.newArgumentError("invalid date");
+            throw newDateError(context, "invalid date");
         }
         return dt;
     }
@@ -625,9 +632,9 @@ public class RubyDate extends RubyObject {
         final long[] rest = new long[] { 0, 1 };
         final int d = (int) RubyDateTime.getDay(context, day, rest);
         Long jd = validOrdinalImpl(year, d, sg);
-        if (jd == null) {
-            throw context.runtime.newArgumentError("invalid date");
-        }
+
+        if (jd == null) throw newDateError(context, "invalid date");
+
         return new RubyDate(context, (RubyClass) self, jd_to_ajd(context, jd), rest, 0, sg);
     }
 
@@ -673,9 +680,8 @@ public class RubyDate extends RubyObject {
         IRubyObject day = (len > 2) ? args[2] : RubyFixnum.newFixnum(context.runtime, 1);
 
         Long jd = validCommercialImpl(year, week, day, sg);
-        if (jd == null) {
-            throw context.runtime.newArgumentError("invalid date");
-        }
+        if (jd == null) throw newDateError(context, "invalid date");
+
         return new RubyDate(context, (RubyClass) self, jd_to_ajd(context, jd), 0, sg);
     }
 
@@ -1531,7 +1537,7 @@ public class RubyDate extends RubyObject {
         } // java.lang.IllegalArgumentException: Cutover too early. Must be on or after 0001-01-01.
         catch (IllegalArgumentException ex) {
             debug(context, "invalid date", ex);
-            throw context.runtime.newArgumentError("invalid date");
+            throw newDateError(context, "invalid date");
         }
     }
 

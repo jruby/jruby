@@ -207,7 +207,7 @@ public class RubyDateTime extends RubyDate {
         }
 
         if (hour == 24 && (minute != 0 || second != 0 || millis != 0)) {
-            throw context.runtime.newArgumentError("invalid date");
+            throw newDateError(context, "invalid date");
         }
 
         final Chronology chronology = getChronology(context, sg, off);
@@ -223,7 +223,7 @@ public class RubyDateTime extends RubyDate {
         }
         catch (IllegalArgumentException ex) {
             debug(context, "invalid date", ex);
-            throw context.runtime.newArgumentError("invalid date");
+            throw newDateError(context, "invalid date");
         }
 
         return (RubyDateTime) new RubyDateTime(context.runtime, (RubyClass) self, dt, off, sg, subMillisNum, subMillisDen).normalizeSubMillis();
@@ -365,7 +365,7 @@ public class RubyDateTime extends RubyDate {
     private static void assertValidFraction(ThreadContext context, IRubyObject val, long ival) {
         if (val instanceof RubyRational) {
             IRubyObject eql = ((RubyRational) val).op_equal(context, RubyFixnum.newFixnum(context.runtime, ival));
-            if (eql != context.tru) throw context.runtime.newArgumentError("invalid fraction");
+            if (eql != context.tru) throw newDateError(context, "invalid fraction");
         }
     }
 
@@ -405,7 +405,7 @@ public class RubyDateTime extends RubyDate {
         final RubyNumeric fr;
         if (hour != zero || min != zero || sec != zero) {
             IRubyObject tmp = _valid_time_p(context, self, hour, min, sec);
-            if (tmp == context.nil) throw context.runtime.newArgumentError("invalid date");
+            if (tmp == context.nil) throw newDateError(context, "invalid date");
             fr = (RubyNumeric) tmp;
         }
         else {
