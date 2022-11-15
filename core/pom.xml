@@ -89,7 +89,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-enxio</artifactId>
-      <version>0.32.13</version>
+      <version>0.32.14</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
@@ -100,7 +100,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-unixsocket</artifactId>
-      <version>0.38.17</version>
+      <version>0.38.19</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
@@ -111,7 +111,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-posix</artifactId>
-      <version>3.1.15</version>
+      <version>3.1.16</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
@@ -122,7 +122,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-constants</artifactId>
-      <version>0.10.3</version>
+      <version>0.10.4</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
@@ -133,7 +133,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-ffi</artifactId>
-      <version>2.2.11</version>
+      <version>2.2.13</version>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
