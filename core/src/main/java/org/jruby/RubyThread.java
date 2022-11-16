@@ -1887,15 +1887,16 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "backtrace")
     public IRubyObject backtrace(ThreadContext context, IRubyObject level, IRubyObject length) {
+        ThreadContext selfContext = getContext();
         Thread nativeThread = getNativeThread();
 
         // context can be nil if we have not started or GC has claimed our context
         // nativeThread can be null if the thread has terminated and GC has claimed it
         // nativeThread may have finished
-        if (context == null || nativeThread == null || !nativeThread.isAlive()) return context.nil;
+        if (selfContext == null || nativeThread == null || !nativeThread.isAlive()) return context.nil;
 
         return RubyKernel.withLevelAndLength(
-                context, level, length, 0,
+                selfContext, level, length, 0,
                 (ctx, lev, len) -> WALKER.walk(getNativeThread().getStackTrace(), stream -> ctx.createCallerBacktrace(lev, len, stream)));
     }
 
@@ -1911,15 +1912,16 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod
     public IRubyObject backtrace_locations(ThreadContext context, IRubyObject level, IRubyObject length) {
+        ThreadContext selfContext = getContext();
         Thread nativeThread = getNativeThread();
 
         // context can be nil if we have not started or GC has claimed our context
         // nativeThread can be null if the thread has terminated and GC has claimed it
         // nativeThread may have finished
-        if (context == null || nativeThread == null || !nativeThread.isAlive()) return context.nil;
+        if (selfContext == null || nativeThread == null || !nativeThread.isAlive()) return context.nil;
 
         return RubyKernel.withLevelAndLength(
-                context, level, length, 0,
+                selfContext, level, length, 0,
                 (ctx, lev, len) -> WALKER.walk(getNativeThread().getStackTrace(), stream -> ctx.createCallerLocations(lev, len, stream)));
     }
 
