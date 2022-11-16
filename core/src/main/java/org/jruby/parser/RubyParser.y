@@ -4756,7 +4756,7 @@ dot_or_colon    : '.' {
                     $$ = p.maybe_symbolize(DOT);
                 }
                 | tCOLON2 {
-                    $$ = p.maybe_symbolize(COLON_COLON);
+                    $$ = $<@@token_type@@>1;
                 }
 
 call_op 	: '.' {
