@@ -4760,7 +4760,7 @@ dot_or_colon    : '.' {
                 }
 
 call_op 	: '.' {
-                    $$ = p.maybe_symbolize(DOT);
+                    $$ = p.maybe_stringolize(DOT);
                 }
                 | tANDDOT {
                     $$ = $1;

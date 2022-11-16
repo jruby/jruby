@@ -928,6 +928,10 @@ public class RipperParserBase {
         return getRuntime().newSymbol(value);
     }
 
+    public IRubyObject maybe_stringolize(ByteList value) {
+        return getRuntime().newString(value);
+    }
+
     protected IRubyObject ripper;
     protected ThreadContext context;
     protected RubyLexer lexer;

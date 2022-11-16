@@ -6711,7 +6711,7 @@ states[797] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[798] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(DOT);
+                    yyVal = p.maybe_stringolize(DOT);
   return yyVal;
 };
 states[799] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {

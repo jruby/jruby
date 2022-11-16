@@ -2197,4 +2197,7 @@ public abstract class RubyParserBase {
     public ByteList maybe_symbolize(ByteList value) {
         return value;
     }
+    public ByteList maybe_stringolize(ByteList value) {
+        return value;
+    }
 }
