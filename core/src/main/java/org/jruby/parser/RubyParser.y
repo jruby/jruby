@@ -136,6 +136,7 @@ import static org.jruby.lexer.LexingCommon.AMPERSAND_DOT;
 import static org.jruby.lexer.LexingCommon.BACKTICK;
 import static org.jruby.lexer.LexingCommon.BANG;
 import static org.jruby.lexer.LexingCommon.CARET;
+import static org.jruby.lexer.LexingCommon.COLON_COLON;
 import static org.jruby.lexer.LexingCommon.DOLLAR_BANG;
 import static org.jruby.lexer.LexingCommon.DOT;
 import static org.jruby.lexer.LexingCommon.GT;
@@ -4755,7 +4756,7 @@ dot_or_colon    : '.' {
                     $$ = p.maybe_symbolize(DOT);
                 }
                 | tCOLON2 {
-                    $$ = $1;
+                    $$ = p.maybe_symbolize(COLON_COLON);
                 }
 
 call_op 	: '.' {

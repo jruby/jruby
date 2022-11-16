@@ -62,6 +62,7 @@ import static org.jruby.lexer.LexingCommon.AMPERSAND_DOT;
 import static org.jruby.lexer.LexingCommon.BACKTICK;
 import static org.jruby.lexer.LexingCommon.BANG;
 import static org.jruby.lexer.LexingCommon.CARET;
+import static org.jruby.lexer.LexingCommon.COLON_COLON;
 import static org.jruby.lexer.LexingCommon.DOLLAR_BANG;
 import static org.jruby.lexer.LexingCommon.DOT;
 import static org.jruby.lexer.LexingCommon.GT;
@@ -94,7 +95,7 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
     public RipperParser(ThreadContext context, IRubyObject ripper, LexerSource source) {
         super(context, ripper, source);
     }
-					// line 98 "-"
+					// line 99 "-"
   // %token constants
   public static final int keyword_class = 257;
   public static final int keyword_module = 258;
@@ -6556,7 +6557,7 @@ states[796] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[797] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = ((ByteList)yyVals[0+yyTop].value);
+                    yyVal = p.maybe_symbolize(COLON_COLON);
   return yyVal;
 };
 states[798] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6592,7 +6593,7 @@ states[817] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 }
-					// line 4574 "ripper_RubyParser.out"
+					// line 4575 "ripper_RubyParser.out"
 
 }
-					// line 14348 "-"
+					// line 14349 "-"
