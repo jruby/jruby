@@ -4760,7 +4760,7 @@ dot_or_colon    : '.' {
                 }
 
 call_op 	: '.' {
-                    $$ = p.maybe_stringolize(DOT);
+                    $$ = $<@@token_type@@>1;
                 }
                 | tANDDOT {
                     $$ = $1;
