@@ -5356,7 +5356,7 @@ states[573] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[574] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = KWNOREST;
+                    yyVal = p.maybe_symbolize(KWNOREST);
   return yyVal;
 };
 states[576] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {

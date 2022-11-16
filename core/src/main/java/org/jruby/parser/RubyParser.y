@@ -3430,7 +3430,7 @@ p_any_kwrest    : p_kwrest {
                     $$ = $1;
                 }
                 | p_kwnorest {
-                    $$ = KWNOREST;
+                    $$ = p.maybe_symbolize(KWNOREST);
                 }
 
 p_value         : p_primitive

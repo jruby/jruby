@@ -5305,7 +5305,7 @@ states[573] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[574] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = KWNOREST;
+                    yyVal = p.maybe_symbolize(KWNOREST);
   return yyVal;
 };
 states[576] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
