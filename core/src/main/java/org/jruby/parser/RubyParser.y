@@ -2463,25 +2463,25 @@ primary         : literal
                     ctxt.shareable_constant_value = $1.shareable_constant_value;
                 }
                 | defn_head f_arglist bodystmt k_end {
-                    /*%%%*/
                     p.restore_defun($1);
+                    /*%%%*/
                     Node body = p.reduce_nodes(p.remove_begin(p.makeNullNil($3)));
                     $$ = new DefnNode($1.line, $1.name, $2, p.getCurrentScope(), body, @4.end());
                     if (p.isNextBreak) $<DefnNode>$.setContainsNextBreak();
-                    p.popCurrentScope();
                     /*% %*/
                     /*% ripper: def!(get_value($1), $2, $3) %*/
+                    p.popCurrentScope();
                 }
                 | defs_head f_arglist bodystmt k_end {
-                    /*%%%*/
                     p.restore_defun($1);
+                    /*%%%*/
                     Node body = p.reduce_nodes(p.remove_begin(p.makeNullNil($3)));
                     $$ = new DefsNode($1.line, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), body, @4.end());
                     if (p.isNextBreak) $<DefsNode>$.setContainsNextBreak();
-                    p.popCurrentScope();
                     // Changed from MRI (no more get_value)
                     /*% %*/                    
                     /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, $3) %*/
+                    p.popCurrentScope();
                 }
                 | keyword_break {
                     /*%%%*/

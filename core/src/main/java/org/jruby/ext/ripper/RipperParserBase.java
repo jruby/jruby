@@ -73,9 +73,9 @@ public class RipperParserBase {
     }
 
     public void reset() {
+        getLexContext().reset();
 //        inSingleton = 0;
-     //   inDefinition = false;
-    }  
+    }
     
     public Object yyparse (RubyLexer yyLex) throws java.io.IOException {
         return null;
