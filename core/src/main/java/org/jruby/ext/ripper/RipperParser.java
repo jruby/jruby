@@ -6245,7 +6245,10 @@ states[738] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
 states[739] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     RubySymbol name = p.get_id(((IRubyObject)yyVals[0+yyTop].value));
                     p.setCurrentArg(name);
-                    yyVal = p.arg_var(yyVals[yyTop - count + 1].id);
+                      p.arg_var(yyVals[yyTop - count + 1].id);
+                      yyVal = ((IRubyObject)yyVals[0+yyTop].value);
+
+
   return yyVal;
 };
 states[740] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6593,7 +6596,7 @@ states[817] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 }
-					// line 4575 "ripper_RubyParser.out"
+					// line 4578 "ripper_RubyParser.out"
 
 }
-					// line 14349 "-"
+					// line 14352 "-"

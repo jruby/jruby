@@ -6316,7 +6316,13 @@ states[738] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[739] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     RubySymbol name = p.get_id(((ByteList)yyVals[0+yyTop].value));
                     p.setCurrentArg(name);
+                    /*%%%*/
                     yyVal = p.arg_var(yyVals[yyTop - count + 1].id);
+                    /*%
+                      p.arg_var(yyVals[yyTop - count + 1].id);
+                      $$ = $1;
+                      %*/
+
   return yyVal;
 };
 states[740] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6743,7 +6749,7 @@ states[817] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4725 "parse.y"
+					// line 4731 "parse.y"
 
 }
-					// line 14499 "-"
+					// line 14505 "-"

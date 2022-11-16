@@ -4386,7 +4386,13 @@ f_norm_arg      : f_bad_arg {
 f_arg_asgn      : f_norm_arg {
                     RubySymbol name = p.get_id($1);
                     p.setCurrentArg(name);
+                    /*%%%*/
                     $$ = p.arg_var(@1.id);
+                    /*%
+                      p.arg_var(@1.id);
+                      $$ = $1;
+                      %*/
+
                 }
 
 f_arg_item      : f_arg_asgn {
