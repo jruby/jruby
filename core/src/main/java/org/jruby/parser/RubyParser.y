@@ -4753,7 +4753,7 @@ operation3      : tIDENTIFIER {
                 }
                     
 dot_or_colon    : '.' {
-                    $$ = p.maybe_symbolize(DOT);
+                    $$ = $<@@token_type@@>1;
                 }
                 | tCOLON2 {
                     $$ = $<@@token_type@@>1;
