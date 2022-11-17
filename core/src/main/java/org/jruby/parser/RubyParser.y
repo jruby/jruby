@@ -812,7 +812,7 @@ expr            : command_call
                     LexContext ctxt = p.getLexContext();
                     ctxt.in_kwarg = $<Boolean>3;
                     /*%%%*/
-                    $$ = p.newPatternCaseNode(@1.start(), $1, p.newIn(@1.start(), $5, new TrueNode(p.tokline()), new FalseNode(p.tokline())));
+                    $$ = p.newPatternCaseNode(@1.start(), $1, p.newIn(@1.start(), $5, new TrueNode(@1.start()), new FalseNode(@1.start())));
                     /*% %*/
                     /*% ripper: case!($1, in!($5, Qnil, Qnil)) %*/
                 }
@@ -1098,14 +1098,14 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                 }
                 | tIVAR {
                     /*%%%*/
-                   $$ = new InstAsgnNode(p.tokline(), p.symbolID($1), NilImplicitNode.NIL);
+                   $$ = new InstAsgnNode(@1.start(), p.symbolID($1), NilImplicitNode.NIL);
                     /*%
                       $$ = p.assignable(@1.id, p.var_field($1));
                     %*/
                 }
                 | tGVAR {
                     /*%%%*/
-                   $$ = new GlobalAsgnNode(p.tokline(), p.symbolID($1), NilImplicitNode.NIL);
+                   $$ = new GlobalAsgnNode(@1.start(), p.symbolID($1), NilImplicitNode.NIL);
                     /*%
                       $$ = p.assignable(@1.id, p.var_field($1));
                     %*/
@@ -1113,14 +1113,14 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                 | tCONSTANT {
                     /*%%%*/
                     if (p.getLexContext().in_def) p.compile_error("dynamic constant assignment");
-                    $$ = new ConstDeclNode(p.tokline(), p.symbolID($1), null, NilImplicitNode.NIL);
+                    $$ = new ConstDeclNode(@1.start(), p.symbolID($1), null, NilImplicitNode.NIL);
                     /*%
                       $$ = p.assignable(@1.id, p.var_field($1));
                     %*/
                 }
                 | tCVAR {
                     /*%%%*/
-                    $$ = new ClassVarAsgnNode(p.tokline(), p.symbolID($1), NilImplicitNode.NIL);
+                    $$ = new ClassVarAsgnNode(@1.start(), p.symbolID($1), NilImplicitNode.NIL);
                     /*%
                       $$ = p.assignable(@1.id, p.var_field($1));
                     %*/
@@ -1227,7 +1227,7 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                         p.yyerror("dynamic constant assignment");
                     }
 
-                    Integer position = p.tokline();
+                    Integer position = @1.start();
 
                     $$ = new ConstDeclNode(position, (RubySymbol) null, p.new_colon3(position, $2), NilImplicitNode.NIL);
                     /*% %*/
@@ -1251,14 +1251,14 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                 }
                 | tIVAR {
                     /*%%%*/
-                    $$ = new InstAsgnNode(p.tokline(), p.symbolID($1), NilImplicitNode.NIL);
+                    $$ = new InstAsgnNode(@1.start(), p.symbolID($1), NilImplicitNode.NIL);
                     /*%
                       $$ = p.assignable(@1.id, p.var_field($1));
                     %*/
                 }
                 | tGVAR {
                     /*%%%*/
-                    $$ = new GlobalAsgnNode(p.tokline(), p.symbolID($1), NilImplicitNode.NIL);
+                    $$ = new GlobalAsgnNode(@1.start(), p.symbolID($1), NilImplicitNode.NIL);
                     /*%
                       $$ = p.assignable(@1.id, p.var_field($1));
                     %*/
@@ -1267,14 +1267,14 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                     /*%%%*/
                     if (p.getLexContext().in_def) p.compile_error("dynamic constant assignment");
 
-                    $$ = new ConstDeclNode(p.tokline(), p.symbolID($1), null, NilImplicitNode.NIL);
+                    $$ = new ConstDeclNode(@1.start(), p.symbolID($1), null, NilImplicitNode.NIL);
                     /*%
                       $$ = p.assignable(@1.id, p.var_field($1));
                     %*/
                 }
                 | tCVAR {
                     /*%%%*/
-                    $$ = new ClassVarAsgnNode(p.tokline(), p.symbolID($1), NilImplicitNode.NIL);
+                    $$ = new ClassVarAsgnNode(@1.start(), p.symbolID($1), NilImplicitNode.NIL);
                     /*%
                       $$ = p.assignable(@1.id, p.var_field($1));
                     %*/
@@ -1377,7 +1377,7 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                         p.yyerror("dynamic constant assignment");
                     }
 
-                    Integer position = p.tokline();
+                    Integer position = @1.start();
 
                     $$ = new ConstDeclNode(position, (RubySymbol) null, p.new_colon3(position, $2), NilImplicitNode.NIL);
                     /*% %*/
@@ -1403,13 +1403,13 @@ cname           : tIDENTIFIER {
 
 cpath           : tCOLON3 cname {
                     /*%%%*/
-                    $$ = p.new_colon3(p.tokline(), $2);
+                    $$ = p.new_colon3(@1.start(), $2);
                     /*% %*/
                     /*% ripper: top_const_ref!($2) %*/
                 }
                 | cname {
                     /*%%%*/
-                    $$ = p.new_colon2(p.tokline(), null, $1);
+                    $$ = p.new_colon2(@1.start(), null, $1);
                     /*% %*/
                     /*% ripper: const_ref!($1) %*/
                 }
@@ -2108,7 +2108,7 @@ block_arg       : tAMPER arg_value {
                 | tAMPER {
                     /*%%%*/
                     if (!p.local_id(FWD_BLOCK)) p.compile_error("no anonymous block parameter");
-                    $$ = new BlockPassNode(p.tokline(), p.arg_var(FWD_BLOCK));
+                    $$ = new BlockPassNode(@1.start(), p.arg_var(FWD_BLOCK));
                     // Changed from MRI
                     /*%
                     $$ = p.nil();
@@ -2272,7 +2272,7 @@ primary         : literal
                 }
                 | tCOLON3 tCONSTANT {
                     /*%%%*/
-                    $$ = p.new_colon3(p.tokline(), $2);
+                    $$ = p.new_colon3(@1.start(), $2);
                     /*% %*/
                     /*% ripper: top_const_ref!($2) %*/
                 }
@@ -3507,44 +3507,44 @@ p_primitive     : literal
                 } 
                 | /*mri:keyword_variable*/ keyword_nil {
                     /*%%%*/
-                    $$ = new NilNode(p.tokline());
+                    $$ = new NilNode(@1.start());
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
                 | keyword_self {
                     /*%%%*/
-                    $$ = new SelfNode(p.tokline());
+                    $$ = new SelfNode(@1.start());
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
                 | keyword_true { 
                     /*%%%*/
-                    $$ = new TrueNode(p.tokline());
+                    $$ = new TrueNode(@1.start());
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
                 | keyword_false {
                     /*%%%*/
-                    $$ = new FalseNode(p.tokline());
+                    $$ = new FalseNode(@1.start());
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
                 | keyword__FILE__ {
                     /*%%%*/
-                    $$ = new FileNode(p.tokline(), new ByteList(p.getFile().getBytes(),
+                    $$ = new FileNode(@1.start(), new ByteList(p.getFile().getBytes(),
                     p.getRuntime().getEncodingService().getLocaleEncoding()));
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
                 | keyword__LINE__ {
                     /*%%%*/
-                    $$ = new FixnumNode(p.tokline(), p.tokline()+1);
+                    $$ = new FixnumNode(@1.start(), @1.start()+1);
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
                 | keyword__ENCODING__ {
                     /*%%%*/
-                    $$ = new EncodingNode(p.tokline(), p.getEncoding());
+                    $$ = new EncodingNode(@1.start(), p.getEncoding());
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 } /*mri:keyword_variable*/
@@ -3574,33 +3574,33 @@ p_var_ref       : '^' tIDENTIFIER {
                 | '^' nonlocal_var {
                     /*%%%*/
                     $$ = p.gettable($2);
-                    if ($$ == null) $$ = new BeginNode(p.tokline(), NilImplicitNode.NIL);
+                    if ($$ == null) $$ = new BeginNode(@1.start(), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: var_ref!($2) %*/
                 }
 
 p_expr_ref      : '^' tLPAREN expr_value ')' {
                     /*%%%*/
-                    $$ = new BeginNode(p.tokline(), $3);
+                    $$ = new BeginNode(@1.start(), $3);
                     /*% %*/
                     /*% ripper: begin!($3) %*/
                 }
 
 p_const         : tCOLON3 cname {
                     /*%%%*/
-                    $$ = p.new_colon3(p.tokline(), $2);
+                    $$ = p.new_colon3(@1.start(), $2);
                     /*% %*/
                     /*% ripper: top_const_ref!($2) %*/
                 }
                 | p_const tCOLON2 cname {
                     /*%%%*/
-                    $$ = p.new_colon2(p.tokline(), $1, $3);
+                    $$ = p.new_colon2(@1.start(), $1, $3);
                     /*% %*/
                     /*% ripper: const_path_ref!($1, $3) %*/
                 }
                 | tCONSTANT {
                     /*%%%*/
-                    $$ = new ConstNode(p.tokline(), p.symbolID($1));
+                    $$ = new ConstNode(@1.start(), p.symbolID($1));
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
@@ -4022,7 +4022,7 @@ var_ref         : tIDENTIFIER { // mri:user_variable
                 }
                 | tIVAR {
                     /*%%%*/
-                    $$ = new InstVarNode(p.tokline(), p.symbolID($1));
+                    $$ = new InstVarNode(@1.start(), p.symbolID($1));
                     /*%  %*/
                     /*%
                     if (p.id_is_var(@1.id)) {
@@ -4034,7 +4034,7 @@ var_ref         : tIDENTIFIER { // mri:user_variable
                 }
                 | tGVAR {
                     /*%%%*/
-                    $$ = new GlobalVarNode(p.tokline(), p.symbolID($1));
+                    $$ = new GlobalVarNode(@1.start(), p.symbolID($1));
                     /*%  %*/
                     /*%
                     if (p.id_is_var(@1.id)) {
@@ -4046,7 +4046,7 @@ var_ref         : tIDENTIFIER { // mri:user_variable
                 }
                 | tCONSTANT {
                     /*%%%*/
-                    $$ = new ConstNode(p.tokline(), p.symbolID($1));
+                    $$ = new ConstNode(@1.start(), p.symbolID($1));
                     /*%  %*/
                     /*%
                     if (p.id_is_var(@1.id)) {
@@ -4058,7 +4058,7 @@ var_ref         : tIDENTIFIER { // mri:user_variable
                 }
                 | tCVAR {
                     /*%%%*/
-                    $$ = new ClassVarNode(p.tokline(), p.symbolID($1));
+                    $$ = new ClassVarNode(@1.start(), p.symbolID($1));
                     /*%  %*/
                     /*%
                     if (p.id_is_var(@1.id)) {
@@ -4070,44 +4070,44 @@ var_ref         : tIDENTIFIER { // mri:user_variable
                 } // mri:user_variable
                 | keyword_nil { // mri:keyword_variable
                     /*%%%*/
-                    $$ = new NilNode(p.tokline());
+                    $$ = new NilNode(@1.start());
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
                 | keyword_self {
                     /*%%%*/
-                    $$ = new SelfNode(p.tokline());
+                    $$ = new SelfNode(@1.start());
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
                 | keyword_true { 
                     /*%%%*/
-                    $$ = new TrueNode(p.tokline());
+                    $$ = new TrueNode(@1.start());
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
                 | keyword_false {
                     /*%%%*/
-                    $$ = new FalseNode(p.tokline());
+                    $$ = new FalseNode(@1.start());
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
                 | keyword__FILE__ {
                     /*%%%*/
-                    $$ = new FileNode(p.tokline(), new ByteList(p.getFile().getBytes(),
+                    $$ = new FileNode(@1.start(), new ByteList(p.getFile().getBytes(),
                     p.getRuntime().getEncodingService().getLocaleEncoding()));
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
                 | keyword__LINE__ {
                     /*%%%*/
-                    $$ = new FixnumNode(p.tokline(), p.tokline()+1);
+                    $$ = new FixnumNode(@1.start(), @1.start()+1);
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
                 | keyword__ENCODING__ {
                     /*%%%*/
-                    $$ = new EncodingNode(p.tokline(), p.getEncoding());
+                    $$ = new EncodingNode(@1.start(), p.getEncoding());
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 } // mri:keyword_variable
@@ -4123,14 +4123,14 @@ var_lhs         : tIDENTIFIER { // mri:user_variable
                 }
                 | tIVAR {
                     /*%%%*/
-                    $$ = new InstAsgnNode(p.tokline(), p.symbolID($1), NilImplicitNode.NIL);
+                    $$ = new InstAsgnNode(@1.start(), p.symbolID($1), NilImplicitNode.NIL);
                     /*%
                       $$ = p.assignable(@1.id, p.var_field($1));
                     %*/
                 }
                 | tGVAR {
                     /*%%%*/
-                    $$ = new GlobalAsgnNode(p.tokline(), p.symbolID($1), NilImplicitNode.NIL);
+                    $$ = new GlobalAsgnNode(@1.start(), p.symbolID($1), NilImplicitNode.NIL);
                     /*%
                       $$ = p.assignable(@1.id, p.var_field($1));
                     %*/
@@ -4139,14 +4139,14 @@ var_lhs         : tIDENTIFIER { // mri:user_variable
                     /*%%%*/
                     if (p.getLexContext().in_def) p.compile_error("dynamic constant assignment");
 
-                    $$ = new ConstDeclNode(p.tokline(), p.symbolID($1), null, NilImplicitNode.NIL);
+                    $$ = new ConstDeclNode(@1.start(), p.symbolID($1), null, NilImplicitNode.NIL);
                     /*%
                       $$ = p.assignable(@1.id, p.var_field($1));
                     %*/
                 }
                 | tCVAR {
                     /*%%%*/
-                    $$ = new ClassVarAsgnNode(p.tokline(), p.symbolID($1), NilImplicitNode.NIL);
+                    $$ = new ClassVarAsgnNode(@1.start(), p.symbolID($1), NilImplicitNode.NIL);
                     /*%
                       $$ = p.assignable(@1.id, p.var_field($1));
                     %*/
@@ -4232,7 +4232,7 @@ superclass      : '<' {
 f_opt_paren_args: f_paren_args
                 | none {
                     p.getLexContext().in_argdef = false;
-                    $$ = p.new_args(p.tokline(), null, null, null, null, 
+                    $$ = p.new_args(@1.start(), null, null, null, null, 
                                     p.new_args_tail(p.src_line(), null, (ByteList) null, (ByteList) null));
                 }
 
@@ -4280,7 +4280,7 @@ args_tail       : f_kwarg ',' f_kwrest opt_f_block_arg {
                 }
                 | args_forward {
                     p.add_forwarding_args();
-                    $$ = p.new_args_tail(p.tokline(), null, $1, FWD_BLOCK);
+                    $$ = p.new_args_tail(@1.start(), null, $1, FWD_BLOCK);
                 }
 
 opt_args_tail   : ',' args_tail {
@@ -4697,9 +4697,9 @@ assoc           : arg_value tASSOC arg_value {
                 }
                 | tLABEL {
                     /*%%%*/
-                    Node label = p.asSymbol(p.tokline(), $1);
+                    Node label = p.asSymbol(@1.start(), $1);
                     Node var = p.gettable($1);
-                    if (var == null) var = new BeginNode(p.tokline(), NilImplicitNode.NIL);
+                    if (var == null) var = new BeginNode(@1.start(), NilImplicitNode.NIL);
                     $$ = p.createKeyValue(label, var);
                     /*% %*/
                     /*% ripper: assoc_new!($1, Qnil) %*/

@@ -2078,10 +2078,6 @@ public abstract class RubyParserBase {
 
     protected abstract Object yyparse(RubyLexer lexer, Object yyDebug) throws IOException;
 
-    protected int tokline() {
-        return lexer.tokline;
-    }
-
     protected LexContext getLexContext() {
         return lexer.getLexContext();
     }

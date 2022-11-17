@@ -6063,7 +6063,7 @@ states[703] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
 };
 states[705] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.getLexContext().in_argdef = false;
-                    yyVal = p.new_args(p.tokline(), null, null, null, null, 
+                    yyVal = p.new_args(yyVals[yyTop - count + 1].start(), null, null, null, null, 
                                     p.new_args_tail(p.src_line(), null, (ByteList) null, (ByteList) null));
   return yyVal;
 };
@@ -6116,7 +6116,7 @@ states[713] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
 };
 states[714] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.add_forwarding_args();
-                    yyVal = p.new_args_tail(p.tokline(), null, ((IRubyObject)yyVals[0+yyTop].value), FWD_BLOCK);
+                    yyVal = p.new_args_tail(yyVals[yyTop - count + 1].start(), null, ((IRubyObject)yyVals[0+yyTop].value), FWD_BLOCK);
   return yyVal;
 };
 states[715] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {

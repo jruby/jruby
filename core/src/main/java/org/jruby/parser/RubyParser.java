@@ -2394,7 +2394,7 @@ states[65] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
                     LexContext ctxt = p.getLexContext();
                     ctxt.in_kwarg = ((Boolean)yyVals[-2+yyTop].value);
                     /*%%%*/
-                    yyVal = p.newPatternCaseNode(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-4+yyTop].value), p.newIn(yyVals[yyTop - count + 1].start(), ((Node)yyVals[0+yyTop].value), new TrueNode(p.tokline()), new FalseNode(p.tokline())));
+                    yyVal = p.newPatternCaseNode(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-4+yyTop].value), p.newIn(yyVals[yyTop - count + 1].start(), ((Node)yyVals[0+yyTop].value), new TrueNode(yyVals[yyTop - count + 1].start()), new FalseNode(yyVals[yyTop - count + 1].start())));
                     /*% %*/
                     /*% ripper: case!($1, in!($5, Qnil, Qnil)) %*/
   return yyVal;
@@ -2687,7 +2687,7 @@ states[111] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[112] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                   yyVal = new InstAsgnNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
+                   yyVal = new InstAsgnNode(yyVals[yyTop - count + 1].start(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
                     /*%
                       $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
                     %*/
@@ -2695,7 +2695,7 @@ states[112] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[113] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                   yyVal = new GlobalAsgnNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
+                   yyVal = new GlobalAsgnNode(yyVals[yyTop - count + 1].start(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
                     /*%
                       $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
                     %*/
@@ -2704,7 +2704,7 @@ states[113] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[114] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     if (p.getLexContext().in_def) p.compile_error("dynamic constant assignment");
-                    yyVal = new ConstDeclNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), null, NilImplicitNode.NIL);
+                    yyVal = new ConstDeclNode(yyVals[yyTop - count + 1].start(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), null, NilImplicitNode.NIL);
                     /*%
                       $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
                     %*/
@@ -2712,7 +2712,7 @@ states[114] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[115] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = new ClassVarAsgnNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
+                    yyVal = new ClassVarAsgnNode(yyVals[yyTop - count + 1].start(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
                     /*%
                       $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
                     %*/
@@ -2832,7 +2832,7 @@ states[128] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                         p.yyerror("dynamic constant assignment");
                     }
 
-                    Integer position = p.tokline();
+                    Integer position = yyVals[yyTop - count + 1].start();
 
                     yyVal = new ConstDeclNode(position, (RubySymbol) null, p.new_colon3(position, ((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
                     /*% %*/
@@ -2857,7 +2857,7 @@ states[130] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[131] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = new InstAsgnNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
+                    yyVal = new InstAsgnNode(yyVals[yyTop - count + 1].start(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
                     /*%
                       $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
                     %*/
@@ -2865,7 +2865,7 @@ states[131] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[132] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = new GlobalAsgnNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
+                    yyVal = new GlobalAsgnNode(yyVals[yyTop - count + 1].start(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
                     /*%
                       $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
                     %*/
@@ -2875,7 +2875,7 @@ states[133] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     /*%%%*/
                     if (p.getLexContext().in_def) p.compile_error("dynamic constant assignment");
 
-                    yyVal = new ConstDeclNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), null, NilImplicitNode.NIL);
+                    yyVal = new ConstDeclNode(yyVals[yyTop - count + 1].start(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), null, NilImplicitNode.NIL);
                     /*%
                       $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
                     %*/
@@ -2883,7 +2883,7 @@ states[133] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[134] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = new ClassVarAsgnNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
+                    yyVal = new ClassVarAsgnNode(yyVals[yyTop - count + 1].start(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
                     /*%
                       $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
                     %*/
@@ -2999,7 +2999,7 @@ states[147] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                         p.yyerror("dynamic constant assignment");
                     }
 
-                    Integer position = p.tokline();
+                    Integer position = yyVals[yyTop - count + 1].start();
 
                     yyVal = new ConstDeclNode(position, (RubySymbol) null, p.new_colon3(position, ((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
                     /*% %*/
@@ -3027,14 +3027,14 @@ states[150] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[151] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = p.new_colon3(p.tokline(), ((ByteList)yyVals[0+yyTop].value));
+                    yyVal = p.new_colon3(yyVals[yyTop - count + 1].start(), ((ByteList)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: top_const_ref!($2) %*/
   return yyVal;
 };
 states[152] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = p.new_colon2(p.tokline(), null, ((ByteList)yyVals[0+yyTop].value));
+                    yyVal = p.new_colon2(yyVals[yyTop - count + 1].start(), null, ((ByteList)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: const_ref!($1) %*/
   return yyVal;
@@ -3866,7 +3866,7 @@ states[315] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[316] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     if (!p.local_id(FWD_BLOCK)) p.compile_error("no anonymous block parameter");
-                    yyVal = new BlockPassNode(p.tokline(), p.arg_var(FWD_BLOCK));
+                    yyVal = new BlockPassNode(yyVals[yyTop - count + 1].start(), p.arg_var(FWD_BLOCK));
                     /* Changed from MRI*/
                     /*%
                     $$ = p.nil();
@@ -4042,7 +4042,7 @@ states[346] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[347] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = p.new_colon3(p.tokline(), ((ByteList)yyVals[0+yyTop].value));
+                    yyVal = p.new_colon3(yyVals[yyTop - count + 1].start(), ((ByteList)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: top_const_ref!($2) %*/
   return yyVal;
@@ -5383,35 +5383,35 @@ states[592] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[593] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = new NilNode(p.tokline());
+                    yyVal = new NilNode(yyVals[yyTop - count + 1].start());
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
   return yyVal;
 };
 states[594] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = new SelfNode(p.tokline());
+                    yyVal = new SelfNode(yyVals[yyTop - count + 1].start());
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
   return yyVal;
 };
 states[595] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = new TrueNode(p.tokline());
+                    yyVal = new TrueNode(yyVals[yyTop - count + 1].start());
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
   return yyVal;
 };
 states[596] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = new FalseNode(p.tokline());
+                    yyVal = new FalseNode(yyVals[yyTop - count + 1].start());
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
   return yyVal;
 };
 states[597] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = new FileNode(p.tokline(), new ByteList(p.getFile().getBytes(),
+                    yyVal = new FileNode(yyVals[yyTop - count + 1].start(), new ByteList(p.getFile().getBytes(),
                     p.getRuntime().getEncodingService().getLocaleEncoding()));
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
@@ -5419,14 +5419,14 @@ states[597] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[598] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = new FixnumNode(p.tokline(), p.tokline()+1);
+                    yyVal = new FixnumNode(yyVals[yyTop - count + 1].start(), yyVals[yyTop - count + 1].start()+1);
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
   return yyVal;
 };
 states[599] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = new EncodingNode(p.tokline(), p.getEncoding());
+                    yyVal = new EncodingNode(yyVals[yyTop - count + 1].start(), p.getEncoding());
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
   return yyVal;
@@ -5458,35 +5458,35 @@ states[602] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[603] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = p.gettable(((ByteList)yyVals[0+yyTop].value));
-                    if (yyVal == null) yyVal = new BeginNode(p.tokline(), NilImplicitNode.NIL);
+                    if (yyVal == null) yyVal = new BeginNode(yyVals[yyTop - count + 1].start(), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: var_ref!($2) %*/
   return yyVal;
 };
 states[604] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = new BeginNode(p.tokline(), ((Node)yyVals[-1+yyTop].value));
+                    yyVal = new BeginNode(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-1+yyTop].value));
                     /*% %*/
                     /*% ripper: begin!($3) %*/
   return yyVal;
 };
 states[605] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = p.new_colon3(p.tokline(), ((ByteList)yyVals[0+yyTop].value));
+                    yyVal = p.new_colon3(yyVals[yyTop - count + 1].start(), ((ByteList)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: top_const_ref!($2) %*/
   return yyVal;
 };
 states[606] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = p.new_colon2(p.tokline(), ((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[0+yyTop].value));
+                    yyVal = p.new_colon2(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: const_path_ref!($1, $3) %*/
   return yyVal;
 };
 states[607] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = new ConstNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)));
+                    yyVal = new ConstNode(yyVals[yyTop - count + 1].start(), p.symbolID(((ByteList)yyVals[0+yyTop].value)));
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
   return yyVal;
@@ -5909,7 +5909,7 @@ states[675] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[676] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = new InstVarNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)));
+                    yyVal = new InstVarNode(yyVals[yyTop - count + 1].start(), p.symbolID(((ByteList)yyVals[0+yyTop].value)));
                     /*%  %*/
                     /*%
                     if (p.id_is_var(yyVals[yyTop - count + 1].id)) {
@@ -5922,7 +5922,7 @@ states[676] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[677] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = new GlobalVarNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)));
+                    yyVal = new GlobalVarNode(yyVals[yyTop - count + 1].start(), p.symbolID(((ByteList)yyVals[0+yyTop].value)));
                     /*%  %*/
                     /*%
                     if (p.id_is_var(yyVals[yyTop - count + 1].id)) {
@@ -5935,7 +5935,7 @@ states[677] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[678] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = new ConstNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)));
+                    yyVal = new ConstNode(yyVals[yyTop - count + 1].start(), p.symbolID(((ByteList)yyVals[0+yyTop].value)));
                     /*%  %*/
                     /*%
                     if (p.id_is_var(yyVals[yyTop - count + 1].id)) {
@@ -5948,7 +5948,7 @@ states[678] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[679] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = new ClassVarNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)));
+                    yyVal = new ClassVarNode(yyVals[yyTop - count + 1].start(), p.symbolID(((ByteList)yyVals[0+yyTop].value)));
                     /*%  %*/
                     /*%
                     if (p.id_is_var(yyVals[yyTop - count + 1].id)) {
@@ -5961,35 +5961,35 @@ states[679] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[680] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = new NilNode(p.tokline());
+                    yyVal = new NilNode(yyVals[yyTop - count + 1].start());
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
   return yyVal;
 };
 states[681] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = new SelfNode(p.tokline());
+                    yyVal = new SelfNode(yyVals[yyTop - count + 1].start());
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
   return yyVal;
 };
 states[682] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = new TrueNode(p.tokline());
+                    yyVal = new TrueNode(yyVals[yyTop - count + 1].start());
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
   return yyVal;
 };
 states[683] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = new FalseNode(p.tokline());
+                    yyVal = new FalseNode(yyVals[yyTop - count + 1].start());
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
   return yyVal;
 };
 states[684] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = new FileNode(p.tokline(), new ByteList(p.getFile().getBytes(),
+                    yyVal = new FileNode(yyVals[yyTop - count + 1].start(), new ByteList(p.getFile().getBytes(),
                     p.getRuntime().getEncodingService().getLocaleEncoding()));
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
@@ -5997,14 +5997,14 @@ states[684] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[685] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = new FixnumNode(p.tokline(), p.tokline()+1);
+                    yyVal = new FixnumNode(yyVals[yyTop - count + 1].start(), yyVals[yyTop - count + 1].start()+1);
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
   return yyVal;
 };
 states[686] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = new EncodingNode(p.tokline(), p.getEncoding());
+                    yyVal = new EncodingNode(yyVals[yyTop - count + 1].start(), p.getEncoding());
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
   return yyVal;
@@ -6020,7 +6020,7 @@ states[687] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[688] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = new InstAsgnNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
+                    yyVal = new InstAsgnNode(yyVals[yyTop - count + 1].start(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
                     /*%
                       $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
                     %*/
@@ -6028,7 +6028,7 @@ states[688] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[689] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = new GlobalAsgnNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
+                    yyVal = new GlobalAsgnNode(yyVals[yyTop - count + 1].start(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
                     /*%
                       $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
                     %*/
@@ -6038,7 +6038,7 @@ states[690] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     /*%%%*/
                     if (p.getLexContext().in_def) p.compile_error("dynamic constant assignment");
 
-                    yyVal = new ConstDeclNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), null, NilImplicitNode.NIL);
+                    yyVal = new ConstDeclNode(yyVals[yyTop - count + 1].start(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), null, NilImplicitNode.NIL);
                     /*%
                       $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
                     %*/
@@ -6046,7 +6046,7 @@ states[690] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[691] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = new ClassVarAsgnNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
+                    yyVal = new ClassVarAsgnNode(yyVals[yyTop - count + 1].start(), p.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
                     /*%
                       $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
                     %*/
@@ -6141,7 +6141,7 @@ states[703] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[705] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.getLexContext().in_argdef = false;
-                    yyVal = p.new_args(p.tokline(), null, null, null, null, 
+                    yyVal = p.new_args(yyVals[yyTop - count + 1].start(), null, null, null, null, 
                                     p.new_args_tail(p.src_line(), null, (ByteList) null, (ByteList) null));
   return yyVal;
 };
@@ -6194,7 +6194,7 @@ states[713] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[714] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.add_forwarding_args();
-                    yyVal = p.new_args_tail(p.tokline(), null, ((ByteList)yyVals[0+yyTop].value), FWD_BLOCK);
+                    yyVal = p.new_args_tail(yyVals[yyTop - count + 1].start(), null, ((ByteList)yyVals[0+yyTop].value), FWD_BLOCK);
   return yyVal;
 };
 states[715] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6638,9 +6638,9 @@ states[782] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[783] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    Node label = p.asSymbol(p.tokline(), ((ByteList)yyVals[0+yyTop].value));
+                    Node label = p.asSymbol(yyVals[yyTop - count + 1].start(), ((ByteList)yyVals[0+yyTop].value));
                     Node var = p.gettable(((ByteList)yyVals[0+yyTop].value));
-                    if (var == null) var = new BeginNode(p.tokline(), NilImplicitNode.NIL);
+                    if (var == null) var = new BeginNode(yyVals[yyTop - count + 1].start(), NilImplicitNode.NIL);
                     yyVal = p.createKeyValue(label, var);
                     /*% %*/
                     /*% ripper: assoc_new!($1, Qnil) %*/

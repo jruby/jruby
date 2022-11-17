@@ -781,10 +781,6 @@ public class RipperParserBase {
         return false;
     }
 
-    protected int tokline() {
-        return lexer.tokline;
-    }
-
     public IRubyObject method_cond(IRubyObject value) {
         return value;
     }
