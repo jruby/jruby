@@ -1,7 +1,6 @@
 exclude :test_collect, "breaks in full interp and JIT due to differences in lambda args processing (#6165)"
 exclude :test_combination_with_callcc, "no callcc"
 exclude :test_flatten_with_callcc, "no callcc"
-exclude :test_permutation, "super flaky on travis" if ENV['TRAVIS'].eql?('true')
 exclude :test_permutation_with_callcc, "no callcc"
 exclude :test_product_with_callcc, "no callcc"
 exclude :test_reject_with_callcc, "no callcc"
