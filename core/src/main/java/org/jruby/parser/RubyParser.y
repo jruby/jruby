@@ -2325,10 +2325,10 @@ primary         : literal
                     $$ = p.new_defined(@1.start(), $5);
                 }
                 | keyword_not '(' expr rparen {
-                    $$ = p.call_uni_op(p.method_cond($3), BANG);
+                    $$ = p.call_uni_op(p.method_cond($3), NOT);
                 }
                 | keyword_not '(' rparen {
-                    $$ = p.call_uni_op(p.method_cond(p.nil()), BANG);
+                    $$ = p.call_uni_op(p.method_cond(p.nil()), NOT);
                 }
                 | fcall brace_block {
                     /*%%%*/
