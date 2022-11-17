@@ -34,6 +34,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.jcodings.Encoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyString;
@@ -940,4 +941,6 @@ public class RipperParserBase {
     private Node numParamInner = null;
     private Node numParamOuter = null;
     public IRubyObject case_labels;
+
+    public static final ByteList NOT = new ByteList(new byte[] {'n', 'o', 't'}, USASCIIEncoding.INSTANCE);
 }

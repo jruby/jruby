@@ -774,7 +774,7 @@ expr            : command_call
                     $$ = p.logop($1, OR_OR, $3);
                 }
                 | keyword_not opt_nl expr {
-                    $$ = p.call_uni_op(p.method_cond($3), BANG);
+                    $$ = p.call_uni_op(p.method_cond($3), NOT);
                 }
                 | '!' command_call {
                     $$ = p.call_uni_op(p.method_cond($2), BANG);

@@ -51,7 +51,6 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.ast.*;
-import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.OperatorCallNode;
 import org.jruby.common.IRubyWarnings;
@@ -2189,4 +2188,6 @@ public abstract class RubyParserBase {
     public RubySymbol get_id(ByteList id) {
         return symbolID(id);
     }
+
+    public static final ByteList NOT = BANG;
 }

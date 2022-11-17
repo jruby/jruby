@@ -2416,7 +2416,7 @@ states[57] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop,
   return yyVal;
 };
 states[58] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.call_uni_op(p.method_cond(((IRubyObject)yyVals[0+yyTop].value)), BANG);
+                    yyVal = p.call_uni_op(p.method_cond(((IRubyObject)yyVals[0+yyTop].value)), NOT);
   return yyVal;
 };
 states[59] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {

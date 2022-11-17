@@ -2345,7 +2345,7 @@ states[57] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
   return yyVal;
 };
 states[58] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.call_uni_op(p.method_cond(((Node)yyVals[0+yyTop].value)), BANG);
+                    yyVal = p.call_uni_op(p.method_cond(((Node)yyVals[0+yyTop].value)), NOT);
   return yyVal;
 };
 states[59] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
