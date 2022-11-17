@@ -1467,13 +1467,13 @@ undef_list      : fitem {
 
 // ByteList:op
 op               : '|' {
-                     $$ = p.maybe_symbolize(OR);
+                     $$ = $<@@token_type@@>1;
                  }
                  | '^' {
-                     $$ = p.maybe_symbolize(CARET);
+                     $$ = $<@@token_type@@>1;
                  }
                  | '&' {
-                     $$ = p.maybe_symbolize(AMPERSAND);
+                     $$ = $<@@token_type@@>1;
                  }
                  | tCMP {
                      $$ = $1;
@@ -1491,13 +1491,13 @@ op               : '|' {
                      $$ = $1;
                  }
                  | '>' {
-                     $$ = p.maybe_symbolize(GT);
+                     $$ = $<@@token_type@@>1;
                  }
                  | tGEQ {
                      $$ = $1;
                  }
                  | '<' {
-                     $$ = p.maybe_symbolize(LT);
+                     $$ = $<@@token_type@@>1;
                  }
                  | tLEQ {
                      $$ = $1;
@@ -1512,22 +1512,22 @@ op               : '|' {
                      $$ = $1;
                  }
                  | '+' {
-                     $$ = p.maybe_symbolize(PLUS);
+                     $$ = $<@@token_type@@>1;
                  }
                  | '-' {
-                     $$ = p.maybe_symbolize(MINUS);
+                     $$ = $<@@token_type@@>1;
                  }
                  | '*' {
-                     $$ = p.maybe_symbolize(STAR);
+                     $$ = $<@@token_type@@>1;
                  }
                  | tSTAR {
                      $$ = $1;
                  }
                  | '/' {
-                     $$ = p.maybe_symbolize(SLASH);
+                     $$ = $<@@token_type@@>1;
                  }
                  | '%' {
-                     $$ = p.maybe_symbolize(PERCENT);
+                     $$ = $<@@token_type@@>1;
                  }
                  | tPOW {
                      $$ = $1;
@@ -1536,10 +1536,10 @@ op               : '|' {
                      $$ = $1;
                  }
                  | '!' {
-                     $$ = p.maybe_symbolize(BANG);
+                     $$ = $<@@token_type@@>1;
                  }
                  | '~' {
-                     $$ = p.maybe_symbolize(TILDE);
+                     $$ = $<@@token_type@@>1;
                  }
                  | tUPLUS {
                      $$ = $1;
@@ -1554,7 +1554,7 @@ op               : '|' {
                      $$ = $1;
                  }
                  | '`' {
-                     $$ = p.maybe_symbolize(BACKTICK);
+                     $$ = $<@@token_type@@>1;
                  }
  
 // ByteList: reswords
@@ -2703,7 +2703,7 @@ f_rest_marg     : tSTAR f_norm_arg {
 
 f_any_kwrest    : f_kwrest
                 | f_no_kwarg {
-                     $$ = p.maybe_symbolize(LexingCommon.NIL);
+                    $$ = $<@@token_type@@>1;
                 }
 
 f_eq            : {
@@ -3424,14 +3424,18 @@ p_kwrest        : kwrest_mark tIDENTIFIER {
                 }
 
 p_kwnorest      : kwrest_mark keyword_nil {
-                    $$ = null;
+                    /*%%%*/
+                       $$ = KWNOREST;
+                    /*%
+                       $$ = $2;
+                    %*/
                 }
 
 p_any_kwrest    : p_kwrest {
                     $$ = $1;
                 }
                 | p_kwnorest {
-                    $$ = p.maybe_symbolize(KWNOREST);
+                    $$ = $1;
                 }
 
 p_value         : p_primitive
@@ -4507,7 +4511,7 @@ kwrest_mark     : tPOW {
 
 f_no_kwarg      : kwrest_mark keyword_nil {
                     /*%%%*/
-                    $$ = $2;
+                    $$ = KWNOREST;
                     /*% %*/
                     /*% ripper: nokw_param!(Qnil) %*/
                 }
@@ -4774,7 +4778,7 @@ call_op 	: '.' {
 
 call_op2        : call_op
                 | tCOLON2 {
-                    $$ = p.maybe_symbolize($1);
+                    $$ = $1;
                 }
   
 opt_terms       : | terms

@@ -119,7 +119,7 @@ public class RipperParserBase {
 
     public IRubyObject assignableIdentifier(IRubyObject value) {
         String ident = lexer.getIdent().intern();
-        getCurrentScope().assign(lexer.getRubySourceline(), context.runtime.newSymbol(lexer.getIdent(), lexer.getEncoding()), null);
+        getCurrentScope().assign(lexer.getRubySourceline(), context.runtime.newSymbol(ident, lexer.getEncoding()), null);
         return value;
     }
 
@@ -917,10 +917,6 @@ public class RipperParserBase {
         }
 
         return getRuntime().newSymbol(lexer.identValue);
-    }
-
-    public IRubyObject maybe_symbolize(ByteList value) {
-        return getRuntime().newSymbol(value);
     }
 
     protected IRubyObject ripper;

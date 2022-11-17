@@ -2189,8 +2189,4 @@ public abstract class RubyParserBase {
     public RubySymbol get_id(ByteList id) {
         return symbolID(id);
     }
-
-    public ByteList maybe_symbolize(ByteList value) {
-        return value;
-    }
 }
