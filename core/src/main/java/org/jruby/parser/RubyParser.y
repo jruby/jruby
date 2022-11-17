@@ -830,9 +830,9 @@ def_name        : fname {
                     p.numparam_name($1);
                     $$ = new DefHolder(name, currentArg, (LexContext) ctxt.clone());
                     // Changed from MRI
-                    /*% 
-                    p.numparam_name(@1.id);
-                        $$ = new DefHolder(name, currentArg, p.get_value($1), (LexContext) ctxt.clone());
+                    /*%
+                        p.numparam_name(@1.id);
+                        $$ = new DefHolder(p.get_id(@1.id), currentArg, p.get_value($1), (LexContext) ctxt.clone());
                     %*/
                     ctxt.in_def = true;
                     p.setCurrentArg(null);
@@ -1890,10 +1890,10 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     /*%%%*/
                     $$ = new DefnNode($1.line, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), @4.end());
                     if (p.isNextBreak) $<DefnNode>$.setContainsNextBreak();
-                    p.popCurrentScope();
                     // Changed from MRI (combined two stmts)
                     /*% %*/
                     /*% ripper: def!(get_value($1), $2, bodystmt!($4, Qnil, Qnil, Qnil)) %*/
+                    p.popCurrentScope();
 		}
                 | defn_head f_opt_paren_args '=' arg modifier_rescue arg {
                     p.endless_method_name($1);
@@ -1902,10 +1902,10 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     Node body = p.reduce_nodes(p.remove_begin(p.rescued_expr(@1.start(), $4, $6)));
                     $$ = new DefnNode($1.line, $1.name, $2, p.getCurrentScope(), body, @6.end());
                     if (p.isNextBreak) $<DefnNode>$.setContainsNextBreak();
-                    p.popCurrentScope();
                     // Changed from MRI (combined two stmts)
                     /*% %*/
                     /*% ripper: def!(get_value($1), $2, bodystmt!(rescue_mod!($4, $6), Qnil, Qnil, Qnil)) %*/
+                    p.popCurrentScope();
 		}
                 | defs_head f_opt_paren_args '=' arg {
                     p.endless_method_name($1);
@@ -1913,20 +1913,20 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     /*%%%*/
                     $$ = new DefsNode($1.line, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), @4.end());
                     if (p.isNextBreak) $<DefsNode>$.setContainsNextBreak();
-                    p.popCurrentScope();
                     /*% %*/
                     /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, bodystmt!($4, Qnil, Qnil, Qnil)) %*/
+                    p.popCurrentScope();
 		}
                 | defs_head f_opt_paren_args '=' arg modifier_rescue arg {
-                    /*%%%*/
                     p.endless_method_name($1);
                     p.restore_defun($1);
+                    /*%%%*/
                     Node body = p.reduce_nodes(p.remove_begin(p.rescued_expr(@1.start(), $4, $6)));
                     $$ = new DefsNode($1.line, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), body, @6.end());
                     if (p.isNextBreak) $<DefsNode>$.setContainsNextBreak();
-                    p.popCurrentScope();
                     /*% %*/
                     /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, bodystmt!(rescue_mod!($4, $6), Qnil, Qnil, Qnil)) %*/
+                    p.popCurrentScope();
                 }
                 | primary {
                     $$ = $1;

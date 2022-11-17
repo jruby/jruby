@@ -912,6 +912,10 @@ public class RipperParserBase {
         return context;
     }
 
+    public RubySymbol get_id(ByteList value) {
+        return getRuntime().newSymbol(value);
+    }
+
     public RubySymbol get_id(IRubyObject _ignored) {
         if (_ignored instanceof RubySymbol) {
             return (RubySymbol) _ignored;

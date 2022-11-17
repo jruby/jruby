@@ -2486,8 +2486,8 @@ states[67] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop,
                     p.setCurrentArg(null);
                     LexContext ctxt = p.getLexContext();
                     RubySymbol name = p.get_id(((IRubyObject)yyVals[0+yyTop].value));
-                    p.numparam_name(yyVals[yyTop - count + 1].id);
-                        yyVal = new DefHolder(name, currentArg, p.get_value(((IRubyObject)yyVals[0+yyTop].value)), (LexContext) ctxt.clone());
+                        p.numparam_name(yyVals[yyTop - count + 1].id);
+                        yyVal = new DefHolder(p.get_id(yyVals[yyTop - count + 1].id), currentArg, p.get_value(((IRubyObject)yyVals[0+yyTop].value)), (LexContext) ctxt.clone());
 
                     ctxt.in_def = true;
                     p.setCurrentArg(null);
@@ -3678,6 +3678,7 @@ states[278] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
                     v8 = v5;
                     v9 = p.dispatch("on_def", v6, v7, v8);
                     yyVal = v9;}
+                    p.popCurrentScope();
   return yyVal;
 };
 states[279] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -3697,6 +3698,7 @@ states[279] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
                     v11 = v8;
                     v12 = p.dispatch("on_def", v9, v10, v11);
                     yyVal = v12;}
+                    p.popCurrentScope();
   return yyVal;
 };
 states[280] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -3715,9 +3717,12 @@ states[280] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
                     v10 = v5;
                     v11 = p.dispatch("on_defs", v6, v7, v8, v9, v10);
                     yyVal = v11;}
+                    p.popCurrentScope();
   return yyVal;
 };
 states[281] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+                    p.endless_method_name(((DefHolder)yyVals[-5+yyTop].value));
+                    p.restore_defun(((DefHolder)yyVals[-5+yyTop].value));
 {IRubyObject v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14;
                     v1 = ((IRubyObject)yyVals[-2+yyTop].value);
                     v2 = ((IRubyObject)yyVals[0+yyTop].value);
@@ -3734,6 +3739,7 @@ states[281] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
                     v13 = v8;
                     v14 = p.dispatch("on_defs", v9, v10, v11, v12, v13);
                     yyVal = v14;}
+                    p.popCurrentScope();
   return yyVal;
 };
 states[282] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6597,7 +6603,7 @@ states[817] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 }
-					// line 4579 "ripper_RubyParser.out"
+					// line 4585 "ripper_RubyParser.out"
 
 }
-					// line 14353 "-"
+					// line 14359 "-"
