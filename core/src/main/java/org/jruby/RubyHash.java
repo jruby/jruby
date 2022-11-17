@@ -247,9 +247,13 @@ public class RubyHash extends RubyObject implements Map {
     private RubyHash(Ruby runtime, RubyClass klass, RubyHash other, boolean identity) {
         super(runtime, klass);
         this.ifNone = UNDEF;
-        threshold = INITIAL_THRESHOLD;
-        table = other.internalCopyTable(head);
-        size = other.size();
+        copyFrom(this, other, identity);
+    }
+
+    private void copyFrom(RubyHash self, RubyHash other, boolean identity) {
+        threshold = other.threshold;
+        self.table = other.internalCopyTable(head);
+        self.size = other.size();
         setComparedByIdentity(identity);
     }
 
@@ -2158,13 +2162,7 @@ public class RubyHash extends RubyObject implements Map {
 
         if (this == otherHash) return this;
 
-        rb_clear(context);
-
-        if (!isComparedByIdentity() && otherHash.isComparedByIdentity()) {
-            setComparedByIdentity(true);
-        }
-
-        otherHash.visitAll(context, ReplaceVisitor, this);
+        copyFrom(this, otherHash, otherHash.isComparedByIdentity());
 
         ifNone = otherHash.ifNone;
 
