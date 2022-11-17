@@ -87,6 +87,7 @@ lib/ruby/stdlib/jline
 lib/ruby/stdlib/jopenssl*
 lib/ruby/stdlib/json*
 lib/ruby/stdlib/krypt*
+lib/ruby/stdlib/libfixposix*
 lib/ruby/stdlib/logger*
 lib/ruby/stdlib/matrix*
 lib/ruby/stdlib/minitest*
@@ -123,6 +124,7 @@ lib/ruby/stdlib/shellwords*
 lib/ruby/stdlib/singleton*
 lib/ruby/stdlib/stringio*
 lib/ruby/stdlib/strscan*
+lib/ruby/stdlib/subspawn*
 lib/ruby/stdlib/time.rb
 lib/ruby/stdlib/timeout*
 lib/ruby/stdlib/tracer*
