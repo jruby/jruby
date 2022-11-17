@@ -5147,7 +5147,7 @@ states[544] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     yyVal = p.new_array_pattern_tail(yyVals[yyTop - count + 1].start(), p.list_concat(((ListNode)yyVals[-1+yyTop].value), ((ListNode)yyVals[0+yyTop].value)), false, null, null);
                     /* JRuby Changed*/
                     /*%
-			RubyArray pre_args = $1.push($2);
+			RubyArray pre_args = $1.concat($2);
 			$$ = p.new_array_pattern_tail(yyVals[yyTop - count + 1].start(), pre_args, false, null, null);
                     %*/
   return yyVal;

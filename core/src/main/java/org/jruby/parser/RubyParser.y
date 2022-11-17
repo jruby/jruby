@@ -3276,7 +3276,7 @@ p_args          : p_expr {
                     $$ = p.new_array_pattern_tail(@1.start(), p.list_concat($1, $2), false, null, null);
                     // JRuby Changed
                     /*%
-			RubyArray pre_args = $1.push($2);
+			RubyArray pre_args = $1.concat($2);
 			$$ = p.new_array_pattern_tail(@1.start(), pre_args, false, null, null);
                     %*/
                 }

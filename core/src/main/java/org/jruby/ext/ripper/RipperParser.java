@@ -5229,7 +5229,7 @@ states[543] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[544] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-			RubyArray pre_args = ((RubyArray)yyVals[-1+yyTop].value).push(((RubyArray)yyVals[0+yyTop].value));
+			RubyArray pre_args = ((RubyArray)yyVals[-1+yyTop].value).concat(((RubyArray)yyVals[0+yyTop].value));
 			yyVal = p.new_array_pattern_tail(yyVals[yyTop - count + 1].start(), pre_args, false, null, null);
 
   return yyVal;
