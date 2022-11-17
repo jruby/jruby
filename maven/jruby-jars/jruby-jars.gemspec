@@ -26,7 +26,7 @@ Gem::Specification.new do |s|
   s.summary = 'The core JRuby code and the JRuby stdlib as jar files.'
   s.homepage = 'https://github.com/jruby/jruby/tree/master/maven/jruby-jars'
   s.description = File.read('README.txt', encoding: 'UTF-8').split(/\n{2,}/)[3]
-  s.licenses = %w(EPL-1.0 GPL-2.0 LGPL-2.1)
+  s.licenses = %w(EPL-2.0 GPL-2.0 LGPL-2.1)
   s.files = Dir['[A-Z]*'] +
       Dir['lib/**/*.rb'] +
       Dir[ 'test/**/*'] +
