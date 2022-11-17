@@ -1768,15 +1768,14 @@ public class RubyLexer extends LexingCommon {
                 set_yylval_name(createTokenByteList());
 
                 if (isLexState(state, EXPR_FNAME)) {
+                    setState(EXPR_ENDFN);
                     identValue = tempVal;
                     return keyword.id0;
                 }
 
                 if (isLexState(lex_state, EXPR_BEG)) commandStart = true;
 
-                if (keyword.id0 == keyword_do) {
-                    return doKeyword(state);
-                }
+                if (keyword.id0 == keyword_do) return doKeyword(state);
 
                 if (isLexState(state, EXPR_BEG|EXPR_LABELED)) {
                     return keyword.id0;
