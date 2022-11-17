@@ -5763,8 +5763,8 @@ states[647] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[648] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    /*%%%*/
                     p.setStrTerm(((StrTerm)yyVals[-1+yyTop].value));
+                   /*%%%*/
                     yyVal = new EvStrNode(yyVals[yyTop - count + 3].start(), ((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: string_dvar!($3) %*/

@@ -3878,9 +3878,9 @@ string_content  : tSTRING_CONTENT {
                     $$ = p.getStrTerm();
                     p.setStrTerm(null);
                     p.setState(EXPR_BEG);
-                } string_dvar {
-                    /*%%%*/
+                } string_dvar { 
                     p.setStrTerm($<StrTerm>2);
+                   /*%%%*/
                     $$ = new EvStrNode(@3.start(), $3);
                     /*% %*/
                     /*% ripper: string_dvar!($3) %*/

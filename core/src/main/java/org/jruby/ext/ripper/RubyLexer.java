@@ -48,16 +48,6 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
 import static org.jruby.ext.ripper.RipperParser.*;
-import static org.jruby.parser.RubyParser.tBDOT2;
-import static org.jruby.parser.RubyParser.tBDOT3;
-import static org.jruby.parser.RubyParser.tDOT2;
-import static org.jruby.parser.RubyParser.tDOT3;
-import static org.jruby.parser.RubyParser.tLAMBEG;
-import static org.jruby.parser.RubyParser.tLBRACE;
-import static org.jruby.parser.RubyParser.tLPAREN_ARG;
-import static org.jruby.parser.RubyParser.tSTRING_BEG;
-import static org.jruby.parser.RubyParser.tSTRING_DEND;
-import static org.jruby.parser.RubyParser.tXSTRING_BEG;
 import static org.jruby.util.StringSupport.CR_7BIT;
 import static org.jruby.util.StringSupport.codeRangeScan;
 
