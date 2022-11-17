@@ -789,6 +789,8 @@ public class RubyLexer extends LexingCommon {
             case EOF: System.out.println("EOF"); break;
             case tDSTAR: System.err.print("tDSTAR"); break;
             case tSTRING_DEND: System.err.print("tDSTRING_DEND,"); break;
+            case tBDOT3: System.err.print("tBDOT3,"); break;
+            case tBDOT2: System.err.print("tBDOT2,"); break;
             default: System.err.print("'" + (char)token + "'[" + token + "]"); break;
         }
     }
@@ -918,6 +920,8 @@ public class RubyLexer extends LexingCommon {
             case tASET: return "on_op";
             case tASSOC: return "on_op";
             case tBACK_REF: return "on_backref";
+            case tBDOT2: return "on_op";
+            case tBDOT3: return "on_op";
             case tCHAR: return "on_CHAR";
             case tCMP: return "on_op";
             case tCOLON2: return "on_op";
