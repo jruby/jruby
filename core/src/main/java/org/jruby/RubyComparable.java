@@ -249,12 +249,14 @@ public class RubyComparable {
         }
 
         RubyRange range = (RubyRange) arg;
+        IRubyObject min = range.begin(context);
+        IRubyObject max = range.end(context);
 
-        if (!range.end(context).isNil() && range.isExcludeEnd()) {
-            throw runtime.newArgumentError("cannot clamp with an exclusive range");
+        if (!max.isNil()) {
+            if (range.isExcludeEnd()) throw runtime.newArgumentError("cannot clamp with an exclusive range");
         }
 
-        return clamp(context, recv, range.begin(context), range.end(context));
+        return clamp(context, recv, min, max);
     }
 
     @JRubyMethod(name = "clamp")
@@ -264,7 +266,7 @@ public class RubyComparable {
         CallSite op_lt = sites.op_lt;
         CallSite op_cmp = sites.op_cmp;
 
-        if (cmpAndCmpint(context, op_cmp, op_gt, op_lt, min, max) > 0) {
+        if (!min.isNil() && !max.isNil() && cmpAndCmpint(context, op_cmp, op_gt, op_lt, min, max) > 0) {
             throw context.runtime.newArgumentError("min argument must be smaller than max argument");
         }
 
