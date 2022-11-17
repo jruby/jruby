@@ -769,14 +769,15 @@ public class RipperParserBase {
         return value == null ? context.nil : value;
     }
 
+    public boolean local_id(ByteList value) {
+        // FIXME: local_id_ref is more complicated and we just blanket look for a scope var of the same name.
+        return currentScope.isDefined(symbolID(value).idString()) >= 0;
+    }
+
     public boolean check_forwarding_args() {
-        // FIXME: Add local_id
-        /*
         if (local_id(FWD_REST) &&
                 local_id(FWD_KWREST) &&
                 local_id(FWD_BLOCK)) return true;
-
-         */
 
         compile_error("unexpected ...");
         return false;
