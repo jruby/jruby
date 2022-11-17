@@ -1,6 +1,6 @@
 exclude :"test_combination_with_callcc", "work in progress"
 exclude :"test_flatten_with_callcc", "work in progress"
-exclude :"test_freeze_inside_sort!", "work in progress"
+exclude :"test_freeze_inside_sort!", "test bug: test expects sort to take at least 6 iterations"
 exclude :"test_permutation_with_callcc", "work in progress"
 exclude :"test_product_with_callcc", "work in progress"
 exclude :"test_reject_with_callcc", "work in progress"
