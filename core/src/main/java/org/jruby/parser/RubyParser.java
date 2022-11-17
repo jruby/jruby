@@ -5805,7 +5805,7 @@ states[653] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                    if (((Node)yyVals[-1+yyTop].value) != null) ((Node)yyVals[-1+yyTop].value).unsetNewline();
                    yyVal = p.newEvStrNode(yyVals[yyTop - count + 6].start(), ((Node)yyVals[-1+yyTop].value));
                    /*% %*/
-                   /*% ripper: string_embexpr!($7) %*/
+                   /*% ripper: string_embexpr!($6) %*/
   return yyVal;
 };
 states[654] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {

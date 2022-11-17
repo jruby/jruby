@@ -5801,7 +5801,7 @@ states[653] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
                    p.setHeredocLineIndent(-1);
 
 {IRubyObject v1, v2;
-                    v1 = ((IRubyObject)yyVals[0+yyTop].value);
+                    v1 = ((IRubyObject)yyVals[-1+yyTop].value);
                     v2 = p.dispatch("on_string_embexpr", v1);
                     yyVal = v2;}
   return yyVal;

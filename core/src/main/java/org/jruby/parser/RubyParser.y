@@ -3912,7 +3912,7 @@ string_content  : tSTRING_CONTENT {
                    if ($6 != null) $6.unsetNewline();
                    $$ = p.newEvStrNode(@6.start(), $6);
                    /*% %*/
-                   /*% ripper: string_embexpr!($7) %*/
+                   /*% ripper: string_embexpr!($6) %*/
                 }
 
 string_dvar     : tGVAR {
