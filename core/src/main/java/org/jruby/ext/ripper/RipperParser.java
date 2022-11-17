@@ -3234,167 +3234,167 @@ states[193] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[194] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.__LINE__.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[195] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.__FILE__.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[196] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.__ENCODING__.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[197] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.LBEGIN.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[198] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.LEND.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[199] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.ALIAS.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[200] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.AND.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[201] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.BEGIN.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[202] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.BREAK.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[203] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.CASE.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[204] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.CLASS.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[205] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.DEF.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[206] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.DEFINED_P.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[207] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.DO.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[208] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.ELSE.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[209] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.ELSIF.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[210] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.END.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[211] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.ENSURE.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[212] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.FALSE.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[213] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.FOR.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[214] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.IN.bytes);
+                    yyVal = yyVals[0+yyTop].value;
   return yyVal;
 };
 states[215] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.MODULE.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[216] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.NEXT.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[217] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.NIL.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[218] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.NOT.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[219] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.OR.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[220] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.REDO.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[221] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.RESCUE.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[222] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.RETRY.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[223] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.RETURN.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[224] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.SELF.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[225] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.SUPER.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[226] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.THEN.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[227] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.TRUE.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[228] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.UNDEF.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[229] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.WHEN.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[230] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.YIELD.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[231] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.IF.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[232] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.UNLESS.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[233] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.WHILE.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[234] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(Keyword.UNTIL.bytes);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[235] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -3741,11 +3741,11 @@ states[282] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[283] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(GT);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[284] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.maybe_symbolize(LT);
+                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[285] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -4170,7 +4170,7 @@ states[354] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
 };
 states[355] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.getLexContext().in_defined = false;
-                    yyVal = p.new_defined(yyVals[yyTop - count + 1].start, ((IRubyObject)yyVals[-1+yyTop].value));
+                    yyVal = p.new_defined(yyVals[yyTop - count + 1].start(), ((IRubyObject)yyVals[-1+yyTop].value));
   return yyVal;
 };
 states[356] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {

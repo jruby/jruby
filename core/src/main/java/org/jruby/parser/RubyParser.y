@@ -25,7 +25,7 @@
     'package' => ['org.jruby.parser', 'org.jruby.ext.ripper'],
     'lex_package' => ['org.jruby.lexer.yacc', 'org.jruby.ext.ripper'],
     'Parser' => ['Ruby', 'Ripper'],
-    'keyword_type' => ['Integer', 'IRubyObject'],
+    'keyword_type' => ['ByteList', 'IRubyObject'],
     'token_type' => ['ByteList', 'IRubyObject'],
     'token_integer_type' => ['Node', 'IRubyObject'],
     'token_float_type' => ['FloatNode', 'IRubyObject'],
@@ -547,19 +547,19 @@ stmt            : keyword_alias fitem {
                     p.setState(EXPR_FNAME|EXPR_FITEM);
                 } fitem {
                     /*%%%*/
-                    $$ = newAlias($1, $2, $4);
+                    $$ = newAlias(@1.start(), $2, $4);
                     /*% %*/
                     /*% ripper: alias!($2, $4) %*/
                 }
                 | keyword_alias tGVAR tGVAR {
                     /*%%%*/
-                    $$ = new VAliasNode($1, p.symbolID($2), p.symbolID($3));
+                    $$ = new VAliasNode(@1.start(), p.symbolID($2), p.symbolID($3));
                     /*% %*/
                     /*% ripper: var_alias!($2, $3) %*/
                 }
                 | keyword_alias tGVAR tBACK_REF {
                     /*%%%*/
-                    $$ = new VAliasNode($1, p.symbolID($2), p.symbolID($<BackRefNode>3.getByteName()));
+                    $$ = new VAliasNode(@1.start(), p.symbolID($2), p.symbolID($<BackRefNode>3.getByteName()));
                     /*% %*/
                     /*% ripper: var_alias!($2, $3) %*/
                 }
@@ -621,7 +621,7 @@ stmt            : keyword_alias fitem {
                        p.warn("END in method; use at_exit");
                     }
                     /*%%%*/
-                    $$ = new PostExeNode($1, $3, p.src_line());
+                   $$ = new PostExeNode(@1.start(), $3, p.src_line());
                     /*% %*/
                     /*% ripper: END!($3) %*/
                 }
@@ -942,31 +942,31 @@ command        : fcall command_args %prec tLOWEST {
                 }
                 | keyword_super command_args {
                     /*%%%*/
-                    $$ = p.new_super($1, $2);
+                    $$ = p.new_super(@1.start(), $2);
                     /*% %*/
                     /*% ripper: super!($2) %*/
                 }
                 | keyword_yield command_args {
                     /*%%%*/
-                    $$ = p.new_yield($1, $2);
+                    $$ = p.new_yield(@1.start(), $2);
                     /*% %*/
                     /*% ripper: yield!($2) %*/
                 }
                 | k_return call_args {
                     /*%%%*/
-                    $$ = new ReturnNode($1, p.ret_args($2, $1));
+                    $$ = new ReturnNode(@1.start(), p.ret_args($2, @1.start()));
                     /*% %*/
                     /*% ripper: return!($2) %*/
                 }
                 | keyword_break call_args {
                     /*%%%*/
-                    $$ = new BreakNode($1, p.ret_args($2, $1));
+                    $$ = new BreakNode(@1.start(), p.ret_args($2, @1.start()));
                     /*% %*/
                     /*% ripper: break!($2) %*/
                 }
                 | keyword_next call_args {
                     /*%%%*/
-                    $$ = new NextNode($1, p.ret_args($2, $1));
+                    $$ = new NextNode(@1.start(), p.ret_args($2, @1.start()));
                     /*% %*/
                     /*% ripper: next!($2) %*/
                 }
@@ -1559,127 +1559,127 @@ op               : '|' {
  
 // ByteList: reswords
 reswords        : keyword__LINE__ {
-                    $$ = p.maybe_symbolize(Keyword.__LINE__.bytes);
+                    $$ = $1;
                 }
                 | keyword__FILE__ {
-                    $$ = p.maybe_symbolize(Keyword.__FILE__.bytes);
+                    $$ = $1;
                 }
                 | keyword__ENCODING__ {
-                    $$ = p.maybe_symbolize(Keyword.__ENCODING__.bytes);
+                    $$ = $1;
                 }
                 | keyword_BEGIN {
-                    $$ = p.maybe_symbolize(Keyword.LBEGIN.bytes);
+                    $$ = $1;
                 }
                 | keyword_END {
-                    $$ = p.maybe_symbolize(Keyword.LEND.bytes);
+                    $$ = $1;
                 }
                 | keyword_alias {
-                    $$ = p.maybe_symbolize(Keyword.ALIAS.bytes);
+                    $$ = $1;
                 }
                 | keyword_and {
-                    $$ = p.maybe_symbolize(Keyword.AND.bytes);
+                    $$ = $1;
                 }
                 | keyword_begin {
-                    $$ = p.maybe_symbolize(Keyword.BEGIN.bytes);
+                    $$ = $1;
                 }
                 | keyword_break {
-                    $$ = p.maybe_symbolize(Keyword.BREAK.bytes);
+                    $$ = $1;
                 }
                 | keyword_case {
-                    $$ = p.maybe_symbolize(Keyword.CASE.bytes);
+                    $$ = $1;
                 }
                 | keyword_class {
-                    $$ = p.maybe_symbolize(Keyword.CLASS.bytes);
+                    $$ = $1;
                 }
                 | keyword_def {
-                    $$ = p.maybe_symbolize(Keyword.DEF.bytes);
+                    $$ = $1;
                 }
                 | keyword_defined {
-                    $$ = p.maybe_symbolize(Keyword.DEFINED_P.bytes);
+                    $$ = $1;
                 }
                 | keyword_do {
-                    $$ = p.maybe_symbolize(Keyword.DO.bytes);
+                    $$ = $1;
                 }
                 | keyword_else {
-                    $$ = p.maybe_symbolize(Keyword.ELSE.bytes);
+                    $$ = $1;
                 }
                 | keyword_elsif {
-                    $$ = p.maybe_symbolize(Keyword.ELSIF.bytes);
+                    $$ = $1;
                 }
                 | keyword_end {
-                    $$ = p.maybe_symbolize(Keyword.END.bytes);
+                    $$ = $1;
                 }
                 | keyword_ensure {
-                    $$ = p.maybe_symbolize(Keyword.ENSURE.bytes);
+                    $$ = $1;
                 }
                 | keyword_false {
-                    $$ = p.maybe_symbolize(Keyword.FALSE.bytes);
+                    $$ = $1;
                 }
                 | keyword_for {
-                    $$ = p.maybe_symbolize(Keyword.FOR.bytes);
+                    $$ = $1;
                 }
                 | keyword_in {
-                    $$ = p.maybe_symbolize(Keyword.IN.bytes);
+                    $$ = $1;
                 }
                 | keyword_module {
-                    $$ = p.maybe_symbolize(Keyword.MODULE.bytes);
+                    $$ = $1;
                 }
                 | keyword_next {
-                    $$ = p.maybe_symbolize(Keyword.NEXT.bytes);
+                    $$ = $1;
                 }
                 | keyword_nil {
-                    $$ = p.maybe_symbolize(Keyword.NIL.bytes);
+                    $$ = $1;
                 }
                 | keyword_not {
-                    $$ = p.maybe_symbolize(Keyword.NOT.bytes);
+                    $$ = $1;
                 }
                 | keyword_or {
-                    $$ = p.maybe_symbolize(Keyword.OR.bytes);
+                    $$ = $1;
                 }
                 | keyword_redo {
-                    $$ = p.maybe_symbolize(Keyword.REDO.bytes);
+                    $$ = $1;
                 }
                 | keyword_rescue {
-                    $$ = p.maybe_symbolize(Keyword.RESCUE.bytes);
+                    $$ = $1;
                 }
                 | keyword_retry {
-                    $$ = p.maybe_symbolize(Keyword.RETRY.bytes);
+                    $$ = $1;
                 }
                 | keyword_return {
-                    $$ = p.maybe_symbolize(Keyword.RETURN.bytes);
+                    $$ = $1;
                 }
                 | keyword_self {
-                    $$ = p.maybe_symbolize(Keyword.SELF.bytes);
+                    $$ = $1;
                 }
                 | keyword_super {
-                    $$ = p.maybe_symbolize(Keyword.SUPER.bytes);
+                    $$ = $1;
                 }
                 | keyword_then {
-                    $$ = p.maybe_symbolize(Keyword.THEN.bytes);
+                    $$ = $1;
                 }
                 | keyword_true {
-                    $$ = p.maybe_symbolize(Keyword.TRUE.bytes);
+                    $$ = $1;
                 }
                 | keyword_undef {
-                    $$ = p.maybe_symbolize(Keyword.UNDEF.bytes);
+                    $$ = $1;
                 }
                 | keyword_when {
-                    $$ = p.maybe_symbolize(Keyword.WHEN.bytes);
+                    $$ = $1;
                 }
                 | keyword_yield {
-                    $$ = p.maybe_symbolize(Keyword.YIELD.bytes);
+                    $$ = $1;
                 }
                 | keyword_if {
-                    $$ = p.maybe_symbolize(Keyword.IF.bytes);
+                    $$ = $1;
                 }
                 | keyword_unless {
-                    $$ = p.maybe_symbolize(Keyword.UNLESS.bytes);
+                    $$ = $1;
                 }
                 | keyword_while {
-                    $$ = p.maybe_symbolize(Keyword.WHILE.bytes);
+                    $$ = $1;
                 }
                 | keyword_until {
-                    $$ = p.maybe_symbolize(Keyword.UNTIL.bytes);
+                    $$ = $1;
                 }
 
 arg             : lhs '=' lex_ctxt arg_rhs {
@@ -1933,10 +1933,10 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                 }
  
 relop           : '>' {
-                    $$ = p.maybe_symbolize(GT);
+                    $$ = $<@@token_type@@>1;
                 }
                 | '<' {
-                    $$ = p.maybe_symbolize(LT);
+                    $$ = $<@@token_type@@>1;
                 }
                 | tGEQ {
                     $$ = $1;
@@ -2232,7 +2232,7 @@ primary         : literal
                 } bodystmt k_end {
                     p.getCmdArgumentState().pop();
                     /*%%%*/
-                    $$ = new BeginNode($1, p.makeNullNil($3));
+                    $$ = new BeginNode(@1.start(), p.makeNullNil($3));
                     /*% %*/
                     /*% ripper: begin!($3) %*/
                 }
@@ -2296,25 +2296,25 @@ primary         : literal
                 }
                 | k_return {
                     /*%%%*/
-                    $$ = new ReturnNode($1, NilImplicitNode.NIL);
+                    $$ = new ReturnNode(@1.start(), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: return0! %*/
                 }
                 | keyword_yield '(' call_args rparen {
                     /*%%%*/
-                    $$ = p.new_yield($1, $3);
+                    $$ = p.new_yield(@1.start(), $3);
                     /*% %*/
                     /*% ripper: yield!(paren!($3)) %*/
                 }
                 | keyword_yield '(' rparen {
                     /*%%%*/
-                    $$ = new YieldNode($1, null);
+                    $$ = new YieldNode(@1.start(), null);
                     /*% %*/
                     /*% ripper: yield!(paren!(args_new!)) %*/
                 }
                 | keyword_yield {
                     /*%%%*/
-                    $$ = new YieldNode($1, null);
+                    $$ = new YieldNode(@1.start(), null);
                     /*% %*/
                     /*% ripper: yield0! %*/
                 }
@@ -2322,7 +2322,7 @@ primary         : literal
                     p.getLexContext().in_defined = true;
                 } expr rparen {
                     p.getLexContext().in_defined = false;
-                    $$ = p.new_defined(@1.start, $5);
+                    $$ = p.new_defined(@1.start(), $5);
                 }
                 | keyword_not '(' expr rparen {
                     $$ = p.call_uni_op(p.method_cond($3), BANG);
@@ -2354,25 +2354,25 @@ primary         : literal
                 }
                 | k_if expr_value then compstmt if_tail k_end {
                     /*%%%*/
-                    $$ = p.new_if($1, $2, $4, $5);
+                    $$ = p.new_if(@1.start(), $2, $4, $5);
                     /*% %*/
                     /*% ripper: if!($2, $4, escape_Qundef($5)) %*/
                 }
                 | k_unless expr_value then compstmt opt_else k_end {
                     /*%%%*/
-                    $$ = p.new_if($1, $2, $5, $4);
+                    $$ = p.new_if(@1.start(), $2, $5, $4);
                     /*% %*/
                     /*% ripper: unless!($2, $4, escape_Qundef($5)) %*/
                 }
                 | k_while expr_value_do compstmt k_end {
                     /*%%%*/
-                    $$ = new WhileNode($1, p.cond($2), p.makeNullNil($3));
+                    $$ = new WhileNode(@1.start(), p.cond($2), p.makeNullNil($3));
                     /*% %*/
                     /*% ripper: while!($2, $3) %*/
                 }
                 | k_until expr_value_do compstmt k_end {
                     /*%%%*/
-                    $$ = new UntilNode($1, p.cond($2), p.makeNullNil($3));
+                    $$ = new UntilNode(@1.start(), p.cond($2), p.makeNullNil($3));
                     /*% %*/
                     /*% ripper: until!($2, $3) %*/
                 }
@@ -2381,7 +2381,7 @@ primary         : literal
                     p.case_labels = p.getRuntime().getNil();
                 } case_body k_end {
                     /*%%%*/
-                    $$ = p.newCaseNode($1, $2, $5);
+                    $$ = p.newCaseNode(@1.start(), $2, $5);
                     p.fixpos($<Node>$, $2);
                     /*% %*/
                     /*% ripper: case!($2, $5) %*/
@@ -2391,19 +2391,19 @@ primary         : literal
                     p.case_labels = null;
                 } case_body k_end {
                     /*%%%*/
-                    $$ = p.newCaseNode($1, null, $4);
+                    $$ = p.newCaseNode(@1.start(), null, $4);
                     /*% %*/
                     /*% ripper: case!(Qnil, $4) %*/
                 }
 		| k_case expr_value opt_terms p_case_body k_end {
                     /*%%%*/
-                    $$ = p.newPatternCaseNode($1, $2, $4);
+                    $$ = p.newPatternCaseNode(@1.start(), $2, $4);
                     /*% %*/
                     /*% ripper: case!($2, $4) %*/
                 }
                 | k_for for_var keyword_in expr_value_do compstmt k_end {
                     /*%%%*/
-                    $$ = new ForNode($1, $2, $5, $4, p.getCurrentScope(), 111);
+                    $$ = new ForNode(@1.start(), $2, $5, $4, p.getCurrentScope(), 111);
                     /*% %*/
                     /*% ripper: for!($2, $4, $5) %*/
                 }
@@ -2487,26 +2487,26 @@ primary         : literal
                 | keyword_break {
                     /*%%%*/
                     p.isNextBreak = true;
-                    $$ = new BreakNode($1, NilImplicitNode.NIL);
+                    $$ = new BreakNode(@1.start(), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: break!(args_new!) %*/
                 }
                 | keyword_next {
                     /*%%%*/
                     p.isNextBreak = true;
-                    $$ = new NextNode($1, NilImplicitNode.NIL);
+                    $$ = new NextNode(@1.start(), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: next!(args_new!) %*/
                 }
                 | keyword_redo {
                     /*%%%*/
-                    $$ = new RedoNode($1);
+                    $$ = new RedoNode(@1.start());
                     /*% %*/
                     /*% ripper: redo! %*/
                 }
                 | keyword_retry {
                     /*%%%*/
-                    $$ = new RetryNode($1);
+                    $$ = new RetryNode(@1.start());
                     /*% %*/
                     /*% ripper: retry! %*/
                 }
@@ -2609,7 +2609,7 @@ do              : term
 if_tail         : opt_else
                 | k_elsif expr_value then compstmt if_tail {
                     /*%%%*/
-                    $$ = p.new_if($1, $2, $4, $5);
+                    $$ = p.new_if(@1.start(), $2, $4, $5);
                     /*% %*/
                     /*% ripper: elsif!($2, $4, escape_Qundef($5)) %*/
                 }
@@ -2978,13 +2978,13 @@ method_call     : fcall paren_args {
                 }
                 | keyword_super paren_args {
                     /*%%%*/
-                    $$ = p.new_super($1, $2);
+                    $$ = p.new_super(@1.start(), $2);
                     /*% %*/
                     /*% ripper: super!($2) %*/
                 }
                 | keyword_super {
                     /*%%%*/
-                    $$ = new ZSuperNode($1);
+                    $$ = new ZSuperNode(@1.start());
                     /*% %*/
                     /*% ripper: zsuper! %*/
                 }
@@ -3080,7 +3080,7 @@ case_args	: arg_value {
  
 case_body       : k_when case_args then compstmt cases {
                     /*%%%*/
-                    $$ = p.newWhenNode($1, $2, $4, $5);
+                    $$ = p.newWhenNode(@1.start(), $2, $4, $5);
                     /*% %*/
                     /*% ripper: when!($2, $4, escape_Qundef($5)) %*/
                 }
@@ -3609,15 +3609,15 @@ opt_rescue      : k_rescue exc_list exc_var then compstmt opt_rescue {
                     /*%%%*/
                     Node node;
                     if ($3 != null) {
-                        node = p.appendToBlock(node_assign($3, new GlobalVarNode($1, p.symbolID(DOLLAR_BANG))), p.makeNullNil($5));
+                        node = p.appendToBlock(node_assign($3, new GlobalVarNode(@1.start(), p.symbolID(DOLLAR_BANG))), p.makeNullNil($5));
                         if ($5 != null) {
-                            node.setLine($1);
+                            node.setLine(@1.start());
                         }
                     } else {
                         node = $5;
                     }
                     Node body = p.makeNullNil(node);
-                    $$ = new RescueBodyNode($1, $2, body, $6);
+                    $$ = new RescueBodyNode(@1.start(), $2, body, $6);
                     /*% %*/
                     /*% ripper: rescue!(escape_Qundef($2), escape_Qundef($3), escape_Qundef($5), escape_Qundef($6)) %*/
                 }
