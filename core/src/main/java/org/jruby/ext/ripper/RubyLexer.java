@@ -913,6 +913,7 @@ public class RubyLexer extends LexingCommon {
             case keyword__LINE__: return "on_kw";
             case keyword__ENCODING__: return "on_kw";
             case keyword_BEGIN: return "on_kw";
+            case keyword_END: return "on_kw";
             case keyword_do_LAMBDA: return "on_kw";
             case tAMPER: return "on_op";
             case tANDOP: return "on_op";
@@ -995,7 +996,6 @@ public class RubyLexer extends LexingCommon {
             case tSP: return "on_sp";
             case tHEREDOC_BEG: return "on_heredoc_beg";
             case tHEREDOC_END: return "on_heredoc_end";
-            case keyword_END: return "on___end__";
             default: // Weird catchall but we will try and not use < 256 value trick like MRI
                 return "on_CHAR";
         }
