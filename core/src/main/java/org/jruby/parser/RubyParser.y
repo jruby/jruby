@@ -481,7 +481,7 @@ top_stmts     : none {
 
 top_stmt      : stmt
               | keyword_BEGIN begin_block {
-                  $$ = null;
+                  $$ = $2;
               }
 
 begin_block   : '{' top_compstmt '}' {

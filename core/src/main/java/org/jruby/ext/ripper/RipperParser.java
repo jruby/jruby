@@ -2015,7 +2015,7 @@ states[7] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[9] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                  yyVal = null;
+                  yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[10] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {

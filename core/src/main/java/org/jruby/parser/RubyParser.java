@@ -2020,7 +2020,7 @@ states[7] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, in
   return yyVal;
 };
 states[9] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                  yyVal = null;
+                  yyVal = ((Node)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[10] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
