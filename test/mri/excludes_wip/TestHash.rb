@@ -1,7 +1,1 @@
 exclude :"test_dup_will_not_rehash", "work in progress"
-exclude :"test_except_on_identhash", "work in progress"
-exclude :"test_reject_on_identhash", "work in progress"
-exclude :"test_select_on_identhash", "work in progress"
-exclude :"test_select_reject_will_not_rehash", "work in progress"
-exclude :"test_slice_on_identhash", "work in progress"
-exclude :"test_transform_values_on_identhash", "work in progress"

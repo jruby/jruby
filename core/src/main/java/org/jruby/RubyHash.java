@@ -241,11 +241,16 @@ public class RubyHash extends RubyObject implements Map {
     private IRubyObject ifNone;
 
     private RubyHash(Ruby runtime, RubyClass klass, RubyHash other) {
+        this(runtime, klass, other, false);
+    }
+
+    private RubyHash(Ruby runtime, RubyClass klass, RubyHash other, boolean identity) {
         super(runtime, klass);
         this.ifNone = UNDEF;
         threshold = INITIAL_THRESHOLD;
         table = other.internalCopyTable(head);
         size = other.size();
+        setComparedByIdentity(identity);
     }
 
     public RubyHash(Ruby runtime, RubyClass klass) {
@@ -1389,7 +1394,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod(rest = true)
     public IRubyObject except(ThreadContext context, IRubyObject[] keys) {
-        RubyHash result = hashCopy(context);
+        RubyHash result = hashCopyWithIdentity(context);
 
         for (int i = 0; i < keys.length; i++) {
             result.delete(context, keys[i]);
@@ -1676,9 +1681,13 @@ public class RubyHash extends RubyObject implements Map {
         return new RubyHash(context.runtime, context.runtime.getHash(), this);
     }
 
+    private RubyHash hashCopyWithIdentity(ThreadContext context) {
+        return new RubyHash(context.runtime, context.runtime.getHash(), this, isComparedByIdentity());
+    }
+
     @JRubyMethod(name = "transform_values")
     public IRubyObject transform_values(final ThreadContext context, final Block block) {
-        return hashCopy(context).transform_values_bang(context, block);
+        return hashCopyWithIdentity(context).transform_values_bang(context, block);
     }
 
     @JRubyMethod(name = "transform_keys!", optional =  1, rest = true)
@@ -1953,14 +1962,11 @@ public class RubyHash extends RubyObject implements Map {
     public IRubyObject select(final ThreadContext context, final Block block) {
         if (!block.isGiven()) return enumeratorizeWithSize(context, this, "select", RubyHash::size);
 
-        final Ruby runtime = context.runtime;
-        final RubyHash result = newHash(runtime);
+        final RubyHash result = hashCopyWithIdentity(context);
 
-        iteratorVisitAll(context, (ctxt, self, key, value, index) -> {
-            if (block.yieldArray(ctxt, runtime.newArray(key, value), null).isTrue()) {
-                result.fastASet(key, value);
-            }
-        });
+        if (!isEmpty()) {
+            result.keep_ifCommon(context, block);
+        }
 
         return result;
     }
@@ -1972,6 +1978,7 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod(name = "slice", rest = true)
     public RubyHash slice(final ThreadContext context, final IRubyObject[] args) {
         RubyHash result = newHash(context.runtime);
+        result.setComparedByIdentity(isComparedByIdentity());
 
         for (int i = 0; i < args.length; i++) {
             IRubyObject key = args[i];
@@ -2016,13 +2023,11 @@ public class RubyHash extends RubyObject implements Map {
      *
      */
     public RubyHash rejectInternal(ThreadContext context, Block block) {
-        final RubyHash result = newHash(context.runtime);
+        final RubyHash result = hashCopyWithIdentity(context);
 
-        iteratorVisitAll(context, (ctxt, self, key, value, index) -> {
-            if (!block.yieldArray(ctxt, RubyArray.newArray(ctxt.runtime, key, value), null).isTrue()) {
-                result.fastASet(key, value);
-            }
-        });
+        if (!isEmpty()) {
+            result.delete_ifInternal(context, block);
+        }
 
         return result;
     }
@@ -2127,7 +2132,9 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(rest = true)
     public RubyHash merge(ThreadContext context, IRubyObject[] others, Block block) {
-        return ((RubyHash)dup()).merge_bang(context, others, block);
+        RubyHash dup = (RubyHash) dup();
+        dup.setComparedByIdentity(isComparedByIdentity());
+        return dup.merge_bang(context, others, block);
     }
 
     @JRubyMethod(name = "initialize_copy", required = 1, visibility = PRIVATE)
