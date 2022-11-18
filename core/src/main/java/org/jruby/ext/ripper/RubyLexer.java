@@ -947,7 +947,7 @@ public class RubyLexer extends LexingCommon {
             case tMATCH: return "on_op";
             case tNEQ: return "on_op";
             case tNMATCH: return "on_op";
-            case tNTH_REF: return "on_backref";
+            case tNTH_REF: return "on_gvar";
             case tOP_ASGN: return "on_op";
             case tOROP: return "on_op";
             case tPOW: return "on_op";
