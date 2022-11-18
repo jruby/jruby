@@ -905,20 +905,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     public IRubyObject rbClone(ThreadContext context, IRubyObject maybeOpts) {
-        Ruby runtime = context.runtime;
-
-        IRubyObject kwfreeze = null;
-        IRubyObject opts = ArgsUtil.getOptionsArg(runtime, maybeOpts);
-
-        if (!opts.isNil()) {
-            IRubyObject freeze = ((RubyHash) opts).fastARef(runtime.newSymbol("freeze"));
-            if (freeze != null) {
-                if (!freeze.isNil() && freeze != runtime.getTrue() && freeze != runtime.getFalse()) {
-                    throw runtime.newArgumentError(str(runtime, "unexpected value for freeze: ", types(runtime, freeze.getType())));
-                }
-                kwfreeze = freeze;
-            }
-        }
+        IRubyObject kwfreeze = ArgsUtil.getFreezeOpt(context, maybeOpts);
 
         return rbCloneInternal(context, kwfreeze);
     }

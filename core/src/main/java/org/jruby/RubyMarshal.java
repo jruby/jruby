@@ -123,8 +123,8 @@ public class RubyMarshal {
         if (args.length > 1) {
             RubyHash kwargs = ArgsUtil.extractKeywords(args[args.length - 1]);
             if (kwargs != null) {
-                IRubyObject[] options = ArgsUtil.extractKeywordArgs(context, kwargs, "freeze");
-                freeze = options[0] != null ? options[0].isTrue(): false;
+                IRubyObject freezeOpt = ArgsUtil.getFreezeOpt(context, kwargs);
+                freeze = freezeOpt != null ? freezeOpt.isTrue() : false;
                 if (args.length > 2) proc = args[1];
             } else {
                 proc = args[1];

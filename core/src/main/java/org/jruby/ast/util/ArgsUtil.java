@@ -42,6 +42,8 @@ import org.jruby.util.TypeConverter;
 
 import java.util.HashMap;
 
+import static org.jruby.util.RubyStringBuilder.str;
+import static org.jruby.util.RubyStringBuilder.types;
 import static org.jruby.util.TypeConverter.booleanExpected;
 
 /**
@@ -262,5 +264,23 @@ public final class ArgsUtil {
         }
 
         return null;
+    }
+
+    public static IRubyObject getFreezeOpt(ThreadContext context, IRubyObject maybeOpts) {
+        Ruby runtime = context.runtime;
+
+        IRubyObject kwfreeze = null;
+        IRubyObject opts = getOptionsArg(runtime, maybeOpts);
+
+        if (!opts.isNil()) {
+            IRubyObject freeze = extractKeywordArg(context, (RubyHash) opts, "freeze");
+            if (freeze != null) {
+                if (!freeze.isNil() && freeze != runtime.getTrue() && freeze != runtime.getFalse()) {
+                    throw runtime.newArgumentError(str(runtime, "unexpected value for freeze: ", types(runtime, freeze.getType())));
+                }
+                kwfreeze = freeze;
+            }
+        }
+        return kwfreeze;
     }
 }

@@ -1625,7 +1625,7 @@ public class RubyNumeric extends RubyObject {
             throw context.runtime.newArgumentError("wrong number of arguments (given 1, expected 0)");
         }
 
-        IRubyObject ret = ArgsUtil.extractKeywordArg(context, (RubyHash) arg, "freeze");
+        IRubyObject ret = ArgsUtil.getFreezeOpt(context, arg);
         if (ret == context.fals) throw context.runtime.newArgumentError("can't unfreeze " + getType());
 
         return this;
