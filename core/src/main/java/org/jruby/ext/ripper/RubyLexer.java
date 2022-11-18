@@ -947,7 +947,7 @@ public class RubyLexer extends LexingCommon {
             case tMATCH: return "on_op";
             case tNEQ: return "on_op";
             case tNMATCH: return "on_op";
-            case tNTH_REF: return "on_gvar";
+            case tNTH_REF: return "on_backref";
             case tOP_ASGN: return "on_op";
             case tOROP: return "on_op";
             case tPOW: return "on_op";
@@ -1546,7 +1546,7 @@ public class RubyLexer extends LexingCommon {
         case '\'':      /* $': string after last match */
         case '+':       /* $+: string matches last paren. */
             // Explicit reference to these vars as symbols...
-            if (last_state == EXPR_FNAME) {
+            if (isLexState(last_state, EXPR_FNAME)) {
                 identValue = "$" + (char) c;
                 set_yylval_name(new ByteList(new byte[] {'$', (byte) c}));
                 return tGVAR;
@@ -1561,7 +1561,7 @@ public class RubyLexer extends LexingCommon {
                 c = nextc();
             } while (Character.isDigit(c));
             pushback(c);
-            if (last_state == EXPR_FNAME) {
+            if (isLexState(last_state, EXPR_FNAME)) {
                 identValue = createTokenString().intern();
                 set_yylval_name(new ByteList(new byte[] {'$', (byte) c}));
                 return tGVAR;
