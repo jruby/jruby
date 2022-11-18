@@ -495,7 +495,9 @@ public class RipperParserBase {
         if (indent <= 0) return array;
 
         lexer.setHeredocIndent(0);
-        return dispatch("on_heredoc_dedent", array, getRuntime().newFixnum(indent));
+        dispatch("on_heredoc_dedent", array, getRuntime().newFixnum(indent));
+
+        return array;
     }
     
     public void setCommandStart(boolean value) {
