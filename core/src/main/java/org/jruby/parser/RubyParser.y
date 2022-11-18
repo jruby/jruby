@@ -3689,7 +3689,6 @@ string          : tCHAR {
 string1         : tSTRING_BEG string_contents tSTRING_END {
                     /*%%%*/
                     p.heredoc_dedent($2);
-		    p.setHeredocIndent(0);
                     $$ = $2;
                     /*% %*/
                     /*% ripper: string_literal!(heredoc_dedent(p, $2)) %*/
@@ -3700,7 +3699,6 @@ xstring         : tXSTRING_BEG xstring_contents tSTRING_END {
                     int line = @2.start();
 
                     p.heredoc_dedent($2);
-		    p.setHeredocIndent(0);
 
                     if ($2 == null) {
                         $$ = new XStrNode(line, null, StringSupport.CR_7BIT);
@@ -3867,8 +3865,6 @@ regexp_contents: /* none */ {
                     %*/
                 }
 
-/* note: We differ from MRI by not having any ripper for bare tSTRING_CONTENT.
- * We already create a RubyString for yyval. */
 // [!null] - StrNode, EvStrNode
 string_content  : tSTRING_CONTENT {
                     $$ = $1;

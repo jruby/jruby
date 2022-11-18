@@ -357,7 +357,11 @@ public class RubyLexer extends LexingCommon {
     public void heredoc_dedent(Node root) {
         int indent = heredoc_indent;
 
-        if (indent <= 0 || root == null) return;
+        if (indent <= 0) return;
+
+        heredoc_indent = 0;
+
+        if (root == null) return;
 
         if (root instanceof StrNode) {
             StrNode str = (StrNode) root;

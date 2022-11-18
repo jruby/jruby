@@ -6604,7 +6604,7 @@ states[817] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 }
-					// line 4586 "ripper_RubyParser.out"
+					// line 4584 "ripper_RubyParser.out"
 
 }
 					// line 14360 "-"

@@ -206,6 +206,7 @@ public class HeredocTerm extends StrTerm {
                     return restore(lexer);
                 }
                 if (c != '\n') {
+                    if (c == '\\') lexer.setHeredocLineIndent(-1);
                     lexer.setValue(lexer.createStr(tok, 0));
                     lexer.flush_string_content(stringTerm.encodingOut);
                     return RipperParser.tSTRING_CONTENT;
@@ -223,8 +224,9 @@ public class HeredocTerm extends StrTerm {
             } while (!lexer.whole_match_p(eos, indent));
             str = tok;
         }
-        
+        lexer.dispatchHeredocEnd();
         lexer.pushback(c);
+        lexer.heredoc_restore(this);
         lexer.setValue(lexer.createStr(str, 0));
         lexer.flush_string_content(lexer.getEncoding());
         return RipperParser.tSTRING_CONTENT;

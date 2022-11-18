@@ -902,7 +902,7 @@ public class RipperParserBase {
     }
 
     protected void setHeredocLineIndent(int value) {
-        lexer.setHeredocIndent(value);
+        lexer.setHeredocLineIndent(value);
     }
 
     public void warn_experimental(int line, String message) {

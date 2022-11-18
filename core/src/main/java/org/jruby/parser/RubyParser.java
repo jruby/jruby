@@ -5575,7 +5575,6 @@ states[622] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[623] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     p.heredoc_dedent(((Node)yyVals[-1+yyTop].value));
-		    p.setHeredocIndent(0);
                     yyVal = ((Node)yyVals[-1+yyTop].value);
                     /*% %*/
                     /*% ripper: string_literal!(heredoc_dedent(p, $2)) %*/
@@ -5586,7 +5585,6 @@ states[624] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     int line = yyVals[yyTop - count + 2].start();
 
                     p.heredoc_dedent(((Node)yyVals[-1+yyTop].value));
-		    p.setHeredocIndent(0);
 
                     if (((Node)yyVals[-1+yyTop].value) == null) {
                         yyVal = new XStrNode(line, null, StringSupport.CR_7BIT);
@@ -6753,7 +6751,7 @@ states[817] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4735 "parse.y"
+					// line 4731 "parse.y"
 
 }
-					// line 14509 "-"
+					// line 14507 "-"
