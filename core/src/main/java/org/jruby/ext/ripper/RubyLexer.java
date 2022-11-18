@@ -817,7 +817,7 @@ public class RubyLexer extends LexingCommon {
     
     public void dispatchScanEvent(int token) { //mri: ripper_dispatch_scan_event
         if (!hasScanEvent()) return;
-        
+
         yaccValue = scanEventValue(token);
     }
 

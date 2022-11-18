@@ -228,6 +228,7 @@ public class HeredocTerm extends StrTerm {
         lexer.pushback(c);
         lexer.heredoc_restore(this);
         lexer.setValue(lexer.createStr(str, 0));
+        lexer.setStrTerm(new StringTerm(flags | STR_FUNC_TERM, 0, 0, line));
         lexer.flush_string_content(lexer.getEncoding());
         return RipperParser.tSTRING_CONTENT;
     }
