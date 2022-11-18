@@ -629,8 +629,7 @@ public class IRRuntimeHelpers {
 
         hash = TypeConverter.checkHashType(context.runtime, hash);
 
-        boolean isEmpty = hash == UNDEFINED ||
-                hash instanceof RubyHash && ((RubyHash) hash).size() == 0;
+        boolean isEmpty = hash instanceof RubyHash && ((RubyHash) hash).size() == 0;
         if (isEmpty) context.callInfo |= CALL_KEYWORD_EMPTY;
         return  isEmpty ? context.tru : context.fals;
     }
