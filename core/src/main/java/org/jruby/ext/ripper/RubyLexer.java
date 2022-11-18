@@ -796,7 +796,8 @@ public class RubyLexer extends LexingCommon {
     public void dispatchDelayedToken(int token) { //mri: ripper_dispatch_delayed_token
         int saved_line = ruby_sourceline;
         int saved_tokp = tokp;
-        
+
+        if (delayed == null) return;
         ruby_sourceline = delayed_line;
         tokp = lex_pbeg + delayed_col;
 
@@ -1060,7 +1061,7 @@ public class RubyLexer extends LexingCommon {
                 if (!parser_magic_comment(lexb.makeShared(lex_p, lex_pend - lex_p))) {
                     if (comment_at_top()) set_file_encoding(lex_p, lex_pend);
                 }
-                lex_p = lex_pend;
+                lex_goto_eol();
                 dispatchScanEvent(tCOMMENT);
 
                 fallthru = true;
