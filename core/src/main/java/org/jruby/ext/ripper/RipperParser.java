@@ -220,7 +220,8 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
   public static final int tEMBDOC_END = 377;
   public static final int tHEREDOC_BEG = 378;
   public static final int tHEREDOC_END = 379;
-  public static final int tLOWEST = 380;
+  public static final int k__END__ = 380;
+  public static final int tLOWEST = 381;
   public static final int yyErrorCode = 256;
 
   /** number of final state.
@@ -921,7 +922,8 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
 "regexp literal","word list","verbatim work list","terminator","symbol list",
 "verbatim symbol list","'}'","tSTRING_DBEG","tSTRING_DVAR",
     "tLAMBEG","tLABEL_END","tIGNORED_NL","tCOMMENT","tEMBDOC_BEG",
-    "tEMBDOC","tEMBDOC_END","tHEREDOC_BEG","tHEREDOC_END","tLOWEST",
+    "tEMBDOC","tEMBDOC_END","tHEREDOC_BEG","tHEREDOC_END","k__END__",
+    "tLOWEST",
     };
 
   /** printable rules for debugging.
@@ -6604,7 +6606,7 @@ states[817] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 }
-					// line 4584 "ripper_RubyParser.out"
+					// line 4585 "ripper_RubyParser.out"
 
 }
-					// line 14360 "-"
+					// line 14362 "-"

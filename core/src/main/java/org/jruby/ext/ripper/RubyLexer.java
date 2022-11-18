@@ -987,6 +987,7 @@ public class RubyLexer extends LexingCommon {
             case tSP: return "on_sp";
             case tHEREDOC_BEG: return "on_heredoc_beg";
             case tHEREDOC_END: return "on_heredoc_end";
+            case k__END__: return "on___end__";
             default: // Weird catchall but we will try and not use < 256 value trick like MRI
                 return "on_CHAR";
         }
@@ -1259,7 +1260,7 @@ public class RubyLexer extends LexingCommon {
                     eofp = true;
                     
                     lex_goto_eol();
-                    dispatchScanEvent(keyword_END);
+                    dispatchScanEvent(k__END__);
                     return EOF;
                 }
                 return identifier(c, commandState);

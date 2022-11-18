@@ -397,6 +397,7 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
 /* RIPPER-ONY TOKENS { */
 %token <IRubyObject> tIGNORED_NL tCOMMENT tEMBDOC_BEG tEMBDOC tEMBDOC_END
 %token <IRubyObject> tHEREDOC_BEG tHEREDOC_END
+%token <IRubyObject> k__END__
 @@program_production@@
 /* } RIPPER-ONY TOKENS */
 
