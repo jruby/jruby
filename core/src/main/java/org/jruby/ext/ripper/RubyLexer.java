@@ -1470,10 +1470,8 @@ public class RubyLexer extends LexingCommon {
     }
 
     private int doKeyword(int state) {
-        int leftParenBegin = getLeftParenBegin();
-        if (leftParenBegin > 0 && leftParenBegin == parenNest) {
-            setLeftParenBegin(0);
-            parenNest--;
+        if (isLambdaBeginning()) {
+            setLeftParenBegin(-1);
             return keyword_do_LAMBDA;
         }
 
@@ -1482,9 +1480,7 @@ public class RubyLexer extends LexingCommon {
         if (cmdArgumentState.set_p() && !isLexState(state, EXPR_CMDARG)) {
             return keyword_do_block;
         }
-        if (isLexState(state,  EXPR_BEG|EXPR_ENDARG)) {
-            return keyword_do_block;
-        }
+
         return keyword_do;
     }
     
