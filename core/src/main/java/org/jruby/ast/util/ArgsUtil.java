@@ -40,7 +40,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
 
-import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
@@ -123,6 +124,21 @@ public final class ArgsUtil {
     private static final IRubyObject[] NULL_1 = new IRubyObject[] { null };
     private static final IRubyObject[] NULL_2 = new IRubyObject[] { null, null };
 
+    public static final RubyHash.VisitorWithState<RubySymbol> SINGLE_KEY_CHECK_VISITOR = new RubyHash.VisitorWithState<RubySymbol>() {
+        @Override
+        public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, RubySymbol testKey) {
+            if (!key.equals(testKey))
+                throw context.runtime.newArgumentError("unknown keyword: " + key.inspect());
+        }
+    };
+    public static final RubyHash.VisitorWithState<Set<RubySymbol>> MULTI_KEY_CHECK_VISITOR = new RubyHash.VisitorWithState<Set<RubySymbol>>() {
+        public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Set<RubySymbol> validKeySet) {
+            if (!validKeySet.contains(key)) {
+                throw context.runtime.newArgumentError("unknown keyword: " + key.inspect());
+            }
+        }
+    };
+
     /**
      * Check that the given kwargs hash doesn't contain any keys other than those which are given as valid.
      * @param context The context to execute in
@@ -141,7 +157,7 @@ public final class ArgsUtil {
 
         IRubyObject[] ret = new IRubyObject[validKeys.length];
 
-        HashMap<RubySymbol, ?> validKeySet = new HashMap<>(ret.length);
+        Set<RubySymbol> validKeySet = new HashSet<>(ret.length);
 
         // Build the return values
         for (int i=0; i<validKeys.length; i++) {
@@ -149,17 +165,11 @@ public final class ArgsUtil {
             RubySymbol keySym = context.runtime.newSymbol(key);
             IRubyObject val = options.fastARef(keySym);
             ret[i] = val; // null if key missing
-            validKeySet.put(keySym, null);
+            validKeySet.add(keySym);
         }
 
         // Check for any unknown keys
-        options.visitAll(context, new RubyHash.Visitor() {
-            public void visit(IRubyObject key, IRubyObject value) {
-                if (!validKeySet.containsKey(key)) {
-                    throw context.runtime.newArgumentError("unknown keyword: " + key.inspect());
-                }
-            }
-        }, null);
+        options.visitAll(context, MULTI_KEY_CHECK_VISITOR, validKeySet);
 
         return ret;
     }
@@ -203,11 +213,7 @@ public final class ArgsUtil {
         IRubyObject ret = options.fastARef(testKey);
 
         if (ret == null || options.size() > 1) { // other (unknown) keys in options
-            options.visitAll(context, new RubyHash.Visitor() {
-                public void visit(IRubyObject key, IRubyObject value) {
-                    if (!key.equals(testKey)) throw context.runtime.newArgumentError("unknown keyword: " + key.inspect());
-                }
-            }, null);
+            options.visitAll(context, SINGLE_KEY_CHECK_VISITOR, testKey);
         }
 
         return ret;
