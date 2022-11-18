@@ -4594,7 +4594,8 @@ states[425] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[427] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = ((IRubyObject)yyVals[0+yyTop].value);
+                      yyVal = p.symbolID(LexingCommon.NIL);
+
   return yyVal;
 };
 states[428] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6603,7 +6604,7 @@ states[817] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 }
-					// line 4583 "ripper_RubyParser.out"
+					// line 4584 "ripper_RubyParser.out"
 
 }
-					// line 14359 "-"
+					// line 14360 "-"

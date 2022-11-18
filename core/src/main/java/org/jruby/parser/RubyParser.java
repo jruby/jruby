@@ -4505,7 +4505,11 @@ states[425] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[427] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+                    /*%%%*/
                     yyVal = ((ByteList)yyVals[0+yyTop].value);
+                    /*%
+                      $$ = p.symbolID(LexingCommon.NIL);
+                      %*/
   return yyVal;
 };
 states[428] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6750,7 +6754,7 @@ states[817] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4730 "parse.y"
+					// line 4734 "parse.y"
 
 }
-					// line 14506 "-"
+					// line 14510 "-"

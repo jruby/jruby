@@ -2702,7 +2702,11 @@ f_rest_marg     : tSTAR f_norm_arg {
 
 f_any_kwrest    : f_kwrest
                 | f_no_kwarg {
+                    /*%%%*/
                     $$ = $<@@token_type@@>1;
+                    /*%
+                      $$ = p.symbolID(LexingCommon.NIL);
+                      %*/
                 }
 
 f_eq            : {
