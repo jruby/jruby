@@ -1930,7 +1930,7 @@ public abstract class RubyParserBase {
         return null;
     }
 
-    public HashPatternNode new_hash_pattern_tail(int line, HashNode keywordArgs, ByteList keywordRestArg, ByteList _ignore) {
+    public HashPatternNode new_hash_pattern_tail(int line, HashNode keywordArgs, ByteList keywordRestArg) {
         Node restArg;
 
         if (keywordRestArg == KWNOREST) {          // '**nil'

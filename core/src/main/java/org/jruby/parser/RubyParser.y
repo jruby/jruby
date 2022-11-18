@@ -3254,7 +3254,7 @@ p_expr_basic    : p_value
                     $$ = p.new_hash_pattern(null, $3);
                 }
                 | tLBRACE rbrace {
-                    $$ = p.new_hash_pattern(null, p.new_hash_pattern_tail(@1.start(), p.none(), null, null));
+                    $$ = p.new_hash_pattern(null, p.new_hash_pattern_tail(@1.start(), p.none(), null));
                 }
                 | tLPAREN {
                     $$ = p.push_pktbl();
@@ -3351,16 +3351,16 @@ p_arg           : p_expr {
 
 // HashPatternNode - [!null]
 p_kwargs        : p_kwarg ',' p_any_kwrest {
-                    $$ = p.new_hash_pattern_tail(@1.start(), $1, $3, @3.id);
+                    $$ = p.new_hash_pattern_tail(@1.start(), $1, $3);
                 }
 		| p_kwarg {
-                    $$ = p.new_hash_pattern_tail(@1.start(), $1, null, null);
+                    $$ = p.new_hash_pattern_tail(@1.start(), $1, null);
                 }
                 | p_kwarg ',' {
-                    $$ = p.new_hash_pattern_tail(@1.start(), $1, null, null);
+                    $$ = p.new_hash_pattern_tail(@1.start(), $1, null);
                 }
                 | p_any_kwrest {
-                    $$ = p.new_hash_pattern_tail(@1.start(), null, $1, @1.id);
+                    $$ = p.new_hash_pattern_tail(@1.start(), null, $1);
                 }
 
 // HashNode - [!null]
@@ -3431,7 +3431,7 @@ p_kwnorest      : kwrest_mark keyword_nil {
                     /*%%%*/
                        $$ = KWNOREST;
                     /*%
-                       $$ = $2;
+                       $$ = null;
                     %*/
                 }
 

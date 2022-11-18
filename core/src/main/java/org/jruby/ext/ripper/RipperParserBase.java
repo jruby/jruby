@@ -747,7 +747,7 @@ public class RipperParserBase {
         return nil();
     }
 
-    public RubyArray new_hash_pattern_tail(int _line, IRubyObject keywordArgs, IRubyObject keywordRestValue, ByteList keywordRestArg) {
+    public RubyArray new_hash_pattern_tail(int _line, IRubyObject keywordArgs, IRubyObject keywordRestValue) {
         IRubyObject restArg;
 
         // To not make parser construct an array we will just detect the case of '**' with no arguments
@@ -756,7 +756,7 @@ public class RipperParserBase {
             keywordArgs = getRuntime().newEmptyArray();
         }
 
-        if (keywordRestArg != null) {
+        if (keywordRestValue != null) {
             restArg = dispatch("on_var_field", keywordRestValue);
         } else {                                   // '**'
             restArg = context.nil;
