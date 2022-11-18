@@ -2026,7 +2026,6 @@ states[10] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop,
   return yyVal;
 };
 states[11] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                   if (((IRubyObject)yyVals[-1+yyTop].value) == null) p.yyerror("else without rescue is useless"); 
   return yyVal;
 };
 states[12] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6604,7 +6603,7 @@ states[817] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 }
-					// line 4584 "ripper_RubyParser.out"
+					// line 4583 "ripper_RubyParser.out"
 
 }
-					// line 14360 "-"
+					// line 14359 "-"

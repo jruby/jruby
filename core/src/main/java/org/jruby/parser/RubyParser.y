@@ -494,7 +494,6 @@ begin_block   : '{' top_compstmt '}' {
               }
 
 bodystmt      : compstmt opt_rescue k_else {
-                   if ($2 == null) p.yyerror("else without rescue is useless"); 
               } compstmt opt_ensure {
                   /*%%%*/
                    $$ = p.new_bodystmt($1, $2, $5, $6);
