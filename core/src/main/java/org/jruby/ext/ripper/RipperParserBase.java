@@ -34,11 +34,11 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.jcodings.Encoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
-import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.DefHolder;
 import org.jruby.ast.Node;
 import org.jruby.lexer.LexerSource;
@@ -73,9 +73,9 @@ public class RipperParserBase {
     }
 
     public void reset() {
+        getLexContext().reset();
 //        inSingleton = 0;
-     //   inDefinition = false;
-    }  
+    }
     
     public Object yyparse (RubyLexer yyLex) throws java.io.IOException {
         return null;
@@ -120,7 +120,7 @@ public class RipperParserBase {
 
     public IRubyObject assignableIdentifier(IRubyObject value) {
         String ident = lexer.getIdent().intern();
-        getCurrentScope().assign(lexer.getRubySourceline(), context.runtime.newSymbol(lexer.getIdent(), lexer.getEncoding()), null);
+        getCurrentScope().assign(lexer.getRubySourceline(), context.runtime.newSymbol(ident, lexer.getEncoding()), null);
         return value;
     }
 
@@ -495,7 +495,9 @@ public class RipperParserBase {
         if (indent <= 0) return array;
 
         lexer.setHeredocIndent(0);
-        return dispatch("on_heredoc_dedent", array, getRuntime().newFixnum(indent));
+        dispatch("on_heredoc_dedent", array, getRuntime().newFixnum(indent));
+
+        return array;
     }
     
     public void setCommandStart(boolean value) {
@@ -747,7 +749,7 @@ public class RipperParserBase {
         return nil();
     }
 
-    public RubyArray new_hash_pattern_tail(int _line, IRubyObject keywordArgs, IRubyObject keywordRestValue, ByteList keywordRestArg) {
+    public RubyArray new_hash_pattern_tail(int _line, IRubyObject keywordArgs, IRubyObject keywordRestValue) {
         IRubyObject restArg;
 
         // To not make parser construct an array we will just detect the case of '**' with no arguments
@@ -756,7 +758,7 @@ public class RipperParserBase {
             keywordArgs = getRuntime().newEmptyArray();
         }
 
-        if (keywordRestArg != null) {
+        if (keywordRestValue != null) {
             restArg = dispatch("on_var_field", keywordRestValue);
         } else {                                   // '**'
             restArg = context.nil;
@@ -769,21 +771,18 @@ public class RipperParserBase {
         return value == null ? context.nil : value;
     }
 
+    public boolean local_id(ByteList value) {
+        // FIXME: local_id_ref is more complicated and we just blanket look for a scope var of the same name.
+        return currentScope.isDefined(symbolID(value).idString()) >= 0;
+    }
+
     public boolean check_forwarding_args() {
-        // FIXME: Add local_id
-        /*
         if (local_id(FWD_REST) &&
                 local_id(FWD_KWREST) &&
                 local_id(FWD_BLOCK)) return true;
 
-         */
-
         compile_error("unexpected ...");
         return false;
-    }
-
-    protected int tokline() {
-        return lexer.tokline;
     }
 
     public IRubyObject method_cond(IRubyObject value) {
@@ -905,7 +904,7 @@ public class RipperParserBase {
     }
 
     protected void setHeredocLineIndent(int value) {
-        lexer.setHeredocIndent(value);
+        lexer.setHeredocLineIndent(value);
     }
 
     public void warn_experimental(int line, String message) {
@@ -916,16 +915,16 @@ public class RipperParserBase {
         return context;
     }
 
+    public RubySymbol get_id(ByteList value) {
+        return getRuntime().newSymbol(value);
+    }
+
     public RubySymbol get_id(IRubyObject _ignored) {
         if (_ignored instanceof RubySymbol) {
             return (RubySymbol) _ignored;
         }
 
         return getRuntime().newSymbol(lexer.identValue);
-    }
-
-    public IRubyObject maybe_symbolize(ByteList value) {
-        return getRuntime().newSymbol(value);
     }
 
     protected IRubyObject ripper;
@@ -949,4 +948,6 @@ public class RipperParserBase {
     private Node numParamInner = null;
     private Node numParamOuter = null;
     public IRubyObject case_labels;
+
+    public static final ByteList NOT = new ByteList(new byte[] {'n', 'o', 't'}, USASCIIEncoding.INSTANCE);
 }

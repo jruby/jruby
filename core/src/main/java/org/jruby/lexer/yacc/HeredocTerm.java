@@ -30,7 +30,6 @@
 
 package org.jruby.lexer.yacc;
 
-import org.jcodings.Encoding;
 import org.jruby.ast.Node;
 import org.jruby.parser.RubyParser;
 import org.jruby.util.ByteList;

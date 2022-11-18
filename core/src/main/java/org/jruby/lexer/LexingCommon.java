@@ -144,7 +144,7 @@ public abstract class LexingCommon {
     public static final ByteList DOLLAR_UNDERSCORE = new ByteList(new byte[] {'$', '_'}, USASCIIEncoding.INSTANCE);
     public static final ByteList DOLLAR_DOT = new ByteList(new byte[] {'$', '_'}, USASCIIEncoding.INSTANCE);
 
-    public static final ByteList KWNOREST = new ByteList(new byte[] {});
+    public static final ByteList KWNOREST = new ByteList(new byte[] {'n', 'i', 'l'});
 
     public int column() {
         return tokp - lex_pbeg;

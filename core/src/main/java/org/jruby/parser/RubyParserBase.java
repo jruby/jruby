@@ -51,7 +51,6 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.ast.*;
-import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.OperatorCallNode;
 import org.jruby.common.IRubyWarnings;
@@ -1931,7 +1930,7 @@ public abstract class RubyParserBase {
         return null;
     }
 
-    public HashPatternNode new_hash_pattern_tail(int line, HashNode keywordArgs, ByteList keywordRestArg, ByteList _ignore) {
+    public HashPatternNode new_hash_pattern_tail(int line, HashNode keywordArgs, ByteList keywordRestArg) {
         Node restArg;
 
         if (keywordRestArg == KWNOREST) {          // '**nil'
@@ -2078,10 +2077,6 @@ public abstract class RubyParserBase {
 
     protected abstract Object yyparse(RubyLexer lexer, Object yyDebug) throws IOException;
 
-    protected int tokline() {
-        return lexer.tokline;
-    }
-
     protected LexContext getLexContext() {
         return lexer.getLexContext();
     }
@@ -2194,7 +2189,5 @@ public abstract class RubyParserBase {
         return symbolID(id);
     }
 
-    public ByteList maybe_symbolize(ByteList value) {
-        return value;
-    }
+    public static final ByteList NOT = BANG;
 }

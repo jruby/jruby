@@ -48,16 +48,6 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
 import static org.jruby.ext.ripper.RipperParser.*;
-import static org.jruby.parser.RubyParser.tBDOT2;
-import static org.jruby.parser.RubyParser.tBDOT3;
-import static org.jruby.parser.RubyParser.tDOT2;
-import static org.jruby.parser.RubyParser.tDOT3;
-import static org.jruby.parser.RubyParser.tLAMBEG;
-import static org.jruby.parser.RubyParser.tLBRACE;
-import static org.jruby.parser.RubyParser.tLPAREN_ARG;
-import static org.jruby.parser.RubyParser.tSTRING_BEG;
-import static org.jruby.parser.RubyParser.tSTRING_DEND;
-import static org.jruby.parser.RubyParser.tXSTRING_BEG;
 import static org.jruby.util.StringSupport.CR_7BIT;
 import static org.jruby.util.StringSupport.codeRangeScan;
 
@@ -789,6 +779,8 @@ public class RubyLexer extends LexingCommon {
             case EOF: System.out.println("EOF"); break;
             case tDSTAR: System.err.print("tDSTAR"); break;
             case tSTRING_DEND: System.err.print("tDSTRING_DEND,"); break;
+            case tBDOT3: System.err.print("tBDOT3,"); break;
+            case tBDOT2: System.err.print("tBDOT2,"); break;
             default: System.err.print("'" + (char)token + "'[" + token + "]"); break;
         }
     }
@@ -804,7 +796,8 @@ public class RubyLexer extends LexingCommon {
     public void dispatchDelayedToken(int token) { //mri: ripper_dispatch_delayed_token
         int saved_line = ruby_sourceline;
         int saved_tokp = tokp;
-        
+
+        if (delayed == null) return;
         ruby_sourceline = delayed_line;
         tokp = lex_pbeg + delayed_col;
 
@@ -825,7 +818,7 @@ public class RubyLexer extends LexingCommon {
     
     public void dispatchScanEvent(int token) { //mri: ripper_dispatch_scan_event
         if (!hasScanEvent()) return;
-        
+
         yaccValue = scanEventValue(token);
     }
 
@@ -911,6 +904,7 @@ public class RubyLexer extends LexingCommon {
             case keyword__LINE__: return "on_kw";
             case keyword__ENCODING__: return "on_kw";
             case keyword_BEGIN: return "on_kw";
+            case keyword_END: return "on_kw";
             case keyword_do_LAMBDA: return "on_kw";
             case tAMPER: return "on_op";
             case tANDOP: return "on_op";
@@ -918,6 +912,8 @@ public class RubyLexer extends LexingCommon {
             case tASET: return "on_op";
             case tASSOC: return "on_op";
             case tBACK_REF: return "on_backref";
+            case tBDOT2: return "on_op";
+            case tBDOT3: return "on_op";
             case tCHAR: return "on_CHAR";
             case tCMP: return "on_op";
             case tCOLON2: return "on_op";
@@ -991,7 +987,7 @@ public class RubyLexer extends LexingCommon {
             case tSP: return "on_sp";
             case tHEREDOC_BEG: return "on_heredoc_beg";
             case tHEREDOC_END: return "on_heredoc_end";
-            case keyword_END: return "on___end__";
+            case k__END__: return "on___end__";
             default: // Weird catchall but we will try and not use < 256 value trick like MRI
                 return "on_CHAR";
         }
@@ -1066,7 +1062,7 @@ public class RubyLexer extends LexingCommon {
                 if (!parser_magic_comment(lexb.makeShared(lex_p, lex_pend - lex_p))) {
                     if (comment_at_top()) set_file_encoding(lex_p, lex_pend);
                 }
-                lex_p = lex_pend;
+                lex_goto_eol();
                 dispatchScanEvent(tCOMMENT);
 
                 fallthru = true;
@@ -1264,7 +1260,7 @@ public class RubyLexer extends LexingCommon {
                     eofp = true;
                     
                     lex_goto_eol();
-                    dispatchScanEvent(keyword_END);
+                    dispatchScanEvent(k__END__);
                     return EOF;
                 }
                 return identifier(c, commandState);
@@ -1476,10 +1472,8 @@ public class RubyLexer extends LexingCommon {
     }
 
     private int doKeyword(int state) {
-        int leftParenBegin = getLeftParenBegin();
-        if (leftParenBegin > 0 && leftParenBegin == parenNest) {
-            setLeftParenBegin(0);
-            parenNest--;
+        if (isLambdaBeginning()) {
+            setLeftParenBegin(-1);
             return keyword_do_LAMBDA;
         }
 
@@ -1488,9 +1482,7 @@ public class RubyLexer extends LexingCommon {
         if (cmdArgumentState.set_p() && !isLexState(state, EXPR_CMDARG)) {
             return keyword_do_block;
         }
-        if (isLexState(state,  EXPR_BEG|EXPR_ENDARG)) {
-            return keyword_do_block;
-        }
+
         return keyword_do;
     }
     
@@ -1552,7 +1544,7 @@ public class RubyLexer extends LexingCommon {
         case '\'':      /* $': string after last match */
         case '+':       /* $+: string matches last paren. */
             // Explicit reference to these vars as symbols...
-            if (last_state == EXPR_FNAME) {
+            if (isLexState(last_state, EXPR_FNAME)) {
                 identValue = "$" + (char) c;
                 set_yylval_name(new ByteList(new byte[] {'$', (byte) c}));
                 return tGVAR;
@@ -1567,7 +1559,7 @@ public class RubyLexer extends LexingCommon {
                 c = nextc();
             } while (Character.isDigit(c));
             pushback(c);
-            if (last_state == EXPR_FNAME) {
+            if (isLexState(last_state, EXPR_FNAME)) {
                 identValue = createTokenString().intern();
                 set_yylval_name(new ByteList(new byte[] {'$', (byte) c}));
                 return tGVAR;
@@ -1764,15 +1756,14 @@ public class RubyLexer extends LexingCommon {
                 set_yylval_name(createTokenByteList());
 
                 if (isLexState(state, EXPR_FNAME)) {
+                    setState(EXPR_ENDFN);
                     identValue = tempVal;
                     return keyword.id0;
                 }
 
                 if (isLexState(lex_state, EXPR_BEG)) commandStart = true;
 
-                if (keyword.id0 == keyword_do) {
-                    return doKeyword(state);
-                }
+                if (keyword.id0 == keyword_do) return doKeyword(state);
 
                 if (isLexState(state, EXPR_BEG|EXPR_LABELED)) {
                     return keyword.id0;

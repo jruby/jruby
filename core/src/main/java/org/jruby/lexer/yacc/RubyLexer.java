@@ -357,7 +357,11 @@ public class RubyLexer extends LexingCommon {
     public void heredoc_dedent(Node root) {
         int indent = heredoc_indent;
 
-        if (indent <= 0 || root == null) return;
+        if (indent <= 0) return;
+
+        heredoc_indent = 0;
+
+        if (root == null) return;
 
         if (root instanceof StrNode) {
             StrNode str = (StrNode) root;
@@ -1636,13 +1640,11 @@ public class RubyLexer extends LexingCommon {
                 int state = lex_state; // Save state at time keyword is encountered
                 setState(keyword.state);
 
+                yaccValue = keyword.bytes;
                 if (isLexState(state, EXPR_FNAME)) {
                     setState(EXPR_ENDFN);
-                    yaccValue = keyword.bytes;
                     set_yylval_name(createTokenByteList());
                     return keyword.id0;
-                } else {
-                    yaccValue = ruby_sourceline;
                 }
 
                 if (isLexState(lex_state, EXPR_BEG)) commandStart = true;
