@@ -115,8 +115,13 @@ public class RubyNumeric extends RubyObject {
 
         if (halfArg == context.nil) return RoundingMode.HALF_UP;
 
-        if (halfArg instanceof RubySymbol) {
-            switch (((RubySymbol) halfArg).asJavaString()) {
+        if (halfArg instanceof RubySymbol || halfArg instanceof RubyString) {
+            RubyString asString = halfArg.asString();
+            if (!asString.getEncoding().isAsciiCompatible()) {
+                throw context.runtime.newEncodingCompatibilityError("ASCII incompatible encoding: " + asString.getEncoding());
+            }
+            
+            switch (halfArg.asJavaString()) {
                 case "up":
                     return RoundingMode.HALF_UP;
                 case "even":
