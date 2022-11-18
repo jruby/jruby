@@ -1681,12 +1681,14 @@ public class RubyHash extends RubyObject implements Map {
         return result;
     }
 
-    private RubyHash hashCopy(ThreadContext context) {
-        return new RubyHash(context.runtime, context.runtime.getHash(), this);
-    }
-
     private RubyHash hashCopyWithIdentity(ThreadContext context) {
-        return new RubyHash(context.runtime, context.runtime.getHash(), this, isComparedByIdentity());
+        Ruby runtime = context.runtime;
+
+        RubyHash copy = new RubyHash(runtime, runtime.getHash());
+
+        copy.replaceWith(context, this);
+
+        return copy;
     }
 
     @JRubyMethod(name = "transform_values")
@@ -2162,8 +2164,7 @@ public class RubyHash extends RubyObject implements Map {
 
         if (this == otherHash) return this;
 
-        alloc();
-        copyFrom(this, otherHash, otherHash.isComparedByIdentity());
+        replaceWith(context, otherHash);
 
         ifNone = otherHash.ifNone;
 
@@ -2174,6 +2175,25 @@ public class RubyHash extends RubyObject implements Map {
         }
 
         return this;
+    }
+
+    protected void replaceWith(ThreadContext context, RubyHash otherHash) {
+        if (otherHash.getClass() == RubyHash.class) {
+            alloc();
+            copyFrom(this, otherHash, otherHash.isComparedByIdentity());
+        } else {
+            replaceExternally(context, otherHash);
+        }
+    }
+
+    protected void replaceExternally(ThreadContext context, RubyHash otherHash) {
+        rb_clear(context);
+
+        if (!isComparedByIdentity() && otherHash.isComparedByIdentity()) {
+            setComparedByIdentity(true);
+        }
+
+        otherHash.visitAll(context, ReplaceVisitor, this);
     }
 
     private static final VisitorWithState<RubyHash> ReplaceVisitor = new VisitorWithState<RubyHash>() {

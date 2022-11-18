@@ -385,6 +385,11 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         @Override
         public final Set directEntrySet() { return entrySet(); }
 
+        @Override
+        protected void replaceWith(ThreadContext context, RubyHash otherHash) {
+            replaceExternally(context, otherHash);
+        }
+
     }
 
     @JRubyMethod(name = "default")
