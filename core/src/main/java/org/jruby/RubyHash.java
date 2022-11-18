@@ -241,13 +241,9 @@ public class RubyHash extends RubyObject implements Map {
     private IRubyObject ifNone;
 
     private RubyHash(Ruby runtime, RubyClass klass, RubyHash other) {
-        this(runtime, klass, other, false);
-    }
-
-    private RubyHash(Ruby runtime, RubyClass klass, RubyHash other, boolean identity) {
         super(runtime, klass);
         this.ifNone = UNDEF;
-        copyFrom(this, other, identity);
+        copyFrom(this, other, false);
     }
 
     private static void copyFrom(RubyHash self, RubyHash other, boolean identity) {
