@@ -45,14 +45,13 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.common.RubyWarnings;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.ir.Tuple;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.runtime.Helpers;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Constants;
@@ -74,7 +73,6 @@ import org.jruby.util.io.FilenoUtil;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.STDIO;
 
-import static org.jruby.common.RubyWarnings.Category.DEPRECATED;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.*;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.io.EncodingUtils.newExternalStringWithEncoding;
@@ -603,6 +601,37 @@ public class RubyGlobal {
         public RubyHash to_h(ThreadContext context, Block block){
             RubyHash h = to_hash(context);
             return block.isGiven() ? h.to_h_block(context, block) : h;
+        }
+
+        @JRubyMethod(name = "clone")
+        @Override
+        public IRubyObject rbClone(ThreadContext context) {
+            context.runtime.getWarnings().warnDeprecatedAlternate("ENV.clone", "ENV.to_h");
+
+            return this;
+        }
+
+        @JRubyMethod(name = "clone")
+        public IRubyObject rbClone(ThreadContext context, IRubyObject _opts) {
+            Ruby runtime = context.runtime;
+
+            IRubyObject opts = ArgsUtil.getOptionsArg(runtime, _opts, true);
+            if (opts.isNil()) {
+                throw runtime.newArgumentError(1, 0);
+            }
+
+            IRubyObject freeze = ArgsUtil.getFreezeOpt(context, opts);
+            if (freeze != null && freeze.isTrue()) {
+                throw runtime.newTypeError("cannot freeze ENV");
+            }
+
+            return rbClone(context);
+        }
+
+        @JRubyMethod()
+        @Override
+        public IRubyObject dup(ThreadContext context) {
+            throw context.runtime.newTypeError("Cannot dup ENV, use ENV.to_h to get a copy of ENV as a hash");
         }
 
         private final RaiseException concurrentModification() {
