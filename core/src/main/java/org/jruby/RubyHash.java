@@ -250,11 +250,11 @@ public class RubyHash extends RubyObject implements Map {
         copyFrom(this, other, identity);
     }
 
-    private void copyFrom(RubyHash self, RubyHash other, boolean identity) {
-        threshold = other.threshold;
-        self.table = other.internalCopyTable(head);
+    private static void copyFrom(RubyHash self, RubyHash other, boolean identity) {
+        self.threshold = other.threshold;
+        self.table = other.internalCopyTable(self.head);
         self.size = other.size();
-        setComparedByIdentity(identity);
+        self.setComparedByIdentity(identity);
     }
 
     public RubyHash(Ruby runtime, RubyClass klass) {
@@ -2162,6 +2162,7 @@ public class RubyHash extends RubyObject implements Map {
 
         if (this == otherHash) return this;
 
+        alloc();
         copyFrom(this, otherHash, otherHash.isComparedByIdentity());
 
         ifNone = otherHash.ifNone;
