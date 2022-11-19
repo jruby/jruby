@@ -61,8 +61,8 @@ public class RubyComplex extends RubyNumeric {
 
     public static RubyClass createComplexClass(Ruby runtime) {
         final String[] UNDEFINED = new String[]{
-                "<", "<=", ">", ">=",
-                "between?", "divmod", "floor", "ceil", "modulo",
+                "<", "<=", ">", ">=", "between?", "clamp",
+                "%", "div", "divmod", "floor", "ceil", "modulo", "remainder",
                 "round", "step", "truncate", "positive?", "negative?"
         };
 
