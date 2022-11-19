@@ -435,6 +435,7 @@ public class RubyComplex extends RubyNumeric {
      */
     @JRubyMethod(name = "convert", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject convert(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        if (arg instanceof RubyComplex) return arg;
         return convertCommon(context, recv, arg, null, true);
     }
 
@@ -453,6 +454,7 @@ public class RubyComplex extends RubyNumeric {
 
         IRubyObject exception = ArgsUtil.extractKeywordArg(context, "exception", (RubyHash) maybeKwargs);
         if (exception instanceof RubyBoolean) {
+            if (a1 instanceof RubyComplex) return a1;
             return convertCommon(context, recv, a1, null, exception.isTrue());
         }
 
