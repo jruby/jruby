@@ -4,7 +4,6 @@ import com.headius.invokebinder.Signature;
 
 import java.io.IOException;
 import java.lang.invoke.MethodHandle;
-import java.util.ArrayList;
 
 import org.jcodings.Encoding;
 import org.jruby.EvalType;
@@ -20,7 +19,6 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.RubyInstanceConfig;
-import org.jruby.RubyLocalJumpError;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
@@ -48,7 +46,6 @@ import org.jruby.ir.JIT;
 import org.jruby.ir.operands.IRException;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Splat;
-import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.persistence.IRReader;
 import org.jruby.ir.persistence.IRReaderStream;
 import org.jruby.java.invokers.InstanceMethodInvoker;
@@ -57,7 +54,6 @@ import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.JavaMethod;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.proxy.JavaProxyMethod;
-import org.jruby.javasupport.proxy.ReifiedJavaProxy;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Binding;
@@ -91,7 +87,6 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.Type;
 
-import static org.jruby.RubyClass.CS_NAMES.length;
 import static org.jruby.ir.operands.UndefinedValue.UNDEFINED;
 import static org.jruby.runtime.Block.Type.LAMBDA;
 import static org.jruby.runtime.ThreadContext.*;
@@ -1237,21 +1232,6 @@ public class IRRuntimeHelpers {
     @JIT
     public static void markKeywordOnCallInfo(ThreadContext context) {
         context.callInfo |= CALL_KEYWORD;
-    }
-
-    public static IRubyObject markAsKwarg(ThreadContext context, IRubyObject arg) {
-        // In a complicated chain of rest splatting (**{**{}. **{}, **{}}) LHS of this series of splats
-        // may have already ended up undefined.
-        if (arg == UNDEFINED) return RubyHash.newSmallHash(context.runtime);
-
-        if (!(arg instanceof RubyHash)) arg = TypeConverter.convertToType(arg, context.runtime.getHash(), "to_hash");
-        
-        // We only mark is non-empty kwrest since an empty one is not destined to make it past the callsite.
-        if (!((RubyHash) arg).isEmpty()) {
-            context.callInfo |= (CALL_KEYWORD | CALL_KEYWORD_REST);
-        }
-
-        return arg;
     }
 
     @JIT @Interp
