@@ -75,7 +75,7 @@ public class EncodingUtils {
     public static Encoding toEncoding(ThreadContext context, IRubyObject enc) {
         RubyString encStr = enc.convertToString();
         if (!encStr.getEncoding().isAsciiCompatible()) {
-            throw context.runtime.newArgumentError("invalid name encoding (non ASCII)");
+            throw context.runtime.newArgumentError("invalid encoding name (non ASCII)");
         }
         Encoding idx = context.runtime.getEncodingService().getEncodingFromObject(encStr);
         // check for missing encoding is in getEncodingFromObject

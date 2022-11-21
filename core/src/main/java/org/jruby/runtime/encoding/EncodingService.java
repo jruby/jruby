@@ -435,7 +435,7 @@ public final class EncodingService {
 
     private void checkAsciiEncodingName(ByteList name) {
         if (!name.getEncoding().isAsciiCompatible()) {
-            throw runtime.newArgumentError("invalid name encoding (non ASCII)");
+            throw runtime.newArgumentError("invalid encoding name (non ASCII)");
         }
     }
 
