@@ -541,7 +541,7 @@ jobs:
     permissions:
       contents: none
     if: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/heads/jruby-9.3' }}
-    needs: [mvn-test, mvn-test-8, mvn-test-windows, dependency-check, rake-test, rake-test-indy, rake-test-8, test-versions, sequel, concurrent-ruby, jruby-tests-dev, ji-specs-indy, regression-specs-jit, maven-test-openj9-8]
+    needs: [mvn-test, mvn-test-8, mvn-test-windows, dependency-check, rake-test, rake-test-indy, rake-test-8, test-versions, sequel, concurrent-ruby, jruby-tests-dev, ji-specs-indy, regression-specs-jit, mvn-test-m1]
     uses: jruby/jruby/.github/workflows/snapshot-publish.yml@6cd0d4d96d9406635183d81cf91acc82cd78245f
     secrets:
       SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
