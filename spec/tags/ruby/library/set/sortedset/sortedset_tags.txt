@@ -1,1 +1,1 @@
-wip:SortedSet raises error including message that it has been extracted from the set stdlib
+fails:SortedSet raises error including message that it has been extracted from the set stdlib
