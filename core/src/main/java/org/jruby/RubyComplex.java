@@ -36,13 +36,17 @@ import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
+import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 import org.jruby.util.TypeConverter;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.function.BiFunction;
@@ -73,6 +77,7 @@ public class RubyComplex extends RubyNumeric {
         
         complexc.kindOf = new RubyModule.JavaClassKindOf(RubyComplex.class);
 
+        complexc.setMarshal(COMPLEX_MARSHAL);
         complexc.defineAnnotatedMethods(RubyComplex.class);
 
         complexc.getSingletonClass().undefineMethod("allocate");
@@ -87,14 +92,10 @@ public class RubyComplex extends RubyNumeric {
         return complexc;
     }
 
-    /** internal
-     * 
-     */
     private RubyComplex(Ruby runtime, RubyClass clazz, IRubyObject real, IRubyObject image) {
         super(runtime, clazz);
         this.real = real;
         this.image = image;
-        this.flags |= FROZEN_F;
     }
 
     private RubyComplex(Ruby runtime, RubyClass clazz) {
@@ -104,7 +105,6 @@ public class RubyComplex extends RubyNumeric {
 
         this.real = zero;
         this.image = zero;
-        this.flags |= FROZEN_F;
     }
 
     @Override
@@ -112,22 +112,31 @@ public class RubyComplex extends RubyNumeric {
         return ClassIndex.COMPLEX;
     }
 
+    /** internal
+     *
+     */
+    private static RubyComplex newComplexInternal(Ruby runtime, RubyClass clazz, IRubyObject x, IRubyObject y) {
+        RubyComplex ret = new RubyComplex(runtime, clazz, x, y);
+        ret.setFrozen(true);
+        return ret;
+    }
+
     /** rb_complex_raw
      * 
      */
     public static RubyComplex newComplexRaw(Ruby runtime, IRubyObject x, IRubyObject y) {
-        return new RubyComplex(runtime, runtime.getComplex(), x, y);
+        return newComplexInternal(runtime, runtime.getComplex(), x, y);
     }
 
     /** rb_complex_raw1
      * 
      */
     public static RubyComplex newComplexRaw(Ruby runtime, IRubyObject x) {
-        return new RubyComplex(runtime, runtime.getComplex(), x, RubyFixnum.zero(runtime));
+        return newComplexRaw(runtime, x, RubyFixnum.zero(runtime));
     }
 
     public static RubyComplex newComplexRawImage(Ruby runtime, IRubyObject image) {
-        return new RubyComplex(runtime, runtime.getComplex(), RubyFixnum.zero(runtime), image);
+        return newComplexRaw(runtime, RubyFixnum.zero(runtime), image);
     }
 
     /** rb_complex_new1
@@ -163,14 +172,16 @@ public class RubyComplex extends RubyNumeric {
      */
     static RubyNumeric newComplex(ThreadContext context, RubyClass clazz, IRubyObject x, IRubyObject y) {
         assert !(x instanceof RubyComplex);
-        return canonicalizeInternal(context, clazz, x, y);
+        RubyNumeric ret = canonicalizeInternal(context, clazz, x, y);
+        ret.setFrozen(true);
+        return ret;
     }
     
     /** f_complex_new_bang2
      * 
      */
     static RubyComplex newComplexBang(ThreadContext context, RubyClass clazz, RubyNumeric x, RubyNumeric y) {
-        return new RubyComplex(context.runtime, clazz, x, y);
+        return newComplexInternal(context.runtime, clazz, x, y);
     }
 
     /** f_complex_new_bang1
@@ -257,14 +268,14 @@ public class RubyComplex extends RubyNumeric {
     @JRubyMethod(name = "new!", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject newInstanceBang(ThreadContext context, IRubyObject recv, IRubyObject real) {
         if (!(real instanceof RubyNumeric)) real = f_to_i(context, real);
-        return new RubyComplex(context.runtime, (RubyClass) recv, real, RubyFixnum.zero(context.runtime));
+        return newComplexInternal(context.runtime, (RubyClass) recv, real, RubyFixnum.zero(context.runtime));
     }
 
     @JRubyMethod(name = "new!", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject newInstanceBang(ThreadContext context, IRubyObject recv, IRubyObject real, IRubyObject image) {
         if (!(real instanceof RubyNumeric)) real = f_to_i(context, real);
         if (!(image instanceof RubyNumeric)) image = f_to_i(context, image);
-        return new RubyComplex(context.runtime, (RubyClass) recv, real, image);
+        return newComplexInternal(context.runtime, (RubyClass) recv, real, image);
     }
 
     /** nucomp_canonicalization
@@ -307,23 +318,23 @@ public class RubyComplex extends RubyNumeric {
         boolean realComplex = real instanceof RubyComplex;
         boolean imageComplex = image instanceof RubyComplex;
         if (!realComplex && !imageComplex) {
-            return new RubyComplex(context.runtime, clazz, real, image);
+            return newComplexInternal(context.runtime, clazz, real, image);
         }
         if (!realComplex) {
             RubyComplex complex = (RubyComplex)image;
-            return new RubyComplex(context.runtime, clazz,
+            return newComplexInternal(context.runtime, clazz,
                                    f_sub(context, real, complex.image),
                                    f_add(context, RubyFixnum.zero(context.runtime), complex.real));
         }
         if (!imageComplex) {
             RubyComplex complex = (RubyComplex)real;
-            return new RubyComplex(context.runtime, clazz,
+            return newComplexInternal(context.runtime, clazz,
                                    complex.real,
                                    f_add(context, complex.image, image));
         } else {
             RubyComplex complex1 = (RubyComplex)real;
             RubyComplex complex2 = (RubyComplex)image;
-            return new RubyComplex(context.runtime, clazz,
+            return newComplexInternal(context.runtime, clazz,
                                    f_sub(context, complex1.real, complex2.image),
                                    f_add(context, complex1.image, complex2.real));
         }
@@ -1099,6 +1110,26 @@ public class RubyComplex extends RubyNumeric {
         if (load.hasVariables()) syncVariables((IRubyObject)load);
         return this;
     }
+
+    private static final ObjectMarshal COMPLEX_MARSHAL = new ObjectMarshal() {
+        @Override
+        public void marshalTo(Ruby runtime, Object obj, RubyClass type, MarshalStream marshalStream) {
+            //do nothing
+        }
+
+        @Override
+        public Object unmarshalFrom(Ruby runtime, RubyClass type,
+                                    UnmarshalStream unmarshalStream) throws IOException {
+            ThreadContext context = runtime.getCurrentContext();
+
+            RubyComplex c = (RubyComplex)RubyClass.DEFAULT_OBJECT_MARSHAL.unmarshalFrom(runtime, type, unmarshalStream);
+            c.real = c.removeInstanceVariable("@real");
+            c.image = c.removeInstanceVariable("@image");
+            c.setFrozen(true);
+
+            return c;
+        }
+    };
 
     /** nucomp_to_c
      *
