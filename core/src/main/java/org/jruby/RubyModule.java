@@ -5310,12 +5310,8 @@ public class RubyModule extends RubyObject {
         }
         if (entry.deprecated) {
             final Ruby runtime = getRuntime();
-            if ( "Object".equals( getName() ) ) {
-                runtime.getWarnings().warn(ID.CONSTANT_DEPRECATED, "constant ::"+ name +" is deprecated");
-            }
-            else {
-                runtime.getWarnings().warn(ID.CONSTANT_DEPRECATED, "constant "+ getName() +"::"+ name +" is deprecated");
-            }
+            String parent = "Object".equals(getName()) ? "" : getName();
+            runtime.getWarnings().warnDeprecated("constant " + parent + "::" + name);
         }
 
         return entry;
