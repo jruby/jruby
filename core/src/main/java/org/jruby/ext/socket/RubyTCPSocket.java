@@ -107,8 +107,6 @@ public class RubyTCPSocket extends RubyIPSocket {
                         context.pollThreadEvents();
                     }
 
-                    channel.configureBlocking(true);
-
                     return channel;
                 }
 
