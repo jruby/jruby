@@ -120,7 +120,7 @@ public class RubyNumeric extends RubyObject {
             if (!asString.getEncoding().isAsciiCompatible()) {
                 throw context.runtime.newEncodingCompatibilityError("ASCII incompatible encoding: " + asString.getEncoding());
             }
-            
+
             switch (halfArg.asJavaString()) {
                 case "up":
                     return RoundingMode.HALF_UP;
