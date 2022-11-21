@@ -1,5 +1,5 @@
-wip:Process.clock_gettime supports the platform clocks mentioned in the documentation CLOCK_PROCESS_CPUTIME_ID
-wip:Process.clock_gettime supports the platform clocks mentioned in the documentation CLOCK_THREAD_CPUTIME_ID
-wip:Process.clock_gettime supports the platform clocks mentioned in the documentation CLOCK_MONOTONIC_RAW
-wip:Process.clock_gettime supports the platform clocks mentioned in the documentation CLOCK_MONOTONIC_RAW_APPROX
-wip:Process.clock_gettime supports the platform clocks mentioned in the documentation CLOCK_UPTIME_RAW and CLOCK_UPTIME_RAW_APPROX
+fails:Process.clock_gettime supports the platform clocks mentioned in the documentation CLOCK_PROCESS_CPUTIME_ID
+fails:Process.clock_gettime supports the platform clocks mentioned in the documentation CLOCK_THREAD_CPUTIME_ID
+fails:Process.clock_gettime supports the platform clocks mentioned in the documentation CLOCK_MONOTONIC_RAW
+fails:Process.clock_gettime supports the platform clocks mentioned in the documentation CLOCK_MONOTONIC_RAW_APPROX
+fails:Process.clock_gettime supports the platform clocks mentioned in the documentation CLOCK_UPTIME_RAW and CLOCK_UPTIME_RAW_APPROX
