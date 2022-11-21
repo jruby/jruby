@@ -1217,7 +1217,7 @@ public abstract class RubyParserBase {
 
     public Node new_call(Node receiver, ByteList callType, ByteList name, Node argsNode, Node iter, int line) {
         if (argsNode instanceof BlockPassNode) {
-            if (iter != null) lexer.compile_error("Both block arg and actual block given.");
+            if (iter != null) lexer.compile_error("both block arg and actual block given.");
 
             BlockPassNode blockPass = (BlockPassNode) argsNode;
             return new CallNode(line, receiver, symbolID(name), blockPass.getArgsNode(), blockPass, isLazy(callType));
@@ -1242,7 +1242,7 @@ public abstract class RubyParserBase {
 
     public void frobnicate_fcall_args(FCallNode fcall, Node args, Node iter) {
         if (args instanceof BlockPassNode) {
-            if (iter != null) lexer.compile_error("Both block arg and actual block given.");
+            if (iter != null) lexer.compile_error("both block arg and actual block given.");
 
             BlockPassNode blockPass = (BlockPassNode) args;
             args = blockPass.getArgsNode();

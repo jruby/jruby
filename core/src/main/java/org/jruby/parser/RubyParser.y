@@ -2345,7 +2345,7 @@ primary         : literal
                     /*%%%*/
                     if ($1 != null && 
                           $<BlockAcceptingNode>1.getIterNode() instanceof BlockPassNode) {
-                          p.compile_error("Both block arg and actual block given.");
+                          p.compile_error("both block arg and actual block given.");
                     }
                     $$ = $<BlockAcceptingNode>1.setIterNode($2);
                     $<Node>$.setLine(@1.start());
@@ -2914,7 +2914,7 @@ block_call      : command do_block {
                         p.compile_error("block given to yield");
                     }
                     if ($1 instanceof BlockAcceptingNode && $<BlockAcceptingNode>1.getIterNode() instanceof BlockPassNode) {
-                        p.compile_error("Both block arg and actual block given.");
+                        p.compile_error("both block arg and actual block given.");
                     }
                     if ($1 instanceof NonLocalControlFlowNode) {
                         ((BlockAcceptingNode) $<NonLocalControlFlowNode>1.getValueNode()).setIterNode($2);

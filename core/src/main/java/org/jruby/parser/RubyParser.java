@@ -4128,7 +4128,7 @@ states[360] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     /*%%%*/
                     if (((Node)yyVals[-1+yyTop].value) != null && 
                           ((BlockAcceptingNode)yyVals[-1+yyTop].value).getIterNode() instanceof BlockPassNode) {
-                          p.compile_error("Both block arg and actual block given.");
+                          p.compile_error("both block arg and actual block given.");
                     }
                     yyVal = ((BlockAcceptingNode)yyVals[-1+yyTop].value).setIterNode(((IterNode)yyVals[0+yyTop].value));
                     ((Node)yyVal).setLine(yyVals[yyTop - count + 1].start());
@@ -4743,7 +4743,7 @@ states[472] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                         p.compile_error("block given to yield");
                     }
                     if (((Node)yyVals[-1+yyTop].value) instanceof BlockAcceptingNode && ((BlockAcceptingNode)yyVals[-1+yyTop].value).getIterNode() instanceof BlockPassNode) {
-                        p.compile_error("Both block arg and actual block given.");
+                        p.compile_error("both block arg and actual block given.");
                     }
                     if (((Node)yyVals[-1+yyTop].value) instanceof NonLocalControlFlowNode) {
                         ((BlockAcceptingNode) ((NonLocalControlFlowNode)yyVals[-1+yyTop].value).getValueNode()).setIterNode(((IterNode)yyVals[0+yyTop].value));
