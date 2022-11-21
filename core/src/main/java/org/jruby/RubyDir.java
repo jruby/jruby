@@ -929,7 +929,7 @@ public class RubyDir extends RubyObject implements Closeable {
     @JRubyMethod(name = "exists?", meta = true)
     public static IRubyObject exists_p(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         if (context.runtime.warningsEnabled()) {
-            context.runtime.getWarnings().warn("Dir.exists? is a deprecated name, use Dir.exist? instead");
+            context.runtime.getWarnings().warnDeprecatedAlternate("Dir.exists?", "Dir.exist?");
         }
 
         return exist(context, recv, arg);
