@@ -1090,7 +1090,7 @@ public class RubyComplex extends RubyNumeric {
     /** nucomp_marshal_load
      * 
      */
-    @JRubyMethod(name = "marshal_load")
+    @JRubyMethod(name = "marshal_load", visibility = Visibility.PRIVATE)
     public IRubyObject marshal_load(ThreadContext context, IRubyObject arg) {
         RubyArray load = arg.convertToArray();
         real = load.size() > 0 ? load.eltInternal(0) : context.nil;
