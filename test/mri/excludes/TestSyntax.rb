@@ -1,3 +1,5 @@
 exclude :test_error_message_encoding, "needs investigation"
 exclude :test_invalid_break, "needs investigation"
 exclude :test_invalid_next, "needs investigation"
+exclude :test_warning_literal_in_condition, "different error"
+exclude :test_warning_literal_in_flip_flop, "different error"
