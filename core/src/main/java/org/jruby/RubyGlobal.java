@@ -638,6 +638,11 @@ public class RubyGlobal {
             return metaClass.runtime.newConcurrencyError(
                     "Detected invalid hash contents due to unsynchronized modifications with concurrent users");
         }
+
+        @Override
+        protected void replaceWith(ThreadContext context, RubyHash otherHash) {
+            replaceExternally(context, otherHash);
+        }
     }
 
     /**
