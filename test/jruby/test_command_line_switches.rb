@@ -358,7 +358,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
 
       FileUtils.symlink real_java, tmp_java
 
-      old_env = ENV.dup
+      old_env = ENV.to_h
       ENV.delete "JAVA_HOME"
       ENV["JAVACMD"] = tmp_java
 
@@ -379,7 +379,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
 
       FileUtils.symlink real_home, tmp_home
 
-      old_env = ENV.dup
+      old_env = ENV.to_h
       ENV.delete "JAVACMD"
       ENV["JAVA_HOME"] = tmp_home
 
