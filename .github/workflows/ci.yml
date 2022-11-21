@@ -10,17 +10,16 @@ permissions:
 
 jobs:
 
-  mvn-test-m1:
-    runs-on: [self-hosted, macos, aarch64]
+  rake-test:
+    runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        package-flags: ['-Ptest']
-        # dist, complete, and osgi do not pass on 17 yet
-        java-version: ['11']
+        target: ['test:mri:core:jit', 'spec:ruby:fast', 'spec:ruby:fast:jit', 'spec:ji', 'spec:ffi']
+        java-version: ['8', '11', '17']
       fail-fast: false
 
-    name: mvn ${{ matrix.package-flags }} (Java ${{ matrix.java-version }} Apple aarch64)
+    name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }})
 
     steps:
       - name: checkout
@@ -36,24 +35,87 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
-          architecture: arm
       - name: bootstrap
         run: mvn -Pbootstrap clean package
-      - name: mvn package ${{ matrix.package-flags }}
-        run: tool/maven-ci-script.sh
-        env:
-          PHASE: 'package ${{ matrix.package-flags }}'
+      - name: bundle install
+        run: bin/jruby --dev -S bundle install
+      - name: rake ${{ matrix.target }}
+        run: bin/jruby --dev -S rake ${{ matrix.target }}
 
-  spec-m1:
-    runs-on: [self-hosted, macos, aarch64]
-    
+  rake-test-8:
+    runs-on: ubuntu-latest
+
     strategy:
       matrix:
-        target: ['spec:ffi']
-        java-version: ['11']
+        target: ['test:mri:core:int', 'test:mri:extra', 'test:jruby:int', 'test:mri:stdlib', 'spec:ruby:slow', 'spec:ruby:debug', 'spec:ruby:wip', 'test:jruby:aot', 'test:slow_suites', 'spec:compiler', 'spec:regression', 'spec:jruby', 'spec:jrubyc', 'spec:profiler']
       fail-fast: false
 
-    name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }} Apple aarch64)
+    name: rake ${{ matrix.target }} (Java 8)
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: set up java 8
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'zulu'
+          java-version: '8'
+      - name: bootstrap
+        run: mvn -Pbootstrap clean package
+      - name: bundle install
+        run: bin/jruby --dev -S bundle install
+      - name: rake ${{ matrix.target }}
+        run: bin/jruby --dev -S rake ${{ matrix.target }}
+
+  jruby-tests-dev:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+
+    env:
+      JRUBY_OPTS: '--dev'
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: set up java 8
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'zulu'
+          java-version: 8
+      - name: bootstrap
+        run: mvn -Pbootstrap clean package
+      - name: bundle install
+        run: bin/jruby --dev -S bundle install
+      - name: rake test:jruby
+        run: bin/jruby --dev -S rake test:jruby
+
+  rake-test-indy:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        target: ['test:jruby', 'spec:compiler']
+        java-version: ['8', '11', '17']
+      fail-fast: false
+
+    name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }} +indy)
+
+    env:
+      JRUBY_OPTS: '-Xcompile.invokedynamic'
 
     steps:
       - name: checkout
@@ -69,7 +131,6 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
-          architecture: arm
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
@@ -142,6 +203,66 @@ jobs:
         env:
           PHASE: 'package ${{ matrix.package-flags }}'
 
+  ji-specs-indy:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+
+    env:
+      JRUBY_OPTS: '-Xcompile.invokedynamic'
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: set up java 8
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'zulu'
+          java-version: 8
+      - name: bootstrap
+        run: mvn -Pbootstrap clean package
+      - name: bundle install
+        run: bin/jruby --dev -S bundle install
+      - name: rake spec:ji
+        run: bin/jruby --dev -S rake spec:ji
+
+  regression-specs-jit:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+
+    env:
+      JRUBY_OPTS: '-Xjit.threshold=0'
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: set up java 8
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'zulu'
+          java-version: 8
+      - name: bootstrap
+        run: mvn -Pbootstrap clean package
+      - name: bundle install
+        run: bin/jruby --dev -S bundle install
+      - name: rake spec:regression
+        run: bin/jruby --dev -S rake spec:regression
+
   mvn-test-windows:
     runs-on: windows-latest
 
@@ -204,135 +325,6 @@ jobs:
         run: tool/maven-ci-script.sh
         env:
           PHASE: 'install -Pmain -Dinvoker.test=GH-6081*'
-
-  rake-test:
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        target: ['test:mri:core:jit', 'spec:ruby:fast', 'spec:ruby:fast:jit', 'spec:ji', 'spec:ffi']
-        java-version: ['8', '11', '17']
-      fail-fast: false
-
-    name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }})
-
-    steps:
-      - name: checkout
-        uses: actions/checkout@v2
-      - name: cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
-          restore-keys: ${{ runner.os }}-m2
-      - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v2
-        with:
-          distribution: 'zulu'
-          java-version: ${{ matrix.java-version }}
-      - name: bootstrap
-        run: mvn -Pbootstrap clean package
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
-      - name: rake ${{ matrix.target }}
-        run: bin/jruby --dev -S rake ${{ matrix.target }}
-
-  rake-test-indy:
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        target: ['test:jruby', 'spec:compiler']
-        java-version: ['8', '11', '17']
-      fail-fast: false
-
-    name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }} +indy)
-
-    env:
-      JRUBY_OPTS: '-Xcompile.invokedynamic'
-
-    steps:
-      - name: checkout
-        uses: actions/checkout@v2
-      - name: cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
-          restore-keys: ${{ runner.os }}-m2
-      - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v2
-        with:
-          distribution: 'zulu'
-          java-version: ${{ matrix.java-version }}
-      - name: bootstrap
-        run: mvn -Pbootstrap clean package
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
-      - name: rake ${{ matrix.target }}
-        run: bin/jruby --dev -S rake ${{ matrix.target }}
-
-  rake-test-8:
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        target: ['test:mri:core:int', 'test:mri:extra', 'test:jruby:int', 'test:mri:stdlib', 'spec:ruby:slow', 'spec:ruby:debug', 'spec:ruby:wip', 'test:jruby:aot', 'test:slow_suites', 'spec:compiler', 'spec:regression', 'spec:jruby', 'spec:jrubyc', 'spec:profiler']
-      fail-fast: false
-
-    name: rake ${{ matrix.target }} (Java 8)
-
-    steps:
-      - name: checkout
-        uses: actions/checkout@v2
-      - name: cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
-          restore-keys: ${{ runner.os }}-m2
-      - name: set up java 8
-        uses: actions/setup-java@v2
-        with:
-          distribution: 'zulu'
-          java-version: '8'
-      - name: bootstrap
-        run: mvn -Pbootstrap clean package
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
-      - name: rake ${{ matrix.target }}
-        run: bin/jruby --dev -S rake ${{ matrix.target }}
-
-  rake-test-wip-8:
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        target: ['test:mri:core_wip', 'test:mri:stdlib_wip', 'test:mri:extra_wip']
-      fail-fast: false
-
-    name: rake ${{ matrix.target }} (Java 8)
-
-    steps:
-      - name: checkout
-        uses: actions/checkout@v2
-      - name: cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
-          restore-keys: ${{ runner.os }}-m2
-      - name: set up java 8
-        uses: actions/setup-java@v2
-        with:
-          distribution: 'zulu'
-          java-version: '8'
-      - name: bootstrap
-        run: mvn -Pbootstrap clean package
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
-      - name: rake ${{ matrix.target }}
-        run: bin/jruby --dev -S rake ${{ matrix.target }}
 
   test-versions:
     runs-on: ubuntu-latest
@@ -423,14 +415,17 @@ jobs:
       - name: concurrent-ruby
         run: tool/concurrent-ruby-github-actions.sh
 
-  jruby-tests-dev:
-    runs-on: ubuntu-latest
+  mvn-test-m1:
+    runs-on: [self-hosted, macos, aarch64]
 
     strategy:
+      matrix:
+        package-flags: ['-Ptest']
+        # dist, complete, and osgi do not pass on 17 yet
+        java-version: ['11']
       fail-fast: false
 
-    env:
-      JRUBY_OPTS: '--dev'
+    name: mvn ${{ matrix.package-flags }} (Java ${{ matrix.java-version }} Apple aarch64)
 
     steps:
       - name: checkout
@@ -441,26 +436,29 @@ jobs:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
           restore-keys: ${{ runner.os }}-m2
-      - name: set up java 8
+      - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
-          java-version: 8
+          java-version: ${{ matrix.java-version }}
+          architecture: arm
       - name: bootstrap
         run: mvn -Pbootstrap clean package
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
-      - name: rake test:jruby
-        run: bin/jruby --dev -S rake test:jruby
+      - name: mvn package ${{ matrix.package-flags }}
+        run: tool/maven-ci-script.sh
+        env:
+          PHASE: 'package ${{ matrix.package-flags }}'
 
-  ji-specs-indy:
-    runs-on: ubuntu-latest
+  spec-m1:
+    runs-on: [self-hosted, macos, aarch64]
 
     strategy:
+      matrix:
+        target: ['spec:ffi']
+        java-version: ['11']
       fail-fast: false
 
-    env:
-      JRUBY_OPTS: '-Xcompile.invokedynamic'
+    name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }} Apple aarch64)
 
     steps:
       - name: checkout
@@ -471,47 +469,18 @@ jobs:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
           restore-keys: ${{ runner.os }}-m2
-      - name: set up java 8
+      - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
-          java-version: 8
+          java-version: ${{ matrix.java-version }}
+          architecture: arm
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
-      - name: rake spec:ji
-        run: bin/jruby --dev -S rake spec:ji
-
-  regression-specs-jit:
-    runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: false
-
-    env:
-      JRUBY_OPTS: '-Xjit.threshold=0'
-
-    steps:
-      - name: checkout
-        uses: actions/checkout@v2
-      - name: cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
-          restore-keys: ${{ runner.os }}-m2
-      - name: set up java 8
-        uses: actions/setup-java@v2
-        with:
-          distribution: 'zulu'
-          java-version: 8
-      - name: bootstrap
-        run: mvn -Pbootstrap clean package
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
-      - name: rake spec:regression
-        run: bin/jruby --dev -S rake spec:regression
+      - name: rake ${{ matrix.target }}
+        run: bin/jruby --dev -S rake ${{ matrix.target }}
 
   maven-test-openj9-8:
     runs-on: ubuntu-latest
@@ -536,6 +505,37 @@ jobs:
         run: tool/maven-ci-script.sh
         env:
           PHASE: 'package -Ptest'
+
+  rake-test-wip-8:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        target: ['test:mri:core_wip', 'test:mri:stdlib_wip', 'test:mri:extra_wip']
+      fail-fast: false
+
+    name: rake ${{ matrix.target }} (Java 8)
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: set up java 8
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'zulu'
+          java-version: '8'
+      - name: bootstrap
+        run: mvn -Pbootstrap clean package
+      - name: bundle install
+        run: bin/jruby --dev -S bundle install
+      - name: rake ${{ matrix.target }}
+        run: bin/jruby --dev -S rake ${{ matrix.target }}
 
   publish-snapshot:
     permissions:
