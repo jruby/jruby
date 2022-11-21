@@ -2986,7 +2986,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         boolean locked = fptr.lock();
         try {
             fptr.checkCharReadable(context);
-            if (c == context.nil) return c;
             if (c instanceof RubyInteger) {
                 c = EncodingUtils.encUintChr(context, (int) ((RubyInteger) c).getLongValue(), fptr.readEncoding(runtime));
             } else {
