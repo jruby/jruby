@@ -160,7 +160,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     }
 
     public void warnDeprecated(String name) {
-        if (runtime.getWarningCategories().contains(Category.DEPRECATED)) warn(ID.MISCELLANEOUS, "`" + name + "' is deprecated");
+        if (runtime.getWarningCategories().contains(Category.DEPRECATED)) warn(ID.MISCELLANEOUS, "" + name + " is deprecated");
     }
 
     public void warnDeprecatedAlternate(String name, String alternate) {
@@ -232,7 +232,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
         if (category == null) throw runtime.newArgumentError(str(runtime, "unknown category: ", arg));
 
-        return runtime.newBoolean(category != null && runtime.getWarningCategories().contains(category));
+        return runtime.newBoolean(runtime.getWarningCategories().contains(category));
     }
 
     @JRubyMethod(name = "[]=")
@@ -297,15 +297,6 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         IRubyObject errorStream = runtime.getGlobalVariables().get("$stderr");
         String buffer = fileName + " warning: " + message + '\n';
         errorStream.callMethod(runtime.getCurrentContext(), "write", runtime.newString(buffer));
-    }
-
-    // When runtime verbose is toggled we change the categories to reflect that.
-    public void adjustCategories(boolean isVerbose) {
-        if (isVerbose) {
-            runtime.getWarningCategories().add(Category.DEPRECATED);
-        } else {
-            runtime.getWarningCategories().remove(Category.DEPRECATED);
-        }
     }
 
     public enum Category {

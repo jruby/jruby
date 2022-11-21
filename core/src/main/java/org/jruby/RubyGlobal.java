@@ -1015,7 +1015,7 @@ public class RubyGlobal {
         public IRubyObject set(IRubyObject value) {
             IRubyObject result = super.set(value);
 
-            if (!value.isNil()) runtime.getWarnings().warnDeprecated(name);
+            if (!value.isNil()) runtime.getWarnings().warnDeprecated("`" + name + "'");
 
             return result;
         }
@@ -1030,7 +1030,7 @@ public class RubyGlobal {
         public IRubyObject set(IRubyObject value) {
             IRubyObject result = super.set(value);
 
-            if (!result.isNil()) runtime.getWarnings().warnDeprecated(name);
+            if (!result.isNil()) runtime.getWarnings().warnDeprecated("`" + name + "'");
 
             return result;
         }
