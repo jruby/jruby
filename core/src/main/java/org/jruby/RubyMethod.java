@@ -410,5 +410,9 @@ public class RubyMethod extends AbstractRubyMethod {
         return name(context);
     }
 
+    public IRubyObject getReceiver() {
+        return receiver;
+    }
+
 }
 
