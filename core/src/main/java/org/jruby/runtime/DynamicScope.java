@@ -126,7 +126,7 @@ public abstract class DynamicScope implements Cloneable {
             values[i] = getValueDepthZero(i);
         }
         return values;
-    };
+    }
 
     /**
      * Get value from current scope or one of its captured scopes.
