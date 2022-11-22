@@ -502,7 +502,8 @@ jobs:
           distribution: 'adopt-openj9'
           java-version: '8'
       - name: test profile
-        run: "tool/maven-ci-script.sh ; true"
+#        run: "tool/maven-ci-script.sh"
+        run: "true"
         env:
           PHASE: 'package -Ptest'
 
