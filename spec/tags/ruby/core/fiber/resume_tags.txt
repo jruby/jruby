@@ -1,1 +1,0 @@
-wip:Fiber#resume raises a FiberError if the Fiber tries to resume itself

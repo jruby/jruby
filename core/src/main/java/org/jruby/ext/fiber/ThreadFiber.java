@@ -137,9 +137,10 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         if (!alive()) throw runtime.newFiberError("dead fiber called");
 
         final FiberData data = this.data;
-        if (root || data.prev != null || data.transferred) throw runtime.newFiberError("attempt to resume a resuming fiber");
-        
         FiberData currentFiberData = context.getFiber().data;
+
+        if (currentFiberData == data) throw runtime.newFiberError("attempt to resume the current fiber");
+        if (root || data.prev != null || data.transferred) throw runtime.newFiberError("attempt to resume a resuming fiber");
         
         if (data == currentFiberData) {
             switch (values.length) {
