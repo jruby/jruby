@@ -480,7 +480,8 @@ jobs:
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake ${{ matrix.target }}
-        run: bin/jruby --dev -S rake ${{ matrix.target }}
+#        run: "bin/jruby --dev -S rake ${{ matrix.target }}"
+        run: "true"
 
   maven-test-openj9-8:
     runs-on: ubuntu-latest
