@@ -1,1 +1,1 @@
-wip:Fiber#resume can work with Fiber#transfer
+fails:Fiber#resume can work with Fiber#transfer

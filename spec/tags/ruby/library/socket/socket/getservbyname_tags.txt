@@ -1,1 +1,1 @@
-wip:Socket#getservbyname raises a SocketError when the service or port is invalid
+fails:Socket#getservbyname raises a SocketError when the service or port is invalid
