@@ -175,7 +175,7 @@ class Enumerator
     end
 
     def with_index(*args)
-      return to_enum(:with_index, *args) unless block_given?
+      return to_enum(:with_index, *args) { size } unless block_given?
       super
     end
     def each_slice(*args)
