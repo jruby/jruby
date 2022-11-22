@@ -1,8 +1,0 @@
-exclude :"test_embedded_expr_in_heredoc", "work in progress"
-exclude :"test_expr_at_beginning_in_heredoc", "work in progress"
-exclude :"test_lexer_scan_with_syntax_error", "work in progress"
-exclude :"test_nested_dedent_heredoc", "work in progress"
-exclude :"test_raise_errors_keyword", "work in progress"
-exclude :"test_slice", "work in progress"
-exclude :"test_space_after_expr_in_heredoc", "work in progress"
-exclude :"test_token_aftr_error_heredoc", "work in progress"

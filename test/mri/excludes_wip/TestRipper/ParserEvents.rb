@@ -1,7 +1,0 @@
-exclude :"test_BEGIN", "work in progress"
-exclude :"test_endless_def", "work in progress"
-exclude :"test_endless_defs", "work in progress"
-exclude :"test_ignored_nl", "work in progress"
-exclude :"test_warn_mismatched_indentations", "work in progress"
-exclude :"test_warning_invalid_magic_comment", "work in progress"
-exclude :"test_event_coverage", "work in progress"
