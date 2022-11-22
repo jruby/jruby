@@ -167,6 +167,10 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         if (runtime.getWarningCategories().contains(Category.DEPRECATED)) warn(ID.MISCELLANEOUS, name + " is deprecated; use " + alternate + " instead");
     }
 
+    public void warnDeprecatedForRemoval(String name, String version) {
+        if (runtime.getWarningCategories().contains(Category.DEPRECATED)) warn(ID.MISCELLANEOUS, name + " is deprecated and will be removed in Ruby " + version);
+    }
+
     public void warnOnce(ID id, String message) {
         if (!runtime.warningsEnabled()) return;
         if (oncelers.contains(id)) return;
