@@ -1,2 +1,2 @@
 fails:Kernel#__dir__ when used in eval with a given filename returns File.dirname(filename)
-wip:Kernel#__dir__ when used in eval with top level binding returns nil
+fails:Kernel#__dir__ when used in eval with top level binding returns nil

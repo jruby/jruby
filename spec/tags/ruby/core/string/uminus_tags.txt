@@ -1,1 +1,1 @@
-wip:String#-@ interns the provided string if it is frozen
+fails:String#-@ interns the provided string if it is frozen

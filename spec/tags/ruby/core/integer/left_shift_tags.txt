@@ -1,1 +1,1 @@
-wip:Integer#<< (with n << m) when m is a bignum or larger than int raises NoMemoryError when m > 0 and n != 0
+fails:Integer#<< (with n << m) when m is a bignum or larger than int raises NoMemoryError when m > 0 and n != 0
