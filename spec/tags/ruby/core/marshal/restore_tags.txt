@@ -1,5 +1,3 @@
 fails:Marshal.restore for a Symbol loads a binary encoded Symbol
 fails:Marshal.restore for an Object raises ArgumentError if the object from an 'o' stream is not dumpable as 'o' type user class
-fails:Marshal.restore for a wrapped C pointer raises ArgumentError when the local class is a regular object ERROR
-
-wip:Marshal.restore for a wrapped C pointer raises ArgumentError when the local class is a regular object
+fails:Marshal.restore for a wrapped C pointer raises ArgumentError when the local class is a regular object
