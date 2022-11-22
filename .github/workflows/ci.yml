@@ -511,7 +511,7 @@ jobs:
 
     strategy:
       matrix:
-        target: ['test:mri:core_wip', 'test:mri:stdlib_wip', 'test:mri:extra_wip']
+        target: ['test:mri:core_wip', 'test:mri:stdlib_wip']
       fail-fast: false
 
     name: rake ${{ matrix.target }} (Java 8)
