@@ -1481,7 +1481,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         private final CallSite site;
 
         public SymbolProcBody(Ruby runtime, String symbol) {
-            super(runtime.getStaticScopeFactory().getDummyScope(), Signature.OPTIONAL);
+            super(runtime.getStaticScopeFactory().getDummyScope(), Signature.ONE_REQUIRED);
             this.site = MethodIndex.getFunctionalCallSite(symbol);
         }
 
