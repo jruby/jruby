@@ -1,7 +1,5 @@
 fails:Process.spawn sets the umask if given the :umask option
 fails:Process.spawn raises an Errno::EACCES or Errno::EISDIR when passed a directory
-fails:Process.spawn defaults :close_others to true
-hangs:Process.spawn when passed close_others: true closes file descriptors >= 3 in the child process even if fds are set close_on_exec=false
 linux:Process.spawn inside Dir.chdir kills extra chdir processes
 windows:Process.spawn executes the given command
 windows:Process.spawn sets environment variables in the child environment

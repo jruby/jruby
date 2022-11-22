@@ -1,7 +1,4 @@
-critical(hangs):Fiber#transfer can be invoked from the same Fiber it transfers control to
-critical(hangs):Fiber#transfer raises a FiberError when transferring to a Fiber which resumes itself
 unstable(intermittent):Fiber#transfer raises a LocalJumpError if the block includes a return statement
-fails:Fiber#transfer can be invoked from the same Fiber it transfers control to
 windows(hangs):Fiber#transfer raises a FiberError if the Fiber is dead
 wip:Fiber#transfer transfers control from one Fiber to another when called from a Fiber
 wip:Fiber#transfer can not transfer control to a Fiber that has suspended by Fiber.yield

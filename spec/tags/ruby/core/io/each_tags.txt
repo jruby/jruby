@@ -1,3 +1,2 @@
-critical:IO#each with limit when limit is 0 raises an ArgumentError
 fails:IO#each with both separator and limit when no block is given returns an Enumerator
 fails:IO#each when passed chomp raises exception when options passed as Hash

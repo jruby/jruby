@@ -1,1 +1,0 @@
-critical(fails on Travis):The RUBYLIB environment variable adds the directory at the front of $LOAD_PATH

@@ -1,5 +1,4 @@
 fails:IO.foreach when the filename starts with | gets data from a fork when passed -
 windows:IO.foreach when the filename starts with | gets data from the standard out of the subprocess
-critical(hangs):IO.foreach when passed name, object when the object is an Integer when passed limit raises ArgumentError when passed 0 as a limit
 fails:IO.foreach when passed name, object when the object is an options Hash raises TypeError exception
 fails:IO.foreach when passed name, object, object when the second object is an options Hash raises TypeError exception

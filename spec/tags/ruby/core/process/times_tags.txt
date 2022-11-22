@@ -1,2 +1,1 @@
 fails:Process.times uses getrusage when available to improve precision beyond milliseconds
-fails:An exception occurred during: Process.times

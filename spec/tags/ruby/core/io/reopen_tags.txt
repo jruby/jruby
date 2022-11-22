@@ -1,4 +1,3 @@
-fails:IO#reopen with a String closes the file descriptor obtained by opening the new file
 windows:IO#reopen calls #to_io to convert an object
 windows:IO#reopen with a String calls #to_path on non-String arguments
 windows:IO#reopen with a String opens a path after writing to the original file descriptor

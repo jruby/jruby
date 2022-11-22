@@ -1,4 +1,3 @@
-fails(compiler):Kernel#sprintf passes some tests for negative %u
 fails:Kernel#sprintf integer formats u converts argument as a decimal number
 fails:Kernel#sprintf float formats a converts floating point argument as [-]0xh.hhhhp[+-]dd
 fails:Kernel#sprintf float formats a displays Float::INFINITY as Inf

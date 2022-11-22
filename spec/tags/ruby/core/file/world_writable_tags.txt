@@ -1,2 +1,0 @@
-windows:File.world_writable? returns a Fixnum if the file is chmod 777
-windows:File.world_writable? returns a Fixnum if the file is a directory and chmod 777

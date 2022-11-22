@@ -1,4 +1,3 @@
-fails(not implemented, jruby/jruby#6149):TracePoint#enable without a block returns true if trace was enabled
 fails(not implemented, jruby/jruby#6149):TracePoint#enable target: option enables trace point for specific location
 fails(not implemented, jruby/jruby#6149):TracePoint#enable target: option traces all the events triggered in specified location
 fails(not implemented, jruby/jruby#6149):TracePoint#enable target: option does not trace events in nested locations

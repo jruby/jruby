@@ -1,1 +1,0 @@
-windows:WIN32OLE#ole_get_methods returns an array of WIN32OLE_METHOD objects
