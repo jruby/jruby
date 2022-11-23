@@ -1285,10 +1285,15 @@ public class RubyComplex extends RubyNumeric {
 
         final RubyFixnum zero = RubyFixnum.zero(runtime);
 
-        RubyNumeric r = convertString(context, sr, zero);
-        RubyNumeric i = convertString(context, si, zero);
+        try {
+            RubyNumeric r = convertString(context, sr, zero);
+            RubyNumeric i = convertString(context, si, zero);
 
-        return new IRubyObject[] { po ? newComplexPolar(context, r, i) : newComplexCanonicalize(context, r, i), re };
+            return new IRubyObject[]{po ? newComplexPolar(context, r, i) : newComplexCanonicalize(context, r, i), re};
+        } catch(RaiseException exception) {
+            context.setErrorInfo(context.nil);
+            return new IRubyObject[] {context.nil, str};
+        }
     }
 
     private static RubyNumeric convertString(ThreadContext context, final IRubyObject s, RubyFixnum zero) {
@@ -1300,7 +1305,7 @@ public class RubyComplex extends RubyNumeric {
         if (f_gt_p(context, s.callMethod(context, "count", RubyString.newStringShared(runtime, _eE)), zero)) {
             return (RubyNumeric) f_to_f(context, s);
         }
-        return (RubyNumeric) f_to_i(context, s);
+        return (RubyNumeric) ((RubyString) s).stringToInum(10, true);
     }
 
     // MRI: string_to_c_strict
@@ -1316,7 +1321,7 @@ public class RubyComplex extends RubyNumeric {
         IRubyObject[] ary = str_to_c_internal(context, str);
         if (ary[0] == context.nil || ary[1].convertToString().getByteList().length() > 0) {
             if (raise) {
-                throw context.runtime.newArgumentError(str(context.runtime, "invalid value for convert(): ", str.callMethod(context, "inspect")));
+                throw context.runtime.newArgumentError(str(context.runtime, "`Complex': invalid value for convert(): ", str.callMethod(context, "inspect")));
             }
 
             return context.nil;
