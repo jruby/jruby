@@ -1321,7 +1321,7 @@ public class RubyComplex extends RubyNumeric {
         IRubyObject[] ary = str_to_c_internal(context, str);
         if (ary[0] == context.nil || ary[1].convertToString().getByteList().length() > 0) {
             if (raise) {
-                throw context.runtime.newArgumentError(str(context.runtime, "`Complex': invalid value for convert(): ", str.callMethod(context, "inspect")));
+                throw context.runtime.newArgumentError(str(context.runtime, "invalid value for convert(): ", str.callMethod(context, "inspect")));
             }
 
             return context.nil;
