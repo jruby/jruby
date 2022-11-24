@@ -188,17 +188,28 @@ class CGI
   # Using #header with the HTML5 tag maker will create a <header> element.
   alias :header :http_header
 
+  def _no_crlf_check(str)
+    if str
+      str = str.to_s
+      raise "A HTTP status or header field must not include CR and LF" if str =~ /[\r\n]/
+      str
+    else
+      nil
+    end
+  end
+  private :_no_crlf_check
+
   def _header_for_string(content_type) #:nodoc:
     buf = ''.dup
     if nph?()
-      buf << "#{$CGI_ENV['SERVER_PROTOCOL'] || 'HTTP/1.0'} 200 OK#{EOL}"
+      buf << "#{_no_crlf_check($CGI_ENV['SERVER_PROTOCOL']) || 'HTTP/1.0'} 200 OK#{EOL}"
       buf << "Date: #{CGI.rfc1123_date(Time.now)}#{EOL}"
-      buf << "Server: #{$CGI_ENV['SERVER_SOFTWARE']}#{EOL}"
+      buf << "Server: #{_no_crlf_check($CGI_ENV['SERVER_SOFTWARE'])}#{EOL}"
       buf << "Connection: close#{EOL}"
     end
-    buf << "Content-Type: #{content_type}#{EOL}"
+    buf << "Content-Type: #{_no_crlf_check(content_type)}#{EOL}"
     if @output_cookies
-      @output_cookies.each {|cookie| buf << "Set-Cookie: #{cookie}#{EOL}" }
+      @output_cookies.each {|cookie| buf << "Set-Cookie: #{_no_crlf_check(cookie)}#{EOL}" }
     end
     return buf
   end # _header_for_string
@@ -213,9 +224,9 @@ class CGI
     ## NPH
     options.delete('nph') if defined?(MOD_RUBY)
     if options.delete('nph') || nph?()
-      protocol = $CGI_ENV['SERVER_PROTOCOL'] || 'HTTP/1.0'
+      protocol = _no_crlf_check($CGI_ENV['SERVER_PROTOCOL']) || 'HTTP/1.0'
       status = options.delete('status')
-      status = HTTP_STATUS[status] || status || '200 OK'
+      status = HTTP_STATUS[status] || _no_crlf_check(status) || '200 OK'
       buf << "#{protocol} #{status}#{EOL}"
       buf << "Date: #{CGI.rfc1123_date(Time.now)}#{EOL}"
       options['server'] ||= $CGI_ENV['SERVER_SOFTWARE'] || ''
@@ -223,45 +234,45 @@ class CGI
     end
     ## common headers
     status = options.delete('status')
-    buf << "Status: #{HTTP_STATUS[status] || status}#{EOL}" if status
+    buf << "Status: #{HTTP_STATUS[status] || _no_crlf_check(status)}#{EOL}" if status
     server = options.delete('server')
-    buf << "Server: #{server}#{EOL}" if server
+    buf << "Server: #{_no_crlf_check(server)}#{EOL}" if server
     connection = options.delete('connection')
-    buf << "Connection: #{connection}#{EOL}" if connection
+    buf << "Connection: #{_no_crlf_check(connection)}#{EOL}" if connection
     type = options.delete('type')
-    buf << "Content-Type: #{type}#{EOL}" #if type
+    buf << "Content-Type: #{_no_crlf_check(type)}#{EOL}" #if type
     length = options.delete('length')
-    buf << "Content-Length: #{length}#{EOL}" if length
+    buf << "Content-Length: #{_no_crlf_check(length)}#{EOL}" if length
     language = options.delete('language')
-    buf << "Content-Language: #{language}#{EOL}" if language
+    buf << "Content-Language: #{_no_crlf_check(language)}#{EOL}" if language
     expires = options.delete('expires')
     buf << "Expires: #{CGI.rfc1123_date(expires)}#{EOL}" if expires
     ## cookie
     if cookie = options.delete('cookie')
       case cookie
       when String, Cookie
-        buf << "Set-Cookie: #{cookie}#{EOL}"
+        buf << "Set-Cookie: #{_no_crlf_check(cookie)}#{EOL}"
       when Array
         arr = cookie
-        arr.each {|c| buf << "Set-Cookie: #{c}#{EOL}" }
+        arr.each {|c| buf << "Set-Cookie: #{_no_crlf_check(c)}#{EOL}" }
       when Hash
         hash = cookie
-        hash.each_value {|c| buf << "Set-Cookie: #{c}#{EOL}" }
+        hash.each_value {|c| buf << "Set-Cookie: #{_no_crlf_check(c)}#{EOL}" }
       end
     end
     if @output_cookies
-      @output_cookies.each {|c| buf << "Set-Cookie: #{c}#{EOL}" }
+      @output_cookies.each {|c| buf << "Set-Cookie: #{_no_crlf_check(c)}#{EOL}" }
     end
     ## other headers
     options.each do |key, value|
-      buf << "#{key}: #{value}#{EOL}"
+      buf << "#{_no_crlf_check(key)}: #{_no_crlf_check(value)}#{EOL}"
     end
     return buf
   end # _header_for_hash
   private :_header_for_hash
 
   def nph?  #:nodoc:
-    return /IIS\/(\d+)/.match($CGI_ENV['SERVER_SOFTWARE']) && $1.to_i < 5
+    return /IIS\/(\d+)/ =~ $CGI_ENV['SERVER_SOFTWARE'] && $1.to_i < 5
   end
 
   def _header_for_modruby(buf)  #:nodoc:
@@ -375,14 +386,14 @@ class CGI
 
   # Parse an HTTP query string into a hash of key=>value pairs.
   #
-  #   params = CGI::parse("query_string")
+  #   params = CGI.parse("query_string")
   #     # {"name1" => ["value1", "value2", ...],
   #     #  "name2" => ["value1", "value2", ...], ... }
   #
-  def CGI::parse(query)
+  def self.parse(query)
     params = {}
     query.split(/[&;]/).each do |pairs|
-      key, value = pairs.split('=',2).collect{|v| CGI::unescape(v) }
+      key, value = pairs.split('=',2).collect{|v| CGI.unescape(v) }
 
       next unless key
 
@@ -544,11 +555,11 @@ class CGI
         /Content-Disposition:.* filename=(?:"(.*?)"|([^;\r\n]*))/i.match(head)
         filename = $1 || $2 || ''.dup
         filename = CGI.unescape(filename) if unescape_filename?()
-        body.instance_variable_set(:@original_filename, filename.taint)
+        body.instance_variable_set(:@original_filename, filename)
         ## content type
         /Content-Type: (.*)/i.match(head)
         (content_type = $1 || ''.dup).chomp!
-        body.instance_variable_set(:@content_type, content_type.taint)
+        body.instance_variable_set(:@content_type, content_type)
         ## query parameter name
         /Content-Disposition:.* name=(?:"(.*?)"|([^;\r\n]*))/i.match(head)
         name = $1 || $2 || ''
@@ -607,6 +618,7 @@ class CGI
     end
     def unescape_filename?  #:nodoc:
       user_agent = $CGI_ENV['HTTP_USER_AGENT']
+      return false unless user_agent
       return /Mac/i.match(user_agent) && /Mozilla/i.match(user_agent) && !/MSIE/i.match(user_agent)
     end
 
@@ -648,7 +660,7 @@ class CGI
     # Reads query parameters in the @params field, and cookies into @cookies.
     def initialize_query()
       if ("POST" == env_table['REQUEST_METHOD']) and
-        %r|\Amultipart/form-data.*boundary=\"?([^\";,]+)\"?|.match(env_table['CONTENT_TYPE'])
+        %r|\Amultipart/form-data.*boundary=\"?([^\";,]+)\"?| =~ env_table['CONTENT_TYPE']
         current_max_multipart_length = @max_multipart_length.respond_to?(:call) ? @max_multipart_length.call : @max_multipart_length
         raise StandardError.new("too large multipart data.") if env_table['CONTENT_LENGTH'].to_i > current_max_multipart_length
         boundary = $1.dup
@@ -656,7 +668,7 @@ class CGI
         @params = read_multipart(boundary, Integer(env_table['CONTENT_LENGTH']))
       else
         @multipart = false
-        @params = CGI::parse(
+        @params = CGI.parse(
                     case env_table['REQUEST_METHOD']
                     when "GET", "HEAD"
                       if defined?(MOD_RUBY)
@@ -686,7 +698,7 @@ class CGI
         end
       end
 
-      @cookies = CGI::Cookie::parse((env_table['HTTP_COOKIE'] or env_table['COOKIE']))
+      @cookies = CGI::Cookie.parse((env_table['HTTP_COOKIE'] or env_table['COOKIE']))
     end
     private :initialize_query
 
