@@ -469,19 +469,24 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return to_s(metaClass.runtime);
     }
 
-    @JRubyMethod(name = {"to_s", "name"})
+    @JRubyMethod(name = "to_s")
     public IRubyObject to_s(ThreadContext context) {
         return to_s(context.runtime);
     }
 
     final RubyString to_s(Ruby runtime) {
-        // FIXME: A race here where two in-flight to_s on same symbol can return a different instance.
-        if (rubyString == null) {
-            rubyString = RubyString.newStringShared(runtime, symbolBytes);
-            rubyString.setFrozen(true);
-        }
+        return RubyString.newStringShared(runtime, getBytes());
+    }
 
-        return rubyString;
+    @JRubyMethod(name = "name")
+    public IRubyObject name(ThreadContext context) {
+      // FIXME: A race here where two in-flight to_s on same symbol can return a different instance.
+      if (rubyString == null) {
+        rubyString = RubyString.newStringShared(context.runtime, getBytes());
+        rubyString.setFrozen(true);
+      }
+
+      return rubyString;
     }
 
     public IRubyObject id2name() {
