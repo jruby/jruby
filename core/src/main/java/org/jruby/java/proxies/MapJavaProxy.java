@@ -619,7 +619,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
      */
     @JRubyMethod(name = "index")
     public IRubyObject index(ThreadContext context, IRubyObject expected) {
-        return getOrCreateRubyHashMap(context.runtime).index(context, expected);
+        return getOrCreateRubyHashMap(context.runtime).key(context, expected);
     }
 
     /** rb_hash_key
