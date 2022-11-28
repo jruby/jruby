@@ -1795,18 +1795,9 @@ public class RubyHash extends RubyObject implements Map {
         return to_a(context).sort_bang(context, block);
     }
 
-    /** rb_hash_index
-     *
-     */
-    @JRubyMethod(name = "index")
-    public IRubyObject index(ThreadContext context, IRubyObject expected) {
-        context.runtime.getWarnings().warn(ID.DEPRECATED_METHOD, "Hash#index is deprecated; use Hash#key");
-        return key(context, expected);
-    }
-
     @Deprecated
     public IRubyObject index19(ThreadContext context, IRubyObject expected) {
-        return index(context, expected);
+        return key(context, expected);
     }
 
     @JRubyMethod
@@ -2460,7 +2451,7 @@ public class RubyHash extends RubyObject implements Map {
         return RubyProc.newProc(context.runtime, block, Block.Type.LAMBDA);
     }
 
-    @JRubyMethod(module = true)
+    @JRubyMethod(meta = true)
     public static IRubyObject ruby2_keywords_hash(ThreadContext context, IRubyObject _self, IRubyObject arg) {
         TypeConverter.checkType(context, arg, context.runtime.getHash());
 
@@ -2470,7 +2461,7 @@ public class RubyHash extends RubyObject implements Map {
         return hash;
     }
 
-    @JRubyMethod(module = true, name = "ruby2_keywords_hash?")
+    @JRubyMethod(meta = true, name = "ruby2_keywords_hash?")
     public static IRubyObject ruby2_keywords_hash_p(ThreadContext context, IRubyObject _self, IRubyObject arg) {
         TypeConverter.checkType(context, arg, context.runtime.getHash());
 
