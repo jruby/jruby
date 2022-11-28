@@ -2125,8 +2125,7 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(rest = true)
     public RubyHash merge(ThreadContext context, IRubyObject[] others, Block block) {
-        RubyHash dup = (RubyHash) dup();
-        dup.setComparedByIdentity(isComparedByIdentity());
+        RubyHash dup = (RubyHash) dup(context);
         return dup.merge_bang(context, others, block);
     }
 

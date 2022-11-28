@@ -704,7 +704,7 @@ public class IRRuntimeHelpers {
             // This is just an ordinary hash as last argument
             return last;
         } else {
-            return hash.isEmpty() ? UNDEFINED : hash.dupFast(context);
+            return hash.dupFast(context);
         }
     }
 
