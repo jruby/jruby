@@ -648,6 +648,9 @@ public abstract class IRScope implements ParseResult {
         if (optimizedInterpreterContext != null) return optimizedInterpreterContext.getLinearizedBBList();
         if (fullInterpreterContext != null) return fullInterpreterContext.getLinearizedBBList();
 
+        // IRB has some scenario where we mark ic = null then add a closure. If closure jits we boom.
+        if (interpreterContext == null) return null;
+
         for (IRScope scope: getClosures()) {
             scope.prepareForCompilation();
         }
