@@ -40,6 +40,10 @@ public class YieldInstr extends TwoOperandResultBaseInstr implements FixedArityI
         return getOperand2();
     }
 
+    public int getFlags() {
+        return flags;
+    }
+
     @Override
     public Instr clone(CloneInfo ii) {
         // FIXME: Is it necessary to clone a yield instruction in a method

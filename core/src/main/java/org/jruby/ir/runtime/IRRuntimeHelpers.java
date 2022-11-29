@@ -1226,11 +1226,6 @@ public class IRRuntimeHelpers {
         return ((RubyHash) rest).dupFast(context);
     }
 
-    @JIT
-    public static void markKeywordOnCallInfo(ThreadContext context) {
-        context.callInfo |= CALL_KEYWORD;
-    }
-
     @JIT @Interp
     public static IRubyObject receiveKeywordRestArg(ThreadContext context, IRubyObject keywords) {
         return keywords == UNDEFINED ? RubyHash.newSmallHash(context.runtime) : (RubyHash) keywords;
@@ -1537,8 +1532,6 @@ public class IRRuntimeHelpers {
 
         }
 
-        if (!literal) runtime.getCurrentContext().callInfo |= CALL_KEYWORD;
-
         return hash;
     }
 
@@ -1550,8 +1543,6 @@ public class IRRuntimeHelpers {
         for (int i = 0; i < pairs.length;) {
             hash.fastASetCheckString(runtime, pairs[i++], pairs[i++]);
         }
-
-        context.callInfo |= CALL_KEYWORD;
 
         return hash;
     }

@@ -1207,9 +1207,7 @@ public class JVMVisitor extends IRVisitor {
             }
         }
 
-        m.loadContext();
-        m.adapter.ldc(call.getFlags());
-        m.invokeIRHelper("setCallInfo", sig(void.class, ThreadContext.class, int.class));
+        setupCallInfo(call.getFlags());
 
         switch (call.getCallType()) {
             case FUNCTIONAL:
@@ -1637,9 +1635,7 @@ public class JVMVisitor extends IRVisitor {
             }
         }
 
-        m.loadContext();
-        m.adapter.ldc(instr.getFlags());
-        m.invokeIRHelper("setCallInfo", sig(void.class, ThreadContext.class, int.class));
+        setupCallInfo(instr.getFlags());
 
         switch (operation) {
             case INSTANCE_SUPER:
@@ -2460,12 +2456,19 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().storeSelf();
     }
 
+    private void setupCallInfo(int flags) {
+        jvmMethod().loadContext();
+        jvmMethod().adapter.ldc(flags);
+        jvmMethod().invokeIRHelper("setCallInfo", sig(void.class, ThreadContext.class, int.class));
+    }
+
     @Override
     public void YieldInstr(YieldInstr yieldinstr) {
         jvmMethod().loadContext();
         visit(yieldinstr.getBlockArg());
 
         if (yieldinstr.getYieldArg() == UndefinedValue.UNDEFINED) {
+            setupCallInfo(yieldinstr.getFlags());
             jvmMethod().getYieldCompiler().yieldSpecific();
         } else {
             Operand yieldOp = yieldinstr.getYieldArg();
@@ -2474,9 +2477,11 @@ public class JVMVisitor extends IRVisitor {
                 for (Operand yieldValue : yieldValues) {
                     visit(yieldValue);
                 }
+                setupCallInfo(yieldinstr.getFlags());
                 jvmMethod().getYieldCompiler().yieldValues(yieldValues.size());
             } else {
                 visit(yieldinstr.getYieldArg());
+                setupCallInfo(yieldinstr.getFlags());
                 jvmMethod().getYieldCompiler().yield(yieldinstr.isUnwrapArray());
             }
         }
@@ -2641,12 +2646,6 @@ public class JVMVisitor extends IRVisitor {
         } else {
             jvmMethod().getDynamicValueCompiler().hash(pairs.size());
         }
-
-        if (kwargs || !hash.literal) {
-            jvmMethod().loadContext();
-            jvmMethod().invokeIRHelper("markKeywordOnCallInfo", sig(void.class, ThreadContext.class));
-        }
-
     }
 
     @Override
