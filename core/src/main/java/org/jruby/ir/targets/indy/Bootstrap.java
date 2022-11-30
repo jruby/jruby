@@ -592,7 +592,6 @@ public class Bootstrap {
         for (int i = 0; i < pairs.length;) {
             hash.fastASetCheckString(runtime, pairs[i++], pairs[i++]);
         }
-        if (!literal) context.callInfo |= CALL_KEYWORD;
         return hash;
     }
 

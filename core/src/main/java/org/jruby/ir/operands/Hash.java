@@ -140,9 +140,6 @@ public class Hash extends Operand {
             hash.fastASetCheckString(runtime, key, value);
         }
 
-        // We mask this after we populate the hash just in case those retrieves are something which can transfer
-        // control to another call (which would reset callInfo if we set this above).
-        if (isKeywordRest() || !literal) IRRuntimeHelpers.markKeywordOnCallInfo(context);
         return hash;
     }
 

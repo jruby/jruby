@@ -1018,8 +1018,6 @@ public class IRRuntimeHelpers {
 
     @JIT @Interp
     public static IRubyObject mergeKeywordArguments(ThreadContext context, IRubyObject restKwarg, IRubyObject explicitKwarg) {
-        // FIXME: Not sure we need to dup in cases like if we IS_EMPTY and realize we are passing empty kwargs around.
-        int callInfo = context.callInfo;  // we may call to_hash. save state.
         // FIXME: JIT is generating a hash which is empty but seems to contain an %undefined within it.
         //   This was crashing because it would dup it and then try and dup the undefined within it.
         //   This replacement logic is correct even if that was figured out but this should just be
@@ -1040,12 +1038,11 @@ public class IRRuntimeHelpers {
 
         // If all the kwargs are empty let's discard them
         if (otherHash.empty_p(context).isTrue()) {
-            context.callInfo = callInfo;
             return hash;
         }
 
         otherHash.visitAll(context, new KwargMergeVisitor(hash), Block.NULL_BLOCK);
-        context.callInfo = callInfo | CALL_KEYWORD | CALL_KEYWORD_REST;
+        context.callInfo = CALL_KEYWORD | CALL_KEYWORD_REST;
 
         return hash;
     }
@@ -1227,11 +1224,6 @@ public class IRRuntimeHelpers {
     public static IRubyObject keywordRestOnHash(ThreadContext context, IRubyObject rest) {
         TypeConverter.checkType(context, rest, context.runtime.getHash());
         return ((RubyHash) rest).dupFast(context);
-    }
-
-    @JIT
-    public static void markKeywordOnCallInfo(ThreadContext context) {
-        context.callInfo |= CALL_KEYWORD;
     }
 
     @JIT @Interp
@@ -1540,8 +1532,6 @@ public class IRRuntimeHelpers {
 
         }
 
-        if (!literal) runtime.getCurrentContext().callInfo |= CALL_KEYWORD;
-
         return hash;
     }
 
@@ -1553,8 +1543,6 @@ public class IRRuntimeHelpers {
         for (int i = 0; i < pairs.length;) {
             hash.fastASetCheckString(runtime, pairs[i++], pairs[i++]);
         }
-
-        context.callInfo |= CALL_KEYWORD;
 
         return hash;
     }
