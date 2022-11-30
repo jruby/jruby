@@ -160,7 +160,8 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
                         (IRubyObject) operands[3].retrieve(context, self, currScope, currDynScope, temp));
             case MERGE_KWARGS:
                 return IRRuntimeHelpers.mergeKeywordArguments(context, (IRubyObject) arg1,
-                        (IRubyObject) getArgs()[1].retrieve(context, self, currScope, currDynScope, temp));
+                        (IRubyObject) getArgs()[1].retrieve(context, self, currScope, currDynScope, temp),
+                        getArgs()[2] == context.runtime.getIRManager().getTrue());
             case IS_HASH_EMPTY:
                 return IRRuntimeHelpers.isHashEmpty(context, (IRubyObject) arg1);
             case HASH_CHECK:

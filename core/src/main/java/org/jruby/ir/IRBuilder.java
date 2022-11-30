@@ -715,7 +715,7 @@ public class IRBuilder {
         Variable splatValue = copy(new Hash(new ArrayList<>()));
         for (KeyValuePair<Node, Node> pair: pairs) {
             Operand splat = buildWithOrder(pair.getValue(), keywordArgs.containsVariableAssignment());
-            addInstr(new RuntimeHelperCall(splatValue, MERGE_KWARGS, new Operand[] { splatValue, splat }));
+            addInstr(new RuntimeHelperCall(splatValue, MERGE_KWARGS, new Operand[] { splatValue, splat, fals() }));
         }
 
         return splatValue;
@@ -3660,11 +3660,11 @@ public class IRBuilder {
                     hash = copy(new Hash(args, hashNode.isLiteral()));
                     args = new ArrayList<>();           // Used args but we may find more after the splat so we reset
                 } else if (!args.isEmpty()) {
-                    addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args) }));
+                    addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args), tru()}));
                     args = new ArrayList<>();
                 }
                 Operand splat = buildWithOrder(pair.getValue(), hasAssignments);
-                addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, splat}));
+                addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, splat, tru()}));
                 continue;
             } else {
                 keyOperand = buildWithOrder(key, hasAssignments);
@@ -3676,7 +3676,7 @@ public class IRBuilder {
         if (hash == null) {           // non-**arg ordinary hash
             hash = copy(new Hash(args, hashNode.isLiteral()));
         } else if (!args.isEmpty()) { // ordinary hash values encountered after a **arg
-            addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args) }));
+            addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args), tru()}));
         }
 
         return hash;

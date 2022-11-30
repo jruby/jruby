@@ -1017,7 +1017,8 @@ public class IRRuntimeHelpers {
     }
 
     @JIT @Interp
-    public static IRubyObject mergeKeywordArguments(ThreadContext context, IRubyObject restKwarg, IRubyObject explicitKwarg) {
+    public static IRubyObject mergeKeywordArguments(ThreadContext context, IRubyObject restKwarg,
+                                                    IRubyObject explicitKwarg, boolean checkForDuplicates) {
         // FIXME: JIT is generating a hash which is empty but seems to contain an %undefined within it.
         //   This was crashing because it would dup it and then try and dup the undefined within it.
         //   This replacement logic is correct even if that was figured out but this should just be
@@ -1041,7 +1042,12 @@ public class IRRuntimeHelpers {
             return hash;
         }
 
-        otherHash.visitAll(context, new KwargMergeVisitor(hash), Block.NULL_BLOCK);
+        if (checkForDuplicates) {
+            otherHash.visitAll(context, new KwargMergeVisitor(hash), Block.NULL_BLOCK);
+        } else {
+            hash.merge_bang(context, new IRubyObject[] { otherHash }, Block.NULL_BLOCK);
+        }
+
         context.callInfo = CALL_KEYWORD | CALL_KEYWORD_REST;
 
         return hash;

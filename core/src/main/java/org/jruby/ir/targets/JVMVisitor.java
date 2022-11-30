@@ -2270,7 +2270,8 @@ public class JVMVisitor extends IRVisitor {
                 jvmMethod().loadContext();
                 visit(runtimehelpercall.getArgs()[0]);
                 visit(runtimehelpercall.getArgs()[1]);
-                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "mergeKeywordArguments", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
+                jvmAdapter().ldc(runtimehelpercall.getArgs()[2] == runtime.getIRManager().getTrue());
+                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "mergeKeywordArguments", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, boolean.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
             case HASH_CHECK:
