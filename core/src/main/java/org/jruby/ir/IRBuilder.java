@@ -788,7 +788,7 @@ public class IRBuilder {
 
                 flags[0] |= CALL_SPLATS;
                 Operand valueToSplat;
-                if (secondNode instanceof ListNode) {
+                if (secondNode instanceof ListNode && !(secondNode instanceof DNode)) {
                     valueToSplat = buildCallArgsArrayForSplat((ListNode) secondNode, flags);
                 } else if (secondNode instanceof HashNode && !((HashNode) secondNode).isLiteral()) {
                     valueToSplat = buildCallKeywordArguments((HashNode) secondNode, flags);
