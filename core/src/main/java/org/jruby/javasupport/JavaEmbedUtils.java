@@ -265,8 +265,6 @@ public class JavaEmbedUtils {
      */
     @SuppressWarnings("deprecation")
     public static IRubyObject javaToRuby(Ruby runtime, Object value) {
-        if (value instanceof IRubyObject) return (IRubyObject) value;
-
         IRubyObject result = JavaUtil.convertJavaToUsableRubyObject(runtime, value);
 
         return result instanceof JavaObject ? Java.wrap(runtime, result) : result;
