@@ -669,10 +669,10 @@ public class JavaProxy extends RubyObject {
         @JRubyMethod(meta = true, visibility = Visibility.PRIVATE)
         public static IRubyObject java_alias(ThreadContext context, IRubyObject clazz, IRubyObject newName, IRubyObject rubyName, IRubyObject argTypes) {
             final Ruby runtime = context.runtime;
-            if ( ! ( clazz instanceof RubyClass ) ) {
+            if ( ! ( clazz instanceof RubyModule ) ) {
                 throw runtime.newTypeError(clazz, runtime.getModule());
             }
-            final RubyClass proxyClass = (RubyClass) clazz;
+            final RubyModule proxyClass = (RubyModule) clazz;
 
             String name = rubyName.asJavaString();
             String newNameStr = newName.asJavaString();
