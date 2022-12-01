@@ -310,9 +310,7 @@ public class JVMVisitor extends IRVisitor {
         // set line number for backtrace
         jvmMethod().updateLineNumber(scope.getLine());
 
-        // check arity
         org.jruby.runtime.Signature scopeSig = scope.getStaticScope().getSignature();
-        checkArity(scopeSig.required(), scopeSig.opt(), scopeSig.hasRest(), scopeSig.keyRest());
 
         // push leading args
         m.loadContext();
@@ -1240,11 +1238,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void CheckArityInstr(CheckArityInstr checkarityinstr) {
-        if (jvm.methodData().specificArity >= 0) {
-            // no arity check in specific arity path
-        } else {
-            checkArity(checkarityinstr.getKeywords(), checkarityinstr.required, checkarityinstr.opt, checkarityinstr.rest, checkarityinstr.restKey);
-        }
+        checkArity(checkarityinstr.getKeywords(), checkarityinstr.required, checkarityinstr.opt, checkarityinstr.rest, checkarityinstr.restKey);
     }
 
     private void checkArity(int required, int opt, boolean rest, int restKey) {
