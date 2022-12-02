@@ -704,8 +704,8 @@ public class RubyLexer extends LexingCommon {
         return lexb.makeShared(pos, len);
     }
     
-    private boolean arg_ambiguous() {
-        parser.dispatch("on_arg_ambiguous");
+    private boolean arg_ambiguous(char c) {
+        parser.dispatch("on_arg_ambiguous", getRuntime().newString("" + c));
         return true;
     }
 
@@ -1934,7 +1934,7 @@ public class RubyLexer extends LexingCommon {
             yaccValue = MINUS_GT;
             return tLAMBDA;
         }
-        if (isBEG() || (isSpaceArg(c, spaceSeen) && arg_ambiguous())) {
+        if (isBEG() || (isSpaceArg(c, spaceSeen) && arg_ambiguous('-'))) {
             setState(EXPR_BEG);
             pushback(c);
             yaccValue = MINUS_AT;
@@ -2026,7 +2026,7 @@ public class RubyLexer extends LexingCommon {
             return tOP_ASGN;
         }
 
-        if (isBEG() || (isSpaceArg(c, spaceSeen) && arg_ambiguous())) {
+        if (isBEG() || (isSpaceArg(c, spaceSeen) && arg_ambiguous('+'))) {
             setState(EXPR_BEG);
             pushback(c);
             if (Character.isDigit(c)) {
@@ -2186,7 +2186,7 @@ public class RubyLexer extends LexingCommon {
         }
         pushback(c);
         if (isSpaceArg(c, spaceSeen)) {
-            arg_ambiguous();
+            arg_ambiguous('/');
             lex_strterm = new StringTerm(str_regexp, '\0', '/', ruby_sourceline);
             return tREGEXP_BEG;
         }
