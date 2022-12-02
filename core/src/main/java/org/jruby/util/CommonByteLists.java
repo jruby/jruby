@@ -1,5 +1,7 @@
 package org.jruby.util;
 
+import org.jcodings.specific.USASCIIEncoding;
+
 /**
  * Values which are referenced in multiple places.  A ByteList warehouse!
  */
@@ -40,6 +42,9 @@ public class CommonByteLists {
     public static final ByteList FWD_REST = STAR;
     public static final ByteList FWD_KWREST = STAR_STAR;
     public static final ByteList FWD_BLOCK = AMPERSAND;
+    // Needs to be different than FWD_BLOCK for object identity comparisons.
+    public static final ByteList ANON_BLOCK = new ByteList(new byte[] {'&'}, USASCIIEncoding.INSTANCE);
+
     public static final ByteList TAB = new ByteList(new byte[] {'\t'});
     public static final ByteList UNDERSCORE = new ByteList(new byte[] {'_'});
     public static final ByteList USING_METHOD = new ByteList(new byte[] {'u', 's', 'i', 'n', 'g'});

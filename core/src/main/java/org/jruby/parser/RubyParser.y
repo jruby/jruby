@@ -162,6 +162,7 @@ import static org.jruby.lexer.LexingCommon.EXPR_ENDFN;
 import static org.jruby.lexer.LexingCommon.EXPR_ENDARG;
 import static org.jruby.lexer.LexingCommon.EXPR_END;
 import static org.jruby.lexer.LexingCommon.EXPR_LABEL;
+import static org.jruby.util.CommonByteLists.ANON_BLOCK;
 import static org.jruby.util.CommonByteLists.FWD_BLOCK;
 import static org.jruby.util.CommonByteLists.FWD_KWREST;
  
@@ -2110,8 +2111,8 @@ block_arg       : tAMPER arg_value {
                 }
                 | tAMPER {
                     /*%%%*/
-                    if (!p.local_id(FWD_BLOCK)) p.compile_error("no anonymous block parameter");
-                    $$ = new BlockPassNode(@1.start(), p.arg_var(FWD_BLOCK));
+                    if (!p.local_id(ANON_BLOCK)) p.compile_error("no anonymous block parameter");
+                    $$ = new BlockPassNode(@1.start(), p.arg_var(ANON_BLOCK));
                     // Changed from MRI
                     /*%
                     $$ = p.nil();
@@ -4625,7 +4626,7 @@ f_block_arg     : blkarg_mark tIDENTIFIER {
                     /*% ripper: blockarg!($2) %*/
                 }
                 | blkarg_mark {
-                    $$ = p.arg_var(p.shadowing_lvar(FWD_BLOCK));
+                    $$ = p.arg_var(p.shadowing_lvar(ANON_BLOCK));
                     /*%%%*/
                     $$ = new BlockArgNode($<ArgumentNode>$);
                     // Changed from MRI
