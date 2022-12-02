@@ -72,7 +72,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
     @JRubyClass(name = "Zlib::GzipReader::Error", parent = "Zlib::GzipReader")
     public static class Error {}
 
-    @JRubyMethod(name = "new", rest = true, meta = true)
+    @JRubyMethod(name = "new", rest = true, meta = true, keywords = true)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         JZlibRubyGzipReader result = newInstance(recv, args);
 
