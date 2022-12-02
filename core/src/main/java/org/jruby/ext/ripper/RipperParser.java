@@ -88,6 +88,7 @@ import static org.jruby.lexer.LexingCommon.EXPR_ENDFN;
 import static org.jruby.lexer.LexingCommon.EXPR_ENDARG;
 import static org.jruby.lexer.LexingCommon.EXPR_END;
 import static org.jruby.lexer.LexingCommon.EXPR_LABEL;
+import static org.jruby.util.CommonByteLists.ANON_BLOCK;
 import static org.jruby.util.CommonByteLists.FWD_BLOCK;
 import static org.jruby.util.CommonByteLists.FWD_KWREST;
  
@@ -95,7 +96,7 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
     public RipperParser(ThreadContext context, IRubyObject ripper, LexerSource source) {
         super(context, ripper, source);
     }
-					// line 99 "-"
+					// line 100 "-"
   // %token constants
   public static final int keyword_class = 257;
   public static final int keyword_module = 258;
@@ -6437,7 +6438,7 @@ states[770] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[771] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.arg_var(p.shadowing_lvar(FWD_BLOCK));
+                    yyVal = p.arg_var(p.shadowing_lvar(ANON_BLOCK));
                         yyVal = p.dispatch("on_blockarg", p.nil());
 
   return yyVal;
@@ -6606,7 +6607,7 @@ states[817] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 }
-					// line 4585 "ripper_RubyParser.out"
+					// line 4586 "ripper_RubyParser.out"
 
 }
-					// line 14362 "-"
+					// line 14363 "-"

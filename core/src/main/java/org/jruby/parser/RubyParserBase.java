@@ -1460,7 +1460,7 @@ public abstract class RubyParserBase {
         if (tail == null) {
             argsNode = new ArgsNode(line, pre, optional, rest, post, null);
         } else {
-            if (tail.getBlockArg() != null && FWD_BLOCK.equals(tail.getBlockArg().getName().getBytes())) {
+            if (tail.getBlockArg() instanceof ForwardingBlockArgNode) {
                 if (rest != null) {
                     yyerror("... after rest argument");
                     argsNode = new ArgsNode(line, null, null, null, null,
@@ -1503,7 +1503,8 @@ public abstract class RubyParserBase {
         BlockArgNode blockArg = null;
         if (block != null) {
             ArgumentNode var = arg_var(block);
-            blockArg = new BlockArgNode(var);
+
+            blockArg = block == FWD_BLOCK ? new ForwardingBlockArgNode(var) : new BlockArgNode(var);
         }
 
         return new_args_tail(line, keywordArg, keywordRestArgName, blockArg);

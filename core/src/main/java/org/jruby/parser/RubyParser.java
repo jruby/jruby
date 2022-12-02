@@ -88,6 +88,7 @@ import static org.jruby.lexer.LexingCommon.EXPR_ENDFN;
 import static org.jruby.lexer.LexingCommon.EXPR_ENDARG;
 import static org.jruby.lexer.LexingCommon.EXPR_END;
 import static org.jruby.lexer.LexingCommon.EXPR_LABEL;
+import static org.jruby.util.CommonByteLists.ANON_BLOCK;
 import static org.jruby.util.CommonByteLists.FWD_BLOCK;
 import static org.jruby.util.CommonByteLists.FWD_KWREST;
  
@@ -95,7 +96,7 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
     public RubyParser(LexerSource source, IRubyWarnings warnings) {
         super(warnings); setLexer(new RubyLexer(this, source, warnings));
     }
-					// line 99 "-"
+					// line 100 "-"
   // %token constants
   public static final int keyword_class = 257;
   public static final int keyword_module = 258;
@@ -3869,8 +3870,8 @@ states[315] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[316] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    if (!p.local_id(FWD_BLOCK)) p.compile_error("no anonymous block parameter");
-                    yyVal = new BlockPassNode(yyVals[yyTop - count + 1].start(), p.arg_var(FWD_BLOCK));
+                    if (!p.local_id(ANON_BLOCK)) p.compile_error("no anonymous block parameter");
+                    yyVal = new BlockPassNode(yyVals[yyTop - count + 1].start(), p.arg_var(ANON_BLOCK));
                     /* Changed from MRI*/
                     /*%
                     $$ = p.nil();
@@ -6565,7 +6566,7 @@ states[770] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[771] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.arg_var(p.shadowing_lvar(FWD_BLOCK));
+                    yyVal = p.arg_var(p.shadowing_lvar(ANON_BLOCK));
                     /*%%%*/
                     yyVal = new BlockArgNode(((ArgumentNode)yyVal));
                     /* Changed from MRI*/
@@ -6759,7 +6760,7 @@ states[817] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4738 "parse.y"
+					// line 4739 "parse.y"
 
 }
-					// line 14515 "-"
+					// line 14516 "-"
