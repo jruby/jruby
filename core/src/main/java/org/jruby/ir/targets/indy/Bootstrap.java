@@ -298,6 +298,13 @@ public class Bootstrap {
         return IRRuntimeHelpers.newCompiledMetaClass(context, body, scope, object, line, dynscopeEliminated, refinements);
     }
 
+    public static final Handle CHECK_ARITY_SPECIFIC_ARGS = new Handle(
+            Opcodes.H_INVOKESTATIC,
+            p(Bootstrap.class),
+            "checkAritySpecificArgs",
+            sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class, int.class, int.class, int.class),
+            false);
+
     public static final Handle CHECK_ARITY = new Handle(
             Opcodes.H_INVOKESTATIC,
             p(Bootstrap.class),
@@ -316,8 +323,23 @@ public class Bootstrap {
                     .invokeStaticQuiet(LOOKUP, Bootstrap.class, "checkArity");
 
     @JIT
+    public static CallSite checkAritySpecificArgs(Lookup lookup, String name, MethodType type, int req, int opt, int rest, int keyrest) {
+        return new ConstantCallSite(insertArguments(CHECK_ARITY_SPECIFIC_ARGS_HANDLE, 4, req, opt, rest == 0 ? false : true, keyrest));
+    }
+
+    private static final MethodHandle CHECK_ARITY_SPECIFIC_ARGS_HANDLE =
+            Binder
+                    .from(void.class, ThreadContext.class, StaticScope.class, Object[].class, Block.class, int.class, int.class, boolean.class, int.class)
+                    .invokeStaticQuiet(LOOKUP, Bootstrap.class, "checkAritySpecificArgs");
+
+    @JIT
     public static void checkArity(ThreadContext context, StaticScope scope, Object[] args, Object keywords, Block block, int req, int opt, boolean rest, int keyrest) {
         IRRuntimeHelpers.checkArity(context, scope, args, keywords, req, opt, rest, keyrest, block);
+    }
+
+    @JIT
+    public static void checkAritySpecificArgs(ThreadContext context, StaticScope scope, Object[] args, Block block, int req, int opt, boolean rest, int keyrest) {
+        IRRuntimeHelpers.checkAritySpecificArgs(context, scope, args, req, opt, rest, keyrest, block);
     }
 
     public static CallSite array(Lookup lookup, String name, MethodType type) {

@@ -1251,12 +1251,11 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext();
         jvmMethod().loadStaticScope();
         jvmMethod().loadArgs();
-        jvmMethod().invokeIRHelper("undefined", sig(IRubyObject.class));
         jvmMethod().loadSelfBlock();
         jvmAdapter().invokedynamic(
                 "checkArity",
-                sig(void.class, ThreadContext.class, StaticScope.class, Object[].class, Object.class, Block.class),
-                Bootstrap.CHECK_ARITY,
+                sig(void.class, ThreadContext.class, StaticScope.class, Object[].class, Block.class),
+                Bootstrap.CHECK_ARITY_SPECIFIC_ARGS,
                 required, opt, rest ? 1 : 0, restKey);
     }
 
