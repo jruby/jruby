@@ -81,8 +81,8 @@ DO NOT MODIFY - GENERATED CODE
       <version>1.2.0</version>
       <exclusions>
         <exclusion>
-          <artifactId>jnr-ffi</artifactId>
           <groupId>com.github.jnr</groupId>
+          <artifactId>jnr-ffi</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -92,8 +92,8 @@ DO NOT MODIFY - GENERATED CODE
       <version>0.32.14</version>
       <exclusions>
         <exclusion>
-          <artifactId>jnr-ffi</artifactId>
           <groupId>com.github.jnr</groupId>
+          <artifactId>jnr-ffi</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -103,8 +103,8 @@ DO NOT MODIFY - GENERATED CODE
       <version>0.38.19</version>
       <exclusions>
         <exclusion>
-          <artifactId>jnr-ffi</artifactId>
           <groupId>com.github.jnr</groupId>
+          <artifactId>jnr-ffi</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -114,8 +114,8 @@ DO NOT MODIFY - GENERATED CODE
       <version>3.1.16</version>
       <exclusions>
         <exclusion>
-          <artifactId>jnr-ffi</artifactId>
           <groupId>com.github.jnr</groupId>
+          <artifactId>jnr-ffi</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -125,8 +125,8 @@ DO NOT MODIFY - GENERATED CODE
       <version>0.10.4</version>
       <exclusions>
         <exclusion>
-          <artifactId>jnr-ffi</artifactId>
           <groupId>com.github.jnr</groupId>
+          <artifactId>jnr-ffi</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -228,8 +228,8 @@ DO NOT MODIFY - GENERATED CODE
       <version>0.4.1</version>
       <exclusions>
         <exclusion>
-          <artifactId>asm-all</artifactId>
           <groupId>org.ow2.asm</groupId>
+          <artifactId>asm-all</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
