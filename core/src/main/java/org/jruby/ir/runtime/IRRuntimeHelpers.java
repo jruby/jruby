@@ -1937,7 +1937,6 @@ public class IRRuntimeHelpers {
     @JIT @Interp
     public static RubyArray splatArray(ThreadContext context, IRubyObject ary, boolean dupArray) {
         Ruby runtime = context.runtime;
-        int callInfo = context.resetCallInfo();
         IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, ary, runtime.getArray(), sites(context).to_a_checked);
 
         if (tmp.isNil()) {
@@ -1945,8 +1944,6 @@ public class IRRuntimeHelpers {
         } else if (dupArray) {
             tmp = ((RubyArray) tmp).aryDup();
         }
-
-        context.callInfo = callInfo | CALL_SPLATS;
 
         return (RubyArray) tmp;
     }
