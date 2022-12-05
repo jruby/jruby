@@ -33,6 +33,7 @@ import org.joda.time.DateTime;
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
+import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.RubyTime;
@@ -41,7 +42,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -87,8 +87,7 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         Ruby runtime = recv.getRuntime();
         RubyGzipFile instance;
 
-        // TODO: People extending GzipWriter/reader will break.  Find better way here.
-        if (recv == runtime.getModule("Zlib").getClass("GzipWriter")) {
+        if (((RubyModule) recv).isKindOfModule(runtime.getModule("Zlib").getClass("GzipWriter"))) {
             instance = JZlibRubyGzipWriter.newInstance(recv, args);
         } else {
             instance = JZlibRubyGzipReader.newInstance(recv, args);
