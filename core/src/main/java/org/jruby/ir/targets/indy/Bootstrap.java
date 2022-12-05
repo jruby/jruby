@@ -82,7 +82,6 @@ import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.methodType;
 import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.runtime.Helpers.constructObjectArrayHandle;
-import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
 import static org.jruby.runtime.invokedynamic.InvokeDynamicSupport.findStatic;
 import static org.jruby.runtime.invokedynamic.InvokeDynamicSupport.findVirtual;
 import static org.jruby.util.CodegenUtils.p;
