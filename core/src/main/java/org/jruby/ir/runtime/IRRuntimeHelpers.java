@@ -1048,8 +1048,6 @@ public class IRRuntimeHelpers {
             hash.merge_bang(context, new IRubyObject[] { otherHash }, Block.NULL_BLOCK);
         }
 
-        context.callInfo = CALL_KEYWORD | CALL_KEYWORD_REST;
-
         return hash;
     }
 
