@@ -572,6 +572,38 @@ public class IRRuntimeHelpers {
         return block;
     }
 
+    /*
+     *  Specific arity methods made during the JIT only accept the arguments they accept.  One strange case with
+     * Ruby 3 keywords is any method can recieve an extra argument for keyword arguments.  For specific arity we do
+     * no accept keyword args but any method can pass them anyways.  We have instructions for processing keywords
+     * but in specific arity methods we check arity mismatches in an args[] signature and it will complain if it
+     * sees that extra kwarg....and it should...unless it happens to be empty (**{}).  In that case we silently ignore
+     * that empty arg.
+     *
+     * As of 9.4.0.0 the design is such that in Ruby we bifurcate and check for empty kwargs and do not pass them.
+     * For ruby2_keyword methods we do not do this (or we would have to put this same if conditional for every call
+     * in Ruby along with a dynamic check looking to see if it is this kind of method -- which would be before our
+     * actual callsite).  So this special logic here literally only exists for ruby2_keyword arg methods which receive and
+     * pass splatted values (where last one might be an empty kwarg hash).
+     *
+     * Note: we probably need this logic baked into every callsite in the system as this would cause a hit in the case
+     * of keywords but it is much simpler than having all kwargs parameter calls emit an if statement looking for
+     * emptiness in the kwarg.  Also all native methods will complain for this case if you call with an empty kwarg.
+     */
+    public static void checkAritySpecificArgs(ThreadContext context, StaticScope scope, Object[] args,
+                                  int required, int opt, boolean rest, int restKey, Block block) {
+        int argsLength = args.length;
+
+        if ((block == null || block.type.checkArity) && (argsLength < required || (!rest && argsLength > (required + opt)))) {
+            if (argsLength > (required + opt) && args[argsLength - 1] instanceof RubyHash) {
+                RubyHash last = (RubyHash) args[argsLength - 1];
+                if (last.isRuby2KeywordHash() && last.isEmpty()) return;
+            }
+            //System.out.println("C: " + context.getFile() + ":" + context.getLine());
+            Arity.raiseArgumentError(context.runtime, argsLength, required, rest ? UNLIMITED_ARGUMENTS : (required + opt));
+        }
+    }
+
     public static void checkArity(ThreadContext context, StaticScope scope, Object[] args, Object keywords,
                                   int required, int opt, boolean rest, int restKey, Block block) {
         int argsLength = args.length - (keywords != UNDEFINED ? 1: 0);
@@ -1047,8 +1079,6 @@ public class IRRuntimeHelpers {
         } else {
             hash.merge_bang(context, new IRubyObject[] { otherHash }, Block.NULL_BLOCK);
         }
-
-        context.callInfo = CALL_KEYWORD | CALL_KEYWORD_REST;
 
         return hash;
     }
@@ -1937,7 +1967,6 @@ public class IRRuntimeHelpers {
     @JIT @Interp
     public static RubyArray splatArray(ThreadContext context, IRubyObject ary, boolean dupArray) {
         Ruby runtime = context.runtime;
-        int callInfo = context.resetCallInfo();
         IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, ary, runtime.getArray(), sites(context).to_a_checked);
 
         if (tmp.isNil()) {
@@ -1945,8 +1974,6 @@ public class IRRuntimeHelpers {
         } else if (dupArray) {
             tmp = ((RubyArray) tmp).aryDup();
         }
-
-        context.callInfo = callInfo | CALL_SPLATS;
 
         return (RubyArray) tmp;
     }

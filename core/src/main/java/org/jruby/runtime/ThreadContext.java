@@ -112,11 +112,24 @@ public final class ThreadContext {
 
     // FIXME: This should get stuffed into call path OR call site should be passed through callpath and have
     //     this in it.
-    // Call info state.
-    public final static int CALL_SPLATS =        1 << 0;
-    public final static int CALL_KEYWORD =       1 << 1;
-    public final static int CALL_KEYWORD_REST =  1 << 2;
-    public final static int CALL_KEYWORD_EMPTY = 1 << 3; // **{} is passed to call
+
+    /*
+      Call info state.  These flags exist in the context of an individual call.  This is largely
+      statically determined during IRBuild. In the case of native methods which call methods we
+      can explicitly mark something as being a keyword but in almost all of these cases we already
+      received keywords.
+
+      The odd case is ruby2_keywords methods.  The processing of these can lead to marking a hash
+      as CALL_KEYWORD_EMPTY.  When we pass that to a method which does not accept keywords it should
+      still work and it should omit that argument value.  Ordinary Ruby callsites will only be
+      aware of CALL_KEYWORD_EMPTY being set from Java or from another IR instruction.
+     */
+    public final static int CALL_SPLATS =        1 << 0; // foo(*args)
+    public final static int CALL_KEYWORD =       1 << 1; // static explicit keywords foo(k: 1, **r)
+    public final static int CALL_KEYWORD_REST =  1 << 2; // foo(**something)
+    // generally live detected info at a callsite that we are passing an empty hash as kwrest.
+    // it is also statically determined by literal **{} (which is only found in test suites).
+    public final static int CALL_KEYWORD_EMPTY = 1 << 3;
 
     public int callInfo;
 

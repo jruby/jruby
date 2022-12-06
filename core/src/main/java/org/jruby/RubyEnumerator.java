@@ -202,7 +202,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
     // and used internally to create enum from Enumerator::Lazy#eager
     @JRubyMethod(name = "__from", meta = true, required = 2, optional = 2, visibility = PRIVATE, keywords = true)
     public static IRubyObject __from(ThreadContext context, IRubyObject klass, IRubyObject[] args) {
-        boolean keywords = (context.callInfo & ThreadContext.CALL_KEYWORD) != 0 && (context.callInfo & ThreadContext.CALL_KEYWORD_EMPTY) == 0;
+        boolean keywords = (context.callInfo & CALL_KEYWORD) != 0 && (context.callInfo & ThreadContext.CALL_KEYWORD_EMPTY) == 0;
         context.resetCallInfo();
 
         // Lazy.__from(enum, method, *args, size)
@@ -250,7 +250,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE, rest = true, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
-        boolean keywords = (context.callInfo & ThreadContext.CALL_KEYWORD) != 0 && (context.callInfo & ThreadContext.CALL_KEYWORD_EMPTY) == 0;
+        boolean keywords = (context.callInfo & CALL_KEYWORD) != 0 && (context.callInfo & ThreadContext.CALL_KEYWORD_EMPTY) == 0;
         context.resetCallInfo();
 
         Ruby runtime = context.runtime;
