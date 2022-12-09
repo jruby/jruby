@@ -26,10 +26,6 @@ public interface ObjectFlags {
     int CR_7BIT_F    = registry.newFlag(RubyString.class);
     int CR_VALID_F   = registry.newFlag(RubyString.class);
 
-    // FIXME: These are hardcoded until moved into stringio gem
-    int STRIO_READABLE = 16;
-    int STRIO_WRITABLE = 32;
-
     int MATCH_BUSY = registry.newFlag(RubyMatchData.class);
 
     int COMPARE_BY_IDENTITY_F = registry.newFlag(RubyHash.class);
