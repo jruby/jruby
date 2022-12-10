@@ -104,6 +104,7 @@ public class RbConfigLibrary implements Library {
         if (architecture == null) architecture = "unknown";
         if ("amd64".equals(architecture)) architecture = "x86_64";
         if ("aarch64".equals(architecture) && Platform.IS_MAC) architecture = "arm64";
+        if ("loongarch64".equals(architecture)) architecture = "loongarch64";
 
         return architecture;
     }

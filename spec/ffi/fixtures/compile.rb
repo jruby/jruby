@@ -18,6 +18,8 @@ module TestLibrary
       end
     when /amd64|x86_64|x64/
       "x86_64"
+    when /loongarch64/
+      "loongarch64"
     when /ppc64|powerpc64/
       "powerpc64"
     when /ppc|powerpc/
