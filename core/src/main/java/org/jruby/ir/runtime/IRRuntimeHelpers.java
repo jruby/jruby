@@ -828,6 +828,12 @@ public class IRRuntimeHelpers {
         context.callInfo = (context.callInfo & CALL_KEYWORD_EMPTY) | flags;
     }
 
+    // specific args of arity 0 does not receive kwargs so we have to reset this.
+    @JIT
+    public static void resetCallInfo(ThreadContext context) {
+        context.resetCallInfo();
+    }
+
     public static void checkForExtraUnwantedKeywordArgs(ThreadContext context, final StaticScope scope, RubyHash keywordArgs) {
         // we do an inexpensive non-gathering scan first to see if there's a bad keyword
         try {
