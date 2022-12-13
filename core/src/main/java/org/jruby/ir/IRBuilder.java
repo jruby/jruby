@@ -1913,7 +1913,13 @@ public class IRBuilder {
     }
 
     private Operand buildCaseTestValue(CaseNode caseNode) {
-        Operand testValue = build(caseNode.getCaseNode());
+        Node caseTestValue = caseNode.getCaseNode();
+
+        if (caseTestValue instanceof StrNode) {
+            // compile literal string cases as fstrings
+            ((StrNode) caseTestValue).setFrozen(true);
+        }
+        Operand testValue = build(caseTestValue);
 
         // null is returned for valueless case statements:
         //   case
@@ -1951,6 +1957,10 @@ public class IRBuilder {
     private void buildWhenValue(Variable eqqResult, Operand testValue, Label bodyLabel, Node node,
                                 Set<IRubyObject> seenLiterals, boolean needsSplat) {
         if (literalWhenCheck(node, seenLiterals)) { // we only emit first literal of the same value.
+            if (node instanceof StrNode) {
+                // compile literal string whens as fstrings
+                ((StrNode) node).setFrozen(true);
+            }
             Operand expression = buildWithOrder(node, node.containsVariableAssignment());
 
             addInstr(new EQQInstr(scope, eqqResult, expression, testValue, needsSplat, scope.maybeUsingRefinements()));
