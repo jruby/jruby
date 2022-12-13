@@ -1019,12 +1019,17 @@ public class JVMVisitor extends IRVisitor {
     public void BSwitchInstr(BSwitchInstr bswitchinstr) {
         visit(bswitchinstr.getCaseOperand());
         jvmAdapter().dup();
-        jvmAdapter().instance_of(p(RubyFixnum.class));
+        Class expectedClass = bswitchinstr.getExpectedClass();
+        jvmAdapter().instance_of(p(expectedClass));
         org.objectweb.asm.Label rubyCaseLabel = getJVMLabel(bswitchinstr.getRubyCaseLabel());
-        org.objectweb.asm.Label notFixnum = new org.objectweb.asm.Label();
-        jvmAdapter().iffalse(notFixnum);
-        jvmAdapter().checkcast(p(RubyFixnum.class));
-        jvmAdapter().invokevirtual(p(RubyFixnum.class), "getIntValue", sig(int.class));
+        org.objectweb.asm.Label notMatchingType = new org.objectweb.asm.Label();
+        jvmAdapter().iffalse(notMatchingType);
+        jvmAdapter().checkcast(p(expectedClass));
+        if (expectedClass == RubyFixnum.class) {
+            jvmAdapter().invokevirtual(p(RubyFixnum.class), "getIntValue", sig(int.class));
+        } else if (expectedClass == RubySymbol.class) {
+            jvmAdapter().invokevirtual(p(RubySymbol.class), "getId", sig(int.class));
+        }
         Label[] targets = bswitchinstr.getTargets();
         org.objectweb.asm.Label[] jvmTargets = new org.objectweb.asm.Label[targets.length];
         for (int i = 0; i < targets.length; i++) jvmTargets[i] = getJVMLabel(targets[i]);
@@ -1055,7 +1060,7 @@ public class JVMVisitor extends IRVisitor {
         } else {
             jvmAdapter().lookupswitch(defaultTarget, bswitchinstr.getJumps(), jvmTargets);
         }
-        jvmAdapter().label(notFixnum);
+        jvmAdapter().label(notMatchingType);
         jvmAdapter().pop();
         jvmAdapter().label(rubyCaseLabel);
     }
