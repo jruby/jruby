@@ -5,6 +5,7 @@ import org.jcodings.EncodingDB;
 import org.jcodings.EncodingDB.Entry;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.ISO8859_16Encoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.spi.ISO_8859_16;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash.HashEntryIterator;
@@ -459,6 +460,11 @@ public final class EncodingService {
         }
 
         return filesystemEncoding;
+    }
+
+    // MRI: env_encoding
+    public Encoding getEnvEncoding() {
+        return Platform.IS_WINDOWS ? UTF8Encoding.INSTANCE : getLocaleEncoding();
     }
 
     /**

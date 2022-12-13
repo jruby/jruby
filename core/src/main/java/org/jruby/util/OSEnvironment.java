@@ -89,15 +89,15 @@ public class OSEnvironment {
     private static Map<RubyString, RubyString> asMapOfRubyStrings(final Ruby runtime, final Map<?, ?> map) {
         @SuppressWarnings("unchecked")
         final Map<RubyString, RubyString> rubyMap = new HashMap(map.size() + 2);
-        Encoding keyEncoding = runtime.getEncodingService().getLocaleEncoding();
+        Encoding encoding = runtime.getEncodingService().getEnvEncoding();
 
         // On Windows, map doesn't have corresponding keys for these
         if (Platform.IS_WINDOWS) {
             // these may be null when in a restricted environment (JRUBY-6514)
             String home = SafePropertyAccessor.getProperty("user.home");
             String user = SafePropertyAccessor.getProperty("user.name");
-            putRubyKeyValuePair(runtime, rubyMap, "HOME", keyEncoding, home == null ? "/" : home, keyEncoding);
-            putRubyKeyValuePair(runtime, rubyMap, "USER", keyEncoding, user == null ? "" : user, keyEncoding);
+            putRubyKeyValuePair(runtime, rubyMap, "HOME", encoding, home == null ? "/" : home, encoding);
+            putRubyKeyValuePair(runtime, rubyMap, "USER", encoding, user == null ? "" : user, encoding);
         }
 
         for (Map.Entry<?, ?> entry : map.entrySet()) {
@@ -111,15 +111,7 @@ public class OSEnvironment {
             val = entry.getValue();
             if ( ! (val instanceof String) ) continue; // Java devs can stuff non-string objects into env
 
-            // Ensure PATH is encoded like filesystem
-            Encoding valueEncoding = keyEncoding;
-            if ( org.jruby.platform.Platform.IS_WINDOWS ?
-                    key.equalsIgnoreCase("PATH") :
-                    key.equals("PATH") ) {
-                valueEncoding = runtime.getEncodingService().getFileSystemEncoding();
-            }
-
-            putRubyKeyValuePair(runtime, rubyMap, key, keyEncoding, (String) val, valueEncoding);
+            putRubyKeyValuePair(runtime, rubyMap, key, encoding, (String) val, encoding);
         }
 
         return rubyMap;

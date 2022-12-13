@@ -43,7 +43,6 @@ import jnr.posix.POSIX;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
-import org.jcodings.specific.UTF8Encoding;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
@@ -767,15 +766,12 @@ public class RubyGlobal {
             return actualKey;
         }
 
-        private static final ByteList PATH_BYTES = new ByteList(new byte[] {'P','A','T','H'}, USASCIIEncoding.INSTANCE, false);
-
         // MRI: env_name_new
         // TODO: mri 3.1 does not use env_name_new
         protected static IRubyObject newName(ThreadContext context, IRubyObject key, IRubyObject valueArg) {
             if (valueArg.isNil()) return context.nil;
 
             RubyString value = (RubyString) valueArg;
-            EncodingService encodingService = context.runtime.getEncodingService();
 
             return newString(context, value);
         }
@@ -790,20 +786,12 @@ public class RubyGlobal {
 
         // MRI: env_str_new
         protected static IRubyObject newString(ThreadContext context, RubyString value) {
-            // env_encoding(void)
-            Encoding encoding = Platform.IS_WINDOWS ? UTF8Encoding.INSTANCE : context.runtime.getEncodingService().getLocaleEncoding();
-            return newString(context, value, encoding);
+            return newString(context, value, context.runtime.getEncodingService().getEnvEncoding());
         }
 
         // MRI: env_str_new2
         protected static IRubyObject newString(ThreadContext context, IRubyObject obj) {
             return obj.isNil() ? context.nil : newString(context, (RubyString) obj);
-        }
-
-        private static boolean isPATH(ThreadContext context, RubyString name) {
-            return Platform.IS_WINDOWS ?
-                    equalIgnoreCase(context, name, RubyString.newString(context.runtime, PATH_BYTES)) :
-                    name.getByteList().equal(PATH_BYTES);
         }
 
         private static boolean equalIgnoreCase(ThreadContext context, final RubyString str1, final RubyString str2) {
