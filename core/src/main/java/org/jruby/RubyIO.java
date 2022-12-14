@@ -124,6 +124,20 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     public static final ByteList PARAGRAPH_SEPARATOR = ByteList.create("\n\n");
     public static final String CLOSED_STREAM_MSG = "closed stream";
 
+    public enum IOEvent {
+        IO_READABLE(1), IO_PRIORITY(2), IO_WRITABLE(4);
+
+        final int value;
+
+        IOEvent(int value) {
+            this.value = value;
+        }
+
+        int getValue() {
+            return value;
+        }
+    }
+
     // This should only be called by this and RubyFile.
     // It allows this object to be created without a IOHandler.
     public RubyIO(Ruby runtime, RubyClass type) {
@@ -321,6 +335,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         ioClass.setConstant("SEEK_SET", runtime.newFixnum(PosixShim.SEEK_SET));
         ioClass.setConstant("SEEK_CUR", runtime.newFixnum(PosixShim.SEEK_CUR));
         ioClass.setConstant("SEEK_END", runtime.newFixnum(PosixShim.SEEK_END));
+
+        ioClass.setConstant("READABLE", runtime.newFixnum(IOEvent.IO_READABLE.getValue()));
+        ioClass.setConstant("WRITABLE", runtime.newFixnum(IOEvent.IO_WRITABLE.getValue()));
+        ioClass.setConstant("PRIORITY", runtime.newFixnum(IOEvent.IO_PRIORITY.getValue()));
 
         ioClass.defineModuleUnder("WaitReadable");
         ioClass.defineModuleUnder("WaitWritable");
