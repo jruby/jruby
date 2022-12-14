@@ -46,6 +46,7 @@ package org.jruby;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.Map;
 
 import jnr.constants.platform.Errno;
@@ -73,6 +74,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.KernelSites;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
@@ -152,6 +154,9 @@ public class RubyKernel {
         if (runtime.getInstanceConfig().isAssumeLoop()) {
             module.defineAnnotatedMethods(LoopMethods.class);
         }
+
+        MethodIndex.METHOD_FRAME_READS.put("method!", EnumSet.of(SCOPE));
+        MethodIndex.METHOD_FRAME_READS.put("public_send!", EnumSet.of(SCOPE));
 
         recacheBuiltinMethods(runtime, module);
 
