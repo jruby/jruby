@@ -82,6 +82,7 @@
           <entry location="lib/jni/i386-SunOS" />
           <entry location="lib/jni/i386-FreeBSD" />
           <entry location="lib/jni/i386-OpenBSD" />
+          <entry location="lib/jni/loongarch64-Linux" />
           <entry location="lib/jni/ppc-AIX" />
           <entry location="lib/jni/ppc64-Linux" />
           <entry location="lib/jni/ppc64le-Linux" />
@@ -106,6 +107,7 @@
           <entry location="lib/jni/i386-OpenBSD" />
           <entry location="lib/jni/i386-SunOS" />
           <entry location="lib/jni/i386-Windows" />
+          <entry location="lib/jni/loongarch64-Linux" />
           <entry location="lib/jni/ppc64-Linux" />
           <entry location="lib/jni/ppc64le-Linux" />
           <entry location="lib/jni/ppc-AIX" />
