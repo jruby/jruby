@@ -28,6 +28,7 @@
 
 package org.jruby;
 
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.exceptions.StopIteration;
@@ -439,32 +440,30 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
     private IRubyObject inspect(ThreadContext context, boolean recurse) {
         Ruby runtime = context.runtime;
-        ByteList bytes = new ByteList();
-        bytes.append((byte)'#').append((byte)'<');
+        ByteList bytes = new ByteList(new byte[] {'#', '<'});
         bytes.append(getMetaClass().getName().getBytes());
         bytes.append((byte)':').append((byte)' ');
+        RubyString result = RubyString.newStringNoCopy(runtime, bytes);
 
         if (recurse) {
-            bytes.append("...>".getBytes());
-            return RubyString.newStringNoCopy(runtime, bytes);
+            return result.catString("...>");
         } else {
-            bytes.append(RubyObject.inspect(context, object).getByteList());
-            bytes.append((byte)':');
-            bytes.append(method.getBytes());
+            result.cat19(RubyObject.inspect(context, object));
+            result.cat(':');
+            result.catString(method);
             if (methodArgs.length > 0) {
-                bytes.append((byte)'(');
+                result.cat('(');
                 for (int i= 0; i < methodArgs.length; i++) {
                     if (methodArgsHasKeywords && i == 0) break;
-                    bytes.append(RubyObject.inspect(context, methodArgs[i]).getByteList());
+                    result.cat19(RubyObject.inspect(context, methodArgs[i]));
                     if (i < methodArgs.length - 1) {
-                        bytes.append((byte)',').append((byte)' ');
+                        result.catString(", ");
                     } else {
-                        bytes.append((byte)')');
+                        result.cat(')');
                     }
                 }
             }
-            bytes.append((byte)'>');
-            RubyString result = RubyString.newStringNoCopy(runtime, bytes);
+            result.cat('>');
             return result;
         }
     }
