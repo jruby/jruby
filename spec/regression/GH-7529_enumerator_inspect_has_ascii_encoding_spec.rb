@@ -13,13 +13,24 @@ if RUBY_VERSION > '1.9'
       expect(e.inspect).to eq("#<Enumerator: [\"abc\"]:each>")
       expect(e.inspect.encoding).to eq(Encoding::ASCII_8BIT)
     end
-    it 'returns UTF_8 String value when the method is UTF_8' do
-      # example derived from TestEnumerator#test_inspect_encoding
-      # in test/mri/ruby/test_enumerator.rb
+    it 'returns UTF_8 String value when the method is UTF_8 Symbol' do
+      # example derived from TestEnumerator#test_inspect_encoding in
+      # test/mri/ruby/test_enumerator.rb, but with :"\u{3042}" instead
+      # of "\u{3042}"
       c = Class.new{define_method(:"\u{3042}"){}}
       e = c.new.enum_for(:"\u{3042}")
       expect(e.inspect).to match(/\A#<Enumerator: .*:\u{3042}>\z/)
       expect(e.inspect.encoding).to eq(Encoding::UTF_8)
+    end
+    it 'returns UTF_8 String value when the method is UTF_8 String' do
+      # same example as TestEnumerator#test_inspect_encoding
+      # in test/mri/ruby/test_enumerator.rb
+      c = Class.new{define_method("\u{3042}"){}}
+      e = c.new.enum_for("\u{3042}")
+      expect(e.inspect).to match(/\A#<Enumerator: .*:\u{3042}>\z/)
+      expect(e.inspect.encoding).to eq(Encoding::UTF_8)
+      # not to the least, the enumerator also enumerates correctly
+      expect { e.next }.to raise_error(StopIteration)
     end
   end
 end

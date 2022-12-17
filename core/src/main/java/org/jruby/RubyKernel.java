@@ -437,7 +437,7 @@ public class RubyKernel {
             if (!exception) return object;
             throw runtime.newTypeError("can't convert nil into Float");
         }
-        
+
         try {
             IRubyObject flote = TypeConverter.convertToType(context, object, runtime.getFloat(), sites(context).to_f_checked, false);
             if (flote instanceof RubyFloat) return flote;
@@ -2024,13 +2024,13 @@ public class RubyKernel {
     @JRubyMethod(name = {"to_enum", "enum_for"}, optional = 1, rest = true, keywords = true)
     public static IRubyObject obj_to_enum(final ThreadContext context, IRubyObject self, IRubyObject[] args, final Block block) {
         // to_enum is a bit strange in that it will propagate the arguments it passes to each element it calls.  We are determining
-        // whether we have recieved keywords so we can propagate this info.
+        // whether we have received keywords so we can propagate this info.
         int callInfo = context.callInfo;
         String method = "each";
         SizeFn sizeFn = null;
 
         if (args.length > 0) {
-            method = args[0].asJavaString();
+            method = RubySymbol.retrieveIDSymbol(args[0]).asJavaString();
             args = Arrays.copyOfRange(args, 1, args.length);
         }
 
