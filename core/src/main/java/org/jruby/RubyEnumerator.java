@@ -450,7 +450,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         } else {
             result.cat19(RubyObject.inspect(context, object));
             result.cat(':');
-            result.catString(method);
+            result.cat19(getMethod().asString());
             if (methodArgs.length > 0) {
                 result.cat('(');
                 for (int i= 0; i < methodArgs.length; i++) {
@@ -617,6 +617,10 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
     private IRubyObject getGenerator() {
         return getInstanceVariable(GENERATOR);
+    }
+
+    private IRubyObject getMethod() {
+        return getInstanceVariable(METHOD);
     }
 
     @Override
