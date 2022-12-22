@@ -2568,7 +2568,6 @@ public class RubyModule extends RubyObject {
 
         block.getBinding().getFrame().setKlazz(this);
         block.getBinding().getFrame().setName(name);
-        block.getBinding().setMethod(name);
 
         // a normal block passed to define_method changes to do arity checking; make it a lambda
         RubyProc proc = runtime.newProc(Block.Type.LAMBDA, block);
