@@ -852,7 +852,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     // IO class methods.
 
-    @JRubyMethod(name = "new", rest = true, meta = true)
+    @JRubyMethod(name = "new", rest = true, meta = true, keywords = true)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         RubyClass klass = (RubyClass)recv;
 
