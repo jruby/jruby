@@ -2464,6 +2464,21 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     /**
+     * Customized for retrieving a Java thread from a Ruby one.
+     *
+     * @param target The target type to which the object should be converted (e.g. <code></>java.lang.Thread.class</code>).
+     * @since 9.4
+     */
+    @Override
+    public <T> T toJava(final Class<T> target) {
+        // since 9.4 the default toJava(java.lang.Object.class) is formalized to return a Java thread
+        if (target.isAssignableFrom(Thread.class)) { // Thread | Runnable | Object
+            return target.cast(getNativeThread());
+        }
+        return super.toJava(target);
+    }
+
+    /**
      * Run the provided {@link BiFunction} without allowing for any cross-thread interrupts (equivalent to calling
      * {@link #handle_interrupt(ThreadContext, IRubyObject, IRubyObject, Block)} with Object => :never.
      *
