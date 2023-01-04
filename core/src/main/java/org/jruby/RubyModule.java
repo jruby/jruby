@@ -3515,6 +3515,21 @@ public class RubyModule extends RubyObject {
         }
     }
 
+    IncludedModuleWrapper findModuleInAncestors(RubyModule arg) {
+        for (RubyClass nextClass = getSuperClass(); nextClass != null; nextClass = nextClass.getSuperClass()) {
+            if (nextClass.isIncluded()) {
+                // does the class equal the module
+                if (nextClass.getDelegate() == arg.getDelegate()) {
+                    // next in hierarchy is an included version of the module we're attempting,
+                    // so we skip including it
+                    return (IncludedModuleWrapper) nextClass;
+                }
+            }
+        }
+
+        return null;
+    }
+
     /**
      * Prepend the given module and all related modules into the hierarchy above
      * this module/class. Inspects the hierarchy to ensure the same module isn't
