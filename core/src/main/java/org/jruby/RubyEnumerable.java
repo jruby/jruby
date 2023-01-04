@@ -1883,6 +1883,9 @@ public class RubyEnumerable {
         if (hasUncoercible) {
             final RubySymbol each = runtime.newSymbol("each");
             for (int i = 0; i < args.length; i++) {
+                if (!args[i].respondsTo("each")) {
+                    throw context.runtime.newTypeError("wrong argument type " + args[i].getMetaClass() + " (must respond to :each)");
+                }
                 newArgs[i] = sites(context).to_enum.call(context, args[i], args[i], each); // args[i].to_enum(:each)
             }
 
