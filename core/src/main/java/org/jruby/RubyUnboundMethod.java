@@ -157,9 +157,13 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
         IRubyObject[] newArgs = new IRubyObject[args.length - 1];
         System.arraycopy(args, 1, newArgs, 0, args.length - 1);
 
-        receiver.getMetaClass().checkValidBindTargetFrom(context, (RubyModule) owner(context), true);
+        RubyClass receiverClass = receiver.getMetaClass();
 
-        return method.call(context, receiver, implementationModule, methodName, newArgs, block);
+        receiverClass.checkValidBindTargetFrom(context, (RubyModule) owner(context), true);
+
+        CacheEntry methodEntry = convertUnboundMethodToCallableEntry(context, receiverClass);
+
+        return method.call(context, receiver, methodEntry.sourceModule, methodName, newArgs, block);
     }
 
     @JRubyMethod(name = {"inspect", "to_s"})
