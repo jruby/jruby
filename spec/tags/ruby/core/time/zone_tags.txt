@@ -1,1 +1,2 @@
 fails:Time#zone defaults to UTC when bad zones given
+fails:Time#zone returns UTC when called on a UTC time

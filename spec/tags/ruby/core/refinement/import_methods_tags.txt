@@ -1,0 +1,1 @@
+fails:Refinement#import_methods when methods are defined in Ruby code imports methods
