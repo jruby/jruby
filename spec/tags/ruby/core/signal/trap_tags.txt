@@ -14,3 +14,5 @@ fails:Signal.trap allows to register a handler for all known signals, except res
 fails:Signal.trap accepts a method
 fails:Signal.trap accepts anything you can call
 fails:Signal.trap accepts a non-callable that becomes callable when used
+fails:Signal.trap raises ArgumentError when passed unknown signal
+fails:Signal.trap raises ArgumentError when passed signal is not Integer, String or Symbol

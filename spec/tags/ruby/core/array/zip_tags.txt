@@ -1,0 +1,1 @@
+fails:Array#zip raises TypeError when some argument isn't Array and doesn't respond to #to_ary and #to_enum

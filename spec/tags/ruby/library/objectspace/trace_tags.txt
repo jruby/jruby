@@ -1,0 +1,1 @@
+fails:require "objspace/trace" shows object allocation sites
