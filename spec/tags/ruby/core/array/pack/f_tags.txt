@@ -1,0 +1,2 @@
+fails:Array#pack with format 'F' raises a TypeError when the object is not Numeric
+fails:Array#pack with format 'f' raises a TypeError when the object is not Numeric
