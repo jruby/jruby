@@ -633,4 +633,21 @@ public abstract class DynamicMethod {
     public int getAliasCount() {
         return this.aliasCount;
     }
+
+    /**
+     * Indicates the method will behave like a ruby2 keywords accepting method.
+     * This must be a Ruby implementation to work.  See Module#ruby2_keywords
+     * for information on the semantics of a method which is marked this way.
+     */
+    public void setRuby2Keywords() {
+        // non-native (Ruby) methods implement this.  We have an empty impl here vs
+        // abstract because we are unsure if any external native extensions happen
+        // to implement their own methods.  If it were abstract that extension would
+        // no longer compile.
+        //
+        // If an external does have their own special method impl AND it is not
+        // a native (Java) method then it must override this method and handle state.
+        // Our IR subsystem will know by how it is marked to process arguments
+        // in an appropriate way.
+    }
 }
