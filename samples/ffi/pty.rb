@@ -7,7 +7,7 @@ module PTY
     extend FFI::Library
     # forkpty(3) is in libutil on linux, libc on MacOS/BSD
     if FFI::Platform.linux?
-      ffi_lib 'libutil'
+      ffi_lib ['libutil.so.1', 'util']
     else
       ffi_lib FFI::Library::LIBC
     end

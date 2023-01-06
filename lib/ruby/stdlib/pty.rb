@@ -7,7 +7,7 @@ module PTY
     ffi_lib FFI::Library::LIBC
     # openpty(3) is in libutil on linux and BSD, libc on MacOS
     if FFI::Platform.linux? || (FFI::Platform.bsd? && !FFI::Platform.mac?)
-      ffi_lib 'libutil'
+      ffi_lib ['libutil.so.1', 'util']
     end
     attach_function :openpty, [ :buffer_out, :buffer_out, :buffer_in, :buffer_in, :buffer_in ], :int
   end
