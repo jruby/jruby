@@ -176,4 +176,9 @@ public class AliasMethod extends DynamicMethod {
     public boolean isNative() {
         return entry.method.isNative();
     }
+
+    @Override
+    public void setRuby2Keywords() {
+        entry.method.setRuby2Keywords();
+    }
 }
