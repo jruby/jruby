@@ -365,7 +365,6 @@ class TestThread < Test::Unit::TestCase
   end
 
   def test_thread_name
-    pend 'java.lang.Thread.native_thread is not implemented'
     Thread.new do
       assert_match(/\#\<Thread\:0x\h+( ([A-Z]:)?[\w\/\.\-_]+\:\d+)?\srun\>/, Thread.current.inspect)
     end.join
@@ -384,15 +383,16 @@ class TestThread < Test::Unit::TestCase
 
     Thread.new do
       my_name = 'user-set-native-thread-name'
-      Thread.current.to_java.native_thread.name = my_name
+      java_thread = java.lang.Thread.currentThread
+      java_thread.setName(my_name)
       Thread.current.name = 'foo'
 
       assert Thread.current.inspect.index('@foo')
-      assert_equal my_name, Thread.current.to_java.native_thread.name
+      assert_equal my_name, java_thread.getName
 
       Thread.current.name = nil
       assert ! Thread.current.inspect.index('@foo')
-      assert_equal my_name, Thread.current.to_java.native_thread.name
+      assert_equal my_name, java.lang.Thread.currentThread.getName
     end.join
   end
 
