@@ -118,4 +118,13 @@ public class SynchronizedDynamicMethod extends DelegatingDynamicMethod {
         return new SynchronizedDynamicMethod(delegate.dup());
     }
 
+    @Override
+    public boolean isNative() {
+        return delegate.isNative();
+    }
+
+    @Override
+    public void setRuby2Keywords() {
+        delegate.setRuby2Keywords();
+    }
 }
