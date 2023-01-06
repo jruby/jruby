@@ -4668,7 +4668,7 @@ public class IRBuilder {
                     () -> receiveBreakException(block,
                             determineSuperInstr(zsuperResult, addArg(args, keywordRest), block, flags[0], inClassBody, isInstanceMethod)));
         } else {
-            Operand[] args = getCallOperands(scope, callArgs, keywordArgs, flags);
+            Operand[] args = getZSuperCallOperands(scope, callArgs, keywordArgs, flags);
             receiveBreakException(block,
                     determineSuperInstr(zsuperResult, args, block, flags[0], inClassBody, isInstanceMethod));
         }
@@ -4892,7 +4892,7 @@ public class IRBuilder {
                         () -> addInstr(new ZSuperInstr(scope, zsuperResult, buildSelf(), args, block, flags[0], scope.maybeUsingRefinements())),
                         () -> addInstr(new ZSuperInstr(scope, zsuperResult, buildSelf(), addArg(args, keywordRest), block, flags[0], scope.maybeUsingRefinements())));
             } else {
-                Operand[] args = adjustVariableDepth(getCallOperands(scope, callArgs, keywordArgs, flags), depthFromSuper);
+                Operand[] args = adjustVariableDepth(getZSuperCallOperands(scope, callArgs, keywordArgs, flags), depthFromSuper);
                 addInstr(new ZSuperInstr(scope, zsuperResult, buildSelf(), args, block, flags[0], scope.maybeUsingRefinements()));
             }
         } else {
@@ -5058,8 +5058,8 @@ public class IRBuilder {
         }
     }
 
-    private static Operand[] getCallOperands(IRScope scope, List<Operand> callArgs, List<KeyValuePair<Operand, Operand>> keywordArgs, int[] flags) {
-        if (scope.receivesKeywordArgs()) {
+    private static Operand[] getZSuperCallOperands(IRScope scope, List<Operand> callArgs, List<KeyValuePair<Operand, Operand>> keywordArgs, int[] flags) {
+        if (scope.getNearestTopLocalVariableScope().receivesKeywordArgs()) {
             flags[0] |= CALL_KEYWORD;
             int i = 0;
             Operand[] args = new Operand[callArgs.size() + 1];
