@@ -1182,7 +1182,7 @@ public class RubyRational extends RubyNumeric {
     }
 
     // MRI: f_round_common
-    private IRubyObject roundCommon(ThreadContext context, final IRubyObject n, RoundingMode mode) {
+    public IRubyObject roundCommon(ThreadContext context, final IRubyObject n, RoundingMode mode) {
         if (n == context.nil) {
             return doRound(context, mode);
         }
