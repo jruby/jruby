@@ -1,2 +1,0 @@
-fails:Float#< handles positive infinity
-fails:Float#< handles negative infinity
