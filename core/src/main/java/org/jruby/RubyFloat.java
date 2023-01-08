@@ -863,7 +863,7 @@ public class RubyFloat extends RubyNumeric {
      */
     @JRubyMethod(name = "floor")
     public IRubyObject floor(ThreadContext context, IRubyObject digits) {
-        double number, f;
+        double number, f, mul, res;
         int ndigits = num2int(digits);
 
         Ruby runtime = context.runtime;
@@ -881,8 +881,10 @@ public class RubyFloat extends RubyNumeric {
             if (number > 0.0 && floatRoundUnderflow(ndigits, binexp))
                 return newFloat(runtime, 0.0);
             f = Math.pow(10, ndigits);
-            f = Math.floor(number * f) / f;
-            return dbl2num(runtime, f);
+            mul = Math.floor(number * f);
+            res = (mul + 1) / f;
+            if (res > number) res = mul / f;
+            return dbl2num(runtime, res);
         } else {
             RubyInteger num = dbl2ival(runtime, Math.floor(number));
             if (ndigits < 0) num = (RubyInteger) num.floor(context, digits);
@@ -1029,6 +1031,10 @@ public class RubyFloat extends RubyNumeric {
             frexp(number, binexp);
             if (floatRoundOverflow(ndigits, binexp)) return this;
             if (floatRoundUnderflow(ndigits, binexp)) return newFloat(runtime, 0);
+            if (ndigits > 14) {
+                /* In this case, pow(10, ndigits) may not be accurate. */
+                return floatRoundByRational(context, RubyFixnum.newFixnum(runtime, ndigits), mode);
+            }
             f = Math.pow(10, ndigits);
             x = doRound(context, mode, number, f);
             return newFloat(runtime, x / f);
@@ -1130,6 +1136,14 @@ public class RubyFloat extends RubyNumeric {
             x = f - d;
         }
         return x;
+    }
+
+    /** rb_flo_round_by_rational
+     *
+     */
+    private IRubyObject floatRoundByRational(ThreadContext context, IRubyObject ndigits, RoundingMode mode) {
+        IRubyObject v = ((RubyRational)to_r(context)).roundCommon(context, ndigits, mode);
+        return ((RubyRational)v).to_f(context);
     }
 
     /** flo_is_nan_p
