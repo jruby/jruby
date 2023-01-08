@@ -1118,9 +1118,9 @@ public class RubyBignum extends RubyInteger {
 
         if (Double.isInfinite(yd)) {
             if (yd > 0.0) {
-                return RubyFixnum.one(runtime);
-            } else {
                 return RubyFixnum.minus_one(runtime);
+            } else {
+                return RubyFixnum.one(runtime);
             }
         }
 
