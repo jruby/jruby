@@ -3283,7 +3283,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "include", required = 1, rest = true)
     public RubyModule include(IRubyObject[] modules) {
         if (this.isRefinement()) {
-            getRuntime().getWarnings().warnDeprecated("deprecated method to be removed: Refinement#include");
+            getRuntime().getWarnings().warnDeprecated(ID.DEPRECATED_METHOD, "deprecated method to be removed: Refinement#include");
         }
 
         for (IRubyObject module: modules) {
@@ -4451,7 +4451,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "prepend", required = 1, rest = true)
     public IRubyObject prepend(ThreadContext context, IRubyObject[] modules) {
         if (this.isRefinement()) {
-            context.runtime.getWarnings().warnDeprecated("deprecated method to be removed: Refinement#prepend");
+            context.runtime.getWarnings().warnDeprecated(ID.DEPRECATED_METHOD, "deprecated method to be removed: Refinement#prepend");
         }
 
         // MRI checks all types first:
@@ -5324,7 +5324,7 @@ public class RubyModule extends RubyObject {
         if (entry.deprecated) {
             final Ruby runtime = getRuntime();
             String parent = "Object".equals(getName()) ? "" : getName();
-            runtime.getWarnings().warnDeprecated("constant " + parent + "::" + name);
+            runtime.getWarnings().warnDeprecated(ID.CONSTANT_DEPRECATED, "constant " + parent + "::" + name + " is deprecated");
         }
 
         return entry;
