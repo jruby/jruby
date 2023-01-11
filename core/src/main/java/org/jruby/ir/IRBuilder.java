@@ -1310,23 +1310,15 @@ public class IRBuilder {
         Operand[] args = setupCallArgs(callNode.getArgsNode(), flags);
         Operand block = setupCallClosure(callNode.getIterNode());
 
-        if ((flags[0] & CALL_KEYWORD) != 0) {
-            if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
-                Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
-                if_else(test, manager.getTrue(),
-                        () -> receiveBreakException(block,
-                                determineIfProcNew(receiverNode,
-                                        CallInstr.create(scope, NORMAL, result, name, receiver, removeArg(args), block, flags[0]))),
-                        () -> receiveBreakException(block,
-                                determineIfProcNew(receiverNode,
-                                        CallInstr.create(scope, NORMAL, result, name, receiver, args, block, flags[0]))));
-
-            } else {  // {a: 1, b: 2}
-                determineIfWeNeedLineNumber(callNode); // buildOperand for call was papered over by args operand building so we check once more.
-                receiveBreakException(block,
-                        determineIfProcNew(receiverNode,
-                                CallInstr.create(scope, NORMAL, result, name, receiver, args, block, flags[0])));
-            }
+        if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
+            Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
+            if_else(test, manager.getTrue(),
+                    () -> receiveBreakException(block,
+                            determineIfProcNew(receiverNode,
+                                    CallInstr.create(scope, NORMAL, result, name, receiver, removeArg(args), block, flags[0]))),
+                    () -> receiveBreakException(block,
+                            determineIfProcNew(receiverNode,
+                                    CallInstr.create(scope, NORMAL, result, name, receiver, args, block, flags[0]))));
         } else {
             determineIfWeNeedLineNumber(callNode); // buildOperand for call was papered over by args operand building so we check once more.
             receiveBreakException(block,
@@ -3531,17 +3523,11 @@ public class IRBuilder {
         Operand[] args = setupCallArgs(callArgsNode, flags);
         Operand block = setupCallClosure(fcallNode.getIterNode());
 
-        if ((flags[0] & CALL_KEYWORD) != 0) {
-            if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
-                Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
-                if_else(test, manager.getTrue(),
-                        () -> receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), removeArg(args), block, flags[0])),
-                        () -> receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), args, block, flags[0])));
-
-            } else {  // {a: 1, b: 2}
-                determineIfWeNeedLineNumber(fcallNode); // buildOperand for fcall was papered over by args operand building so we check once more.
-                receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), args, block, flags[0]));
-            }
+        if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
+            Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
+            if_else(test, manager.getTrue(),
+                    () -> receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), removeArg(args), block, flags[0])),
+                    () -> receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), args, block, flags[0])));
         } else {
             determineIfMaybeRefined(fcallNode.getName(), args);
 
@@ -3551,8 +3537,7 @@ public class IRBuilder {
                 IRClosure closure = ((WrappedIRClosure) block).getClosure();
 
                 // To convert to a method we need its variable scoping to appear like a normal method.
-                if (!closure.accessesParentsLocalVariables() &&
-                        fcallNode.getIterNode() instanceof IterNode) {
+                if (!closure.accessesParentsLocalVariables() && fcallNode.getIterNode() instanceof IterNode) {
                     closure.setSource((IterNode) fcallNode.getIterNode());
                 }
             }
@@ -4700,20 +4685,13 @@ public class IRBuilder {
         int[] flags = new int[] { 0 };
         Operand[] args = setupCallArgs(callNode.getArgsNode(), flags);
 
-        if ((flags[0] & CALL_KEYWORD) != 0) {
-            if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
-                Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
-                if_else(test, manager.getTrue(),
-                        () -> receiveBreakException(block,
-                                determineSuperInstr(result, removeArg(args), block, flags[0], inClassBody, isInstanceMethod)),
-                        () -> receiveBreakException(block,
-                                determineSuperInstr(result, args, block, flags[0], inClassBody, isInstanceMethod)));
-
-            } else {  // {a: 1, b: 2}
-                determineIfWeNeedLineNumber(callNode); // buildOperand for fcall was papered over by args operand building so we check once more.
-                receiveBreakException(block,
-                        determineSuperInstr(result, args, block, flags[0], inClassBody, isInstanceMethod));
-            }
+        if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
+            Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
+            if_else(test, manager.getTrue(),
+                    () -> receiveBreakException(block,
+                            determineSuperInstr(result, removeArg(args), block, flags[0], inClassBody, isInstanceMethod)),
+                    () -> receiveBreakException(block,
+                            determineSuperInstr(result, args, block, flags[0], inClassBody, isInstanceMethod)));
         } else {
             determineIfWeNeedLineNumber(callNode); // buildOperand for fcall was papered over by args operand building so we check once more.
             receiveBreakException(block,
