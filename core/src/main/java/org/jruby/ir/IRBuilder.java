@@ -4825,11 +4825,15 @@ public class IRBuilder {
 
         boolean unwrap = true;
         Node argNode = node.getArgsNode();
-        // FIXME: This is likely wrong. single argnode array may only be the kwarg
         // Get rid of one level of array wrapping
         if (argNode != null && (argNode instanceof ArrayNode) && ((ArrayNode)argNode).size() == 1) {
-            argNode = ((ArrayNode)argNode).getLast();
-            unwrap = false;
+            Node onlyArg = ((ArrayNode)argNode).getLast();
+
+            // We should not unwrap if it is a keyword argument.
+            if (!(onlyArg instanceof HashNode) || ((HashNode) onlyArg).isLiteral()) {
+                argNode = onlyArg;
+                unwrap = false;
+            }
         }
 
         Variable ret = result == null ? createTemporaryVariable() : result;
