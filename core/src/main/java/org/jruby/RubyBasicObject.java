@@ -1633,7 +1633,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return method_missing(context, recv, args, block);
     }
 
-    @JRubyMethod(name = "__send__", omit = true, keywords = true)
+    @JRubyMethod(name = "__send__", omit = true)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, Block block) {
         String name = RubySymbol.checkID(arg0);
 
@@ -1641,7 +1641,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         return getMetaClass().finvokeWithRefinements(context, this, staticScope, name, block);
     }
-    @JRubyMethod(name = "__send__", omit = true, keywords = true)
+    @JRubyMethod(name = "__send__", omit = true)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         String name = RubySymbol.checkID(arg0);
 
@@ -1650,7 +1650,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         arg1 = dupIfKeywordRestAtCallsite(context, arg1);
         return getMetaClass().finvokeWithRefinements(context, this, staticScope, name, arg1, block);
     }
-    @JRubyMethod(name = "__send__", omit = true, keywords = true)
+    @JRubyMethod(name = "__send__", omit = true)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         String name = RubySymbol.checkID(arg0);
 
@@ -1660,7 +1660,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         return getMetaClass().finvokeWithRefinements(context, this, staticScope, name, arg1, arg2, block);
     }
-    @JRubyMethod(name = "__send__", required = 1, rest = true, omit = true, keywords = true)
+    @JRubyMethod(name = "__send__", required = 1, rest = true, omit = true)
     public IRubyObject send(ThreadContext context, IRubyObject[] args, Block block) {
         int callInfo = context.callInfo;
 
@@ -2574,7 +2574,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     k = Klass.new
      *     k.instance_exec(5) {|x| @secret+x }   #=> 104
      */
-    @JRubyMethod(name = "instance_exec", optional = 3, rest = true, keywords = true,
+    @JRubyMethod(name = "instance_exec", optional = 3, rest = true,
             reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
             writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject instance_exec(ThreadContext context, IRubyObject[] args, Block block) {

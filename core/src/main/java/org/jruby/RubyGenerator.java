@@ -93,7 +93,7 @@ public class RubyGenerator extends RubyObject {
     }
 
     // generator_each
-    @JRubyMethod(rest = true, keywords = true)
+    @JRubyMethod(rest = true)
     public IRubyObject each(ThreadContext context, IRubyObject[] args, Block block) {
         return proc.call(context, ArraySupport.newCopy(RubyYielder.newYielder(context, block), args));
     }

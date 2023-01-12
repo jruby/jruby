@@ -93,7 +93,9 @@ public final class ThreadContext {
     private final static int INITIAL_SIZE = 10;
     private final static int INITIAL_FRAMES_SIZE = 10;
 
-    /** The number of calls after which to do a thread event poll */
+    /**
+     * The number of calls after which to do a thread event poll
+     */
     private final static int CALL_POLL_COUNT = 0xFFF;
 
     // runtime, nil, and runtimeCache cached here for speed of access from any thread
@@ -124,12 +126,16 @@ public final class ThreadContext {
       still work and it should omit that argument value.  Ordinary Ruby callsites will only be
       aware of CALL_KEYWORD_EMPTY being set from Java or from another IR instruction.
      */
-    public final static int CALL_SPLATS =        1 << 0; // foo(*args)
-    public final static int CALL_KEYWORD =       1 << 1; // static explicit keywords foo(k: 1, **r)
-    public final static int CALL_KEYWORD_REST =  1 << 2; // foo(**something)
+    public final static int CALL_SPLATS = 1 << 0; // foo(*args)
+    public final static int CALL_KEYWORD = 1 << 1; // static explicit keywords foo(k: 1, **r)
+    public final static int CALL_KEYWORD_REST = 1 << 2; // foo(**something)
     // generally live detected info at a callsite that we are passing an empty hash as kwrest.
     // it is also statically determined by literal **{} (which is only found in test suites).
     public final static int CALL_KEYWORD_EMPTY = 1 << 3;
+    // Marked at all native callsites.  If native->ruby then this is just an extra field
+    // ignored but all callInfo state still exists from the native call.  If native->native
+    // and the native method is not marked as needing keywords it deletes the callInfo state.
+    public final static int CALL_LAST_CALL_NATIVE = 1 << 4;
 
     public int callInfo;
 
@@ -1499,8 +1505,24 @@ public final class ThreadContext {
         return callInfo;
     }
 
+    /**
+     * Any callInfo passed to a native call will leave it alone but mark this
+     * as native.
+     */
+    public void markAsNativeCall() {
+        this.callInfo |= CALL_LAST_CALL_NATIVE;
+    }
+
     public static boolean hasKeywords(int callInfo) {
         return (callInfo & CALL_KEYWORD) != 0;
+    }
+
+    public static String callInfoDebugString(int callInfo) {
+        return "CallInfo: " + (((callInfo & CALL_SPLATS) != 0) ? " SPLAT " : "") +
+                (((callInfo & CALL_KEYWORD) != 0) ? " KEYWORD " : "") +
+                (((callInfo & CALL_KEYWORD_REST) != 0) ? " KWREST " : "") +
+                (((callInfo & CALL_KEYWORD_EMPTY) != 0) ? " KWEMPTY " : "") +
+                (((callInfo & CALL_LAST_CALL_NATIVE) != 0) ? " NATIVE" : "");
     }
 
     @Deprecated

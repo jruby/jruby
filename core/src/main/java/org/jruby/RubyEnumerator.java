@@ -201,7 +201,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
     // used internally to create lazy without block (from Enumerator/Enumerable)
     // and used internally to create enum from Enumerator::Lazy#eager
-    @JRubyMethod(name = "__from", meta = true, required = 2, optional = 2, visibility = PRIVATE, keywords = true)
+    @JRubyMethod(name = "__from", meta = true, required = 2, optional = 2, visibility = PRIVATE)
     public static IRubyObject __from(ThreadContext context, IRubyObject klass, IRubyObject[] args) {
         boolean keywords = (context.callInfo & CALL_KEYWORD) != 0 && (context.callInfo & ThreadContext.CALL_KEYWORD_EMPTY) == 0;
         context.resetCallInfo();
@@ -239,17 +239,17 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         return initialize(context, Block.NULL_BLOCK);
     }
 
-    @JRubyMethod(name = "initialize", visibility = PRIVATE, keywords = true)
+    @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, Block block) {
         return initialize(context, NULL_ARRAY, block);
     }
 
-    @JRubyMethod(name = "initialize", visibility = PRIVATE, keywords = true)
+    @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject object, Block block) {
         return initialize(context, new IRubyObject[] { object }, block);
     }
 
-    @JRubyMethod(name = "initialize", visibility = PRIVATE, rest = true, keywords = true)
+    @JRubyMethod(name = "initialize", visibility = PRIVATE, rest = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
         boolean keywords = (context.callInfo & CALL_KEYWORD) != 0 && (context.callInfo & ThreadContext.CALL_KEYWORD_EMPTY) == 0;
         context.resetCallInfo();

@@ -113,29 +113,29 @@ public class RubyMethod extends AbstractRubyMethod {
     /** Call the method.
      * 
      */
-    @JRubyMethod(name = {"call", "[]"}, keywords = true)
+    @JRubyMethod(name = {"call", "[]"})
     public IRubyObject call(ThreadContext context, Block block) {
         return method.call(context, receiver, sourceModule, methodName, block);
     }
-    @JRubyMethod(name = {"call", "[]"}, keywords = true)
+    @JRubyMethod(name = {"call", "[]"})
     public IRubyObject call(ThreadContext context, IRubyObject arg, Block block) {
         arg = dupIfKeywordRestAtCallsite(context, arg);
 
         return method.call(context, receiver, sourceModule, methodName, arg, block);
     }
-    @JRubyMethod(name = {"call", "[]"}, keywords = true)
+    @JRubyMethod(name = {"call", "[]"})
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         arg1 = dupIfKeywordRestAtCallsite(context, arg1);
 
         return method.call(context, receiver, sourceModule, methodName, arg0, arg1, block);
     }
-    @JRubyMethod(name = {"call", "[]"}, keywords = true)
+    @JRubyMethod(name = {"call", "[]"})
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         arg2 = dupIfKeywordRestAtCallsite(context, arg2);
 
         return method.call(context, receiver, sourceModule, methodName, arg0, arg1, arg2, block);
     }
-    @JRubyMethod(name = {"call", "[]"}, rest = true, keywords = true)
+    @JRubyMethod(name = {"call", "[]"}, rest = true)
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
         if (args.length > 0) {
             args[args.length - 1] = dupIfKeywordRestAtCallsite(context, args[args.length - 1]);

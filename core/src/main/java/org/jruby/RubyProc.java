@@ -315,12 +315,12 @@ public class RubyProc extends RubyObject implements DataType {
         return args;
     }
 
-    @JRubyMethod(name = {"call", "[]", "yield", "==="}, rest = true, omit = true, keywords = true)
+    @JRubyMethod(name = {"call", "[]", "yield", "==="}, rest = true, omit = true)
     public final IRubyObject call(ThreadContext context, IRubyObject[] args, Block blockCallArg) {
         return block.call(context, args, blockCallArg);
     }
 
-    @JRubyMethod(name = {"call", "[]", "yield", "==="}, omit = true, keywords = true)
+    @JRubyMethod(name = {"call", "[]", "yield", "==="}, omit = true)
     public final IRubyObject call(ThreadContext context, Block blockCallArg) {
         return block.call(
                 context,
@@ -328,12 +328,12 @@ public class RubyProc extends RubyObject implements DataType {
                 blockCallArg);
     }
 
-    @JRubyMethod(name = {"call", "[]", "yield", "==="}, omit = true, keywords = true)
+    @JRubyMethod(name = {"call", "[]", "yield", "==="}, omit = true)
     public final IRubyObject call(ThreadContext context, IRubyObject arg0, Block blockCallArg) {
         return block.call(context, new IRubyObject[] { arg0 }, blockCallArg);
     }
 
-    @JRubyMethod(name = {"call", "[]", "yield", "==="}, omit = true, keywords = true)
+    @JRubyMethod(name = {"call", "[]", "yield", "==="}, omit = true)
     public final IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block blockCallArg) {
         return block.call(
                 context,
@@ -341,7 +341,7 @@ public class RubyProc extends RubyObject implements DataType {
                 blockCallArg);
     }
 
-    @JRubyMethod(name = {"call", "[]", "yield", "==="}, omit = true, keywords = true)
+    @JRubyMethod(name = {"call", "[]", "yield", "==="}, omit = true)
     public final IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block blockCallArg) {
         return block.call(
                 context,
