@@ -168,9 +168,9 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
         }
 
         if (receiver == null) {
-            return RubyUnboundMethod.newUnboundMethod(superClass, methodName, superClass, originName, entry);
+            return RubyUnboundMethod.newUnboundMethod(entry.sourceModule, methodName, superClass, originName, entry);
         } else {
-            return RubyMethod.newMethod(superClass, methodName, superClass, originName, entry, receiver);
+            return RubyMethod.newMethod(entry.sourceModule, methodName, superClass, originName, entry, receiver);
         }
     }
 
