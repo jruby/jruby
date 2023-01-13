@@ -310,7 +310,8 @@ public class Pack {
         converters['V'] = tmp;
         converters['L' + LE] = tmp;
         converters['I' + LE] = tmp;
-        
+        if (Platform.BIT_WIDTH == 32) converters['J' + LE] = tmp;
+
         // unsigned long, big-endian
         tmp = new Converter(4, "Integer") {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
@@ -324,6 +325,7 @@ public class Pack {
         converters['N'] = tmp;
         converters['L' + BE] = tmp;
         converters['I' + BE] = tmp;
+        if (Platform.BIT_WIDTH == 32) converters['J' + BE] = tmp;
 
         // unsigned int, native
         tmp = new Converter(4, "Integer") {
@@ -341,6 +343,7 @@ public class Pack {
         };
         converters['I'] = tmp; // unsigned int, native
         converters['L'] = tmp; // unsigned long, native
+        if (Platform.BIT_WIDTH == 32) converters['J'] = tmp; // unsigned long, native
 
         // int, native
         tmp = new Converter(4, "Integer") {
@@ -355,7 +358,8 @@ public class Pack {
         };
         converters['i'] = tmp; // int, native
         converters['l'] = tmp; // long, native
-        
+        if (Platform.BIT_WIDTH == 32) converters['j'] = tmp; // long, native
+
         // int, little endian
         tmp = new Converter(4, "Integer") {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
@@ -368,7 +372,8 @@ public class Pack {
         };
         converters['i' + LE] = tmp; // int, native
         converters['l' + LE] = tmp; // long, native
-        
+        if (Platform.BIT_WIDTH == 32) converters['j' + LE] = tmp; // long, native
+
         // int, big endian
         tmp = new Converter(4, "Integer") {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
@@ -381,6 +386,7 @@ public class Pack {
         };
         converters['i' + BE] = tmp; // int, native
         converters['l' + BE] = tmp; // long, native
+        if (Platform.BIT_WIDTH == 32) converters['j' + BE] = tmp; // long, native
 
         // 64-bit number, native (as bignum)
         tmp = new QuadConverter(8, "Integer") {
@@ -396,7 +402,7 @@ public class Pack {
             }
         };
         converters['Q'] = tmp;
-        converters['J'] = tmp;
+        if (Platform.BIT_WIDTH == 64) converters['J'] = tmp;
 
         // 64-bit number, little endian (as bignum)
         tmp = new QuadConverter(8, "Integer") {
@@ -411,10 +417,9 @@ public class Pack {
             }
         };
         converters['Q' + LE] = tmp;
-        converters['J' + LE] = tmp;
+        if (Platform.BIT_WIDTH == 64) converters['J' + LE] = tmp;
 
         // 64-bit number, big endian (as bignum)
-
         tmp = new QuadConverter(8, "Integer") {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
                 long l = decodeLongBigEndian(enc);
@@ -427,7 +432,7 @@ public class Pack {
             }
         };
         converters['Q' + BE] = tmp;
-        converters['J' + BE] = tmp;
+        if (Platform.BIT_WIDTH == 64) converters['J' + BE] = tmp;
 
         // 64-bit number, native (as fixnum)
         tmp = new QuadConverter(8, "Integer") {
@@ -442,7 +447,7 @@ public class Pack {
             }
         };
         converters['q'] = tmp;
-        converters['j'] = tmp;
+        if (Platform.BIT_WIDTH == 64) converters['j'] = tmp;
 
         // 64-bit number, little-endian (as fixnum)
         tmp = new QuadConverter(8, "Integer") {
@@ -456,7 +461,7 @@ public class Pack {
             }
         };
         converters['q' + LE] = tmp;
-        converters['j' + LE] = tmp;
+        if (Platform.BIT_WIDTH == 64) converters['j' + LE] = tmp;
 
         // 64-bit number, big-endian (as fixnum)
         tmp = new QuadConverter(8, "Integer") {
@@ -470,7 +475,7 @@ public class Pack {
             }
         };
         converters['q' + BE] = tmp;
-        converters['j' + BE] = tmp;
+        if (Platform.BIT_WIDTH == 64) converters['j' + BE] = tmp;
     }
 
     public static int unpackInt_i(ByteBuffer enc) {
