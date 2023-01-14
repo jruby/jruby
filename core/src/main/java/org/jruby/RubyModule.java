@@ -3570,11 +3570,12 @@ public class RubyModule extends RubyObject {
 
         if (!parents) mod = getMethodLocation();
 
-        DynamicMethod method = mod.searchMethod(name);
+        CacheEntry entry = mod.searchWithCache(name);
+        DynamicMethod method = entry.method;
 
         if (method.isUndefined()) return Visibility.UNDEFINED;
 
-        if (!parents && method.getDefinedClass() != mod) return Visibility.UNDEFINED;
+        if (!parents && entry.sourceModule != mod) return Visibility.UNDEFINED;
 
         return method.getVisibility();
     }
