@@ -166,4 +166,11 @@ public interface ValueCompiler {
      * Stack required: none
      */
     void pushEmptyString(Encoding encoding);
+
+    /**
+     * Push a new empty string on the stack preallocated to the given size
+     *
+     * Stack required: none
+     */
+    void pushBufferString(Encoding encoding, int size);
 }

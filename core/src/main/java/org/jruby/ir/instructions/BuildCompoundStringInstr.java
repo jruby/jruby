@@ -47,6 +47,10 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
         return encoding;
     }
 
+    public int getInitialSize() {
+        return estimatedSize * 3 / 2;
+    }
+
     @Override
     public Instr clone(CloneInfo ii) {
         return new BuildCompoundStringInstr(ii.getRenamedVariable(result), cloneOperands(ii), encoding, estimatedSize, frozen, debug, file, line);
@@ -71,7 +75,7 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         // use estimatedSize * 1.5 to give some initial room for interpolation
-        RubyString str = RubyString.newStringLight(context.runtime, estimatedSize * 3 / 2, encoding);
+        RubyString str = RubyString.newStringLight(context.runtime, getInitialSize(), encoding);
 
         for (Operand p : getOperands()) {
             if (p instanceof StringLiteral) {

@@ -115,7 +115,15 @@ public class NormalValueCompiler implements ValueCompiler {
 
     public void pushEmptyString(Encoding encoding) {
         pushRuntime();
-        compiler.adapter.invokestatic(p(RubyString.class), "newEmptyString", sig(RubyString.class, Ruby.class));
+        compiler.getValueCompiler().pushEncoding(encoding);
+        compiler.adapter.invokestatic(p(RubyString.class), "newEmptyString", sig(RubyString.class, Ruby.class, Encoding.class));
+    }
+
+    public void pushBufferString(Encoding encoding, int size) {
+        pushRuntime();
+        compiler.adapter.pushInt(size);
+        compiler.getValueCompiler().pushEncoding(encoding);
+        compiler.adapter.invokestatic(p(RubyString.class), "newStringLight", sig(RubyString.class, Ruby.class, int.class, Encoding.class));
     }
 
     public void pushByteList(final ByteList bl) {
