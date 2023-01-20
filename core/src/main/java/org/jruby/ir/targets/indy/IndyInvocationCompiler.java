@@ -2,6 +2,7 @@ package org.jruby.ir.targets.indy;
 
 import org.jruby.RubyClass;
 import org.jruby.compiler.NotCompilableException;
+import org.jruby.ir.instructions.AsStringInstr;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.EQQInstr;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -192,5 +193,15 @@ public class IndyInvocationCompiler implements InvocationCompiler {
     @Override
     public void invokeEQQ(EQQInstr call) {
         normalCompiler.invokeEQQ(call);
+    }
+
+    @Override
+    public void asString(AsStringInstr call, String scopeFieldName, String file) {
+        if (call.isPotentiallyRefined()) {
+            normalCompiler.asString(call, scopeFieldName, file);
+            return;
+        }
+
+        compiler.adapter.invokedynamic("asString", sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT)), AsStringSite.BOOTSTRAP, file, compiler.getLastLine());
     }
 }

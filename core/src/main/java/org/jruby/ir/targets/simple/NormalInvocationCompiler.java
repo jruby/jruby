@@ -5,6 +5,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.jruby.ir.instructions.AsStringInstr;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.EQQInstr;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -381,5 +382,11 @@ public class NormalInvocationCompiler implements InvocationCompiler {
         compiler.getValueCompiler().pushCallSite(compiler.getClassData().clsName, compiler.getUniqueSiteName(call.getId()), null, call);
         compiler.adapter.ldc(call.isSplattedValue());
         compiler.invokeIRHelper("isEQQ", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, CallSite.class, boolean.class));
+    }
+
+    @Override
+    public void asString(AsStringInstr call, String scopeFieldName, String file) {
+        invokeOther(file, scopeFieldName, call, 0);
+        compiler.adapter.invokeinterface(p(IRubyObject.class), "asString", sig(RubyString.class));
     }
 }
