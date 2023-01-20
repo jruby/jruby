@@ -87,6 +87,11 @@ public class IndyValueCompiler implements ValueCompiler {
         compiler.adapter.invokedynamic("emptyString", sig(RubyString.class, ThreadContext.class), Bootstrap.EMPTY_STRING_BOOTSTRAP, encoding.toString());
     }
 
+    public void pushBufferString(Encoding encoding, int size) {
+        compiler.loadContext();
+        compiler.adapter.invokedynamic("bufferString", sig(RubyString.class, ThreadContext.class), Bootstrap.BUFFER_STRING_BOOTSTRAP, encoding.toString(), size);
+    }
+
     public void pushByteList(ByteList bl) {
         compiler.adapter.invokedynamic("bytelist", sig(ByteList.class), Bootstrap.bytelist(), RubyEncoding.decodeRaw(bl), bl.getEncoding().toString());
     }

@@ -33,7 +33,6 @@ import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
-import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
 import org.jruby.util.collections.IntHashMap;
 import org.jruby.util.log.Logger;
@@ -1088,7 +1087,8 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void BuildCompoundStringInstr(BuildCompoundStringInstr compoundstring) {
-        jvmMethod().getValueCompiler().pushEmptyString(compoundstring.getEncoding());
+        jvmMethod().getValueCompiler().pushBufferString(compoundstring.getEncoding(), compoundstring.getInitialSize());
+
         for (Operand p : compoundstring.getPieces()) {
             if (p instanceof StringLiteral) {
                 // we have bytelist and CR in hand, go straight to cat logic

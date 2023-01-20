@@ -70,6 +70,7 @@ import org.jruby.specialized.RubyArraySpecialized;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JavaNameMangler;
+import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -101,6 +102,12 @@ public class Bootstrap {
             "emptyString",
             sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class),
             false);
+    public static final Handle BUFFER_STRING_BOOTSTRAP = new Handle(
+            Opcodes.H_INVOKESTATIC,
+            p(Bootstrap.class),
+            "bufferString",
+            sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, int.class),
+            false);
     private static final String[] GENERIC_CALL_PERMUTE = {"context", "self", "arg.*"};
 
     public static CallSite string(Lookup lookup, String name, MethodType type, String value, String encodingName, int cr) {
@@ -128,6 +135,10 @@ public class Bootstrap {
     public static CallSite emptyString(Lookup lookup, String name, MethodType type, String encodingName) {
         RubyString.EmptyByteListHolder holder = RubyString.getEmptyByteList(encodingFromName(encodingName));
         return new ConstantCallSite(insertArguments(STRING_HANDLE, 1, holder.bytes, holder.cr));
+    }
+
+    public static CallSite bufferString(Lookup lookup, String name, MethodType type, String encodingName, int size) {
+        return new ConstantCallSite(insertArguments(STRING_HANDLE, 1, bytelist(size, encodingName), StringSupport.CR_7BIT));
     }
 
     public static Handle isNilBoot() {
@@ -233,6 +244,12 @@ public class Bootstrap {
         }
 
         return new ByteList(RubyEncoding.encodeISO(value), encoding, false);
+    }
+
+    public static ByteList bytelist(int size, String encodingName) {
+        Encoding encoding = encodingFromName(encodingName);
+
+        return new ByteList(size, encoding);
     }
 
     private static Encoding encodingFromName(String encodingName) {
