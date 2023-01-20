@@ -740,8 +740,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext();
         jvmMethod().loadSelf();
         visit(asstring.getReceiver());
-        jvmMethod().getInvocationCompiler().invokeOther(file, jvm.methodData().scopeField, asstring, 0);
-        jvmAdapter().invokeinterface(p(IRubyObject.class), "asString", sig(RubyString.class));
+        jvmMethod().getInvocationCompiler().asString(asstring, jvm.methodData().scopeField, file);
         jvmStoreLocal(asstring.getResult());
     }
 
