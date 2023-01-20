@@ -65,6 +65,7 @@ import org.jruby.runtime.ivars.FieldVariableAccessor;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.runtime.opto.OptoFactory;
+import org.jruby.runtime.scope.DynamicScopeGenerator;
 import org.jruby.specialized.RubyArraySpecialized;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
@@ -91,6 +92,7 @@ public class Bootstrap {
     public final static String BOOTSTRAP_BARE_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class);
     public final static String BOOTSTRAP_LONG_STRING_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, long.class, int.class, String.class, int.class);
     public final static String BOOTSTRAP_DOUBLE_STRING_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, double.class, int.class, String.class, int.class);
+    public final static String BOOTSTRAP_INT_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class, int.class);
     private static final Logger LOG = LoggerFactory.getLogger(Bootstrap.class);
     static final Lookup LOOKUP = MethodHandles.lookup();
     public static final Handle EMPTY_STRING_BOOTSTRAP = new Handle(
@@ -1350,6 +1352,14 @@ public class Bootstrap {
         return getBootstrapHandle("coverLineBootstrap", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, int.class, int.class));
     }
 
+    public static Handle getHeapLocalHandle() {
+        return getBootstrapHandle("getHeapLocalBootstrap", BOOTSTRAP_INT_INT_SIG);
+    }
+
+    public static Handle getHeapLocalOrNilHandle() {
+        return getBootstrapHandle("getHeapLocalOrNilBootstrap", BOOTSTRAP_INT_INT_SIG);
+    }
+
     public static Handle getBootstrapHandle(String name, String sig) {
         return getBootstrapHandle(name, Bootstrap.class, sig);
     }
@@ -1403,6 +1413,56 @@ public class Bootstrap {
         IRRuntimeHelpers.updateCoverage(context, filename, line);
 
         if (oneshot) site.setTarget(Binder.from(void.class, ThreadContext.class).dropAll().nop());
+    }
+
+    public static CallSite getHeapLocalBootstrap(Lookup lookup, String name, MethodType type, int depth, int location) throws Throwable {
+        // no null checking needed for method bodies
+        MethodHandle getter;
+        Binder binder = Binder
+                .from(type);
+
+        if (depth == 0) {
+            if (location < DynamicScopeGenerator.SPECIALIZED_GETS.size()) {
+                getter = binder.invokeVirtualQuiet(LOOKUP, DynamicScopeGenerator.SPECIALIZED_GETS.get(location));
+            } else {
+                getter = binder
+                        .insert(1, location)
+                        .invokeVirtualQuiet(LOOKUP, "getValueDepthZero");
+            }
+        } else {
+            getter = binder
+                    .insert(1, arrayOf(int.class, int.class), location, depth)
+                    .invokeVirtualQuiet(LOOKUP, "getValue");
+        }
+
+        ConstantCallSite site = new ConstantCallSite(getter);
+
+        return site;
+    }
+
+    public static CallSite getHeapLocalOrNilBootstrap(Lookup lookup, String name, MethodType type, int depth, int location) throws Throwable {
+        MethodHandle getter;
+        Binder binder = Binder
+                .from(type)
+                .filter(1, contextValue(lookup, "nil", methodType(IRubyObject.class, ThreadContext.class)).dynamicInvoker());
+
+        if (depth == 0) {
+            if (location < DynamicScopeGenerator.SPECIALIZED_GETS_OR_NIL.size()) {
+                getter = binder.invokeVirtualQuiet(LOOKUP, DynamicScopeGenerator.SPECIALIZED_GETS_OR_NIL.get(location));
+            } else {
+                getter = binder
+                        .insert(1, location)
+                        .invokeVirtualQuiet(LOOKUP, "getValueDepthZeroOrNil");
+            }
+        } else {
+            getter = binder
+                    .insert(1, arrayOf(int.class, int.class), location, depth)
+                    .invokeVirtualQuiet(LOOKUP, "getValueOrNil");
+        }
+
+        ConstantCallSite site = new ConstantCallSite(getter);
+
+        return site;
     }
 
     public static CallSite globalBootstrap(Lookup lookup, String name, MethodType type, String file, int line) throws Throwable {

@@ -2657,41 +2657,12 @@ public class JVMVisitor extends IRVisitor {
         int depth = localvariable.getScopeDepth();
         int location = localvariable.getLocation();
 
-        // We can only use the fast path with no null checking in methods, since closures may JIT independently
-        // atop methods that do not guarantee all scoped vars are initialized. See jruby/jruby#4235.
         if (jvm.methodData().scope instanceof IRMethod) {
             jvmLoadLocal(DYNAMIC_SCOPE);
-
-            if (depth == 0) {
-                if (location < DynamicScopeGenerator.SPECIALIZED_GETS.size()) {
-                    m.adapter.invokevirtual(p(DynamicScope.class), DynamicScopeGenerator.SPECIALIZED_GETS.get(location), sig(IRubyObject.class));
-                } else {
-                    m.adapter.pushInt(location);
-                    m.adapter.invokevirtual(p(DynamicScope.class), "getValueDepthZero", sig(IRubyObject.class, int.class));
-                }
-            } else {
-                m.adapter.pushInt(location);
-                m.adapter.pushInt(depth);
-                m.adapter.invokevirtual(p(DynamicScope.class), "getValue", sig(IRubyObject.class, int.class, int.class));
-            }
+            m.getLocalVariableCompiler().getHeapLocal(depth, location);
         } else {
             jvmLoadLocal(DYNAMIC_SCOPE);
-
-            if (depth == 0) {
-                if (location < DynamicScopeGenerator.SPECIALIZED_GETS_OR_NIL.size()) {
-                    m.getValueCompiler().pushNil();
-                    m.adapter.invokevirtual(p(DynamicScope.class), DynamicScopeGenerator.SPECIALIZED_GETS_OR_NIL.get(location), sig(IRubyObject.class, IRubyObject.class));
-                } else {
-                    m.adapter.pushInt(location);
-                    m.getValueCompiler().pushNil();
-                    m.adapter.invokevirtual(p(DynamicScope.class), "getValueDepthZeroOrNil", sig(IRubyObject.class, int.class, IRubyObject.class));
-                }
-            } else {
-                m.adapter.pushInt(location);
-                m.adapter.pushInt(depth);
-                m.getValueCompiler().pushNil();
-                m.adapter.invokevirtual(p(DynamicScope.class), "getValueOrNil", sig(IRubyObject.class, int.class, int.class, IRubyObject.class));
-            }
+            m.getLocalVariableCompiler().getHeapLocalOrNil(depth, location);
         }
     }
 
