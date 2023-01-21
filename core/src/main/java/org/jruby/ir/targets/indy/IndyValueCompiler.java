@@ -118,6 +118,11 @@ public class IndyValueCompiler implements ValueCompiler {
         compiler.adapter.invokedynamic("symbolProc", sig(JVM.OBJECT, ThreadContext.class), SymbolProcObjectSite.BOOTSTRAP, RubyEncoding.decodeRaw(bytes), bytes.getEncoding().toString());
     }
 
+    public void pushRubyEncoding(Encoding encoding) {
+        compiler.loadContext();
+        compiler.adapter.invokedynamic("rubyEncoding", sig(RubyEncoding.class, ThreadContext.class), Bootstrap.contextValueString(), new String(encoding.getName()));
+    }
+
     public void pushEncoding(Encoding encoding) {
         compiler.loadContext();
         compiler.adapter.invokedynamic("encoding", sig(RubyEncoding.class, ThreadContext.class), Bootstrap.contextValueString(), new String(encoding.getName()));

@@ -117,6 +117,15 @@ public interface ValueCompiler {
     void pushSymbolProc(ByteList bytes);
 
     /**
+     * Push a RubyEncoding on the stack.
+     *
+     * Stack required: none
+     *
+     * @param encoding the encoding to push
+     */
+    void pushRubyEncoding(Encoding encoding);
+
+    /**
      * Push an encoding on the stack.
      *
      * Stack required: none

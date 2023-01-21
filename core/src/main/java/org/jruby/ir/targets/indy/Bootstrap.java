@@ -524,6 +524,9 @@ public class Bootstrap {
             case "False":
                 dmh = FALSE_HANDLE;
                 break;
+            case "rubyEncoding":
+                dmh = RUBY_ENCODING_HANDLE;
+                break;
             case "encoding":
                 dmh = ENCODING_HANDLE;
                 break;
@@ -541,6 +544,9 @@ public class Bootstrap {
 
         MethodHandle dmh;
         switch (name) {
+            case "rubyEncoding":
+                dmh = RUBY_ENCODING_HANDLE;
+                break;
             case "encoding":
                 dmh = ENCODING_HANDLE;
                 break;
@@ -572,9 +578,14 @@ public class Bootstrap {
                     .from(IRubyObject.class, ThreadContext.class, MutableCallSite.class)
                     .invokeStaticQuiet(LOOKUP, Bootstrap.class, "False");
 
-    private static final MethodHandle ENCODING_HANDLE =
+    private static final MethodHandle RUBY_ENCODING_HANDLE =
             Binder
                     .from(RubyEncoding.class, ThreadContext.class, MutableCallSite.class, String.class)
+                    .invokeStaticQuiet(LOOKUP, Bootstrap.class, "rubyEncoding");
+
+    private static final MethodHandle ENCODING_HANDLE =
+            Binder
+                    .from(Encoding.class, ThreadContext.class, MutableCallSite.class, String.class)
                     .invokeStaticQuiet(LOOKUP, Bootstrap.class, "encoding");
 
     public static IRubyObject nil(ThreadContext context, MutableCallSite site) {
@@ -615,7 +626,7 @@ public class Bootstrap {
         return context.runtime;
     }
 
-    public static RubyEncoding encoding(ThreadContext context, MutableCallSite site, String name) {
+    public static RubyEncoding rubyEncoding(ThreadContext context, MutableCallSite site, String name) {
         RubyEncoding rubyEncoding = IRRuntimeHelpers.retrieveEncoding(context, name);
 
         MethodHandle constant = (MethodHandle)rubyEncoding.constant();
@@ -624,6 +635,17 @@ public class Bootstrap {
         site.setTarget(constant);
 
         return rubyEncoding;
+    }
+
+    public static Encoding encoding(ThreadContext context, MutableCallSite site, String name) {
+        Encoding encoding = IRRuntimeHelpers.retrieveJCodingsEncoding(context, name);
+
+        MethodHandle constant = MethodHandles.constant(Encoding.class, encoding);
+        if (constant == null) constant = (MethodHandle)OptoFactory.newConstantWrapper(Encoding.class, encoding);
+
+        site.setTarget(constant);
+
+        return encoding;
     }
 
     public static RubyHash hash(ThreadContext context, boolean literal, IRubyObject[] pairs) {
