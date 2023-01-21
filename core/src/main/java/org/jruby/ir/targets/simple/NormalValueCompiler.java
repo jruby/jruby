@@ -21,7 +21,6 @@ import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.targets.IRBytecodeAdapter;
 import org.jruby.ir.targets.ValueCompiler;
-import org.jruby.ir.targets.indy.Bootstrap;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
@@ -41,7 +40,6 @@ import java.lang.invoke.MethodType;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Consumer;
 
 import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.p;
