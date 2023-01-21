@@ -115,14 +115,14 @@ public class NormalValueCompiler implements ValueCompiler {
 
     public void pushEmptyString(Encoding encoding) {
         pushRuntime();
-        compiler.getValueCompiler().pushEncoding(encoding);
+        pushRubyEncoding(encoding);
         compiler.adapter.invokestatic(p(RubyString.class), "newEmptyString", sig(RubyString.class, Ruby.class, Encoding.class));
     }
 
     public void pushBufferString(Encoding encoding, int size) {
         pushRuntime();
         compiler.adapter.pushInt(size);
-        compiler.getValueCompiler().pushEncoding(encoding);
+        pushEncoding(encoding);
         compiler.adapter.invokestatic(p(RubyString.class), "newStringLight", sig(RubyString.class, Ruby.class, int.class, Encoding.class));
     }
 
@@ -170,11 +170,19 @@ public class NormalValueCompiler implements ValueCompiler {
         });
     }
 
-    public void pushEncoding(final Encoding encoding) {
-        cacheValuePermanentlyLoadContext("encoding", RubySymbol.class, keyFor("encoding", encoding), () -> {
+    public void pushRubyEncoding(final Encoding encoding) {
+        cacheValuePermanentlyLoadContext("rubyEncoding", RubyEncoding.class, keyFor("rubyEncoding", encoding), () -> {
             compiler.loadContext();
             compiler.adapter.ldc(encoding.toString());
             compiler.invokeIRHelper("retrieveEncoding", sig(RubyEncoding.class, ThreadContext.class, String.class));
+        });
+    }
+
+    public void pushEncoding(final Encoding encoding) {
+        cacheValuePermanentlyLoadContext("encoding", Encoding.class, keyFor("encoding", encoding), () -> {
+            compiler.loadContext();
+            compiler.adapter.ldc(encoding.toString());
+            compiler.invokeIRHelper("retrieveJCodingsEncoding", sig(Encoding.class, ThreadContext.class, String.class));
         });
     }
 

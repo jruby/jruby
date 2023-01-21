@@ -2532,7 +2532,7 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void GetEncodingInstr(GetEncodingInstr getencodinginstr) {
         jvmMethod().loadContext();
-        jvmMethod().getValueCompiler().pushEncoding(getencodinginstr.getEncoding());
+        jvmMethod().getValueCompiler().pushRubyEncoding(getencodinginstr.getEncoding());
         jvmStoreLocal(getencodinginstr.getResult());
     }
 
