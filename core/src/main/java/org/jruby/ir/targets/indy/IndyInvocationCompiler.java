@@ -126,15 +126,15 @@ public class IndyInvocationCompiler implements InvocationCompiler {
         IRBytecodeAdapter.BlockPassType blockPassType = IRBytecodeAdapter.BlockPassType.fromIR(call);
         if (blockPassType != IRBytecodeAdapter.BlockPassType.NONE) {
             if (arity == -1) {
-                compiler.adapter.invokedynamic(action + ':' + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class)), SelfInvokeSite.BOOTSTRAP, blockPassType.literal(), file, compiler.getLastLine());
+                compiler.adapter.invokedynamic(action + ':' + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class)), SelfInvokeSite.BOOTSTRAP, blockPassType.literal(), file, compiler.getLastLine());
             } else {
-                compiler.adapter.invokedynamic(action + ':' + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, arity + 2, Block.class)), SelfInvokeSite.BOOTSTRAP, blockPassType.literal(), file, compiler.getLastLine());
+                compiler.adapter.invokedynamic(action + ':' + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, arity + 1, Block.class)), SelfInvokeSite.BOOTSTRAP, blockPassType.literal(), file, compiler.getLastLine());
             }
         } else {
             if (arity == -1) {
-                compiler.adapter.invokedynamic(action + ':' + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY)), SelfInvokeSite.BOOTSTRAP, false, file, compiler.getLastLine());
+                compiler.adapter.invokedynamic(action + ':' + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT_ARRAY)), SelfInvokeSite.BOOTSTRAP, false, file, compiler.getLastLine());
             } else {
-                compiler.adapter.invokedynamic(action + ':' + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity)), SelfInvokeSite.BOOTSTRAP, false, file, compiler.getLastLine());
+                compiler.adapter.invokedynamic(action + ':' + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, arity)), SelfInvokeSite.BOOTSTRAP, false, file, compiler.getLastLine());
             }
         }
     }

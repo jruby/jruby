@@ -737,7 +737,6 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void AsStringInstr(AsStringInstr asstring) {
         jvmMethod().loadContext();
-        jvmMethod().loadSelf();
         visit(asstring.getReceiver());
         jvmMethod().getInvocationCompiler().asString(asstring, jvm.methodData().scopeField, file);
         jvmStoreLocal(asstring.getResult());
@@ -1176,10 +1175,12 @@ public class JVMVisitor extends IRVisitor {
     }
 
     private void compileCallCommon(IRBytecodeAdapter m, CallBase call) {
+        boolean functional = call.getCallType() == CallType.FUNCTIONAL || call.getCallType() == CallType.VARIABLE;
+
         Operand[] args = call.getCallArgs();
         BlockPassType blockPassType = BlockPassType.fromIR(call);
         m.loadContext();
-        m.loadSelf(); // caller
+        if (!functional) m.loadSelf(); // caller
         visit(call.getReceiver());
         int arity = args.length;
 
@@ -1744,12 +1745,13 @@ public class JVMVisitor extends IRVisitor {
         long fixnum = oneFixnumArgNoBlockCallInstr.getFixnumArg();
         Operand receiver = oneFixnumArgNoBlockCallInstr.getReceiver();
         Variable result = oneFixnumArgNoBlockCallInstr.getResult();
+        boolean functional = oneFixnumArgNoBlockCallInstr.getCallType() == CallType.FUNCTIONAL
+                || oneFixnumArgNoBlockCallInstr.getCallType() == CallType.VARIABLE;
 
         m.loadContext();
 
         // for visibility checking without requiring frame self
-        // TODO: don't bother passing when fcall or vcall, and adjust callsite appropriately
-        m.loadSelf(); // caller
+        if (!functional) m.loadSelf(); // caller
 
         visit(receiver);
 
@@ -1768,12 +1770,13 @@ public class JVMVisitor extends IRVisitor {
         double flote = oneFloatArgNoBlockCallInstr.getFloatArg();
         Operand receiver = oneFloatArgNoBlockCallInstr.getReceiver();
         Variable result = oneFloatArgNoBlockCallInstr.getResult();
+        boolean functional = oneFloatArgNoBlockCallInstr.getCallType() == CallType.FUNCTIONAL
+                || oneFloatArgNoBlockCallInstr.getCallType() == CallType.VARIABLE;
 
         m.loadContext();
 
         // for visibility checking without requiring frame self
-        // TODO: don't bother passing when fcall or vcall, and adjust callsite appropriately
-        m.loadSelf(); // caller
+        if (!functional) m.loadSelf(); // caller
 
         visit(receiver);
 

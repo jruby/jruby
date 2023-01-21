@@ -37,8 +37,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.internal.runtime.methods.*;
 import org.jruby.ir.JIT;
-import org.jruby.ir.interpreter.FullInterpreterContext;
-import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.java.invokers.SingletonMethodInvoker;
 import org.jruby.javasupport.JavaUtil;
@@ -663,7 +661,7 @@ public class Bootstrap {
 
     static MethodHandle buildIndyHandle(InvokeSite site, CacheEntry entry) {
         MethodHandle mh = null;
-        Signature siteToDyncall = site.signature.insertArgs(3, arrayOf("class", "name"), arrayOf(RubyModule.class, String.class));
+        Signature siteToDyncall = site.signature.insertArgs(site.argOffset, arrayOf("class", "name"), arrayOf(RubyModule.class, String.class));
         DynamicMethod method = entry.method;
 
         if (method instanceof HandleMethod) {
@@ -674,10 +672,10 @@ public class Bootstrap {
                 mh = handleMethod.getHandle(site.arity);
                 if (mh != null) {
                     if (!blockGiven) mh = insertArguments(mh, mh.type().parameterCount() - 1, Block.NULL_BLOCK);
-                    mh = dropArguments(mh, 1, IRubyObject.class);
+                    if (!site.functional) mh = dropArguments(mh, 1, IRubyObject.class);
                 } else {
                     mh = handleMethod.getHandle(-1);
-                    mh = dropArguments(mh, 1, IRubyObject.class);
+                    if (!site.functional) mh = dropArguments(mh, 1, IRubyObject.class);
                     if (site.arity == 0) {
                         if (!blockGiven) {
                             mh = insertArguments(mh, mh.type().parameterCount() - 2, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
@@ -697,7 +695,7 @@ public class Bootstrap {
             } else {
                 mh = handleMethod.getHandle(-1);
                 if (mh != null) {
-                    mh = dropArguments(mh, 1, IRubyObject.class);
+                    if (!site.functional) mh = dropArguments(mh, 1, IRubyObject.class);
                     if (!blockGiven) mh = insertArguments(mh, mh.type().parameterCount() - 1, Block.NULL_BLOCK);
 
                     mh = SmartBinder.from(lookup(), siteToDyncall)
@@ -707,7 +705,7 @@ public class Bootstrap {
             }
 
             if (mh != null) {
-                mh = insertArguments(mh, 3, entry.sourceModule, site.name());
+                mh = insertArguments(mh, site.argOffset, entry.sourceModule, site.name());
 
                 if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
                     LOG.info(site.name() + "\tbound directly to handle " + Bootstrap.logMethod(method));
@@ -866,13 +864,13 @@ public class Bootstrap {
         if (accessor instanceof FieldVariableAccessor) {
             MethodHandle getter = ((FieldVariableAccessor)accessor).getGetter();
             getValue = Binder.from(site.type())
-                    .drop(0, 2)
+                    .drop(0, site.argOffset - 1)
                     .filterReturn(filter)
                     .cast(methodType(Object.class, self.getClass()))
                     .invoke(getter);
         } else {
             getValue = Binder.from(site.type())
-                    .drop(0, 2)
+                    .drop(0, site.argOffset - 1)
                     .filterReturn(filter)
                     .cast(methodType(Object.class, Object.class))
                     .prepend(accessor)
@@ -901,13 +899,13 @@ public class Bootstrap {
         if (accessor instanceof FieldVariableAccessor) {
             MethodHandle setter = ((FieldVariableAccessor)accessor).getSetter();
             setValue = Binder.from(site.type())
-                    .drop(0, 2)
+                    .drop(0, site.argOffset - 1)
                     .filterReturn(filter)
                     .cast(methodType(void.class, self.getClass(), Object.class))
                     .invoke(setter);
         } else {
             setValue = Binder.from(site.type())
-                    .drop(0, 2)
+                    .drop(0, site.argOffset - 1)
                     .filterReturn(filter)
                     .cast(methodType(void.class, Object.class, Object.class))
                     .prepend(accessor)
@@ -1019,7 +1017,7 @@ public class Bootstrap {
                     } else if (site.arity == 0) {
                         // no args, insert dummy
                         binder = SmartBinder.from(lookup(), site.signature)
-                                .insert(2, "args", IRubyObject.NULL_ARRAY);
+                                .insert(site.argOffset, "args", IRubyObject.NULL_ARRAY);
                     } else {
                         // 1 or more args, collect into []
                         binder = SmartBinder.from(lookup(), site.signature)

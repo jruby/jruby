@@ -5,7 +5,6 @@ import org.jruby.ir.instructions.CallBase;
 import org.jruby.util.ByteList;
 
 import java.math.BigInteger;
-import java.util.function.Consumer;
 
 public interface ValueCompiler {
     /**

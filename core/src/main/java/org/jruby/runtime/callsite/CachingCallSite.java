@@ -77,6 +77,11 @@ public abstract class CachingCallSite extends CallSite {
         return cacheAndCall(caller, selfType, args, context, self);
     }
 
+    public IRubyObject fcall(ThreadContext context, IRubyObject self, IRubyObject... args) {
+        return call(context, self, self, args);
+    }
+
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) {
         RubyClass selfType = getMetaClass(self);
         // This must be retrieved *once* to avoid racing with other threads.
@@ -87,11 +92,24 @@ public abstract class CachingCallSite extends CallSite {
         return cacheAndCall(caller, selfType, block, args, context, self);
     }
 
+    public IRubyObject fcall(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+        return call(context, self, self, args, block);
+    }
+
     @Override
     public IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self,
         IRubyObject[] args, Block block) {
         try {
             return call(context, caller, self, args, block);
+        } finally {
+            block.escape();
+        }
+    }
+
+    public IRubyObject fcallIter(ThreadContext context, IRubyObject self,
+                                IRubyObject[] args, Block block) {
+        try {
+            return call(context, self, self, args, block);
         } finally {
             block.escape();
         }
@@ -109,6 +127,17 @@ public abstract class CachingCallSite extends CallSite {
         }
     }
 
+    public final IRubyObject fcallVarargs(ThreadContext context,
+                                         IRubyObject self, IRubyObject... args) {
+        switch (args.length) {
+            case 0: return call(context, self, self);
+            case 1: return call(context, self, self, args[0]);
+            case 2: return call(context, self, self, args[0], args[1]);
+            case 3: return call(context, self, self, args[0], args[1], args[2]);
+            default: return call(context, self, self, args);
+        }
+    }
+
     @Override
     public final IRubyObject callVarargs(ThreadContext context, IRubyObject caller,
         IRubyObject self, IRubyObject[] args, Block block) {
@@ -118,6 +147,17 @@ public abstract class CachingCallSite extends CallSite {
             case 2: return call(context, caller, self, args[0], args[1], block);
             case 3: return call(context, caller, self, args[0], args[1], args[2], block);
             default: return call(context, caller, self, args, block);
+        }
+    }
+
+    public final IRubyObject fcallVarargs(ThreadContext context,
+                                         IRubyObject self, IRubyObject[] args, Block block) {
+        switch (args.length) {
+            case 0: return call(context, self, self, block);
+            case 1: return call(context, self, self, args[0], block);
+            case 2: return call(context, self, self, args[0], args[1], block);
+            case 3: return call(context, self, self, args[0], args[1], args[2], block);
+            default: return call(context, self, self, args, block);
         }
     }
 
@@ -133,6 +173,17 @@ public abstract class CachingCallSite extends CallSite {
         }
     }
 
+    public final IRubyObject fcallVarargsIter(ThreadContext context,
+                                             IRubyObject self, IRubyObject[] args, Block block) {
+        switch (args.length) {
+            case 0: return callIter(context, self, self, block);
+            case 1: return callIter(context, self, self, args[0], block);
+            case 2: return callIter(context, self, self, args[0], args[1], block);
+            case 3: return callIter(context, self, self, args[0], args[1], args[2], block);
+            default: return callIter(context, self, self, args, block);
+        }
+    }
+
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self) {
         RubyClass selfType = getMetaClass(self);
@@ -144,6 +195,11 @@ public abstract class CachingCallSite extends CallSite {
         return cacheAndCall(caller, selfType, context, self);
     }
 
+    public IRubyObject fcall(ThreadContext context, IRubyObject self) {
+        return call(context, self, self);
+    }
+
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, Block block) {
         RubyClass selfType = getMetaClass(self);
         // This must be retrieved *once* to avoid racing with other threads.
@@ -154,11 +210,24 @@ public abstract class CachingCallSite extends CallSite {
         return cacheAndCall(caller, selfType, block, context, self);
     }
 
+    public IRubyObject fcall(ThreadContext context, IRubyObject self, Block block) {
+        return call(context, self, self, block);
+    }
+
     @Override
     public final IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self,
         Block block) {
         try {
             return call(context, caller, self, block);
+        } finally {
+            block.escape();
+        }
+    }
+
+    public final IRubyObject fcallIter(ThreadContext context, IRubyObject self,
+                                      Block block) {
+        try {
+            return call(context, self, self, block);
         } finally {
             block.escape();
         }
@@ -175,6 +244,11 @@ public abstract class CachingCallSite extends CallSite {
         return cacheAndCall(caller, selfType, context, self, arg1);
     }
 
+    public IRubyObject fcall(ThreadContext context, IRubyObject self, IRubyObject arg1) {
+        return call(context, self, self, arg1);
+    }
+
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, Block block) {
         RubyClass selfType = getMetaClass(self);
         // This must be retrieved *once* to avoid racing with other threads.
@@ -185,11 +259,24 @@ public abstract class CachingCallSite extends CallSite {
         return cacheAndCall(caller, selfType, block, context, self, arg1);
     }
 
+    public IRubyObject fcall(ThreadContext context, IRubyObject self, IRubyObject arg1, Block block) {
+        return call(context, self, self, arg1, block);
+    }
+
     @Override
     public IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self,
         IRubyObject arg1, Block block) {
         try {
             return call(context, caller, self, arg1, block);
+        } finally {
+            block.escape();
+        }
+    }
+
+    public IRubyObject fcallIter(ThreadContext context, IRubyObject self,
+                                IRubyObject arg1, Block block) {
+        try {
+            return call(context, self, self, arg1, block);
         } finally {
             block.escape();
         }
@@ -206,6 +293,11 @@ public abstract class CachingCallSite extends CallSite {
         return cacheAndCall(caller, selfType, context, self, arg1, arg2);
     }
 
+    public IRubyObject fcall(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
+        return call(context, self, self, arg1, arg2);
+    }
+
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block) {
         RubyClass selfType = getMetaClass(self);
         // This must be retrieved *once* to avoid racing with other threads.
@@ -216,11 +308,24 @@ public abstract class CachingCallSite extends CallSite {
         return cacheAndCall(caller, selfType, block, context, self, arg1, arg2);
     }
 
+    public IRubyObject fcall(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block) {
+        return call(context, self, self, arg1, arg2, block);
+    }
+
     @Override
     public final IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self,
         IRubyObject arg1, IRubyObject arg2, Block block) {
         try {
             return call(context, caller, self, arg1, arg2, block);
+        } finally {
+            block.escape();
+        }
+    }
+
+    public final IRubyObject fcallIter(ThreadContext context, IRubyObject self,
+                                      IRubyObject arg1, IRubyObject arg2, Block block) {
+        try {
+            return call(context, self, self, arg1, arg2, block);
         } finally {
             block.escape();
         }
@@ -237,6 +342,11 @@ public abstract class CachingCallSite extends CallSite {
         return cacheAndCall(caller, selfType, context, self, arg1, arg2, arg3);
     }
 
+    public IRubyObject fcall(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+        return call(context, self, self, arg1, arg2, arg3);
+    }
+
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
         RubyClass selfType = getMetaClass(self);
         // This must be retrieved *once* to avoid racing with other threads.
@@ -247,11 +357,24 @@ public abstract class CachingCallSite extends CallSite {
         return cacheAndCall(caller, selfType, block, context, self, arg1, arg2, arg3);
     }
 
+    public IRubyObject fcall(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
+        return call(context, self, self, arg1, arg2, arg3, block);
+    }
+
     @Override
     public final IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self,
         IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
         try {
             return call(context, caller, self, arg1, arg2, arg3, block);
+        } finally {
+            block.escape();
+        }
+    }
+
+    public final IRubyObject fcallIter(ThreadContext context, IRubyObject self,
+                                      IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
+        try {
+            return call(context, self, self, arg1, arg2, arg3, block);
         } finally {
             block.escape();
         }
