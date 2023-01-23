@@ -1126,15 +1126,12 @@ public class JVMVisitor extends IRVisitor {
         RegexpOptions options = instr.getOptions();
         final Operand[] operands = instr.getPieces();
 
-        Runnable r = new Runnable() {
-            @Override
-            public void run() {
-                m.loadContext();
-                for (int i = 0; i < operands.length; i++) {
-                    Operand operand = operands[i];
-                    visit(operand);
-                    jvmAdapter().invokeinterface(p(IRubyObject.class), "asString", sig(RubyString.class));
-                }
+        Runnable r = () -> {
+            m.loadContext();
+            for (int i = 0; i < operands.length; i++) {
+                Operand operand = operands[i];
+                visit(operand);
+                jvmAdapter().invokeinterface(p(IRubyObject.class), "asString", sig(RubyString.class));
             }
         };
 
