@@ -1556,8 +1556,14 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void GetFieldInstr(GetFieldInstr getfieldinstr) {
-        visit(getfieldinstr.getSource());
-        jvmMethod().getInstanceVariableCompiler().getField(getfieldinstr.getId());
+        Operand source = getfieldinstr.getSource();
+
+        // We need target twice, so rather than introduce a hidden var or do stack tricks, we check if we can safely revaluate
+        if (!source.canCopyPropagate()) {
+            throw new NotCompilableException("non-propagatable target for PutField: " + source);
+        }
+
+        jvmMethod().getInstanceVariableCompiler().getField(() -> visit(source), getfieldinstr.getId());
         jvmStoreLocal(getfieldinstr.getResult());
     }
 
@@ -1987,9 +1993,17 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void PutFieldInstr(PutFieldInstr putfieldinstr) {
-        visit(putfieldinstr.getTarget());
-        visit(putfieldinstr.getValue());
-        jvmMethod().getInstanceVariableCompiler().putField(putfieldinstr.getId());
+        Operand target = putfieldinstr.getTarget();
+
+        // We need target twice, so rather than introduce a hidden var or do stack tricks, we check if we can safely revaluate
+        if (!target.canCopyPropagate()) {
+            throw new NotCompilableException("non-propagatable target for PutField: " + target);
+        }
+
+        jvmMethod().getInstanceVariableCompiler().putField(
+                () -> visit(target),
+                () -> visit(putfieldinstr.getValue()),
+                putfieldinstr.getId());
     }
 
     @Override
