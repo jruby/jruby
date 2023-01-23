@@ -1111,31 +1111,41 @@ public class RubyFloat extends RubyNumeric {
     }
 
     private static double roundHalfEven(double x, double s) {
-        double f, d, xs = x * s;
+        double u, v, us = 0.0, vs, f, d, uf;
 
         if (x > 0.0) {
-            f = Math.floor(xs);
-            d = xs - f;
+            u = Math.floor(x);
+            v = x - u;
+            us = u * s;
+            vs = v * s;
+            f = Math.floor(vs);
+            uf = us + f;
+            d = vs - f;
             if (d > 0.5)
                 d = 1.0;
-            else if (d == 0.5 || ((double)((f + 0.5) / s) <= x))
-                d = f % 2.0;
+            else if (d == 0.5 || ((double)((uf + 0.5) / s) <= x))
+                d = uf % 2.0;
             else
                 d = 0.0;
             x = f + d;
         }
         else if (x < 0.0) {
-            f = Math.ceil(xs);
-            d = f - xs;
+            u = Math.ceil(x);
+            v = x - u;
+            us = u * s;
+            vs = v * s;
+            f = Math.ceil(vs);
+            uf = us + f;
+            d = f - vs;
             if (d > 0.5)
                 d = 1.0;
-            else if (d == 0.5 || ((double)((f - 0.5) / s) >= x))
-                d = -f % 2.0;
+            else if (d == 0.5 || ((double)((uf - 0.5) / s) >= x))
+                d = -uf % 2.0;
             else
                 d = 0.0;
             x = f - d;
         }
-        return x;
+        return us + x;
     }
 
     /** rb_flo_round_by_rational
