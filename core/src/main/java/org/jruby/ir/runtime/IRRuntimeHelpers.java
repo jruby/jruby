@@ -2069,21 +2069,6 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static IRubyObject getVariableWithAccessor(IRubyObject self, VariableAccessor accessor, ThreadContext context, String name) {
-        Ruby runtime = context.runtime;
-        IRubyObject result = (IRubyObject)accessor.get(self);
-        if (result == null) {
-            result = context.nil;
-        }
-        return result;
-    }
-
-    @JIT
-    public static void setVariableWithAccessor(IRubyObject self, IRubyObject value, VariableAccessor accessor) {
-        accessor.set(self, value);
-    }
-
-    @JIT
     public static RubyFixnum getArgScopeDepth(ThreadContext context, StaticScope currScope) {
         int i = 0;
         while (!currScope.isArgumentScope()) {
