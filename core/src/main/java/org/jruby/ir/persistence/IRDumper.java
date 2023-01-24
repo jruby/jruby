@@ -29,10 +29,12 @@ import org.jruby.ir.operands.Hash;
 import org.jruby.ir.operands.IRException;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
+import org.jruby.ir.operands.MutableString;
 import org.jruby.ir.operands.Nil;
 import org.jruby.ir.operands.NthRef;
 import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.Range;
 import org.jruby.ir.operands.Rational;
 import org.jruby.ir.operands.Regexp;
 import org.jruby.ir.operands.SValue;
@@ -40,7 +42,6 @@ import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.operands.Self;
 import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.StandardError;
-import org.jruby.ir.operands.MutableString;
 import org.jruby.ir.operands.Symbol;
 import org.jruby.ir.operands.SymbolProc;
 import org.jruby.ir.operands.TemporaryBooleanVariable;
@@ -324,6 +325,7 @@ public class IRDumper extends IRVisitor {
     public void NthRef(NthRef nthref) { print(nthref.getId()); }
     public void NullBlock(NullBlock nullblock) { }
     public void Rational(Rational rational) { print(rational.getNumerator() + "/" + rational.getDenominator()); }
+    public void Range(Range range) { print(range.getBegin() + (range.isExclusive() ? "..." : "..") + range.getEnd()); }
     public void Regexp(Regexp regexp) { print(regexp.getSource()); }
     public void ScopeModule(ScopeModule scopemodule) { print(scopemodule.getScopeModuleDepth()); }
     public void Self(Self self) { print("%self"); }
