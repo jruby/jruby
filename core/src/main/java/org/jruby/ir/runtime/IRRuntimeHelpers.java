@@ -1984,6 +1984,42 @@ public class IRRuntimeHelpers {
         return (RubyArray) tmp;
     }
 
+    /**
+     * Call to_ary to get Array or die typing.  The optionally dup it if specified.  Some conditional
+     * cases in compiler we know we are safe in not-duping.  This method is the same impl as MRIs
+     * splatarray instr in the YARV instruction set.
+     */
+    @JIT @Interp
+    public static RubyArray splatArray(ThreadContext context, IRubyObject ary) {
+        Ruby runtime = context.runtime;
+        IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, ary, runtime.getArray(), sites(context).to_a_checked);
+
+        if (tmp.isNil()) {
+            tmp = runtime.newArray(ary);
+        }
+
+        return (RubyArray) tmp;
+    }
+
+    /**
+     * Call to_ary to get Array or die typing.  The optionally dup it if specified.  Some conditional
+     * cases in compiler we know we are safe in not-duping.  This method is the same impl as MRIs
+     * splatarray instr in the YARV instruction set.
+     */
+    @JIT @Interp
+    public static RubyArray splatArrayDup(ThreadContext context, IRubyObject ary) {
+        Ruby runtime = context.runtime;
+        IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, ary, runtime.getArray(), sites(context).to_a_checked);
+
+        if (tmp.isNil()) {
+            tmp = runtime.newArray(ary);
+        } else  {
+            tmp = ((RubyArray) tmp).aryDup();
+        }
+
+        return (RubyArray) tmp;
+    }
+
     public static IRubyObject irToAry(ThreadContext context, IRubyObject value) {
         return value instanceof RubyArray ? value : RubyArray.aryToAry(context, value);
     }

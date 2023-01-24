@@ -1159,8 +1159,13 @@ public class JVMVisitor extends IRVisitor {
     public void BuildSplatInstr(BuildSplatInstr instr) {
         jvmMethod().loadContext();
         visit(instr.getArray());
-        jvmAdapter().ldc(instr.getDup());
-        jvmMethod().invokeIRHelper("splatArray", sig(RubyArray.class, ThreadContext.class, IRubyObject.class, boolean.class));
+        String splatMethod;
+        if (instr.getDup()) {
+            splatMethod = "splatArrayDup";
+        } else {
+            splatMethod = "splatArray";
+        }
+        jvmMethod().invokeIRHelper(splatMethod, sig(RubyArray.class, ThreadContext.class, IRubyObject.class));
         jvmStoreLocal(instr.getResult());
     }
 
