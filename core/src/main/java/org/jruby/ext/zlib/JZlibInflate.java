@@ -253,6 +253,8 @@ public class JZlibInflate extends ZStream {
                 case com.jcraft.jzlib.JZlib.Z_OK:
                     resultLength = flater.next_out_index;
                     break;
+                case com.jcraft.jzlib.JZlib.Z_BUF_ERROR:
+                    throw RubyZlib.newDataError(runtime, "incorrect header check");
                 default:
                     resultLength = 0;
             }
