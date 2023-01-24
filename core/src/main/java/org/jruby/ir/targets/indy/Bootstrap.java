@@ -32,10 +32,28 @@ import com.headius.invokebinder.SmartBinder;
 import com.headius.invokebinder.SmartHandle;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
-import org.jruby.*;
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyBasicObject;
+import org.jruby.RubyBoolean;
+import org.jruby.RubyClass;
+import org.jruby.RubyEncoding;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyFloat;
+import org.jruby.RubyGlobal;
+import org.jruby.RubyHash;
+import org.jruby.RubyModule;
+import org.jruby.RubyNil;
+import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.GlobalVariable;
-import org.jruby.internal.runtime.methods.*;
+import org.jruby.internal.runtime.methods.AttrReaderMethod;
+import org.jruby.internal.runtime.methods.AttrWriterMethod;
+import org.jruby.internal.runtime.methods.CompiledIRMethod;
+import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.HandleMethod;
+import org.jruby.internal.runtime.methods.MixedModeIRMethod;
+import org.jruby.internal.runtime.methods.NativeCallMethod;
 import org.jruby.ir.JIT;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.java.invokers.SingletonMethodInvoker;
@@ -75,10 +93,22 @@ import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 
-import java.lang.invoke.*;
+import java.lang.invoke.CallSite;
+import java.lang.invoke.ConstantCallSite;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.invoke.MutableCallSite;
+import java.lang.invoke.SwitchPoint;
 import java.math.BigInteger;
 
-import static java.lang.invoke.MethodHandles.*;
+import static java.lang.invoke.MethodHandles.Lookup;
+import static java.lang.invoke.MethodHandles.constant;
+import static java.lang.invoke.MethodHandles.dropArguments;
+import static java.lang.invoke.MethodHandles.explicitCastArguments;
+import static java.lang.invoke.MethodHandles.filterArguments;
+import static java.lang.invoke.MethodHandles.insertArguments;
+import static java.lang.invoke.MethodHandles.lookup;
 import static java.lang.invoke.MethodType.methodType;
 import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.runtime.Helpers.constructObjectArrayHandle;
@@ -1641,6 +1671,17 @@ public class Bootstrap {
 
         return new ConstantCallSite(blockMaker);
     }
+
+    public CallSite checkArrayArity(Lookup lookup, String name, MethodType methodType, int required, int opt, int rest) {
+        return new ConstantCallSite(MethodHandles.insertArguments(CHECK_ARRAY_ARITY, 2, required, opt, (rest == 0 ? false : true)));
+    }
+
+    public static final Handle CHECK_ARRAY_ARITY_BOOTSTRAP = new Handle(Opcodes.H_INVOKESTATIC, p(Helpers.class), "checkArrayArity", sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class, int.class, int.class));
+
+    private static final MethodHandle CHECK_ARRAY_ARITY =
+            Binder
+                    .from(void.class, ThreadContext.class, RubyArray.class, int.class, int.class, boolean.class)
+                    .invokeStaticQuiet(LOOKUP, Helpers.class, "irCheckArgsArrayArity");
 
     static String logMethod(DynamicMethod method) {
         return "[#" + method.getSerialNumber() + " " + method.getImplementationClass().getMethodLocation() + "]";

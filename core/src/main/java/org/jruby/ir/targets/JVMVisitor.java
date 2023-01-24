@@ -1,23 +1,49 @@
 package org.jruby.ir.targets;
 
 import com.headius.invokebinder.Signature;
-import org.jruby.*;
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyBoolean;
+import org.jruby.RubyClass;
+import org.jruby.RubyComplex;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyFloat;
+import org.jruby.RubyHash;
+import org.jruby.RubyModule;
+import org.jruby.RubyProc;
+import org.jruby.RubyRange;
+import org.jruby.RubyRational;
+import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.ir.*;
+import org.jruby.ir.IRClassBody;
+import org.jruby.ir.IRClosure;
+import org.jruby.ir.IRFlags;
+import org.jruby.ir.IRMethod;
+import org.jruby.ir.IRModuleBody;
+import org.jruby.ir.IRScope;
+import org.jruby.ir.IRScriptBody;
+import org.jruby.ir.IRVisitor;
+import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.*;
-import org.jruby.ir.instructions.boxing.*;
+import org.jruby.ir.instructions.boxing.AluInstr;
+import org.jruby.ir.instructions.boxing.BoxBooleanInstr;
+import org.jruby.ir.instructions.boxing.BoxFixnumInstr;
+import org.jruby.ir.instructions.boxing.BoxFloatInstr;
+import org.jruby.ir.instructions.boxing.UnboxBooleanInstr;
+import org.jruby.ir.instructions.boxing.UnboxFixnumInstr;
+import org.jruby.ir.instructions.boxing.UnboxFloatInstr;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.instructions.specialized.OneFixnumArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneFloatArgNoBlockCallInstr;
 import org.jruby.ir.interpreter.FullInterpreterContext;
-import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Float;
-import org.jruby.ir.operands.Label;
+import org.jruby.ir.operands.*;
 import org.jruby.ir.persistence.IRDumper;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -25,7 +51,14 @@ import org.jruby.ir.targets.IRBytecodeAdapter.BlockPassType;
 import org.jruby.ir.targets.indy.Bootstrap;
 import org.jruby.ir.targets.indy.CallTraceSite;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.*;
+import org.jruby.runtime.ArgumentDescriptor;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.CallType;
+import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Frame;
+import org.jruby.runtime.Helpers;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.DynamicScopeGenerator;
 import org.jruby.util.ByteList;
@@ -49,7 +82,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import static org.jruby.util.CodegenUtils.*;
+import static org.jruby.util.CodegenUtils.c;
+import static org.jruby.util.CodegenUtils.ci;
+import static org.jruby.util.CodegenUtils.p;
+import static org.jruby.util.CodegenUtils.sig;
 
 /**
  * Implementation of IRCompiler for the JVM.
@@ -1238,12 +1274,20 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void CheckArgsArrayArityInstr(CheckArgsArrayArityInstr checkargsarrayarityinstr) {
-        jvmMethod().loadContext();
-        visit(checkargsarrayarityinstr.getArgsArray());
-        jvmAdapter().pushInt(checkargsarrayarityinstr.required);
-        jvmAdapter().pushInt(checkargsarrayarityinstr.opt);
-        jvmAdapter().pushBoolean(checkargsarrayarityinstr.rest);
-        jvmMethod().invokeStatic(Type.getType(Helpers.class), Method.getMethod("void irCheckArgsArrayArity(org.jruby.runtime.ThreadContext, org.jruby.RubyArray, int, int, boolean)"));
+        int required = checkargsarrayarityinstr.required;
+        int opt = checkargsarrayarityinstr.opt;
+        boolean rest = checkargsarrayarityinstr.rest;
+
+        if (required == 0) {
+            if (opt == 0) {
+                if (rest) {
+                    // do nothing, all argument forms are valid
+                    return;
+                }
+            }
+        }
+
+        jvmMethod().getBranchCompiler().checkArgsArity(() -> visit(checkargsarrayarityinstr.getArgsArray()), required, opt, rest);
     }
 
     @Override
