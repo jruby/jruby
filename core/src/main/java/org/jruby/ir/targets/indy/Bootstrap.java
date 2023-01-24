@@ -136,8 +136,13 @@ public class Bootstrap {
     }
 
     public static CallSite bufferString(Lookup lookup, String name, MethodType type, String encodingName, int size) {
-        return new ConstantCallSite(insertArguments(STRING_HANDLE, 1, bytelist(size, encodingName), StringSupport.CR_7BIT));
+        return new ConstantCallSite(insertArguments(BUFFERSTRING_HANDLE, 1, encodingFromName(encodingName), size, StringSupport.CR_7BIT));
     }
+
+    private static final MethodHandle BUFFERSTRING_HANDLE =
+            Binder
+                    .from(RubyString.class, ThreadContext.class, Encoding.class, int.class, int.class)
+                    .invokeStaticQuiet(LOOKUP, Bootstrap.class, "bufferString");
 
     public static Handle isNilBoot() {
         return new Handle(
@@ -470,6 +475,10 @@ public class Bootstrap {
 
     public static RubyString string(ThreadContext context, ByteList value, int cr) {
         return RubyString.newStringShared(context.runtime, value, cr);
+    }
+
+    public static RubyString bufferString(ThreadContext context, Encoding encoding, int size, int cr) {
+        return RubyString.newString(context.runtime, new ByteList(size, encoding), cr);
     }
 
     public static RubyString frozenString(ThreadContext context, MutableCallSite site, ByteList value, int cr, String file, int line) {
