@@ -1304,11 +1304,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadStaticScope();
         jvmMethod().loadArgs();
         jvmMethod().loadSelfBlock();
-        jvmAdapter().invokedynamic(
-                "checkArity",
-                sig(void.class, ThreadContext.class, StaticScope.class, Object[].class, Block.class),
-                Bootstrap.CHECK_ARITY_SPECIFIC_ARGS,
-                required, opt, rest ? 1 : 0, restKey);
+        jvmMethod().getBranchCompiler().checkAritySpecificArgs(required, opt, rest, restKey);
     }
 
     private void checkArity(Operand keywords, int required, int opt, boolean rest, int restKey) {
@@ -1317,11 +1313,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadArgs();
         visit(keywords);
         jvmMethod().loadSelfBlock();
-        jvmAdapter().invokedynamic(
-                "checkArity",
-                sig(void.class, ThreadContext.class, StaticScope.class, Object[].class, Object.class, Block.class),
-                Bootstrap.CHECK_ARITY,
-                required, opt, rest ? 1 : 0, restKey);
+        jvmMethod().getBranchCompiler().checkArity(required, opt, rest, restKey);
     }
 
     @Override
