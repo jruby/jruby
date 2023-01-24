@@ -219,8 +219,8 @@ public class RubyDir extends RubyObject implements Closeable {
         }
     }
 
-    private static final String[] BASE = new String[] { "base", "sort" };
-    private static final String[] BASE_FLAGS = new String[] { "base", "sort", "flags" };
+    private static final String[] BASE_KEYWORDS = new String[] { "base", "sort" };
+    private static final String[] BASE_FLAGS_KEYWORDS = new String[] { "base", "sort", "flags" };
 
     private static class GlobOptions {
         String base = null;
@@ -234,16 +234,14 @@ public class RubyDir extends RubyObject implements Closeable {
 
         if (args.length > 1) {
             IRubyObject tmp = TypeConverter.checkHashType(runtime, args[args.length - 1]);
-            boolean aref = keys.length == 2; // BASE
+            boolean processFlags = keys == BASE_FLAGS_KEYWORDS;
             if (tmp == context.nil) {
-                if (!aref) {
-                    options.flags = RubyNumeric.num2int(args[1]);
-                }
+                if (processFlags) options.flags = RubyNumeric.num2int(args[1]);
             } else {
                 IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, (RubyHash) tmp, keys);
 
-                if (args.length == 3) options.flags = RubyNumeric.num2int(args[1]);
-                if (!aref && rets[2] != null) options.flags |= RubyNumeric.num2int(rets[2]);
+                if (args.length == 3 && processFlags) options.flags = RubyNumeric.num2int(args[1]);
+                if (processFlags && rets[2] != null) options.flags |= RubyNumeric.num2int(rets[2]);
 
                 if (rets[1] != null) {
                     if (!(rets[1] instanceof RubyBoolean)) {
@@ -271,11 +269,11 @@ public class RubyDir extends RubyObject implements Closeable {
         }
     }
 
-    @JRubyMethod(name = "[]", rest = true, meta = true)
+    @JRubyMethod(name = "[]", rest = true, meta = true, keywords = true)
     public static IRubyObject aref(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         GlobOptions options = new GlobOptions();
-        globOptions(context, args, BASE, options);
+        globOptions(context, args, BASE_KEYWORDS, options);
         List<ByteList> dirs;
         String base = options.base;
 
@@ -324,7 +322,7 @@ public class RubyDir extends RubyObject implements Closeable {
     public static IRubyObject glob(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.runtime;
         GlobOptions options = new GlobOptions();
-        globOptions(context, args, BASE_FLAGS, options);
+        globOptions(context, args, BASE_FLAGS_KEYWORDS, options);
         List<ByteList> dirs;
         String base = options.base;
 
