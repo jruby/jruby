@@ -3,6 +3,9 @@ package org.jruby.ir.targets.simple;
 import org.jruby.RubyArray;
 import org.jruby.ir.targets.BranchCompiler;
 import org.jruby.ir.targets.IRBytecodeAdapter;
+import org.jruby.ir.targets.indy.Bootstrap;
+import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.objectweb.asm.Label;
@@ -48,5 +51,21 @@ public class NormalBranchCompiler implements BranchCompiler {
         compiler.adapter.pushInt(opt);
         compiler.adapter.pushBoolean(rest);
         compiler.invokeHelper("irCheckArgsArrayArity", sig(void.class, params(ThreadContext.class, RubyArray.class, int.class, int.class, boolean.class)));
+    }
+
+    public void checkArity(int required, int opt, boolean rest, int restKey) {
+        compiler.adapter.ldc(required);
+        compiler.adapter.ldc(opt);
+        compiler.adapter.ldc(rest);
+        compiler.adapter.ldc(restKey);
+        compiler.adapter.invokestatic(p(Bootstrap.class), "checkArity", sig(void.class, params(ThreadContext.class, StaticScope.class, Object[].class, Object.class, Block.class, int.class, int.class, boolean.class, int.class)));
+    }
+
+    public void checkAritySpecificArgs(int required, int opt, boolean rest, int restKey) {
+        compiler.adapter.ldc(required);
+        compiler.adapter.ldc(opt);
+        compiler.adapter.ldc(rest);
+        compiler.adapter.ldc(restKey);
+        compiler.adapter.invokestatic(p(Bootstrap.class), "checkAritySpecificArgs", sig(void.class, params(ThreadContext.class, StaticScope.class, Object[].class, Block.class, int.class, int.class, boolean.class, int.class)));
     }
 }
