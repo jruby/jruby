@@ -3521,6 +3521,10 @@ public class IRBuilder {
         Variable result = aResult == null ? createTemporaryVariable() : aResult;
         int[] flags = new int[] { 0 };
         Operand[] args = setupCallArgs(callArgsNode, flags);
+
+        // check for refinement calls before building any closure
+        determineIfMaybeRefined(fcallNode.getName(), args);
+
         Operand block = setupCallClosure(fcallNode.getIterNode());
 
         if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
@@ -3529,8 +3533,6 @@ public class IRBuilder {
                     () -> receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), removeArg(args), block, flags[0])),
                     () -> receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), args, block, flags[0])));
         } else {
-            determineIfMaybeRefined(fcallNode.getName(), args);
-
             // We will stuff away the iters AST source into the closure in the hope we can convert
             // this closure to a method.
             if (CommonByteLists.DEFINE_METHOD_METHOD.equals(fcallNode.getName().getBytes()) && block instanceof WrappedIRClosure) {
