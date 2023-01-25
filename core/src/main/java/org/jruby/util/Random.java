@@ -48,6 +48,7 @@ public class Random {
     private int left = 1;
 
     public Random() {
+        this((int) System.currentTimeMillis());
     }
 
     public Random(int s) {
