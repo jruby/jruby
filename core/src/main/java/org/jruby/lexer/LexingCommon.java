@@ -333,7 +333,7 @@ public abstract class LexingCommon {
     }
 
     public boolean isLookingAtEOL() {
-        for (int i = lex_p + 1; i < lex_pend; i++) {
+        for (int i = lex_p; i < lex_pend; i++) {
             int c = lexb.get(i);
             boolean eol = c == '\n' || c == '#';
             if (eol || !isSpace(c)) {
