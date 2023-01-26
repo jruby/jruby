@@ -3575,14 +3575,28 @@ public class IRBuilder {
         IRScope outerScope = scope.getNearestTopLocalVariableScope();
 
         // 'using single_mod_arg' possible nearly everywhere but method scopes.
-        if (!(outerScope instanceof IRMethod) && args.length == 1
-                && (
-                CommonByteLists.USING_METHOD.equals(methodName.getBytes())
-                        // FIXME: This sets the bit for the whole module, but really only the refine block needs it
-                        || CommonByteLists.REFINE_METHOD.equals(methodName.getBytes())
-        )) {
-            scope.setIsMaybeUsingRefinements();
+        boolean refinement = false;
+        if (!(outerScope instanceof IRMethod)) {
+            ByteList methodBytes = methodName.getBytes();
+            if (args.length == 1) {
+                refinement = isRefinementCall(methodBytes);
+            } else if (args.length == 2
+                    && CommonByteLists.SEND.equal(methodBytes)) {
+                if (args[0] instanceof Symbol) {
+                    Symbol sendName = (Symbol) args[0];
+                    methodBytes = sendName.getBytes();
+                    refinement = isRefinementCall(methodBytes);
+                }
+            }
         }
+
+        if (refinement) scope.setIsMaybeUsingRefinements();
+    }
+
+    private static boolean isRefinementCall(ByteList methodBytes) {
+        return CommonByteLists.USING_METHOD.equals(methodBytes)
+                // FIXME: This sets the bit for the whole module, but really only the refine block needs it
+                || CommonByteLists.REFINE_METHOD.equals(methodBytes);
     }
 
     public Operand buildFixnum(FixnumNode node) {
