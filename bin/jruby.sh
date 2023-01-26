@@ -120,8 +120,14 @@ cygwin=false
 case "$(uname)" in
     CYGWIN*) cygwin=true ;;
     MINGW*)
-        jruby.exe "$@"
-        exit $?
+        release_id=$(awk -F= '$1=="ID" { print $2; }' /etc/os-release 2> /dev/null)
+        case $release_id in
+            "msys2") ;;
+            *)
+                jruby.exe "$@"
+                exit $?
+                ;;
+        esac
         ;;
 esac
 readonly cygwin
