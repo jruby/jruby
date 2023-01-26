@@ -142,7 +142,7 @@ public class RubyRandomBase extends RubyObject {
         if (limit == 0) return RubyFixnum.zero(runtime);
         Random impl;
         if (random == null) {
-            impl = new Random();
+            impl = new Random(runtime.getDefaultRandom().random.genrandInt32());
         } else {
             impl = random.impl;
         }
