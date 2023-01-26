@@ -19,20 +19,31 @@ module Psych
       end
     end
 
-    def test_no_recursion
-      x = []
-      x << x
-      assert_raise(Psych::BadAlias) do
-        Psych.safe_load Psych.dump(x)
+    def test_raises_when_alias_found_if_alias_parsing_not_enabled
+      yaml_with_aliases = <<~YAML
+        ---
+        a: &ABC
+          k1: v1
+          k2: v2
+        b: *ABC
+      YAML
+
+      assert_raise(Psych::AliasesNotEnabled) do
+        Psych.safe_load(yaml_with_aliases)
       end
     end
 
-    def test_explicit_recursion
-      x = []
-      x << x
-      assert_equal(x, Psych.safe_load(Psych.dump(x), permitted_classes: [], permitted_symbols: [], aliases: true))
-      # deprecated interface
-      assert_equal(x, Psych.safe_load(Psych.dump(x), [], [], true))
+    def test_aliases_are_parsed_when_alias_parsing_is_enabled
+      yaml_with_aliases = <<~YAML
+        ---
+        a: &ABC
+          k1: v1
+          k2: v2
+        b: *ABC
+      YAML
+
+      result = Psych.safe_load(yaml_with_aliases, aliases: true)
+      assert_same result.fetch("a"), result.fetch("b")
     end
 
     def test_permitted_symbol
@@ -48,9 +59,6 @@ module Psych
           permitted_symbols: [:foo]
         )
       )
-
-      # deprecated interface
-      assert_equal(:foo, Psych.safe_load(yml, [Symbol], [:foo]))
     end
 
     def test_symbol
@@ -61,17 +69,9 @@ module Psych
         Psych.safe_load '--- !ruby/symbol foo', permitted_classes: []
       end
 
-      # deprecated interface
-      assert_raise(Psych::DisallowedClass) do
-        Psych.safe_load '--- !ruby/symbol foo', []
-      end
-
       assert_safe_cycle :foo, permitted_classes: [Symbol]
       assert_safe_cycle :foo, permitted_classes: %w{ Symbol }
       assert_equal :foo, Psych.safe_load('--- !ruby/symbol foo', permitted_classes: [Symbol])
-
-      # deprecated interface
-      assert_equal :foo, Psych.safe_load('--- !ruby/symbol foo', [Symbol])
     end
 
     def test_foo
@@ -79,18 +79,10 @@ module Psych
         Psych.safe_load '--- !ruby/object:Foo {}', permitted_classes: [Foo]
       end
 
-      # deprecated interface
-      assert_raise(Psych::DisallowedClass) do
-        Psych.safe_load '--- !ruby/object:Foo {}', [Foo]
-      end
-
       assert_raise(Psych::DisallowedClass) do
         assert_safe_cycle Foo.new
       end
       assert_kind_of(Foo, Psych.safe_load(Psych.dump(Foo.new), permitted_classes: [Foo]))
-
-      # deprecated interface
-      assert_kind_of(Foo, Psych.safe_load(Psych.dump(Foo.new), [Foo]))
     end
 
     X = Struct.new(:x)
@@ -122,27 +114,6 @@ module Psych
       end
     end
 
-    def test_deprecated_anon_struct
-      assert Psych.safe_load(<<-eoyml, [Struct, Symbol])
---- !ruby/struct
-  foo: bar
-                      eoyml
-
-      assert_raise(Psych::DisallowedClass) do
-        Psych.safe_load(<<-eoyml, [Struct])
---- !ruby/struct
-  foo: bar
-                      eoyml
-      end
-
-      assert_raise(Psych::DisallowedClass) do
-        Psych.safe_load(<<-eoyml, [Symbol])
---- !ruby/struct
-  foo: bar
-                      eoyml
-      end
-    end
-
     def test_safe_load_default_fallback
       assert_nil Psych.safe_load("")
     end
@@ -159,8 +130,6 @@ module Psych
 
     def cycle object, permitted_classes: []
       Psych.safe_load(Psych.dump(object), permitted_classes: permitted_classes)
-      # deprecated interface test
-      Psych.safe_load(Psych.dump(object), permitted_classes)
     end
 
     def assert_safe_cycle object, permitted_classes: []

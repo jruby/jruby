@@ -78,10 +78,6 @@ class TestPsych < Psych::TestCase
     assert_raise(Psych::SyntaxError) { Psych.parse("--- `") }
   end
 
-  def test_parse_with_fallback
-    assert_equal 42, Psych.parse("", fallback: 42)
-  end
-
   def test_non_existing_class_on_deserialize
     e = assert_raise(ArgumentError) do
       Psych.unsafe_load("--- !ruby/object:NonExistent\nfoo: 1")
@@ -239,11 +235,11 @@ class TestPsych < Psych::TestCase
   end
 
   def test_load_with_fallback_for_nil
-    assert_nil Psych.unsafe_load("--- null", "file", fallback: 42)
+    assert_nil Psych.unsafe_load("--- null", filename: "file", fallback: 42)
   end
 
   def test_load_with_fallback_for_false
-    assert_equal false, Psych.unsafe_load("--- false", "file", fallback: 42)
+    assert_equal false, Psych.unsafe_load("--- false", filename: "file", fallback: 42)
   end
 
   def test_load_file
@@ -385,4 +381,64 @@ hoge:
     result = Psych.safe_load(yaml, symbolize_names: true)
     assert_equal result, { foo: { bar: "baz", 1 => 2 }, hoge: [{ fuga: "piyo" }] }
   end
+
+  def test_safe_dump_defaults
+    yaml = <<-eoyml
+---
+array:
+- 1
+float: 13.12
+booleans:
+- true
+- false
+eoyml
+
+    payload = Psych.safe_dump({
+      "array" => [1],
+      "float" => 13.12,
+      "booleans" => [true, false],
+    })
+    assert_equal yaml, payload
+  end
+
+  def test_safe_dump_unpermitted_class
+    error = assert_raise Psych::DisallowedClass do
+      Psych.safe_dump(Object.new)
+    end
+    assert_equal "Tried to dump unspecified class: Object", error.message
+
+    hash_subclass = Class.new(Hash)
+    error = assert_raise Psych::DisallowedClass do
+      Psych.safe_dump(hash_subclass.new)
+    end
+    assert_equal "Tried to dump unspecified class: #{hash_subclass.inspect}", error.message
+  end
+
+  def test_safe_dump_extra_permitted_classes
+    assert_equal "--- !ruby/object {}\n", Psych.safe_dump(Object.new, permitted_classes: [Object])
+  end
+
+  def test_safe_dump_symbols
+    assert_equal Psych.dump(:foo), Psych.safe_dump(:foo, permitted_classes: [Symbol])
+    assert_equal Psych.dump(:foo), Psych.safe_dump(:foo, permitted_symbols: [:foo])
+
+    error = assert_raise Psych::DisallowedClass do
+      Psych.safe_dump(:foo)
+    end
+    assert_equal "Tried to dump unspecified class: Symbol(:foo)", error.message
+
+    assert_match(/\A--- :foo\n(?:\.\.\.\n)?\z/, Psych.safe_dump(:foo, permitted_symbols: [:foo]))
+  end
+
+  def test_safe_dump_aliases
+    x = []
+    x << x
+    error = assert_raise Psych::BadAlias do
+      Psych.safe_dump(x)
+    end
+    assert_equal "Tried to dump an aliased object", error.message
+
+    assert_equal "--- &1\n" + "- *1\n", Psych.safe_dump(x, aliases: true)
+  end
+
 end
