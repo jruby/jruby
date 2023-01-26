@@ -294,7 +294,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>psych</artifactId>
-      <version>3.3.4</version>
+      <version>5.1.0.pre1</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -579,7 +579,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/mutex_m-0.1.0*</include>
           <include>specifications/ostruct-0.5.5*</include>
           <include>specifications/prime-0.1.0*</include>
-          <include>specifications/psych-3.3.4*</include>
+          <include>specifications/psych-5.1.0.pre1*</include>
           <include>specifications/racc-1.5.2*</include>
           <include>specifications/rake-ant-1.0.4*</include>
           <include>specifications/rdoc-6.3.3*</include>
@@ -618,7 +618,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/mutex_m-0.1.0*/**/*</include>
           <include>gems/ostruct-0.5.5*/**/*</include>
           <include>gems/prime-0.1.0*/**/*</include>
-          <include>gems/psych-3.3.4*/**/*</include>
+          <include>gems/psych-5.1.0.pre1*/**/*</include>
           <include>gems/racc-1.5.2*/**/*</include>
           <include>gems/rake-ant-1.0.4*/**/*</include>
           <include>gems/rdoc-6.3.3*/**/*</include>
@@ -657,7 +657,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/mutex_m-0.1.0*</include>
           <include>cache/ostruct-0.5.5*</include>
           <include>cache/prime-0.1.0*</include>
-          <include>cache/psych-3.3.4*</include>
+          <include>cache/psych-5.1.0.pre1*</include>
           <include>cache/racc-1.5.2*</include>
           <include>cache/rake-ant-1.0.4*</include>
           <include>cache/rdoc-6.3.3*</include>
