@@ -489,7 +489,7 @@ public final class ThreadContext {
 
     public void pushEvalSimpleFrame(IRubyObject executeObject) {
         Frame frame = getCurrentFrame();
-        pushCallFrame(frame.getKlazz(), frame.getName(), executeObject, Block.NULL_BLOCK);
+        pushCallFrame(frame.getKlazz(), frame.getName(), executeObject, frame.getBlock());
     }
 
     private void pushCallFrame(RubyModule clazz, String name,
