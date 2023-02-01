@@ -996,6 +996,23 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return RubyBoolean.newBoolean(context, (double) value == other);
     }
 
+    /** fix_not_equal
+     *
+     */
+    @Override
+    public IRubyObject op_not_equal(ThreadContext context, IRubyObject other) {
+        return other instanceof RubyFixnum ?
+                op_not_equal(context, ((RubyFixnum) other).value) : super.op_not_equal(context, other);
+    }
+
+    public IRubyObject op_not_equal(ThreadContext context, long other) {
+        return RubyBoolean.newBoolean(context, value != other);
+    }
+
+    public IRubyObject op_not_equal(ThreadContext context, double other) {
+        return RubyBoolean.newBoolean(context, (double) value != other);
+    }
+
     public boolean op_equal_boolean(ThreadContext context, long other) {
         return value == other;
     }
