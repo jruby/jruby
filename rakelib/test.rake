@@ -98,9 +98,11 @@ namespace :test do
         aot: "-X+C -Xjit.background=false #{get_meta_size.call()}"
     }
 
-    mri_suites = [:core, :extra, :stdlib]
+    j_flag = "-j#{AVAILABLE_PROCESSORS}"
 
-    mri_suites.each do |suite|
+    mri_suites = [[:core, j_flag], [:extra, j_flag], [:stdlib, ""]]
+
+    mri_suites.each do |(suite, extra_flags)|
       files = File.readlines("test/mri.#{suite}.index").grep(/^[^#]\w+/).map(&:chomp).join(' ')
 
       namespace suite do
@@ -109,7 +111,7 @@ namespace :test do
 
           task task do
             ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} --disable-gems -Xbacktrace.style=mri -Xdebug.fullTrace #{opts}"
-            ruby "test/mri/runner.rb -j#{AVAILABLE_PROCESSORS} #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{files}"
+            ruby "test/mri/runner.rb #{extra_flags} #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{files}"
           end
         end
       end
