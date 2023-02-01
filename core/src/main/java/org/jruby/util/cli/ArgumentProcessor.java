@@ -619,7 +619,7 @@ public class ArgumentProcessor {
                         }
                     }
                 default:
-                    throw new MainExitException(1, "jruby: unknown option " + argument);
+                    throw new MainExitException(1, "jruby: invalid option " + argument);
             }
         }
     }
