@@ -75,6 +75,7 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.collections.WeakValuedMap;
 
+import static org.jruby.util.StringSupport.CR_7BIT;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
 import java.util.Iterator;
@@ -1389,6 +1390,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return RubyString.newString(metaClass.runtime, newStr);
     }
 
+    public ByteList rawSource() {
+        return str;
+    }
+
     public final int length() {
         return str.getRealSize();
     }
@@ -1875,5 +1880,18 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     @Deprecated
     public IRubyObject match_m19(ThreadContext context, IRubyObject str, boolean useBackref, Block block) {
         return matchCommon(context, str, 0, useBackref, block);
+    }
+
+    /**
+     * Is the pattern itself a simple US-ASCII string which can be used in simple string searches and
+     * can be used outside of the regexp engine?
+     *
+     */
+    public boolean isSimpleString() {
+        return isLiteral() &&
+                getEncoding().isAsciiCompatible() &&
+                str.realSize() == 1 &&
+                RubyString.scanForCodeRange(str) == CR_7BIT &&
+                str.charAt(0) != '.'; // FIXME: This should examine to see if any special chars for any length.
     }
 }

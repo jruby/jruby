@@ -4478,7 +4478,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     // MRI: rb_str_split_m, overall structure
-    private RubyArray splitCommon(ThreadContext context, IRubyObject spat, final boolean limit, final int lim, final int i) {
+    private RubyArray splitCommon(ThreadContext context, Object spat, final boolean limit, final int lim, final int i) {
         final RubyArray result;
         if (spat == context.nil && (spat = context.runtime.getGlobalVariables().get("$;")) == context.nil) {
             result = awkSplit(context.runtime, limit, lim, i);
@@ -4487,7 +4487,15 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             if (!context.runtime.getGlobalVariables().get("$;").isNil()) {
                 context.runtime.getWarnings().warn("$; is set to non-nil value");
             }
-            if (spat instanceof RubyString) {
+
+            if (spat instanceof ByteList) {
+                if (((ByteList) spat).realSize() == 1) {
+                    result = asciiStringSplitOne(context, (byte) ((ByteList) spat).charAt(0), limit, lim, i);
+                } else {
+                    spat = context.runtime.newString((ByteList) spat);
+                    result = stringSplit(context, (RubyString) spat, limit, lim, i);
+                }
+            } else if (spat instanceof RubyString) {
                 ByteList spatValue = ((RubyString)spat).value;
                 int len = spatValue.getRealSize();
                 Encoding spatEnc = spatValue.getEncoding();
@@ -4505,7 +4513,21 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                     } else {
                         c = len == StringSupport.preciseLength(spatEnc, bytes, p, p + len) ? spatEnc.mbcToCode(bytes, p, p + len) : -1;
                     }
-                    result = c == ' ' ? awkSplit(context.runtime, limit, lim, i) : stringSplit(context, (RubyString)spat, limit, lim, i);
+                    if (c == ' ') {
+                        result = awkSplit(context.runtime, limit, lim, i);
+                    } else {
+                        /*
+                        if (((RubyString) spat).isAsciiOnly() && this.isAsciiOnly()) {
+                            if (((RubyString) spat).length() == 1) {
+                                result = asciiStringSplitOne(context, (byte) ((RubyString) spat).getByteList().charAt(0), limit, lim, i);
+                            } else {
+                                result = asciiStringSplit(context, (RubyString) spat, limit, lim, i);
+                            }
+                        } else {
+                         */
+                            result = stringSplit(context, (RubyString) spat, limit, lim, i);
+//                        }
+                    }
                 }
             } else {
                 result = regexSplit(context, (RubyRegexp) spat, limit, lim, i);
@@ -4623,6 +4645,65 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return result;
     }
 
+    private RubyArray asciiStringSplitOne(ThreadContext context, byte pat, boolean limit, int lim, int i) {
+        Ruby runtime = context.runtime;
+
+        RubyArray result = runtime.newArray();
+
+        byte[] bytes = value.getUnsafeBytes();
+        int begin = value.getBegin();
+        int realSize = value.getRealSize();
+
+        int end = begin + realSize;
+        int b = begin;
+        i = 0;
+        int p = begin;
+
+        for (; p < end; p++) {
+            if (bytes[p] == pat) {
+                result.append(makeSharedString(runtime, b, p - b));
+                b = p + 1;
+                if (limit && lim <= ++i) break;
+            }
+        }
+
+        if (realSize > 0 && (limit || realSize > p || lim < 0)) {
+            result.append(makeSharedString(runtime, p, realSize - p));
+        }
+
+        return result;
+    }
+
+    // Only for use with two clean 7BIT ASCII strings.
+    private RubyArray asciiStringSplit(ThreadContext context, RubyString spat, boolean limit, int lim, int i) {
+        Ruby runtime = context.runtime;
+
+        RubyArray result = runtime.newArray();
+        ByteList pattern = spat.value;
+
+        byte[] patternBytes = pattern.getUnsafeBytes();
+        int patternBegin = pattern.getBegin();
+        int patternRealSize = pattern.getRealSize();
+
+        byte[] bytes = value.getUnsafeBytes();
+        int begin = value.getBegin();
+        int realSize = value.getRealSize();
+
+        int e, p = 0;
+
+        while (p < realSize && (e = asciiIndexOf(bytes, begin, realSize, patternBytes, patternBegin, patternRealSize, p)) >= 0) {
+            result.append(makeSharedString(runtime, p, e - p));
+            p = e + pattern.getRealSize();
+            if (limit && lim <= ++i) break;
+        }
+
+        if (realSize > 0 && (limit || realSize > p || lim < 0)) {
+            result.append(makeSharedString(runtime, p, realSize - p));
+        }
+
+        return result;
+    }
+
     // MRI: rb_str_split_m, when split_type = string
     private RubyArray stringSplit(ThreadContext context, RubyString spat, boolean limit, int lim, int i) {
         Ruby runtime = context.runtime;
@@ -4658,6 +4739,32 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         }
 
         return result;
+    }
+
+    // TODO: make the ByteList version public and use it, rather than copying here
+    static int asciiIndexOf(byte[] source, int sourceOffset, int sourceCount, byte[] target, int targetOffset, int targetCount, int fromIndex) {
+        if (fromIndex >= sourceCount) return (targetCount == 0 ? sourceCount : -1);
+        if (fromIndex < 0) fromIndex = 0;
+        if (targetCount == 0) return fromIndex;
+
+        byte first  = target[targetOffset];
+        int max = sourceOffset + (sourceCount - targetCount);
+
+        int i = sourceOffset + fromIndex;
+        while (i <= max) {
+            while (i <= max && source[i] != first)
+                i += 1;
+
+            if (i <= max) {
+                int j = i + 1;
+                int end = j + targetCount - 1;
+                for (int k = targetOffset + 1; j < end && source[j] == target[k]; j++, k++);
+
+                if (j == end) return i - sourceOffset;
+                i += 1;
+            }
+        }
+        return -1;
     }
 
     // TODO: make the ByteList version public and use it, rather than copying here
@@ -4702,15 +4809,23 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     // MRI: get_pat_quoted
-    private static IRubyObject getPatternQuoted(ThreadContext context, IRubyObject pat, final boolean check) {
+    private static Object getPatternQuoted(ThreadContext context, Object pat, final boolean check) {
         IRubyObject val;
 
         if (pat instanceof RubyRegexp) return pat;
+        /*
+        if (pat instanceof RubyRegexp) {
+            if (((RubyRegexp) pat).isSimpleString()) {
+                return ((RubyRegexp) pat).rawSource();
+            }
+
+            return pat;
+        }*/
 
         if (!(pat instanceof RubyString)) {
-            val = pat.checkStringType();
+            val = ((IRubyObject) pat).checkStringType();
             if (val == context.nil) {
-                TypeConverter.checkType(context, pat, context.runtime.getRegexp());
+                TypeConverter.checkType(context, (IRubyObject) pat, context.runtime.getRegexp());
             }
             pat = val;
         }
@@ -4732,7 +4847,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         int last = -1, prev = 0;
         final int[] startp = {0};
 
-        pat = getPatternQuoted(context, pat, true);
+        // FIXME: this may return a ByteList
+        pat = (IRubyObject) getPatternQuoted(context, pat, true);
         mustnotBroken(context);
         if (!block.isGiven()) {
             RubyArray ary = null;
