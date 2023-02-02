@@ -1,2 +1,0 @@
-fails:String#to_sym ignores exising symbols with different encoding
-fails:String#to_sym ignores existing symbols with different encoding
