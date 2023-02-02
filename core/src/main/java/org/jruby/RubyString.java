@@ -6305,13 +6305,18 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @JRubyMethod(name = {"to_sym", "intern"})
     public RubySymbol intern() {
         final Ruby runtime = getRuntime();
+        Encoding originalEncoding = getEncoding();
+        int codeRange = scanForCodeRange();
 
-        if (scanForCodeRange() == CR_BROKEN) {
-            throw runtime.newEncodingError("invalid symbol in encoding " + getEncoding() + " :" + inspect());
+        if (codeRange == CR_BROKEN) {
+            throw runtime.newEncodingError("invalid symbol in encoding " + originalEncoding + " :" + inspect());
         }
 
         RubySymbol symbol = runtime.getSymbolTable().getSymbol(value);
-        symbol.associateEncoding(getEncoding());
+        boolean asciiCompatible = originalEncoding.isAsciiCompatible() && codeRange == CR_7BIT;
+        if (!asciiCompatible) {
+            symbol.associateEncoding(originalEncoding);
+        }
         if (symbol.getBytes() == value) shareLevel = SHARE_LEVEL_BYTELIST;
         return symbol;
     }
