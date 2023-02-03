@@ -4516,17 +4516,15 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                     if (c == ' ') {
                         result = awkSplit(context.runtime, limit, lim, i);
                     } else {
-                        /*
-                        if (((RubyString) spat).isAsciiOnly() && this.isAsciiOnly()) {
+                          if (((RubyString) spat).isAsciiOnly() && this.isAsciiOnly()) {
                             if (((RubyString) spat).length() == 1) {
                                 result = asciiStringSplitOne(context, (byte) ((RubyString) spat).getByteList().charAt(0), limit, lim, i);
                             } else {
                                 result = asciiStringSplit(context, (RubyString) spat, limit, lim, i);
                             }
                         } else {
-                         */
-                            result = stringSplit(context, (RubyString) spat, limit, lim, i);
-//                        }
+                              result = stringSplit(context, (RubyString) spat, limit, lim, i);
+                        }
                     }
                 }
             } else {
@@ -4654,21 +4652,26 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         int begin = value.getBegin();
         int realSize = value.getRealSize();
 
-        int end = begin + realSize;
-        int b = begin;
-        i = 0;
-        int p = begin;
+        int startSegment = 0; // start index of currently processed segment in split
+        int index = 0;
 
-        for (; p < end; p++) {
-            if (bytes[p] == pat) {
-                result.append(makeSharedString(runtime, b, p - b));
-                b = p + 1;
+        for (; index < realSize; index++) {
+            if (bytes[begin + index] == pat) {
+                RubyString str = makeSharedString(runtime, startSegment, index - startSegment);
+                result.append(str);
+                startSegment = index + 1;
                 if (limit && lim <= ++i) break;
             }
         }
 
-        if (realSize > 0 && (limit || realSize > p || lim < 0)) {
-            result.append(makeSharedString(runtime, p, realSize - p));
+        if (realSize > 0) {
+            if (limit) {
+                RubyString str = makeSharedString(runtime, startSegment, realSize - startSegment);
+                result.append(str);
+            } else if (index > startSegment || lim < 0) {
+                RubyString str = makeSharedString(runtime, startSegment, index - startSegment);
+                result.append(str);
+            }
         }
 
         return result;
