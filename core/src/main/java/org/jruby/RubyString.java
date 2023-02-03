@@ -4392,27 +4392,17 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return this;
     }
 
-    public RubyArray split(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        final int lim = RubyNumeric.num2int(arg1);
-        RubyArray array;
-        if (lim <= 0) {
-            array = splitCommon(context, arg0, lim, 1);
-        } else if (lim == 1) {
-            Ruby runtime = context.runtime;
-            array = value.getRealSize() == 0 ? runtime.newArray() : runtime.newArray(this.strDup(runtime, runtime.getString()));
-        } else {
-            array = splitCommon(context, arg0, lim, 1);
-        }
+    public RubyArray split(ThreadContext context, IRubyObject pattern, IRubyObject arg1) {
+        final int limit = RubyNumeric.num2int(arg1);
 
-        return array;
+        return splitCommon(context, pattern, limit, 1);
     }
 
     @JRubyMethod(name = "split")
-    public IRubyObject splitWithBlock(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        RubyArray array = split(context, arg0, arg1);
-        if (!block.isGiven()) {
-            return array;
-        }
+    public IRubyObject splitWithBlock(ThreadContext context, IRubyObject pattern, IRubyObject limit, Block block) {
+        RubyArray array = split(context, pattern, limit);
+
+        if (!block.isGiven()) return array;
 
         for (int i = 0; i < array.getLength(); i++) {
             block.yield(context, array.eltOk(i));
@@ -4465,12 +4455,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private RubyArray doSplit(IRubyObject delimiter, final int limit) {
-        ThreadContext context = getRuntime().getCurrentContext();
-        if (limit == 1) {
-            Ruby runtime = context.runtime;
-            return isEmpty() ? runtime.newEmptyArray() : runtime.newArray(strDup(runtime, runtime.getString()));
-        }
-        return splitCommon(context, delimiter, limit, 1);
+        return splitCommon(getRuntime().getCurrentContext(), delimiter, limit, 1);
     }
 
     final RubyArray split(ThreadContext context, RubyRegexp spat) {
@@ -4479,8 +4464,15 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     // MRI: rb_str_split_m, overall structure
     private RubyArray splitCommon(ThreadContext context, Object spat, final int lim, final int i) {
+        Ruby runtime = context.runtime;
         boolean limit = lim > 0;
         final RubyArray result;
+
+        // limit of 1 is the whole value.
+        if (lim == 1) {
+            return value.getRealSize() == 0 ? runtime.newArray() : runtime.newArray(this.strDup(runtime, runtime.getString()));
+        }
+
         if (spat == context.nil && (spat = context.runtime.getGlobalVariables().get("$;")) == context.nil) {
             result = awkSplit(context.runtime, limit, lim, i);
         } else {
