@@ -1558,11 +1558,11 @@ public class RubyRational extends RubyNumeric {
             IRubyObject de = match.at(3);
             IRubyObject re = match.post_match(context);
             
-            RubyArray a = nu.split(context, RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.an_e_pat), false);
+            RubyArray a = nu.split(context, RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.an_e_pat));
             RubyString ifp = (RubyString)a.eltInternal(0);
             IRubyObject exp = a.size() != 2 ? nil : a.eltInternal(1);
             
-            a = ifp.split(context, RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.a_dot_pat), false);
+            a = ifp.split(context, runtime.newString("."));
             IRubyObject ip = a.eltInternal(0);
             IRubyObject fp = a.size() != 2 ? nil : a.eltInternal(1);
             

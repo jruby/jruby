@@ -817,7 +817,7 @@ public class Numeric {
     }
 
     public static final class RationalPatterns {
-        public static final Regex rat_pat, an_e_pat, a_dot_pat;
+        public static final Regex rat_pat, an_e_pat;
         static {
             String WS = "\\s*";
             String DIGITS = "(?:\\d(?:_\\d|\\d)*)";
@@ -826,7 +826,6 @@ public class Numeric {
             String PATTERN = "\\A" + WS + "([-+])?(" + NUMERATOR + ")(?:\\/(" + DENOMINATOR + "))?" + WS;
             rat_pat = new Regex(PATTERN.getBytes(), 0, PATTERN.length(), 0, ASCIIEncoding.INSTANCE, WarnCallback.NONE);
             an_e_pat = new Regex("[Ee]".getBytes(), 0, 4, 0, ASCIIEncoding.INSTANCE, WarnCallback.NONE);
-            a_dot_pat = new Regex("\\.".getBytes(), 0, 2, 0, ASCIIEncoding.INSTANCE, WarnCallback.NONE);
         }
     }
 
