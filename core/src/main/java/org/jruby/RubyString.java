@@ -4451,10 +4451,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return splitCommon(getRuntime().getCurrentContext(), delimiter, limit);
     }
 
-    final RubyArray split(ThreadContext context, RubyRegexp spat) {
-        return splitCommon(context, spat, 0);
-    }
-
     // MRI: rb_str_split_m, overall structure
     private RubyArray splitCommon(ThreadContext context, Object spat, int lim) {
         Ruby runtime = context.runtime;
