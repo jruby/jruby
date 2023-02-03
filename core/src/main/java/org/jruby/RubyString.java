@@ -7166,7 +7166,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @Deprecated
     public RubyArray split19(ThreadContext context, IRubyObject arg0, boolean useBackref) {
-        return splitCommon(context, arg0, useBackref, flags, flags);
+        return split(context, arg0);
     }
 
     @Deprecated
