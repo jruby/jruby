@@ -1552,7 +1552,7 @@ public class EncodingUtils {
 
     // make_econv_exception
     public static RaiseException makeEconvException(Ruby runtime, EConv ec) {
-        final StringBuilder mesg = new StringBuilder(); RaiseException exc;
+        final StringBuilder mesg; RaiseException exc;
 
         final EConvResult result = ec.lastError.getResult();
         if (result == EConvResult.InvalidByteSequence || result == EConvResult.IncompleteInput) {
@@ -1564,6 +1564,7 @@ public class EncodingUtils {
             RubyString dumped = (RubyString)bytes.dump();
             int readagainLen = ec.lastError.getReadAgainLength();
             IRubyObject bytes2 = runtime.getNil();
+            mesg = new StringBuilder();
             if (result == EConvResult.IncompleteInput) {
                 mesg.append("incomplete ").append(dumped).append(" on ").append(new String(ec.lastError.getSource()));
             } else if (readagainLen != 0) {
@@ -1593,6 +1594,7 @@ public class EncodingUtils {
             RubyString bytes = newString(runtime, new ByteList(errBytes, errBytesP, errorLen - errBytesP));
             RubyString dumped = (RubyString) bytes.dump();
 
+            mesg = new StringBuilder();
             if (Arrays.equals(errSource, ec.source) &&  Arrays.equals(ec.lastError.getDestination(), ec.destination)) {
                 mesg.append(dumped).append(" from ").append( new String(errSource) ).append(" to ").append( new String(ec.lastError.getDestination()) );
             } else {
