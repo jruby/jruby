@@ -174,7 +174,7 @@ public class RubyMatchData extends RubyObject {
     private void updateCharOffsetOnlyOneReg(ByteList value, Encoding encoding) {
         if (charOffsetUpdated) return;
 
-        if (charOffsets == null || charOffsets.getNumRegs() < 1) charOffsets = new Region(1);
+        if (charOffsets == null || charOffsets.getNumRegs() < 1) charOffsets = Region.newRegion(1);
 
         if (encoding.maxLength() == 1) {
             charOffsets.setBeg(0, begin);
@@ -212,7 +212,7 @@ public class RubyMatchData extends RubyObject {
         final Region regs = this.regs;
         int numRegs = regs.getNumRegs();
 
-        if (charOffsets == null || charOffsets.getNumRegs() < numRegs) charOffsets = new Region(numRegs);
+        if (charOffsets == null || charOffsets.getNumRegs() < numRegs) charOffsets = Region.newRegion(numRegs);
 
         if (encoding.maxLength() == 1) {
             for (int i = 0; i < numRegs; i++) {
