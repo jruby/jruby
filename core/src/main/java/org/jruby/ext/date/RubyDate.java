@@ -1479,7 +1479,7 @@ public class RubyDate extends RubyObject {
             ajd = newRationalConvert(context, df, DAY_IN_SECONDS).op_plus(context, ajd);
         }
         if ( ! ( (RubyNumeric) sf ).isZero() ) {
-            ajd = newRationalConvert(context, sf, DAY_IN_SECONDS * 1_000_000_000).op_plus(context, ajd);
+            ajd = newRationalConvert(context, sf, DAY_IN_SECONDS * 1_000_000_000L).op_plus(context, ajd);
         }
         return ajd;
     }
