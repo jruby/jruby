@@ -64,6 +64,19 @@ public abstract class CallSite {
      * @return the result of the call
      */
     public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, long fixnum);
+
+    /**
+     * Call the site's method against the target object, passing a literal long
+     * value. This version does not check visibility.
+     *
+     * @param context the ThreadContext for the current thread
+     * @param self the target object to call against
+     * @param fixnum the literal long value to pass
+     * @return the result of the call
+     */
+    public IRubyObject fcall(ThreadContext context, IRubyObject self, long fixnum) {
+        return call(context, self, self, fixnum);
+    }
     
     /**
      * Call the site's method against the target object, passing a literal double
@@ -76,6 +89,19 @@ public abstract class CallSite {
      * @return the result of the call
      */
     public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, double flote);
+
+    /**
+     * Call the site's method against the target object, passing a literal double
+     * value. This version does not check visibility.
+     *
+     * @param context the ThreadContext for the current thread
+     * @param self the target object to call against
+     * @param flote the literal double value to pass
+     * @return the result of the call
+     */
+    public IRubyObject fcall(ThreadContext context, IRubyObject self, double flote) {
+        return call(context, self, self, flote);
+    }
     
     // no block
 

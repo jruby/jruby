@@ -45,11 +45,4 @@ public class SelfInvokeSite extends InvokeSite {
 
         return InvokeSite.bootstrap(site, lookup);
     }
-
-    @Override
-    public boolean methodMissing(CacheEntry entry, IRubyObject caller) {
-        DynamicMethod method = entry.method;
-
-        return method.isUndefined();
-    }
 }

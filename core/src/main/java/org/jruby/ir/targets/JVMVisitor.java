@@ -1,23 +1,49 @@
 package org.jruby.ir.targets;
 
 import com.headius.invokebinder.Signature;
-import org.jruby.*;
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyBoolean;
+import org.jruby.RubyClass;
+import org.jruby.RubyComplex;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyFloat;
+import org.jruby.RubyHash;
+import org.jruby.RubyModule;
+import org.jruby.RubyProc;
+import org.jruby.RubyRange;
+import org.jruby.RubyRational;
+import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.ir.*;
+import org.jruby.ir.IRClassBody;
+import org.jruby.ir.IRClosure;
+import org.jruby.ir.IRFlags;
+import org.jruby.ir.IRMethod;
+import org.jruby.ir.IRModuleBody;
+import org.jruby.ir.IRScope;
+import org.jruby.ir.IRScriptBody;
+import org.jruby.ir.IRVisitor;
+import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.*;
-import org.jruby.ir.instructions.boxing.*;
+import org.jruby.ir.instructions.boxing.AluInstr;
+import org.jruby.ir.instructions.boxing.BoxBooleanInstr;
+import org.jruby.ir.instructions.boxing.BoxFixnumInstr;
+import org.jruby.ir.instructions.boxing.BoxFloatInstr;
+import org.jruby.ir.instructions.boxing.UnboxBooleanInstr;
+import org.jruby.ir.instructions.boxing.UnboxFixnumInstr;
+import org.jruby.ir.instructions.boxing.UnboxFloatInstr;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.instructions.specialized.OneFixnumArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneFloatArgNoBlockCallInstr;
 import org.jruby.ir.interpreter.FullInterpreterContext;
-import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Float;
-import org.jruby.ir.operands.Label;
+import org.jruby.ir.operands.*;
 import org.jruby.ir.persistence.IRDumper;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -25,7 +51,14 @@ import org.jruby.ir.targets.IRBytecodeAdapter.BlockPassType;
 import org.jruby.ir.targets.indy.Bootstrap;
 import org.jruby.ir.targets.indy.CallTraceSite;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.*;
+import org.jruby.runtime.ArgumentDescriptor;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.CallType;
+import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Frame;
+import org.jruby.runtime.Helpers;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.DynamicScopeGenerator;
 import org.jruby.util.ByteList;
@@ -33,7 +66,6 @@ import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
-import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
 import org.jruby.util.collections.IntHashMap;
 import org.jruby.util.log.Logger;
@@ -50,7 +82,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import static org.jruby.util.CodegenUtils.*;
+import static org.jruby.util.CodegenUtils.c;
+import static org.jruby.util.CodegenUtils.ci;
+import static org.jruby.util.CodegenUtils.p;
+import static org.jruby.util.CodegenUtils.sig;
 
 /**
  * Implementation of IRCompiler for the JVM.
@@ -738,10 +773,8 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void AsStringInstr(AsStringInstr asstring) {
         jvmMethod().loadContext();
-        jvmMethod().loadSelf();
         visit(asstring.getReceiver());
-        jvmMethod().getInvocationCompiler().invokeOther(file, jvm.methodData().scopeField, asstring, 0);
-        jvmAdapter().invokeinterface(p(IRubyObject.class), "asString", sig(RubyString.class));
+        jvmMethod().getInvocationCompiler().asString(asstring, jvm.methodData().scopeField, file);
         jvmStoreLocal(asstring.getResult());
     }
 
@@ -1089,10 +1122,17 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void BuildCompoundStringInstr(BuildCompoundStringInstr compoundstring) {
-        jvmMethod().getValueCompiler().pushEmptyString(compoundstring.getEncoding());
-        for (Operand p : compoundstring.getPieces()) {
-            if (p instanceof StringLiteral) {
+        Operand[] pieces = compoundstring.getPieces();
+
+        jvmMethod().getValueCompiler().pushBufferString(compoundstring.getEncoding(), compoundstring.getInitialSize());
+
+        for (Operand p : pieces) {
+            if (p instanceof FrozenString) {
                 // we have bytelist and CR in hand, go straight to cat logic
+                FrozenString str = (FrozenString) p;
+                jvmMethod().getValueCompiler().pushFrozenString(str.getByteList(), str.getCodeRange(), str.getFile(), str.getLine());
+                jvmAdapter().invokevirtual(p(RubyString.class), "cat19", sig(RubyString.class, RubyString.class));
+            } else if (p instanceof StringLiteral) {
                 StringLiteral str = (StringLiteral) p;
                 jvmMethod().getValueCompiler().pushByteList(str.getByteList());
                 jvmAdapter().pushInt(str.getCodeRange());
@@ -1128,15 +1168,12 @@ public class JVMVisitor extends IRVisitor {
         RegexpOptions options = instr.getOptions();
         final Operand[] operands = instr.getPieces();
 
-        Runnable r = new Runnable() {
-            @Override
-            public void run() {
-                m.loadContext();
-                for (int i = 0; i < operands.length; i++) {
-                    Operand operand = operands[i];
-                    visit(operand);
-                    jvmAdapter().invokeinterface(p(IRubyObject.class), "asString", sig(RubyString.class));
-                }
+        Runnable r = () -> {
+            m.loadContext();
+            for (int i = 0; i < operands.length; i++) {
+                Operand operand = operands[i];
+                visit(operand);
+                jvmAdapter().invokeinterface(p(IRubyObject.class), "asString", sig(RubyString.class));
             }
         };
 
@@ -1158,8 +1195,13 @@ public class JVMVisitor extends IRVisitor {
     public void BuildSplatInstr(BuildSplatInstr instr) {
         jvmMethod().loadContext();
         visit(instr.getArray());
-        jvmAdapter().ldc(instr.getDup());
-        jvmMethod().invokeIRHelper("splatArray", sig(RubyArray.class, ThreadContext.class, IRubyObject.class, boolean.class));
+        String splatMethod;
+        if (instr.getDup()) {
+            splatMethod = "splatArrayDup";
+        } else {
+            splatMethod = "splatArray";
+        }
+        jvmMethod().invokeIRHelper(splatMethod, sig(RubyArray.class, ThreadContext.class, IRubyObject.class));
         jvmStoreLocal(instr.getResult());
     }
 
@@ -1177,10 +1219,12 @@ public class JVMVisitor extends IRVisitor {
     }
 
     private void compileCallCommon(IRBytecodeAdapter m, CallBase call) {
+        boolean functional = call.getCallType() == CallType.FUNCTIONAL || call.getCallType() == CallType.VARIABLE;
+
         Operand[] args = call.getCallArgs();
         BlockPassType blockPassType = BlockPassType.fromIR(call);
         m.loadContext();
-        m.loadSelf(); // caller
+        if (!functional) m.loadSelf(); // caller
         visit(call.getReceiver());
         int arity = args.length;
 
@@ -1230,12 +1274,20 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void CheckArgsArrayArityInstr(CheckArgsArrayArityInstr checkargsarrayarityinstr) {
-        jvmMethod().loadContext();
-        visit(checkargsarrayarityinstr.getArgsArray());
-        jvmAdapter().pushInt(checkargsarrayarityinstr.required);
-        jvmAdapter().pushInt(checkargsarrayarityinstr.opt);
-        jvmAdapter().pushBoolean(checkargsarrayarityinstr.rest);
-        jvmMethod().invokeStatic(Type.getType(Helpers.class), Method.getMethod("void irCheckArgsArrayArity(org.jruby.runtime.ThreadContext, org.jruby.RubyArray, int, int, boolean)"));
+        int required = checkargsarrayarityinstr.required;
+        int opt = checkargsarrayarityinstr.opt;
+        boolean rest = checkargsarrayarityinstr.rest;
+
+        if (required == 0) {
+            if (opt == 0) {
+                if (rest) {
+                    // do nothing, all argument forms are valid
+                    return;
+                }
+            }
+        }
+
+        jvmMethod().getBranchCompiler().checkArgsArity(() -> visit(checkargsarrayarityinstr.getArgsArray()), required, opt, rest);
     }
 
     @Override
@@ -1252,11 +1304,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadStaticScope();
         jvmMethod().loadArgs();
         jvmMethod().loadSelfBlock();
-        jvmAdapter().invokedynamic(
-                "checkArity",
-                sig(void.class, ThreadContext.class, StaticScope.class, Object[].class, Block.class),
-                Bootstrap.CHECK_ARITY_SPECIFIC_ARGS,
-                required, opt, rest ? 1 : 0, restKey);
+        jvmMethod().getBranchCompiler().checkAritySpecificArgs(required, opt, rest, restKey);
     }
 
     private void checkArity(Operand keywords, int required, int opt, boolean rest, int restKey) {
@@ -1265,11 +1313,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadArgs();
         visit(keywords);
         jvmMethod().loadSelfBlock();
-        jvmAdapter().invokedynamic(
-                "checkArity",
-                sig(void.class, ThreadContext.class, StaticScope.class, Object[].class, Object.class, Block.class),
-                Bootstrap.CHECK_ARITY,
-                required, opt, rest ? 1 : 0, restKey);
+        jvmMethod().getBranchCompiler().checkArity(required, opt, rest, restKey);
     }
 
     @Override
@@ -1559,8 +1603,14 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void GetFieldInstr(GetFieldInstr getfieldinstr) {
-        visit(getfieldinstr.getSource());
-        jvmMethod().getInstanceVariableCompiler().getField(getfieldinstr.getId());
+        Operand source = getfieldinstr.getSource();
+
+        // We need target twice, so rather than introduce a hidden var or do stack tricks, we check if we can safely revaluate
+        if (!source.canCopyPropagate()) {
+            throw new NotCompilableException("non-propagatable target for PutField: " + source);
+        }
+
+        jvmMethod().getInstanceVariableCompiler().getField(() -> visit(source), getfieldinstr.getId());
         jvmStoreLocal(getfieldinstr.getResult());
     }
 
@@ -1745,12 +1795,13 @@ public class JVMVisitor extends IRVisitor {
         long fixnum = oneFixnumArgNoBlockCallInstr.getFixnumArg();
         Operand receiver = oneFixnumArgNoBlockCallInstr.getReceiver();
         Variable result = oneFixnumArgNoBlockCallInstr.getResult();
+        boolean functional = oneFixnumArgNoBlockCallInstr.getCallType() == CallType.FUNCTIONAL
+                || oneFixnumArgNoBlockCallInstr.getCallType() == CallType.VARIABLE;
 
         m.loadContext();
 
         // for visibility checking without requiring frame self
-        // TODO: don't bother passing when fcall or vcall, and adjust callsite appropriately
-        m.loadSelf(); // caller
+        if (!functional) m.loadSelf(); // caller
 
         visit(receiver);
 
@@ -1769,12 +1820,13 @@ public class JVMVisitor extends IRVisitor {
         double flote = oneFloatArgNoBlockCallInstr.getFloatArg();
         Operand receiver = oneFloatArgNoBlockCallInstr.getReceiver();
         Variable result = oneFloatArgNoBlockCallInstr.getResult();
+        boolean functional = oneFloatArgNoBlockCallInstr.getCallType() == CallType.FUNCTIONAL
+                || oneFloatArgNoBlockCallInstr.getCallType() == CallType.VARIABLE;
 
         m.loadContext();
 
         // for visibility checking without requiring frame self
-        // TODO: don't bother passing when fcall or vcall, and adjust callsite appropriately
-        m.loadSelf(); // caller
+        if (!functional) m.loadSelf(); // caller
 
         visit(receiver);
 
@@ -1988,9 +2040,17 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void PutFieldInstr(PutFieldInstr putfieldinstr) {
-        visit(putfieldinstr.getTarget());
-        visit(putfieldinstr.getValue());
-        jvmMethod().getInstanceVariableCompiler().putField(putfieldinstr.getId());
+        Operand target = putfieldinstr.getTarget();
+
+        // We need target twice, so rather than introduce a hidden var or do stack tricks, we check if we can safely revaluate
+        if (!target.canCopyPropagate()) {
+            throw new NotCompilableException("non-propagatable target for PutField: " + target);
+        }
+
+        jvmMethod().getInstanceVariableCompiler().putField(
+                () -> visit(target),
+                () -> visit(putfieldinstr.getValue()),
+                putfieldinstr.getId());
     }
 
     @Override
@@ -2533,7 +2593,7 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void GetEncodingInstr(GetEncodingInstr getencodinginstr) {
         jvmMethod().loadContext();
-        jvmMethod().getValueCompiler().pushEncoding(getencodinginstr.getEncoding());
+        jvmMethod().getValueCompiler().pushRubyEncoding(getencodinginstr.getEncoding());
         jvmStoreLocal(getencodinginstr.getResult());
     }
 
@@ -2658,41 +2718,12 @@ public class JVMVisitor extends IRVisitor {
         int depth = localvariable.getScopeDepth();
         int location = localvariable.getLocation();
 
-        // We can only use the fast path with no null checking in methods, since closures may JIT independently
-        // atop methods that do not guarantee all scoped vars are initialized. See jruby/jruby#4235.
         if (jvm.methodData().scope instanceof IRMethod) {
             jvmLoadLocal(DYNAMIC_SCOPE);
-
-            if (depth == 0) {
-                if (location < DynamicScopeGenerator.SPECIALIZED_GETS.size()) {
-                    m.adapter.invokevirtual(p(DynamicScope.class), DynamicScopeGenerator.SPECIALIZED_GETS.get(location), sig(IRubyObject.class));
-                } else {
-                    m.adapter.pushInt(location);
-                    m.adapter.invokevirtual(p(DynamicScope.class), "getValueDepthZero", sig(IRubyObject.class, int.class));
-                }
-            } else {
-                m.adapter.pushInt(location);
-                m.adapter.pushInt(depth);
-                m.adapter.invokevirtual(p(DynamicScope.class), "getValue", sig(IRubyObject.class, int.class, int.class));
-            }
+            m.getLocalVariableCompiler().getHeapLocal(depth, location);
         } else {
             jvmLoadLocal(DYNAMIC_SCOPE);
-
-            if (depth == 0) {
-                if (location < DynamicScopeGenerator.SPECIALIZED_GETS_OR_NIL.size()) {
-                    m.getValueCompiler().pushNil();
-                    m.adapter.invokevirtual(p(DynamicScope.class), DynamicScopeGenerator.SPECIALIZED_GETS_OR_NIL.get(location), sig(IRubyObject.class, IRubyObject.class));
-                } else {
-                    m.adapter.pushInt(location);
-                    m.getValueCompiler().pushNil();
-                    m.adapter.invokevirtual(p(DynamicScope.class), "getValueDepthZeroOrNil", sig(IRubyObject.class, int.class, IRubyObject.class));
-                }
-            } else {
-                m.adapter.pushInt(location);
-                m.adapter.pushInt(depth);
-                m.getValueCompiler().pushNil();
-                m.adapter.invokevirtual(p(DynamicScope.class), "getValueOrNil", sig(IRubyObject.class, int.class, int.class, IRubyObject.class));
-            }
+            m.getLocalVariableCompiler().getHeapLocalOrNil(depth, location);
         }
     }
 
