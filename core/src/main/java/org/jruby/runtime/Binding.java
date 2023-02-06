@@ -82,8 +82,7 @@ public class Binding {
 
     public Binding(IRubyObject self, Frame frame,
                    Visibility visibility, DynamicScope dynamicScope, String method, String filename, int line) {
-        frame.getClass(); // null check
-
+        assert frame != null;
         this.self = self;
         this.frame = frame;
         this.visibility = visibility;
@@ -95,8 +94,7 @@ public class Binding {
 
     private Binding(IRubyObject self, Frame frame,
                     Visibility visibility, DynamicScope dynamicScope, String method, String filename, int line, DynamicScope dummyScope) {
-        frame.getClass(); // null check
-
+        assert frame != null;
         this.self = self;
         this.frame = frame;
         this.visibility = visibility;
@@ -108,8 +106,7 @@ public class Binding {
     }
     
     public Binding(Frame frame, DynamicScope dynamicScope, String method, String filename, int line) {
-        frame.getClass(); // null check
-
+        assert frame != null;
         this.self = frame.getSelf();
         this.frame = frame;
         this.visibility = frame.getVisibility();
@@ -127,8 +124,7 @@ public class Binding {
 
     public Binding(IRubyObject self, Frame frame,
                    Visibility visibility) {
-        frame.getClass(); // null check
-
+        assert frame != null;
         this.self = self;
         this.frame = frame;
         this.visibility = visibility;
@@ -143,8 +139,7 @@ public class Binding {
 
     public Binding(IRubyObject self, Frame frame,
                    Visibility visibility, DynamicScope dynamicScope) {
-        frame.getClass(); // null check
-
+        assert frame != null;
         this.self = self;
         this.frame = frame;
         this.visibility = visibility;
