@@ -154,8 +154,8 @@ public class OpenFile implements Finalizable {
 
     protected volatile Set<RubyThread> blockingThreads;
 
-    private Ptr spPtr = new Ptr();
-    private Ptr dpPtr = new Ptr();
+    private final Ptr spPtr = new Ptr();
+    private final Ptr dpPtr = new Ptr();
 
     public void clearStdio() {
         stdio_file = null;
