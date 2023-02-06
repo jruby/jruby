@@ -1587,11 +1587,11 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             start = match.begin;
             end = match.end;
         } else {
-            if (nth >= match.regs.numRegs || (nth < 0 && (nth+=match.regs.numRegs) <= 0)) {
+            if (nth >= match.regs.getNumRegs() || (nth < 0 && (nth+=match.regs.getNumRegs()) <= 0)) {
                 return match.getRuntime().getNil();
             }
-            start = match.regs.beg[nth];
-            end = match.regs.end[nth];
+            start = match.regs.getBeg(nth);
+            end = match.regs.getEnd(nth);
         }
 
         if (start == -1) return match.getRuntime().getNil();
@@ -1640,10 +1640,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         RubyMatchData m = (RubyMatchData) match;
         m.check();
 
-        if (m.regs == null || m.regs.beg[0] == -1) return m.getRuntime().getNil();
+        if (m.regs == null || m.regs.getBeg(0) == -1) return m.getRuntime().getNil();
 
         int i;
-        for (i = m.regs.numRegs - 1; m.regs.beg[i] == -1 && i > 0; i--);
+        for (i = m.regs.getNumRegs() - 1; m.regs.getBeg(i) == -1 && i > 0; i--)
         if (i == 0) return m.getRuntime().getNil();
 
         return nth_match(i, m);
@@ -1754,8 +1754,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 continue;
             case '+':
                 if (regs != null) {
-                    no = regs.numRegs - 1;
-                    while (regs.beg[no] == -1 && no > 0) no--;
+                    no = regs.getNumRegs() - 1;
+                    while (regs.getBeg(no) == -1 && no > 0) no--;
                 }
                 if (no == 0) continue;
                 break;
@@ -1769,9 +1769,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
             if (regs != null) {
                 if (no >= 0) {
-                    if (no >= regs.numRegs) continue;
-                    if (regs.beg[no] == -1) continue;
-                    EncodingUtils.encStrBufCat(runtime, val, srcbs.getUnsafeBytes(), srcbs.getBegin() + regs.beg[no], regs.end[no] - regs.beg[no], srcEnc);
+                    if (no >= regs.getNumRegs()) continue;
+                    if (regs.getBeg(no) == -1) continue;
+                    EncodingUtils.encStrBufCat(runtime, val, srcbs.getUnsafeBytes(), srcbs.getBegin() + regs.getBeg(no), regs.getEnd(no) - regs.getBeg(no), srcEnc);
                 }
             } else {
                 if (no != 0 || begin == -1) continue;
