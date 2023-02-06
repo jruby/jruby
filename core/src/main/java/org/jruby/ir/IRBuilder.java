@@ -7,6 +7,7 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyRational;
 import org.jruby.RubySymbol;
 import org.jruby.ast.*;
+import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.compiler.NotCompilableException;
@@ -628,8 +629,11 @@ public class IRBuilder {
         Node valueNode = multipleAsgnNode.getValueNode();
         Operand values = build(valueNode);
         Variable ret = getValueInTemporaryVariable(values);
-        if (valueNode instanceof ArrayNode) {
+        if (valueNode instanceof ArrayNode || valueNode instanceof ZArrayNode) {
             buildMultipleAsgn19Assignment(multipleAsgnNode, null, ret);
+        } else if (valueNode instanceof ILiteralNode) {
+            // treat a single literal value as a single-element array
+            buildMultipleAsgn19Assignment(multipleAsgnNode, null, new Array(new Operand[]{ret}));
         } else {
             Variable tmp = createTemporaryVariable();
             addInstr(new ToAryInstr(tmp, ret));

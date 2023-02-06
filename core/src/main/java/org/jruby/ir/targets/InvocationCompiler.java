@@ -1,5 +1,6 @@
 package org.jruby.ir.targets;
 
+import org.jruby.ir.instructions.AsStringInstr;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.EQQInstr;
 
@@ -105,4 +106,11 @@ public interface InvocationCompiler {
      * Stack required: context, case value, when value
      */
     void invokeEQQ(EQQInstr call);
+
+    /**
+     * Coerces the receiver to a String using to_s, unless it is already a String
+     *
+     * Stack required: context, caller, receiver
+     */
+    void asString(AsStringInstr call, String scopeFieldName, String file);
 }

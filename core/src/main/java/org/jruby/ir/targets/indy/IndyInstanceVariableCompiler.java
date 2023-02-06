@@ -17,11 +17,14 @@ public class IndyInstanceVariableCompiler implements InstanceVariableCompiler {
         this.compiler = compiler;
     }
 
-    public void putField(String name) {
+    public void putField(Runnable target, Runnable value, String name) {
+        target.run();
+        value.run();
         compiler.adapter.invokedynamic("ivarSet:" + JavaNameMangler.mangleMethodName(name), sig(void.class, IRubyObject.class, IRubyObject.class), VariableSite.IVAR_ASM_HANDLE);
     }
 
-    public void getField(String name) {
+    public void getField(Runnable source, String name) {
+        source.run();
         compiler.adapter.invokedynamic("ivarGet:" + JavaNameMangler.mangleMethodName(name), CodegenUtils.sig(JVM.OBJECT, IRubyObject.class), VariableSite.IVAR_ASM_HANDLE);
     }
 }

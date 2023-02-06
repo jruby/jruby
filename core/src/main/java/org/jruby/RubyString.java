@@ -3837,7 +3837,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private int subpatSetCheck(Ruby runtime, int nth, Region regs) {
-        int numRegs = regs == null ? 1 : regs.numRegs;
+        int numRegs = regs == null ? 1 : regs.getNumRegs();
         if (nth < numRegs) {
             if (nth < 0) {
                 if (-nth < numRegs) return nth + numRegs;
@@ -3865,8 +3865,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             start = match.begin;
             end = match.end;
         } else {
-            start = match.regs.beg[nth];
-            end = match.regs.end[nth];
+            start = match.regs.getBeg(nth);
+            end = match.regs.getEnd(nth);
         }
         if (start == -1) throw runtime.newIndexError("regexp group " + nth + " not matched");
         RubyString replStr =  repl.convertToString();

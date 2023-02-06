@@ -15,4 +15,10 @@ public interface BranchCompiler {
     public void bfalse(Label label);
 
     public void btrue(Label label);
+
+    void checkArgsArity(Runnable args, int required, int opt, boolean rest);
+
+    void checkArity(int required, int opt, boolean rest, int restKey);
+
+    void checkAritySpecificArgs(int required, int opt, boolean rest, int restKey);
 }
