@@ -45,17 +45,22 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- * Utility functions to help embedders out.   These function consolidate logic that is
- * used between BSF and JSR 223.  People who are embedding JRuby 'raw' should use these
- * as well.  If at a later date, we discover a flaw or change how we do things, this
- * utility class should provide some insulation.
+ * Utility functions to help embedders out.
+ * These function consolidate logic that is used between BSF and JSR 223.
+ * People who are embedding JRuby 'raw' should use these as well.
+ * If at a later date, we discover a flaw or change how we do things, this utility class should provide some insulation.
  *
+ * <pre>
  * Example:
- * Ruby runtime = JavaEmbedUtils.initialize(new ArrayList());
- * RubyRuntimeAdapter evaler = JavaEmbedUtils.newRuntimeAdapter();
- * IRubyObject rubyObject = evaler.parse(runtime, expr.toString(), file, line).run());
- * SomeClassOrInterface javaObject = (SomeClassOrInterface) JavaEmbedUtils.rubyToJava(rubyObject);
- * runtime.terminate();
+ *
+ *   Ruby runtime = JavaEmbedUtils.initialize(List.of("a/custom/load/path"));
+ *
+ *   RubyRuntimeAdapter evaler = JavaEmbedUtils.newRuntimeAdapter();
+ *   IRubyObject rubyObject = evaler.parse(runtime, expr.toString(), file, line).run());
+ *   SomeClassOrInterface javaObject = JavaEmbedUtils.rubyToJava(rubyObject, SomeClassOrInterface.class);
+ *
+ *   runtime.terminate();
+ * </pre>
  */
 public class JavaEmbedUtils {
     /**
