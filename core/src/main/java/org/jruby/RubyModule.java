@@ -207,7 +207,6 @@ public class RubyModule extends RubyObject {
      *
      * @param classIndex the ClassIndex for this type
      */
-    @SuppressWarnings("deprecated")
     void setClassIndex(ClassIndex classIndex) {
         this.classIndex = classIndex;
         this.index = classIndex.ordinal();

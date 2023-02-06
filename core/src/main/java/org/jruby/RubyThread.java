@@ -1637,7 +1637,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     @Deprecated
-    public static interface BlockingTask {
+    public interface BlockingTask {
         public void run() throws InterruptedException;
         public void wakeup();
     }
@@ -2227,7 +2227,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
-    @SuppressWarnings("deprecated")
+    @SuppressWarnings("deprecation")
     public synchronized void interrupt() {
         setInterrupt();
 
