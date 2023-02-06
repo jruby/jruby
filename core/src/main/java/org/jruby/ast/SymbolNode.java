@@ -56,10 +56,16 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode, Literal
         this.name = value;
     }
 
+    @Override
     public boolean equals(Object other) {
         return other instanceof SymbolNode &&
                 name.equals(((SymbolNode) other).name) &&
                 name.getEncoding() == ((SymbolNode) other).name.getEncoding();
+    }
+
+    @Override
+    public int hashCode() {
+        return 31 * name.hashCode();
     }
 
     public NodeType getNodeType() {

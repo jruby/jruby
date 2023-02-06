@@ -227,4 +227,9 @@ public abstract class DelegatingDynamicMethod extends DynamicMethod {
 
         return delegate.equals(other);
     }
+
+    @Override
+    public int hashCode() {
+        return 11 * delegate.hashCode();
+    }
 }

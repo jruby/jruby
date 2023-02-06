@@ -260,6 +260,11 @@ public class Binding {
             this.dynamicScope == bOther.dynamicScope;
     }
 
+    @Override
+    public int hashCode() {
+        return (self == null ? 1 : self.hashCode()) * dynamicScope.hashCode();
+    }
+
     // FIXME: This is because we clone the same explicit binding whenever we execute because both the captured Frame
     // and the binding gets mutated during execution.  This means that we cannot share the same instance across
     // concurrent evals of the same binding.  The mutated Frames I think can become new frames during execution and
