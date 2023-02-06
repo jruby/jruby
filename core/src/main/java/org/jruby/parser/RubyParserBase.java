@@ -39,8 +39,10 @@ package org.jruby.parser;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.jcodings.Encoding;
@@ -1511,28 +1513,28 @@ public abstract class RubyParserBase {
         return new_args_tail(line, keywordArg, keywordRestArgName, blockArg);
     }
 
-
-    @SuppressWarnings("CollectionIncompatibleType") // TODO: this should get reviewed/fixed, the error-prone warning is legit!
-    public Node remove_duplicate_keys(HashNode hash) {
-        List<Node> encounteredKeys = new ArrayList<>();
+    public Node remove_duplicate_keys(final HashNode hash) {
+        final Map<Node, KeyValuePair<Node, Node>> encounteredKeys = new HashMap<>();
+        List<KeyValuePair<Node, Node>> pairsToRemove = null;
 
         for (KeyValuePair<Node,Node> pair: hash.getPairs()) {
-            Node key = pair.getKey();
-            if (key == null || !(key instanceof LiteralValue)) continue;
-            int index = encounteredKeys.indexOf(key);
-            if (index >= 0) {
+            final Node key = pair.getKey();
+            if (!(key instanceof LiteralValue)) continue;
+            if (encounteredKeys.containsKey(key)) {
                 Ruby runtime = getConfiguration().getRuntime();
                 IRubyObject value = ((LiteralValue) key).literalValue(runtime);
                 warning(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), hash.getLine(), str(runtime, "key ", value.inspect(),
-                        " is duplicated and overwritten on line " + (encounteredKeys.get(index).getLine() + 1)));
-            } else {
-                encounteredKeys.add(key);
+                        " is duplicated and overwritten on line " + (key.getLine() + 1)));
+
+                if (pairsToRemove == null) pairsToRemove = new ArrayList<>(4);
+                pairsToRemove.add(encounteredKeys.get(key));
             }
+            // even if the key was previously seen, we replace the value to properly remove multiple duplicates
+            encounteredKeys.put(key, pair);
         }
 
-        for (Node key: encounteredKeys) {
-            hash.getPairs().remove(key);
-        }
+        if (pairsToRemove != null) hash.removeAll(pairsToRemove);
+
         return hash;
     }
 
