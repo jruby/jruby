@@ -408,6 +408,10 @@ public class RubyGlobal {
         runtime.defineGlobalConstant("ENV_JAVA", envJava);
     }
 
+    private static void warnDeprecatedGlobal(final Ruby runtime, final String name) {
+        runtime.getWarnings().warnDeprecated(ID.MISCELLANEOUS, "`" + name + "' is deprecated");
+    }
+
     /**
      * Obligate string-keyed and string-valued hash, used for ENV.
      * On Windows, the keys are case-insensitive for ENV
@@ -1003,7 +1007,7 @@ public class RubyGlobal {
         public IRubyObject set(IRubyObject value) {
             IRubyObject result = super.set(value);
 
-            if (!value.isNil()) runtime.getWarnings().warnDeprecated("`" + name + "'");
+            if (!value.isNil()) warnDeprecatedGlobal(runtime, name);
 
             return result;
         }
@@ -1018,7 +1022,7 @@ public class RubyGlobal {
         public IRubyObject set(IRubyObject value) {
             IRubyObject result = super.set(value);
 
-            if (!result.isNil()) runtime.getWarnings().warnDeprecated("`" + name + "'");
+            if (!result.isNil()) warnDeprecatedGlobal(runtime, name);
 
             return result;
         }
