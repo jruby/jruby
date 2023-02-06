@@ -513,6 +513,13 @@ public class RubyFloat extends RubyNumeric {
         return RubyBoolean.newBoolean(context, value == other);
     }
 
+    public IRubyObject op_not_equal(ThreadContext context, double other) {
+        if (Double.isNaN(value)) {
+            return context.tru;
+        }
+        return RubyBoolean.newBoolean(context, value != other);
+    }
+
     public boolean fastEqual(RubyFloat other) {
         return Double.isNaN(value) ? false : value == other.value;
     }

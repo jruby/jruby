@@ -49,6 +49,7 @@ import org.jruby.runtime.callsite.ModCallSite;
 import org.jruby.runtime.callsite.MulCallSite;
 import org.jruby.runtime.callsite.MonomorphicCallSite;
 import org.jruby.runtime.callsite.GtCallSite;
+import org.jruby.runtime.callsite.NotEqCallSite;
 import org.jruby.runtime.callsite.PlusCallSite;
 import org.jruby.runtime.callsite.GeCallSite;
 import org.jruby.runtime.callsite.CmpCallSite;
@@ -144,6 +145,7 @@ public class MethodIndex {
             case ">>" : return "op_rshift";
             case "<<" : return "op_lshift";
 
+            case "!=" : return "op_not_equal";
             case "==" : return "op_equal";
             case "<"  : return "op_lt";
             case "<=" : return "op_le";
@@ -168,6 +170,7 @@ public class MethodIndex {
             case ">>"  : return new ShiftRightCallSite();
             case "<<"  : return new ShiftLeftCallSite();
 
+            case "!="  : return new NotEqCallSite();
             case "=="  : return new EqCallSite();
             case "<"   : return new LtCallSite();
             case "<="  : return new LeCallSite();
