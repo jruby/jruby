@@ -1616,6 +1616,7 @@ public final class Ruby implements Constantizable {
         loadService.loadFromClassLoader(getClassLoader(), "jruby/bundler/startup.rb", false);
     }
 
+    @SuppressWarnings("ReturnValueIgnored")
     private boolean doesReflectionWork() {
         try {
             ClassLoader.class.getDeclaredMethod("getResourceAsStream", String.class);
@@ -3266,11 +3267,12 @@ public final class Ruby implements Constantizable {
         }
     }
 
-    private void systemTeardown(ThreadContext context) {
+    @SuppressWarnings("ReturnValueIgnored")
+    private void systemTeardown(final ThreadContext context) {
         // Run post-user exit hooks, such as for shutting down internal JRuby services
         while (!postExitBlocks.isEmpty()) {
             ExitFunction fun = postExitBlocks.remove(0);
-            fun.applyAsInt(context);
+            fun.applyAsInt(context); // return value ignored
         }
 
         synchronized (internalFinalizersMutex) {
