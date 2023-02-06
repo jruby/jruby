@@ -1512,6 +1512,7 @@ public abstract class RubyParserBase {
     }
 
 
+    @SuppressWarnings("CollectionIncompatibleType") // TODO: this should get reviewed/fixed, the error-prone warning is legit!
     public Node remove_duplicate_keys(HashNode hash) {
         List<Node> encounteredKeys = new ArrayList<>();
 
