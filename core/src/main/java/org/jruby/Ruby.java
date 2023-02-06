@@ -2531,13 +2531,33 @@ public final class Ruby implements Constantizable {
         return warningsEnabled;
     }
 
-    /** Setter for property isVerbose.
-     * @param verbose New value of property isVerbose.
+    /**
+     * Setter that enables/disabled warnings (without changing verbose mode).
+     * @param warningsEnabled
+     * @see #setVerbose(IRubyObject)
      */
-    public void setVerbose(IRubyObject verbose) {
+    public void setWarningsEnabled(final boolean warningsEnabled) {
+        this.warningsEnabled = warningsEnabled;
+    }
+
+    /**
+     * Sets the runtime verbosity ($VERBOSE global which usually gets set to nil/false or true).
+     * @note warnings get enabled whenever the verbose level is set to a value that is not nil.
+     * @param verbose the verbose ruby value
+     */
+    public void setVerbose(final IRubyObject verbose) {
         this.verbose = verbose.isTrue();
         this.verboseValue = verbose;
         warningsEnabled = !verbose.isNil();
+    }
+
+    /**
+     * Sets the $VERBOSE level
+     * @param verbose null, true and false are all valid
+     * @see #setVerbose(IRubyObject)
+     */
+    public void setVerbose(final Boolean verbose) {
+        setVerbose(verbose == null ? nilObject : (verbose ? trueObject : falseObject));
     }
 
     /** Getter for property isDebug.
