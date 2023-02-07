@@ -354,7 +354,6 @@ DO NOT MODIFY - GENERATED CODE
               <goal>create</goal>
             </goals>
             <configuration>
-              <shortRevisionLength>10</shortRevisionLength>
               <buildNumberPropertyName>jruby.revision</buildNumberPropertyName>
             </configuration>
           </execution>
