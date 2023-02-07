@@ -240,12 +240,13 @@ public class Binding {
         this.method = method;
     }
 
+    @Override
     public boolean equals(Object other) {
-        if(this == other) {
+        if (this == other) {
             return true;
         }
 
-        if(!(other instanceof Binding)) {
+        if (!(other instanceof Binding)) {
             return false;
         }
 
