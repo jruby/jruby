@@ -52,7 +52,7 @@ import org.jruby.runtime.Helpers;
  * of characters. However, its API resembles StringBuffer/StringBuilder more than String
  * because it is a mutable object.
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings("ComparableType")
 public class ByteList implements Comparable, CharSequence, Serializable {
     private static final long serialVersionUID = -1286166947275543731L;
 
