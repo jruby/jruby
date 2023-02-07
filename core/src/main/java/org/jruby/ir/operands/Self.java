@@ -73,11 +73,6 @@ public class Self extends Variable {
     }
 
     @Override
-    public int compareTo(Object o) {
-        return this == o ? 0 : -1;
-    }
-
-    @Override
     public String toString() {
         return NAME;
     }

@@ -6,7 +6,7 @@ import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import java.util.List;
 import java.util.Map;
 
-public abstract class Variable extends Operand implements Comparable {
+public abstract class Variable extends Operand {
     public Variable() {
         super();
     }
