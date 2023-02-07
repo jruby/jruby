@@ -1890,11 +1890,34 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     public boolean isSimpleString() {
         return isLiteral() &&
                 getEncoding().isAsciiCompatible() &&
-                !getOptions().isIgnorecase() &&
-                str.realSize() == 1 &&
                 RubyString.scanForCodeRange(str) == CR_7BIT &&
+                !getOptions().isIgnorecase() &&
+                ((str.realSize() == 1 &&
                 str.charAt(0) != '.' &&
-                str.charAt(0) != ' '; // FIXME: This should examine to see if any special chars for any length.
+                str.charAt(0) != ' ') ||
+                isExact(str));
         // FIXME ' ' is for awk split detection this should be in split code perhaps.
+    }
+
+    // Assumes 7bit source
+    private boolean isExact(ByteList str) {
+        int size = str.realSize();
+        byte[] bytes = str.unsafeBytes();
+        int begin = str.begin();
+
+        for (int i = 0; i < size; i++) {
+            switch (bytes[begin + i]) {
+                case '.':
+                case '*':
+                case '[':
+                case '(':
+                case '+':
+                case '?':
+                case '{':
+                    return false;
+            }
+        }
+
+        return true;
     }
 }
