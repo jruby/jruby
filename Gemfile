@@ -1,3 +1,3 @@
 source 'https://rubygems.org'
 
-gem 'rspec', '3.10.0'
+gem 'rspec', '3.12.0'
