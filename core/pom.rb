@@ -198,7 +198,16 @@ project 'JRuby Base' do
                    'compilerArgs' => [ '-XDignore.symbol.file=true',
                                        '-J-Duser.language=en',
                                        '-J-Dfile.encoding=UTF-8',
-                                       '-J-Xmx${jruby.compile.memory}' ] )
+                                       '-J-Xmx${jruby.compile.memory}',
+                                       '-XDcompilePolicy=simple', '-Xplugin:ErrorProne' ],
+                   'annotationProcessorPaths' => { 'path' => [ {
+                                                                'groupId' => 'com.google.errorprone',
+                                                                'artifactId' => 'error_prone_core',
+                                                                'version' => '2.10.0' }, # last version that works on Java 8
+                                                               {
+                                                                 'groupId' => 'org.jruby',
+                                                                 'artifactId' => 'jruby-base',
+                                                                 'version' => version } ] })
     execute_goals( 'compile',
                    :id => 'populators',
                    :phase => 'process-classes',
