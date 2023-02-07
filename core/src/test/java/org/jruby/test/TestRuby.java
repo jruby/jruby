@@ -198,7 +198,7 @@ public class TestRuby extends Base {
 
     // Test that the revision is being populated correctly. jruby/jruby#6090
     public void testRevision() {
-        assertTrue(Constants.REVISION.length() == 10);
+        assertTrue(Constants.REVISION.length() == 40);
         assertFalse(Constants.REVISION.equals(Constants.BOGUS_REVISION));
     }
 }
