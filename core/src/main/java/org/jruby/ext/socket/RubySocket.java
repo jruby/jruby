@@ -530,6 +530,10 @@ public class RubySocket extends RubyBasicSocket {
 
     private boolean tryConnect(ThreadContext context, Ruby runtime, Channel channel, SocketAddress addr, boolean ex, boolean blocking) {
         SelectableChannel selectable = (SelectableChannel) channel;
+
+        // whether to clean up after a failed connection
+        boolean cleanup = false;
+
         try {
             synchronized (selectable.blockingLock()) {
                 boolean oldBlocking = selectable.isBlocking();
@@ -567,6 +571,7 @@ public class RubySocket extends RubyBasicSocket {
                 }
             }
         } catch (ClosedChannelException e) {
+            cleanup = true;
             throw context.runtime.newErrnoECONNREFUSEDError();
         } catch (AlreadyConnectedException e) {
             if (!ex) return false;
@@ -574,16 +579,21 @@ public class RubySocket extends RubyBasicSocket {
         } catch (ConnectionPendingException e) {
             throw runtime.newErrnoEINPROGRESSWritableError();
         } catch (UnknownHostException e) {
+            cleanup = true;
             throw SocketUtils.sockerr(runtime, "connect(2): unknown host");
         } catch (SocketException e) {
-            // Subclasses of SocketException all indicate failure to connect, which leaves the channel closed.
-            // At this point the socket channel is no longer usable, so we clean up.
-            getOpenFile().cleanup(runtime, true);
+            cleanup = true;
             throw buildSocketException(runtime, e, "connect(2)", addr);
         } catch (IOException e) {
+            cleanup = true;
             throw sockerr(runtime, "connect(2): name or service not known", e);
         } catch (IllegalArgumentException e) {
+            cleanup = true;
             throw sockerr(runtime, e.getMessage(), e);
+        } finally {
+            // Some exceptions indicate failure to connect, which leaves the channel closed.
+            // At this point the socket channel is no longer usable, so we clean up.
+            if (cleanup) getOpenFile().cleanup(runtime, true);
         }
     }
 
