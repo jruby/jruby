@@ -393,4 +393,29 @@ class TestClass < Test::Unit::TestCase
     #assert_include methods, :bar
   end
 
+  def test_attached_object
+    c = Class.new
+    sc = c.singleton_class
+    obj = c.new
+
+    assert_equal(obj, obj.singleton_class.attached_object)
+    assert_equal(c, sc.attached_object)
+
+    assert_raise_with_message(TypeError, /is not a singleton class/) do
+      c.attached_object
+    end
+
+    assert_raise_with_message(TypeError, /`NilClass' is not a singleton class/) do
+      nil.singleton_class.attached_object
+    end
+
+    assert_raise_with_message(TypeError, /`FalseClass' is not a singleton class/) do
+      false.singleton_class.attached_object
+    end
+
+    assert_raise_with_message(TypeError, /`TrueClass' is not a singleton class/) do
+      true.singleton_class.attached_object
+    end
+  end
+
 end

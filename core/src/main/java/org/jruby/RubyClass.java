@@ -888,6 +888,20 @@ public class RubyClass extends RubyModule {
         return method.call(context, self, entry.sourceModule, "inherited", subclass, Block.NULL_BLOCK);
     }
 
+    /**
+     * rb_class_attached_object
+     */
+    @JRubyMethod(name = "attached_object")
+    public IRubyObject attached_object(ThreadContext context) {
+        if (!this.isSingleton()) {
+            throw getRuntime().newTypeError(String.format(
+                    "`%s' is not a singleton class", this.getName())
+            );
+        }
+
+        return ((MetaClass) this).getAttached();
+    }
+    
     /** rb_class_new_instance
     *
     */
