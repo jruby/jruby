@@ -185,8 +185,9 @@ public class RipperParserBase {
     }
     
     public boolean id_is_var(ByteList value) {
-        // FIXME: Using Ruby Parser version...
-        RubyParserBase.IDType type = RubyParserBase.id_type(value);
+        if (value == null) return false; // sigils without characters end up null (@, @@, $).
+
+        RubyParserBase.IDType type = RubyParserBase.id_type(value);         // FIXME: Using Ruby Parser version...
 
         switch (type) {
             case Constant:
