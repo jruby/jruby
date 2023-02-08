@@ -45,4 +45,25 @@ describe "A Java object's java_send method" do
       @list.add_int_object 0, 'foo', 'bar'
     end.to raise_error(ArgumentError)
   end
+
+  context 'interface' do
+
+    before(:all) do
+      java.lang.Iterable.module_eval do
+        java_alias :__do_for_each, :forEach, [java.util.function.Consumer]
+      end
+    end
+
+    let(:iterable) do
+      java.util.concurrent.ConcurrentLinkedQueue.new.tap { |coll| coll.add(111) }
+    end
+
+
+    it "allows calling alias" do
+      last_element = nil
+      iterable.__do_for_each { |elem| last_element = elem }
+      expect(last_element).to eql 111
+    end
+
+  end
 end

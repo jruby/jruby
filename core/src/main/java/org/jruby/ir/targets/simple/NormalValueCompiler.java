@@ -21,7 +21,6 @@ import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.targets.IRBytecodeAdapter;
 import org.jruby.ir.targets.ValueCompiler;
-import org.jruby.ir.targets.indy.Bootstrap;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
@@ -41,7 +40,6 @@ import java.lang.invoke.MethodType;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Consumer;
 
 import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.p;
@@ -115,7 +113,15 @@ public class NormalValueCompiler implements ValueCompiler {
 
     public void pushEmptyString(Encoding encoding) {
         pushRuntime();
-        compiler.adapter.invokestatic(p(RubyString.class), "newEmptyString", sig(RubyString.class, Ruby.class));
+        pushRubyEncoding(encoding);
+        compiler.adapter.invokestatic(p(RubyString.class), "newEmptyString", sig(RubyString.class, Ruby.class, Encoding.class));
+    }
+
+    public void pushBufferString(Encoding encoding, int size) {
+        pushRuntime();
+        compiler.adapter.pushInt(size);
+        pushEncoding(encoding);
+        compiler.adapter.invokestatic(p(RubyString.class), "newStringLight", sig(RubyString.class, Ruby.class, int.class, Encoding.class));
     }
 
     public void pushByteList(final ByteList bl) {
@@ -162,11 +168,19 @@ public class NormalValueCompiler implements ValueCompiler {
         });
     }
 
-    public void pushEncoding(final Encoding encoding) {
-        cacheValuePermanentlyLoadContext("encoding", RubySymbol.class, keyFor("encoding", encoding), () -> {
+    public void pushRubyEncoding(final Encoding encoding) {
+        cacheValuePermanentlyLoadContext("rubyEncoding", RubyEncoding.class, keyFor("rubyEncoding", encoding), () -> {
             compiler.loadContext();
             compiler.adapter.ldc(encoding.toString());
             compiler.invokeIRHelper("retrieveEncoding", sig(RubyEncoding.class, ThreadContext.class, String.class));
+        });
+    }
+
+    public void pushEncoding(final Encoding encoding) {
+        cacheValuePermanentlyLoadContext("encoding", Encoding.class, keyFor("encoding", encoding), () -> {
+            compiler.loadContext();
+            compiler.adapter.ldc(encoding.toString());
+            compiler.invokeIRHelper("retrieveJCodingsEncoding", sig(Encoding.class, ThreadContext.class, String.class));
         });
     }
 

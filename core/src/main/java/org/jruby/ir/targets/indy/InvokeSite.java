@@ -14,6 +14,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyNil;
 import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
+import org.jruby.compiler.NotCompilableException;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.PartialDelegatingMethod;
@@ -69,7 +70,8 @@ public abstract class InvokeSite extends MutableCallSite {
     final MethodHandle fallback;
     private final SiteTracker tracker = new SiteTracker();
     private final long siteID = SITE_ID.getAndIncrement();
-    private final int argOffset;
+    public final int argOffset;
+    public final boolean functional;
     protected final String file;
     protected final int line;
     private boolean boundOnce;
@@ -99,9 +101,15 @@ public abstract class InvokeSite extends MutableCallSite {
         if (callType == CallType.SUPER) {
             // super calls receive current class argument, so offsets and signature are different
             startSig = JRubyCallSite.STANDARD_SUPER_SIG;
+            functional = false;
             argOffset = 4;
+        } else if (callType == CallType.FUNCTIONAL || callType == CallType.VARIABLE) {
+            startSig = JRubyCallSite.STANDARD_FSITE_SIG;
+            functional = true;
+            argOffset = 2;
         } else {
             startSig = JRubyCallSite.STANDARD_SITE_SIG;
+            functional = false;
             argOffset = 3;
         }
 
@@ -209,6 +217,71 @@ public abstract class InvokeSite extends MutableCallSite {
         }
     }
 
+
+    public IRubyObject invoke(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) throws Throwable {
+        RubyClass selfClass = pollAndGetClass(context, self);
+        SwitchPoint switchPoint = (SwitchPoint) selfClass.getInvalidator().getData();
+        CacheEntry entry = selfClass.searchWithCache(methodName);
+        DynamicMethod method = entry.method;
+        MethodHandle mh = null;
+        boolean methodMissing = false;
+
+        if (methodMissing(entry)) {
+            methodMissing = true;
+            // Test thresholds so we don't do this forever (#4596)
+            if (testThresholds(selfClass) == CacheAction.FAIL) {
+                logFail();
+                bindToFail();
+            } else {
+                logMethodMissing();
+            }
+            method = Helpers.selectMethodMissing(context, selfClass, entry.method.getVisibility(), methodName, callType);
+            if (method instanceof Helpers.MethodMissingMethod) {
+                entry = ((Helpers.MethodMissingMethod) method).entry;
+                method = entry.method;
+            } else {
+                entry = new CacheEntry(
+                        method,
+                        selfClass,
+                        entry.token);
+            }
+            try {
+                mh = Bootstrap.buildMethodMissingHandle(this, entry, self);
+            } catch (Throwable t) {
+                t.printStackTrace();
+                Helpers.throwException(t);
+            }
+        } else {
+            mh = getHandle(self, entry);
+        }
+
+        if (literalClosure) {
+            mh = Binder.from(mh.type())
+                    .tryFinally(getBlockEscape(signature))
+                    .invoke(mh);
+        }
+
+        updateInvocationTarget(mh, self, selfClass, entry.method, switchPoint);
+
+        if (literalClosure) {
+            try {
+                if (methodMissing) {
+                    return method.call(context, self, entry.sourceModule, methodName, Helpers.arrayOf(context.runtime.newSymbol(methodName), args), block);
+                } else {
+                    return method.call(context, self, entry.sourceModule, methodName, args, block);
+                }
+            } finally {
+                block.escape();
+            }
+        }
+
+        if (methodMissing) {
+            return method.call(context, self, entry.sourceModule, methodName, Helpers.arrayOf(context.runtime.newSymbol(methodName), args), block);
+        } else {
+            return method.call(context, self, entry.sourceModule, methodName, args, block);
+        }
+    }
+
     private static final MethodHandle ESCAPE_BLOCK = Binder.from(void.class, Block.class).invokeVirtualQuiet(LOOKUP, "escape");
     private static final Map<Signature, MethodHandle> BLOCK_ESCAPES = Collections.synchronizedMap(new HashMap<Signature, MethodHandle>());
 
@@ -251,8 +324,38 @@ public abstract class InvokeSite extends MutableCallSite {
     /**
      * Failover version uses a monomorphic cache and DynamicMethod.call, as in non-indy.
      */
+    public IRubyObject failf(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) throws Throwable {
+        RubyClass selfClass = pollAndGetClass(context, self);
+        String name = methodName;
+        CacheEntry entry = cache;
+
+        if (entry.typeOk(selfClass)) {
+            return entry.method.call(context, self, entry.sourceModule, name, args, block);
+        }
+
+        entry = selfClass.searchWithCache(name);
+
+        if (methodMissing(entry)) {
+            return callMethodMissing(entry, callType, context, self, selfClass, name, args, block);
+        }
+
+        cache = entry;
+
+        return entry.method.call(context, self, entry.sourceModule, name, args, block);
+    }
+
+    /**
+     * Failover version uses a monomorphic cache and DynamicMethod.call, as in non-indy.
+     */
     public IRubyObject fail(ThreadContext context, IRubyObject caller, IRubyObject self, Block block) throws Throwable {
         return fail(context, caller, self, IRubyObject.NULL_ARRAY, block);
+    }
+
+    /**
+     * Failover version uses a monomorphic cache and DynamicMethod.call, as in non-indy.
+     */
+    public IRubyObject failf(ThreadContext context, IRubyObject self, Block block) throws Throwable {
+        return failf(context, self, IRubyObject.NULL_ARRAY, block);
     }
 
     /**
@@ -270,6 +373,29 @@ public abstract class InvokeSite extends MutableCallSite {
         entry = selfClass.searchWithCache(name);
 
         if (methodMissing(entry, caller)) {
+            return callMethodMissing(entry, callType, context, self, selfClass, name, arg0, block);
+        }
+
+        cache = entry;
+
+        return entry.method.call(context, self, entry.sourceModule, name, arg0, block);
+    }
+
+    /**
+     * Failover version uses a monomorphic cache and DynamicMethod.call, as in non-indy.
+     */
+    public IRubyObject failf(ThreadContext context, IRubyObject self, IRubyObject arg0, Block block) throws Throwable {
+        RubyClass selfClass = pollAndGetClass(context, self);
+        String name = methodName;
+        CacheEntry entry = cache;
+
+        if (entry.typeOk(selfClass)) {
+            return entry.method.call(context, self, entry.sourceModule, name, arg0, block);
+        }
+
+        entry = selfClass.searchWithCache(name);
+
+        if (methodMissing(entry)) {
             return callMethodMissing(entry, callType, context, self, selfClass, name, arg0, block);
         }
 
@@ -304,6 +430,29 @@ public abstract class InvokeSite extends MutableCallSite {
     /**
      * Failover version uses a monomorphic cache and DynamicMethod.call, as in non-indy.
      */
+    public IRubyObject failf(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) throws Throwable {
+        RubyClass selfClass = pollAndGetClass(context, self);
+        String name = methodName;
+        CacheEntry entry = cache;
+
+        if (entry.typeOk(selfClass)) {
+            return entry.method.call(context, self, entry.sourceModule, name, arg0, arg1, block);
+        }
+
+        entry = selfClass.searchWithCache(name);
+
+        if (methodMissing(entry)) {
+            return callMethodMissing(entry, callType, context, self, selfClass, name, arg0, arg1, block);
+        }
+
+        cache = entry;
+
+        return entry.method.call(context, self, entry.sourceModule, name, arg0, arg1, block);
+    }
+
+    /**
+     * Failover version uses a monomorphic cache and DynamicMethod.call, as in non-indy.
+     */
     public IRubyObject fail(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
         String name = methodName;
@@ -316,6 +465,29 @@ public abstract class InvokeSite extends MutableCallSite {
         entry = selfClass.searchWithCache(name);
 
         if (methodMissing(entry, caller)) {
+            return callMethodMissing(entry, callType, context, self, selfClass, name, arg0, arg1, arg2, block);
+        }
+
+        cache = entry;
+
+        return entry.method.call(context, self, entry.sourceModule, name, arg0, arg1, arg2, block);
+    }
+
+    /**
+     * Failover version uses a monomorphic cache and DynamicMethod.call, as in non-indy.
+     */
+    public IRubyObject failf(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) throws Throwable {
+        RubyClass selfClass = pollAndGetClass(context, self);
+        String name = methodName;
+        CacheEntry entry = cache;
+
+        if (entry.typeOk(selfClass)) {
+            return entry.method.call(context, self, entry.sourceModule, name, arg0, arg1, arg2, block);
+        }
+
+        entry = selfClass.searchWithCache(name);
+
+        if (methodMissing(entry)) {
             return callMethodMissing(entry, callType, context, self, selfClass, name, arg0, arg1, arg2, block);
         }
 
@@ -459,8 +631,11 @@ public abstract class InvokeSite extends MutableCallSite {
             RubyClass recvClass = (RubyClass) self;
 
             // Bind a second site as a dynamic invoker to guard against changes in new object's type
-            CallSite initSite = SelfInvokeSite.bootstrap(LOOKUP, "callFunctional:initialize", type(), literalClosure ? 1 : 0, file, line);
+            MethodType type = type();
+            if (!functional) type = type.dropParameterTypes(1, 2);
+            CallSite initSite = SelfInvokeSite.bootstrap(LOOKUP, "callFunctional:initialize", type, literalClosure ? 1 : 0, file, line);
             MethodHandle initHandle = initSite.dynamicInvoker();
+            if (!functional) initHandle = MethodHandles.dropArguments(initHandle, 1, IRubyObject.class);
 
             MethodHandle allocFilter = Binder.from(IRubyObject.class, IRubyObject.class)
                     .cast(IRubyObject.class, RubyClass.class)
@@ -493,15 +668,23 @@ public abstract class InvokeSite extends MutableCallSite {
             CallSite equalSite = null;
 
             // FIXME: poor test for built-in != and !~
+            MethodType type = type();
+            if (!functional) type = type.dropParameterTypes(1, 2);
+            String negatedCall;
             if (method.getImplementationClass() == runtime.getBasicObject() && name().equals("!=")) {
-                equalSite = SelfInvokeSite.bootstrap(LOOKUP, "callFunctional:==", type(), literalClosure ? 1 : 0, file, line);
+                negatedCall = "callFunctional:==";
             } else if (method.getImplementationClass() == runtime.getKernel() && name().equals("!~")) {
-                equalSite = SelfInvokeSite.bootstrap(LOOKUP, "callFunctional:=~", type(), literalClosure ? 1 : 0, file, line);
+                negatedCall = "callFunctional:=~";
+            } else {
+                // unknown negatable call for us
+                return null;
             }
+            equalSite = SelfInvokeSite.bootstrap(LOOKUP, negatedCall, type, literalClosure ? 1 : 0, file, line);
 
             if (equalSite != null) {
                 // Bind a second site as a dynamic invoker to guard against changes in new object's type
                 MethodHandle equalHandle = equalSite.dynamicInvoker();
+                if (!functional) equalHandle = MethodHandles.dropArguments(equalHandle, 1, IRubyObject.class);
 
                 MethodHandle filter = insertArguments(NEGATE, 1, runtime.getNil(), runtime.getTrue(), runtime.getFalse());
                 mh = MethodHandles.filterReturnValue(equalHandle, filter);
@@ -535,8 +718,11 @@ public abstract class InvokeSite extends MutableCallSite {
             String name = alias.getName();
 
             // Use a second site to mimic invocation from AliasMethod
-            InvokeSite innerSite = (InvokeSite) SelfInvokeSite.bootstrap(LOOKUP, "callFunctional:" + name, type(), literalClosure ? 1 : 0, file, line);
+            MethodType type = type();
+            if (!functional) type = type.dropParameterTypes(1, 2);
+            InvokeSite innerSite = (InvokeSite) SelfInvokeSite.bootstrap(LOOKUP, "callFunctional:" + name, type, literalClosure ? 1 : 0, file, line);
             mh = innerSite.getHandle(self, new CacheEntry(innerMethod, entry.sourceModule, entry.token));
+            if (!functional) mh = MethodHandles.dropArguments(mh, 1, IRubyObject.class);
 
             alias.setHandle(mh);
 
@@ -698,7 +884,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
     private MethodHandle bindToFail() {
         MethodHandle target;
-        setTarget(target = prepareBinder(false).invokeVirtualQuiet(LOOKUP, "fail"));
+        setTarget(target = prepareBinder(false).invokeVirtualQuiet(LOOKUP, functional ? "failf" : "fail"));
         return target;
     }
 
@@ -737,7 +923,17 @@ public abstract class InvokeSite extends MutableCallSite {
         super.setTarget(target);
     }
 
-    public abstract boolean methodMissing(CacheEntry entry, IRubyObject caller);
+    public boolean methodMissing(CacheEntry entry, IRubyObject caller) {
+        DynamicMethod method = entry.method;
+
+        return method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(caller, callType));
+    }
+
+    public boolean methodMissing(CacheEntry entry) {
+        DynamicMethod method = entry.method;
+
+        return method.isUndefined();
+    }
 
     /**
      * Variable arity method_missing invocation. Arity zero also passes through here.

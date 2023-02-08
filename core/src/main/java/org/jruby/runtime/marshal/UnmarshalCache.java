@@ -33,7 +33,9 @@ package org.jruby.runtime.marshal;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.jruby.Ruby;
@@ -44,22 +46,22 @@ public class UnmarshalCache {
     private final Ruby runtime;
     private final List<IRubyObject> links = new ArrayList<>();
     private final List<RubySymbol> symbols = new ArrayList<>();
-    private final Set<IRubyObject> partials = new HashSet<>();
+    private final Map<IRubyObject, IRubyObject> partials = new IdentityHashMap<>();
 
     public UnmarshalCache(Ruby runtime) {
         this.runtime = runtime;
     }
 
     public boolean isPartialObject(IRubyObject value) {
-        return partials.contains(value.id());
+        return partials.containsKey(value);
     }
 
     public void markAsPartialObject(IRubyObject value) {
-        partials.add(value.id());
+        partials.put(value, value);
     }
 
     public void noLongerPartial(IRubyObject value) {
-        partials.remove(value.id());
+        partials.remove(value);
     }
 
     public IRubyObject readSymbolLink(UnmarshalStream input) throws IOException {

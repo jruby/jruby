@@ -29,6 +29,8 @@ package org.jruby.runtime.ivars;
 
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Abstraction of an accessor for instance or internal variables on Ruby
@@ -96,6 +98,17 @@ public abstract class VariableAccessor {
      */
     public Object get(Object object) {
         return getVariable((RubyBasicObject)object, index);
+    }
+
+    /**
+     * Retrieve the variable's value from the given object.
+     *
+     * @param object the object from which to retrieve this variable
+     * @return the variable's value
+     */
+    public IRubyObject getOrNil(Object object, ThreadContext context) {
+        Object value = getVariable((RubyBasicObject) object, index);
+        return value == null ? context.nil : (IRubyObject) value;
     }
 
     /**

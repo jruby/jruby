@@ -51,7 +51,7 @@ project 'JRuby Base' do
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
-  jar 'org.jruby.joni:joni:2.1.46'
+  jar 'org.jruby.joni:joni:2.1.48'
   jar 'org.jruby.jcodings:jcodings:1.0.58'
   jar 'org.jruby:dirgra:0.3'
 
@@ -133,7 +133,6 @@ project 'JRuby Base' do
     execute_goals( 'create',
                    :id => 'jruby-revision',
                    :phase => 'generate-sources',
-                   'shortRevisionLength' =>  '10',
                    'buildNumberPropertyName' =>  'jruby.revision' )
   end
 

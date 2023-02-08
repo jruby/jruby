@@ -154,6 +154,9 @@ public class OpenFile implements Finalizable {
 
     protected volatile Set<RubyThread> blockingThreads;
 
+    private final Ptr spPtr = new Ptr();
+    private final Ptr dpPtr = new Ptr();
+
     public void clearStdio() {
         stdio_file = null;
     }
@@ -1202,8 +1205,8 @@ public class OpenFile implements Finalizable {
 
             cbuf_len0 = cbuf.len;
 
-            Ptr spPtr = new Ptr();
-            Ptr dpPtr = new Ptr();
+            spPtr.p = 0;
+            dpPtr.p = 0;
 
             while (true) {
                 ss = spPtr.p = rbuf.off;
@@ -2359,11 +2362,11 @@ public class OpenFile implements Finalizable {
     IRubyObject finishWriteconv(ThreadContext context, boolean noalloc) {
         byte[] dsBytes;
         int ds, de;
-        Ptr dpPtr = new Ptr();
         EConvResult res;
 
         boolean locked = lock();
         try {
+            dpPtr.p = 0;
             if (wbuf.ptr == null) {
                 byte[] buf = new byte[1024];
                 long r;

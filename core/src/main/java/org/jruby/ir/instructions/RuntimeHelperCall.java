@@ -29,8 +29,10 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
         IS_DEFINED_CLASS_VAR, IS_DEFINED_SUPER, IS_DEFINED_METHOD, IS_DEFINED_CALL,
         IS_DEFINED_CONSTANT_OR_METHOD, MERGE_KWARGS, IS_HASH_EMPTY, HASH_CHECK, ARRAY_LENGTH;
 
-        public static Methods fromOrdinal(int value) {
-            return value < 0 || value >= values().length ? null : values()[value];
+        private static final Methods[] VALUES = values();
+
+        static Methods fromOrdinal(int value) {
+            return value < 0 || value >= VALUES.length ? null : VALUES[value];
         }
     }
 
