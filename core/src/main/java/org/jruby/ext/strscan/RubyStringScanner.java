@@ -549,6 +549,14 @@ public class RubyStringScanner extends RubyObject {
         }
     }
 
+    private int adjustRegisterPosition(int position) {
+        if (fixedAnchor) {
+            return position;
+        } else {
+            return prev + position;
+        }
+    }
+
     @JRubyMethod(name = "getch")
     public IRubyObject getch(ThreadContext context) {
         return getchCommon(context);
@@ -577,8 +585,8 @@ public class RubyStringScanner extends RubyObject {
         adjustRegisters();
 
         return extractRange(runtime,
-                prev + REGION_ADAPTER.getBeg(regs, 0),
-                prev + REGION_ADAPTER.getEnd(regs, 0));
+                adjustRegisterPosition(REGION_ADAPTER.getBeg(regs, 0)),
+                adjustRegisterPosition(REGION_ADAPTER.getEnd(regs, 0)));
     }
 
     @JRubyMethod(name = "get_byte")
@@ -593,7 +601,9 @@ public class RubyStringScanner extends RubyObject {
         setMatched();
         adjustRegisters();
 
-        return extractRange(context.runtime, prev + REGION_ADAPTER.getBeg(regs, 0), prev + REGION_ADAPTER.getEnd(regs, 0));
+        return extractRange(context.runtime,
+                adjustRegisterPosition(REGION_ADAPTER.getBeg(regs, 0)),
+                adjustRegisterPosition(REGION_ADAPTER.getEnd(regs, 0)));
     }
 
     @JRubyMethod(name = "getbyte")
@@ -688,7 +698,9 @@ public class RubyStringScanner extends RubyObject {
     public IRubyObject matched(ThreadContext context) {
         check(context);
         if (!isMatched()) return context.nil;
-        return extractRange(context.runtime, prev + REGION_ADAPTER.getBeg(regs, 0), prev + REGION_ADAPTER.getEnd(regs, 0));
+        return extractRange(context.runtime,
+                adjustRegisterPosition(REGION_ADAPTER.getBeg(regs, 0)),
+                adjustRegisterPosition(REGION_ADAPTER.getEnd(regs, 0)));
     }
 
     @JRubyMethod(name = "matched_size")
@@ -734,7 +746,9 @@ public class RubyStringScanner extends RubyObject {
             return context.nil;
         }
 
-        return extractRange(context.runtime, prev + REGION_ADAPTER.getBeg(regs, i), prev + REGION_ADAPTER.getEnd(regs, i));
+        return extractRange(context.runtime,
+                adjustRegisterPosition(REGION_ADAPTER.getBeg(regs, i)),
+                adjustRegisterPosition(REGION_ADAPTER.getEnd(regs, i)));
     }
 
     @JRubyMethod(name = "pre_match")
@@ -743,7 +757,7 @@ public class RubyStringScanner extends RubyObject {
         if (!isMatched()) {
             return context.nil;
         }
-        return extractRange(context.runtime, 0, prev + REGION_ADAPTER.getBeg(regs, 0));
+        return extractRange(context.runtime, 0, adjustRegisterPosition(REGION_ADAPTER.getBeg(regs, 0)));
     }
 
     @JRubyMethod(name = "post_match")
@@ -754,7 +768,9 @@ public class RubyStringScanner extends RubyObject {
             return context.nil;
         }
 
-        return extractRange(context.runtime, prev + REGION_ADAPTER.getEnd(regs, 0), str.getByteList().getRealSize());
+        return extractRange(context.runtime,
+                adjustRegisterPosition(REGION_ADAPTER.getEnd(regs, 0)),
+                str.getByteList().getRealSize());
     }
 
     @JRubyMethod(name = "rest")
@@ -877,7 +893,9 @@ public class RubyStringScanner extends RubyObject {
         newAry = RubyArray.newArray(runtime, numRegs);
 
         for (i = 1; i < numRegs; i++) {
-            IRubyObject str = extractRange(runtime, prev + REGION_ADAPTER.getBeg(regs, i), prev + REGION_ADAPTER.getEnd(regs, i));
+            IRubyObject str = extractRange(runtime,
+                    adjustRegisterPosition(REGION_ADAPTER.getBeg(regs, i)),
+                    adjustRegisterPosition(REGION_ADAPTER.getEnd(regs, i)));
             newAry.push(str);
         }
 
