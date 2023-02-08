@@ -37,7 +37,7 @@ default_gems = [
     ['mutex_m', '0.1.0'],
     ['ostruct', '0.5.5'],
     ['prime', '0.1.0'],
-    ['psych', '5.1.0.pre1'],
+    ['psych', '5.1.0'],
     ['racc', '1.5.2'],
     ['rake-ant', '1.0.4'],
     ['rdoc', '6.3.3'],
