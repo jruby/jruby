@@ -175,11 +175,11 @@ public class RubyMatchData extends RubyObject {
     private void updateCharOffsetOnlyOneReg(ByteList value, Encoding encoding) {
         if (charOffsetUpdated) return;
 
-        if (charOffsets == null || charOffsets.numRegs < 1) charOffsets = new Region(1);
+        if (charOffsets == null || charOffsets.getNumRegs() < 1) charOffsets = Region.newRegion(1);
 
         if (encoding.maxLength() == 1) {
-            charOffsets.beg[0] = begin;
-            charOffsets.end[0] = end;
+            charOffsets.setBeg(0, begin);
+            charOffsets.setEnd(0, end);
             charOffsetUpdated = true;
             return;
         }
@@ -195,14 +195,14 @@ public class RubyMatchData extends RubyObject {
         updatePairs(value, encoding, pairs);
 
         if (begin < 0) {
-            charOffsets.beg[0] = charOffsets.end[0] = -1;
+            charOffsets.setBeg(0, charOffsets.setEnd(0, -1));
             return;
         }
         Pair key = new Pair();
         key.bytePos = begin;
-        charOffsets.beg[0] = pairs[Arrays.binarySearch(pairs, key)].charPos;
+        charOffsets.setBeg(0, pairs[Arrays.binarySearch(pairs, key)].charPos);
         key.bytePos = end;
-        charOffsets.end[0] = pairs[Arrays.binarySearch(pairs, key)].charPos;
+        charOffsets.setEnd(0, pairs[Arrays.binarySearch(pairs, key)].charPos);
 
         charOffsetUpdated = true;
     }
@@ -211,14 +211,14 @@ public class RubyMatchData extends RubyObject {
         if (charOffsetUpdated) return;
 
         final Region regs = this.regs;
-        int numRegs = regs.numRegs;
+        int numRegs = regs.getNumRegs();
 
-        if (charOffsets == null || charOffsets.numRegs < numRegs) charOffsets = new Region(numRegs);
+        if (charOffsets == null || charOffsets.getNumRegs() < numRegs) charOffsets = Region.newRegion(numRegs);
 
         if (encoding.maxLength() == 1) {
             for (int i = 0; i < numRegs; i++) {
-                charOffsets.beg[i] = regs.beg[i];
-                charOffsets.end[i] = regs.end[i];
+                charOffsets.setBeg(i, regs.getBeg(i));
+                charOffsets.setEnd(i, regs.getEnd(i));
             }
             charOffsetUpdated = true;
             return;
@@ -229,23 +229,23 @@ public class RubyMatchData extends RubyObject {
 
         int numPos = 0;
         for (int i = 0; i < numRegs; i++) {
-            if (regs.beg[i] < 0) continue;
-            pairs[numPos++].bytePos = regs.beg[i];
-            pairs[numPos++].bytePos = regs.end[i];
+            if (regs.getBeg(i) < 0) continue;
+            pairs[numPos++].bytePos = regs.getBeg(i);
+            pairs[numPos++].bytePos = regs.getEnd(i);
         }
 
         updatePairs(value, encoding, pairs);
 
         Pair key = new Pair();
-        for (int i = 0; i < regs.numRegs; i++) {
-            if (regs.beg[i] < 0) {
-                charOffsets.beg[i] = charOffsets.end[i] = -1;
+        for (int i = 0; i < regs.getNumRegs(); i++) {
+            if (regs.getBeg(i) < 0) {
+                charOffsets.setBeg(i, charOffsets.setEnd(i, -1));
                 continue;
             }
-            key.bytePos = regs.beg[i];
-            charOffsets.beg[i] = pairs[Arrays.binarySearch(pairs, key)].charPos;
-            key.bytePos = regs.end[i];
-            charOffsets.end[i] = pairs[Arrays.binarySearch(pairs, key)].charPos;
+            key.bytePos = regs.getBeg(i);
+            charOffsets.setBeg(i, pairs[Arrays.binarySearch(pairs, key)].charPos);
+            key.bytePos = regs.getEnd(i);
+            charOffsets.setEnd(i, pairs[Arrays.binarySearch(pairs, key)].charPos);
         }
 
         charOffsetUpdated = true;
@@ -314,13 +314,13 @@ public class RubyMatchData extends RubyObject {
                 return runtime.newArray( ss.infectBy(this) );
             }
         } else {
-            RubyArray arr = RubyArray.newBlankArray(runtime, regs.numRegs - start);
+            RubyArray arr = RubyArray.newBlankArray(runtime, regs.getNumRegs() - start);
             int index = 0;
-            for (int i=start; i < regs.numRegs; i++) {
-                if (regs.beg[i] == -1) {
+            for (int i=start; i < regs.getNumRegs(); i++) {
+                if (regs.getBeg(i) == -1) {
                     arr.storeInternal(index++, nil);
                 } else {
-                    RubyString ss = makeShared(runtime, str, regs.beg[i], regs.end[i] - regs.beg[i]);
+                    RubyString ss = makeShared(runtime, str, regs.getBeg(i), regs.getEnd(i) - regs.getBeg(i));
                     arr.storeInternal(index++, ss.infectBy(this));
                 }
             }
@@ -375,7 +375,7 @@ public class RubyMatchData extends RubyObject {
         result.cat((byte)'#').cat((byte)'<');
         result.append(getMetaClass().getRealClass().to_s());
 
-        NameEntry[] names = new NameEntry[regs == null ? 1 : regs.numRegs];
+        NameEntry[] names = new NameEntry[regs == null ? 1 : regs.getNumRegs()];
 
         final Regex pattern = getPattern();
         for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
@@ -520,7 +520,7 @@ public class RubyMatchData extends RubyObject {
     private IRubyObject matchArySubseq(ThreadContext context, int beg, int len, RubyArray result) {
         assert result != null;
 
-        int olen = regs.numRegs;
+        int olen = regs.getNumRegs();
         int wantedEnd = beg + len;
         int j, end = olen < wantedEnd ? olen : wantedEnd;
 
@@ -542,7 +542,7 @@ public class RubyMatchData extends RubyObject {
     // MRI: match_ary_aref
     private IRubyObject matchAryAref(ThreadContext context, IRubyObject index, RubyArray result) {
         int[] begLen = new int[2];
-        int numRegs = regs.numRegs;
+        int numRegs = regs.getNumRegs();
 
         /* check if idx is Range */
         IRubyObject isRange = RubyRange.rangeBeginLength(context, index, numRegs, begLen, 1);
@@ -612,7 +612,7 @@ public class RubyMatchData extends RubyObject {
     public IRubyObject size(ThreadContext context) {
         check();
         Ruby runtime = context.runtime;
-        return regs == null ? RubyFixnum.one(runtime) : RubyFixnum.newFixnum(runtime, regs.numRegs);
+        return regs == null ? RubyFixnum.one(runtime) : RubyFixnum.newFixnum(runtime, regs.getNumRegs());
     }
 
     /**
@@ -624,17 +624,17 @@ public class RubyMatchData extends RubyObject {
         final Ruby runtime = context.runtime;
         final int i = backrefNumber(runtime, index);
 
-        if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) {
+        if (i < 0 || (regs == null ? 1 : regs.getNumRegs()) <= i) {
             throw runtime.newIndexError("index " + i + " out of matches");
         }
 
-        int b = regs == null ? begin : regs.beg[i];
+        int b = regs == null ? begin : regs.getBeg(i);
 
         if (b < 0) return context.nil;
 
         updateCharOffset();
 
-        return RubyFixnum.newFixnum(runtime, charOffsets.beg[i]);
+        return RubyFixnum.newFixnum(runtime, charOffsets.getBeg(i));
     }
 
     /** match_end
@@ -647,17 +647,17 @@ public class RubyMatchData extends RubyObject {
         final Ruby runtime = context.runtime;
         final int i = backrefNumber(runtime, index);
 
-        if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) {
+        if (i < 0 || (regs == null ? 1 : regs.getNumRegs()) <= i) {
             throw runtime.newIndexError("index " + i + " out of matches");
         }
 
-        int e = regs == null ? end : regs.end[i];
+        int e = regs == null ? end : regs.getEnd(i);
 
         if (e < 0) return context.nil;
 
         if ( ! str.singleByteOptimizable() ) {
             updateCharOffset();
-            e = charOffsets.end[i];
+            e = charOffsets.getEnd(i);
         }
 
         return RubyFixnum.newFixnum(runtime, e);
@@ -677,7 +677,7 @@ public class RubyMatchData extends RubyObject {
         final Ruby runtime = context.runtime;
         final int i = backrefNumber(runtime, index);
 
-        if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) {
+        if (i < 0 || (regs == null ? 1 : regs.getNumRegs()) <= i) {
             throw runtime.newIndexError("index " + i + " out of matches");
         }
 
@@ -686,16 +686,16 @@ public class RubyMatchData extends RubyObject {
             b = begin;
             e = end;
         } else {
-            b = regs.beg[i];
-            e = regs.end[i];
+            b = regs.getBeg(i);
+            e = regs.getEnd(i);
         }
 
         if (b < 0) return runtime.newArray(context.nil, context.nil);
 
         if ( ! str.singleByteOptimizable() ) {
             updateCharOffset();
-            b = charOffsets.beg[i];
-            e = charOffsets.end[i];
+            b = charOffsets.getBeg(i);
+            e = charOffsets.getEnd(i);
         }
 
         return runtime.newArray(RubyFixnum.newFixnum(runtime, b), RubyFixnum.newFixnum(runtime, e));
@@ -833,8 +833,8 @@ public class RubyMatchData extends RubyObject {
             if (i > 1) return -1;
             return begin;
         }
-        if (i > regs.numRegs) return -1;
-        return regs.beg[i];
+        if (i > regs.getNumRegs()) return -1;
+        return regs.getBeg(i);
     }
 
     /**
@@ -848,8 +848,8 @@ public class RubyMatchData extends RubyObject {
             if (i > 1) return -1;
             return end;
         }
-        if (i > regs.numRegs) return -1;
-        return regs.end[i];
+        if (i > regs.getNumRegs()) return -1;
+        return regs.getEnd(i);
     }
 
     /**
@@ -858,7 +858,7 @@ public class RubyMatchData extends RubyObject {
      * @return the number of regions in this match
      */
     public int numRegs() {
-        return regs == null ? 1 : regs.numRegs;
+        return regs == null ? 1 : regs.getNumRegs();
     }
 
     @Deprecated
