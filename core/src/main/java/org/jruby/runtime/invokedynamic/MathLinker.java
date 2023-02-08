@@ -190,6 +190,10 @@ public class MathLinker {
         return ((RubyFixnum)self).op_equal(context, value);
     }
 
+    public static IRubyObject fixnum_op_not_equal(ThreadContext context, IRubyObject caller, IRubyObject self, long value) throws Throwable {
+        return ((RubyFixnum)self).op_not_equal(context, value);
+    }
+
     public static IRubyObject fixnum_op_lt(ThreadContext context, IRubyObject caller, IRubyObject self, long value) throws Throwable {
         return ((RubyFixnum)self).op_lt(context, value);
     }
