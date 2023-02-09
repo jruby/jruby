@@ -1356,5 +1356,10 @@ modes.each do |mode|
     it "dispatches to Java using a block to implement an interface" do
       run('ary = []; 2.times { java.util.ArrayList.new([1]).forEach { |e| ary << e } }; ary') {|ary| ary.should == [1, 1]}
     end
+
+    it "calls struct field methods" do
+      run('StructTest1 = Struct.new(:foo); st1 = StructTest1.new; st1.foo = 1; st1.foo') {|x| expect(x).to eq(1)}
+      run('StructTest2 = Struct.new(:foo); class StructTest2; def do_foo; self.foo = 1; foo; end; end; StructTest2.new.do_foo') {|x| expect(x).to eq(1)}
+    end
   end
 end
