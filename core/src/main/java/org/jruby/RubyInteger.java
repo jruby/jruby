@@ -210,6 +210,13 @@ public abstract class RubyInteger extends RubyNumeric {
         return metaClass.runtime.getTrue();
     }
 
+    @JRubyMethod(name = "ceildiv")
+    public IRubyObject ceildiv(ThreadContext context, IRubyObject arg) {
+        IRubyObject argNegated = sites(context).op_uminus.call(context, arg, arg);
+
+        return ((RubyFixnum) (this.div(context, argNegated))).negate();
+    }
+
     /** int_upto
      *
      */
