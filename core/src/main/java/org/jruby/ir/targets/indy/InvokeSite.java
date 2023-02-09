@@ -743,11 +743,11 @@ public abstract class InvokeSite extends MutableCallSite {
                 RubyStruct.Accessor accessor = (RubyStruct.Accessor) method;
                 int index = accessor.getIndex();
 
-                mh = Binder.from(type())
-                        .cast(type().changeParameterType(2, RubyStruct.class))
-                        .permute(2)
-                        .append(index)
-                        .invokeVirtual(LOOKUP, "get");
+                mh = SmartBinder.from(signature)
+                        .cast(signature.replaceArg("self", "self", RubyStruct.class))
+                        .permute("self")
+                        .append("index", index)
+                        .invokeVirtualQuiet(LOOKUP, "get").handle();
 
                 method.setHandle(mh);
 
@@ -764,11 +764,11 @@ public abstract class InvokeSite extends MutableCallSite {
                 RubyStruct.Mutator mutator = (RubyStruct.Mutator) method;
                 int index = mutator.getIndex();
 
-                mh = Binder.from(type())
-                        .cast(type().changeParameterType(2, RubyStruct.class))
-                        .permute(2, 3)
-                        .append(index)
-                        .invokeVirtual(LOOKUP, "set");
+                mh = SmartBinder.from(signature)
+                        .cast(signature.replaceArg("self", "self", RubyStruct.class))
+                        .permute("self", "arg0")
+                        .append("index", index)
+                        .invokeVirtualQuiet(LOOKUP, "set").handle();
 
                 method.setHandle(mh);
 
