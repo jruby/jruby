@@ -151,7 +151,7 @@ public class ThreadService extends ThreadLocal<SoftReference<ThreadContext>> {
             // don't kill current thread that is doing teardown
             if (rth == getCurrentContext().getThread()) continue;
 
-            if (rth.isAdopted()) return;
+            if (rth.isAdopted()) continue;
 
             try {
                 rth.kill();
