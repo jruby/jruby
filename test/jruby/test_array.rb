@@ -102,6 +102,14 @@ class TestArray < Test::Unit::TestCase
     assert_equal [[1, 3, 5], [2, 4, 6]], res
   end
 
+  # GH-7684
+  def test_fill
+    assert_equal [:foo, nil], [:foo].fill(:a, 2, 0)
+    assert_equal [:foo, nil, :a, :a, :a], [:foo].fill(:a, 2, 3)
+    assert_equal [:foo, nil], [:foo].fill(2,0) {|i| i}
+    assert_equal [:foo, nil, 2, 3, 4], [:foo].fill(2,3) {|i| i}
+  end
+
   class MyArray < Array; end
 
   def test_array_instance_methods_on_subclass
