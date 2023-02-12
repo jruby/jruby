@@ -180,6 +180,8 @@ modes.each do |mode|
     it "compiles interpolated strings" do
       run('a = "hello#{42}"; a') {|result| expect(result).to eq('hello42') }
       run('i = 1; a = "hello#{i + 42}"; a') {|result| expect(result).to eq("hello43") }
+      # same cases in presence of refinements
+      run('class NoToS; end; module AddToS; refine(NoToS){def to_s; "42"; end}; end; class TryToS; using AddToS; def self.a; "hello#{NoToS.new}"; end; end; TryToS.a') {|result| expect(result).to eq('hello42') }
     end
 
     it "compiles calls" do
