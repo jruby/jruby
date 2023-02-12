@@ -49,6 +49,7 @@ public class ArrayDerefInvokeSite extends NormalInvokeSite {
 
         MethodHandle mh;
 
+        SwitchPoint switchPoint = (SwitchPoint) selfClass.getInvalidator().getData();
         CacheEntry entry = selfClass.searchWithCache(methodName);
         DynamicMethod method = entry.method;
 
@@ -60,14 +61,11 @@ public class ArrayDerefInvokeSite extends NormalInvokeSite {
                     .invokeVirtual(MethodHandles.publicLookup(), "op_aref")
                     .handle();
 
-            SwitchPoint switchPoint = (SwitchPoint) selfClass.getInvalidator().getData();
-
             updateInvocationTarget(mh, self, selfClass, method, switchPoint);
 
             return ((RubyHash) self).op_aref(context, args[0]);
         } else {
             // slow path follows normal invoke logic with a strDup for the key
-            SwitchPoint switchPoint = (SwitchPoint) selfClass.getInvalidator().getData();
 
             // strdup for this call
             args[0] = ((RubyString) args[0]).strDup(context.runtime);
