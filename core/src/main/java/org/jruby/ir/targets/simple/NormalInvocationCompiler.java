@@ -467,7 +467,15 @@ public class NormalInvocationCompiler implements InvocationCompiler {
 
     @Override
     public void asString(AsStringInstr call, String scopeFieldName, String file) {
-        invokeOther(file, scopeFieldName, call, 0);
-        compiler.adapter.invokeinterface(p(IRubyObject.class), "asString", sig(RubyString.class));
+        if (call.isPotentiallyRefined()) {
+            String methodName = compiler.getUniqueSiteName(call.getId());
+            String clsName = compiler.getClassData().clsName;
+
+            compiler.getValueCompiler().pushCallSite(clsName, methodName, scopeFieldName, call);
+            compiler.invokeIRHelper("asString", sig(RubyString.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, CallSite.class));
+        } else {
+            invokeOther(file, scopeFieldName, call, 0);
+            compiler.adapter.invokeinterface(p(IRubyObject.class), "asString", sig(RubyString.class));
+        }
     }
 }
