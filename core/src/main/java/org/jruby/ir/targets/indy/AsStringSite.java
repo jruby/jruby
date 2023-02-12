@@ -46,8 +46,6 @@ public class AsStringSite extends NormalInvokeSite {
     }
 
     public IRubyObject invoke(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) throws Throwable {
-        RubyClass selfClass = pollAndGetClass(context, self);
-
         NormalInvokeSite toS = new NormalInvokeSite(type(), "to_s", false, file, line);
         MethodHandle toS_handle = toS.dynamicInvoker();
 
