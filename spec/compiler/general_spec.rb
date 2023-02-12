@@ -1387,5 +1387,72 @@ modes.each do |mode|
         ary.map{|o| o["a"]}.sum
       AREF
     end
+
+    it "handles instance super calls with a block" do
+      run(<<-SUPER) {|val| expect(val).to eq(1)}
+        class AInstanceSuper
+          def instance_super
+            yield
+          end
+        end
+        class BInstanceSuper < AInstanceSuper
+          def instance_super
+            super {1}
+          end
+        end
+        BInstanceSuper.new.instance_super
+      SUPER
+    end
+
+    it "handles module super calls with a block" do
+      run(<<-SUPER) {|val| expect(val).to eq(1)}
+          class AModuleSuper
+            def module_super
+              yield
+            end
+          end
+          module BModuleSuper
+            def module_super
+              super {1}
+            end
+          end
+          class CModuleSuper < AModuleSuper
+            include BModuleSuper
+          end
+          CModuleSuper.new.module_super
+      SUPER
+    end
+
+    it "handles class super calls with a block" do
+      run(<<-SUPER) {|val| expect(val).to eq(1)}
+        class AInstanceSuper
+          def self.class_super
+            yield
+          end
+        end
+        class BInstanceSuper < AInstanceSuper
+          def self.class_super
+            super {1}
+          end
+        end
+        BInstanceSuper.class_super
+      SUPER
+    end
+
+    it "handles zsuper calls" do
+      run(<<-SUPER) {|val| expect(val).to eq(1)}
+        class AZSuper
+          def z_super
+            1
+          end
+        end
+        class BZSuper < AZSuper
+          def z_super
+            1.times { super }
+          end
+        end
+        BZSuper.new.z_super
+      SUPER
+    end
   end
 end
