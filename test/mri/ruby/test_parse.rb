@@ -930,6 +930,10 @@ x = __ENCODING__
     assert_no_warning(/shadowing outer local variable/) {eval("a=1; tap {|a|}")}
   end
 
+  def test_shadowing_private_local_variable
+    assert_equal 1, eval("_ = 1; [[2]].each{ |(_)| }; _")
+  end
+
   def test_unused_variable
     o = Object.new
     assert_warning(/assigned but unused variable/) {o.instance_eval("def foo; a=1; nil; end")}
@@ -1353,6 +1357,52 @@ x = __ENCODING__
       def o.freeze; self; end
       C = [o]
     end;
+  end
+
+  def test_if_after_class
+    assert_valid_syntax('module if true; Object end::Kernel; end')
+    assert_valid_syntax('module while true; break Object end::Kernel; end')
+    assert_valid_syntax('class if true; Object end::Kernel; end')
+    assert_valid_syntax('class while true; break Object end::Kernel; end')
+  end
+
+  def test_escaped_space
+    assert_syntax_error('x = \ 42', /escaped space/)
+  end
+
+  def test_label
+    expected = {:foo => 1}
+
+    code = '{"foo": 1}'
+    assert_valid_syntax(code)
+    assert_equal(expected, eval(code))
+
+    code = '{foo: 1}'
+    assert_valid_syntax(code)
+    assert_equal(expected, eval(code))
+
+    class << (obj = Object.new)
+      attr_reader :arg
+      def set(arg)
+        @arg = arg
+      end
+    end
+
+    assert_valid_syntax(code = "#{<<~"do;"}\n#{<<~'end;'}")
+    do;
+      obj.set foo:
+                1
+    end;
+    assert_equal(expected, eval(code))
+    assert_equal(expected, obj.arg)
+
+    assert_valid_syntax(code = "#{<<~"do;"}\n#{<<~'end;'}")
+    do;
+      obj.set "foo":
+                  1
+    end;
+    assert_equal(expected, eval(code))
+    assert_equal(expected, obj.arg)
   end
 
 =begin

@@ -1,23 +1,14 @@
-# frozen_string_literal: true
-exclude :test_abort_on_exception, "very sensitive to thread timing and parallelism"
-exclude :test_inspect_with_fiber, "Thread.current is known to reflect the fiber, not the thread, in JRuby"
-exclude :test_join_limit_negative_INT64_MIN, "times out"
-exclude :test_list, "JVM finalizer threads get adopted, randomly skewing the result (#4960)"
-exclude :test_machine_stack_size, "slow and unreliable"
-exclude :test_main_thread_status_at_exit, "we do not set main thread to aborting when it terminates; differing opinions on thread lifecycle at main shutdown"
-exclude :test_main_thread_variable_in_enumerator, "differing notions of current thread within a fiber"
-exclude :test_mutex_interrupt, "hangs"
-exclude :test_mutex_unlock_on_trap, "traps execute in a separate thread in JRuby, and can't unlock a mutex"
-exclude :test_no_valid_cfp, "raises NullPointerException, may depend on MRI internal stack structures for nesting call without block"
-exclude :test_priority, "unreliably depends on thread scheduling"
-exclude :test_report_on_exception, "very sensitive to thread timing and parallelism"
-exclude :test_safe_level, "SAFE levels are unsupported"
-exclude :test_signal_at_join, "very timing-sensitive and very edge casey"
-exclude :test_stack_size, "slow and unreliable"
-exclude :test_thread_interrupt_for_killed_thread, "uses RubyVM but otherwise passes"
-exclude :test_thread_join_main_thread, "hangs"
-exclude :test_thread_setname_in_initialize, "needs investigation #4308"
-exclude :test_thread_timer_and_interrupt, "event statuses do not match expected"
-exclude :test_thread_variable_in_enumerator, "fibers in JRuby have their own Thread.current"
-exclude :test_vm_machine_stack_size, "slow and unreliable"
-exclude :test_wakeup, "uses RubyVM but otherwise passes"
+# frozen_string_literal: false
+exclude(/_stack_size$/, 'often too expensive')
+if /freebsd13/ =~ RUBY_PLATFORM
+  # http://rubyci.s3.amazonaws.com/freebsd13/ruby-master/log/20220216T143001Z.fail.html.gz
+  #
+  #   1) Error:
+  # TestThread#test_signal_at_join:
+  # Timeout::Error: execution of assert_separately expired timeout (120 sec)
+  # pid 30743 killed by SIGABRT (signal 6) (core dumped)
+  # |
+  #
+  #     /usr/home/chkbuild/chkbuild/tmp/build/20220216T143001Z/ruby/test/ruby/test_thread.rb:1390:in `test_signal_at_join'
+  exclude(:test_signal_at_join, 'gets stuck somewhere')
+end

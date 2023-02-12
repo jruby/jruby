@@ -100,8 +100,9 @@ module TestStruct
     assert_equal([:utime, :stime, :cutime, :cstime], Process.times.members)
   end
 
-  def test_struct_new_with_empty_hash
-    assert_equal({:a=>1}, Struct.new(:a, {}).new({:a=>1}).a)
+  def test_struct_new_with_hash
+    assert_raise_with_message(TypeError, /not a symbol/) {Struct.new(:a, {})}
+    assert_raise_with_message(TypeError, /not a symbol/) {Struct.new(:a, {name: "b"})}
   end
 
   def test_struct_new_with_keyword_init
@@ -362,9 +363,8 @@ module TestStruct
   end
 
   def test_keyword_args_warning
-    warning = /warning: Passing only keyword arguments to Struct#initialize will behave differently from Ruby 3\.2\./
-    assert_warn(warning) { assert_equal({a: 1}, @Struct.new(:a).new(a: 1).a) }
-    assert_warn(warning) { assert_equal({a: 1}, @Struct.new(:a, keyword_init: nil).new(a: 1).a) }
+    assert_warn('') { assert_equal(1, @Struct.new(:a).new(a: 1).a) }
+    assert_warn('') { assert_equal(1, @Struct.new(:a, keyword_init: nil).new(a: 1).a) }
     assert_warn('') { assert_equal({a: 1}, @Struct.new(:a).new({a: 1}).a) }
     assert_warn('') { assert_equal({a: 1}, @Struct.new(:a, :b).new(1, a: 1).b) }
     assert_warn('') { assert_equal(1, @Struct.new(:a, keyword_init: true).new(a: 1).a) }

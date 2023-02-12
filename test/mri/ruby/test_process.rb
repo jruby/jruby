@@ -3,7 +3,6 @@
 require 'test/unit'
 require 'tempfile'
 require 'timeout'
-require 'io/wait'
 require 'rbconfig'
 
 class TestProcess < Test::Unit::TestCase
@@ -169,7 +168,7 @@ class TestProcess < Test::Unit::TestCase
   end
 
   def test_execopts_pgroup
-    skip "system(:pgroup) is not supported" if windows?
+    omit "system(:pgroup) is not supported" if windows?
     assert_nothing_raised { system(*TRUECOMMAND, :pgroup=>false) }
 
     io = IO.popen([RUBY, "-e", "print Process.getpgrp"])
@@ -511,7 +510,7 @@ class TestProcess < Test::Unit::TestCase
   UMASK = [RUBY, '-e', 'printf "%04o\n", File.umask']
 
   def test_execopts_umask
-    skip "umask is not supported" if windows?
+    omit "umask is not supported" if windows?
     IO.popen([*UMASK, :umask => 0]) {|io|
       assert_equal("0000", io.read.chomp)
     }
@@ -837,7 +836,7 @@ class TestProcess < Test::Unit::TestCase
                          STDERR=>"out", STDOUT=>[:child, STDERR])
       assert_equal("errout", File.read("out"))
 
-      skip "inheritance of fd other than stdin,stdout and stderr is not supported" if windows?
+      omit "inheritance of fd other than stdin,stdout and stderr is not supported" if windows?
       Process.wait spawn(RUBY, "-e", "STDERR.print 'err'; STDOUT.print 'out'",
                          STDOUT=>"out",
                          STDERR=>[:child, 3],
@@ -889,7 +888,7 @@ class TestProcess < Test::Unit::TestCase
   end
 
   def test_execopts_popen_extra_fd
-    skip "inheritance of fd other than stdin,stdout and stderr is not supported" if windows?
+    omit "inheritance of fd other than stdin,stdout and stderr is not supported" if windows?
     with_tmpchdir {|d|
       with_pipe {|r, w|
         IO.popen([RUBY, '-e', 'IO.new(3, "w").puts("a"); puts "b"', 3=>w]) {|io|
@@ -918,7 +917,7 @@ class TestProcess < Test::Unit::TestCase
   end
 
   def test_fd_inheritance
-    skip "inheritance of fd other than stdin,stdout and stderr is not supported" if windows?
+    omit "inheritance of fd other than stdin,stdout and stderr is not supported" if windows?
     with_pipe {|r, w|
       system(RUBY, '-e', 'IO.new(ARGV[0].to_i, "w").puts(:ba)', w.fileno.to_s, w=>w)
       w.close
@@ -964,7 +963,7 @@ class TestProcess < Test::Unit::TestCase
   end
 
   def test_execopts_close_others
-    skip "inheritance of fd other than stdin,stdout and stderr is not supported" if windows?
+    omit "inheritance of fd other than stdin,stdout and stderr is not supported" if windows?
     with_tmpchdir {|d|
       with_pipe {|r, w|
         system(RUBY, '-e', 'STDERR.reopen("err", "w"); IO.new(ARGV[0].to_i, "w").puts("ma")', w.fileno.to_s, :close_others=>true)
@@ -1058,7 +1057,7 @@ class TestProcess < Test::Unit::TestCase
         }
       }
     rescue NotImplementedError
-      skip "IO#close_on_exec= is not supported"
+      omit "IO#close_on_exec= is not supported"
     end
   end unless windows? # passing non-stdio fds is not supported on Windows
 
@@ -1610,7 +1609,7 @@ class TestProcess < Test::Unit::TestCase
   else
     assert_kind_of(Integer, max)
     assert_predicate(max, :positive?)
-    skip "not limited to NGROUPS_MAX" if /darwin/ =~ RUBY_PLATFORM
+    omit "not limited to NGROUPS_MAX" if /darwin/ =~ RUBY_PLATFORM
     gs = Process.groups
     assert_operator(gs.size, :<=, max)
     gs[0] ||= 0
@@ -1637,7 +1636,7 @@ class TestProcess < Test::Unit::TestCase
   end
 
   def test_setegid
-    skip "root can use Process.egid on Android platform" if RUBY_PLATFORM =~ /android/
+    omit "root can use Process.egid on Android platform" if RUBY_PLATFORM =~ /android/
     assert_nothing_raised(TypeError) {Process.egid += 0}
   rescue NotImplementedError
   end
@@ -1698,7 +1697,7 @@ class TestProcess < Test::Unit::TestCase
     if /freebsd|openbsd/ =~ RUBY_PLATFORM
       # this relates #4173
       # When ruby can use 2 cores, signal and wait4 may miss the signal.
-      skip "this fails on FreeBSD and OpenBSD on multithreaded environment"
+      omit "this fails on FreeBSD and OpenBSD on multithreaded environment"
     end
     signal_received = []
     IO.pipe do |sig_r, sig_w|
@@ -1733,7 +1732,7 @@ class TestProcess < Test::Unit::TestCase
 
   def test_no_curdir
     if /solaris/i =~ RUBY_PLATFORM
-      skip "Temporary skip to avoid CI failures after commit to use realpath on required files"
+      omit "Temporary omit to avoid CI failures after commit to use realpath on required files"
     end
     with_tmpchdir {|d|
       Dir.mkdir("vd")
@@ -1775,7 +1774,7 @@ class TestProcess < Test::Unit::TestCase
 
   def test_aspawn_too_long_path
     if /solaris/i =~ RUBY_PLATFORM && !defined?(Process::RLIMIT_NPROC)
-      skip "Too exhaustive test on platforms without Process::RLIMIT_NPROC such as Solaris 10"
+      omit "Too exhaustive test on platforms without Process::RLIMIT_NPROC such as Solaris 10"
     end
     bug4315 = '[ruby-core:34833] #7904 [ruby-core:52628] #11613'
     assert_fail_too_long_path(%w"echo |", bug4315)
@@ -1817,7 +1816,7 @@ class TestProcess < Test::Unit::TestCase
 
     with_tmpchdir do
       assert_nothing_raised('[ruby-dev:12261]') do
-        EnvUtil.timeout(3) do
+        EnvUtil.timeout(10) do
           pid = spawn('yes | ls')
           Process.waitpid pid
         end
@@ -1874,6 +1873,28 @@ class TestProcess < Test::Unit::TestCase
         puts $$
       end
       assert_not_equal(cpid, dpid)
+    end
+
+    def test_daemon_detached
+      IO.popen("-", "r+") do |f|
+        if f
+          assert_equal(f.pid, Process.wait(f.pid))
+
+          dpid, ppid, dsid = 3.times.map {Integer(f.gets)}
+
+          message = "daemon #{dpid} should be detached"
+          assert_not_equal($$, ppid, message) # would be 1 almost always
+          assert_raise(Errno::ECHILD, message) {Process.wait(dpid)}
+          assert_kind_of(Integer, Process.kill(0, dpid), message)
+          assert_equal(dpid, dsid)
+
+          break # close f, and let the daemon resume and exit
+        end
+        Process.setsid rescue nil
+        Process.daemon(false, true)
+        puts $$, Process.ppid, Process.getsid
+        $stdin.gets # wait for the above assertions using signals
+      end
     end
 
     if File.directory?("/proc/self/task") && /netbsd[a-z]*[1-6]/ !~ RUBY_PLATFORM
@@ -1958,7 +1979,7 @@ class TestProcess < Test::Unit::TestCase
   end
 
   def test_execopts_uid
-    skip "root can use uid option of Kernel#system on Android platform" if RUBY_PLATFORM =~ /android/
+    omit "root can use uid option of Kernel#system on Android platform" if RUBY_PLATFORM =~ /android/
     feature6975 = '[ruby-core:47414]'
 
     [30000, [Process.uid, ENV["USER"]]].each do |uid, user|
@@ -1989,8 +2010,8 @@ class TestProcess < Test::Unit::TestCase
   end
 
   def test_execopts_gid
-    skip "Process.groups not implemented on Windows platform" if windows?
-    skip "root can use Process.groups on Android platform" if RUBY_PLATFORM =~ /android/
+    omit "Process.groups not implemented on Windows platform" if windows?
+    omit "root can use Process.groups on Android platform" if RUBY_PLATFORM =~ /android/
     feature6975 = '[ruby-core:47414]'
 
     groups = Process.groups.map do |g|
@@ -2511,7 +2532,7 @@ EOS
   end
 
   def test_forked_child_handles_signal
-    skip "fork not supported" unless Process.respond_to?(:fork)
+    omit "fork not supported" unless Process.respond_to?(:fork)
     assert_normal_exit(<<-"end;", '[ruby-core:82883] [Bug #13916]')
       require 'timeout'
       pid = fork { sleep }

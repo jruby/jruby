@@ -247,6 +247,13 @@ class TestInteger < Test::Unit::TestCase
     end;
   end
 
+  def test_Integer_when_to_str
+    def (obj = Object.new).to_str
+      "0x10"
+    end
+    assert_equal(16, Integer(obj))
+  end
+
   def test_int_p
     assert_not_predicate(1.0, :integer?)
     assert_predicate(1, :integer?)
@@ -703,5 +710,22 @@ class TestInteger < Test::Unit::TestCase
     o = Object.new
     def o.to_int; Object.new; end
     assert_raise_with_message(TypeError, /can't convert Object to Integer/) {Integer.try_convert(o)}
+  end
+
+  def test_ceildiv
+    assert_equal(0, 0.ceildiv(3))
+    assert_equal(1, 1.ceildiv(3))
+    assert_equal(1, 3.ceildiv(3))
+    assert_equal(2, 4.ceildiv(3))
+
+    assert_equal(-1, 4.ceildiv(-3))
+    assert_equal(-1, -4.ceildiv(3))
+    assert_equal(2, -4.ceildiv(-3))
+
+    assert_equal(3, 3.ceildiv(1.2))
+    assert_equal(3, 3.ceildiv(6/5r))
+
+    assert_equal(10, (10**100-11).ceildiv(10**99-1))
+    assert_equal(11, (10**100-9).ceildiv(10**99-1))
   end
 end

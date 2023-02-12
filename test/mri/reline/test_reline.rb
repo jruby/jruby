@@ -137,7 +137,7 @@ class Reline::Test < Reline::TestCase
   end
 
   def test_completion_proc
-    skip unless Reline.completion_proc == nil
+    omit unless Reline.completion_proc == nil
     # Another test can set Reline.completion_proc
 
     # assert_equal(nil, Reline.completion_proc)
@@ -364,20 +364,14 @@ class Reline::Test < Reline::TestCase
     assert_include(Reline.private_instance_methods, :readline)
   end
 
-  def test_inner_readline
-    # TODO in Reline::Core
-  end
-
   def test_read_io
     # TODO in Reline::Core
   end
 
-  def test_read_escaped_key
-    # TODO in Reline::Core
-  end
-
-  def test_may_req_ambiguous_char_width
-    # TODO in Reline::Core
+  def test_dumb_terminal
+    lib = File.expand_path("../../lib", __dir__)
+    out = IO.popen([{"TERM"=>"dumb"}, "ruby", "-I#{lib}", "-rreline", "-e", "p Reline::IOGate"], &:read)
+    assert_equal("Reline::GeneralIO", out.chomp)
   end
 
   def get_reline_encoding

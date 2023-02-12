@@ -1,6 +1,6 @@
 # frozen_string_literal: true
-require_relative '../helper'
-require 'rubygems/package'
+require_relative "../helper"
+require "rubygems/package"
 
 ##
 # A test case for Gem::Package::Tar* classes
@@ -67,7 +67,7 @@ class Gem::Package::TarTestCase < Gem::TestCase
   end
 
   def calc_checksum(header)
-    sum = header.unpack("C*").inject{|s,a| s + a }
+    sum = header.unpack("C*").inject {|s,a| s + a }
     SP(Z(to_oct(sum, 6)))
   end
 

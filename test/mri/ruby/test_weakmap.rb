@@ -59,7 +59,7 @@ class TestWeakMap < Test::Unit::TestCase
       assert_weak_include(m, k)
     end
     GC.start
-    skip('TODO: failure introduced from r60440')
+    pend('TODO: failure introduced from 837fd5e494731d7d44786f29e7d6e8c27029806f')
     assert_not_send([@wm, m, k])
   end
   alias test_member? test_include?
@@ -166,5 +166,14 @@ class TestWeakMap < Test::Unit::TestCase
     o = Object.new.freeze
     assert_nothing_raised(FrozenError) {@wm[o] = 'foo'}
     assert_nothing_raised(FrozenError) {@wm['foo'] = o}
+  end
+
+  def test_no_memory_leak
+    assert_no_memory_leak([], '', "#{<<~"begin;"}\n#{<<~'end;'}", "[Bug #19398]", rss: true, limit: 1.5, timeout: 60)
+    begin;
+      1_000_000.times do
+        ObjectSpace::WeakMap.new
+      end
+    end;
   end
 end

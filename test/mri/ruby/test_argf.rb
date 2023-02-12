@@ -143,6 +143,17 @@ class TestArgf < Test::Unit::TestCase
     };
   end
 
+  def test_lineno_after_shebang
+    expected = %w"1 1 1 2 2 2 3 3 1 4 4 2"
+    assert_in_out_err(["--enable=gems", "-", @t1.path, @t2.path], "#{<<~"{#"}\n#{<<~'};'}", expected)
+    #!/usr/bin/env ruby
+    {#
+      ARGF.each do |line|
+        puts [$., ARGF.lineno, ARGF.file.lineno]
+      end
+    };
+  end
+
   def test_new_lineno_each
     f = ARGF.class.new(@t1.path, @t2.path, @t3.path)
     result = []
@@ -257,13 +268,13 @@ class TestArgf < Test::Unit::TestCase
 
   def test_inplace_nonascii
     ext = Encoding.default_external or
-      skip "no default external encoding"
+      omit "no default external encoding"
     t = nil
     ["\u{3042}", "\u{e9}"].any? do |n|
       t = make_tempfile(n.encode(ext))
     rescue Encoding::UndefinedConversionError
     end
-    t or skip "no name to test"
+    t or omit "no name to test"
     assert_in_out_err(["-i.bak", "-", t.path],
                       "#{<<~"{#"}\n#{<<~'};'}")
     {#

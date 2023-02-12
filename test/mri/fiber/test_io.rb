@@ -6,14 +6,12 @@ class TestFiberIO < Test::Unit::TestCase
   MESSAGE = "Hello World"
 
   def test_read
-    skip "UNIXSocket is not defined!" unless defined?(UNIXSocket)
+    omit unless defined?(UNIXSocket)
 
     i, o = UNIXSocket.pair
-
-    unless i.nonblock? && o.nonblock?
-      i.close
-      o.close
-      skip "I/O is not non-blocking!"
+    if RUBY_PLATFORM=~/mswin|mingw/
+      i.nonblock = true
+      o.nonblock = true
     end
 
     message = nil
@@ -41,11 +39,15 @@ class TestFiberIO < Test::Unit::TestCase
   end
 
   def test_heavy_read
-    skip unless defined?(UNIXSocket)
+    omit unless defined?(UNIXSocket)
 
     16.times.map do
       Thread.new do
         i, o = UNIXSocket.pair
+        if RUBY_PLATFORM=~/mswin|mingw/
+          i.nonblock = true
+          o.nonblock = true
+        end
 
         scheduler = Scheduler.new
         Fiber.set_scheduler scheduler
@@ -64,15 +66,10 @@ class TestFiberIO < Test::Unit::TestCase
   end
 
   def test_epipe_on_read
-    skip "UNIXSocket is not defined!" unless defined?(UNIXSocket)
+    omit unless defined?(UNIXSocket)
+    omit "nonblock=true isn't properly supported on Windows" if RUBY_PLATFORM=~/mswin|mingw/
 
     i, o = UNIXSocket.pair
-
-    unless i.nonblock? && o.nonblock?
-      i.close
-      o.close
-      skip "I/O is not non-blocking!"
-    end
 
     error = nil
 
@@ -142,7 +139,7 @@ class TestFiberIO < Test::Unit::TestCase
   end
 
   def test_read_write_blocking
-    skip "UNIXSocket is not defined!" unless defined?(UNIXSocket)
+    omit "UNIXSocket is not defined!" unless defined?(UNIXSocket)
 
     i, o = UNIXSocket.pair
     i.nonblock = false
@@ -171,5 +168,27 @@ class TestFiberIO < Test::Unit::TestCase
     assert_equal MESSAGE, message
     assert_predicate(i, :closed?)
     assert_predicate(o, :closed?)
+  end
+
+  def test_io_select
+    omit "UNIXSocket is not defined!" unless defined?(UNIXSocket)
+
+    UNIXSocket.pair do |r, w|
+      result = nil
+
+      thread = Thread.new do
+        scheduler = Scheduler.new
+        Fiber.set_scheduler scheduler
+
+        Fiber.schedule do
+          w.write("Hello World")
+          result = IO.select([r], [w])
+        end
+      end
+
+      thread.join
+
+      assert_equal [[r], [w], []], result
+    end
   end
 end

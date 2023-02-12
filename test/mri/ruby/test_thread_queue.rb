@@ -111,6 +111,23 @@ class TestThreadQueue < Test::Unit::TestCase
     assert_equal(0, q.num_waiting)
   end
 
+  def test_queue_pop_timeout
+    q = Thread::Queue.new
+    q << 1
+    assert_equal 1, q.pop(timeout: 1)
+
+    t1 = Thread.new { q.pop(timeout: 1) }
+    assert_equal t1, t1.join(2)
+    assert_nil t1.value
+
+    t2 = Thread.new { q.pop(timeout: 0.1) }
+    assert_equal t2, t2.join(1)
+    assert_nil t2.value
+  ensure
+    t1&.kill&.join
+    t2&.kill&.join
+  end
+
   def test_queue_pop_non_block
     q = Thread::Queue.new
     assert_raise_with_message(ThreadError, /empty/) do
@@ -126,11 +143,47 @@ class TestThreadQueue < Test::Unit::TestCase
     assert_equal(0, q.num_waiting)
   end
 
+  def test_sized_queue_pop_timeout
+    q = Thread::SizedQueue.new(1)
+
+    q << 1
+    assert_equal 1, q.pop(timeout: 1)
+
+    t1 = Thread.new { q.pop(timeout: 1) }
+    assert_equal t1, t1.join(2)
+    assert_nil t1.value
+
+    t2 = Thread.new { q.pop(timeout: 0.1) }
+    assert_equal t2, t2.join(1)
+    assert_nil t2.value
+  ensure
+    t1&.kill&.join
+    t2&.kill&.join
+  end
+
   def test_sized_queue_pop_non_block
     q = Thread::SizedQueue.new(1)
     assert_raise_with_message(ThreadError, /empty/) do
       q.pop(true)
     end
+  end
+
+  def test_sized_queue_push_timeout
+    q = Thread::SizedQueue.new(1)
+
+    q << 1
+    assert_equal 1, q.size
+
+    t1 = Thread.new { q.push(2, timeout: 1) }
+    assert_equal t1, t1.join(2)
+    assert_nil t1.value
+
+    t2 = Thread.new { q.push(2, timeout: 0.1) }
+    assert_equal t2, t2.join(1)
+    assert_nil t2.value
+  ensure
+    t1&.kill&.join
+    t2&.kill&.join
   end
 
   def test_sized_queue_push_interrupt
@@ -151,6 +204,8 @@ class TestThreadQueue < Test::Unit::TestCase
   end
 
   def test_thr_kill
+    omit "[Bug #18613]" if /freebsd/ =~ RUBY_PLATFORM
+
     bug5343 = '[ruby-core:39634]'
     Dir.mktmpdir {|d|
       timeout = EnvUtil.apply_timeout_scale(60)
@@ -580,10 +635,10 @@ class TestThreadQueue < Test::Unit::TestCase
 
   def test_queue_with_trap
     if ENV['APPVEYOR'] == 'True' && RUBY_PLATFORM.match?(/mswin/)
-      skip 'This test fails too often on AppVeyor vs140'
+      omit 'This test fails too often on AppVeyor vs140'
     end
     if RUBY_PLATFORM.match?(/mingw/)
-      skip 'This test fails too often on MinGW'
+      omit 'This test fails too often on MinGW'
     end
 
     assert_in_out_err([], <<-INPUT, %w(INT INT exit), [])
