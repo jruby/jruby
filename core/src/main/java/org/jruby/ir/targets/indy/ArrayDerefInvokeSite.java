@@ -86,28 +86,30 @@ public class ArrayDerefInvokeSite extends NormalInvokeSite {
 
     /**
      * Failover version uses a monomorphic cache and DynamicMethod.call, as in non-indy.
+     *
+     * This assumes all ArrayDeref will be arity=1, which correlates to the code in IRBuilder.
      */
-    public IRubyObject fail(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) throws Throwable {
+    public IRubyObject fail(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, Block block) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
         String name = methodName;
         CacheEntry entry = cache;
 
         // strdup for all calls
-        args[0] = ((RubyString) args[0]).strDup(context.runtime);
+        arg0 = ((RubyString) arg0).strDup(context.runtime);
 
         if (entry.typeOk(selfClass)) {
-            return entry.method.call(context, self, entry.sourceModule, name, args, block);
+            return entry.method.call(context, self, entry.sourceModule, name, arg0, block);
         }
 
         entry = selfClass.searchWithCache(name);
 
         if (methodMissing(entry, caller)) {
-            return callMethodMissing(entry, callType, context, self, selfClass, name, args, block);
+            return callMethodMissing(entry, callType, context, self, selfClass, name, arg0, block);
         }
 
         cache = entry;
 
-        return entry.method.call(context, self, entry.sourceModule, name, args, block);
+        return entry.method.call(context, self, entry.sourceModule, name, arg0, block);
     }
 
     private static final MethodHandle STRDUP_FILTER = Binder.from(IRubyObject.class, IRubyObject.class)
