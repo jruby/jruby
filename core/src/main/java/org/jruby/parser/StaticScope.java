@@ -730,4 +730,14 @@ public class StaticScope implements Serializable {
     public void setInstanceVariableNames(Collection<String> ivarWrites) {
         this.ivarNames = ivarWrites;
     }
+
+    /**
+     *  Is this the top scope?  This represents the top of the scope from an execution perspective.
+     *  An eval will have an enclosing scope but naively we will mistakenly think the top of the file as a top scope.
+     *  This will also occur in a load where a module is wrapping the contents.  In both of those cases this
+     *  returns false.  An ordinary require or main script scope will return true at top of the file lexically.
+     */
+    public boolean isTopScope() {
+        return enclosingScope == null;
+    }
 }
