@@ -2146,9 +2146,11 @@ public class IRBuilder {
 
     // @@c
     public Operand buildClassVar(ClassVarNode node) {
-        Variable ret = createTemporaryVariable();
-        addInstr(new GetClassVariableInstr(ret, classVarDefinitionContainer(), node.getName()));
-        return ret;
+        if (scope.getStaticScope().isTopScope()) {
+            return addRaiseError("RuntimeError", "class variable access from toplevel");
+        } else {
+            return addResultInstr(new GetClassVariableInstr(temp(), classVarDefinitionContainer(), node.getName()));
+        }
     }
 
     // Add the specified result instruction to the scope and return its result variable.
@@ -2164,9 +2166,13 @@ public class IRBuilder {
     //   @@c = 1
     // end
     public Operand buildClassVarAsgn(final ClassVarAsgnNode classVarAsgnNode) {
-        Operand val = build(classVarAsgnNode.getValueNode());
-        addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), classVarAsgnNode.getName(), val));
-        return val;
+        if (scope.getStaticScope().isTopScope()) {
+            return addRaiseError("RuntimeError", "class variable access from toplevel");
+        } else {
+            Operand val = build(classVarAsgnNode.getValueNode());
+            addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), classVarAsgnNode.getName(), val));
+            return val;
+        }
     }
 
     @Deprecated
@@ -4926,14 +4932,14 @@ public class IRBuilder {
         return false;
     }
 
-    private void addRaiseError(String id, String message) {
-        addRaiseError(id, new MutableString(message));
+    private Operand addRaiseError(String id, String message) {
+        return addRaiseError(id, new MutableString(message));
     }
 
-    private void addRaiseError(String id, Operand message) {
+    private Operand addRaiseError(String id, Operand message) {
         Operand exceptionClass = searchModuleForConst(manager.getObjectClass(), symbol(id));
         Operand kernel = searchModuleForConst(manager.getObjectClass(), symbol("Kernel"));
-        call(temp(), kernel, "raise", exceptionClass, message);
+        return call(temp(), kernel, "raise", exceptionClass, message);
     }
 
     public Operand buildZSuper(ZSuperNode zsuperNode) {

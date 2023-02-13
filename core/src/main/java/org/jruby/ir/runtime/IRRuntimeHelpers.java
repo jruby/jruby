@@ -2469,22 +2469,15 @@ public class IRRuntimeHelpers {
     }
 
     @Interp @JIT
-    public static IRubyObject getClassVariable(ThreadContext context, IRubyObject self, RubyModule module, String id) {
-        errorIfTopSelf(context, "class variable access from toplevel");
-
+    public static IRubyObject getClassVariable(ThreadContext context, RubyModule module, String id) {
         return module.getClassVar(id);
     }
 
     @Interp @JIT
     public static void putClassVariable(ThreadContext context, IRubyObject self, RubyModule module, String id, IRubyObject value) {
         warnSetConstInRefinement(context, self);
-        errorIfTopSelf(context, "class variable access from toplevel");
 
         module.setClassVar(id, value);
-    }
-
-    private static void errorIfTopSelf(ThreadContext context, String message) {
-        if (context.getCurrentStaticScope().isTopScope()) throw context.runtime.newRuntimeError(message);
     }
 
     @JIT
