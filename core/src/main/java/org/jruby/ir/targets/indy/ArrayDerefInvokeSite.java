@@ -2,8 +2,11 @@ package org.jruby.ir.targets.indy;
 
 import com.headius.invokebinder.Binder;
 import com.headius.invokebinder.SmartBinder;
+import com.headius.invokebinder.SmartHandle;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
+import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.ir.targets.simple.NormalInvokeSite;
@@ -53,7 +56,9 @@ public class ArrayDerefInvokeSite extends NormalInvokeSite {
         CacheEntry entry = selfClass.searchWithCache(methodName);
         DynamicMethod method = entry.method;
 
-        if (method.isBuiltin() && selfClass == context.runtime.getHash()) {
+        if (method.isBuiltin() &&
+                testOptimizedHash(context.runtime.getHash(), self) &&
+                !((RubyHash) self).isComparedByIdentity()) {
             // fast path since we know we're working with a normal hash and have a pre-frozen string
             mh = SmartBinder.from(signature)
                     .permute("self", "context", "arg0")
@@ -82,6 +87,26 @@ public class ArrayDerefInvokeSite extends NormalInvokeSite {
 
             return method.call(context, self, entry.sourceModule, methodName, args, block);
         }
+    }
+
+    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+
+    @Override
+    protected SmartHandle testTarget(IRubyObject self, RubyModule testClass) {
+        if (self instanceof RubyHash && testOptimizedHash((RubyClass) testClass, self)) {
+            return SmartBinder
+                    .from(signature.changeReturn(boolean.class))
+                    .permute("self")
+                    .insert(0, "selfClass", RubyClass.class, testClass)
+                    .invokeStaticQuiet(LOOKUP, ArrayDerefInvokeSite.class, "testOptimizedHash");
+        }
+
+        return super.testTarget(self, testClass);
+    }
+
+    public static boolean testOptimizedHash(RubyClass testClass, IRubyObject self) {
+        return testClass == RubyBasicObject.getMetaClass(self) &&
+                !((RubyHash) self).isComparedByIdentity();
     }
 
     /**

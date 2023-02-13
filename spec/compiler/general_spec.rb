@@ -1386,6 +1386,8 @@ modes.each do |mode|
         end
         ary.map{|o| o["a"]}.sum
       AREF
+      # compare_by_identity after usage
+      run('h = {"a" => 1}; val = nil; 2.times { val = h["a"]; h.compare_by_identity }; val') {|val| expect(val).to eq(nil)}
     end
 
     it "handles instance super calls with a block" do

@@ -2400,7 +2400,9 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static IRubyObject callOptimizedAref(ThreadContext context, IRubyObject caller, IRubyObject target, RubyString keyStr, CallSite site) {
-        if (target instanceof RubyHash && ((CachingCallSite) site).isBuiltin(target)) {
+        if (target instanceof RubyHash &&
+                !((RubyHash) target).isComparedByIdentity() &&
+                ((CachingCallSite) site).isBuiltin(target)) {
             // call directly with cached frozen string
             return ((RubyHash) target).op_aref(context, keyStr);
         }

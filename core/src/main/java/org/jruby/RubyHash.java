@@ -2622,7 +2622,7 @@ public class RubyHash extends RubyObject implements Map {
      *
      * @return true if this object is compared by identity, false otherwise
      */
-    protected boolean isComparedByIdentity() {
+    public boolean isComparedByIdentity() {
         return (flags & COMPARE_BY_IDENTITY_F) != 0;
     }
 
