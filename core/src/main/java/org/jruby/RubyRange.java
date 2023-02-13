@@ -1233,8 +1233,8 @@ public class RubyRange extends RubyObject {
         IRubyObject _beg = sites.begin.call(context, range, range);
         IRubyObject _end = sites.end.call(context, range, range);
         boolean excludeEnd = sites.exclude_end.call(context, range, range).isTrue();
-        int beg = _beg.convertToInteger().getIntValue();
-        int end = _end.convertToInteger().getIntValue();
+        int beg = _beg.isNil() ? 0 : _beg.convertToInteger().getIntValue();
+        int end = _end.isNil() ? -1 :_end.convertToInteger().getIntValue();
         int origBeg = beg;
         int origEnd = end;
 

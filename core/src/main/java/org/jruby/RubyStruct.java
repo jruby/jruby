@@ -828,35 +828,37 @@ public class RubyStruct extends RubyObject {
         return values[newIdx] = value;
     }
 
-    // NOTE: copied from RubyArray, both RE, Struct, and Array should share one impl
     @JRubyMethod(rest = true)
     public IRubyObject values_at(IRubyObject[] args) {
+        final Ruby runtime = metaClass.runtime;
         final int olen = values.length;
         RubyArray result = getRuntime().newArray(args.length);
 
         for (int i = 0; i < args.length; i++) {
             final IRubyObject arg = args[i];
-            if ( arg instanceof RubyFixnum ) {
+            if (arg instanceof RubyFixnum ) {
                 result.append( aref(arg) );
                 continue;
             }
 
-            final int[] begLen;
-            if ( ! ( arg instanceof RubyRange ) ) {
-                // do result.append
-            }
-            else if ( ( begLen = ((RubyRange) args[i]).begLenInt(olen, 0) ) == null ) {
-                continue;
-            }
-            else {
+            final int [] begLen = new int[2];
+            if (arg instanceof RubyRange &&
+                    RubyRange.rangeBeginLength(runtime.getCurrentContext(),(RubyRange) args[i], olen, begLen, 1).isTrue()) {
                 final int beg = begLen[0];
                 final int len = begLen[1];
-                for (int j = 0; j < len; j++) {
-                    result.append( aref(j + beg) );
+                int end = olen < beg + len ? olen : beg + len;
+                int j;
+                for (j = beg; j < end; j++) {
+                    result.push(aref(j));
+                }
+                if ( beg + len > j ) {
+                    IRubyObject [] tmp = new IRubyObject[beg + len - j];
+                    Helpers.fillNil(tmp, getRuntime());
+                    result.push(tmp);
                 }
                 continue;
             }
-            result.append( aref(RubyNumeric.num2int(arg)) );
+            result.push(aref(RubyNumeric.num2int(arg)));
         }
 
         return result;
