@@ -732,12 +732,25 @@ public class StaticScope implements Serializable {
     }
 
     /**
-     *  Is this the top scope?  This represents the top of the scope from an execution perspective.
-     *  An eval will have an enclosing scope but naively we will mistakenly think the top of the file as a top scope.
-     *  This will also occur in a load where a module is wrapping the contents.  In both of those cases this
-     *  returns false.  An ordinary require or main script scope will return true at top of the file lexically.
+     *  Is this the top scope?
      */
     public boolean isTopScope() {
-        return enclosingScope == null;
+        if (enclosingScope == null) return true;
+        // Quick test since most top-level checks will not happen within an eval.
+        if (type != Type.EVAL) return false;
+
+        // This should be uncommon enough to outline this to make isTopScope smaller.
+        return isTopScopeEvals();
+    }
+
+    private boolean isTopScopeEvals() {
+        Ruby runtime = cref.getRuntime();
+        StaticScope scope = this;
+        while (scope != null && scope.type == Type.EVAL) {
+            if (cref != runtime.getTopSelf()) return false;
+            scope = scope.enclosingScope;
+        }
+
+        return scope != null && scope.enclosingScope == null;
     }
 }

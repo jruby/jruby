@@ -2484,8 +2484,7 @@ public class IRRuntimeHelpers {
     }
 
     private static void errorIfTopSelf(ThreadContext context, String message) {
-        StaticScope scope = context.getCurrentStaticScope();
-        if (scope.isTopScope()) throw context.runtime.newRuntimeError(message);
+        if (context.getCurrentStaticScope().isTopScope()) throw context.runtime.newRuntimeError(message);
     }
 
     @JIT
