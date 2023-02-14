@@ -731,18 +731,6 @@ public class StaticScope implements Serializable {
         this.ivarNames = ivarWrites;
     }
 
-    /**
-     *  Is this the top scope?
-     */
-    public boolean isTopScope() {
-        if (enclosingScope == null) return true;
-        // Quick test since most top-level checks will not happen within an eval.
-        if (type != Type.EVAL) return false;
-
-        // This should be uncommon enough to outline this to make isTopScope smaller.
-        return isTopScopeEvals();
-    }
-
     private boolean isTopScopeEvals() {
         Ruby runtime = cref.getRuntime();
         StaticScope scope = this;

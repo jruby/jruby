@@ -28,6 +28,7 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.Signature;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
@@ -2144,13 +2145,16 @@ public class IRBuilder {
         return processBodyResult;
     }
 
+    private boolean isTopScope() {
+        IRScope topScope = scope.getNearestNonClosurelikeScope();
+        return topScope instanceof IRScriptBody || topScope instanceof IREvalScript;
+    }
+
     // @@c
     public Operand buildClassVar(ClassVarNode node) {
-        if (scope.getStaticScope().isTopScope()) {
-            return addRaiseError("RuntimeError", "class variable access from toplevel");
-        } else {
-            return addResultInstr(new GetClassVariableInstr(temp(), classVarDefinitionContainer(), node.getName()));
-        }
+        if (isTopScope()) return addRaiseError("RuntimeError", "class variable access from toplevel");
+
+        return addResultInstr(new GetClassVariableInstr(temp(), classVarDefinitionContainer(), node.getName()));
     }
 
     // Add the specified result instruction to the scope and return its result variable.
@@ -2166,13 +2170,11 @@ public class IRBuilder {
     //   @@c = 1
     // end
     public Operand buildClassVarAsgn(final ClassVarAsgnNode classVarAsgnNode) {
-        if (scope.getStaticScope().isTopScope()) {
-            return addRaiseError("RuntimeError", "class variable access from toplevel");
-        } else {
-            Operand val = build(classVarAsgnNode.getValueNode());
-            addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), classVarAsgnNode.getName(), val));
-            return val;
-        }
+        if (isTopScope()) return addRaiseError("RuntimeError", "class variable access from toplevel");
+
+        Operand val = build(classVarAsgnNode.getValueNode());
+        addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), classVarAsgnNode.getName(), val));
+        return val;
     }
 
     @Deprecated
