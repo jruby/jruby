@@ -138,7 +138,7 @@ public class OutputStrings {
                 Constants.VERSION,
                 Constants.RUBY_VERSION,
                 Constants.COMPILE_DATE,
-                Constants.REVISION,
+                Constants.REVISION.substring(0, 10),
                 SafePropertyAccessor.getProperty("java.vm.name", "Unknown JVM"),
                 SafePropertyAccessor.getProperty("java.vm.version", "Unknown JVM version"),
                 SafePropertyAccessor.getProperty("java.runtime.version", SafePropertyAccessor.getProperty("java.version", "Unknown version")),

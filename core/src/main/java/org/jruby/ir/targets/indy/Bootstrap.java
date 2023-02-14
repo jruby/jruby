@@ -32,13 +32,29 @@ import com.headius.invokebinder.SmartBinder;
 import com.headius.invokebinder.SmartHandle;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
-import org.jruby.*;
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyBasicObject;
+import org.jruby.RubyBoolean;
+import org.jruby.RubyClass;
+import org.jruby.RubyEncoding;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyFloat;
+import org.jruby.RubyGlobal;
+import org.jruby.RubyHash;
+import org.jruby.RubyModule;
+import org.jruby.RubyNil;
+import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.GlobalVariable;
-import org.jruby.internal.runtime.methods.*;
+import org.jruby.internal.runtime.methods.AttrReaderMethod;
+import org.jruby.internal.runtime.methods.AttrWriterMethod;
+import org.jruby.internal.runtime.methods.CompiledIRMethod;
+import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.HandleMethod;
+import org.jruby.internal.runtime.methods.MixedModeIRMethod;
+import org.jruby.internal.runtime.methods.NativeCallMethod;
 import org.jruby.ir.JIT;
-import org.jruby.ir.interpreter.FullInterpreterContext;
-import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.java.invokers.SingletonMethodInvoker;
 import org.jruby.javasupport.JavaUtil;
@@ -65,20 +81,34 @@ import org.jruby.runtime.ivars.FieldVariableAccessor;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.runtime.opto.OptoFactory;
+import org.jruby.runtime.scope.DynamicScopeGenerator;
 import org.jruby.specialized.RubyArraySpecialized;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JavaNameMangler;
+import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 
-import java.lang.invoke.*;
+import java.lang.invoke.CallSite;
+import java.lang.invoke.ConstantCallSite;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.invoke.MutableCallSite;
+import java.lang.invoke.SwitchPoint;
 import java.math.BigInteger;
 
-import static java.lang.invoke.MethodHandles.*;
+import static java.lang.invoke.MethodHandles.Lookup;
+import static java.lang.invoke.MethodHandles.constant;
+import static java.lang.invoke.MethodHandles.dropArguments;
+import static java.lang.invoke.MethodHandles.explicitCastArguments;
+import static java.lang.invoke.MethodHandles.filterArguments;
+import static java.lang.invoke.MethodHandles.insertArguments;
+import static java.lang.invoke.MethodHandles.lookup;
 import static java.lang.invoke.MethodType.methodType;
 import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.runtime.Helpers.constructObjectArrayHandle;
@@ -91,6 +121,7 @@ public class Bootstrap {
     public final static String BOOTSTRAP_BARE_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class);
     public final static String BOOTSTRAP_LONG_STRING_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, long.class, int.class, String.class, int.class);
     public final static String BOOTSTRAP_DOUBLE_STRING_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, double.class, int.class, String.class, int.class);
+    public final static String BOOTSTRAP_INT_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class, int.class);
     private static final Logger LOG = LoggerFactory.getLogger(Bootstrap.class);
     static final Lookup LOOKUP = MethodHandles.lookup();
     public static final Handle EMPTY_STRING_BOOTSTRAP = new Handle(
@@ -98,6 +129,12 @@ public class Bootstrap {
             p(Bootstrap.class),
             "emptyString",
             sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class),
+            false);
+    public static final Handle BUFFER_STRING_BOOTSTRAP = new Handle(
+            Opcodes.H_INVOKESTATIC,
+            p(Bootstrap.class),
+            "bufferString",
+            sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, int.class),
             false);
     private static final String[] GENERIC_CALL_PERMUTE = {"context", "self", "arg.*"};
 
@@ -127,6 +164,15 @@ public class Bootstrap {
         RubyString.EmptyByteListHolder holder = RubyString.getEmptyByteList(encodingFromName(encodingName));
         return new ConstantCallSite(insertArguments(STRING_HANDLE, 1, holder.bytes, holder.cr));
     }
+
+    public static CallSite bufferString(Lookup lookup, String name, MethodType type, String encodingName, int size) {
+        return new ConstantCallSite(insertArguments(BUFFERSTRING_HANDLE, 1, encodingFromName(encodingName), size, StringSupport.CR_7BIT));
+    }
+
+    private static final MethodHandle BUFFERSTRING_HANDLE =
+            Binder
+                    .from(RubyString.class, ThreadContext.class, Encoding.class, int.class, int.class)
+                    .invokeStaticQuiet(LOOKUP, Bootstrap.class, "bufferString");
 
     public static Handle isNilBoot() {
         return new Handle(
@@ -231,6 +277,12 @@ public class Bootstrap {
         }
 
         return new ByteList(RubyEncoding.encodeISO(value), encoding, false);
+    }
+
+    public static ByteList bytelist(int size, String encodingName) {
+        Encoding encoding = encodingFromName(encodingName);
+
+        return new ByteList(size, encoding);
     }
 
     private static Encoding encodingFromName(String encodingName) {
@@ -455,6 +507,10 @@ public class Bootstrap {
         return RubyString.newStringShared(context.runtime, value, cr);
     }
 
+    public static RubyString bufferString(ThreadContext context, Encoding encoding, int size, int cr) {
+        return RubyString.newString(context.runtime, new ByteList(size, encoding), cr);
+    }
+
     public static RubyString frozenString(ThreadContext context, MutableCallSite site, ByteList value, int cr, String file, int line) {
         RubyString frozen = IRRuntimeHelpers.newFrozenString(context, value, cr, file, line);
 
@@ -505,6 +561,9 @@ public class Bootstrap {
             case "False":
                 dmh = FALSE_HANDLE;
                 break;
+            case "rubyEncoding":
+                dmh = RUBY_ENCODING_HANDLE;
+                break;
             case "encoding":
                 dmh = ENCODING_HANDLE;
                 break;
@@ -522,6 +581,9 @@ public class Bootstrap {
 
         MethodHandle dmh;
         switch (name) {
+            case "rubyEncoding":
+                dmh = RUBY_ENCODING_HANDLE;
+                break;
             case "encoding":
                 dmh = ENCODING_HANDLE;
                 break;
@@ -553,9 +615,14 @@ public class Bootstrap {
                     .from(IRubyObject.class, ThreadContext.class, MutableCallSite.class)
                     .invokeStaticQuiet(LOOKUP, Bootstrap.class, "False");
 
-    private static final MethodHandle ENCODING_HANDLE =
+    private static final MethodHandle RUBY_ENCODING_HANDLE =
             Binder
                     .from(RubyEncoding.class, ThreadContext.class, MutableCallSite.class, String.class)
+                    .invokeStaticQuiet(LOOKUP, Bootstrap.class, "rubyEncoding");
+
+    private static final MethodHandle ENCODING_HANDLE =
+            Binder
+                    .from(Encoding.class, ThreadContext.class, MutableCallSite.class, String.class)
                     .invokeStaticQuiet(LOOKUP, Bootstrap.class, "encoding");
 
     public static IRubyObject nil(ThreadContext context, MutableCallSite site) {
@@ -596,7 +663,7 @@ public class Bootstrap {
         return context.runtime;
     }
 
-    public static RubyEncoding encoding(ThreadContext context, MutableCallSite site, String name) {
+    public static RubyEncoding rubyEncoding(ThreadContext context, MutableCallSite site, String name) {
         RubyEncoding rubyEncoding = IRRuntimeHelpers.retrieveEncoding(context, name);
 
         MethodHandle constant = (MethodHandle)rubyEncoding.constant();
@@ -605,6 +672,17 @@ public class Bootstrap {
         site.setTarget(constant);
 
         return rubyEncoding;
+    }
+
+    public static Encoding encoding(ThreadContext context, MutableCallSite site, String name) {
+        Encoding encoding = IRRuntimeHelpers.retrieveJCodingsEncoding(context, name);
+
+        MethodHandle constant = MethodHandles.constant(Encoding.class, encoding);
+        if (constant == null) constant = (MethodHandle)OptoFactory.newConstantWrapper(Encoding.class, encoding);
+
+        site.setTarget(constant);
+
+        return encoding;
     }
 
     public static RubyHash hash(ThreadContext context, boolean literal, IRubyObject[] pairs) {
@@ -622,7 +700,7 @@ public class Bootstrap {
 
     static MethodHandle buildIndyHandle(InvokeSite site, CacheEntry entry) {
         MethodHandle mh = null;
-        Signature siteToDyncall = site.signature.insertArgs(3, arrayOf("class", "name"), arrayOf(RubyModule.class, String.class));
+        Signature siteToDyncall = site.signature.insertArgs(site.argOffset, arrayOf("class", "name"), arrayOf(RubyModule.class, String.class));
         DynamicMethod method = entry.method;
 
         if (method instanceof HandleMethod) {
@@ -633,10 +711,10 @@ public class Bootstrap {
                 mh = handleMethod.getHandle(site.arity);
                 if (mh != null) {
                     if (!blockGiven) mh = insertArguments(mh, mh.type().parameterCount() - 1, Block.NULL_BLOCK);
-                    mh = dropArguments(mh, 1, IRubyObject.class);
+                    if (!site.functional) mh = dropArguments(mh, 1, IRubyObject.class);
                 } else {
                     mh = handleMethod.getHandle(-1);
-                    mh = dropArguments(mh, 1, IRubyObject.class);
+                    if (!site.functional) mh = dropArguments(mh, 1, IRubyObject.class);
                     if (site.arity == 0) {
                         if (!blockGiven) {
                             mh = insertArguments(mh, mh.type().parameterCount() - 2, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
@@ -656,7 +734,7 @@ public class Bootstrap {
             } else {
                 mh = handleMethod.getHandle(-1);
                 if (mh != null) {
-                    mh = dropArguments(mh, 1, IRubyObject.class);
+                    if (!site.functional) mh = dropArguments(mh, 1, IRubyObject.class);
                     if (!blockGiven) mh = insertArguments(mh, mh.type().parameterCount() - 1, Block.NULL_BLOCK);
 
                     mh = SmartBinder.from(lookup(), siteToDyncall)
@@ -666,7 +744,7 @@ public class Bootstrap {
             }
 
             if (mh != null) {
-                mh = insertArguments(mh, 3, entry.sourceModule, site.name());
+                mh = insertArguments(mh, site.argOffset, entry.sourceModule, site.name());
 
                 if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
                     LOG.info(site.name() + "\tbound directly to handle " + Bootstrap.logMethod(method));
@@ -825,13 +903,13 @@ public class Bootstrap {
         if (accessor instanceof FieldVariableAccessor) {
             MethodHandle getter = ((FieldVariableAccessor)accessor).getGetter();
             getValue = Binder.from(site.type())
-                    .drop(0, 2)
+                    .drop(0, site.argOffset - 1)
                     .filterReturn(filter)
                     .cast(methodType(Object.class, self.getClass()))
                     .invoke(getter);
         } else {
             getValue = Binder.from(site.type())
-                    .drop(0, 2)
+                    .drop(0, site.argOffset - 1)
                     .filterReturn(filter)
                     .cast(methodType(Object.class, Object.class))
                     .prepend(accessor)
@@ -860,13 +938,13 @@ public class Bootstrap {
         if (accessor instanceof FieldVariableAccessor) {
             MethodHandle setter = ((FieldVariableAccessor)accessor).getSetter();
             setValue = Binder.from(site.type())
-                    .drop(0, 2)
+                    .drop(0, site.argOffset - 1)
                     .filterReturn(filter)
                     .cast(methodType(void.class, self.getClass(), Object.class))
                     .invoke(setter);
         } else {
             setValue = Binder.from(site.type())
-                    .drop(0, 2)
+                    .drop(0, site.argOffset - 1)
                     .filterReturn(filter)
                     .cast(methodType(void.class, Object.class, Object.class))
                     .prepend(accessor)
@@ -978,7 +1056,7 @@ public class Bootstrap {
                     } else if (site.arity == 0) {
                         // no args, insert dummy
                         binder = SmartBinder.from(lookup(), site.signature)
-                                .insert(2, "args", IRubyObject.NULL_ARRAY);
+                                .insert(site.argOffset, "args", IRubyObject.NULL_ARRAY);
                     } else {
                         // 1 or more args, collect into []
                         binder = SmartBinder.from(lookup(), site.signature)
@@ -1350,6 +1428,14 @@ public class Bootstrap {
         return getBootstrapHandle("coverLineBootstrap", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, int.class, int.class));
     }
 
+    public static Handle getHeapLocalHandle() {
+        return getBootstrapHandle("getHeapLocalBootstrap", BOOTSTRAP_INT_INT_SIG);
+    }
+
+    public static Handle getHeapLocalOrNilHandle() {
+        return getBootstrapHandle("getHeapLocalOrNilBootstrap", BOOTSTRAP_INT_INT_SIG);
+    }
+
     public static Handle getBootstrapHandle(String name, String sig) {
         return getBootstrapHandle(name, Bootstrap.class, sig);
     }
@@ -1403,6 +1489,56 @@ public class Bootstrap {
         IRRuntimeHelpers.updateCoverage(context, filename, line);
 
         if (oneshot) site.setTarget(Binder.from(void.class, ThreadContext.class).dropAll().nop());
+    }
+
+    public static CallSite getHeapLocalBootstrap(Lookup lookup, String name, MethodType type, int depth, int location) throws Throwable {
+        // no null checking needed for method bodies
+        MethodHandle getter;
+        Binder binder = Binder
+                .from(type);
+
+        if (depth == 0) {
+            if (location < DynamicScopeGenerator.SPECIALIZED_GETS.size()) {
+                getter = binder.invokeVirtualQuiet(LOOKUP, DynamicScopeGenerator.SPECIALIZED_GETS.get(location));
+            } else {
+                getter = binder
+                        .insert(1, location)
+                        .invokeVirtualQuiet(LOOKUP, "getValueDepthZero");
+            }
+        } else {
+            getter = binder
+                    .insert(1, arrayOf(int.class, int.class), location, depth)
+                    .invokeVirtualQuiet(LOOKUP, "getValue");
+        }
+
+        ConstantCallSite site = new ConstantCallSite(getter);
+
+        return site;
+    }
+
+    public static CallSite getHeapLocalOrNilBootstrap(Lookup lookup, String name, MethodType type, int depth, int location) throws Throwable {
+        MethodHandle getter;
+        Binder binder = Binder
+                .from(type)
+                .filter(1, contextValue(lookup, "nil", methodType(IRubyObject.class, ThreadContext.class)).dynamicInvoker());
+
+        if (depth == 0) {
+            if (location < DynamicScopeGenerator.SPECIALIZED_GETS_OR_NIL.size()) {
+                getter = binder.invokeVirtualQuiet(LOOKUP, DynamicScopeGenerator.SPECIALIZED_GETS_OR_NIL.get(location));
+            } else {
+                getter = binder
+                        .insert(1, location)
+                        .invokeVirtualQuiet(LOOKUP, "getValueDepthZeroOrNil");
+            }
+        } else {
+            getter = binder
+                    .insert(1, arrayOf(int.class, int.class), location, depth)
+                    .invokeVirtualQuiet(LOOKUP, "getValueOrNil");
+        }
+
+        ConstantCallSite site = new ConstantCallSite(getter);
+
+        return site;
     }
 
     public static CallSite globalBootstrap(Lookup lookup, String name, MethodType type, String file, int line) throws Throwable {
@@ -1535,6 +1671,17 @@ public class Bootstrap {
 
         return new ConstantCallSite(blockMaker);
     }
+
+    public CallSite checkArrayArity(Lookup lookup, String name, MethodType methodType, int required, int opt, int rest) {
+        return new ConstantCallSite(MethodHandles.insertArguments(CHECK_ARRAY_ARITY, 2, required, opt, (rest == 0 ? false : true)));
+    }
+
+    public static final Handle CHECK_ARRAY_ARITY_BOOTSTRAP = new Handle(Opcodes.H_INVOKESTATIC, p(Helpers.class), "checkArrayArity", sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class, int.class, int.class));
+
+    private static final MethodHandle CHECK_ARRAY_ARITY =
+            Binder
+                    .from(void.class, ThreadContext.class, RubyArray.class, int.class, int.class, boolean.class)
+                    .invokeStaticQuiet(LOOKUP, Helpers.class, "irCheckArgsArrayArity");
 
     static String logMethod(DynamicMethod method) {
         return "[#" + method.getSerialNumber() + " " + method.getImplementationClass().getMethodLocation() + "]";

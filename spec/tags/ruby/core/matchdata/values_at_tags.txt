@@ -1,0 +1,1 @@
+fails:Struct#values_at when passed an integer Range supports endless Range

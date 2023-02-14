@@ -43,20 +43,24 @@ import org.jruby.ast.Node;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.UriLikePathHelper;
 
 /**
- * Utility functions to help embedders out.   These function consolidate logic that is
- * used between BSF and JSR 223.  People who are embedding JRuby 'raw' should use these
- * as well.  If at a later date, we discover a flaw or change how we do things, this
- * utility class should provide some insulation.
+ * Utility functions to help embedders out.
+ * These function consolidate logic that is used between BSF and JSR 223.
+ * People who are embedding JRuby 'raw' should use these as well.
+ * If at a later date, we discover a flaw or change how we do things, this utility class should provide some insulation.
  *
+ * <pre>
  * Example:
- * Ruby runtime = JavaEmbedUtils.initialize(new ArrayList());
- * RubyRuntimeAdapter evaler = JavaEmbedUtils.newRuntimeAdapter();
- * IRubyObject rubyObject = evaler.parse(runtime, expr.toString(), file, line).run());
- * SomeClassOrInterface javaObject = (SomeClassOrInterface) JavaEmbedUtils.rubyToJava(rubyObject);
- * runtime.terminate();
+ *
+ *   Ruby runtime = JavaEmbedUtils.initialize(List.of("a/custom/load/path"));
+ *
+ *   RubyRuntimeAdapter evaler = JavaEmbedUtils.newRuntimeAdapter();
+ *   IRubyObject rubyObject = evaler.parse(runtime, expr.toString(), file, line).run());
+ *   SomeClassOrInterface javaObject = JavaEmbedUtils.rubyToJava(rubyObject, SomeClassOrInterface.class);
+ *
+ *   runtime.terminate();
+ * </pre>
  */
 public class JavaEmbedUtils {
     /**
@@ -223,7 +227,7 @@ public class JavaEmbedUtils {
      * @return the result of the invocation.
      */
     @SuppressWarnings("deprecation")
-    public static Object invokeMethod(Ruby runtime, Object receiver, String method, Object[] args, Class returnType) {
+    public static <T> T invokeMethod(Ruby runtime, Object receiver, String method, Object[] args, Class<T> returnType) {
         IRubyObject rubyReceiver = receiver != null ? JavaUtil.convertJavaToRuby(runtime, receiver) : runtime.getTopSelf();
 
         IRubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(runtime, args);
@@ -243,7 +247,12 @@ public class JavaEmbedUtils {
     /**
      * Convert a Ruby object to a Java object.
      */
-    public static Object rubyToJava(Ruby runtime, IRubyObject value, Class type) {
+    public static <T> T rubyToJava(IRubyObject value, Class<T> type) {
+        return value.toJava(type);
+    }
+
+    // @Deprecated
+    public static <T> T rubyToJava(Ruby runtime, IRubyObject value, Class<T> type) {
         return value.toJava(type);
     }
 
@@ -252,8 +261,8 @@ public class JavaEmbedUtils {
      * @param value to be converted
      * @return the converted object
      */
-    public static Object rubyToJava(IRubyObject value) {
-        return value.toJava(Object.class);
+    public static <T> T rubyToJava(IRubyObject value) {
+        return (T) value.toJava(Object.class);
     }
 
     /**
@@ -261,8 +270,6 @@ public class JavaEmbedUtils {
      */
     @SuppressWarnings("deprecation")
     public static IRubyObject javaToRuby(Ruby runtime, Object value) {
-        if (value instanceof IRubyObject) return (IRubyObject) value;
-
         IRubyObject result = JavaUtil.convertJavaToUsableRubyObject(runtime, value);
 
         return result instanceof JavaObject ? Java.wrap(runtime, result) : result;

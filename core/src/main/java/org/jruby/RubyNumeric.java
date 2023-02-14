@@ -875,6 +875,9 @@ public class RubyNumeric extends RubyObject {
                         RubyNumeric.positiveInt(context, y)) ||
                         (x.isPositive() &&
                                 RubyNumeric.negativeInt(context, y)))) {
+            if (y instanceof RubyFloat && Double.isInfinite(((RubyFloat)y).value)) {
+                return x;
+            }
             return sites.op_minus.call(context, z, z, y);
         }
         return z;

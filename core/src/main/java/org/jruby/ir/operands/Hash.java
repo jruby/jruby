@@ -119,6 +119,8 @@ public class Hash extends Operand {
         RubyHash hash;
         KeyValuePair<Operand, Operand>[] pairs = this.pairs;
         int index = 0;
+        int length = pairs.length / 2;
+        boolean smallHash = length <= 10;
 
         if (isKeywordRest()) {
             // Dup the rest args hash and use that as the basis for inserting the non-rest args
@@ -128,7 +130,7 @@ public class Hash extends Operand {
             // Skip the first pair
             index++;
         } else {
-            hash = RubyHash.newHash(runtime);
+            hash = smallHash ? RubyHash.newSmallHash(runtime) : RubyHash.newHash(runtime);
         }
 
 
@@ -137,7 +139,11 @@ public class Hash extends Operand {
             IRubyObject key = (IRubyObject) pair.getKey().retrieve(context, self, currScope, currDynScope, temp);
             IRubyObject value = (IRubyObject) pair.getValue().retrieve(context, self, currScope, currDynScope, temp);
 
-            hash.fastASetCheckString(runtime, key, value);
+            if (smallHash) {
+                hash.fastASetSmallCheckString(runtime, key, value);
+            } else {
+                hash.fastASetCheckString(runtime, key, value);
+            }
         }
 
         return hash;

@@ -122,8 +122,27 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
         RubyClass receiverClass = aReceiver.getMetaClass();
         
         receiverClass.checkValidBindTargetFrom(context, (RubyModule) owner(context), true);
-        
-        return RubyMethod.newMethod(implementationModule, methodName, receiverClass, originName, entry, aReceiver);
+
+        CacheEntry methodEntry = convertUnboundMethodToCallableEntry(context, receiverClass);
+
+        return RubyMethod.newMethod(implementationModule, methodName, receiverClass, originName, methodEntry, aReceiver);
+    }
+
+    private CacheEntry convertUnboundMethodToCallableEntry(ThreadContext context, RubyClass receiverClass) {
+        CacheEntry methodEntry = entry;
+
+        if (implementationModule.isModule()) {
+            IncludedModuleWrapper alreadyIncluded = receiverClass.findModuleInAncestors(implementationModule);
+
+            if (alreadyIncluded != null) {
+                methodEntry = new CacheEntry(method, alreadyIncluded, entry.token);
+            } else {
+                RubyModule boundModule = new IncludedModuleWrapper(context.runtime, receiverClass, implementationModule);
+                methodEntry = new CacheEntry(method, boundModule, entry.token);
+            }
+        }
+
+        return methodEntry;
     }
 
     @JRubyMethod(name = "clone")
@@ -138,9 +157,13 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
         IRubyObject[] newArgs = new IRubyObject[args.length - 1];
         System.arraycopy(args, 1, newArgs, 0, args.length - 1);
 
-        receiver.getMetaClass().checkValidBindTargetFrom(context, (RubyModule) owner(context), true);
+        RubyClass receiverClass = receiver.getMetaClass();
 
-        return method.call(context, receiver, implementationModule, methodName, newArgs, block);
+        receiverClass.checkValidBindTargetFrom(context, (RubyModule) owner(context), true);
+
+        CacheEntry methodEntry = convertUnboundMethodToCallableEntry(context, receiverClass);
+
+        return method.call(context, receiver, methodEntry.sourceModule, methodName, newArgs, block);
     }
 
     @JRubyMethod(name = {"inspect", "to_s"})

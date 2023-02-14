@@ -163,6 +163,15 @@ public class JRubyCallSite extends MutableCallSite {
     public static final Signature STANDARD_SITE_SIG_2ARG = STANDARD_SITE_SIG_1ARG.appendArg("arg1", IRubyObject.class);
     public static final Signature STANDARD_SITE_SIG_3ARG = STANDARD_SITE_SIG_2ARG.appendArg("arg2", IRubyObject.class);
     public static final Signature STANDARD_SITE_SIG_NARG = STANDARD_SITE_SIG.appendArg("args", IRubyObject[].class);
+
+    public static final Signature STANDARD_FSITE_SIG = Signature
+            .returning(IRubyObject.class)
+            .appendArg("context", ThreadContext.class)
+            .appendArg("self", IRubyObject.class);
+    public static final Signature STANDARD_FSITE_SIG_1ARG = STANDARD_FSITE_SIG.appendArg("arg0", IRubyObject.class);
+    public static final Signature STANDARD_FSITE_SIG_2ARG = STANDARD_FSITE_SIG_1ARG.appendArg("arg1", IRubyObject.class);
+    public static final Signature STANDARD_FSITE_SIG_3ARG = STANDARD_FSITE_SIG_2ARG.appendArg("arg2", IRubyObject.class);
+    public static final Signature STANDARD_FSITE_SIG_NARG = STANDARD_FSITE_SIG.appendArg("args", IRubyObject[].class);
     
     public static final Signature[] STANDARD_SITE_SIGS = {
         STANDARD_SITE_SIG,

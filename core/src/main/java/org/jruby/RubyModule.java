@@ -81,7 +81,6 @@ import org.jruby.internal.runtime.methods.AttrWriterMethod;
 import org.jruby.internal.runtime.methods.DefineMethodMethod;
 import org.jruby.internal.runtime.methods.DelegatingDynamicMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.IRMethodArgs;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.internal.runtime.methods.NativeCallMethod;
 import org.jruby.internal.runtime.methods.PartialDelegatingMethod;
@@ -2981,7 +2980,7 @@ public class RubyModule extends RubyObject {
                 if (!method.isNative()) {
                     Signature signature = method.getSignature();
                     if (signature.hasRest() && !signature.hasKwargs()) {
-                        ((IRMethodArgs) method).setRuby2Keywords();
+                        method.setRuby2Keywords();
                     } else {
                         context.runtime.getWarnings().warn(IRubyWarnings.ID.MISCELLANEOUS, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (method accepts keywords or method does not accept argument splat)"));
                     }
@@ -3284,7 +3283,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "include", required = 1, rest = true)
     public RubyModule include(IRubyObject[] modules) {
         if (this.isRefinement()) {
-            getRuntime().getWarnings().warnDeprecated("deprecated method to be removed: Refinement#include");
+            getRuntime().getWarnings().warnDeprecated(ID.DEPRECATED_METHOD, "deprecated method to be removed: Refinement#include");
         }
 
         for (IRubyObject module: modules) {
@@ -3571,11 +3570,12 @@ public class RubyModule extends RubyObject {
 
         if (!parents) mod = getMethodLocation();
 
-        DynamicMethod method = mod.searchMethod(name);
+        CacheEntry entry = mod.searchWithCache(name);
+        DynamicMethod method = entry.method;
 
         if (method.isUndefined()) return Visibility.UNDEFINED;
 
-        if (!parents && method.getDefinedClass() != mod) return Visibility.UNDEFINED;
+        if (!parents && entry.sourceModule != mod) return Visibility.UNDEFINED;
 
         return method.getVisibility();
     }
@@ -3788,6 +3788,21 @@ public class RubyModule extends RubyObject {
 
             currentInclusionPoint = proceedWithInclude(currentInclusionPoint, nextModule.getDelegate());
         }
+    }
+
+    IncludedModuleWrapper findModuleInAncestors(RubyModule arg) {
+        for (RubyClass nextClass = getSuperClass(); nextClass != null; nextClass = nextClass.getSuperClass()) {
+            if (nextClass.isIncluded()) {
+                // does the class equal the module
+                if (nextClass.getDelegate() == arg.getDelegate()) {
+                    // next in hierarchy is an included version of the module we're attempting,
+                    // so we skip including it
+                    return (IncludedModuleWrapper) nextClass;
+                }
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -4437,7 +4452,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "prepend", required = 1, rest = true)
     public IRubyObject prepend(ThreadContext context, IRubyObject[] modules) {
         if (this.isRefinement()) {
-            context.runtime.getWarnings().warnDeprecated("deprecated method to be removed: Refinement#prepend");
+            context.runtime.getWarnings().warnDeprecated(ID.DEPRECATED_METHOD, "deprecated method to be removed: Refinement#prepend");
         }
 
         // MRI checks all types first:
@@ -5310,7 +5325,7 @@ public class RubyModule extends RubyObject {
         if (entry.deprecated) {
             final Ruby runtime = getRuntime();
             String parent = "Object".equals(getName()) ? "" : getName();
-            runtime.getWarnings().warnDeprecated("constant " + parent + "::" + name);
+            runtime.getWarnings().warnDeprecated(ID.CONSTANT_DEPRECATED, "constant " + parent + "::" + name + " is deprecated");
         }
 
         return entry;

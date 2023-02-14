@@ -7,6 +7,7 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyRational;
 import org.jruby.RubySymbol;
 import org.jruby.ast.*;
+import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.compiler.NotCompilableException;
@@ -628,8 +629,11 @@ public class IRBuilder {
         Node valueNode = multipleAsgnNode.getValueNode();
         Operand values = build(valueNode);
         Variable ret = getValueInTemporaryVariable(values);
-        if (valueNode instanceof ArrayNode) {
+        if (valueNode instanceof ArrayNode || valueNode instanceof ZArrayNode) {
             buildMultipleAsgn19Assignment(multipleAsgnNode, null, ret);
+        } else if (valueNode instanceof ILiteralNode) {
+            // treat a single literal value as a single-element array
+            buildMultipleAsgn19Assignment(multipleAsgnNode, null, new Array(new Operand[]{ret}));
         } else {
             Variable tmp = createTemporaryVariable();
             addInstr(new ToAryInstr(tmp, ret));
@@ -1310,23 +1314,15 @@ public class IRBuilder {
         Operand[] args = setupCallArgs(callNode.getArgsNode(), flags);
         Operand block = setupCallClosure(callNode.getIterNode());
 
-        if ((flags[0] & CALL_KEYWORD) != 0) {
-            if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
-                Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
-                if_else(test, manager.getTrue(),
-                        () -> receiveBreakException(block,
-                                determineIfProcNew(receiverNode,
-                                        CallInstr.create(scope, NORMAL, result, name, receiver, removeArg(args), block, flags[0]))),
-                        () -> receiveBreakException(block,
-                                determineIfProcNew(receiverNode,
-                                        CallInstr.create(scope, NORMAL, result, name, receiver, args, block, flags[0]))));
-
-            } else {  // {a: 1, b: 2}
-                determineIfWeNeedLineNumber(callNode); // buildOperand for call was papered over by args operand building so we check once more.
-                receiveBreakException(block,
-                        determineIfProcNew(receiverNode,
-                                CallInstr.create(scope, NORMAL, result, name, receiver, args, block, flags[0])));
-            }
+        if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
+            Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
+            if_else(test, manager.getTrue(),
+                    () -> receiveBreakException(block,
+                            determineIfProcNew(receiverNode,
+                                    CallInstr.create(scope, NORMAL, result, name, receiver, removeArg(args), block, flags[0]))),
+                    () -> receiveBreakException(block,
+                            determineIfProcNew(receiverNode,
+                                    CallInstr.create(scope, NORMAL, result, name, receiver, args, block, flags[0]))));
         } else {
             determineIfWeNeedLineNumber(callNode); // buildOperand for call was papered over by args operand building so we check once more.
             receiveBreakException(block,
@@ -3529,30 +3525,25 @@ public class IRBuilder {
         Variable result = aResult == null ? createTemporaryVariable() : aResult;
         int[] flags = new int[] { 0 };
         Operand[] args = setupCallArgs(callArgsNode, flags);
+
+        // check for refinement calls before building any closure
+        determineIfMaybeRefined(fcallNode.getName(), args);
+
         Operand block = setupCallClosure(fcallNode.getIterNode());
 
-        if ((flags[0] & CALL_KEYWORD) != 0) {
-            if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
-                Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
-                if_else(test, manager.getTrue(),
-                        () -> receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), removeArg(args), block, flags[0])),
-                        () -> receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), args, block, flags[0])));
-
-            } else {  // {a: 1, b: 2}
-                determineIfWeNeedLineNumber(fcallNode); // buildOperand for fcall was papered over by args operand building so we check once more.
-                receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), args, block, flags[0]));
-            }
+        if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
+            Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
+            if_else(test, manager.getTrue(),
+                    () -> receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), removeArg(args), block, flags[0])),
+                    () -> receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), args, block, flags[0])));
         } else {
-            determineIfMaybeRefined(fcallNode.getName(), args);
-
             // We will stuff away the iters AST source into the closure in the hope we can convert
             // this closure to a method.
             if (CommonByteLists.DEFINE_METHOD_METHOD.equals(fcallNode.getName().getBytes()) && block instanceof WrappedIRClosure) {
                 IRClosure closure = ((WrappedIRClosure) block).getClosure();
 
                 // To convert to a method we need its variable scoping to appear like a normal method.
-                if (!closure.accessesParentsLocalVariables() &&
-                        fcallNode.getIterNode() instanceof IterNode) {
+                if (!closure.accessesParentsLocalVariables() && fcallNode.getIterNode() instanceof IterNode) {
                     closure.setSource((IterNode) fcallNode.getIterNode());
                 }
             }
@@ -3588,14 +3579,28 @@ public class IRBuilder {
         IRScope outerScope = scope.getNearestTopLocalVariableScope();
 
         // 'using single_mod_arg' possible nearly everywhere but method scopes.
-        if (!(outerScope instanceof IRMethod) && args.length == 1
-                && (
-                CommonByteLists.USING_METHOD.equals(methodName.getBytes())
-                        // FIXME: This sets the bit for the whole module, but really only the refine block needs it
-                        || CommonByteLists.REFINE_METHOD.equals(methodName.getBytes())
-        )) {
-            scope.setIsMaybeUsingRefinements();
+        boolean refinement = false;
+        if (!(outerScope instanceof IRMethod)) {
+            ByteList methodBytes = methodName.getBytes();
+            if (args.length == 1) {
+                refinement = isRefinementCall(methodBytes);
+            } else if (args.length == 2
+                    && CommonByteLists.SEND.equal(methodBytes)) {
+                if (args[0] instanceof Symbol) {
+                    Symbol sendName = (Symbol) args[0];
+                    methodBytes = sendName.getBytes();
+                    refinement = isRefinementCall(methodBytes);
+                }
+            }
         }
+
+        if (refinement) scope.setIsMaybeUsingRefinements();
+    }
+
+    private static boolean isRefinementCall(ByteList methodBytes) {
+        return CommonByteLists.USING_METHOD.equals(methodBytes)
+                // FIXME: This sets the bit for the whole module, but really only the refine block needs it
+                || CommonByteLists.REFINE_METHOD.equals(methodBytes);
     }
 
     public Operand buildFixnum(FixnumNode node) {
@@ -4668,7 +4673,7 @@ public class IRBuilder {
                     () -> receiveBreakException(block,
                             determineSuperInstr(zsuperResult, addArg(args, keywordRest), block, flags[0], inClassBody, isInstanceMethod)));
         } else {
-            Operand[] args = getCallOperands(scope, callArgs, keywordArgs, flags);
+            Operand[] args = getZSuperCallOperands(scope, callArgs, keywordArgs, flags);
             receiveBreakException(block,
                     determineSuperInstr(zsuperResult, args, block, flags[0], inClassBody, isInstanceMethod));
         }
@@ -4700,20 +4705,13 @@ public class IRBuilder {
         int[] flags = new int[] { 0 };
         Operand[] args = setupCallArgs(callNode.getArgsNode(), flags);
 
-        if ((flags[0] & CALL_KEYWORD) != 0) {
-            if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
-                Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
-                if_else(test, manager.getTrue(),
-                        () -> receiveBreakException(block,
-                                determineSuperInstr(result, removeArg(args), block, flags[0], inClassBody, isInstanceMethod)),
-                        () -> receiveBreakException(block,
-                                determineSuperInstr(result, args, block, flags[0], inClassBody, isInstanceMethod)));
-
-            } else {  // {a: 1, b: 2}
-                determineIfWeNeedLineNumber(callNode); // buildOperand for fcall was papered over by args operand building so we check once more.
-                receiveBreakException(block,
-                        determineSuperInstr(result, args, block, flags[0], inClassBody, isInstanceMethod));
-            }
+        if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
+            Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
+            if_else(test, manager.getTrue(),
+                    () -> receiveBreakException(block,
+                            determineSuperInstr(result, removeArg(args), block, flags[0], inClassBody, isInstanceMethod)),
+                    () -> receiveBreakException(block,
+                            determineSuperInstr(result, args, block, flags[0], inClassBody, isInstanceMethod)));
         } else {
             determineIfWeNeedLineNumber(callNode); // buildOperand for fcall was papered over by args operand building so we check once more.
             receiveBreakException(block,
@@ -4825,11 +4823,15 @@ public class IRBuilder {
 
         boolean unwrap = true;
         Node argNode = node.getArgsNode();
-        // FIXME: This is likely wrong. single argnode array may only be the kwarg
         // Get rid of one level of array wrapping
         if (argNode != null && (argNode instanceof ArrayNode) && ((ArrayNode)argNode).size() == 1) {
-            argNode = ((ArrayNode)argNode).getLast();
-            unwrap = false;
+            Node onlyArg = ((ArrayNode)argNode).getLast();
+
+            // We should not unwrap if it is a keyword argument.
+            if (!(onlyArg instanceof HashNode) || ((HashNode) onlyArg).isLiteral()) {
+                argNode = onlyArg;
+                unwrap = false;
+            }
         }
 
         Variable ret = result == null ? createTemporaryVariable() : result;
@@ -4892,7 +4894,7 @@ public class IRBuilder {
                         () -> addInstr(new ZSuperInstr(scope, zsuperResult, buildSelf(), args, block, flags[0], scope.maybeUsingRefinements())),
                         () -> addInstr(new ZSuperInstr(scope, zsuperResult, buildSelf(), addArg(args, keywordRest), block, flags[0], scope.maybeUsingRefinements())));
             } else {
-                Operand[] args = adjustVariableDepth(getCallOperands(scope, callArgs, keywordArgs, flags), depthFromSuper);
+                Operand[] args = adjustVariableDepth(getZSuperCallOperands(scope, callArgs, keywordArgs, flags), depthFromSuper);
                 addInstr(new ZSuperInstr(scope, zsuperResult, buildSelf(), args, block, flags[0], scope.maybeUsingRefinements()));
             }
         } else {
@@ -5058,8 +5060,8 @@ public class IRBuilder {
         }
     }
 
-    private static Operand[] getCallOperands(IRScope scope, List<Operand> callArgs, List<KeyValuePair<Operand, Operand>> keywordArgs, int[] flags) {
-        if (scope.receivesKeywordArgs()) {
+    private static Operand[] getZSuperCallOperands(IRScope scope, List<Operand> callArgs, List<KeyValuePair<Operand, Operand>> keywordArgs, int[] flags) {
+        if (scope.getNearestTopLocalVariableScope().receivesKeywordArgs()) {
             flags[0] |= CALL_KEYWORD;
             int i = 0;
             Operand[] args = new Operand[callArgs.size() + 1];

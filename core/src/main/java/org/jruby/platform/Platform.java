@@ -114,6 +114,7 @@ public abstract class Platform {
     public static final int BIG_ENDIAN = 4321;
     public static final int LITTLE_ENDIAN = 1234;
     public static final int BYTE_ORDER = ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN) ? BIG_ENDIAN : LITTLE_ENDIAN;
+    public static final int BIT_WIDTH = jnr.ffi.Platform.getNativePlatform().is32Bit() ? 32 : 64;
 
     public static final boolean IS_GCJ = JVM.equals(GCJ);
     public static final boolean IS_J9 = JVM.equals(OPENJ9) || JVM.equals(IBM);

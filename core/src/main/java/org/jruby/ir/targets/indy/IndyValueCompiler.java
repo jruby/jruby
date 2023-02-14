@@ -87,6 +87,11 @@ public class IndyValueCompiler implements ValueCompiler {
         compiler.adapter.invokedynamic("emptyString", sig(RubyString.class, ThreadContext.class), Bootstrap.EMPTY_STRING_BOOTSTRAP, encoding.toString());
     }
 
+    public void pushBufferString(Encoding encoding, int size) {
+        compiler.loadContext();
+        compiler.adapter.invokedynamic("bufferString", sig(RubyString.class, ThreadContext.class), Bootstrap.BUFFER_STRING_BOOTSTRAP, encoding.toString(), size);
+    }
+
     public void pushByteList(ByteList bl) {
         compiler.adapter.invokedynamic("bytelist", sig(ByteList.class), Bootstrap.bytelist(), RubyEncoding.decodeRaw(bl), bl.getEncoding().toString());
     }
@@ -111,6 +116,11 @@ public class IndyValueCompiler implements ValueCompiler {
     public void pushSymbolProc(final ByteList bytes) {
         compiler.loadContext();
         compiler.adapter.invokedynamic("symbolProc", sig(JVM.OBJECT, ThreadContext.class), SymbolProcObjectSite.BOOTSTRAP, RubyEncoding.decodeRaw(bytes), bytes.getEncoding().toString());
+    }
+
+    public void pushRubyEncoding(Encoding encoding) {
+        compiler.loadContext();
+        compiler.adapter.invokedynamic("rubyEncoding", sig(RubyEncoding.class, ThreadContext.class), Bootstrap.contextValueString(), new String(encoding.getName()));
     }
 
     public void pushEncoding(Encoding encoding) {

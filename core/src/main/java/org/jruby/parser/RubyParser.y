@@ -793,14 +793,17 @@ expr            : command_call
                     ctxt.in_kwarg = true;
                 } {
                     $$ = p.push_pvtbl();
+                } {
+                    $$ = p.push_pktbl();
                 } p_top_expr_body {
+                    p.pop_pvtbl($<Set>5);
                     p.pop_pvtbl($<Set>4);
                     LexContext ctxt = p.getLexContext();
                     ctxt.in_kwarg = $<Boolean>3;
                     /*%%%*/
-                    $$ = p.newPatternCaseNode(@1.start(), $1, p.newIn(@1.start(), $5, null, null));
+                    $$ = p.newPatternCaseNode(@1.start(), $1, p.newIn(@1.start(), $6, null, null));
                     /*% %*/
-                    /*% ripper: case!($1, in!($5, Qnil, Qnil)) %*/
+                    /*% ripper: case!($1, in!($6, Qnil, Qnil)) %*/
                 }
                 | arg keyword_in {
                     p.value_expr($1);
@@ -811,14 +814,17 @@ expr            : command_call
                     ctxt.in_kwarg = true;
                 } {
                     $$ = p.push_pvtbl();
+                } {
+                    $$ = p.push_pktbl();
                 } p_top_expr_body {
+                    p.pop_pvtbl($<Set>5);
                     p.pop_pvtbl($<Set>4);
                     LexContext ctxt = p.getLexContext();
                     ctxt.in_kwarg = $<Boolean>3;
                     /*%%%*/
-                    $$ = p.newPatternCaseNode(@1.start(), $1, p.newIn(@1.start(), $5, new TrueNode(@1.start()), new FalseNode(@1.start())));
+                    $$ = p.newPatternCaseNode(@1.start(), $1, p.newIn(@1.start(), $6, new TrueNode(@1.start()), new FalseNode(@1.start())));
                     /*% %*/
-                    /*% ripper: case!($1, in!($5, Qnil, Qnil)) %*/
+                    /*% ripper: case!($1, in!($6, Qnil, Qnil)) %*/
                 }
 		| arg %prec tLBRACE_ARG
 

@@ -20,6 +20,7 @@ import org.jruby.ir.targets.indy.IndyDynamicValueCompiler;
 import org.jruby.ir.targets.indy.IndyGlobalVariableCompiler;
 import org.jruby.ir.targets.indy.IndyInstanceVariableCompiler;
 import org.jruby.ir.targets.indy.IndyInvocationCompiler;
+import org.jruby.ir.targets.indy.IndyLocalVariableCompiler;
 import org.jruby.ir.targets.indy.IndyValueCompiler;
 import org.jruby.ir.targets.indy.IndyYieldCompiler;
 import org.jruby.ir.targets.simple.NormalArgumentsCompiler;
@@ -31,6 +32,7 @@ import org.jruby.ir.targets.simple.NormalDynamicValueCompiler;
 import org.jruby.ir.targets.simple.NormalGlobalVariableCompiler;
 import org.jruby.ir.targets.simple.NormalInstanceVariableCompiler;
 import org.jruby.ir.targets.simple.NormalInvocationCompiler;
+import org.jruby.ir.targets.simple.NormalLocalVariableCompiler;
 import org.jruby.ir.targets.simple.NormalValueCompiler;
 import org.jruby.ir.targets.simple.NormalYieldCompiler;
 import org.jruby.parser.StaticScope;
@@ -72,6 +74,7 @@ public class IRBytecodeAdapter {
                 this.checkpointCompiler = new IndyCheckpointCompiler(this);
                 this.instanceVariableCompiler = new IndyInstanceVariableCompiler(this);
                 this.globalVariableCompiler = new IndyGlobalVariableCompiler(this);
+                this.localVariableCompiler = new IndyLocalVariableCompiler(this);
                 this.yieldCompiler = new IndyYieldCompiler(this);
                 this.blockCompiler = new IndyBlockCompiler(this);
                 this.argumentsCompiler = new IndyArgumentsCompiler(this);
@@ -85,6 +88,7 @@ public class IRBytecodeAdapter {
                 this.checkpointCompiler = new NormalCheckpointCompiler(this);
                 this.instanceVariableCompiler = new NormalInstanceVariableCompiler(this);
                 this.globalVariableCompiler = new IndyGlobalVariableCompiler(this);
+                this.localVariableCompiler = new NormalLocalVariableCompiler(this);
                 this.yieldCompiler = new IndyYieldCompiler(this);
                 this.blockCompiler = new IndyBlockCompiler(this);
                 this.argumentsCompiler = new NormalArgumentsCompiler(this);
@@ -98,6 +102,7 @@ public class IRBytecodeAdapter {
                 this.checkpointCompiler = new NormalCheckpointCompiler(this);
                 this.instanceVariableCompiler = new NormalInstanceVariableCompiler(this);
                 this.globalVariableCompiler = new NormalGlobalVariableCompiler(this);
+                this.localVariableCompiler = new NormalLocalVariableCompiler(this);
                 this.yieldCompiler = new NormalYieldCompiler(this);
                 this.blockCompiler = new NormalBlockCompiler(this);
                 this.argumentsCompiler = new NormalArgumentsCompiler(this);
@@ -178,6 +183,15 @@ public class IRBytecodeAdapter {
      */
     public GlobalVariableCompiler getGlobalVariableCompiler() {
         return globalVariableCompiler;
+    }
+
+    /**
+     * Instance variable compiler.
+     *
+     * @return the instance variable compiler
+     */
+    public LocalVariableCompiler getLocalVariableCompiler() {
+        return localVariableCompiler;
     }
 
     /**
@@ -453,6 +467,7 @@ public class IRBytecodeAdapter {
     protected final ConstantCompiler constantCompiler;
     protected final InstanceVariableCompiler instanceVariableCompiler;
     protected final GlobalVariableCompiler globalVariableCompiler;
+    protected final LocalVariableCompiler localVariableCompiler;
     protected final YieldCompiler yieldCompiler;
     protected final BlockCompiler blockCompiler;
     protected final ArgumentsCompiler argumentsCompiler;

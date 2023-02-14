@@ -25,19 +25,20 @@ public class NormalInstanceVariableCompiler implements InstanceVariableCompiler 
         this.compiler = compiler;
     }
 
-    public void putField(String name) {
-        compiler.adapter.dup2(); // self, value, self, value
-        compiler.adapter.pop(); // self, value, self
-        cacheVariableAccessor(name, true); // self, value, accessor
-        compiler.invokeIRHelper("setVariableWithAccessor", sig(void.class, IRubyObject.class, IRubyObject.class, VariableAccessor.class));
+    public void putField(Runnable target, Runnable value, String name) {
+        target.run();
+        cacheVariableAccessor(name, true);
+        target.run();
+        value.run();
+        compiler.adapter.invokevirtual(p(VariableAccessor.class), "set", sig(void.class, Object.class, Object.class));
     }
 
-    public void getField(String name) {
-        compiler.adapter.dup(); // self, self
-        cacheVariableAccessor(name, false); // self, accessor
-        compiler.loadContext(); // self, accessor, context
-        compiler.adapter.ldc(name);
-        compiler.invokeIRHelper("getVariableWithAccessor", sig(IRubyObject.class, IRubyObject.class, VariableAccessor.class, ThreadContext.class, String.class));
+    public void getField(Runnable source, String name) {
+        source.run();
+        cacheVariableAccessor(name, false);
+        source.run();
+        compiler.loadContext();
+        compiler.adapter.invokevirtual(p(VariableAccessor.class), "getOrNil", sig(IRubyObject.class, Object.class, ThreadContext.class));
     }
 
     /**

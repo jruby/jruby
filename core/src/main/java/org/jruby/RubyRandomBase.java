@@ -107,7 +107,7 @@ public class RubyRandomBase extends RubyObject {
                 if (restrictive) return context.nil;
                 max = -max;
             }
-            return randLimitedFixnum(context, random, max - 1);
+            return randomUlongLimited(context, self, random, max - 1);
         } else {
             BigInteger big = vmax.getBigIntegerValue();
             if (big.equals(BigInteger.ZERO)) {
@@ -142,7 +142,7 @@ public class RubyRandomBase extends RubyObject {
         if (limit == 0) return RubyFixnum.zero(runtime);
         Random impl;
         if (random == null) {
-            impl = new Random();
+            impl = new Random(runtime.getDefaultRandom().random.genrandInt32());
         } else {
             impl = random.impl;
         }
@@ -175,6 +175,34 @@ public class RubyRandomBase extends RubyObject {
 
     public static RubyInteger randLimited(ThreadContext context, BigInteger limit) {
         return limitedBigRand(context, getDefaultRand(context), limit);
+    }
+
+    // c: random_ulong_limited
+    // Note this is a modified version of randomUlongLimitedBig due to lack of ulong in Java
+    private static IRubyObject randomUlongLimited(ThreadContext context, IRubyObject self, RubyRandom.RandomType random, long limit) {
+        if (limit == 0) {
+            return RubyFixnum.zero(context.runtime);
+        }
+        if (random == null) {
+            int octets = limit <= Integer.MAX_VALUE ? 4 : 8;
+
+            byte[] octetBytes = objRandomBytes(context, self, octets);
+            long randLong = 0L;
+            for (byte b : octetBytes) {
+                randLong = (randLong << 8) + Byte.toUnsignedLong(b);
+            }
+
+            if (randLong < 0) {
+                randLong = -randLong;
+            }
+
+            if (randLong > limit) {
+                randLong = randLong % limit;
+            }
+
+            return RubyFixnum.newFixnum(context.runtime, randLong);
+        }
+        return randLimitedFixnum(context, random, limit);
     }
 
     // c: random_ulong_limited_big

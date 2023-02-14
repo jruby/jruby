@@ -68,6 +68,8 @@ public class RubyBignum extends RubyInteger {
     private static final long MAX = (1L << (BIT_SIZE - 1)) - 1;
     public static final BigInteger LONG_MAX = BigInteger.valueOf(MAX);
     public static final BigInteger LONG_MIN = BigInteger.valueOf(-MAX - 1);
+    public static final BigInteger INTEGER_MAX = BigInteger.valueOf(Integer.MAX_VALUE);
+    public static final BigInteger INTEGER_MIN = BigInteger.valueOf(Integer.MIN_VALUE);
     public static final BigInteger ULONG_MAX = BigInteger.valueOf(1).shiftLeft(BIT_SIZE).subtract(BigInteger.valueOf(1));
 
     final BigInteger value;
@@ -909,6 +911,11 @@ public class RubyBignum extends RubyInteger {
                     IRubyObject tmp = otherBignum.checkShiftDown(context, this);
                     if (tmp != null) return tmp;
                 }
+
+                if (otherBignum.value.compareTo(INTEGER_MAX) > 0) {
+                    throw context.runtime.newRaiseException(context.runtime.getNoMemoryError(), "failed to allocate memory");
+                }
+
                 shift = big2long(otherBignum);
                 break;
             }
@@ -920,6 +927,14 @@ public class RubyBignum extends RubyInteger {
 
     @Override
     public RubyInteger op_lshift(ThreadContext context, long shift) {
+        if (value.signum() == 0) {
+            return RubyFixnum.zero(context.runtime);
+        }
+
+        if (shift > Integer.MAX_VALUE) {
+            throw context.runtime.newRaiseException(context.runtime.getNoMemoryError(), "failed to allocate memory");
+        }
+
         return bignorm(context.runtime, value.shiftLeft((int) shift));
     }
 
@@ -951,6 +966,11 @@ public class RubyBignum extends RubyInteger {
                     IRubyObject tmp = otherBignum.checkShiftDown(context, this);
                     if (tmp != null) return tmp;
                 }
+
+                if (otherBignum.value.compareTo(INTEGER_MIN) < 0) {
+                    throw context.runtime.newRaiseException(context.runtime.getNoMemoryError(), "failed to allocate memory");
+                }
+
                 shift = big2long(otherBignum);
                 break;
             }
@@ -962,6 +982,14 @@ public class RubyBignum extends RubyInteger {
 
     @Override
     public RubyInteger op_rshift(ThreadContext context, long shift) {
+        if (value.signum() == 0) {
+            return RubyFixnum.zero(context.runtime);
+        }
+
+        if (shift < Integer.MIN_VALUE) {
+            throw context.runtime.newRaiseException(context.runtime.getNoMemoryError(), "failed to allocate memory");
+        }
+
         return bignorm(context.runtime, value.shiftRight((int) shift));
     }
 
@@ -1090,9 +1118,9 @@ public class RubyBignum extends RubyInteger {
 
         if (Double.isInfinite(yd)) {
             if (yd > 0.0) {
-                return RubyFixnum.one(runtime);
-            } else {
                 return RubyFixnum.minus_one(runtime);
+            } else {
+                return RubyFixnum.one(runtime);
             }
         }
 

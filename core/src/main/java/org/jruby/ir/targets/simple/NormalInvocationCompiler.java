@@ -5,6 +5,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.jruby.ir.instructions.AsStringInstr;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.EQQInstr;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -75,41 +76,82 @@ public class NormalInvocationCompiler implements InvocationCompiler {
 
         IRBytecodeAdapter.BlockPassType blockPassType = IRBytecodeAdapter.BlockPassType.fromIR(call);
         boolean blockGiven = blockPassType.given();
-        if (blockGiven) {
-            switch (arity) {
-                case -1:
-                    incoming = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class));
-                    outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class));
-                    break;
-                case 0:
-                case 1:
-                case 2:
-                case 3:
-                    incoming = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity, Block.class));
-                    outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity, Block.class));
-                    break;
-                default:
-                    incoming = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity, Block.class));
-                    outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class));
-                    break;
+        boolean functional = call.getCallType() == CallType.FUNCTIONAL || call.getCallType() == CallType.VARIABLE;
+        if (functional) {
+            if (blockGiven) {
+                switch (arity) {
+                    case -1:
+                        incoming = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class));
+                        outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class));
+                        break;
+                    case 0:
+                    case 1:
+                    case 2:
+                    case 3:
+                        incoming = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, arity, Block.class));
+                        outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, arity, Block.class));
+                        break;
+                    default:
+                        incoming = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, arity, Block.class));
+                        outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class));
+                        break;
+                }
+            } else {
+                switch (arity) {
+                    case -1:
+                        incoming = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT_ARRAY));
+                        outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT_ARRAY));
+                        break;
+                    case 0:
+                    case 1:
+                    case 2:
+                    case 3:
+                        incoming = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, arity));
+                        outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, arity));
+                        break;
+                    default:
+                        incoming = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, arity));
+                        outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT_ARRAY));
+                        break;
+                }
             }
         } else {
-            switch (arity) {
-                case -1:
-                    incoming = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY));
-                    outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY));
-                    break;
-                case 0:
-                case 1:
-                case 2:
-                case 3:
-                    incoming = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity));
-                    outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity));
-                    break;
-                default:
-                    incoming = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity));
-                    outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY));
-                    break;
+            if (blockGiven) {
+                switch (arity) {
+                    case -1:
+                        incoming = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class));
+                        outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class));
+                        break;
+                    case 0:
+                    case 1:
+                    case 2:
+                    case 3:
+                        incoming = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity, Block.class));
+                        outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity, Block.class));
+                        break;
+                    default:
+                        incoming = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity, Block.class));
+                        outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class));
+                        break;
+                }
+            } else {
+                switch (arity) {
+                    case -1:
+                        incoming = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY));
+                        outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY));
+                        break;
+                    case 0:
+                    case 1:
+                    case 2:
+                    case 3:
+                        incoming = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity));
+                        outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity));
+                        break;
+                    default:
+                        incoming = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity));
+                        outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY));
+                        break;
+                }
             }
         }
 
@@ -126,36 +168,45 @@ public class NormalInvocationCompiler implements InvocationCompiler {
 
             // use call site to invoke
             compiler.adapter.aload(0); // context
-            compiler.adapter.aload(1); // caller
-            compiler.adapter.aload(2); // self
+            int selfBase;
+            if (functional)  {
+                selfBase = 1;
+            } else {
+                selfBase = 2;
+                compiler.adapter.aload(1); // caller
+            }
+            compiler.adapter.aload(selfBase); // self
 
             switch (arity) {
                 case -1:
                 case 1:
-                    compiler.adapter.aload(3);
-                    if (blockGiven) compiler.adapter.aload(4);
+                    compiler.adapter.aload(selfBase + 1);
+                    if (blockGiven) compiler.adapter.aload(selfBase + 2);
                     break;
                 case 0:
-                    if (blockGiven) compiler.adapter.aload(3);
+                    if (blockGiven) compiler.adapter.aload(selfBase + 1);
                     break;
                 case 2:
-                    compiler.adapter.aload(3);
-                    compiler.adapter.aload(4);
-                    if (blockGiven) compiler.adapter.aload(5);
+                    compiler.adapter.aload(selfBase + 1);
+                    compiler.adapter.aload(selfBase + 2);
+                    if (blockGiven) compiler.adapter.aload(selfBase + 3);
                     break;
                 case 3:
-                    compiler.adapter.aload(3);
-                    compiler.adapter.aload(4);
-                    compiler.adapter.aload(5);
-                    if (blockGiven) compiler.adapter.aload(6);
+                    compiler.adapter.aload(selfBase + 1);
+                    compiler.adapter.aload(selfBase + 2);
+                    compiler.adapter.aload(selfBase + 3);
+                    if (blockGiven) compiler.adapter.aload(selfBase + 4);
                     break;
                 default:
-                    IRBytecodeAdapter.buildArrayFromLocals(compiler.adapter, 3, arity);
-                    if (blockGiven) compiler.adapter.aload(3 + arity);
+                    IRBytecodeAdapter.buildArrayFromLocals(compiler.adapter, selfBase + 1, arity);
+                    if (blockGiven) compiler.adapter.aload(selfBase + 1 + arity);
                     break;
             }
 
-            compiler.adapter.invokevirtual(p(CachingCallSite.class), blockPassType.literal() ? "callIter" : "call", outgoingSig);
+            String callName = functional ?
+                    blockPassType.literal() ? "fcallIter" : "fcall" :
+                    blockPassType.literal() ? "callIter" : "call";
+            compiler.adapter.invokevirtual(p(CachingCallSite.class), callName, outgoingSig);
             compiler.adapter.areturn();
         });
 
@@ -165,6 +216,7 @@ public class NormalInvocationCompiler implements InvocationCompiler {
 
     @Override
     public void invokeOtherOneFixnum(String file, CallBase call, long fixnum) {
+        boolean functional = call.getCallType() == CallType.FUNCTIONAL || call.getCallType() == CallType.VARIABLE;
         String id = call.getId();
         if (!MethodIndex.hasFastFixnumOps(id)) {
             compiler.getValueCompiler().pushFixnum(fixnum);
@@ -176,8 +228,15 @@ public class NormalInvocationCompiler implements InvocationCompiler {
             return;
         }
 
-        MethodType incoming = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT));
-        MethodType outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, long.class));
+        MethodType incoming;
+        MethodType outgoing;
+        if (functional) {
+            incoming = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT));
+            outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, long.class));
+        } else {
+            incoming = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT));
+            outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, long.class));
+        }
         String incomingSig = sig(incoming);
         String outgoingSig = sig(outgoing);
 
@@ -202,13 +261,20 @@ public class NormalInvocationCompiler implements InvocationCompiler {
             adapter.putstatic(compiler.getClassData().clsName, methodName, ci(CallSite.class));
 
             // use call site to invoke
+            String callMethod;
             adapter.label(doCall);
             adapter.aload(0); // context
-            adapter.aload(1); // caller
-            adapter.aload(2); // target
+            if (functional) {
+                adapter.aload(1); // target
+                callMethod = "fcall";
+            } else {
+                adapter.aload(1); // caller
+                adapter.aload(2); // target
+                callMethod = "call";
+            }
             adapter.ldc(fixnum); // fixnum
 
-            adapter.invokevirtual(p(CallSite.class), "call", outgoingSig);
+            adapter.invokevirtual(p(CallSite.class), callMethod, outgoingSig);
             adapter.areturn();
         });
 
@@ -218,6 +284,8 @@ public class NormalInvocationCompiler implements InvocationCompiler {
 
     @Override
     public void invokeOtherOneFloat(String file, CallBase call, double flote) {
+        boolean functional = call.getCallType() == CallType.FUNCTIONAL || call.getCallType() == CallType.VARIABLE;
+
         String id = call.getId();
         if (!MethodIndex.hasFastFloatOps(id)) {
             compiler.getValueCompiler().pushFloat(flote);
@@ -229,8 +297,15 @@ public class NormalInvocationCompiler implements InvocationCompiler {
             return;
         }
 
-        MethodType incoming = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT));
-        MethodType outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, double.class));
+        MethodType incoming;
+        MethodType outgoing;
+        if (functional) {
+            incoming = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT));
+            outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, double.class));
+        } else {
+            incoming = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT));
+            outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, double.class));
+        }
         String incomingSig = sig(incoming);
         String outgoingSig = sig(outgoing);
 
@@ -255,13 +330,20 @@ public class NormalInvocationCompiler implements InvocationCompiler {
             adapter.putstatic(compiler.getClassData().clsName, methodName, ci(CallSite.class));
 
             // use call site to invoke
+            String callMethod;
             adapter.label(doCall);
             adapter.aload(0); // context
-            adapter.aload(1); // caller
-            adapter.aload(2); // target
+            if (functional) {
+                adapter.aload(1); // target
+                callMethod = "fcall";
+            } else {
+                adapter.aload(1); // caller
+                adapter.aload(2); // target
+                callMethod = "call";
+            }
             adapter.ldc(flote); // float
 
-            adapter.invokevirtual(p(CallSite.class), "call", outgoingSig);
+            adapter.invokevirtual(p(CallSite.class), callMethod, outgoingSig);
             adapter.areturn();
         });
 
@@ -381,5 +463,11 @@ public class NormalInvocationCompiler implements InvocationCompiler {
         compiler.getValueCompiler().pushCallSite(compiler.getClassData().clsName, compiler.getUniqueSiteName(call.getId()), null, call);
         compiler.adapter.ldc(call.isSplattedValue());
         compiler.invokeIRHelper("isEQQ", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, CallSite.class, boolean.class));
+    }
+
+    @Override
+    public void asString(AsStringInstr call, String scopeFieldName, String file) {
+        invokeOther(file, scopeFieldName, call, 0);
+        compiler.adapter.invokeinterface(p(IRubyObject.class), "asString", sig(RubyString.class));
     }
 }
