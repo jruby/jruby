@@ -2155,8 +2155,20 @@ public class IRBuilder {
     //   for what I consider to be a very low-value error.
     private boolean isTopScope() {
         IRScope topScope = scope.getNearestNonClosurelikeScope();
-        return topScope instanceof IRScriptBody ||
+
+        boolean isTopScope = topScope instanceof IRScriptBody ||
                 (evalType != null && evalType != EvalType.MODULE_EVAL && evalType != EvalType.BINDING_EVAL);
+
+        // we think it could be a top scope but it could still be called from within a module/class which
+        // would then not be a top scope.
+        if (!isTopScope) return false;
+
+        IRScope s = topScope;
+        while (s != null && !(s instanceof IRModuleBody)) {
+            s = s.getLexicalParent();
+        }
+
+        return s == null; // nothing means we walked all the way up.
     }
 
     // @@c
