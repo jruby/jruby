@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
@@ -33,6 +34,8 @@ public class AsStringInstr extends ZeroOperandArgNoBlockCallInstr {
                 Operand.EMPTY_ARRAY,
                 0,
                 isPotentiallyRefined);
+
+        assert isPotentiallyRefined : "AsStringInstr should only be needed in refined scopes";
     }
 
     private AsStringInstr(IRScope scope, Variable result, Operand source, boolean isPotentiallyRefined, CallSite callSite, long callSiteId) {
@@ -48,6 +51,8 @@ public class AsStringInstr extends ZeroOperandArgNoBlockCallInstr {
                 isPotentiallyRefined,
                 callSite,
                 callSiteId);
+
+        assert isPotentiallyRefined : "AsStringInstr should only be needed in refined scopes";
     }
 
     private static Operand nonNull(Operand source) {
@@ -76,11 +81,7 @@ public class AsStringInstr extends ZeroOperandArgNoBlockCallInstr {
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         Object receiver = getReceiver().retrieve(context, self, currScope, currDynScope, temp);
 
-        if (isPotentiallyRefined()) {
-            return IRRuntimeHelpers.asString(context, self, (IRubyObject) receiver, getCallSite());
-        }
-
-        return ((IRubyObject) receiver).asString();
+        return IRRuntimeHelpers.asString(context, self, (IRubyObject) receiver, getCallSite());
     }
 
     @Override

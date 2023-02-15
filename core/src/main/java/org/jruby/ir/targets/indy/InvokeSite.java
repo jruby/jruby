@@ -817,30 +817,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
         // Continue with logic for PIC, BIND, and REBIND
 
-        SmartHandle test;
-
-        if (self instanceof RubySymbol ||
-                self instanceof RubyFixnum ||
-                self instanceof RubyFloat ||
-                self instanceof RubyNil ||
-                self instanceof RubyBoolean.True ||
-                self instanceof RubyBoolean.False) {
-
-            test = SmartBinder
-                    .from(signature.asFold(boolean.class))
-                    .permute("self")
-                    .insert(1, "selfJavaType", self.getClass())
-                    .cast(boolean.class, Object.class, Class.class)
-                    .invoke(TEST_CLASS);
-
-        } else {
-
-            test = SmartBinder
-                    .from(signature.changeReturn(boolean.class))
-                    .permute("self")
-                    .insert(0, "selfClass", RubyClass.class, testClass)
-                    .invokeStaticQuiet(LOOKUP, Bootstrap.class, "testType");
-        }
+        SmartHandle test = testTarget(self, testClass);
 
         gwt = MethodHandles.guardWithTest(test.handle(), target, fallback);
 
@@ -852,6 +829,31 @@ public abstract class InvokeSite extends MutableCallSite {
         tracker.addType(testClass.id);
 
         return target;
+    }
+
+    protected SmartHandle testTarget(IRubyObject self, RubyModule testClass) {
+        if (self instanceof RubySymbol ||
+                self instanceof RubyFixnum ||
+                self instanceof RubyFloat ||
+                self instanceof RubyNil ||
+                self instanceof RubyBoolean.True ||
+                self instanceof RubyBoolean.False) {
+
+            return SmartBinder
+                    .from(signature.asFold(boolean.class))
+                    .permute("self")
+                    .insert(1, "selfJavaType", self.getClass())
+                    .cast(boolean.class, Object.class, Class.class)
+                    .invoke(TEST_CLASS);
+
+        } else {
+
+            return SmartBinder
+                    .from(signature.changeReturn(boolean.class))
+                    .permute("self")
+                    .insert(0, "selfClass", RubyClass.class, testClass)
+                    .invokeStaticQuiet(LOOKUP, Bootstrap.class, "testType");
+        }
     }
 
     private void logMethodMissing() {
