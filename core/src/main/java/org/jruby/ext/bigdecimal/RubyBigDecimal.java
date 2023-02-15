@@ -545,7 +545,7 @@ public class RubyBigDecimal extends RubyNumeric {
         RubyBigDecimal res = newFloatSpecialCases(runtime, arg);
         if (res != null) return res;
 
-        return new RubyBigDecimal(runtime, (RubyClass) recv, new BigDecimal(arg.getDoubleValue(), mathContext));
+        return new RubyBigDecimal(runtime, (RubyClass) recv, new BigDecimal(arg.toString(), mathContext));
     }
 
     private static RubyBigDecimal newFloatSpecialCases(Ruby runtime, RubyFloat val) {
