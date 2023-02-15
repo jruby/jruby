@@ -26,7 +26,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
       - name: cache dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
@@ -59,7 +59,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
       - name: cache dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
@@ -93,7 +93,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
       - name: cache dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
@@ -125,7 +125,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
       - name: cache dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
@@ -168,7 +168,7 @@ jobs:
           java-version: 8
           maven-version: '3.8.7'
       - name: cache dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
@@ -195,7 +195,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
       - name: cache dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
@@ -225,7 +225,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
       - name: cache dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
@@ -260,7 +260,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
       - name: cache dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
@@ -291,7 +291,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
       - name: cache dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
@@ -319,7 +319,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
       - name: cache dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
@@ -357,7 +357,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
       - name: cache dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
@@ -382,7 +382,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
       - name: cache dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
@@ -410,7 +410,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
       - name: cache dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
@@ -440,7 +440,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
       - name: cache dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
@@ -470,7 +470,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
       - name: cache dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
@@ -496,7 +496,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
       - name: cache dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
