@@ -33,7 +33,7 @@ public class GetClassVariableInstr extends GetInstr implements FixedArityInstr {
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         RubyModule module = (RubyModule) getSource().retrieve(context, self, currScope, currDynScope, temp);
 
-        return IRRuntimeHelpers.getClassVariable(context, self, module, getId());
+        return IRRuntimeHelpers.getClassVariable(context, module, getId());
     }
 
     @Override

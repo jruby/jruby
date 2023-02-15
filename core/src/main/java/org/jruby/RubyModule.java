@@ -4545,7 +4545,6 @@ public class RubyModule extends RubyObject {
 
     public IRubyObject getClassVarQuiet(String name) {
         assert IdUtil.isClassVariable(name);
-        Object value;
         RubyModule module = this;
         RubyModule highest = null;
 

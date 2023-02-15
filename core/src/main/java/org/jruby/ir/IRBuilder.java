@@ -1,5 +1,6 @@
 package org.jruby.ir;
 
+import org.jruby.EvalType;
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyComplex;
@@ -28,6 +29,7 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.Signature;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
@@ -322,6 +324,10 @@ public class IRBuilder {
     protected boolean executesOnce = true;
     private int temporaryVariableIndex = -1;
     private boolean needsYieldBlock = false;
+
+    // If set we know which kind of eval is being performed.  Beyond type it also prevents needing to
+    // ask what scope type we are in.
+    public EvalType evalType = null;
 
     // This variable is an out-of-band passing mechanism to pass the method name to the block the
     // method is attached to.  call/fcall will set this and iter building will pass it into the iter
@@ -2155,11 +2161,32 @@ public class IRBuilder {
         return processBodyResult;
     }
 
+    // FIXME: Technically a binding in top-level could get passed which would should still cause an error but this
+    //   scenario is very uncommon combined with setting @@cvar in a place you shouldn't it is an acceptable incompat
+    //   for what I consider to be a very low-value error.
+    private boolean isTopScope() {
+        IRScope topScope = scope.getNearestNonClosurelikeScope();
+
+        boolean isTopScope = topScope instanceof IRScriptBody ||
+                (evalType != null && evalType != EvalType.MODULE_EVAL && evalType != EvalType.BINDING_EVAL);
+
+        // we think it could be a top scope but it could still be called from within a module/class which
+        // would then not be a top scope.
+        if (!isTopScope) return false;
+
+        IRScope s = topScope;
+        while (s != null && !(s instanceof IRModuleBody)) {
+            s = s.getLexicalParent();
+        }
+
+        return s == null; // nothing means we walked all the way up.
+    }
+
     // @@c
     public Operand buildClassVar(ClassVarNode node) {
-        Variable ret = createTemporaryVariable();
-        addInstr(new GetClassVariableInstr(ret, classVarDefinitionContainer(), node.getName()));
-        return ret;
+        if (isTopScope()) return addRaiseError("RuntimeError", "class variable access from toplevel");
+
+        return addResultInstr(new GetClassVariableInstr(temp(), classVarDefinitionContainer(), node.getName()));
     }
 
     // Add the specified result instruction to the scope and return its result variable.
@@ -2175,6 +2202,8 @@ public class IRBuilder {
     //   @@c = 1
     // end
     public Operand buildClassVarAsgn(final ClassVarAsgnNode classVarAsgnNode) {
+        if (isTopScope()) return addRaiseError("RuntimeError", "class variable access from toplevel");
+
         Operand val = build(classVarAsgnNode.getValueNode());
         addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), classVarAsgnNode.getName(), val));
         return val;
@@ -4937,14 +4966,14 @@ public class IRBuilder {
         return false;
     }
 
-    private void addRaiseError(String id, String message) {
-        addRaiseError(id, new MutableString(message));
+    private Operand addRaiseError(String id, String message) {
+        return addRaiseError(id, new MutableString(message));
     }
 
-    private void addRaiseError(String id, Operand message) {
+    private Operand addRaiseError(String id, Operand message) {
         Operand exceptionClass = searchModuleForConst(manager.getObjectClass(), symbol(id));
         Operand kernel = searchModuleForConst(manager.getObjectClass(), symbol("Kernel"));
-        call(temp(), kernel, "raise", exceptionClass, message);
+        return call(temp(), kernel, "raise", exceptionClass, message);
     }
 
     public Operand buildZSuper(ZSuperNode zsuperNode) {
