@@ -2,8 +2,11 @@ package org.jruby.ir.targets.indy;
 
 import com.headius.invokebinder.Binder;
 import com.headius.invokebinder.SmartBinder;
+import com.headius.invokebinder.SmartHandle;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
+import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.ir.targets.simple.NormalInvokeSite;
@@ -49,10 +52,13 @@ public class ArrayDerefInvokeSite extends NormalInvokeSite {
 
         MethodHandle mh;
 
+        SwitchPoint switchPoint = (SwitchPoint) selfClass.getInvalidator().getData();
         CacheEntry entry = selfClass.searchWithCache(methodName);
         DynamicMethod method = entry.method;
 
-        if (method.isBuiltin() && selfClass == context.runtime.getHash()) {
+        if (method.isBuiltin() &&
+                testOptimizedHash(context.runtime.getHash(), self) &&
+                !((RubyHash) self).isComparedByIdentity()) {
             // fast path since we know we're working with a normal hash and have a pre-frozen string
             mh = SmartBinder.from(signature)
                     .permute("self", "context", "arg0")
@@ -60,14 +66,11 @@ public class ArrayDerefInvokeSite extends NormalInvokeSite {
                     .invokeVirtual(MethodHandles.publicLookup(), "op_aref")
                     .handle();
 
-            SwitchPoint switchPoint = (SwitchPoint) selfClass.getInvalidator().getData();
-
             updateInvocationTarget(mh, self, selfClass, method, switchPoint);
 
             return ((RubyHash) self).op_aref(context, args[0]);
         } else {
             // slow path follows normal invoke logic with a strDup for the key
-            SwitchPoint switchPoint = (SwitchPoint) selfClass.getInvalidator().getData();
 
             // strdup for this call
             args[0] = ((RubyString) args[0]).strDup(context.runtime);
@@ -86,30 +89,52 @@ public class ArrayDerefInvokeSite extends NormalInvokeSite {
         }
     }
 
+    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+
+    @Override
+    protected SmartHandle testTarget(IRubyObject self, RubyModule testClass) {
+        if (self instanceof RubyHash && testOptimizedHash((RubyClass) testClass, self)) {
+            return SmartBinder
+                    .from(signature.changeReturn(boolean.class))
+                    .permute("self")
+                    .insert(0, "selfClass", RubyClass.class, testClass)
+                    .invokeStaticQuiet(LOOKUP, ArrayDerefInvokeSite.class, "testOptimizedHash");
+        }
+
+        return super.testTarget(self, testClass);
+    }
+
+    public static boolean testOptimizedHash(RubyClass testClass, IRubyObject self) {
+        return testClass == RubyBasicObject.getMetaClass(self) &&
+                !((RubyHash) self).isComparedByIdentity();
+    }
+
     /**
      * Failover version uses a monomorphic cache and DynamicMethod.call, as in non-indy.
+     *
+     * This assumes all ArrayDeref will be arity=1, which correlates to the code in IRBuilder.
      */
-    public IRubyObject fail(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) throws Throwable {
+    public IRubyObject fail(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, Block block) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
         String name = methodName;
         CacheEntry entry = cache;
 
         // strdup for all calls
-        args[0] = ((RubyString) args[0]).strDup(context.runtime);
+        arg0 = ((RubyString) arg0).strDup(context.runtime);
 
         if (entry.typeOk(selfClass)) {
-            return entry.method.call(context, self, entry.sourceModule, name, args, block);
+            return entry.method.call(context, self, entry.sourceModule, name, arg0, block);
         }
 
         entry = selfClass.searchWithCache(name);
 
         if (methodMissing(entry, caller)) {
-            return callMethodMissing(entry, callType, context, self, selfClass, name, args, block);
+            return callMethodMissing(entry, callType, context, self, selfClass, name, arg0, block);
         }
 
         cache = entry;
 
-        return entry.method.call(context, self, entry.sourceModule, name, args, block);
+        return entry.method.call(context, self, entry.sourceModule, name, arg0, block);
     }
 
     private static final MethodHandle STRDUP_FILTER = Binder.from(IRubyObject.class, IRubyObject.class)

@@ -67,6 +67,7 @@ public class ArrayDerefInstr extends OneOperandArgNoBlockCallInstr {
         e.encode(getResult());
         e.encode(getReceiver());
         e.encode(getArg1());
+        e.encode(getFlags());
     }
 
     public static ArrayDerefInstr decode(IRReaderDecoder d) {

@@ -773,6 +773,7 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void AsStringInstr(AsStringInstr asstring) {
         jvmMethod().loadContext();
+        jvmMethod().loadSelf();
         visit(asstring.getReceiver());
         jvmMethod().getInvocationCompiler().asString(asstring, jvm.methodData().scopeField, file);
         jvmStoreLocal(asstring.getResult());

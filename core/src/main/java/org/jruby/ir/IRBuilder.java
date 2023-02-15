@@ -1294,14 +1294,25 @@ public class IRBuilder {
 
         // obj["string"] optimization for Hash
         ArrayNode argsAry;
+        Node arg0;
         if (!callNode.isLazy() &&
+                // aref only
                 id.equals("[]") &&
+
+                // single literal string argument
                 callNode.getArgsNode() instanceof ArrayNode &&
                 (argsAry = (ArrayNode) callNode.getArgsNode()).size() == 1 &&
-                argsAry.get(0) instanceof StrNode &&
+                (arg0 = argsAry.get(0)) instanceof StrNode &&
+
+                // not pre-frozen (which can just go through normal call path)
+                !((StrNode) arg0).isFrozen() &&
+
+                // obj#[] definitely not refined
                 !scope.maybeUsingRefinements() &&
-                receiverNode instanceof HashNode &&
+
+                // no block argument
                 callNode.getIterNode() == null) {
+
             StrNode keyNode = (StrNode) argsAry.get(0);
             FrozenString key = new FrozenString(keyNode.getValue(), keyNode.getCodeRange(), scope.getFile(), keyNode.getLine());
             addInstr(ArrayDerefInstr.create(scope, result, receiver, key, 0));

@@ -558,7 +558,6 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
     }
 
     private void illegalArgument(String message) {
-        System.out.println("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
         throw new IllegalArgumentException(message + "\nfile: " + getFilename() + "\nscope: " + getCurrentScope());
     }
 }
