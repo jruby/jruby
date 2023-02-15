@@ -139,15 +139,15 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         context.pushEvalSimpleFrame(self);
 
         try {
-            return evalCommon(context, evalScope, self, src, file, lineNumber, "(eval)", Block.NULL_BLOCK, evalType);
+            return evalCommon(context, evalScope, self, src, file, lineNumber, "(eval)", Block.NULL_BLOCK, evalType, false);
         } finally {
             context.popFrame();
         }
     }
 
     private static IRubyObject evalCommon(ThreadContext context, DynamicScope evalScope, IRubyObject self, IRubyObject src,
-                                          String file, int lineNumber, String name, Block blockArg, EvalType evalType) {
-        InterpreterContext ic = prepareIC(context, evalScope, src, file, lineNumber, evalType);
+                                          String file, int lineNumber, String name, Block blockArg, EvalType evalType, boolean bindingGiven) {
+        InterpreterContext ic = prepareIC(context, evalScope, src, file, lineNumber, evalType, bindingGiven);
 
         evalScope.setEvalType(evalType);
         context.pushScope(evalScope);
@@ -170,7 +170,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
      * @param binding The binding object under which to perform the evaluation
      * @return An IRubyObject result from the evaluation
      */
-    public static IRubyObject evalWithBinding(ThreadContext context, IRubyObject self, IRubyObject src, Binding binding) {
+    public static IRubyObject evalWithBinding(ThreadContext context, IRubyObject self, IRubyObject src, Binding binding, boolean bindingGiven) {
         Ruby runtime = context.runtime;
 
         DynamicScope evalScope = binding.getEvalScope(runtime);
@@ -180,14 +180,14 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         Frame lastFrame = context.preEvalWithBinding(binding);
         try {
             return evalCommon(context, evalScope, self, src, binding.getFile(),
-                    binding.getLine(), binding.getMethod(), binding.getFrame().getBlock(), EvalType.BINDING_EVAL);
+                    binding.getLine(), binding.getMethod(), binding.getFrame().getBlock(), EvalType.BINDING_EVAL, bindingGiven);
         } finally {
             context.postEvalWithBinding(binding, lastFrame);
         }
     }
 
     private static InterpreterContext prepareIC(ThreadContext context, DynamicScope evalScope, IRubyObject src,
-                                                        String file, int lineNumber, EvalType evalType) {
+                                                        String file, int lineNumber, EvalType evalType, boolean bindingGiven) {
         Ruby runtime = context.runtime;
         IRScope containingIRScope = evalScope.getStaticScope().getEnclosingScope().getIRScope();
         RootNode rootNode = (RootNode) runtime.parseEval(src.convertToString().getByteList(), file, evalScope, lineNumber);
@@ -205,7 +205,9 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         // we end up growing dynamicscope potentially based on any changes made.
         staticScope.setIRScope(script);
 
-        InterpreterContext ic = IRBuilder.topIRBuilder(runtime.getIRManager(), script).buildEvalRoot(rootNode);
+        IRBuilder builder = IRBuilder.topIRBuilder(runtime.getIRManager(), script);
+        builder.evalType = !bindingGiven && evalType == EvalType.BINDING_EVAL ? EvalType.INSTANCE_EVAL : evalType;
+        InterpreterContext ic = builder.buildEvalRoot(rootNode);
 
         if (IRRuntimeHelpers.isDebug()) LOG.info(script.debugOutput());
 

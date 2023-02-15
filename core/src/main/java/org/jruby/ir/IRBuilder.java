@@ -1,5 +1,6 @@
 package org.jruby.ir;
 
+import org.jruby.EvalType;
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyComplex;
@@ -323,6 +324,10 @@ public class IRBuilder {
     protected boolean executesOnce = true;
     private int temporaryVariableIndex = -1;
     private boolean needsYieldBlock = false;
+
+    // If set we know which kind of eval is being performed.  Beyond type it also prevents needing to
+    // ask what scope type we are in.
+    public EvalType evalType = null;
 
     // This variable is an out-of-band passing mechanism to pass the method name to the block the
     // method is attached to.  call/fcall will set this and iter building will pass it into the iter
@@ -2145,9 +2150,13 @@ public class IRBuilder {
         return processBodyResult;
     }
 
+    // FIXME: Technically a binding in top-level could get passed which would should still cause an error but this
+    //   scenario is very uncommon combined with setting @@cvar in a place you shouldn't it is an acceptable incompat
+    //   for what I consider to be a very low-value error.
     private boolean isTopScope() {
         IRScope topScope = scope.getNearestNonClosurelikeScope();
-        return topScope instanceof IRScriptBody || topScope instanceof IREvalScript;
+        return topScope instanceof IRScriptBody ||
+                (evalType != null && evalType != EvalType.MODULE_EVAL && evalType != EvalType.BINDING_EVAL);
     }
 
     // @@c
