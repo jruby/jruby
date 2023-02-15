@@ -2487,8 +2487,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         unpack();
         modify();
 
-        // See [ruby-core:17483]
-        if (len <= 0) return this;
+        if (len < 0) return this;
 
         if (len > Integer.MAX_VALUE - beg) throw context.runtime.newArgumentError("argument too big");
 
@@ -2514,8 +2513,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         unpack();
         modify();
 
-        // See [ruby-core:17483]
-        if (len <= 0) return this;
+        if (len < 0) return this;
 
         if (len > Integer.MAX_VALUE - beg) throw context.runtime.newArgumentError("argument too big");
 
