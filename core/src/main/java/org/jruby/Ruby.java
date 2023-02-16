@@ -5813,7 +5813,7 @@ public final class Ruby implements Constantizable {
         }
 
         public boolean matches(Object o) {
-            return (o instanceof RubyProc) && ((RubyProc) o).getBlock() == proc.getBlock();
+            return (o instanceof RubyProc) && ((RubyProc) o).getBlock().getBody() == proc.getBlock().getBody();
         }
 
         @Override
