@@ -11,6 +11,9 @@ module Signal
   private_constant :SIGNALS
 
   def trap(sig, cmd = nil, &block)
+    if sig.nil? || !sig.kind_of?(Integer) && !sig.kind_of?(Symbol) && !sig.kind_of?(String)
+      raise ArgumentError.new("bad signal type #{sig.class}")
+    end
     sig = SIGNALS[sig] if sig.kind_of?(Integer)
     sig = sig.to_s.sub(/^SIG(.+)/,'\1')
 
@@ -36,7 +39,7 @@ module Signal
       when String
         Signal::__jtrap_kernel(proc{eval cmd, TOPLEVEL_BINDING}, sig)
       else
-        Signal::__jtrap_kernel(proc{cmd.call}, sig)
+        Signal::__jtrap_kernel(proc{|s|cmd.call s}, sig)
       end
     end
 
