@@ -1,2 +1,0 @@
-fails:Array#pack with format 'I' warns in verbose mode that a directive is unknown
-fails:Array#pack with format 'i' warns in verbose mode that a directive is unknown

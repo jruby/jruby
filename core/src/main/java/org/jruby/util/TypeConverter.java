@@ -43,6 +43,7 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.TypeConverterSites;
@@ -143,11 +144,12 @@ public class TypeConverter {
 
     // MRI: rb_to_float - adjusted to handle also Java numbers (non RubyNumeric types)
     public static RubyFloat toFloat(Ruby runtime, IRubyObject obj) {
-        if (obj instanceof RubyNumeric) {
-            return ((RubyNumeric) obj).convertToFloat();
-        }
-        if (obj instanceof RubyString || obj.isNil()) {
-            throw runtime.newTypeError(obj, "Float");
+        if (obj instanceof RubyNumeric) return ((RubyNumeric) obj).convertToFloat();
+        if (obj instanceof RubyString || obj.isNil()) throw runtime.newTypeError(obj, "Float");
+
+        // Java types which can become floats pass to to_f logic and we don't try and match this error string.
+        if (!(obj instanceof JavaProxy) && !obj.getMetaClass().isKindOfModule(runtime.getNumeric())) {
+            throw runtime.newTypeError(str(runtime, "can't convert ", types(runtime, obj.getMetaClass()), " into Float"));
         }
         return (RubyFloat) TypeConverter.convertToType(obj, runtime.getFloat(), "to_f", true);
     }

@@ -48,9 +48,11 @@ import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.io.EncodingUtils;
 
 import static com.headius.backport9.buffer.Buffers.markBuffer;
 import static com.headius.backport9.buffer.Buffers.positionBuffer;
+import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.TypeConverter.toFloat;
 
 public class Pack {
@@ -1061,6 +1063,10 @@ public class Pack {
                 case 'w':
                     value = unpack_w(context, block, runtime, result, encode, occurrences, mode);
                     break;
+                default:
+                    unknownDirective(context.runtime, "unpack", type, formatString);
+                    break;
+
             }
             if (mode == UNPACK_1 && value != null) {
                 return value;
@@ -2034,6 +2040,9 @@ public class Pack {
                 case 'w':
                     pack_w(context, list, result, packInts, occurrences);
                     break;
+                default:
+                    unknownDirective(context.runtime, "pack", type, formatString);
+                    break;
             }
         }
 
@@ -2049,6 +2058,18 @@ public class Pack {
         }
 
         return buffer;
+    }
+
+    private static void unknownDirective(Ruby runtime, String mode, int type, ByteList formatString) {
+        ByteList unknown;
+        if (EncodingUtils.isPrint(type)) {
+            unknown = new ByteList(new byte[]{(byte) type});
+        } else {
+            unknown = new ByteList();
+            Sprintf.sprintf(runtime, unknown, "\\x%02X", type & 0377);
+        }
+
+        runtime.getWarnings().warning(str(runtime, "unknown " + mode + " directive '", runtime.newString(unknown), "' in '", runtime.newString(formatString), "'"));
     }
 
     private static void pack_w(ThreadContext context, RubyArray list, ByteList result, PackInts packInts, int occurrences) {
