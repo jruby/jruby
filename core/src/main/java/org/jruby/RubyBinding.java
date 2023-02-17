@@ -36,6 +36,7 @@ package org.jruby;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ext.ripper.RubyLexer;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
@@ -43,6 +44,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.TypeConverter;
 
 import static org.jruby.util.RubyStringBuilder.str;
 
@@ -131,14 +133,15 @@ public class RubyBinding extends RubyObject {
 
     @JRubyMethod(name = "local_variable_defined?")
     public IRubyObject local_variable_defined_p(ThreadContext context, IRubyObject symbol) {
-        return RubyBoolean.newBoolean(context, binding.getEvalScope(context.runtime).getStaticScope().isDefined(symbol.asJavaString()) != -1);
+        String id = checkLocalId(context, symbol);
+        return RubyBoolean.newBoolean(context, binding.getEvalScope(context.runtime).getStaticScope().isDefined(id) != -1);
     }
 
     @JRubyMethod
     public IRubyObject local_variable_get(ThreadContext context, IRubyObject symbol) {
-        String name = symbol.asJavaString().intern();
+        String id = checkLocalId(context, symbol);
         DynamicScope evalScope = binding.getEvalScope(context.runtime);
-        int slot = evalScope.getStaticScope().isDefined(name);
+        int slot = evalScope.getStaticScope().isDefined(id);
 
         if (slot == -1) throw context.runtime.newNameError(str(context.runtime, "local variable `", symbol, "' not defined for " + inspect()), symbol);
 
@@ -147,18 +150,28 @@ public class RubyBinding extends RubyObject {
 
     @JRubyMethod
     public IRubyObject local_variable_set(ThreadContext context, IRubyObject symbol, IRubyObject value) {
-        String name = symbol.asJavaString().intern();
+        String id = checkLocalId(context, symbol);
         DynamicScope evalScope = binding.getEvalScope(context.runtime);
-        int slot = evalScope.getStaticScope().isDefined(name);
+        int slot = evalScope.getStaticScope().isDefined(id);
 
         if (slot == -1) { // Yay! New variable associated with this binding
-            slot = evalScope.getStaticScope().addVariable(name.intern());
+            slot = evalScope.getStaticScope().addVariable(id.intern());
             evalScope.growIfNeeded();
         }
 
         return evalScope.setValue(slot & 0xffff, value, slot >> 16);
     }
 
+    // MRI: check_local_id
+    private String checkLocalId(ThreadContext context, IRubyObject obj) {
+        String id = RubySymbol.checkID(obj);
+
+        if (!RubyLexer.isIdentifierChar(id.charAt(0))) {
+            throw context.runtime.newNameError(str(context.runtime, "wrong local variable name `", obj, "' for ", this), id);
+        }
+
+        return id;
+    }
     @JRubyMethod
     public IRubyObject local_variables(ThreadContext context) {
         Ruby runtime = context.runtime;
