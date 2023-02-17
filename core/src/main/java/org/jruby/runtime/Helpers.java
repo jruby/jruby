@@ -579,13 +579,13 @@ public class Helpers {
      * Check that the buffer length requested is within the valid range of 0 to MAX_ARRAY_SIZE, or raise an argument
      * error.
      */
-    public static int validateBufferLength(Ruby runtime, int length) {
+    public static int validateBufferLength(Ruby runtime, long length) {
         if (length < 0) {
             throw runtime.newArgumentError("negative argument");
         } else if (length > MAX_ARRAY_SIZE) {
             throw runtime.newArgumentError("argument too big");
         }
-        return length;
+        return (int) length;
     }
 
     public static class MethodMissingMethod extends DynamicMethod {

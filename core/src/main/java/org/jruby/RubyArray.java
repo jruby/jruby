@@ -680,7 +680,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
         long len = RubyNumeric.num2long(arg0);
         if (len < 0) throw runtime.newArgumentError("negative array size");
-        int ilen = validateBufferLength(runtime, (int) len);
+        int ilen = validateBufferLength(runtime, len);
 
         modify();
 
