@@ -2266,6 +2266,11 @@ public class EncodingUtils {
         return (RubyString) RubyString.rbStrEscape(runtime.getCurrentContext(), str);
     }
 
+    // MRI: ISPRINT
+    public static boolean isPrint(int c) {
+        return ' ' <= c && c <= 0x7e;
+    }
+
     public static int rbStrBufCatEscapedChar(RubyString result, long c, boolean unicode_p) {
         // FIXME: inefficient
         byte[] buf;
