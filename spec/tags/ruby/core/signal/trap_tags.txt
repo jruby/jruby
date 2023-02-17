@@ -1,4 +1,3 @@
-fails(JRUBY-4869):Signal.trap ignores the signal when passed nil
 fails:Signal.trap ignores the signal when passed nil
 fails(JRUBY-5666):Signal.trap the special EXIT signal code runs the proc before at_exit handlers
 fails:Signal.trap is possible to create a new Thread when the handler runs
