@@ -7,6 +7,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.RubyClass;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.util.TypeConverter;
 
 import static org.jruby.RubyBasicObject.getMetaClass;
 
@@ -62,8 +63,8 @@ public class RespondToCallSite extends MonomorphicCallSite {
         RubyClass klass = getMetaClass(self);
         RespondToTuple tuple = respondToTuple;
         if (tuple.cacheOk(klass)) {
-            String strName = name.asJavaString();
-            if (strName.equals(tuple.name) && tuple.checkVisibility) return tuple.respondsTo;
+            String id = TypeConverter.checkID(name).idString();
+            if (id.equals(tuple.name) && tuple.checkVisibility) return tuple.respondsTo;
         }
         // go through normal call logic, which will hit overridden cacheAndCall
         return super.call(context, caller, self, name);
@@ -74,8 +75,8 @@ public class RespondToCallSite extends MonomorphicCallSite {
         RubyClass klass = getMetaClass(self);
         RespondToTuple tuple = respondToTuple;
         if (tuple.cacheOk(klass)) {
-            String strName = name.asJavaString();
-            if (strName.equals(tuple.name) && !bool.isTrue() == tuple.checkVisibility) return tuple.respondsTo;
+            String id = TypeConverter.checkID(name).idString();
+            if (id.equals(tuple.name) && !bool.isTrue() == tuple.checkVisibility) return tuple.respondsTo;
         }
         // go through normal call logic, which will hit overridden cacheAndCall
         return super.call(context, caller, self, name, bool);
@@ -121,8 +122,8 @@ public class RespondToCallSite extends MonomorphicCallSite {
 
         // alternate logic to cache the result of respond_to if it's the standard one
         if (method.isBuiltin()) {
-            String name = arg.asJavaString();
-            RespondToTuple tuple = recacheRespondsTo(entry, name, selfType, true, context);
+            String id = TypeConverter.checkID(arg).idString();
+            RespondToTuple tuple = recacheRespondsTo(entry, id, selfType, true, context);
 
             // only cache if it does respond_to? OR there's no custom respond_to_missing? logic
             if (tuple.respondsTo.isTrue() ||
@@ -147,8 +148,8 @@ public class RespondToCallSite extends MonomorphicCallSite {
 
         // alternate logic to cache the result of respond_to if it's the standard one
         if (method.equals(context.runtime.getRespondToMethod())) {
-            String name = arg0.asJavaString();
-            RespondToTuple tuple = recacheRespondsTo(entry, name, selfType, !arg1.isTrue(), context);
+            String id = TypeConverter.checkID(arg0).idString();
+            RespondToTuple tuple = recacheRespondsTo(entry, id, selfType, !arg1.isTrue(), context);
 
             // only cache if it does respond_to? OR there's no custom respond_to_missing? logic
             if (tuple.respondsTo.isTrue() ||
