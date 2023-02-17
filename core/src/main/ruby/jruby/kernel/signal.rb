@@ -11,6 +11,9 @@ module Signal
   private_constant :SIGNALS
 
   def trap(sig, cmd = nil, &block)
+    if sig.nil? || !sig.kind_of?(Integer) && !sig.kind_of?(Symbol) && !sig.kind_of?(String)
+      raise ArgumentError.new("bad signal type #{sig.class}")
+    end
     sig = SIGNALS[sig] if sig.kind_of?(Integer)
     sig = sig.to_s.sub(/^SIG(.+)/,'\1')
 
