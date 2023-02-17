@@ -1484,15 +1484,18 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     public static final class SymbolProcBody extends ContextAwareBlockBody {
         private final CallSite site;
+        private final String id;
 
-        public SymbolProcBody(Ruby runtime, String symbol) {
+        public SymbolProcBody(Ruby runtime, String id) {
             super(runtime.getStaticScopeFactory().getDummyScope(), Signature.OPTIONAL);
-            this.site = MethodIndex.getFunctionalCallSite(symbol);
+            this.site = MethodIndex.getFunctionalCallSite(id);
+            this.id = id;
         }
 
-        public SymbolProcBody(Ruby runtime, String symbol, StaticScope scope) {
+        public SymbolProcBody(Ruby runtime, String id, StaticScope scope) {
             super(scope, Signature.OPTIONAL);
-            this.site = new RefinedCachingCallSite(symbol, scope, CallType.FUNCTIONAL);
+            this.site = new RefinedCachingCallSite(id, scope, CallType.FUNCTIONAL);
+            this.id = id;
         }
 
         private IRubyObject yieldInner(ThreadContext context, RubyArray array, Block blockArg) {
@@ -1544,12 +1547,16 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         @Override
         public String getFile() {
-            return null;
+            return site.methodName;
         }
 
         @Override
         public int getLine() {
             return -1;
+        }
+
+        public String getId() {
+            return id;
         }
 
         @Override
