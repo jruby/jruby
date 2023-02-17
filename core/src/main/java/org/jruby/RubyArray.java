@@ -788,7 +788,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /** rb_ary_to_s
      *
      */
-    @JRubyMethod(name = "to_s")
     public RubyString to_s(ThreadContext context) {
         return inspect(context);
     }
@@ -1866,7 +1865,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /** rb_ary_inspect
     *
     */
-    @JRubyMethod(name = "inspect")
+    @JRubyMethod(name = "inspect", alias = "to_s")
     public RubyString inspect(ThreadContext context) {
         final Ruby runtime = context.runtime;
         if (realLength == 0) return RubyString.newStringShared(runtime, EMPTY_ARRAY_BL);
