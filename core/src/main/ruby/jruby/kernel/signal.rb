@@ -36,7 +36,7 @@ module Signal
       when String
         Signal::__jtrap_kernel(proc{eval cmd, TOPLEVEL_BINDING}, sig)
       else
-        Signal::__jtrap_kernel(proc{cmd.call}, sig)
+        Signal::__jtrap_kernel(proc{|s|cmd.call s}, sig)
       end
     end
 
