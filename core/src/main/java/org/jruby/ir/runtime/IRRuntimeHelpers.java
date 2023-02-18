@@ -15,6 +15,7 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyComplex;
 import org.jruby.RubyEncoding;
+import org.jruby.RubyException;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
@@ -69,6 +70,7 @@ import org.jruby.runtime.JavaSites.IRRuntimeHelpersSites;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
+import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.callsite.CachingCallSite;
@@ -2454,6 +2456,20 @@ public class IRRuntimeHelpers {
             int linenumber = line == -1 ? context.getLine() : line;
 
             context.trace(event, name, context.getFrameKlazz(), filename, linenumber);
+        }
+    }
+
+    public static void traceRaise(ThreadContext context, RubyException exception) {
+        Ruby runtime = context.runtime;
+        if (runtime.hasEventHooks()) {
+            RubyStackTraceElement backtraceElement = context.getSingleBacktrace();
+            String file = backtraceElement.getFileName();
+            int line = backtraceElement.getLineNumber();
+
+            // FIXME: Try and statically generate END linenumber instead of hacking it.
+            int linenumber = line == -1 ? context.getLine() : line;
+
+            runtime.callEventHooks(context, RubyEvent.RAISE, file, linenumber, null, context.nil);
         }
     }
 
