@@ -22,8 +22,8 @@ public enum RubyEvent {
     C_RETURN ("c_return"),
     B_CALL   ("b_call"),
     B_RETURN ("b_return"),
-    THREAD_BEGIN   ("thread_begin"),
-    THREAD_END ("thread_end"),
+    THREAD_BEGIN   ("thread_begin", false),
+    THREAD_END ("thread_end", false),
     RAISE    ("raise", false),
     COVERAGE ("coverage"),
     // A_CALL is CALL + B_CALL + C_CALL
