@@ -252,11 +252,11 @@ public final class Ruby implements Constantizable {
     private static final Logger LOG = LoggerFactory.getLogger(Ruby.class);
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     public static final MethodHandle TRACE_OFF = Binder
-            .from(void.class, ThreadContext.class, RubyModule.class, RubyEvent.class, String.class, String.class, int.class)
+            .from(void.class, ThreadContext.class, IRubyObject.class, RubyEvent.class, String.class, String.class, int.class)
             .drop(1, 5)
             .identity();
     public static final MethodHandle TRACE_ON = Binder
-            .from(void.class, ThreadContext.class, RubyModule.class, RubyEvent.class, String.class, String.class, int.class)
+            .from(void.class, ThreadContext.class, IRubyObject.class, RubyEvent.class, String.class, String.class, int.class)
             .invokeStaticQuiet(LOOKUP, IRRuntimeHelpers.class, "callTrace");
     public static final MethodHandle B_TRACE_OFF = Binder
             .from(void.class, ThreadContext.class, Block.class, RubyEvent.class, String.class, String.class, int.class)

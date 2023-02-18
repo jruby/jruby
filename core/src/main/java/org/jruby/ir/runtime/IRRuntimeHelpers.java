@@ -2450,7 +2450,7 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static void callTrace(ThreadContext context, RubyModule selfClass, RubyEvent event, String name, String filename, int line) {
+    public static void callTrace(ThreadContext context, IRubyObject selfClass, RubyEvent event, String name, String filename, int line) {
         Ruby runtime = context.runtime;
         if (runtime.hasEventHooks()) {
             // FIXME: Try and statically generate END linenumber instead of hacking it.

@@ -377,7 +377,7 @@ public class IRBuilder {
             }
 
             if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                addInstr(new TraceInstr(RubyEvent.LINE, methodNameFor(), getFileName(), lastProcessedLineNum + 1));
+                addInstr(new TraceInstr(RubyEvent.LINE, getCurrentModuleVariable(), methodNameFor(), getFileName(), lastProcessedLineNum + 1));
             }
         }
 
@@ -2791,7 +2791,7 @@ public class IRBuilder {
             addInstr(manager.newLineNumber(scope.getLine() + 1));
         }
 
-        addInstr(new TraceInstr(RubyEvent.CALL, getName(), getFileName(), scope.getLine() + 1));
+        addInstr(new TraceInstr(RubyEvent.CALL, getCurrentModuleVariable(), getName(), getFileName(), scope.getLine() + 1));
 
         prepareImplicitState();                                    // recv_self, add frame block, etc)
 
@@ -2811,7 +2811,7 @@ public class IRBuilder {
             addInstr(new LineNumberInstr(defNode.getEndLine() + 1));
         }
 
-        addInstr(new TraceInstr(RubyEvent.RETURN, getName(), getFileName(), defNode.getEndLine() + 1));
+        addInstr(new TraceInstr(RubyEvent.RETURN, getCurrentModuleVariable(), getName(), getFileName(), defNode.getEndLine() + 1));
 
         if (rv != null) addInstr(new ReturnInstr(rv));
 
@@ -3786,7 +3786,7 @@ public class IRBuilder {
         boolean forNode = iterNode instanceof ForNode;
         prepareClosureImplicitState();                                    // recv_self, add frame block, etc)
 
-        addInstr(new TraceInstr(RubyEvent.B_CALL, getName(), getFileName(), scope.getLine() + 1));
+        addInstr(new TraceInstr(RubyEvent.B_CALL, getCurrentModuleVariable(), getName(), getFileName(), scope.getLine() + 1));
 
         if (!forNode) addCurrentModule();                                // %current_module
         receiveBlockArgs(iterNode);
@@ -3800,7 +3800,7 @@ public class IRBuilder {
         // Build closure body and return the result of the closure
         Operand closureRetVal = iterNode.getBodyNode() == null ? manager.getNil() : build(iterNode.getBodyNode());
 
-        addInstr(new TraceInstr(RubyEvent.B_RETURN, getName(), getFileName(), iterNode.getEndLine() + 1));
+        addInstr(new TraceInstr(RubyEvent.B_RETURN, getCurrentModuleVariable(), getName(), getFileName(), iterNode.getEndLine() + 1));
 
         // can be U_NIL if the node is an if node with returns in both branches.
         if (closureRetVal != U_NIL) addInstr(new ReturnInstr(closureRetVal));
@@ -4580,7 +4580,7 @@ public class IRBuilder {
         } else {
             retVal = processEnsureRescueBlocks(retVal);
 
-            addInstr(new TraceInstr(RubyEvent.RETURN, getName(), getFileName(), returnNode.getLine() + 1));
+            addInstr(new TraceInstr(RubyEvent.RETURN, getCurrentModuleVariable(), getName(), getFileName(), returnNode.getLine() + 1));
             addInstr(new ReturnInstr(retVal));
         }
 
@@ -4971,7 +4971,7 @@ public class IRBuilder {
     }
 
     private InterpreterContext buildModuleOrClassBody(Node bodyNode, int startLine, int endLine) {
-        addInstr(new TraceInstr(RubyEvent.CLASS, null, getFileName(), startLine + 1));
+        addInstr(new TraceInstr(RubyEvent.CLASS, getCurrentModuleVariable(), null, getFileName(), startLine + 1));
 
         prepareImplicitState();                                    // recv_self, add frame block, etc)
         addCurrentModule();                                        // %current_module
@@ -4981,7 +4981,7 @@ public class IRBuilder {
         // This is only added when tracing is enabled because an 'end' will normally have no other instrs which can
         // raise after this point.  When we add trace we need to add one so backtrace generated shows the 'end' line.
         addInstr(manager.newLineNumber(endLine));
-        addInstr(new TraceInstr(RubyEvent.END, null, getFileName(), endLine + 1));
+        addInstr(new TraceInstr(RubyEvent.END, getCurrentModuleVariable(), null, getFileName(), endLine + 1));
 
         addInstr(new ReturnInstr(bodyReturnValue));
 
