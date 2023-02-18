@@ -40,6 +40,7 @@
 
 package org.jruby;
 
+import com.headius.invokebinder.Binder;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.anno.FrameField;
 import org.jruby.anno.TypePopulator;
@@ -64,6 +65,7 @@ import org.jruby.ext.thread.SizedQueue;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.runtime.IRReturnJump;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaPackage;
@@ -184,6 +186,8 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MutableCallSite;
 import java.lang.ref.WeakReference;
 import java.net.BindException;
 import java.nio.charset.Charset;
@@ -246,6 +250,21 @@ public final class Ruby implements Constantizable {
      * The logger used to log relevant bits.
      */
     private static final Logger LOG = LoggerFactory.getLogger(Ruby.class);
+    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+    public static final MethodHandle TRACE_OFF = Binder
+            .from(void.class, ThreadContext.class, RubyModule.class, RubyEvent.class, String.class, String.class, int.class)
+            .drop(1, 5)
+            .identity();
+    public static final MethodHandle TRACE_ON = Binder
+            .from(void.class, ThreadContext.class, RubyModule.class, RubyEvent.class, String.class, String.class, int.class)
+            .invokeStaticQuiet(LOOKUP, IRRuntimeHelpers.class, "callTrace");
+    public static final MethodHandle B_TRACE_OFF = Binder
+            .from(void.class, ThreadContext.class, Block.class, RubyEvent.class, String.class, String.class, int.class)
+            .drop(1, 5)
+            .identity();
+    public static final MethodHandle B_TRACE_ON = Binder
+            .from(void.class, ThreadContext.class, Block.class, RubyEvent.class, String.class, String.class, int.class)
+            .invokeStaticQuiet(LOOKUP, IRRuntimeHelpers.class, "callTrace");
 
     /**
      * Create and initialize a new JRuby runtime. The properties of the
@@ -3114,6 +3133,14 @@ public final class Ruby implements Constantizable {
                     RubyEvent.RETURN
             );
 
+    public MutableCallSite getCallTrace() {
+        return callTrace;
+    }
+
+    public MutableCallSite getBcallTrace() {
+        return bcallTrace;
+    }
+
     public static class CallTraceFuncHook extends EventHook {
         private RubyProc traceFunc;
         private final ThreadContext thread; // if non-null only call traceFunc if it is from this thread.
@@ -3195,6 +3222,8 @@ public final class Ruby implements Constantizable {
         EventHook[] newHooks = Arrays.copyOf(hooks, hooks.length + 1);
         newHooks[hooks.length] = hook;
         eventHooks = newHooks;
+        callTrace.setTarget(TRACE_ON);
+        bcallTrace.setTarget(B_TRACE_ON);
         hasEventHooks = true;
     }
 
@@ -3221,6 +3250,8 @@ public final class Ruby implements Constantizable {
 
         eventHooks = newHooks;
         hasEventHooks = newHooks.length > 0;
+        if (newHooks.length == 0) callTrace.setTarget(TRACE_OFF);
+        if (newHooks.length == 0) bcallTrace.setTarget(B_TRACE_OFF);
     }
 
     public void setTraceFunction(RubyProc traceFunction) {
@@ -3277,6 +3308,14 @@ public final class Ruby implements Constantizable {
     public boolean hasEventHooks() {
         return hasEventHooks;
     }
+
+    private final MutableCallSite callTrace = new MutableCallSite(
+            TRACE_OFF
+    );
+
+    private final MutableCallSite bcallTrace = new MutableCallSite(
+            B_TRACE_OFF
+    );
 
     public GlobalVariables getGlobalVariables() {
         return globalVariables;

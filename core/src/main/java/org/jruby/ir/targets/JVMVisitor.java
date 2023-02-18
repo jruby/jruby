@@ -57,6 +57,7 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -2478,16 +2479,43 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext();
 
         String name = traceInstr.getName();
-        if (name == null) name = "";
+        if (name == null) name = "null";
 
-        jvmAdapter().invokedynamic(
-                "callTrace",
-                sig(void.class, ThreadContext.class),
-                CallTraceSite.BOOTSTRAP,
-                traceInstr.getEvent().getName(),
-                name,
-                traceInstr.getFilename(),
-                traceInstr.getLinenumber());
+        switch (traceInstr.getEvent()) {
+            case CALL:
+            case RETURN:
+            case CLASS:
+            case END:
+            case LINE:
+                jvmMethod().loadFrameClass();
+
+                jvmAdapter().invokedynamic(
+                        name,
+                        sig(void.class, ThreadContext.class, RubyModule.class),
+                        CallTraceSite.BOOTSTRAP,
+                        traceInstr.getEvent().getName(),
+                        traceInstr.getFilename(),
+                        traceInstr.getLinenumber());
+
+                break;
+
+            case B_CALL:
+            case B_RETURN:
+                jvmMethod().loadSelfBlock();
+
+                jvmAdapter().invokedynamic(
+                        name,
+                        sig(void.class, ThreadContext.class, Block.class),
+                        CallTraceSite.BOOTSTRAP,
+                        traceInstr.getEvent().getName(),
+                        traceInstr.getFilename(),
+                        traceInstr.getLinenumber());
+
+                break;
+
+            default:
+                throw new NotCompilableException("unknown trace event in JIT: " + traceInstr.getEvent());
+        }
     }
 
     @Override

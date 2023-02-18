@@ -78,7 +78,7 @@ public class TraceInstr extends NoOperandInstr {
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        IRRuntimeHelpers.callTrace(context, getEvent(), getName(), getFilename(), getLinenumber());
+        IRRuntimeHelpers.callTrace(context, context.getFrameKlazz(), getEvent(), getName(), getFilename(), getLinenumber());
 
         return null;
     }
@@ -90,6 +90,13 @@ public class TraceInstr extends NoOperandInstr {
 
     @Override
     public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
+        if (event == RubyEvent.CALL || event == RubyEvent.RETURN
+                || event == RubyEvent.B_CALL || event == RubyEvent.B_RETURN) {
+            // no need for frame for these currently
+            return false;
+        }
+
+        // other instrs need frame
         flags.addAll(IRFlags.REQUIRE_ALL_FRAME_FIELDS);
         return true;
     }

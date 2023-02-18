@@ -2474,6 +2474,25 @@ public class IRRuntimeHelpers {
         }
     }
 
+    @JIT
+    public static void callTrace(ThreadContext context, Block selfBlock, RubyEvent event, String name, String filename, int line) {
+        Ruby runtime = context.runtime;
+        if (runtime.hasEventHooks()) {
+            // FIXME: Try and statically generate END linenumber instead of hacking it.
+            int linenumber = line == -1 ? context.getLine() : line;
+
+            runtime.callEventHooks(context, event, filename, linenumber, name, selfBlock.getFrameClass());
+        }
+    }
+
+    @JIT
+    public static void callTraceHooks(ThreadContext context, Block selfBlock, RubyEvent event, String name, String filename, int line) {
+        // FIXME: Try and statically generate END linenumber instead of hacking it.
+        int linenumber = line == -1 ? context.getLine() : line;
+
+        context.runtime.callEventHooks(context, event, filename, linenumber, name, selfBlock.getFrameClass());
+    }
+
     public static void warnSetConstInRefinement(ThreadContext context, IRubyObject self) {
         if (self instanceof RubyModule && ((RubyModule) self).isRefinement()) {
             context.runtime.getWarnings().warn("not defined at the refinement, but at the outer class/module");

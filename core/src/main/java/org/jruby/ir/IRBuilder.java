@@ -2789,8 +2789,9 @@ public class IRBuilder {
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             // Explicit line number here because we need a line number for trace before we process any nodes
             addInstr(manager.newLineNumber(scope.getLine() + 1));
-            addInstr(new TraceInstr(RubyEvent.CALL, getName(), getFileName(), scope.getLine() + 1));
         }
+
+        addInstr(new TraceInstr(RubyEvent.CALL, getName(), getFileName(), scope.getLine() + 1));
 
         prepareImplicitState();                                    // recv_self, add frame block, etc)
 
@@ -2808,8 +2809,9 @@ public class IRBuilder {
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             addInstr(new LineNumberInstr(defNode.getEndLine() + 1));
-            addInstr(new TraceInstr(RubyEvent.RETURN, getName(), getFileName(), defNode.getEndLine() + 1));
         }
+
+        addInstr(new TraceInstr(RubyEvent.RETURN, getName(), getFileName(), defNode.getEndLine() + 1));
 
         if (rv != null) addInstr(new ReturnInstr(rv));
 
@@ -3784,9 +3786,7 @@ public class IRBuilder {
         boolean forNode = iterNode instanceof ForNode;
         prepareClosureImplicitState();                                    // recv_self, add frame block, etc)
 
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            addInstr(new TraceInstr(RubyEvent.B_CALL, getName(), getFileName(), scope.getLine() + 1));
-        }
+        addInstr(new TraceInstr(RubyEvent.B_CALL, getName(), getFileName(), scope.getLine() + 1));
 
         if (!forNode) addCurrentModule();                                // %current_module
         receiveBlockArgs(iterNode);
@@ -3800,9 +3800,7 @@ public class IRBuilder {
         // Build closure body and return the result of the closure
         Operand closureRetVal = iterNode.getBodyNode() == null ? manager.getNil() : build(iterNode.getBodyNode());
 
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            addInstr(new TraceInstr(RubyEvent.B_RETURN, getName(), getFileName(), iterNode.getEndLine() + 1));
-        }
+        addInstr(new TraceInstr(RubyEvent.B_RETURN, getName(), getFileName(), iterNode.getEndLine() + 1));
 
         // can be U_NIL if the node is an if node with returns in both branches.
         if (closureRetVal != U_NIL) addInstr(new ReturnInstr(closureRetVal));
@@ -4582,10 +4580,7 @@ public class IRBuilder {
         } else {
             retVal = processEnsureRescueBlocks(retVal);
 
-            if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                addInstr(new TraceInstr(RubyEvent.RETURN, getName(), getFileName(), returnNode.getLine() + 1));
-            }
-
+            addInstr(new TraceInstr(RubyEvent.RETURN, getName(), getFileName(), returnNode.getLine() + 1));
             addInstr(new ReturnInstr(retVal));
         }
 
