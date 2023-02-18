@@ -493,7 +493,7 @@ public class IRBuilder {
             case FORNODE: return buildFor((ForNode) node);
             case GLOBALASGNNODE: return buildGlobalAsgn((GlobalAsgnNode) node);
             case GLOBALVARNODE: return buildGlobalVar(result, (GlobalVarNode) node);
-            case HASHNODE: return buildHash((HashNode) node);
+            case HASHNODE: return buildHash((HashNode) node, false);
             case IFNODE: return buildIf(result, (IfNode) node);
             case INSTASGNNODE: return buildInstAsgn((InstAsgnNode) node);
             case INSTVARNODE: return buildInstVar((InstVarNode) node);
@@ -736,7 +736,7 @@ public class IRBuilder {
 
         if (keywords.hasOnlyRestKwargs()) return buildRestKeywordArgs(keywords, flags);
 
-        return buildWithOrder(keywords, keywords.containsVariableAssignment());
+        return buildHash(keywords, true);
     }
 
     // This is very similar to buildArray but when building generic arrays we do not want to mark callinfo
@@ -3691,7 +3691,7 @@ public class IRBuilder {
         return addResultInstr(new GetGlobalVariableInstr(result, node.getName()));
     }
 
-    public Operand buildHash(HashNode hashNode) {
+    public Operand buildHash(HashNode hashNode, boolean keywordArgsCall) {
         List<KeyValuePair<Operand, Operand>> args = new ArrayList<>();
         boolean hasAssignments = hashNode.containsVariableAssignment();
         Variable hash = null;
@@ -3709,7 +3709,7 @@ public class IRBuilder {
                     args = new ArrayList<>();
                 }
                 Operand splat = buildWithOrder(pair.getValue(), hasAssignments);
-                addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, splat, tru()}));
+                addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, splat, keywordArgsCall ? fals() : tru()}));
                 continue;
             } else {
                 keyOperand = buildWithOrder(key, hasAssignments);
