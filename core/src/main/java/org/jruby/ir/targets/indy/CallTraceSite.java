@@ -7,6 +7,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 
@@ -16,6 +17,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 
+import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
 
@@ -52,16 +54,16 @@ public class CallTraceSite extends MutableCallSite {
         return site;
     }
 
-    public void traceBootstrap(ThreadContext context, RubyModule clazz) {
+    public void traceBootstrap(ThreadContext context, IRubyObject clazz) {
         // bind to dynamic invoker from runtime
-        setTarget(Binder.from(type()).append(Helpers.arrayOf(RubyEvent.class, String.class, String.class, int.class), event, name, file, line).invoke(context.getRuntime().getCallTrace().dynamicInvoker()));
+        setTarget(Binder.from(type()).append(arrayOf(RubyEvent.class, String.class, String.class, int.class), event, name, file, line).invoke(context.traceEvents.getCallReturnSite().dynamicInvoker()));
 
         IRRuntimeHelpers.callTrace(context, clazz, event, name, file, line);
     }
 
     public void traceBootstrap(ThreadContext context, Block selfBlock) {
         // bind to dynamic invoker from runtime
-        setTarget(Binder.from(type()).append(Helpers.arrayOf(RubyEvent.class, String.class, String.class, int.class), event, name, file, line).invoke(context.getRuntime().getBcallTrace().dynamicInvoker()));
+        setTarget(Binder.from(type()).append(arrayOf(RubyEvent.class, String.class, String.class, int.class), event, name, file, line).invoke(context.traceEvents.getBCallBReturnSite().dynamicInvoker()));
 
         IRRuntimeHelpers.callTrace(context, selfBlock.getFrameClass(), event, name, file, line);
     }

@@ -2491,7 +2491,7 @@ public class JVMVisitor extends IRVisitor {
 
                 jvmAdapter().invokedynamic(
                         name,
-                        sig(void.class, ThreadContext.class, RubyModule.class),
+                        sig(void.class, ThreadContext.class, IRubyObject.class),
                         CallTraceSite.BOOTSTRAP,
                         traceInstr.getEvent().getName(),
                         traceInstr.getFilename(),

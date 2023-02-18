@@ -74,7 +74,6 @@ import java.lang.ref.WeakReference;
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.IntStream;
@@ -105,10 +104,12 @@ public final class ThreadContext {
 
     // Thread#set_trace_func for specific threads events.  We need this because successive
     // Thread.set_trace_funcs will end up replacing the current one (as opposed to add_trace_func).
-    private Ruby.CallTraceFuncHook traceFuncHook = null;
+    private TraceEventManager.CallTraceFuncHook traceFuncHook = null;
 
     // Is this thread currently with in a function trace?
     private boolean isWithinTrace;
+
+    public final TraceEventManager traceEvents;
 
     // FIXME: This should get stuffed into call path OR call site should be passed through callpath and have
     //     this in it.
@@ -241,6 +242,7 @@ public final class ThreadContext {
 
         this.runtimeCache = runtime.getRuntimeCache();
         this.sites = runtime.sites;
+        this.traceEvents = runtime.getTraceEvents();
 
         // TOPLEVEL self and a few others want a top-level scope.  We create this one right
         // away and then pass it into top-level parse so it ends up being the top level.
@@ -804,7 +806,7 @@ public final class ThreadContext {
     }
 
     public void trace(RubyEvent event, String name, RubyModule implClass, String file, int line) {
-        runtime.callEventHooks(this, event, file, line, name, implClass);
+        traceEvents.callEventHooks(this, event, file, line, name, implClass);
     }
 
     /**
@@ -1158,7 +1160,7 @@ public final class ThreadContext {
      * Is this thread actively tracing at this moment.
      *
      * @return true if so
-     * @see org.jruby.Ruby#callEventHooks(ThreadContext, RubyEvent, String, int, String, org.jruby.runtime.builtin.IRubyObject)
+     * @see org.jruby.runtime.TraceEventManager#callEventHooks(ThreadContext, RubyEvent, String, int, String, org.jruby.runtime.builtin.IRubyObject)
      */
     public boolean isWithinTrace() {
         return isWithinTrace;
@@ -1168,7 +1170,7 @@ public final class ThreadContext {
      * Set whether we are actively tracing or not on this thread.
      *
      * @param isWithinTrace true is so
-     * @see org.jruby.Ruby#callEventHooks(ThreadContext, RubyEvent, String, int, String, org.jruby.runtime.builtin.IRubyObject)
+     * @see org.jruby.runtime.TraceEventManager#callEventHooks(ThreadContext, RubyEvent, String, int, String, org.jruby.runtime.builtin.IRubyObject)
      */
     public void setWithinTrace(boolean isWithinTrace) {
         this.isWithinTrace = isWithinTrace;
@@ -1319,7 +1321,7 @@ public final class ThreadContext {
         // We called Thread#set_trace_func.  Remove it here since all thread trace funcs are going away.
         if (traceFuncHook != null) traceFuncHook = null;
 
-        runtime.removeAllCallEventHooksFor(this);
+        traceEvents.removeAllCallEventHooksFor(this);
 
         return nil;
     }
@@ -1327,18 +1329,18 @@ public final class ThreadContext {
     public IRubyObject addThreadTraceFunction(IRubyObject trace_func, boolean useContextHook) {
         if (!(trace_func instanceof RubyProc)) throw runtime.newTypeError("trace_func needs to be Proc.");
 
-        Ruby.CallTraceFuncHook hook;
+        TraceEventManager.CallTraceFuncHook hook;
 
         if (useContextHook) {
             hook = traceFuncHook;
             if (hook == null) {
-                hook = new Ruby.CallTraceFuncHook(this);
+                hook = new TraceEventManager.CallTraceFuncHook(this);
                 traceFuncHook = hook;
             }
         } else {
-            hook = new Ruby.CallTraceFuncHook(this);
+            hook = new TraceEventManager.CallTraceFuncHook(this);
         }
-        runtime.setTraceFunction(hook, (RubyProc) trace_func);
+        traceEvents.setTraceFunction(hook, (RubyProc) trace_func);
 
         return trace_func;
     }

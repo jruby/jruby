@@ -1471,11 +1471,11 @@ public class RubyKernel {
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject set_trace_func(ThreadContext context, IRubyObject recv, IRubyObject trace_func, Block block) {
         if (trace_func.isNil()) {
-            context.runtime.setTraceFunction(null);
+            context.traceEvents.setTraceFunction(null);
         } else if (!(trace_func instanceof RubyProc)) {
             throw context.runtime.newTypeError("trace_func needs to be Proc.");
         } else {
-            context.runtime.setTraceFunction((RubyProc) trace_func);
+            context.traceEvents.setTraceFunction((RubyProc) trace_func);
         }
         return trace_func;
     }

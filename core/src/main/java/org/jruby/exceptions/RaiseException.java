@@ -215,7 +215,7 @@ public class RaiseException extends JumpException {
             setStackTraceFromException();
         }
 
-        IRRuntimeHelpers.traceRaise(context, getException());
+        IRRuntimeHelpers.traceRaise(context);
     }
 
     private void setStackTraceFromException() {

@@ -271,9 +271,9 @@ public class TracePoint extends RubyObject {
         enabled = toggle;
         
         if (toggle) {
-            context.runtime.addEventHook(hook);
+            context.traceEvents.addEventHook(hook);
         } else {
-            context.runtime.removeEventHook(hook);
+            context.traceEvents.removeEventHook(hook);
         }
     }
 
