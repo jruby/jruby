@@ -1821,6 +1821,11 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     @JRubyMethod
+    public IRubyObject precision(ThreadContext context) {
+        return context.runtime.newFixnum(value.precision());
+    }
+
+    @JRubyMethod
     public IRubyObject precs(ThreadContext context) {
         return RubyArray.newArray(context.runtime,
                 context.runtime.newFixnum(getSignificantDigits().length()),
