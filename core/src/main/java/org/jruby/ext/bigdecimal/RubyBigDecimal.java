@@ -829,6 +829,11 @@ public class RubyBigDecimal extends RubyNumeric {
                 return newInstance(context.runtime, recv, (RubyBignum) arg, MathContext.UNLIMITED);
             case BIGDECIMAL:
                 return newInstance(context.runtime, recv, (RubyBigDecimal) arg);
+            case COMPLEX:
+                RubyComplex c = (RubyComplex) arg;
+                if (!((RubyNumeric)c.image()).isZero()) {
+                    throw context.runtime.newArgumentError("Unable to make a BigDecimal from non-zero imaginary number");
+                }
         }
 
         IRubyObject maybeString = arg.checkStringType();
