@@ -483,7 +483,7 @@ public class RubyBigDecimal extends RubyNumeric {
             }
 
             MathContext mathContext = new MathContext(RubyFloat.DIG + 1, getRoundingMode(context.runtime));
-            return new RubyBigDecimal(context.runtime, new BigDecimal(doubleValue, mathContext));
+            return new RubyBigDecimal(context.runtime, new BigDecimal(value.toString(), mathContext));
         }
         if (value instanceof RubyRational) {
             return div2Impl(context, ((RubyRational) value).getNumerator(), ((RubyRational) value).getDenominator(), this.value.precision() * BASE_FIG);
