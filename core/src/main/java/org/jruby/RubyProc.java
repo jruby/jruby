@@ -232,16 +232,11 @@ public class RubyProc extends RubyObject implements DataType {
         string.append(types(runtime, type()));
         string.catString(":0x" + Integer.toString(System.identityHashCode(block), 16));
 
-        String file = block.getBody().getFile();
-
-        if (file != null) {
-            boolean isSymbolProc = block.getBody() instanceof RubySymbol.SymbolProcBody;
-
-            if (isSymbolProc) {
-                string.catString("(&:" + file + ")");
-            } else {
-                string.catString(" " + file + ":" + (block.getBody().getLine() + 1));
-            }
+        boolean isSymbolProc = block.getBody() instanceof RubySymbol.SymbolProcBody;
+        if (isSymbolProc) {
+            string.catString("(&:" + ((RubySymbol.SymbolProcBody) block.getBody()).getId() + ")");
+        } else if ((file = block.getBody().getFile()) != null) {
+            string.catString(" " + file + ":" + (block.getBody().getLine() + 1));
         }
 
         if (isLambda()) string.catString(" (lambda)");
