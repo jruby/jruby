@@ -1806,8 +1806,10 @@ public class RubyBigDecimal extends RubyNumeric {
         return context.runtime.newFixnum(value.precision());
     }
 
+    @Deprecated
     @JRubyMethod
     public IRubyObject precs(ThreadContext context) {
+        context.runtime.getWarnings().warn(IRubyWarnings.ID.DEPRECATED_METHOD, "BigDecimal#precs is deprecated and will be removed in the future; use BigDecimal#precision instead.");
         return RubyArray.newArray(context.runtime,
                 context.runtime.newFixnum(getSignificantDigits().length()),
                 context.runtime.newFixnum(((getAllDigits().length() / 4) + 1) * 4));
