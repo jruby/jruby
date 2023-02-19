@@ -1856,18 +1856,27 @@ public class RubyBigDecimal extends RubyNumeric {
 
         RoundingMode mode = getRoundingMode(runtime);
         int scale = 0;
+        boolean roundToInt = false;
 
         int argc = args.length;
         switch (argc) {
             case 2:
                 mode = javaRoundingModeFromRubyRoundingMode(context, args[1]);
                 scale = num2int(args[0]);
+                break;
             case 1:
                 if (ArgsUtil.getOptionsArg(runtime, args[0]) == context.nil) {
                     scale = num2int(args[0]);
+                    if (scale < 1) {
+                        roundToInt = true;
+                    }
                 } else {
                     mode = javaRoundingModeFromRubyRoundingMode(context, args[0]);
                 }
+                break;
+            case 0:
+                roundToInt = true;
+                break;
         }
 
         // JRUBY-914: Java 1.4 BigDecimal does not allow a negative scale, so we have to simulate it
@@ -1884,7 +1893,7 @@ public class RubyBigDecimal extends RubyNumeric {
             bigDecimal = new RubyBigDecimal(runtime, value.setScale(scale, mode));
         }
 
-        return args.length == 0 ? bigDecimal.to_int(runtime) : bigDecimal;
+        return roundToInt ? bigDecimal.to_int(runtime) : bigDecimal;
     }
 
     public IRubyObject round(ThreadContext context, IRubyObject scale, IRubyObject mode) {
