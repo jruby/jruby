@@ -149,6 +149,8 @@ public class RubyBigDecimal extends RubyNumeric {
 
         bigDecimal.defineConstant("NAN", newNaN(runtime));
         bigDecimal.defineConstant("INFINITY", newInfinity(runtime, 1));
+
+        bigDecimal.getMetaClass().undefineMethod("new");
         
         bigDecimal.setReifiedClass(RubyBigDecimal.class);
 
@@ -788,27 +790,6 @@ public class RubyBigDecimal extends RubyNumeric {
             case 2: return newInstance(context, recv, args[0], args[1]);
         }
         throw new IllegalArgumentException("unexpected argument count: " + args.length);
-    }
-
-    @Deprecated // no to be used in user-lang
-    @JRubyMethod(name = "new", meta = true)
-    public static IRubyObject new_(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        context.runtime.getWarnings().warn(IRubyWarnings.ID.DEPRECATED_METHOD, "BigDecimal.new is deprecated; use BigDecimal() method instead.");
-        return BigDecimalKernelMethods.newBigDecimal(context, recv, arg);
-    }
-
-    @Deprecated // no to be used in user-lang
-    @JRubyMethod(name = "new", meta = true)
-    public static IRubyObject new_(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject mathArg) {
-        context.runtime.getWarnings().warn(IRubyWarnings.ID.DEPRECATED_METHOD, "BigDecimal.new is deprecated; use BigDecimal() method instead.");
-        return BigDecimalKernelMethods.newBigDecimal(context, recv, arg, mathArg);
-    }
-
-    @Deprecated // no to be used in user-lang
-    @JRubyMethod(name = "new", meta = true)
-    public static IRubyObject new_(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject mathArg, IRubyObject opts) {
-        context.runtime.getWarnings().warn(IRubyWarnings.ID.DEPRECATED_METHOD, "BigDecimal.new is deprecated; use BigDecimal() method instead.");
-        return BigDecimalKernelMethods.newBigDecimal(context, recv, arg, mathArg, opts);
     }
 
     public static RubyBigDecimal newInstance(ThreadContext context, IRubyObject recv, IRubyObject arg) {
