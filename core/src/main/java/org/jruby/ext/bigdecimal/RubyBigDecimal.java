@@ -1803,7 +1803,41 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod
     public IRubyObject precision(ThreadContext context) {
-        return context.runtime.newFixnum(value.precision());
+        return precision_scale(context).aref(context, RubyFixnum.zero(context.runtime));
+    }
+
+    @JRubyMethod
+    public IRubyObject scale(ThreadContext context) {
+        return precision_scale(context).aref(context, RubyFixnum.one(context.runtime));
+    }
+
+    @JRubyMethod
+    public RubyArray precision_scale(ThreadContext context) {
+        Ruby runtime = context.runtime;
+        int precision = 0;
+        int scale = 0;
+        String plainString = value.toPlainString();
+
+        if (value.equals(BigDecimal.ZERO)) {
+            // special case
+        } else {
+            if (plainString.indexOf(".") == -1) {
+                // only integer
+                precision = plainString.replace("-", "").length();
+            } else {
+                // integer and fraction
+                String [] params = plainString.split("\\.");
+                if (new BigDecimal(params[1]).equals(BigDecimal.ZERO)) {
+                    // special case
+                    precision = params[0].replace("-", "").length();
+                } else {
+                    precision = value.precision() > value.scale() ? value.precision() : value.scale();
+                    scale = value.scale();
+                }
+            }
+        }
+        
+        return runtime.newArray(runtime.newFixnum(precision), runtime.newFixnum(scale));
     }
 
     @Deprecated
