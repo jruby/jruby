@@ -493,7 +493,7 @@ public class IRBuilder {
             case FORNODE: return buildFor((ForNode) node);
             case GLOBALASGNNODE: return buildGlobalAsgn((GlobalAsgnNode) node);
             case GLOBALVARNODE: return buildGlobalVar(result, (GlobalVarNode) node);
-            case HASHNODE: return buildHash((HashNode) node);
+            case HASHNODE: return buildHash((HashNode) node, false);
             case IFNODE: return buildIf(result, (IfNode) node);
             case INSTASGNNODE: return buildInstAsgn((InstAsgnNode) node);
             case INSTVARNODE: return buildInstVar((InstVarNode) node);
@@ -736,7 +736,7 @@ public class IRBuilder {
 
         if (keywords.hasOnlyRestKwargs()) return buildRestKeywordArgs(keywords, flags);
 
-        return buildWithOrder(keywords, keywords.containsVariableAssignment());
+        return buildHash(keywords, true);
     }
 
     // This is very similar to buildArray but when building generic arrays we do not want to mark callinfo
@@ -3691,25 +3691,29 @@ public class IRBuilder {
         return addResultInstr(new GetGlobalVariableInstr(result, node.getName()));
     }
 
-    public Operand buildHash(HashNode hashNode) {
+    public Operand buildHash(HashNode hashNode, boolean keywordArgsCall) {
         List<KeyValuePair<Operand, Operand>> args = new ArrayList<>();
         boolean hasAssignments = hashNode.containsVariableAssignment();
         Variable hash = null;
+        // Duplication checks happen when **{} are literals and not **h variable references.
+        Operand duplicateCheck = fals();
 
         for (KeyValuePair<Node, Node> pair: hashNode.getPairs()) {
             Node key = pair.getKey();
             Operand keyOperand;
 
             if (key == null) {                          // Splat kwarg [e.g. {**splat1, a: 1, **splat2)]
+                Node value = pair.getValue();
+                 duplicateCheck = value instanceof HashNode && ((HashNode) value).isLiteral() ? tru() : fals();
                 if (hash == null) {                     // No hash yet. Define so order is preserved.
                     hash = copy(new Hash(args, hashNode.isLiteral()));
                     args = new ArrayList<>();           // Used args but we may find more after the splat so we reset
                 } else if (!args.isEmpty()) {
-                    addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args), tru()}));
+                    addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args), duplicateCheck}));
                     args = new ArrayList<>();
                 }
-                Operand splat = buildWithOrder(pair.getValue(), hasAssignments);
-                addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, splat, tru()}));
+                Operand splat = buildWithOrder(value, hasAssignments);
+                addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, splat, duplicateCheck}));
                 continue;
             } else {
                 keyOperand = buildWithOrder(key, hasAssignments);
@@ -3721,7 +3725,7 @@ public class IRBuilder {
         if (hash == null) {           // non-**arg ordinary hash
             hash = copy(new Hash(args, hashNode.isLiteral()));
         } else if (!args.isEmpty()) { // ordinary hash values encountered after a **arg
-            addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args), tru()}));
+            addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args), duplicateCheck}));
         }
 
         return hash;
