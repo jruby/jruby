@@ -3695,21 +3695,25 @@ public class IRBuilder {
         List<KeyValuePair<Operand, Operand>> args = new ArrayList<>();
         boolean hasAssignments = hashNode.containsVariableAssignment();
         Variable hash = null;
+        // Duplication checks happen when **{} are literals and not **h variable references.
+        Operand duplicateCheck = fals();
 
         for (KeyValuePair<Node, Node> pair: hashNode.getPairs()) {
             Node key = pair.getKey();
             Operand keyOperand;
 
             if (key == null) {                          // Splat kwarg [e.g. {**splat1, a: 1, **splat2)]
+                Node value = pair.getValue();
+                 duplicateCheck = value instanceof HashNode && ((HashNode) value).isLiteral() ? tru() : fals();
                 if (hash == null) {                     // No hash yet. Define so order is preserved.
                     hash = copy(new Hash(args, hashNode.isLiteral()));
                     args = new ArrayList<>();           // Used args but we may find more after the splat so we reset
                 } else if (!args.isEmpty()) {
-                    addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args), tru()}));
+                    addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args), duplicateCheck}));
                     args = new ArrayList<>();
                 }
-                Operand splat = buildWithOrder(pair.getValue(), hasAssignments);
-                addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, splat, keywordArgsCall ? fals() : tru()}));
+                Operand splat = buildWithOrder(value, hasAssignments);
+                addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, splat, duplicateCheck}));
                 continue;
             } else {
                 keyOperand = buildWithOrder(key, hasAssignments);
@@ -3721,7 +3725,7 @@ public class IRBuilder {
         if (hash == null) {           // non-**arg ordinary hash
             hash = copy(new Hash(args, hashNode.isLiteral()));
         } else if (!args.isEmpty()) { // ordinary hash values encountered after a **arg
-            addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args), tru()}));
+            addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args), duplicateCheck}));
         }
 
         return hash;
