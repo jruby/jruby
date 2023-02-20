@@ -1802,6 +1802,14 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     @JRubyMethod
+    public  IRubyObject n_significant_digits(ThreadContext context) {
+        if (value.equals(BigDecimal.ZERO)) {
+            return RubyFixnum.zero(context.runtime);
+        }
+        return context.runtime.newFixnum(value.stripTrailingZeros().precision());
+    }
+
+    @JRubyMethod
     public IRubyObject precision(ThreadContext context) {
         return precision_scale(context).aref(context, RubyFixnum.zero(context.runtime));
     }
