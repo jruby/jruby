@@ -279,6 +279,17 @@ public class ArgumentProcessor {
                         separator = SEPARATOR;
                     }
                     String[] ls = s.split(separator);
+
+                    for (int i = 0; i < ls.length; i++) {
+                        File file = new File(ls[i]);
+                        if (!file.isAbsolute()) {
+                            try {
+                                ls[i] = file.getCanonicalPath();
+                            } catch (IOException e) {
+                                ls[i] = file.getAbsolutePath();
+                            }
+                        }
+                    }
                     config.getLoadPaths().addAll(Arrays.asList(ls));
                     break FOR;
                 case 'J':
