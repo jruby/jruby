@@ -809,7 +809,7 @@ public class RubyBigDecimal extends RubyNumeric {
             case BIGNUM:
                 return newInstance(context.runtime, recv, (RubyBignum) arg, MathContext.UNLIMITED);
             case BIGDECIMAL:
-                return newInstance(context.runtime, recv, (RubyBigDecimal) arg);
+                return arg;
             case COMPLEX:
                 RubyComplex c = (RubyComplex) arg;
                 if (!((RubyNumeric)c.image()).isZero()) {
