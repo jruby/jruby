@@ -1099,7 +1099,8 @@ public class IRRuntimeHelpers {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Block block) {
             if (target.fastARef(key) != null) {
-                context.runtime.getWarnings().warn(str(context.runtime, "key ", key.inspect(), " is duplicated and overwritten on line " + (context.getLine() + 1)));
+                context.runtime.getWarnings().warn(
+                        (trace) -> str(context.runtime, "key ", key.inspect(), " is duplicated and overwritten on line " + (trace.getLineNumber())));
             }
             target.op_aset(context, key, value);
         }

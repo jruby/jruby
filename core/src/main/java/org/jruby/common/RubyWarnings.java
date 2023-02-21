@@ -31,6 +31,8 @@ package org.jruby.common;
 
 import java.util.EnumSet;
 import java.util.Set;
+import java.util.function.Function;
+
 import org.joni.WarnCallback;
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
@@ -71,6 +73,10 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     @Override
     public void warn(String message) {
         warn(ID.MISCELLANEOUS, message);
+    }
+
+    public void warn(Function<RubyStackTraceElement, String> callback) {
+        warn(ID.MISCELLANEOUS, callback);
     }
 
     @Override
