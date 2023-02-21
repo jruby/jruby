@@ -2032,14 +2032,11 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyMethod
     public IRubyObject sqrt(IRubyObject arg) {
         Ruby runtime = getRuntime();
-        if (isNaN()) throw runtime.newFloatDomainError("sqrt of NaN");
+        if (isNaN()) throw runtime.newFloatDomainError("sqrt of 'NaN'(Not a Number)");
         if ((isInfinity() && infinitySign < 0) || value.signum() < 0) throw runtime.newFloatDomainError("sqrt of negative value");
         if (isInfinity() && infinitySign > 0) return newInfinity(runtime, 1);
 
-        // NOTE: MRI's sqrt precision is limited by 100, but we allow values more than 100.
-        int n = getPrecisionInt(runtime, arg) + VP_DOUBLE_FIG + BASE_FIG;
-        //int mx = value.precision() * (BASE_FIG + 1);
-        //if (mx <= n) mx = n;
+        int n = RubyNumeric.num2int(precision(runtime.getCurrentContext())) * (getPrecisionInt(runtime, arg) + 1);
 
         return new RubyBigDecimal(runtime, bigSqrt(value, new MathContext(n, RoundingMode.HALF_UP))).setResult();
     }

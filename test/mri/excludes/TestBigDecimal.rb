@@ -13,7 +13,6 @@ exclude :test_power_with_prec, "needs investigation"
 exclude :test_power_without_prec, "needs investigation"
 
 exclude :test_round_up, "needs investigation"
-exclude :test_sqrt_bigdecimal, "needs investigation"
 exclude :test_thread_local_mode, "needs investigation"
 exclude :test_to_f, "needs investigation"
 exclude :"test_BigDecimal_bug7522", "work in progress"
