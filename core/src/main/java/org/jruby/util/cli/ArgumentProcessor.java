@@ -249,7 +249,7 @@ public class ArgumentProcessor {
                     config.setHasInlineScript(true);
                     break FOR;
                 case 'E':
-                    processEncodingOption(grabValue(getArgumentError("unknown encoding name")));
+                    processEncodingOption("-E", grabValue(getArgumentError("unknown encoding name")));
                     break FOR;
                 case 'F':
                     disallowedInRubyOpts(argument);
@@ -468,6 +468,21 @@ public class ArgumentProcessor {
                             config.getError().println("warning: unknown argument for --debug: `" + debug + "'");
                         }
                         break FOR;
+                    } else if (argument.startsWith("--encoding")) {
+                        String encodingValue;
+                        final int len = argument.length();
+                        if (len == "--encoding".length()) {
+                            characterIndex = len;
+                            encodingValue = grabValue(getArgumentError("unknown encoding name"));
+                        } else {
+                            int splitIndex = argument.indexOf('=');
+                            if (splitIndex == -1 || len == (splitIndex + 1)) {
+                                throw new MainExitException(0, "jruby: missing argument for --encoding");
+                            }
+                            encodingValue = argument.substring(splitIndex + 1);
+                        }
+                        processEncodingOption("--encoding", encodingValue);
+                        break FOR;
                     } else if (argument.equals("--jdb")) {
                         config.setDebug(true);
                         config.setVerbosity(RubyInstanceConfig.Verbosity.TRUE);
@@ -656,11 +671,11 @@ public class ArgumentProcessor {
         throw mee;
     }
 
-    private void processEncodingOption(String value) {
+    private void processEncodingOption(String optionString, String value) {
         List<String> encodings = StringSupport.split(value, ':', 3);
         switch (encodings.size()) {
             case 3:
-                throw new MainExitException(1, "extra argument for -E: " + encodings.get(2));
+                throw new MainExitException(1, "extra argument for " + optionString + ": " + encodings.get(2));
             case 2:
                 config.setInternalEncoding(encodings.get(1));
             case 1:
