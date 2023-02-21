@@ -450,7 +450,7 @@ public class TraceType {
         }
         String type = exception.getMetaClass().getName();
 
-        return printBacktraceJRuby(exception.getRuntime(), exception.getBacktraceElements(), type, message, color);
+        return printBacktraceJRuby(runtime, exception.getBacktraceElements(), type, message, color);
     }
 
     private static void renderBacktraceJRuby(Ruby runtime, RubyStackTraceElement[] frames, StringBuilder buffer, boolean color) {
@@ -546,7 +546,11 @@ public class TraceType {
         if ( backtrace.isNil() ) return;
         if ( backtrace instanceof RubyArray ) {
             IRubyObject[] elements = ((RubyArray) backtrace).toJavaArrayMaybeUnsafe();
-            for (int i = skip; i < elements.length; i++) {
+            Ruby runtime = backtrace.getRuntime();
+            int optionBacktraceLimit = runtime.getInstanceConfig().getBacktraceLimit() + skip;
+            int maxBacktraceLines =  (optionBacktraceLimit > elements.length || optionBacktraceLimit == -1) ? elements.length : optionBacktraceLimit;
+
+            for (int i = skip; i < maxBacktraceLines; i++) {
                 IRubyObject stackTraceLine = elements[i];
                 if (stackTraceLine instanceof RubyString) {
                     errorStream.println("\tfrom " + stackTraceLine);
@@ -554,6 +558,11 @@ public class TraceType {
                 else {
                     errorStream.println("\t" + stackTraceLine);
                 }
+            }
+
+            if ((elements.length > optionBacktraceLimit)) {
+                String suppressedLines = String.valueOf(elements.length - optionBacktraceLimit);
+                errorStream.append("\t ... " + suppressedLines + " levels...\n");
             }
         }
     }
