@@ -278,7 +278,11 @@ public class ArgumentProcessor {
                     for (int i = 0; i < ls.length; i++) {
                         File file = new File(ls[i]);
                         if (!file.isAbsolute()) {
-                            ls[i] = file.getAbsolutePath();
+                            try {
+                                ls[i] = file.getCanonicalPath();
+                            } catch (IOException e) {
+                                ls[i] = file.getAbsolutePath();
+                            }
                         }
                     }
                     config.getLoadPaths().addAll(Arrays.asList(ls));
