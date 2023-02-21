@@ -167,6 +167,8 @@ public class RubyInstanceConfig {
     }
 
     public void processArgumentsWithRubyopts() {
+        if (disableRUBYOPT) return;
+        
         // environment defaults to System.getenv normally
         Object rubyoptObj = environment.get("RUBYOPT");
 
