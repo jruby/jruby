@@ -1139,10 +1139,11 @@ public final class Ruby implements Constantizable {
     private RootNode addGetsLoop(RootNode oldRoot, boolean printing, boolean processLineEndings, boolean split) {
         int line = oldRoot.getLine();
         BlockNode newBody = new BlockNode(line);
-        RubySymbol dollarSlash = newSymbol(CommonByteLists.DOLLAR_SLASH);
-        newBody.add(new GlobalAsgnNode(line, dollarSlash, new StrNode(line, ((RubyString) globalVariables.get("$/")).getByteList())));
 
-        if (processLineEndings) newBody.add(new GlobalAsgnNode(line, newSymbol(CommonByteLists.DOLLAR_BACKSLASH), new GlobalVarNode(line, dollarSlash)));
+        if (processLineEndings) {
+            RubySymbol dollarSlash = newSymbol(CommonByteLists.DOLLAR_SLASH);
+            newBody.add(new GlobalAsgnNode(line, newSymbol(CommonByteLists.DOLLAR_BACKSLASH), new GlobalVarNode(line, dollarSlash)));
+        }
 
         GlobalVarNode dollarUnderscore = new GlobalVarNode(line, newSymbol("$_"));
 

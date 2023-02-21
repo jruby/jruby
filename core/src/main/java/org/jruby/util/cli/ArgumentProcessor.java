@@ -96,6 +96,7 @@ public class ArgumentProcessor {
     final RubyInstanceConfig config;
     private boolean endOfArguments = false;
     private int characterIndex = 0;
+    private boolean dashUpperU = false;
 
     private static final Pattern VERSION_FLAG = Pattern.compile("^--[12]\\.[89012]$");
 
@@ -249,6 +250,10 @@ public class ArgumentProcessor {
                     config.setHasInlineScript(true);
                     break FOR;
                 case 'E':
+                    if (dashUpperU) {
+                        MainExitException mee = fakeRuntimeError("jruby: default_internal already set to UTF-8");
+                        throw mee;
+                    }
                     processEncodingOption("-E", grabValue(getArgumentError("unknown encoding name")));
                     break FOR;
                 case 'F':
@@ -332,6 +337,7 @@ public class ArgumentProcessor {
                     runBinScript();
                     break FOR;
                 case 'U':
+                    dashUpperU = true;
                     config.setInternalEncoding("UTF-8");
                     break;
                 case 'v':
@@ -629,6 +635,24 @@ public class ArgumentProcessor {
                         String limit = valueListFor(argument, "backtrace-limit")[0];
                         config.setBacktraceLimit(Integer.parseInt(limit));
                         break FOR;
+                    } else if (argument.startsWith("--external-encoding=")) {
+                        String externalEncoding = valueListFor(argument, "external-encoding")[0];
+                        config.setExternalEncoding(externalEncoding);
+                        break FOR;
+                    } else if (argument.startsWith("--external-encoding")) {
+                        characterIndex = argument.length();
+                        String externalEncoding = grabValue(getArgumentError("invalid encoding"));
+                        config.setExternalEncoding(externalEncoding);
+                        break FOR;
+                    } else if (argument.startsWith("--internal-encoding=")) {
+                        String internalEncoding = valueListFor(argument, "internal-encoding")[0];
+                        config.setInternalEncoding(internalEncoding);
+                        break FOR;
+                    } else if (argument.startsWith("--internal-encoding")) {
+                        characterIndex = argument.length();
+                        String internalEncoding = grabValue(getArgumentError("invalid encoding"));
+                        config.setInternalEncoding(internalEncoding);
+                        break FOR;
                     } else {
                         if (argument.equals("--")) {
                             // ruby interpreter compatibilty
@@ -664,8 +688,13 @@ public class ArgumentProcessor {
 
     private void disallowedInRubyOpts(CharSequence option) {
         if (rubyOpts) {
-            throw new MainExitException(1, "jruby: invalid switch in RUBYOPT: " + option + " (RuntimeError)");
+            throw fakeRuntimeError("jruby: invalid switch in RUBYOPT: " + option);
         }
+    }
+
+    private MainExitException fakeRuntimeError(String message) {
+        // We process arguments before JRuby boots, so there's no RuntimeError class yet
+        return new MainExitException(1, message + " (RuntimeError)");
     }
 
     private static void errorMissingEquals(String label) {
