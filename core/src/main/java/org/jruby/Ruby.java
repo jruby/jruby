@@ -1158,7 +1158,7 @@ public final class Ruby implements Constantizable {
             whileBody.add(oldRoot.getBodyNode());
         }
 
-        if (printing) whileBody.add(new FCallNode(line, newSymbol("puts"), new ArrayNode(line, dollarUnderscore), null));
+        if (printing) whileBody.add(new FCallNode(line, newSymbol("print"), new ArrayNode(line, dollarUnderscore), null));
 
         return new RootNode(line, oldRoot.getScope(), newBody, oldRoot.getFile());
     }
