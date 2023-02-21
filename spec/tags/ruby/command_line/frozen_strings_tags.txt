@@ -1,1 +1,0 @@
-fails:The --debug flag produces debugging info on attempted frozen string modification
