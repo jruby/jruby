@@ -625,6 +625,24 @@ public class ArgumentProcessor {
                         String limit = valueListFor(argument, "backtrace-limit")[0];
                         config.setBacktraceLimit(Integer.parseInt(limit));
                         break FOR;
+                    } else if (argument.startsWith("--external-encoding=")) {
+                        String externalEncoding = valueListFor(argument, "external-encoding")[0];
+                        config.setExternalEncoding(externalEncoding);
+                        break FOR;
+                    } else if (argument.startsWith("--external-encoding")) {
+                        characterIndex = argument.length();
+                        String externalEncoding = grabValue(getArgumentError("invalid encoding"));
+                        config.setExternalEncoding(externalEncoding);
+                        break FOR;
+                    } else if (argument.startsWith("--internal-encoding=")) {
+                        String internalEncoding = valueListFor(argument, "internal-encoding")[0];
+                        config.setInternalEncoding(internalEncoding);
+                        break FOR;
+                    } else if (argument.startsWith("--internal-encoding")) {
+                        characterIndex = argument.length();
+                        String internalEncoding = grabValue(getArgumentError("invalid encoding"));
+                        config.setInternalEncoding(internalEncoding);
+                        break FOR;
                     } else {
                         if (argument.equals("--")) {
                             // ruby interpreter compatibilty
