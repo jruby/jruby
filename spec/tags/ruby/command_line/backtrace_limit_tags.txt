@@ -1,0 +1,2 @@
+fails:The --backtrace-limit command line option limits top-level backtraces to a given number of entries
+fails:The --backtrace-limit command line option affects Exception#full_message
