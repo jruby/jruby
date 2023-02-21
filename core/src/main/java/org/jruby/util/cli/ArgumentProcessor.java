@@ -287,14 +287,18 @@ public class ArgumentProcessor {
                 case 'K': // @Deprecated TODO no longer relevant in Ruby 2.x
                     String eArg = grabValue(getArgumentError("provide a value for -K"));
 
-                    config.setKCode(KCode.create(eArg));
+                    KCode kcode = KCode.create(eArg);
 
-                    // source encoding
-                    config.setSourceEncoding(config.getKCode().getEncoding().toString());
+                    if (kcode != KCode.NIL) {
+                        config.setKCode(kcode);
 
-                    // set external encoding if not already specified
-                    if (config.getExternalEncoding() == null) {
-                        config.setExternalEncoding(config.getKCode().getEncoding().toString());
+                        // source encoding
+                        config.setSourceEncoding(config.getKCode().getEncoding().toString());
+
+                        // set external encoding if not already specified
+                        if (config.getExternalEncoding() == null) {
+                            config.setExternalEncoding(config.getKCode().getEncoding().toString());
+                        }
                     }
 
                     break;
