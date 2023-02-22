@@ -434,7 +434,7 @@ public class IRBuilder {
     private void determineIfWeNeedLineNumber(Node node) {
         if (node.isNewline()) {
             int currLineNum = node.getLine();
-            if (currLineNum != lastProcessedLineNum) { // Do not emit multiple line number instrs for the same line
+            if (currLineNum != lastProcessedLineNum && !(node instanceof NilImplicitNode)) { // Do not emit multiple line number instrs for the same line
                 needsLineNumInfo = true;
                 lastProcessedLineNum = currLineNum;
             }
