@@ -1225,6 +1225,8 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private IRubyObject addInternal(ThreadContext context, RubyBigDecimal val, IRubyObject b, IRubyObject digits) {
+        final Ruby runtime = context.runtime;
+        int prec = getPositiveInt(context, digits);
         if (val == null) {
             // TODO:
             // MRI behavior: Call "+" or "add", depending on the call.
@@ -1232,15 +1234,15 @@ public class RubyBigDecimal extends RubyNumeric {
             // http://blade.nagaokaut.ac.jp/cgi-bin/scat.rb/ruby/ruby-core/17374
             // return callCoerced(context, op, b, true); -- this is MRI behavior.
             // We'll use ours for now, thus providing an ability to add Floats.
-            return callCoerced(context, sites(context).op_plus, b, true);
+            RubyBigDecimal ret = (RubyBigDecimal) callCoerced(context, sites(context).op_plus, b, true);
+            if (ret != null) {
+                ret.setResult(prec);
+            }
+            return ret;
         }
 
         RubyBigDecimal res = addSpecialCases(context, val);
         if ( res != null ) return res;
-
-        final Ruby runtime = context.runtime;
-        int prec = getPositiveInt(context, digits);
-
         MathContext mathContext = new MathContext(prec, getRoundingMode(runtime));
         return new RubyBigDecimal(runtime, value.add(val.value, mathContext)).setResult(prec);
     }
