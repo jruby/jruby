@@ -69,6 +69,7 @@ import org.jruby.runtime.JavaSites.IRRuntimeHelpersSites;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
+import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.callsite.CachingCallSite;
@@ -1099,10 +1100,13 @@ public class IRRuntimeHelpers {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Block block) {
             if (target.fastARef(key) != null) {
-                context.runtime.getWarnings().warn(
-                        (trace) -> str(context.runtime, "key ", key.inspect(), " is duplicated and overwritten on line " + (trace.getLineNumber())));
+                context.runtime.getWarnings().warn(context, key, KwargMergeVisitor::duplicationWarning);
             }
             target.op_aset(context, key, value);
+        }
+
+        private static String duplicationWarning(ThreadContext c, IRubyObject k, RubyStackTraceElement trace) {
+            return str(c.runtime, "key ", k.inspect(), " is duplicated and overwritten on line " + (trace.getLineNumber()));
         }
     }
 

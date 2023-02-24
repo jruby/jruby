@@ -31,7 +31,6 @@ package org.jruby.common;
 
 import java.util.EnumSet;
 import java.util.Set;
-import java.util.function.Function;
 
 import org.joni.WarnCallback;
 import org.jruby.Ruby;
@@ -46,6 +45,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.func.TriFunction;
 
 import static org.jruby.util.RubyStringBuilder.cat;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -75,8 +75,25 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         warn(ID.MISCELLANEOUS, message);
     }
 
-    public void warn(Function<RubyStackTraceElement, String> callback) {
-        warn(ID.MISCELLANEOUS, callback);
+    public <Context, State> void warn(Context context, State state, TriFunction<Context, State, RubyStackTraceElement, String> callback) {
+        if (!runtime.warningsEnabled()) return;
+
+        RubyStackTraceElement trace = runtime.getCurrentContext().getSingleBacktrace();
+
+        String message = callback.apply(context, state, trace);
+        String file;
+        int line;
+
+        if (trace == null) {
+            file = "(unknown)";
+            line = 0;
+        } else {
+            file = trace.getFileName();
+            line = trace.getLineNumber();
+        }
+
+        // 1 is subtracted here because getRubyStackTrace is 1-indexed.
+        warn(file, line - 1, message);
     }
 
     @Override
