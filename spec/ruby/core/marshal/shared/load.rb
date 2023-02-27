@@ -8,7 +8,11 @@ describe :marshal_load, shared: true do
 
   it "raises an ArgumentError when the dumped data is truncated" do
     obj = {first: 1, second: 2, third: 3}
-    -> { Marshal.send(@method, Marshal.dump(obj)[0, 5]) }.should raise_error(ArgumentError)
+    -> { Marshal.send(@method, Marshal.dump(obj)[0, 5]) }.should raise_error(ArgumentError, "marshal data too short")
+  end
+
+  it "raises an ArgumentError when the argument is empty String" do
+    -> { Marshal.send(@method, "") }.should raise_error(ArgumentError, "marshal data too short")
   end
 
   it "raises an ArgumentError when the dumped class is missing" do
@@ -67,6 +71,18 @@ describe :marshal_load, shared: true do
       it "does not freeze classes" do
         Marshal.send(@method, Marshal.dump(Object), freeze: true)
         Object.should_not.frozen?
+      end
+
+      ruby_bug "#19427", ""..."3.3" do
+        it "does freeze extended objects" do
+          object = Marshal.load("\x04\be:\x0FEnumerableo:\vObject\x00", freeze: true)
+          object.should.frozen?
+        end
+
+        it "does freeze extended objects with instance variables" do
+          object = Marshal.load("\x04\be:\x0FEnumerableo:\vObject\x06:\n@ivarT", freeze: true)
+          object.should.frozen?
+        end
       end
 
       describe "when called with a proc" do
@@ -129,6 +145,14 @@ describe :marshal_load, shared: true do
       it "no longer mutate the object after it was passed to the proc" do
         string = Marshal.load(Marshal.dump("foo"), :freeze.to_proc)
         string.should.frozen?
+      end
+    end
+
+    ruby_bug "#19427", ""..."3.3" do
+      it "call the proc with extended objects" do
+        objs = []
+        obj = Marshal.load("\x04\be:\x0FEnumerableo:\vObject\x00", Proc.new { |o| objs << o; o })
+        objs.should == [obj]
       end
     end
 
@@ -719,6 +743,17 @@ describe :marshal_load, shared: true do
       new_obj_metaclass_ancestors = class << new_obj; ancestors; end
       new_obj_metaclass_ancestors[@num_self_class, 3].should ==
         [Meths, UserRegexp, Regexp]
+    end
+
+    ruby_bug "#19439", ""..."3.3" do
+      it "restore the regexp instance variables" do
+        obj = Regexp.new("hello")
+        obj.instance_variable_set(:@regexp_ivar, [42])
+
+        new_obj = Marshal.send(@method, "\x04\bI/\nhello\x00\a:\x06EF:\x11@regexp_ivar[\x06i/")
+        new_obj.instance_variables.should == [:@regexp_ivar]
+        new_obj.instance_variable_get(:@regexp_ivar).should == [42]
+      end
     end
   end
 

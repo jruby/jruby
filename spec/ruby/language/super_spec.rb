@@ -325,7 +325,7 @@ describe "The super keyword" do
   it "should pass method arguments when called within a closure" do
     SuperSpecs::ZSuperInBlock::B.new.m(arg: 1).should == 1
   end
-  
+
   describe 'when using keyword arguments' do
     before :each do
       @req  = SuperSpecs::Keywords::RequiredArguments.new

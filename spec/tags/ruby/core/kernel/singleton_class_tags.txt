@@ -1,0 +1,1 @@
+fails:Kernel#singleton_class raises TypeError for a frozen deduplicated String
