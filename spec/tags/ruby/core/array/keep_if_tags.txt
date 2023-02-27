@@ -1,0 +1,1 @@
+fails:Array#keep_if tolerates increasing an array size during iteration

@@ -1,0 +1,2 @@
+fails:Array#collect tolerates increasing an array size during iteration
+fails:Array#collect! tolerates increasing an array size during iteration

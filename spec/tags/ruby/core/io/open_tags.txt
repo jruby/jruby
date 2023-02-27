@@ -4,3 +4,4 @@ windows:IO.open ingores the :encoding option when the :internal_encoding option 
 windows:IO.open raises an Errno::EINVAL if the new mode is not compatible with the descriptor's current mode
 fails:IO.open ignores the :encoding option when the :external_encoding option is present
 fails:IO.open ignores the :encoding option when the :internal_encoding option is present
+fails:IO.open accepts options as keyword arguments

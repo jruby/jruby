@@ -1,3 +1,6 @@
 fails:Marshal.load for a Symbol loads a binary encoded Symbol
 fails:Marshal.load for an Object raises ArgumentError if the object from an 'o' stream is not dumpable as 'o' type user class
 fails:Marshal.load for a wrapped C pointer raises ArgumentError when the local class is a regular object
+fails:Marshal.load when called with freeze: true does freeze extended objects
+fails:Marshal.load when called with freeze: true does freeze extended objects with instance variables
+fails:Marshal.load when called with a proc call the proc with extended objects

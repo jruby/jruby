@@ -1,0 +1,2 @@
+fails:Rational#truncate with an invalid valud for precision raises a TypeError
+fails:Rational#truncate with an invalid valud for precision does not call to_int on the argument
