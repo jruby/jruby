@@ -1626,10 +1626,12 @@ public class OpenFile implements Finalizable {
                         rbuf.len -= chomplen;
                     }
                     len += pending - chomplen;
-                    //if (cr != StringSupport.CR_BROKEN) {
+                    if (cr != StringSupport.CR_BROKEN) {
                         final int beg = strByteList.begin();
-                        pos += codeRangeScanRestartable(enc, strByteList.unsafeBytes(), beg + pos, beg + len, cr);
-                    //}
+                        long v = codeRangeScanRestartable(enc, strByteList.unsafeBytes(), beg + pos, beg + len, cr);
+                        cr = unpackArg(v);
+                        pos += unpackResult(v);
+                    }
                     if (e != -1) break;
                 }
                 READ_CHECK(context);
@@ -1722,10 +1724,12 @@ public class OpenFile implements Finalizable {
                 }
                 bytes += n;
                 strByteList.setRealSize(bytes);
-                //if (cr != StringSupport.CR_BROKEN) {
+                if (cr != StringSupport.CR_BROKEN) {
                     final int beg = strByteList.begin();
-                    pos += codeRangeScanRestartable(enc, strByteList.unsafeBytes(), beg + pos, beg + bytes, cr);
-                //}
+                    long v = codeRangeScanRestartable(enc, strByteList.unsafeBytes(), beg + pos, beg + bytes, cr);
+                    cr = unpackArg(v);
+                    pos += unpackResult(v);
+                }
                 if (bytes < siz) break;
                 siz += BUFSIZ;
                 ((RubyString) str).modify(BUFSIZ);
