@@ -450,21 +450,58 @@ public abstract class RubyInteger extends RubyNumeric {
     public RubyString chr(ThreadContext context) {
         Ruby runtime = context.runtime;
 
-        // rb_num_to_uint
-        long i = getLongValue() & 0xFFFFFFFFL;
-        int c = (int) i;
+        long uint = toUnsignedInteger(runtime);
 
-        Encoding enc;
-
-        if (i > 0xff) {
-            enc = runtime.getDefaultInternalEncoding();
+        if (uint > 0xff) {
+            Encoding enc = runtime.getDefaultInternalEncoding();
             if (enc == null) {
-                throw runtime.newRangeError(toString() + " out of char range");
+                throw runtime.newRangeError(uint + " out of char range");
             }
-            return chrCommon(context, c, enc);
+            return chrCommon(context, uint, enc);
         }
 
-        return RubyString.newStringShared(runtime, SINGLE_CHAR_BYTELISTS[c]);
+        return RubyString.newStringShared(runtime, SINGLE_CHAR_BYTELISTS[(int) uint]);
+    }
+
+    private long toUnsignedInteger(Ruby runtime) {
+        // rb_num_to_uint
+        long uintResult = numToUint(this);
+        long uint = uintResult >>> 32;
+        int ret = (int) (uintResult & 0xFFFFFFFF);
+        if (ret == 0) {
+        } else if (this instanceof RubyFixnum) {
+            throw runtime.newRangeError(getLongValue() + " out of char range");
+        } else {
+            throw runtime.newRangeError("bignum out of char range");
+        }
+        return uint;
+    }
+
+    public static final int NUMERR_TYPE = 1;
+    public static final int NUMERR_NEGATIVE = 2;
+    public static final int NUMERR_TOOLARGE = 3;
+
+    /**
+     * Simulate CRuby's rb_num_to_uint by returning a single long; the top 4 bytes will be the uint and the bottom
+     * four bytes will be the result code. See {@link #NUMERR_TYPE}, {@link #NUMERR_NEGATIVE}, and {@link #NUMERR_TOOLARGE}.
+     *
+     * @param val the object to convert to a uint
+     * @return the value and result code, with the top four bytes being the result code (zero if no error)
+     */
+    public static long numToUint(IRubyObject val) {
+        if (val instanceof RubyFixnum) {
+            long v = fix2long(val);
+            if (v > 0xFFFFFFFFL) return NUMERR_TOOLARGE;
+            if (v < 0) return NUMERR_NEGATIVE;
+            return v << 32;
+        }
+
+        if (val instanceof RubyBignum) {
+            if (((RubyBignum) val).isNegative()) return NUMERR_NEGATIVE;
+            /* long is 64bit */
+            return NUMERR_TOOLARGE;
+        }
+        return NUMERR_TYPE;
     }
 
     @Deprecated
@@ -476,8 +513,7 @@ public abstract class RubyInteger extends RubyNumeric {
     public RubyString chr(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.runtime;
 
-        // rb_num_to_uint
-        long i = getLongValue() & 0xFFFFFFFFL;
+        long uint = toUnsignedInteger(runtime);
 
         Encoding enc;
         if (arg instanceof RubyEncoding) {
@@ -485,7 +521,7 @@ public abstract class RubyInteger extends RubyNumeric {
         } else {
             enc =  arg.convertToString().toEncoding(runtime);
         }
-        return chrCommon(context, i, enc);
+        return chrCommon(context, uint, enc);
     }
 
     @Deprecated

@@ -2123,7 +2123,7 @@ public class EncodingUtils {
         int n;
         switch (n = EncodingUtils.encCodelen(context, code, enc)) {
             case ErrorCodes.ERR_INVALID_CODE_POINT_VALUE:
-                throw runtime.newRangeError("invalid codepoint " + Long.toHexString(i) + " in " + enc);
+                throw runtime.newRangeError("invalid codepoint 0x" + Long.toHexString(i) + " in " + enc);
             case ErrorCodes.ERR_TOO_BIG_WIDE_CHAR_VALUE:
             case 0:
                 throw runtime.newRangeError(i + " out of char range");
@@ -2325,7 +2325,7 @@ public class EncodingUtils {
     public static int encCodelen(ThreadContext context, int c, Encoding enc) {
         int n = enc.codeToMbcLength(c);
         if (n == 0) {
-            throw context.runtime.newArgumentError("invalid codepoint " + Long.toHexString(c & 0xFFFFFFFFL) + " in " + enc);
+            throw context.runtime.newArgumentError("invalid codepoint 0x" + Long.toHexString(c & 0xFFFFFFFFL) + " in " + enc);
         }
         return n;
     }
