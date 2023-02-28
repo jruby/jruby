@@ -29,6 +29,7 @@
 
 package org.jruby.util.cli;
 
+import java.io.Console;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -55,6 +56,7 @@ import static org.jruby.RubyInstanceConfig.CompileMode;
 public class Options {
     private static final List<Option> _loadedOptions = new ArrayList<>(240);
     private static final boolean INVOKEDYNAMIC_DEFAULT = calculateInvokedynamicDefault();
+    private static final boolean COLOR = System.console() != null;
 
     // This section holds all Options for JRuby. They will be listed in the
     // --properties output.
@@ -114,7 +116,7 @@ public class Options {
     public static final Option<Boolean>  IR_PRINT_OPT = bool(IR, "ir.print.opt", false, "Print the IR CFG before and after each optimization pass.");
     public static final Option<Boolean>  IR_PRINT_ALL = bool(IR, "ir.print.all", false, "Enable ir.print and include IR executed during JRuby's boot phase.");
     public static final Option<Boolean>  IR_PRINT = bool(IR, "ir.print", IR_PRINT_ALL.load(), "Print the final IR to be run before starting to execute each body of code.");
-    public static final Option<Boolean>  IR_PRINT_COLOR = bool(IR, "ir.print.color", false, "Print the final IR with color highlighting.");
+    public static final Option<Boolean>  IR_PRINT_COLOR = bool(IR, "ir.print.color", COLOR, "Print the final IR with color highlighting.");
     public static final Option<Boolean>  IR_STRING_FREEZE = bool(IR, "ir.string.freeze", true, "Compile \"foo\".freeze as a constant frozen string value instead of a call.");
 
     public static final Option<Boolean> NATIVE_ENABLED = bool(NATIVE, "native.enabled", true, "Enable/disable native code, including POSIX features and C exts.");
@@ -142,7 +144,7 @@ public class Options {
     public static final Option<Boolean> REIFY_CLASSES = bool(MISCELLANEOUS, "reify.classes", false, "Generate a real Java class and methods for every Ruby class.");
     public static final Option<Boolean> REIFY_FFI = bool(MISCELLANEOUS, "reify.ffi", false, "Reify FFI memory structures.");
     public static final Option<Boolean> REIFY_LOGERRORS = bool(MISCELLANEOUS, "reify.logErrors", false, "Log errors during reification (reify.classes=true).");
-    public static final Option<Boolean> BACKTRACE_COLOR = bool(MISCELLANEOUS, "backtrace.color", false, "Enable colorized backtraces.");
+    public static final Option<Boolean> BACKTRACE_COLOR = bool(MISCELLANEOUS, "backtrace.color", COLOR, "Enable colorized backtraces.");
     public static final Option<String> BACKTRACE_STYLE = string(MISCELLANEOUS, "backtrace.style", new String[]{"normal", "raw", "full", "mri"}, "normal", "Set the style of exception backtraces.");
     public static final Option<Boolean> BACKTRACE_MASK = bool(MISCELLANEOUS, "backtrace.mask", false, "Mask .java lines in Ruby backtraces.");
     public static final Option<Boolean> NATIVE_EXEC = bool(MISCELLANEOUS, "native.exec", true, "Do a true process-obliterating native exec for Kernel#exec.");
