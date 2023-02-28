@@ -127,11 +127,24 @@ describe "Hash literal" do
     {a: 1, **h, c: 4}.should == {a: 1, b: 2, c: 4}
   end
 
-  it "expands an '**{}' element with the last key/value pair taking precedence" do
+  it "expands an '**{}' or '**obj' element with the last key/value pair taking precedence" do
     -> {
       @h = eval "{a: 1, **{a: 2, b: 3, c: 1}, c: 3}"
     }.should complain(/key :a is duplicated|duplicated key/)
     @h.should == {a: 2, b: 3, c: 3}
+
+    -> {
+      h = {a: 2, b: 3, c: 1}
+      @h = eval "{a: 1, **h, c: 3}"
+    }.should_not complain
+    @h.should == {a: 2, b: 3, c: 3}
+  end
+
+  it "expands an '**{}' and warns when finding an additional duplicate key afterwards" do
+    -> {
+      @h = eval "{d: 1, **{a: 2, b: 3, c: 1}, c: 3}"
+    }.should complain(/key :c is duplicated|duplicated key/)
+    @h.should == {a: 2, b: 3, c: 3, d: 1}
   end
 
   it "merges multiple nested '**obj' in Hash literals" do

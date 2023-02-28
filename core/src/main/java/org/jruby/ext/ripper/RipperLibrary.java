@@ -42,7 +42,5 @@ public class RipperLibrary implements Library {
         
         runtime.getClass("Ripper").setConstant("Version", 
                 runtime.newString(RIPPER_VERSION));
-        
-        runtime.defineGlobalConstant("SCRIPT_LINES__", runtime.getNil());
     }
 }

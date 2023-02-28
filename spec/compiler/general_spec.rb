@@ -180,6 +180,8 @@ modes.each do |mode|
     it "compiles interpolated strings" do
       run('a = "hello#{42}"; a') {|result| expect(result).to eq('hello42') }
       run('i = 1; a = "hello#{i + 42}"; a') {|result| expect(result).to eq("hello43") }
+      # same cases in presence of refinements
+      run('class NoToS; end; module AddToS; refine(NoToS){def to_s; "42"; end}; end; class TryToS; using AddToS; def self.a; "hello#{NoToS.new}"; end; end; TryToS.a') {|result| expect(result).to eq('hello42') }
     end
 
     it "compiles calls" do
@@ -1355,6 +1357,104 @@ modes.each do |mode|
     # See jruby/jruby#7246, test must loop twice to hit optimized dispatch
     it "dispatches to Java using a block to implement an interface" do
       run('ary = []; 2.times { java.util.ArrayList.new([1]).forEach { |e| ary << e } }; ary') {|ary| ary.should == [1, 1]}
+    end
+
+    it "calls struct field methods" do
+      run('StructTest1 = Struct.new(:foo); st1 = StructTest1.new; st1.foo = 1; st1.foo') {|x| expect(x).to eq(1)}
+      run('StructTest2 = Struct.new(:foo); class StructTest2; def do_foo; self.foo = 1; foo; end; end; StructTest2.new.do_foo') {|x| expect(x).to eq(1)}
+    end
+
+    it "calls aref with string key" do
+      # optimized case for hash receiver
+      run('def foo; {"a" => 1}; end; ary = foo; ary["a"] = 5; ary["a"]') {|val| expect(val).to eq(5)}
+      # normal case for non-hash
+      run('def foo; "abcd"; end; str = foo; str["a"]') {|val| expect(val).to eq("a")}
+      # method_missing case
+      run('o = Object.new; def o.method_missing(sym, a); :ok; end; o["a"]') {|val| expect(val).to eq(:ok)}
+      # failed call site case, calls twice to trigger monomorphic cache in fail path
+      run('10.times.map {o = Object.new; def o.[](a); 1; end; o}.map{|o| 2.times {o["a"]}; o["a"]}.sum') {|val| expect(val).to eq(10)}
+      # failed call site with method_missing
+      run(<<-AREF) {|val| expect(val).to eq(10)}
+        ary = 10.times.map do |i|
+          o = Object.new
+          if i < 9
+            def o.[](a); 1; end
+          else
+            def o.method_missing(sym, a); 1; end;
+          end
+          o
+        end
+        ary.map{|o| o["a"]}.sum
+      AREF
+      # compare_by_identity after usage
+      run('h = {"a" => 1}; val = nil; 2.times { val = h["a"]; h.compare_by_identity }; val') {|val| expect(val).to eq(nil)}
+    end
+
+    it "handles instance super calls with a block" do
+      run(<<-SUPER) {|val| expect(val).to eq(1)}
+        class AInstanceSuper
+          def instance_super
+            yield
+          end
+        end
+        class BInstanceSuper < AInstanceSuper
+          def instance_super
+            super {1}
+          end
+        end
+        BInstanceSuper.new.instance_super
+      SUPER
+    end
+
+    it "handles module super calls with a block" do
+      run(<<-SUPER) {|val| expect(val).to eq(1)}
+          class AModuleSuper
+            def module_super
+              yield
+            end
+          end
+          module BModuleSuper
+            def module_super
+              super {1}
+            end
+          end
+          class CModuleSuper < AModuleSuper
+            include BModuleSuper
+          end
+          CModuleSuper.new.module_super
+      SUPER
+    end
+
+    it "handles class super calls with a block" do
+      run(<<-SUPER) {|val| expect(val).to eq(1)}
+        class AInstanceSuper
+          def self.class_super
+            yield
+          end
+        end
+        class BInstanceSuper < AInstanceSuper
+          def self.class_super
+            super {1}
+          end
+        end
+        BInstanceSuper.class_super
+      SUPER
+    end
+
+    it "handles zsuper calls" do
+      run(<<-SUPER) {|val| expect(val).to eq(1)}
+        class AZSuper
+          def z_super
+            1
+          end
+        end
+        class BZSuper < AZSuper
+          def z_super
+            1.times { super }
+          end
+        end
+        BZSuper.new.z_super
+      SUPER
     end
   end
 end

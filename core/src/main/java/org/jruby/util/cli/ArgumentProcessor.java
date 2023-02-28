@@ -96,6 +96,7 @@ public class ArgumentProcessor {
     final RubyInstanceConfig config;
     private boolean endOfArguments = false;
     private int characterIndex = 0;
+    private boolean dashUpperU = false;
 
     private static final Pattern VERSION_FLAG = Pattern.compile("^--[12]\\.[89012]$");
 
@@ -249,7 +250,11 @@ public class ArgumentProcessor {
                     config.setHasInlineScript(true);
                     break FOR;
                 case 'E':
-                    processEncodingOption(grabValue(getArgumentError("unknown encoding name")));
+                    if (dashUpperU) {
+                        MainExitException mee = fakeRuntimeError("jruby: default_internal already set to UTF-8");
+                        throw mee;
+                    }
+                    processEncodingOption("-E", grabValue(getArgumentError("unknown encoding name")));
                     break FOR;
                 case 'F':
                     disallowedInRubyOpts(argument);
@@ -274,6 +279,17 @@ public class ArgumentProcessor {
                         separator = SEPARATOR;
                     }
                     String[] ls = s.split(separator);
+
+                    for (int i = 0; i < ls.length; i++) {
+                        File file = new File(ls[i]);
+                        if (!file.isAbsolute()) {
+                            try {
+                                ls[i] = file.getCanonicalPath();
+                            } catch (IOException e) {
+                                ls[i] = file.getAbsolutePath();
+                            }
+                        }
+                    }
                     config.getLoadPaths().addAll(Arrays.asList(ls));
                     break FOR;
                 case 'J':
@@ -287,14 +303,18 @@ public class ArgumentProcessor {
                 case 'K': // @Deprecated TODO no longer relevant in Ruby 2.x
                     String eArg = grabValue(getArgumentError("provide a value for -K"));
 
-                    config.setKCode(KCode.create(eArg));
+                    KCode kcode = KCode.create(eArg);
 
-                    // source encoding
-                    config.setSourceEncoding(config.getKCode().getEncoding().toString());
+                    if (kcode != KCode.NIL) {
+                        config.setKCode(kcode);
 
-                    // set external encoding if not already specified
-                    if (config.getExternalEncoding() == null) {
-                        config.setExternalEncoding(config.getKCode().getEncoding().toString());
+                        // source encoding
+                        config.setSourceEncoding(config.getKCode().getEncoding().toString());
+
+                        // set external encoding if not already specified
+                        if (config.getExternalEncoding() == null) {
+                            config.setExternalEncoding(config.getKCode().getEncoding().toString());
+                        }
                     }
 
                     break;
@@ -328,6 +348,7 @@ public class ArgumentProcessor {
                     runBinScript();
                     break FOR;
                 case 'U':
+                    dashUpperU = true;
                     config.setInternalEncoding("UTF-8");
                     break;
                 case 'v':
@@ -467,6 +488,21 @@ public class ArgumentProcessor {
 
                             config.getError().println("warning: unknown argument for --debug: `" + debug + "'");
                         }
+                        break FOR;
+                    } else if (argument.startsWith("--encoding")) {
+                        String encodingValue;
+                        final int len = argument.length();
+                        if (len == "--encoding".length()) {
+                            characterIndex = len;
+                            encodingValue = grabValue(getArgumentError("unknown encoding name"));
+                        } else {
+                            int splitIndex = argument.indexOf('=');
+                            if (splitIndex == -1 || len == (splitIndex + 1)) {
+                                throw new MainExitException(0, "jruby: missing argument for --encoding");
+                            }
+                            encodingValue = argument.substring(splitIndex + 1);
+                        }
+                        processEncodingOption("--encoding", encodingValue);
                         break FOR;
                     } else if (argument.equals("--jdb")) {
                         config.setDebug(true);
@@ -610,6 +646,24 @@ public class ArgumentProcessor {
                         String limit = valueListFor(argument, "backtrace-limit")[0];
                         config.setBacktraceLimit(Integer.parseInt(limit));
                         break FOR;
+                    } else if (argument.startsWith("--external-encoding=")) {
+                        String externalEncoding = valueListFor(argument, "external-encoding")[0];
+                        config.setExternalEncoding(externalEncoding);
+                        break FOR;
+                    } else if (argument.startsWith("--external-encoding")) {
+                        characterIndex = argument.length();
+                        String externalEncoding = grabValue(getArgumentError("invalid encoding"));
+                        config.setExternalEncoding(externalEncoding);
+                        break FOR;
+                    } else if (argument.startsWith("--internal-encoding=")) {
+                        String internalEncoding = valueListFor(argument, "internal-encoding")[0];
+                        config.setInternalEncoding(internalEncoding);
+                        break FOR;
+                    } else if (argument.startsWith("--internal-encoding")) {
+                        characterIndex = argument.length();
+                        String internalEncoding = grabValue(getArgumentError("invalid encoding"));
+                        config.setInternalEncoding(internalEncoding);
+                        break FOR;
                     } else {
                         if (argument.equals("--")) {
                             // ruby interpreter compatibilty
@@ -645,8 +699,13 @@ public class ArgumentProcessor {
 
     private void disallowedInRubyOpts(CharSequence option) {
         if (rubyOpts) {
-            throw new MainExitException(1, "jruby: invalid switch in RUBYOPT: " + option + " (RuntimeError)");
+            throw fakeRuntimeError("jruby: invalid switch in RUBYOPT: " + option);
         }
+    }
+
+    private MainExitException fakeRuntimeError(String message) {
+        // We process arguments before JRuby boots, so there's no RuntimeError class yet
+        return new MainExitException(1, message + " (RuntimeError)");
     }
 
     private static void errorMissingEquals(String label) {
@@ -656,11 +715,11 @@ public class ArgumentProcessor {
         throw mee;
     }
 
-    private void processEncodingOption(String value) {
+    private void processEncodingOption(String optionString, String value) {
         List<String> encodings = StringSupport.split(value, ':', 3);
         switch (encodings.size()) {
             case 3:
-                throw new MainExitException(1, "extra argument for -E: " + encodings.get(2));
+                throw new MainExitException(1, "extra argument for " + optionString + ": " + encodings.get(2));
             case 2:
                 config.setInternalEncoding(encodings.get(1));
             case 1:

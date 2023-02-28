@@ -29,6 +29,7 @@ package org.jruby.ir.interpreter;
 import java.util.Arrays;
 
 import org.jruby.ir.instructions.CallBase;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -67,6 +68,10 @@ public class ExitableInterpreterContext extends InterpreterContext {
      * @returns the live ruby values for the operand to the original super call.
       */
     public IRubyObject[] getArgs(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temps) {
-    	return superCall.prepareArguments(context, self, currScope, currDynScope, temps);
+    	IRubyObject[] args = superCall.prepareArguments(context, self, currScope, currDynScope, temps);
+
+        IRRuntimeHelpers.setCallInfo(context, superCall.getFlags());
+
+        return args;
     }
 }

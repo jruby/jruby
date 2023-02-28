@@ -2031,12 +2031,13 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     final RubyBoolean respond_to_p(ThreadContext context, IRubyObject methodName, final boolean includePrivate) {
-        final String name = methodName.asJavaString();
-        if (getMetaClass().respondsToMethod(name, !includePrivate, context.getCurrentStaticScope())) return context.tru;
-        // MRI (1.9) always passes down a symbol when calling respond_to_missing?
-        if ( ! (methodName instanceof RubySymbol) ) methodName = context.runtime.newSymbol(name);
-        IRubyObject respond = sites(context).respond_to_missing.call(context, this, this, methodName, RubyBoolean.newBoolean(context, includePrivate));
-        return RubyBoolean.newBoolean(context, respond.isTrue());
+        RubySymbol name = TypeConverter.checkID(methodName);
+
+        if (getMetaClass().respondsToMethod(name.idString(), !includePrivate, context.getCurrentStaticScope())) return context.tru;
+
+        Ruby runtime = context.runtime;
+        IRubyObject result = sites(context).respond_to_missing.call(context, this, this, name, runtime.newBoolean(includePrivate));
+        return context.runtime.newBoolean(result.isTrue());
     }
 
     /** rb_obj_id

@@ -1139,10 +1139,11 @@ public final class Ruby implements Constantizable {
     private RootNode addGetsLoop(RootNode oldRoot, boolean printing, boolean processLineEndings, boolean split) {
         int line = oldRoot.getLine();
         BlockNode newBody = new BlockNode(line);
-        RubySymbol dollarSlash = newSymbol(CommonByteLists.DOLLAR_SLASH);
-        newBody.add(new GlobalAsgnNode(line, dollarSlash, new StrNode(line, ((RubyString) globalVariables.get("$/")).getByteList())));
 
-        if (processLineEndings) newBody.add(new GlobalAsgnNode(line, newSymbol(CommonByteLists.DOLLAR_BACKSLASH), new GlobalVarNode(line, dollarSlash)));
+        if (processLineEndings) {
+            RubySymbol dollarSlash = newSymbol(CommonByteLists.DOLLAR_SLASH);
+            newBody.add(new GlobalAsgnNode(line, newSymbol(CommonByteLists.DOLLAR_BACKSLASH), new GlobalVarNode(line, dollarSlash)));
+        }
 
         GlobalVarNode dollarUnderscore = new GlobalVarNode(line, newSymbol("$_"));
 
@@ -1158,7 +1159,7 @@ public final class Ruby implements Constantizable {
             whileBody.add(oldRoot.getBodyNode());
         }
 
-        if (printing) whileBody.add(new FCallNode(line, newSymbol("puts"), new ArrayNode(line, dollarUnderscore), null));
+        if (printing) whileBody.add(new FCallNode(line, newSymbol("print"), new ArrayNode(line, dollarUnderscore), null));
 
         return new RootNode(line, oldRoot.getScope(), newBody, oldRoot.getFile());
     }
@@ -5813,7 +5814,7 @@ public final class Ruby implements Constantizable {
         }
 
         public boolean matches(Object o) {
-            return (o instanceof RubyProc) && ((RubyProc) o).getBlock() == proc.getBlock();
+            return (o instanceof RubyProc) && ((RubyProc) o).getBlock().getBody() == proc.getBlock().getBody();
         }
 
         @Override

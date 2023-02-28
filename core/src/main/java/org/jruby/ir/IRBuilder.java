@@ -1,5 +1,6 @@
 package org.jruby.ir;
 
+import org.jruby.EvalType;
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyComplex;
@@ -28,6 +29,7 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.Signature;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
@@ -323,6 +325,10 @@ public class IRBuilder {
     private int temporaryVariableIndex = -1;
     private boolean needsYieldBlock = false;
 
+    // If set we know which kind of eval is being performed.  Beyond type it also prevents needing to
+    // ask what scope type we are in.
+    public EvalType evalType = null;
+
     // This variable is an out-of-band passing mechanism to pass the method name to the block the
     // method is attached to.  call/fcall will set this and iter building will pass it into the iter
     // builder and set it.
@@ -428,7 +434,7 @@ public class IRBuilder {
     private void determineIfWeNeedLineNumber(Node node) {
         if (node.isNewline()) {
             int currLineNum = node.getLine();
-            if (currLineNum != lastProcessedLineNum) { // Do not emit multiple line number instrs for the same line
+            if (currLineNum != lastProcessedLineNum && !(node instanceof NilImplicitNode)) { // Do not emit multiple line number instrs for the same line
                 needsLineNumInfo = true;
                 lastProcessedLineNum = currLineNum;
             }
@@ -487,7 +493,7 @@ public class IRBuilder {
             case FORNODE: return buildFor((ForNode) node);
             case GLOBALASGNNODE: return buildGlobalAsgn((GlobalAsgnNode) node);
             case GLOBALVARNODE: return buildGlobalVar(result, (GlobalVarNode) node);
-            case HASHNODE: return buildHash((HashNode) node);
+            case HASHNODE: return buildHash((HashNode) node, false);
             case IFNODE: return buildIf(result, (IfNode) node);
             case INSTASGNNODE: return buildInstAsgn((InstAsgnNode) node);
             case INSTVARNODE: return buildInstVar((InstVarNode) node);
@@ -730,7 +736,7 @@ public class IRBuilder {
 
         if (keywords.hasOnlyRestKwargs()) return buildRestKeywordArgs(keywords, flags);
 
-        return buildWithOrder(keywords, keywords.containsVariableAssignment());
+        return buildHash(keywords, true);
     }
 
     // This is very similar to buildArray but when building generic arrays we do not want to mark callinfo
@@ -1294,14 +1300,25 @@ public class IRBuilder {
 
         // obj["string"] optimization for Hash
         ArrayNode argsAry;
+        Node arg0;
         if (!callNode.isLazy() &&
+                // aref only
                 id.equals("[]") &&
+
+                // single literal string argument
                 callNode.getArgsNode() instanceof ArrayNode &&
                 (argsAry = (ArrayNode) callNode.getArgsNode()).size() == 1 &&
-                argsAry.get(0) instanceof StrNode &&
+                (arg0 = argsAry.get(0)) instanceof StrNode &&
+
+                // not pre-frozen (which can just go through normal call path)
+                !((StrNode) arg0).isFrozen() &&
+
+                // obj#[] definitely not refined
                 !scope.maybeUsingRefinements() &&
-                receiverNode instanceof HashNode &&
+
+                // no block argument
                 callNode.getIterNode() == null) {
+
             StrNode keyNode = (StrNode) argsAry.get(0);
             FrozenString key = new FrozenString(keyNode.getValue(), keyNode.getCodeRange(), scope.getFile(), keyNode.getLine());
             addInstr(ArrayDerefInstr.create(scope, result, receiver, key, 0));
@@ -2144,11 +2161,32 @@ public class IRBuilder {
         return processBodyResult;
     }
 
+    // FIXME: Technically a binding in top-level could get passed which would should still cause an error but this
+    //   scenario is very uncommon combined with setting @@cvar in a place you shouldn't it is an acceptable incompat
+    //   for what I consider to be a very low-value error.
+    private boolean isTopScope() {
+        IRScope topScope = scope.getNearestNonClosurelikeScope();
+
+        boolean isTopScope = topScope instanceof IRScriptBody ||
+                (evalType != null && evalType != EvalType.MODULE_EVAL && evalType != EvalType.BINDING_EVAL);
+
+        // we think it could be a top scope but it could still be called from within a module/class which
+        // would then not be a top scope.
+        if (!isTopScope) return false;
+
+        IRScope s = topScope;
+        while (s != null && !(s instanceof IRModuleBody)) {
+            s = s.getLexicalParent();
+        }
+
+        return s == null; // nothing means we walked all the way up.
+    }
+
     // @@c
     public Operand buildClassVar(ClassVarNode node) {
-        Variable ret = createTemporaryVariable();
-        addInstr(new GetClassVariableInstr(ret, classVarDefinitionContainer(), node.getName()));
-        return ret;
+        if (isTopScope()) return addRaiseError("RuntimeError", "class variable access from toplevel");
+
+        return addResultInstr(new GetClassVariableInstr(temp(), classVarDefinitionContainer(), node.getName()));
     }
 
     // Add the specified result instruction to the scope and return its result variable.
@@ -2164,6 +2202,8 @@ public class IRBuilder {
     //   @@c = 1
     // end
     public Operand buildClassVarAsgn(final ClassVarAsgnNode classVarAsgnNode) {
+        if (isTopScope()) return addRaiseError("RuntimeError", "class variable access from toplevel");
+
         Operand val = build(classVarAsgnNode.getValueNode());
         addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), classVarAsgnNode.getName(), val));
         return val;
@@ -3651,25 +3691,29 @@ public class IRBuilder {
         return addResultInstr(new GetGlobalVariableInstr(result, node.getName()));
     }
 
-    public Operand buildHash(HashNode hashNode) {
+    public Operand buildHash(HashNode hashNode, boolean keywordArgsCall) {
         List<KeyValuePair<Operand, Operand>> args = new ArrayList<>();
         boolean hasAssignments = hashNode.containsVariableAssignment();
         Variable hash = null;
+        // Duplication checks happen when **{} are literals and not **h variable references.
+        Operand duplicateCheck = fals();
 
         for (KeyValuePair<Node, Node> pair: hashNode.getPairs()) {
             Node key = pair.getKey();
             Operand keyOperand;
 
             if (key == null) {                          // Splat kwarg [e.g. {**splat1, a: 1, **splat2)]
+                Node value = pair.getValue();
+                 duplicateCheck = value instanceof HashNode && ((HashNode) value).isLiteral() ? tru() : fals();
                 if (hash == null) {                     // No hash yet. Define so order is preserved.
                     hash = copy(new Hash(args, hashNode.isLiteral()));
                     args = new ArrayList<>();           // Used args but we may find more after the splat so we reset
                 } else if (!args.isEmpty()) {
-                    addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args), tru()}));
+                    addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args), duplicateCheck}));
                     args = new ArrayList<>();
                 }
-                Operand splat = buildWithOrder(pair.getValue(), hasAssignments);
-                addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, splat, tru()}));
+                Operand splat = buildWithOrder(value, hasAssignments);
+                addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, splat, duplicateCheck}));
                 continue;
             } else {
                 keyOperand = buildWithOrder(key, hasAssignments);
@@ -3681,7 +3725,7 @@ public class IRBuilder {
         if (hash == null) {           // non-**arg ordinary hash
             hash = copy(new Hash(args, hashNode.isLiteral()));
         } else if (!args.isEmpty()) { // ordinary hash values encountered after a **arg
-            addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args), tru()}));
+            addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args), duplicateCheck}));
         }
 
         return hash;
@@ -4926,14 +4970,14 @@ public class IRBuilder {
         return false;
     }
 
-    private void addRaiseError(String id, String message) {
-        addRaiseError(id, new MutableString(message));
+    private Operand addRaiseError(String id, String message) {
+        return addRaiseError(id, new MutableString(message));
     }
 
-    private void addRaiseError(String id, Operand message) {
+    private Operand addRaiseError(String id, Operand message) {
         Operand exceptionClass = searchModuleForConst(manager.getObjectClass(), symbol(id));
         Operand kernel = searchModuleForConst(manager.getObjectClass(), symbol("Kernel"));
-        call(temp(), kernel, "raise", exceptionClass, message);
+        return call(temp(), kernel, "raise", exceptionClass, message);
     }
 
     public Operand buildZSuper(ZSuperNode zsuperNode) {

@@ -1,1 +1,0 @@
-fails:The END keyword runs only once for multiple calls

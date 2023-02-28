@@ -114,8 +114,8 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   end
 
   def test_dash_little_v_version_verbose_d_debug_K_kcode_r_require_b_benchmarks_a_splitsinput_I_loadpath_C_cwd_F_delimeter_J_javaprop_19
-    e_line = 'puts $VERBOSE, $DEBUG, Encoding.default_external, $F.join(59.chr), $LOAD_PATH.join(44.chr), Dir.pwd, Java::java::lang::System.getProperty(:foo.to_s)'
-    args = "-v -d -a -n -Ihello -C .. -F, -e #{q + e_line + q}"
+    e_line = 'puts $VERBOSE, $DEBUG, Encoding.default_external, $F.join(59.chr), Dir.pwd, Java::java::lang::System.getProperty(:foo.to_s)'
+    args = "-v -d -a -n -C .. -F, -e #{q + e_line + q}"
     # the options at the end will add -J-Dfoo=bar to the args
     lines = jruby_with_pipe("echo 1,2,3", args, :foo => 'bar').split("\n")
     assert_equal 0, $?.exitstatus, "failed execution with output:\n#{lines}"
@@ -126,10 +126,9 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     assert_equal "true", lines[2]
     assert_equal "UTF-8", lines[3]
     assert_equal "1;2;3", lines[4].rstrip
-    assert_match(/^hello/, lines[5])
     # The gsub is for windows
-    assert_equal "#{parent_dir}", lines[6].gsub('\\', '/')
-    assert_equal "bar", lines[7]
+    assert_equal "#{parent_dir}", lines[5].gsub('\\', '/')
+    assert_equal "bar", lines[6]
 
     e_line = 'puts Gem'
     args = " -rrubygems -e #{q + e_line + q}"
@@ -326,15 +325,6 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     args = %{-Xlaunch.inproc=true -e "p defined?(Benchmark) != nil; ENV[%{RUBYOPT}] = nil; system %{bin/jruby -e 'p defined?(Benchmark) != nil'}"}
 
     assert_equal "true\nfalse\n", jruby(args)
-  ensure
-    ENV['RUBYOPT'] = rubyopt_org
-  end
-
-  def test_rubyopts_take_effect_with_double_dash
-    rubyopt_org = ENV['RUBYOPT']
-    ENV['RUBYOPT'] = '-rrubygems -Ilib'
-    jruby("-e \"defined?(::Gem) && $:.include?('lib') or abort\" --")
-    assert_equal 0 ,$?.exitstatus
   ensure
     ENV['RUBYOPT'] = rubyopt_org
   end

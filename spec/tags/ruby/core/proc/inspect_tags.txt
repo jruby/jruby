@@ -1,1 +1,0 @@
-fails:Proc#inspect for a proc created with Symbol#to_proc returns a description including '(&:symbol)'

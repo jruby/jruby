@@ -133,7 +133,6 @@ project 'JRuby Base' do
     execute_goals( 'create',
                    :id => 'jruby-revision',
                    :phase => 'generate-sources',
-                   'shortRevisionLength' =>  '10',
                    'buildNumberPropertyName' =>  'jruby.revision' )
   end
 

@@ -1,2 +1,0 @@
-fails:Array#pack with format 'D' raises a TypeError when the object is not Numeric
-fails:Array#pack with format 'd' raises a TypeError when the object is not Numeric

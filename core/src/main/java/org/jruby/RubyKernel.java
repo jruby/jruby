@@ -1178,7 +1178,7 @@ public class RubyKernel {
 
         if (bindingGiven) recv = binding.getSelf();
 
-        return Interpreter.evalWithBinding(context, recv, src, binding);
+        return Interpreter.evalWithBinding(context, recv, src, binding, bindingGiven);
     }
 
     private static Binding getBindingForEval(ThreadContext context, IRubyObject scope) {
