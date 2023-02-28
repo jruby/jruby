@@ -39,8 +39,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -52,8 +52,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -65,8 +65,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -78,8 +78,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -91,8 +91,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -104,8 +104,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -117,8 +117,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -130,8 +130,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -143,8 +143,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -156,8 +156,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -169,8 +169,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -182,8 +182,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -195,8 +195,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -208,8 +208,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -221,8 +221,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -234,8 +234,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -247,8 +247,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -260,8 +260,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -273,8 +273,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -286,8 +286,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -299,8 +299,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -312,8 +312,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -325,8 +325,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -338,8 +338,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -351,8 +351,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -364,8 +364,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -377,8 +377,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -390,8 +390,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -403,8 +403,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -416,8 +416,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -429,8 +429,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -442,8 +442,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -455,8 +455,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -468,8 +468,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -481,8 +481,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -494,8 +494,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -507,8 +507,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -520,8 +520,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -533,8 +533,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -546,8 +546,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -559,8 +559,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -572,8 +572,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -585,8 +585,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -598,8 +598,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -611,8 +611,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -624,8 +624,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -637,8 +637,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -650,8 +650,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -663,8 +663,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -676,8 +676,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -689,8 +689,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -702,8 +702,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -715,8 +715,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -728,8 +728,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -741,8 +741,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -754,8 +754,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -767,8 +767,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -780,8 +780,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -793,8 +793,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -806,8 +806,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -819,8 +819,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -832,8 +832,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -845,8 +845,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -858,8 +858,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -871,8 +871,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -884,8 +884,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -897,8 +897,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -910,8 +910,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -923,8 +923,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -936,8 +936,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -949,8 +949,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -962,8 +962,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -975,8 +975,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -988,8 +988,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -1001,8 +1001,8 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>rubygems</groupId>
           <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
         </exclusion>
       </exclusions>
     </dependency>
