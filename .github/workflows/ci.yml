@@ -35,6 +35,11 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
+      - name: Setup Maven Action
+        uses: s4u/setup-maven-action@v1.6.0
+        with:
+          java-version: ${{ matrix.java-version }}
+          maven-version: '3.8.7'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
@@ -66,6 +71,11 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '8'
+      - name: Setup Maven Action
+        uses: s4u/setup-maven-action@v1.6.0
+        with:
+          java-version: '8'
+          maven-version: '3.8.7'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
@@ -96,6 +106,11 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: 8
+      - name: Setup Maven Action
+        uses: s4u/setup-maven-action@v1.6.0
+        with:
+          java-version: 8
+          maven-version: '3.8.7'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
@@ -131,6 +146,11 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
+      - name: Setup Maven Action
+        uses: s4u/setup-maven-action@v1.6.0
+        with:
+          java-version: ${{ matrix.java-version }}
+          maven-version: '3.8.7'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
@@ -164,6 +184,11 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
+      - name: Setup Maven Action
+        uses: s4u/setup-maven-action@v1.6.0
+        with:
+          java-version: ${{ matrix.java-version }}
+          maven-version: '3.8.7'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: mvn package ${{ matrix.package-flags }}
@@ -196,6 +221,11 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '8'
+      - name: Setup Maven Action
+        uses: s4u/setup-maven-action@v1.6.0
+        with:
+          java-version: '8'
+          maven-version: '3.8.7'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: mvn package ${{ matrix.package-flags }}
@@ -226,6 +256,11 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: 8
+      - name: Setup Maven Action
+        uses: s4u/setup-maven-action@v1.6.0
+        with:
+          java-version: 8
+          maven-version: '3.8.7'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
@@ -256,6 +291,11 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: 8
+      - name: Setup Maven Action
+        uses: s4u/setup-maven-action@v1.6.0
+        with:
+          java-version: 8
+          maven-version: '3.8.7'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
@@ -286,7 +326,7 @@ jobs:
       - name: Setup Maven Action
         uses: s4u/setup-maven-action@v1.6.0
         with:
-          java-version: 8
+          java-version: 11
           maven-version: '3.8.7'
       - name: cache dependencies
         uses: actions/cache@v3
@@ -326,6 +366,11 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '8'
+      - name: Setup Maven Action
+        uses: s4u/setup-maven-action@v1.6.0
+        with:
+          java-version: '8'
+          maven-version: '3.8.7'
       - name: dependency convergence
         run: tool/maven-ci-script.sh
         env:
@@ -352,6 +397,11 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: 8
+      - name: Setup Maven Action
+        uses: s4u/setup-maven-action@v1.6.0
+        with:
+          java-version: 8
+          maven-version: '3.8.7'
       - name: maven-ci-script.sh
         run: tool/maven-ci-script.sh
         env:
@@ -390,6 +440,11 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: 11
+      - name: Setup Maven Action
+        uses: s4u/setup-maven-action@v1.6.0
+        with:
+          java-version: 11
+          maven-version: '3.8.7'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: sequel
@@ -415,6 +470,11 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: 8
+      - name: Setup Maven Action
+        uses: s4u/setup-maven-action@v1.6.0
+        with:
+          java-version: 8
+          maven-version: '3.8.7'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: concurrent-ruby
@@ -441,6 +501,11 @@ jobs:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
           architecture: arm
+      - name: Setup Maven Action
+        uses: s4u/setup-maven-action@v1.6.0
+        with:
+          java-version: ${{ matrix.java-version }}
+          maven-version: '3.8.7'
       - name: cache dependencies
         uses: actions/cache@v3
         with:
@@ -474,6 +539,11 @@ jobs:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
           architecture: arm
+      - name: Setup Maven Action
+        uses: s4u/setup-maven-action@v1.6.0
+        with:
+          java-version: ${{ matrix.java-version }}
+          maven-version: '3.8.7'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
@@ -501,6 +571,11 @@ jobs:
         with:
           distribution: 'adopt-openj9'
           java-version: '8'
+      - name: Setup Maven Action
+        uses: s4u/setup-maven-action@v1.6.0
+        with:
+          java-version: '8'
+          maven-version: '3.8.7'
       - name: test profile
 #        run: "tool/maven-ci-script.sh"
         run: "true"
@@ -531,6 +606,11 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '8'
+      - name: Setup Maven Action
+        uses: s4u/setup-maven-action@v1.6.0
+        with:
+          java-version: '8'
+          maven-version: '3.8.7'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
