@@ -1907,6 +1907,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
         for (int i = 0; i < size; i++) {
             switch (bytes[begin + i]) {
+                case '|':
                 case '.':
                 case '*':
                 case '[':
