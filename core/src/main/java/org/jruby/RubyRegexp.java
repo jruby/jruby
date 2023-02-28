@@ -1899,6 +1899,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         // FIXME ' ' is for awk split detection this should be in split code perhaps.
     }
 
+    // FIXME: This should be something within joni which says it is a simple text string and not something requiring a regexp.
     // Assumes 7bit source
     private boolean isExact(ByteList str) {
         int size = str.realSize();
@@ -1915,6 +1916,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 case '+':
                 case '?':
                 case '{':
+                case '\\':
                     return false;
             }
         }
