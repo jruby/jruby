@@ -1893,8 +1893,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 RubyString.scanForCodeRange(str) == CR_7BIT &&
                 !getOptions().isIgnorecase() &&
                 ((str.realSize() == 1 &&
-                str.charAt(0) != '.' &&
-                str.charAt(0) != ' ') ||
+                        str.charAt(0) != '.' &&
+                        str.charAt(0) != '^' &&
+                        str.charAt(0) != '$' &&
+                        str.charAt(0) != ' ') ||
                 isExact(str));
         // FIXME ' ' is for awk split detection this should be in split code perhaps.
     }
@@ -1917,6 +1919,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 case '?':
                 case '{':
                 case '\\':
+                case '^':
+                case '$':
                     return false;
             }
         }
