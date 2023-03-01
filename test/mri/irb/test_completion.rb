@@ -1,9 +1,15 @@
 # frozen_string_literal: false
 require "test/unit"
+require "pathname"
 require "irb"
 
 module TestIRB
   class TestCompletion < Test::Unit::TestCase
+    def setup
+      # make sure require completion candidates are not cached
+      IRB::InputCompletor.class_variable_set(:@@files_from_load_path, nil)
+    end
+
     def test_nonstring_module_name
       begin
         require "irb/completion"
@@ -84,6 +90,45 @@ module TestIRB
       end
     end
 
+    def test_complete_require_with_pathname_in_load_path
+      temp_dir = Dir.mktmpdir
+      File.write(File.join(temp_dir, "foo.rb"), "test")
+      test_path = Pathname.new(temp_dir)
+      $LOAD_PATH << test_path
+
+      candidates = IRB::InputCompletor::CompletionProc.("'foo", "require ", "")
+      assert_include candidates, "'foo"
+    ensure
+      $LOAD_PATH.pop if test_path
+      FileUtils.remove_entry(temp_dir) if temp_dir
+    end
+
+    def test_complete_require_with_string_convertable_in_load_path
+      temp_dir = Dir.mktmpdir
+      File.write(File.join(temp_dir, "foo.rb"), "test")
+      object = Object.new
+      object.define_singleton_method(:to_s) { temp_dir }
+      $LOAD_PATH << object
+
+      candidates = IRB::InputCompletor::CompletionProc.("'foo", "require ", "")
+      assert_include candidates, "'foo"
+    ensure
+      $LOAD_PATH.pop if object
+      FileUtils.remove_entry(temp_dir) if temp_dir
+    end
+
+    def test_complete_require_with_malformed_object_in_load_path
+      object = Object.new
+      def object.to_s; raise; end
+      $LOAD_PATH << object
+
+      assert_nothing_raised do
+        IRB::InputCompletor::CompletionProc.("'foo", "require ", "")
+      end
+    ensure
+      $LOAD_PATH.pop if object
+    end
+
     def test_complete_require_library_name_first
       pend 'Need to use virtual library paths'
       candidates = IRB::InputCompletor::CompletionProc.("'csv", "require ", "")
@@ -107,11 +152,56 @@ module TestIRB
     end
 
     def test_complete_variable
+      # Bug fix issues https://github.com/ruby/irb/issues/368
+      # Variables other than `str_example` and `@str_example` are defined to ensure that irb completion does not cause unintended behavior
       str_example = ''
-      str_example.clear # suppress "assigned but unused variable" warning
+      @str_example = ''
+      private_methods = ''
+      methods = ''
+      global_variables = ''
+      local_variables = ''
+      instance_variables = ''
+
+      # suppress "assigned but unused variable" warning
+      str_example.clear
+      @str_example.clear
+      private_methods.clear
+      methods.clear
+      global_variables.clear
+      local_variables.clear
+      instance_variables.clear
+
       assert_include(IRB::InputCompletor.retrieve_completion_data("str_examp", bind: binding), "str_example")
       assert_equal(IRB::InputCompletor.retrieve_completion_data("str_example", bind: binding, doc_namespace: true), "String")
       assert_equal(IRB::InputCompletor.retrieve_completion_data("str_example.to_s", bind: binding, doc_namespace: true), "String.to_s")
+
+      assert_include(IRB::InputCompletor.retrieve_completion_data("@str_examp", bind: binding), "@str_example")
+      assert_equal(IRB::InputCompletor.retrieve_completion_data("@str_example", bind: binding, doc_namespace: true), "String")
+      assert_equal(IRB::InputCompletor.retrieve_completion_data("@str_example.to_s", bind: binding, doc_namespace: true), "String.to_s")
+    end
+
+    def test_complete_methods
+      obj = Object.new
+      obj.singleton_class.class_eval {
+        def public_hoge; end
+        private def private_hoge; end
+
+        # Support for overriding #methods etc.
+        def methods; end
+        def private_methods; end
+        def global_variables; end
+        def local_variables; end
+        def instance_variables; end
+      }
+      bind = obj.instance_exec { binding }
+
+      assert_include(IRB::InputCompletor.retrieve_completion_data("public_hog", bind: bind), "public_hoge")
+      assert_include(IRB::InputCompletor.retrieve_completion_data("public_hoge.to_s", bind: bind), "public_hoge.to_s")
+      assert_include(IRB::InputCompletor.retrieve_completion_data("public_hoge", bind: bind, doc_namespace: true), "public_hoge")
+
+      assert_include(IRB::InputCompletor.retrieve_completion_data("private_hog", bind: bind), "private_hoge")
+      assert_include(IRB::InputCompletor.retrieve_completion_data("private_hoge.to_s", bind: bind), "private_hoge.to_s")
+      assert_include(IRB::InputCompletor.retrieve_completion_data("private_hoge", bind: bind, doc_namespace: true), "private_hoge")
     end
 
     def test_complete_class_method
