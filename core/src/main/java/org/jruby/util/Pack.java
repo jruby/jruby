@@ -1063,6 +1063,8 @@ public class Pack {
                 case 'w':
                     value = unpack_w(context, block, runtime, result, encode, occurrences, mode);
                     break;
+                case ' ':
+                    break;
                 default:
                     unknownDirective(context.runtime, "unpack", type, formatString);
                     break;
@@ -2039,6 +2041,8 @@ public class Pack {
                     break;
                 case 'w':
                     pack_w(context, list, result, packInts, occurrences);
+                    break;
+                case ' ':
                     break;
                 default:
                     unknownDirective(context.runtime, "pack", type, formatString);
