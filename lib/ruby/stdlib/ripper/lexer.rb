@@ -245,10 +245,21 @@ class Ripper
       @errors.push Elem.new(elem.pos, __callee__, elem.tok, elem.state, mesg)
     end
     PARSER_EVENTS.grep(/_error\z/) do |e|
+      name = "on_#{e}".intern
       arity = PARSER_EVENT_TABLE.fetch(e)
-      alias_method "on_#{e}", "on_error#{arity}"
+      if arity == 1
+        define_method name do |mesg|
+          @errors.push Elem.new([lineno(), column()], __callee__, token(), state(), mesg)
+        end
+      elsif arity == 2
+        define_method name do |mesg, elem|
+          @errors.push Elem.new(elem.pos, __callee__, elem.tok, elem.state, mesg)
+        end
+      end
     end
-    alias compile_error on_error1
+    def compile_error(mesg)
+      @errors.push Elem.new([lineno(), column()], __callee__, token(), state(), mesg)
+    end
 
     (SCANNER_EVENTS.map {|event|:"on_#{event}"} - private_instance_methods(false)).each do |event|
       # FIXME: Our callee impl is broken and returns same result as __method__
