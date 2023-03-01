@@ -50,7 +50,7 @@ default_gems = [
     ['io-console', '0.5.11'],
     # https://github.com/ruby/io-nonblock/issues/4
     # ['io-nonblock', '0.1.0'],
-    ['io-wait', '0.2.3'],
+    ['io-wait', '0.3.0'],
     ['ipaddr', '1.2.4'],
     ['irb', '1.4.2'],
     ['jar-dependencies', '0.4.1'],
@@ -96,8 +96,8 @@ default_gems = [
     # ['set', '1.0.2'],
     ['shellwords', '0.1.0'],
     ['singleton', '0.1.1'],
-    ['stringio', '3.0.4'],
-    ['strscan', '3.0.4'],
+    ['stringio', '3.0.5'],
+    ['strscan', '3.0.6'],
     ['subspawn', '0.1.1'], # has 3 transitive deps:
       ['subspawn-posix', '0.1.1'],
       ['ffi-binary-libfixposix', '0.5.1.0'],
