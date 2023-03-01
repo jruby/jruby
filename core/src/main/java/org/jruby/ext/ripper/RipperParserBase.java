@@ -564,7 +564,7 @@ public class RipperParserBase {
     
     public void yyerror(String message, String[] expected, String found) {
         error();
-        compile_error(message + ", unexpected " + found + "\n");
+        compile_error(message + ", unexpected " + found);
     }
 
     public void error() {
