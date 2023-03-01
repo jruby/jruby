@@ -462,6 +462,19 @@ DO NOT MODIFY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>open3</artifactId>
+      <version>0.1.2</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>rubygems</groupId>
+          <artifactId>jar-dependencies</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>open-uri</artifactId>
       <version>0.1.0</version>
       <type>gem</type>
@@ -1060,6 +1073,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/net-http-0.2.2*</include>
           <include>specifications/net-protocol-0.1.1*</include>
           <include>specifications/observer-0.1.1*</include>
+          <include>specifications/open3-0.1.2*</include>
           <include>specifications/open-uri-0.1.0*</include>
           <include>specifications/optparse-0.2.0*</include>
           <include>specifications/ostruct-0.5.5*</include>
@@ -1135,6 +1149,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/net-http-0.2.2*/**/*</include>
           <include>gems/net-protocol-0.1.1*/**/*</include>
           <include>gems/observer-0.1.1*/**/*</include>
+          <include>gems/open3-0.1.2*/**/*</include>
           <include>gems/open-uri-0.1.0*/**/*</include>
           <include>gems/optparse-0.2.0*/**/*</include>
           <include>gems/ostruct-0.5.5*/**/*</include>
@@ -1210,6 +1225,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/net-http-0.2.2*</include>
           <include>cache/net-protocol-0.1.1*</include>
           <include>cache/observer-0.1.1*</include>
+          <include>cache/open3-0.1.2*</include>
           <include>cache/open-uri-0.1.0*</include>
           <include>cache/optparse-0.2.0*</include>
           <include>cache/ostruct-0.5.5*</include>

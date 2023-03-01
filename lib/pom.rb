@@ -64,7 +64,7 @@ default_gems = [
     # Partial implementation in JRuby, unsure whether this is important
     # ['nkf', '0.1.1'],
     ['observer', '0.1.1'],
-    # ['open3', '0.1.1'],
+    ['open3', '0.1.2'],
     # https://github.com/ruby/openssl/issues/20#issuecomment-1022872855
     # ['openssl', '3.0.0'],
     # Depends on stringio gem, https://github.com/ruby/stringio/pull/21
