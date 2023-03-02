@@ -344,7 +344,7 @@ public class RubyObject extends RubyBasicObject {
         if (args.length == 0) {
             throw getRuntime().newArgumentError("block not supplied");
         } else if (args.length > 3) {
-            String lastFuncName = context.getSuperName();
+            String lastFuncName = context.getFrameName();
             throw getRuntime().newArgumentError(
                 "wrong number of arguments: " + lastFuncName + "(src) or " + lastFuncName + "{..}");
         }

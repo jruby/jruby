@@ -723,7 +723,7 @@ public class Helpers {
      * invoking.
      */
     public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-        return invokeSuper(context, self, context.getFrameKlazz(), context.getSuperName(), args, block);
+        return invokeSuper(context, self, context.getFrameKlazz(), context.getFrameName(), args, block);
     }
 
     public static String getSuperNameFromFrameName(String frameName) {
@@ -773,7 +773,7 @@ public class Helpers {
     public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, Block block) {
         checkSuperDisabledOrOutOfMethod(context);
         RubyModule klazz = context.getFrameKlazz();
-        String name = context.getSuperName();
+        String name = context.getFrameName();
 
         RubyClass selfClass = getMetaClass(self);
         RubyClass superClass = klazz.getSuperClass();
@@ -789,7 +789,7 @@ public class Helpers {
     public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, IRubyObject arg0, Block block) {
         checkSuperDisabledOrOutOfMethod(context);
         RubyModule klazz = context.getFrameKlazz();
-        String name = context.getSuperName();
+        String name = context.getFrameName();
 
         RubyClass selfClass = getMetaClass(self);
         RubyClass superClass = klazz.getSuperClass();
@@ -805,7 +805,7 @@ public class Helpers {
     public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) {
         checkSuperDisabledOrOutOfMethod(context);
         RubyModule klazz = context.getFrameKlazz();
-        String name = context.getSuperName();
+        String name = context.getFrameName();
 
         RubyClass selfClass = getMetaClass(self);
         RubyClass superClass = klazz.getSuperClass();
@@ -821,7 +821,7 @@ public class Helpers {
     public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         checkSuperDisabledOrOutOfMethod(context);
         RubyModule klazz = context.getFrameKlazz();
-        String name = context.getSuperName();
+        String name = context.getFrameName();
 
         RubyClass selfClass = getMetaClass(self);
         RubyClass superClass = klazz.getSuperClass();
@@ -1209,7 +1209,7 @@ public class Helpers {
     }
 
     public static void checkSuperDisabledOrOutOfMethod(ThreadContext context) {
-        checkSuperDisabledOrOutOfMethod(context, context.getFrameKlazz(), context.getSuperName());
+        checkSuperDisabledOrOutOfMethod(context, context.getFrameKlazz(), context.getFrameName());
     }
 
     public static void checkSuperDisabledOrOutOfMethod(ThreadContext context, RubyModule klass, String name) {

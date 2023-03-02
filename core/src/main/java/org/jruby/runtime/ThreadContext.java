@@ -730,14 +730,34 @@ public final class ThreadContext {
         return false;
     }
 
-    public String getFrameName() {
+    /**
+     * A string representing the name of the current method and the name under which it was called. If not called via
+     * an alias, this will be a single string. If called via an alias, it will be encoded as "\0alias\0original" and
+     * must be unpacked for its components.
+     *
+     * @see #getFrameName()
+     * @see #getCalleeName()
+     * @return a representation of the current method's name and the name it was called under
+     */
+    public String getCompositeName() {
         return getCurrentFrame().getName();
     }
 
-    public String getSuperName() {
+    /**
+     * The currently-running method's original name, used for stack traces, super calls, and __method__, and trace
+     * hooks.
+     *
+     * @return the current method's name
+     */
+    public String getFrameName() {
         return Helpers.getSuperNameFromFrameName(getCurrentFrame().getName());
     }
 
+    /**
+     * The name under which the current method was called, if called via an alias. Used for __callee__.
+     *
+     * @return the name under which the current method was called
+     */
     public String getCalleeName() {
         return Helpers.getCalleeNameFromFrameName(getCurrentFrame().getName());
     }
