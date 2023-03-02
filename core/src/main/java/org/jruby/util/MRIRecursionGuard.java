@@ -119,7 +119,7 @@ public class MRIRecursionGuard {
 
     private IRubyObject recursiveListAccess() {
         Map<String, RubyHash> hash = recursive.get();
-        String sym = runtime.getCurrentContext().getFrameName();
+        String sym = runtime.getCurrentContext().getSuperName();
         IRubyObject list = runtime.getNil();
         if(hash == null) {
             hash = new HashMap<>();

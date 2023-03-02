@@ -701,7 +701,7 @@ public final class ThreadContext {
     public static void pushBacktrace(ThreadContext context, String method, String file, int line) {
         int index = ++context.backtraceIndex;
         BacktraceElement[] stack = context.backtrace;
-        BacktraceElement.update(stack[index], method, file, line);
+        BacktraceElement.update(stack[index], Helpers.getSuperNameFromFrameName(method), file, line);
         if (index + 1 == stack.length) {
             ThreadContext.expandBacktraceStack(context);
         }
@@ -732,6 +732,14 @@ public final class ThreadContext {
 
     public String getFrameName() {
         return getCurrentFrame().getName();
+    }
+
+    public String getSuperName() {
+        return Helpers.getSuperNameFromFrameName(getCurrentFrame().getName());
+    }
+
+    public String getCalleeName() {
+        return Helpers.getCalleeNameFromFrameName(getCurrentFrame().getName());
     }
 
     public IRubyObject getFrameSelf() {

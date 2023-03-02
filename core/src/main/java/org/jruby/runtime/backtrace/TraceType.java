@@ -531,9 +531,9 @@ public class TraceType {
 
     private static void printErrorPos(ThreadContext context, PrintStream errorStream) {
         if (context.getFile() != null && context.getFile().length() > 0) {
-            if (context.getFrameName() != null) {
+            if (context.getSuperName() != null) {
                 errorStream.print(context.getFile() + ':' + context.getLine());
-                errorStream.print(":in '" + context.getFrameName() + '\'');
+                errorStream.print(":in '" + context.getSuperName() + '\'');
             } else if (context.getLine() != 0) {
                 errorStream.print(context.getFile() + ':' + context.getLine());
             } else {

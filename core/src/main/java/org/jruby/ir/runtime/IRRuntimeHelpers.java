@@ -991,7 +991,7 @@ public class IRRuntimeHelpers {
 
     @Interp
     public static IRubyObject isDefinedSuper(ThreadContext context, IRubyObject receiver, IRubyObject definedMessage) {
-        return isDefinedSuper(context, receiver, context.getFrameName(), context.getFrameKlazz(), definedMessage);
+        return isDefinedSuper(context, receiver, context.getSuperName(), context.getFrameKlazz(), definedMessage);
     }
 
     @JIT
@@ -1413,7 +1413,7 @@ public class IRRuntimeHelpers {
     public static IRubyObject unresolvedSuper(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
         // We have to rely on the frame stack to find the implementation class
         RubyModule klazz = context.getFrameKlazz();
-        String methodName = context.getFrameName();
+        String methodName = context.getSuperName();
 
         Helpers.checkSuperDisabledOrOutOfMethod(context, klazz, methodName);
 

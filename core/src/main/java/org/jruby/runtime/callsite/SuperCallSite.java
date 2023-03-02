@@ -45,7 +45,7 @@ public class SuperCallSite extends CallSite {
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject... args) {
         RubyModule klazz = context.getFrameKlazz();
-        String name = context.getFrameName();
+        String name = context.getSuperName();
 
         return call(context, caller, self, klazz, name, args);
     }
@@ -62,7 +62,7 @@ public class SuperCallSite extends CallSite {
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) {
         RubyModule klazz = context.getFrameKlazz();
-        String name = context.getFrameName();
+        String name = context.getSuperName();
 
         return call(context, caller, self, klazz, name, args, block);
     }
@@ -155,7 +155,7 @@ public class SuperCallSite extends CallSite {
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self) {
         RubyModule klazz = context.getFrameKlazz();
-        String name = context.getFrameName();
+        String name = context.getSuperName();
 
         return call(context, caller, self, klazz, name);
     }
@@ -172,7 +172,7 @@ public class SuperCallSite extends CallSite {
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, Block block) {
         RubyModule klazz = context.getFrameKlazz();
-        String name = context.getFrameName();
+        String name = context.getSuperName();
 
         return call(context, caller, self, klazz, name, block);
     }
@@ -205,7 +205,7 @@ public class SuperCallSite extends CallSite {
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1) {
         RubyModule klazz = context.getFrameKlazz();
-        String name = context.getFrameName();
+        String name = context.getSuperName();
 
         return call(context, caller, self, klazz, name, arg1);
     }
@@ -222,7 +222,7 @@ public class SuperCallSite extends CallSite {
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, Block block) {
         RubyModule klazz = context.getFrameKlazz();
-        String name = context.getFrameName();
+        String name = context.getSuperName();
 
         return call(context, caller, self, klazz, name, arg1, block);
     }
@@ -255,7 +255,7 @@ public class SuperCallSite extends CallSite {
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
         RubyModule klazz = context.getFrameKlazz();
-        String name = context.getFrameName();
+        String name = context.getSuperName();
 
         return call(context, caller, self, klazz, name, arg1, arg2);
     }
@@ -272,7 +272,7 @@ public class SuperCallSite extends CallSite {
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block) {
         RubyModule klazz = context.getFrameKlazz();
-        String name = context.getFrameName();
+        String name = context.getSuperName();
 
         return call(context, caller, self, klazz, name, arg1, arg2, block);
     }
@@ -305,7 +305,7 @@ public class SuperCallSite extends CallSite {
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
         RubyModule klazz = context.getFrameKlazz();
-        String name = context.getFrameName();
+        String name = context.getSuperName();
 
         return call(context, caller, self, klazz, name, arg1, arg2, arg3);
     }
@@ -322,7 +322,7 @@ public class SuperCallSite extends CallSite {
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
         RubyModule klazz = context.getFrameKlazz();
-        String name = context.getFrameName();
+        String name = context.getSuperName();
 
         return call(context, caller, self, klazz, name, arg1, arg2, arg3, block);
     }
