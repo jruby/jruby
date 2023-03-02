@@ -95,6 +95,7 @@ lib/ruby/stdlib/mutex_m.rb
 lib/ruby/stdlib/net/protocol*
 lib/ruby/stdlib/net/http*
 lib/ruby/stdlib/observer*
+lib/ruby/stdlib/open3*
 lib/ruby/stdlib/open-uri*
 lib/ruby/stdlib/optparse*
 lib/ruby/stdlib/optionparser*

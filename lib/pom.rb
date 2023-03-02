@@ -50,7 +50,7 @@ default_gems = [
     ['io-console', '0.5.11'],
     # https://github.com/ruby/io-nonblock/issues/4
     # ['io-nonblock', '0.1.0'],
-    ['io-wait', '0.2.3'],
+    ['io-wait', '0.3.0'],
     ['ipaddr', '1.2.4'],
     ['irb', '1.4.2'],
     ['jar-dependencies', '0.4.1'],
@@ -64,12 +64,10 @@ default_gems = [
     # Partial implementation in JRuby, unsure whether this is important
     # ['nkf', '0.1.1'],
     ['observer', '0.1.1'],
-    # ['open3', '0.1.1'],
+    ['open3', '0.1.2'],
     # https://github.com/ruby/openssl/issues/20#issuecomment-1022872855
     # ['openssl', '3.0.0'],
-    # Depends on stringio gem, https://github.com/ruby/stringio/pull/21
-    # ['open-uri', '0.2.0'],
-    ['open-uri', '0.1.0'],
+    ['open-uri', '0.3.0'],
     ['optparse', '0.2.0'],
     ['ostruct', '0.5.5'],
     # https://github.com/ruby/pathname/issues/17
@@ -96,8 +94,8 @@ default_gems = [
     # ['set', '1.0.2'],
     ['shellwords', '0.1.0'],
     ['singleton', '0.1.1'],
-    ['stringio', '3.0.4'],
-    ['strscan', '3.0.4'],
+    ['stringio', '3.0.5'],
+    ['strscan', '3.0.6'],
     ['subspawn', '0.1.1'], # has 3 transitive deps:
       ['subspawn-posix', '0.1.1'],
       ['ffi-binary-libfixposix', '0.5.1.0'],
@@ -109,7 +107,6 @@ default_gems = [
     # Depends on date gem
     # ['time', '0.2.0'],
     ['time', '0.1.0'],
-    # https://github.com/ruby/timeout/issues/11
     ['timeout', '0.3.0'],
     # https://github.com/ruby/tmpdir/issues/13
     # ['tmpdir', '0.1.2'],
