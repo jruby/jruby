@@ -275,32 +275,8 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         return initialize(runtime, object, method, args, size, null, keywords);
     }
 
-    @JRubyMethod(name = "initialize", visibility = PRIVATE)
-    public IRubyObject initialize(ThreadContext context, IRubyObject object, IRubyObject method, Block block) {
-        if (block.isGiven()) {
-            throw context.runtime.newArgumentError(2, 1);
-        }
-        return initialize(context.runtime, object, method, NULL_ARRAY);
-    }
-
-    @JRubyMethod(name = "initialize", visibility = PRIVATE)
-    public IRubyObject initialize(ThreadContext context, IRubyObject object, IRubyObject method, IRubyObject methodArg, Block block) {
-        if (block.isGiven()) {
-            throw context.runtime.newArgumentError(3, 1);
-        }
-        return initialize(context.runtime, object, method, new IRubyObject[] { methodArg });
-    }
-
-    public IRubyObject initialize(ThreadContext context, IRubyObject object, IRubyObject method, IRubyObject methodArg) {
-        return initialize(context, object, method, methodArg, Block.NULL_BLOCK);
-    }
-
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         return initialize(context, args, Block.NULL_BLOCK);
-    }
-
-    public IRubyObject initialize(ThreadContext context, IRubyObject object, IRubyObject method) {
-        return initialize(context, object, method, Block.NULL_BLOCK);
     }
 
     @Deprecated
@@ -321,26 +297,6 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
     @Deprecated
     public IRubyObject initialize20(ThreadContext context, IRubyObject[] args, Block block) {
         return initialize(context, args, block);
-    }
-
-    @Deprecated
-    public IRubyObject initialize19(ThreadContext context, IRubyObject object, IRubyObject method, Block block) {
-        return initialize(context, object, method, block);
-    }
-
-    @Deprecated
-    public IRubyObject initialize19(ThreadContext context, IRubyObject object, IRubyObject method, IRubyObject methodArg, Block block) {
-        return initialize(context, object, method, methodArg, Block.NULL_BLOCK);
-    }
-
-    @Deprecated
-    public IRubyObject initialize20(ThreadContext context, IRubyObject object, IRubyObject method, Block block) {
-        return initialize(context, object, method, block);
-    }
-
-    @Deprecated
-    public IRubyObject initialize20(ThreadContext context, IRubyObject object, IRubyObject method, IRubyObject methodArg, Block block) {
-        return initialize(context, object, method, methodArg, block);
     }
 
     @Deprecated
