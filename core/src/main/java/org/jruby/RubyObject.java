@@ -49,7 +49,6 @@ import java.util.Set;
 import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.ObjectSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;

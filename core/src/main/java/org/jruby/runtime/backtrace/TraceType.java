@@ -3,7 +3,6 @@ package org.jruby.runtime.backtrace;
 import java.io.ByteArrayOutputStream;
 import java.io.FileDescriptor;
 import java.io.PrintStream;
-import java.util.Arrays;
 import java.util.stream.Stream;
 
 import com.headius.backport9.stack.StackWalker;
