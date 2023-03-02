@@ -505,8 +505,8 @@ public class TraceType {
             buffer.append('\n');
         }
 
-        if (runtime != null && (frames.length > optionBacktraceLimit)) {
-            String suppressedLines = String.valueOf(frames.length - optionBacktraceLimit);
+        if (runtime != null && (frames.length > maxBacktraceLines)) {
+            String suppressedLines = String.valueOf(frames.length - maxBacktraceLines);
             buffer.append("... " + suppressedLines + " levels...\n");
         }
     }
