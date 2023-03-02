@@ -45,7 +45,7 @@ jobs:
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake ${{ matrix.target }}
-        run: bin/jruby --dev -S rake ${{ matrix.target }}
+        run: bin/jruby -S rake ${{ matrix.target }}
 
   rake-test-8:
     runs-on: ubuntu-latest
@@ -81,7 +81,7 @@ jobs:
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake ${{ matrix.target }}
-        run: bin/jruby --dev -S rake ${{ matrix.target }}
+        run: bin/jruby -S rake ${{ matrix.target }}
 
   jruby-tests-dev:
     runs-on: ubuntu-latest
@@ -156,7 +156,7 @@ jobs:
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake ${{ matrix.target }}
-        run: bin/jruby --dev -S rake ${{ matrix.target }}
+        run: bin/jruby -S rake ${{ matrix.target }}
 
   mvn-test:
     runs-on: ubuntu-latest
@@ -266,7 +266,7 @@ jobs:
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake spec:ji
-        run: bin/jruby --dev -S rake spec:ji
+        run: bin/jruby -S rake spec:ji
 
   regression-specs-jit:
     runs-on: ubuntu-latest
@@ -301,7 +301,7 @@ jobs:
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake spec:regression
-        run: bin/jruby --dev -S rake spec:regression
+        run: bin/jruby -S rake spec:regression
 
   mvn-test-windows:
     runs-on: windows-latest
@@ -341,7 +341,7 @@ jobs:
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake test:jruby
-        run: bin/jruby --dev -S rake test:jruby TESTOPTS="--no-show-detail-immediately"
+        run: bin/jruby -S rake test:jruby TESTOPTS="--no-show-detail-immediately"
         env:
           JRUBY_OPTS: ''
       - name: mvn -P test
@@ -549,7 +549,7 @@ jobs:
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake ${{ matrix.target }}
-#        run: "bin/jruby --dev -S rake ${{ matrix.target }}"
+#        run: "bin/jruby -S rake ${{ matrix.target }}"
         run: "true"
 
   maven-test-openj9-8:
@@ -617,7 +617,7 @@ jobs:
         run: bin/jruby --dev -S bundle install
       - name: rake ${{ matrix.target }}
         continue-on-error: true
-        run: "bin/jruby --dev -S rake ${{ matrix.target }}"
+        run: "bin/jruby -S rake ${{ matrix.target }}"
       - run: true
 
   publish-snapshot:
