@@ -74,7 +74,6 @@ import java.lang.ref.WeakReference;
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.IntStream;
@@ -701,7 +700,7 @@ public final class ThreadContext {
     public static void pushBacktrace(ThreadContext context, String method, String file, int line) {
         int index = ++context.backtraceIndex;
         BacktraceElement[] stack = context.backtrace;
-        BacktraceElement.update(stack[index], Helpers.getSuperNameFromFrameName(method), file, line);
+        BacktraceElement.update(stack[index], Helpers.getSuperNameFromCompositeName(method), file, line);
         if (index + 1 == stack.length) {
             ThreadContext.expandBacktraceStack(context);
         }
@@ -750,7 +749,7 @@ public final class ThreadContext {
      * @return the current method's name
      */
     public String getFrameName() {
-        return Helpers.getSuperNameFromFrameName(getCurrentFrame().getName());
+        return Helpers.getSuperNameFromCompositeName(getCurrentFrame().getName());
     }
 
     /**
@@ -759,7 +758,7 @@ public final class ThreadContext {
      * @return the name under which the current method was called
      */
     public String getCalleeName() {
-        return Helpers.getCalleeNameFromFrameName(getCurrentFrame().getName());
+        return Helpers.getCalleeNameFromCompositeName(getCurrentFrame().getName());
     }
 
     public IRubyObject getFrameSelf() {

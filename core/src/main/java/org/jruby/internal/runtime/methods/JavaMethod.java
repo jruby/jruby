@@ -183,19 +183,19 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     protected final static void postNoop(ThreadContext context) {}
 
     protected final void callTrace(ThreadContext context, boolean enabled, String name) {
-        if (enabled) context.trace(RubyEvent.C_CALL, Helpers.getSuperNameFromFrameName(name), getImplementationClass());
+        if (enabled) context.trace(RubyEvent.C_CALL, Helpers.getSuperNameFromCompositeName(name), getImplementationClass());
     }
 
     protected final void returnTrace(ThreadContext context, boolean enabled, String name) {
-        if (enabled) context.trace(RubyEvent.C_RETURN, Helpers.getSuperNameFromFrameName(name), getImplementationClass());
+        if (enabled) context.trace(RubyEvent.C_RETURN, Helpers.getSuperNameFromCompositeName(name), getImplementationClass());
     }
 
     protected final void callTraceCompiled(ThreadContext context, boolean enabled, String name, String file, int line) {
-        if (enabled) context.trace(RubyEvent.CALL, Helpers.getSuperNameFromFrameName(name), getImplementationClass(), file, line);
+        if (enabled) context.trace(RubyEvent.CALL, Helpers.getSuperNameFromCompositeName(name), getImplementationClass(), file, line);
     }
 
     protected final void returnTraceCompiled(ThreadContext context, boolean enabled, String name) {
-        if (enabled) context.trace(RubyEvent.RETURN, Helpers.getSuperNameFromFrameName(name), getImplementationClass());
+        if (enabled) context.trace(RubyEvent.RETURN, Helpers.getSuperNameFromCompositeName(name), getImplementationClass());
     }
 
     @Deprecated

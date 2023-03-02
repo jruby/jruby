@@ -59,7 +59,6 @@ import org.jruby.ir.JIT;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.javasupport.Java;
-import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.proxy.ReifiedJavaProxy;
 import org.jruby.parser.StaticScope;
@@ -81,7 +80,6 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.unicode.UnicodeEncoding;
 
-import static org.jruby.RubyBasicObject.UNDEF;
 import static org.jruby.RubyBasicObject.getMetaClass;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_EMPTY;
 import static org.jruby.runtime.Visibility.*;
@@ -726,20 +724,20 @@ public class Helpers {
         return invokeSuper(context, self, context.getFrameKlazz(), context.getFrameName(), args, block);
     }
 
-    public static String getSuperNameFromFrameName(String frameName) {
-        if (frameName != null && frameName.length() > 0 && frameName.charAt(0) == '\0') {
-            return frameName.substring(frameName.lastIndexOf('\0') + 1);
+    public static String getSuperNameFromCompositeName(String compositeName) {
+        if (compositeName != null && compositeName.length() > 0 && compositeName.charAt(0) == '\0') {
+            return compositeName.substring(compositeName.lastIndexOf('\0') + 1);
         }
 
-        return frameName;
+        return compositeName;
     }
 
-    public static String getCalleeNameFromFrameName(String frameName) {
-        if (frameName != null && frameName.length() > 0 && frameName.charAt(0) == '\0') {
-            return frameName.substring(1, frameName.lastIndexOf('\0'));
+    public static String getCalleeNameFromCompositeName(String compositeName) {
+        if (compositeName != null && compositeName.length() > 0 && compositeName.charAt(0) == '\0') {
+            return compositeName.substring(1, compositeName.lastIndexOf('\0'));
         }
 
-        return frameName;
+        return compositeName;
     }
 
     public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, RubyModule klass, String name, IRubyObject[] args, Block block) {
