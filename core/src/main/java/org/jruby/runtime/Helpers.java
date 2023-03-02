@@ -724,6 +724,22 @@ public class Helpers {
         return invokeSuper(context, self, context.getFrameKlazz(), context.getFrameName(), args, block);
     }
 
+    public static String getSuperNameFromCompositeName(String compositeName) {
+        if (compositeName != null && compositeName.length() > 0 && compositeName.charAt(0) == '\0') {
+            return compositeName.substring(compositeName.lastIndexOf('\0') + 1);
+        }
+
+        return compositeName;
+    }
+
+    public static String getCalleeNameFromCompositeName(String compositeName) {
+        if (compositeName != null && compositeName.length() > 0 && compositeName.charAt(0) == '\0') {
+            return compositeName.substring(1, compositeName.lastIndexOf('\0'));
+        }
+
+        return compositeName;
+    }
+
     public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, RubyModule klass, String name, IRubyObject[] args, Block block) {
         checkSuperDisabledOrOutOfMethod(context, klass, name);
 
@@ -804,7 +820,6 @@ public class Helpers {
         checkSuperDisabledOrOutOfMethod(context);
         RubyModule klazz = context.getFrameKlazz();
         String name = context.getFrameName();
-
 
         RubyClass selfClass = getMetaClass(self);
         RubyClass superClass = klazz.getSuperClass();

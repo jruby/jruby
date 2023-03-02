@@ -2089,7 +2089,7 @@ public class RubyModule extends RubyObject {
     public void putAlias(String id, DynamicMethod method, String oldName) {
         if (id.equals(oldName)) return;
 
-        putMethod(getRuntime(), id, new AliasMethod(this, new CacheEntry(method, method.getImplementationClass(), generation), oldName));
+        putMethod(getRuntime(), id, new AliasMethod(this, new CacheEntry(method, method.getImplementationClass(), generation), id, oldName));
 
         if (isRefinement()) {
             addRefinedMethodEntry(id, method);
@@ -2106,7 +2106,7 @@ public class RubyModule extends RubyObject {
     public void putAlias(String id, CacheEntry entry, String oldName) {
         if (id.equals(oldName)) return;
 
-        putMethod(getRuntime(), id, new AliasMethod(this, entry, oldName));
+        putMethod(getRuntime(), id, new AliasMethod(this, entry, id, oldName));
 
         if (isRefinement()) {
             addRefinedMethodEntry(id, entry.method);

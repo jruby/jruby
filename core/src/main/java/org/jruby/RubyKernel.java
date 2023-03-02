@@ -1173,7 +1173,7 @@ public class RubyKernel {
         }
 
         // set method to current frame's, which should be caller's
-        String frameName = context.getFrameName();
+        String frameName = context.getCompositeName();
         if (frameName != null) binding.setMethod(frameName);
 
         if (bindingGiven) recv = binding.getSelf();
@@ -2047,9 +2047,18 @@ public class RubyKernel {
         return enumeratorizeWithSize(context, self, method, args, sizeFn, keywords);
     }
 
-    @JRubyMethod(name = { "__method__", "__callee__" }, module = true, visibility = PRIVATE, reads = METHODNAME, omit = true)
+    @JRubyMethod(name = { "__method__" }, module = true, visibility = PRIVATE, reads = METHODNAME, omit = true)
     public static IRubyObject __method__(ThreadContext context, IRubyObject recv) {
         String frameName = context.getFrameName();
+        if (frameName == null || frameName == Ruby.ROOT_FRAME_NAME) {
+            return context.nil;
+        }
+        return context.runtime.newSymbol(frameName);
+    }
+
+    @JRubyMethod(name = { "__callee__" }, module = true, visibility = PRIVATE, reads = METHODNAME, omit = true)
+    public static IRubyObject __callee__(ThreadContext context, IRubyObject recv) {
+        String frameName = context.getCalleeName();
         if (frameName == null || frameName == Ruby.ROOT_FRAME_NAME) {
             return context.nil;
         }

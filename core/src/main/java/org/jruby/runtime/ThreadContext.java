@@ -700,7 +700,7 @@ public final class ThreadContext {
     public static void pushBacktrace(ThreadContext context, String method, String file, int line) {
         int index = ++context.backtraceIndex;
         BacktraceElement[] stack = context.backtrace;
-        BacktraceElement.update(stack[index], method, file, line);
+        BacktraceElement.update(stack[index], Helpers.getSuperNameFromCompositeName(method), file, line);
         if (index + 1 == stack.length) {
             ThreadContext.expandBacktraceStack(context);
         }
@@ -729,8 +729,36 @@ public final class ThreadContext {
         return false;
     }
 
-    public String getFrameName() {
+    /**
+     * A string representing the name of the current method and the name under which it was called. If not called via
+     * an alias, this will be a single string. If called via an alias, it will be encoded as "\0alias\0original" and
+     * must be unpacked for its components.
+     *
+     * @see #getFrameName()
+     * @see #getCalleeName()
+     * @return a representation of the current method's name and the name it was called under
+     */
+    public String getCompositeName() {
         return getCurrentFrame().getName();
+    }
+
+    /**
+     * The currently-running method's original name, used for stack traces, super calls, and __method__, and trace
+     * hooks.
+     *
+     * @return the current method's name
+     */
+    public String getFrameName() {
+        return Helpers.getSuperNameFromCompositeName(getCurrentFrame().getName());
+    }
+
+    /**
+     * The name under which the current method was called, if called via an alias. Used for __callee__.
+     *
+     * @return the name under which the current method was called
+     */
+    public String getCalleeName() {
+        return Helpers.getCalleeNameFromCompositeName(getCurrentFrame().getName());
     }
 
     public IRubyObject getFrameSelf() {
