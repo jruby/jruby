@@ -279,31 +279,6 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         return initialize(context, args, Block.NULL_BLOCK);
     }
 
-    @Deprecated
-    public IRubyObject initialize19(ThreadContext context, Block block) {
-        return initialize(context, block);
-    }
-
-    @Deprecated
-    public IRubyObject initialize20(ThreadContext context, Block block) {
-        return initialize(context, block);
-    }
-
-    @Deprecated
-    public IRubyObject initialize20(ThreadContext context, IRubyObject object, Block block) {
-        return initialize(context, object, block);
-    }
-
-    @Deprecated
-    public IRubyObject initialize20(ThreadContext context, IRubyObject[] args, Block block) {
-        return initialize(context, args, block);
-    }
-
-    @Deprecated
-    public IRubyObject initialize19(ThreadContext context, IRubyObject[] args, Block block) {
-        return initialize(context, args, block);
-    }
-
     private IRubyObject initialize(Ruby runtime, IRubyObject object, IRubyObject method, IRubyObject[] methodArgs) {
         return initialize(runtime, object, method, methodArgs, null, null, false);
     }
@@ -455,11 +430,6 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         return block.isGiven() ? RubyEnumerable.each_entryCommon(context, this, args, block) : enumeratorize(context.runtime, getType(), this, "each_entry", args);
     }
 
-    @Deprecated
-    public IRubyObject each_slice19(ThreadContext context, IRubyObject arg, final Block block) {
-        return each_slice(context, arg, block);
-    }
-
     @JRubyMethod(name = "each_slice")
     public IRubyObject each_slice(ThreadContext context, IRubyObject arg, final Block block) {
         int size = (int) RubyNumeric.num2long(arg);
@@ -467,11 +437,6 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
         return block.isGiven() ? RubyEnumerable.each_sliceCommon(context, this, size, block) :
                 enumeratorize(context.runtime, getType(), this, "each_slice", arg);
-    }
-
-    @Deprecated
-    public IRubyObject each_cons19(ThreadContext context, IRubyObject arg, final Block block) {
-        return each_cons(context, arg, block);
     }
 
     @JRubyMethod(name = "each_cons")
@@ -542,19 +507,9 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         return with_index_common(context, block, "with_index", context.nil);
     }
 
-    @Deprecated
-    public IRubyObject with_index19(ThreadContext context, final Block block) {
-        return with_index(context, block);
-    }
-
     @JRubyMethod(name = "with_index")
     public IRubyObject with_index(ThreadContext context, IRubyObject arg, final Block block) {
         return with_index_common(context, block, "with_index", arg);
-    }
-
-    @Deprecated
-    public IRubyObject with_index19(ThreadContext context, IRubyObject arg, final Block block) {
-        return with_index(context, arg, block);
     }
 
     // java.util.Iterator :
