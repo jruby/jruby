@@ -29,7 +29,6 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.Signature;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
@@ -1376,7 +1375,7 @@ public class IRBuilder {
     }
 
     private void buildFindPattern(Label testEnd, Variable result, Variable deconstructed, FindPatternNode pattern,
-                                  Operand obj, boolean inAlteration) {
+                                  Operand obj, boolean inAlteration, boolean isSinglePattern, Variable errorString) {
         if (pattern.hasConstant()) {
             Operand constant = build(pattern.getConstant());
             addInstr(new EQQInstr(scope, result, constant, obj, false, true));
@@ -1417,7 +1416,7 @@ public class IRBuilder {
                         Operand deconstructIndex = addResultInstr(new IntegerMathInstr(ADD, temp(), i, new Integer(j.value)));
                         Operand deconstructFixnum = as_fixnum(deconstructIndex);
                         Operand test = call(temp(), deconstructed, "[]", deconstructFixnum);
-                        buildPatternMatch(result, copy(buildNil()), pat, test, false);
+                        buildPatternMatch(result, copy(buildNil()), pat, test, false, isSinglePattern, errorString);
                         cond_ne(bottom, result, tru());
                     });
 
@@ -1425,7 +1424,7 @@ public class IRBuilder {
                     if (pre != null && !(pre instanceof StarNode)) {
                         Operand iFixnum = as_fixnum(i);
                         Operand test = call(temp(), deconstructed, "[]", manager.newFixnum(0), iFixnum);
-                        buildPatternMatch(result, copy(buildNil()), pre, test, false);
+                        buildPatternMatch(result, copy(buildNil()), pre, test, false, isSinglePattern, errorString);
                         cond_ne(bottom, result, tru());
                     }
 
@@ -1435,7 +1434,7 @@ public class IRBuilder {
                         Operand deconstructFixnum = as_fixnum(deconstructIndex);
                         Operand lengthFixnum = as_fixnum(length);
                         Operand test = call(temp(), deconstructed, "[]", deconstructFixnum, lengthFixnum);
-                        buildPatternMatch(result, copy(buildNil()), post, test, false);
+                        buildPatternMatch(result, copy(buildNil()), post, test, false, isSinglePattern, errorString);
                         cond_ne(bottom, result, tru());
                     }
                     jump(after);
@@ -1443,7 +1442,7 @@ public class IRBuilder {
     }
 
     private void buildArrayPattern(Label testEnd, Variable result, Variable deconstructed, ArrayPatternNode pattern,
-                                   Operand obj, boolean inAlteration) {
+                                   Operand obj, boolean inAlteration, boolean isSinglePattern, Variable errorString) {
         Variable restNum = addResultInstr(new CopyInstr(temp(), new Integer(0)));
 
         if (pattern.hasConstant()) {
@@ -1470,6 +1469,8 @@ public class IRBuilder {
         label("min_args_check_end", minArgsCheck -> {
             BIntInstr.Op compareOp = pattern.hasRestArg() ? BIntInstr.Op.GTE : BIntInstr.Op.EQ;
             addInstr(new BIntInstr(minArgsCheck, compareOp, length, minArgsCount));
+            fcall(errorString, buildSelf(), "sprintf",
+                    new FrozenString("%s: %s length mismatch (given %d, expected %d)"), deconstructed, deconstructed, as_fixnum(length), as_fixnum(minArgsCount));
             addInstr(new CopyInstr(result, fals()));
             jump(testEnd);
         });
@@ -1481,7 +1482,7 @@ public class IRBuilder {
                 Variable elt = call(temp(), deconstructed, "[]", fix(i));
                 Node arg = preArgs.get(i);
 
-                buildPatternEach(testEnd, result, copy(buildNil()), elt, arg, inAlteration);
+                buildPatternEach(testEnd, result, copy(buildNil()), elt, arg, inAlteration, isSinglePattern, errorString);
                 cond_ne(testEnd, result, tru());
             }
         }
@@ -1494,7 +1495,7 @@ public class IRBuilder {
                 Variable max = as_fixnum(restNum);
                 Variable elt = call(temp(), deconstructed, "[]", min, max);
 
-                buildPatternMatch(result, copy(buildNil()), pattern.getRestArg(), elt, inAlteration);
+                buildPatternMatch(result, copy(buildNil()), pattern.getRestArg(), elt, inAlteration, isSinglePattern, errorString);
                 cond_ne(testEnd, result, tru());
             }
         }
@@ -1507,7 +1508,7 @@ public class IRBuilder {
                 Variable k = as_fixnum(j);
                 Variable elt = call(temp(), deconstructed, "[]", k);
 
-                buildPatternEach(testEnd, result, copy(buildNil()), elt, postArgs.get(i), inAlteration);
+                buildPatternEach(testEnd, result, copy(buildNil()), elt, postArgs.get(i), inAlteration, isSinglePattern, errorString);
                 addInstr(BNEInstr.create(matchElementCheck, result, buildFalse()));
                 addInstr(new JumpInstr(testEnd));
                 addInstr(new LabelInstr(matchElementCheck));
@@ -1544,7 +1545,7 @@ public class IRBuilder {
     }
 
     private void buildHashPattern(Label testEnd, Variable result, Variable deconstructed, HashPatternNode pattern,
-                                  Operand obj, boolean inAlteration) {
+                                  Operand obj, boolean inAlteration, boolean isSinglePattern, Variable errorString) {
         Variable d = deconstructHashPatternKeys(testEnd, pattern, result, obj);
 
         label("hash_check_end", endHashCheck -> {
@@ -1566,7 +1567,7 @@ public class IRBuilder {
 
                 String method = pattern.hasRestArg() ? "delete" : "[]";
                 Operand value = call(temp(), d, method, key);
-                buildPatternEach(testEnd, result, copy(buildNil()), value, pair.getValue(), inAlteration);
+                buildPatternEach(testEnd, result, copy(buildNil()), value, pair.getValue(), inAlteration, isSinglePattern, errorString);
                 cond_ne(testEnd, result, tru());
             }
         } else {
@@ -1579,7 +1580,7 @@ public class IRBuilder {
                 call(result, d, "empty?");
                 cond_ne(testEnd, result, tru());
             } else if (pattern.isNamedRestArg()) {
-                buildPatternEach(testEnd, result, copy(buildNil()), d, pattern.getRestArg(), inAlteration);
+                buildPatternEach(testEnd, result, copy(buildNil()), d, pattern.getRestArg(), inAlteration, isSinglePattern, errorString);
                 cond_ne(testEnd, result, tru());
             }
         }
@@ -1692,18 +1693,19 @@ public class IRBuilder {
         addInstr(new LabelInstr(label));
     }
 
-    private void buildPatternMatch(Variable result, Variable deconstructed, Node arg, Operand obj, boolean inAlternation) {
-        label("pattern_end", testEnd -> buildPatternEach(testEnd, result, deconstructed, obj, arg, inAlternation));
+    private void buildPatternMatch(Variable result, Variable deconstructed, Node arg, Operand obj,
+                                   boolean inAlternation, boolean isSinglePattern, Variable errorString) {
+        label("pattern_end", testEnd -> buildPatternEach(testEnd, result, deconstructed, obj, arg, inAlternation, isSinglePattern, errorString));
     }
 
     private Variable buildPatternEach(Label testEnd, Variable result, Variable deconstructed, Operand value,
-                                      Node exprNodes, boolean inAlternation) {
+                                      Node exprNodes, boolean inAlternation, boolean isSinglePattern, Variable errorString) {
         if (exprNodes instanceof ArrayPatternNode) {
-            buildArrayPattern(testEnd, result, deconstructed, (ArrayPatternNode) exprNodes, value, inAlternation);
+            buildArrayPattern(testEnd, result, deconstructed, (ArrayPatternNode) exprNodes, value, inAlternation, isSinglePattern, errorString);
         } else if (exprNodes instanceof HashPatternNode) {
-            buildHashPattern(testEnd, result, deconstructed, (HashPatternNode) exprNodes, value, inAlternation);
+            buildHashPattern(testEnd, result, deconstructed, (HashPatternNode) exprNodes, value, inAlternation, isSinglePattern, errorString);
         } else if (exprNodes instanceof FindPatternNode) {
-            buildFindPattern(testEnd, result, deconstructed, (FindPatternNode) exprNodes, value, inAlternation);
+            buildFindPattern(testEnd, result, deconstructed, (FindPatternNode) exprNodes, value, inAlternation, isSinglePattern, errorString);
         } else if (exprNodes instanceof HashNode) {
             HashNode hash = (HashNode) exprNodes;
 
@@ -1712,18 +1714,18 @@ public class IRBuilder {
             }
 
             KeyValuePair<Node, Node> pair = hash.getPairs().get(0);
-            buildPatternMatch(result, deconstructed, pair.getKey(), value, inAlternation);
-            buildPatternEach(testEnd, result, deconstructed, value, pair.getValue(), inAlternation);
+            buildPatternMatch(result, deconstructed, pair.getKey(), value, inAlternation, isSinglePattern, errorString);
+            buildPatternEach(testEnd, result, deconstructed, value, pair.getValue(), inAlternation, isSinglePattern, errorString);
         } else if (exprNodes instanceof IfNode) {
             IfNode ifNode = (IfNode) exprNodes;
 
             boolean unless; // position of body is how we detect between if/unless
             if (ifNode.getThenBody() != null) { // if
                 unless = false;
-                buildPatternMatch(result, deconstructed, ifNode.getThenBody(), value, inAlternation);
+                buildPatternMatch(result, deconstructed, ifNode.getThenBody(), value, inAlternation, isSinglePattern, errorString);
             } else {
                 unless = true;
-                buildPatternMatch(result, deconstructed, ifNode.getElseBody(), value, inAlternation);
+                buildPatternMatch(result, deconstructed, ifNode.getElseBody(), value, inAlternation, isSinglePattern, errorString);
             }
             label("if_else_end", conditionalEnd -> {
                 cond_ne(conditionalEnd, result, tru());
@@ -1759,10 +1761,10 @@ public class IRBuilder {
         } else if (exprNodes instanceof OrNode) {
             OrNode orNode = (OrNode) exprNodes;
             label("or_lhs_end", firstCase -> {
-                buildPatternEach(firstCase, result, deconstructed, value, orNode.getFirstNode(), true);
+                buildPatternEach(firstCase, result, deconstructed, value, orNode.getFirstNode(), true, isSinglePattern, errorString);
             });
             label("or_rhs_end", secondCase -> {
-                cond(secondCase, result, tru(), () -> buildPatternEach(testEnd, result, deconstructed, value, orNode.getSecondNode(), true));
+                cond(secondCase, result, tru(), () -> buildPatternEach(testEnd, result, deconstructed, value, orNode.getSecondNode(), true, isSinglePattern, errorString));
             });
         } else {
             Operand expression = build(exprNodes);
@@ -1777,6 +1779,7 @@ public class IRBuilder {
     public Operand buildPatternCase(PatternCaseNode patternCase) {
         Variable result = temp();
         Operand value = build(patternCase.getCaseNode());
+        Variable errorString = copy(buildNil());
 
         label("pattern_case_end", end -> {
             List<Label> labels = new ArrayList<>();
@@ -1788,9 +1791,11 @@ public class IRBuilder {
                 InNode inNode = (InNode) aCase;
                 Label bodyLabel = getNewLabel();
 
+                boolean isSinglePattern = inNode.isSinglePattern();
+
                 Variable eqqResult = copy(tru());
                 labels.add(bodyLabel);
-                buildPatternMatch(eqqResult, deconstructed, inNode.getExpression(), value, false);
+                buildPatternMatch(eqqResult, deconstructed, inNode.getExpression(), value, false, isSinglePattern, errorString);
                 addInstr(createBranch(eqqResult, tru(), bodyLabel));
                 bodies.put(bodyLabel, inNode.getBody());
             }
@@ -1816,7 +1821,13 @@ public class IRBuilder {
 
             if (!hasElse) {
                 addInstr(new LabelInstr(elseLabel));
-                Variable inspect = call(temp(), value, "inspect");
+                Variable inspect = temp();
+                if_else(errorString, buildNil(), () -> {
+                    call(inspect, value, "inspect");
+                }, () -> {
+                    copy(inspect, errorString);
+                });
+
                 addRaiseError("NoMatchingPatternError", inspect);
                 jump(end);
             }

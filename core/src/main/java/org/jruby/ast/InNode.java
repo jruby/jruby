@@ -29,6 +29,10 @@ public class InNode extends Node {
         return nextCase;
     }
 
+    public boolean isSinglePattern() {
+        return getNextCase() == null;
+    }
+
     @Override
     public <T> T accept(NodeVisitor<T> visitor) {
         return visitor.visitInNode(this);
