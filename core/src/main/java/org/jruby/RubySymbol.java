@@ -447,7 +447,8 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         RubyString str = RubyString.newString(runtime, getBytes());
 
-        if (!(isPrintable(runtime) && (resenc.equals(getBytes().getEncoding()) || str.isAsciiOnly()) && isSymbolName(symbol))) {
+        if (!(isPrintable(runtime) && (resenc.equals(getBytes().getEncoding()) || str.isAsciiOnly()) &&
+                isSymbolName(symbol))) {
             str = str.inspect(runtime);
         }
 
@@ -890,7 +891,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     private static boolean isSymbolLocal(final String str, final char first, final int length) {
         if (!isIdentStart(first)) return false;
 
-        boolean localID = (first >= 'a' && first <= 'z');
+        boolean localID = isIdentStart(first);
         int last = 1;
 
         for (; last < length; last++) {
