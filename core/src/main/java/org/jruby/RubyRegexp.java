@@ -75,6 +75,7 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.collections.WeakValuedMap;
 
+import static org.jruby.util.StringSupport.CR_7BIT;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
 import java.util.Iterator;
@@ -1389,6 +1390,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return RubyString.newString(metaClass.runtime, newStr);
     }
 
+    public ByteList rawSource() {
+        return str;
+    }
+
     public final int length() {
         return str.getRealSize();
     }
@@ -1875,5 +1880,51 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     @Deprecated
     public IRubyObject match_m19(ThreadContext context, IRubyObject str, boolean useBackref, Block block) {
         return matchCommon(context, str, 0, useBackref, block);
+    }
+
+    /**
+     * Is the pattern itself a simple US-ASCII string which can be used in simple string searches and
+     * can be used outside of the regexp engine?
+     *
+     */
+    public boolean isSimpleString() {
+        return isLiteral() &&
+                getEncoding().isAsciiCompatible() &&
+                RubyString.scanForCodeRange(str) == CR_7BIT &&
+                !getOptions().isIgnorecase() &&
+                ((str.realSize() == 1 &&
+                        str.charAt(0) != '.' &&
+                        str.charAt(0) != '^' &&
+                        str.charAt(0) != '$' &&
+                        str.charAt(0) != ' ') ||
+                isExact(str));
+        // FIXME ' ' is for awk split detection this should be in split code perhaps.
+    }
+
+    // FIXME: This should be something within joni which says it is a simple text string and not something requiring a regexp.
+    // Assumes 7bit source
+    private boolean isExact(ByteList str) {
+        int size = str.realSize();
+        byte[] bytes = str.unsafeBytes();
+        int begin = str.begin();
+
+        for (int i = 0; i < size; i++) {
+            switch (bytes[begin + i]) {
+                case '|':
+                case '.':
+                case '*':
+                case '[':
+                case '(':
+                case '+':
+                case '?':
+                case '{':
+                case '\\':
+                case '^':
+                case '$':
+                    return false;
+            }
+        }
+
+        return true;
     }
 }
