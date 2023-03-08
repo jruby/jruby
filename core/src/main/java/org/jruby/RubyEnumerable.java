@@ -1987,9 +1987,9 @@ public class RubyEnumerable {
                                             final IRubyObject[] args, final Block block, ObjectObjectIntFunction<ThreadContext, IRubyObject, IRubyObject> nextElement) {
         final Ruby runtime = context.runtime;
         final int len = args.length + 1;
+        final AtomicInteger ix = new AtomicInteger(0);
 
         if (block.isGiven()) {
-            final AtomicInteger ix = new AtomicInteger(0);
             callEach(context, eachSite(context), self, (ctx, largs, unused) -> {
                 RubyArray array = RubyArray.newBlankArrayInternal(runtime, len);
                 int myIx = ix.getAndIncrement();
@@ -2004,7 +2004,6 @@ public class RubyEnumerable {
             return context.nil;
         } else {
             final RubyArray zip = runtime.newArray();
-            final AtomicInteger ix = new AtomicInteger(0);
             callEach(context, eachSite(context), self, Signature.ONE_REQUIRED, (ctx, largs, unused) -> {
                 RubyArray array = RubyArray.newBlankArrayInternal(runtime, len);
                 int myIx = ix.getAndIncrement();
@@ -2021,31 +2020,25 @@ public class RubyEnumerable {
     }
 
     // See enum_zip + zip_i in Ruby source
+    // This path is specialized for a single companion enumerable/array
     public static IRubyObject zipCommon(ThreadContext context, IRubyObject self,
                                         final IRubyObject arg0, final Block block, ObjectObjectIntFunction<ThreadContext, IRubyObject, IRubyObject> nextElement) {
-        final Ruby runtime = context.runtime;
-        final int len = 2;
         final AtomicInteger ix = new AtomicInteger(0);
 
         if (block.isGiven()) {
             callEach(context, eachSite(context), self, (ctx, largs, unused) -> {
-                RubyArray array = RubyArray.newBlankArrayInternal(runtime, len);
                 int myIx = ix.getAndIncrement();
-                array.eltInternalSet(0, packEnumValues(ctx, largs));
-                array.eltInternalSet(1, nextElement.apply(context, arg0, myIx));
-                array.realLength = len;
+                RubyArray array = RubyArray.newArray(ctx.runtime,
+                        packEnumValues(ctx, largs), nextElement.apply(ctx, arg0, myIx));
                 block.yield(ctx, array);
                 return ctx.nil;
             });
             return context.nil;
         } else {
-            final RubyArray zip = runtime.newArray();
+            final RubyArray zip = context.runtime.newArray();
             callEach(context, eachSite(context), self, Signature.ONE_REQUIRED, (ctx, largs, unused) -> {
-                RubyArray array = RubyArray.newBlankArrayInternal(runtime, len);
                 int myIx = ix.getAndIncrement();
-                array.eltInternalSet(0, packEnumValues(ctx, largs));
-                array.eltInternalSet(1, nextElement.apply(context, arg0, myIx));
-                array.realLength = len;
+                RubyArray array = RubyArray.newArray(ctx.runtime, packEnumValues(ctx, largs), nextElement.apply(ctx, arg0, myIx));
                 synchronized (zip) { zip.append(array); }
                 return ctx.nil;
             });
