@@ -1170,6 +1170,27 @@ public class RubyBigDecimal extends RubyNumeric {
         } else if ( exp instanceof RubyRational) {
             int ny = nx;
             return bigdecimal_power_by_bigdecimal(context, exp, nx + ny);
+        } else if (exp instanceof RubyBignum) {
+            BigDecimal absValue = value.abs();
+            if (absValue.equals(BigDecimal.ONE)) {
+                return new RubyBigDecimal(runtime, BigDecimal.ONE, 0, 1) ;
+            } else if (absValue.compareTo(BigDecimal.ONE) == -1) {
+                if (Numeric.f_negative_p(context, exp)) {
+                    return newInfinity(runtime, (isEven((RubyBignum)exp) ? 1 : -1 ) * value.signum());
+                } else if (Numeric.f_negative_p(context, this) && isEven((RubyBignum)exp)) {
+                    return newZero(runtime, -1);
+                } else {
+                    return newZero(runtime, 1);
+                }
+            } else {
+                if (!Numeric.f_negative_p(context, exp)) {
+                    return newInfinity(runtime, (isEven((RubyBignum)exp) ? 1 : -1 ) * value.signum());
+                } else if(value.signum() == -1 && isEven((RubyBignum)exp)) {
+                    return newZero(runtime, -1);
+                } else {
+                    return newZero(runtime, 1);
+                }
+            }
         } else if ( ! ( exp instanceof RubyInteger ) ) {
             // when pow is not an integer we're play the oldest trick :
             // X pow (T+R) = X pow T * X pow R
