@@ -1117,7 +1117,7 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     @JRubyMethod(name = {"**", "power"}, required = 1)
-    public RubyBigDecimal op_pow(final ThreadContext context, IRubyObject exp) {
+    public IRubyObject op_pow(final ThreadContext context, IRubyObject exp) {
         final Ruby runtime = context.runtime;
 
         if (isNaN()) return newNaN(runtime);
@@ -1157,10 +1157,22 @@ public class RubyBigDecimal extends RubyNumeric {
 
         if (isInfinity()) return newPowOfInfinity(context, (RubyNumeric) exp);
 
-        final int times; final double rem; // exp's decimal part
-        // when pow is not an integer we're play the oldest trick :
-        // X pow (T+R) = X pow T * X pow R
-        if ( ! ( exp instanceof RubyInteger ) ) {
+        final int times;
+        final double rem; // exp's decimal part
+        final int nx = getPrec(context) * BASE_FIG;
+        if (exp instanceof RubyBigDecimal) {
+            RubyBigDecimal bdExp = (RubyBigDecimal)exp;
+            int ny = bdExp.getPrec(context) * BASE_FIG;
+            return bigdecimal_power_by_bigdecimal(context, exp, nx + ny);
+        } else if ( exp instanceof RubyFloat ) {
+            int ny = VP_DOUBLE_FIG;
+            return bigdecimal_power_by_bigdecimal(context, exp, nx + ny);
+        } else if ( exp instanceof RubyRational) {
+            int ny = nx;
+            return bigdecimal_power_by_bigdecimal(context, exp, nx + ny);
+        } else if ( ! ( exp instanceof RubyInteger ) ) {
+            // when pow is not an integer we're play the oldest trick :
+            // X pow (T+R) = X pow T * X pow R
             BigDecimal expVal = BigDecimal.valueOf( ((RubyNumeric) exp).getDoubleValue() );
             BigDecimal[] divAndRem = expVal.divideAndRemainder(BigDecimal.ONE);
             times = divAndRem[0].intValueExact(); rem = divAndRem[1].doubleValue();
@@ -1187,13 +1199,21 @@ public class RubyBigDecimal extends RubyNumeric {
         return new RubyBigDecimal(runtime, pow);
     }
 
+    // mri bigdecimal_power_by_bigdecimal
+    private IRubyObject bigdecimal_power_by_bigdecimal(ThreadContext context, IRubyObject exp, int precision) {
+        RubyModule bigMath = context.getRuntime().getModule("BigMath");
+        RubyBigDecimal log_x = (RubyBigDecimal) bigMath.callMethod(context, "log", new IRubyObject[]{this, RubyFixnum.newFixnum(context.getRuntime(), precision + 1)});
+        RubyBigDecimal multipled = (RubyBigDecimal) log_x.mult2(context, exp, RubyFixnum.newFixnum(context.getRuntime(), precision + 1));
+        return bigMath.callMethod(context, "exp", new IRubyObject[]{multipled, RubyFixnum.newFixnum(context.getRuntime(), precision)});
+    }
+
     @Deprecated
     public IRubyObject op_pow19(IRubyObject exp) {
         return op_pow(getRuntime().getCurrentContext(), exp);
     }
 
     @Deprecated
-    public RubyBigDecimal op_pow19(ThreadContext context, IRubyObject exp) {
+    public IRubyObject op_pow19(ThreadContext context, IRubyObject exp) {
         return op_pow(context, exp);
     }
 
@@ -1824,6 +1844,12 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyMethod
     public RubyArray precision_scale(ThreadContext context) {
         Ruby runtime = context.runtime;
+        int [] ary = getPrecisionScale(context);
+        return runtime.newArray(runtime.newFixnum(ary[0]), runtime.newFixnum(ary[1]));
+    }
+
+    private int [] getPrecisionScale(ThreadContext context) {
+        Ruby runtime = context.runtime;
         int precision = 0;
         int scale = 0;
         String plainString = value.toPlainString();
@@ -1846,8 +1872,12 @@ public class RubyBigDecimal extends RubyNumeric {
                 }
             }
         }
-        
-        return runtime.newArray(runtime.newFixnum(precision), runtime.newFixnum(scale));
+        return new int [] {precision, scale};
+    }
+
+    // mri x->Prec
+    private int getPrec(ThreadContext context) {
+        return getPrecisionScale(context)[0] / 8 + 1;
     }
 
     @Deprecated
