@@ -927,7 +927,7 @@ public class LibrarySearcher {
         }
 
         private LoadServiceResourceInputStream prepareInputStream(Ruby runtime) {
-            try (InputStream is = resource.inputStream()){
+            try (InputStream is = resource.openInputStream()){
                 return new LoadServiceResourceInputStream(is);
             } catch (IOException ioe) {
                 throw runtime.newLoadError("failure to load file: " + ioe.getLocalizedMessage(), searchName);
@@ -942,7 +942,7 @@ public class LibrarySearcher {
 
         @Override
         public void load(Ruby runtime, boolean wrap) {
-            try (InputStream ris = resource.inputStream()) {
+            try (InputStream ris = resource.openInputStream()) {
 
                 InputStream is = new BufferedInputStream(ris, 32768);
                 IRScope script = CompiledScriptLoader.loadScriptFromFile(runtime, is, null, scriptName, false);
