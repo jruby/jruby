@@ -88,7 +88,8 @@ public abstract class JavaSupport {
     private RubyModule javaUtilitiesModule;
     private RubyModule javaArrayUtilitiesModule;
     private RubyClass javaObjectClass;
-    private JavaClass objectJavaClass;
+    @Deprecated
+    private Object objectJavaClass;
     private RubyClass javaClassClass;
     private RubyClass javaPackageClass;
     private RubyClass javaArrayClass;
@@ -214,9 +215,11 @@ public abstract class JavaSupport {
 
     @Deprecated // no longer used
     public JavaClass getObjectJavaClass() {
-        JavaClass clazz;
-        if ((clazz = objectJavaClass) != null) return clazz;
-        return objectJavaClass = JavaClass.get(runtime, Object.class);
+        Object clazz;
+        if ((clazz = objectJavaClass) != null) return (JavaClass) clazz;
+        JavaClass javaClass = JavaClass.get(runtime, Object.class);
+        objectJavaClass = javaClass;
+        return javaClass;
     }
 
     @Deprecated
