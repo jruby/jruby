@@ -1184,7 +1184,7 @@ public class Java implements Library {
             return this.packageOrClass;
         }
 
-        @Override
+        @Deprecated @Override
         public Arity getArity() { return Arity.noArguments(); }
 
     }
