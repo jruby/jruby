@@ -118,11 +118,15 @@ public class Ifaddr extends RubyObject {
     }
 
     @JRubyMethod
-    public IRubyObject netmask(ThreadContext context) throws UnknownHostException {
+    public IRubyObject netmask(ThreadContext context) {
         if (netmask == null) {
             return context.nil;
         }
-        return new Addrinfo(context.runtime, context.runtime.getClass("Addrinfo"), InetAddress.getByName(netmask));
+        try {
+            return new Addrinfo(context.runtime, context.runtime.getClass("Addrinfo"), InetAddress.getByName(netmask));
+        } catch (UnknownHostException uhe) {
+            throw context.runtime.newIOErrorFromException(uhe);
+        }
     }
 
     @JRubyMethod(notImplemented = true)
