@@ -65,12 +65,6 @@ public class JavaArrayUtilities {
         if (wrappedObject instanceof JavaProxy) {
             Object wrapped = ((JavaProxy) wrappedObject).getObject();
             if ( wrapped instanceof byte[] ) bytes = (byte[]) wrapped;
-        } else {
-            IRubyObject byteArray = (IRubyObject) wrappedObject.dataGetStruct();
-            if (byteArray instanceof JavaArray) {
-                final Object wrapped = ((JavaArray) byteArray).getValue();
-                if ( wrapped instanceof byte[] ) bytes = (byte[]) wrapped;
-            }
         }
 
         if (bytes == null) {

@@ -534,7 +534,7 @@ public class AnnotationBinder extends AbstractProcessor {
             }
         }
         if (exNames.size() > 0) {
-            warn("method " + type + "." + method + " should not throw exceptions: " + join(", ", exNames));
+            warn("method " + type + "." + method + " throws Java exceptions: " + join(", ", exNames));
         }
     }
 

@@ -5,9 +5,8 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.java.invokers.ConstructorInvoker;
+import org.jruby.java.util.ClassUtils;
 import org.jruby.javasupport.Java;
-import org.jruby.javasupport.JavaClass;
-import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaSupportImpl;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -353,7 +352,7 @@ public class MethodGatherer {
     @SuppressWarnings("deprecation")
     protected void installInnerClasses(final Class<?> javaClass, final RubyModule proxy) {
         // setup constants for public inner classes
-        Class<?>[] classes = JavaClass.getDeclaredClasses(javaClass);
+        Class<?>[] classes = ClassUtils.getDeclaredClasses(javaClass);
 
         final Ruby runtime = proxy.getRuntime();
 
@@ -364,7 +363,7 @@ public class MethodGatherer {
             // no non-public inner classes
             if ( ! Modifier.isPublic(clazz.getModifiers()) ) continue;
 
-            final String simpleName = JavaClass.getSimpleName(clazz);
+            final String simpleName = ClassUtils.getSimpleName(clazz);
             if ( simpleName.length() == 0 ) continue;
 
             if (constantFields.containsKey(simpleName)) {
@@ -474,9 +473,8 @@ public class MethodGatherer {
         getStaticInstallers().forEach(($, value) -> value.install(proxy));
     }
 
-    @SuppressWarnings("deprecation")
     void installConstructors(Class<?> javaClass, final RubyModule proxy) {
-        Constructor[] constructors = JavaClass.getConstructors(javaClass);
+        Constructor[] constructors = ClassUtils.getConstructors(javaClass);
 
         boolean localConstructor = false;
         for (Constructor constructor : constructors) {
@@ -563,7 +561,7 @@ public class MethodGatherer {
 
     @SuppressWarnings("deprecation")
     void setupFieldsAndConstants(Class<?> javaClass) {
-        Field[] fields = JavaClass.getDeclaredFields(javaClass);
+        Field[] fields = ClassUtils.getDeclaredFields(javaClass);
 
         for (Field field : fields) {
             if (javaClass != field.getDeclaringClass()) continue;

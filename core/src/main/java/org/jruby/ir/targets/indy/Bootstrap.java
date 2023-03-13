@@ -1676,7 +1676,7 @@ public class Bootstrap {
         return new ConstantCallSite(MethodHandles.insertArguments(CHECK_ARRAY_ARITY, 2, required, opt, (rest == 0 ? false : true)));
     }
 
-    public static final Handle CHECK_ARRAY_ARITY_BOOTSTRAP = new Handle(Opcodes.H_INVOKESTATIC, p(Helpers.class), "checkArrayArity", sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class, int.class, int.class));
+    public static final Handle CHECK_ARRAY_ARITY_BOOTSTRAP = new Handle(Opcodes.H_INVOKESTATIC, p(Helpers.class), "checkArrayArity", sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class, int.class, int.class), false);
 
     private static final MethodHandle CHECK_ARRAY_ARITY =
             Binder

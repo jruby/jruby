@@ -38,8 +38,8 @@ import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.javasupport.Java;
-import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaPackage;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.JavaUtilities;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
@@ -117,7 +117,7 @@ public class Module {
         } else if (klass instanceof JavaPackage) {
             throw runtime.newArgumentError("java_import does not work for Java packages (try include_package instead)");
         } else if (klass instanceof RubyModule) {
-            javaClass = JavaClass.getJavaClassIfProxy(context, (RubyModule) klass);
+            javaClass = JavaUtil.getJavaClass((RubyModule) klass, null);
             if (javaClass == null) {
                 throw runtime.newArgumentError("not a Java class or interface: " + klass.inspect());
             }

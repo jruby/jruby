@@ -8,10 +8,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.util.ArrayUtils;
 import org.jruby.javasupport.Java;
-import org.jruby.javasupport.JavaArray;
-import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -66,12 +63,12 @@ public final class ArrayJavaProxy extends JavaProxy {
 
     @Override
     @Deprecated
-    protected JavaArray asJavaObject(final Object array) {
-        return new JavaArray(getRuntime(), array);
+    protected org.jruby.javasupport.JavaArray asJavaObject(final Object array) {
+        return new org.jruby.javasupport.JavaArray(getRuntime(), array);
     }
 
     @Deprecated
-    public final JavaArray getJavaArray() {
+    public final org.jruby.javasupport.JavaArray getJavaArray() {
         return asJavaObject(this.object);
     }
 

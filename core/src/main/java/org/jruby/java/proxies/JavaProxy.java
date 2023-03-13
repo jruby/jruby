@@ -36,11 +36,9 @@ import org.jruby.java.invokers.MethodInvoker;
 import org.jruby.java.invokers.StaticFieldGetter;
 import org.jruby.java.invokers.StaticFieldSetter;
 import org.jruby.java.invokers.StaticMethodInvoker;
+import org.jruby.java.util.ClassUtils;
 import org.jruby.javasupport.Java;
-import org.jruby.javasupport.JavaArray;
-import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaMethod;
-import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.binding.MethodGatherer;
 import org.jruby.runtime.Helpers;
@@ -137,8 +135,8 @@ public class JavaProxy extends RubyObject {
     @Override
     @SuppressWarnings("deprecation")
     public final void dataWrapStruct(Object object) {
-        if (object instanceof JavaObject) {
-            this.object = ((JavaObject) object).getValue();
+        if (object instanceof org.jruby.javasupport.JavaObject) {
+            this.object = ((org.jruby.javasupport.JavaObject) object).getValue();
         } else if (object instanceof JavaProxy) {
             this.object = ((JavaProxy) object).object;
         } else {
@@ -158,8 +156,8 @@ public class JavaProxy extends RubyObject {
 
     @Deprecated // not used
     @SuppressWarnings("deprecation")
-    protected JavaObject asJavaObject(final Object object) {
-        return JavaObject.wrap(getRuntime(), object);
+    protected org.jruby.javasupport.JavaObject asJavaObject(final Object object) {
+        return org.jruby.javasupport.JavaObject.wrap(getRuntime(), object);
     }
 
     @Override
@@ -317,11 +315,11 @@ public class JavaProxy extends RubyObject {
         final Map<String, String> fieldMap = getFieldListFromArgs(context, args);
 
         for (RubyModule module = topModule; module != null; module = module.getSuperClass()) {
-            final Class<?> javaClass = JavaClass.getJavaClassIfProxy(context, module);
+            final Class<?> javaClass = JavaUtil.getJavaClass(module, null);
             // Hit a non-java proxy class (included Modules can be a cause of this...skip)
             if ( javaClass == null ) continue;
 
-            Field[] fields = JavaClass.getDeclaredFields(javaClass);
+            Field[] fields = ClassUtils.getDeclaredFields(javaClass);
             for (int j = 0; j < fields.length; j++) {
                 installField(context, fieldMap, fields[j], module, asReader, asWriter);
             }
@@ -371,7 +369,7 @@ public class JavaProxy extends RubyObject {
         String name = rubyName.asJavaString();
         Ruby runtime = context.runtime;
 
-        JavaMethod method = new JavaMethod(runtime, getMethod(context, name));
+        org.jruby.javasupport.JavaMethod method = new org.jruby.javasupport.JavaMethod(runtime, getMethod(context, name));
         return method.invokeDirect(context, getObject());
     }
 
@@ -383,7 +381,7 @@ public class JavaProxy extends RubyObject {
 
         checkArgSizeMismatch(runtime, 0, argTypesAry);
 
-        JavaMethod method = new JavaMethod(runtime, getMethod(context, name));
+        org.jruby.javasupport.JavaMethod method = new org.jruby.javasupport.JavaMethod(runtime, getMethod(context, name));
         return method.invokeDirect(context, getObject());
     }
 
@@ -395,7 +393,7 @@ public class JavaProxy extends RubyObject {
 
         checkArgSizeMismatch(runtime, 1, argTypesAry);
 
-        Class argTypeClass = (Class) argTypesAry.eltInternal(0).toJava(Class.class);
+        Class argTypeClass = argTypesAry.eltInternal(0).toJava(Class.class);
 
         JavaMethod method = new JavaMethod(runtime, getMethod(context, name, argTypeClass));
         return method.invokeDirect(context, getObject(), arg0.toJava(argTypeClass));

@@ -92,7 +92,7 @@ import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.targets.indy.Bootstrap;
-import org.jruby.javasupport.JavaClass;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.binding.MethodGatherer;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
@@ -5874,7 +5874,7 @@ public class RubyModule extends RubyObject {
     public <T> T toJava(Class<T> target) {
         if (target == Class.class) { // try java_class for proxy modules
             final ThreadContext context = metaClass.runtime.getCurrentContext();
-            Class<?> javaClass = JavaClass.getJavaClassIfProxy(context, this);
+            Class<?> javaClass = JavaUtil.getJavaClass(this, null);
             if (javaClass != null) return (T) javaClass;
         }
 

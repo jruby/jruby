@@ -31,7 +31,6 @@ package org.jruby.javasupport.ext;
 import org.jruby.*;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -357,7 +356,7 @@ public abstract class JavaLangReflect {
     @SuppressWarnings("deprecation")
     private static Object convertValueToJava(final java.lang.reflect.Field field, IRubyObject value) {
         Object val = value.dataGetStruct();
-        if (val instanceof JavaObject) value = (IRubyObject) val; // expected to be no longer necessary
+        if (val instanceof org.jruby.javasupport.JavaObject) value = (IRubyObject) val; // expected to be no longer necessary
         return value.toJava(field.getType());
     }
 

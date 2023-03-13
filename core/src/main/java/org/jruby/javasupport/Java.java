@@ -257,17 +257,6 @@ public class Java implements Library {
         return proxyClass;
     }
 
-    @Deprecated // no longer used
-    public static IRubyObject get_java_class(final IRubyObject self, final IRubyObject name) {
-        try {
-            return JavaClass.for_name(self, name);
-        }
-        catch (Exception e) {
-            self.getRuntime().getJavaSupport().handleNativeException(e, null);
-            return self.getRuntime().getNil();
-        }
-    }
-
     /**
      * Same as Java#getInstance(runtime, rawJavaObject, false).
      */
@@ -332,10 +321,6 @@ public class Java implements Library {
             throw runtime.newArgumentError("expected a Java class, got " + java_class.inspect());
         }
 
-        if ( java_class instanceof JavaClass ) { // legacy
-            return ((JavaClass) java_class).javaClass();
-        }
-
         throw runtime.newArgumentError("expected a Java class (or String), got " + java_class.inspect());
     }
 
@@ -377,11 +362,8 @@ public class Java implements Library {
         }
 
         if (type instanceof RubyModule) { // assuming a proxy module/class e.g. to_java(java.lang.String)
-            return JavaClass.getJavaClassIfProxy(runtime.getCurrentContext(), (RubyModule) type);
-        } else {
-            if (type instanceof JavaClass) { // handle legacy JavaClass
-                return ((JavaClass) type).javaClass();
-            }
+            runtime.getCurrentContext();
+            return JavaUtil.getJavaClass((RubyModule) type, null);
         }
         return null;
     }
@@ -1202,7 +1184,7 @@ public class Java implements Library {
             return this.packageOrClass;
         }
 
-        @Override
+        @Deprecated @Override
         public Arity getArity() { return Arity.noArguments(); }
 
     }
@@ -1281,7 +1263,7 @@ public class Java implements Library {
 
         if (name.length() == 0) throw runtime.newArgumentError("empty class name");
 
-        Class<?> enclosing = JavaClass.getJavaClass(context, enclosingClass);
+        Class<?> enclosing = JavaUtil.getJavaClass(enclosingClass, null);
 
         if (enclosing == null) return null;
 

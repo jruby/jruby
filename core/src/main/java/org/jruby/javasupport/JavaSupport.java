@@ -61,6 +61,7 @@ public abstract class JavaSupport {
 
     protected final Ruby runtime;
 
+    @Deprecated
     private final ClassValue<JavaClass> javaClassCache;
     private final ClassValue<RubyModule> proxyClassCache;
 
@@ -87,7 +88,8 @@ public abstract class JavaSupport {
     private RubyModule javaUtilitiesModule;
     private RubyModule javaArrayUtilitiesModule;
     private RubyClass javaObjectClass;
-    private JavaClass objectJavaClass;
+    @Deprecated
+    private Object objectJavaClass;
     private RubyClass javaClassClass;
     private RubyClass javaPackageClass;
     private RubyClass javaArrayClass;
@@ -102,6 +104,7 @@ public abstract class JavaSupport {
     private RubyClass mapJavaProxy;
     private RubyClass javaProxyConstructorClass;
 
+    @SuppressWarnings("deprecation")
     public JavaSupport(final Ruby runtime) {
         this.runtime = runtime;
 
@@ -212,9 +215,11 @@ public abstract class JavaSupport {
 
     @Deprecated // no longer used
     public JavaClass getObjectJavaClass() {
-        JavaClass clazz;
-        if ((clazz = objectJavaClass) != null) return clazz;
-        return objectJavaClass = JavaClass.get(runtime, Object.class);
+        Object clazz;
+        if ((clazz = objectJavaClass) != null) return (JavaClass) clazz;
+        JavaClass javaClass = JavaClass.get(runtime, Object.class);
+        objectJavaClass = javaClass;
+        return javaClass;
     }
 
     @Deprecated
@@ -332,14 +337,12 @@ public abstract class JavaSupport {
 
     // Internal API
 
+    abstract ClassValue<Map<String, AssignedName>> getStaticAssignedNames();
+
+    abstract ClassValue<Map<String, AssignedName>> getInstanceAssignedNames();
+
     @Deprecated
     public abstract Map<String, JavaClass> getNameClassMap();
-
-    @Deprecated // internal API
-    public abstract ClassValue<Map<String, AssignedName>> getStaticAssignedNames();
-
-    @Deprecated // internal API
-    public abstract ClassValue<Map<String, AssignedName>> getInstanceAssignedNames();
 
     @Deprecated // internal API - no longer used
     public abstract Map<Set<?>, JavaProxyClass> getJavaProxyClassCache();

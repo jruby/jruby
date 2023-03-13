@@ -37,7 +37,7 @@ public class DefaultMethod extends DynamicMethod implements CacheableMethod {
         return this;
     }
 
-    @Override
+    @Deprecated @Override
     public final Arity getArity() {
         return arity;
     }
