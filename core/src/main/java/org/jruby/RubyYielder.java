@@ -126,7 +126,7 @@ public class RubyYielder extends RubyObject {
         return RubyProc.newProc(context.runtime, CallBlock19.newCallClosure(this, this.getMetaClass(), Signature.OPTIONAL, new BlockCallback() {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
-                return yield(context, args);
+                return RubyYielder.this.yield(context, args);
             }
         }, context), Block.Type.PROC);
     }
