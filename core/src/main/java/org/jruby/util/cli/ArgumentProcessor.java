@@ -51,6 +51,8 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.function.BiFunction;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Encapsulated logic for processing JRuby's command-line arguments.
@@ -274,23 +276,10 @@ public class ArgumentProcessor {
                     break FOR;
                 case 'I':
                     String s = grabValue(getArgumentError("-I must be followed by a directory name to add to lib path"));
-                    String separator = java.io.File.pathSeparator;
-                    if (":".equals(separator)) {
-                        separator = SEPARATOR;
-                    }
-                    String[] ls = s.split(separator);
+                    String separator = ":".equals(File.pathSeparator) ? SEPARATOR : File.pathSeparator;
+                    Stream<String> paths = Arrays.stream(s.split(separator)).map(path -> new JRubyFile(path).getAbsolutePath());
 
-                    for (int i = 0; i < ls.length; i++) {
-                        File file = new File(ls[i]);
-                        if (!file.isAbsolute()) {
-                            try {
-                                ls[i] = file.getCanonicalPath();
-                            } catch (IOException e) {
-                                ls[i] = file.getAbsolutePath();
-                            }
-                        }
-                    }
-                    config.getLoadPaths().addAll(Arrays.asList(ls));
+                    config.getLoadPaths().addAll(paths.collect(Collectors.toList()));
                     break FOR;
                 case 'J':
                     String js = grabOptionalValue();
