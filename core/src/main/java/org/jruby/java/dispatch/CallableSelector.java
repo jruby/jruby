@@ -17,8 +17,8 @@ import org.jruby.RubyInteger;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.java.invokers.RubyToJavaInvoker;
+import org.jruby.java.util.ClassUtils;
 import org.jruby.javasupport.JavaCallable;
-import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.ParameterTypes;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -606,7 +606,7 @@ public class CallableSelector {
     }
 
     private static boolean assignable(Class<?> type, final IRubyObject arg) {
-        return JavaClass.assignable(type, getJavaClass(arg)) ||
+        return ClassUtils.assignable(type, getJavaClass(arg)) ||
                 // handle 'native' signatures e.g. method with a (org.jruby.RubyArray arg)
                 ( arg != null && type.isAssignableFrom(arg.getClass()) );
     }

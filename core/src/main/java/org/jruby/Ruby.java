@@ -49,7 +49,6 @@ import org.jruby.ast.CallNode;
 import org.jruby.ast.FCallNode;
 import org.jruby.ast.GlobalAsgnNode;
 import org.jruby.ast.GlobalVarNode;
-import org.jruby.ast.StrNode;
 import org.jruby.ast.VCallNode;
 import org.jruby.ast.WhileNode;
 import org.jruby.compiler.Constantizable;
@@ -64,8 +63,8 @@ import org.jruby.ext.thread.SizedQueue;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.runtime.IRReturnJump;
+import org.jruby.java.util.ClassUtils;
 import org.jruby.javasupport.Java;
-import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaPackage;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaSupportImpl;
@@ -2885,7 +2884,7 @@ public final class Ruby implements Constantizable {
             }
 
             // FIXME: JI depends on const_missing getting called from Marshal.load (ruby objests do not).  We should marshal JI objects differently so we do not differentiate here.
-            boolean isJava = c instanceof JavaPackage || JavaClass.isProxyType(context, c);
+            boolean isJava = c instanceof JavaPackage || ClassUtils.isJavaClassProxyType(context, c);
             IRubyObject cc = flexibleSearch || isJava ? c.getConstant(str) : c.getConstantAt(str);
 
             if (!flexibleSearch && cc == null) return null;

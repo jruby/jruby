@@ -61,6 +61,7 @@ public abstract class JavaSupport {
 
     protected final Ruby runtime;
 
+    @Deprecated
     private final ClassValue<JavaClass> javaClassCache;
     private final ClassValue<RubyModule> proxyClassCache;
 
@@ -102,6 +103,7 @@ public abstract class JavaSupport {
     private RubyClass mapJavaProxy;
     private RubyClass javaProxyConstructorClass;
 
+    @SuppressWarnings("deprecation")
     public JavaSupport(final Ruby runtime) {
         this.runtime = runtime;
 
@@ -332,14 +334,12 @@ public abstract class JavaSupport {
 
     // Internal API
 
+    abstract ClassValue<Map<String, AssignedName>> getStaticAssignedNames();
+
+    abstract ClassValue<Map<String, AssignedName>> getInstanceAssignedNames();
+
     @Deprecated
     public abstract Map<String, JavaClass> getNameClassMap();
-
-    @Deprecated // internal API
-    public abstract ClassValue<Map<String, AssignedName>> getStaticAssignedNames();
-
-    @Deprecated // internal API
-    public abstract ClassValue<Map<String, AssignedName>> getInstanceAssignedNames();
 
     @Deprecated // internal API - no longer used
     public abstract Map<Set<?>, JavaProxyClass> getJavaProxyClassCache();

@@ -67,8 +67,8 @@ import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.Java.JCtorCache;
-import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaConstructor;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.proxy.ReifiedJavaProxy;
 import org.jruby.javasupport.util.JavaClassConfiguration;
@@ -2430,7 +2430,7 @@ public class RubyClass extends RubyModule {
             if (reifiedClass == null) reifyWithAncestors(); // possibly auto-reify
             // Class requested; try java_class or else return nearest reified class
             final ThreadContext context = runtime.getCurrentContext();
-            Class<?> javaClass = JavaClass.getJavaClassIfProxy(context, this);
+            Class<?> javaClass = JavaUtil.getJavaClass(this, null);
             if (javaClass != null) return (T) javaClass;
 
             Class<?> reifiedClass = nearestReifiedClass(this);

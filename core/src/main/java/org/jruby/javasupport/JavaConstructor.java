@@ -42,6 +42,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
 
 import org.jruby.Ruby;
+import org.jruby.java.util.ClassUtils;
 import org.jruby.runtime.ThreadContext;
 
 public class JavaConstructor extends JavaCallable {
@@ -66,38 +67,11 @@ public class JavaConstructor extends JavaCallable {
 
     public static JavaConstructor getMatchingConstructor(final Ruby runtime,
         final Class<?> javaClass, final Class<?>[] argumentTypes) {
-        try {
-            return wrap(javaClass.getConstructor(argumentTypes));
-        }
-        catch (NoSuchMethodException e) {
-            final int argLength = argumentTypes.length;
-            // Java reflection does not allow retrieving constructors like methods
-            Search: for (Constructor<?> ctor : javaClass.getConstructors()) {
-                final Class<?>[] ctorTypes = ctor.getParameterTypes();
-                final int ctorLength = ctorTypes.length;
+        Constructor c = ClassUtils.getMatchingConstructor(javaClass, argumentTypes);
 
-                if ( ctorLength != argLength ) continue Search;
-                // for zero args case we can stop searching
-                if ( ctorLength == 0 && argLength == 0 ) {
-                    return wrap(ctor);
-                }
+        if (c == null) return null;
 
-                boolean found = true;
-                TypeScan: for ( int i = 0; i < argLength; i++ ) {
-                    //if ( i >= ctorLength ) found = false;
-                    if ( ctorTypes[i].isAssignableFrom(argumentTypes[i]) ) {
-                        found = true; // continue TypeScan;
-                    } else {
-                        continue Search; // not-found
-                    }
-                }
-
-                // if we get here, we found a matching method, use it
-                // TODO: choose narrowest method by continuing to search
-                if ( found ) return wrap(ctor);
-            }
-        }
-        return null; // no matching ctor found
+        return wrap(c);
     }
 
     @Override

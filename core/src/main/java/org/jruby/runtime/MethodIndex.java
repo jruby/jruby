@@ -116,7 +116,7 @@ public class MethodIndex {
         CallSite callSite = null;
 
         // only use fast ops if we're not tracing
-        if (RubyInstanceConfig.FASTOPS_COMPILE_ENABLED && !(RubyInstanceConfig.FULL_TRACE_ENABLED)) {
+        if (!(RubyInstanceConfig.FULL_TRACE_ENABLED)) {
             callSite = getFastFixnumOpsCallSite(name);
         }
 

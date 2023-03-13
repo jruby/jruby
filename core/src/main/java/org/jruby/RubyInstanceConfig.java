@@ -1650,13 +1650,6 @@ public class RubyInstanceConfig {
     public static final int JAVA_VERSION = initJavaBytecodeVersion();
 
     /**
-     * Enable fast operator compiler optimizations.
-     *
-     * Set with the <tt>jruby.compile.fastops</tt> system property.
-     */
-    public static final boolean FASTOPS_COMPILE_ENABLED = Options.COMPILE_FASTOPS.load();
-
-    /**
      * Enable a thread pool. Each Ruby thread will be mapped onto a thread from this pool.
      *
      * Set with the <tt>jruby.thread.pool.enabled</tt> system property.
@@ -2041,4 +2034,7 @@ public class RubyInstanceConfig {
 
     @Deprecated
     public static final boolean USE_GENERATED_HANDLES = false;
+
+    @Deprecated
+    public static final boolean FASTOPS_COMPILE_ENABLED = Options.COMPILE_FASTOPS.load();
 }

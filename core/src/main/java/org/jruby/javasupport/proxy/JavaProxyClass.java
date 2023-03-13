@@ -44,6 +44,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.proxies.ConcreteJavaProxy.NewMethodReified;
 import org.jruby.java.proxies.ConcreteJavaProxy.StaticJCreateMethod;
 import org.jruby.java.proxies.JavaProxy;
+import org.jruby.java.util.ClassUtils;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.ObjectAllocator;
@@ -64,7 +65,6 @@ import java.util.HashSet;
 import java.util.List;
 
 import static org.jruby.javasupport.JavaCallable.inspectParameterTypes;
-import static org.jruby.javasupport.JavaClass.EMPTY_CLASS_ARRAY;
 
 /**
  * Generalized proxy for classes and interfaces.
@@ -472,7 +472,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             types.add(type);
         }
 
-        return types.isEmpty() ? EMPTY_CLASS_ARRAY : types.toArray(new Class[types.size()]);
+        return types.isEmpty() ? ClassUtils.EMPTY_CLASS_ARRAY : types.toArray(new Class[types.size()]);
     }
 
     //

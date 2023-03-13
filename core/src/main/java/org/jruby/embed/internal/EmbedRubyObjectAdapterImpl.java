@@ -41,10 +41,8 @@ import org.jruby.embed.InvokeFailedException;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.embed.variable.BiVariable;
 import org.jruby.embed.variable.InstanceVariable;
-import org.jruby.internal.runtime.methods.InvokeDynamicMethodFactory;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaEmbedUtils;
-import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
@@ -285,7 +283,7 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
         IRubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(runtime, args);
         for (int i = 0; i < rubyArgs.length; i++) {
             IRubyObject obj = rubyArgs[i];
-            if (obj instanceof JavaObject) {
+            if (obj instanceof org.jruby.javasupport.JavaObject) {
                 rubyArgs[i] = Java.wrap(runtime, obj);
             }
         }
