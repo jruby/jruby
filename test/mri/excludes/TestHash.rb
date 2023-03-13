@@ -1,4 +1,5 @@
 exclude :test_AREF_fstring_key, "Depends on MRI-specific ObjectSpace.count_objects"
+exclude :test_NEWHASH_fstring_key, "https://github.com/jruby/jruby/issues/7713"
 exclude :test_callcc, "needs investigation"
 exclude :test_callcc_escape, "needs investigation"
 exclude :test_callcc_iter_level, "needs investigation"
