@@ -253,7 +253,7 @@ public class TraceEventManager {
         public boolean equals(Object other) {
             if (!(other instanceof CallTraceFuncHook)) return false;
 
-            return super.equals(other) && thread == ((CallTraceFuncHook) other).thread;
+            return traceFunc == ((CallTraceFuncHook) other).traceFunc && thread == ((CallTraceFuncHook) other).thread;
         }
 
         @Override
