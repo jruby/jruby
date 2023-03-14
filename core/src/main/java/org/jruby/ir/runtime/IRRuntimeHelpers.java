@@ -15,6 +15,7 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyComplex;
 import org.jruby.RubyEncoding;
+import org.jruby.RubyException;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
@@ -68,6 +69,7 @@ import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.JavaSites.IRRuntimeHelpersSites;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.TraceEventManager;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -2453,13 +2455,47 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static void callTrace(ThreadContext context, RubyEvent event, String name, String filename, int line) {
-        if (context.runtime.hasEventHooks()) {
+    public static void callTrace(ThreadContext context, IRubyObject selfClass, RubyEvent event, String name, String filename, int line) {
+        TraceEventManager traceEvents = context.traceEvents;
+        if (traceEvents.hasEventHooks()) {
             // FIXME: Try and statically generate END linenumber instead of hacking it.
             int linenumber = line == -1 ? context.getLine() : line;
 
-            context.trace(event, name, context.getFrameKlazz(), filename, linenumber);
+            traceEvents.callEventHooks(context, event, filename, linenumber, name, selfClass);
         }
+    }
+
+    public static void traceRaise(ThreadContext context) {
+        TraceEventManager traceEvents = context.traceEvents;
+        if (traceEvents.hasEventHooks()) {
+            RubyStackTraceElement backtraceElement = context.getSingleBacktrace();
+            String file = backtraceElement.getFileName();
+            int line = backtraceElement.getLineNumber();
+
+            // FIXME: Try and statically generate END linenumber instead of hacking it.
+            int linenumber = line == -1 ? context.getLine() : line;
+
+            traceEvents.callEventHooks(context, RubyEvent.RAISE, file, linenumber, null, context.nil);
+        }
+    }
+
+    @JIT
+    public static void callTrace(ThreadContext context, Block selfBlock, RubyEvent event, String name, String filename, int line) {
+        TraceEventManager traceEvents = context.traceEvents;
+        if (traceEvents.hasEventHooks()) {
+            // FIXME: Try and statically generate END linenumber instead of hacking it.
+            int linenumber = line == -1 ? context.getLine() : line;
+
+            traceEvents.callEventHooks(context, event, filename, linenumber, name, selfBlock.getFrameClass());
+        }
+    }
+
+    @JIT
+    public static void callTraceHooks(ThreadContext context, Block selfBlock, RubyEvent event, String name, String filename, int line) {
+        // FIXME: Try and statically generate END linenumber instead of hacking it.
+        int linenumber = line == -1 ? context.getLine() : line;
+
+        context.traceEvents.callEventHooks(context, event, filename, linenumber, name, selfBlock.getFrameClass());
     }
 
     public static void warnSetConstInRefinement(ThreadContext context, IRubyObject self) {

@@ -305,9 +305,7 @@ public class IRBytecodeAdapter {
         if (superNameOffset == -1) {
             // load from self block
             loadSelfBlock();
-            adapter.invokevirtual(p(Block.class), "getBinding", sig(Binding.class));
-            adapter.invokevirtual(p(Binding.class), "getFrame", sig(Frame.class));
-            adapter.invokevirtual(p(Frame.class), "getKlazz", sig(RubyModule.class));
+            adapter.invokevirtual(p(Block.class), "getFrameClass", sig(RubyModule.class));
         } else {
             // when present, should be second-to-last element in signature
             adapter.aload(signature.argCount() - 2);

@@ -45,6 +45,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import org.jruby.EvalType;
+import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -345,6 +346,15 @@ public class Block implements FunctionOneOrTwoOrThree<ThreadContext, IRubyObject
      */
     public Frame getFrame() {
         return binding.getFrame();
+    }
+
+    /**
+     * Gets the frame class.
+     *
+     * @return the binding's frame's self class
+     */
+    public RubyModule getFrameClass() {
+        return binding.getFrame().getKlazz();
     }
 
     public boolean isEscaped() {
