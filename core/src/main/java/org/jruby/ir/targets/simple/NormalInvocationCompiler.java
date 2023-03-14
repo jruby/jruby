@@ -478,4 +478,15 @@ public class NormalInvocationCompiler implements InvocationCompiler {
             compiler.adapter.invokeinterface(p(IRubyObject.class), "asString", sig(RubyString.class));
         }
     }
+
+    @Override
+    public void setCallInfo(int flags) {
+        compiler.loadContext();
+        if (flags == 0) {
+            compiler.invokeIRHelper("clearCallInfo", sig(void.class, ThreadContext.class));
+        } else {
+            compiler.adapter.ldc(flags);
+            compiler.invokeIRHelper("setCallInfo", sig(void.class, ThreadContext.class, int.class));
+        }
+    }
 }

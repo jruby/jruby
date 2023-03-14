@@ -122,6 +122,7 @@ public class Bootstrap {
     public final static String BOOTSTRAP_LONG_STRING_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, long.class, int.class, String.class, int.class);
     public final static String BOOTSTRAP_DOUBLE_STRING_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, double.class, int.class, String.class, int.class);
     public final static String BOOTSTRAP_INT_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class, int.class);
+    public final static String BOOTSTRAP_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class);
     private static final Logger LOG = LoggerFactory.getLogger(Bootstrap.class);
     static final Lookup LOOKUP = MethodHandles.lookup();
     public static final Handle EMPTY_STRING_BOOTSTRAP = new Handle(
@@ -1424,6 +1425,10 @@ public class Bootstrap {
         return getBootstrapHandle("checkpointBootstrap", BOOTSTRAP_BARE_SIG);
     }
 
+    public static Handle callInfoHandle() {
+        return getBootstrapHandle("callInfoBootstrap", BOOTSTRAP_INT_SIG);
+    }
+
     public static Handle coverLineHandle() {
         return getBootstrapHandle("coverLineBootstrap", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, int.class, int.class));
     }
@@ -1472,6 +1477,18 @@ public class Bootstrap {
         target = ((SwitchPoint)invalidator.getData()).guardWithTest(target, fallback);
 
         site.setTarget(target);
+    }
+
+    public static CallSite callInfoBootstrap(Lookup lookup, String name, MethodType type, int callInfo) throws Throwable {
+        MethodHandle handle;
+        if (callInfo == 0) {
+            handle = lookup.findVirtual(ThreadContext.class, "clearCallInfo", methodType(void.class));
+        } else {
+            handle = lookup.findStatic(IRRuntimeHelpers.class, "setCallInfo", methodType(void.class, ThreadContext.class, int.class));
+            handle = insertArguments(handle, 1, callInfo);
+        }
+
+        return new ConstantCallSite(handle);
     }
 
     public static CallSite coverLineBootstrap(Lookup lookup, String name, MethodType type, String filename, int line, int oneshot) throws Throwable {

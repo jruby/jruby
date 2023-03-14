@@ -113,4 +113,11 @@ public interface InvocationCompiler {
      * Stack required: context, caller, receiver
      */
     void asString(AsStringInstr call, String scopeFieldName, String file);
+
+    /**
+     * Sets the current callInfo, when it cannot be passed other ways
+     *
+     * Stack required: none
+     */
+    void setCallInfo(int flags);
 }

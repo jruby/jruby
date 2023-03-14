@@ -2553,9 +2553,7 @@ public class JVMVisitor extends IRVisitor {
     }
 
     private void setupCallInfo(int flags) {
-        jvmMethod().loadContext();
-        jvmMethod().adapter.ldc(flags);
-        jvmMethod().invokeIRHelper("setCallInfo", sig(void.class, ThreadContext.class, int.class));
+        jvmMethod().getInvocationCompiler().setCallInfo(flags);
     }
 
     @Override

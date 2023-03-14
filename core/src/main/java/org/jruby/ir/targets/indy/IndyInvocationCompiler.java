@@ -204,4 +204,10 @@ public class IndyInvocationCompiler implements InvocationCompiler {
 
         compiler.adapter.invokedynamic("asString", sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT)), AsStringSite.BOOTSTRAP, file, compiler.getLastLine());
     }
+
+    @Override
+    public void setCallInfo(int flags) {
+        compiler.loadContext();
+        compiler.adapter.invokedynamic("callInfo", sig(void.class, ThreadContext.class), Bootstrap.callInfoHandle(), flags);
+    }
 }

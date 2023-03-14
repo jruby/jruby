@@ -837,6 +837,11 @@ public class IRRuntimeHelpers {
         context.resetCallInfo();
     }
 
+    @JIT
+    public static void clearCallInfo(ThreadContext context) {
+        context.clearCallInfo();
+    }
+
     public static void checkForExtraUnwantedKeywordArgs(ThreadContext context, final StaticScope scope, RubyHash keywordArgs) {
         // we do an inexpensive non-gathering scan first to see if there's a bad keyword
         try {
