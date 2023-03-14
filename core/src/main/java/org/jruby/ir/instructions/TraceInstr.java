@@ -103,13 +103,6 @@ public class TraceInstr extends OneOperandInstr {
 
     @Override
     public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
-        if (event == RubyEvent.CALL || event == RubyEvent.RETURN
-                || event == RubyEvent.B_CALL || event == RubyEvent.B_RETURN) {
-            // no need for frame for these currently
-            return false;
-        }
-
-        // other instrs need frame
         flags.addAll(IRFlags.REQUIRE_ALL_FRAME_FIELDS);
         return true;
     }
