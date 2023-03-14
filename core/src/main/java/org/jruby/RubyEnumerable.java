@@ -454,7 +454,7 @@ public class RubyEnumerable {
         return result;
     }
 
-    @JRubyMethod(name = {"to_a", "entries"}, keywords = true)
+    @JRubyMethod(name = {"to_a", "entries"})
     public static IRubyObject to_a(ThreadContext context, IRubyObject self, IRubyObject arg) {
         final Ruby runtime = context.runtime;
         final RubyArray result = runtime.newArray();
@@ -463,7 +463,7 @@ public class RubyEnumerable {
         return result;
     }
 
-    @JRubyMethod(name = {"to_a", "entries"}, rest = true, keywords = true)
+    @JRubyMethod(name = {"to_a", "entries"}, rest = true)
     public static IRubyObject to_a(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         final Ruby runtime = context.runtime;
         final RubyArray result = runtime.newArray();

@@ -275,7 +275,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
                     ClassWriter cw = createJavaMethodCtor(generatedClassPath, superClassString, info.getParameterDesc());
 
-                    addAnnotatedMethodInvoker(cw, superClassString, descs, info.acceptsKeywords());
+                    addAnnotatedMethodInvoker(cw, superClassString, descs);
 
                     c = endClass(cw, generatedClassName);
                 }
@@ -708,28 +708,24 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
-    private void addAnnotatedMethodInvoker(ClassWriter cw, String superClass, List<JavaMethodDescriptor> descs, boolean acceptsKeywords) {
+    private void addAnnotatedMethodInvoker(ClassWriter cw, String superClass, List<JavaMethodDescriptor> descs) {
         for (JavaMethodDescriptor desc: descs) {
             int specificArity = desc.calculateSpecificCallArity();
 
             SkinnyMethodAdapter mv = beginMethod(cw, "call", specificArity, desc.hasBlock);
             mv.visitCode();
-            createAnnotatedMethodInvocation(desc, mv, superClass, specificArity, desc.hasBlock, acceptsKeywords);
+            createAnnotatedMethodInvocation(desc, mv, superClass, specificArity, desc.hasBlock);
             mv.end();
         }
     }
 
     private void createAnnotatedMethodInvocation(JavaMethodDescriptor desc, SkinnyMethodAdapter method,
-                                                 String superClass, int specificArity, boolean block, boolean acceptsKeywords) {
+                                                 String superClass, int specificArity, boolean block) {
         String typePath = desc.declaringClassPath;
         String javaMethodName = desc.name;
 
-        // If a native method does not accept keywords then we wipe callInfo.
-        if (!acceptsKeywords) {
-            method.aload(1);
-            method.ldc(0);
-            method.putfield("org/jruby/runtime/ThreadContext", "callInfo", "I");
-        }
+        method.aload(THREADCONTEXT_INDEX);
+        method.invokevirtual(p(ThreadContext.class), "markAsNativeCall", sig(void.class));
 
         checkArity(desc.anno, method, specificArity);
 
