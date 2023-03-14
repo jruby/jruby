@@ -14,7 +14,6 @@ import org.jruby.RubyModule;
 import org.jruby.RubyNil;
 import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
-import org.jruby.compiler.NotCompilableException;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.PartialDelegatingMethod;
@@ -156,105 +155,77 @@ public abstract class InvokeSite extends MutableCallSite {
     public IRubyObject invoke(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
         SwitchPoint switchPoint = (SwitchPoint) selfClass.getInvalidator().getData();
+        String methodName = this.methodName;
         CacheEntry entry = selfClass.searchWithCache(methodName);
-        DynamicMethod method = entry.method;
         MethodHandle mh = null;
         boolean methodMissing = false;
 
         if (methodMissing(entry, caller)) {
             methodMissing = true;
-            // Test thresholds so we don't do this forever (#4596)
-            if (testThresholds(selfClass) == CacheAction.FAIL) {
-                logFail();
-                bindToFail();
-            } else {
-                logMethodMissing();
-            }
-            method = Helpers.selectMethodMissing(context, selfClass, entry.method.getVisibility(), methodName, callType);
-            if (method instanceof Helpers.MethodMissingMethod) {
-                entry = ((Helpers.MethodMissingMethod) method).entry;
-                method = entry.method;
-            } else {
-                entry = new CacheEntry(
-                        method,
-                        selfClass,
-                        entry.token);
-            }
-            try {
-                mh = Bootstrap.buildMethodMissingHandle(this, entry, self);
-            } catch (Throwable t) {
-                t.printStackTrace();
-                Helpers.throwException(t);
-            }
+            entry = methodMissingEntry(context, selfClass, methodName, entry);
+            mh = methodMissingHandle(self, entry, mh);
         } else {
             mh = getHandle(self, entry);
         }
 
-        if (literalClosure) {
-            mh = Binder.from(mh.type())
-                    .tryFinally(getBlockEscape(signature))
-                    .invoke(mh);
-        }
+        finishBinding(entry, mh, self, selfClass, switchPoint);
 
-        updateInvocationTarget(mh, self, selfClass, entry.method, switchPoint);
-
-        if (literalClosure) {
-            try {
-                if (methodMissing) {
-                    return method.call(context, self, entry.sourceModule, methodName, Helpers.arrayOf(context.runtime.newSymbol(methodName), args), block);
-                } else {
-                    return method.call(context, self, entry.sourceModule, methodName, args, block);
-                }
-            } finally {
-                block.escape();
-            }
-        }
-
-        if (methodMissing) {
-            return method.call(context, self, entry.sourceModule, methodName, Helpers.arrayOf(context.runtime.newSymbol(methodName), args), block);
-        } else {
-            return method.call(context, self, entry.sourceModule, methodName, args, block);
-        }
+        return performIndirectCall(context, self, args, block, methodName, methodMissing, entry);
     }
-
 
     public IRubyObject invoke(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
         SwitchPoint switchPoint = (SwitchPoint) selfClass.getInvalidator().getData();
+        String methodName = this.methodName;
         CacheEntry entry = selfClass.searchWithCache(methodName);
-        DynamicMethod method = entry.method;
         MethodHandle mh = null;
         boolean methodMissing = false;
 
         if (methodMissing(entry)) {
             methodMissing = true;
             // Test thresholds so we don't do this forever (#4596)
-            if (testThresholds(selfClass) == CacheAction.FAIL) {
-                logFail();
-                bindToFail();
-            } else {
-                logMethodMissing();
-            }
-            method = Helpers.selectMethodMissing(context, selfClass, entry.method.getVisibility(), methodName, callType);
-            if (method instanceof Helpers.MethodMissingMethod) {
-                entry = ((Helpers.MethodMissingMethod) method).entry;
-                method = entry.method;
-            } else {
-                entry = new CacheEntry(
-                        method,
-                        selfClass,
-                        entry.token);
-            }
-            try {
-                mh = Bootstrap.buildMethodMissingHandle(this, entry, self);
-            } catch (Throwable t) {
-                t.printStackTrace();
-                Helpers.throwException(t);
-            }
+            entry = methodMissingEntry(context, selfClass, methodName, entry);
+            mh = methodMissingHandle(self, entry, mh);
         } else {
             mh = getHandle(self, entry);
         }
 
+        finishBinding(entry, mh, self, selfClass, switchPoint);
+
+        return performIndirectCall(context, self, args, block, methodName, methodMissing, entry);
+    }
+
+    private CacheEntry methodMissingEntry(ThreadContext context, RubyClass selfClass, String methodName, CacheEntry entry) {
+        // Test thresholds so we don't do this forever (#4596)
+        if (testThresholds(selfClass) == CacheAction.FAIL) {
+            logFail();
+            bindToFail();
+        } else {
+            logMethodMissing();
+        }
+        DynamicMethod method = Helpers.selectMethodMissing(context, selfClass, entry.method.getVisibility(), methodName, callType);
+        if (method instanceof Helpers.MethodMissingMethod) {
+            entry = ((Helpers.MethodMissingMethod) method).entry;
+        } else {
+            entry = new CacheEntry(
+                    method,
+                    selfClass,
+                    entry.token);
+        }
+        return entry;
+    }
+
+    private MethodHandle methodMissingHandle(IRubyObject self, CacheEntry entry, MethodHandle mh) {
+        try {
+            mh = Bootstrap.buildMethodMissingHandle(this, entry, self);
+        } catch (Throwable t) {
+            t.printStackTrace();
+            Helpers.throwException(t);
+        }
+        return mh;
+    }
+
+    private void finishBinding(CacheEntry entry, MethodHandle mh, IRubyObject self, RubyClass selfClass, SwitchPoint switchPoint) {
         if (literalClosure) {
             mh = Binder.from(mh.type())
                     .tryFinally(getBlockEscape(signature))
@@ -262,13 +233,18 @@ public abstract class InvokeSite extends MutableCallSite {
         }
 
         updateInvocationTarget(mh, self, selfClass, entry.method, switchPoint);
+    }
+
+    private IRubyObject performIndirectCall(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, String methodName, boolean methodMissing, CacheEntry entry) {
+        RubyModule sourceModule = entry.sourceModule;
+        DynamicMethod method = entry.method;
 
         if (literalClosure) {
             try {
                 if (methodMissing) {
-                    return method.call(context, self, entry.sourceModule, methodName, Helpers.arrayOf(context.runtime.newSymbol(methodName), args), block);
+                    return method.call(context, self, sourceModule, methodName, Helpers.arrayOf(context.runtime.newSymbol(methodName), args), block);
                 } else {
-                    return method.call(context, self, entry.sourceModule, methodName, args, block);
+                    return method.call(context, self, sourceModule, methodName, args, block);
                 }
             } finally {
                 block.escape();
@@ -276,9 +252,9 @@ public abstract class InvokeSite extends MutableCallSite {
         }
 
         if (methodMissing) {
-            return method.call(context, self, entry.sourceModule, methodName, Helpers.arrayOf(context.runtime.newSymbol(methodName), args), block);
+            return method.call(context, self, sourceModule, methodName, Helpers.arrayOf(context.runtime.newSymbol(methodName), args), block);
         } else {
-            return method.call(context, self, entry.sourceModule, methodName, args, block);
+            return method.call(context, self, sourceModule, methodName, args, block);
         }
     }
 
