@@ -109,6 +109,7 @@ import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
+import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callsite.CacheEntry;
@@ -5530,7 +5531,8 @@ public class RubyModule extends RubyObject {
         if (existingAutoload == null || existingAutoload.getValue() == null) {
             storeConstant(symbol, RubyObject.UNDEF);
             ThreadContext context = path.getRuntime().getCurrentContext();
-            getAutoloadMapForWrite().put(symbol, new Autoload(symbol, path, context.getFile(), context.getLine() + 1));
+            RubyStackTraceElement caller = context.getSingleBacktrace();
+            getAutoloadMapForWrite().put(symbol, new Autoload(symbol, path, caller.getFileName(), caller.getLineNumber()));
         }
     }
 
