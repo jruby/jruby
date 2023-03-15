@@ -51,54 +51,62 @@ public interface InvocationCompiler {
 
     /**
      * Invoke a superclass method from an instance context.
-     *
+     * <p>
      * Stack required: context, caller, self, start class, arguments[, block]
-     *  @param file the filename of the script making this call
-     * @param name name of the method to invoke
-     * @param arity arity of the arguments on the stack
-     * @param hasClosure whether a block is passed
+     *
+     * @param file           the filename of the script making this call
+     * @param name           name of the method to invoke
+     * @param arity          arity of the arguments on the stack
+     * @param hasClosure     whether a block is passed
      * @param literalClosure whether the block passed is a literal closure
-     * @param splatmap a map of arguments to be splatted back into arg list
+     * @param splatmap       a map of arguments to be splatted back into arg list
+     * @param flags
      */
-    void invokeInstanceSuper(String file, String name, int arity, boolean hasClosure, boolean literalClosure, boolean[] splatmap);
+    void invokeInstanceSuper(String file, String name, int arity, boolean hasClosure, boolean literalClosure, boolean[] splatmap, int flags);
 
     /**
      * Invoke a superclass method from a class context.
-     *
+     * <p>
      * Stack required: context, caller, self, start class, arguments[, block]
-     *  @param file the filename of the script making this call
-     * @param name name of the method to invoke
-     * @param arity arity of the arguments on the stack
-     * @param hasClosure whether a block is passed
+     *
+     * @param file           the filename of the script making this call
+     * @param name           name of the method to invoke
+     * @param arity          arity of the arguments on the stack
+     * @param hasClosure     whether a block is passed
      * @param literalClosure whether the block passed is a literal closure
-     * @param splatmap a map of arguments to be splatted back into arg list
+     * @param splatmap       a map of arguments to be splatted back into arg list
+     * @param flags
      */
-    void invokeClassSuper(String file, String name, int arity, boolean hasClosure, boolean literalClosure, boolean[] splatmap);
+    void invokeClassSuper(String file, String name, int arity, boolean hasClosure, boolean literalClosure, boolean[] splatmap, int flags);
 
     /**
      * Invoke a superclass method from an unresolved context.
-     *
+     * <p>
      * Stack required: context, caller, self, arguments[, block]
-     *  @param file the filename of the script making this call
-     * @param name name of the method to invoke
-     * @param arity arity of the arguments on the stack
-     * @param hasClosure whether a block is passed
+     *
+     * @param file           the filename of the script making this call
+     * @param name           name of the method to invoke
+     * @param arity          arity of the arguments on the stack
+     * @param hasClosure     whether a block is passed
      * @param literalClosure whether the block passed is a literal closure
-     * @param splatmap a map of arguments to be splatted back into arg list
+     * @param splatmap       a map of arguments to be splatted back into arg list
+     * @param flags
      */
-    void invokeUnresolvedSuper(String file, String name, int arity, boolean hasClosure, boolean literalClosure, boolean[] splatmap);
+    void invokeUnresolvedSuper(String file, String name, int arity, boolean hasClosure, boolean literalClosure, boolean[] splatmap, int flags);
 
     /**
      * Invoke a superclass method from a zsuper in a block.
-     *
+     * <p>
      * Stack required: context, caller, self, arguments[, block]
-     *  @param file the filename of the script making this call
-     * @param name name of the method to invoke
-     * @param arity arity of the arguments on the stack
+     *
+     * @param file       the filename of the script making this call
+     * @param name       name of the method to invoke
+     * @param arity      arity of the arguments on the stack
      * @param hasClosure whether a block is passed
-     * @param splatmap a map of arguments to be splatted back into arg list
+     * @param splatmap   a map of arguments to be splatted back into arg list
+     * @param flags
      */
-    void invokeZSuper(String file, String name, int arity, boolean hasClosure, boolean[] splatmap);
+    void invokeZSuper(String file, String name, int arity, boolean hasClosure, boolean[] splatmap, int flags);
 
     /**
      * Perform a === call appropriate for a case/when statement.

@@ -1258,8 +1258,6 @@ public class JVMVisitor extends IRVisitor {
             }
         }
 
-        setupCallInfo(call.getFlags());
-
         switch (call.getCallType()) {
             case FUNCTIONAL:
             case VARIABLE:
@@ -1690,20 +1688,18 @@ public class JVMVisitor extends IRVisitor {
             }
         }
 
-        setupCallInfo(instr.getFlags());
-
         switch (operation) {
             case INSTANCE_SUPER:
-                m.getInvocationCompiler().invokeInstanceSuper(file, name, args.length, hasClosure, literalClosure, splatMap);
+                m.getInvocationCompiler().invokeInstanceSuper(file, name, args.length, hasClosure, literalClosure, splatMap, instr.getFlags());
                 break;
             case CLASS_SUPER:
-                m.getInvocationCompiler().invokeClassSuper(file, name, args.length, hasClosure, literalClosure, splatMap);
+                m.getInvocationCompiler().invokeClassSuper(file, name, args.length, hasClosure, literalClosure, splatMap, instr.getFlags());
                 break;
             case UNRESOLVED_SUPER:
-                m.getInvocationCompiler().invokeUnresolvedSuper(file, name, args.length, hasClosure, literalClosure, splatMap);
+                m.getInvocationCompiler().invokeUnresolvedSuper(file, name, args.length, hasClosure, literalClosure, splatMap, instr.getFlags());
                 break;
             case ZSUPER:
-                m.getInvocationCompiler().invokeZSuper(file, name, args.length, hasClosure, splatMap);
+                m.getInvocationCompiler().invokeZSuper(file, name, args.length, hasClosure, splatMap, instr.getFlags());
                 break;
             default:
                 throw new NotCompilableException("unknown super type " + operation + " in " + instr);

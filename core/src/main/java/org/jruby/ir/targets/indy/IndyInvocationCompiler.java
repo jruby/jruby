@@ -94,6 +94,8 @@ public class IndyInvocationCompiler implements InvocationCompiler {
 
         String signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
 
+        setCallInfo(call.getFlags());
+
         compiler.adapter.invokedynamic(
                 "floatOperator:" + JavaNameMangler.mangleMethodName(id),
                 signature,
@@ -122,6 +124,8 @@ public class IndyInvocationCompiler implements InvocationCompiler {
             return;
         }
 
+        setCallInfo(call.getFlags());
+
         String action = call.getCallType() == CallType.FUNCTIONAL ? "callFunctional" : "callVariable";
         IRBytecodeAdapter.BlockPassType blockPassType = IRBytecodeAdapter.BlockPassType.fromIR(call);
         if (blockPassType != IRBytecodeAdapter.BlockPassType.NONE) {
@@ -139,9 +143,11 @@ public class IndyInvocationCompiler implements InvocationCompiler {
         }
     }
 
-    public void invokeInstanceSuper(String file, String name, int arity, boolean hasClosure, boolean literalClosure, boolean[] splatmap) {
+    public void invokeInstanceSuper(String file, String name, int arity, boolean hasClosure, boolean literalClosure, boolean[] splatmap, int flags) {
         if (arity > IRBytecodeAdapter.MAX_ARGUMENTS)
             throw new NotCompilableException("call to instance super has more than " + IRBytecodeAdapter.MAX_ARGUMENTS + " arguments");
+
+        setCallInfo(flags);
 
         String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);
         if (hasClosure) {
@@ -152,9 +158,11 @@ public class IndyInvocationCompiler implements InvocationCompiler {
         }
     }
 
-    public void invokeClassSuper(String file, String name, int arity, boolean hasClosure, boolean literalClosure, boolean[] splatmap) {
+    public void invokeClassSuper(String file, String name, int arity, boolean hasClosure, boolean literalClosure, boolean[] splatmap, int flags) {
         if (arity > IRBytecodeAdapter.MAX_ARGUMENTS)
             throw new NotCompilableException("call to class super has more than " + IRBytecodeAdapter.MAX_ARGUMENTS + " arguments");
+
+        setCallInfo(flags);
 
         String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);
         if (hasClosure) {
@@ -165,9 +173,11 @@ public class IndyInvocationCompiler implements InvocationCompiler {
         }
     }
 
-    public void invokeUnresolvedSuper(String file, String name, int arity, boolean hasClosure, boolean literalClosure, boolean[] splatmap) {
+    public void invokeUnresolvedSuper(String file, String name, int arity, boolean hasClosure, boolean literalClosure, boolean[] splatmap, int flags) {
         if (arity > IRBytecodeAdapter.MAX_ARGUMENTS)
             throw new NotCompilableException("call to unresolved super has more than " + IRBytecodeAdapter.MAX_ARGUMENTS + " arguments");
+
+        setCallInfo(flags);
 
         String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);
         if (hasClosure) {
@@ -178,9 +188,11 @@ public class IndyInvocationCompiler implements InvocationCompiler {
         }
     }
 
-    public void invokeZSuper(String file, String name, int arity, boolean hasClosure, boolean[] splatmap) {
+    public void invokeZSuper(String file, String name, int arity, boolean hasClosure, boolean[] splatmap, int flags) {
         if (arity > IRBytecodeAdapter.MAX_ARGUMENTS)
             throw new NotCompilableException("call to zsuper has more than " + IRBytecodeAdapter.MAX_ARGUMENTS + " arguments");
+
+        setCallInfo(flags);
 
         String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);
         if (hasClosure) {
