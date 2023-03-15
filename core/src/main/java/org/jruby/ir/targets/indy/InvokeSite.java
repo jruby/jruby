@@ -18,6 +18,7 @@ import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.PartialDelegatingMethod;
 import org.jruby.ir.JIT;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.targets.SiteTracker;
 import org.jruby.java.invokers.InstanceFieldGetter;
 import org.jruby.java.invokers.InstanceFieldSetter;
@@ -46,6 +47,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static java.lang.invoke.MethodHandles.constant;
+import static java.lang.invoke.MethodHandles.foldArguments;
 import static java.lang.invoke.MethodHandles.insertArguments;
 import static java.lang.invoke.MethodHandles.lookup;
 import static org.jruby.runtime.invokedynamic.JRubyCallSite.SITE_ID;
@@ -73,6 +75,7 @@ public abstract class InvokeSite extends MutableCallSite {
     public final boolean functional;
     protected final String file;
     protected final int line;
+    protected final int flags;
     private boolean boundOnce;
     private boolean literalClosure;
     protected CacheEntry cache = CacheEntry.NULL_CACHE;
@@ -83,17 +86,14 @@ public abstract class InvokeSite extends MutableCallSite {
 
     public final CallType callType;
 
-    public InvokeSite(MethodType type, String name, CallType callType, String file, int line) {
-        this(type, name, callType, false, file, line);
-    }
-
-    public InvokeSite(MethodType type, String name, CallType callType, boolean literalClosure, String file, int line) {
+    public InvokeSite(MethodType type, String name, CallType callType, boolean literalClosure, int flags, String file, int line) {
         super(type);
         this.methodName = name;
         this.callType = callType;
         this.literalClosure = literalClosure;
         this.file = file;
         this.line = line;
+        this.flags = flags;
 
         Signature startSig;
 
@@ -232,12 +232,23 @@ public abstract class InvokeSite extends MutableCallSite {
                     .invoke(mh);
         }
 
+        SmartHandle callInfoWrapper;
+        SmartBinder baseBinder = SmartBinder.from(signature.changeReturn(void.class)).permute("context");
+        if (flags == 0) {
+            callInfoWrapper = baseBinder.invokeVirtualQuiet(LOOKUP, "clearCallInfo");
+        } else {
+            callInfoWrapper = baseBinder.append("flags", flags).invokeStaticQuiet(LOOKUP, IRRuntimeHelpers.class, "setCallInfo");
+        }
+        mh = foldArguments(mh, callInfoWrapper.handle());
+
         updateInvocationTarget(mh, self, selfClass, entry.method, switchPoint);
     }
 
     private IRubyObject performIndirectCall(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, String methodName, boolean methodMissing, CacheEntry entry) {
         RubyModule sourceModule = entry.sourceModule;
         DynamicMethod method = entry.method;
+
+        IRRuntimeHelpers.setCallInfo(context, flags);
 
         if (literalClosure) {
             try {
@@ -282,6 +293,8 @@ public abstract class InvokeSite extends MutableCallSite {
         String name = methodName;
         CacheEntry entry = cache;
 
+        IRRuntimeHelpers.setCallInfo(context, flags);
+
         if (entry.typeOk(selfClass)) {
             return entry.method.call(context, self, entry.sourceModule, name, args, block);
         }
@@ -304,6 +317,8 @@ public abstract class InvokeSite extends MutableCallSite {
         RubyClass selfClass = pollAndGetClass(context, self);
         String name = methodName;
         CacheEntry entry = cache;
+
+        IRRuntimeHelpers.setCallInfo(context, flags);
 
         if (entry.typeOk(selfClass)) {
             return entry.method.call(context, self, entry.sourceModule, name, args, block);
@@ -342,6 +357,8 @@ public abstract class InvokeSite extends MutableCallSite {
         String name = methodName;
         CacheEntry entry = cache;
 
+        IRRuntimeHelpers.setCallInfo(context, flags);
+
         if (entry.typeOk(selfClass)) {
             return entry.method.call(context, self, entry.sourceModule, name, arg0, block);
         }
@@ -364,6 +381,8 @@ public abstract class InvokeSite extends MutableCallSite {
         RubyClass selfClass = pollAndGetClass(context, self);
         String name = methodName;
         CacheEntry entry = cache;
+
+        IRRuntimeHelpers.setCallInfo(context, flags);
 
         if (entry.typeOk(selfClass)) {
             return entry.method.call(context, self, entry.sourceModule, name, arg0, block);
@@ -388,6 +407,8 @@ public abstract class InvokeSite extends MutableCallSite {
         String name = methodName;
         CacheEntry entry = cache;
 
+        IRRuntimeHelpers.setCallInfo(context, flags);
+
         if (entry.typeOk(selfClass)) {
             return entry.method.call(context, self, entry.sourceModule, name, arg0, arg1, block);
         }
@@ -410,6 +431,8 @@ public abstract class InvokeSite extends MutableCallSite {
         RubyClass selfClass = pollAndGetClass(context, self);
         String name = methodName;
         CacheEntry entry = cache;
+
+        IRRuntimeHelpers.setCallInfo(context, flags);
 
         if (entry.typeOk(selfClass)) {
             return entry.method.call(context, self, entry.sourceModule, name, arg0, arg1, block);
@@ -434,6 +457,8 @@ public abstract class InvokeSite extends MutableCallSite {
         String name = methodName;
         CacheEntry entry = cache;
 
+        IRRuntimeHelpers.setCallInfo(context, flags);
+
         if (entry.typeOk(selfClass)) {
             return entry.method.call(context, self, entry.sourceModule, name, arg0, arg1, arg2, block);
         }
@@ -456,6 +481,8 @@ public abstract class InvokeSite extends MutableCallSite {
         RubyClass selfClass = pollAndGetClass(context, self);
         String name = methodName;
         CacheEntry entry = cache;
+
+        IRRuntimeHelpers.setCallInfo(context, flags);
 
         if (entry.typeOk(selfClass)) {
             return entry.method.call(context, self, entry.sourceModule, name, arg0, arg1, arg2, block);
@@ -609,7 +636,7 @@ public abstract class InvokeSite extends MutableCallSite {
             // Bind a second site as a dynamic invoker to guard against changes in new object's type
             MethodType type = type();
             if (!functional) type = type.dropParameterTypes(1, 2);
-            CallSite initSite = SelfInvokeSite.bootstrap(LOOKUP, "callFunctional:initialize", type, literalClosure ? 1 : 0, file, line);
+            CallSite initSite = SelfInvokeSite.bootstrap(LOOKUP, "callFunctional:initialize", type, literalClosure ? 1 : 0, flags, file, line);
             MethodHandle initHandle = initSite.dynamicInvoker();
             if (!functional) initHandle = MethodHandles.dropArguments(initHandle, 1, IRubyObject.class);
 
@@ -655,7 +682,7 @@ public abstract class InvokeSite extends MutableCallSite {
                 // unknown negatable call for us
                 return null;
             }
-            equalSite = SelfInvokeSite.bootstrap(LOOKUP, negatedCall, type, literalClosure ? 1 : 0, file, line);
+            equalSite = SelfInvokeSite.bootstrap(LOOKUP, negatedCall, type, literalClosure ? 1 : 0, flags, file, line);
 
             if (equalSite != null) {
                 // Bind a second site as a dynamic invoker to guard against changes in new object's type
@@ -696,7 +723,7 @@ public abstract class InvokeSite extends MutableCallSite {
             // Use a second site to mimic invocation from AliasMethod
             MethodType type = type();
             if (!functional) type = type.dropParameterTypes(1, 2);
-            InvokeSite innerSite = (InvokeSite) SelfInvokeSite.bootstrap(LOOKUP, "callFunctional:" + name, type, literalClosure ? 1 : 0, file, line);
+            InvokeSite innerSite = (InvokeSite) SelfInvokeSite.bootstrap(LOOKUP, "callFunctional:" + name, type, literalClosure ? 1 : 0, flags, file, line);
             mh = innerSite.getHandle(self, new CacheEntry(innerMethod, entry.sourceModule, entry.token));
             if (!functional) mh = MethodHandles.dropArguments(mh, 1, IRubyObject.class);
 
