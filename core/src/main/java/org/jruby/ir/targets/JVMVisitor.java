@@ -2489,10 +2489,10 @@ public class JVMVisitor extends IRVisitor {
                 jvmMethod().loadFrameClass();
 
                 jvmAdapter().invokedynamic(
-                        name,
+                        traceInstr.getEvent().getName(),
                         sig(void.class, ThreadContext.class, IRubyObject.class),
                         CallTraceSite.BOOTSTRAP,
-                        traceInstr.getEvent().getName(),
+                        name,
                         traceInstr.getFilename(),
                         traceInstr.getLinenumber());
 
@@ -2503,10 +2503,10 @@ public class JVMVisitor extends IRVisitor {
                 jvmMethod().loadSelfBlock();
 
                 jvmAdapter().invokedynamic(
-                        name,
+                        traceInstr.getEvent().getName(),
                         sig(void.class, ThreadContext.class, Block.class),
                         CallTraceSite.BOOTSTRAP,
-                        traceInstr.getEvent().getName(),
+                        name,
                         traceInstr.getFilename(),
                         traceInstr.getLinenumber());
 

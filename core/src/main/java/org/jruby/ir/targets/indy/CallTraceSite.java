@@ -8,6 +8,7 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.JavaNameMangler;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 
@@ -42,7 +43,7 @@ public class CallTraceSite extends MutableCallSite {
             "bootstrap", sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, String.class, int.class),
             false);
 
-    public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, String event, String file, int line) {
+    public static CallSite bootstrap(MethodHandles.Lookup lookup, String event, MethodType type, String name, String file, int line) {
         CallTraceSite site = new CallTraceSite(type, event, name, file, line);
         MethodHandle traceSetup = Binder
                         .from(type)
