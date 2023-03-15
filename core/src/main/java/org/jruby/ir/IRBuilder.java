@@ -1838,7 +1838,7 @@ public class IRBuilder {
     }
 
     public Operand buildCase(CaseNode caseNode) {
-        if (caseNode.getCaseNode() != null) {
+        if (caseNode.getCaseNode() != null && !scope.maybeUsingRefinements()) {
             // scan all cases to see if we have a homogeneous literal case/when
             NodeType seenType = null;
             for (Node aCase : caseNode.getCases().children()) {
@@ -2078,15 +2078,17 @@ public class IRBuilder {
         // get the incoming case value
         Operand value = build(caseNode.getCaseNode());
 
-        Label     eqqPath   = getNewLabel();
         Label     endLabel  = getNewLabel();
         boolean   hasElse   = (caseNode.getElseNode() != null);
         Label     elseLabel = getNewLabel();
         Variable  result    = createTemporaryVariable();
 
         // insert fast switch with fallback to eqq
-        addInstr(new BSwitchInstr(jumps, value, eqqPath, targets, elseLabel, RubyFixnum.class));
-        addInstr(new LabelInstr(eqqPath));
+        if (!scope.maybeUsingRefinements()) {
+            Label eqqPath = getNewLabel();
+            addInstr(new BSwitchInstr(jumps, value, eqqPath, targets, elseLabel, RubyFixnum.class));
+            addInstr(new LabelInstr(eqqPath));
+        }
 
         List<Label> labels = new ArrayList<>();
         Map<Label, Node> bodies = new HashMap<>();
@@ -2195,15 +2197,17 @@ public class IRBuilder {
         // get the incoming case value
         Operand value = build(caseNode.getCaseNode());
 
-        Label     eqqPath   = getNewLabel();
         Label     endLabel  = getNewLabel();
         boolean   hasElse   = (caseNode.getElseNode() != null);
         Label     elseLabel = getNewLabel();
         Variable  result    = createTemporaryVariable();
 
         // insert fast switch with fallback to eqq
-        addInstr(new BSwitchInstr(jumps, value, eqqPath, targets, elseLabel, RubySymbol.class));
-        addInstr(new LabelInstr(eqqPath));
+        if (scope.maybeUsingRefinements()) {
+            Label eqqPath = getNewLabel();
+            addInstr(new BSwitchInstr(jumps, value, eqqPath, targets, elseLabel, RubySymbol.class));
+            addInstr(new LabelInstr(eqqPath));
+        }
 
         List<Label> labels = new ArrayList<>();
         Map<Label, Node> bodies = new HashMap<>();
