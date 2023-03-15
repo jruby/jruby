@@ -2515,19 +2515,29 @@ public final class Ruby implements Constantizable {
         return charsetMap;
     }
 
-    /** Getter for property isVerbose.
-     * @return Value of property isVerbose.
+    /**
+     * @return $VERBOSE value
      */
     public IRubyObject getVerbose() {
         return verboseValue;
     }
 
+    /**
+     * @return $VERBOSE value as a Java primitive
+     */
     public boolean isVerbose() {
         return verbose;
     }
 
+    /**
+     * If the user explicitly disabled warnings using: {@link #setWarningsEnabled(boolean)} return false.
+     *
+     * Otherwise fallback to a $VERBOSE value check (which is the default behavior).
+     *
+     * @return whether warnings are enabled
+     */
     public boolean warningsEnabled() {
-        return warningsEnabled;
+        return warningsEnabled && verboseWarnings;
     }
 
     /**
@@ -2547,7 +2557,7 @@ public final class Ruby implements Constantizable {
     public void setVerbose(final IRubyObject verbose) {
         this.verbose = verbose.isTrue();
         this.verboseValue = verbose;
-        warningsEnabled = !verbose.isNil();
+        verboseWarnings = !verbose.isNil();
     }
 
     /**
@@ -2559,22 +2569,34 @@ public final class Ruby implements Constantizable {
         setVerbose(verbose == null ? nilObject : (verbose ? trueObject : falseObject));
     }
 
-    /** Getter for property isDebug.
-     * @return Value of property isDebug.
+    /**
+     * @return $DEBUG value
      */
     public IRubyObject getDebug() {
         return debug ? trueObject : falseObject;
     }
 
+    /**
+     * @return $DEBUG value as a boolean
+     */
     public boolean isDebug() {
         return debug;
     }
 
-    /** Setter for property isDebug.
-     * @param debug New value of property isDebug.
+    /**
+     * Setter for property isDebug.
+     * @param debug the $DEBUG value
      */
     public void setDebug(IRubyObject debug) {
-        this.debug = debug.isTrue();
+        setDebug(debug.isTrue());
+    }
+
+    /**
+     * Sets the $DEBUG flag
+     * @param debug
+     */
+    public void setDebug(final boolean debug) {
+        this.debug = debug;
     }
 
     /**
@@ -5266,7 +5288,9 @@ public final class Ruby implements Constantizable {
     @Deprecated
     private IRubyObject rootFiber;
 
-    private boolean verbose, warningsEnabled, debug;
+    private boolean warningsEnabled = true; // global flag to be able to disable warnings regardless of $VERBOSE
+    private boolean verboseWarnings; // whether warnings are enabled based on $VERBOSE
+    private boolean verbose, debug;
     private IRubyObject verboseValue;
 
     // Set of categories we care about (set defined when creating warnings).
