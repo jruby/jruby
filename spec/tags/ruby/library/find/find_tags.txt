@@ -1,1 +1,0 @@
-fails:Find.find when called without a block returns an Enumerator
