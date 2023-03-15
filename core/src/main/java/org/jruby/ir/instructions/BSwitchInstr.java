@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
@@ -10,6 +11,7 @@ import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -24,8 +26,9 @@ public class BSwitchInstr extends MultiBranchInstr {
     private final Label rubyCase;
     private final Label[] targets;
     private final Label elseTarget;
+    private final Class expectedClass;
 
-    public BSwitchInstr(int[] jumps, Operand operand, Label rubyCase, Label[] targets, Label elseTarget) {
+    public BSwitchInstr(int[] jumps, Operand operand, Label rubyCase, Label[] targets, Label elseTarget, Class expectedClass) {
         super(Operation.B_SWITCH);
 
         // We depend on the jump table being sorted, so ensure that's the case here
@@ -39,6 +42,7 @@ public class BSwitchInstr extends MultiBranchInstr {
         this.rubyCase = rubyCase;
         this.targets = targets;
         this.elseTarget = elseTarget;
+        this.expectedClass = expectedClass;
     }
 
     @Override
@@ -65,6 +69,10 @@ public class BSwitchInstr extends MultiBranchInstr {
         return elseTarget;
     }
 
+    public Class getExpectedClass() {
+        return expectedClass;
+    }
+
     @Override
     public void setOperand(int i, Operand operand) {
         assert i == 0;
@@ -78,7 +86,7 @@ public class BSwitchInstr extends MultiBranchInstr {
         Label[] targets = new Label[this.targets.length];
         for (int i = 0; i < targets.length; i++) targets[i] = info.getRenamedLabel(this.targets[i]);
         Label elseTarget = info.getRenamedLabel(this.elseTarget);
-        return new BSwitchInstr(jumps, operand, rubyCase, targets, elseTarget);
+        return new BSwitchInstr(jumps, operand, rubyCase, targets, elseTarget, expectedClass);
     }
 
     @Override
@@ -89,10 +97,17 @@ public class BSwitchInstr extends MultiBranchInstr {
         e.encode(rubyCase);
         e.encode(targets); // FXXXX
         e.encode(elseTarget);
+        e.encode(expectedClass.getName());
     }
 
     public static BSwitchInstr decode(IRReaderDecoder d) {
-        return new BSwitchInstr(d.decodeIntArray(), d.decodeOperand(), d.decodeLabel(), d.decodeLabelArray(), d.decodeLabel());
+        try {
+            return new BSwitchInstr(d.decodeIntArray(), d.decodeOperand(), d.decodeLabel(), d.decodeLabelArray(), d.decodeLabel(), Class.forName(d.decodeString()));
+        } catch (Exception e) {
+            // should never happen unless encode was corrupted
+            Helpers.throwException(e);
+            return null;
+        }
     }
 
 

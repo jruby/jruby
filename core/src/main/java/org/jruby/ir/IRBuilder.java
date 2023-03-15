@@ -4,6 +4,7 @@ import org.jruby.EvalType;
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyComplex;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyRational;
 import org.jruby.RubySymbol;
@@ -1856,6 +1857,8 @@ public class IRBuilder {
                 switch (seenType) {
                     case FIXNUMNODE:
                         return buildFixnumCase(caseNode);
+                    case SYMBOLNODE:
+                        return buildSymbolCase(caseNode);
                 }
             }
         }
@@ -1913,7 +1916,13 @@ public class IRBuilder {
     }
 
     private Operand buildCaseTestValue(CaseNode caseNode) {
-        Operand testValue = build(caseNode.getCaseNode());
+        Node caseTestValue = caseNode.getCaseNode();
+
+        if (caseTestValue instanceof StrNode) {
+            // compile literal string cases as fstrings
+            ((StrNode) caseTestValue).setFrozen(true);
+        }
+        Operand testValue = build(caseTestValue);
 
         // null is returned for valueless case statements:
         //   case
@@ -1951,6 +1960,10 @@ public class IRBuilder {
     private void buildWhenValue(Variable eqqResult, Operand testValue, Label bodyLabel, Node node,
                                 Set<IRubyObject> seenLiterals, boolean needsSplat) {
         if (literalWhenCheck(node, seenLiterals)) { // we only emit first literal of the same value.
+            if (node instanceof StrNode) {
+                // compile literal string whens as fstrings
+                ((StrNode) node).setFrozen(true);
+            }
             Operand expression = buildWithOrder(node, node.containsVariableAssignment());
 
             addInstr(new EQQInstr(scope, eqqResult, expression, testValue, needsSplat, scope.maybeUsingRefinements()));
@@ -2072,7 +2085,124 @@ public class IRBuilder {
         Variable  result    = createTemporaryVariable();
 
         // insert fast switch with fallback to eqq
-        addInstr(new BSwitchInstr(jumps, value, eqqPath, targets, elseLabel));
+        addInstr(new BSwitchInstr(jumps, value, eqqPath, targets, elseLabel, RubyFixnum.class));
+        addInstr(new LabelInstr(eqqPath));
+
+        List<Label> labels = new ArrayList<>();
+        Map<Label, Node> bodies = new HashMap<>();
+
+        // build each "when"
+        for (Node aCase : caseNode.getCases().children()) {
+            WhenNode whenNode = (WhenNode)aCase;
+            Label bodyLabel = nodeBodies.get(whenNode);
+            if (bodyLabel == null) bodyLabel = getNewLabel();
+
+            Variable eqqResult = createTemporaryVariable();
+            labels.add(bodyLabel);
+            Operand expression = build(whenNode.getExpressionNodes());
+
+            // use frozen string for direct literal strings in `when`
+            if (expression instanceof MutableString) {
+                expression = ((MutableString) expression).frozenString;
+            }
+
+            addInstr(new EQQInstr(scope, eqqResult, expression, value, false, scope.maybeUsingRefinements()));
+            addInstr(createBranch(eqqResult, manager.getTrue(), bodyLabel));
+
+            // SSS FIXME: This doesn't preserve original order of when clauses.  We could consider
+            // preserving the order (or maybe not, since we would have to sort the constants first
+            // in any case) for outputting jump tables in certain situations.
+            //
+            // add body to map for emitting later
+            bodies.put(bodyLabel, whenNode.getBodyNode());
+        }
+
+        // Jump to else in case nothing matches!
+        addInstr(new JumpInstr(elseLabel));
+
+        // Build "else" if it exists
+        if (hasElse) {
+            labels.add(elseLabel);
+            bodies.put(elseLabel, caseNode.getElseNode());
+        }
+
+        // Now, emit bodies while preserving when clauses order
+        for (Label whenLabel: labels) {
+            addInstr(new LabelInstr(whenLabel));
+            Operand bodyValue = build(bodies.get(whenLabel));
+            // bodyValue can be null if the body ends with a return!
+            if (bodyValue != null) {
+                // SSS FIXME: Do local optimization of break results (followed by a copy & jump) to short-circuit the jump right away
+                // rather than wait to do it during an optimization pass when a dead jump needs to be removed.  For this, you have
+                // to look at what the last generated instruction was.
+                addInstr(new CopyInstr(result, bodyValue));
+                addInstr(new JumpInstr(endLabel));
+            }
+        }
+
+        if (!hasElse) {
+            addInstr(new LabelInstr(elseLabel));
+            addInstr(new CopyInstr(result, manager.getNil()));
+            addInstr(new JumpInstr(endLabel));
+        }
+
+        // Close it out
+        addInstr(new LabelInstr(endLabel));
+
+        return result;
+    }
+
+    private Operand buildSymbolCase(CaseNode caseNode) {
+        Map<java.lang.Integer, Label> jumpTable = new HashMap<>();
+        Map<Node, Label> nodeBodies = new HashMap<>();
+
+        // gather fixnum-when bodies or bail
+        for (Node aCase : caseNode.getCases().children()) {
+            WhenNode whenNode = (WhenNode) aCase;
+            Label bodyLabel = getNewLabel();
+
+            SymbolNode expr = (SymbolNode) whenNode.getExpressionNodes();
+            long exprLong = expr.getName().getId();
+            if (exprLong > java.lang.Integer.MAX_VALUE) throw notCompilable("optimized symbol case has long-ranged id", caseNode);
+
+            if (jumpTable.get((int) exprLong) == null) {
+                jumpTable.put((int) exprLong, bodyLabel);
+                nodeBodies.put(whenNode, bodyLabel);
+            } else {
+                scope.getManager().getRuntime().getWarnings().warning(IRubyWarnings.ID.MISCELLANEOUS, getFileName(), expr.getLine(), "duplicated when clause is ignored");
+            }
+        }
+
+        // sort the jump table
+        Map.Entry<java.lang.Integer, Label>[] jumpEntries = jumpTable.entrySet().toArray(new Map.Entry[jumpTable.size()]);
+        Arrays.sort(jumpEntries, new Comparator<Map.Entry<java.lang.Integer, Label>>() {
+            @Override
+            public int compare(Map.Entry<java.lang.Integer, Label> o1, Map.Entry<java.lang.Integer, Label> o2) {
+                return java.lang.Integer.compare(o1.getKey(), o2.getKey());
+            }
+        });
+
+        // build a switch
+        int[] jumps = new int[jumpTable.size()];
+        Label[] targets = new Label[jumps.length];
+        int i = 0;
+        for (Map.Entry<java.lang.Integer, Label> jumpEntry : jumpEntries) {
+            jumps[i] = jumpEntry.getKey();
+            targets[i] = jumpEntry.getValue();
+            i++;
+        }
+
+        // get the incoming case value
+        Operand value = build(caseNode.getCaseNode());
+
+        Label     eqqPath   = getNewLabel();
+        Label     endLabel  = getNewLabel();
+        boolean   hasElse   = (caseNode.getElseNode() != null);
+        Label     elseLabel = getNewLabel();
+        Variable  result    = createTemporaryVariable();
+
+        // insert fast switch with fallback to eqq
+        addInstr(new BSwitchInstr(jumps, value, eqqPath, targets, elseLabel, RubySymbol.class));
         addInstr(new LabelInstr(eqqPath));
 
         List<Label> labels = new ArrayList<>();
