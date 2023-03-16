@@ -114,8 +114,9 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   end
 
   def test_dash_little_v_version_verbose_d_debug_K_kcode_r_require_b_benchmarks_a_splitsinput_I_loadpath_C_cwd_F_delimeter_J_javaprop_19
-    e_line = 'puts $VERBOSE, $DEBUG, Encoding.default_external, $F.join(59.chr), Dir.pwd, Java::java::lang::System.getProperty(:foo.to_s)'
-    args = "-v -d -a -n -C .. -F, -e #{q + e_line + q}"
+    e_line = 'puts $VERBOSE, $DEBUG, Encoding.default_external, $F.join(59.chr), Dir.pwd, Java::java::lang::System.getProperty(:foo.to_s), $LOAD_PATH.join("|")'
+    path = 'uri:classpath://foo'
+    args = "-v -d -a -n -C .. -F, -I #{path}  -e #{q + e_line + q}"
     # the options at the end will add -J-Dfoo=bar to the args
     lines = jruby_with_pipe("echo 1,2,3", args, :foo => 'bar').split("\n")
     assert_equal 0, $?.exitstatus, "failed execution with output:\n#{lines}"
@@ -129,6 +130,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     # The gsub is for windows
     assert_equal "#{parent_dir}", lines[5].gsub('\\', '/')
     assert_equal "bar", lines[6]
+    assert lines[7].split("|").include?(path)
 
     e_line = 'puts Gem'
     args = " -rrubygems -e #{q + e_line + q}"
