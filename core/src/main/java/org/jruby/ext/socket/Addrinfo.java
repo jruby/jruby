@@ -216,31 +216,15 @@ public class Addrinfo extends RubyObject {
                 }
 
             } else {
+                InetAddress inetAddress = getRubyInetAddress(sockaddr);
 
-                InetAddress inetAddress;
-
-                inetAddress = getRubyInetAddress(sockaddr);
-                if (inetAddress == null) {
-                    // try unpacking
-                    // FIXME: inefficient to allow exception before trying unpack
+                if (inetAddress != null) {
+                    this.socketAddress = new InetSocketAddress(inetAddress, port != null ? SocketUtils.portToInt(port) : 0);
+                } else {
                     this.socketAddress = Sockaddr.sockaddrFromBytes(runtime, sockaddr.convertToString().getBytes());
                 }
 
-                int _port;
-                if (port != null) {
-                    _port = SocketUtils.portToInt(port);
-                } else {
-                    _port = 0;
-                }
-
-                this.socketAddress = new InetSocketAddress(inetAddress, _port);
-
-                //this.pfamily = SocketUtils.protocolFamilyFromArg(family);
-                if (getInetAddress() instanceof Inet4Address) {
-                    this.pfamily = PF_INET;
-                } else {
-                    this.pfamily = PF_INET6;
-                }
+                this.pfamily = getInetAddress() instanceof Inet4Address ? PF_INET : PF_INET6;
             }
 
             this.socketType = SocketType.SOCKET;
