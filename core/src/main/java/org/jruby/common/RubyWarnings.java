@@ -207,11 +207,9 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     }
 
     /**
-     * Verbose mode warning methods, their contract is that consumer must explicitly check for runtime.isVerbose()
-     * before calling them
+     * Verbose mode warning methods, their contract is that consumer must explicitly check for runtime.isVerbose() before calling them
      */
     public void warning(String message) {
-        if (!isVerbose()) return;
         if (!runtime.warningsEnabled()) return;
 
         warning(ID.MISCELLANEOUS, message);
@@ -219,7 +217,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
     @Override
     public void warning(ID id, String message) {
-        if (!runtime.warningsEnabled() || !runtime.isVerbose()) return;
+        if (!runtime.warningsEnabled()) return;
 
         writeWarning(runtime, id, message);
     }
@@ -249,7 +247,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     }
 
     public void warning(String fileName, int lineNumber, String message) {
-        if (!runtime.warningsEnabled() || !runtime.isVerbose()) return;
+        if (!runtime.warningsEnabled()) return;
 
         warn(fileName, lineNumber, message);
     }
@@ -289,12 +287,13 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
     // This used to be jrubymethod but leave recv behind for backwards compat
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        Ruby runtime = context.runtime;
+        TypeConverter.checkType(context, arg, context.runtime.getString());
+        return warn(context, (RubyString) arg);
+    }
 
-        TypeConverter.checkType(context, arg, runtime.getString());
-        RubyString str = (RubyString) arg;
+    public static IRubyObject warn(ThreadContext context, RubyString str) {
         str.verifyAsciiCompatible();
-        writeWarningToError(runtime.getCurrentContext(), str);
+        writeWarningToError(context, str);
         return context.nil;
     }
 
