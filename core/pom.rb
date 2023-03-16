@@ -55,7 +55,7 @@ project 'JRuby Base' do
   jar 'org.jruby.jcodings:jcodings:1.0.58'
   jar 'org.jruby:dirgra:0.3'
 
-  jar 'com.headius:invokebinder:1.12'
+  jar 'com.headius:invokebinder:1.13'
   jar 'com.headius:options:1.6'
 
   jar 'com.jcraft:jzlib:1.1.3'
