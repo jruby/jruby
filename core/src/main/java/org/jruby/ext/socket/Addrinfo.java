@@ -97,6 +97,15 @@ public class Addrinfo extends RubyObject {
         setSockAndProtocol(sock);
     }
 
+    public Addrinfo(Ruby runtime, RubyClass cls, SocketAddress socketAddress, Sock sock, SocketType socketType, boolean displaysCanonical) {
+        super(runtime, cls);
+        this.socketAddress = socketAddress;
+        this.pfamily = ProtocolFamily.valueOf(getAddressFamily().intValue());
+        this.socketType = socketType;
+        this.displaysCanonical = displaysCanonical;
+        setSockAndProtocol(sock);
+    }
+
     public Addrinfo(Ruby runtime, RubyClass cls, InetAddress inetAddress, int port) {
         super(runtime, cls);
         this.socketAddress = new InetSocketAddress(inetAddress, port);
@@ -392,6 +401,8 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod
     public IRubyObject canonname(ThreadContext context) {
+        if (!displaysCanonical) return context.nil;
+
         if (socketAddress instanceof InetSocketAddress) {
             return context.runtime.newString(getInetSocketAddress().getAddress().getCanonicalHostName());
         } else if (socketAddress instanceof UnixSocketAddress) {
@@ -828,5 +839,6 @@ public class Addrinfo extends RubyObject {
     private boolean interfaceLink;
     private NetworkInterface networkInterface;
     private boolean isBroadcast;
+    private boolean displaysCanonical;
     private Protocol protocol = Protocol.getProtocolByNumber(0);
 }

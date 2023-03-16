@@ -73,6 +73,7 @@ import static jnr.constants.platform.ProtocolFamily.PF_INET;
 import static jnr.constants.platform.ProtocolFamily.PF_INET6;
 import static jnr.constants.platform.Sock.SOCK_DGRAM;
 import static jnr.constants.platform.Sock.SOCK_STREAM;
+import static org.jruby.ext.socket.Addrinfo.AI_CANONNAME;
 
 /**
  * Socket class methods for addresses, structures, and so on.
@@ -180,7 +181,7 @@ public class SocketUtils {
 
         buildAddrinfoList(context, args, true, new AddrinfoCallback() {
             @Override
-            public void addrinfo(InetAddress address, int port, Sock sock, Boolean reverse) {
+            public void addrinfo(InetAddress address, int port, Sock sock, Boolean reverse, boolean usesCanonical) {
                 boolean is_ipv6 = address instanceof Inet6Address;
                 boolean sock_stream = true;
                 boolean sock_dgram = true;
@@ -232,7 +233,7 @@ public class SocketUtils {
 
         buildAddrinfoList(context, args, false, new AddrinfoCallback() {
             @Override
-            public void addrinfo(InetAddress address, int port, Sock sock, Boolean reverse) {
+            public void addrinfo(InetAddress address, int port, Sock sock, Boolean reverse, boolean usesCanonical) {
                 boolean sock_stream = true;
                 boolean sock_dgram = true;
 
@@ -250,14 +251,16 @@ public class SocketUtils {
                     l.add(new Addrinfo(runtime, runtime.getClass("Addrinfo"),
                             new InetSocketAddress(address, port),
                             Sock.SOCK_DGRAM,
-                            SocketType.DATAGRAM));
+                            SocketType.DATAGRAM,
+                            usesCanonical));
                 }
 
                 if (sock_stream) {
                     l.add(new Addrinfo(runtime, runtime.getClass("Addrinfo"),
                             new InetSocketAddress(address, port),
                             Sock.SOCK_STREAM,
-                            SocketType.SOCKET));
+                            SocketType.SOCKET,
+                            usesCanonical));
                 }
             }
         });
@@ -270,7 +273,8 @@ public class SocketUtils {
                 InetAddress address,
                 int port,
                 Sock sock,
-                Boolean reverse);
+                Boolean reverse,
+                boolean usesCanonical);
     }
 
     // FIXME: timeout is not actually implemented and while this original method dualed nice betwee Socket/AddrInfo they now deviate on 7th arg.
@@ -311,6 +315,8 @@ public class SocketUtils {
         // TODO: implement flags
         int flag = flags.isNil() ? 0 : RubyNumeric.fix2int(flags);
 
+        boolean displayCanonical = (flag & AI_CANONNAME) != 0;
+
         String hostString = null;
 
         // The value of 1 is for Socket::AI_PASSIVE.
@@ -329,7 +335,7 @@ public class SocketUtils {
                 // filter out unrelated address families if specified
                 if (addressFamily == AF_INET6 && !(addrs[i] instanceof Inet6Address)) continue;
                 if (addressFamily == AF_INET && !(addrs[i] instanceof Inet4Address)) continue;
-                callback.addrinfo(addrs[i], p, sock, reverseLookup);
+                callback.addrinfo(addrs[i], p, sock, reverseLookup, displayCanonical);
             }
 
         } catch(UnknownHostException e) {
