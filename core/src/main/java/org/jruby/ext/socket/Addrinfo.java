@@ -13,6 +13,7 @@ import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyInteger;
+import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
@@ -730,34 +731,28 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod(optional = 1)
     public IRubyObject getnameinfo(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-
-        RubyString hostname;
-
-        InetSocketAddress inet = getInetSocketAddress();
-        if (inet != null) {
-            hostname = runtime.newString(inet.getHostName());
-        } else {
-            UnixSocketAddress unix = getUnixSocketAddress();
-            hostname = runtime.newString(unix.path());
-        }
-
-        RubyString rubyService = null;
-
-        if (args.length > 0) {
-            int flags = args[0].convertToInteger().getIntValue();
-            if ((flags & NameInfo.NI_NUMERICSERV.intValue()) != 0) {
-                rubyService = runtime.newString(Integer.toString(getPort()));
-            }
-        }
-
-        if (rubyService == null) {
-            Service service = Service.getServiceByPort(getPort(), protocol.getName());
-            rubyService = runtime.newString(service.getName());
-        }
-
-        return runtime.newArray(hostname, rubyService);
+        return getnameinfo(context, args.length == 0 ? 0 : args[0].convertToInteger().getIntValue());
     }
+
+    public IRubyObject getnameinfo(ThreadContext context, int flags) {
+        Ruby runtime = context.runtime;
+        boolean unix = socketType == SocketType.UNIX;
+        // FIXME: I believe there is normative way of asking for local host when return unix domain sockets.
+        String host = unix ? "localhost.localdomain" : getInetSocketAddress().getHostName();
+        RubyString hostname = runtime.newString(host);
+
+        String serviceName;
+        if ((flags & NameInfo.NI_NUMERICSERV.intValue()) != 0) {
+            serviceName = Integer.toString(getPort());
+        } else if (unix) {
+            serviceName = getUnixSocketAddress().path();
+        } else {
+            serviceName = Service.getServiceByPort(getPort(), protocol.getName()).getName();
+        }
+
+        return runtime.newArray(hostname, runtime.newString(serviceName));
+    }
+
 
     @JRubyMethod(notImplemented = true)
     public IRubyObject marshal_dump(ThreadContext context) {
