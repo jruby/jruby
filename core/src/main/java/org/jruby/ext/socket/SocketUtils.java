@@ -179,48 +179,45 @@ public class SocketUtils {
         final Ruby runtime = context.runtime;
         final List<IRubyObject> l = new ArrayList<IRubyObject>();
 
-        buildAddrinfoList(context, args, true, new AddrinfoCallback() {
-            @Override
-            public void addrinfo(InetAddress address, int port, Sock sock, Boolean reverse, boolean usesCanonical) {
-                boolean is_ipv6 = address instanceof Inet6Address;
-                boolean sock_stream = true;
-                boolean sock_dgram = true;
+        buildAddrinfoList(context, args, true, (address, port, sock, reverse, usesCanonical) -> {
+            boolean is_ipv6 = address instanceof Inet6Address;
+            boolean sock_stream = true;
+            boolean sock_dgram = true;
 
-                if (sock != null) {
-                    if (sock == SOCK_STREAM) {
-                        sock_dgram = false;
+            if (sock != null) {
+                if (sock == SOCK_STREAM) {
+                    sock_dgram = false;
 
-                    } else if (sock == SOCK_DGRAM) {
-                        sock_stream = false;
+                } else if (sock == SOCK_DGRAM) {
+                    sock_stream = false;
 
-                    }
                 }
+            }
 
-                IRubyObject[] c;
+            IRubyObject[] c;
 
-                if (sock_dgram) {
-                    c = new IRubyObject[7];
-                    c[0] = runtime.newString(is_ipv6 ? "AF_INET6" : "AF_INET");
-                    c[1] = runtime.newFixnum(port);
-                    c[2] = runtime.newString(getHostAddress(context, address, reverse));
-                    c[3] = runtime.newString(address.getHostAddress());
-                    c[4] = runtime.newFixnum(is_ipv6 ? PF_INET6 : PF_INET);
-                    c[5] = runtime.newFixnum(SOCK_DGRAM);
-                    c[6] = runtime.newFixnum(IPPROTO_UDP);
-                    l.add(RubyArray.newArrayMayCopy(runtime, c));
-                }
+            if (sock_dgram) {
+                c = new IRubyObject[7];
+                c[0] = runtime.newString(is_ipv6 ? "AF_INET6" : "AF_INET");
+                c[1] = runtime.newFixnum(port);
+                c[2] = runtime.newString(getHostAddress(context, address, reverse));
+                c[3] = runtime.newString(address.getHostAddress());
+                c[4] = runtime.newFixnum(is_ipv6 ? PF_INET6 : PF_INET);
+                c[5] = runtime.newFixnum(SOCK_DGRAM);
+                c[6] = runtime.newFixnum(IPPROTO_UDP);
+                l.add(RubyArray.newArrayMayCopy(runtime, c));
+            }
 
-                if (sock_stream) {
-                    c = new IRubyObject[7];
-                    c[0] = runtime.newString(is_ipv6 ? "AF_INET6" : "AF_INET");
-                    c[1] = runtime.newFixnum(port);
-                    c[2] = runtime.newString(getHostAddress(context, address, reverse));
-                    c[3] = runtime.newString(address.getHostAddress());
-                    c[4] = runtime.newFixnum(is_ipv6 ? PF_INET6 : PF_INET);
-                    c[5] = runtime.newFixnum(SOCK_STREAM);
-                    c[6] = runtime.newFixnum(IPPROTO_TCP);
-                    l.add(RubyArray.newArrayMayCopy(runtime, c));
-                }
+            if (sock_stream) {
+                c = new IRubyObject[7];
+                c[0] = runtime.newString(is_ipv6 ? "AF_INET6" : "AF_INET");
+                c[1] = runtime.newFixnum(port);
+                c[2] = runtime.newString(getHostAddress(context, address, reverse));
+                c[3] = runtime.newString(address.getHostAddress());
+                c[4] = runtime.newFixnum(is_ipv6 ? PF_INET6 : PF_INET);
+                c[5] = runtime.newFixnum(SOCK_STREAM);
+                c[6] = runtime.newFixnum(IPPROTO_TCP);
+                l.add(RubyArray.newArrayMayCopy(runtime, c));
             }
         });
 
@@ -231,37 +228,34 @@ public class SocketUtils {
         final Ruby runtime = context.runtime;
         final List<Addrinfo> l = new ArrayList<Addrinfo>();
 
-        buildAddrinfoList(context, args, false, new AddrinfoCallback() {
-            @Override
-            public void addrinfo(InetAddress address, int port, Sock sock, Boolean reverse, boolean usesCanonical) {
-                boolean sock_stream = true;
-                boolean sock_dgram = true;
+        buildAddrinfoList(context, args, false, (address, port, sock, reverse, usesCanonical) -> {
+            boolean sock_stream = true;
+            boolean sock_dgram = true;
 
-                if (sock != null) {
-                    if (sock == SOCK_STREAM) {
-                        sock_dgram = false;
+            if (sock != null) {
+                if (sock == SOCK_STREAM) {
+                    sock_dgram = false;
 
-                    } else if (sock == SOCK_DGRAM) {
-                        sock_stream = false;
+                } else if (sock == SOCK_DGRAM) {
+                    sock_stream = false;
 
-                    }
                 }
+            }
 
-                if (sock_dgram) {
-                    l.add(new Addrinfo(runtime, runtime.getClass("Addrinfo"),
-                            new InetSocketAddress(address, port),
-                            Sock.SOCK_DGRAM,
-                            SocketType.DATAGRAM,
-                            usesCanonical));
-                }
+            if (sock_dgram) {
+                l.add(new Addrinfo(runtime, runtime.getClass("Addrinfo"),
+                        new InetSocketAddress(address, port),
+                        Sock.SOCK_DGRAM,
+                        SocketType.DATAGRAM,
+                        usesCanonical));
+            }
 
-                if (sock_stream) {
-                    l.add(new Addrinfo(runtime, runtime.getClass("Addrinfo"),
-                            new InetSocketAddress(address, port),
-                            Sock.SOCK_STREAM,
-                            SocketType.SOCKET,
-                            usesCanonical));
-                }
+            if (sock_stream) {
+                l.add(new Addrinfo(runtime, runtime.getClass("Addrinfo"),
+                        new InetSocketAddress(address, port),
+                        Sock.SOCK_STREAM,
+                        SocketType.SOCKET,
+                        usesCanonical));
             }
         });
 
