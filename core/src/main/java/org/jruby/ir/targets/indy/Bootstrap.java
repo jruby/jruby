@@ -1477,6 +1477,9 @@ public class Bootstrap {
         target = ((SwitchPoint)invalidator.getData()).guardWithTest(target, fallback);
 
         site.setTarget(target);
+
+        // poll for events once since we've ended up back in fallback
+        context.pollThreadEvents();
     }
 
     public static CallSite callInfoBootstrap(Lookup lookup, String name, MethodType type, int callInfo) throws Throwable {
