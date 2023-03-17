@@ -270,7 +270,7 @@ public class Addrinfo extends RubyObject {
                     }
 
                     this.pfamily = pf;
-                    this.protocol = SocketUtils.protocolFromArg(!protocolArg.isNil() ? protocolArg : runtime.newFixnum(0));
+                    this.protocol = Protocol.getProtocolByNumber(proto);
                     this.socketType = SocketType.SOCKET;
                     if (!socketTypeArg.isNil()) setSockAndProtocol(socketTypeArg);
                     return;
@@ -609,10 +609,13 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod
     public IRubyObject unix_path(ThreadContext context) {
-        if (getAddressFamily() != AF_UNIX) {
-            throw sockerr(context.runtime, "need AF_UNIX address");
-        }
-        return context.runtime.newString(getUnixSocketAddress().path());
+        if (getAddressFamily() != AF_UNIX) throw sockerr(context.runtime, "need AF_UNIX address");
+
+        // Get path and strip out preceeding NUL (sometimes on linux) and any trailing NUL.
+        String path = getUnixSocketAddress().humanReadablePath();
+        int index = path.indexOf(0);
+        if (index != -1) path = path.substring(0, index);
+        return context.runtime.newString(path);
     }
 
     @JRubyMethod(name = {"to_sockaddr", "to_s"})
