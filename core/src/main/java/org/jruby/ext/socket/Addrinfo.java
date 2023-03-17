@@ -13,7 +13,6 @@ import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyInteger;
-import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
@@ -269,12 +268,19 @@ public class Addrinfo extends RubyObject {
                         throw sockerr(runtime, "getaddrinfo: Address family for hostname not supported");
                     }
 
+                    if (SocketType.values().length <= socketType) {
+                        this.socketType = SocketType.SOCKET;
+                    } else {
+                        this.socketType = SocketType.values()[socketType];
+                        this.sock = Sock.valueOf(socketType);
+                    }
+
                     this.pfamily = pf;
+                    // unknown protos will end up as null but this should be an indication of a mismatch of networking
+                    // constants and netdb not lining up (constants which should not exist of db entries not existing
+                    // which should).
                     this.protocol = Protocol.getProtocolByNumber(proto);
-                    this.socketType = SocketType.SOCKET;
-                    if (!socketTypeArg.isNil()) setSockAndProtocol(socketTypeArg);
                     return;
-                    // fall through below to finish setting up
                 } else {
                     throw sockerr(runtime, "getaddrinfo: unknown address family: " + protocolFamilyArg);
                 }
@@ -284,17 +290,12 @@ public class Addrinfo extends RubyObject {
                 this.pfamily = protocolFamilyArg.isNil() ? PF_UNSPEC: SocketUtils.protocolFamilyFromArg(protocolFamilyArg);
                 if (!protocolArg.isNil()) this.protocol = SocketUtils.protocolFromArg(protocolArg);
                 if (!socketTypeArg.isNil()) this.sock = SocketUtils.sockFromArg(socketTypeArg);
+                this.socketType = SocketType.SOCKET;
             }
-
-            this.socketType = SocketType.SOCKET;
         } catch (IOException ioe) {
             ioe.printStackTrace();
             throw runtime.newIOErrorFromException(ioe);
         }
-    }
-
-    private void setSockAndProtocol(IRubyObject sock) {
-        setSockAndProtocol(sock == null ? null : SocketUtils.sockFromArg(sock));
     }
 
     private void setSockAndProtocol(Sock sock) {
