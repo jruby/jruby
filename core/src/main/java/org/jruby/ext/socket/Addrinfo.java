@@ -41,10 +41,14 @@ import static jnr.constants.platform.AddressFamily.AF_INET;
 import static jnr.constants.platform.AddressFamily.AF_INET6;
 import static jnr.constants.platform.AddressFamily.AF_UNIX;
 import static jnr.constants.platform.AddressFamily.AF_UNSPEC;
+import static jnr.constants.platform.IPProto.IPPROTO_TCP;
+import static jnr.constants.platform.IPProto.IPPROTO_UDP;
 import static jnr.constants.platform.ProtocolFamily.PF_INET;
 import static jnr.constants.platform.ProtocolFamily.PF_INET6;
 import static jnr.constants.platform.ProtocolFamily.PF_UNIX;
 import static jnr.constants.platform.ProtocolFamily.PF_UNSPEC;
+import static jnr.constants.platform.Sock.*;
+import static org.jruby.ext.socket.SocketUtils.sockerr;
 
 public class Addrinfo extends RubyObject {
 
@@ -110,14 +114,14 @@ public class Addrinfo extends RubyObject {
     public Addrinfo(Ruby runtime, RubyClass cls, InetAddress inetAddress, int port) {
         super(runtime, cls);
         this.socketAddress = new InetSocketAddress(inetAddress, port);
-        setSockAndProtocol(Sock.SOCK_STREAM);
+        setSockAndProtocol(SOCK_STREAM);
     }
 
     public Addrinfo(Ruby runtime, RubyClass cls, SocketAddress socketAddress) {
         super(runtime, cls);
         this.socketAddress = socketAddress;
         this.pfamily = ProtocolFamily.valueOf(getAddressFamily().intValue());
-        setSockAndProtocol(Sock.SOCK_STREAM);
+        setSockAndProtocol(SOCK_STREAM);
     }
 
     public int getPort() {
@@ -126,19 +130,19 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject _sockaddr) {
-        initializeCommon(context, _sockaddr, null, null, null);
+        initializeCommon(context, _sockaddr, context.nil, context.nil, context.nil);
         return context.nil;
     }
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject _sockaddr, IRubyObject _family) {
-        initializeCommon(context, _sockaddr, _family, null, null);
+        initializeCommon(context, _sockaddr, _family, context.nil, context.nil);
         return context.nil;
     }
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject _sockaddr, IRubyObject _family, IRubyObject _socktype) {
-        initializeCommon(context, _sockaddr, _family, _socktype, null);
+        initializeCommon(context, _sockaddr, _family, _socktype, context.nil);
         return context.nil;
     }
 
@@ -173,38 +177,80 @@ public class Addrinfo extends RubyObject {
 
     public static final int AI_ALL = 0x00000100; /* IPv6 and IPv4-mapped (with AI_V4MAPPED) */
     public static final int AI_V4MAPPED_CFG = 0x00000200; /* accept IPv4-mapped if kernel supports */
-    public static final int AI_ADDRCONFIG = 0x00000400; /* only if any address is assigned */
+    public static final int AI_ADDRCONFIG = 0x00000400; /* only if any address     is assigned */
     public static final int AI_V4MAPPED = 0x00000800; /* accept IPv4-mapped IPv6 address */
     /* special recommended flags for getipnodebyname */
     public static final int AI_DEFAULT = (AI_V4MAPPED_CFG | AI_ADDRCONFIG);
 
-    private void initializeCommon(ThreadContext context, IRubyObject sockaddr, IRubyObject family, IRubyObject sock, IRubyObject port) {
+    private Addrinfo initializeSimple(IRubyObject host, IRubyObject port, int socketType, int protocolFamily) {
+        InetAddress inetAddress = getRubyInetAddress(host);
+
+        this.socketAddress = new InetSocketAddress(inetAddress, port != null ? SocketUtils.portToInt(port) : 0);
+        this.pfamily = getInetAddress() instanceof Inet4Address ? PF_INET : PF_INET6;
+        this.protocol = Protocol.getProtocolByNumber(protocolFamily);
+        this.socketType = SocketType.values()[socketType];
+        this.sock = Sock.valueOf(socketType);
+
+        return this;
+    }
+
+    private void initializeCommon(ThreadContext context, IRubyObject sockaddrArg, IRubyObject protocolFamilyArg,
+                                  IRubyObject socketTypeArg, IRubyObject protocolArg) {
         Ruby runtime = context.runtime;
 
         try {
-            IRubyObject _sockaddrAry = TypeConverter.checkArrayType(context, sockaddr);
+            IRubyObject testArray = TypeConverter.checkArrayType(context, sockaddrArg);
+            if (testArray != context.nil) {
+                RubyArray sockaddAry = (RubyArray) testArray;
+                AddressFamily af = SocketUtils.addressFamilyFromArg(sockaddAry.entry(0).convertToString());
 
-            if (_sockaddrAry != context.nil) {
-                RubyArray sockaddAry = (RubyArray)_sockaddrAry;
-
-                family = sockaddAry.entry(0).convertToString();
-                AddressFamily af = SocketUtils.addressFamilyFromArg(family);
-                ProtocolFamily pf = SocketUtils.protocolFamilyFromArg(family);
-
-                if (af == AF_UNIX || pf == PF_UNIX) { /* ["AF_UNIX", "/tmp/sock"] */
-                    IRubyObject path = sockaddAry.eltOk(1).convertToString();
-                    socketAddress = new UnixSocketAddress(new File(path.toString()));
-                    this.socketType = SocketType.UNIX;
-                    this.sock = Sock.SOCK_STREAM;
-
-                    return;
+                ProtocolFamily pf;
+                if (protocolFamilyArg.isNil()) {
+                    pf = af == AF_INET6 ? PF_INET6 : PF_INET;
+                } else {
+                    pf = SocketUtils.protocolFamilyFromArg(protocolFamilyArg);
                 }
 
-                if (
-                        af == AF_INET || pf == PF_INET       /* ["AF_INET", 46102, "localhost.localdomain", "127.0.0.1"] */
-                                || af == AF_INET6 || pf == PF_INET6  /* ["AF_INET6", 42304, "ip6-localhost", "::1"] */
-                        ) {
+                if (pf != PF_UNIX) {
+                    if (af == AF_INET6 && pf != PF_INET && pf != PF_INET6) {
+                        throw sockerr(runtime, "The given protocol and address families are incompatible");
+                    }
+                    af = AddressFamily.valueOf(pf.intValue());
+                }
 
+                if (af != AF_UNIX &&  af != AF_UNSPEC && af != AF_INET && af != AF_INET6) {
+                    throw sockerr(runtime, "Address family must be AF_UNIX, AF_INET, AF_INET6, PF_INET or PF_INET6");
+                }
+
+                int proto = protocolArg.isNil() ? 0 : protocolArg.convertToInteger().getIntValue();
+                int socketType = socketTypeArg.isNil() ? 0 : socketTypeArg.convertToInteger().getIntValue();
+
+                if (socketType == 0) {
+                    if (proto != 0 && proto != IPPROTO_UDP.intValue()) throw sockerr(runtime, "getaddrinfo: ai_socktype not supported");
+                } else if (socketType == SOCK_DGRAM.intValue()) {
+                    if (proto != 0 && proto != IPPROTO_UDP.intValue()) {
+                        throw sockerr(runtime, "getaddrinfo: ai_socktype not supported");
+                    }
+                } else if (socketType == SOCK_STREAM.intValue()) {
+                    if (proto != 0 && proto != IPPROTO_TCP.intValue()) {
+                        throw sockerr(runtime, "getaddrinfo: ai_socktype not supported");
+                    }
+                } else if (socketType == SOCK_SEQPACKET.intValue()) {
+                    if (proto != 0) throw sockerr(runtime, "getaddrinfo: ai_socktype not supported");
+                } else if (socketType != SOCK_RAW.intValue()) {
+                    throw sockerr(runtime, "getaddrinfo: ai_socktype not supported");
+                }
+
+                if (af == AF_UNIX || pf == PF_UNIX) { /* ["AF_UNIX", "/tmp/sock"] */
+                    IRubyObject path = sockaddAry.eltOk(1).checkStringType();
+                    if (path.isNil()) throw sockerr(runtime, "getaddrinfo: ai_family not supported");
+                    socketAddress = new UnixSocketAddress(new File(path.toString()));
+                    this.socketType = SocketType.UNIX;
+                    this.sock = SOCK_STREAM;
+
+                    return;
+                } else if (af == AF_INET || pf == PF_INET ||    // ["AF_INET", 46102, "localhost.localdomain", "127.0.0.1"]
+                           af == AF_INET6 || pf == PF_INET6) {  // ["AF_INET6", 42304, "ip6-localhost", "::1"]
                     IRubyObject service = sockaddAry.entry(1).convertToInteger();
                     IRubyObject nodename = sockaddAry.entry(2);
                     String numericnode = sockaddAry.entry(3).convertToString().toString();
@@ -218,28 +264,29 @@ public class Addrinfo extends RubyObject {
                     }
 
                     this.socketAddress = new InetSocketAddress(inetAddress, _port);
-                    this.pfamily = pf;
 
+                    if (af == AF_INET6 && getInetAddress() instanceof Inet4Address) {
+                        throw sockerr(runtime, "getaddrinfo: Address family for hostname not supported");
+                    }
+
+                    this.pfamily = pf;
+                    this.protocol = SocketUtils.protocolFromArg(!protocolArg.isNil() ? protocolArg : runtime.newFixnum(0));
+                    this.socketType = SocketType.SOCKET;
+                    if (!socketTypeArg.isNil()) setSockAndProtocol(socketTypeArg);
+                    return;
                     // fall through below to finish setting up
                 } else {
-                    throw runtime.newRaiseException(runtime.getClass("SocketError"), "unknown address family: " + family.toString());
+                    throw sockerr(runtime, "getaddrinfo: unknown address family: " + protocolFamilyArg);
                 }
 
             } else {
-                InetAddress inetAddress = getRubyInetAddress(sockaddr);
-
-                if (inetAddress != null) {
-                    this.socketAddress = new InetSocketAddress(inetAddress, port != null ? SocketUtils.portToInt(port) : 0);
-                } else {
-                    this.socketAddress = Sockaddr.sockaddrFromBytes(runtime, sockaddr.convertToString().getBytes());
-                }
-
-                this.pfamily = getInetAddress() instanceof Inet4Address ? PF_INET : PF_INET6;
+                this.socketAddress = Sockaddr.sockaddrFromBytes(runtime, sockaddrArg.convertToString().getBytes());
+                this.pfamily = protocolFamilyArg.isNil() ? PF_UNSPEC: SocketUtils.protocolFamilyFromArg(protocolFamilyArg);
+                if (!protocolArg.isNil()) this.protocol = SocketUtils.protocolFromArg(protocolArg);
+                if (!socketTypeArg.isNil()) this.sock = SocketUtils.sockFromArg(socketTypeArg);
             }
 
             this.socketType = SocketType.SOCKET;
-
-            setSockAndProtocol(sock);
         } catch (IOException ioe) {
             ioe.printStackTrace();
             throw runtime.newIOErrorFromException(ioe);
@@ -253,9 +300,9 @@ public class Addrinfo extends RubyObject {
     private void setSockAndProtocol(Sock sock) {
         this.sock = sock;
         if (socketAddress instanceof InetSocketAddress) {
-            if (this.sock == Sock.SOCK_STREAM) {
+            if (this.sock == SOCK_STREAM) {
                 protocol = Protocol.getProtocolByName("tcp");
-            } else if (this.sock == Sock.SOCK_DGRAM) {
+            } else if (this.sock == SOCK_DGRAM) {
                 protocol = Protocol.getProtocolByName("udp");
             }
         }
@@ -272,7 +319,7 @@ public class Addrinfo extends RubyObject {
             val.append(inspect_sockaddr(context).toString());
         }
         
-        if ((pfamily == PF_INET || pfamily == PF_INET6) && (sock == Sock.SOCK_STREAM || sock == Sock.SOCK_DGRAM)) {
+        if ((pfamily == PF_INET || pfamily == PF_INET6) && (sock == SOCK_STREAM || sock == SOCK_DGRAM)) {
             val.append(" ").append(protocol.getName().toUpperCase());
         } else if (sock != null) {
             val.append(" ").append(sock.name().toUpperCase());
@@ -327,28 +374,20 @@ public class Addrinfo extends RubyObject {
 
             return addrinfo;
         } catch (UnknownHostException uhe) {
-            throw SocketUtils.sockerr(context.runtime, "host not found");
+            throw sockerr(context.runtime, "host not found");
         }
     }
 
     @JRubyMethod(meta = true)
     public static IRubyObject tcp(ThreadContext context, IRubyObject recv, IRubyObject host, IRubyObject port) {
-        Ruby runtime = context.runtime;
-
-        Addrinfo addrinfo = new Addrinfo(runtime, (RubyClass) recv);
-        addrinfo.initializeCommon(context, host, runtime.newFixnum(PF_UNSPEC.intValue()), runtime.newFixnum(Sock.SOCK_STREAM.intValue()), port);
-
-        return addrinfo;
+        Addrinfo addrinfo = new Addrinfo(context.runtime, (RubyClass) recv);
+        return addrinfo.initializeSimple(host, port, SOCK_STREAM.intValue(), IPPROTO_TCP.intValue());
     }
 
     @JRubyMethod(meta = true)
     public static IRubyObject udp(ThreadContext context, IRubyObject recv, IRubyObject host, IRubyObject port) {
-        Ruby runtime = context.runtime;
-
-        Addrinfo addrinfo = new Addrinfo(runtime, (RubyClass) recv);
-        addrinfo.initializeCommon(context, host, runtime.newFixnum(PF_UNSPEC.intValue()), runtime.newFixnum(Sock.SOCK_DGRAM.intValue()), port);
-
-        return addrinfo;
+        Addrinfo addrinfo = new Addrinfo(context.runtime, (RubyClass) recv);
+        return addrinfo.initializeSimple(host, port, SOCK_DGRAM.intValue(), IPPROTO_UDP.intValue());
     }
 
     @JRubyMethod(meta = true)
@@ -356,7 +395,7 @@ public class Addrinfo extends RubyObject {
         Addrinfo addrinfo = new Addrinfo(context.runtime, (RubyClass) recv);
 
         addrinfo.socketAddress = new UnixSocketAddress(new File(path.convertToString().toString()));
-        addrinfo.sock = Sock.SOCK_STREAM;
+        addrinfo.sock = SOCK_STREAM;
         addrinfo.socketType = SocketType.UNIX;
         addrinfo.pfamily = PF_UNIX;
         addrinfo.protocol = Protocol.getProtocolByName("ip");
@@ -443,7 +482,7 @@ public class Addrinfo extends RubyObject {
     @JRubyMethod
     public IRubyObject ip_address(ThreadContext context) {
         if (getAddressFamily() != AF_INET && getAddressFamily() != AF_INET6) {
-            throw SocketUtils.sockerr(context.runtime, "need IPv4 or IPv6 address");
+            throw sockerr(context.runtime, "need IPv4 or IPv6 address");
         }
         // TODO: (gf) for IPv6 link-local address this appends a numeric interface index (like MS-Windows), should append interface name on Linux
         String fullHost = ((InetSocketAddress) socketAddress).getAddress().getHostAddress();
@@ -455,7 +494,7 @@ public class Addrinfo extends RubyObject {
     @JRubyMethod(notImplemented = true)
     public IRubyObject ip_port(ThreadContext context) {
         if (getAddressFamily() != AF_INET && getAddressFamily() != AF_INET6) {
-            throw SocketUtils.sockerr(context.runtime, "need IPv4 or IPv6 address");
+            throw sockerr(context.runtime, "need IPv4 or IPv6 address");
         }
         return context.runtime.newFixnum(((InetSocketAddress) socketAddress).getPort());
     }
@@ -571,7 +610,7 @@ public class Addrinfo extends RubyObject {
     @JRubyMethod
     public IRubyObject unix_path(ThreadContext context) {
         if (getAddressFamily() != AF_UNIX) {
-            throw SocketUtils.sockerr(context.runtime, "need AF_UNIX address");
+            throw sockerr(context.runtime, "need AF_UNIX address");
         }
         return context.runtime.newString(getUnixSocketAddress().path());
     }
@@ -599,7 +638,7 @@ public class Addrinfo extends RubyObject {
                   ds.writeByte(hw.length);                                 //   unsigned char  sll_halen;    /* Length of address */
                   ds.write(hw);                                            //   unsigned char  sll_addr[8];  /* Physical layer address */
                 } catch (IOException e) {
-                    throw SocketUtils.sockerr(context.runtime, "to_sockaddr: " + e.getMessage());
+                    throw sockerr(context.runtime, "to_sockaddr: " + e.getMessage());
                 }
                 return context.runtime.newString(new ByteList(bufS.toByteArray(), false));
       }
