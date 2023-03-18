@@ -54,6 +54,9 @@ import static org.jruby.util.RubyStringBuilder.str;
  *
  */
 public class RubyWarnings implements IRubyWarnings, WarnCallback {
+
+    private static final int LINE_NUMBER_NON_WARNING = Integer.MIN_VALUE;
+
     private final Ruby runtime;
     private final Set<ID> oncelers = EnumSet.allOf(IRubyWarnings.ID.class);
 
@@ -93,7 +96,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         }
 
         // 1 is subtracted here because getRubyStackTrace is 1-indexed.
-        warn(file, line - 1, message);
+        warn(ID.MISCELLANEOUS, file, line - 1, message);
     }
 
     @Override
@@ -111,33 +114,40 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      */
     @Override
     public void warn(ID id, String fileName, int lineNumber, String message) {
-        warn(fileName, lineNumber, message);
+        doWarn(id, fileName, lineNumber, message);
     }
 
     public void warn(String fileName, int lineNumber, String message) {
+        doWarn(ID.MISCELLANEOUS, fileName, lineNumber, message);
+    }
+
+    private void doWarn(ID id, String fileName, int lineNumber, CharSequence message) {
         if (!runtime.warningsEnabled()) return;
 
-        String buffer = fileName + ':' + (lineNumber + 1) + ": warning: " + message + '\n';
-        RubyString errorString = runtime.newString(buffer);
-
-        writeWarningDyncall(runtime.getCurrentContext(), errorString);
+        String fullMessage;
+        if (lineNumber != LINE_NUMBER_NON_WARNING) {
+            fullMessage = fileName + ':' + (lineNumber + 1) + ": warning: " + message + '\n';
+        } else {
+            fullMessage = fileName + ": " + message + '\n'; // warn(fileName, message) behave as in MRI
+        }
+        writeWarningDyncall(runtime.getCurrentContext(), runtime.newString(fullMessage));
     }
 
     // MRI: rb_write_warning_str
-    public static void writeWarningDyncall(ThreadContext context, RubyString errorString) {
+    private static IRubyObject writeWarningDyncall(ThreadContext context, RubyString errorString) {
         RubyModule warning = context.runtime.getWarning();
 
-        sites(context).warn.call(context, warning, warning, errorString);
+        return sites(context).warn.call(context, warning, warning, errorString);
     }
 
     // MR: rb_write_error_str
-    public static void writeWarningToError(ThreadContext context, RubyString errorString) {
+    private static IRubyObject writeWarningToError(ThreadContext context, RubyString errorString) {
         Ruby runtime = context.runtime;
 
         IRubyObject errorStream = runtime.getGlobalVariables().get("$stderr");
         RubyModule warning = runtime.getWarning();
 
-        sites(context).write.call(context, warning, errorStream, errorString);
+        return sites(context).write.call(context, warning, errorStream, errorString);
     }
 
     public static IRubyObject warnWithCategory(ThreadContext context, IRubyObject errorString, IRubyObject category) {
@@ -167,15 +177,11 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         }
 
         // 1 is subtracted here because getRubyStackTrace is 1-indexed.
-        warn(id, file, line - 1, message);
+        doWarn(id, file, line - 1, message);
     }
 
     public void warn(String filename, String message) {
-        if (!runtime.warningsEnabled()) return;
-
-        RubyString errorString = runtime.newString(filename + ": " + message + '\n');
-
-        writeWarningDyncall(runtime.getCurrentContext(), errorString);
+        doWarn(ID.MISCELLANEOUS, filename, LINE_NUMBER_NON_WARNING, message);
     }
 
     public void warnExperimental(String filename, int line, String message) {
@@ -210,8 +216,6 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      * Verbose mode warning methods, their contract is that consumer must explicitly check for runtime.isVerbose() before calling them
      */
     public void warning(String message) {
-        if (!runtime.warningsEnabled()) return;
-
         warning(ID.MISCELLANEOUS, message);
     }
 
@@ -243,12 +247,10 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      */
     @Override
     public void warning(ID id, String fileName, int lineNumber, String message) {
-        warning(fileName, lineNumber, message);
+        warn(id, fileName, lineNumber, message);
     }
 
     public void warning(String fileName, int lineNumber, String message) {
-        if (!runtime.warningsEnabled()) return;
-
         warn(fileName, lineNumber, message);
     }
 
