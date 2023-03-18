@@ -2064,11 +2064,11 @@ public class RubyModule extends RubyObject {
         DynamicMethod method = getMethods().get(name);
         if (method != null && entry.method.getRealMethod() != method.getRealMethod() && !method.isUndefined()) {
             // warn if overwriting an existing method on this module
-            if (method.getRealMethod().getAliasCount() == 0) runtime.getWarnings().warning("method redefined; discarding old " + name);
+            if (method.getRealMethod().getAliasCount() == 0) runtime.getWarnings().warning(ID.REDEFINING_METHOD, "method redefined; discarding old " + name);
 
             if (method instanceof PositionAware) {
                 PositionAware posAware = (PositionAware) method;
-                runtime.getWarnings().warning(posAware.getFile(), posAware.getLine(), "previous definition of bar " + name);
+                runtime.getWarnings().warning(ID.REDEFINING_METHOD, posAware.getFile(), posAware.getLine() + 1, "previous definition of " + name + " was here");
             }
         }
 
