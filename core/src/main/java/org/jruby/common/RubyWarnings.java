@@ -126,7 +126,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
         String fullMessage;
         if (lineNumber != LINE_NUMBER_NON_WARNING) {
-            fullMessage = fileName + ':' + (lineNumber + 1) + ": warning: " + message + '\n';
+            fullMessage = fileName + ':' + lineNumber + ": warning: " + message + '\n';
         } else {
             fullMessage = fileName + ": " + message + '\n'; // warn(fileName, message) behave as in MRI
         }

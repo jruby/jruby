@@ -807,7 +807,7 @@ public class RubyLexer extends LexingCommon {
 
             switch (newline) {
                 case 1:
-                    parser.warn(ruby_sourceline, "here document identifier ends with a newline");
+                    parser.warn("here document identifier ends with a newline");
                     markerValue.setRealSize(markerValue.realSize() - 1);
                     if (markerValue.get(markerValue.realSize() - 1) == '\r') markerValue.setRealSize(markerValue.realSize() - 1);
                     break;

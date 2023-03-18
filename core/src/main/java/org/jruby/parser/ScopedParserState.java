@@ -95,13 +95,15 @@ public class ScopedParserState {
         usedVariables.add(name);
     }
 
-    public void warnUnusedVariables(Ruby runtime, IRubyWarnings warnings, String file) {
+    public void warnUnusedVariables(RubyParserBase parser, String file) {
         if (definedVariables == null) return;
 
-        for(RubySymbol name: definedVariables.keySet()) {
+        final Ruby runtime = parser.getRuntime();
+        for (RubySymbol name: definedVariables.keySet()) {
             if (RubyParserBase.is_private_local_id(name.getBytes())) continue; // Hidden variable cannot be used.
             if (usedVariables == null || !usedVariables.contains(name)) {
-                warnings.warn(IRubyWarnings.ID.AMBIGUOUS_ARGUMENT, file, definedVariables.get(name), str(runtime, "assigned but unused variable - ", name));
+                parser.warning(IRubyWarnings.ID.AMBIGUOUS_ARGUMENT, file, definedVariables.get(name),
+                    str(runtime, "assigned but unused variable - ", name));
             }
         }
 
