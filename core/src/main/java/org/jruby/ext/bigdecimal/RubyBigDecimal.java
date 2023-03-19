@@ -2194,10 +2194,10 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     public static boolean formatHasFloatingPointNotation(String format) {
-        return format.length() > 0 && format.charAt(format.length()-1) == 'F';
+        return format.length() > 0 && (format.charAt(format.length()-1) == 'F' || format.charAt(format.length()-1) == 'f');
     }
 
-    private static final Pattern FRACTIONAL_DIGIT_GROUPS = Pattern.compile("(\\+| )?(\\d+)(E|F)?");
+    private static final Pattern FRACTIONAL_DIGIT_GROUPS = Pattern.compile("(\\+| )?(\\d+)(E|F|f)?");
 
     public static int formatFractionalDigitGroups(String format) {
         Matcher match = FRACTIONAL_DIGIT_GROUPS.matcher(format);
