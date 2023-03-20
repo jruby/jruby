@@ -42,6 +42,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static org.jruby.ir.IRFlags.*;
 import static org.jruby.ir.instructions.Instr.EMPTY_OPERANDS;
@@ -1856,9 +1857,9 @@ public class IRBuilder {
             if (seenType != null) {
                 switch (seenType) {
                     case FIXNUMNODE:
-                        return buildFixnumCase(caseNode);
+                        return buildOptimizedCaseWhen(caseNode, RubyFixnum.class, (n) -> ((FixnumNode) n).getValue());
                     case SYMBOLNODE:
-                        return buildSymbolCase(caseNode);
+                        return buildOptimizedCaseWhen(caseNode, RubySymbol.class, (n) -> (long) ((SymbolNode) n).getName().getId());
                 }
             }
         }
@@ -2035,137 +2036,38 @@ public class IRBuilder {
         return null;
     }
 
-    private Operand buildFixnumCase(CaseNode caseNode) {
-        Map<java.lang.Integer, Label> jumpTable = new HashMap<>();
-        Map<Node, Label> nodeBodies = new HashMap<>();
-
-        // gather fixnum-when bodies or bail
-        for (Node aCase : caseNode.getCases().children()) {
-            WhenNode whenNode = (WhenNode) aCase;
-            Label bodyLabel = getNewLabel();
-
-            FixnumNode expr = (FixnumNode) whenNode.getExpressionNodes();
-            long exprLong = expr.getValue();
-            if (exprLong > java.lang.Integer.MAX_VALUE) throw notCompilable("optimized fixnum case has long-ranged", caseNode);
-
-            if (jumpTable.get((int) exprLong) == null) {
-                jumpTable.put((int) exprLong, bodyLabel);
-                nodeBodies.put(whenNode, bodyLabel);
-            } else {
-                scope.getManager().getRuntime().getWarnings().warning(IRubyWarnings.ID.MISCELLANEOUS, getFileName(), expr.getLine(), "duplicated when clause is ignored");
-            }
-        }
-
-        // sort the jump table
-        Map.Entry<java.lang.Integer, Label>[] jumpEntries = jumpTable.entrySet().toArray(new Map.Entry[jumpTable.size()]);
-        Arrays.sort(jumpEntries, new Comparator<Map.Entry<java.lang.Integer, Label>>() {
-            @Override
-            public int compare(Map.Entry<java.lang.Integer, Label> o1, Map.Entry<java.lang.Integer, Label> o2) {
-                return java.lang.Integer.compare(o1.getKey(), o2.getKey());
-            }
-        });
-
-        // build a switch
-        int[] jumps = new int[jumpTable.size()];
-        Label[] targets = new Label[jumps.length];
-        int i = 0;
-        for (Map.Entry<java.lang.Integer, Label> jumpEntry : jumpEntries) {
-            jumps[i] = jumpEntry.getKey();
-            targets[i] = jumpEntry.getValue();
-            i++;
-        }
-
+    private <T extends Node & ILiteralNode> Variable buildOptimizedCaseWhen(
+            CaseNode caseNode, Class caseClass, Function<T, Long> caseFunction) {
         // get the incoming case value
         Operand value = build(caseNode.getCaseNode());
+
+        Map<Node, Label> nodeBodies = new HashMap<>();
+
+        Map<java.lang.Integer, Label> jumpTable = gatherLiteralWhenBodies(caseNode, nodeBodies, caseFunction);
+        Map.Entry<java.lang.Integer, Label>[] jumpEntries = sortJumpEntries(jumpTable);
 
         Label     endLabel  = getNewLabel();
         boolean   hasElse   = (caseNode.getElseNode() != null);
         Label     elseLabel = getNewLabel();
         Variable  result    = createTemporaryVariable();
 
-        // insert fast switch with fallback to eqq
-        if (!scope.maybeUsingRefinements()) {
-            Label eqqPath = getNewLabel();
-            addInstr(new BSwitchInstr(jumps, value, eqqPath, targets, elseLabel, RubyFixnum.class));
-            addInstr(new LabelInstr(eqqPath));
-        }
+        buildOptimizedSwitch(jumpTable, jumpEntries, elseLabel, value, caseClass);
 
-        List<Label> labels = new ArrayList<>();
-        Map<Label, Node> bodies = new HashMap<>();
-
-        // build each "when"
-        for (Node aCase : caseNode.getCases().children()) {
-            WhenNode whenNode = (WhenNode)aCase;
-            Label bodyLabel = nodeBodies.get(whenNode);
-            if (bodyLabel == null) bodyLabel = getNewLabel();
-
-            Variable eqqResult = createTemporaryVariable();
-            labels.add(bodyLabel);
-            Operand expression = build(whenNode.getExpressionNodes());
-
-            // use frozen string for direct literal strings in `when`
-            if (expression instanceof MutableString) {
-                expression = ((MutableString) expression).frozenString;
-            }
-
-            addInstr(new EQQInstr(scope, eqqResult, expression, value, false, scope.maybeUsingRefinements()));
-            addInstr(createBranch(eqqResult, manager.getTrue(), bodyLabel));
-
-            // SSS FIXME: This doesn't preserve original order of when clauses.  We could consider
-            // preserving the order (or maybe not, since we would have to sort the constants first
-            // in any case) for outputting jump tables in certain situations.
-            //
-            // add body to map for emitting later
-            bodies.put(bodyLabel, whenNode.getBodyNode());
-        }
-
-        // Jump to else in case nothing matches!
-        addInstr(new JumpInstr(elseLabel));
-
-        // Build "else" if it exists
-        if (hasElse) {
-            labels.add(elseLabel);
-            bodies.put(elseLabel, caseNode.getElseNode());
-        }
-
-        // Now, emit bodies while preserving when clauses order
-        for (Label whenLabel: labels) {
-            addInstr(new LabelInstr(whenLabel));
-            Operand bodyValue = build(bodies.get(whenLabel));
-            // bodyValue can be null if the body ends with a return!
-            if (bodyValue != null) {
-                // SSS FIXME: Do local optimization of break results (followed by a copy & jump) to short-circuit the jump right away
-                // rather than wait to do it during an optimization pass when a dead jump needs to be removed.  For this, you have
-                // to look at what the last generated instruction was.
-                addInstr(new CopyInstr(result, bodyValue));
-                addInstr(new JumpInstr(endLabel));
-            }
-        }
-
-        if (!hasElse) {
-            addInstr(new LabelInstr(elseLabel));
-            addInstr(new CopyInstr(result, manager.getNil()));
-            addInstr(new JumpInstr(endLabel));
-        }
-
-        // Close it out
-        addInstr(new LabelInstr(endLabel));
-
-        return result;
+        return buildStandardCaseWhen(caseNode, nodeBodies, endLabel, hasElse, elseLabel, value, result);
     }
 
-    private Operand buildSymbolCase(CaseNode caseNode) {
+    private <T extends Node & ILiteralNode> Map<java.lang.Integer, Label> gatherLiteralWhenBodies(
+            CaseNode caseNode, Map<Node, Label> nodeBodies, Function<T, Long> caseFunction) {
         Map<java.lang.Integer, Label> jumpTable = new HashMap<>();
-        Map<Node, Label> nodeBodies = new HashMap<>();
 
-        // gather fixnum-when bodies or bail
+        // gather literal when bodies or bail
         for (Node aCase : caseNode.getCases().children()) {
             WhenNode whenNode = (WhenNode) aCase;
             Label bodyLabel = getNewLabel();
 
-            SymbolNode expr = (SymbolNode) whenNode.getExpressionNodes();
-            long exprLong = expr.getName().getId();
-            if (exprLong > java.lang.Integer.MAX_VALUE) throw notCompilable("optimized symbol case has long-ranged id", caseNode);
+            T expr = (T) whenNode.getExpressionNodes();
+            long exprLong = caseFunction.apply(expr);
+            if (exprLong > java.lang.Integer.MAX_VALUE) throw notCompilable("optimized case has long-ranged value", caseNode);
 
             if (jumpTable.get((int) exprLong) == null) {
                 jumpTable.put((int) exprLong, bodyLabel);
@@ -2175,14 +2077,25 @@ public class IRBuilder {
             }
         }
 
+        return jumpTable;
+    }
+
+    private static Map.Entry<java.lang.Integer, Label>[] sortJumpEntries(Map<java.lang.Integer, Label> jumpTable) {
         // sort the jump table
         Map.Entry<java.lang.Integer, Label>[] jumpEntries = jumpTable.entrySet().toArray(new Map.Entry[jumpTable.size()]);
-        Arrays.sort(jumpEntries, new Comparator<Map.Entry<java.lang.Integer, Label>>() {
-            @Override
-            public int compare(Map.Entry<java.lang.Integer, Label> o1, Map.Entry<java.lang.Integer, Label> o2) {
-                return java.lang.Integer.compare(o1.getKey(), o2.getKey());
-            }
-        });
+        Arrays.sort(jumpEntries, Comparator.comparingInt(Map.Entry::getKey));
+        return jumpEntries;
+    }
+
+    private void buildOptimizedSwitch(
+            Map<java.lang.Integer, Label> jumpTable,
+            Map.Entry<java.lang.Integer,
+                    Label>[] jumpEntries,
+            Label elseLabel,
+            Operand value,
+            Class valueClass) {
+
+        Label     eqqPath   = getNewLabel();
 
         // build a switch
         int[] jumps = new int[jumpTable.size()];
@@ -2194,21 +2107,12 @@ public class IRBuilder {
             i++;
         }
 
-        // get the incoming case value
-        Operand value = build(caseNode.getCaseNode());
-
-        Label     endLabel  = getNewLabel();
-        boolean   hasElse   = (caseNode.getElseNode() != null);
-        Label     elseLabel = getNewLabel();
-        Variable  result    = createTemporaryVariable();
-
         // insert fast switch with fallback to eqq
-        if (scope.maybeUsingRefinements()) {
-            Label eqqPath = getNewLabel();
-            addInstr(new BSwitchInstr(jumps, value, eqqPath, targets, elseLabel, RubySymbol.class));
-            addInstr(new LabelInstr(eqqPath));
-        }
+        addInstr(new BSwitchInstr(jumps, value, eqqPath, targets, elseLabel, valueClass));
+        addInstr(new LabelInstr(eqqPath));
+    }
 
+    private Variable buildStandardCaseWhen(CaseNode caseNode, Map<Node, Label> nodeBodies, Label endLabel, boolean hasElse, Label elseLabel, Operand value, Variable result) {
         List<Label> labels = new ArrayList<>();
         Map<Label, Node> bodies = new HashMap<>();
 

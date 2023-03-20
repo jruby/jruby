@@ -1,3 +1,0 @@
-fails:Syslog.alert logs a message
-fails:Syslog.alert accepts sprintf arguments
-fails:Syslog.alert works as an alias for Syslog.log

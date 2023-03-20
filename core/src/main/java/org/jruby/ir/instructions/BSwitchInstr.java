@@ -2,6 +2,7 @@ package org.jruby.ir.instructions;
 
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Label;
@@ -110,17 +111,19 @@ public class BSwitchInstr extends MultiBranchInstr {
         }
     }
 
-
-
     @Override
     public int interpretAndGetNewIPC(ThreadContext context, DynamicScope currDynScope, StaticScope currScope, IRubyObject self, Object[] temp, int ipc) {
         Object result = operand.retrieve(context, self, currScope, currDynScope, temp);
-        if (!(result instanceof RubyFixnum)) {
-            // not a fixnum, fall back on old case logic
+
+        int value;
+        if (result instanceof RubyFixnum && expectedClass == RubyFixnum.class) {
+            value = ((RubyFixnum) result).getIntValue();
+        } else if (result instanceof RubySymbol && expectedClass == RubySymbol.class) {
+            value = ((RubySymbol) result).getId();
+        } else {
+            // not an optimizable value, fall back on old case logic
             return rubyCase.getTargetPC();
         }
-
-        int value = ((RubyFixnum) result).getIntValue();
 
         int index = Arrays.binarySearch(jumps, value);
 
