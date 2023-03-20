@@ -205,16 +205,7 @@ public abstract class InvokeSite extends MutableCallSite {
         } else {
             logMethodMissing();
         }
-        DynamicMethod method = Helpers.selectMethodMissing(context, selfClass, entry.method.getVisibility(), methodName, callType);
-        if (method instanceof Helpers.MethodMissingMethod) {
-            entry = ((Helpers.MethodMissingMethod) method).entry;
-        } else {
-            entry = new CacheEntry(
-                    method,
-                    selfClass,
-                    entry.token);
-        }
-        return entry;
+        return Helpers.createDirectMethodMissingEntry(context, selfClass, callType, entry.method.getVisibility(), entry.token, methodName);
     }
 
     private MethodHandle methodMissingHandle(IRubyObject self, CacheEntry entry) {

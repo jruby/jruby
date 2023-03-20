@@ -113,22 +113,6 @@ public class Helpers {
         }
     }
 
-    @Deprecated // no longer used - only been used by interface implementation
-    public static IRubyObject invokeMethodMissing(IRubyObject receiver, String name, IRubyObject[] args) {
-        ThreadContext context = receiver.getRuntime().getCurrentContext();
-
-        // store call information so method_missing impl can use it
-        context.setLastCallStatusAndVisibility(CallType.FUNCTIONAL, Visibility.PUBLIC);
-
-        if (name.equals("method_missing")) {
-            return RubyKernel.method_missing(context, receiver, args, Block.NULL_BLOCK);
-        }
-
-        IRubyObject[] newArgs = prepareMethodMissingArgs(args, context, name);
-
-        return invoke(context, receiver, "method_missing", newArgs, Block.NULL_BLOCK);
-    }
-
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, RubyClass klass, Visibility visibility, String name, CallType callType, IRubyObject[] args, Block block) {
         return selectMethodMissing(context, klass, visibility, name, callType).call(context, self, klass, name, args, block);
     }
@@ -586,10 +570,31 @@ public class Helpers {
         return (int) length;
     }
 
+    public static CacheEntry createDirectMethodMissingEntry(ThreadContext context, RubyClass selfClass, CallType callType, Visibility visibility, int token, String methodName) {
+        DynamicMethod method = selectMethodMissing(context, selfClass, visibility, methodName, callType);
+        if (method instanceof MethodMissingMethod) {
+            return ((MethodMissingMethod) method).entry;
+        } else {
+            return new CacheEntry(
+                    method,
+                    selfClass,
+                    token);
+        }
+    }
+
+    public static CacheEntry createMethodMissingEntry(ThreadContext context, RubyClass selfClass, CallType callType, Visibility visibility, int token, String methodName) {
+        DynamicMethod method = selectMethodMissing(context, selfClass, visibility, methodName, callType);
+        return new CacheEntry(
+                method,
+                selfClass,
+                token);
+    }
+    
     public static class MethodMissingMethod extends DynamicMethod {
         public final CacheEntry entry;
         private final CallType lastCallStatus;
         private final Visibility lastVisibility;
+        private RubySymbol lastName;
 
         public MethodMissingMethod(CacheEntry entry, Visibility lastVisibility, CallType lastCallStatus) {
             super(entry.method.getImplementationClass(), lastVisibility, entry.method.getName());
@@ -605,8 +610,78 @@ public class Helpers {
         }
 
         @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
+            context.setLastCallStatusAndVisibility(lastCallStatus, lastVisibility);
+            return this.entry.method.call(context, self, entry.sourceModule, "method_missing", nameToSymbol(context, name), block);
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
+            context.setLastCallStatusAndVisibility(lastCallStatus, lastVisibility);
+            return this.entry.method.call(context, self, entry.sourceModule, "method_missing", nameToSymbol(context, name), arg0, block);
+        }
+
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+            context.setLastCallStatusAndVisibility(lastCallStatus, lastVisibility);
+            return this.entry.method.call(context, self, entry.sourceModule, "method_missing", nameToSymbol(context, name), arg0, arg1, block);
+        }
+
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+            context.setLastCallStatusAndVisibility(lastCallStatus, lastVisibility);
+            return this.entry.method.call(context, self, entry.sourceModule, "method_missing", arrayOf(nameToSymbol(context, name), arg0, arg1, arg2), block);
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+            context.setLastCallStatusAndVisibility(lastCallStatus, lastVisibility);
+            return this.entry.method.call(context, self, entry.sourceModule, "method_missing", prepareMethodMissingArgs(args, context, name));
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+            context.setLastCallStatusAndVisibility(lastCallStatus, lastVisibility);
+            return this.entry.method.call(context, self, entry.sourceModule, "method_missing", nameToSymbol(context, name));
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
+            context.setLastCallStatusAndVisibility(lastCallStatus, lastVisibility);
+            return this.entry.method.call(context, self, entry.sourceModule, "method_missing", nameToSymbol(context, name), arg0);
+        }
+
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
+            context.setLastCallStatusAndVisibility(lastCallStatus, lastVisibility);
+            return this.entry.method.call(context, self, entry.sourceModule, "method_missing", nameToSymbol(context, name), arg0, arg1);
+        }
+
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+            context.setLastCallStatusAndVisibility(lastCallStatus, lastVisibility);
+            return this.entry.method.call(context, self, entry.sourceModule, "method_missing", arrayOf(nameToSymbol(context, name), arg0, arg1, arg2));
+        }
+
+        @Override
         public DynamicMethod dup() {
             return this;
+        }
+
+        private IRubyObject[] prepareMethodMissingArgs(IRubyObject[] args, ThreadContext context, String name) {
+            return ArraySupport.newCopy(nameToSymbol(context, name), args);
+        }
+
+        private RubySymbol nameToSymbol(ThreadContext context, String name) {
+            RubySymbol lastName = this.lastName;
+            if (lastName == null || !name.equals(lastName.idString())) {
+                this.lastName = lastName = context.runtime.newSymbol(name);
+            }
+            return lastName;
         }
     }
 
@@ -622,10 +697,6 @@ public class Helpers {
         } else {
             return runtime.getNormalMethodMissing();
         }
-    }
-
-    private static IRubyObject[] prepareMethodMissingArgs(IRubyObject[] args, ThreadContext context, String name) {
-        return ArraySupport.newCopy(context.runtime.newSymbol(name), args);
     }
 
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, Block block) {

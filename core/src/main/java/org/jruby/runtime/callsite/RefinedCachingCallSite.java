@@ -6,6 +6,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -29,7 +30,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
         DynamicMethod method = entry.method;
 
         if (methodMissing(method, caller)) {
-            return callMethodMissing(context, self, selfType, method, args);
+            method = Helpers.selectMethodMissing(context, selfType, method.getVisibility(), methodName, callType);
         }
 
         return method.call(context, self, entry.sourceModule, methodName, args);
@@ -41,7 +42,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
         DynamicMethod method = entry.method;
 
         if (methodMissing(method, caller)) {
-            return callMethodMissing(context, self, selfType, method, args, block);
+            method = Helpers.selectMethodMissing(context, selfType, method.getVisibility(), methodName, callType);
         }
 
         return method.call(context, self, entry.sourceModule, methodName, args, block);
@@ -53,7 +54,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
         DynamicMethod method = entry.method;
 
         if (methodMissing(method, caller)) {
-            return callMethodMissing(context, self, selfType, method);
+            method = Helpers.selectMethodMissing(context, selfType, method.getVisibility(), methodName, callType);
         }
 
         return method.call(context, self, entry.sourceModule, methodName);
@@ -65,7 +66,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
         DynamicMethod method = entry.method;
 
         if (methodMissing(method, caller)) {
-            return callMethodMissing(context, self, selfType, method, block);
+            method = Helpers.selectMethodMissing(context, selfType, method.getVisibility(), methodName, callType);
         }
 
         return method.call(context, self, entry.sourceModule, methodName, block);
@@ -77,7 +78,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
         DynamicMethod method = entry.method;
 
         if (methodMissing(method, caller)) {
-            return callMethodMissing(context, self, selfType, method, arg0);
+            method = Helpers.selectMethodMissing(context, selfType, method.getVisibility(), methodName, callType);
         }
 
         return method.call(context, self, entry.sourceModule, methodName, arg0);
@@ -89,7 +90,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
         DynamicMethod method = entry.method;
 
         if (methodMissing(method, caller)) {
-            return callMethodMissing(context, self, selfType, method, arg0, block);
+            method = Helpers.selectMethodMissing(context, selfType, method.getVisibility(), methodName, callType);
         }
 
         return method.call(context, self, entry.sourceModule, methodName, arg0, block);
@@ -101,7 +102,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
         DynamicMethod method = entry.method;
 
         if (methodMissing(method, caller)) {
-            return callMethodMissing(context, self, selfType, method, arg0, arg1);
+            method = Helpers.selectMethodMissing(context, selfType, method.getVisibility(), methodName, callType);
         }
 
         return method.call(context, self, entry.sourceModule, methodName, arg0, arg1);
@@ -113,7 +114,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
         DynamicMethod method = entry.method;
 
         if (methodMissing(method, caller)) {
-            return callMethodMissing(context, self, selfType, method, arg0, arg1, block);
+            method = Helpers.selectMethodMissing(context, selfType, method.getVisibility(), methodName, callType);
         }
 
         return method.call(context, self, entry.sourceModule, methodName, arg0, arg1, block);
@@ -125,7 +126,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
         DynamicMethod method = entry.method;
 
         if (methodMissing(method, caller)) {
-            return callMethodMissing(context, self, selfType, method, arg0, arg1, arg2);
+            method = Helpers.selectMethodMissing(context, selfType, method.getVisibility(), methodName, callType);
         }
 
         return method.call(context, self, entry.sourceModule, methodName, arg0, arg1, arg2);
@@ -137,7 +138,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
         DynamicMethod method = entry.method;
 
         if (methodMissing(method, caller)) {
-            return callMethodMissing(context, self, selfType, method, arg0, arg1, arg2, block);
+            method = Helpers.selectMethodMissing(context, selfType, method.getVisibility(), methodName, callType);
         }
 
         return method.call(context, self, entry.sourceModule, methodName, arg0, arg1, arg2, block);
