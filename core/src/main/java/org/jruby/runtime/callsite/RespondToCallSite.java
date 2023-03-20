@@ -115,22 +115,17 @@ public class RespondToCallSite extends MonomorphicCallSite {
     @Override
     protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg) {
         CacheEntry entry = selfType.searchWithCache(methodName);
-        final DynamicMethod method = entry.method;
+        DynamicMethod method = entry.method;
+
         if (methodMissing(method, caller)) {
-            return callMethodMissing(context, self, selfType, method, arg);
+            entry = Helpers.createMethodMissingEntry(context, selfType, callType, method.getVisibility(), entry.token, methodName);
+            method = entry.method;
         }
 
         // alternate logic to cache the result of respond_to if it's the standard one
         if (method.isBuiltin()) {
-            String id = TypeConverter.checkID(arg).idString();
-            RespondToTuple tuple = recacheRespondsTo(entry, id, selfType, true, context);
-
-            // only cache if it does respond_to? OR there's no custom respond_to_missing? logic
-            if (tuple.respondsTo.isTrue() ||
-                    selfType.searchWithCache("respond_to_missing?").method == context.runtime.getRespondToMissingMethod()) {
-                respondToTuple = tuple;
-                return tuple.respondsTo;
-            }
+            IRubyObject tuple = fastRespondTo(arg, entry, selfType, true, context);
+            if (tuple != null) return tuple;
         }
 
         // normal logic if it's not the builtin respond_to? method
@@ -141,27 +136,35 @@ public class RespondToCallSite extends MonomorphicCallSite {
     @Override
     protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1) {
         CacheEntry entry = selfType.searchWithCache(methodName);
-        final DynamicMethod method = entry.method;
+        DynamicMethod method = entry.method;
+
         if (methodMissing(method, caller)) {
-            return callMethodMissing(context, self, selfType, method, arg0, arg1);
+            entry = Helpers.createMethodMissingEntry(context, selfType, callType, method.getVisibility(), entry.token, methodName);
+            method = entry.method;
         }
 
         // alternate logic to cache the result of respond_to if it's the standard one
         if (method.equals(context.runtime.getRespondToMethod())) {
-            String id = TypeConverter.checkID(arg0).idString();
-            RespondToTuple tuple = recacheRespondsTo(entry, id, selfType, !arg1.isTrue(), context);
-
-            // only cache if it does respond_to? OR there's no custom respond_to_missing? logic
-            if (tuple.respondsTo.isTrue() ||
-                    selfType.searchWithCache("respond_to_missing?").method == context.runtime.getRespondToMissingMethod()) {
-                respondToTuple = tuple;
-                return tuple.respondsTo;
-            }
+            IRubyObject tuple = fastRespondTo(arg0, entry, selfType, !arg1.isTrue(), context);
+            if (tuple != null) return tuple;
         }
 
         // normal logic if it's not the builtin respond_to? method
         entry = setCache(entry, self); // cache = entry;
         return method.call(context, self, entry.sourceModule, methodName, arg0, arg1);
+    }
+
+    private IRubyObject fastRespondTo(IRubyObject arg, CacheEntry entry, RubyClass selfType, boolean checkVisibility, ThreadContext context) {
+        String id = TypeConverter.checkID(arg).idString();
+        RespondToTuple tuple = recacheRespondsTo(entry, id, selfType, checkVisibility, context);
+
+        // only cache if it does respond_to? OR there's no custom respond_to_missing? logic
+        if (tuple.respondsTo.isTrue() ||
+                selfType.searchWithCache("respond_to_missing?").method == context.runtime.getRespondToMissingMethod()) {
+            respondToTuple = tuple;
+            return tuple.respondsTo;
+        }
+        return null;
     }
 
     private static RespondToTuple recacheRespondsTo(CacheEntry respondToMethod, String newString, RubyClass klass, boolean checkVisibility, ThreadContext context) {

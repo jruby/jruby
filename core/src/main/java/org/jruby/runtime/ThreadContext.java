@@ -1529,6 +1529,13 @@ public final class ThreadContext {
         return callInfo;
     }
 
+    /**
+     * Clear call info state (set to 0).
+     */
+    public void clearCallInfo() {
+        this.callInfo = 0;
+    }
+
     public static boolean hasKeywords(int callInfo) {
         return (callInfo & CALL_KEYWORD) != 0;
     }

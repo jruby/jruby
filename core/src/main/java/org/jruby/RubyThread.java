@@ -1859,6 +1859,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private void pendingInterruptEnqueue(IRubyObject v) {
         pendingInterruptQueue.add(v);
         pendingInterruptQueueChecked = false;
+
+        getRuntime().getCheckpointInvalidator().invalidate();
     }
 
     /**

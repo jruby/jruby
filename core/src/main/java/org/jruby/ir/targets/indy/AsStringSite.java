@@ -29,7 +29,7 @@ import static org.jruby.util.CodegenUtils.sig;
 */
 public class AsStringSite extends NormalInvokeSite {
     public AsStringSite(MethodType type, String file, int line) {
-        super(type, "to_s", false, file, line);
+        super(type, "to_s", false, 0, file, line);
     }
 
     public static final Handle BOOTSTRAP = new Handle(
@@ -46,7 +46,7 @@ public class AsStringSite extends NormalInvokeSite {
     }
 
     public IRubyObject invoke(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) throws Throwable {
-        NormalInvokeSite toS = new NormalInvokeSite(type(), "to_s", false, file, line);
+        NormalInvokeSite toS = new NormalInvokeSite(type(), "to_s", false, 0, file, line);
         MethodHandle toS_handle = toS.dynamicInvoker();
 
         MethodHandle checkcast = Binder.from(type().changeReturnType(boolean.class))

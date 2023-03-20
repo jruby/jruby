@@ -123,8 +123,8 @@ jobs:
 
     strategy:
       matrix:
-        target: ['test:jruby', 'spec:compiler']
-        java-version: ['8', '17']
+        target: ['test:jruby:jit', 'spec:compiler', 'spec:ruby:fast:jit']
+        java-version: ['17']
       fail-fast: false
 
     name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }} +indy)
