@@ -10,6 +10,7 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
+import org.jruby.RubyKernel;
 import org.jruby.RubyModule;
 import org.jruby.RubyNil;
 import org.jruby.RubyStruct;
@@ -157,20 +158,21 @@ public abstract class InvokeSite extends MutableCallSite {
         SwitchPoint switchPoint = (SwitchPoint) selfClass.getInvalidator().getData();
         String methodName = this.methodName;
         CacheEntry entry = selfClass.searchWithCache(methodName);
-        MethodHandle mh = null;
-        boolean methodMissing = false;
+        MethodHandle mh;
+        boolean passSymbol = false;
 
         if (methodMissing(entry, caller)) {
-            methodMissing = true;
             entry = methodMissingEntry(context, selfClass, methodName, entry);
-            mh = methodMissingHandle(self, entry, mh);
+            // only pass symbol below if we be calling a user-defined method_missing (default ones do it for us)
+            passSymbol = !(entry.method instanceof RubyKernel.MethodMissingMethod);
+            mh = methodMissingHandle(self, entry);
         } else {
             mh = getHandle(self, entry);
         }
 
         finishBinding(entry, mh, self, selfClass, switchPoint);
 
-        return performIndirectCall(context, self, args, block, methodName, methodMissing, entry);
+        return performIndirectCall(context, self, args, block, methodName, passSymbol, entry);
     }
 
     public IRubyObject invoke(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) throws Throwable {
@@ -178,21 +180,21 @@ public abstract class InvokeSite extends MutableCallSite {
         SwitchPoint switchPoint = (SwitchPoint) selfClass.getInvalidator().getData();
         String methodName = this.methodName;
         CacheEntry entry = selfClass.searchWithCache(methodName);
-        MethodHandle mh = null;
-        boolean methodMissing = false;
+        MethodHandle mh;
+        boolean passSymbol = false;
 
         if (methodMissing(entry)) {
-            methodMissing = true;
-            // Test thresholds so we don't do this forever (#4596)
             entry = methodMissingEntry(context, selfClass, methodName, entry);
-            mh = methodMissingHandle(self, entry, mh);
+            // only pass symbol below if we be calling a user-defined method_missing (default ones do it for us)
+            passSymbol = !(entry.method instanceof RubyKernel.MethodMissingMethod);
+            mh = methodMissingHandle(self, entry);
         } else {
             mh = getHandle(self, entry);
         }
 
         finishBinding(entry, mh, self, selfClass, switchPoint);
 
-        return performIndirectCall(context, self, args, block, methodName, methodMissing, entry);
+        return performIndirectCall(context, self, args, block, methodName, passSymbol, entry);
     }
 
     private CacheEntry methodMissingEntry(ThreadContext context, RubyClass selfClass, String methodName, CacheEntry entry) {
@@ -215,14 +217,20 @@ public abstract class InvokeSite extends MutableCallSite {
         return entry;
     }
 
-    private MethodHandle methodMissingHandle(IRubyObject self, CacheEntry entry, MethodHandle mh) {
+    private MethodHandle methodMissingHandle(IRubyObject self, CacheEntry entry) {
         try {
-            mh = Bootstrap.buildMethodMissingHandle(this, entry, self);
+            if (entry.method instanceof RubyKernel.MethodMissingMethod) {
+                // the built-in special-case handles pass symbol for us, so just invoke generically
+                return Bootstrap.buildGenericHandle(this, entry);
+            }
+
+            // otherwise, it's a user-defined method_missing and we should insert a symbol into the handle
+            return Bootstrap.buildMethodMissingHandle(this, entry, self);
         } catch (Throwable t) {
             t.printStackTrace();
             Helpers.throwException(t);
         }
-        return mh;
+        return null;
     }
 
     private void finishBinding(CacheEntry entry, MethodHandle mh, IRubyObject self, RubyClass selfClass, SwitchPoint switchPoint) {
@@ -244,7 +252,7 @@ public abstract class InvokeSite extends MutableCallSite {
         updateInvocationTarget(mh, self, selfClass, entry.method, switchPoint);
     }
 
-    private IRubyObject performIndirectCall(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, String methodName, boolean methodMissing, CacheEntry entry) {
+    private IRubyObject performIndirectCall(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, String methodName, boolean passSymbol, CacheEntry entry) {
         RubyModule sourceModule = entry.sourceModule;
         DynamicMethod method = entry.method;
 
@@ -252,7 +260,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
         if (literalClosure) {
             try {
-                if (methodMissing) {
+                if (passSymbol) {
                     return method.call(context, self, sourceModule, methodName, Helpers.arrayOf(context.runtime.newSymbol(methodName), args), block);
                 } else {
                     return method.call(context, self, sourceModule, methodName, args, block);
@@ -262,7 +270,7 @@ public abstract class InvokeSite extends MutableCallSite {
             }
         }
 
-        if (methodMissing) {
+        if (passSymbol) {
             return method.call(context, self, sourceModule, methodName, Helpers.arrayOf(context.runtime.newSymbol(methodName), args), block);
         } else {
             return method.call(context, self, sourceModule, methodName, args, block);
