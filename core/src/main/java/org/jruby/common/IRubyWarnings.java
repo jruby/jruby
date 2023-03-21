@@ -38,6 +38,11 @@ import org.jruby.Ruby;
  */
 public interface IRubyWarnings {
     enum ID {
+        /**
+         * Generic identifier often used when there isn't an extra ID type.
+         * @implNote Some of the "MISCELLANEOUS" warnings might end up being re-categorized.
+         */
+        MISCELLANEOUS,
         AMBIGUOUS_ARGUMENT,
         ACCESSOR_NOT_INITIALIZED,
         ACCESSOR_MODULE_FUNCTION,
@@ -48,6 +53,7 @@ public interface IRubyWarnings {
         BLOCK_BEATS_DEFAULT_VALUE,
         BLOCK_NOT_ACCEPTED,
         BLOCK_UNUSED,
+        BLOCK_DEPRECATED,
         CONSTANT_ALREADY_INITIALIZED,
         CONSTANT_DEPRECATED,
         CONSTANT_BAD_REFERENCE,
@@ -67,7 +73,6 @@ public interface IRubyWarnings {
         INVALID_CHAR_SEQUENCE,
         IVAR_NOT_INITIALIZED,
         MAY_BE_TOO_BIG,
-        MISCELLANEOUS,
         MULTIPLE_VALUES_FOR_BLOCK,
         NEGATIVE_NUMBER_FOR_U,
         NO_SUPER_CLASS,
