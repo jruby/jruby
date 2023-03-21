@@ -15,7 +15,7 @@ jobs:
 
     strategy:
       matrix:
-        target: ['test:mri:core:jit', 'spec:ruby:fast', 'spec:ruby:fast:jit', 'spec:ji', 'spec:ffi']
+        target: ['test:jruby:int', 'spec:ruby:fast', 'spec:ji', 'spec:ffi']
         java-version: ['8', '17']
       fail-fast: false
 
@@ -52,7 +52,7 @@ jobs:
 
     strategy:
       matrix:
-        target: ['test:mri:core:int', 'test:mri:extra', 'test:jruby:int', 'test:mri:stdlib', 'spec:ruby:slow', 'spec:ruby:debug', 'test:jruby:aot', 'test:slow_suites', 'spec:compiler', 'spec:regression', 'spec:jruby', 'spec:jrubyc', 'spec:profiler']
+        target: ['test:mri:core:jit', 'test:mri:extra', 'spec:ruby:fast:jit', 'test:mri:stdlib', 'spec:ruby:slow', 'spec:ruby:debug', 'test:jruby:aot', 'test:slow_suites', 'spec:compiler', 'spec:regression', 'spec:jruby', 'spec:jrubyc', 'spec:profiler']
       fail-fast: false
 
     name: rake ${{ matrix.target }} (Java 8)
@@ -165,7 +165,7 @@ jobs:
       matrix:
         package-flags: ['-Pmain', '-Pdist', '-Pcomplete', '-Posgi', '-Ptest', '-Pmain,test -Dinvoker.test=extended']
         # dist, complete, and osgi do not pass on 17 yet
-        java-version: ['8', '11']
+        java-version: ['11']
       fail-fast: false
 
     name: mvn ${{ matrix.package-flags }} (Java ${{ matrix.java-version }})
@@ -233,7 +233,7 @@ jobs:
         env:
           PHASE: 'package ${{ matrix.package-flags }}'
 
-  ji-specs-indy:
+  ji-specs-8-indy:
     runs-on: ubuntu-latest
 
     strategy:
@@ -555,7 +555,7 @@ jobs:
   maven-test-openj9-8:
     runs-on: ubuntu-latest
 
-    name: mvn -Ptest (OpenJ9 Java 8)
+    name: mvn -Ptest (OpenJ9 Java 8; disabled)
 
     steps:
       - name: checkout
@@ -624,7 +624,7 @@ jobs:
     permissions:
       contents: none
     if: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/heads/jruby-9.3' }}
-    needs: [mvn-test, mvn-test-8, mvn-test-windows, dependency-check, rake-test, rake-test-indy, rake-test-8, test-versions, sequel, concurrent-ruby, jruby-tests-dev, ji-specs-indy, regression-specs-jit, mvn-test-m1]
+    needs: [mvn-test, mvn-test-8, mvn-test-windows, dependency-check, rake-test, rake-test-indy, rake-test-8, test-versions, sequel, concurrent-ruby, jruby-tests-dev, ji-specs-8-indy, regression-specs-jit, mvn-test-m1]
     uses: jruby/jruby/.github/workflows/snapshot-publish.yml@6cd0d4d96d9406635183d81cf91acc82cd78245f
     secrets:
       SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
