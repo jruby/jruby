@@ -189,15 +189,14 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneabl
         try {
             MethodHandle target4 = ensureTarget4();
             if (target4 != null) {
-                Arity.checkArgumentCount(context, args.length, min, max);
                 return (IRubyObject) target4.invokeExact(context, self, clazz, name, args, block);
             } else {
                 int arity = Arity.checkArgumentCount(context, args.length, min, max);
                 switch (args.length) {
-                    case 0: return (IRubyObject) ensureTarget0().invokeExact(context, self, clazz, name, block);
-                    case 1: return (IRubyObject) ensureTarget1().invokeExact(context, self, clazz, name, args[0], block);
-                    case 2: return (IRubyObject) ensureTarget2().invokeExact(context, self, clazz, name, args[0], args[1], block);
-                    case 3: return (IRubyObject) ensureTarget3().invokeExact(context, self, clazz, name, args[0], args[1], args[2], block);
+                    case 0: return call(context, self, clazz, name, block);
+                    case 1: return call(context, self, clazz, name, args[0], block);
+                    case 2: return call(context, self, clazz, name, args[0], args[1], block);
+                    case 3: return call(context, self, clazz, name, args[0], args[1], args[2], block);
                     default:
                         throw new RuntimeException("invalid arity for call: " + arity);
                 }
