@@ -38,7 +38,7 @@ import org.jruby.anno.JRubyModule;
 import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
 import org.jruby.ast.util.ArgsUtil;
-import org.jruby.ir.IRBuilder;
+import org.jruby.ir.builder.IRBuilder;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.targets.JVMVisitor;

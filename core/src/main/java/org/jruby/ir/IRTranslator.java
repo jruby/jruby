@@ -4,6 +4,7 @@ import org.jruby.ParseResult;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.RootNode;
+import org.jruby.ir.builder.IRBuilder;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.persistence.IRWriter;
 import org.jruby.ir.persistence.IRWriterStream;

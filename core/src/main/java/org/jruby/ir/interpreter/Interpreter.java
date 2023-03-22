@@ -6,7 +6,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.ast.RootNode;
-import org.jruby.ir.IRBuilder;
+import org.jruby.ir.builder.IRBuilder;
 import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;

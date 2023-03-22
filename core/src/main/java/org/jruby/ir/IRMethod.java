@@ -32,6 +32,7 @@ import org.jruby.ast.InstAsgnNode;
 import org.jruby.ast.InstVarNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.visitor.AbstractNodeVisitor;
+import org.jruby.ir.builder.IRBuilder;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.GetFieldInstr;
 import org.jruby.ir.instructions.Instr;
@@ -189,7 +190,7 @@ public class IRMethod extends IRScope {
         return interpreterContext;
     }
 
-    final InterpreterContext lazilyAcquireInterpreterContext() {
+    public final InterpreterContext lazilyAcquireInterpreterContext() {
         if (!hasBeenBuilt()) buildMethodImpl();
 
         return interpreterContext;
