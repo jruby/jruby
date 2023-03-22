@@ -77,6 +77,16 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneabl
     private final boolean builtin;
     private final boolean notImplemented;
 
+    private static final com.headius.invokebinder.Signature ARITY_0 =
+            com.headius.invokebinder.Signature.from(
+                    IRubyObject.class,
+                    arrayOf(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, Block.class),
+                    "context", "self", "selfType", "name", "block");
+    private static final com.headius.invokebinder.Signature ARITY_1 = ARITY_0.insertArg(4, "arg0", IRubyObject.class);
+    private static final com.headius.invokebinder.Signature ARITY_2 = ARITY_1.insertArg(5, "arg1", IRubyObject.class);
+    private static final com.headius.invokebinder.Signature ARITY_3 = ARITY_2.insertArg(6, "arg2", IRubyObject.class);
+    private static final com.headius.invokebinder.Signature[] ARITIES = {ARITY_0, ARITY_1, ARITY_2, ARITY_3};
+
     public HandleMethod(
             RubyModule implementationClass,
             Visibility visibility,
@@ -168,28 +178,6 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneabl
         return target1;
     }
 
-    private static final com.headius.invokebinder.Signature ARITY_0 =
-            com.headius.invokebinder.Signature.from(
-                    IRubyObject.class,
-                    arrayOf(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, Block.class),
-                    "context", "self", "selfType", "name", "block");
-    private static final com.headius.invokebinder.Signature ARITY_1 = ARITY_0.insertArg(4, "arg0", IRubyObject.class);
-    private static final com.headius.invokebinder.Signature ARITY_2 = ARITY_1.insertArg(5, "arg1", IRubyObject.class);
-    private static final com.headius.invokebinder.Signature ARITY_3 = ARITY_2.insertArg(6, "arg2", IRubyObject.class);
-    private static final com.headius.invokebinder.Signature[] ARITIES = {ARITY_0, ARITY_1, ARITY_2, ARITY_3};
-
-    private MethodHandle adaptSpecificToVarargs(MethodHandle varargs, int arity) {
-        if (arity == 0) {
-            return MethodHandles.insertArguments(varargs, 4, new Object[] {IRubyObject.NULL_ARRAY});
-        }
-
-        return SmartBinder.from(ARITIES[arity])
-                .permute("context", "self", "type", "name", "block", "arg.*")
-                .collect("args", "arg.*")
-                .permute("context", "self", "type", "name", "args", "block")
-                .invoke(varargs).handle();
-    }
-
     private MethodHandle ensureTarget2() {
         MethodHandle target2;
         if (!initialized2) {
@@ -242,14 +230,16 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneabl
         return this.target4;
     }
 
-    private static MethodHandle safeCall(Callable<MethodHandle> maker) {
-        try {
-            if (maker == null) return null;
-            return maker.call();
-        } catch (Exception e) {
-            Helpers.throwException(e);
-            return null;
+    private MethodHandle adaptSpecificToVarargs(MethodHandle varargs, int arity) {
+        if (arity == 0) {
+            return MethodHandles.insertArguments(varargs, 4, new Object[] {IRubyObject.NULL_ARRAY});
         }
+
+        return SmartBinder.from(ARITIES[arity])
+                .permute("context", "self", "type", "name", "block", "arg.*")
+                .collect("args", "arg.*")
+                .permute("context", "self", "type", "name", "args", "block")
+                .invoke(varargs).handle();
     }
 
     @Override
