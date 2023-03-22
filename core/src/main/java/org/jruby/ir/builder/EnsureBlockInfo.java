@@ -61,14 +61,10 @@ class EnsureBlockInfo {
     // Innermost loop within which this ensure block is nested, if any
     final IRLoop   innermostLoop;
 
-    // AST node for any associated rescue node in the case of begin-rescue-ensure-end block
-    // Will be null in the case of begin-ensure-end block
-    final RescueNode matchingRescueNode;
-
     // This ensure block's instructions
     final List<Instr> instrs;
 
-    public EnsureBlockInfo(IRScope s, RescueNode n, IRLoop l, Label bodyRescuer) {
+    public EnsureBlockInfo(IRScope s, IRLoop l, Label bodyRescuer) {
         regionStart = s.getNewLabel();
         start       = s.getNewLabel();
         end         = s.getNewLabel();
@@ -76,7 +72,6 @@ class EnsureBlockInfo {
         instrs = new ArrayList<>();
         savedGlobalException = null;
         innermostLoop = l;
-        matchingRescueNode = n;
         this.bodyRescuer = bodyRescuer;
         needsBacktrace = true;
     }
@@ -96,7 +91,7 @@ class EnsureBlockInfo {
         }
     }
 
-    public void cloneIntoHostScope(IRBuilderBase builder) {
+    public void cloneIntoHostScope(IRBuilder builder) {
         // $! should be restored before the ensure block is run
         if (savedGlobalException != null) {
             // We need make sure on all outgoing paths in optimized short-hand rescues we restore the backtrace

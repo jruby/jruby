@@ -4,7 +4,7 @@ import org.jruby.ParseResult;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.RootNode;
-import org.jruby.ir.builder.IRBuilder;
+import org.jruby.ir.builder.IRBuilderAST;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.persistence.IRWriter;
 import org.jruby.ir.persistence.IRWriterStream;
@@ -26,7 +26,7 @@ public abstract class IRTranslator<R, S> {
             scope = (IRScriptBody) result;
         } else if (result instanceof RootNode) { // Need to perform create IR from AST
             // FIXME: In terms of writing and reading we should emit enough to rebuild IC + minimal IRScope state
-            InterpreterContext ic = IRBuilder.buildRoot(runtime.getIRManager(), (RootNode) result);
+            InterpreterContext ic = IRBuilderAST.buildRoot(runtime.getIRManager(), (RootNode) result);
             scope = (IRScriptBody) ic.getScope();
             scope.setScriptDynamicScope(((RootNode) result).getScope());
 

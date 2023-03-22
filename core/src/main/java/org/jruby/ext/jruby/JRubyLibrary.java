@@ -38,7 +38,7 @@ import org.jruby.anno.JRubyModule;
 import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
 import org.jruby.ast.util.ArgsUtil;
-import org.jruby.ir.builder.IRBuilder;
+import org.jruby.ir.builder.IRBuilderAST;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.targets.JVMVisitor;
@@ -254,7 +254,7 @@ public class JRubyLibrary implements Library {
     private static IRScriptBody compileIR(ThreadContext context, IRubyObject[] args, Block block) {
         RootNode node = (RootNode) parseImpl(context, args, block);
         IRManager manager = new IRManager(context.runtime, context.runtime.getInstanceConfig());
-        IRScriptBody scope = (IRScriptBody) IRBuilder.buildRoot(manager, node).getScope();
+        IRScriptBody scope = (IRScriptBody) IRBuilderAST.buildRoot(manager, node).getScope();
         scope.setScriptDynamicScope(node.getScope());
         scope.getStaticScope().setIRScope(scope);
         return scope;

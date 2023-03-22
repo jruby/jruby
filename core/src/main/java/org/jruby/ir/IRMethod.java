@@ -32,7 +32,7 @@ import org.jruby.ast.InstAsgnNode;
 import org.jruby.ast.InstVarNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.visitor.AbstractNodeVisitor;
-import org.jruby.ir.builder.IRBuilder;
+import org.jruby.ir.builder.IRBuilderAST;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.GetFieldInstr;
 import org.jruby.ir.instructions.Instr;
@@ -199,7 +199,8 @@ public class IRMethod extends IRScope {
     private synchronized void buildMethodImpl() {
         if (hasBeenBuilt()) return;
 
-        IRBuilder builder = IRBuilder.topIRBuilder(getManager(), this);
+        // FIXME: we need a generic defineMethodInner which likely is abstract
+        IRBuilderAST builder = IRBuilderAST.topIRBuilder(getManager(), this);
         builder.executesOnce = false; // set up so nested things (modules+) which think it could execute once knows it cannot (it is in a method).
         builder.defineMethodInner(defNode, getLexicalParent(), getCoverageMode()); // sets interpreterContext
         this.defNode = null;

@@ -6,7 +6,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.ast.RootNode;
-import org.jruby.ir.builder.IRBuilder;
+import org.jruby.ir.builder.IRBuilderAST;
 import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
@@ -205,7 +205,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         // we end up growing dynamicscope potentially based on any changes made.
         staticScope.setIRScope(script);
 
-        IRBuilder builder = IRBuilder.topIRBuilder(runtime.getIRManager(), script);
+        IRBuilderAST builder = IRBuilderAST.topIRBuilder(runtime.getIRManager(), script);
         builder.evalType = !bindingGiven && evalType == EvalType.BINDING_EVAL ? EvalType.INSTANCE_EVAL : evalType;
         InterpreterContext ic = builder.buildEvalRoot(rootNode);
 
