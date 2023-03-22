@@ -29,8 +29,10 @@
 package org.jruby.internal.runtime.methods;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.util.concurrent.Callable;
 
+import com.headius.invokebinder.SmartBinder;
 import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -40,6 +42,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 import static org.jruby.util.StringSupport.split;
 
@@ -130,39 +133,89 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneabl
     }
 
     private MethodHandle ensureTarget0() {
+        MethodHandle target0;
         if (!initialized0) {
-            this.target0 = safeCall(maker0);
+            target0 = safeCall(maker0);
+            if (target0 == null) {
+                target0 = adaptSpecificToVarargs(ensureTarget4(), 0);
+            }
+            this.target0 = target0;
             initialized0 = true;
             maker0 = null;
+        } else {
+            target0 = this.target0;
         }
-        return this.target0;
+        return target0;
     }
 
     private MethodHandle ensureTarget1() {
+        MethodHandle target1;
         if (!initialized1) {
-            this.target1 = safeCall(maker1);
+            target1 = safeCall(maker1);
+            if (target1 == null) {
+                target1 = adaptSpecificToVarargs(ensureTarget4(), 1);
+            }
+            this.target1 = target1;
             initialized1 = true;
             maker1 = null;
+        } else {
+            target1 = this.target1;
         }
-        return this.target1;
+        return target1;
+    }
+
+    private static final com.headius.invokebinder.Signature ARITY_0 =
+            com.headius.invokebinder.Signature.from(
+                    IRubyObject.class,
+                    arrayOf(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, Block.class),
+                    "context", "self", "selfType", "name", "block");
+    private static final com.headius.invokebinder.Signature ARITY_1 = ARITY_0.insertArg(4, "arg0", IRubyObject.class);
+    private static final com.headius.invokebinder.Signature ARITY_2 = ARITY_1.insertArg(5, "arg1", IRubyObject.class);
+    private static final com.headius.invokebinder.Signature ARITY_3 = ARITY_2.insertArg(6, "arg2", IRubyObject.class);
+    private static final com.headius.invokebinder.Signature[] ARITIES = {ARITY_0, ARITY_1, ARITY_2, ARITY_3};
+
+    private MethodHandle adaptSpecificToVarargs(MethodHandle varargs, int arity) {
+        if (arity == 0) {
+            return MethodHandles.insertArguments(varargs, 4, new Object[] {IRubyObject.NULL_ARRAY});
+        }
+
+        return SmartBinder.from(ARITIES[arity])
+                .permute("context", "self", "type", "name", "block", "arg.*")
+                .collect("args", "arg.*")
+                .permute("context", "self", "type", "name", "args", "block")
+                .invoke(varargs).handle();
     }
 
     private MethodHandle ensureTarget2() {
+        MethodHandle target2;
         if (!initialized2) {
-            this.target2 = safeCall(maker2);
+            target2 = safeCall(maker2);
+            if (target2 == null) {
+                target2 = adaptSpecificToVarargs(ensureTarget4(), 2);
+            }
+            this.target2 = target2;
             initialized2 = true;
             maker2 = null;
+        } else {
+            target2 = this.target2;
         }
-        return this.target2;
+        return target2;
     }
 
     private MethodHandle ensureTarget3() {
+        MethodHandle target3;
         if (!initialized3) {
-            this.target3 = safeCall(maker3);
+            target3 = safeCall(maker3);
+            if (target3 == null) {
+                target3 = adaptSpecificToVarargs(ensureTarget4(), 3);
+            }
+            this.target3 = target3;
             initialized3 = true;
             maker3 = null;
+        } else {
+            target3 = this.target3;
         }
-        return this.target3;
+        return target3;
     }
 
     private MethodHandle ensureTarget4() {
