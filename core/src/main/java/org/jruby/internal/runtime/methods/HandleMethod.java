@@ -30,7 +30,7 @@ package org.jruby.internal.runtime.methods;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
 import com.headius.invokebinder.SmartBinder;
 import org.jruby.RubyModule;
@@ -59,11 +59,11 @@ import static org.jruby.util.StringSupport.split;
  * @author headius
  */
 public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneable {
-    private Callable<MethodHandle> maker0;
-    private Callable<MethodHandle> maker1;
-    private Callable<MethodHandle> maker2;
-    private Callable<MethodHandle> maker3;
-    private Callable<MethodHandle> maker4;
+    private Supplier<MethodHandle> maker0;
+    private Supplier<MethodHandle> maker1;
+    private Supplier<MethodHandle> maker2;
+    private Supplier<MethodHandle> maker3;
+    private Supplier<MethodHandle> maker4;
     private MethodHandle target0;
     private MethodHandle target1;
     private MethodHandle target2;
@@ -87,11 +87,11 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneabl
             String parameterDesc,
             final int min,
             final int max,
-            final Callable<MethodHandle> maker0,
-            final Callable<MethodHandle> maker1,
-            final Callable<MethodHandle> maker2,
-            final Callable<MethodHandle> maker3,
-            final Callable<MethodHandle> maker4) {
+            final Supplier<MethodHandle> maker0,
+            final Supplier<MethodHandle> maker1,
+            final Supplier<MethodHandle> maker2,
+            final Supplier<MethodHandle> maker3,
+            final Supplier<MethodHandle> maker4) {
 
         super(implementationClass, visibility, name);
         this.signature = Signature.decode(encodedSignature);
@@ -135,13 +135,15 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneabl
     private MethodHandle ensureTarget0() {
         MethodHandle target0;
         if (!initialized0) {
-            target0 = safeCall(maker0);
-            if (target0 == null) {
+            Supplier<MethodHandle> maker0 = this.maker0;
+            if (maker0 == null) {
                 target0 = adaptSpecificToVarargs(ensureTarget4(), 0);
+            } else {
+                target0 = maker0.get();
             }
             this.target0 = target0;
+            this.maker0 = null;
             initialized0 = true;
-            maker0 = null;
         } else {
             target0 = this.target0;
         }
@@ -151,13 +153,15 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneabl
     private MethodHandle ensureTarget1() {
         MethodHandle target1;
         if (!initialized1) {
-            target1 = safeCall(maker1);
-            if (target1 == null) {
+            Supplier<MethodHandle> maker1 = this.maker1;
+            if (maker1 == null) {
                 target1 = adaptSpecificToVarargs(ensureTarget4(), 1);
+            } else {
+                target1 = maker1.get();
             }
             this.target1 = target1;
+            this.maker1 = null;
             initialized1 = true;
-            maker1 = null;
         } else {
             target1 = this.target1;
         }
@@ -189,13 +193,15 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneabl
     private MethodHandle ensureTarget2() {
         MethodHandle target2;
         if (!initialized2) {
-            target2 = safeCall(maker2);
-            if (target2 == null) {
+            Supplier<MethodHandle> maker2 = this.maker2;
+            if (maker2 == null) {
                 target2 = adaptSpecificToVarargs(ensureTarget4(), 2);
+            } else {
+                target2 = maker2.get();
             }
             this.target2 = target2;
+            this.maker2 = null;
             initialized2 = true;
-            maker2 = null;
         } else {
             target2 = this.target2;
         }
@@ -205,13 +211,15 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneabl
     private MethodHandle ensureTarget3() {
         MethodHandle target3;
         if (!initialized3) {
-            target3 = safeCall(maker3);
-            if (target3 == null) {
+            Supplier<MethodHandle> maker3 = this.maker3;
+            if (maker3 == null) {
                 target3 = adaptSpecificToVarargs(ensureTarget4(), 3);
+            } else {
+                target3 = maker3.get();
             }
             this.target3 = target3;
+            this.maker3 = null;
             initialized3 = true;
-            maker3 = null;
         } else {
             target3 = this.target3;
         }
@@ -219,10 +227,17 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneabl
     }
 
     private MethodHandle ensureTarget4() {
+        MethodHandle target4;
         if (!initialized4) {
-            this.target4 = safeCall(maker4);
+            Supplier<MethodHandle> maker4 = this.maker4;
+            if (maker4 == null) {
+                target4 = null;
+            } else {
+                target4 = maker4.get();
+            }
+            this.target4 = target4;
             initialized4 = true;
-            maker4 = null;
+            this.maker4 = null;
         }
         return this.target4;
     }
