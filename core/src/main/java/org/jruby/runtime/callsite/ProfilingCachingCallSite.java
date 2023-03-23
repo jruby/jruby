@@ -104,7 +104,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
             return cache.method.call(context, self, cache.sourceModule, methodName, args);
         } else {
             totalMonomorphicCalls.set(1);
-            return cacheAndCall(caller, selfType, args, context, self);
+            return cacheAndCall(context, caller, self, selfType, args);
         }
     }
 
@@ -117,7 +117,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
             return cache.method.call(context, self, cache.sourceModule, methodName, args, block);
         } else {
             totalMonomorphicCalls.set(1);
-            return cacheAndCall(caller, selfType, block, args, context, self);
+            return cacheAndCall(context, caller, self, selfType, args, block);
         }
     }
 
@@ -131,7 +131,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
             return cache.method.call(context, self, cache.sourceModule, methodName);
         } else {
             totalMonomorphicCalls.set(1);
-            return cacheAndCall(caller, selfType, context, self);
+            return cacheAndCall(context, caller, self, selfType);
         }
     }
 
@@ -144,7 +144,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
             return cache.method.call(context, self, cache.sourceModule, methodName, block);
         } else {
             totalMonomorphicCalls.set(1);
-            return cacheAndCall(caller, selfType, block, context, self);
+            return cacheAndCall(context, caller, self, selfType, block);
         }
     }
 
@@ -158,7 +158,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
             return cache.method.call(context, self, cache.sourceModule, methodName, arg1);
         } else {
             totalMonomorphicCalls.set(1);
-            return cacheAndCall(caller, selfType, context, self, arg1);
+            return cacheAndCall(context, caller, self, selfType, arg1);
         }
     }
 
@@ -171,7 +171,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
             return cache.method.call(context, self, cache.sourceModule, methodName, arg1, block);
         } else {
             totalMonomorphicCalls.set(1);
-            return cacheAndCall(caller, selfType, block, context, self, arg1);
+            return cacheAndCall(context, caller, self, selfType, arg1, block);
         }
     }
 
@@ -185,7 +185,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
             return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2);
         } else {
             totalMonomorphicCalls.set(1);
-            return cacheAndCall(caller, selfType, context, self, arg1, arg2);
+            return cacheAndCall(context, caller, self, selfType, arg1, arg2);
         }
     }
 
@@ -198,7 +198,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
             return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2, block);
         } else {
             totalMonomorphicCalls.set(1);
-            return cacheAndCall(caller, selfType, block, context, self, arg1, arg2);
+            return cacheAndCall(context, caller, self, selfType, arg1, arg2, block);
         }
     }
 
@@ -212,7 +212,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
             return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2, arg3);
         } else {
             totalMonomorphicCalls.set(1);
-            return cacheAndCall(caller, selfType, context, self, arg1, arg2, arg3);
+            return cacheAndCall(context, caller, self, selfType, arg1, arg2, arg3);
         }
     }
 
@@ -225,7 +225,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
             return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2, arg3, block);
         } else {
             totalMonomorphicCalls.set(1);
-            return cacheAndCall(caller, selfType, block, context, self, arg1, arg2, arg3);
+            return cacheAndCall(context, caller, self, selfType, block, arg1, arg2, arg3);
         }
     }
 }
