@@ -77,8 +77,23 @@ public abstract class CachingCallSite extends CallSite {
         return cacheAndCall(context, caller, self, selfType, args);
     }
 
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, int callInfo, IRubyObject... args) {
+        RubyClass selfType = getMetaClass(self);
+        // This must be retrieved *once* to avoid racing with other threads.
+        CacheEntry cache = this.cache;
+        if (cache.typeOk(selfType)) {
+            return cache.method.call(context, self, cache.sourceModule, methodName, callInfo, args);
+        }
+        return cacheAndCall(context, caller, self, selfType, callInfo, args);
+    }
+
     public IRubyObject fcall(ThreadContext context, IRubyObject self, IRubyObject... args) {
         return call(context, self, self, args);
+    }
+
+    public IRubyObject fcall(ThreadContext context, IRubyObject self, int callInfo, IRubyObject... args) {
+        return call(context, self, self, callInfo, args);
     }
 
     @Override
@@ -96,6 +111,21 @@ public abstract class CachingCallSite extends CallSite {
         return call(context, self, self, args, block);
     }
 
+    public IRubyObject fcall(ThreadContext context, IRubyObject self, int fcall, Block block, IRubyObject... args) {
+        return call(context, self, self, fcall, block, args);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, int callInfo, Block block, IRubyObject... args) {
+        RubyClass selfType = getMetaClass(self);
+        // This must be retrieved *once* to avoid racing with other threads.
+        CacheEntry cache = this.cache;
+        if (cache.typeOk(selfType)) {
+            return cache.method.call(context, self, cache.sourceModule, methodName, callInfo, block, args);
+        }
+        return cacheAndCall(context, caller, self, selfType, callInfo, block, args);
+    }
+
     @Override
     public IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self,
         IRubyObject[] args, Block block) {
@@ -106,10 +136,20 @@ public abstract class CachingCallSite extends CallSite {
         }
     }
 
-    public IRubyObject fcallIter(ThreadContext context, IRubyObject self,
-                                IRubyObject[] args, Block block) {
+    @Override
+    public IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self,
+                                int callInfo, Block block, IRubyObject... args) {
         try {
-            return call(context, self, self, args, block);
+            return call(context, caller, self, callInfo, block, args);
+        } finally {
+            block.escape();
+        }
+    }
+
+    public IRubyObject fcallIter(ThreadContext context, IRubyObject self,
+                                int callInfo, Block block, IRubyObject[] args) {
+        try {
+            return call(context, self, self, callInfo, block, args);
         } finally {
             block.escape();
         }
@@ -451,9 +491,19 @@ public abstract class CachingCallSite extends CallSite {
         return entry.method.call(context, self, entry.sourceModule, methodName, args);
     }
 
+    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass selfType, int callInfo, Block block, IRubyObject... args) {
+        CacheEntry entry = populateCacheEntry(caller, selfType, context, self);
+        return entry.method.call(context, self, entry.sourceModule, methodName, callInfo, block, args);
+    }
+
     protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass selfType) {
         CacheEntry entry = populateCacheEntry(caller, selfType, context, self);
         return entry.method.call(context, self, entry.sourceModule, methodName);
+    }
+
+    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass selfType, int callInfo, IRubyObject[] args) {
+        CacheEntry entry = populateCacheEntry(caller, selfType, context, self);
+        return entry.method.call(context, self, entry.sourceModule, methodName, callInfo, args);
     }
 
     protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass selfType, Block block) {

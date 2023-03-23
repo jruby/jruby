@@ -20,8 +20,7 @@ public class ZSuperInvokeSite extends SuperInvokeSite {
         // TODO: get rid of caller
         // TODO: caching
         if (block == null || !block.isGiven()) block = context.getFrameBlock();
-        IRRuntimeHelpers.setCallInfo(context, flags);
-        return IRRuntimeHelpers.zSuperSplatArgs(context, self, args, block, splatMap);
+        return IRRuntimeHelpers.zSuperSplatArgs(context, self, flags, args, block, splatMap);
     }
 
     public IRubyObject fail(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, IRubyObject[] args, Block block) throws Throwable {

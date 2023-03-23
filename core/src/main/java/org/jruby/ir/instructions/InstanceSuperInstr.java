@@ -131,12 +131,12 @@ public class InstanceSuperInstr extends CallInstr {
         Block block = prepareBlock(context, self, currScope, currDynScope, temp);
         RubyModule definingModule = ((RubyModule) getDefiningModule().retrieve(context, self, currScope, currDynScope, temp));
 
-        IRRuntimeHelpers.setCallInfo(context, getFlags());
+        int callInfo = getFlags();
 
         if (isLiteralBlock) {
-            return IRRuntimeHelpers.instanceSuperIter(context, self, getId(), definingModule, args, block);
+            return IRRuntimeHelpers.instanceSuperIter(context, self, getId(), definingModule, callInfo, args, block);
         } else {
-            return IRRuntimeHelpers.instanceSuper(context, self, getId(), definingModule, args, block);
+            return IRRuntimeHelpers.instanceSuper(context, self, getId(), definingModule, callInfo, args, block);
         }
     }
 

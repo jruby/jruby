@@ -19,8 +19,7 @@ public class UnresolvedSuperInvokeSite extends SuperInvokeSite {
     public IRubyObject invoke(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, IRubyObject[] args, Block block) throws Throwable {
         // TODO: get rid of caller
         // TODO: caching
-        IRRuntimeHelpers.setCallInfo(context, flags);
-        return IRRuntimeHelpers.unresolvedSuperSplatArgs(context, self, args, block, splatMap);
+        return IRRuntimeHelpers.unresolvedSuperSplatArgs(context, self, flags, args, block, splatMap);
     }
 
     public IRubyObject fail(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, IRubyObject[] args, Block block) throws Throwable {

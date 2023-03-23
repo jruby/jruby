@@ -26,7 +26,6 @@ public class ClassSuperIterInvokeSite extends ResolvedSuperInvokeSite {
     public IRubyObject invoke(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, IRubyObject[] args, Block block) throws Throwable {
         // TODO: get rid of caller
         // TODO: caching
-        IRRuntimeHelpers.setCallInfo(context, flags);
-        return IRRuntimeHelpers.classSuperIterSplatArgs(context, self, superName, definingModule, args, block, splatMap);
+        return IRRuntimeHelpers.classSuperIterSplatArgs(context, self, superName, definingModule, flags, args, block, splatMap);
     }
 }

@@ -41,6 +41,7 @@ import org.jruby.PrependedModule;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -156,6 +157,45 @@ public abstract class DynamicMethod {
         } else {
             flags &= ~BUILTIN_FLAG;
         }
+    }
+
+    /**
+     * A call path specialized for passing keyword arguments. Keywords can be passed
+     * as a Hash or as a series of values, with the exact configuration being passed
+     * in callInfo. The default version sets callInfo using thread-local storage.
+     *
+     * @param context The thread context for the currently executing thread
+     * @param self The 'self' or 'receiver' object to use for this call
+     * @param clazz The Ruby class against which this method is binding
+     * @param name The incoming name used to invoke this method
+     * @param callInfo The call info flags for passing keyword configuration
+     * @param args The arguments and keywords for the method
+     * @return The result of the call
+     */
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz,
+                                     String name, int callInfo, IRubyObject... args) {
+        IRRuntimeHelpers.setCallInfo(context, callInfo);
+        return call(context, self, clazz, name, args);
+    }
+
+    /**
+     * A call path specialized for passing keyword arguments. Keywords can be passed
+     * as a Hash or as a series of values, with the exact configuration being passed
+     * in callInfo. The default version sets callInfo using thread-local storage.
+     *
+     * @param context The thread context for the currently executing thread
+     * @param self The 'self' or 'receiver' object to use for this call
+     * @param clazz The Ruby class against which this method is binding
+     * @param name The incoming name used to invoke this method
+     * @param callInfo The call info flags for passing keyword configuration
+     * @param block The block passed to this invocation
+     * @param args The arguments and keywords for the method
+     * @return The result of the call
+     */
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz,
+                            String name, int callInfo, Block block, IRubyObject... args) {
+        IRRuntimeHelpers.setCallInfo(context, callInfo);
+        return call(context, self, clazz, name, args, block);
     }
 
     /**

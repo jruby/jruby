@@ -74,6 +74,8 @@ public class NormalInvocationCompiler implements InvocationCompiler {
         MethodType incoming, outgoing;
         String incomingSig, outgoingSig;
 
+        boolean needsCallInfo = true;
+
         IRBytecodeAdapter.BlockPassType blockPassType = IRBytecodeAdapter.BlockPassType.fromIR(call);
         boolean blockGiven = blockPassType.given();
         boolean functional = call.getCallType() == CallType.FUNCTIONAL || call.getCallType() == CallType.VARIABLE;
@@ -81,8 +83,9 @@ public class NormalInvocationCompiler implements InvocationCompiler {
             if (blockGiven) {
                 switch (arity) {
                     case -1:
+                        needsCallInfo = false;
                         incoming = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class));
-                        outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class));
+                        outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, int.class, Block.class, JVM.OBJECT_ARRAY));
                         break;
                     case 0:
                     case 1:
@@ -92,15 +95,17 @@ public class NormalInvocationCompiler implements InvocationCompiler {
                         outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, arity, Block.class));
                         break;
                     default:
+                        needsCallInfo = false;
                         incoming = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, arity, Block.class));
-                        outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class));
+                        outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, int.class, Block.class, JVM.OBJECT_ARRAY));
                         break;
                 }
             } else {
                 switch (arity) {
                     case -1:
+                        needsCallInfo = false;
                         incoming = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT_ARRAY));
-                        outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT_ARRAY));
+                        outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, int.class, JVM.OBJECT_ARRAY));
                         break;
                     case 0:
                     case 1:
@@ -110,8 +115,9 @@ public class NormalInvocationCompiler implements InvocationCompiler {
                         outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, arity));
                         break;
                     default:
+                        needsCallInfo = false;
                         incoming = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, arity));
-                        outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT_ARRAY));
+                        outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, int.class, JVM.OBJECT_ARRAY));
                         break;
                 }
             }
@@ -119,8 +125,9 @@ public class NormalInvocationCompiler implements InvocationCompiler {
             if (blockGiven) {
                 switch (arity) {
                     case -1:
+                        needsCallInfo = false;
                         incoming = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class));
-                        outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class));
+                        outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, int.class, Block.class, JVM.OBJECT_ARRAY));
                         break;
                     case 0:
                     case 1:
@@ -130,15 +137,17 @@ public class NormalInvocationCompiler implements InvocationCompiler {
                         outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity, Block.class));
                         break;
                     default:
+                        needsCallInfo = false;
                         incoming = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity, Block.class));
-                        outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class));
+                        outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, int.class, Block.class, JVM.OBJECT_ARRAY));
                         break;
                 }
             } else {
                 switch (arity) {
                     case -1:
+                        needsCallInfo = false;
                         incoming = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY));
-                        outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY));
+                        outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, int.class, JVM.OBJECT_ARRAY));
                         break;
                     case 0:
                     case 1:
@@ -148,8 +157,9 @@ public class NormalInvocationCompiler implements InvocationCompiler {
                         outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity));
                         break;
                     default:
+                        needsCallInfo = false;
                         incoming = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity));
-                        outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY));
+                        outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, int.class, JVM.OBJECT_ARRAY));
                         break;
                 }
             }
@@ -179,6 +189,10 @@ public class NormalInvocationCompiler implements InvocationCompiler {
 
             switch (arity) {
                 case -1:
+                    compiler.adapter.pushInt(call.getFlags());
+                    if (blockGiven) compiler.adapter.aload(selfBase + 2);
+                    compiler.adapter.aload(selfBase + 1);
+                    break;
                 case 1:
                     compiler.adapter.aload(selfBase + 1);
                     if (blockGiven) compiler.adapter.aload(selfBase + 2);
@@ -198,8 +212,9 @@ public class NormalInvocationCompiler implements InvocationCompiler {
                     if (blockGiven) compiler.adapter.aload(selfBase + 4);
                     break;
                 default:
-                    IRBytecodeAdapter.buildArrayFromLocals(compiler.adapter, selfBase + 1, arity);
+                    compiler.adapter.pushInt(call.getFlags());
                     if (blockGiven) compiler.adapter.aload(selfBase + 1 + arity);
+                    IRBytecodeAdapter.buildArrayFromLocals(compiler.adapter, selfBase + 1, arity);
                     break;
             }
 
@@ -211,7 +226,7 @@ public class NormalInvocationCompiler implements InvocationCompiler {
         });
 
         // now set up callInfo and call the method
-        setCallInfo(call.getFlags());
+        if (needsCallInfo) setCallInfo(call.getFlags());
         compiler.adapter.invokestatic(clsName, methodName, incomingSig);
     }
 

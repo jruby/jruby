@@ -81,9 +81,8 @@ public class ZSuperInstr extends UnresolvedSuperInstr {
         IRubyObject[] args = prepareArguments(context, self, currScope, currDynScope, temp);
         Block block = prepareBlock(context, self, currScope, currDynScope, temp);
 
-        IRRuntimeHelpers.setCallInfo(context, getFlags());
 
-        return IRRuntimeHelpers.zSuper(context, self, args, block);
+        return IRRuntimeHelpers.zSuper(context, self, getFlags(), args, block);
     }
 
     @Override
