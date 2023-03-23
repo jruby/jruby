@@ -130,7 +130,7 @@ jobs:
     name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }} +indy)
 
     env:
-      JRUBY_OPTS: '-Xinvokedynamic.handles -Xcompile.invokedynamic'
+      JRUBY_OPTS: '-Xcompile.invokedynamic'
 
     steps:
       - name: checkout
