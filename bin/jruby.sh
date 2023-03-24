@@ -8,8 +8,14 @@
 if command -v local >/dev/null; then
     :
 elif command -v typeset >/dev/null; then
-    # ksh93 has typeset but not local
+    # ksh93 and older have typeset but not local, and expand aliases at parse
+    # time so require re-sourcing the script
     alias local=typeset
+    if [ -z "$KSH_VERSION" ] || (eval : '"${.sh.version}"' >/dev/null 2>&1); then
+        # shellcheck source=/dev/null
+        . "$0"
+        exit
+    fi
 else
     echo >&2 "Error: Your shell does not support local variables. Re-run this script with one that does (e.g. bash, ksh)"
     exit 1
