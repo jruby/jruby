@@ -20,13 +20,13 @@ fi
 # esceval [ARGUMENT...]
 #
 # Escape ARGUMENT for safe use with eval
-# Returns escaped arguments via $result
+# Returns escaped arguments via $REPLY
 # Thanks to @mentalisttraceur for original implementation:
 # https://github.com/mentalisttraceur/esceval
 esceval()
 {
     local escaped= unescaped= output=
-    result=
+    REPLY=
 
     [ $# -gt 0 ] || return 0
     while true; do
@@ -46,7 +46,7 @@ esceval()
         [ $# -gt 0 ] || break
         output="$output $escaped"
     done
-    result="$output $escaped"
+    REPLY="$output $escaped"
 }
 
 # assign LISTNAME ELEMENT [ELEMENT...]
@@ -54,11 +54,11 @@ esceval()
 # Assign ELEMENT to the list named by LISTNAME.
 assign() {
     local listname="$1"
-    local result=
+    local REPLY=
     shift
 
     esceval "$@"
-    eval "$listname=\"\${result}\""
+    eval "$listname=\"\${REPLY}\""
 }
 
 # append LISTNAME ELEMENT [ELEMENT...]
@@ -66,11 +66,11 @@ assign() {
 # Append ELEMENT to the list named by LISTNAME.
 append() {
     local listname="$1"
-    local result=
+    local REPLY=
     shift
 
     esceval "$@"
-    eval "$listname=\"\${$listname} \${result}\""
+    eval "$listname=\"\${$listname} \${REPLY}\""
 }
 
 # prepend LISTNAME ELEMENT [ELEMENT...]
@@ -78,11 +78,11 @@ append() {
 # Prepend ELEMENT to the list named by LISTNAME, preserving order.
 prepend() {
     local listname="$1"
-    local result=
+    local REPLY=
     shift
 
     esceval "$@"
-    eval "$listname=\"\${result} \${$listname}\""
+    eval "$listname=\"\${REPLY} \${$listname}\""
 }
 
 # extend LISTNAME1 LISTNAME2
@@ -196,14 +196,14 @@ dir_name() {
         */*[!/]*)
             trail=${filename##*[!/]}
             filename=${filename%%"$trail"}
-            result=${filename%/*}
+            REPLY=${filename%/*}
             ;;
         *[!/]*)
             trail=${filename##*[!/]}
-            result="."
+            REPLY="."
             ;;
         *)
-            result="/"
+            REPLY="/"
             ;;
     esac
 }
@@ -214,14 +214,14 @@ base_name() {
         */*[!/]*)
             trail=${filename##*[!/]}
             filename=${filename%%"$trail"}
-            result=${filename##*/}
+            REPLY=${filename##*/}
             ;;
         *[!/]*)
             trail=${filename##*[!/]}
-            result=${filename%%"$trail"}
+            REPLY=${filename%%"$trail"}
             ;;
         *)
-            result="/"
+            REPLY="/"
             ;;
     esac
 }
@@ -238,19 +238,19 @@ resolve_symlinks() {
         sym="$(readlink "$cur_path")"
 
         dir_name "$cur_path"
-        dirname="$result"
+        dirname="$REPLY"
 
         sym_base="$(cd -P -- "$dirname" >/dev/null && pwd -P)"
 
         dir_name "$sym"
-        dirname="$result"
+        dirname="$REPLY"
 
         base_name "$sym"
-        basename="$result"
+        basename="$REPLY"
 
         cur_path="$(cd "$sym_base" && cd "$dirname" && pwd -P)/$basename"
     done
-    result="$cur_path"
+    REPLY="$cur_path"
 }
 
 # ----- Determine JRUBY_HOME based on this executable's path ------------------
@@ -263,10 +263,10 @@ else
     script_src="$0"
 fi
 dir_name "$script_src"
-BASE_DIR="$(cd -P -- "$result" >/dev/null && pwd -P)"
+BASE_DIR="$(cd -P -- "$REPLY" >/dev/null && pwd -P)"
 base_name "$script_src"
-resolve_symlinks "$BASE_DIR/$result"
-SELF_PATH="$result"
+resolve_symlinks "$BASE_DIR/$REPLY"
+SELF_PATH="$REPLY"
 
 JRUBY_HOME="${SELF_PATH%/*/*}"
 
@@ -318,12 +318,12 @@ if [ -z "$JAVACMD" ]; then
         else
             # Linux and others have a chain of symlinks
             resolve_symlinks "$(command -v java)"
-            JAVACMD="$result"
+            JAVACMD="$REPLY"
 
             # export separately from command execution
             dir_name "$JAVACMD"
-            dir_name "$result"
-            JAVA_HOME="$result"
+            dir_name "$REPLY"
+            JAVA_HOME="$REPLY"
         fi
     elif $cygwin; then
         JAVACMD="$(cygpath -u "$JAVA_HOME")/bin/java"
@@ -332,11 +332,11 @@ if [ -z "$JAVACMD" ]; then
     fi
 else
     resolve_symlinks "$(command -v "$JAVACMD")"
-    expanded_javacmd="$result"
+    expanded_javacmd="$REPLY"
     if [ -z "$JAVA_HOME" ] && [ -x "$expanded_javacmd" ]; then
         dir_name "$expanded_javacmd"
-        dir_name "$result"
-        JAVA_HOME="$result"
+        dir_name "$REPLY"
+        JAVA_HOME="$REPLY"
     fi
 fi
 
