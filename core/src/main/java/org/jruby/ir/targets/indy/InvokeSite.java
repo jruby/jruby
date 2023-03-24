@@ -252,7 +252,7 @@ public abstract class InvokeSite extends MutableCallSite {
         if (literalClosure) {
             try {
                 if (passSymbol) {
-                    return method.call(context, self, sourceModule, methodName, Helpers.arrayOf(context.runtime.newSymbol(methodName), args), block);
+                    return method.call(context, self, sourceModule, "method_missing", Helpers.arrayOf(context.runtime.newSymbol(methodName), args), block);
                 } else {
                     return method.call(context, self, sourceModule, methodName, args, block);
                 }
