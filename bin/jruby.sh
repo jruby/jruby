@@ -226,31 +226,83 @@ base_name() {
     esac
 }
 
-# Resolve all symlinks in a chain
-resolve_symlinks() {
-    local cur_path= sym= sym_base= dirname= basename=
-    cur_path="$1"
-    while [ -h "$cur_path" ]; do
-        # 1) cd to directory of the symlink
-        # 2) cd to the directory of where the symlink points
-        # 3) get the physical pwd
-        # 4) append the basename
-        sym="$(readlink "$cur_path")"
-
-        dir_name "$cur_path"
-        dirname="$REPLY"
-
-        sym_base="$(cd -P -- "$dirname" >/dev/null && pwd -P)"
-
-        dir_name "$sym"
-        dirname="$REPLY"
-
-        base_name "$sym"
-        basename="$REPLY"
-
-        cur_path="$(cd "$sym_base" && cd "$dirname" && pwd -P)/$basename"
+# Determine whether path is absolute and contains no relative segments or symlinks
+path_is_canonical() {
+    local path=
+    for path; do
+        case $path in
+            ([!/]*) return 1 ;;
+            (./*|../*) return 1 ;;
+            (*/.|*/..) return 1 ;;
+            (*/./*|*/../*) return 1 ;;
+        esac
+        while [ "$path" ]; do
+            [ -h "$path" ] && return 1
+            path="${path%/*}"
+        done
     done
-    REPLY="$cur_path"
+    return 0
+}
+
+# Resolve directory to its canonical value
+resolve_dir() {
+    # Some shells (dash, ksh) resolve relative paths by default before cd'ing, i.e.
+    # cd /foo/bar/../baz = cd /foo/baz
+    # This is fine unless bar is a symlink, in which case the second form is
+    # invalid. Passing -P to cd fixes this behaviour.
+    REPLY="$(cd -P -- "$1" && pwd)"
+}
+
+# Resolve symlink until it's not a symlink
+resolve_file() {
+    local current="$1" target=
+
+    while [ -h "$current" ]; do
+        target="$(readlink "$current")" || return
+        case $target in
+            (/*) current="$target" ;;
+            # handle relative symlinks
+            (*) dir_name "$current"; current="$REPLY/$target" ;;
+        esac
+    done
+    REPLY="$current"
+}
+
+# Resolve path to its canonical value
+resolve() {
+    local target="$1" base=
+    REPLY=
+
+    # Verify target actually exists (and isn't too deep in symlinks)
+    if ! [ -e "$target" ]; then
+        echo >&2 "Error: No such file or directory: $target"
+        return 1
+    fi
+
+    # Realpath is way faster than repeatedly calling readlink, so use it if possible
+    if command -v realpath >/dev/null; then
+        REPLY="$(realpath "$target")" && return
+    fi
+
+    # Take shortcut for directories
+    if [ -d "$target" ]; then
+        resolve_dir "$target" && return
+    fi
+
+    # Ensure $target is not a symlink
+    resolve_file "$target" || return
+    target="$REPLY"
+
+    # Resolve parent directory if it's not absolute
+    if ! path_is_canonical "$target"; then
+        dir_name "$target"
+        resolve_dir "$REPLY" || return
+        base="$REPLY"
+
+        base_name "$target"
+        target="$base/$REPLY"
+    fi
+    REPLY="$target"
 }
 
 # ----- Determine JRUBY_HOME based on this executable's path ------------------
@@ -265,7 +317,7 @@ fi
 dir_name "$script_src"
 BASE_DIR="$(cd -P -- "$REPLY" >/dev/null && pwd -P)"
 base_name "$script_src"
-resolve_symlinks "$BASE_DIR/$REPLY"
+resolve "$BASE_DIR/$REPLY"
 SELF_PATH="$REPLY"
 
 JRUBY_HOME="${SELF_PATH%/*/*}"
@@ -317,7 +369,7 @@ if [ -z "$JAVACMD" ]; then
             JAVACMD="$JAVA_HOME"/bin/java
         else
             # Linux and others have a chain of symlinks
-            resolve_symlinks "$(command -v java)"
+            resolve "$(command -v java)"
             JAVACMD="$REPLY"
 
             # export separately from command execution
@@ -331,7 +383,7 @@ if [ -z "$JAVACMD" ]; then
         JAVACMD="$JAVA_HOME/bin/java"
     fi
 else
-    resolve_symlinks "$(command -v "$JAVACMD")"
+    resolve "$(command -v "$JAVACMD")"
     expanded_javacmd="$REPLY"
     if [ -z "$JAVA_HOME" ] && [ -x "$expanded_javacmd" ]; then
         dir_name "$expanded_javacmd"
