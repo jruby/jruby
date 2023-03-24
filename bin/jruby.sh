@@ -340,13 +340,22 @@ else
     fi
 fi
 
-# Detect modularized Java if modules file is present or a MODULES line appears in release
-if [ -f "$JAVA_HOME"/lib/modules ] \
-    || {
-        [ -f "$JAVA_HOME"/release ] \
-        && grep -q ^MODULES "$JAVA_HOME"/release
-    }
-then
+# Detect modularized Java
+java_is_modular() {
+    # check that modules file is present
+    if [ -f "$JAVA_HOME"/lib/modules ]; then
+        return 0
+    fi
+
+    # check if a MODULES line appears in release
+    if [ -f "$JAVA_HOME"/release ] && grep -q ^MODULES "$JAVA_HOME"/release; then
+        return 0
+    fi
+
+    return 1
+}
+
+if java_is_modular; then
     use_modules=true
 else
     use_modules=false
