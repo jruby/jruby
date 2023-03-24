@@ -1096,11 +1096,11 @@ public class Bootstrap {
                     if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
                         LOG.info(site.name() + "\tbound directly to JVM method " + Bootstrap.logMethod(method));
                     }
-                }
 
-                JRubyMethod anno = nativeCall.getMethod().getAnnotation(JRubyMethod.class);
-                if (anno != null && anno.frame()) {
-                    mh = InvocationLinker.wrapWithFrameOnly(site.signature, entry.sourceModule, site.name(), mh);
+                    JRubyMethod anno = nativeCall.getMethod().getAnnotation(JRubyMethod.class);
+                    if (anno != null && anno.frame()) {
+                        mh = InvocationLinker.wrapWithFrameOnly(site.signature, entry.sourceModule, site.name(), mh);
+                    }
                 }
             }
         }
