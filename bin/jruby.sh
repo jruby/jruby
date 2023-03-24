@@ -174,13 +174,14 @@ add_log() {
 
 # Logic to process "arguments files" on both Java 8 and Java 9+
 process_java_opts() {
-    local java_opts_file="$1"
+    local java_opts_file="$1" java_opts=
     if [ -r "$java_opts_file" ]; then
         add_log
         add_log "Adding Java options from: $java_opts_file"
 
         while read -r line; do
             if [ "$line" ]; then
+                java_opts="${java_opts} ${line}"
                 add_log "  $line"
             fi
         done < "$java_opts_file"
@@ -190,7 +191,7 @@ process_java_opts() {
         if $use_modules; then
             java_opts_from_files="$java_opts_from_files @$java_opts_file"
         else
-            java_opts_from_files="$java_opts_from_files $(cat "$java_opts_file")"
+            java_opts_from_files="$java_opts_from_files $java_opts"
         fi
     fi
 }
