@@ -161,7 +161,7 @@ public class MarshalStream extends FilterOutputStream {
                     // object has instance vars and isn't a class, get a snapshot to be marshalled
                     // and output the ivar header here
 
-                    variables = value.getVariableList();
+                    variables = value.getMarshalVariableList();
 
                     // check if any of those variables were actually set
                     if (variables.size() > 0 || shouldMarshalEncoding(value)) {
@@ -380,7 +380,7 @@ public class MarshalStream extends FilterOutputStream {
 
         List<Variable<Object>> variables = null;
         if (marshaled.hasVariables()) {
-            variables = marshaled.getVariableList();
+            variables = marshaled.getMarshalVariableList();
             if (variables.size() > 0) {
                 write(TYPE_IVAR);
             } else {

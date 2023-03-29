@@ -1269,7 +1269,7 @@ public class RubyClass extends RubyModule {
             IRubyObject object = (IRubyObject) obj;
 
             marshalStream.registerLinkTarget(object);
-            marshalStream.dumpVariables(object.getVariableList());
+            marshalStream.dumpVariables(object.getMarshalVariableList());
         }
 
         @Override
