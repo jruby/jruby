@@ -172,7 +172,7 @@ public class RubyProcess {
             RubyStatus status = (RubyStatus) obj;
 
             marshalStream.registerLinkTarget(status);
-            List<Variable<Object>> attrs = status.getVariableList();
+            List<Variable<Object>> attrs = status.getMarshalVariableList();
 
             attrs.add(new VariableEntry("status", runtime.newFixnum(status.status)));
             attrs.add(new VariableEntry("pid", runtime.newFixnum(status.pid)));

@@ -361,6 +361,13 @@ public interface IRubyObject {
      */
     List<Variable<Object>> getVariableList();
 
+    /**
+     * @return a list of all marshalable variables (ivar/cvar/constant/internal)
+     */
+    default List<Variable<Object>> getMarshalVariableList() {
+        return getVariableList();
+    }
+
     //
     // INSTANCE VARIABLE METHODS
     //

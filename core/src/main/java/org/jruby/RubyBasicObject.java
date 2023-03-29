@@ -1332,6 +1332,20 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     /**
+     * @see IRubyObject#getMarshalVariableList()
+     */
+    public List<Variable<Object>> getMarshalVariableList() {
+        Map<String, VariableAccessor> ivarAccessors = metaClass.getVariableAccessorsForRead();
+        ArrayList<Variable<Object>> list = new ArrayList<>(ivarAccessors.size());
+        for (Map.Entry<String, VariableAccessor> entry : ivarAccessors.entrySet()) {
+            Object value = entry.getValue().get(this);
+            if (value == null || !(value instanceof Serializable)) continue;
+            list.add(new VariableEntry<>(entry.getKey(), value));
+        }
+        return list;
+    }
+
+    /**
      * Gets a name list of all variables in this object.
      */
     @Override

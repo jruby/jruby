@@ -458,6 +458,12 @@ describe "Marshal.dump" do
       obj = MarshalSpec::BasicObjectSubWithRespondToFalse.new
       Marshal.dump(obj).should == "\x04\bo:2MarshalSpec::BasicObjectSubWithRespondToFalse\x00"
     end
+
+    it "dumps without marshaling any attached finalizer" do
+      obj = Object.new
+      ObjectSpace.define_finalizer(obj, &:itself)
+      Marshal.load(Marshal.dump(obj)).class.should == Object
+    end
   end
 
   describe "with a Range" do
