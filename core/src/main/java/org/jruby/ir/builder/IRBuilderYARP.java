@@ -17,6 +17,7 @@ import org.jruby.ir.instructions.BuildSplatInstr;
 import org.jruby.ir.instructions.CheckArityInstr;
 import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.DefineModuleInstr;
+import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LabelInstr;
 import org.jruby.ir.instructions.LoadImplicitClosureInstr;
 import org.jruby.ir.instructions.RaiseRequiredKeywordArgumentError;
@@ -30,6 +31,7 @@ import org.jruby.ir.instructions.ReceiveRestArgInstr;
 import org.jruby.ir.instructions.ReifyClosureInstr;
 import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.instructions.SearchConstInstr;
+import org.jruby.ir.instructions.ThreadPollInstr;
 import org.jruby.ir.instructions.ToAryInstr;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.CurrentScope;
@@ -81,12 +83,18 @@ public class IRBuilderYARP extends IRBuilder {
             return buildConstantRead((ConstantReadNode) node);
         } else if (node instanceof DefNode) {
             return buildDef((DefNode) node);
+        } else if (node instanceof FalseNode) {
+            return fals();
+        } else if (node instanceof IfNode) {
+            return buildIf((IfNode) node);
         } else if (node instanceof IntegerNode) {
             return buildInteger((IntegerNode) node);
         } else if (node instanceof LocalVariableReadNode) {
             return buildLocalVariableRead((LocalVariableReadNode) node);
         } else if (node instanceof ModuleNode) {
             return buildModule((ModuleNode) node);
+        } else if (node instanceof NilNode) {
+            return nil();
         } else if (node instanceof ProgramNode) {
             return buildProgram((ProgramNode) node);
         } else if (node instanceof SplatNode) {
@@ -97,6 +105,10 @@ public class IRBuilderYARP extends IRBuilder {
             return buildString((StringNode) node);
         } else if (node instanceof SymbolNode) {
             return buildSymbol((SymbolNode) node);
+        } else if (node instanceof TrueNode) {
+            return tru();
+        } else if (node instanceof UnlessNode) {
+            return buildUnless((UnlessNode) node);
         } else {
             throw new RuntimeException("Unhandled Node type: " + node);
         }
@@ -185,6 +197,15 @@ public class IRBuilderYARP extends IRBuilder {
 
     private Operand buildDefs(DefNode node) {
         return buildDefn(buildNewMethod(node, false));
+    }
+
+    @Override
+    public Operand buildGeneric(Object node) {
+        return build((Node) node);
+    }
+
+    private Operand buildIf(IfNode node) {
+        return buildConditional(node.predicate, node.statements, node.consequent);
     }
 
     private Operand buildInteger(IntegerNode node) {
@@ -312,6 +333,10 @@ public class IRBuilderYARP extends IRBuilder {
 
     private Operand buildSymbol(SymbolNode node) {
         return new Symbol(symbol(byteListFromSource(node.value)));
+    }
+
+    private Operand buildUnless(UnlessNode node) {
+        return buildConditional(node.predicate, node.consequent, node.statements);
     }
 
     /**

@@ -53,7 +53,6 @@ import org.jruby.ir.operands.Range;
 import org.jruby.ir.operands.Rational;
 import org.jruby.ir.operands.Regexp;
 import org.jruby.ir.operands.SValue;
-import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.operands.Self;
 import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.Symbol;
@@ -2287,6 +2286,11 @@ public class IRBuilderAST extends IRBuilder {
         //     p a
         // we are guaranteed that the value passed into foo and 'a' point to the same object
         // because of the use of copyAndReturnValue method for literal objects.
+    }
+
+    @Override
+    public Operand buildGeneric(Object node) {
+        return build((Node) node);
     }
 
     @Override

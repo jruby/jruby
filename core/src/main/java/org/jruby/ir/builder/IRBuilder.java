@@ -69,6 +69,7 @@ import org.jruby.ir.operands.TemporaryClosureVariable;
 import org.jruby.ir.operands.TemporaryCurrentModuleVariable;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.UndefinedValue;
+import org.jruby.ir.operands.UnexecutableNil;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.runtime.ArgumentDescriptor;
@@ -95,6 +96,8 @@ import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_REST;
 
 public abstract class IRBuilder {
+    static final UnexecutableNil U_NIL = UnexecutableNil.U_NIL;
+
     private IRManager manager;
     protected final IRScope scope;
     protected final IRBuilder parent;
@@ -871,6 +874,63 @@ public abstract class IRBuilder {
                                 copy((Variable) ret, right.run()))));
     }
 
+    // FIXME: AST needs variable passed in to work which I think means some context really needs to pass in the result at least in AST build?
+    public Operand buildConditional(Object predicate, Object statements, Object consequent) {
+        Label    falseLabel = getNewLabel();
+        Label    doneLabel  = getNewLabel();
+        addInstr(createBranch(buildGeneric(predicate), fals(), falseLabel));
+
+        boolean thenNull = false;
+        boolean elseNull = false;
+        boolean thenUnil = false;
+        boolean elseUnil = false;
+        Variable result = null;
+
+        // Build the then part of the if-statement
+        if (statements != null) {
+            Operand statementsResult = buildGeneric(statements);
+            if (statementsResult != U_NIL) { // thenResult can be U_NIL if then-body ended with a return!
+                // SSS FIXME: Can look at the last instr and short-circuit this jump if it is a break rather
+                // than wait for dead code elimination to do it
+                result = getValueInTemporaryVariable(statementsResult);
+                addInstr(new JumpInstr(doneLabel));
+            } else {
+                result = statementsResult == null ? temp() : result;
+                thenUnil = true;
+            }
+        } else {
+            thenNull = true;
+            result = temp();
+            copy(result, nil());
+            addInstr(new JumpInstr(doneLabel));
+        }
+
+        // Build the else part of the if-statement
+        addInstr(new LabelInstr(falseLabel));
+        if (consequent != null) {
+            Operand elseResult = buildGeneric(consequent);
+            // elseResult can be U_NIL if then-body ended with a return!
+            if (elseResult != U_NIL) {
+                copy(result, elseResult);
+            } else {
+                elseUnil = true;
+            }
+        } else {
+            elseNull = true;
+            copy(result, nil());
+        }
+
+        if (thenNull && elseNull) {
+            addInstr(new LabelInstr(doneLabel));
+            return nil();
+        } else if (thenUnil && elseUnil) {
+            return U_NIL;
+        } else {
+            addInstr(new LabelInstr(doneLabel));
+            return result;
+        }
+    }
+
     public Operand buildDefn(IRMethod method) {
         addInstr(new DefineInstanceMethodInstr(method));
         return new Symbol(method.getName());
@@ -958,6 +1018,7 @@ public abstract class IRBuilder {
         return zsuperResult;
     }
 
+    public abstract Operand buildGeneric(Object node);
     public abstract void receiveMethodArgs(Object defNode);
     public abstract Operand buildMethodBody(Object defNode);
     public abstract int getMethodEndLine(Object defNode);
