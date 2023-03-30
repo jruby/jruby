@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.util.ByteList;
 import org.jruby.util.log.Logger;
@@ -67,6 +68,9 @@ import static org.jruby.ir.IRFlags.*;
  * and so on ...
  */
 public abstract class IRScope implements ParseResult {
+    public DynamicScope getDynamicScope() {
+        return null;
+    }
     public static final Logger LOG = LoggerFactory.getLogger(IRScope.class);
 
     private static final Collection<IRClosure> NO_CLOSURES = Collections.EMPTY_LIST;

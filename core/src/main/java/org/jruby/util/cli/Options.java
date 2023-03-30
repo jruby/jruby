@@ -178,6 +178,8 @@ public class Options {
     public static final Option<Boolean> DUMP_INSTANCE_VARS = bool(DEBUG, "dump.variables", false, "Dump class + instance var names on first new of Object subclasses.");
     public static final Option<Boolean> REWRITE_JAVA_TRACE = bool(DEBUG, "rewrite.java.trace", true, "Rewrite stack traces from exceptions raised in Java calls.");
 
+    public static final Option<Boolean> PARSER_YARP = bool(DEBUG, "parser.yarp", false, "Dump class + instance var names on first new of Object subclasses.");
+
     public static final Option<Boolean> JI_SETACCESSIBLE = bool(JAVA_INTEGRATION, "ji.setAccessible", true, "Try to set inaccessible Java methods to be accessible.");
     public static final Option<Boolean> JI_UPPER_CASE_PACKAGE_NAME_ALLOWED = bool(JAVA_INTEGRATION, "ji.upper.case.package.name.allowed", false, "Allow Capitalized Java package names.");
     public static final Option<Boolean> INTERFACES_USEPROXY = bool(JAVA_INTEGRATION, "interfaces.useProxy", false, "Use java.lang.reflect.Proxy for interface impl.");

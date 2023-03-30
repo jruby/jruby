@@ -1,5 +1,6 @@
 package org.jruby.ir.builder;
 
+import org.jruby.ParseResult;
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyComplex;
@@ -57,13 +58,11 @@ import org.jruby.ir.operands.Self;
 import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.Symbol;
 import org.jruby.ir.operands.SymbolProc;
-import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.UnexecutableNil;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.ArgumentType;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
@@ -82,6 +81,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.function.Function;
 
+import static org.jruby.ir.builder.IRBuilder.AndType.*;
 import static org.jruby.ir.instructions.Instr.EMPTY_OPERANDS;
 import static org.jruby.ir.instructions.IntegerMathInstr.Op.ADD;
 import static org.jruby.ir.instructions.IntegerMathInstr.Op.SUBTRACT;
@@ -170,15 +170,13 @@ public class IRBuilderAST extends IRBuilder {
         super(manager, scope, parent, variableBuilder);
     }
 
-    public IRBuilderAST(IRManager manager, IRScope scope, IRBuilder parent) {
-        this(manager, scope, parent, null);
+    @Override
+    public Operand build(ParseResult result) {
+        return build(((RootNode) result).getBodyNode());
     }
 
-    public void addArgumentDescription(ArgumentType type, RubySymbol name) {
-        if (argumentDescriptions == null) argumentDescriptions = new ArrayList<>();
-
-        argumentDescriptions.add(type);
-        argumentDescriptions.add(name);
+    public IRBuilderAST(IRManager manager, IRScope scope, IRBuilder parent) {
+        this(manager, scope, parent, null);
     }
 
     private void determineIfWeNeedLineNumber(Node node) {
@@ -305,10 +303,6 @@ public class IRBuilderAST extends IRBuilder {
         return new IRBuilderAST(manager, newScope, this);
     }
 
-    public static IRBuilderAST topIRBuilder(IRManager manager, IRScope newScope) {
-        return new IRBuilderAST(manager, newScope, null);
-    }
-
     public Operand build(Node node) {
         return build(null, node);
     }
@@ -402,12 +396,6 @@ public class IRBuilderAST extends IRBuilder {
         // We need to preserve order in cases (like in presence of assignments) except that immutable
         // literals can never change value so we can still emit these out of order.
         return preserveOrder && !(value instanceof ImmutableLiteral) ? copy(value) : value;
-    }
-
-    protected Variable getValueInTemporaryVariable(Operand val) {
-        if (val != null && val instanceof TemporaryVariable) return (Variable) val;
-
-        return copy(val);
     }
 
     // Return the last argument in the list as this represents rhs of the overall attrassign expression
@@ -734,42 +722,15 @@ public class IRBuilderAST extends IRBuilder {
     }
 
     public Operand buildAlias(final AliasNode alias) {
-        Operand newName = build(alias.getNewName());
-        Operand oldName = build(alias.getOldName());
-        addInstr(new AliasInstr(newName, oldName));
-
-        return nil();
+        return buildAlias(build(alias.getNewName()), build(alias.getOldName()));
     }
 
-    // Translate "ret = (a && b)" --> "ret = (a ? b : false)" -->
-    //
-    //    v1 = -- build(a) --
-    //       OPT: ret can be set to v1, but effectively v1 is false if we take the branch to L.
-    //            while this info can be inferred by using attributes, why bother if we can do this?
-    //    ret = v1
-    //    beq(v1, false, L)
-    //    v2 = -- build(b) --
-    //    ret = v2
-    // L:
-    //
     public Operand buildAnd(final AndNode andNode) {
-        if (andNode.getFirstNode().getNodeType().alwaysTrue()) {
-            // build first node (and ignore its result) and then second node
-            build(andNode.getFirstNode());
-            return build(andNode.getSecondNode());
-        } else if (andNode.getFirstNode().getNodeType().alwaysFalse()) {
-            // build first node only and return its value
-            return build(andNode.getFirstNode());
-        } else {
-            Label l = getNewLabel();
-            Operand v1 = build(andNode.getFirstNode());
-            Variable ret = getValueInTemporaryVariable(v1);
-            addInstr(createBranch(v1, fals(), l));
-            Operand v2 = build(andNode.getSecondNode());
-            addInstr(new CopyInstr(ret, v2));
-            addInstr(new LabelInstr(l));
-            return ret;
-        }
+        Operand left = build(andNode.getFirstNode());
+        NodeType leftType = andNode.getFirstNode().getNodeType();
+        AndType type = leftType.alwaysTrue() ? LeftTrue : (leftType.alwaysFalse() ? LeftFalse : Normal);
+
+        return buildAnd(left, () -> build(andNode.getSecondNode()), type);
     }
 
     public Operand buildArray(ArrayNode node, boolean operandOnly) {
@@ -912,74 +873,6 @@ public class IRBuilderAST extends IRBuilder {
     private void throwSyntaxError(Node node, String message) {
         String errorMessage = getFileName() + ":" + (node.getLine() + 1) + ": " + message;
         throw scope.getManager().getRuntime().newSyntaxError(errorMessage);
-    }
-
-    private void handleNonlocalReturnInMethod() {
-        Label rBeginLabel = getNewLabel();
-        Label rEndLabel = getNewLabel();
-        Label gebLabel = getNewLabel();
-
-        // Protect the entire body as it exists now with the global ensure block
-        //
-        // Add label and marker instruction in reverse order to the beginning
-        // so that the label ends up being the first instr.
-        addInstrAtBeginning(new ExceptionRegionStartMarkerInstr(gebLabel));
-        addInstrAtBeginning(new LabelInstr(rBeginLabel));
-        addInstr( new ExceptionRegionEndMarkerInstr());
-
-        // Receive exceptions (could be anything, but the handler only processes IRReturnJumps)
-        addInstr(new LabelInstr(gebLabel));
-        Variable exc = temp();
-        addInstr(new ReceiveJRubyExceptionInstr(exc));
-
-        // Handle break using runtime helper
-        // --> IRRuntimeHelpers.handleNonlocalReturn(scope, bj, blockType)
-        Variable ret = temp();
-        addInstr(new RuntimeHelperCall(ret, HANDLE_NONLOCAL_RETURN, new Operand[]{exc} ));
-        addInstr(new ReturnInstr(ret));
-
-        // End
-        addInstr(new LabelInstr(rEndLabel));
-    }
-
-    private Operand receiveBreakException(Operand block, CodeBlock codeBlock) {
-        // Check if we have to handle a break
-        if (block == null ||
-            !(block instanceof WrappedIRClosure) ||
-            !(((WrappedIRClosure)block).getClosure()).hasBreakInstructions()) {
-            // No protection needed -- add the call and return
-            return codeBlock.run();
-        }
-
-        Label rBeginLabel = getNewLabel();
-        Label rEndLabel   = getNewLabel();
-        Label rescueLabel = getNewLabel();
-
-        // Protected region
-        addInstr(new LabelInstr(rBeginLabel));
-        addInstr(new ExceptionRegionStartMarkerInstr(rescueLabel));
-        Variable callResult = (Variable)codeBlock.run();
-        addInstr(new JumpInstr(rEndLabel));
-        addInstr(new ExceptionRegionEndMarkerInstr());
-
-        // Receive exceptions (could be anything, but the handler only processes IRBreakJumps)
-        addInstr(new LabelInstr(rescueLabel));
-        Variable exc = temp();
-        addInstr(new ReceiveJRubyExceptionInstr(exc));
-
-        // Handle break using runtime helper
-        // --> IRRuntimeHelpers.handlePropagatedBreak(context, scope, bj, blockType)
-        addInstr(new RuntimeHelperCall(callResult, HANDLE_PROPAGATED_BREAK, new Operand[]{exc} ));
-
-        // End
-        addInstr(new LabelInstr(rEndLabel));
-
-        return callResult;
-    }
-
-    // Wrap call in a rescue handler that catches the IRBreakJump
-    private void receiveBreakException(Operand block, final CallInstr callInstr) {
-        receiveBreakException(block, () -> addResultInstr(callInstr));
     }
 
     public Operand buildCall(Variable aResult, CallNode callNode, Label lazyLabel, Label endLabel) {
@@ -2401,63 +2294,19 @@ public class IRBuilderAST extends IRBuilder {
         // because of the use of copyAndReturnValue method for literal objects.
     }
 
-    // Called by defineMethod but called on a new builder so things like ensure block info recording
-    // do not get confused.
-    public InterpreterContext defineMethodInner(DefNode defNode, IRScope parent, int coverageMode) {
-        this.coverageMode = coverageMode;
+    @Override
+    public void receiveMethodArgs(Object defNode) {
+        receiveMethodArgs(((DefNode) defNode).getArgsNode());
+    }
 
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            // Explicit line number here because we need a line number for trace before we process any nodes
-            addInstr(getManager().newLineNumber(scope.getLine() + 1));
-            addInstr(new TraceInstr(RubyEvent.CALL, getCurrentModuleVariable(), getName(), getFileName(), scope.getLine() + 1));
-        }
+    @Override
+    public Operand buildMethodBody(Object defNode) {
+        return build(((DefNode) defNode).getBodyNode());
+    }
 
-
-        prepareImplicitState();                                    // recv_self, add frame block, etc)
-
-        // These instructions need to be toward the top of the method because they may both be needed for processing
-        // optional arguments as in def foo(a = Object).
-        // Set %current_module = isInstanceMethod ? %self.metaclass : %self
-        int nearestScopeDepth = parent.getNearestModuleReferencingScopeDepth();
-        addInstr(new CopyInstr(getCurrentModuleVariable(), ScopeModule.ModuleFor(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
-
-        // Build IR for arguments (including the block arg)
-        receiveMethodArgs(defNode.getArgsNode());
-
-        // Build IR for body
-        Operand rv = build(defNode.getBodyNode());
-
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            addInstr(new LineNumberInstr(defNode.getEndLine() + 1));
-            addInstr(new TraceInstr(RubyEvent.RETURN, getCurrentModuleVariable(), getName(), getFileName(), defNode.getEndLine() + 1));
-        }
-
-
-        if (rv != null) addInstr(new ReturnInstr(rv));
-
-        // We do an extra early one so we can look for non-local returns.
-        computeScopeFlagsFrom(instructions);
-
-        // If the method can receive non-local returns
-        if (scope.canReceiveNonlocalReturns()) handleNonlocalReturnInMethod();
-
-        ArgumentDescriptor[] argDesc;
-        if (argumentDescriptions == null) {
-            argDesc = ArgumentDescriptor.EMPTY_ARRAY;
-        } else {
-            argDesc = new ArgumentDescriptor[argumentDescriptions.size() / 2];
-            for (int i = 0; i < argumentDescriptions.size(); i += 2) {
-                ArgumentType type = (ArgumentType) argumentDescriptions.get(i);
-                RubySymbol symbol = (RubySymbol) argumentDescriptions.get(i+1);
-                argDesc[i / 2] = new ArgumentDescriptor(type, symbol);
-            }
-        }
-
-        ((IRMethod) scope).setArgumentDescriptors(argDesc);
-
-        computeScopeFlagsFrom(instructions);
-
-        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
+    @Override
+    public int getMethodEndLine(Object defNode) {
+        return ((DefNode) defNode).getEndLine() + 1;
     }
 
     private IRMethod defineNewMethod(MethodDefNode defNode, boolean isInstanceMethod) {
@@ -2465,15 +2314,17 @@ public class IRBuilderAST extends IRBuilder {
                 defNode.getScope(), coverageMode);
 
         // poorly placed next/break expects a syntax error so we eagerly build methods which contain them.
-        if (defNode.containsBreakNext()) method.lazilyAcquireInterpreterContext();
+        if (!canBeLazyMethod(defNode)) method.lazilyAcquireInterpreterContext();
 
         return method;
     }
 
+    boolean canBeLazyMethod(Object method) {
+        return !((MethodDefNode) method).containsBreakNext();
+    }
+
     public Operand buildDefn(MethodDefNode node) { // Instance method
-        IRMethod method = defineNewMethod(node, true);
-        addInstr(new DefineInstanceMethodInstr(method));
-        return new Symbol(node.getName());
+        return buildDefn(defineNewMethod(node, true));
     }
 
     public Operand buildDefs(DefsNode node) { // Class method
@@ -2495,21 +2346,6 @@ public class IRBuilderAST extends IRBuilder {
             addInstr(new ReceivePostReqdArgInstr(v, keywords, argIndex, signature.pre(), signature.opt(), signature.hasRest(), signature.post()));
         } else {
             addInstr(new ReceivePreReqdArgInstr(v, keywords, argIndex));
-        }
-    }
-
-    /* '_' can be seen as a variable only by its first assignment as a local variable.  For any additional
-     * '_' we create temporary variables in the case the scope has a zsuper in it.  If so, then the zsuper
-     * call will slurp those temps up as it's parameters so it can properly set up the call.
-     */
-    private Variable argumentResult(RubySymbol name) {
-        boolean isUnderscore = name.getBytes().realSize() == 1 && name.getBytes().charAt(0) == '_';
-
-        if (isUnderscore && underscoreVariableSeen) {
-            return temp();
-        } else {
-            if (isUnderscore) underscoreVariableSeen = true;
-            return getNewLocalVariable(name, 0);
         }
     }
 
@@ -2641,31 +2477,6 @@ public class IRBuilderAST extends IRBuilder {
     }
 
     /**
-     * Prepare implicit runtime state needed for typical methods to execute. This includes such things
-     * as the implicit self variable and any yieldable block available to this scope.
-     */
-    private void prepareImplicitState() {
-        // Receive self
-        addInstr(getManager().getReceiveSelfInstr());
-
-        // used for yields; metaclass body (sclass) inherits yield var from surrounding, and accesses it as implicit
-        if (scope instanceof IRMethod || scope instanceof IRMetaClassBody) {
-            addInstr(new LoadImplicitClosureInstr(getYieldClosureVariable()));
-        } else {
-            addInstr(new LoadFrameClosureInstr(getYieldClosureVariable()));
-        }
-    }
-
-    /**
-     * Prepare closure runtime state. This includes the implicit self variable and setting up a variable to hold any
-     * frame closure if it is needed later.
-     */
-    private void prepareClosureImplicitState() {
-        // Receive self
-        addInstr(getManager().getReceiveSelfInstr());
-    }
-
-    /**
      * Process all arguments specified for this scope. This includes pre args (required args
      * at the beginning of the argument list), opt args (arguments with a default value),
      * a rest arg (catch-all for argument list overflow), post args (required arguments after
@@ -2682,7 +2493,6 @@ public class IRBuilderAST extends IRBuilder {
 
         // 2.0 keyword args
         Node[] args = argsNode.getArgs();
-        int required = argsNode.getRequiredArgsCount();
         if (argsNode.hasKwargs()) {
             int keywordIndex = argsNode.getKeywordsIndex();
             int keywordsCount = argsNode.getKeywordCount();
@@ -2693,7 +2503,7 @@ public class IRBuilderAST extends IRBuilder {
                 Variable av = getNewLocalVariable(key, 0);
                 Label l = getNewLabel();
                 if (scope instanceof IRMethod) addKeyArgDesc(kasgn, key);
-                addInstr(new ReceiveKeywordArgInstr(av, keywords, key, required));
+                addInstr(new ReceiveKeywordArgInstr(av, keywords, key));
                 addInstr(BNEInstr.create(l, av, UndefinedValue.UNDEFINED)); // if 'av' is not undefined, we are done
 
                 // Required kwargs have no value and check_arity will throw if they are not provided.
@@ -4202,34 +4012,6 @@ public class IRBuilderAST extends IRBuilder {
         return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 2, flags);
     }
 
-    public static InterpreterContext buildRoot(IRManager manager, RootNode rootNode) {
-        String file = rootNode.getFile();
-        IRScriptBody script = new IRScriptBody(manager, file == null ? "(anon)" : file, rootNode.getStaticScope());
-
-        return topIRBuilder(manager, script).buildRootInner(rootNode);
-    }
-
-    private void addCurrentModule() {
-        addInstr(new CopyInstr(getCurrentModuleVariable(), SCOPE_MODULE[0])); // %current_module
-    }
-
-    private InterpreterContext buildRootInner(RootNode rootNode) {
-        coverageMode = rootNode.coverageMode();
-        prepareImplicitState();                                    // recv_self, add frame block, etc)
-        addCurrentModule();                                        // %current_module
-
-        afterPrologueIndex = instructions.size() - 1;                      // added BEGINs start after scope prologue stuff
-
-        // Build IR for the tree and return the result of the expression tree
-        addInstr(new ReturnInstr(build(rootNode.getBodyNode())));
-
-        computeScopeFlagsFrom(instructions);
-        // Root scope can receive returns now, so we add non-local return logic if necessary (2.5+)
-        if (scope.canReceiveNonlocalReturns()) handleNonlocalReturnInMethod();
-
-        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
-    }
-
     public Operand buildSplat(SplatNode splatNode) {
         return addResultInstr(new BuildSplatInstr(temp(), build(splatNode.getValue()), true));
     }
@@ -4440,14 +4222,6 @@ public class IRBuilderAST extends IRBuilder {
         return addResultInstr(new AsFixnumInstr(temp(), value));
     }
 
-    public Variable copy(Operand value) {
-        return copy(null, value);
-    }
-
-    public Variable copy(Variable result, Operand value) {
-        return addResultInstr(new CopyInstr(result == null ? temp() : result, value));
-    }
-
     public Operand buildZArray(Variable result) {
        return copy(result, new Array());
     }
@@ -4476,14 +4250,6 @@ public class IRBuilderAST extends IRBuilder {
 
         computeScopeFlagsFrom(instructions);
         return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
-    }
-
-    public LocalVariable getLocalVariable(RubySymbol name, int scopeDepth) {
-        return scope.getLocalVariable(name, scopeDepth);
-    }
-
-    public LocalVariable getNewLocalVariable(RubySymbol name, int scopeDepth) {
-        return scope.getNewLocalVariable(name, scopeDepth);
     }
 
     /*

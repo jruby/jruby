@@ -255,7 +255,7 @@ public class JRubyLibrary implements Library {
         RootNode node = (RootNode) parseImpl(context, args, block);
         IRManager manager = new IRManager(context.runtime, context.runtime.getInstanceConfig());
         IRScriptBody scope = (IRScriptBody) IRBuilderAST.buildRoot(manager, node).getScope();
-        scope.setScriptDynamicScope(node.getScope());
+        scope.setScriptDynamicScope(node.getDynamicScope());
         scope.getStaticScope().setIRScope(scope);
         return scope;
     }

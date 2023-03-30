@@ -75,6 +75,7 @@ import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.TraceEventManager;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
+import org.jruby.runtime.load.LoadServiceResourceInputStream;
 import org.jruby.util.CommonByteLists;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.MRIRecursionGuard;
@@ -175,6 +176,8 @@ import org.jruby.util.io.SelectorPool;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.ClassReader;
+import org.yarp.Nodes;
+import org.yarp.YarpParseResult;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -1159,7 +1162,7 @@ public final class Ruby implements Constantizable {
 
         if (printing) whileBody.add(new FCallNode(line, newSymbol("print"), new ArrayNode(line, dollarUnderscore), null));
 
-        return new RootNode(line, oldRoot.getScope(), newBody, oldRoot.getFile());
+        return new RootNode(line, oldRoot.getDynamicScope(), newBody, oldRoot.getFile());
     }
 
     /**
@@ -2938,6 +2941,8 @@ public final class Ruby implements Constantizable {
     }
 
     static final String ROOT_FRAME_NAME = "(root)";
+    static long yarpTime = 0;
+    static boolean loaded = false;
 
     public void loadFile(String scriptName, InputStream in, boolean wrap) {
         IRubyObject self = wrap ? getTopSelf().rbClone() : getTopSelf();
@@ -2954,8 +2959,28 @@ public final class Ruby implements Constantizable {
         ThreadContext context = getCurrentContext();
 
         try {
+            ParseResult parseResult;
             context.preNodeEval(self);
-            ParseResult parseResult = parseFile(scriptName, in, null);
+            if (Options.PARSER_YARP.load() && in instanceof LoadServiceResourceInputStream) {
+                if (!loaded) {
+                    org.yarp.Parser.loadLibrary("/home/enebo/work/jruby/lib/libjavaparser.so");
+                    loaded = true;
+                }
+                byte[] source = ((LoadServiceResourceInputStream) in).getBytes();
+
+                long time = System.nanoTime();
+
+                System.out.println("LOADING: " + scriptName);
+                byte[] blob = org.yarp.Parser.parseAndSerialize(source);
+                org.yarp.Nodes.Node node = org.yarp.Loader.load(scriptName, source, blob);
+                long parseTime = System.nanoTime() - time;
+                yarpTime += parseTime;
+                System.out.println("TOTAL_TIME: " + yarpTime + ", TIME: " + parseTime + ", SRC SIZE = " + source.length + ", BLOB SIZE = " + blob.length + ", RATIO: " + (((float) blob.length) / source.length));
+                parseResult = new YarpParseResult(scriptName, source, (Nodes.ProgramNode) node);
+  //              parseResult = parseFile(scriptName, in, null);
+            } else {
+                parseResult = parseFile(scriptName, in, null);
+            }
 
             // toss an anonymous module into the search path
             if (wrap) wrapWithModule((RubyBasicObject) self, parseResult);

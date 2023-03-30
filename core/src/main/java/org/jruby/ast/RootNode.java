@@ -80,7 +80,7 @@ public class RootNode extends Node implements ParseResult {
      * 
      * @return dynamic scope of this AST
      */
-    public DynamicScope getScope() {
+    public DynamicScope getDynamicScope() {
         return scope;
     }
     
@@ -99,7 +99,12 @@ public class RootNode extends Node implements ParseResult {
     public String getFile() {
         return file;
     }
-    
+
+    @Override
+    public int getCoverageMode() {
+        return coverageMode;
+    }
+
     /**
      * First real AST node to be interpreted
      * 
@@ -115,11 +120,6 @@ public class RootNode extends Node implements ParseResult {
 
     public List<Node> childNodes() {
         return createList(bodyNode);
-    }
-
-    // Is coverage enabled and is this a valid source file for coverage to apply?
-    public int coverageMode() {
-        return coverageMode;
     }
 
     @Override
