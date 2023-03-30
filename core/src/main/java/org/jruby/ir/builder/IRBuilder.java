@@ -876,6 +876,27 @@ public abstract class IRBuilder {
         return new Symbol(method.getName());
     }
 
+    InterpreterContext buildModuleOrClassBody(Object body, int startLine, int endLine) {
+        addInstr(new TraceInstr(RubyEvent.CLASS, getCurrentModuleVariable(), null, getFileName(), startLine + 1));
+
+        prepareImplicitState();                                    // recv_self, add frame block, etc)
+        addCurrentModule();                                        // %current_module
+
+        Operand bodyReturnValue = buildModuleBody(body);
+
+        // This is only added when tracing is enabled because an 'end' will normally have no other instrs which can
+        // raise after this point.  When we add trace we need to add one so backtrace generated shows the 'end' line.
+        addInstr(getManager().newLineNumber(endLine));
+        addInstr(new TraceInstr(RubyEvent.END, getCurrentModuleVariable(), null, getFileName(), endLine + 1));
+
+        addInstr(new ReturnInstr(bodyReturnValue));
+
+        computeScopeFlagsFrom(instructions);
+        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
+    }
+
+    protected abstract Operand buildModuleBody(Object body);
+
     public Variable buildSelf() {
         return scope.getSelf();
     }
@@ -1021,6 +1042,11 @@ public abstract class IRBuilder {
             if (isUnderscore) underscoreVariableSeen = true;
             return getNewLocalVariable(name, 0);
         }
+    }
+
+    Operand findContainerModule() {
+        int nearestModuleBodyDepth = scope.getNearestModuleReferencingScopeDepth();
+        return (nearestModuleBodyDepth == -1) ? getCurrentModuleVariable() : ScopeModule.ModuleFor(nearestModuleBodyDepth);
     }
 
     public LocalVariable getLocalVariable(RubySymbol name, int scopeDepth) {

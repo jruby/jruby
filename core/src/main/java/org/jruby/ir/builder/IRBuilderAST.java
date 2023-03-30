@@ -1751,11 +1751,6 @@ public class IRBuilderAST extends IRBuilder {
         return buildConstDeclAssignment(node, build(node.getValueNode()));
     }
 
-    private Operand findContainerModule() {
-        int nearestModuleBodyDepth = scope.getNearestModuleReferencingScopeDepth();
-        return (nearestModuleBodyDepth == -1) ? getCurrentModuleVariable() : ScopeModule.ModuleFor(nearestModuleBodyDepth);
-    }
-
     public Operand buildConstDeclAssignment(ConstDeclNode constDeclNode, Operand value) {
         Node constNode = constDeclNode.getConstNode();
 
@@ -2302,6 +2297,11 @@ public class IRBuilderAST extends IRBuilder {
     @Override
     public Operand buildMethodBody(Object defNode) {
         return build(((DefNode) defNode).getBodyNode());
+    }
+
+    @Override
+    protected Operand buildModuleBody(Object body) {
+        return build((Node) body);
     }
 
     @Override
@@ -4231,25 +4231,6 @@ public class IRBuilderAST extends IRBuilder {
         if (block == NullBlock.INSTANCE) block = getYieldClosureVariable();
 
         return scope instanceof IRMethod ? buildZSuper(block) : buildZSuperIfNest(block);
-    }
-
-    private InterpreterContext buildModuleOrClassBody(Node bodyNode, int startLine, int endLine) {
-        addInstr(new TraceInstr(RubyEvent.CLASS, getCurrentModuleVariable(), null, getFileName(), startLine + 1));
-
-        prepareImplicitState();                                    // recv_self, add frame block, etc)
-        addCurrentModule();                                        // %current_module
-
-        Operand bodyReturnValue = build(bodyNode);
-
-        // This is only added when tracing is enabled because an 'end' will normally have no other instrs which can
-        // raise after this point.  When we add trace we need to add one so backtrace generated shows the 'end' line.
-        addInstr(getManager().newLineNumber(endLine));
-        addInstr(new TraceInstr(RubyEvent.END, getCurrentModuleVariable(), null, getFileName(), endLine + 1));
-
-        addInstr(new ReturnInstr(bodyReturnValue));
-
-        computeScopeFlagsFrom(instructions);
-        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
     }
 
     /*

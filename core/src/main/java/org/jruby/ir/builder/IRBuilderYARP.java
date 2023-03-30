@@ -3,14 +3,20 @@ package org.jruby.ir.builder;
 import org.jruby.ParseResult;
 import org.jruby.RubyNumeric;
 import org.jruby.RubySymbol;
+import org.jruby.ast.ArgumentNode;
+import org.jruby.ast.BlockPassNode;
+import org.jruby.ast.Colon3Node;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRMethod;
+import org.jruby.ir.IRModuleBody;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.BNEInstr;
+import org.jruby.ir.instructions.BuildSplatInstr;
 import org.jruby.ir.instructions.CheckArityInstr;
 import org.jruby.ir.instructions.CopyInstr;
+import org.jruby.ir.instructions.DefineModuleInstr;
 import org.jruby.ir.instructions.LabelInstr;
 import org.jruby.ir.instructions.LoadImplicitClosureInstr;
 import org.jruby.ir.instructions.RaiseRequiredKeywordArgumentError;
@@ -31,6 +37,7 @@ import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.MutableString;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Symbol;
+import org.jruby.ir.operands.SymbolProc;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
 import org.jruby.runtime.ArgumentType;
@@ -66,6 +73,8 @@ public class IRBuilderYARP extends IRBuilder {
         // FIXME: Need node types if this is how we process
         if (node instanceof ArrayNode) {
             return buildArray((ArrayNode) node);
+        } else if (node instanceof BlockArgumentNode) {
+            return buildBlockArgument((BlockArgumentNode) node);
         } else if (node instanceof CallNode) {
             return buildCall((CallNode) node);
         } else if (node instanceof ConstantReadNode) {
@@ -76,8 +85,12 @@ public class IRBuilderYARP extends IRBuilder {
             return buildInteger((IntegerNode) node);
         } else if (node instanceof LocalVariableReadNode) {
             return buildLocalVariableRead((LocalVariableReadNode) node);
+        } else if (node instanceof ModuleNode) {
+            return buildModule((ModuleNode) node);
         } else if (node instanceof ProgramNode) {
             return buildProgram((ProgramNode) node);
+        } else if (node instanceof SplatNode) {
+            return buildSplat((SplatNode) node);
         } else if (node instanceof StatementsNode) {
             return buildStatements((StatementsNode) node);
         } else if (node instanceof StringNode) {
@@ -132,6 +145,15 @@ public class IRBuilderYARP extends IRBuilder {
         }
     }
 
+    private Operand buildBlockArgument(BlockArgumentNode node) {
+        if (node.expression instanceof SymbolNode && !scope.maybeUsingRefinements()) {
+            return new SymbolProc(symbol(byteListFromNode(node.expression)));
+        } else if (node.expression == null) {
+            return getYieldClosureVariable();
+        }
+        return build(node.expression);
+    }
+
     private Operand buildCall(CallNode node) {
         // FIXME: this should just be typed by parser.
         CallType callType = determineCallType(node.receiver);
@@ -176,6 +198,43 @@ public class IRBuilderYARP extends IRBuilder {
         return getLocalVariable(symbol(byteListFromNode(node)), node.depth);
     }
 
+    private Operand buildModule(ModuleNode node) {
+        boolean executesOnce = this.executesOnce;
+        ByteList moduleName = determineModuleBasName(node);
+        Operand container = buildModuleContainer(node);
+
+        // FIXME: Missing line. set to 0.
+        int line = 0;
+        int endLine = 0;
+        IRModuleBody body = new IRModuleBody(getManager(), scope, moduleName, line, node.scope, executesOnce);
+        Variable bodyResult = addResultInstr(new DefineModuleInstr(temp(), container, body));
+
+        IRBuilderYARP builder = new IRBuilderYARP(getManager(), body, this, null);
+        builder.buildModuleOrClassBody(node.statements, line, endLine);
+        return bodyResult;
+    }
+
+    private Operand buildModuleContainer(ModuleNode node) {
+        if (node.constant_path instanceof ConstantReadNode) {
+            return findContainerModule();
+        } else if (node.constant_path instanceof ConstantPathNode) {
+            ConstantPathNode path = (ConstantPathNode) node.constant_path;
+
+            if (path.parent == null) { // ::Foo
+                return getManager().getObjectClass();
+            } else {
+                return build(path.parent);
+            }
+        }
+        // FIXME: We may not need these based on whether there are more possible nodes.
+        throw notCompilable("Unsupported node in module path", node);
+    }
+
+    @Override
+    protected Operand buildModuleBody(Object body) {
+        return build((Node) body);
+    }
+
     private IRMethod buildNewMethod(DefNode node, boolean isInstanceMethod) {
         IRMethod method = new IRMethod(getManager(), scope, null, byteListFromSource(node.name), isInstanceMethod, 0,
                 node.scope, coverageMode);
@@ -190,6 +249,8 @@ public class IRBuilderYARP extends IRBuilder {
     }
 
     private void buildParameters(ParametersNode parameters) {
+        // FIXME: If we setup signature here we need to do it for no params before returning.
+        if (parameters == null) return;
         boolean hasRest = parameters.rest != null;
         boolean hasKeywords = parameters.keywords.length != 0 || parameters.keyword_rest != null;
         Variable keywords = addResultInstr(new ReceiveKeywordsInstr(temp(), hasRest, hasKeywords));
@@ -243,6 +304,10 @@ public class IRBuilderYARP extends IRBuilder {
 
         receiveBlockArg(parameters.block);
 
+    }
+
+    private Operand buildSplat(SplatNode node) {
+        return addResultInstr(new BuildSplatInstr(temp(), build(node.expression), true));
     }
 
     private Operand buildSymbol(SymbolNode node) {
@@ -461,6 +526,15 @@ public class IRBuilderYARP extends IRBuilder {
         return node == null ?
                 CallType.FUNCTIONAL :
                 CallType.NORMAL;
+    }
+
+    private ByteList determineModuleBasName(ModuleNode node) {
+        if (node.constant_path instanceof ConstantReadNode) {
+            return byteListFromNode(node.constant_path);
+        } else if (node.constant_path instanceof ConstantPathNode) {
+            return byteListFromNode(((ConstantPathNode) node.constant_path).child);
+        }
+        throw notCompilable("Unsupported node in module path", node);
     }
 
     boolean canBeLazyMethod(Object method) {
