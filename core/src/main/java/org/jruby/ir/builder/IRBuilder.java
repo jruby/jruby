@@ -971,7 +971,6 @@ public abstract class IRBuilder {
             addInstr(new TraceInstr(RubyEvent.RETURN, getCurrentModuleVariable(), getName(), getFileName(), endLine));
         }
 
-
         if (rv != null) addInstr(new ReturnInstr(rv));
 
         // We do an extra early one so we can look for non-local returns.

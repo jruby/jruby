@@ -1,6 +1,7 @@
 package org.jruby.ir.builder;
 
 import org.jruby.ParseResult;
+import org.jruby.RubyNumeric;
 import org.jruby.RubySymbol;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.IRClosure;
@@ -21,10 +22,13 @@ import org.jruby.ir.instructions.ReceivePostReqdArgInstr;
 import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.ir.instructions.ReceiveRestArgInstr;
 import org.jruby.ir.instructions.ReifyClosureInstr;
+import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.instructions.ToAryInstr;
+import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.MutableString;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.Symbol;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
 import org.jruby.runtime.ArgumentType;
@@ -33,6 +37,8 @@ import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
 import org.yarp.Nodes.*;
 import org.yarp.YarpParseResult;
+
+import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.IS_HASH_EMPTY;
 
 public class IRBuilderYARP extends IRBuilder {
     YarpParseResult result = null;
@@ -56,16 +62,24 @@ public class IRBuilderYARP extends IRBuilder {
 
     private Operand build(Node node) {
         // FIXME: Need node types if this is how we process
-        if (node instanceof CallNode) {
+        if (node instanceof ArrayNode) {
+            return buildArray((ArrayNode) node);
+        } else if (node instanceof CallNode) {
             return buildCall((CallNode) node);
         } else if (node instanceof DefNode) {
             return buildDef((DefNode) node);
+        } else if (node instanceof IntegerNode) {
+            return buildInteger((IntegerNode) node);
+        } else if (node instanceof LocalVariableReadNode) {
+            return buildLocalVariableRead((LocalVariableReadNode) node);
         } else if (node instanceof ProgramNode) {
             return buildProgram((ProgramNode) node);
         } else if (node instanceof StatementsNode) {
             return buildStatements((StatementsNode) node);
         } else if (node instanceof StringNode) {
             return buildString((StringNode) node);
+        } else if (node instanceof SymbolNode) {
+            return buildSymbol((SymbolNode) node);
         } else {
             throw new RuntimeException("Unhandled Node type: " + node);
         }
@@ -83,6 +97,35 @@ public class IRBuilderYARP extends IRBuilder {
         }
 
         return args;
+    }
+
+    private Operand buildArray(ArrayNode node) {
+        Node[] nodes = node.elements;
+        Operand[] elts = new Operand[nodes.length];
+        //boolean containsAssignments = node.containsVariableAssignment();
+        Operand keywordRestSplat = null;
+        for (int i = 0; i < nodes.length; i++) {
+            // FIXME: we need to know if this contains assignments to know if we need to preserve order.
+            elts[i] = build(nodes[i]);
+            if (nodes[i] instanceof HashNode && hasOnlyRestKwargs((HashNode) nodes[i])) keywordRestSplat = elts[i];
+        }
+
+        // We have some amount of ** on the end of this array construction.  This is handled in IR since we
+        // do not want arrays to have to know if it has an UNDEFINED on the end and then not include it.  Also
+        // since we must evaluate array values left to right we cannot look at last argument first to eliminate
+        // complicating the array sizes computation.  Luckily, this is a rare feature to see used in actual code
+        // so externalizing this in IR should not be a big deal.
+        if (keywordRestSplat != null) {
+            Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[]{ keywordRestSplat }));
+            final Variable result = temp();
+            if_else(test, tru(),
+                    () -> copy(result, new Array(removeArg(elts))),
+                    () -> copy(result, new Array(elts)));
+            return result;
+        } else {
+            Operand array = new Array(elts);
+            return copy(array);
+        }
     }
 
     private Operand buildCall(CallNode node) {
@@ -112,6 +155,17 @@ public class IRBuilderYARP extends IRBuilder {
 
     private Operand buildDefs(DefNode node) {
         return buildDefn(buildNewMethod(node, false));
+    }
+
+    private Operand buildInteger(IntegerNode node) {
+        // FIXME: HAHAHAH horrible hack around integer being too much postprocessing.
+        ByteList value = byteListFromNode(node);
+
+        return fix(RubyNumeric.fix2long(RubyNumeric.str2inum(getManager().runtime, getManager().getRuntime().newString(value), 10)));
+    }
+
+    private Operand buildLocalVariableRead(LocalVariableReadNode node) {
+        return getLocalVariable(symbol(byteListFromNode(node)), node.depth);
     }
 
     private IRMethod buildNewMethod(DefNode node, boolean isInstanceMethod) {
@@ -181,6 +235,10 @@ public class IRBuilderYARP extends IRBuilder {
 
         receiveBlockArg(parameters.block);
 
+    }
+
+    private Operand buildSymbol(SymbolNode node) {
+        return new Symbol(symbol(byteListFromSource(node.value)));
     }
 
     /**
@@ -254,10 +312,10 @@ public class IRBuilderYARP extends IRBuilder {
                 addInstr(BNEInstr.create(variableAssigned, argVar, UndefinedValue.UNDEFINED));
                 // We add this extra nil copy because we do not know if we have a circular defininition of
                 // argVar: proc { |a=a| } or proc { |a = foo(bar(a))| }.
-                addInstr(new CopyInstr(argVar, nil()));
+                copy(argVar, nil());
                 // This bare build looks weird but OptArgNode is just a marker and value is either a LAsgnNode
                 // or a DAsgnNode.  So building the value will end up having a copy(var, assignment).
-                build(optArg.value);
+                copy(argVar, build(optArg.value));
                 addInstr(new LabelInstr(variableAssigned));
             }
         }
@@ -371,7 +429,7 @@ public class IRBuilderYARP extends IRBuilder {
 
     @Override
     public Operand buildMethodBody(Object defNode) {
-        return null;
+        return build(((DefNode) defNode).statements);
     }
 
     @Override
@@ -406,5 +464,14 @@ public class IRBuilderYARP extends IRBuilder {
         String loc = scope.getFile() + ":" + line;
         String what = node != null ? node.getClass().getSimpleName() + " - " + loc : loc;
         return new NotCompilableException(message + " (" + what + ").");
+    }
+
+    // All splats on array construction will stuff them into a hash.
+    private boolean hasOnlyRestKwargs(HashNode node) {
+        for (Node element: node.elements) {
+            if (!(element instanceof AssocSplatNode)) return false;
+        }
+
+        return true;
     }
 }
