@@ -23,8 +23,10 @@ import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.ir.instructions.ReceiveRestArgInstr;
 import org.jruby.ir.instructions.ReifyClosureInstr;
 import org.jruby.ir.instructions.RuntimeHelperCall;
+import org.jruby.ir.instructions.SearchConstInstr;
 import org.jruby.ir.instructions.ToAryInstr;
 import org.jruby.ir.operands.Array;
+import org.jruby.ir.operands.CurrentScope;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.MutableString;
 import org.jruby.ir.operands.Operand;
@@ -66,6 +68,8 @@ public class IRBuilderYARP extends IRBuilder {
             return buildArray((ArrayNode) node);
         } else if (node instanceof CallNode) {
             return buildCall((CallNode) node);
+        } else if (node instanceof ConstantReadNode) {
+            return buildConstantRead((ConstantReadNode) node);
         } else if (node instanceof DefNode) {
             return buildDef((DefNode) node);
         } else if (node instanceof IntegerNode) {
@@ -138,7 +142,11 @@ public class IRBuilderYARP extends IRBuilder {
         // FIXME: at least type arguments to ArgumentsNode
         Operand[] args = buildArguments((ArgumentsNode) node.arguments);
 
-        return _call(temp(), callType, receiver, getManager().getRuntime().newSymbol(new String(node.name)), args);
+        return _call(temp(), callType, receiver, symbol(new String(node.name)), args);
+    }
+
+    private Operand buildConstantRead(ConstantReadNode node) {
+        return addResultInstr(new SearchConstInstr(temp(), CurrentScope.INSTANCE, symbol(byteListFromNode(node)), false));
     }
 
     private Operand buildDef(DefNode node) {
