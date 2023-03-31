@@ -886,32 +886,32 @@ public abstract class IRBuilder {
     }
 
     // FIXME: AST needs variable passed in to work which I think means some context really needs to pass in the result at least in AST build?
-    public Operand buildConditional(Object predicate, Object statements, Object consequent) {
+    public Operand buildConditional(Variable result, Object predicate, Object statements, Object consequent) {
         Label    falseLabel = getNewLabel();
         Label    doneLabel  = getNewLabel();
+        Operand thenResult;
         addInstr(createBranch(buildGeneric(predicate), fals(), falseLabel));
 
         boolean thenNull = false;
         boolean elseNull = false;
         boolean thenUnil = false;
         boolean elseUnil = false;
-        Variable result = null;
 
         // Build the then part of the if-statement
         if (statements != null) {
-            Operand statementsResult = buildGeneric(statements);
-            if (statementsResult != U_NIL) { // thenResult can be U_NIL if then-body ended with a return!
+            thenResult = buildGeneric(statements);
+            if (thenResult != U_NIL) { // thenResult can be U_NIL if then-body ended with a return!
                 // SSS FIXME: Can look at the last instr and short-circuit this jump if it is a break rather
                 // than wait for dead code elimination to do it
-                result = getValueInTemporaryVariable(statementsResult);
+                result = getValueInTemporaryVariable(thenResult);
                 addInstr(new JumpInstr(doneLabel));
             } else {
-                result = statementsResult == null ? temp() : result;
+                if (result == null) result = temp();
                 thenUnil = true;
             }
         } else {
             thenNull = true;
-            result = temp();
+            if (result == null) result = temp();
             copy(result, nil());
             addInstr(new JumpInstr(doneLabel));
         }
@@ -945,6 +945,37 @@ public abstract class IRBuilder {
     public Operand buildDefn(IRMethod method) {
         addInstr(new DefineInstanceMethodInstr(method));
         return new Symbol(method.getName());
+    }
+
+    public Operand buildLocalVariableAssign(RubySymbol name, int depth, Object valueNode) {
+        Variable variable  = getLocalVariable(name, depth);
+        Operand value = buildGeneric(variable, valueNode);
+
+        if (variable != value) copy(variable, value);  // no use copying a variable to itself
+
+        return value;
+
+        // IMPORTANT: The return value of this method is value, not var!
+        //
+        // Consider this Ruby code: foo((a = 1), (a = 2))
+        //
+        // If we return 'value' this will get translated to:
+        //    a = 1
+        //    a = 2
+        //    call("foo", [1,2]) <---- CORRECT
+        //
+        // If we return 'var' this will get translated to:
+        //    a = 1
+        //    a = 2
+        //    call("foo", [a,a]) <---- BUGGY
+        //
+        // This technique only works if 'value' is an immutable value (ex: fixnum) or a variable
+        // So, for Ruby code like this:
+        //     def foo(x); x << 5; end;
+        //     foo(a=[1,2]);
+        //     p a
+        // we are guaranteed that the value passed into foo and 'a' point to the same object
+        // because of the use of copyAndReturnValue method for literal objects.
     }
 
     InterpreterContext buildModuleOrClassBody(Object body, int startLine, int endLine) {
@@ -1029,6 +1060,7 @@ public abstract class IRBuilder {
         return zsuperResult;
     }
 
+    public abstract Operand buildGeneric(Variable result, Object node);
     public abstract Operand buildGeneric(Object node);
     public abstract void receiveMethodArgs(Object defNode);
     public abstract Operand buildMethodBody(Object defNode);

@@ -3,9 +3,6 @@ package org.jruby.ir.builder;
 import org.jruby.ParseResult;
 import org.jruby.RubyNumeric;
 import org.jruby.RubySymbol;
-import org.jruby.ast.ArgumentNode;
-import org.jruby.ast.BlockPassNode;
-import org.jruby.ast.Colon3Node;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRManager;
@@ -17,7 +14,6 @@ import org.jruby.ir.instructions.BuildSplatInstr;
 import org.jruby.ir.instructions.CheckArityInstr;
 import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.DefineModuleInstr;
-import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LabelInstr;
 import org.jruby.ir.instructions.LoadImplicitClosureInstr;
 import org.jruby.ir.instructions.RaiseRequiredKeywordArgumentError;
@@ -31,7 +27,6 @@ import org.jruby.ir.instructions.ReceiveRestArgInstr;
 import org.jruby.ir.instructions.ReifyClosureInstr;
 import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.instructions.SearchConstInstr;
-import org.jruby.ir.instructions.ThreadPollInstr;
 import org.jruby.ir.instructions.ToAryInstr;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.CurrentScope;
@@ -78,13 +73,21 @@ public class IRBuilderYARP extends IRBuilder {
     }
 
     private Operand build(Node node) {
+        return build(null, node);
+    }
+
+    /*
+     * @param result preferred result variable (this reduces temp vars pinning values).
+     * @param node to be built
+     */
+    private Operand build(Variable result, Node node) {
         // FIXME: Need node types if this is how we process
         if (node instanceof ArrayNode) {
             return buildArray((ArrayNode) node);
         } else if (node instanceof BlockArgumentNode) {
             return buildBlockArgument((BlockArgumentNode) node);
         } else if (node instanceof CallNode) {
-            return buildCall((CallNode) node);
+            return buildCall(result, (CallNode) node);
         } else if (node instanceof ConstantPathNode) {
             return buildConstantPath((ConstantPathNode) node);
         } else if (node instanceof ConstantPathWriteNode) {
@@ -98,11 +101,13 @@ public class IRBuilderYARP extends IRBuilder {
         } else if (node instanceof HashNode) {
             return buildHash((HashNode) node);
         } else if (node instanceof IfNode) {
-            return buildIf((IfNode) node);
+            return buildIf(result, (IfNode) node);
         } else if (node instanceof IntegerNode) {
             return buildInteger((IntegerNode) node);
         } else if (node instanceof LocalVariableReadNode) {
             return buildLocalVariableRead((LocalVariableReadNode) node);
+        } else if (node instanceof LocalVariableWriteNode) {
+            return buildLocalVariableWrite((LocalVariableWriteNode) node);
         } else if (node instanceof ModuleNode) {
             return buildModule((ModuleNode) node);
         } else if (node instanceof NilNode) {
@@ -120,7 +125,7 @@ public class IRBuilderYARP extends IRBuilder {
         } else if (node instanceof TrueNode) {
             return tru();
         } else if (node instanceof UnlessNode) {
-            return buildUnless((UnlessNode) node);
+            return buildUnless(result, (UnlessNode) node);
         } else {
             throw new RuntimeException("Unhandled Node type: " + node);
         }
@@ -178,7 +183,9 @@ public class IRBuilderYARP extends IRBuilder {
         return build(node.expression);
     }
 
-    private Operand buildCall(CallNode node) {
+    private Operand buildCall(Variable result, CallNode node) {
+        if (result == null) result = temp();
+
         // FIXME: this should just be typed by parser.
         CallType callType = determineCallType(node.receiver);
         Operand receiver = callType == CallType.FUNCTIONAL ?
@@ -186,9 +193,10 @@ public class IRBuilderYARP extends IRBuilder {
                 build(node.receiver);
         // FIXME: pretend always . and not &. for now.
         // FIXME: at least type arguments to ArgumentsNode
-        Operand[] args = buildArguments((ArgumentsNode) node.arguments);
+        Operand[] args = buildArguments(node.arguments);
+        // FIXME: Lots and lots of special logic in AST not here
 
-        return _call(temp(), callType, receiver, symbol(new String(node.name)), args);
+        return _call(result, callType, receiver, symbol(new String(node.name)), args);
     }
 
     private Operand buildConstantPath(ConstantPathNode node) {
@@ -234,6 +242,11 @@ public class IRBuilderYARP extends IRBuilder {
         return build((Node) node);
     }
 
+    @Override
+    public Operand buildGeneric(Variable result, Object node) {
+        return build(result, (Node) node);
+    }
+
     private Operand buildHash(HashNode node) {
         List<KeyValuePair<Operand, Operand>> args = new ArrayList<>();
         boolean hasAssignments = false; // FIXME: Missing variable assignments check
@@ -274,8 +287,8 @@ public class IRBuilderYARP extends IRBuilder {
         return hash;
     }
 
-    private Operand buildIf(IfNode node) {
-        return buildConditional(node.predicate, node.statements, node.consequent);
+    private Operand buildIf(Variable result, IfNode node) {
+        return buildConditional(result, node.predicate, node.statements, node.consequent);
     }
 
     private Operand buildInteger(IntegerNode node) {
@@ -287,6 +300,10 @@ public class IRBuilderYARP extends IRBuilder {
 
     private Operand buildLocalVariableRead(LocalVariableReadNode node) {
         return getLocalVariable(symbol(byteListFromNode(node)), node.depth);
+    }
+
+    private Operand buildLocalVariableWrite(LocalVariableWriteNode node) {
+        return buildLocalVariableAssign(symbol(byteListFromLocation(node.name_loc)), node.depth, node.value);
     }
 
     private Operand buildModule(ModuleNode node) {
@@ -327,7 +344,7 @@ public class IRBuilderYARP extends IRBuilder {
     }
 
     private IRMethod buildNewMethod(DefNode node, boolean isInstanceMethod) {
-        IRMethod method = new IRMethod(getManager(), scope, null, byteListFromSource(node.name), isInstanceMethod, 0,
+        IRMethod method = new IRMethod(getManager(), scope, null, byteListFromToken(node.name), isInstanceMethod, 0,
                 node.scope, coverageMode);
 
         if (canBeLazyMethod(node)) throw new RuntimeException("Laziness not implemented for YARP");
@@ -356,7 +373,7 @@ public class IRBuilderYARP extends IRBuilder {
             for (int i = 0; i < keywordsCount; i++) {
                 KeywordParameterNode kwarg = (KeywordParameterNode) kwArgs[i];
 
-                RubySymbol key = symbol(byteListFromSource(kwarg.name));
+                RubySymbol key = symbol(byteListFromToken(kwarg.name));
                 Variable av = getNewLocalVariable(key, 0);
                 Label l = getNewLabel();
                 if (scope instanceof IRMethod) addKeyArgDesc(kwarg, key);
@@ -377,7 +394,7 @@ public class IRBuilderYARP extends IRBuilder {
         // 2.0 keyword rest arg
         KeywordRestParameterNode keyRest = (KeywordRestParameterNode) parameters.keyword_rest;
         if (keyRest != null) {
-            RubySymbol key = symbol(byteListFromSource(keyRest.name));
+            RubySymbol key = symbol(byteListFromToken(keyRest.name));
             ArgumentType type = ArgumentType.keyrest;
 
             // anonymous keyrest
@@ -402,11 +419,11 @@ public class IRBuilderYARP extends IRBuilder {
     }
 
     private Operand buildSymbol(SymbolNode node) {
-        return new Symbol(symbol(byteListFromSource(node.value)));
+        return new Symbol(symbol(byteListFromToken(node.value)));
     }
 
-    private Operand buildUnless(UnlessNode node) {
-        return buildConditional(node.predicate, node.consequent, node.statements);
+    private Operand buildUnless(Variable result, UnlessNode node) {
+        return buildConditional(result, node.predicate, node.consequent, node.statements);
     }
 
     /**
@@ -418,7 +435,7 @@ public class IRBuilderYARP extends IRBuilder {
     protected void receiveBlockArg(BlockParameterNode blockArg) {
         // reify to Proc if we have a block arg
         if (blockArg != null) {
-            RubySymbol argName = symbol(byteListFromSource(blockArg.name));
+            RubySymbol argName = symbol(byteListFromToken(blockArg.name));
             Variable blockVar = argumentResult(argName);
             if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.block, argName);
             Variable tmp = temp();
@@ -472,7 +489,7 @@ public class IRBuilderYARP extends IRBuilder {
                 // We fall through or jump to variableAssigned once we know we have a valid value in place.
                 Label variableAssigned = getNewLabel();
                 OptionalParameterNode optArg = (OptionalParameterNode) opts[j];
-                RubySymbol argName = symbol(byteListFromSource(optArg.name));
+                RubySymbol argName = symbol(byteListFromToken(optArg.name));
                 Variable argVar = argumentResult(argName);
                 if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.opt, argName);
                 // You need at least required+j+1 incoming args for this opt arg to get an arg at all
@@ -496,14 +513,14 @@ public class IRBuilderYARP extends IRBuilder {
             if (scope instanceof IRMethod) {
                 // FIXME: how do we annotate generated AST types to have isAnonymous etc...
                 if (restArgNode.name == null) {
-                    addArgumentDescription(ArgumentType.anonrest, symbol(byteListFromSource(restArgNode.operator)));
+                    addArgumentDescription(ArgumentType.anonrest, symbol(byteListFromToken(restArgNode.operator)));
                 } else {
-                    addArgumentDescription(ArgumentType.rest, symbol(byteListFromSource(restArgNode.name)));
+                    addArgumentDescription(ArgumentType.rest, symbol(byteListFromToken(restArgNode.name)));
                 }
             }
 
             RubySymbol argName =  restArgNode.name == null ?
-                    scope.getManager().getRuntime().newSymbol(CommonByteLists.STAR) : symbol(byteListFromSource(restArgNode.name));
+                    scope.getManager().getRuntime().newSymbol(CommonByteLists.STAR) : symbol(byteListFromToken(restArgNode.name));
 
             // You need at least required+opt+1 incoming args for the rest arg to get any args at all
             // If it is going to get something, then it should ignore required+opt args from the beginning
@@ -587,7 +604,7 @@ public class IRBuilderYARP extends IRBuilder {
         // FIXME: No code range
         // FIXME: how can we tell if frozen or not
         // FIXME: no line
-        return new MutableString(byteListFromSource(node.content), 0, scope.getFile(), 0);
+        return new MutableString(byteListFromToken(node.content), 0, scope.getFile(), 0);
     }
 
     @Override
@@ -605,10 +622,16 @@ public class IRBuilderYARP extends IRBuilder {
         return 0;
     }
 
-    private ByteList byteListFromSource(Token token) {
+    private ByteList byteListFromToken(Token token) {
         byte[] source = result.getSource();
 
         return new ByteList(source, token.startOffset, token.endOffset - token.startOffset);
+    }
+
+    private ByteList byteListFromLocation(Location location) {
+        byte[] source = result.getSource();
+
+        return new ByteList(source, location.startOffset, location.endOffset - location.startOffset);
     }
 
     private ByteList byteListFromNode(Node node) {

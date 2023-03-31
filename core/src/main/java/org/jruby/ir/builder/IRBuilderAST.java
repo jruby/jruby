@@ -306,6 +306,10 @@ public class IRBuilderAST extends IRBuilder {
         return build(null, node);
     }
 
+    /*
+     * @param result preferred result variable (this reduces temp vars pinning values).
+     * @param node to be built
+     */
     public Operand build(Variable result, Node node) {
         if (node == null) return null;
 
@@ -2277,6 +2281,11 @@ public class IRBuilderAST extends IRBuilder {
     }
 
     @Override
+    public Operand buildGeneric(Variable result, Object node) {
+        return build(result, (Node) node);
+    }
+
+    @Override
     public void receiveMethodArgs(Object defNode) {
         receiveMethodArgs(((DefNode) defNode).getArgsNode());
     }
@@ -3086,73 +3095,8 @@ public class IRBuilderAST extends IRBuilder {
         return hash;
     }
 
-    // Translate "r = if (cond); .. thenbody ..; else; .. elsebody ..; end" to
-    //
-    //     v = -- build(cond) --
-    //     BEQ(v, FALSE, L1)
-    //     r = -- build(thenbody) --
-    //     jump L2
-    // L1:
-    //     r = -- build(elsebody) --
-    // L2:
-    //     --- r is the result of the if expression --
-    //
     public Operand buildIf(Variable result, final IfNode ifNode) {
-        Node actualCondition = ifNode.getCondition();
-
-        Label    falseLabel = getNewLabel();
-        Label    doneLabel  = getNewLabel();
-        Operand  thenResult;
-        addInstr(createBranch(build(actualCondition), fals(), falseLabel));
-
-        boolean thenNull = false;
-        boolean elseNull = false;
-        boolean thenUnil = false;
-        boolean elseUnil = false;
-
-        // Build the then part of the if-statement
-        if (ifNode.getThenBody() != null) {
-            thenResult = build(result, ifNode.getThenBody());
-            if (thenResult != U_NIL) { // thenResult can be U_NIL if then-body ended with a return!
-                // SSS FIXME: Can look at the last instr and short-circuit this jump if it is a break rather
-                // than wait for dead code elimination to do it
-                result = getValueInTemporaryVariable(thenResult);
-                addInstr(new JumpInstr(doneLabel));
-            } else {
-                if (result == null) result = temp();
-                thenUnil = true;
-            }
-        } else {
-            thenNull = true;
-            if (result == null) result = temp();
-            addInstr(new CopyInstr(result, nil()));
-            addInstr(new JumpInstr(doneLabel));
-        }
-
-        // Build the else part of the if-statement
-        addInstr(new LabelInstr(falseLabel));
-        if (ifNode.getElseBody() != null) {
-            Operand elseResult = build(ifNode.getElseBody());
-            // elseResult can be U_NIL if then-body ended with a return!
-            if (elseResult != U_NIL) {
-                addInstr(new CopyInstr(result, elseResult));
-            } else {
-                elseUnil = true;
-            }
-        } else {
-            elseNull = true;
-            addInstr(new CopyInstr(result, nil()));
-        }
-
-        if (thenNull && elseNull) {
-            addInstr(new LabelInstr(doneLabel));
-            return nil();
-        } else if (thenUnil && elseUnil) {
-            return U_NIL;
-        } else {
-            addInstr(new LabelInstr(doneLabel));
-            return result;
-        }
+        return buildConditional(result, ifNode.getCondition(), ifNode.getThenBody(), ifNode.getElseBody());
     }
 
     public Operand buildInstAsgn(final InstAsgnNode instAsgnNode) {
@@ -3221,13 +3165,11 @@ public class IRBuilderAST extends IRBuilder {
     }
 
     public Operand buildLocalAsgn(LocalAsgnNode localAsgnNode) {
-        Variable variable  = getLocalVariable(localAsgnNode.getName(), localAsgnNode.getDepth());
+        Variable variable = getLocalVariable(localAsgnNode.getName(), localAsgnNode.getDepth());
         Operand value = build(variable, localAsgnNode.getValueNode());
 
         // no use copying a variable to itself
-        if (variable == value) return value;
-
-        addInstr(new CopyInstr(variable, value));
+        if (variable != value) copy(variable, value);
 
         return value;
 
