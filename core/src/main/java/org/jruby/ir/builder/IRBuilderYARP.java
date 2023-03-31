@@ -35,6 +35,7 @@ import org.jruby.ir.instructions.ThreadPollInstr;
 import org.jruby.ir.instructions.ToAryInstr;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.CurrentScope;
+import org.jruby.ir.operands.Hash;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.MutableString;
 import org.jruby.ir.operands.Operand;
@@ -46,10 +47,15 @@ import org.jruby.runtime.ArgumentType;
 import org.jruby.runtime.CallType;
 import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
+import org.jruby.util.KeyValuePair;
 import org.yarp.Nodes.*;
 import org.yarp.YarpParseResult;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.IS_HASH_EMPTY;
+import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.MERGE_KWARGS;
 
 public class IRBuilderYARP extends IRBuilder {
     YarpParseResult result = null;
@@ -89,6 +95,8 @@ public class IRBuilderYARP extends IRBuilder {
             return buildDef((DefNode) node);
         } else if (node instanceof FalseNode) {
             return fals();
+        } else if (node instanceof HashNode) {
+            return buildHash((HashNode) node);
         } else if (node instanceof IfNode) {
             return buildIf((IfNode) node);
         } else if (node instanceof IntegerNode) {
@@ -224,6 +232,46 @@ public class IRBuilderYARP extends IRBuilder {
     @Override
     public Operand buildGeneric(Object node) {
         return build((Node) node);
+    }
+
+    private Operand buildHash(HashNode node) {
+        List<KeyValuePair<Operand, Operand>> args = new ArrayList<>();
+        boolean hasAssignments = false; // FIXME: Missing variable assignments check
+        Variable hash = null;
+        // Duplication checks happen when **{} are literals and not **h variable references.
+        Operand duplicateCheck = fals();
+
+        // pair is AssocNode or AssocSplatNode
+        for (Node pair: node.elements) {
+            Operand keyOperand;
+
+            if (pair instanceof AssocNode) {
+                keyOperand = build(((AssocNode) pair).key);
+                args.add(new KeyValuePair<>(keyOperand, build(((AssocNode) pair).value))); // FIXME: missing possible buildWithOrder
+            } else {  // AssocHashNode
+                AssocSplatNode assoc = (AssocSplatNode) pair;
+                boolean isLiteral = assoc.value instanceof HashNode;
+                duplicateCheck = isLiteral ? tru() : fals();
+
+                if (hash == null) {                     // No hash yet. Define so order is preserved.
+                    hash = copy(new Hash(args, isLiteral));
+                    args = new ArrayList<>();           // Used args but we may find more after the splat so we reset
+                } else if (!args.isEmpty()) {
+                    addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args), duplicateCheck}));
+                    args = new ArrayList<>();
+                }
+                Operand splat = build(assoc.value); // FIXME: buildWithOrder
+                addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, splat, duplicateCheck}));
+            }
+        }
+
+        if (hash == null) {           // non-**arg ordinary hash
+            hash = copy(new Hash(args, true));
+        } else if (!args.isEmpty()) { // ordinary hash values encountered after a **arg
+            addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args), duplicateCheck}));
+        }
+
+        return hash;
     }
 
     private Operand buildIf(IfNode node) {
