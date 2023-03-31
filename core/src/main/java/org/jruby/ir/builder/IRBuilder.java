@@ -37,6 +37,7 @@ import org.jruby.ir.instructions.LoadBlockImplicitClosureInstr;
 import org.jruby.ir.instructions.LoadFrameClosureInstr;
 import org.jruby.ir.instructions.LoadImplicitClosureInstr;
 import org.jruby.ir.instructions.NopInstr;
+import org.jruby.ir.instructions.PutConstInstr;
 import org.jruby.ir.instructions.ReceiveArgBase;
 import org.jruby.ir.instructions.ReceiveJRubyExceptionInstr;
 import org.jruby.ir.instructions.ReceiveKeywordArgInstr;
@@ -476,6 +477,16 @@ public abstract class IRBuilder {
         System.arraycopy(args, 0, newArgs, 0, args.length);
         newArgs[args.length] = extraArg;
         return newArgs;
+    }
+
+    Operand putConstant(RubySymbol name, Operand value) {
+        return putConstant(findContainerModule(), name, value);
+    }
+
+    Operand putConstant(Operand parent, RubySymbol name, Operand value) {
+        addInstr(new PutConstInstr(parent, name, value));
+
+        return value;
     }
 
     // No bounds checks.  Only call this when you know you have an arg to remove.

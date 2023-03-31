@@ -81,6 +81,8 @@ public class IRBuilderYARP extends IRBuilder {
             return buildCall((CallNode) node);
         } else if (node instanceof ConstantPathNode) {
             return buildConstantPath((ConstantPathNode) node);
+        } else if (node instanceof ConstantPathWriteNode) {
+            return buildConstantWritePath((ConstantPathWriteNode) node);
         } else if (node instanceof ConstantReadNode) {
             return buildConstantRead((ConstantReadNode) node);
         } else if (node instanceof DefNode) {
@@ -185,6 +187,18 @@ public class IRBuilderYARP extends IRBuilder {
         RubySymbol name = symbol(byteListFromNode(node.child));
 
         return node.parent == null ? searchConst(name) : searchModuleForConst(build(node.parent), name);
+    }
+
+    private Operand buildConstantWritePath(ConstantPathWriteNode node) {
+        Operand value = build(node.value);
+
+        if (node.target instanceof ConstantReadNode) {
+            return putConstant(symbol(byteListFromNode(node.target)), value);
+        }
+
+        ConstantPathNode path = (ConstantPathNode) node.target;
+
+        return putConstant(build(path.parent), symbol(byteListFromNode(path.child)), value);
     }
 
     private Operand buildConstantRead(ConstantReadNode node) {

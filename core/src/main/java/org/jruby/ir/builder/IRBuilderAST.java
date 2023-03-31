@@ -1753,39 +1753,22 @@ public class IRBuilderAST extends IRBuilder {
     public Operand buildConstDeclAssignment(ConstDeclNode constDeclNode, Operand value) {
         Node constNode = constDeclNode.getConstNode();
 
-        if (constNode == null) {
-            return putConstant(constDeclNode.getName(), value);
-        } else if (constNode.getNodeType() == NodeType.COLON2NODE) {
-            return putConstant((Colon2Node) constNode, value);
+        if (constNode == null) return putConstant(constDeclNode.getName(), value);
+
+        return putConstant((Colon3Node) constNode, value);
+    }
+
+    private Operand putConstant(Colon3Node colonNode, Operand value) {
+        if (colonNode.getNodeType() == NodeType.COLON2NODE) {
+            Colon2Node colon2Node = (Colon2Node) colonNode;
+            return putConstant(build(colon2Node.getLeftNode()), colon2Node.getName(), value);
         } else { // colon3, assign in Object
-            return putConstant((Colon3Node) constNode, value);
+            return putConstant(getManager().getObjectClass(), colonNode.getName(), value);
         }
     }
 
-    private Operand putConstant(RubySymbol name, Operand value) {
-        addInstr(new PutConstInstr(findContainerModule(), name, value));
-
-        return value;
-    }
-
-    private Operand putConstant(Colon3Node node, Operand value) {
-        addInstr(new PutConstInstr(getManager().getObjectClass(), node.getName(), value));
-
-        return value;
-    }
-
-    private Operand putConstant(Colon2Node node, Operand value) {
-        addInstr(new PutConstInstr(build(node.getLeftNode()), node.getName(), value));
-
-        return value;
-    }
-
     private Operand putConstantAssignment(OpAsgnConstDeclNode node, Operand value) {
-        Node constNode = node.getFirstNode();
-
-        if (constNode instanceof Colon2Node) return putConstant((Colon2Node) constNode, value);
-
-        return putConstant((Colon3Node) constNode, value);
+        return putConstant((Colon3Node) node.getFirstNode(), value);
     }
 
     public Operand buildColon2(final Colon2Node colon2) {
