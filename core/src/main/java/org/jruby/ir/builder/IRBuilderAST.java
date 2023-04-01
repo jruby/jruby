@@ -201,8 +201,8 @@ public class IRBuilderAST extends IRBuilder {
         switch (node.getNodeType()) {
             case ALIASNODE: return buildAlias((AliasNode) node);
             case ANDNODE: return buildAnd((AndNode) node);
-            case ARGSCATNODE: return buildArgsCat((ArgsCatNode) node);
-            case ARGSPUSHNODE: return buildArgsPush((ArgsPushNode) node);
+            case ARGSCATNODE: return buildArgsCat(result, (ArgsCatNode) node);
+            case ARGSPUSHNODE: return buildArgsPush(result, (ArgsPushNode) node);
             case ARRAYNODE: return buildArray((ArrayNode) node, false);
             case ATTRASSIGNNODE: return buildAttrAssign(result, (AttrAssignNode) node);
             case BACKREFNODE: return buildBackref(result, (BackRefNode) node);
@@ -213,13 +213,13 @@ public class IRBuilderAST extends IRBuilder {
             case CALLNODE: return buildCall(result, (CallNode) node, null, null);
             case CASENODE: return buildCase((CaseNode) node);
             case CLASSNODE: return buildClass((ClassNode) node);
-            case CLASSVARNODE: return buildClassVar((ClassVarNode) node);
+            case CLASSVARNODE: return buildClassVar(result, (ClassVarNode) node);
             case CLASSVARASGNNODE: return buildClassVarAsgn((ClassVarAsgnNode) node);
-            case COLON2NODE: return buildColon2((Colon2Node) node);
-            case COLON3NODE: return buildColon3((Colon3Node) node);
+            case COLON2NODE: return buildColon2(result, (Colon2Node) node);
+            case COLON3NODE: return buildColon3(result, (Colon3Node) node);
             case COMPLEXNODE: return buildComplex((ComplexNode) node);
             case CONSTDECLNODE: return buildConstDecl((ConstDeclNode) node);
-            case CONSTNODE: return searchConst(((ConstNode) node).getName());
+            case CONSTNODE: return searchConst(result, ((ConstNode) node).getName());
             case DASGNNODE: return buildDAsgn((DAsgnNode) node);
             case DEFINEDNODE: return buildGetDefinition(((DefinedNode) node).getExpressionNode());
             case DEFNNODE: return buildDefn((MethodDefNode) node);
@@ -278,10 +278,10 @@ public class IRBuilderAST extends IRBuilder {
                 throw notCompilable("Use buildRoot()", node);
             case SCLASSNODE: return buildSClass((SClassNode) node);
             case SELFNODE: return buildSelf();
-            case SPLATNODE: return buildSplat((SplatNode) node);
+            case SPLATNODE: return buildSplat(result, (SplatNode) node);
             case STRNODE: return buildStr((StrNode) node);
-            case SUPERNODE: return buildSuper((SuperNode) node);
-            case SVALUENODE: return buildSValue((SValueNode) node);
+            case SUPERNODE: return buildSuper(result, (SuperNode) node);
+            case SVALUENODE: return buildSValue(result, (SValueNode) node);
             case SYMBOLNODE: return buildSymbol((SymbolNode) node);
             case TRUENODE: return tru();
             case UNDEFNODE: return buildUndef(node);
@@ -290,10 +290,10 @@ public class IRBuilderAST extends IRBuilder {
             case VCALLNODE: return buildVCall(result, (VCallNode) node);
             case WHILENODE: return buildWhile((WhileNode) node);
             case WHENNODE: assert false : "When nodes are handled by case node compilation."; return null;
-            case XSTRNODE: return buildXStr((XStrNode) node);
-            case YIELDNODE: return buildYield((YieldNode) node, result);
+            case XSTRNODE: return buildXStr(result, (XStrNode) node);
+            case YIELDNODE: return buildYield(result, (YieldNode) node);
             case ZARRAYNODE: return buildZArray(result);
-            case ZSUPERNODE: return buildZSuper((ZSuperNode) node);
+            case ZSUPERNODE: return buildZSuper(result, (ZSuperNode) node);
             default: throw notCompilable("Unknown node encountered in builder", node);
         }
     }
@@ -434,7 +434,7 @@ public class IRBuilderAST extends IRBuilder {
                 return rhs;
             }
             case SPLATNODE: {     // a[1] = *b
-                Splat rhs = new Splat(buildSplat((SplatNode)args));
+                Splat rhs = new Splat(buildSplat(temp(), (SplatNode)args));
                 argsList.add(rhs);
                 return rhs;
             }
@@ -764,18 +764,20 @@ public class IRBuilderAST extends IRBuilder {
         }
     }
 
-    public Operand buildArgsCat(final ArgsCatNode argsCatNode) {
+    public Operand buildArgsCat(Variable result, ArgsCatNode argsCatNode) {
+        if (result == null) result = temp();
         Operand lhs = build(argsCatNode.getFirstNode());
         Operand rhs = build(argsCatNode.getSecondNode());
 
-        return addResultInstr(new BuildCompoundArrayInstr(temp(), lhs, rhs, false, false));
+        return addResultInstr(new BuildCompoundArrayInstr(result, lhs, rhs, false, false));
     }
 
-    public Operand buildArgsPush(final ArgsPushNode node) {
+    public Operand buildArgsPush(Variable result, ArgsPushNode node) {
+        if (result == null) result = temp();
         Operand lhs = build(node.getFirstNode());
         Operand rhs = build(node.getSecondNode());
 
-        return addResultInstr(new BuildCompoundArrayInstr(temp(), lhs, rhs, true, false));
+        return addResultInstr(new BuildCompoundArrayInstr(result, lhs, rhs, true, false));
     }
 
     private Operand buildAttrAssign(Variable result, AttrAssignNode attrAssignNode) {
@@ -1722,10 +1724,11 @@ public class IRBuilderAST extends IRBuilder {
     }
 
     // @@c
-    public Operand buildClassVar(ClassVarNode node) {
+    public Operand buildClassVar(Variable result, ClassVarNode node) {
+        if (result == null) result = temp();
         if (isTopScope()) return addRaiseError("RuntimeError", "class variable access from toplevel");
 
-        return addResultInstr(new GetClassVariableInstr(temp(), classVarDefinitionContainer(), node.getName()));
+        return addResultInstr(new GetClassVariableInstr(result, classVarDefinitionContainer(), node.getName()));
     }
 
     // ClassVarAsgn node is assignment within a method/closure scope
@@ -1775,18 +1778,18 @@ public class IRBuilderAST extends IRBuilder {
         return putConstant((Colon3Node) node.getFirstNode(), value);
     }
 
-    public Operand buildColon2(final Colon2Node colon2) {
+    public Operand buildColon2(Variable result, final Colon2Node colon2) {
         Node lhs = colon2.getLeftNode();
 
         // Colon2ImplicitNode - (module|class) Foo.  Weird, but it is a wrinkle of AST inheritance.
-        if (lhs == null) return searchConst(colon2.getName());
+        if (lhs == null) return searchConst(result, colon2.getName());
 
         // Colon2ConstNode (Left::name)
-        return searchModuleForConst(build(lhs), colon2.getName());
+        return searchModuleForConst(result, build(lhs), colon2.getName());
     }
 
-    public Operand buildColon3(Colon3Node node) {
-        return searchModuleForConst(getManager().getObjectClass(), node.getName());
+    public Operand buildColon3(Variable result, Colon3Node node) {
+        return searchModuleForConst(result, getManager().getObjectClass(), node.getName());
     }
 
     public Operand buildComplex(ComplexNode node) {
@@ -3941,8 +3944,9 @@ public class IRBuilderAST extends IRBuilder {
         return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 2, flags);
     }
 
-    public Operand buildSplat(SplatNode splatNode) {
-        return addResultInstr(new BuildSplatInstr(temp(), build(splatNode.getValue()), true));
+    public Operand buildSplat(Variable result, SplatNode splatNode) {
+        if (result == null) result = temp();
+        return addResultInstr(new BuildSplatInstr(result, build(splatNode.getValue()), true));
     }
 
     public Operand buildStr(StrNode strNode) {
@@ -3961,14 +3965,14 @@ public class IRBuilderAST extends IRBuilder {
         return new MutableString(strNode.getValue(), strNode.getCodeRange(), scope.getFile(), line);
     }
 
-    private Operand buildZSuper(Operand block) {
+    private Operand buildZSuper(Variable result, Operand block) {
         List<Operand> callArgs = new ArrayList<>(5);
         List<KeyValuePair<Operand, Operand>> keywordArgs = new ArrayList<>(3);
         determineZSuperCallArgs(scope, this, callArgs, keywordArgs);
 
         boolean inClassBody = scope instanceof IRMethod && scope.getLexicalParent() instanceof IRClassBody;
         boolean isInstanceMethod = inClassBody && ((IRMethod) scope).isInstanceMethod;
-        Variable zsuperResult = temp();
+        Variable zsuperResult = result == null ? temp() : result;
         int[] flags = new int[] { 0 };
         if (keywordArgs.size() == 1 && keywordArgs.get(0).getKey().equals(Symbol.KW_REST_ARG_DUMMY)) {
             flags[0] |= (CALL_KEYWORD | CALL_KEYWORD_REST);
@@ -3991,6 +3995,7 @@ public class IRBuilderAST extends IRBuilder {
 
     private CallInstr determineSuperInstr(Variable result, Operand[] args, Operand block, int flags,
                                           boolean inClassBody, boolean isInstanceMethod) {
+        if (result == null) result = temp();
         return inClassBody ?
                 isInstanceMethod ?
                         new InstanceSuperInstr(scope, result, getCurrentModuleVariable(), getName(), args, block, flags, scope.maybeUsingRefinements()) :
@@ -4002,14 +4007,14 @@ public class IRBuilderAST extends IRBuilder {
                 new UnresolvedSuperInstr(scope, result, buildSelf(), args, block, flags, scope.maybeUsingRefinements());
     }
 
-    public Operand buildSuper(SuperNode callNode) {
+    public Operand buildSuper(Variable aResult, SuperNode callNode) {
+        Variable result = aResult == null ? temp() : aResult;
         Operand tempBlock = setupCallClosure(callNode.getIterNode());
         if (tempBlock == NullBlock.INSTANCE) tempBlock = getYieldClosureVariable();
         Operand block = tempBlock;
 
         boolean inClassBody = scope instanceof IRMethod && scope.getLexicalParent() instanceof IRClassBody;
         boolean isInstanceMethod = inClassBody && ((IRMethod) scope).isInstanceMethod;
-        Variable result = temp();
         int[] flags = new int[] { 0 };
         Operand[] args = setupCallArgs(callNode.getArgsNode(), flags);
 
@@ -4029,8 +4034,8 @@ public class IRBuilderAST extends IRBuilder {
         return result;
     }
 
-    public Operand buildSValue(SValueNode node) {
-        return copy(new SValue(build(node.getValue())));
+    public Operand buildSValue(Variable result, SValueNode node) {
+        return copy(result, new SValue(build(node.getValue())));
     }
 
     public Operand buildSymbol(SymbolNode node) {
@@ -4109,8 +4114,6 @@ public class IRBuilderAST extends IRBuilder {
     }
 
     public Operand buildVCall(Variable result, VCallNode node) {
-        if (result == null) result = temp();
-
         return _call(result, VARIABLE, buildSelf(), node.getName());
     }
 
@@ -4118,11 +4121,12 @@ public class IRBuilderAST extends IRBuilder {
         return buildConditionalLoop(whileNode.getConditionNode(), whileNode.getBodyNode(), true, whileNode.evaluateAtStart());
     }
 
-    public Operand buildXStr(XStrNode node) {
-        return fcall(temp(), Self.SELF, "`", new FrozenString(node.getValue(), node.getCodeRange(), scope.getFile(), node.getLine()));
+    public Operand buildXStr(Variable result, XStrNode node) {
+        return fcall(result, Self.SELF, "`", new FrozenString(node.getValue(), node.getCodeRange(), scope.getFile(), node.getLine()));
     }
 
-    public Operand buildYield(YieldNode node, Variable result) {
+    public Operand buildYield(Variable result, YieldNode node) {
+        if (result == null) result = temp();
         if (scope instanceof IRScriptBody || scope instanceof IRModuleBody) throwSyntaxError(node, "Invalid yield");
 
         boolean unwrap = true;
@@ -4138,13 +4142,12 @@ public class IRBuilderAST extends IRBuilder {
             }
         }
 
-        Variable ret = result == null ? temp() : result;
         int[] flags = new int[] { 0 };
         Operand value = buildYieldArgs(argNode, flags);
 
-        addInstr(new YieldInstr(ret, getYieldClosureVariable(), value, flags[0], unwrap));
+        addInstr(new YieldInstr(result, getYieldClosureVariable(), value, flags[0], unwrap));
 
-        return ret;
+        return result;
     }
 
     public Variable as_fixnum(Operand value) {
@@ -4155,11 +4158,11 @@ public class IRBuilderAST extends IRBuilder {
        return copy(result, new Array());
     }
 
-    public Operand buildZSuper(ZSuperNode zsuperNode) {
+    public Operand buildZSuper(Variable result, ZSuperNode zsuperNode) {
         Operand block = setupCallClosure(zsuperNode.getIterNode());
         if (block == NullBlock.INSTANCE) block = getYieldClosureVariable();
 
-        return scope instanceof IRMethod ? buildZSuper(block) : buildZSuperIfNest(block);
+        return scope instanceof IRMethod ? buildZSuper(result, block) : buildZSuperIfNest(result, block);
     }
 
     /*

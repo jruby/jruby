@@ -99,7 +99,7 @@ import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_REST;
 public abstract class IRBuilder {
     static final UnexecutableNil U_NIL = UnexecutableNil.U_NIL;
 
-    private IRManager manager;
+    private final IRManager manager;
     protected final IRScope scope;
     protected final IRBuilder parent;
     protected final List<Instr> instructions;
@@ -496,12 +496,14 @@ public abstract class IRBuilder {
         return newArgs;
     }
 
-    Operand searchModuleForConst(Operand startingModule, RubySymbol name) {
-        return addResultInstr(new SearchModuleForConstInstr(temp(), startingModule, name, true));
+    Operand searchModuleForConst(Variable result, Operand startingModule, RubySymbol name) {
+        if (result == null) result = temp();
+        return addResultInstr(new SearchModuleForConstInstr(result, startingModule, name, true));
     }
 
-    Operand searchConst(RubySymbol name) {
-        return addResultInstr(new SearchConstInstr(temp(), CurrentScope.INSTANCE, name, false));
+    Operand searchConst(Variable result, RubySymbol name) {
+        if (result == null) result = temp();
+        return addResultInstr(new SearchConstInstr(result, CurrentScope.INSTANCE, name, false));
     }
 
     // SSS FIXME: This feels a little ugly.  Is there a better way of representing this?
@@ -538,8 +540,8 @@ public abstract class IRBuilder {
     }
 
     Operand addRaiseError(String id, Operand message) {
-        Operand exceptionClass = searchModuleForConst(getManager().getObjectClass(), symbol(id));
-        Operand kernel = searchModuleForConst(getManager().getObjectClass(), symbol("Kernel"));
+        Operand exceptionClass = searchModuleForConst(temp(), getManager().getObjectClass(), symbol(id));
+        Operand kernel = searchModuleForConst(temp(), getManager().getObjectClass(), symbol("Kernel"));
         return call(temp(), kernel, "raise", exceptionClass, message);
     }
 
@@ -636,8 +638,8 @@ public abstract class IRBuilder {
     }
 
     Variable _call(Variable result, CallType type, Operand object, RubySymbol name, Operand... args) {
-        addInstr(CallInstr.create(scope, type, result, name, object, args, NullBlock.INSTANCE, 0));
-        return result;
+        if (result == null) result = temp();
+        return addResultInstr(CallInstr.create(scope, type, result, name, object, args, NullBlock.INSTANCE, 0));
     }
 
     // if-only
@@ -1003,7 +1005,7 @@ public abstract class IRBuilder {
         return scope.getSelf();
     }
 
-    Operand buildZSuperIfNest(final Operand block) {
+    Operand buildZSuperIfNest(Variable result, final Operand block) {
         int depthFrom = 0;
         IRBuilder superBuilder = this;
         IRScope superScope = scope;
@@ -1022,7 +1024,7 @@ public abstract class IRBuilder {
         final int depthFromSuper = depthFrom;
 
         // If we hit a method, this is known to always succeed
-        Variable zsuperResult = temp();
+        Variable zsuperResult = result == null ? temp() : result;
         if (superScope instanceof IRMethod && !defineMethod) {
             List<Operand> callArgs = new ArrayList<>(5);
             List<KeyValuePair<Operand, Operand>> keywordArgs = new ArrayList<>(3);
