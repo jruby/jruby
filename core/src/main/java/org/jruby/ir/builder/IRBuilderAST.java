@@ -80,7 +80,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.function.Function;
 
-import static org.jruby.ir.builder.IRBuilder.AndType.*;
+import static org.jruby.ir.builder.IRBuilder.BinaryType.*;
 import static org.jruby.ir.instructions.Instr.EMPTY_OPERANDS;
 import static org.jruby.ir.instructions.IntegerMathInstr.Op.ADD;
 import static org.jruby.ir.instructions.IntegerMathInstr.Op.SUBTRACT;
@@ -731,7 +731,7 @@ public class IRBuilderAST extends IRBuilder {
     public Operand buildAnd(final AndNode andNode) {
         Operand left = build(andNode.getFirstNode());
         NodeType leftType = andNode.getFirstNode().getNodeType();
-        AndType type = leftType.alwaysTrue() ? LeftTrue : (leftType.alwaysFalse() ? LeftFalse : Normal);
+        BinaryType type = leftType.alwaysTrue() ? LeftTrue : (leftType.alwaysFalse() ? LeftFalse : Normal);
 
         return buildAnd(left, () -> build(andNode.getSecondNode()), type);
     }
@@ -3547,36 +3547,12 @@ public class IRBuilderAST extends IRBuilder {
         return elt;
     }
 
-    // Translate ret = (a || b) to ret = (a ? true : b) as follows
-    //
-    //    v1 = -- build(a) --
-    //       OPT: ret can be set to v1, but effectively v1 is true if we take the branch to L.
-    //            while this info can be inferred by using attributes, why bother if we can do this?
-    //    ret = v1
-    //    beq(v1, true, L)
-    //    v2 = -- build(b) --
-    //    ret = v2
-    // L:
-    //
     public Operand buildOr(final OrNode orNode) {
-        // lazy evaluation opt.  Don't bother building rhs of expr is lhs is unconditionally true.
-        if (orNode.getFirstNode().getNodeType().alwaysTrue()) return build(orNode.getFirstNode());
-
-        // lazy evaluation opt. Eliminate conditional logic if we know lhs is always false.
-        if (orNode.getFirstNode().getNodeType().alwaysFalse()) {
-            build(orNode.getFirstNode());          // needs to be executed for potential side-effects
-            return build(orNode.getSecondNode());  // but we return rhs for result.
-        }
-
-        Label endOfExprLabel = getNewLabel();
         Operand left = build(orNode.getFirstNode());
-        Variable result = getValueInTemporaryVariable(left);
-        addInstr(createBranch(left, tru(), endOfExprLabel));
-        Operand right  = build(orNode.getSecondNode());
-        addInstr(new CopyInstr(result, right));
-        addInstr(new LabelInstr(endOfExprLabel));
+        NodeType leftType = orNode.getFirstNode().getNodeType();
+        BinaryType type = leftType.alwaysTrue() ? LeftTrue : (leftType.alwaysFalse() ? LeftFalse : Normal);
 
-        return result;
+        return buildOr(left, () -> build(orNode.getSecondNode()), type);
     }
 
     private InterpreterContext buildPrePostExeInner(Node body) {

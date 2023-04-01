@@ -866,14 +866,14 @@ public abstract class IRBuilder {
         return nil();
     }
 
-    public enum AndType {
+    public enum BinaryType {
         Normal,    // Left is unknown expression
         LeftTrue,  // Statically true
         LeftFalse  // Statically false
     }
 
     // Note: passing NORMAL just removes ability to remove a branch and will be semantically correct.
-    public Operand buildAnd(Operand left, CodeBlock right, AndType truth) {
+    public Operand buildAnd(Operand left, CodeBlock right, BinaryType truth) {
         switch(truth) {
             case LeftTrue:  // left is statically true so we return whatever right expr is.
                 return right.run();
@@ -1000,6 +1000,22 @@ public abstract class IRBuilder {
     }
 
     protected abstract Operand buildModuleBody(Object body);
+
+    public Operand buildOr(Operand left, CodeBlock right, BinaryType type) {
+        // lazy evaluation opt.  Don't bother building rhs of expr is lhs is unconditionally true.
+        if (type == BinaryType.LeftTrue) return left;
+
+        // lazy evaluation opt. Eliminate conditional logic if we know lhs is always false.
+        if (type == BinaryType.LeftFalse) return right.run();
+
+        Label endOfExprLabel = getNewLabel();
+        Variable result = getValueInTemporaryVariable(left);
+        addInstr(createBranch(left, tru(), endOfExprLabel));
+        addInstr(new CopyInstr(result, right.run()));
+        addInstr(new LabelInstr(endOfExprLabel));
+
+        return result;
+    }
 
     public Variable buildSelf() {
         return scope.getSelf();

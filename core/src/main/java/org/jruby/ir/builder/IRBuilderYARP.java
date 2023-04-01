@@ -82,7 +82,9 @@ public class IRBuilderYARP extends IRBuilder {
      */
     private Operand build(Variable result, Node node) {
         // FIXME: Need node types if this is how we process
-        if (node instanceof ArrayNode) {
+        if (node instanceof AndNode) {
+            return buildAnd((AndNode) node);
+        } else if (node instanceof ArrayNode) {
             return buildArray((ArrayNode) node);
         } else if (node instanceof BlockArgumentNode) {
             return buildBlockArgument((BlockArgumentNode) node);
@@ -112,6 +114,8 @@ public class IRBuilderYARP extends IRBuilder {
             return buildModule((ModuleNode) node);
         } else if (node instanceof NilNode) {
             return nil();
+        } else if (node instanceof OrNode) {
+            return buildOr((OrNode) node);
         } else if (node instanceof ProgramNode) {
             return buildProgram((ProgramNode) node);
         } else if (node instanceof SplatNode) {
@@ -129,6 +133,10 @@ public class IRBuilderYARP extends IRBuilder {
         } else {
             throw new RuntimeException("Unhandled Node type: " + node);
         }
+    }
+
+    private Operand buildAnd(AndNode node) {
+        return buildAnd(build(node.left), () -> build(node.right), BinaryType.Normal);
     }
 
     private Operand[] buildArguments(ArgumentsNode node) {
@@ -354,6 +362,11 @@ public class IRBuilderYARP extends IRBuilder {
         builder.defineMethodInner(node, scope, coverageMode); // sets interpreterContext
 
         return method;
+    }
+
+    // FIXME: Need NodeType.alwaysTrue/False so we can opt this.
+    private Operand buildOr(OrNode node) {
+        return buildOr(build(node.left), () -> build(node.right), BinaryType.Normal);
     }
 
     private void buildParameters(ParametersNode parameters) {
