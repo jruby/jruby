@@ -139,7 +139,7 @@ import static org.jruby.util.RubyStringBuilder.str;
 // This introduces artificial data dependencies, but fewer variables.  But, if we are going to implement SSA pass
 // this is not a big deal.  Think this through!
 
-public class IRBuilderAST extends IRBuilder {
+public class IRBuilderAST extends IRBuilder<Node, DefNode> {
     static final UnexecutableNil U_NIL = UnexecutableNil.U_NIL;
 
     public static Node buildAST(boolean isCommandLineScript, String arg) {
@@ -2279,33 +2279,23 @@ public class IRBuilderAST extends IRBuilder {
     }
 
     @Override
-    public Operand buildGeneric(Object node) {
-        return build((Node) node);
+    public void receiveMethodArgs(DefNode defNode) {
+        receiveMethodArgs(defNode.getArgsNode());
     }
 
     @Override
-    public Operand buildGeneric(Variable result, Object node) {
-        return build(result, (Node) node);
+    public Operand buildMethodBody(DefNode defNode) {
+        return build(defNode.getBodyNode());
     }
 
     @Override
-    public void receiveMethodArgs(Object defNode) {
-        receiveMethodArgs(((DefNode) defNode).getArgsNode());
+    protected Operand buildModuleBody(Node body) {
+        return build(body);
     }
 
     @Override
-    public Operand buildMethodBody(Object defNode) {
-        return build(((DefNode) defNode).getBodyNode());
-    }
-
-    @Override
-    protected Operand buildModuleBody(Object body) {
-        return build((Node) body);
-    }
-
-    @Override
-    public int getMethodEndLine(Object defNode) {
-        return ((DefNode) defNode).getEndLine() + 1;
+    public int getMethodEndLine(DefNode defNode) {
+        return defNode.getEndLine() + 1;
     }
 
     private IRMethod defineNewMethod(MethodDefNode defNode, boolean isInstanceMethod) {
@@ -2757,12 +2747,7 @@ public class IRBuilderAST extends IRBuilder {
             estimatedSize += dynamicPiece(pieces, i, nodePieces[i]);
         }
 
-        if (result == null) result = temp();
-
-        boolean debuggingFrozenStringLiteral = getManager().getInstanceConfig().isDebuggingFrozenStringLiteral();
-        addInstr(new BuildCompoundStringInstr(result, pieces, node.getEncoding(), estimatedSize, node.isFrozen(), debuggingFrozenStringLiteral, getFileName(), node.getLine()));
-
-        return result;
+        return buildDStr(result, pieces, estimatedSize, node.getEncoding(), node.isFrozen(), node.getLine());
     }
 
     public Operand buildDSymbol(Variable result, DSymbolNode node) {

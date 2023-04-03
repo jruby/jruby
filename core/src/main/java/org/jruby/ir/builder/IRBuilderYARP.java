@@ -52,7 +52,7 @@ import java.util.List;
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.IS_HASH_EMPTY;
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.MERGE_KWARGS;
 
-public class IRBuilderYARP extends IRBuilder {
+public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
     YarpParseResult result = null;
 
     public IRBuilderYARP(IRManager manager, IRScope scope, IRBuilder parent, IRBuilder variableBuilder) {
@@ -72,7 +72,7 @@ public class IRBuilderYARP extends IRBuilder {
         return build(program.statements);
     }
 
-    private Operand build(Node node) {
+    Operand build(Node node) {
         return build(null, node);
     }
 
@@ -80,7 +80,7 @@ public class IRBuilderYARP extends IRBuilder {
      * @param result preferred result variable (this reduces temp vars pinning values).
      * @param node to be built
      */
-    private Operand build(Variable result, Node node) {
+    Operand build(Variable result, Node node) {
         // FIXME: Need node types if this is how we process
         if (node instanceof AndNode) {
             return buildAnd((AndNode) node);
@@ -106,6 +106,8 @@ public class IRBuilderYARP extends IRBuilder {
             return buildIf(result, (IfNode) node);
         } else if (node instanceof IntegerNode) {
             return buildInteger((IntegerNode) node);
+        } else if (node instanceof InterpolatedStringNode) {
+            return buildInterpolatedString((InterpolatedStringNode) node);
         } else if (node instanceof LocalVariableReadNode) {
             return buildLocalVariableRead((LocalVariableReadNode) node);
         } else if (node instanceof LocalVariableWriteNode) {
@@ -245,16 +247,6 @@ public class IRBuilderYARP extends IRBuilder {
         return buildDefn(buildNewMethod(node, false));
     }
 
-    @Override
-    public Operand buildGeneric(Object node) {
-        return build((Node) node);
-    }
-
-    @Override
-    public Operand buildGeneric(Variable result, Object node) {
-        return build(result, (Node) node);
-    }
-
     private Operand buildHash(HashNode node) {
         List<KeyValuePair<Operand, Operand>> args = new ArrayList<>();
         boolean hasAssignments = false; // FIXME: Missing variable assignments check
@@ -306,6 +298,11 @@ public class IRBuilderYARP extends IRBuilder {
         return fix(RubyNumeric.fix2long(RubyNumeric.str2inum(getManager().runtime, getManager().getRuntime().newString(value), 10)));
     }
 
+
+    private Operand buildInterpolatedString(InterpolatedStringNode node) {
+        return nil();
+    }
+
     private Operand buildLocalVariableRead(LocalVariableReadNode node) {
         return getLocalVariable(symbol(byteListFromNode(node)), node.depth);
     }
@@ -347,8 +344,8 @@ public class IRBuilderYARP extends IRBuilder {
     }
 
     @Override
-    protected Operand buildModuleBody(Object body) {
-        return build((Node) body);
+    protected Operand buildModuleBody(Node body) {
+        return build(body);
     }
 
     private IRMethod buildNewMethod(DefNode node, boolean isInstanceMethod) {
@@ -621,17 +618,17 @@ public class IRBuilderYARP extends IRBuilder {
     }
 
     @Override
-    public void receiveMethodArgs(Object defNode) {
-        buildParameters(((DefNode) defNode).parameters);
+    public void receiveMethodArgs(DefNode defNode) {
+        buildParameters(defNode.parameters);
     }
 
     @Override
-    public Operand buildMethodBody(Object defNode) {
-        return build(((DefNode) defNode).statements);
+    public Operand buildMethodBody(DefNode defNode) {
+        return build(defNode.statements);
     }
 
     @Override
-    public int getMethodEndLine(Object defNode) {
+    public int getMethodEndLine(DefNode defNode) {
         return 0;
     }
 

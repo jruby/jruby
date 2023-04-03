@@ -1,5 +1,6 @@
 package org.jruby.ir.builder;
 
+import org.jcodings.Encoding;
 import org.jruby.EvalType;
 import org.jruby.ParseResult;
 import org.jruby.RubyInstanceConfig;
@@ -23,6 +24,7 @@ import org.jruby.ir.instructions.BNEInstr;
 import org.jruby.ir.instructions.BNilInstr;
 import org.jruby.ir.instructions.BTrueInstr;
 import org.jruby.ir.instructions.BUndefInstr;
+import org.jruby.ir.instructions.BuildCompoundStringInstr;
 import org.jruby.ir.instructions.CallInstr;
 import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.DefineInstanceMethodInstr;
@@ -96,7 +98,7 @@ import static org.jruby.runtime.CallType.NORMAL;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_REST;
 
-public abstract class IRBuilder {
+public abstract class IRBuilder<U, V> {
     static final UnexecutableNil U_NIL = UnexecutableNil.U_NIL;
 
     private final IRManager manager;
@@ -439,7 +441,7 @@ public abstract class IRBuilder {
         throw new RuntimeException("BUG: no BEQ");
     }
 
-    public static void determineZSuperCallArgs(IRScope scope, IRBuilder builder, List<Operand> callArgs, List<KeyValuePair<Operand, Operand>> keywordArgs) {
+    public void determineZSuperCallArgs(IRScope scope, IRBuilder<U, V> builder, List<Operand> callArgs, List<KeyValuePair<Operand, Operand>> keywordArgs) {
         if (builder != null) {  // Still in currently building scopes
             for (Instr instr : builder.instructions) {
                 extractCallOperands(callArgs, keywordArgs, instr);
@@ -888,11 +890,11 @@ public abstract class IRBuilder {
     }
 
     // FIXME: AST needs variable passed in to work which I think means some context really needs to pass in the result at least in AST build?
-    public Operand buildConditional(Variable result, Object predicate, Object statements, Object consequent) {
+    public Operand buildConditional(Variable result, U predicate, U statements, U consequent) {
         Label    falseLabel = getNewLabel();
         Label    doneLabel  = getNewLabel();
         Operand thenResult;
-        addInstr(createBranch(buildGeneric(predicate), fals(), falseLabel));
+        addInstr(createBranch(build(predicate), fals(), falseLabel));
 
         boolean thenNull = false;
         boolean elseNull = false;
@@ -901,7 +903,7 @@ public abstract class IRBuilder {
 
         // Build the then part of the if-statement
         if (statements != null) {
-            thenResult = buildGeneric(statements);
+            thenResult = build(statements);
             if (thenResult != U_NIL) { // thenResult can be U_NIL if then-body ended with a return!
                 // SSS FIXME: Can look at the last instr and short-circuit this jump if it is a break rather
                 // than wait for dead code elimination to do it
@@ -921,7 +923,7 @@ public abstract class IRBuilder {
         // Build the else part of the if-statement
         addInstr(new LabelInstr(falseLabel));
         if (consequent != null) {
-            Operand elseResult = buildGeneric(consequent);
+            Operand elseResult = build(consequent);
             // elseResult can be U_NIL if then-body ended with a return!
             if (elseResult != U_NIL) {
                 copy(result, elseResult);
@@ -949,9 +951,18 @@ public abstract class IRBuilder {
         return new Symbol(method.getName());
     }
 
-    public Operand buildLocalVariableAssign(RubySymbol name, int depth, Object valueNode) {
+    public Operand buildDStr(Variable result, Operand[] pieces, int estimatedSize, Encoding encoding, boolean isFrozen, int line) {
+        if (result == null) result = temp();
+
+        boolean debuggingFrozenStringLiteral = getManager().getInstanceConfig().isDebuggingFrozenStringLiteral();
+        addInstr(new BuildCompoundStringInstr(result, pieces, encoding, estimatedSize, isFrozen, debuggingFrozenStringLiteral, getFileName(), line));
+
+        return result;
+    }
+
+    public Operand buildLocalVariableAssign(RubySymbol name, int depth, U valueNode) {
         Variable variable  = getLocalVariable(name, depth);
-        Operand value = buildGeneric(variable, valueNode);
+        Operand value = build(variable, valueNode);
 
         if (variable != value) copy(variable, value);  // no use copying a variable to itself
 
@@ -980,7 +991,7 @@ public abstract class IRBuilder {
         // because of the use of copyAndReturnValue method for literal objects.
     }
 
-    InterpreterContext buildModuleOrClassBody(Object body, int startLine, int endLine) {
+    InterpreterContext buildModuleOrClassBody(U body, int startLine, int endLine) {
         addInstr(new TraceInstr(RubyEvent.CLASS, getCurrentModuleVariable(), null, getFileName(), startLine + 1));
 
         prepareImplicitState();                                    // recv_self, add frame block, etc)
@@ -999,7 +1010,7 @@ public abstract class IRBuilder {
         return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
     }
 
-    protected abstract Operand buildModuleBody(Object body);
+    abstract Operand buildModuleBody(U body);
 
     public Operand buildOr(Operand left, CodeBlock right, BinaryType type) {
         // lazy evaluation opt.  Don't bother building rhs of expr is lhs is unconditionally true.
@@ -1078,13 +1089,13 @@ public abstract class IRBuilder {
         return zsuperResult;
     }
 
-    public abstract Operand buildGeneric(Variable result, Object node);
-    public abstract Operand buildGeneric(Object node);
-    public abstract void receiveMethodArgs(Object defNode);
-    public abstract Operand buildMethodBody(Object defNode);
-    public abstract int getMethodEndLine(Object defNode);
+    abstract Operand build(Variable result, U node);
+    abstract Operand build(U node);
+    abstract void receiveMethodArgs(V defNode);
+    abstract Operand buildMethodBody(V defNode);
+    abstract int getMethodEndLine(V defNode);
 
-    public InterpreterContext defineMethodInner(Object defNode, IRScope parent, int coverageMode) {
+    public InterpreterContext defineMethodInner(V defNode, IRScope parent, int coverageMode) {
         this.coverageMode = coverageMode;
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
