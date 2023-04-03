@@ -2686,7 +2686,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode> {
         return addResultInstr(new BuildRangeInstr(temp(), begin, end, dotNode.isExclusive()));
     }
 
-    private int dynamicPiece(Operand[] pieces, int i, Node pieceNode) {
+    int dynamicPiece(Operand[] pieces, int i, Node pieceNode) {
         Operand piece;
 
         // somewhat arbitrary minimum size for interpolated values
@@ -2739,15 +2739,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode> {
     }
 
     public Operand buildDStr(Variable result, DStrNode node) {
-        Node[] nodePieces = node.children();
-        Operand[] pieces = new Operand[nodePieces.length];
-        int estimatedSize = 0;
-
-        for (int i = 0; i < pieces.length; i++) {
-            estimatedSize += dynamicPiece(pieces, i, nodePieces[i]);
-        }
-
-        return buildDStr(result, pieces, estimatedSize, node.getEncoding(), node.isFrozen(), node.getLine());
+        return buildDStr(result, node.children(), node.getEncoding(), node.isFrozen(), node.getLine());
     }
 
     public Operand buildDSymbol(Variable result, DSymbolNode node) {

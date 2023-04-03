@@ -5,6 +5,7 @@ import org.jruby.EvalType;
 import org.jruby.ParseResult;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
+import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
 import org.jruby.ext.coverage.CoverageData;
 import org.jruby.ir.IRClosure;
@@ -951,8 +952,15 @@ public abstract class IRBuilder<U, V> {
         return new Symbol(method.getName());
     }
 
-    public Operand buildDStr(Variable result, Operand[] pieces, int estimatedSize, Encoding encoding, boolean isFrozen, int line) {
+    public Operand buildDStr(Variable result, U[] nodePieces, Encoding encoding, boolean isFrozen, int line) {
         if (result == null) result = temp();
+
+        Operand[] pieces = new Operand[nodePieces.length];
+        int estimatedSize = 0;
+
+        for (int i = 0; i < pieces.length; i++) {
+            estimatedSize += dynamicPiece(pieces, i, nodePieces[i]);
+        }
 
         boolean debuggingFrozenStringLiteral = getManager().getInstanceConfig().isDebuggingFrozenStringLiteral();
         addInstr(new BuildCompoundStringInstr(result, pieces, encoding, estimatedSize, isFrozen, debuggingFrozenStringLiteral, getFileName(), line));
@@ -1091,9 +1099,10 @@ public abstract class IRBuilder<U, V> {
 
     abstract Operand build(Variable result, U node);
     abstract Operand build(U node);
-    abstract void receiveMethodArgs(V defNode);
     abstract Operand buildMethodBody(V defNode);
+    abstract int dynamicPiece(Operand[] pieces, int index, U piece);
     abstract int getMethodEndLine(V defNode);
+    abstract void receiveMethodArgs(V defNode);
 
     public InterpreterContext defineMethodInner(V defNode, IRScope parent, int coverageMode) {
         this.coverageMode = coverageMode;

@@ -1,14 +1,19 @@
 package org.jruby.ir.builder;
 
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.ParseResult;
 import org.jruby.RubyNumeric;
 import org.jruby.RubySymbol;
+import org.jruby.ast.EvStrNode;
+import org.jruby.ast.FileNode;
+import org.jruby.ast.StrNode;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRModuleBody;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.instructions.AsStringInstr;
 import org.jruby.ir.instructions.BNEInstr;
 import org.jruby.ir.instructions.BuildSplatInstr;
 import org.jruby.ir.instructions.CheckArityInstr;
@@ -30,6 +35,8 @@ import org.jruby.ir.instructions.SearchConstInstr;
 import org.jruby.ir.instructions.ToAryInstr;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.CurrentScope;
+import org.jruby.ir.operands.Filename;
+import org.jruby.ir.operands.FrozenString;
 import org.jruby.ir.operands.Hash;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.MutableString;
@@ -107,7 +114,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
         } else if (node instanceof IntegerNode) {
             return buildInteger((IntegerNode) node);
         } else if (node instanceof InterpolatedStringNode) {
-            return buildInterpolatedString((InterpolatedStringNode) node);
+            return buildInterpolatedString(result, (InterpolatedStringNode) node);
         } else if (node instanceof LocalVariableReadNode) {
             return buildLocalVariableRead((LocalVariableReadNode) node);
         } else if (node instanceof LocalVariableWriteNode) {
@@ -299,8 +306,9 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
     }
 
 
-    private Operand buildInterpolatedString(InterpolatedStringNode node) {
-        return nil();
+    private Operand buildInterpolatedString(Variable result, InterpolatedStringNode node) {
+        // FIXME: Missing encoding, frozen, line
+        return buildDStr(result, node.parts, UTF8Encoding.INSTANCE, false, 0);
     }
 
     private Operand buildLocalVariableRead(LocalVariableReadNode node) {
@@ -428,12 +436,60 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
         return addResultInstr(new BuildSplatInstr(temp(), build(node.expression), true));
     }
 
+    public Operand buildStrRaw(StringNode node) {
+        int line = 0; // FIXME: need to get line number
+
+        // FIXME: Need to know if it is frozen
+        //if (strNode.isFrozen()) return new FrozenString(strNode.getValue(), strNode.getCodeRange(), scope.getFile(), line);
+
+        // FIXME: need coderange.
+        return new MutableString(byteListFromToken(((StringNode) node).content), 0, scope.getFile(), line);
+    }
+
     private Operand buildSymbol(SymbolNode node) {
         return new Symbol(symbol(byteListFromToken(node.value)));
     }
 
     private Operand buildUnless(Variable result, UnlessNode node) {
         return buildConditional(result, node.predicate, node.consequent, node.statements);
+    }
+
+    int dynamicPiece(Operand[] pieces, int i, Node pieceNode) {
+        Operand piece;
+
+        // somewhat arbitrary minimum size for interpolated values
+        int estimatedSize = 4;
+
+        while (true) { // loop to unwrap EvStr
+
+            if (pieceNode instanceof StringNode) {
+                piece = buildStrRaw((StringNode) pieceNode);
+                estimatedSize = byteListFromToken(((StringNode) pieceNode).content).realSize();
+            } else if (pieceNode instanceof StringInterpolatedNode) {
+                if (scope.maybeUsingRefinements()) {
+                    // refined asString must still go through dispatch
+                    Variable result = temp();
+                    addInstr(new AsStringInstr(scope, result, build(((StringInterpolatedNode) pieceNode).statements), scope.maybeUsingRefinements()));
+                    piece = result;
+                } else {
+                    // evstr/asstring logic lives in BuildCompoundString now, unwrap and try again
+                    pieceNode = ((StringInterpolatedNode) pieceNode).statements;
+                    continue;
+                }
+            } else {
+                piece = build(pieceNode);
+            }
+
+            break;
+        }
+
+        if (piece instanceof MutableString) {
+            piece = ((MutableString)piece).frozenString;
+        }
+
+        pieces[i] = piece == null ? nil() : piece;
+
+        return estimatedSize;
     }
 
     /**
