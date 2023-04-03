@@ -41,6 +41,7 @@ import org.jruby.ir.operands.Hash;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.MutableString;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.Regexp;
 import org.jruby.ir.operands.Symbol;
 import org.jruby.ir.operands.SymbolProc;
 import org.jruby.ir.operands.UndefinedValue;
@@ -50,6 +51,7 @@ import org.jruby.runtime.CallType;
 import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
 import org.jruby.util.KeyValuePair;
+import org.jruby.util.RegexpOptions;
 import org.yarp.Nodes.*;
 import org.yarp.YarpParseResult;
 
@@ -127,6 +129,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
             return buildOr((OrNode) node);
         } else if (node instanceof ProgramNode) {
             return buildProgram((ProgramNode) node);
+        } else if (node instanceof RegularExpressionNode) {
+            return buildRegularExpression((RegularExpressionNode) node);
         } else if (node instanceof SplatNode) {
             return buildSplat((SplatNode) node);
         } else if (node instanceof StatementsNode) {
@@ -430,6 +434,13 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
 
         receiveBlockArg(parameters.block);
 
+    }
+
+    private Operand buildRegularExpression(RegularExpressionNode node) {
+        ByteList content = byteListFromToken(node.content);
+        String opts = new String(byteListFromToken(node.closing).getUnsafeBytes()).substring(1);
+        RegexpOptions options = RegexpOptions.newRegexpOptions(opts);
+        return new Regexp(content, options);
     }
 
     private Operand buildSplat(SplatNode node) {
