@@ -1737,15 +1737,6 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode> {
         return val;
     }
 
-    @Deprecated
-    public Operand classVarDeclarationContainer() {
-        return classVarContainer(true);
-    }
-
-    public Operand classVarDefinitionContainer() {
-        return classVarContainer(false);
-    }
-
     public Operand buildConstDecl(ConstDeclNode node) {
         return buildConstDeclAssignment(node, build(node.getValueNode()));
     }

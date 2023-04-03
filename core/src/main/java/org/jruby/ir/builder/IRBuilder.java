@@ -645,8 +645,12 @@ public abstract class IRBuilder<U, V> {
         return addResultInstr(CallInstr.create(scope, type, result, name, object, args, NullBlock.INSTANCE, 0));
     }
 
+    public Operand classVarDefinitionContainer() {
+        return classVarContainer(false);
+    }
+
     // if-only
-    private void cond(Label label, Operand value, Operand test) {
+    void cond(Label label, Operand value, Operand test) {
         addInstr(createBranch(value, test, label));
     }
 
