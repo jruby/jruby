@@ -4,9 +4,9 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.ParseResult;
 import org.jruby.RubyNumeric;
 import org.jruby.RubySymbol;
-import org.jruby.ast.EvStrNode;
-import org.jruby.ast.FileNode;
-import org.jruby.ast.StrNode;
+import org.jruby.ast.MultipleAsgnNode;
+import org.jruby.ast.ZArrayNode;
+import org.jruby.ast.types.ILiteralNode;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRManager;
@@ -35,8 +35,6 @@ import org.jruby.ir.instructions.SearchConstInstr;
 import org.jruby.ir.instructions.ToAryInstr;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.CurrentScope;
-import org.jruby.ir.operands.Filename;
-import org.jruby.ir.operands.FrozenString;
 import org.jruby.ir.operands.Hash;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.MutableString;
@@ -123,6 +121,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
             return buildLocalVariableWrite((LocalVariableWriteNode) node);
         } else if (node instanceof ModuleNode) {
             return buildModule((ModuleNode) node);
+        } else if (node instanceof MultiWriteNode) {
+            return buildMultiWriteNode((MultiWriteNode) node);
         } else if (node instanceof NilNode) {
             return nil();
         } else if (node instanceof OrNode) {
@@ -358,6 +358,35 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
     @Override
     protected Operand buildModuleBody(Node body) {
         return build(body);
+    }
+
+    private Operand buildMultiWriteNode(MultiWriteNode node) {
+        Node valueNode = node.value;
+        Operand values = build(valueNode);
+        Variable ret = getValueInTemporaryVariable(values);
+        if (valueNode instanceof ArrayNode) {
+            buildMultiAssignment(node, ret);
+            // FIXME: need to know equiv of ILiteralNode so we can opt this case.
+        /*} else if (valueNode instanceof ILiteralNode) {
+            // treat a single literal value as a single-element array
+            buildMultiAssignment(node, new Array(new Operand[]{ret}));*/
+        } else {
+            Variable tmp = addResultInstr(new ToAryInstr(temp(), ret));
+            buildMultiAssignment(node, tmp);
+        }
+        return ret;
+    }
+
+    // SplatNode, MultiWriteNode, LocalVariableWrite and lots of other normal writes
+    private void buildMultiAssignment(MultiWriteNode node, Operand values) {
+        Node[] targets = node.targets;
+        int length = targets.length;
+
+        for (int i = 0; i < length; i++) {
+            if (node instanceof MultiWriteNode) {
+               // build
+            }
+        }
     }
 
     private IRMethod buildNewMethod(DefNode node, boolean isInstanceMethod) {

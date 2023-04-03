@@ -370,17 +370,14 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode> {
     // Non-arg masgn
     public Operand buildMultipleAsgn19(MultipleAsgnNode multipleAsgnNode) {
         Node valueNode = multipleAsgnNode.getValueNode();
-        Operand values = build(valueNode);
-        Variable ret = getValueInTemporaryVariable(values);
+        Variable ret = getValueInTemporaryVariable(build(valueNode));
         if (valueNode instanceof ArrayNode || valueNode instanceof ZArrayNode) {
-            buildMultipleAsgn19Assignment(multipleAsgnNode, null, ret);
+            buildMultipleAssignment(multipleAsgnNode, ret);
         } else if (valueNode instanceof ILiteralNode) {
             // treat a single literal value as a single-element array
-            buildMultipleAsgn19Assignment(multipleAsgnNode, null, new Array(new Operand[]{ret}));
+            buildMultipleAssignment(multipleAsgnNode, new Array(new Operand[]{ret}));
         } else {
-            Variable tmp = temp();
-            addInstr(new ToAryInstr(tmp, ret));
-            buildMultipleAsgn19Assignment(multipleAsgnNode, null, tmp);
+            buildMultipleAssignment(multipleAsgnNode, addResultInstr(new ToAryInstr(temp(), ret)));
         }
         return ret;
     }
@@ -604,8 +601,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode> {
                 break;
             case DASGNNODE: {
                 DAsgnNode variable = (DAsgnNode) node;
-                int depth = variable.getDepth();
-                addInstr(new CopyInstr(getLocalVariable(variable.getName(), depth), rhsVal));
+                copy(getLocalVariable(variable.getName(), variable.getDepth()), rhsVal);
                 break;
             }
             case GLOBALASGNNODE:
@@ -617,16 +613,13 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode> {
                 break;
             case LOCALASGNNODE: {
                 LocalAsgnNode localVariable = (LocalAsgnNode) node;
-                int depth = localVariable.getDepth();
-                addInstr(new CopyInstr(getLocalVariable(localVariable.getName(), depth), rhsVal));
+                copy(getLocalVariable(localVariable.getName(), localVariable.getDepth()), rhsVal);
                 break;
             }
             case ZEROARGNODE:
                 throw notCompilable("Shouldn't get here; zeroarg does not do assignment", node);
             case MULTIPLEASGNNODE: {
-                Variable tmp = temp();
-                addInstr(new ToAryInstr(tmp, rhsVal));
-                buildMultipleAsgn19Assignment((MultipleAsgnNode)node, null, tmp);
+                buildMultipleAssignment((MultipleAsgnNode) node, addResultInstr(new ToAryInstr(temp(), rhsVal)));
                 break;
             }
             default:
@@ -2353,9 +2346,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode> {
                 Variable v = temp();
                 addArgReceiveInstr(v, keywords, argIndex, signature);
                 if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.anonreq, null);
-                Variable tmp = temp();
-                addInstr(new ToAryInstr(tmp, v));
-                buildMultipleAsgn19Assignment(childNode, tmp, null);
+                Variable tmp = addResultInstr(new ToAryInstr(temp(), v));
+                buildMultipleAssignmentArgs(childNode, tmp);
                 break;
             }
             default: throw notCompilable("Can't build assignment node", node);
@@ -2543,34 +2535,26 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode> {
 
     // This method is called to build arguments
     public void buildArgsMasgn(Node node, Operand argsArray, boolean isMasgnRoot, int preArgsCount, int postArgsCount, int index, boolean isSplat) {
-        Variable v;
         switch (node.getNodeType()) {
             case DASGNNODE: {
                 DAsgnNode dynamicAsgn = (DAsgnNode) node;
-                v = getArgVariable(dynamicAsgn.getName(), dynamicAsgn.getDepth());
-                if (isSplat) addInstr(new RestArgMultipleAsgnInstr(v, argsArray, index, preArgsCount, postArgsCount));
-                else addInstr(new ReqdArgMultipleAsgnInstr(v, argsArray, index, preArgsCount, postArgsCount));
+                Variable v = getArgVariable(dynamicAsgn.getName(), dynamicAsgn.getDepth());
+                buildSplatForMultiAssign(v, argsArray, preArgsCount, postArgsCount, index, isSplat);
                 break;
             }
             case LOCALASGNNODE: {
                 LocalAsgnNode localVariable = (LocalAsgnNode) node;
-                v = getArgVariable(localVariable.getName(), localVariable.getDepth());
-                if (isSplat) addInstr(new RestArgMultipleAsgnInstr(v, argsArray, index, preArgsCount, postArgsCount));
-                else addInstr(new ReqdArgMultipleAsgnInstr(v, argsArray, index, preArgsCount, postArgsCount));
+                Variable v = getArgVariable(localVariable.getName(), localVariable.getDepth());
+                buildSplatForMultiAssign(v, argsArray, preArgsCount, postArgsCount, index, isSplat);
                 break;
             }
             case MULTIPLEASGNNODE: {
                 MultipleAsgnNode childNode = (MultipleAsgnNode) node;
                 if (!isMasgnRoot) {
-                    v = temp();
-                    if (isSplat) addInstr(new RestArgMultipleAsgnInstr(v, argsArray, index, preArgsCount, postArgsCount));
-                    else addInstr(new ReqdArgMultipleAsgnInstr(v, argsArray, index, preArgsCount, postArgsCount));
-                    Variable tmp = temp();
-                    addInstr(new ToAryInstr(tmp, v));
-                    argsArray = tmp;
+                    Variable v = buildSplatForMultiAssign(temp(), argsArray, preArgsCount, postArgsCount, index, isSplat);
+                    argsArray = addResultInstr(new ToAryInstr(temp(), v));
                 }
-                // Build
-                buildMultipleAsgn19Assignment(childNode, argsArray, null);
+                buildMultipleAssignmentArgs(childNode, argsArray);
                 break;
             }
             default:
@@ -2578,54 +2562,68 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode> {
         }
     }
 
-    // This method is called both for regular multiple assignment as well as argument passing
-    //
-    // Ex: a,b,*c=v  is a regular assignment and in this case, the "values" operand will be non-null
-    // Ex: { |a,b,*c| ..} is the argument passing case
-    public void buildMultipleAsgn19Assignment(final MultipleAsgnNode multipleAsgnNode, Operand argsArray, Operand values) {
+    private Variable buildSplatForMultiAssign(Variable result, Operand argsArray, int preArgsCount, int postArgsCount,
+                                              int index, boolean isSplat) {
+        return isSplat ?
+                addResultInstr(new RestArgMultipleAsgnInstr(result, argsArray, index, preArgsCount, postArgsCount)) :
+                addResultInstr(new ReqdArgMultipleAsgnInstr(result, argsArray, index, preArgsCount, postArgsCount));
+    }
+
+    // Multiple assignment in an ordinary expression (e.g a,b,*c=v).
+    public void buildMultipleAssignment(final MultipleAsgnNode multipleAsgnNode, Operand values) {
         final ListNode masgnPre = multipleAsgnNode.getPre();
         final List<Tuple<Node, Variable>> assigns = new ArrayList<>();
 
-        // Build assignments for specific named arguments
         int i = 0;
         if (masgnPre != null) {
             for (Node an: masgnPre.children()) {
-                if (values == null) {
-                    buildArgsMasgn(an, argsArray, false, -1, -1, i, false);
-                } else {
-                    Variable rhsVal = temp();
-                    addInstr(new ReqdArgMultipleAsgnInstr(rhsVal, values, i));
-                    assigns.add(new Tuple<>(an, rhsVal));
-                }
+                assigns.add(new Tuple<>(an, addResultInstr(new ReqdArgMultipleAsgnInstr(temp(), values, i))));
                 i++;
             }
         }
 
-        // Build an assignment for a splat, if any, with the rest of the operands!
         Node restNode = multipleAsgnNode.getRest();
-        int postArgsCount = multipleAsgnNode.getPostCount();
+        int postCount = multipleAsgnNode.getPostCount();
         if (restNode != null && !(restNode instanceof StarNode)) {
-            if (values == null) {
-                buildArgsMasgn(restNode, argsArray, false, i, postArgsCount, 0, true); // rest of the argument array!
-            } else {
-                Variable rhsVal = temp();
-                addInstr(new RestArgMultipleAsgnInstr(rhsVal, values, 0, i, postArgsCount));
-                assigns.add(new Tuple<>(restNode, rhsVal)); // rest of the argument array!
-            }
+            assigns.add(new Tuple<>(restNode, addResultInstr(new RestArgMultipleAsgnInstr(temp(), values, 0, i, postCount))));
         }
 
-        // Build assignments for rest of the operands
         final ListNode masgnPost = multipleAsgnNode.getPost();
         if (masgnPost != null) {
             int j = 0;
             for (Node an: masgnPost.children()) {
-                if (values == null) {
-                    buildArgsMasgn(an, argsArray, false, i, postArgsCount, j, false);
-                } else {
-                    Variable rhsVal = temp();
-                    addInstr(new ReqdArgMultipleAsgnInstr(rhsVal, values, j, i, postArgsCount));  // Fetch from the end
-                    assigns.add(new Tuple<>(an, rhsVal));
-                }
+                assigns.add(new Tuple<>(an, addResultInstr(new ReqdArgMultipleAsgnInstr(temp(), values, j, i, postCount))));
+                j++;
+            }
+        }
+
+        for (Tuple<Node, Variable> assign: assigns) {
+            buildAssignment(assign.a, assign.b);
+        }
+    }
+
+    // Multiple assignment in arguments (e.g. { |a,b,*c| ..})
+    public void buildMultipleAssignmentArgs(final MultipleAsgnNode multipleAsgnNode, Operand argsArray) {
+        final List<Tuple<Node, Variable>> assigns = new ArrayList<>();
+        int i = 0;
+        ListNode masgnPre = multipleAsgnNode.getPre();
+        if (masgnPre != null) {
+            for (Node an: masgnPre.children()) {
+                buildArgsMasgn(an, argsArray, false, -1, -1, i++, false);
+            }
+        }
+
+        Node restNode = multipleAsgnNode.getRest();
+        int postArgsCount = multipleAsgnNode.getPostCount();
+        if (restNode != null && !(restNode instanceof StarNode)) {
+            buildArgsMasgn(restNode, argsArray, false, i, postArgsCount, 0, true); // rest of the argument array!
+        }
+
+        ListNode masgnPost = multipleAsgnNode.getPost();
+        if (masgnPost != null) {
+            int j = 0;
+            for (Node an: masgnPost.children()) {
+                buildArgsMasgn(an, argsArray, false, i, postArgsCount, j, false);
                 j++;
             }
         }
