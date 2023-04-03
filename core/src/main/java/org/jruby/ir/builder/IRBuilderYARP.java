@@ -109,6 +109,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
             return buildConstantRead((ConstantReadNode) node);
         } else if (node instanceof DefNode) {
             return buildDef((DefNode) node);
+        } else if (node instanceof ElseNode) {
+            return buildElse((ElseNode) node);
         } else if (node instanceof FalseNode) {
             return fals();
         } else if (node instanceof HashNode) {
@@ -303,6 +305,10 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
 
     private Operand buildDefs(DefNode node) {
         return buildDefn(buildNewMethod(node, false));
+    }
+
+    private Operand buildElse(ElseNode node) {
+        return buildStatements(node.statements);
     }
 
     private Operand buildHash(HashNode node) {
