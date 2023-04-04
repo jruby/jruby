@@ -5,13 +5,6 @@ import org.jruby.EvalType;
 import org.jruby.ParseResult;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
-import org.jruby.ast.ClassVarNode;
-import org.jruby.ast.GlobalAsgnNode;
-import org.jruby.ast.GlobalVarNode;
-import org.jruby.ast.InstAsgnNode;
-import org.jruby.ast.InstVarNode;
-import org.jruby.ast.Node;
-import org.jruby.ast.NthRefNode;
 import org.jruby.ast.RootNode;
 import org.jruby.ext.coverage.CoverageData;
 import org.jruby.ir.IRClosure;
@@ -63,6 +56,7 @@ import org.jruby.ir.instructions.ReturnInstr;
 import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.instructions.SearchConstInstr;
 import org.jruby.ir.instructions.SearchModuleForConstInstr;
+import org.jruby.ir.instructions.ThreadPollInstr;
 import org.jruby.ir.instructions.TraceInstr;
 import org.jruby.ir.instructions.ZSuperInstr;
 import org.jruby.ir.interpreter.InterpreterContext;
@@ -886,12 +880,6 @@ public abstract class IRBuilder<U, V> {
         return nil();
     }
 
-    public enum BinaryType {
-        Normal,    // Left is unknown expression
-        LeftTrue,  // Statically true
-        LeftFalse  // Statically false
-    }
-
     // Note: passing NORMAL just removes ability to remove a branch and will be semantically correct.
     public Operand buildAnd(Operand left, CodeBlock right, BinaryType truth) {
         switch(truth) {
@@ -1053,6 +1041,57 @@ public abstract class IRBuilder<U, V> {
         // because of the use of copyAndReturnValue method for literal objects.
     }
 
+    Operand buildConditionalLoop(U conditionNode, U bodyNode, boolean isWhile, boolean isLoopHeadCondition) {
+        if (isLoopHeadCondition && (isWhile && alwaysFalse(conditionNode) || !isWhile && alwaysTrue(conditionNode))) {
+            build(conditionNode);  // we won't enter the loop -- just build the condition node
+            return nil();
+        } else {
+            IRLoop loop = new IRLoop(scope, getCurrentLoop(), temp());
+            Variable loopResult = loop.loopResult;
+            Label setupResultLabel = getNewLabel();
+
+            // Push new loop
+            loopStack.push(loop);
+
+            // End of iteration jumps here
+            addInstr(new LabelInstr(loop.loopStartLabel));
+            if (isLoopHeadCondition) {
+                Operand cv = build(conditionNode);
+                addInstr(createBranch(cv, isWhile ? fals() : tru(), setupResultLabel));
+            }
+
+            // Redo jumps here
+            addInstr(new LabelInstr(loop.iterStartLabel));
+
+            // Thread poll at start of iteration -- ensures that redos and nexts run one thread-poll per iteration
+            addInstr(new ThreadPollInstr(true));
+
+            // Build body
+            if (bodyNode != null) build(bodyNode);
+
+            // Next jumps here
+            addInstr(new LabelInstr(loop.iterEndLabel));
+            if (isLoopHeadCondition) {
+                addInstr(new JumpInstr(loop.loopStartLabel));
+            } else {
+                Operand cv = build(conditionNode);
+                addInstr(createBranch(cv, isWhile ? tru() : fals(), loop.iterStartLabel));
+            }
+
+            // Loop result -- nil always
+            addInstr(new LabelInstr(setupResultLabel));
+            addInstr(new CopyInstr(loopResult, nil()));
+
+            // Loop end -- breaks jump here bypassing the result set up above
+            addInstr(new LabelInstr(loop.loopEndLabel));
+
+            // Done with loop
+            loopStack.pop();
+
+            return loopResult;
+        }
+    }
+
     InterpreterContext buildModuleOrClassBody(U body, int startLine, int endLine) {
         addInstr(new TraceInstr(RubyEvent.CLASS, getCurrentModuleVariable(), null, getFileName(), startLine + 1));
 
@@ -1153,6 +1192,8 @@ public abstract class IRBuilder<U, V> {
         return zsuperResult;
     }
 
+    abstract boolean alwaysFalse(U node);
+    abstract boolean alwaysTrue(U node);
     abstract Operand build(Variable result, U node);
     abstract Operand build(U node);
     abstract Operand buildMethodBody(V defNode);
@@ -1259,6 +1300,11 @@ public abstract class IRBuilder<U, V> {
         return manager;
     }
 
+    BinaryType binaryType(U node) {
+        return alwaysTrue(node) ? BinaryType.LeftTrue :
+                alwaysFalse(node) ? BinaryType.LeftFalse : BinaryType.Normal;
+    }
+
     interface CodeBlock {
         Operand run();
     }
@@ -1273,6 +1319,12 @@ public abstract class IRBuilder<U, V> {
 
     interface VoidCodeBlock {
         void run();
+    }
+
+    public enum BinaryType {
+        Normal,    // Left is unknown expression
+        LeftTrue,  // Statically true
+        LeftFalse  // Statically false
     }
 }
 

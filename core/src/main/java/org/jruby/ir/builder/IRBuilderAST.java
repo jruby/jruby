@@ -46,7 +46,6 @@ import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.MutableString;
 import org.jruby.ir.operands.Nil;
-import org.jruby.ir.operands.NthRef;
 import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Range;
@@ -721,12 +720,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode> {
         return buildAlias(build(alias.getNewName()), build(alias.getOldName()));
     }
 
-    public Operand buildAnd(final AndNode andNode) {
-        Operand left = build(andNode.getFirstNode());
-        NodeType leftType = andNode.getFirstNode().getNodeType();
-        BinaryType type = leftType.alwaysTrue() ? LeftTrue : (leftType.alwaysFalse() ? LeftFalse : Normal);
-
-        return buildAnd(left, () -> build(andNode.getSecondNode()), type);
+    public Operand buildAnd(AndNode node) {
+        return buildAnd(build(node.getFirstNode()), () -> build(node.getSecondNode()), binaryType(node.getFirstNode()));
     }
 
     public Operand buildArray(ArrayNode node, boolean operandOnly) {
@@ -3488,12 +3483,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode> {
         return elt;
     }
 
-    public Operand buildOr(final OrNode orNode) {
-        Operand left = build(orNode.getFirstNode());
-        NodeType leftType = orNode.getFirstNode().getNodeType();
-        BinaryType type = leftType.alwaysTrue() ? LeftTrue : (leftType.alwaysFalse() ? LeftFalse : Normal);
-
-        return buildOr(left, () -> build(orNode.getSecondNode()), type);
+    public Operand buildOr(OrNode node) {
+        return buildOr(build(node.getFirstNode()), () -> build(node.getSecondNode()), binaryType(node.getFirstNode()));
     }
 
     private InterpreterContext buildPrePostExeInner(Node body) {
@@ -3965,63 +3956,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode> {
         return addResultInstr(new UndefMethodInstr(temp(), methName));
     }
 
-    private Operand buildConditionalLoop(Node conditionNode,
-                                         Node bodyNode, boolean isWhile, boolean isLoopHeadCondition) {
-        if (isLoopHeadCondition &&
-                ((isWhile && conditionNode.getNodeType().alwaysFalse()) ||
-                (!isWhile && conditionNode.getNodeType().alwaysTrue()))) {
-            // we won't enter the loop -- just build the condition node
-            build(conditionNode);
-            return nil();
-        } else {
-            IRLoop loop = new IRLoop(scope, getCurrentLoop(), temp());
-            Variable loopResult = loop.loopResult;
-            Label setupResultLabel = getNewLabel();
-
-            // Push new loop
-            loopStack.push(loop);
-
-            // End of iteration jumps here
-            addInstr(new LabelInstr(loop.loopStartLabel));
-            if (isLoopHeadCondition) {
-                Operand cv = build(conditionNode);
-                addInstr(createBranch(cv, isWhile ? fals() : tru(), setupResultLabel));
-            }
-
-            // Redo jumps here
-            addInstr(new LabelInstr(loop.iterStartLabel));
-
-            // Thread poll at start of iteration -- ensures that redos and nexts run one thread-poll per iteration
-            addInstr(new ThreadPollInstr(true));
-
-            // Build body
-            if (bodyNode != null) build(bodyNode);
-
-            // Next jumps here
-            addInstr(new LabelInstr(loop.iterEndLabel));
-            if (isLoopHeadCondition) {
-                addInstr(new JumpInstr(loop.loopStartLabel));
-            } else {
-                Operand cv = build(conditionNode);
-                addInstr(createBranch(cv, isWhile ? tru() : fals(), loop.iterStartLabel));
-            }
-
-            // Loop result -- nil always
-            addInstr(new LabelInstr(setupResultLabel));
-            addInstr(new CopyInstr(loopResult, nil()));
-
-            // Loop end -- breaks jump here bypassing the result set up above
-            addInstr(new LabelInstr(loop.loopEndLabel));
-
-            // Done with loop
-            loopStack.pop();
-
-            return loopResult;
-        }
-    }
-
-    public Operand buildUntil(final UntilNode untilNode) {
-        return buildConditionalLoop(untilNode.getConditionNode(), untilNode.getBodyNode(), false, untilNode.evaluateAtStart());
+    public Operand buildUntil(UntilNode node) {
+        return buildConditionalLoop(node.getConditionNode(), node.getBodyNode(), false, node.evaluateAtStart());
     }
 
     public Operand buildVAlias(VAliasNode valiasNode) {
@@ -4034,8 +3970,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode> {
         return _call(result, VARIABLE, buildSelf(), node.getName());
     }
 
-    public Operand buildWhile(final WhileNode whileNode) {
-        return buildConditionalLoop(whileNode.getConditionNode(), whileNode.getBodyNode(), true, whileNode.evaluateAtStart());
+    public Operand buildWhile(WhileNode node) {
+        return buildConditionalLoop(node.getConditionNode(), node.getBodyNode(), true, node.evaluateAtStart());
     }
 
     public Operand buildXStr(Variable result, XStrNode node) {
@@ -4090,4 +4026,13 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode> {
         addInstr(new DebugOutputInstr(message, operands));
     }
 
+    @Override
+    boolean alwaysFalse(Node node) {
+        return node.getNodeType().alwaysFalse();
+    }
+
+    @Override
+    boolean alwaysTrue(Node node) {
+        return node.getNodeType().alwaysTrue();
+    }
 }

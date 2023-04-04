@@ -166,13 +166,17 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
             return tru();
         } else if (node instanceof UnlessNode) {
             return buildUnless(result, (UnlessNode) node);
+        } else if (node instanceof UntilNode) {
+            return buildUntil((UntilNode) node);
+        } else if (node instanceof WhileNode) {
+            return buildWhile((WhileNode) node);
         } else {
             throw new RuntimeException("Unhandled Node type: " + node);
         }
     }
 
     private Operand buildAnd(AndNode node) {
-        return buildAnd(build(node.left), () -> build(node.right), BinaryType.Normal);
+        return buildAnd(build(node.left), () -> build(node.right), binaryType(node.left));
     }
 
     private Operand[] buildArguments(ArgumentsNode node) {
@@ -527,9 +531,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
         return method;
     }
 
-    // FIXME: Need NodeType.alwaysTrue/False so we can opt this.
     private Operand buildOr(OrNode node) {
-        return buildOr(build(node.left), () -> build(node.right), BinaryType.Normal);
+        return buildOr(build(node.left), () -> build(node.right), binaryType(node.left));
     }
 
     private void buildParameters(ParametersNode parameters) {
@@ -621,6 +624,29 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
 
     private Operand buildUnless(Variable result, UnlessNode node) {
         return buildConditional(result, node.predicate, node.consequent, node.statements);
+    }
+
+    // FIXME: until and while should have field for whether normal or modifer and no keyword at all.
+    private Operand buildUntil(UntilNode node) {
+        boolean evaluateAtStart = node.keyword.type == TokenType.KEYWORD_UNTIL;
+        return buildConditionalLoop(node.predicate, node.statements, false, evaluateAtStart);
+    }
+
+    private Operand buildWhile(WhileNode node) {
+        boolean evaluateAtStart = node.keyword.type == TokenType.KEYWORD_WHILE;
+        return buildConditionalLoop(node.predicate, node.statements, true, evaluateAtStart);
+    }
+
+    // FIXME: implement
+    @Override
+    boolean alwaysFalse(Node node) {
+        return false;
+    }
+
+    // FIXME: implement
+    @Override
+    boolean alwaysTrue(Node node) {
+        return false;
     }
 
     int dynamicPiece(Operand[] pieces, int i, Node pieceNode) {
