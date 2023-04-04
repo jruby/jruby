@@ -2273,11 +2273,6 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode> {
     }
 
     @Override
-    protected Operand buildModuleBody(Node body) {
-        return build(body);
-    }
-
-    @Override
     public int getMethodEndLine(DefNode defNode) {
         return defNode.getEndLine() + 1;
     }
@@ -3012,16 +3007,12 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode> {
         return new WrappedIRClosure(buildSelf(), closure);
     }
 
-    public Operand buildGlobalAsgn(GlobalAsgnNode globalAsgnNode) {
-        Operand value = build(globalAsgnNode.getValueNode());
-        addInstr(new PutGlobalVarInstr(globalAsgnNode.getName(), value));
-        return value;
+    public Operand buildGlobalAsgn(GlobalAsgnNode node) {
+        return buildGlobalAsgn(node.getName(), node.getValueNode());
     }
 
-    public Operand buildGlobalVar(Variable result, GlobalVarNode node) {
-        if (result == null) result = temp();
-
-        return addResultInstr(new GetGlobalVariableInstr(result, node.getName()));
+    Operand buildGlobalVar(Variable result, GlobalVarNode node) {
+        return buildGlobalVar(result, node.getName());
     }
 
     public Operand buildHash(HashNode hashNode) {
@@ -3068,15 +3059,12 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode> {
         return buildConditional(result, ifNode.getCondition(), ifNode.getThenBody(), ifNode.getElseBody());
     }
 
-    public Operand buildInstAsgn(final InstAsgnNode instAsgnNode) {
-        Operand val = build(instAsgnNode.getValueNode());
-        // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
-        addInstr(new PutFieldInstr(buildSelf(), instAsgnNode.getName(), val));
-        return val;
+    public Operand buildInstAsgn(final InstAsgnNode node) {
+        return buildInstAsgn(node.getName(), node.getValueNode());
     }
 
     public Operand buildInstVar(InstVarNode node) {
-        return addResultInstr(new GetFieldInstr(temp(), buildSelf(), node.getName()));
+        return buildInstVar(node.getName());
     }
 
     private InterpreterContext buildIterInner(RubySymbol methodName, IterNode iterNode) {

@@ -2970,12 +2970,12 @@ public final class Ruby implements Constantizable {
 
                 long time = System.nanoTime();
 
-                System.out.println("LOADING: " + scriptName);
+                //System.out.println("LOADING: " + scriptName);
                 byte[] blob = org.yarp.Parser.parseAndSerialize(source);
                 org.yarp.Nodes.Node node = org.yarp.Loader.load(scriptName, source, blob);
                 long parseTime = System.nanoTime() - time;
-                yarpTime += parseTime;
-                System.out.println("TOTAL_TIME: " + yarpTime + ", TIME: " + parseTime + ", SRC SIZE = " + source.length + ", BLOB SIZE = " + blob.length + ", RATIO: " + (((float) blob.length) / source.length));
+                //yarpTime += parseTime;
+                //System.out.println("TOTAL_TIME: " + yarpTime + ", TIME: " + parseTime + ", SRC SIZE = " + source.length + ", BLOB SIZE = " + blob.length + ", RATIO: " + (((float) blob.length) / source.length));
                 parseResult = new YarpParseResult(scriptName, source, (Nodes.ProgramNode) node);
   //              parseResult = parseFile(scriptName, in, null);
             } else {

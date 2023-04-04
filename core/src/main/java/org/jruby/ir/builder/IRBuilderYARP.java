@@ -54,6 +54,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
+import org.yarp.Nodes;
 import org.yarp.Nodes.*;
 import org.yarp.YarpParseResult;
 
@@ -92,6 +93,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
      * @param node to be built
      */
     Operand build(Variable result, Node node) {
+        if (node == null) return nil();
+
         // FIXME: Need node types if this is how we process
         if (node instanceof AndNode) {
             return buildAnd((AndNode) node);
@@ -101,6 +104,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
             return buildBlockArgument((BlockArgumentNode) node);
         } else if (node instanceof CallNode) {
             return buildCall(result, (CallNode) node);
+        } else if (node instanceof CaseNode) {
+            return buildCase((CaseNode) node);
         } else if (node instanceof ConstantPathNode) {
             return buildConstantPath(result, (ConstantPathNode) node);
         } else if (node instanceof ConstantPathWriteNode) {
@@ -113,10 +118,18 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
             return buildElse((ElseNode) node);
         } else if (node instanceof FalseNode) {
             return fals();
+        } else if (node instanceof GlobalVariableReadNode) {
+            return buildGlobalVariableRead(result, (GlobalVariableReadNode) node);
+        } else if (node instanceof GlobalVariableWriteNode) {
+            return buildGlobalVariableWrite((GlobalVariableWriteNode) node);
         } else if (node instanceof HashNode) {
             return buildHash((HashNode) node);
         } else if (node instanceof IfNode) {
             return buildIf(result, (IfNode) node);
+        } else if (node instanceof InstanceVariableReadNode) {
+            return buildInstanceVariableRead((InstanceVariableReadNode) node);
+        } else if (node instanceof InstanceVariableWriteNode) {
+            return buildInstanceVariableWrite((InstanceVariableWriteNode) node);
         } else if (node instanceof IntegerNode) {
             return buildInteger((IntegerNode) node);
         } else if (node instanceof InterpolatedStringNode) {
@@ -268,6 +281,10 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
         return _call(result, callType, receiver, symbol(new String(node.name)), args);
     }
 
+    private Operand buildCase(CaseNode node) {
+        return nil();
+    }
+
     private Operand buildConstantPath(Variable result, ConstantPathNode node) {
         RubySymbol name = symbol(byteListFrom(node.child));
 
@@ -309,6 +326,14 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
 
     private Operand buildElse(ElseNode node) {
         return buildStatements(node.statements);
+    }
+
+    private Operand buildGlobalVariableRead(Variable result, GlobalVariableReadNode node) {
+        return buildGlobalVar(result, symbol(byteListFrom(node.name)));
+    }
+
+    private Operand buildGlobalVariableWrite(GlobalVariableWriteNode node) {
+        return buildGlobalAsgn(symbol(byteListFrom(node.name)), node.value);
     }
 
     private Operand buildHash(HashNode node) {
@@ -353,6 +378,14 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
 
     private Operand buildIf(Variable result, IfNode node) {
         return buildConditional(result, node.predicate, node.statements, node.consequent);
+    }
+
+    private Operand buildInstanceVariableRead(InstanceVariableReadNode node) {
+        return buildInstVar(symbol(byteListFrom(node)));
+    }
+
+    private Operand buildInstanceVariableWrite(InstanceVariableWriteNode node) {
+        return buildInstAsgn(symbol(byteListFrom(node.name_loc)), node.value);
     }
 
     private Operand buildInteger(IntegerNode node) {
@@ -406,11 +439,6 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
         }
         // FIXME: We may not need these based on whether there are more possible nodes.
         throw notCompilable("Unsupported node in module path", node);
-    }
-
-    @Override
-    protected Operand buildModuleBody(Node body) {
-        return build(body);
     }
 
     private Operand buildMultiWriteNode(MultiWriteNode node) {

@@ -5,6 +5,10 @@ import org.jruby.EvalType;
 import org.jruby.ParseResult;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
+import org.jruby.ast.GlobalAsgnNode;
+import org.jruby.ast.GlobalVarNode;
+import org.jruby.ast.InstAsgnNode;
+import org.jruby.ast.InstVarNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
 import org.jruby.ext.coverage.CoverageData;
@@ -32,6 +36,8 @@ import org.jruby.ir.instructions.DefineInstanceMethodInstr;
 import org.jruby.ir.instructions.ExceptionRegionEndMarkerInstr;
 import org.jruby.ir.instructions.ExceptionRegionStartMarkerInstr;
 import org.jruby.ir.instructions.GetClassVarContainerModuleInstr;
+import org.jruby.ir.instructions.GetFieldInstr;
+import org.jruby.ir.instructions.GetGlobalVariableInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LabelInstr;
@@ -41,6 +47,8 @@ import org.jruby.ir.instructions.LoadFrameClosureInstr;
 import org.jruby.ir.instructions.LoadImplicitClosureInstr;
 import org.jruby.ir.instructions.NopInstr;
 import org.jruby.ir.instructions.PutConstInstr;
+import org.jruby.ir.instructions.PutFieldInstr;
+import org.jruby.ir.instructions.PutGlobalVarInstr;
 import org.jruby.ir.instructions.ReceiveArgBase;
 import org.jruby.ir.instructions.ReceiveJRubyExceptionInstr;
 import org.jruby.ir.instructions.ReceiveKeywordArgInstr;
@@ -972,6 +980,28 @@ public abstract class IRBuilder<U, V> {
         return result;
     }
 
+    public Operand buildGlobalAsgn(RubySymbol name, U valueNode) {
+        Operand value = build(valueNode);
+        addInstr(new PutGlobalVarInstr(name, value));
+        return value;
+    }
+
+    public Operand buildGlobalVar(Variable result, RubySymbol name) {
+        if (result == null) result = temp();
+
+        return addResultInstr(new GetGlobalVariableInstr(result, name));
+    }
+
+    public Operand buildInstAsgn(RubySymbol name, U valueNode) {
+        Operand value = build(valueNode);
+        addInstr(new PutFieldInstr(buildSelf(), name, value));
+        return value;
+    }
+
+    public Operand buildInstVar(RubySymbol name) {
+        return addResultInstr(new GetFieldInstr(temp(), buildSelf(), name));
+    }
+
     public Operand buildLocalVariableAssign(RubySymbol name, int depth, U valueNode) {
         Variable variable  = getLocalVariable(name, depth);
         Operand value = build(variable, valueNode);
@@ -1009,7 +1039,7 @@ public abstract class IRBuilder<U, V> {
         prepareImplicitState();                                    // recv_self, add frame block, etc)
         addCurrentModule();                                        // %current_module
 
-        Operand bodyReturnValue = buildModuleBody(body);
+        Operand bodyReturnValue = build(body);
 
         // This is only added when tracing is enabled because an 'end' will normally have no other instrs which can
         // raise after this point.  When we add trace we need to add one so backtrace generated shows the 'end' line.
@@ -1021,8 +1051,6 @@ public abstract class IRBuilder<U, V> {
         computeScopeFlagsFrom(instructions);
         return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
     }
-
-    abstract Operand buildModuleBody(U body);
 
     public Operand buildOr(Operand left, CodeBlock right, BinaryType type) {
         // lazy evaluation opt.  Don't bother building rhs of expr is lhs is unconditionally true.
