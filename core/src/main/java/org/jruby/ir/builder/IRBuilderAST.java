@@ -1716,25 +1716,12 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode> {
         return processBodyResult;
     }
 
-    // @@c
     public Operand buildClassVar(Variable result, ClassVarNode node) {
-        if (result == null) result = temp();
-        if (isTopScope()) return addRaiseError("RuntimeError", "class variable access from toplevel");
-
-        return addResultInstr(new GetClassVariableInstr(result, classVarDefinitionContainer(), node.getName()));
+        return buildClassVar(result, node.getName());
     }
 
-    // ClassVarAsgn node is assignment within a method/closure scope
-    //
-    // def foo
-    //   @@c = 1
-    // end
-    public Operand buildClassVarAsgn(final ClassVarAsgnNode classVarAsgnNode) {
-        if (isTopScope()) return addRaiseError("RuntimeError", "class variable access from toplevel");
-
-        Operand val = build(classVarAsgnNode.getValueNode());
-        addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), classVarAsgnNode.getName(), val));
-        return val;
+    public Operand buildClassVarAsgn(final ClassVarAsgnNode node) {
+        return buildClassVarAsgn(node.getName(), node.getValueNode());
     }
 
     public Operand buildConstDecl(ConstDeclNode node) {

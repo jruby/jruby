@@ -5,6 +5,7 @@ import org.jruby.EvalType;
 import org.jruby.ParseResult;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
+import org.jruby.ast.ClassVarNode;
 import org.jruby.ast.GlobalAsgnNode;
 import org.jruby.ast.GlobalVarNode;
 import org.jruby.ast.InstAsgnNode;
@@ -36,6 +37,7 @@ import org.jruby.ir.instructions.DefineInstanceMethodInstr;
 import org.jruby.ir.instructions.ExceptionRegionEndMarkerInstr;
 import org.jruby.ir.instructions.ExceptionRegionStartMarkerInstr;
 import org.jruby.ir.instructions.GetClassVarContainerModuleInstr;
+import org.jruby.ir.instructions.GetClassVariableInstr;
 import org.jruby.ir.instructions.GetFieldInstr;
 import org.jruby.ir.instructions.GetGlobalVariableInstr;
 import org.jruby.ir.instructions.Instr;
@@ -46,6 +48,7 @@ import org.jruby.ir.instructions.LoadBlockImplicitClosureInstr;
 import org.jruby.ir.instructions.LoadFrameClosureInstr;
 import org.jruby.ir.instructions.LoadImplicitClosureInstr;
 import org.jruby.ir.instructions.NopInstr;
+import org.jruby.ir.instructions.PutClassVariableInstr;
 import org.jruby.ir.instructions.PutConstInstr;
 import org.jruby.ir.instructions.PutFieldInstr;
 import org.jruby.ir.instructions.PutGlobalVarInstr;
@@ -900,6 +903,21 @@ public abstract class IRBuilder<U, V> {
                 label("and", (label) ->
                         cond(label, left, fals(), () ->
                                 copy((Variable) ret, right.run()))));
+    }
+
+    public Operand buildClassVarAsgn(RubySymbol name, U valueNode) {
+        if (isTopScope()) return addRaiseError("RuntimeError", "class variable access from toplevel");
+
+        Operand value = build(valueNode);
+        addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), name, value));
+        return value;
+    }
+
+    public Operand buildClassVar(Variable result, RubySymbol name) {
+        if (result == null) result = temp();
+        if (isTopScope()) return addRaiseError("RuntimeError", "class variable access from toplevel");
+
+        return addResultInstr(new GetClassVariableInstr(result, classVarDefinitionContainer(), name));
     }
 
     // FIXME: AST needs variable passed in to work which I think means some context really needs to pass in the result at least in AST build?

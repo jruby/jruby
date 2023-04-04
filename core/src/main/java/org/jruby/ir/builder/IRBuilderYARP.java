@@ -54,6 +54,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
+import org.yarp.Nodes;
 import org.yarp.Nodes.*;
 import org.yarp.YarpParseResult;
 
@@ -105,6 +106,10 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
             return buildCall(result, (CallNode) node);
         } else if (node instanceof CaseNode) {
             return buildCase((CaseNode) node);
+        } else if (node instanceof ClassVariableReadNode) {
+            return buildClassVariableRead(result, (ClassVariableReadNode) node);
+        } else if (node instanceof ClassVariableWriteNode) {
+            return buildClassVariableWrite((ClassVariableWriteNode) node);
         } else if (node instanceof ConstantPathNode) {
             return buildConstantPath(result, (ConstantPathNode) node);
         } else if (node instanceof ConstantPathWriteNode) {
@@ -283,6 +288,15 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
     private Operand buildCase(CaseNode node) {
         return nil();
     }
+
+    private Operand buildClassVariableRead(Variable result, ClassVariableReadNode node) {
+        return buildClassVar(result, symbolFor(node));
+    }
+
+    private Operand buildClassVariableWrite(ClassVariableWriteNode node) {
+        return buildClassVarAsgn(symbolFor(node.name_loc), node.value);
+    }
+
 
     private Operand buildConstantPath(Variable result, ConstantPathNode node) {
         RubySymbol name = symbolFor(node.child);
