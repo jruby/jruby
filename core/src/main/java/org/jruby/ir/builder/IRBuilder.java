@@ -11,6 +11,7 @@ import org.jruby.ast.GlobalVarNode;
 import org.jruby.ast.InstAsgnNode;
 import org.jruby.ast.InstVarNode;
 import org.jruby.ast.Node;
+import org.jruby.ast.NthRefNode;
 import org.jruby.ast.RootNode;
 import org.jruby.ext.coverage.CoverageData;
 import org.jruby.ir.IRClosure;
@@ -75,6 +76,7 @@ import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.MutableString;
 import org.jruby.ir.operands.Nil;
+import org.jruby.ir.operands.NthRef;
 import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.ScopeModule;
@@ -1068,6 +1070,10 @@ public abstract class IRBuilder<U, V> {
 
         computeScopeFlagsFrom(instructions);
         return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
+    }
+
+    public Operand buildNthRef(int matchNumber) {
+        return copy(new NthRef(scope, matchNumber));
     }
 
     public Operand buildOr(Operand left, CodeBlock right, BinaryType type) {

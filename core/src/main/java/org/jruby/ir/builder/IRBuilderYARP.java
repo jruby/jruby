@@ -342,6 +342,12 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
     }
 
     private Operand buildGlobalVariableRead(Variable result, GlobalVariableReadNode node) {
+        // FIXME: Prefer a full node for nth ref.
+        if (node.name.type == TokenType.NTH_REFERENCE) {
+            // FIXME: Gruesome :)
+            return buildNthRef(Integer.parseInt(new String(byteListFrom(node.name).getUnsafeBytes()).substring(1)));
+        }
+
         return buildGlobalVar(result, symbolFor(node.name));
     }
 

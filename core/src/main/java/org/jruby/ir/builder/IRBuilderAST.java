@@ -3255,8 +3255,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode> {
         return U_NIL;
     }
 
-    public Operand buildNthRef(NthRefNode nthRefNode) {
-        return copy(new NthRef(scope, nthRefNode.getMatchNumber()));
+    public Operand buildNthRef(NthRefNode node) {
+        return buildNthRef(node.getMatchNumber());
     }
 
     public Operand buildNil() {
