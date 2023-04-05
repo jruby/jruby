@@ -162,7 +162,7 @@ public class RubyEnumerable {
         final Ruby runtime = context.runtime;
         final SingleInt result = new SingleInt();
 
-        if (block.isGiven()) runtime.getWarnings().warn(ID.BLOCK_UNUSED , "given block not used");
+        if (block.isGiven()) runtime.getWarnings().warning(ID.BLOCK_UNUSED , "given block not used");
 
         each(context, eachSite(context), self, new JavaInternalBlockBody(runtime, context, "Enumerable#count", Signature.ONE_REQUIRED) {
             public IRubyObject yield(ThreadContext context1, IRubyObject[] args) {
@@ -707,7 +707,7 @@ public class RubyEnumerable {
     public static IRubyObject find_index(ThreadContext context, IRubyObject self, final IRubyObject cond, final Block block) {
         final Ruby runtime = context.runtime;
 
-        if (block.isGiven()) runtime.getWarnings().warn(ID.BLOCK_UNUSED , "given block not used");
+        if (block.isGiven()) runtime.getWarnings().warning(ID.BLOCK_UNUSED , "given block not used");
         if (self instanceof RubyArray) return ((RubyArray) self).find_index(context, cond);
 
         return find_indexCommon(context, eachSite(context), self, cond);
@@ -1103,7 +1103,7 @@ public class RubyEnumerable {
     public static IRubyObject inject(ThreadContext context, IRubyObject self, IRubyObject init, IRubyObject method, final Block block) {
         final Ruby runtime = context.runtime;
 
-        if (block.isGiven()) runtime.getWarnings().warn(ID.BLOCK_UNUSED , "given block not used");
+        if (block.isGiven()) runtime.getWarnings().warning(ID.BLOCK_UNUSED , "given block not used");
 
         final String methodId = method.asJavaString();
         final SingleObject<IRubyObject> result = new SingleObject<>(init);
@@ -1608,7 +1608,7 @@ public class RubyEnumerable {
         final boolean patternGiven = pattern != null;
 
         if (block.isGiven() && patternGiven) {
-            context.runtime.getWarnings().warn("given block not used");
+            context.runtime.getWarnings().warning(ID.BLOCK_UNUSED, "given block not used");
         }
 
         try {
@@ -1663,7 +1663,7 @@ public class RubyEnumerable {
         final boolean patternGiven = pattern != null;
 
         if (block.isGiven() && patternGiven) {
-            context.runtime.getWarnings().warn("given block not used");
+            context.runtime.getWarnings().warning(ID.BLOCK_UNUSED, "given block not used");
         }
 
         try {
@@ -1746,7 +1746,7 @@ public class RubyEnumerable {
         final boolean patternGiven = pattern != null;
 
         if (block.isGiven() && patternGiven) {
-            localContext.runtime.getWarnings().warn("given block not used");
+            localContext.runtime.getWarnings().warning(ID.BLOCK_UNUSED, "given block not used");
         }
 
         try {
@@ -1836,7 +1836,7 @@ public class RubyEnumerable {
         final boolean patternGiven = pattern != null;
 
         if (block.isGiven() && patternGiven) {
-            localContext.runtime.getWarnings().warn("given block not used");
+            localContext.runtime.getWarnings().warning(ID.BLOCK_UNUSED, "given block not used");
         }
 
         try {

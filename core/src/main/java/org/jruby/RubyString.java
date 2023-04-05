@@ -60,6 +60,7 @@ import org.joni.Region;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.JumpException;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
@@ -4533,7 +4534,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
             if (splitPattern.isNil()) return context.nil;
 
-            context.runtime.getWarnings().warnDeprecated("$; is set to non-nil value");
+            context.runtime.getWarnings().warnDeprecated(ID.MISCELLANEOUS, "$; is set to non-nil value");
 
             pattern = splitPattern;
         }
@@ -6239,7 +6240,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         if (block.isGiven()) {
             if (wantarray) {
-                runtime.getWarnings().warning("passing a block to String#" + name + " is deprecated");
+                runtime.getWarnings().warning(ID.BLOCK_DEPRECATED, "passing a block to String#" + name + " is deprecated");
                 wantarray = false;
             }
         }
@@ -6292,7 +6293,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         if (block.isGiven()) {
             if (wantarray) {
-                runtime.getWarnings().warning("passing a block to String#" + name + " is deprecated");
+                runtime.getWarnings().warning(ID.BLOCK_DEPRECATED, "passing a block to String#" + name + " is deprecated");
                 wantarray = false;
             }
         }
@@ -6325,7 +6326,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         if (block.isGiven()) {
             if (wantarray) {
-                runtime.getWarnings().warning("passing a block to String#" + name + " is deprecated");
+                runtime.getWarnings().warning(ID.BLOCK_DEPRECATED, "passing a block to String#" + name + " is deprecated");
                 wantarray = false;
             }
         }
@@ -6391,7 +6392,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         if (block.isGiven()) {
             if (wantarray) {
-                runtime.getWarnings().warning("passing a block to String#" + name + " is deprecated");
+                runtime.getWarnings().warning(ID.BLOCK_DEPRECATED, "passing a block to String#" + name + " is deprecated");
                 wantarray = false;
             }
         }

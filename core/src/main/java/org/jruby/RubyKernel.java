@@ -1375,7 +1375,7 @@ public class RubyKernel {
         }
 
         if (recv == runtime.getWarning()) {
-            RubyWarnings.warn(context, recv, message);
+            RubyWarnings.warn(context, message);
             return;
         }
 

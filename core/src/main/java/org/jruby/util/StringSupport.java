@@ -48,6 +48,7 @@ import org.jruby.RubyEncoding;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -2070,9 +2071,9 @@ public final class StringSupport {
             if (wantarray) {
                 // this code should be live in 3.0
                 if (false) { // #if STRING_ENUMERATORS_WANTARRAY
-                    runtime.getWarnings().warn("given block not used");
+                    runtime.getWarnings().warning(ID.BLOCK_UNUSED, "given block not used");
                 } else {
-                    runtime.getWarnings().warning("passing a block to String#lines is deprecated");
+                    runtime.getWarnings().warning(ID.BLOCK_DEPRECATED, "passing a block to String#lines is deprecated");
                     wantarray = false;
                 }
             }

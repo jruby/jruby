@@ -133,7 +133,7 @@ public abstract class RubyParserBase {
         }
 
         if (warnOnUnusedVariables) {
-            scopedParserState.warnUnusedVariables(configuration.getRuntime(), warnings, currentScope.getFile());
+            scopedParserState.warnUnusedVariables(this, currentScope.getFile());
         }
 
         currentScope = currentScope.getEnclosingScope();
@@ -463,7 +463,7 @@ public abstract class RubyParserBase {
         switch (head.getNodeType()) {
             case BIGNUMNODE: case FIXNUMNODE: case FLOATNODE: // NODE_LIT
             case STRNODE: case SELFNODE: case TRUENODE: case FALSENODE: case NILNODE:
-                warnings.warning(ID.MISCELLANEOUS, lexer.getFile(), tail.getLine(), "unused literal ignored");
+                warning(ID.MISCELLANEOUS, lexer.getFile(), tail.getLine(), "unused literal ignored");
                 return tail;
         }
 
@@ -472,7 +472,7 @@ public abstract class RubyParserBase {
         }
 
         if (warnings.isVerbose() && isBreakStatement(((ListNode) head).getLast()) && Options.PARSER_WARN_NOT_REACHED.load()) {
-            warnings.warning(ID.STATEMENT_NOT_REACHED, lexer.getFile(), tail.getLine(), "statement not reached");
+            warning(ID.STATEMENT_NOT_REACHED, lexer.getFile(), tail.getLine(), "statement not reached");
         }
 
         // Assumption: tail is never a list node
@@ -636,7 +636,7 @@ public abstract class RubyParserBase {
     
     public void warnUnlessEOption(ID id, Node node, String message) {
         if (!configuration.isInlineSource()) {
-            warnings.warn(id, lexer.getFile(), node.getLine(), message);
+            warning(id, lexer.getFile(), node.getLine(), message);
         }
     }
 
@@ -679,7 +679,7 @@ public abstract class RubyParserBase {
 
     private void handleUselessWarn(Node node, String useless) {
         if (Options.PARSER_WARN_USELESSS_USE_OF.load()) {
-            warnings.warn(ID.USELESS_EXPRESSION, lexer.getFile(), node.getLine(), "possibly useless use of " + useless + " in void context");
+            warn(node.getLine(), "possibly useless use of " + useless + " in void context");
         }
     }
 
@@ -852,7 +852,7 @@ public abstract class RubyParserBase {
         if (node instanceof MultipleAsgnNode || node instanceof LocalAsgnNode || node instanceof DAsgnNode || node instanceof GlobalAsgnNode || node instanceof InstAsgnNode) {
             Node valueNode = ((AssignableNode) node).getValueNode();
             if (isStaticContent(valueNode)) {
-                warnings.warn(ID.ASSIGNMENT_IN_CONDITIONAL, lexer.getFile(), valueNode.getLine(), "found `= literal' in conditional, should be ==");
+                warning(ID.ASSIGNMENT_IN_CONDITIONAL, lexer.getFile(), valueNode.getLine(), "found `= literal' in conditional, should be ==");
             }
             return true;
         } 
@@ -1521,7 +1521,7 @@ public abstract class RubyParserBase {
             if (index >= 0) {
                 Ruby runtime = getConfiguration().getRuntime();
                 IRubyObject value = ((LiteralValue) key).literalValue(runtime);
-                warnings.warn(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), hash.getLine(), str(runtime, "key ", value.inspect(),
+                warning(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), hash.getLine(), str(runtime, "key ", value.inspect(),
                         " is duplicated and overwritten on line " + (encounteredKeys.get(index).getLine() + 1)));
             } else {
                 encounteredKeys.add(key);
@@ -1567,16 +1567,20 @@ public abstract class RubyParserBase {
     }
 
     public void warn(String message) {
-        warnings.warn(ID.USELESS_EXPRESSION, lexer.getFile(), src_line(), message);
+        warn(src_line(), message);
     }
 
     public void warn(int line, String message) {
-        warnings.warn(ID.USELESS_EXPRESSION, lexer.getFile(), line, message);
+        warnings.warn(ID.USELESS_EXPRESSION, lexer.getFile(), line + 1, message); // node/lexer lines are 0 based
     }
 
     // FIXME: Replace this with file/line version and stop using ISourcePosition
     public void warning(int line, String message) {
-        if (warnings.isVerbose()) warnings.warning(ID.USELESS_EXPRESSION, lexer.getFile(), line, message);
+        if (warnings.isVerbose()) warning(ID.USELESS_EXPRESSION, lexer.getFile(), line, message);
+    }
+
+    public void warning(ID id, String file, int line, String message) {
+        warnings.warning(id, file, line + 1, message); // node/lexer lines are 0 based
     }
 
     // ENEBO: Totally weird naming (in MRI is not allocated and is a local var name) [1.9]

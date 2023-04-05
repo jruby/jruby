@@ -68,7 +68,6 @@ import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.anno.TypePopulator;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.embed.Extension;
 import org.jruby.exceptions.LoadError;
@@ -2064,11 +2063,11 @@ public class RubyModule extends RubyObject {
         DynamicMethod method = getMethods().get(name);
         if (method != null && entry.method.getRealMethod() != method.getRealMethod() && !method.isUndefined()) {
             // warn if overwriting an existing method on this module
-            if (method.getRealMethod().getAliasCount() == 0) runtime.getWarnings().warning("method redefined; discarding old " + name);
+            if (method.getRealMethod().getAliasCount() == 0) runtime.getWarnings().warning(ID.REDEFINING_METHOD, "method redefined; discarding old " + name);
 
             if (method instanceof PositionAware) {
                 PositionAware posAware = (PositionAware) method;
-                runtime.getWarnings().warning(posAware.getFile(), posAware.getLine(), "previous definition of bar " + name);
+                runtime.getWarnings().warning(ID.REDEFINING_METHOD, posAware.getFile(), posAware.getLine() + 1, "previous definition of " + name + " was here");
             }
         }
 
@@ -2983,13 +2982,13 @@ public class RubyModule extends RubyObject {
                     if (signature.hasRest() && !signature.hasKwargs()) {
                         method.setRuby2Keywords();
                     } else {
-                        context.runtime.getWarnings().warn(IRubyWarnings.ID.MISCELLANEOUS, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (method accepts keywords or method does not accept argument splat)"));
+                        context.runtime.getWarnings().warn(ID.MISCELLANEOUS, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (method accepts keywords or method does not accept argument splat)"));
                     }
                 } else {
-                    context.runtime.getWarnings().warn(IRubyWarnings.ID.MISCELLANEOUS, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (method not defined in Ruby)"));
+                    context.runtime.getWarnings().warn(ID.MISCELLANEOUS, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (method not defined in Ruby)"));
                 }
             } else {
-                context.runtime.getWarnings().warn(IRubyWarnings.ID.MISCELLANEOUS, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (can only set in method defining module)"));
+                context.runtime.getWarnings().warn(ID.MISCELLANEOUS, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (can only set in method defining module)"));
             }
         }
         return context.nil;
@@ -4903,9 +4902,9 @@ public class RubyModule extends RubyObject {
             if (notAutoload || !setAutoloadConstant(name, value, file, line)) {
                 if (warn && notAutoload) {
                     if (this.equals(getRuntime().getObject())) {
-                        getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name);
+                        getRuntime().getWarnings().warning(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name);
                     } else {
-                        getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + this + "::" + name);
+                        getRuntime().getWarnings().warning(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + this + "::" + name);
                     }
                 }
 
