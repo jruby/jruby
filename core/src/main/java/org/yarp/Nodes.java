@@ -288,13 +288,11 @@ public abstract class Nodes {
     public static final class AndNode extends Node {
         public final Node left;
         public final Node right;
-        public final Token operator;
 
-        public AndNode(Node left, Node right, Token operator, int startOffset, int endOffset) {
+        public AndNode(Node left, Node right, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.left =  left;
             this.right =  right;
-            this.operator =  operator;
         }
 
         public Node[] childNodes() {
@@ -335,13 +333,11 @@ public abstract class Nodes {
     public static final class ArrayNode extends Node {
         public final Node[] elements;
         public final Token opening; // optional
-        public final Token closing; // optional
 
-        public ArrayNode(Node[] elements, Token opening, Token closing, int startOffset, int endOffset) {
+        public ArrayNode(Node[] elements, Token opening, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.elements =  elements;
             this.opening =  opening;
-            this.closing =  closing;
         }
 
         public Node[] childNodes() {
@@ -408,13 +404,11 @@ public abstract class Nodes {
     public static final class AssocNode extends Node {
         public final Node key;
         public final Node value; // optional
-        public final Token operator; // optional
 
-        public AssocNode(Node key, Node value, Token operator, int startOffset, int endOffset) {
+        public AssocNode(Node key, Node value, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.key =  key;
             this.value =  value;
-            this.operator =  operator;
         }
 
         public Node[] childNodes() {
@@ -432,12 +426,10 @@ public abstract class Nodes {
     //       ^^^^^
     public static final class AssocSplatNode extends Node {
         public final Node value; // optional
-        public final Location operator_loc;
 
-        public AssocSplatNode(Node value, Location operator_loc, int startOffset, int endOffset) {
+        public AssocSplatNode(Node value, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.value =  value;
-            this.operator_loc =  operator_loc;
         }
 
         public Node[] childNodes() {
@@ -456,21 +448,17 @@ public abstract class Nodes {
     //     end
     //     ^^^^^
     public static final class BeginNode extends Node {
-        public final Token begin_keyword; // optional
         public final StatementsNode statements; // optional
         public final RescueNode rescue_clause; // optional
         public final ElseNode else_clause; // optional
         public final EnsureNode ensure_clause; // optional
-        public final Token end_keyword; // optional
 
-        public BeginNode(Token begin_keyword, Node statements, Node rescue_clause, Node else_clause, Node ensure_clause, Token end_keyword, int startOffset, int endOffset) {
+        public BeginNode(Node statements, Node rescue_clause, Node else_clause, Node ensure_clause, int startOffset, int endOffset) {
             super(startOffset, endOffset);
-            this.begin_keyword =  begin_keyword;
             this.statements = (StatementsNode) statements;
             this.rescue_clause = (RescueNode) rescue_clause;
             this.else_clause = (ElseNode) else_clause;
             this.ensure_clause = (EnsureNode) ensure_clause;
-            this.end_keyword =  end_keyword;
         }
 
         public Node[] childNodes() {
@@ -488,12 +476,10 @@ public abstract class Nodes {
     //     ^^^^^^^^^^
     public static final class BlockArgumentNode extends Node {
         public final Node expression; // optional
-        public final Location operator_loc;
 
-        public BlockArgumentNode(Node expression, Location operator_loc, int startOffset, int endOffset) {
+        public BlockArgumentNode(Node expression, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.expression =  expression;
-            this.operator_loc =  operator_loc;
         }
 
         public Node[] childNodes() {
@@ -513,16 +499,12 @@ public abstract class Nodes {
         public final StaticScope scope;
         public final BlockParametersNode parameters; // optional
         public final Node statements; // optional
-        public final Location opening_loc;
-        public final Location closing_loc;
 
-        public BlockNode(StaticScope scope, Node parameters, Node statements, Location opening_loc, Location closing_loc, int startOffset, int endOffset) {
+        public BlockNode(StaticScope scope, Node parameters, Node statements, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.scope =  scope;
             this.parameters = (BlockParametersNode) parameters;
             this.statements =  statements;
-            this.opening_loc =  opening_loc;
-            this.closing_loc =  closing_loc;
         }
 
         public Node[] childNodes() {
@@ -541,12 +523,10 @@ public abstract class Nodes {
     //     end
     public static final class BlockParameterNode extends Node {
         public final Token name; // optional
-        public final Location operator_loc;
 
-        public BlockParameterNode(Token name, Location operator_loc, int startOffset, int endOffset) {
+        public BlockParameterNode(Token name, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.name =  name;
-            this.operator_loc =  operator_loc;
         }
 
         public Node[] childNodes() {
@@ -625,22 +605,16 @@ public abstract class Nodes {
     //     ^^^^^^^^
     public static final class CallNode extends Node {
         public final Node receiver; // optional
-        public final Token call_operator; // optional
         public final Token message; // optional
-        public final Token opening; // optional
         public final ArgumentsNode arguments; // optional
-        public final Token closing; // optional
         public final BlockNode block; // optional
         public final byte[] name;
 
-        public CallNode(Node receiver, Token call_operator, Token message, Token opening, Node arguments, Token closing, Node block, byte[] name, int startOffset, int endOffset) {
+        public CallNode(Node receiver, Token message, Node arguments, Node block, byte[] name, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.receiver =  receiver;
-            this.call_operator =  call_operator;
             this.message =  message;
-            this.opening =  opening;
             this.arguments = (ArgumentsNode) arguments;
-            this.closing =  closing;
             this.block = (BlockNode) block;
             this.name =  name;
         }
@@ -689,16 +663,12 @@ public abstract class Nodes {
         public final Node predicate; // optional
         public final Node[] conditions;
         public final ElseNode consequent; // optional
-        public final Location case_keyword_loc;
-        public final Location end_keyword_loc;
 
-        public CaseNode(Node predicate, Node[] conditions, Node consequent, Location case_keyword_loc, Location end_keyword_loc, int startOffset, int endOffset) {
+        public CaseNode(Node predicate, Node[] conditions, Node consequent, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.predicate =  predicate;
             this.conditions =  conditions;
             this.consequent = (ElseNode) consequent;
-            this.case_keyword_loc =  case_keyword_loc;
-            this.end_keyword_loc =  end_keyword_loc;
         }
 
         public Node[] childNodes() {
@@ -720,22 +690,16 @@ public abstract class Nodes {
     //     ^^^^^^^^^^^^^
     public static final class ClassNode extends Node {
         public final StaticScope scope;
-        public final Token class_keyword;
         public final Node constant_path;
-        public final Token inheritance_operator; // optional
         public final Node superclass; // optional
         public final Node statements; // optional
-        public final Token end_keyword;
 
-        public ClassNode(StaticScope scope, Token class_keyword, Node constant_path, Token inheritance_operator, Node superclass, Node statements, Token end_keyword, int startOffset, int endOffset) {
+        public ClassNode(StaticScope scope, Node constant_path, Node superclass, Node statements, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.scope =  scope;
-            this.class_keyword =  class_keyword;
             this.constant_path =  constant_path;
-            this.inheritance_operator =  inheritance_operator;
             this.superclass =  superclass;
             this.statements =  statements;
-            this.end_keyword =  end_keyword;
         }
 
         public Node[] childNodes() {
@@ -773,13 +737,11 @@ public abstract class Nodes {
     public static final class ClassVariableWriteNode extends Node {
         public final Location name_loc;
         public final Node value; // optional
-        public final Location operator_loc; // optional
 
-        public ClassVariableWriteNode(Location name_loc, Node value, Location operator_loc, int startOffset, int endOffset) {
+        public ClassVariableWriteNode(Location name_loc, Node value, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.name_loc =  name_loc;
             this.value =  value;
-            this.operator_loc =  operator_loc;
         }
 
         public Node[] childNodes() {
@@ -798,13 +760,11 @@ public abstract class Nodes {
     public static final class ConstantPathNode extends Node {
         public final Node parent; // optional
         public final Node child;
-        public final Location delimiter_loc;
 
-        public ConstantPathNode(Node parent, Node child, Location delimiter_loc, int startOffset, int endOffset) {
+        public ConstantPathNode(Node parent, Node child, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.parent =  parent;
             this.child =  child;
-            this.delimiter_loc =  delimiter_loc;
         }
 
         public Node[] childNodes() {
@@ -825,13 +785,11 @@ public abstract class Nodes {
     //     ^^^^^^^^^^^^
     public static final class ConstantPathWriteNode extends Node {
         public final Node target;
-        public final Token operator; // optional
         public final Node value; // optional
 
-        public ConstantPathWriteNode(Node target, Token operator, Node value, int startOffset, int endOffset) {
+        public ConstantPathWriteNode(Node target, Node value, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.target =  target;
-            this.operator =  operator;
             this.value =  value;
         }
 
@@ -874,26 +832,14 @@ public abstract class Nodes {
         public final ParametersNode parameters; // optional
         public final Node statements; // optional
         public final StaticScope scope;
-        public final Location def_keyword_loc;
-        public final Location operator_loc; // optional
-        public final Location lparen_loc; // optional
-        public final Location rparen_loc; // optional
-        public final Location equal_loc; // optional
-        public final Location end_keyword_loc; // optional
 
-        public DefNode(Token name, Node receiver, Node parameters, Node statements, StaticScope scope, Location def_keyword_loc, Location operator_loc, Location lparen_loc, Location rparen_loc, Location equal_loc, Location end_keyword_loc, int startOffset, int endOffset) {
+        public DefNode(Token name, Node receiver, Node parameters, Node statements, StaticScope scope, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.name =  name;
             this.receiver =  receiver;
             this.parameters = (ParametersNode) parameters;
             this.statements =  statements;
             this.scope =  scope;
-            this.def_keyword_loc =  def_keyword_loc;
-            this.operator_loc =  operator_loc;
-            this.lparen_loc =  lparen_loc;
-            this.rparen_loc =  rparen_loc;
-            this.equal_loc =  equal_loc;
-            this.end_keyword_loc =  end_keyword_loc;
         }
 
         public Node[] childNodes() {
@@ -910,17 +856,11 @@ public abstract class Nodes {
     //     defined?(a)
     //     ^^^^^^^^^^^
     public static final class DefinedNode extends Node {
-        public final Token lparen; // optional
         public final Node value;
-        public final Token rparen; // optional
-        public final Location keyword_loc;
 
-        public DefinedNode(Token lparen, Node value, Token rparen, Location keyword_loc, int startOffset, int endOffset) {
+        public DefinedNode(Node value, int startOffset, int endOffset) {
             super(startOffset, endOffset);
-            this.lparen =  lparen;
             this.value =  value;
-            this.rparen =  rparen;
-            this.keyword_loc =  keyword_loc;
         }
 
         public Node[] childNodes() {
@@ -937,15 +877,11 @@ public abstract class Nodes {
     //     if a then b else c end
     //                 ^^^^^^^^^^
     public static final class ElseNode extends Node {
-        public final Token else_keyword;
         public final StatementsNode statements; // optional
-        public final Token end_keyword; // optional
 
-        public ElseNode(Token else_keyword, Node statements, Token end_keyword, int startOffset, int endOffset) {
+        public ElseNode(Node statements, int startOffset, int endOffset) {
             super(startOffset, endOffset);
-            this.else_keyword =  else_keyword;
             this.statements = (StatementsNode) statements;
-            this.end_keyword =  end_keyword;
         }
 
         public Node[] childNodes() {
@@ -966,15 +902,11 @@ public abstract class Nodes {
     //       bar
     //     end
     public static final class EnsureNode extends Node {
-        public final Token ensure_keyword;
         public final StatementsNode statements; // optional
-        public final Token end_keyword;
 
-        public EnsureNode(Token ensure_keyword, Node statements, Token end_keyword, int startOffset, int endOffset) {
+        public EnsureNode(Node statements, int startOffset, int endOffset) {
             super(startOffset, endOffset);
-            this.ensure_keyword =  ensure_keyword;
             this.statements = (StatementsNode) statements;
-            this.end_keyword =  end_keyword;
         }
 
         public Node[] childNodes() {
@@ -1020,17 +952,13 @@ public abstract class Nodes {
         public final Node left;
         public final Node[] requireds;
         public final Node right;
-        public final Location opening_loc; // optional
-        public final Location closing_loc; // optional
 
-        public FindPatternNode(Node constant, Node left, Node[] requireds, Node right, Location opening_loc, Location closing_loc, int startOffset, int endOffset) {
+        public FindPatternNode(Node constant, Node left, Node[] requireds, Node right, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.constant =  constant;
             this.left =  left;
             this.requireds =  requireds;
             this.right =  right;
-            this.opening_loc =  opening_loc;
-            this.closing_loc =  closing_loc;
         }
 
         public Node[] childNodes() {
@@ -1074,20 +1002,12 @@ public abstract class Nodes {
         public final Node index;
         public final Node collection;
         public final StatementsNode statements; // optional
-        public final Location for_keyword_loc;
-        public final Location in_keyword_loc;
-        public final Location do_keyword_loc; // optional
-        public final Location end_keyword_loc;
 
-        public ForNode(Node index, Node collection, Node statements, Location for_keyword_loc, Location in_keyword_loc, Location do_keyword_loc, Location end_keyword_loc, int startOffset, int endOffset) {
+        public ForNode(Node index, Node collection, Node statements, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.index =  index;
             this.collection =  collection;
             this.statements = (StatementsNode) statements;
-            this.for_keyword_loc =  for_keyword_loc;
-            this.in_keyword_loc =  in_keyword_loc;
-            this.do_keyword_loc =  do_keyword_loc;
-            this.end_keyword_loc =  end_keyword_loc;
         }
 
         public Node[] childNodes() {
@@ -1188,13 +1108,11 @@ public abstract class Nodes {
     //     ^^^^^^^^
     public static final class GlobalVariableWriteNode extends Node {
         public final Token name;
-        public final Token operator; // optional
         public final Node value; // optional
 
-        public GlobalVariableWriteNode(Token name, Token operator, Node value, int startOffset, int endOffset) {
+        public GlobalVariableWriteNode(Token name, Node value, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.name =  name;
-            this.operator =  operator;
             this.value =  value;
         }
 
@@ -1212,15 +1130,11 @@ public abstract class Nodes {
     //     { a => b }
     //     ^^^^^^^^^^
     public static final class HashNode extends Node {
-        public final Token opening; // optional
         public final Node[] elements;
-        public final Token closing; // optional
 
-        public HashNode(Token opening, Node[] elements, Token closing, int startOffset, int endOffset) {
+        public HashNode(Node[] elements, int startOffset, int endOffset) {
             super(startOffset, endOffset);
-            this.opening =  opening;
             this.elements =  elements;
-            this.closing =  closing;
         }
 
         public Node[] childNodes() {
@@ -1243,16 +1157,12 @@ public abstract class Nodes {
         public final Node constant; // optional
         public final Node[] assocs;
         public final Node kwrest; // optional
-        public final Location opening_loc; // optional
-        public final Location closing_loc; // optional
 
-        public HashPatternNode(Node constant, Node[] assocs, Node kwrest, Location opening_loc, Location closing_loc, int startOffset, int endOffset) {
+        public HashPatternNode(Node constant, Node[] assocs, Node kwrest, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.constant =  constant;
             this.assocs =  assocs;
             this.kwrest =  kwrest;
-            this.opening_loc =  opening_loc;
-            this.closing_loc =  closing_loc;
         }
 
         public Node[] childNodes() {
@@ -1275,16 +1185,12 @@ public abstract class Nodes {
     //     HERE
     //     ^^^^^^^^^^
     public static final class HeredocNode extends Node {
-        public final Token opening;
         public final Node[] parts;
-        public final Token closing;
         public final int dedent;
 
-        public HeredocNode(Token opening, Node[] parts, Token closing, int dedent, int startOffset, int endOffset) {
+        public HeredocNode(Node[] parts, int dedent, int startOffset, int endOffset) {
             super(startOffset, endOffset);
-            this.opening =  opening;
             this.parts =  parts;
-            this.closing =  closing;
             this.dedent =  dedent;
         }
 
@@ -1305,19 +1211,15 @@ public abstract class Nodes {
     //     if foo then bar end
     //     ^^^^^^^^^^^^^^^^^^^
     public static final class IfNode extends Node {
-        public final Token if_keyword;
         public final Node predicate;
         public final StatementsNode statements; // optional
         public final Node consequent; // optional
-        public final Token end_keyword; // optional
 
-        public IfNode(Token if_keyword, Node predicate, Node statements, Node consequent, Token end_keyword, int startOffset, int endOffset) {
+        public IfNode(Node predicate, Node statements, Node consequent, int startOffset, int endOffset) {
             super(startOffset, endOffset);
-            this.if_keyword =  if_keyword;
             this.predicate =  predicate;
             this.statements = (StatementsNode) statements;
             this.consequent =  consequent;
-            this.end_keyword =  end_keyword;
         }
 
         public Node[] childNodes() {
@@ -1356,14 +1258,12 @@ public abstract class Nodes {
         public final Node pattern;
         public final StatementsNode statements; // optional
         public final Location in_loc;
-        public final Location then_loc; // optional
 
-        public InNode(Node pattern, Node statements, Location in_loc, Location then_loc, int startOffset, int endOffset) {
+        public InNode(Node pattern, Node statements, Location in_loc, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.pattern =  pattern;
             this.statements = (StatementsNode) statements;
             this.in_loc =  in_loc;
-            this.then_loc =  then_loc;
         }
 
         public Node[] childNodes() {
@@ -1401,13 +1301,11 @@ public abstract class Nodes {
     public static final class InstanceVariableWriteNode extends Node {
         public final Location name_loc;
         public final Node value; // optional
-        public final Location operator_loc; // optional
 
-        public InstanceVariableWriteNode(Location name_loc, Node value, Location operator_loc, int startOffset, int endOffset) {
+        public InstanceVariableWriteNode(Location name_loc, Node value, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.name_loc =  name_loc;
             this.value =  value;
-            this.operator_loc =  operator_loc;
         }
 
         public Node[] childNodes() {
@@ -1443,15 +1341,11 @@ public abstract class Nodes {
     //     /foo #{bar} baz/
     //     ^^^^^^^^^^^^^^^^
     public static final class InterpolatedRegularExpressionNode extends Node {
-        public final Token opening;
         public final Node[] parts;
-        public final Token closing;
 
-        public InterpolatedRegularExpressionNode(Token opening, Node[] parts, Token closing, int startOffset, int endOffset) {
+        public InterpolatedRegularExpressionNode(Node[] parts, int startOffset, int endOffset) {
             super(startOffset, endOffset);
-            this.opening =  opening;
             this.parts =  parts;
-            this.closing =  closing;
         }
 
         public Node[] childNodes() {
@@ -1468,15 +1362,11 @@ public abstract class Nodes {
     //     "foo #{bar} baz"
     //     ^^^^^^^^^^^^^^^^
     public static final class InterpolatedStringNode extends Node {
-        public final Token opening; // optional
         public final Node[] parts;
-        public final Token closing; // optional
 
-        public InterpolatedStringNode(Token opening, Node[] parts, Token closing, int startOffset, int endOffset) {
+        public InterpolatedStringNode(Node[] parts, int startOffset, int endOffset) {
             super(startOffset, endOffset);
-            this.opening =  opening;
             this.parts =  parts;
-            this.closing =  closing;
         }
 
         public Node[] childNodes() {
@@ -1493,15 +1383,11 @@ public abstract class Nodes {
     //     :"foo #{bar} baz"
     //     ^^^^^^^^^^^^^^^^^
     public static final class InterpolatedSymbolNode extends Node {
-        public final Token opening; // optional
         public final Node[] parts;
-        public final Token closing; // optional
 
-        public InterpolatedSymbolNode(Token opening, Node[] parts, Token closing, int startOffset, int endOffset) {
+        public InterpolatedSymbolNode(Node[] parts, int startOffset, int endOffset) {
             super(startOffset, endOffset);
-            this.opening =  opening;
             this.parts =  parts;
-            this.closing =  closing;
         }
 
         public Node[] childNodes() {
@@ -1518,15 +1404,11 @@ public abstract class Nodes {
     //     `foo #{bar} baz`
     //     ^^^^^^^^^^^^^^^^
     public static final class InterpolatedXStringNode extends Node {
-        public final Token opening;
         public final Node[] parts;
-        public final Token closing;
 
-        public InterpolatedXStringNode(Token opening, Node[] parts, Token closing, int startOffset, int endOffset) {
+        public InterpolatedXStringNode(Node[] parts, int startOffset, int endOffset) {
             super(startOffset, endOffset);
-            this.opening =  opening;
             this.parts =  parts;
-            this.closing =  closing;
         }
 
         public Node[] childNodes() {
@@ -1572,12 +1454,10 @@ public abstract class Nodes {
     //           ^^^
     //     end
     public static final class KeywordRestParameterNode extends Node {
-        public final Token operator;
         public final Token name; // optional
 
-        public KeywordRestParameterNode(Token operator, Token name, int startOffset, int endOffset) {
+        public KeywordRestParameterNode(Token name, int startOffset, int endOffset) {
             super(startOffset, endOffset);
-            this.operator =  operator;
             this.name =  name;
         }
 
@@ -1596,19 +1476,13 @@ public abstract class Nodes {
     //     ^^^^^^^^^^^^^^^^^^^^^^^
     public static final class LambdaNode extends Node {
         public final StaticScope scope;
-        public final Token opening;
-        public final Token lparen; // optional
         public final BlockParametersNode parameters; // optional
-        public final Token rparen; // optional
         public final Node statements; // optional
 
-        public LambdaNode(StaticScope scope, Token opening, Token lparen, Node parameters, Token rparen, Node statements, int startOffset, int endOffset) {
+        public LambdaNode(StaticScope scope, Node parameters, Node statements, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.scope =  scope;
-            this.opening =  opening;
-            this.lparen =  lparen;
             this.parameters = (BlockParametersNode) parameters;
-            this.rparen =  rparen;
             this.statements =  statements;
         }
 
@@ -1651,14 +1525,12 @@ public abstract class Nodes {
     public static final class LocalVariableWriteNode extends Node {
         public final Location name_loc;
         public final Node value; // optional
-        public final Location operator_loc; // optional
         public final int depth;
 
-        public LocalVariableWriteNode(Location name_loc, Node value, Location operator_loc, int depth, int startOffset, int endOffset) {
+        public LocalVariableWriteNode(Location name_loc, Node value, int depth, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.name_loc =  name_loc;
             this.value =  value;
-            this.operator_loc =  operator_loc;
             this.depth =  depth;
         }
 
@@ -1678,13 +1550,11 @@ public abstract class Nodes {
     public static final class MatchPredicateNode extends Node {
         public final Node value;
         public final Node pattern;
-        public final Location operator_loc;
 
-        public MatchPredicateNode(Node value, Node pattern, Location operator_loc, int startOffset, int endOffset) {
+        public MatchPredicateNode(Node value, Node pattern, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.value =  value;
             this.pattern =  pattern;
-            this.operator_loc =  operator_loc;
         }
 
         public Node[] childNodes() {
@@ -1703,13 +1573,11 @@ public abstract class Nodes {
     public static final class MatchRequiredNode extends Node {
         public final Node value;
         public final Node pattern;
-        public final Location operator_loc;
 
-        public MatchRequiredNode(Node value, Node pattern, Location operator_loc, int startOffset, int endOffset) {
+        public MatchRequiredNode(Node value, Node pattern, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.value =  value;
             this.pattern =  pattern;
-            this.operator_loc =  operator_loc;
         }
 
         public Node[] childNodes() {
@@ -1744,18 +1612,14 @@ public abstract class Nodes {
     //     ^^^^^^^^^^^^^^
     public static final class ModuleNode extends Node {
         public final StaticScope scope;
-        public final Token module_keyword;
         public final Node constant_path;
         public final Node statements; // optional
-        public final Token end_keyword;
 
-        public ModuleNode(StaticScope scope, Token module_keyword, Node constant_path, Node statements, Token end_keyword, int startOffset, int endOffset) {
+        public ModuleNode(StaticScope scope, Node constant_path, Node statements, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.scope =  scope;
-            this.module_keyword =  module_keyword;
             this.constant_path =  constant_path;
             this.statements =  statements;
-            this.end_keyword =  end_keyword;
         }
 
         public Node[] childNodes() {
@@ -1773,18 +1637,12 @@ public abstract class Nodes {
     //     ^^^^^^^^^^^^^^^^^
     public static final class MultiWriteNode extends Node {
         public final Node[] targets;
-        public final Token operator; // optional
         public final Node value; // optional
-        public final Location lparen_loc; // optional
-        public final Location rparen_loc; // optional
 
-        public MultiWriteNode(Node[] targets, Token operator, Node value, Location lparen_loc, Location rparen_loc, int startOffset, int endOffset) {
+        public MultiWriteNode(Node[] targets, Node value, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.targets =  targets;
-            this.operator =  operator;
             this.value =  value;
-            this.lparen_loc =  lparen_loc;
-            this.rparen_loc =  rparen_loc;
         }
 
         public Node[] childNodes() {
@@ -1805,12 +1663,10 @@ public abstract class Nodes {
     //     ^^^^^^
     public static final class NextNode extends Node {
         public final ArgumentsNode arguments; // optional
-        public final Location keyword_loc;
 
-        public NextNode(Node arguments, Location keyword_loc, int startOffset, int endOffset) {
+        public NextNode(Node arguments, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.arguments = (ArgumentsNode) arguments;
-            this.keyword_loc =  keyword_loc;
         }
 
         public Node[] childNodes() {
@@ -1847,13 +1703,9 @@ public abstract class Nodes {
     //           ^^^^^
     //     end
     public static final class NoKeywordsParameterNode extends Node {
-        public final Location operator_loc;
-        public final Location keyword_loc;
 
-        public NoKeywordsParameterNode(Location operator_loc, Location keyword_loc, int startOffset, int endOffset) {
+        public NoKeywordsParameterNode(int startOffset, int endOffset) {
             super(startOffset, endOffset);
-            this.operator_loc =  operator_loc;
-            this.keyword_loc =  keyword_loc;
         }
 
         public Node[] childNodes() {
@@ -1872,13 +1724,11 @@ public abstract class Nodes {
     public static final class OperatorAndAssignmentNode extends Node {
         public final Node target;
         public final Node value;
-        public final Location operator_loc;
 
-        public OperatorAndAssignmentNode(Node target, Node value, Location operator_loc, int startOffset, int endOffset) {
+        public OperatorAndAssignmentNode(Node target, Node value, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.target =  target;
             this.value =  value;
-            this.operator_loc =  operator_loc;
         }
 
         public Node[] childNodes() {
@@ -1922,13 +1772,11 @@ public abstract class Nodes {
     public static final class OperatorOrAssignmentNode extends Node {
         public final Node target;
         public final Node value;
-        public final Location operator_loc;
 
-        public OperatorOrAssignmentNode(Node target, Node value, Location operator_loc, int startOffset, int endOffset) {
+        public OperatorOrAssignmentNode(Node target, Node value, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.target =  target;
             this.value =  value;
-            this.operator_loc =  operator_loc;
         }
 
         public Node[] childNodes() {
@@ -1947,13 +1795,11 @@ public abstract class Nodes {
     //     end
     public static final class OptionalParameterNode extends Node {
         public final Token name;
-        public final Token equal_operator;
         public final Node value;
 
-        public OptionalParameterNode(Token name, Token equal_operator, Node value, int startOffset, int endOffset) {
+        public OptionalParameterNode(Token name, Node value, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.name =  name;
-            this.equal_operator =  equal_operator;
             this.value =  value;
         }
 
@@ -1973,13 +1819,11 @@ public abstract class Nodes {
     public static final class OrNode extends Node {
         public final Node left;
         public final Node right;
-        public final Location operator_loc;
 
-        public OrNode(Node left, Node right, Location operator_loc, int startOffset, int endOffset) {
+        public OrNode(Node left, Node right, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.left =  left;
             this.right =  right;
-            this.operator_loc =  operator_loc;
         }
 
         public Node[] childNodes() {
@@ -2039,14 +1883,10 @@ public abstract class Nodes {
     //     ^^^^^^^^^
     public static final class ParenthesesNode extends Node {
         public final Node statements; // optional
-        public final Location opening_loc;
-        public final Location closing_loc;
 
-        public ParenthesesNode(Node statements, Location opening_loc, Location closing_loc, int startOffset, int endOffset) {
+        public ParenthesesNode(Node statements, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.statements =  statements;
-            this.opening_loc =  opening_loc;
-            this.closing_loc =  closing_loc;
         }
 
         public Node[] childNodes() {
@@ -2065,16 +1905,10 @@ public abstract class Nodes {
     //            ^^^^^^
     public static final class PinnedExpressionNode extends Node {
         public final Node expression;
-        public final Location operator_loc;
-        public final Location lparen_loc;
-        public final Location rparen_loc;
 
-        public PinnedExpressionNode(Node expression, Location operator_loc, Location lparen_loc, Location rparen_loc, int startOffset, int endOffset) {
+        public PinnedExpressionNode(Node expression, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.expression =  expression;
-            this.operator_loc =  operator_loc;
-            this.lparen_loc =  lparen_loc;
-            this.rparen_loc =  rparen_loc;
         }
 
         public Node[] childNodes() {
@@ -2093,12 +1927,10 @@ public abstract class Nodes {
     //            ^^^^
     public static final class PinnedVariableNode extends Node {
         public final Node variable;
-        public final Location operator_loc;
 
-        public PinnedVariableNode(Node variable, Location operator_loc, int startOffset, int endOffset) {
+        public PinnedVariableNode(Node variable, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.variable =  variable;
-            this.operator_loc =  operator_loc;
         }
 
         public Node[] childNodes() {
@@ -2116,16 +1948,10 @@ public abstract class Nodes {
     //     ^^^^^^^^^^^
     public static final class PostExecutionNode extends Node {
         public final StatementsNode statements;
-        public final Location keyword_loc;
-        public final Location opening_loc;
-        public final Location closing_loc;
 
-        public PostExecutionNode(Node statements, Location keyword_loc, Location opening_loc, Location closing_loc, int startOffset, int endOffset) {
+        public PostExecutionNode(Node statements, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.statements = (StatementsNode) statements;
-            this.keyword_loc =  keyword_loc;
-            this.opening_loc =  opening_loc;
-            this.closing_loc =  closing_loc;
         }
 
         public Node[] childNodes() {
@@ -2143,16 +1969,10 @@ public abstract class Nodes {
     //     ^^^^^^^^^^^^^
     public static final class PreExecutionNode extends Node {
         public final StatementsNode statements;
-        public final Location keyword_loc;
-        public final Location opening_loc;
-        public final Location closing_loc;
 
-        public PreExecutionNode(Node statements, Location keyword_loc, Location opening_loc, Location closing_loc, int startOffset, int endOffset) {
+        public PreExecutionNode(Node statements, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.statements = (StatementsNode) statements;
-            this.keyword_loc =  keyword_loc;
-            this.opening_loc =  opening_loc;
-            this.closing_loc =  closing_loc;
         }
 
         public Node[] childNodes() {
@@ -2255,14 +2075,12 @@ public abstract class Nodes {
     //     /foo/i
     //     ^^^^^^
     public static final class RegularExpressionNode extends Node {
-        public final Token opening;
         public final Token content;
         public final Token closing;
         public final byte[] unescaped;
 
-        public RegularExpressionNode(Token opening, Token content, Token closing, byte[] unescaped, int startOffset, int endOffset) {
+        public RegularExpressionNode(Token content, Token closing, byte[] unescaped, int startOffset, int endOffset) {
             super(startOffset, endOffset);
-            this.opening =  opening;
             this.content =  content;
             this.closing =  closing;
             this.unescaped =  unescaped;
@@ -2284,14 +2102,10 @@ public abstract class Nodes {
     //     end
     public static final class RequiredDestructuredParameterNode extends Node {
         public final Node[] parameters;
-        public final Token opening;
-        public final Token closing;
 
-        public RequiredDestructuredParameterNode(Node[] parameters, Token opening, Token closing, int startOffset, int endOffset) {
+        public RequiredDestructuredParameterNode(Node[] parameters, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.parameters =  parameters;
-            this.opening =  opening;
-            this.closing =  closing;
         }
 
         public Node[] childNodes() {
@@ -2329,13 +2143,11 @@ public abstract class Nodes {
     //   ^^^^^^^^^^^^^^
     public static final class RescueModifierNode extends Node {
         public final Node expression;
-        public final Token rescue_keyword;
         public final Node rescue_expression;
 
-        public RescueModifierNode(Node expression, Token rescue_keyword, Node rescue_expression, int startOffset, int endOffset) {
+        public RescueModifierNode(Node expression, Node rescue_expression, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.expression =  expression;
-            this.rescue_keyword =  rescue_keyword;
             this.rescue_expression =  rescue_expression;
         }
 
@@ -2356,18 +2168,14 @@ public abstract class Nodes {
     //     ^^^^^^
     //     end
     public static final class RescueNode extends Node {
-        public final Token rescue_keyword;
         public final Node[] exceptions;
-        public final Token equal_greater; // optional
         public final Node exception; // optional
         public final StatementsNode statements; // optional
         public final RescueNode consequent; // optional
 
-        public RescueNode(Token rescue_keyword, Node[] exceptions, Token equal_greater, Node exception, Node statements, Node consequent, int startOffset, int endOffset) {
+        public RescueNode(Node[] exceptions, Node exception, Node statements, Node consequent, int startOffset, int endOffset) {
             super(startOffset, endOffset);
-            this.rescue_keyword =  rescue_keyword;
             this.exceptions =  exceptions;
-            this.equal_greater =  equal_greater;
             this.exception =  exception;
             this.statements = (StatementsNode) statements;
             this.consequent = (RescueNode) consequent;
@@ -2393,12 +2201,10 @@ public abstract class Nodes {
     //           ^^
     //     end
     public static final class RestParameterNode extends Node {
-        public final Token operator;
         public final Token name; // optional
 
-        public RestParameterNode(Token operator, Token name, int startOffset, int endOffset) {
+        public RestParameterNode(Token name, int startOffset, int endOffset) {
             super(startOffset, endOffset);
-            this.operator =  operator;
             this.name =  name;
         }
 
@@ -2435,12 +2241,10 @@ public abstract class Nodes {
     //     return 1
     //     ^^^^^^^^
     public static final class ReturnNode extends Node {
-        public final Token keyword;
         public final ArgumentsNode arguments; // optional
 
-        public ReturnNode(Token keyword, Node arguments, int startOffset, int endOffset) {
+        public ReturnNode(Node arguments, int startOffset, int endOffset) {
             super(startOffset, endOffset);
-            this.keyword =  keyword;
             this.arguments = (ArgumentsNode) arguments;
         }
 
@@ -2497,20 +2301,14 @@ public abstract class Nodes {
     //     ^^^^^^^^^^^^^^^^^
     public static final class SingletonClassNode extends Node {
         public final StaticScope scope;
-        public final Token class_keyword;
-        public final Token operator;
         public final Node expression;
         public final Node statements; // optional
-        public final Token end_keyword;
 
-        public SingletonClassNode(StaticScope scope, Token class_keyword, Token operator, Node expression, Node statements, Token end_keyword, int startOffset, int endOffset) {
+        public SingletonClassNode(StaticScope scope, Node expression, Node statements, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.scope =  scope;
-            this.class_keyword =  class_keyword;
-            this.operator =  operator;
             this.expression =  expression;
             this.statements =  statements;
-            this.end_keyword =  end_keyword;
         }
 
         public Node[] childNodes() {
@@ -2584,12 +2382,10 @@ public abstract class Nodes {
     //     [*a]
     //      ^^
     public static final class SplatNode extends Node {
-        public final Token operator;
         public final Node expression; // optional
 
-        public SplatNode(Token operator, Node expression, int startOffset, int endOffset) {
+        public SplatNode(Node expression, int startOffset, int endOffset) {
             super(startOffset, endOffset);
-            this.operator =  operator;
             this.expression =  expression;
         }
 
@@ -2651,15 +2447,11 @@ public abstract class Nodes {
     //     "foo #{bar}"
     //          ^^^^^^
     public static final class StringInterpolatedNode extends Node {
-        public final Token opening;
         public final StatementsNode statements; // optional
-        public final Token closing;
 
-        public StringInterpolatedNode(Token opening, Node statements, Token closing, int startOffset, int endOffset) {
+        public StringInterpolatedNode(Node statements, int startOffset, int endOffset) {
             super(startOffset, endOffset);
-            this.opening =  opening;
             this.statements = (StatementsNode) statements;
-            this.closing =  closing;
         }
 
         public Node[] childNodes() {
@@ -2683,16 +2475,12 @@ public abstract class Nodes {
     //     "foo #{bar} baz"
     //      ^^^^      ^^^^
     public static final class StringNode extends Node {
-        public final Token opening; // optional
         public final Token content;
-        public final Token closing; // optional
         public final byte[] unescaped;
 
-        public StringNode(Token opening, Token content, Token closing, byte[] unescaped, int startOffset, int endOffset) {
+        public StringNode(Token content, byte[] unescaped, int startOffset, int endOffset) {
             super(startOffset, endOffset);
-            this.opening =  opening;
             this.content =  content;
-            this.closing =  closing;
             this.unescaped =  unescaped;
         }
 
@@ -2713,18 +2501,12 @@ public abstract class Nodes {
     //     super foo, bar
     //     ^^^^^^^^^^^^^^
     public static final class SuperNode extends Node {
-        public final Token keyword;
-        public final Token lparen; // optional
         public final ArgumentsNode arguments; // optional
-        public final Token rparen; // optional
         public final BlockNode block; // optional
 
-        public SuperNode(Token keyword, Token lparen, Node arguments, Token rparen, Node block, int startOffset, int endOffset) {
+        public SuperNode(Node arguments, Node block, int startOffset, int endOffset) {
             super(startOffset, endOffset);
-            this.keyword =  keyword;
-            this.lparen =  lparen;
             this.arguments = (ArgumentsNode) arguments;
-            this.rparen =  rparen;
             this.block = (BlockNode) block;
         }
 
@@ -2745,16 +2527,12 @@ public abstract class Nodes {
     //     %i[foo]
     //        ^^^
     public static final class SymbolNode extends Node {
-        public final Token opening; // optional
         public final Token value;
-        public final Token closing; // optional
         public final byte[] unescaped;
 
-        public SymbolNode(Token opening, Token value, Token closing, byte[] unescaped, int startOffset, int endOffset) {
+        public SymbolNode(Token value, byte[] unescaped, int startOffset, int endOffset) {
             super(startOffset, endOffset);
-            this.opening =  opening;
             this.value =  value;
-            this.closing =  closing;
             this.unescaped =  unescaped;
         }
 
@@ -2792,12 +2570,10 @@ public abstract class Nodes {
     //     ^^^^^^^^^^^^^^^^^^^^^^
     public static final class UndefNode extends Node {
         public final Node[] names;
-        public final Location keyword_loc;
 
-        public UndefNode(Node[] names, Location keyword_loc, int startOffset, int endOffset) {
+        public UndefNode(Node[] names, int startOffset, int endOffset) {
             super(startOffset, endOffset);
             this.names =  names;
-            this.keyword_loc =  keyword_loc;
         }
 
         public Node[] childNodes() {
@@ -2817,19 +2593,15 @@ public abstract class Nodes {
     //     unless foo then bar end
     //     ^^^^^^^^^^^^^^^^^^^^^^^
     public static final class UnlessNode extends Node {
-        public final Token keyword;
         public final Node predicate;
         public final StatementsNode statements; // optional
         public final ElseNode consequent; // optional
-        public final Token end_keyword; // optional
 
-        public UnlessNode(Token keyword, Node predicate, Node statements, Node consequent, Token end_keyword, int startOffset, int endOffset) {
+        public UnlessNode(Node predicate, Node statements, Node consequent, int startOffset, int endOffset) {
             super(startOffset, endOffset);
-            this.keyword =  keyword;
             this.predicate =  predicate;
             this.statements = (StatementsNode) statements;
             this.consequent = (ElseNode) consequent;
-            this.end_keyword =  end_keyword;
         }
 
         public Node[] childNodes() {
@@ -2874,13 +2646,11 @@ public abstract class Nodes {
     // ^^^^^^^^^
     // end
     public static final class WhenNode extends Node {
-        public final Token when_keyword;
         public final Node[] conditions;
         public final StatementsNode statements; // optional
 
-        public WhenNode(Token when_keyword, Node[] conditions, Node statements, int startOffset, int endOffset) {
+        public WhenNode(Node[] conditions, Node statements, int startOffset, int endOffset) {
             super(startOffset, endOffset);
-            this.when_keyword =  when_keyword;
             this.conditions =  conditions;
             this.statements = (StatementsNode) statements;
         }
@@ -2930,16 +2700,12 @@ public abstract class Nodes {
     //     `foo`
     //     ^^^^^
     public static final class XStringNode extends Node {
-        public final Token opening;
         public final Token content;
-        public final Token closing;
         public final byte[] unescaped;
 
-        public XStringNode(Token opening, Token content, Token closing, byte[] unescaped, int startOffset, int endOffset) {
+        public XStringNode(Token content, byte[] unescaped, int startOffset, int endOffset) {
             super(startOffset, endOffset);
-            this.opening =  opening;
             this.content =  content;
-            this.closing =  closing;
             this.unescaped =  unescaped;
         }
 
@@ -2957,14 +2723,12 @@ public abstract class Nodes {
     //     yield 1
     //     ^^^^^^^
     public static final class YieldNode extends Node {
-        public final Token keyword;
         public final Token lparen; // optional
         public final ArgumentsNode arguments; // optional
         public final Token rparen; // optional
 
-        public YieldNode(Token keyword, Token lparen, Node arguments, Token rparen, int startOffset, int endOffset) {
+        public YieldNode(Token lparen, Node arguments, Token rparen, int startOffset, int endOffset) {
             super(startOffset, endOffset);
-            this.keyword =  keyword;
             this.lparen =  lparen;
             this.arguments = (ArgumentsNode) arguments;
             this.rparen =  rparen;

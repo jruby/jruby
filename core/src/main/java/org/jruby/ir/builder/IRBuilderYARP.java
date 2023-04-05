@@ -54,7 +54,6 @@ import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
-import org.yarp.Nodes;
 import org.yarp.Nodes.*;
 import org.yarp.YarpParseResult;
 
@@ -65,23 +64,21 @@ import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.IS_HASH_EMPTY;
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.MERGE_KWARGS;
 
 public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
-    YarpParseResult result = null;
+    byte[] source = null;
 
     public IRBuilderYARP(IRManager manager, IRScope scope, IRBuilder parent, IRBuilder variableBuilder) {
         super(manager, scope, parent, variableBuilder);
 
         // FIXME: remove once all paths consstently use same parser.
         if (parent instanceof IRBuilderYARP) {
-            result = ((IRBuilderYARP) parent).result;
+            source = ((IRBuilderYARP) parent).source;
         }
     }
 
     @Override
     public Operand build(ParseResult result) {
-        ProgramNode program = ((YarpParseResult) result).getRoot();
-
-        this.result = (YarpParseResult) result;
-        return build(program.statements);
+        this.source = ((YarpParseResult) result).getSource();
+        return build(((YarpParseResult) result).getRoot().statements);
     }
 
     Operand build(Node node) {
@@ -150,6 +147,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
             return nil();
         } else if (node instanceof OrNode) {
             return buildOr((OrNode) node);
+        } else if (node instanceof ParenthesesNode) {
+            return build(((ParenthesesNode) node).statements);
         } else if (node instanceof ProgramNode) {
             return buildProgram((ProgramNode) node);
         } else if (node instanceof RegularExpressionNode) {
@@ -334,11 +333,13 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
     }
 
     private Operand buildDefn(DefNode node) {
-        return buildDefn(buildNewMethod(node, true));
+        LazyMethodDefinition def = new YARPLazyMethodDefinition(getManager().getRuntime(), source, node);
+        return buildDefn(defineNewMethod(def, byteListFrom(node.name), 0, node.scope, true));
     }
 
     private Operand buildDefs(DefNode node) {
-        return buildDefn(buildNewMethod(node, false));
+        LazyMethodDefinition def = new YARPLazyMethodDefinition(getManager().getRuntime(), source, node);
+        return buildDefn(defineNewMethod(def, byteListFrom(node.name), 0, node.scope, false));
     }
 
     private Operand buildElse(ElseNode node) {
@@ -516,19 +517,6 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
         for (Tuple<Node, Variable> assign: assigns) {
             buildAssignment(assign.a, assign.b);
         }
-    }
-
-    private IRMethod buildNewMethod(DefNode node, boolean isInstanceMethod) {
-        IRMethod method = new IRMethod(getManager(), scope, null, byteListFrom(node.name), isInstanceMethod, 0,
-                node.scope, coverageMode);
-
-        if (canBeLazyMethod(node)) throw new RuntimeException("Laziness not implemented for YARP");
-
-        IRBuilder builder = new IRBuilderYARP(getManager(), method, this, null);
-        builder.executesOnce = false; // set up so nested things (modules+) which think it could execute once knows it cannot (it is in a method).
-        builder.defineMethodInner(node, scope, coverageMode); // sets interpreterContext
-
-        return method;
     }
 
     private Operand buildOr(OrNode node) {
@@ -774,7 +762,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
             if (scope instanceof IRMethod) {
                 // FIXME: how do we annotate generated AST types to have isAnonymous etc...
                 if (restArgNode.name == null) {
-                    addArgumentDescription(ArgumentType.anonrest, symbolFor(restArgNode.operator));
+                    addArgumentDescription(ArgumentType.anonrest, symbol("*"));
                 } else {
                     addArgumentDescription(ArgumentType.rest, symbolFor(restArgNode.name));
                 }
@@ -873,16 +861,6 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
         buildParameters(defNode.parameters);
     }
 
-    @Override
-    public Operand buildMethodBody(DefNode defNode) {
-        return build(defNode.statements);
-    }
-
-    @Override
-    public int getMethodEndLine(DefNode defNode) {
-        return 0;
-    }
-
     private RubySymbol symbolFor(Token token) {
         return symbol(byteListFrom(token));
     }
@@ -896,20 +874,14 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
     }
 
     private ByteList byteListFrom(Token token) {
-        byte[] source = result.getSource();
-
         return new ByteList(source, token.startOffset, token.endOffset - token.startOffset);
     }
 
     private ByteList byteListFrom(Location location) {
-        byte[] source = result.getSource();
-
         return new ByteList(source, location.startOffset, location.endOffset - location.startOffset);
     }
 
     private ByteList byteListFrom(Node node) {
-        byte[] source = result.getSource();
-
         return new ByteList(source, node.startOffset, node.endOffset - node.startOffset);
     }
 
@@ -928,8 +900,9 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
         throw notCompilable("Unsupported node in module path", node);
     }
 
-    boolean canBeLazyMethod(Object method) {
-        return false;
+    // FIXME: need to know about breaks
+    boolean canBeLazyMethod(DefNode node) {
+        return true;
     }
 
     private NotCompilableException notCompilable(String message, Node node) {

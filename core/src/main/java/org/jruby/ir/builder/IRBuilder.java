@@ -83,6 +83,7 @@ import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.UnexecutableNil;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.ArgumentType;
 import org.jruby.runtime.CallType;
@@ -193,6 +194,14 @@ public abstract class IRBuilder<U, V> {
 
     public static IRBuilderAST topIRBuilder(IRManager manager, IRScope newScope) {
         return new IRBuilderAST(manager, newScope, null);
+    }
+
+    public static IRBuilder methodIRBuilder(IRManager manager, IRScope newScope, Object node) {
+        if (node instanceof org.jruby.ast.DefNode) {
+            return new IRBuilderAST(manager, newScope, null, null);
+        } else {
+            return new IRBuilderYARP(manager, newScope, null, null);
+        }
     }
 
     public static IRBuilder topIRBuilder(IRManager manager, IRScope newScope, ParseResult rootNode) {
@@ -866,10 +875,10 @@ public abstract class IRBuilder<U, V> {
      * containing break/next cannot for syntax error purposes) or whether it is enabled as an
      * option (feature does not exist yet).
      *
-     * @param defThang syntactical representation of the definition
+     * @param defNode syntactical representation of the definition
      * @return true if can be lazy
      */
-    abstract boolean canBeLazyMethod(Object defThang);
+    abstract boolean canBeLazyMethod(V defNode);
 
     // build methods
     public abstract Operand build(ParseResult result);
@@ -1196,12 +1205,20 @@ public abstract class IRBuilder<U, V> {
     abstract boolean alwaysTrue(U node);
     abstract Operand build(Variable result, U node);
     abstract Operand build(U node);
-    abstract Operand buildMethodBody(V defNode);
     abstract int dynamicPiece(Operand[] pieces, int index, U piece);
-    abstract int getMethodEndLine(V defNode);
     abstract void receiveMethodArgs(V defNode);
 
-    public InterpreterContext defineMethodInner(V defNode, IRScope parent, int coverageMode) {
+    IRMethod defineNewMethod(LazyMethodDefinition<U, V> defn, ByteList name, int line, StaticScope scope, boolean isInstanceMethod) {
+        IRMethod method = new IRMethod(getManager(), this.scope, defn, name, isInstanceMethod, line, scope, coverageMode);
+
+        // poorly placed next/break expects a syntax error so we eagerly build methods which contain them.
+        if (!canBeLazyMethod(defn.getMethod())) method.lazilyAcquireInterpreterContext();
+
+        return method;
+    }
+
+
+    public InterpreterContext defineMethodInner(LazyMethodDefinition<U, V> defNode, IRScope parent, int coverageMode) {
         this.coverageMode = coverageMode;
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
@@ -1219,14 +1236,14 @@ public abstract class IRBuilder<U, V> {
         addInstr(new CopyInstr(getCurrentModuleVariable(), ScopeModule.ModuleFor(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
 
         // Build IR for arguments (including the block arg)
-        receiveMethodArgs(defNode);
+        receiveMethodArgs(defNode.getMethod());
 
         // Build IR for body
-        Operand rv = buildMethodBody(defNode);
+        Operand rv = build(defNode.getMethodBody());
 
         // FIXME: Need commonality for line numbers between YARP and AST
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            int endLine = getMethodEndLine(defNode);
+            int endLine = defNode.getEndLine();
             addInstr(new LineNumberInstr(endLine));
             addInstr(new TraceInstr(RubyEvent.RETURN, getCurrentModuleVariable(), getName(), getFileName(), endLine));
         }

@@ -51,7 +51,6 @@ public class Loader {
     // FIXME: our staticscope assumes we know first offset to kwargs.
     private StaticScope loadStaticScope() {
         int type = buffer.get() & 0xFF;
-        int length = buffer.getInt();
         int startOffset = buffer.getInt();
         int endOffset = buffer.getInt();
 
@@ -130,227 +129,440 @@ public class Loader {
         return buffer.getInt();
     }
 
+    private Nodes.Node loadAliasNode(int startOffset, int endOffset) {
+        return new Nodes.AliasNode(loadNode(), loadNode(), loadLocation(), startOffset, endOffset);
+    }
+    private Nodes.Node loadAlternationPatternNode(int startOffset, int endOffset) {
+        return new Nodes.AlternationPatternNode(loadNode(), loadNode(), loadLocation(), startOffset, endOffset);
+    }
+    private Nodes.Node loadAndNode(int startOffset, int endOffset) {
+        return new Nodes.AndNode(loadNode(), loadNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadArgumentsNode(int startOffset, int endOffset) {
+        return new Nodes.ArgumentsNode(loadNodes(), startOffset, endOffset);
+    }
+    private Nodes.Node loadArrayNode(int startOffset, int endOffset) {
+        return new Nodes.ArrayNode(loadNodes(), loadOptionalToken(), startOffset, endOffset);
+    }
+    private Nodes.Node loadArrayPatternNode(int startOffset, int endOffset) {
+        return new Nodes.ArrayPatternNode(loadOptionalNode(), loadNodes(), loadOptionalNode(), loadNodes(), loadOptionalLocation(), loadOptionalLocation(), startOffset, endOffset);
+    }
+    private Nodes.Node loadAssocNode(int startOffset, int endOffset) {
+        return new Nodes.AssocNode(loadNode(), loadOptionalNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadAssocSplatNode(int startOffset, int endOffset) {
+        return new Nodes.AssocSplatNode(loadOptionalNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadBeginNode(int startOffset, int endOffset) {
+        return new Nodes.BeginNode(loadOptionalNode(), loadOptionalNode(), loadOptionalNode(), loadOptionalNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadBlockArgumentNode(int startOffset, int endOffset) {
+        return new Nodes.BlockArgumentNode(loadOptionalNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadBlockNode(int startOffset, int endOffset) {
+        return new Nodes.BlockNode(loadStaticScope(), loadOptionalNode(), loadOptionalNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadBlockParameterNode(int startOffset, int endOffset) {
+        return new Nodes.BlockParameterNode(loadOptionalToken(), startOffset, endOffset);
+    }
+    private Nodes.Node loadBlockParametersNode(int startOffset, int endOffset) {
+        return new Nodes.BlockParametersNode(loadOptionalNode(), loadTokens(), startOffset, endOffset);
+    }
+    private Nodes.Node loadBreakNode(int startOffset, int endOffset) {
+        return new Nodes.BreakNode(loadOptionalNode(), loadLocation(), startOffset, endOffset);
+    }
+    private Nodes.Node loadCallNode(int startOffset, int endOffset) {
+        return new Nodes.CallNode(loadOptionalNode(), loadOptionalToken(), loadOptionalNode(), loadOptionalNode(), loadString(), startOffset, endOffset);
+    }
+    private Nodes.Node loadCapturePatternNode(int startOffset, int endOffset) {
+        return new Nodes.CapturePatternNode(loadNode(), loadNode(), loadLocation(), startOffset, endOffset);
+    }
+    private Nodes.Node loadCaseNode(int startOffset, int endOffset) {
+        return new Nodes.CaseNode(loadOptionalNode(), loadNodes(), loadOptionalNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadClassNode(int startOffset, int endOffset) {
+        return new Nodes.ClassNode(loadStaticScope(), loadNode(), loadOptionalNode(), loadOptionalNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadClassVariableReadNode(int startOffset, int endOffset) {
+        return new Nodes.ClassVariableReadNode(startOffset, endOffset);
+    }
+    private Nodes.Node loadClassVariableWriteNode(int startOffset, int endOffset) {
+        return new Nodes.ClassVariableWriteNode(loadLocation(), loadOptionalNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadConstantPathNode(int startOffset, int endOffset) {
+        return new Nodes.ConstantPathNode(loadOptionalNode(), loadNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadConstantPathWriteNode(int startOffset, int endOffset) {
+        return new Nodes.ConstantPathWriteNode(loadNode(), loadOptionalNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadConstantReadNode(int startOffset, int endOffset) {
+        return new Nodes.ConstantReadNode(startOffset, endOffset);
+    }
+    private Nodes.Node loadDefNode(int startOffset, int endOffset) {
+        return new Nodes.DefNode(loadToken(), loadOptionalNode(), loadOptionalNode(), loadOptionalNode(), loadStaticScope(), startOffset, endOffset);
+    }
+    private Nodes.Node loadDefinedNode(int startOffset, int endOffset) {
+        return new Nodes.DefinedNode(loadNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadElseNode(int startOffset, int endOffset) {
+        return new Nodes.ElseNode(loadOptionalNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadEnsureNode(int startOffset, int endOffset) {
+        return new Nodes.EnsureNode(loadOptionalNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadFalseNode(int startOffset, int endOffset) {
+        return new Nodes.FalseNode(startOffset, endOffset);
+    }
+    private Nodes.Node loadFindPatternNode(int startOffset, int endOffset) {
+        return new Nodes.FindPatternNode(loadOptionalNode(), loadNode(), loadNodes(), loadNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadFloatNode(int startOffset, int endOffset) {
+        return new Nodes.FloatNode(startOffset, endOffset);
+    }
+    private Nodes.Node loadForNode(int startOffset, int endOffset) {
+        return new Nodes.ForNode(loadNode(), loadNode(), loadOptionalNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadForwardingArgumentsNode(int startOffset, int endOffset) {
+        return new Nodes.ForwardingArgumentsNode(startOffset, endOffset);
+    }
+    private Nodes.Node loadForwardingParameterNode(int startOffset, int endOffset) {
+        return new Nodes.ForwardingParameterNode(startOffset, endOffset);
+    }
+    private Nodes.Node loadForwardingSuperNode(int startOffset, int endOffset) {
+        return new Nodes.ForwardingSuperNode(loadOptionalNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadGlobalVariableReadNode(int startOffset, int endOffset) {
+        return new Nodes.GlobalVariableReadNode(loadToken(), startOffset, endOffset);
+    }
+    private Nodes.Node loadGlobalVariableWriteNode(int startOffset, int endOffset) {
+        return new Nodes.GlobalVariableWriteNode(loadToken(), loadOptionalNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadHashNode(int startOffset, int endOffset) {
+        return new Nodes.HashNode(loadNodes(), startOffset, endOffset);
+    }
+    private Nodes.Node loadHashPatternNode(int startOffset, int endOffset) {
+        return new Nodes.HashPatternNode(loadOptionalNode(), loadNodes(), loadOptionalNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadHeredocNode(int startOffset, int endOffset) {
+        return new Nodes.HeredocNode(loadNodes(), loadInteger(), startOffset, endOffset);
+    }
+    private Nodes.Node loadIfNode(int startOffset, int endOffset) {
+        return new Nodes.IfNode(loadNode(), loadOptionalNode(), loadOptionalNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadImaginaryNode(int startOffset, int endOffset) {
+        return new Nodes.ImaginaryNode(startOffset, endOffset);
+    }
+    private Nodes.Node loadInNode(int startOffset, int endOffset) {
+        return new Nodes.InNode(loadNode(), loadOptionalNode(), loadLocation(), startOffset, endOffset);
+    }
+    private Nodes.Node loadInstanceVariableReadNode(int startOffset, int endOffset) {
+        return new Nodes.InstanceVariableReadNode(startOffset, endOffset);
+    }
+    private Nodes.Node loadInstanceVariableWriteNode(int startOffset, int endOffset) {
+        return new Nodes.InstanceVariableWriteNode(loadLocation(), loadOptionalNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadIntegerNode(int startOffset, int endOffset) {
+        return new Nodes.IntegerNode(startOffset, endOffset);
+    }
+    private Nodes.Node loadInterpolatedRegularExpressionNode(int startOffset, int endOffset) {
+        return new Nodes.InterpolatedRegularExpressionNode(loadNodes(), startOffset, endOffset);
+    }
+    private Nodes.Node loadInterpolatedStringNode(int startOffset, int endOffset) {
+        return new Nodes.InterpolatedStringNode(loadNodes(), startOffset, endOffset);
+    }
+    private Nodes.Node loadInterpolatedSymbolNode(int startOffset, int endOffset) {
+        return new Nodes.InterpolatedSymbolNode(loadNodes(), startOffset, endOffset);
+    }
+    private Nodes.Node loadInterpolatedXStringNode(int startOffset, int endOffset) {
+        return new Nodes.InterpolatedXStringNode(loadNodes(), startOffset, endOffset);
+    }
+    private Nodes.Node loadKeywordParameterNode(int startOffset, int endOffset) {
+        return new Nodes.KeywordParameterNode(loadToken(), loadOptionalNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadKeywordRestParameterNode(int startOffset, int endOffset) {
+        return new Nodes.KeywordRestParameterNode(loadOptionalToken(), startOffset, endOffset);
+    }
+    private Nodes.Node loadLambdaNode(int startOffset, int endOffset) {
+        return new Nodes.LambdaNode(loadStaticScope(), loadOptionalNode(), loadOptionalNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadLocalVariableReadNode(int startOffset, int endOffset) {
+        return new Nodes.LocalVariableReadNode(loadInteger(), startOffset, endOffset);
+    }
+    private Nodes.Node loadLocalVariableWriteNode(int startOffset, int endOffset) {
+        return new Nodes.LocalVariableWriteNode(loadLocation(), loadOptionalNode(), loadInteger(), startOffset, endOffset);
+    }
+    private Nodes.Node loadMatchPredicateNode(int startOffset, int endOffset) {
+        return new Nodes.MatchPredicateNode(loadNode(), loadNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadMatchRequiredNode(int startOffset, int endOffset) {
+        return new Nodes.MatchRequiredNode(loadNode(), loadNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadMissingNode(int startOffset, int endOffset) {
+        return new Nodes.MissingNode(startOffset, endOffset);
+    }
+    private Nodes.Node loadModuleNode(int startOffset, int endOffset) {
+        return new Nodes.ModuleNode(loadStaticScope(), loadNode(), loadOptionalNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadMultiWriteNode(int startOffset, int endOffset) {
+        return new Nodes.MultiWriteNode(loadNodes(), loadOptionalNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadNextNode(int startOffset, int endOffset) {
+        return new Nodes.NextNode(loadOptionalNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadNilNode(int startOffset, int endOffset) {
+        return new Nodes.NilNode(startOffset, endOffset);
+    }
+    private Nodes.Node loadNoKeywordsParameterNode(int startOffset, int endOffset) {
+        return new Nodes.NoKeywordsParameterNode(startOffset, endOffset);
+    }
+    private Nodes.Node loadOperatorAndAssignmentNode(int startOffset, int endOffset) {
+        return new Nodes.OperatorAndAssignmentNode(loadNode(), loadNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadOperatorAssignmentNode(int startOffset, int endOffset) {
+        return new Nodes.OperatorAssignmentNode(loadNode(), loadToken(), loadNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadOperatorOrAssignmentNode(int startOffset, int endOffset) {
+        return new Nodes.OperatorOrAssignmentNode(loadNode(), loadNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadOptionalParameterNode(int startOffset, int endOffset) {
+        return new Nodes.OptionalParameterNode(loadToken(), loadNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadOrNode(int startOffset, int endOffset) {
+        return new Nodes.OrNode(loadNode(), loadNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadParametersNode(int startOffset, int endOffset) {
+        return new Nodes.ParametersNode(loadNodes(), loadNodes(), loadNodes(), loadOptionalNode(), loadNodes(), loadOptionalNode(), loadOptionalNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadParenthesesNode(int startOffset, int endOffset) {
+        return new Nodes.ParenthesesNode(loadOptionalNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadPinnedExpressionNode(int startOffset, int endOffset) {
+        return new Nodes.PinnedExpressionNode(loadNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadPinnedVariableNode(int startOffset, int endOffset) {
+        return new Nodes.PinnedVariableNode(loadNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadPostExecutionNode(int startOffset, int endOffset) {
+        return new Nodes.PostExecutionNode(loadNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadPreExecutionNode(int startOffset, int endOffset) {
+        return new Nodes.PreExecutionNode(loadNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadProgramNode(int startOffset, int endOffset) {
+        return new Nodes.ProgramNode(loadStaticScope(), loadNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadRangeNode(int startOffset, int endOffset) {
+        return new Nodes.RangeNode(loadOptionalNode(), loadOptionalNode(), loadLocation(), startOffset, endOffset);
+    }
+    private Nodes.Node loadRationalNode(int startOffset, int endOffset) {
+        return new Nodes.RationalNode(startOffset, endOffset);
+    }
+    private Nodes.Node loadRedoNode(int startOffset, int endOffset) {
+        return new Nodes.RedoNode(startOffset, endOffset);
+    }
+    private Nodes.Node loadRegularExpressionNode(int startOffset, int endOffset) {
+        return new Nodes.RegularExpressionNode(loadToken(), loadToken(), loadString(), startOffset, endOffset);
+    }
+    private Nodes.Node loadRequiredDestructuredParameterNode(int startOffset, int endOffset) {
+        return new Nodes.RequiredDestructuredParameterNode(loadNodes(), startOffset, endOffset);
+    }
+    private Nodes.Node loadRequiredParameterNode(int startOffset, int endOffset) {
+        return new Nodes.RequiredParameterNode(startOffset, endOffset);
+    }
+    private Nodes.Node loadRescueModifierNode(int startOffset, int endOffset) {
+        return new Nodes.RescueModifierNode(loadNode(), loadNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadRescueNode(int startOffset, int endOffset) {
+        return new Nodes.RescueNode(loadNodes(), loadOptionalNode(), loadOptionalNode(), loadOptionalNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadRestParameterNode(int startOffset, int endOffset) {
+        return new Nodes.RestParameterNode(loadOptionalToken(), startOffset, endOffset);
+    }
+    private Nodes.Node loadRetryNode(int startOffset, int endOffset) {
+        return new Nodes.RetryNode(startOffset, endOffset);
+    }
+    private Nodes.Node loadReturnNode(int startOffset, int endOffset) {
+        return new Nodes.ReturnNode(loadOptionalNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadScopeNode(int startOffset, int endOffset) {
+        return new Nodes.ScopeNode(loadTokens(), startOffset, endOffset);
+    }
+    private Nodes.Node loadSelfNode(int startOffset, int endOffset) {
+        return new Nodes.SelfNode(startOffset, endOffset);
+    }
+    private Nodes.Node loadSingletonClassNode(int startOffset, int endOffset) {
+        return new Nodes.SingletonClassNode(loadStaticScope(), loadNode(), loadOptionalNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadSourceEncodingNode(int startOffset, int endOffset) {
+        return new Nodes.SourceEncodingNode(startOffset, endOffset);
+    }
+    private Nodes.Node loadSourceFileNode(int startOffset, int endOffset) {
+        return new Nodes.SourceFileNode(startOffset, endOffset);
+    }
+    private Nodes.Node loadSourceLineNode(int startOffset, int endOffset) {
+        return new Nodes.SourceLineNode(startOffset, endOffset);
+    }
+    private Nodes.Node loadSplatNode(int startOffset, int endOffset) {
+        return new Nodes.SplatNode(loadOptionalNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadStatementsNode(int startOffset, int endOffset) {
+        return new Nodes.StatementsNode(loadNodes(), startOffset, endOffset);
+    }
+    private Nodes.Node loadStringConcatNode(int startOffset, int endOffset) {
+        return new Nodes.StringConcatNode(loadNode(), loadNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadStringInterpolatedNode(int startOffset, int endOffset) {
+        return new Nodes.StringInterpolatedNode(loadOptionalNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadStringNode(int startOffset, int endOffset) {
+        return new Nodes.StringNode(loadToken(), loadString(), startOffset, endOffset);
+    }
+    private Nodes.Node loadSuperNode(int startOffset, int endOffset) {
+        return new Nodes.SuperNode(loadOptionalNode(), loadOptionalNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadSymbolNode(int startOffset, int endOffset) {
+        return new Nodes.SymbolNode(loadToken(), loadString(), startOffset, endOffset);
+    }
+    private Nodes.Node loadTrueNode(int startOffset, int endOffset) {
+        return new Nodes.TrueNode(startOffset, endOffset);
+    }
+    private Nodes.Node loadUndefNode(int startOffset, int endOffset) {
+        return new Nodes.UndefNode(loadNodes(), startOffset, endOffset);
+    }
+    private Nodes.Node loadUnlessNode(int startOffset, int endOffset) {
+        return new Nodes.UnlessNode(loadNode(), loadOptionalNode(), loadOptionalNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadUntilNode(int startOffset, int endOffset) {
+        return new Nodes.UntilNode(loadToken(), loadNode(), loadOptionalNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadWhenNode(int startOffset, int endOffset) {
+        return new Nodes.WhenNode(loadNodes(), loadOptionalNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadWhileNode(int startOffset, int endOffset) {
+        return new Nodes.WhileNode(loadToken(), loadNode(), loadOptionalNode(), startOffset, endOffset);
+    }
+    private Nodes.Node loadXStringNode(int startOffset, int endOffset) {
+        return new Nodes.XStringNode(loadToken(), loadString(), startOffset, endOffset);
+    }
+    private Nodes.Node loadYieldNode(int startOffset, int endOffset) {
+        return new Nodes.YieldNode(loadOptionalToken(), loadOptionalNode(), loadOptionalToken(), startOffset, endOffset);
+    }
+                            
+
     private Nodes.Node loadNode() {
         int type = buffer.get() & 0xFF;
-        int length = buffer.getInt();
         int startOffset = buffer.getInt();
         int endOffset = buffer.getInt();
 
         switch (type) {
-            case 0:
-                return new Nodes.AliasNode(loadNode(), loadNode(), loadLocation(), startOffset, endOffset);
-            case 1:
-                return new Nodes.AlternationPatternNode(loadNode(), loadNode(), loadLocation(), startOffset, endOffset);
-            case 2:
-                return new Nodes.AndNode(loadNode(), loadNode(), loadToken(), startOffset, endOffset);
-            case 3:
-                return new Nodes.ArgumentsNode(loadNodes(), startOffset, endOffset);
-            case 4:
-                return new Nodes.ArrayNode(loadNodes(), loadOptionalToken(), loadOptionalToken(), startOffset, endOffset);
-            case 5:
-                return new Nodes.ArrayPatternNode(loadOptionalNode(), loadNodes(), loadOptionalNode(), loadNodes(), loadOptionalLocation(), loadOptionalLocation(), startOffset, endOffset);
-            case 6:
-                return new Nodes.AssocNode(loadNode(), loadOptionalNode(), loadOptionalToken(), startOffset, endOffset);
-            case 7:
-                return new Nodes.AssocSplatNode(loadOptionalNode(), loadLocation(), startOffset, endOffset);
-            case 8:
-                return new Nodes.BeginNode(loadOptionalToken(), loadOptionalNode(), loadOptionalNode(), loadOptionalNode(), loadOptionalNode(), loadOptionalToken(), startOffset, endOffset);
-            case 9:
-                return new Nodes.BlockArgumentNode(loadOptionalNode(), loadLocation(), startOffset, endOffset);
-            case 10:
-                return new Nodes.BlockNode(loadStaticScope(), loadOptionalNode(), loadOptionalNode(), loadLocation(), loadLocation(), startOffset, endOffset);
-            case 11:
-                return new Nodes.BlockParameterNode(loadOptionalToken(), loadLocation(), startOffset, endOffset);
-            case 12:
-                return new Nodes.BlockParametersNode(loadOptionalNode(), loadTokens(), startOffset, endOffset);
-            case 13:
-                return new Nodes.BreakNode(loadOptionalNode(), loadLocation(), startOffset, endOffset);
-            case 14:
-                return new Nodes.CallNode(loadOptionalNode(), loadOptionalToken(), loadOptionalToken(), loadOptionalToken(), loadOptionalNode(), loadOptionalToken(), loadOptionalNode(), loadString(), startOffset, endOffset);
-            case 15:
-                return new Nodes.CapturePatternNode(loadNode(), loadNode(), loadLocation(), startOffset, endOffset);
-            case 16:
-                return new Nodes.CaseNode(loadOptionalNode(), loadNodes(), loadOptionalNode(), loadLocation(), loadLocation(), startOffset, endOffset);
-            case 17:
-                return new Nodes.ClassNode(loadStaticScope(), loadToken(), loadNode(), loadOptionalToken(), loadOptionalNode(), loadOptionalNode(), loadToken(), startOffset, endOffset);
-            case 18:
-                return new Nodes.ClassVariableReadNode(startOffset, endOffset);
-            case 19:
-                return new Nodes.ClassVariableWriteNode(loadLocation(), loadOptionalNode(), loadOptionalLocation(), startOffset, endOffset);
-            case 20:
-                return new Nodes.ConstantPathNode(loadOptionalNode(), loadNode(), loadLocation(), startOffset, endOffset);
-            case 21:
-                return new Nodes.ConstantPathWriteNode(loadNode(), loadOptionalToken(), loadOptionalNode(), startOffset, endOffset);
-            case 22:
-                return new Nodes.ConstantReadNode(startOffset, endOffset);
-            case 23:
-                return new Nodes.DefNode(loadToken(), loadOptionalNode(), loadOptionalNode(), loadOptionalNode(), loadStaticScope(), loadLocation(), loadOptionalLocation(), loadOptionalLocation(), loadOptionalLocation(), loadOptionalLocation(), loadOptionalLocation(), startOffset, endOffset);
-            case 24:
-                return new Nodes.DefinedNode(loadOptionalToken(), loadNode(), loadOptionalToken(), loadLocation(), startOffset, endOffset);
-            case 25:
-                return new Nodes.ElseNode(loadToken(), loadOptionalNode(), loadOptionalToken(), startOffset, endOffset);
-            case 26:
-                return new Nodes.EnsureNode(loadToken(), loadOptionalNode(), loadToken(), startOffset, endOffset);
-            case 27:
-                return new Nodes.FalseNode(startOffset, endOffset);
-            case 28:
-                return new Nodes.FindPatternNode(loadOptionalNode(), loadNode(), loadNodes(), loadNode(), loadOptionalLocation(), loadOptionalLocation(), startOffset, endOffset);
-            case 29:
-                return new Nodes.FloatNode(startOffset, endOffset);
-            case 30:
-                return new Nodes.ForNode(loadNode(), loadNode(), loadOptionalNode(), loadLocation(), loadLocation(), loadOptionalLocation(), loadLocation(), startOffset, endOffset);
-            case 31:
-                return new Nodes.ForwardingArgumentsNode(startOffset, endOffset);
-            case 32:
-                return new Nodes.ForwardingParameterNode(startOffset, endOffset);
-            case 33:
-                return new Nodes.ForwardingSuperNode(loadOptionalNode(), startOffset, endOffset);
-            case 34:
-                return new Nodes.GlobalVariableReadNode(loadToken(), startOffset, endOffset);
-            case 35:
-                return new Nodes.GlobalVariableWriteNode(loadToken(), loadOptionalToken(), loadOptionalNode(), startOffset, endOffset);
-            case 36:
-                return new Nodes.HashNode(loadOptionalToken(), loadNodes(), loadOptionalToken(), startOffset, endOffset);
-            case 37:
-                return new Nodes.HashPatternNode(loadOptionalNode(), loadNodes(), loadOptionalNode(), loadOptionalLocation(), loadOptionalLocation(), startOffset, endOffset);
-            case 38:
-                return new Nodes.HeredocNode(loadToken(), loadNodes(), loadToken(), loadInteger(), startOffset, endOffset);
-            case 39:
-                return new Nodes.IfNode(loadToken(), loadNode(), loadOptionalNode(), loadOptionalNode(), loadOptionalToken(), startOffset, endOffset);
-            case 40:
-                return new Nodes.ImaginaryNode(startOffset, endOffset);
-            case 41:
-                return new Nodes.InNode(loadNode(), loadOptionalNode(), loadLocation(), loadOptionalLocation(), startOffset, endOffset);
-            case 42:
-                return new Nodes.InstanceVariableReadNode(startOffset, endOffset);
-            case 43:
-                return new Nodes.InstanceVariableWriteNode(loadLocation(), loadOptionalNode(), loadOptionalLocation(), startOffset, endOffset);
-            case 44:
-                return new Nodes.IntegerNode(startOffset, endOffset);
-            case 45:
-                return new Nodes.InterpolatedRegularExpressionNode(loadToken(), loadNodes(), loadToken(), startOffset, endOffset);
-            case 46:
-                return new Nodes.InterpolatedStringNode(loadOptionalToken(), loadNodes(), loadOptionalToken(), startOffset, endOffset);
-            case 47:
-                return new Nodes.InterpolatedSymbolNode(loadOptionalToken(), loadNodes(), loadOptionalToken(), startOffset, endOffset);
-            case 48:
-                return new Nodes.InterpolatedXStringNode(loadToken(), loadNodes(), loadToken(), startOffset, endOffset);
-            case 49:
-                return new Nodes.KeywordParameterNode(loadToken(), loadOptionalNode(), startOffset, endOffset);
-            case 50:
-                return new Nodes.KeywordRestParameterNode(loadToken(), loadOptionalToken(), startOffset, endOffset);
-            case 51:
-                return new Nodes.LambdaNode(loadStaticScope(), loadToken(), loadOptionalToken(), loadOptionalNode(), loadOptionalToken(), loadOptionalNode(), startOffset, endOffset);
-            case 52:
-                return new Nodes.LocalVariableReadNode(loadInteger(), startOffset, endOffset);
-            case 53:
-                return new Nodes.LocalVariableWriteNode(loadLocation(), loadOptionalNode(), loadOptionalLocation(), loadInteger(), startOffset, endOffset);
-            case 54:
-                return new Nodes.MatchPredicateNode(loadNode(), loadNode(), loadLocation(), startOffset, endOffset);
-            case 55:
-                return new Nodes.MatchRequiredNode(loadNode(), loadNode(), loadLocation(), startOffset, endOffset);
-            case 56:
-                return new Nodes.MissingNode(startOffset, endOffset);
-            case 57:
-                return new Nodes.ModuleNode(loadStaticScope(), loadToken(), loadNode(), loadOptionalNode(), loadToken(), startOffset, endOffset);
-            case 58:
-                return new Nodes.MultiWriteNode(loadNodes(), loadOptionalToken(), loadOptionalNode(), loadOptionalLocation(), loadOptionalLocation(), startOffset, endOffset);
-            case 59:
-                return new Nodes.NextNode(loadOptionalNode(), loadLocation(), startOffset, endOffset);
-            case 60:
-                return new Nodes.NilNode(startOffset, endOffset);
-            case 61:
-                return new Nodes.NoKeywordsParameterNode(loadLocation(), loadLocation(), startOffset, endOffset);
-            case 62:
-                return new Nodes.OperatorAndAssignmentNode(loadNode(), loadNode(), loadLocation(), startOffset, endOffset);
-            case 63:
-                return new Nodes.OperatorAssignmentNode(loadNode(), loadToken(), loadNode(), startOffset, endOffset);
-            case 64:
-                return new Nodes.OperatorOrAssignmentNode(loadNode(), loadNode(), loadLocation(), startOffset, endOffset);
-            case 65:
-                return new Nodes.OptionalParameterNode(loadToken(), loadToken(), loadNode(), startOffset, endOffset);
-            case 66:
-                return new Nodes.OrNode(loadNode(), loadNode(), loadLocation(), startOffset, endOffset);
-            case 67:
-                return new Nodes.ParametersNode(loadNodes(), loadNodes(), loadNodes(), loadOptionalNode(), loadNodes(), loadOptionalNode(), loadOptionalNode(), startOffset, endOffset);
-            case 68:
-                return new Nodes.ParenthesesNode(loadOptionalNode(), loadLocation(), loadLocation(), startOffset, endOffset);
-            case 69:
-                return new Nodes.PinnedExpressionNode(loadNode(), loadLocation(), loadLocation(), loadLocation(), startOffset, endOffset);
-            case 70:
-                return new Nodes.PinnedVariableNode(loadNode(), loadLocation(), startOffset, endOffset);
-            case 71:
-                return new Nodes.PostExecutionNode(loadNode(), loadLocation(), loadLocation(), loadLocation(), startOffset, endOffset);
-            case 72:
-                return new Nodes.PreExecutionNode(loadNode(), loadLocation(), loadLocation(), loadLocation(), startOffset, endOffset);
-            case 73:
-                return new Nodes.ProgramNode(loadStaticScope(), loadNode(), startOffset, endOffset);
-            case 74:
-                return new Nodes.RangeNode(loadOptionalNode(), loadOptionalNode(), loadLocation(), startOffset, endOffset);
-            case 75:
-                return new Nodes.RationalNode(startOffset, endOffset);
-            case 76:
-                return new Nodes.RedoNode(startOffset, endOffset);
-            case 77:
-                return new Nodes.RegularExpressionNode(loadToken(), loadToken(), loadToken(), loadString(), startOffset, endOffset);
-            case 78:
-                return new Nodes.RequiredDestructuredParameterNode(loadNodes(), loadToken(), loadToken(), startOffset, endOffset);
-            case 79:
-                return new Nodes.RequiredParameterNode(startOffset, endOffset);
-            case 80:
-                return new Nodes.RescueModifierNode(loadNode(), loadToken(), loadNode(), startOffset, endOffset);
-            case 81:
-                return new Nodes.RescueNode(loadToken(), loadNodes(), loadOptionalToken(), loadOptionalNode(), loadOptionalNode(), loadOptionalNode(), startOffset, endOffset);
-            case 82:
-                return new Nodes.RestParameterNode(loadToken(), loadOptionalToken(), startOffset, endOffset);
-            case 83:
-                return new Nodes.RetryNode(startOffset, endOffset);
-            case 84:
-                return new Nodes.ReturnNode(loadToken(), loadOptionalNode(), startOffset, endOffset);
-            case 85:
-                return new Nodes.ScopeNode(loadTokens(), startOffset, endOffset);
-            case 86:
-                return new Nodes.SelfNode(startOffset, endOffset);
-            case 87:
-                return new Nodes.SingletonClassNode(loadStaticScope(), loadToken(), loadToken(), loadNode(), loadOptionalNode(), loadToken(), startOffset, endOffset);
-            case 88:
-                return new Nodes.SourceEncodingNode(startOffset, endOffset);
-            case 89:
-                return new Nodes.SourceFileNode(startOffset, endOffset);
-            case 90:
-                return new Nodes.SourceLineNode(startOffset, endOffset);
-            case 91:
-                return new Nodes.SplatNode(loadToken(), loadOptionalNode(), startOffset, endOffset);
-            case 92:
-                return new Nodes.StatementsNode(loadNodes(), startOffset, endOffset);
-            case 93:
-                return new Nodes.StringConcatNode(loadNode(), loadNode(), startOffset, endOffset);
-            case 94:
-                return new Nodes.StringInterpolatedNode(loadToken(), loadOptionalNode(), loadToken(), startOffset, endOffset);
-            case 95:
-                return new Nodes.StringNode(loadOptionalToken(), loadToken(), loadOptionalToken(), loadString(), startOffset, endOffset);
-            case 96:
-                return new Nodes.SuperNode(loadToken(), loadOptionalToken(), loadOptionalNode(), loadOptionalToken(), loadOptionalNode(), startOffset, endOffset);
-            case 97:
-                return new Nodes.SymbolNode(loadOptionalToken(), loadToken(), loadOptionalToken(), loadString(), startOffset, endOffset);
-            case 98:
-                return new Nodes.TrueNode(startOffset, endOffset);
-            case 99:
-                return new Nodes.UndefNode(loadNodes(), loadLocation(), startOffset, endOffset);
-            case 100:
-                return new Nodes.UnlessNode(loadToken(), loadNode(), loadOptionalNode(), loadOptionalNode(), loadOptionalToken(), startOffset, endOffset);
-            case 101:
-                return new Nodes.UntilNode(loadToken(), loadNode(), loadOptionalNode(), startOffset, endOffset);
-            case 102:
-                return new Nodes.WhenNode(loadToken(), loadNodes(), loadOptionalNode(), startOffset, endOffset);
-            case 103:
-                return new Nodes.WhileNode(loadToken(), loadNode(), loadOptionalNode(), startOffset, endOffset);
-            case 104:
-                return new Nodes.XStringNode(loadToken(), loadToken(), loadToken(), loadString(), startOffset, endOffset);
-            case 105:
-                return new Nodes.YieldNode(loadToken(), loadOptionalToken(), loadOptionalNode(), loadOptionalToken(), startOffset, endOffset);
-            default:
-                throw new Error("Unknown node type: " + type);
+        case 0: return loadAliasNode(startOffset, endOffset);
+        case 1: return loadAlternationPatternNode(startOffset, endOffset);
+        case 2: return loadAndNode(startOffset, endOffset);
+        case 3: return loadArgumentsNode(startOffset, endOffset);
+        case 4: return loadArrayNode(startOffset, endOffset);
+        case 5: return loadArrayPatternNode(startOffset, endOffset);
+        case 6: return loadAssocNode(startOffset, endOffset);
+        case 7: return loadAssocSplatNode(startOffset, endOffset);
+        case 8: return loadBeginNode(startOffset, endOffset);
+        case 9: return loadBlockArgumentNode(startOffset, endOffset);
+        case 10: return loadBlockNode(startOffset, endOffset);
+        case 11: return loadBlockParameterNode(startOffset, endOffset);
+        case 12: return loadBlockParametersNode(startOffset, endOffset);
+        case 13: return loadBreakNode(startOffset, endOffset);
+        case 14: return loadCallNode(startOffset, endOffset);
+        case 15: return loadCapturePatternNode(startOffset, endOffset);
+        case 16: return loadCaseNode(startOffset, endOffset);
+        case 17: return loadClassNode(startOffset, endOffset);
+        case 18: return loadClassVariableReadNode(startOffset, endOffset);
+        case 19: return loadClassVariableWriteNode(startOffset, endOffset);
+        case 20: return loadConstantPathNode(startOffset, endOffset);
+        case 21: return loadConstantPathWriteNode(startOffset, endOffset);
+        case 22: return loadConstantReadNode(startOffset, endOffset);
+        case 23: return loadDefNode(startOffset, endOffset);
+        case 24: return loadDefinedNode(startOffset, endOffset);
+        case 25: return loadElseNode(startOffset, endOffset);
+        case 26: return loadEnsureNode(startOffset, endOffset);
+        case 27: return loadFalseNode(startOffset, endOffset);
+        case 28: return loadFindPatternNode(startOffset, endOffset);
+        case 29: return loadFloatNode(startOffset, endOffset);
+        case 30: return loadForNode(startOffset, endOffset);
+        case 31: return loadForwardingArgumentsNode(startOffset, endOffset);
+        case 32: return loadForwardingParameterNode(startOffset, endOffset);
+        case 33: return loadForwardingSuperNode(startOffset, endOffset);
+        case 34: return loadGlobalVariableReadNode(startOffset, endOffset);
+        case 35: return loadGlobalVariableWriteNode(startOffset, endOffset);
+        case 36: return loadHashNode(startOffset, endOffset);
+        case 37: return loadHashPatternNode(startOffset, endOffset);
+        case 38: return loadHeredocNode(startOffset, endOffset);
+        case 39: return loadIfNode(startOffset, endOffset);
+        case 40: return loadImaginaryNode(startOffset, endOffset);
+        case 41: return loadInNode(startOffset, endOffset);
+        case 42: return loadInstanceVariableReadNode(startOffset, endOffset);
+        case 43: return loadInstanceVariableWriteNode(startOffset, endOffset);
+        case 44: return loadIntegerNode(startOffset, endOffset);
+        case 45: return loadInterpolatedRegularExpressionNode(startOffset, endOffset);
+        case 46: return loadInterpolatedStringNode(startOffset, endOffset);
+        case 47: return loadInterpolatedSymbolNode(startOffset, endOffset);
+        case 48: return loadInterpolatedXStringNode(startOffset, endOffset);
+        case 49: return loadKeywordParameterNode(startOffset, endOffset);
+        case 50: return loadKeywordRestParameterNode(startOffset, endOffset);
+        case 51: return loadLambdaNode(startOffset, endOffset);
+        case 52: return loadLocalVariableReadNode(startOffset, endOffset);
+        case 53: return loadLocalVariableWriteNode(startOffset, endOffset);
+        case 54: return loadMatchPredicateNode(startOffset, endOffset);
+        case 55: return loadMatchRequiredNode(startOffset, endOffset);
+        case 56: return loadMissingNode(startOffset, endOffset);
+        case 57: return loadModuleNode(startOffset, endOffset);
+        case 58: return loadMultiWriteNode(startOffset, endOffset);
+        case 59: return loadNextNode(startOffset, endOffset);
+        case 60: return loadNilNode(startOffset, endOffset);
+        case 61: return loadNoKeywordsParameterNode(startOffset, endOffset);
+        case 62: return loadOperatorAndAssignmentNode(startOffset, endOffset);
+        case 63: return loadOperatorAssignmentNode(startOffset, endOffset);
+        case 64: return loadOperatorOrAssignmentNode(startOffset, endOffset);
+        case 65: return loadOptionalParameterNode(startOffset, endOffset);
+        case 66: return loadOrNode(startOffset, endOffset);
+        case 67: return loadParametersNode(startOffset, endOffset);
+        case 68: return loadParenthesesNode(startOffset, endOffset);
+        case 69: return loadPinnedExpressionNode(startOffset, endOffset);
+        case 70: return loadPinnedVariableNode(startOffset, endOffset);
+        case 71: return loadPostExecutionNode(startOffset, endOffset);
+        case 72: return loadPreExecutionNode(startOffset, endOffset);
+        case 73: return loadProgramNode(startOffset, endOffset);
+        case 74: return loadRangeNode(startOffset, endOffset);
+        case 75: return loadRationalNode(startOffset, endOffset);
+        case 76: return loadRedoNode(startOffset, endOffset);
+        case 77: return loadRegularExpressionNode(startOffset, endOffset);
+        case 78: return loadRequiredDestructuredParameterNode(startOffset, endOffset);
+        case 79: return loadRequiredParameterNode(startOffset, endOffset);
+        case 80: return loadRescueModifierNode(startOffset, endOffset);
+        case 81: return loadRescueNode(startOffset, endOffset);
+        case 82: return loadRestParameterNode(startOffset, endOffset);
+        case 83: return loadRetryNode(startOffset, endOffset);
+        case 84: return loadReturnNode(startOffset, endOffset);
+        case 85: return loadScopeNode(startOffset, endOffset);
+        case 86: return loadSelfNode(startOffset, endOffset);
+        case 87: return loadSingletonClassNode(startOffset, endOffset);
+        case 88: return loadSourceEncodingNode(startOffset, endOffset);
+        case 89: return loadSourceFileNode(startOffset, endOffset);
+        case 90: return loadSourceLineNode(startOffset, endOffset);
+        case 91: return loadSplatNode(startOffset, endOffset);
+        case 92: return loadStatementsNode(startOffset, endOffset);
+        case 93: return loadStringConcatNode(startOffset, endOffset);
+        case 94: return loadStringInterpolatedNode(startOffset, endOffset);
+        case 95: return loadStringNode(startOffset, endOffset);
+        case 96: return loadSuperNode(startOffset, endOffset);
+        case 97: return loadSymbolNode(startOffset, endOffset);
+        case 98: return loadTrueNode(startOffset, endOffset);
+        case 99: return loadUndefNode(startOffset, endOffset);
+        case 100: return loadUnlessNode(startOffset, endOffset);
+        case 101: return loadUntilNode(startOffset, endOffset);
+        case 102: return loadWhenNode(startOffset, endOffset);
+        case 103: return loadWhileNode(startOffset, endOffset);
+        case 104: return loadXStringNode(startOffset, endOffset);
+        case 105: return loadYieldNode(startOffset, endOffset);
+        default:
+            throw new Error("Unknown node type: " + type);
         }
     }
 

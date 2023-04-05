@@ -79,7 +79,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.function.Function;
 
-import static org.jruby.ir.builder.IRBuilder.BinaryType.*;
 import static org.jruby.ir.instructions.Instr.EMPTY_OPERANDS;
 import static org.jruby.ir.instructions.IntegerMathInstr.Op.ADD;
 import static org.jruby.ir.instructions.IntegerMathInstr.Op.SUBTRACT;
@@ -2244,42 +2243,24 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode> {
         // because of the use of copyAndReturnValue method for literal objects.
     }
 
+    boolean canBeLazyMethod(DefNode node) {
+        return !((MethodDefNode) node).containsBreakNext();
+    }
+
     @Override
     public void receiveMethodArgs(DefNode defNode) {
         receiveMethodArgs(defNode.getArgsNode());
     }
 
-    @Override
-    public Operand buildMethodBody(DefNode defNode) {
-        return build(defNode.getBodyNode());
-    }
-
-    @Override
-    public int getMethodEndLine(DefNode defNode) {
-        return defNode.getEndLine() + 1;
-    }
-
-    private IRMethod defineNewMethod(MethodDefNode defNode, boolean isInstanceMethod) {
-        IRMethod method = new IRMethod(getManager(), scope, defNode, defNode.getName().getBytes(), isInstanceMethod, defNode.getLine(),
-                defNode.getScope(), coverageMode);
-
-        // poorly placed next/break expects a syntax error so we eagerly build methods which contain them.
-        if (!canBeLazyMethod(defNode)) method.lazilyAcquireInterpreterContext();
-
-        return method;
-    }
-
-    boolean canBeLazyMethod(Object method) {
-        return !((MethodDefNode) method).containsBreakNext();
-    }
-
     public Operand buildDefn(MethodDefNode node) { // Instance method
-        return buildDefn(defineNewMethod(node, true));
+        LazyMethodDefinition def = new ASTLazyMethodDefinition(node);
+        return buildDefn(defineNewMethod(def, node.getName().getBytes(), node.getLine(), node.getScope(), true));
     }
 
     public Operand buildDefs(DefsNode node) { // Class method
+        LazyMethodDefinition def = new ASTLazyMethodDefinition(node);
         Operand container =  build(node.getReceiverNode());
-        IRMethod method = defineNewMethod(node, false);
+        IRMethod method = defineNewMethod(def, node.getName().getBytes(), node.getLine(), node.getScope(), false);
         addInstr(new DefineClassMethodInstr(container, method));
         return new Symbol(node.getName());
     }
