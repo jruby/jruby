@@ -10,16 +10,15 @@ permissions:
 
 jobs:
 
-  rake-test:
+  bootstrap-build:
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        target: ['test:jruby:int', 'spec:ruby:fast', 'spec:ji', 'spec:ffi']
-        java-version: ['8', '17']
-      fail-fast: false
+        java-version: ['8']
+      fail-fast: true
 
-    name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }})
+    name: bootstrap JRuby build
 
     steps:
       - name: checkout
@@ -32,8 +31,56 @@ jobs:
           cache: 'maven'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
+      - name: install bundler
+        run: bin/jruby --dev -S gem install bundler
       - name: bundle install
         run: bin/jruby --dev -S bundle install
+      - name: Save bootstrap build
+        id: cache-bootstrap-save
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            bin
+            core
+            lib
+            shaded
+            test
+          key: ${{ github.sha }}-bootstrap
+          enableCrossOsArchive: true
+
+  rake-test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        target: ['test:jruby:int', 'spec:ruby:fast', 'spec:ji', 'spec:ffi']
+        java-version: ['8', '17']
+      fail-fast: false
+
+    name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }})
+    needs: bootstrap-build
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: set up java ${{ matrix.java-version }}
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: ${{ matrix.java-version }}
+          cache: 'maven'
+      - name: Restore bootstrap build
+        id: cache-bootstrap-restore
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            bin
+            core
+            lib
+            shaded
+            test
+          key: ${{ github.sha }}-bootstrap
+          enableCrossOsArchive: true
       - name: rake ${{ matrix.target }}
         run: bin/jruby -S rake ${{ matrix.target }}
 
@@ -46,6 +93,7 @@ jobs:
       fail-fast: false
 
     name: rake ${{ matrix.target }} (Java 8)
+    needs: bootstrap-build
 
     steps:
       - name: checkout
@@ -55,16 +103,24 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '8'
+          cache: 'maven'
       - name: Setup Maven Action
         uses: s4u/setup-maven-action@v1.6.0
         with:
           java-version: '8'
           maven-version: '3.8.7'
-          cache: 'maven'
-      - name: bootstrap
-        run: mvn -Pbootstrap clean package
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
+      - name: Restore bootstrap build
+        id: cache-bootstrap-restore
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            bin
+            core
+            lib
+            shaded
+            test
+          key: ${{ github.sha }}-bootstrap
+          enableCrossOsArchive: true
       - name: rake ${{ matrix.target }}
         run: bin/jruby -S rake ${{ matrix.target }}
 
@@ -77,6 +133,8 @@ jobs:
     env:
       JRUBY_OPTS: '--dev'
 
+    needs: bootstrap-build
+
     steps:
       - name: checkout
         uses: actions/checkout@v3
@@ -91,10 +149,18 @@ jobs:
         with:
           java-version: 8
           maven-version: '3.8.7'
-      - name: bootstrap
-        run: mvn -Pbootstrap clean package
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
+      - name: Restore bootstrap build
+        id: cache-bootstrap-restore
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            bin
+            core
+            lib
+            shaded
+            test
+          key: ${{ github.sha }}-bootstrap
+          enableCrossOsArchive: true
       - name: rake test:jruby
         run: bin/jruby --dev -S rake test:jruby
 
@@ -108,6 +174,7 @@ jobs:
       fail-fast: false
 
     name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }} +indy)
+    needs: bootstrap-build
 
     env:
       JRUBY_OPTS: '-Xcompile.invokedynamic'
@@ -121,10 +188,18 @@ jobs:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
-      - name: bootstrap
-        run: mvn -Pbootstrap clean package
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
+      - name: Restore bootstrap build
+        id: cache-bootstrap-restore
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            bin
+            core
+            lib
+            shaded
+            test
+          key: ${{ github.sha }}-bootstrap
+          enableCrossOsArchive: true
       - name: rake ${{ matrix.target }}
         run: bin/jruby -S rake ${{ matrix.target }}
 
@@ -139,6 +214,7 @@ jobs:
       fail-fast: false
 
     name: mvn ${{ matrix.package-flags }} (Java ${{ matrix.java-version }})
+    needs: bootstrap-build
 
     steps:
       - name: checkout
@@ -149,8 +225,18 @@ jobs:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
-      - name: bootstrap
-        run: mvn -Pbootstrap clean package
+      - name: Restore bootstrap build
+        id: cache-bootstrap-restore
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            bin
+            core
+            lib
+            shaded
+            test
+          key: ${{ github.sha }}-bootstrap
+          enableCrossOsArchive: true
       - name: mvn package ${{ matrix.package-flags }}
         run: tool/maven-ci-script.sh
         env:
@@ -166,6 +252,7 @@ jobs:
       fail-fast: false
 
     name: mvn ${{ matrix.package-flags }} (Java 8)
+    needs: bootstrap-build
 
     steps:
       - name: checkout
@@ -181,8 +268,18 @@ jobs:
         with:
           java-version: '8'
           maven-version: '3.8.7'
-      - name: bootstrap
-        run: mvn -Pbootstrap clean package
+      - name: Restore bootstrap build
+        id: cache-bootstrap-restore
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            bin
+            core
+            lib
+            shaded
+            test
+          key: ${{ github.sha }}-bootstrap
+          enableCrossOsArchive: true
       - name: mvn package ${{ matrix.package-flags }}
         run: tool/maven-ci-script.sh
         env:
@@ -197,6 +294,8 @@ jobs:
     env:
       JRUBY_OPTS: '-Xcompile.invokedynamic'
 
+    needs: bootstrap-build
+
     steps:
       - name: checkout
         uses: actions/checkout@v3
@@ -211,10 +310,18 @@ jobs:
         with:
           java-version: 8
           maven-version: '3.8.7'
-      - name: bootstrap
-        run: mvn -Pbootstrap clean package
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
+      - name: Restore bootstrap build
+        id: cache-bootstrap-restore
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            bin
+            core
+            lib
+            shaded
+            test
+          key: ${{ github.sha }}-bootstrap
+          enableCrossOsArchive: true
       - name: rake spec:ji
         run: bin/jruby -S rake spec:ji
 
@@ -227,6 +334,8 @@ jobs:
     env:
       JRUBY_OPTS: '-Xjit.threshold=0'
 
+    needs: bootstrap-build
+
     steps:
       - name: checkout
         uses: actions/checkout@v3
@@ -241,10 +350,18 @@ jobs:
         with:
           java-version: 8
           maven-version: '3.8.7'
-      - name: bootstrap
-        run: mvn -Pbootstrap clean package
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
+      - name: Restore bootstrap build
+        id: cache-bootstrap-restore
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            bin
+            core
+            lib
+            shaded
+            test
+          key: ${{ github.sha }}-bootstrap
+          enableCrossOsArchive: true
       - name: rake spec:regression
         run: bin/jruby -S rake spec:regression
 
@@ -255,6 +372,7 @@ jobs:
       fail-fast: false
 
     name: mvn -Ptest, rake test:jruby (Windows, Java 11)
+    needs: bootstrap-build
 
     env:
       JAVA_OPTS: "-Djdk.io.File.enableADS=true"
@@ -274,12 +392,18 @@ jobs:
         with:
           java-version: 11
           maven-version: '3.8.7'
-      - name: bootstrap
-        run: mvn -Pbootstrap clean package
-      - name: install bundler
-        run: bin/jruby --dev -S gem install bundler
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
+      - name: Restore bootstrap build
+        id: cache-bootstrap-restore
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            bin
+            core
+            lib
+            shaded
+            test
+          key: ${{ github.sha }}-bootstrap
+          enableCrossOsArchive: true
       - name: rake test:jruby
         run: bin/jruby -S rake test:jruby TESTOPTS="--no-show-detail-immediately"
         env:
@@ -343,6 +467,8 @@ jobs:
     strategy:
       fail-fast: false
 
+    needs: bootstrap-build
+
     services:
       postgres:
         image: postgres:11.5
@@ -370,8 +496,18 @@ jobs:
         with:
           java-version: 11
           maven-version: '3.8.7'
-      - name: bootstrap
-        run: mvn -Pbootstrap clean package
+      - name: Restore bootstrap build
+        id: cache-bootstrap-restore
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            bin
+            core
+            lib
+            shaded
+            test
+          key: ${{ github.sha }}-bootstrap
+          enableCrossOsArchive: true
       - name: sequel
         run: tool/sequel-github-actions.sh
 
@@ -380,6 +516,8 @@ jobs:
 
     strategy:
       fail-fast: false
+
+    needs: bootstrap-build
 
     steps:
       - name: checkout
@@ -395,8 +533,18 @@ jobs:
         with:
           java-version: 8
           maven-version: '3.8.7'
-      - name: bootstrap
-        run: mvn -Pbootstrap clean package
+      - name: Restore bootstrap build
+        id: cache-bootstrap-restore
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            bin
+            core
+            lib
+            shaded
+            test
+          key: ${{ github.sha }}-bootstrap
+          enableCrossOsArchive: true
       - name: concurrent-ruby
         run: tool/concurrent-ruby-github-actions.sh
 
@@ -411,6 +559,7 @@ jobs:
       fail-fast: false
 
     name: mvn ${{ matrix.package-flags }} (Java ${{ matrix.java-version }} Apple aarch64)
+    needs: bootstrap-build
 
     steps:
       - name: checkout
@@ -422,8 +571,18 @@ jobs:
           java-version: ${{ matrix.java-version }}
           architecture: arm
           cache: 'maven'
-      - name: bootstrap
-        run: mvn -Pbootstrap clean package
+      - name: Restore bootstrap build
+        id: cache-bootstrap-restore
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            bin
+            core
+            lib
+            shaded
+            test
+          key: ${{ github.sha }}-bootstrap
+          enableCrossOsArchive: true
       - name: mvn package ${{ matrix.package-flags }}
         run: tool/maven-ci-script.sh
         env:
@@ -439,6 +598,7 @@ jobs:
       fail-fast: false
 
     name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }} Apple aarch64)
+    needs: bootstrap-build
 
     steps:
       - name: checkout
@@ -450,10 +610,18 @@ jobs:
           java-version: ${{ matrix.java-version }}
           architecture: arm
           cache: 'maven'
-      - name: bootstrap
-        run: mvn -Pbootstrap clean package
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
+      - name: Restore bootstrap build
+        id: cache-bootstrap-restore
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            bin
+            core
+            lib
+            shaded
+            test
+          key: ${{ github.sha }}-bootstrap
+          enableCrossOsArchive: true
       - name: rake ${{ matrix.target }}
 #        run: "bin/jruby -S rake ${{ matrix.target }}"
         run: "true"
@@ -462,6 +630,7 @@ jobs:
     runs-on: ubuntu-latest
 
     name: mvn -Ptest (OpenJ9 Java 8; disabled)
+    needs: bootstrap-build
 
     steps:
       - name: checkout
@@ -477,6 +646,18 @@ jobs:
         with:
           java-version: '8'
           maven-version: '3.8.7'
+      - name: Restore bootstrap build
+        id: cache-bootstrap-restore
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            bin
+            core
+            lib
+            shaded
+            test
+          key: ${{ github.sha }}-bootstrap
+          enableCrossOsArchive: true
       - name: test profile
 #        run: "tool/maven-ci-script.sh"
         run: "true"
@@ -492,6 +673,7 @@ jobs:
       fail-fast: false
 
     name: rake ${{ matrix.target }} (Java 8)
+    needs: bootstrap-build
 
     steps:
       - name: checkout
@@ -507,10 +689,18 @@ jobs:
         with:
           java-version: '8'
           maven-version: '3.8.7'
-      - name: bootstrap
-        run: mvn -Pbootstrap clean package
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
+      - name: Restore bootstrap build
+        id: cache-bootstrap-restore
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            bin
+            core
+            lib
+            shaded
+            test
+          key: ${{ github.sha }}-bootstrap
+          enableCrossOsArchive: true
       - name: rake ${{ matrix.target }}
         continue-on-error: true
         run: "bin/jruby -S rake ${{ matrix.target }}"
