@@ -30,11 +30,6 @@ jobs:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
-      - name: Setup Maven Action
-        uses: s4u/setup-maven-action@v1.6.0
-        with:
-          java-version: ${{ matrix.java-version }}
-          maven-version: '3.8.7'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
@@ -126,11 +121,6 @@ jobs:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
-      - name: Setup Maven Action
-        uses: s4u/setup-maven-action@v1.6.0
-        with:
-          java-version: ${{ matrix.java-version }}
-          maven-version: '3.8.7'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
@@ -159,11 +149,6 @@ jobs:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
-      - name: Setup Maven Action
-        uses: s4u/setup-maven-action@v1.6.0
-        with:
-          java-version: ${{ matrix.java-version }}
-          maven-version: '3.8.7'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: mvn package ${{ matrix.package-flags }}
@@ -437,11 +422,6 @@ jobs:
           java-version: ${{ matrix.java-version }}
           architecture: arm
           cache: 'maven'
-      - name: Setup Maven Action
-        uses: s4u/setup-maven-action@v1.6.0
-        with:
-          java-version: ${{ matrix.java-version }}
-          maven-version: '3.8.7'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: mvn package ${{ matrix.package-flags }}
@@ -470,11 +450,6 @@ jobs:
           java-version: ${{ matrix.java-version }}
           architecture: arm
           cache: 'maven'
-      - name: Setup Maven Action
-        uses: s4u/setup-maven-action@v1.6.0
-        with:
-          java-version: ${{ matrix.java-version }}
-          maven-version: '3.8.7'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
