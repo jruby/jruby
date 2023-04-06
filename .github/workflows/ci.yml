@@ -24,17 +24,12 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v3
-      - name: cache dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
-          restore-keys: ${{ runner.os }}-m2
       - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
+          cache: 'maven'
       - name: Setup Maven Action
         uses: s4u/setup-maven-action@v1.6.0
         with:
@@ -60,14 +55,8 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v3
-      - name: cache dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
-          restore-keys: ${{ runner.os }}-m2
       - name: set up java 8
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: '8'
@@ -76,6 +65,7 @@ jobs:
         with:
           java-version: '8'
           maven-version: '3.8.7'
+          cache: 'maven'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
@@ -95,17 +85,12 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v3
-      - name: cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
-          restore-keys: ${{ runner.os }}-m2
       - name: set up java 8
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: 8
+          cache: 'maven'
       - name: Setup Maven Action
         uses: s4u/setup-maven-action@v1.6.0
         with:
@@ -135,17 +120,12 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v3
-      - name: cache dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
-          restore-keys: ${{ runner.os }}-m2
       - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
+          cache: 'maven'
       - name: Setup Maven Action
         uses: s4u/setup-maven-action@v1.6.0
         with:
@@ -173,17 +153,12 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v3
-      - name: cache dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
-          restore-keys: ${{ runner.os }}-m2
       - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
+          cache: 'maven'
       - name: Setup Maven Action
         uses: s4u/setup-maven-action@v1.6.0
         with:
@@ -210,17 +185,12 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v3
-      - name: cache dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
-          restore-keys: ${{ runner.os }}-m2
       - name: set up java 8
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: '8'
+          cache: 'maven'
       - name: Setup Maven Action
         uses: s4u/setup-maven-action@v1.6.0
         with:
@@ -245,17 +215,12 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v3
-      - name: cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
-          restore-keys: ${{ runner.os }}-m2
       - name: set up java 8
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: 8
+          cache: 'maven'
       - name: Setup Maven Action
         uses: s4u/setup-maven-action@v1.6.0
         with:
@@ -280,17 +245,12 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v3
-      - name: cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
-          restore-keys: ${{ runner.os }}-m2
       - name: set up java 8
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: 8
+          cache: 'maven'
       - name: Setup Maven Action
         uses: s4u/setup-maven-action@v1.6.0
         with:
@@ -323,17 +283,12 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: 11
+          cache: 'maven'
       - name: Setup Maven Action
         uses: s4u/setup-maven-action@v1.6.0
         with:
           java-version: 11
           maven-version: '3.8.7'
-      - name: cache dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: install bundler
@@ -355,17 +310,12 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v3
-      - name: cache dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
-          restore-keys: ${{ runner.os }}-m2
       - name: set up java 8
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: '8'
+          cache: 'maven'
       - name: Setup Maven Action
         uses: s4u/setup-maven-action@v1.6.0
         with:
@@ -386,17 +336,12 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v3
-      - name: cache dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
-          restore-keys: ${{ runner.os }}-m2
       - name: set up java 8
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: 8
+          cache: 'maven'
       - name: Setup Maven Action
         uses: s4u/setup-maven-action@v1.6.0
         with:
@@ -429,17 +374,12 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v3
-      - name: cache dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
-          restore-keys: ${{ runner.os }}-m2
       - name: set up java 8
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: 11
+          cache: 'maven'
       - name: Setup Maven Action
         uses: s4u/setup-maven-action@v1.6.0
         with:
@@ -459,17 +399,12 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v3
-      - name: cache dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
-          restore-keys: ${{ runner.os }}-m2
       - name: set up java 8
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: 8
+          cache: 'maven'
       - name: Setup Maven Action
         uses: s4u/setup-maven-action@v1.6.0
         with:
@@ -496,22 +431,17 @@ jobs:
       - name: checkout
         uses: actions/checkout@v3
       - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
           architecture: arm
+          cache: 'maven'
       - name: Setup Maven Action
         uses: s4u/setup-maven-action@v1.6.0
         with:
           java-version: ${{ matrix.java-version }}
           maven-version: '3.8.7'
-      - name: cache dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
-          restore-keys: ${{ runner.os }}-m2
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: mvn package ${{ matrix.package-flags }}
@@ -534,11 +464,12 @@ jobs:
       - name: checkout
         uses: actions/checkout@v3
       - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
           architecture: arm
+          cache: 'maven'
       - name: Setup Maven Action
         uses: s4u/setup-maven-action@v1.6.0
         with:
@@ -560,17 +491,12 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v3
-      - name: cache dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
-          restore-keys: ${{ runner.os }}-m2
       - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v3
         with:
           distribution: 'adopt-openj9'
           java-version: '8'
+          cache: 'maven'
       - name: Setup Maven Action
         uses: s4u/setup-maven-action@v1.6.0
         with:
@@ -595,17 +521,12 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v3
-      - name: cache dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
-          restore-keys: ${{ runner.os }}-m2
       - name: set up java 8
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: '8'
+          cache: 'maven'
       - name: Setup Maven Action
         uses: s4u/setup-maven-action@v1.6.0
         with:
