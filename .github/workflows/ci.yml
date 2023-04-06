@@ -570,7 +570,6 @@ jobs:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
           architecture: arm
-          cache: 'maven'
       - name: Restore bootstrap build
         id: cache-bootstrap-restore
         uses: actions/cache/restore@v3
