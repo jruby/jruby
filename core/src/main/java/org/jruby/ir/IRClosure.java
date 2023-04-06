@@ -9,7 +9,7 @@ import org.jruby.RubySymbol;
 import org.jruby.ast.DefNode;
 import org.jruby.ast.IterNode;
 import org.jruby.ext.coverage.CoverageData;
-import org.jruby.ir.builder.ASTLazyMethodDefinition;
+import org.jruby.ir.builder.LazyMethodDefinitionAST;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.interpreter.ClosureInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
@@ -201,7 +201,7 @@ public class IRClosure extends IRScope {
         source = null;
 
         // FIXME: will not work when YARP is used.
-        ASTLazyMethodDefinition defn = new ASTLazyMethodDefinition(def);
+        LazyMethodDefinitionAST defn = new LazyMethodDefinitionAST(def);
         return new IRMethod(getManager(), getLexicalParent(), defn, name, true,  getLine(), getStaticScope().duplicate(), getCoverageMode());
     }
 

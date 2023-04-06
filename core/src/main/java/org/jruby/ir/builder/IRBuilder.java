@@ -6,6 +6,7 @@ import org.jruby.ParseResult;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
 import org.jruby.ast.RootNode;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.ext.coverage.CoverageData;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IREvalScript;
@@ -28,6 +29,7 @@ import org.jruby.ir.instructions.BuildCompoundStringInstr;
 import org.jruby.ir.instructions.CallInstr;
 import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.DefineInstanceMethodInstr;
+import org.jruby.ir.instructions.EQQInstr;
 import org.jruby.ir.instructions.ExceptionRegionEndMarkerInstr;
 import org.jruby.ir.instructions.ExceptionRegionStartMarkerInstr;
 import org.jruby.ir.instructions.GetClassVarContainerModuleInstr;
@@ -65,6 +67,7 @@ import org.jruby.ir.operands.CurrentScope;
 import org.jruby.ir.operands.DepthCloneable;
 import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Hash;
+import org.jruby.ir.operands.ImmutableLiteral;
 import org.jruby.ir.operands.Integer;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
@@ -88,6 +91,7 @@ import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.ArgumentType;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.RubyEvent;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 
@@ -95,8 +99,12 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import static org.jruby.ir.IRFlags.*;
@@ -107,7 +115,7 @@ import static org.jruby.runtime.CallType.NORMAL;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_REST;
 
-public abstract class IRBuilder<U, V> {
+public abstract class IRBuilder<U, V, W> {
     static final UnexecutableNil U_NIL = UnexecutableNil.U_NIL;
 
     private final IRManager manager;
@@ -458,7 +466,7 @@ public abstract class IRBuilder<U, V> {
         throw new RuntimeException("BUG: no BEQ");
     }
 
-    public void determineZSuperCallArgs(IRScope scope, IRBuilder<U, V> builder, List<Operand> callArgs, List<KeyValuePair<Operand, Operand>> keywordArgs) {
+    public void determineZSuperCallArgs(IRScope scope, IRBuilder<U, V, W> builder, List<Operand> callArgs, List<KeyValuePair<Operand, Operand>> keywordArgs) {
         if (builder != null) {  // Still in currently building scopes
             for (Instr instr : builder.instructions) {
                 extractCallOperands(callArgs, keywordArgs, instr);
@@ -883,6 +891,14 @@ public abstract class IRBuilder<U, V> {
     // build methods
     public abstract Operand build(ParseResult result);
 
+    protected Operand buildWithOrder(U node, boolean preserveOrder) {
+        Operand value = build(node);
+
+        // We need to preserve order in cases (like in presence of assignments) except that immutable
+        // literals can never change value so we can still emit these out of order.
+        return preserveOrder && !(value instanceof ImmutableLiteral) ? copy(value) : value;
+    }
+
     public Operand buildAlias(Operand newName, Operand oldName) {
         addInstr(new AliasInstr(newName, oldName));
 
@@ -902,6 +918,72 @@ public abstract class IRBuilder<U, V> {
                 label("and", (label) ->
                         cond(label, left, fals(), () ->
                                 copy((Variable) ret, right.run()))));
+    }
+
+    public Operand buildCase(U predicate, U[] arms, U elsey) {
+        // FIXME: Missing optimized homogeneous here (still in AST but will be missed by YARP).
+
+        Operand testValue = buildCaseTestValue(predicate); // what each when arm gets tested against.
+        Label elseLabel = getNewLabel();                  // where else body is location (implicit or explicit).
+        Label endLabel = getNewLabel();                   // end of the entire case statement.
+        boolean hasExplicitElse = elsey != null; // does this have an explicit 'else' or not.
+        Variable result = temp();      // final result value of the case statement.
+        Map<Label, U> bodies = new HashMap<>();        // we save bodies and emit them after processing when values.
+        Set<IRubyObject> seenLiterals = new HashSet<>();  // track to warn on duplicated values in when clauses.
+
+        for (U arm: arms) { // Emit each when value test against the case value.
+            Label bodyLabel = getNewLabel();
+            buildWhenArgs((W) arm, testValue, bodyLabel, seenLiterals);
+            bodies.put(bodyLabel, whenBody((W) arm));
+        }
+
+        addInstr(new JumpInstr(elseLabel));               // if no explicit matches jump to else
+
+        if (hasExplicitElse) bodies.put(elseLabel, elsey);
+
+        int numberOfBodies = bodies.size();
+        int i = 1;
+        for (Map.Entry<Label, U> entry: bodies.entrySet()) {
+            addInstr(new LabelInstr(entry.getKey()));
+            Operand bodyValue = build(entry.getValue());
+
+            if (bodyValue != null) {                      // can be null if the body ends with a return!
+                addInstr(new CopyInstr(result, bodyValue));
+
+                //  we can omit the jump to the last body so long as we don't have an implicit else
+                //  since that is emitted right after this section.
+                if (i != numberOfBodies) {
+                    addInstr(new JumpInstr(endLabel));
+                } else if (!hasExplicitElse) {
+                    addInstr(new JumpInstr(endLabel));
+                }
+            }
+            i++;
+        }
+
+        if (!hasExplicitElse) {                           // build implicit else
+            addInstr(new LabelInstr(elseLabel));
+            addInstr(new CopyInstr(result, nil()));
+        }
+
+        addInstr(new LabelInstr(endLabel));
+
+        return result;
+    }
+
+    abstract U whenBody(W arm);
+
+    private Operand buildCaseTestValue(U test) {
+        if (isLiteralString(test)) return frozen_string(test);
+
+        Operand testValue = build(test);
+
+        // null is returned for valueless case statements:
+        //   case
+        //     when true <blah>
+        //     when false <blah>
+        //   end
+        return testValue == null ? UndefinedValue.UNDEFINED : testValue;
     }
 
     public Operand buildClassVarAsgn(RubySymbol name, U valueNode) {
@@ -1144,6 +1226,54 @@ public abstract class IRBuilder<U, V> {
         return scope.getSelf();
     }
 
+    abstract void buildWhenArgs(W whenNode, Operand testValue, Label bodyLabel, Set<IRubyObject> seenLiterals);
+
+    void buildWhenValues(Variable eqqResult, U[] exprValues, Operand testValue, Label bodyLabel,
+                                 Set<IRubyObject> seenLiterals) {
+        for (U value: exprValues) {
+            buildWhenValue(eqqResult, testValue, bodyLabel, value, seenLiterals, false);
+        }
+    }
+
+    void buildWhenValue(Variable eqqResult, Operand testValue, Label bodyLabel, U node,
+                                Set<IRubyObject> seenLiterals, boolean needsSplat) {
+        if (literalWhenCheck(node, seenLiterals)) { // we only emit first literal of the same value.
+            Operand expression;
+            if (isLiteralString(node)) {  // compile literal string whens as fstrings
+                expression = frozen_string(node);
+            } else {
+                expression = buildWithOrder(node, containsVariableAssignment(node));
+            }
+
+            addInstr(new EQQInstr(scope, eqqResult, expression, testValue, needsSplat, scope.maybeUsingRefinements()));
+            addInstr(createBranch(eqqResult, tru(), bodyLabel));
+        }
+    }
+
+    abstract boolean containsVariableAssignment(U node);
+    abstract Operand frozen_string(U node);
+    abstract int getLine(U node);
+    abstract IRubyObject getWhenLiteral(U node);
+    abstract boolean isLiteralString(U node);
+
+    // returns true if we should emit an eqq for this value (e.g. it has not already been seen yet).
+    boolean literalWhenCheck(U value, Set<IRubyObject> seenLiterals) {
+        IRubyObject literal = getWhenLiteral(value);
+
+        if (literal != null) {
+            if (seenLiterals.contains(literal)) {
+                scope.getManager().getRuntime().getWarnings().warning(IRubyWarnings.ID.MISCELLANEOUS,
+                        getFileName(), getLine(value), "duplicated when clause is ignored");
+                return false;
+            } else {
+                seenLiterals.add(literal);
+                return true;
+            }
+        }
+
+        return true;
+    }
+
     Operand buildZSuperIfNest(Variable result, final Operand block) {
         int depthFrom = 0;
         IRBuilder superBuilder = this;
@@ -1208,7 +1338,7 @@ public abstract class IRBuilder<U, V> {
     abstract int dynamicPiece(Operand[] pieces, int index, U piece);
     abstract void receiveMethodArgs(V defNode);
 
-    IRMethod defineNewMethod(LazyMethodDefinition<U, V> defn, ByteList name, int line, StaticScope scope, boolean isInstanceMethod) {
+    IRMethod defineNewMethod(LazyMethodDefinition<U, V, W> defn, ByteList name, int line, StaticScope scope, boolean isInstanceMethod) {
         IRMethod method = new IRMethod(getManager(), this.scope, defn, name, isInstanceMethod, line, scope, coverageMode);
 
         // poorly placed next/break expects a syntax error so we eagerly build methods which contain them.
@@ -1218,7 +1348,7 @@ public abstract class IRBuilder<U, V> {
     }
 
 
-    public InterpreterContext defineMethodInner(LazyMethodDefinition<U, V> defNode, IRScope parent, int coverageMode) {
+    public InterpreterContext defineMethodInner(LazyMethodDefinition<U, V, W> defNode, IRScope parent, int coverageMode) {
         this.coverageMode = coverageMode;
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {

@@ -137,7 +137,7 @@ import static org.jruby.util.RubyStringBuilder.str;
 // This introduces artificial data dependencies, but fewer variables.  But, if we are going to implement SSA pass
 // this is not a big deal.  Think this through!
 
-public class IRBuilderAST extends IRBuilder<Node, DefNode> {
+public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
     static final UnexecutableNil U_NIL = UnexecutableNil.U_NIL;
 
     public static Node buildAST(boolean isCommandLineScript, String arg) {
@@ -378,14 +378,6 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode> {
             buildMultipleAssignment(multipleAsgnNode, addResultInstr(new ToAryInstr(temp(), ret)));
         }
         return ret;
-    }
-
-    protected Operand buildWithOrder(Node node, boolean preserveOrder) {
-        Operand value = build(node);
-
-        // We need to preserve order in cases (like in presence of assignments) except that immutable
-        // literals can never change value so we can still emit these out of order.
-        return preserveOrder && !(value instanceof ImmutableLiteral) ? copy(value) : value;
     }
 
     protected Operand buildLazyWithOrder(CallNode node, Label lazyLabel, Label endLabel, boolean preserveOrder) {
@@ -1364,118 +1356,33 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode> {
             }
         }
 
-        Operand testValue = buildCaseTestValue(caseNode); // what each when arm gets tested against.
-        Label elseLabel = getNewLabel();                  // where else body is location (implicit or explicit).
-        Label endLabel = getNewLabel();                   // end of the entire case statement.
-        boolean hasExplicitElse = caseNode.getElseNode() != null; // does this have an explicit 'else' or not.
-        Variable result = temp();      // final result value of the case statement.
-        Map<Label, Node> bodies = new HashMap<>();        // we save bodies and emit them after processing when values.
-        Set<IRubyObject> seenLiterals = new HashSet<>();  // track to warn on duplicated values in when clauses.
-
-        for (Node aCase: caseNode.getCases().children()) { // Emit each when value test against the case value.
-            WhenNode when = (WhenNode) aCase;
-            Label bodyLabel = getNewLabel();
-
-            buildWhenArgs(when, testValue, bodyLabel, seenLiterals);
-            bodies.put(bodyLabel, when.getBodyNode());
-        }
-
-        addInstr(new JumpInstr(elseLabel));               // if no explicit matches jump to else
-
-        if (hasExplicitElse) {                            // build explicit else
-            bodies.put(elseLabel, caseNode.getElseNode());
-        }
-
-        int numberOfBodies = bodies.size();
-        int i = 1;
-        for (Map.Entry<Label, Node> entry: bodies.entrySet()) {
-            addInstr(new LabelInstr(entry.getKey()));
-            Operand bodyValue = build(entry.getValue());
-
-            if (bodyValue != null) {                      // can be null if the body ends with a return!
-                addInstr(new CopyInstr(result, bodyValue));
-
-                //  we can omit the jump to the last body so long as we don't have an implicit else
-                //  since that is emitted right after this section.
-                if (i != numberOfBodies) {
-                    addInstr(new JumpInstr(endLabel));
-                } else if (!hasExplicitElse) {
-                    addInstr(new JumpInstr(endLabel));
-                }
-            }
-            i++;
-        }
-
-        if (!hasExplicitElse) {                           // build implicit else
-            addInstr(new LabelInstr(elseLabel));
-            addInstr(new CopyInstr(result, nil()));
-        }
-
-        addInstr(new LabelInstr(endLabel));
-
-        return result;
+        return buildCase(caseNode.getCaseNode(), caseNode.getCases().children(), caseNode.getElseNode());
     }
 
-    private Operand buildCaseTestValue(CaseNode caseNode) {
-        Node caseTestValue = caseNode.getCaseNode();
-
-        if (caseTestValue instanceof StrNode) {
-            // compile literal string cases as fstrings
-            ((StrNode) caseTestValue).setFrozen(true);
-        }
-        Operand testValue = build(caseTestValue);
-
-        // null is returned for valueless case statements:
-        //   case
-        //     when true <blah>
-        //     when false <blah>
-        //   end
-        return testValue == null ? UndefinedValue.UNDEFINED : testValue;
+    Node whenBody(WhenNode when) {
+        return when.getBodyNode();
     }
 
-    // returns true if we should emit an eqq for this value (e.g. it has not already been seen yet).
-    private boolean literalWhenCheck(Node value, Set<IRubyObject> seenLiterals) {
-        IRubyObject literal = getWhenLiteral(value);
-
-        if (literal != null) {
-            if (seenLiterals.contains(literal)) {
-                scope.getManager().getRuntime().getWarnings().warning(IRubyWarnings.ID.MISCELLANEOUS,
-                        getFileName(), value.getLine(), "duplicated when clause is ignored");
-                return false;
-            } else {
-                seenLiterals.add(literal);
-                return true;
-            }
-        }
-
-        return true;
+    @Override
+    boolean containsVariableAssignment(Node node) {
+        return node.containsVariableAssignment();
     }
 
-    private void buildWhenValues(Variable eqqResult, ListNode exprValues, Operand testValue, Label bodyLabel,
-                                 Set<IRubyObject> seenLiterals) {
-        for (Node value: exprValues.children()) {
-            buildWhenValue(eqqResult, testValue, bodyLabel, value, seenLiterals, false);
-        }
+    @Override
+    Operand frozen_string(Node node) {
+        ((StrNode) node).setFrozen(true);
+        return buildStrRaw((StrNode) node);
     }
 
-    private void buildWhenValue(Variable eqqResult, Operand testValue, Label bodyLabel, Node node,
-                                Set<IRubyObject> seenLiterals, boolean needsSplat) {
-        if (literalWhenCheck(node, seenLiterals)) { // we only emit first literal of the same value.
-            if (node instanceof StrNode) {
-                // compile literal string whens as fstrings
-                ((StrNode) node).setFrozen(true);
-            }
-            Operand expression = buildWithOrder(node, node.containsVariableAssignment());
-
-            addInstr(new EQQInstr(scope, eqqResult, expression, testValue, needsSplat, scope.maybeUsingRefinements()));
-            addInstr(createBranch(eqqResult, tru(), bodyLabel));
-        }
+    @Override
+    int getLine(Node node) {
+        return node.getLine();
     }
 
     private void buildWhenSplatValues(Variable eqqResult, Node node, Operand testValue, Label bodyLabel,
                                       Set<IRubyObject> seenLiterals) {
         if (node instanceof ListNode && !(node instanceof DNode) && !(node instanceof ArrayNode)) {
-            buildWhenValues(eqqResult, (ListNode) node, testValue, bodyLabel, seenLiterals);
+            buildWhenValues(eqqResult, ((ListNode) node).children(), testValue, bodyLabel, seenLiterals);
         } else if (node instanceof SplatNode) {
             buildWhenValue(eqqResult, testValue, bodyLabel, node, seenLiterals, true);
         } else if (node instanceof ArgsCatNode) {
@@ -1491,12 +1398,12 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode> {
         }
     }
 
-    private void buildWhenArgs(WhenNode whenNode, Operand testValue, Label bodyLabel, Set<IRubyObject> seenLiterals) {
+    void buildWhenArgs(WhenNode whenNode, Operand testValue, Label bodyLabel, Set<IRubyObject> seenLiterals) {
         Variable eqqResult = temp();
         Node exprNodes = whenNode.getExpressionNodes();
 
         if (exprNodes instanceof ListNode && !(exprNodes instanceof DNode) && !(exprNodes instanceof ArrayNode) && !(exprNodes instanceof ZArrayNode)) {
-            buildWhenValues(eqqResult, (ListNode) exprNodes, testValue, bodyLabel, seenLiterals);
+            buildWhenValues(eqqResult, ((ListNode) exprNodes).children(), testValue, bodyLabel, seenLiterals);
         } else if (exprNodes instanceof ArgsPushNode || exprNodes instanceof SplatNode || exprNodes instanceof ArgsCatNode) {
             buildWhenSplatValues(eqqResult, exprNodes, testValue, bodyLabel, seenLiterals);
         } else {
@@ -1507,7 +1414,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode> {
     // Note: This is potentially a little wasteful in that we eagerly create these literals for a duplicated warning
     // check.  In most cases these would be made anyways (e.g. symbols/fixnum) but in others we double allocation
     // (e.g. strings).
-    private IRubyObject getWhenLiteral(Node node) {
+    IRubyObject getWhenLiteral(Node node) {
         Ruby runtime = scope.getManager().getRuntime();
 
         switch(node.getNodeType()) {
@@ -1534,6 +1441,11 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode> {
         }
 
         return null;
+    }
+
+    @Override
+    boolean isLiteralString(Node node) {
+        return false;
     }
 
     private <T extends Node & ILiteralNode> Variable buildOptimizedCaseWhen(
@@ -2253,12 +2165,12 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode> {
     }
 
     public Operand buildDefn(MethodDefNode node) { // Instance method
-        LazyMethodDefinition def = new ASTLazyMethodDefinition(node);
+        LazyMethodDefinition def = new LazyMethodDefinitionAST(node);
         return buildDefn(defineNewMethod(def, node.getName().getBytes(), node.getLine(), node.getScope(), true));
     }
 
     public Operand buildDefs(DefsNode node) { // Class method
-        LazyMethodDefinition def = new ASTLazyMethodDefinition(node);
+        LazyMethodDefinition def = new LazyMethodDefinitionAST(node);
         Operand container =  build(node.getReceiverNode());
         IRMethod method = defineNewMethod(def, node.getName().getBytes(), node.getLine(), node.getScope(), false);
         addInstr(new DefineClassMethodInstr(container, method));

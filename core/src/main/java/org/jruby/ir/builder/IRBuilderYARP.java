@@ -2,6 +2,7 @@ package org.jruby.ir.builder;
 
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.ParseResult;
+import org.jruby.Ruby;
 import org.jruby.RubyNumeric;
 import org.jruby.RubySymbol;
 import org.jruby.compiler.NotCompilableException;
@@ -50,6 +51,7 @@ import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
 import org.jruby.runtime.ArgumentType;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
 import org.jruby.util.KeyValuePair;
@@ -59,11 +61,12 @@ import org.yarp.YarpParseResult;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.IS_HASH_EMPTY;
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.MERGE_KWARGS;
 
-public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
+public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
     byte[] source = null;
 
     public IRBuilderYARP(IRManager manager, IRScope scope, IRBuilder parent, IRBuilder variableBuilder) {
@@ -79,6 +82,98 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
     public Operand build(ParseResult result) {
         this.source = ((YarpParseResult) result).getSource();
         return build(((YarpParseResult) result).getRoot().statements);
+    }
+
+    @Override
+    Node whenBody(WhenNode arm) {
+        return arm.statements;
+    }
+
+    @Override
+    void buildWhenArgs(WhenNode whenNode, Operand testValue, Label bodyLabel, Set<IRubyObject> seenLiterals) {
+        Variable eqqResult = temp();
+        Node[] exprNodes = whenNode.conditions;
+
+        if (exprNodes.length == 1) {
+            if (exprNodes[0] instanceof SplatNode) {
+                buildWhenSplatValues(eqqResult, exprNodes[0], testValue, bodyLabel, seenLiterals);
+            } else {
+                buildWhenValue(eqqResult, testValue, bodyLabel, exprNodes[0], seenLiterals, false);
+            }
+        } else {
+            buildWhenValues(eqqResult, exprNodes, testValue, bodyLabel, seenLiterals);
+        }
+    }
+
+    private void buildWhenSplatValues(Variable eqqResult, Node node, Operand testValue, Label bodyLabel,
+                                      Set<IRubyObject> seenLiterals) {
+        // FIXME: could see errors since this is missing whatever is YARP args{cat,push}?
+        if (node instanceof StatementsNode) {
+            buildWhenValues(eqqResult, ((StatementsNode) node).body, testValue, bodyLabel, seenLiterals);
+        } else if (node instanceof SplatNode) {
+            buildWhenValue(eqqResult, testValue, bodyLabel, node, seenLiterals, true);
+        } else {
+            buildWhenValue(eqqResult, testValue, bodyLabel, node, seenLiterals, true);
+        }
+    }
+
+    // FIXME: needs to derive this walking down tree.
+    @Override
+    boolean containsVariableAssignment(Node node) {
+        return false;
+    }
+
+    @Override
+    Operand frozen_string(Node node) {
+        return buildStrRaw((StringNode) node);
+    }
+
+    // FIXME: need to get line.
+    @Override
+    int getLine(Node node) {
+        return 0;
+    }
+
+    @Override
+    IRubyObject getWhenLiteral(Node node) {
+        Ruby runtime = scope.getManager().getRuntime();
+
+        if (node instanceof IntegerNode) {
+            // FIXME: determine fixnum/bignum
+            return null;
+        } else if (node instanceof FloatNode) {
+            return null;
+            // FIXME:
+            //return runtime.newFloat((((FloatNode) node)));
+        } else if (node instanceof ImaginaryNode) {
+            return null;
+            // FIXME:
+            //return RubyComplex.newComplexRaw(runtime, getWhenLiteral(((ComplexNode) node).getNumber()));
+        } else if (node instanceof RationalNode) {
+            return null;
+            // FIXME:
+            /*
+            return RubyRational.newRationalRaw(runtime,
+                    getWhenLiteral(((RationalNode) node).getDenominator()),
+                    getWhenLiteral(((RationalNode) node).getNumerator()));*/
+        } else if (node instanceof NilNode) {
+            return runtime.getNil();
+        } else if (node instanceof TrueNode) {
+            return runtime.getTrue();
+        } else if (node instanceof FalseNode) {
+            return runtime.getFalse();
+        } else if (node instanceof SymbolNode) {
+            return symbolFor(((SymbolNode) node).value);
+        } else if (node instanceof StringNode) {
+            return runtime.newString((byteListFrom(((StringNode) node).content)));
+        }
+
+        return null;
+    }
+
+    @Override
+    boolean isLiteralString(Node node) {
+        return node instanceof StringNode;
     }
 
     Operand build(Node node) {
@@ -289,7 +384,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
     }
 
     private Operand buildCase(CaseNode node) {
-        return nil();
+        return buildCase(node.predicate, node.conditions, node.consequent);
     }
 
     private Operand buildClassVariableRead(Variable result, ClassVariableReadNode node) {
@@ -333,12 +428,12 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
     }
 
     private Operand buildDefn(DefNode node) {
-        LazyMethodDefinition def = new YARPLazyMethodDefinition(getManager().getRuntime(), source, node);
+        LazyMethodDefinition def = new LazyMethodDefinitionYARP(getManager().getRuntime(), source, node);
         return buildDefn(defineNewMethod(def, byteListFrom(node.name), 0, node.scope, true));
     }
 
     private Operand buildDefs(DefNode node) {
-        LazyMethodDefinition def = new YARPLazyMethodDefinition(getManager().getRuntime(), source, node);
+        LazyMethodDefinition def = new LazyMethodDefinitionYARP(getManager().getRuntime(), source, node);
         return buildDefn(defineNewMethod(def, byteListFrom(node.name), 0, node.scope, false));
     }
 
@@ -597,7 +692,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode> {
     }
 
     public Operand buildStrRaw(StringNode node) {
-        int line = 0; // FIXME: need to get line number
+        int line = getLine(node);
 
         // FIXME: Need to know if it is frozen
         //if (strNode.isFrozen()) return new FrozenString(strNode.getValue(), strNode.getCodeRange(), scope.getFile(), line);

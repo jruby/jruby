@@ -14,7 +14,7 @@ import org.jruby.ast.ModuleNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
 import org.jruby.ext.coverage.CoverageData;
-import org.jruby.ir.builder.ASTLazyMethodDefinition;
+import org.jruby.ir.builder.LazyMethodDefinitionAST;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.ReceiveSelfInstr;
 import org.jruby.ir.instructions.ToggleBacktraceInstr;
@@ -390,7 +390,7 @@ public class IRManager {
                 containingScope = new IRClassBody(this, script, scopeNode.getCPath().getName().getBytes(), 0, scopeNode.getScope(), false);
             }
             // FIXME: Broken with YARP
-            ASTLazyMethodDefinition defn = new ASTLazyMethodDefinition(defNode);
+            LazyMethodDefinitionAST defn = new LazyMethodDefinitionAST(defNode);
             IRMethod newMethod = new IRMethod(this, containingScope, defn, context.runtime.newSymbol(method).getBytes(), true, 0, defNode.getScope(), CoverageData.NONE);
 
             newMethod.prepareForCompilation();
