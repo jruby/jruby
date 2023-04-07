@@ -461,6 +461,7 @@ public final class ThreadContext {
      * @param tag The interned string to search for
      * @return The continuation associated with this tag
      */
+    @SuppressWarnings("ReferenceEquality")
     public CatchThrow getActiveCatch(Object tag) {
         for (int i = catchIndex; i >= 0; i--) {
             CatchThrow c = catchStack[i];

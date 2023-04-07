@@ -330,6 +330,7 @@ public class Block implements FunctionOneOrTwoOrThree<ThreadContext, IRubyObject
      *
      * @return true if this is a valid block or false otherwise
      */
+    @SuppressWarnings("ReferenceEquality")
     public final boolean isGiven() {
         return this != NULL_BLOCK;
     }

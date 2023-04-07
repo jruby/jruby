@@ -1241,6 +1241,7 @@ public abstract class LexingCommon {
 
     protected abstract void mismatchedRegexpEncodingError(Encoding optionEncoding, Encoding encoding);
 
+    @SuppressWarnings("ReferenceEquality")
     // MRI: reg_fragment_setenc_gen
     public void setRegexpEncoding(Ruby runtime, ByteList value, RegexpOptions options) {
         Encoding optionsEncoding = options.setup(runtime);
@@ -1266,10 +1267,11 @@ public abstract class LexingCommon {
         }
     }
 
-    private boolean is7BitASCII(ByteList value) {
-      return StringSupport.codeRangeScan(value.getEncoding(), value) == StringSupport.CR_7BIT;
+    private static boolean is7BitASCII(ByteList value) {
+        return StringSupport.codeRangeScan(value.getEncoding(), value) == StringSupport.CR_7BIT;
     }
 
+    @SuppressWarnings("ReferenceEquality")
     // TODO: Put somewhere more consolidated (similiar
     protected char optionsEncodingChar(Encoding optionEncoding) {
         if (optionEncoding == USASCIIEncoding.INSTANCE) return 'n';
@@ -1418,6 +1420,7 @@ public abstract class LexingCommon {
         return scanHex(count, false, errorMessage);
     }
 
+    @SuppressWarnings("ReferenceEquality")
     protected void readUTF8EscapeIntoBuffer(int codepoint, ByteList buffer, boolean stringLiteral, boolean[] encodingDetermined) throws IOException {
         if (codepoint >= 0x80) {
             if (encodingDetermined[0] && buffer.getEncoding() != UTF8Encoding.INSTANCE) {
