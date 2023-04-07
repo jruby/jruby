@@ -9,7 +9,6 @@ import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRMethod;
-import org.jruby.ir.IRModuleBody;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Tuple;
 import org.jruby.ir.instructions.AsStringInstr;
@@ -18,7 +17,6 @@ import org.jruby.ir.instructions.BNEInstr;
 import org.jruby.ir.instructions.BuildSplatInstr;
 import org.jruby.ir.instructions.CheckArityInstr;
 import org.jruby.ir.instructions.CopyInstr;
-import org.jruby.ir.instructions.DefineModuleInstr;
 import org.jruby.ir.instructions.LabelInstr;
 import org.jruby.ir.instructions.LoadImplicitClosureInstr;
 import org.jruby.ir.instructions.PutClassVariableInstr;
@@ -144,6 +142,11 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
         }
             // FIXME: We may not need these based on whether there are more possible nodes.
         throw notCompilable("Unsupported node in module path", node);
+    }
+
+
+    private int getEndLine(ModuleNode node) {
+        return 0;
     }
 
     // FIXME: need to get line.
@@ -554,22 +557,9 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
     }
 
     private Operand buildModule(ModuleNode node) {
-        boolean executesOnce = this.executesOnce;
-        ByteList moduleName = determineModuleBaseName(node);
-        Operand container = getContainerFromCPath(node.constant_path);
-
-        // FIXME: Missing line. set to 0.
-        int line = 0;
-        int endLine = 0;
-        IRModuleBody body = new IRModuleBody(getManager(), scope, moduleName, line, node.scope, executesOnce);
-        Variable bodyResult = addResultInstr(new DefineModuleInstr(temp(), container, body));
-
-        IRBuilderYARP builder = new IRBuilderYARP(getManager(), body, this, null);
-        builder.buildModuleOrClassBody(node.statements, line, endLine);
-        return bodyResult;
+        return buildModule(determineModuleBaseName(node), node.constant_path, node.statements, node.scope,
+                getLine(node), getEndLine(node));
     }
-
-
 
     private Operand buildMultiWriteNode(MultiWriteNode node) {
         Node valueNode = node.value;

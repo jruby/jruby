@@ -3090,19 +3090,9 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
         return container;
     }
 
-    public Operand buildModule(ModuleNode moduleNode) {
-        boolean executesOnce = this.executesOnce;
-        Colon3Node cpath = moduleNode.getCPath();
-        ByteList moduleName = cpath.getName().getBytes();
-        Operand container = getContainerFromCPath(cpath);
-
-        //System.out.println("MODULE IS " +  (executesOnce ? "" : "NOT") + " SINGLE USE:"  + moduleName +  ", " +  scope.getFile() + ":" + moduleNode.getEndLine());
-
-        IRModuleBody body = new IRModuleBody(getManager(), scope, moduleName, moduleNode.getLine(), moduleNode.getScope(), executesOnce);
-        Variable bodyResult = addResultInstr(new DefineModuleInstr(temp(), container, body));
-
-        newIRBuilder(getManager(), body).buildModuleOrClassBody(moduleNode.getBodyNode(), moduleNode.getLine(), moduleNode.getEndLine());
-        return bodyResult;
+    Operand buildModule(ModuleNode node) {
+        return buildModule(node.getCPath().getName().getBytes(), node.getCPath(), node.getBodyNode(),
+                node.getScope(), node.getLine(), node.getEndLine());
     }
 
     public Operand buildNext(final NextNode nextNode) {

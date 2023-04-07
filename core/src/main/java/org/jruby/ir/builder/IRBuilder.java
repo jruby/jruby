@@ -5,7 +5,6 @@ import org.jruby.EvalType;
 import org.jruby.ParseResult;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
-import org.jruby.ast.Colon3Node;
 import org.jruby.ast.RootNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.ext.coverage.CoverageData;
@@ -32,6 +31,7 @@ import org.jruby.ir.instructions.CallInstr;
 import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.DefineClassInstr;
 import org.jruby.ir.instructions.DefineInstanceMethodInstr;
+import org.jruby.ir.instructions.DefineModuleInstr;
 import org.jruby.ir.instructions.EQQInstr;
 import org.jruby.ir.instructions.ExceptionRegionEndMarkerInstr;
 import org.jruby.ir.instructions.ExceptionRegionStartMarkerInstr;
@@ -200,7 +200,7 @@ public abstract class IRBuilder<U, V, W> {
         String file = rootNode.getFile();
         IRScriptBody script = new IRScriptBody(manager, file == null ? "(anon)" : file, rootNode.getStaticScope());
 
-        System.out.println("Building " + file);
+        //System.out.println("Building " + file);
         return topIRBuilder(manager, script, rootNode).buildRootInner(rootNode);
     }
 
@@ -1199,6 +1199,18 @@ public abstract class IRBuilder<U, V, W> {
 
             return loopResult;
         }
+    }
+
+    public Operand buildModule(ByteList name, U cpath, U bodyNode, StaticScope scope, int line, int endLine) {
+        boolean executesOnce = this.executesOnce;
+        Operand container = getContainerFromCPath(cpath);
+
+        IRModuleBody body = new IRModuleBody(getManager(), this.scope, name, line, scope, executesOnce);
+        Variable bodyResult = addResultInstr(new DefineModuleInstr(temp(), container, body));
+
+        newIRBuilder(getManager(), body, this, bodyNode).buildModuleOrClassBody(bodyNode, line, endLine);
+
+        return bodyResult;
     }
 
     InterpreterContext buildModuleOrClassBody(U body, int startLine, int endLine) {
