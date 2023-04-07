@@ -1233,11 +1233,6 @@ public class RubyBigDecimal extends RubyNumeric {
         return op_pow(getRuntime().getCurrentContext(), exp);
     }
 
-    @Deprecated
-    public IRubyObject op_pow19(ThreadContext context, IRubyObject exp) {
-        return op_pow(context, exp);
-    }
-
     private BigDecimal powNegative(final int times) {
         // Note: MRI has a very non-trivial way of calculating the precision,
         // so we use very simple approximation here:
