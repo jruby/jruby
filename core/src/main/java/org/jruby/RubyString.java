@@ -444,23 +444,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     // Deprecated String construction routines
-    /** Create a new String which uses the same Ruby runtime and the same
-     *  class like this String.
-     *
-     *  This method should be used to satisfy RCR #38.
-     *  @deprecated
-     */
+
     @Deprecated
     public RubyString newString(CharSequence s) {
         return new RubyString(getRuntime(), getType(), s);
     }
 
-    /** Create a new String which uses the same Ruby runtime and the same
-     *  class like this String.
-     *
-     *  This method should be used to satisfy RCR #38.
-     *  @deprecated
-     */
     @Deprecated
     public RubyString newString(ByteList s) {
         return new RubyString(getRuntime(), getMetaClass(), s);
@@ -968,10 +957,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private void frozenCheck() {
-        frozenCheck(false);
-    }
-
-    private void frozenCheck(boolean runtimeError) {
         if (isFrozen()) {
             if (getRuntime().getInstanceConfig().isDebuggingFrozenStringLiteral()) {
                 IRubyObject obj = getInstanceVariable(DEBUG_INFO_FIELD);
@@ -1301,8 +1286,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     /**
      * Generate a hash for the String, using its associated Ruby instance's hash seed.
      *
-     * @param runtime
-     * @return
+     * @param runtime the runtime
+     * @return calculated hash
      */
     public int strHashCode(Ruby runtime) {
         final ByteList value = this.value;
@@ -1318,8 +1303,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     /**
      * Generate a hash for the String, without a seed.
      *
-     * @param runtime
-     * @return
+     * @param runtime the runtime
+     * @return calculated hash
      */
     public int unseededStrHashCode(Ruby runtime) {
         final ByteList value = this.value;
@@ -2315,7 +2300,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         long retval = 0;
         int tmp;
 
-        while ((len--) > 0 && s < bytes.length && (tmp = memchr(hexdigit, 0, bytes[s], hexdigit.length)) != -1) {
+        while (len-- > 0 && s < bytes.length && (tmp = memchr(hexdigit, 0, bytes[s], hexdigit.length)) != -1) {
             retval <<= 4;
             retval |= tmp & 15;
             s++;
@@ -2359,15 +2344,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (index < 0) index++;
         replaceInternal19(index, 0, str);
         return this;
-    }
-
-    private int checkIndex(int beg, int len) {
-        if (beg > len) raiseIndexOutOfString(beg);
-        if (beg < 0) {
-            if (-beg > len) raiseIndexOutOfString(beg);
-            beg += len;
-        }
-        return beg;
     }
 
     private int checkIndexForRef(int beg, int len) {
@@ -2426,8 +2402,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 if (p > prev) result.cat(pBytes, prev, p - prev);
                 n = enc.minLength();
                 if (pend < p + n)
-                    n = (int)(pend - p);
-                while ((n--) > 0) {
+                    n = (pend - p);
+                while (n-- > 0) {
                     result.modify();
                     Sprintf.sprintf(runtime, result.getByteList(), "\\x%02X", pBytes[p] & 0377);
                     prev = ++p;
@@ -2955,11 +2931,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return subBangIter(context, arg0, (RubyHash) hash, block);
     }
 
-    private static RubyRegexp asRegexpArg(final Ruby runtime, final IRubyObject arg0) {
-        return arg0 instanceof RubyRegexp ? (RubyRegexp) arg0 :
-            RubyRegexp.newRegexp(runtime, RubyRegexp.quote(getStringForPattern(runtime, arg0).getByteList(), false), new RegexpOptions());
-    }
-
     private IRubyObject subBangIter(ThreadContext context, IRubyObject arg0, RubyHash hash, Block block) {
         if (arg0 instanceof RubyRegexp ) {
             return subBangIter(context, (RubyRegexp) arg0, hash, block);
@@ -3086,10 +3057,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     /**
      * sub! but without any frame globals ...
-     * <p>Note: Internal API, subject to change!</p>
-     * @param context
-     * @param regexp
-     * @param repl
+     * @note Internal API, subject to change!
+     * @param context current context
+     * @param regexp the regular expression
+     * @param repl replacement string value
      * @return sub result
      */
     public final IRubyObject subBangFast(ThreadContext context, RubyRegexp regexp, RubyString repl) {
