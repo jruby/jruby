@@ -213,19 +213,23 @@ public abstract class LexingCommon {
         return createAsEncodedString(lexb.getUnsafeBytes(), lexb.begin() + start, lex_p - start);
     }
 
+    @SuppressWarnings({"DefaultCharset", "ReferenceEquality"})
     public String createAsEncodedString(byte[] bytes, int start, int length) {
         // FIXME: We should be able to move some faster non-exception cache using Encoding.isDefined
+        Charset charset;
         try {
-            Charset charset = EncodingUtils.charsetForEncoding(getEncoding());
-            if (charset != null) {
-                if (charset == RubyEncoding.UTF8) {
-                    return RubyEncoding.decodeUTF8(bytes, start, length);
-                } else {
-                    return new String(bytes, start, length, charset);
-                }
-            }
-        } catch (UnsupportedCharsetException e) {}
+            charset = EncodingUtils.charsetForEncoding(getEncoding());
+        } catch (UnsupportedCharsetException e) {
+            charset = null; // fallback to platform's default charset
+        }
 
+        if (charset == RubyEncoding.UTF8) { // common path first
+            return RubyEncoding.decodeUTF8(bytes, start, length);
+        }
+
+        if (charset != null) {
+            return new String(bytes, start, length, charset);
+        }
         return new String(bytes, start, length);
     }
 
