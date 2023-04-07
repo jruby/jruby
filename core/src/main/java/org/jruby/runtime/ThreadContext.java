@@ -177,8 +177,7 @@ public final class ThreadContext {
 
     /**
      * This fields is no longer initialized, is null by default!
-     * Use {@link #getSecureRandom()} instead.
-     * @deprecated
+     * @deprecated Use {@link #getSecureRandom()} instead.
      */
     @Deprecated
     public transient SecureRandom secureRandom;
@@ -813,6 +812,7 @@ public final class ThreadContext {
         return callNumber;
     }
 
+    @SuppressWarnings("AmbiguousMethodReference")
     public void callThreadPoll() {
         if ((callNumber++ & CALL_POLL_COUNT) == 0) pollThreadEvents();
     }
@@ -1340,7 +1340,7 @@ public final class ThreadContext {
         setExceptionRequiresBacktrace(false);
     }
 
-    private Map<String, Map<IRubyObject, IRubyObject>> symToGuards;
+    private Map<String, IdentityHashMap<IRubyObject, IRubyObject>> symToGuards;
 
     // Thread#set_trace_func of nil will not only remove the one via set_trace_func but also any which
     // were added via add_trace_func.
@@ -1440,15 +1440,14 @@ public final class ThreadContext {
     }
 
     private Map<IRubyObject, IRubyObject> safeRecurseGetGuards(String name) {
-        Map<String, Map<IRubyObject, IRubyObject>> symToGuards = this.symToGuards;
+        Map<String, IdentityHashMap<IRubyObject, IRubyObject>> symToGuards = this.symToGuards;
         if (symToGuards == null) {
             this.symToGuards = symToGuards = new HashMap<>();
         }
 
-        Map<IRubyObject, IRubyObject> guards = symToGuards.get(name);
-        if (guards == null) {
-            guards = new IdentityHashMap<>();
-            symToGuards.put(name, guards);
+        IdentityHashMap<IRubyObject, IRubyObject> guards = symToGuards.get(name);
+        if (guards == null) {;
+            symToGuards.put(name, guards = new IdentityHashMap<>());
         }
 
         return guards;
