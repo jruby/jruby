@@ -1592,19 +1592,10 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
     /**
      * Build a new class and add it to the current scope (s).
      */
-    public Operand buildClass(ClassNode classNode) {
-        boolean executesOnce = this.executesOnce;
-        Node superNode = classNode.getSuperNode();
-        Colon3Node cpath = classNode.getCPath();
-        Operand superClass = (superNode == null) ? null : build(superNode);
-        ByteList className = cpath.getName().getBytes();
-        Operand container = getContainerFromCPath(cpath);
-
-        IRClassBody body = new IRClassBody(getManager(), scope, className, classNode.getLine(), classNode.getScope(), executesOnce);
-        Variable bodyResult = addResultInstr(new DefineClassInstr(temp(), body, container, superClass));
-
-        newIRBuilder(getManager(), body).buildModuleOrClassBody(classNode.getBodyNode(), classNode.getLine(), classNode.getEndLine());
-        return bodyResult;
+    public Operand buildClass(ClassNode node) {
+        // FIXME: can I just use node.getName?
+        return buildClass(node.getCPath().getName().getBytes(), node.getSuperNode(), node.getCPath(),
+                node.getBodyNode(), node.getScope(), node.getLine(), node.getEndLine());
     }
 
     // class Foo; class << self; end; end
@@ -3081,7 +3072,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
         return addResultInstr(new MatchInstr(scope, result, receiver, value));
     }
 
-    private Operand getContainerFromCPath(Colon3Node cpath) {
+    Operand getContainerFromCPath(Node cpath) {
         Operand container;
 
         if (cpath instanceof Colon2Node) {

@@ -65,6 +65,6 @@ public class LazyMethodDefinitionAST implements LazyMethodDefinition<Node, DefNo
 
     @Override
     public IRBuilder<Node, DefNode, WhenNode> getBuilder(IRManager manager, IRMethod methodScope) {
-        return IRBuilder.methodIRBuilder(manager, methodScope, node);
+        return IRBuilder.newIRBuilder(manager, methodScope, null, node);
     }
 }

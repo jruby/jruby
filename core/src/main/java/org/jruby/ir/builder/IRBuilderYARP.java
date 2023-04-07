@@ -128,6 +128,24 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
         return buildStrRaw((StringNode) node);
     }
 
+    @Override
+    Operand getContainerFromCPath(Node node) {
+
+        if (node instanceof ConstantReadNode) {
+            return findContainerModule();
+        } else if (node instanceof ConstantPathNode) {
+            ConstantPathNode path = (ConstantPathNode) node;
+
+            if (path.parent == null) { // ::Foo
+                return getManager().getObjectClass();
+            } else {
+                return build(path.parent);
+            }
+        }
+            // FIXME: We may not need these based on whether there are more possible nodes.
+        throw notCompilable("Unsupported node in module path", node);
+    }
+
     // FIXME: need to get line.
     @Override
     int getLine(Node node) {
@@ -198,6 +216,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
             return buildCall(result, (CallNode) node);
         } else if (node instanceof CaseNode) {
             return buildCase((CaseNode) node);
+        } else if (node instanceof ClassNode) {
+            return buildClass((ClassNode) node);
         } else if (node instanceof ClassVariableReadNode) {
             return buildClassVariableRead(result, (ClassVariableReadNode) node);
         } else if (node instanceof ClassVariableWriteNode) {
@@ -387,6 +407,11 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
         return buildCase(node.predicate, node.conditions, node.consequent);
     }
 
+    // FIXME: need to get enndline;
+    private Operand buildClass(ClassNode node) {
+        return buildClass(byteListFrom(node.constant_path), node.superclass, node.constant_path, node.statements, node.scope, getLine(node), 0);
+    }
+
     private Operand buildClassVariableRead(Variable result, ClassVariableReadNode node) {
         return buildClassVar(result, symbolFor(node));
     }
@@ -531,7 +556,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
     private Operand buildModule(ModuleNode node) {
         boolean executesOnce = this.executesOnce;
         ByteList moduleName = determineModuleBaseName(node);
-        Operand container = buildModuleContainer(node);
+        Operand container = getContainerFromCPath(node.constant_path);
 
         // FIXME: Missing line. set to 0.
         int line = 0;
@@ -544,21 +569,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
         return bodyResult;
     }
 
-    private Operand buildModuleContainer(ModuleNode node) {
-        if (node.constant_path instanceof ConstantReadNode) {
-            return findContainerModule();
-        } else if (node.constant_path instanceof ConstantPathNode) {
-            ConstantPathNode path = (ConstantPathNode) node.constant_path;
 
-            if (path.parent == null) { // ::Foo
-                return getManager().getObjectClass();
-            } else {
-                return build(path.parent);
-            }
-        }
-        // FIXME: We may not need these based on whether there are more possible nodes.
-        throw notCompilable("Unsupported node in module path", node);
-    }
 
     private Operand buildMultiWriteNode(MultiWriteNode node) {
         Node valueNode = node.value;

@@ -5,9 +5,11 @@ import org.jruby.EvalType;
 import org.jruby.ParseResult;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
+import org.jruby.ast.Colon3Node;
 import org.jruby.ast.RootNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.ext.coverage.CoverageData;
+import org.jruby.ir.IRClassBody;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRFlags;
@@ -28,6 +30,7 @@ import org.jruby.ir.instructions.BUndefInstr;
 import org.jruby.ir.instructions.BuildCompoundStringInstr;
 import org.jruby.ir.instructions.CallInstr;
 import org.jruby.ir.instructions.CopyInstr;
+import org.jruby.ir.instructions.DefineClassInstr;
 import org.jruby.ir.instructions.DefineInstanceMethodInstr;
 import org.jruby.ir.instructions.EQQInstr;
 import org.jruby.ir.instructions.ExceptionRegionEndMarkerInstr;
@@ -197,6 +200,7 @@ public abstract class IRBuilder<U, V, W> {
         String file = rootNode.getFile();
         IRScriptBody script = new IRScriptBody(manager, file == null ? "(anon)" : file, rootNode.getStaticScope());
 
+        System.out.println("Building " + file);
         return topIRBuilder(manager, script, rootNode).buildRootInner(rootNode);
     }
 
@@ -204,11 +208,11 @@ public abstract class IRBuilder<U, V, W> {
         return new IRBuilderAST(manager, newScope, null);
     }
 
-    public static IRBuilder methodIRBuilder(IRManager manager, IRScope newScope, Object node) {
-        if (node instanceof org.jruby.ast.DefNode) {
-            return new IRBuilderAST(manager, newScope, null, null);
+    public static IRBuilder newIRBuilder(IRManager manager, IRScope newScope, IRBuilder parent, Object node) {
+        if (node instanceof org.jruby.ast.Node) {
+            return new IRBuilderAST(manager, newScope, parent, null);
         } else {
-            return new IRBuilderYARP(manager, newScope, null, null);
+            return new IRBuilderYARP(manager, newScope, parent, null);
         }
     }
 
@@ -986,19 +990,33 @@ public abstract class IRBuilder<U, V, W> {
         return testValue == null ? UndefinedValue.UNDEFINED : testValue;
     }
 
-    public Operand buildClassVarAsgn(RubySymbol name, U valueNode) {
-        if (isTopScope()) return addRaiseError("RuntimeError", "class variable access from toplevel");
+    public Operand buildClass(ByteList className, U superNode, U cpath, U bodyNode, StaticScope scope, int line, int endLine) {
+        boolean executesOnce = this.executesOnce;
+        Operand superClass = (superNode == null) ? null : build(superNode);
+        Operand container = getContainerFromCPath(cpath);
 
-        Operand value = build(valueNode);
-        addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), name, value));
-        return value;
+        IRClassBody body = new IRClassBody(getManager(), this.scope, className, line, scope, executesOnce);
+        Variable bodyResult = addResultInstr(new DefineClassInstr(temp(), body, container, superClass));
+
+        newIRBuilder(getManager(), body, this, bodyNode).buildModuleOrClassBody(bodyNode, line, endLine);
+        return bodyResult;
     }
+
+    abstract Operand getContainerFromCPath(U cpath);
 
     public Operand buildClassVar(Variable result, RubySymbol name) {
         if (result == null) result = temp();
         if (isTopScope()) return addRaiseError("RuntimeError", "class variable access from toplevel");
 
         return addResultInstr(new GetClassVariableInstr(result, classVarDefinitionContainer(), name));
+    }
+
+    public Operand buildClassVarAsgn(RubySymbol name, U valueNode) {
+        if (isTopScope()) return addRaiseError("RuntimeError", "class variable access from toplevel");
+
+        Operand value = build(valueNode);
+        addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), name, value));
+        return value;
     }
 
     // FIXME: AST needs variable passed in to work which I think means some context really needs to pass in the result at least in AST build?
