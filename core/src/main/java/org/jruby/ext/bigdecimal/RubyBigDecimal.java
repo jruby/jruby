@@ -487,7 +487,7 @@ public class RubyBigDecimal extends RubyNumeric {
             MathContext mathContext = new MathContext(RubyFloat.DIG + 1, getRoundingMode(context.runtime));
             // uses value.toString to prevent a precision error
             // e.g. new BigDecimal(64.4) -> 64.400000000000005684341886080801486968994140625
-            //      new BigDecimal("64.4) -> 64.4
+            //      new BigDecimal("64.4") -> 64.4
             return new RubyBigDecimal(context.runtime, new BigDecimal(value.toString(), mathContext));
         }
         if (value instanceof RubyRational) {
