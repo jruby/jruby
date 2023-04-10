@@ -3796,6 +3796,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 offset = argv[1];
             case 1:
                 advice = argv[0];
+                break;
+            default:
+                Arity.raiseArgumentError(runtime, argv, 1, 3);
         }
 
         PosixFadvise fadvise = adviceArgCheck(context, advice);
