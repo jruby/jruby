@@ -58,6 +58,7 @@ import org.jruby.ir.instructions.ReceiveKeywordRestArgInstr;
 import org.jruby.ir.instructions.ReceiveRestArgInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnInstr;
+import org.jruby.ir.instructions.ReturnOrRethrowSavedExcInstr;
 import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.instructions.SearchConstInstr;
 import org.jruby.ir.instructions.SearchModuleForConstInstr;
@@ -593,6 +594,29 @@ public abstract class IRBuilder<U, V, W> {
     // Wrap call in a rescue handler that catches the IRBreakJump
     void receiveBreakException(Operand block, final CallInstr callInstr) {
         receiveBreakException(block, () -> addResultInstr(callInstr));
+    }
+
+    void handleBreakAndReturnsInLambdas() {
+        Label rEndLabel   = getNewLabel();
+        Label rescueLabel = Label.getGlobalEnsureBlockLabel();
+
+        // Protect the entire body as it exists now with the global ensure block
+        addInstrAtBeginning(new ExceptionRegionStartMarkerInstr(rescueLabel));
+        addInstr(new ExceptionRegionEndMarkerInstr());
+
+        // Receive exceptions (could be anything, but the handler only processes IRBreakJumps)
+        addInstr(new LabelInstr(rescueLabel));
+        Variable exc = temp();
+        addInstr(new ReceiveJRubyExceptionInstr(exc));
+
+        // Handle break using runtime helper
+        // --> IRRuntimeHelpers.handleBreakAndReturnsInLambdas(context, scope, bj, blockType)
+        Variable ret = temp();
+        addInstr(new RuntimeHelperCall(ret, RuntimeHelperCall.Methods.HANDLE_BREAK_AND_RETURNS_IN_LAMBDA, new Operand[]{exc} ));
+        addInstr(new ReturnOrRethrowSavedExcInstr(ret));
+
+        // End
+        addInstr(new LabelInstr(rEndLabel));
     }
 
     void handleNonlocalReturnInMethod() {
@@ -1258,13 +1282,6 @@ public abstract class IRBuilder<U, V, W> {
 
     abstract void buildWhenArgs(W whenNode, Operand testValue, Label bodyLabel, Set<IRubyObject> seenLiterals);
 
-    void buildWhenValues(Variable eqqResult, U[] exprValues, Operand testValue, Label bodyLabel,
-                                 Set<IRubyObject> seenLiterals) {
-        for (U value: exprValues) {
-            buildWhenValue(eqqResult, testValue, bodyLabel, value, seenLiterals, false);
-        }
-    }
-
     void buildWhenValue(Variable eqqResult, Operand testValue, Label bodyLabel, U node,
                                 Set<IRubyObject> seenLiterals, boolean needsSplat) {
         if (literalWhenCheck(node, seenLiterals)) { // we only emit first literal of the same value.
@@ -1277,6 +1294,13 @@ public abstract class IRBuilder<U, V, W> {
 
             addInstr(new EQQInstr(scope, eqqResult, expression, testValue, needsSplat, scope.maybeUsingRefinements()));
             addInstr(createBranch(eqqResult, tru(), bodyLabel));
+        }
+    }
+
+    void buildWhenValues(Variable eqqResult, U[] exprValues, Operand testValue, Label bodyLabel,
+                         Set<IRubyObject> seenLiterals) {
+        for (U value: exprValues) {
+            buildWhenValue(eqqResult, testValue, bodyLabel, value, seenLiterals, false);
         }
     }
 
@@ -1475,6 +1499,11 @@ public abstract class IRBuilder<U, V, W> {
 
     public IRManager getManager() {
         return manager;
+    }
+
+    void throwSyntaxError(int line , String message) {
+        String errorMessage = getFileName() + ":" + (line + 1) + ": " + message;
+        throw scope.getManager().getRuntime().newSyntaxError(errorMessage);
     }
 
     BinaryType binaryType(U node) {

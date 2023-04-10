@@ -539,7 +539,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
         throw notCompilable("Invalid node for call args: ", args);
     }
 
-    protected Operand buildYieldArgs(Node args, int[] flags) {
+    Operand buildYieldArgs(Node args, int[] flags) {
         if (args == null) return UndefinedValue.UNDEFINED;
 
         switch (args.getNodeType()) {
@@ -840,23 +840,18 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
                 IRScope returnScope = scope.getLexicalParent();
                 if (scope instanceof IREvalScript || returnScope == null) {
                     // We are not in a closure or a loop => bad break instr!
-                    throwSyntaxError(breakNode, "Can't escape from eval with redo");
+                    throwSyntaxError(breakNode.getLine(), "Can't escape from eval with redo");
                 } else {
                     addInstr(new BreakInstr(build(breakNode.getValueNode()), returnScope.getId()));
                 }
             } else {
                 // We are not in a closure or a loop => bad break instr!
-                throwSyntaxError(breakNode, "Invalid break");
+                throwSyntaxError(breakNode.getLine(), "Invalid break");
             }
         }
 
         // Once the break instruction executes, control exits this scope
         return U_NIL;
-    }
-
-    private void throwSyntaxError(Node node, String message) {
-        String errorMessage = getFileName() + ":" + (node.getLine() + 1) + ": " + message;
-        throw scope.getManager().getRuntime().newSyntaxError(errorMessage);
     }
 
     public Operand buildCall(Variable aResult, CallNode callNode, Label lazyLabel, Label endLabel) {
@@ -1204,7 +1199,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
             HashNode hash = (HashNode) exprNodes;
 
             if (hash.getPairs().size() != 1) {
-                throwSyntaxError(hash, "unexpected node");
+                throwSyntaxError(hash.getLine(), "unexpected node");
             }
 
             KeyValuePair<Node, Node> pair = hash.getPairs().get(0);
@@ -1235,7 +1230,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
             RubySymbol name = localAsgnNode.getName();
 
             if (inAlternation && name.idString().charAt(0) != '_') {
-                throwSyntaxError(localAsgnNode, str(getManager().getRuntime(), "illegal variable in alternative pattern (", name, ")"));
+                throwSyntaxError(localAsgnNode.getLine(), str(getManager().getRuntime(), "illegal variable in alternative pattern (", name, ")"));
             }
 
             Variable variable  = getLocalVariable(name, localAsgnNode.getDepth());
@@ -1247,7 +1242,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
             RubySymbol name = localAsgnNode.getName();
 
             if (inAlternation && name.idString().charAt(0) != '_') {
-                throwSyntaxError(localAsgnNode, str(getManager().getRuntime(), "illegal variable in alternative pattern (", name, ")"));
+                throwSyntaxError(localAsgnNode.getLine(), str(getManager().getRuntime(), "illegal variable in alternative pattern (", name, ")"));
             }
 
             Variable variable = getLocalVariable(name, localAsgnNode.getDepth());
@@ -1445,7 +1440,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
 
     @Override
     boolean isLiteralString(Node node) {
-        return false;
+        return node instanceof StrNode;
     }
 
     private <T extends Node & ILiteralNode> Variable buildOptimizedCaseWhen(
@@ -2485,29 +2480,6 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
         }
     }
 
-    private void handleBreakAndReturnsInLambdas() {
-        Label rEndLabel   = getNewLabel();
-        Label rescueLabel = Label.getGlobalEnsureBlockLabel();
-
-        // Protect the entire body as it exists now with the global ensure block
-        addInstrAtBeginning(new ExceptionRegionStartMarkerInstr(rescueLabel));
-        addInstr(new ExceptionRegionEndMarkerInstr());
-
-        // Receive exceptions (could be anything, but the handler only processes IRBreakJumps)
-        addInstr(new LabelInstr(rescueLabel));
-        Variable exc = temp();
-        addInstr(new ReceiveJRubyExceptionInstr(exc));
-
-        // Handle break using runtime helper
-        // --> IRRuntimeHelpers.handleBreakAndReturnsInLambdas(context, scope, bj, blockType)
-        Variable ret = temp();
-        addInstr(new RuntimeHelperCall(ret, RuntimeHelperCall.Methods.HANDLE_BREAK_AND_RETURNS_IN_LAMBDA, new Operand[]{exc} ));
-        addInstr(new ReturnOrRethrowSavedExcInstr(ret));
-
-        // End
-        addInstr(new LabelInstr(rEndLabel));
-    }
-
     public void receiveMethodArgs(final ArgsNode argsNode) {
         receiveArgs(argsNode);
     }
@@ -3111,12 +3083,12 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
             // If a closure, the next is simply a return from the closure!
             if (scope instanceof IRClosure) {
                 if (scope instanceof IREvalScript) {
-                    throwSyntaxError(nextNode, "Can't escape from eval with next");
+                    throwSyntaxError(nextNode.getLine(), "Can't escape from eval with next");
                 } else {
                     addInstr(new ReturnInstr(rv));
                 }
             } else {
-                throwSyntaxError(nextNode, "Invalid next");
+                throwSyntaxError(nextNode.getLine(), "Invalid next");
             }
         }
 
@@ -3434,7 +3406,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
         } else {
             if (scope instanceof IRClosure) {
                 if (scope instanceof IREvalScript) {
-                    throwSyntaxError(redoNode, "Can't escape from eval with redo");
+                    throwSyntaxError(redoNode.getLine(), "Can't escape from eval with redo");
                 } else {
                     addInstr(new ThreadPollInstr(true));
                     Label startLabel = new Label(scope.getId() + "_START", 0);
@@ -3442,7 +3414,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
                     addInstr(new JumpInstr(startLabel));
                 }
             } else {
-                throwSyntaxError(redoNode, "Invalid redo");
+                throwSyntaxError(redoNode.getLine(), "Invalid redo");
             }
         }
         return nil();
@@ -3639,7 +3611,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
         // Jump back to the innermost rescue block
         // We either find it, or we add code to throw a runtime exception
         if (activeRescueBlockStack.isEmpty()) {
-            throwSyntaxError(retryNode, "Invalid retry");
+            throwSyntaxError(retryNode.getLine(), "Invalid retry");
         } else {
             addInstr(new ThreadPollInstr(true));
             // Restore $! and jump back to the entry of the rescue block
@@ -3854,7 +3826,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
 
     public Operand buildYield(Variable result, YieldNode node) {
         if (result == null) result = temp();
-        if (scope instanceof IRScriptBody || scope instanceof IRModuleBody) throwSyntaxError(node, "Invalid yield");
+        if (scope instanceof IRScriptBody || scope instanceof IRModuleBody) throwSyntaxError(node.getLine(), "Invalid yield");
 
         boolean unwrap = true;
         Node argNode = node.getArgsNode();

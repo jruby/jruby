@@ -3,18 +3,22 @@ package org.jruby.ir.builder;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.ParseResult;
 import org.jruby.Ruby;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyNumeric;
 import org.jruby.RubySymbol;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRMethod;
+import org.jruby.ir.IRModuleBody;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.Tuple;
 import org.jruby.ir.instructions.AsStringInstr;
 import org.jruby.ir.instructions.AttrAssignInstr;
 import org.jruby.ir.instructions.BNEInstr;
 import org.jruby.ir.instructions.BuildSplatInstr;
+import org.jruby.ir.instructions.CallInstr;
 import org.jruby.ir.instructions.CheckArityInstr;
 import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.LabelInstr;
@@ -33,22 +37,31 @@ import org.jruby.ir.instructions.ReceiveRestArgInstr;
 import org.jruby.ir.instructions.ReifyClosureInstr;
 import org.jruby.ir.instructions.ReqdArgMultipleAsgnInstr;
 import org.jruby.ir.instructions.RestArgMultipleAsgnInstr;
+import org.jruby.ir.instructions.ReturnInstr;
 import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.instructions.SearchConstInstr;
 import org.jruby.ir.instructions.ToAryInstr;
+import org.jruby.ir.instructions.TraceInstr;
+import org.jruby.ir.instructions.YieldInstr;
+import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.CurrentScope;
 import org.jruby.ir.operands.Hash;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.MutableString;
+import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Regexp;
+import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.Symbol;
 import org.jruby.ir.operands.SymbolProc;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.runtime.ArgumentType;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.RubyEvent;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
@@ -61,8 +74,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.IS_HASH_EMPTY;
-import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.MERGE_KWARGS;
+import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
+import static org.jruby.runtime.ThreadContext.*;
 
 public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
     byte[] source = null;
@@ -82,121 +95,6 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
         return build(((YarpParseResult) result).getRoot().statements);
     }
 
-    @Override
-    Node whenBody(WhenNode arm) {
-        return arm.statements;
-    }
-
-    @Override
-    void buildWhenArgs(WhenNode whenNode, Operand testValue, Label bodyLabel, Set<IRubyObject> seenLiterals) {
-        Variable eqqResult = temp();
-        Node[] exprNodes = whenNode.conditions;
-
-        if (exprNodes.length == 1) {
-            if (exprNodes[0] instanceof SplatNode) {
-                buildWhenSplatValues(eqqResult, exprNodes[0], testValue, bodyLabel, seenLiterals);
-            } else {
-                buildWhenValue(eqqResult, testValue, bodyLabel, exprNodes[0], seenLiterals, false);
-            }
-        } else {
-            buildWhenValues(eqqResult, exprNodes, testValue, bodyLabel, seenLiterals);
-        }
-    }
-
-    private void buildWhenSplatValues(Variable eqqResult, Node node, Operand testValue, Label bodyLabel,
-                                      Set<IRubyObject> seenLiterals) {
-        // FIXME: could see errors since this is missing whatever is YARP args{cat,push}?
-        if (node instanceof StatementsNode) {
-            buildWhenValues(eqqResult, ((StatementsNode) node).body, testValue, bodyLabel, seenLiterals);
-        } else if (node instanceof SplatNode) {
-            buildWhenValue(eqqResult, testValue, bodyLabel, node, seenLiterals, true);
-        } else {
-            buildWhenValue(eqqResult, testValue, bodyLabel, node, seenLiterals, true);
-        }
-    }
-
-    // FIXME: needs to derive this walking down tree.
-    @Override
-    boolean containsVariableAssignment(Node node) {
-        return false;
-    }
-
-    @Override
-    Operand frozen_string(Node node) {
-        return buildStrRaw((StringNode) node);
-    }
-
-    @Override
-    Operand getContainerFromCPath(Node node) {
-
-        if (node instanceof ConstantReadNode) {
-            return findContainerModule();
-        } else if (node instanceof ConstantPathNode) {
-            ConstantPathNode path = (ConstantPathNode) node;
-
-            if (path.parent == null) { // ::Foo
-                return getManager().getObjectClass();
-            } else {
-                return build(path.parent);
-            }
-        }
-            // FIXME: We may not need these based on whether there are more possible nodes.
-        throw notCompilable("Unsupported node in module path", node);
-    }
-
-
-    private int getEndLine(ModuleNode node) {
-        return 0;
-    }
-
-    // FIXME: need to get line.
-    @Override
-    int getLine(Node node) {
-        return 0;
-    }
-
-    @Override
-    IRubyObject getWhenLiteral(Node node) {
-        Ruby runtime = scope.getManager().getRuntime();
-
-        if (node instanceof IntegerNode) {
-            // FIXME: determine fixnum/bignum
-            return null;
-        } else if (node instanceof FloatNode) {
-            return null;
-            // FIXME:
-            //return runtime.newFloat((((FloatNode) node)));
-        } else if (node instanceof ImaginaryNode) {
-            return null;
-            // FIXME:
-            //return RubyComplex.newComplexRaw(runtime, getWhenLiteral(((ComplexNode) node).getNumber()));
-        } else if (node instanceof RationalNode) {
-            return null;
-            // FIXME:
-            /*
-            return RubyRational.newRationalRaw(runtime,
-                    getWhenLiteral(((RationalNode) node).getDenominator()),
-                    getWhenLiteral(((RationalNode) node).getNumerator()));*/
-        } else if (node instanceof NilNode) {
-            return runtime.getNil();
-        } else if (node instanceof TrueNode) {
-            return runtime.getTrue();
-        } else if (node instanceof FalseNode) {
-            return runtime.getFalse();
-        } else if (node instanceof SymbolNode) {
-            return symbolFor(((SymbolNode) node).value);
-        } else if (node instanceof StringNode) {
-            return runtime.newString((byteListFrom(((StringNode) node).content)));
-        }
-
-        return null;
-    }
-
-    @Override
-    boolean isLiteralString(Node node) {
-        return node instanceof StringNode;
-    }
-
     Operand build(Node node) {
         return build(null, node);
     }
@@ -213,6 +111,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
             return buildAnd((AndNode) node);
         } else if (node instanceof ArrayNode) {
             return buildArray((ArrayNode) node);
+        } else if (node instanceof BlockNode) {
+            return buildBlock((BlockNode) node);
         } else if (node instanceof BlockArgumentNode) {
             return buildBlockArgument((BlockArgumentNode) node);
         } else if (node instanceof CallNode) {
@@ -287,6 +187,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
             return buildUntil((UntilNode) node);
         } else if (node instanceof WhileNode) {
             return buildWhile((WhileNode) node);
+        } else if (node instanceof YieldNode) {
+            return buildYield(result, (YieldNode) node);
         } else {
             throw new RuntimeException("Unhandled Node type: " + node);
         }
@@ -381,6 +283,68 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
         return value;
     }
 
+    // FIXME: Try and genericize this with AST
+    private Operand buildBlock(BlockNode node) {
+        // FIXME: This needs to be calculated
+        Signature signature = Signature.OPTIONAL;
+        IRClosure closure = new IRClosure(getManager(), scope, getLine(node), node.scope, signature, coverageMode);
+
+        // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
+        ((IRBuilderYARP) newIRBuilder(getManager(), closure, this, node)).buildIterInner(methodName, node);
+
+        methodName = null;
+
+        return new WrappedIRClosure(buildSelf(), closure);
+    }
+
+    // FIXME: Try and genericize this with AST
+    private InterpreterContext buildIterInner(RubySymbol methodName, BlockNode iterNode) {
+        this.methodName = methodName;
+
+        boolean forNode = false; // FIXME: For will be handled separately.
+        prepareClosureImplicitState();                                    // recv_self, add frame block, etc)
+
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            addInstr(new TraceInstr(RubyEvent.B_CALL, getCurrentModuleVariable(), getName(), getFileName(), scope.getLine() + 1));
+        }
+
+        if (!forNode) addCurrentModule();                                // %current_module
+        receiveBlockArgs(iterNode);
+        // for adds these after processing binding block args because and operations at that point happen relative
+        // to the previous scope.
+        if (forNode) addCurrentModule();                                 // %current_module
+
+        // conceptually abstract prologue scope instr creation so we can put this at the end of it instead of replicate it.
+        afterPrologueIndex = instructions.size() - 1;
+
+        // Build closure body and return the result of the closure
+        Operand closureRetVal = iterNode.statements == null ? nil() : build(iterNode.statements);
+
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            addInstr(new TraceInstr(RubyEvent.B_RETURN, getCurrentModuleVariable(), getName(), getFileName(), getEndLine(iterNode) + 1));
+        }
+
+        // can be U_NIL if the node is an if node with returns in both branches.
+        if (closureRetVal != U_NIL) addInstr(new ReturnInstr(closureRetVal));
+
+        preloadBlockImplicitClosure();
+
+        // Add break/return handling in case it is a lambda (we cannot know at parse time what it is).
+        // SSS FIXME: At a later time, see if we can optimize this and do this on demand.
+        if (!forNode) handleBreakAndReturnsInLambdas();
+
+        computeScopeFlagsFrom(instructions);
+        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
+    }
+
+    // FIXME: This is used for both for and blocks in AST but we do different path for for in YARP
+    public void receiveBlockArgs(BlockNode node) {
+        // FIXME: Impl
+        //((IRClosure) scope).setArgumentDescriptors(Helpers.argsNodeToArgumentDescriptors(((ArgsNode) args)));
+        // FIXME: Missing locals?  Not sure how we handle those but I would have thought with a scope?
+        if (node.parameters != null) buildParameters(node.parameters.parameters);
+    }
+
     private Operand buildBlockArgument(BlockArgumentNode node) {
         if (node.expression instanceof SymbolNode && !scope.maybeUsingRefinements()) {
             return new SymbolProc(symbolFor(node.expression));
@@ -401,9 +365,34 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
         // FIXME: pretend always . and not &. for now.
         // FIXME: at least type arguments to ArgumentsNode
         Operand[] args = buildArguments(node.arguments);
+        Operand block = setupCallClosure(node.block);
         // FIXME: Lots and lots of special logic in AST not here
+        return addResultInstr(CallInstr.create(scope, callType, result, symbol(new String(node.name)), receiver, args, block, 0));
+    }
 
-        return _call(result, callType, receiver, symbol(new String(node.name)), args);
+    protected Operand[] buildCallArgsArray(Node[] children, int[] flags) {
+        int numberOfArgs = children.length;
+        Operand[] builtArgs = new Operand[numberOfArgs];
+        boolean hasAssignments = containsVariableAssignment(children);
+
+        for (int i = 0; i < numberOfArgs; i++) {
+            // FIXME: here and possibly AST make isKeywordsHash() method.
+            if (i == numberOfArgs - 1 && children[i] instanceof HashNode && !isLiteralHash(children[i])) {
+                builtArgs[i] = buildCallKeywordArguments((HashNode) children[i], flags);
+            } else {
+                builtArgs[i] = buildWithOrder(children[i], hasAssignments);
+            }
+        }
+
+        return builtArgs;
+    }
+
+    protected Operand buildCallKeywordArguments(HashNode node, int[] flags) {
+        flags[0] |= CALL_KEYWORD;
+
+        if (hasOnlyRestKwargs(node)) return buildRestKeywordArgs(node, flags);
+
+        return buildHash(node);
     }
 
     private Operand buildCase(CaseNode node) {
@@ -485,7 +474,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
 
     private Operand buildHash(HashNode node) {
         List<KeyValuePair<Operand, Operand>> args = new ArrayList<>();
-        boolean hasAssignments = false; // FIXME: Missing variable assignments check
+        boolean hasAssignments = containsVariableAssignment(node);
         Variable hash = null;
         // Duplication checks happen when **{} are literals and not **h variable references.
         Operand duplicateCheck = fals();
@@ -496,7 +485,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
 
             if (pair instanceof AssocNode) {
                 keyOperand = build(((AssocNode) pair).key);
-                args.add(new KeyValuePair<>(keyOperand, build(((AssocNode) pair).value))); // FIXME: missing possible buildWithOrder
+                args.add(new KeyValuePair<>(keyOperand, buildWithOrder(((AssocNode) pair).value, hasAssignments)));
             } else {  // AssocHashNode
                 AssocSplatNode assoc = (AssocSplatNode) pair;
                 boolean isLiteral = assoc.value instanceof HashNode;
@@ -509,7 +498,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
                     addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args), duplicateCheck}));
                     args = new ArrayList<>();
                 }
-                Operand splat = build(assoc.value); // FIXME: buildWithOrder
+                Operand splat = buildWithOrder(assoc.value, hasAssignments);
                 addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, splat, duplicateCheck}));
             }
         }
@@ -684,6 +673,26 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
         return new Regexp(content, options);
     }
 
+    private Operand buildRestKeywordArgs(HashNode keywordArgs, int[] flags) {
+        flags[0] |= CALL_KEYWORD_REST;
+        Node[] pairs = keywordArgs.elements;
+        boolean containsVariableAssignment = containsVariableAssignment(keywordArgs);
+
+        if (pairs.length == 1) { // Only a single rest arg here.  Do not bother to merge.
+            Operand splat = buildWithOrder(pairs[0], containsVariableAssignment);
+
+            return addResultInstr(new RuntimeHelperCall(temp(), HASH_CHECK, new Operand[] { splat }));
+        }
+
+        Variable splatValue = copy(new Hash(new ArrayList<>()));
+        for (int i = 0; i < pairs.length; i++) {
+            Operand splat = buildWithOrder(pairs[i], containsVariableAssignment);
+            addInstr(new RuntimeHelperCall(splatValue, MERGE_KWARGS, new Operand[] { splatValue, splat, fals() }));
+        }
+
+        return splatValue;
+    }
+
     private Operand buildSplat(SplatNode node) {
         return buildSplat(node, build(node.expression));
     }
@@ -714,6 +723,18 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
     private Operand buildUntil(UntilNode node) {
         boolean evaluateAtStart = node.keyword.type == TokenType.KEYWORD_UNTIL;
         return buildConditionalLoop(node.predicate, node.statements, false, evaluateAtStart);
+    }
+
+    private void buildWhenSplatValues(Variable eqqResult, Node node, Operand testValue, Label bodyLabel,
+                                      Set<IRubyObject> seenLiterals) {
+        // FIXME: could see errors since this is missing whatever is YARP args{cat,push}?
+        if (node instanceof StatementsNode) {
+            buildWhenValues(eqqResult, ((StatementsNode) node).body, testValue, bodyLabel, seenLiterals);
+        } else if (node instanceof SplatNode) {
+            buildWhenValue(eqqResult, testValue, bodyLabel, node, seenLiterals, true);
+        } else {
+            buildWhenValue(eqqResult, testValue, bodyLabel, node, seenLiterals, true);
+        }
     }
 
     private Operand buildWhile(WhileNode node) {
@@ -953,8 +974,167 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
     }
 
     @Override
+    void buildWhenArgs(WhenNode whenNode, Operand testValue, Label bodyLabel, Set<IRubyObject> seenLiterals) {
+        Variable eqqResult = temp();
+        Node[] exprNodes = whenNode.conditions;
+
+        if (exprNodes.length == 1) {
+            if (exprNodes[0] instanceof SplatNode) {
+                buildWhenSplatValues(eqqResult, exprNodes[0], testValue, bodyLabel, seenLiterals);
+            } else {
+                buildWhenValue(eqqResult, testValue, bodyLabel, exprNodes[0], seenLiterals, false);
+            }
+        } else {
+            buildWhenValues(eqqResult, exprNodes, testValue, bodyLabel, seenLiterals);
+        }
+    }
+
+    Operand buildYield(Variable result, YieldNode node) {
+        if (result == null) result = temp();
+        if (scope instanceof IRScriptBody || scope instanceof IRModuleBody) throwSyntaxError(getLine(node), "Invalid yield");
+
+        boolean unwrap = true;
+        Node[] args = node.arguments.arguments;
+        // Get rid of one level of array wrapping
+        if (args != null && args.length == 1) {
+            // We should not unwrap if it is a keyword argument.
+            if (!(args[0] instanceof HashNode) || ((HashNode) args[0]).opening != null) {
+                unwrap = false;
+            }
+        }
+
+        int[] flags = new int[] { 0 };
+        Operand value = buildYieldArgs(args, flags);
+
+        addInstr(new YieldInstr(result, getYieldClosureVariable(), value, flags[0], unwrap));
+
+        return result;
+    }
+
+    Operand buildYieldArgs(Node[] args, int[] flags) {
+        if (args == null) return UndefinedValue.UNDEFINED;
+
+        if (args.length == 1) {
+            if (args[0] instanceof SplatNode) {
+                flags[0] |= CALL_SPLATS;
+                return new Splat(addResultInstr(new BuildSplatInstr(temp(), build(args[0]), false)));
+            }
+
+            return build(args[0]);
+        }
+
+        return new Array(buildCallArgsArray(args, flags));
+    }
+
+    // FIXME: needs to derive this walking down tree.
+    @Override
+    boolean containsVariableAssignment(Node node) {
+        return false;
+    }
+
+    // FIXME: needs to derive this walking down tree.
+    boolean containsVariableAssignment(Node[] nodes) {
+        for (int i = 0; i < nodes.length; i++) {
+            if (containsVariableAssignment(nodes[i])) return true;
+        }
+        return false;
+    }
+
+    @Override
+    Operand frozen_string(Node node) {
+        return buildStrRaw((StringNode) node);
+    }
+
+    @Override
+    Operand getContainerFromCPath(Node node) {
+
+        if (node instanceof ConstantReadNode) {
+            return findContainerModule();
+        } else if (node instanceof ConstantPathNode) {
+            ConstantPathNode path = (ConstantPathNode) node;
+
+            if (path.parent == null) { // ::Foo
+                return getManager().getObjectClass();
+            } else {
+                return build(path.parent);
+            }
+        }
+        // FIXME: We may not need these based on whether there are more possible nodes.
+        throw notCompilable("Unsupported node in module path", node);
+    }
+
+
+    private int getEndLine(Node node) {
+        return 0;
+    }
+
+    // FIXME: need to get line.
+    @Override
+    int getLine(Node node) {
+        return 0;
+    }
+
+    @Override
+    IRubyObject getWhenLiteral(Node node) {
+        Ruby runtime = scope.getManager().getRuntime();
+
+        if (node instanceof IntegerNode) {
+            // FIXME: determine fixnum/bignum
+            return null;
+        } else if (node instanceof FloatNode) {
+            return null;
+            // FIXME:
+            //return runtime.newFloat((((FloatNode) node)));
+        } else if (node instanceof ImaginaryNode) {
+            return null;
+            // FIXME:
+            //return RubyComplex.newComplexRaw(runtime, getWhenLiteral(((ComplexNode) node).getNumber()));
+        } else if (node instanceof RationalNode) {
+            return null;
+            // FIXME:
+            /*
+            return RubyRational.newRationalRaw(runtime,
+                    getWhenLiteral(((RationalNode) node).getDenominator()),
+                    getWhenLiteral(((RationalNode) node).getNumerator()));*/
+        } else if (node instanceof NilNode) {
+            return runtime.getNil();
+        } else if (node instanceof TrueNode) {
+            return runtime.getTrue();
+        } else if (node instanceof FalseNode) {
+            return runtime.getFalse();
+        } else if (node instanceof SymbolNode) {
+            return symbolFor(((SymbolNode) node).value);
+        } else if (node instanceof StringNode) {
+            return runtime.newString((byteListFrom(((StringNode) node).content)));
+        }
+
+        return null;
+    }
+
+    @Override
+    boolean isLiteralString(Node node) {
+        return node instanceof StringNode;
+    }
+
+    boolean isLiteralHash(Node node) {
+        return node instanceof HashNode && ((HashNode) node).opening != null;
+    }
+
+    @Override
     public void receiveMethodArgs(DefNode defNode) {
         buildParameters(defNode.parameters);
+    }
+
+    private Operand setupCallClosure(Node node) {
+        if (node == null) return NullBlock.INSTANCE;
+
+        if (node instanceof BlockNode) {
+            return build(node);
+        } else if (node instanceof BlockArgumentNode) {
+            return buildBlockArgument((BlockArgumentNode) node);
+        }
+
+        throw notCompilable("Encountered unexpected block node", node);
     }
 
     private RubySymbol symbolFor(Token token) {
@@ -1015,5 +1195,10 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
         }
 
         return true;
+    }
+
+    @Override
+    Node whenBody(WhenNode arm) {
+        return arm.statements;
     }
 }

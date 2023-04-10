@@ -1145,10 +1145,12 @@ public abstract class Nodes {
     //     { a => b }
     //     ^^^^^^^^^^
     public static final class HashNode extends Node {
+        public final Token opening; // optional
         public final Node[] elements;
 
-        public HashNode(Node[] elements, int startOffset, int endOffset) {
+        public HashNode(Token opening, Node[] elements, int startOffset, int endOffset) {
             super(startOffset, endOffset);
+            this.opening =  opening;
             this.elements =  elements;
         }
 

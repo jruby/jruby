@@ -248,7 +248,7 @@ public class Loader {
         return new Nodes.GlobalVariableWriteNode(loadToken(), loadOptionalNode(), startOffset, endOffset);
     }
     private Nodes.Node loadHashNode(int startOffset, int endOffset) {
-        return new Nodes.HashNode(loadNodes(), startOffset, endOffset);
+        return new Nodes.HashNode(loadOptionalToken(), loadNodes(), startOffset, endOffset);
     }
     private Nodes.Node loadHashPatternNode(int startOffset, int endOffset) {
         return new Nodes.HashPatternNode(loadOptionalNode(), loadNodes(), loadOptionalNode(), startOffset, endOffset);
