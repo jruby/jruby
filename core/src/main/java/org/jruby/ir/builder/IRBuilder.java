@@ -31,6 +31,7 @@ import org.jruby.ir.instructions.CallInstr;
 import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.DefineClassInstr;
 import org.jruby.ir.instructions.DefineInstanceMethodInstr;
+import org.jruby.ir.instructions.DefineMetaClassInstr;
 import org.jruby.ir.instructions.DefineModuleInstr;
 import org.jruby.ir.instructions.EQQInstr;
 import org.jruby.ir.instructions.ExceptionRegionEndMarkerInstr;
@@ -47,6 +48,7 @@ import org.jruby.ir.instructions.LoadBlockImplicitClosureInstr;
 import org.jruby.ir.instructions.LoadFrameClosureInstr;
 import org.jruby.ir.instructions.LoadImplicitClosureInstr;
 import org.jruby.ir.instructions.NopInstr;
+import org.jruby.ir.instructions.ProcessModuleBodyInstr;
 import org.jruby.ir.instructions.PutClassVariableInstr;
 import org.jruby.ir.instructions.PutConstInstr;
 import org.jruby.ir.instructions.PutFieldInstr;
@@ -1274,6 +1276,17 @@ public abstract class IRBuilder<U, V, W> {
         addInstr(new LabelInstr(endOfExprLabel));
 
         return result;
+    }
+
+    public Operand buildSClass(U receiverNode, U bodyNode, StaticScope scope, int line, int endLine) {
+        Operand receiver = build(receiverNode);
+        IRModuleBody body = new IRMetaClassBody(getManager(), this.scope, getManager().getMetaClassName().getBytes(), line, scope);
+        Variable sClassVar = addResultInstr(new DefineMetaClassInstr(temp(), receiver, body));
+
+        // sclass bodies inherit the block of their containing method
+        Variable bodyResult = addResultInstr(new ProcessModuleBodyInstr(temp(), sClassVar, getYieldClosureVariable()));
+        newIRBuilder(getManager(), body, this, bodyNode).buildModuleOrClassBody(bodyNode, line, endLine);
+        return bodyResult;
     }
 
     public Variable buildSelf() {

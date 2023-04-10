@@ -1596,16 +1596,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
     // class Foo; class << self; end; end
     // Here, the class << self declaration is in Foo's body.
     // Foo is the class in whose context this is being defined.
-    public Operand buildSClass(SClassNode sclassNode) {
-        Operand receiver = build(sclassNode.getReceiverNode());
-        // FIXME: metaclass name should be a bytelist
-        IRModuleBody body = new IRMetaClassBody(getManager(), scope, getManager().getMetaClassName().getBytes(), sclassNode.getLine(), sclassNode.getScope());
-        Variable sClassVar = addResultInstr(new DefineMetaClassInstr(temp(), receiver, body));
-
-        // sclass bodies inherit the block of their containing method
-        Variable processBodyResult = addResultInstr(new ProcessModuleBodyInstr(temp(), sClassVar, getYieldClosureVariable()));
-        newIRBuilder(getManager(), body).buildModuleOrClassBody(sclassNode.getBodyNode(), sclassNode.getLine(), sclassNode.getEndLine());
-        return processBodyResult;
+    public Operand buildSClass(SClassNode node) {
+        return buildSClass(node.getReceiverNode(), node.getBodyNode(), node.getScope(), node.getLine(), node.getEndLine());
     }
 
     public Operand buildClassVar(Variable result, ClassVarNode node) {

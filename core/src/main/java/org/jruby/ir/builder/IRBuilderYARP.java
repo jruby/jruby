@@ -171,6 +171,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
             return buildProgram((ProgramNode) node);
         } else if (node instanceof RegularExpressionNode) {
             return buildRegularExpression((RegularExpressionNode) node);
+        } else if (node instanceof SingletonClassNode) {
+            return buildSingletonClass((SingletonClassNode) node);
         } else if (node instanceof SplatNode) {
             return buildSplat((SplatNode) node);
         } else if (node instanceof StatementsNode) {
@@ -691,6 +693,10 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
         }
 
         return splatValue;
+    }
+
+    private Operand buildSingletonClass(SingletonClassNode node) {
+        return buildSClass(node.expression, node.statements, node.scope, getLine(node), getEndLine(node));
     }
 
     private Operand buildSplat(SplatNode node) {
