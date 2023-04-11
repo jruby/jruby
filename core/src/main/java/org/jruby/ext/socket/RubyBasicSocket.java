@@ -55,6 +55,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.platform.Platform;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -207,8 +208,7 @@ public class RubyBasicSocket extends RubyIO {
                 str = null; flags = null;
                 break;
             default:
-                length = context.nil;
-                str = null; flags = null;
+                throw context.runtime.newArgumentError(args.length, 1, 3);
         }
 
         return recv(context, length, str, flags);
@@ -251,7 +251,8 @@ public class RubyBasicSocket extends RubyIO {
 
     @JRubyMethod(required = 1, optional = 3)
     public IRubyObject recv_nonblock(ThreadContext context, IRubyObject[] args) {
-        int argc = args.length;
+        int argc = Arity.checkArgumentCount(context, args, 1, 4);
+
         boolean exception = true;
         Ruby runtime = context.runtime;
         IRubyObject opts = ArgsUtil.getOptionsArg(runtime, args);
@@ -616,9 +617,11 @@ public class RubyBasicSocket extends RubyIO {
 
     @JRubyMethod(optional = 1)
     public IRubyObject shutdown(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 0, 1);
+
         int how = 2;
 
-        if (args.length > 0) {
+        if (argc > 0) {
             String howString = null;
             if (args[0] instanceof RubyString || args[0] instanceof RubySymbol) {
                 howString = args[0].asJavaString();

@@ -872,10 +872,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "pending_interrupt?", optional = 1)
     public IRubyObject pending_interrupt_p(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 0, 1);
+
         if (pendingInterruptQueue.isEmpty()) {
             return context.fals;
         }
-        if (args.length == 1) {
+        if (argc == 1) {
             IRubyObject err = args[0];
             if (!(err instanceof RubyModule)) {
                 throw context.runtime.newTypeError("class or module required for rescue clause");
@@ -1220,12 +1222,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(optional = 1)
     public IRubyObject join(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 0, 1);
+
         Ruby runtime = context.runtime;
         long timeoutMillis = Long.MAX_VALUE;
 
-        if (args.length > 0 && !args[0].isNil()) {
-            if (args.length > 1) {
-                throw runtime.newArgumentError(args.length, 1);
+        if (argc > 0 && !args[0].isNil()) {
+            if (argc > 1) {
+                throw runtime.newArgumentError(argc, 1);
             }
             // MRI behavior: value given in seconds; converted to Float; less
             // than or equal to zero returns immediately; returns nil
@@ -1481,6 +1485,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(optional = 3)
     public IRubyObject raise(ThreadContext context, IRubyObject[] args, Block block) {
+        Arity.checkArgumentCount(context, args, 0, 3);
+
         return genericRaise(context, context.getThread(), args);
     }
 
@@ -1512,7 +1518,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     private IRubyObject genericRaise(ThreadContext context, RubyThread currentThread, IRubyObject... args) {
         if (!isAlive()) return context.nil;
-
 
         pendingInterruptEnqueue(prepareRaiseException(context, args));
         interrupt();

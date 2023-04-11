@@ -2315,7 +2315,9 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod(name = "any?", optional = 1)
     public IRubyObject any_p(ThreadContext context, IRubyObject[] args, Block block) {
-        IRubyObject pattern = args.length > 0 ? args[0] : null;
+        int argc = Arity.checkArgumentCount(context, args, 0, 1);
+
+        IRubyObject pattern = argc > 0 ? args[0] : null;
         boolean patternGiven = pattern != null;
 
         if (isEmpty()) return context.fals;
@@ -2431,8 +2433,10 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod(name = "dig", required = 1, rest = true)
     public IRubyObject dig(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 1, -1);
+
         final IRubyObject val = op_aref(context, args[0] );
-        return args.length == 1 ? val : RubyObject.dig(context, val, args, 1);
+        return argc == 1 ? val : RubyObject.dig(context, val, args, 1);
     }
 
     @JRubyMethod

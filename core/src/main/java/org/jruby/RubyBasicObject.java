@@ -33,6 +33,7 @@ import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.BasicObjectSites;
 import org.jruby.runtime.callsite.CacheEntry;
@@ -1676,27 +1677,28 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
     @JRubyMethod(name = "__send__", required = 1, rest = true, omit = true, keywords = true)
     public IRubyObject send(ThreadContext context, IRubyObject[] args, Block block) {
+        int argc = Arity.checkArgumentCount(context, args, 1, -1);
         int callInfo = context.callInfo;
 
         // FIXME: Likely all methods which can pass the last value to another ruby call must do this.
         // MRI: from vm_args.setup_parameters_complex()
-        if (args.length > 0) {
+        if (argc > 0) {
             if ((callInfo & CALL_SPLATS) != 0) {
-                IRubyObject last = args[args.length - 1];
+                IRubyObject last = args[argc - 1];
                 if (last instanceof RubyHash && ((RubyHash) last).isRuby2KeywordHash()) {
-                    args[args.length - 1] = ((RubyHash) last).dupFast(context);
-                    ((RubyHash) args[args.length - 1]).setRuby2KeywordHash(false);
+                    args[argc - 1] = ((RubyHash) last).dupFast(context);
+                    ((RubyHash) args[argc - 1]).setRuby2KeywordHash(false);
                     context.callInfo |= (CALL_KEYWORD | CALL_KEYWORD_REST);
                 }
-            } else if (args.length > 1) {
-              args[args.length - 1] = dupIfKeywordRestAtCallsite(context, args[args.length - 1]);
+            } else if (argc > 1) {
+              args[argc - 1] = dupIfKeywordRestAtCallsite(context, args[argc - 1]);
             }
         }
         String name = RubySymbol.checkID(args[0]);
 
         StaticScope staticScope = context.getCurrentStaticScope();
 
-        final int length = args.length - 1;
+        final int length = argc - 1;
         args = ( length == 0 ) ? IRubyObject.NULL_ARRAY : ArraySupport.newCopy(args, 1, length);
         return getMetaClass().finvokeWithRefinements(context, this, staticScope, name, args, block);
     }

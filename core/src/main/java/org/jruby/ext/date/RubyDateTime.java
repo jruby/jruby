@@ -48,6 +48,7 @@ import org.jruby.RubyString;
 import org.jruby.RubyTime;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -174,30 +175,29 @@ public class RubyDateTime extends RubyDate {
     public static RubyDateTime civil(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         // year=-4712, month=1, mday=1,
         //  hour=0, minute=0, second=0, offset=0, start=Date::ITALY
-
-        final int len = args.length;
+        int argc = Arity.checkArgumentCount(context, args, 0, 8);
 
         int hour = 0, minute = 0, second = 0; long millis = 0; long subMillisNum = 0, subMillisDen = 1;
         int off = 0; long sg = ITALY;
 
-        if (len == 8) sg = val2sg(context, args[7]);
-        if (len >= 7) off = val2off(context, args[6]);
+        if (argc == 8) sg = val2sg(context, args[7]);
+        if (argc >= 7) off = val2off(context, args[6]);
 
         final int year = (sg > 0) ? getYear(args[0]) : args[0].convertToInteger().getIntValue();
         final int month = getMonth(args[1]);
         final long[] rest = new long[] { 0, 1 };
         final int day = (int) getDay(context, args[2], rest);
 
-        if (len >= 4 || rest[0] != 0) {
-            hour = getHour(context, len >= 4 ? args[3] : RubyFixnum.zero(context.runtime), rest);
+        if (argc >= 4 || rest[0] != 0) {
+            hour = getHour(context, argc >= 4 ? args[3] : RubyFixnum.zero(context.runtime), rest);
         }
 
-        if (len >= 5 || rest[0] != 0) {
-            minute = getMinute(context, len >= 5 ? args[4] : RubyFixnum.zero(context.runtime), rest);
+        if (argc >= 5 || rest[0] != 0) {
+            minute = getMinute(context, argc >= 5 ? args[4] : RubyFixnum.zero(context.runtime), rest);
         }
 
-        if (len >= 6 || rest[0] != 0) {
-            IRubyObject sec = len >= 6 ? args[5] : RubyFixnum.zero(context.runtime);
+        if (argc >= 6 || rest[0] != 0) {
+            IRubyObject sec = argc >= 6 ? args[5] : RubyFixnum.zero(context.runtime);
             second = getSecond(context, sec, rest);
             final long r0 = rest[0], r1 = rest[1];
             if (r0 != 0) {
@@ -392,15 +392,16 @@ public class RubyDateTime extends RubyDate {
 
     @JRubyMethod(name = "jd", meta = true, optional = 6)
     public static RubyDateTime jd(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        final int len = args.length;
+        int argc = Arity.checkArgumentCount(context, args, 0, 6);
+
         final RubyFixnum zero = RubyFixnum.zero(context.runtime);
 
         final long[] rest = new long[] { 0, 1 };
         final long jd = getDay(context, args[0], rest);
 
-        final IRubyObject hour = (len > 1) ? args[1] : zero;
-        final IRubyObject min = (len > 2) ? args[2] : zero;
-        final IRubyObject sec = (len > 3) ? args[3] : zero;
+        final IRubyObject hour = (argc > 1) ? args[1] : zero;
+        final IRubyObject min = (argc > 2) ? args[2] : zero;
+        final IRubyObject sec = (argc > 3) ? args[3] : zero;
 
         final RubyNumeric fr;
         if (hour != zero || min != zero || sec != zero) {
@@ -413,8 +414,8 @@ public class RubyDateTime extends RubyDate {
         }
 
         int off = 0; long sg = ITALY;
-        if (len > 4) off = val2off(context, args[4]);
-        if (len > 5) sg = val2sg(context, args[5]);
+        if (argc > 4) off = val2off(context, args[4]);
+        if (argc > 5) sg = val2sg(context, args[5]);
 
         RubyNumeric ajd = jd_to_ajd(context, jd, fr, off);
         return new RubyDateTime(context, (RubyClass) self, ajd, rest, off, sg);

@@ -399,8 +399,10 @@ public class RubyComplex extends RubyNumeric {
      */
     @JRubyMethod(name = "polar", meta = true, required = 1, optional = 1)
     public static IRubyObject polar(ThreadContext context, IRubyObject clazz, IRubyObject... args) {
+        int argc = Arity.checkArgumentCount(context, args, 1, 2);
+
         IRubyObject abs = args[0];
-        IRubyObject arg = args.length < 2 ? RubyFixnum.zero(context.runtime) : args[1];
+        IRubyObject arg = argc < 2 ? RubyFixnum.zero(context.runtime) : args[1];
 
         realCheck(context, abs, true);
         realCheck(context, arg, true);

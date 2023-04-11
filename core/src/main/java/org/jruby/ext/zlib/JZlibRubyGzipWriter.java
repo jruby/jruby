@@ -43,6 +43,7 @@ import org.jruby.RubyString;
 import org.jruby.RubyTime;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -79,6 +80,8 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
 
     @JRubyMethod(name = "open", required = 1, optional = 3, meta = true)
     public static IRubyObject open19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        int argc = Arity.checkArgumentCount(context, args, 1, 4);
+
         Ruby runtime = recv.getRuntime();
         
         args[0] = Helpers.invoke(context, runtime.getFile(), "open", args[0], runtime.newString("wb"));
@@ -290,9 +293,11 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
 
     @JRubyMethod(name = "flush", optional = 1)
     public IRubyObject flush(IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(getRuntime(), args, 0, 1);
+
         int flush = JZlib.Z_SYNC_FLUSH;
         
-        if (args.length > 0 && !args[0].isNil()) {
+        if (argc > 0 && !args[0].isNil()) {
             flush = RubyNumeric.fix2int(args[0]);
         }
         

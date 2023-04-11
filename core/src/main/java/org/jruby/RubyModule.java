@@ -2957,6 +2957,8 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(required = 1, rest = true, visibility = PRIVATE)
     public IRubyObject ruby2_keywords(ThreadContext context, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 1, -1);
+
         Ruby runtime = context.runtime;
 
         checkFrozen();
@@ -3173,6 +3175,8 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "instance_methods", optional = 1)
     public RubyArray instance_methods19(IRubyObject[] args) {
+        Arity.checkArgumentCount(getRuntime(), args, 0, 1);
+
         return instanceMethods(args, PRIVATE, false, true);
     }
 
@@ -3182,6 +3186,8 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "public_instance_methods", optional = 1)
     public RubyArray public_instance_methods19(IRubyObject[] args) {
+        Arity.checkArgumentCount(getRuntime(), args, 0, 1);
+
         return instanceMethods(args, PUBLIC, false, false);
     }
 
@@ -3204,6 +3210,8 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "protected_instance_methods", optional = 1)
     public RubyArray protected_instance_methods(IRubyObject[] args) {
+        Arity.checkArgumentCount(getRuntime(), args, 0, 1);
+
         return instanceMethods(args, PROTECTED, false, false);
     }
 
@@ -3217,6 +3225,8 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "private_instance_methods", optional = 1)
     public RubyArray private_instance_methods(IRubyObject[] args) {
+        Arity.checkArgumentCount(getRuntime(), args, 0, 1);
+
         return instanceMethods(args, PRIVATE, false, false);
     }
 
@@ -3282,17 +3292,21 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "include", required = 1, rest = true)
     public RubyModule include(IRubyObject[] modules) {
+        Ruby runtime = getRuntime();
+
+        int argc = Arity.checkArgumentCount(runtime, modules, 1, -1);
+
         if (this.isRefinement()) {
-            getRuntime().getWarnings().warnDeprecated(ID.DEPRECATED_METHOD, "deprecated method to be removed: Refinement#include");
+            runtime.getWarnings().warnDeprecated(ID.DEPRECATED_METHOD, "deprecated method to be removed: Refinement#include");
         }
 
         for (IRubyObject module: modules) {
-            if (!module.isModule()) throw getRuntime().newTypeError(module, getRuntime().getModule());
+            if (!module.isModule()) throw runtime.newTypeError(module, runtime.getModule());
         }
 
-        ThreadContext context = getRuntime().getCurrentContext();
+        ThreadContext context = runtime.getCurrentContext();
 
-        for (int i = modules.length - 1; i >= 0; i--) {
+        for (int i = argc - 1; i >= 0; i--) {
             IRubyObject module = modules[i];
             module.callMethod(context, "append_features", this);
             module.callMethod(context, "included", this);
@@ -4154,8 +4168,10 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "const_get", required = 1, optional = 1)
     public IRubyObject const_get(ThreadContext context, IRubyObject... args) {
+        int argc = Arity.checkArgumentCount(context, args, 1, 2);
+
         final Ruby runtime = context.runtime;
-        boolean inherit = args.length == 1 || ( ! args[1].isNil() && args[1].isTrue() );
+        boolean inherit = argc == 1 || ( ! args[1].isNil() && args[1].isTrue() );
 
         final IRubyObject symbol = args[0];
         RubySymbol fullName = TypeConverter.checkID(symbol);
@@ -4197,8 +4213,10 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(required = 1, optional = 1)
     public IRubyObject const_source_location(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 1, 2);
+
         final Ruby runtime = context.runtime;
-        boolean inherit = args.length == 1 || ( ! args[1].isNil() && args[1].isTrue() );
+        boolean inherit = argc == 1 || ( ! args[1].isNil() && args[1].isTrue() );
 
         final IRubyObject symbol = args[0];
         String name;
@@ -4424,6 +4442,8 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(required = 1, rest = true)
     public IRubyObject private_constant(ThreadContext context, IRubyObject[] rubyNames) {
+        Arity.checkArgumentCount(context, rubyNames, 1, -1);
+
         for (IRubyObject rubyName : rubyNames) {
             private_constant(context, rubyName);
         }
@@ -4443,6 +4463,8 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(required = 1, rest = true)
     public IRubyObject public_constant(ThreadContext context, IRubyObject[] rubyNames) {
+        Arity.checkArgumentCount(context, rubyNames, 1, -1);
+
         for (IRubyObject rubyName : rubyNames) {
             public_constant(context, rubyName);
         }
@@ -4451,18 +4473,20 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "prepend", required = 1, rest = true)
     public IRubyObject prepend(ThreadContext context, IRubyObject[] modules) {
+        int argc = Arity.checkArgumentCount(context, modules, 1, -1);
+
         if (this.isRefinement()) {
             context.runtime.getWarnings().warnDeprecated(ID.DEPRECATED_METHOD, "deprecated method to be removed: Refinement#prepend");
         }
 
         // MRI checks all types first:
-        for (int i = modules.length; --i >= 0; ) {
+        for (int i = argc; --i >= 0; ) {
             IRubyObject obj = modules[i];
             if (!obj.isModule()) {
                 throw context.runtime.newTypeError(obj, context.runtime.getModule());
             }
         }
-        for (int i = modules.length - 1; i >= 0; i--) {
+        for (int i = argc - 1; i >= 0; i--) {
             modules[i].callMethod(context, "prepend_features", this);
             modules[i].callMethod(context, "prepended", this);
         }
@@ -5941,6 +5965,8 @@ public class RubyModule extends RubyObject {
     public static class RefinementMethods {
         @JRubyMethod(required = 1, rest = true, visibility = PRIVATE)
         public static IRubyObject import_methods(ThreadContext context, IRubyObject self, IRubyObject[] modules) {
+            Arity.checkArgumentCount(context, modules, 1, -1);
+
             Ruby runtime = context.runtime;
 
             RubyModule selfModule = (RubyModule) self;

@@ -37,6 +37,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.proxy.JavaProxyClass;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -69,15 +70,17 @@ public abstract class ClassJavaAddons {
     public static IRubyObject become_java(ThreadContext context, final IRubyObject self, final IRubyObject[] args) {
         final RubyClass klass = (RubyClass) self;
 
+        int argc = Arity.checkArgumentCount(context, args, 1, 2);
+
         String dumpDir = null; boolean useChildLoader = true;
         if ( args[0] instanceof RubyString ) {
             dumpDir = args[0].asJavaString();
-            if ( args.length > 1 ) useChildLoader = args[1].isTrue();
+            if ( argc > 1 ) useChildLoader = args[1].isTrue();
         }
         else {
             useChildLoader = args[0].isTrue();
             // ~ compatibility with previous (.rb) args handling :
-            if ( args.length > 1 && args[1] instanceof RubyString ) {
+            if ( argc > 1 && args[1] instanceof RubyString ) {
                 dumpDir = args[1].asJavaString();
             }
         }

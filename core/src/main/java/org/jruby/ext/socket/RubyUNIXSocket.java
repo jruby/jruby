@@ -48,6 +48,7 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -122,12 +123,14 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
     @JRubyMethod(name = "recvfrom", required = 1, optional = 1)
     public IRubyObject recvfrom(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 1, 2);
+
         Ruby runtime = context.runtime;
 
         IRubyObject _length = args[0];
         IRubyObject _flags;
 
-        if(args.length == 2) {
+        if(argc == 2) {
             _flags = args[1];
         } else {
             _flags = runtime.getNil();
@@ -205,16 +208,18 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
     @JRubyMethod(optional = 2)
     public IRubyObject recv_io(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 0, 2);
+
         final Ruby runtime = context.runtime;
         final POSIX posix = runtime.getPosix();
         OpenFile fptr = getOpenFileChecked();
 
         IRubyObject klass = runtime.getIO();
         IRubyObject mode = runtime.getNil();
-        if (args.length > 0) {
+        if (argc > 0) {
             klass = args[0];
         }
-        if (args.length > 1) {
+        if (argc > 1) {
             mode = args[1];
         }
 
@@ -262,6 +267,8 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
     @JRubyMethod(name = {"socketpair", "pair"}, optional = 2, meta = true)
     public static IRubyObject socketpair(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 0, 2);
+
         final Ruby runtime = context.runtime;
 
         // TODO: type and protocol

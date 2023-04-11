@@ -64,11 +64,12 @@ public class RubySignalException extends RubyException {
 
     @JRubyMethod(optional = 2, visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
+        int argc = Arity.checkArgumentCount(context, args, 0, 2);
+
         final Ruby runtime = context.runtime;
         int argnum = 1;
         IRubyObject sig = context.nil;
         long _signo;
-        int argc = args.length;
 
         if (argc > 0) {
             sig = TypeConverter.checkToInteger(runtime, args[0], "to_int");

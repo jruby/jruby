@@ -103,6 +103,8 @@ public class CallbackInfo extends Type {
     public static final IRubyObject newCallbackInfo(ThreadContext context, IRubyObject klass,
             IRubyObject[] args)
     {
+        int argc = Arity.checkArgumentCount(context, args, 2, 3);
+
         IRubyObject returnType = args[0], paramTypes = args[1];
 
         if (!(returnType instanceof Type)) {
@@ -110,13 +112,13 @@ public class CallbackInfo extends Type {
                     + returnType.getMetaClass().getName() + " (expected FFI::Type)");
         }
 
-        if (returnType instanceof MappedType) {
-            returnType = ((MappedType) returnType).getRealType();
-        }
-
         if (!(paramTypes instanceof RubyArray)) {
             throw context.runtime.newTypeError("wrong argument type "
                     + paramTypes.getMetaClass().getName() + " (expected Array)");
+        }
+
+        if (returnType instanceof MappedType) {
+            returnType = ((MappedType) returnType).getRealType();
         }
 
         Type[] nativeParamTypes = new Type[((RubyArray)paramTypes).size()];
@@ -130,7 +132,7 @@ public class CallbackInfo extends Type {
         }
 
         boolean stdcall = false;
-        if (args.length > 2) {
+        if (argc > 2) {
             if (!(args[2] instanceof RubyHash)) {
                 throw context.runtime.newTypeError("wrong argument type "
                         + args[2].getMetaClass().getName() + " (expected Enums or Hash)");

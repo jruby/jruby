@@ -40,6 +40,7 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
@@ -277,7 +278,9 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
     @JRubyMethod(required = 1, optional = 1)
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        if (args.length > 1) {
+        int argc = Arity.checkArgumentCount(context, args, 1, 2);
+
+        if (argc > 1) {
             IRubyObject opts = TypeConverter.checkHashType(context.runtime, args[1]);
             IRubyObject ret = ArgsUtil.extractKeywordArg(context, (RubyHash) opts, "category");
             if (ret.isNil()) {

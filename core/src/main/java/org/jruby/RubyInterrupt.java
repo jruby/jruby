@@ -67,9 +67,9 @@ public class RubyInterrupt extends RubySignalException {
     @JRubyMethod(optional = 1, visibility = PRIVATE)
     @Override
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
-        final Ruby runtime = context.runtime;
+        Arity.checkArgumentCount(context, args, 0, 1);
 
-        Arity.checkArgumentCount(runtime, args, 0, 1);
+        final Ruby runtime = context.runtime;
 
         IRubyObject signo = runtime.newFixnum(SIGINT);
 

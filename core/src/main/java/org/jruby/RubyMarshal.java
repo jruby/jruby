@@ -72,13 +72,15 @@ public class RubyMarshal {
 
     @JRubyMethod(required = 1, optional = 2, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject dump(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
+        int argc = Arity.checkArgumentCount(context, args, 1, 3);
+
         final Ruby runtime = context.runtime;
 
         IRubyObject objectToDump = args[0];
         IRubyObject io = null;
         int depthLimit = -1;
 
-        if (args.length >= 2) {
+        if (argc >= 2) {
             IRubyObject arg1 = args[1];
             if (sites(context).respond_to_write.respondsTo(context, arg1, arg1)) {
                 io = arg1;
@@ -87,7 +89,7 @@ public class RubyMarshal {
             } else {
                 throw runtime.newTypeError("Instance of IO needed");
             }
-            if (args.length == 3) {
+            if (argc == 3) {
                 depthLimit = (int) args[2].convertToInteger().getLongValue();
             }
         }
@@ -115,17 +117,19 @@ public class RubyMarshal {
 
     @JRubyMethod(name = {"load", "restore"}, required = 1, optional = 2, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject load(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
+        int argc = Arity.checkArgumentCount(context, args, 1, 3);
+
         Ruby runtime = context.runtime;
         IRubyObject in = args[0];
         boolean freeze = false;
         IRubyObject proc = null;
 
-        if (args.length > 1) {
-            RubyHash kwargs = ArgsUtil.extractKeywords(args[args.length - 1]);
+        if (argc > 1) {
+            RubyHash kwargs = ArgsUtil.extractKeywords(args[argc - 1]);
             if (kwargs != null) {
                 IRubyObject freezeOpt = ArgsUtil.getFreezeOpt(context, kwargs);
                 freeze = freezeOpt != null ? freezeOpt.isTrue() : false;
-                if (args.length > 2) proc = args[1];
+                if (argc > 2) proc = args[1];
             } else {
                 proc = args[1];
             }

@@ -34,6 +34,7 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -71,6 +72,8 @@ public class JZlibInflate extends ZStream {
 
     @JRubyMethod(name = "initialize", optional = 1, visibility = PRIVATE)
     public IRubyObject _initialize(IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(getRuntime(), args, 0, 1);
+
         windowBits = JZlib.DEF_WBITS;
 
         if (args.length > 0 && !args[0].isNil()) {

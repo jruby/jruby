@@ -54,6 +54,7 @@ import org.jruby.RubyModule;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -243,6 +244,8 @@ public class RubySocket extends RubyBasicSocket {
 
     @JRubyMethod(required = 1, optional = 3)
     public IRubyObject recvfrom_nonblock(ThreadContext context, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 1, 4);
+
         if (getOpenFile() == null) {
             throw context.runtime.newErrnoENOTCONNError("socket is not connected");
         }
@@ -293,11 +296,15 @@ public class RubySocket extends RubyBasicSocket {
 
     @JRubyMethod(required = 1, rest = true, meta = true)
     public static IRubyObject gethostbyaddr(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 1, -1);
+
         return SocketUtils.gethostbyaddr(context, args);
     }
 
     @JRubyMethod(required = 1, optional = 1, meta = true)
     public static IRubyObject getservbyname(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 1, 2);
+
         return SocketUtils.getservbyname(context, args);
     }
 
@@ -329,11 +336,15 @@ public class RubySocket extends RubyBasicSocket {
 
     @JRubyMethod(required = 2, optional = 5, meta = true)
     public static IRubyObject getaddrinfo(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 2, 7);
+
         return SocketUtils.getaddrinfo(context, args);
     }
 
     @JRubyMethod(required = 1, optional = 1, meta = true)
     public static IRubyObject getnameinfo(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 1, 2);
+
         return SocketUtils.getnameinfo(context, args);
     }
 

@@ -263,11 +263,14 @@ public class JRubyLibrary implements Library {
     @JRubyMethod(module = true, name = "compile", required = 1, optional = 3)
     public static IRubyObject compile(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         // def compile(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, &block)
+
+        int argc = Arity.checkArgumentCount(context, args, 1, 4);
+
         final Ruby runtime = context.runtime;
 
         final RubyString content = args[0].convertToString();
         args[0] = content;
-        final RubyString filename = args.length > 1 ? args[1].convertToString() : RubyString.newEmptyString(runtime);
+        final RubyString filename = argc > 1 ? args[1].convertToString() : RubyString.newEmptyString(runtime);
 
         IRScriptBody scope = compileIR(context, args, block);
 
