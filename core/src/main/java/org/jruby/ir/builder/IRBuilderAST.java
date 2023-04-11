@@ -19,7 +19,6 @@ import org.jruby.ir.IRClosure;
 import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRFor;
 import org.jruby.ir.IRManager;
-import org.jruby.ir.IRMetaClassBody;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRModuleBody;
 import org.jruby.ir.IRScope;
@@ -1651,62 +1650,11 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
         return new Complex((ImmutableLiteral) build(node.getNumber()));
     }
 
-    private Operand protectCodeWithRescue(CodeBlock protectedCode, CodeBlock rescueBlock) {
-        // This effectively mimics a begin-rescue-end code block
-        // Except this catches all exceptions raised by the protected code
-
-        Variable rv = temp();
-        Label rBeginLabel = getNewLabel();
-        Label rEndLabel   = getNewLabel();
-        Label rescueLabel = getNewLabel();
-
-        // Protected region code
-        addInstr(new LabelInstr(rBeginLabel));
-        addInstr(new ExceptionRegionStartMarkerInstr(rescueLabel));
-        Object v1 = protectedCode.run(); // YIELD: Run the protected code block
-        addInstr(new CopyInstr(rv, (Operand)v1));
-        addInstr(new JumpInstr(rEndLabel));
-        addInstr(new ExceptionRegionEndMarkerInstr());
-
-        // SSS FIXME: Create an 'Exception' operand type to eliminate the constant lookup below
-        // We could preload a set of constant objects that are preloaded at boot time and use them
-        // directly in IR when we know there is no lookup involved.
-        //
-        // new Operand type: CachedClass(String name)?
-        //
-        // Some candidates: Exception, StandardError, Fixnum, Object, Boolean, etc.
-        // So, when they are referenced, they are fetched directly from the runtime object
-        // which probably already has cached references to these constants.
-        //
-        // But, unsure if this caching is safe ... so, just an idea here for now.
-
-        // Rescue code
-        Label caughtLabel = getNewLabel();
-        Variable exc = temp();
-        Variable excType = temp();
-
-        // Receive 'exc' and verify that 'exc' is of ruby-type 'Exception'
-        addInstr(new LabelInstr(rescueLabel));
-        addInstr(new ReceiveRubyExceptionInstr(exc));
-        addInstr(new InheritanceSearchConstInstr(excType, getManager().getObjectClass(),
-                getManager().runtime.newSymbol(CommonByteLists.EXCEPTION)));
-        outputExceptionCheck(excType, exc, caughtLabel);
-
-        // Fall-through when the exc !== Exception; rethrow 'exc'
-        addInstr(new ThrowExceptionInstr(exc));
-
-        // exc === Exception; Run the rescue block
-        addInstr(new LabelInstr(caughtLabel));
-        Object v2 = rescueBlock.run(); // YIELD: Run the protected code block
-        if (v2 != null) addInstr(new CopyInstr(rv, nil()));
-
-        // End
-        addInstr(new LabelInstr(rEndLabel));
-
-        return rv;
+    boolean needsDefinitionCheck(Node node) {
+        return node.needsDefinitionCheck();
     }
 
-    public Operand buildGetDefinition(Node node) {
+    Operand buildGetDefinition(Node node) {
         if (node == null) return new FrozenString("expression");
 
         switch (node.getNodeType()) {
@@ -2044,23 +1992,6 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
         }
     }
 
-    protected Variable buildDefnCheckIfThenPaths(Label undefLabel, Operand defVal) {
-        Label defLabel = getNewLabel();
-        Variable tmpVar = getValueInTemporaryVariable(defVal);
-        addInstr(new JumpInstr(defLabel));
-        addInstr(new LabelInstr(undefLabel));
-        addInstr(new CopyInstr(tmpVar, nil()));
-        addInstr(new LabelInstr(defLabel));
-        return tmpVar;
-    }
-
-    protected Variable buildDefinitionCheck(ResultInstr definedInstr, String definedReturnValue) {
-        Label undefLabel = getNewLabel();
-        addInstr((Instr) definedInstr);
-        addInstr(createBranch(definedInstr.getResult(), fals(), undefLabel));
-        return buildDefnCheckIfThenPaths(undefLabel, new FrozenString(definedReturnValue));
-    }
-
     public Operand buildGetArgumentDefinition(final Node node, String type) {
         if (node == null) return new MutableString(type);
 
@@ -2069,8 +2000,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
         Label failLabel = getNewLabel();
         if (node instanceof ArrayNode) {
             for (int i = 0; i < ((ArrayNode) node).size(); i++) {
-                Node iterNode = ((ArrayNode) node).get(i);
-                Operand def = buildGetDefinition(iterNode);
+                Operand def = buildGetDefinition(((ArrayNode) node).get(i));
                 if (def == nil()) { // Optimization!
                     rv = nil();
                     break;
@@ -2149,10 +2079,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
 
     public Operand buildDefs(DefsNode node) { // Class method
         LazyMethodDefinition def = new LazyMethodDefinitionAST(node);
-        Operand container =  build(node.getReceiverNode());
-        IRMethod method = defineNewMethod(def, node.getName().getBytes(), node.getLine(), node.getScope(), false);
-        addInstr(new DefineClassMethodInstr(container, method));
-        return new Symbol(node.getName());
+        return buildDefs(node.getReceiverNode(), defineNewMethod(def, node.getName().getBytes(), node.getLine(), node.getScope(), false));
     }
 
     protected LocalVariable getArgVariable(RubySymbol name, int depth) {
@@ -3232,39 +3159,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
         return result;
     }
 
-    // "x ||= y"
-    // --> "x = (is_defined(x) && is_true(x) ? x : y)"
-    // --> v = -- build(x) should return a variable! --
-    //     f = is_true(v)
-    //     beq(f, true, L)
-    //     -- build(x = y) --
-    //   L:
-    //
     public Operand buildOpAsgnOr(final OpAsgnOrNode orNode) {
-        Label    l1 = getNewLabel();
-        Label    l2 = null;
-        Variable flag = temp();
-        Operand  v1;
-        boolean  needsDefnCheck = orNode.getFirstNode().needsDefinitionCheck();
-        if (needsDefnCheck) {
-            l2 = getNewLabel();
-            v1 = buildGetDefinition(orNode.getFirstNode());
-            addInstr(new CopyInstr(flag, v1));
-            addInstr(createBranch(flag, nil(), l2)); // if v1 is undefined, go to v2's computation
-        }
-        v1 = build(orNode.getFirstNode()); // build of 'x'
-        addInstr(new CopyInstr(flag, v1));
-        Variable result = getValueInTemporaryVariable(v1);
-        if (needsDefnCheck) {
-            addInstr(new LabelInstr(l2));
-        }
-        addInstr(createBranch(flag, tru(), l1));  // if v1 is defined and true, we are done!
-        Operand v2 = build(orNode.getSecondNode()); // This is an AST node that sets x = y, so nothing special to do here.
-        addInstr(new CopyInstr(result, v2));
-        addInstr(new LabelInstr(l1));
-
-        // Return value of x ||= y is always 'x'
-        return result;
+        return buildOpAsgnOr(orNode.getFirstNode(), orNode.getSecondNode());
     }
 
     public Operand buildOpElementAsgn(OpElementAsgnNode node) {
@@ -3540,11 +3436,6 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
 
         activeRescueBlockStack.pop();
         return rv;
-    }
-
-    private void outputExceptionCheck(Operand excType, Operand excObj, Label caughtLabel) {
-        Variable eqqResult = addResultInstr(new RescueEQQInstr(temp(), excType, excObj));
-        addInstr(createBranch(eqqResult, tru(), caughtLabel));
     }
 
     private void buildRescueBodyInternal(RescueBodyNode rescueBodyNode, Variable rv, Variable exc, Label endLabel) {

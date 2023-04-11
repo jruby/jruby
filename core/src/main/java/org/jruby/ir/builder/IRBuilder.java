@@ -5,6 +5,7 @@ import org.jruby.EvalType;
 import org.jruby.ParseResult;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
+import org.jruby.ast.OpAsgnOrNode;
 import org.jruby.ast.RootNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.ext.coverage.CoverageData;
@@ -30,6 +31,7 @@ import org.jruby.ir.instructions.BuildCompoundStringInstr;
 import org.jruby.ir.instructions.CallInstr;
 import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.DefineClassInstr;
+import org.jruby.ir.instructions.DefineClassMethodInstr;
 import org.jruby.ir.instructions.DefineInstanceMethodInstr;
 import org.jruby.ir.instructions.DefineMetaClassInstr;
 import org.jruby.ir.instructions.DefineModuleInstr;
@@ -40,6 +42,7 @@ import org.jruby.ir.instructions.GetClassVarContainerModuleInstr;
 import org.jruby.ir.instructions.GetClassVariableInstr;
 import org.jruby.ir.instructions.GetFieldInstr;
 import org.jruby.ir.instructions.GetGlobalVariableInstr;
+import org.jruby.ir.instructions.InheritanceSearchConstInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LabelInstr;
@@ -58,6 +61,8 @@ import org.jruby.ir.instructions.ReceiveJRubyExceptionInstr;
 import org.jruby.ir.instructions.ReceiveKeywordArgInstr;
 import org.jruby.ir.instructions.ReceiveKeywordRestArgInstr;
 import org.jruby.ir.instructions.ReceiveRestArgInstr;
+import org.jruby.ir.instructions.ReceiveRubyExceptionInstr;
+import org.jruby.ir.instructions.RescueEQQInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnInstr;
 import org.jruby.ir.instructions.ReturnOrRethrowSavedExcInstr;
@@ -65,6 +70,7 @@ import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.instructions.SearchConstInstr;
 import org.jruby.ir.instructions.SearchModuleForConstInstr;
 import org.jruby.ir.instructions.ThreadPollInstr;
+import org.jruby.ir.instructions.ThrowExceptionInstr;
 import org.jruby.ir.instructions.TraceInstr;
 import org.jruby.ir.instructions.ZSuperInstr;
 import org.jruby.ir.interpreter.InterpreterContext;
@@ -72,6 +78,7 @@ import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.CurrentScope;
 import org.jruby.ir.operands.DepthCloneable;
 import org.jruby.ir.operands.Fixnum;
+import org.jruby.ir.operands.FrozenString;
 import org.jruby.ir.operands.Hash;
 import org.jruby.ir.operands.ImmutableLiteral;
 import org.jruby.ir.operands.Integer;
@@ -99,6 +106,7 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.CommonByteLists;
 import org.jruby.util.KeyValuePair;
 
 import java.util.ArrayDeque;
@@ -203,7 +211,7 @@ public abstract class IRBuilder<U, V, W> {
         String file = rootNode.getFile();
         IRScriptBody script = new IRScriptBody(manager, file == null ? "(anon)" : file, rootNode.getStaticScope());
 
-        //System.out.println("Building " + file);
+        System.out.println("Building " + file);
         return topIRBuilder(manager, script, rootNode).buildRootInner(rootNode);
     }
 
@@ -394,6 +402,11 @@ public abstract class IRBuilder<U, V, W> {
         return s == null; // nothing means we walked all the way up.
     }
 
+    void outputExceptionCheck(Operand excType, Operand excObj, Label caughtLabel) {
+        Variable eqqResult = addResultInstr(new RescueEQQInstr(temp(), excType, excObj));
+        addInstr(createBranch(eqqResult, tru(), caughtLabel));
+    }
+
     void preloadBlockImplicitClosure() {
         if (needsYieldBlock) {
             addInstrAtBeginning(new LoadBlockImplicitClosureInstr(getYieldClosureVariable()));
@@ -427,6 +440,61 @@ public abstract class IRBuilder<U, V, W> {
     void prepareClosureImplicitState() {
         // Receive self
         addInstr(getManager().getReceiveSelfInstr());
+    }
+
+    Operand protectCodeWithRescue(CodeBlock protectedCode, CodeBlock rescueBlock) {
+        // This effectively mimics a begin-rescue-end code block
+        // Except this catches all exceptions raised by the protected code
+
+        Variable rv = temp();
+        Label rBeginLabel = getNewLabel();
+        Label rEndLabel   = getNewLabel();
+        Label rescueLabel = getNewLabel();
+
+        // Protected region code
+        addInstr(new LabelInstr(rBeginLabel));
+        addInstr(new ExceptionRegionStartMarkerInstr(rescueLabel));
+        Object v1 = protectedCode.run(); // YIELD: Run the protected code block
+        addInstr(new CopyInstr(rv, (Operand)v1));
+        addInstr(new JumpInstr(rEndLabel));
+        addInstr(new ExceptionRegionEndMarkerInstr());
+
+        // SSS FIXME: Create an 'Exception' operand type to eliminate the constant lookup below
+        // We could preload a set of constant objects that are preloaded at boot time and use them
+        // directly in IR when we know there is no lookup involved.
+        //
+        // new Operand type: CachedClass(String name)?
+        //
+        // Some candidates: Exception, StandardError, Fixnum, Object, Boolean, etc.
+        // So, when they are referenced, they are fetched directly from the runtime object
+        // which probably already has cached references to these constants.
+        //
+        // But, unsure if this caching is safe ... so, just an idea here for now.
+
+        // Rescue code
+        Label caughtLabel = getNewLabel();
+        Variable exc = temp();
+        Variable excType = temp();
+
+        // Receive 'exc' and verify that 'exc' is of ruby-type 'Exception'
+        addInstr(new LabelInstr(rescueLabel));
+        addInstr(new ReceiveRubyExceptionInstr(exc));
+        addInstr(new InheritanceSearchConstInstr(excType, getManager().getObjectClass(),
+                getManager().runtime.newSymbol(CommonByteLists.EXCEPTION)));
+        outputExceptionCheck(excType, exc, caughtLabel);
+
+        // Fall-through when the exc !== Exception; rethrow 'exc'
+        addInstr(new ThrowExceptionInstr(exc));
+
+        // exc === Exception; Run the rescue block
+        addInstr(new LabelInstr(caughtLabel));
+        Object v2 = rescueBlock.run(); // YIELD: Run the protected code block
+        if (v2 != null) addInstr(new CopyInstr(rv, nil()));
+
+        // End
+        addInstr(new LabelInstr(rEndLabel));
+
+        return rv;
     }
 
     private TemporaryVariable createTemporaryVariable() {
@@ -1107,6 +1175,11 @@ public abstract class IRBuilder<U, V, W> {
         return new Symbol(method.getName());
     }
 
+    public Operand buildDefs(U receiver, IRMethod method) {
+        addInstr(new DefineClassMethodInstr(build(receiver), method));
+        return new Symbol(method.getName());
+    }
+
     public Operand buildDStr(Variable result, U[] nodePieces, Encoding encoding, boolean isFrozen, int line) {
         if (result == null) result = temp();
 
@@ -1227,6 +1300,23 @@ public abstract class IRBuilder<U, V, W> {
         }
     }
 
+    protected Variable buildDefinitionCheck(ResultInstr definedInstr, String definedReturnValue) {
+        Label undefLabel = getNewLabel();
+        addInstr((Instr) definedInstr);
+        addInstr(createBranch(definedInstr.getResult(), fals(), undefLabel));
+        return buildDefnCheckIfThenPaths(undefLabel, new FrozenString(definedReturnValue));
+    }
+
+    protected Variable buildDefnCheckIfThenPaths(Label undefLabel, Operand defVal) {
+        Label defLabel = getNewLabel();
+        Variable tmpVar = getValueInTemporaryVariable(defVal);
+        addInstr(new JumpInstr(defLabel));
+        addInstr(new LabelInstr(undefLabel));
+        addInstr(new CopyInstr(tmpVar, nil()));
+        addInstr(new LabelInstr(defLabel));
+        return tmpVar;
+    }
+
     public Operand buildModule(ByteList name, U cpath, U bodyNode, StaticScope scope, int line, int endLine) {
         boolean executesOnce = this.executesOnce;
         Operand container = getContainerFromCPath(cpath);
@@ -1260,6 +1350,41 @@ public abstract class IRBuilder<U, V, W> {
 
     public Operand buildNthRef(int matchNumber) {
         return copy(new NthRef(scope, matchNumber));
+    }
+
+    // "x ||= y"
+    // --> "x = (is_defined(x) && is_true(x) ? x : y)"
+    // --> v = -- build(x) should return a variable! --
+    //     f = is_true(v)
+    //     beq(f, true, L)
+    //     -- build(x = y) --
+    //   L:
+    //
+    public Operand buildOpAsgnOr(final U first, U second) {
+        Label    l1 = getNewLabel();
+        Label    l2 = null;
+        Variable flag = temp();
+        Operand  v1;
+        boolean  needsDefnCheck = needsDefinitionCheck(first);
+        if (needsDefnCheck) {
+            l2 = getNewLabel();
+            v1 = buildGetDefinition(first);
+            addInstr(new CopyInstr(flag, v1));
+            addInstr(createBranch(flag, nil(), l2)); // if v1 is undefined, go to v2's computation
+        }
+        v1 = build(first); // build of 'x'
+        addInstr(new CopyInstr(flag, v1));
+        Variable result = getValueInTemporaryVariable(v1);
+        if (needsDefnCheck) {
+            addInstr(new LabelInstr(l2));
+        }
+        addInstr(createBranch(flag, tru(), l1));  // if v1 is defined and true, we are done!
+        Operand v2 = build(second); // This is an AST node that sets x = y, so nothing special to do here.
+        addInstr(new CopyInstr(result, v2));
+        addInstr(new LabelInstr(l1));
+
+        // Return value of x ||= y is always 'x'
+        return result;
     }
 
     public Operand buildOr(Operand left, CodeBlock right, BinaryType type) {
@@ -1317,11 +1442,14 @@ public abstract class IRBuilder<U, V, W> {
         }
     }
 
+
+    abstract Operand buildGetDefinition(U node);
     abstract boolean containsVariableAssignment(U node);
     abstract Operand frozen_string(U node);
     abstract int getLine(U node);
     abstract IRubyObject getWhenLiteral(U node);
     abstract boolean isLiteralString(U node);
+    abstract boolean needsDefinitionCheck(U node);
 
     // returns true if we should emit an eqq for this value (e.g. it has not already been seen yet).
     boolean literalWhenCheck(U value, Set<IRubyObject> seenLiterals) {

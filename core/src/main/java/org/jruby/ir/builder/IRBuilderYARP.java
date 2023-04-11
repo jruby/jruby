@@ -17,11 +17,15 @@ import org.jruby.ir.Tuple;
 import org.jruby.ir.instructions.AsStringInstr;
 import org.jruby.ir.instructions.AttrAssignInstr;
 import org.jruby.ir.instructions.BNEInstr;
+import org.jruby.ir.instructions.BlockGivenInstr;
 import org.jruby.ir.instructions.BuildSplatInstr;
 import org.jruby.ir.instructions.CallInstr;
 import org.jruby.ir.instructions.CheckArityInstr;
 import org.jruby.ir.instructions.CopyInstr;
+import org.jruby.ir.instructions.InheritanceSearchConstInstr;
+import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LabelInstr;
+import org.jruby.ir.instructions.LexicalSearchConstInstr;
 import org.jruby.ir.instructions.LoadImplicitClosureInstr;
 import org.jruby.ir.instructions.PutClassVariableInstr;
 import org.jruby.ir.instructions.PutFieldInstr;
@@ -43,9 +47,12 @@ import org.jruby.ir.instructions.SearchConstInstr;
 import org.jruby.ir.instructions.ToAryInstr;
 import org.jruby.ir.instructions.TraceInstr;
 import org.jruby.ir.instructions.YieldInstr;
+import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
+import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.CurrentScope;
+import org.jruby.ir.operands.FrozenString;
 import org.jruby.ir.operands.Hash;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.MutableString;
@@ -65,6 +72,7 @@ import org.jruby.runtime.Signature;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
+import org.jruby.util.DefinedMessage;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
 import org.yarp.Nodes.*;
@@ -111,6 +119,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
             return buildAnd((AndNode) node);
         } else if (node instanceof ArrayNode) {
             return buildArray((ArrayNode) node);
+        } else if (node instanceof BeginNode) {
+            return buildBegin((BeginNode) node);
         } else if (node instanceof BlockNode) {
             return buildBlock((BlockNode) node);
         } else if (node instanceof BlockArgumentNode) {
@@ -133,6 +143,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
             return buildConstantRead((ConstantReadNode) node);
         } else if (node instanceof DefNode) {
             return buildDef((DefNode) node);
+        } else if (node instanceof DefinedNode) {
+            return buildDefined((DefinedNode) node);
         } else if (node instanceof ElseNode) {
             return buildElse((ElseNode) node);
         } else if (node instanceof FalseNode) {
@@ -163,6 +175,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
             return buildMultiWriteNode((MultiWriteNode) node);
         } else if (node instanceof NilNode) {
             return nil();
+        } else if (node instanceof OperatorOrAssignmentNode) {
+            return buildOperatorOrAssignment((OperatorOrAssignmentNode) node);
         } else if (node instanceof OrNode) {
             return buildOr((OrNode) node);
         } else if (node instanceof ParenthesesNode) {
@@ -171,6 +185,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
             return buildProgram((ProgramNode) node);
         } else if (node instanceof RegularExpressionNode) {
             return buildRegularExpression((RegularExpressionNode) node);
+        } else if (node instanceof SelfNode) {
+            return buildSelf();
         } else if (node instanceof SingletonClassNode) {
             return buildSingletonClass((SingletonClassNode) node);
         } else if (node instanceof SplatNode) {
@@ -283,6 +299,11 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
         args = addArg(args, value);
         addInstr(AttrAssignInstr.create(scope, obj, name, args, flags[0], scope.maybeUsingRefinements()));
         return value;
+    }
+
+    // FIXME: no rescue or ensure!!!!
+    private Operand buildBegin(BeginNode node) {
+        return build(node.statements);
     }
 
     // FIXME: Try and genericize this with AST
@@ -446,6 +467,10 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
         }
     }
 
+    private Operand buildDefined(DefinedNode node) {
+        return buildGetDefinition(node.value);
+    }
+
     private Operand buildDefn(DefNode node) {
         LazyMethodDefinition def = new LazyMethodDefinitionYARP(getManager().getRuntime(), source, node);
         return buildDefn(defineNewMethod(def, byteListFrom(node.name), 0, node.scope, true));
@@ -453,7 +478,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
 
     private Operand buildDefs(DefNode node) {
         LazyMethodDefinition def = new LazyMethodDefinitionYARP(getManager().getRuntime(), source, node);
-        return buildDefn(defineNewMethod(def, byteListFrom(node.name), 0, node.scope, false));
+        return buildDefs(node.receiver, defineNewMethod(def, byteListFrom(node.name), 0, node.scope, false));
     }
 
     private Operand buildElse(ElseNode node) {
@@ -604,6 +629,10 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
         for (Tuple<Node, Variable> assign: assigns) {
             buildAssignment(assign.a, assign.b);
         }
+    }
+
+    private Operand buildOperatorOrAssignment(OperatorOrAssignmentNode node) {
+        return buildOpAsgnOr(node.target, node.value);
     }
 
     private Operand buildOr(OrNode node) {
@@ -995,6 +1024,265 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
         }
     }
 
+    public Operand buildGetArgumentDefinition(final ArgumentsNode node, String type) {
+        if (node == null) return new MutableString(type);
+
+        Operand rv = new FrozenString(type);
+        boolean failPathReqd = false;
+        Label failLabel = getNewLabel();
+        for(Node arg: node.arguments) {
+            Operand def = buildGetDefinition(arg);
+            if (def == nil()) { // Optimization!
+                rv = nil();
+                break;
+            } else if (!def.hasKnownValue()) { // Optimization!
+                failPathReqd = true;
+                addInstr(createBranch(def, nil(), failLabel));
+            }
+        }
+
+        return failPathReqd ? buildDefnCheckIfThenPaths(failLabel, rv) : rv;
+
+    }
+
+    @Override
+    Operand buildGetDefinition(Node node) {
+        if (node == null) return new FrozenString("expression");
+
+        if (node instanceof ClassVariableWriteNode ||
+                node instanceof ConstantPathWriteNode || node instanceof LocalVariableWriteNode ||
+                node instanceof GlobalVariableWriteNode || node instanceof MultiWriteNode ||
+                node instanceof OperatorOrAssignmentNode || node instanceof OperatorAssignmentNode ||
+                node instanceof OperatorAndAssignmentNode || node instanceof InstanceVariableWriteNode) {
+            return new FrozenString(DefinedMessage.ASSIGNMENT.getText());
+        } else if (node instanceof OrNode || node instanceof AndNode ||
+                node instanceof InterpolatedRegularExpressionNode || node instanceof InterpolatedStringNode) {
+            return new FrozenString(DefinedMessage.EXPRESSION.getText());
+        } else if (node instanceof FalseNode) {
+            return new FrozenString(DefinedMessage.FALSE.getText());
+        } else if (node instanceof LocalVariableReadNode) {
+            return new FrozenString(DefinedMessage.LOCAL_VARIABLE.getText());
+        } else if (node instanceof MatchPredicateNode || node instanceof MatchRequiredNode) {
+            return new FrozenString(DefinedMessage.METHOD.getText());
+        } else if (node instanceof NilNode) {
+            return new FrozenString(DefinedMessage.NIL.getText());
+        } else if (node instanceof SelfNode) {
+            return new FrozenString(DefinedMessage.SELF.getText());
+        } else if (node instanceof TrueNode) {
+            return new FrozenString(DefinedMessage.TRUE.getText());
+        } else if (node instanceof StatementsNode) {
+            Node[] array = ((StatementsNode) node).body;
+            Label undefLabel = getNewLabel();
+            Label doneLabel = getNewLabel();
+
+            Variable tmpVar = temp();
+            for (Node elt : array) {
+                Operand result = buildGetDefinition(elt);
+
+                addInstr(createBranch(result, nil(), undefLabel));
+            }
+
+            addInstr(new CopyInstr(tmpVar, new FrozenString(DefinedMessage.EXPRESSION.getText())));
+            addInstr(new JumpInstr(doneLabel));
+            addInstr(new LabelInstr(undefLabel));
+            addInstr(new CopyInstr(tmpVar, nil()));
+            addInstr(new LabelInstr(doneLabel));
+
+            return tmpVar;
+        } else if (node instanceof GlobalVariableReadNode) {
+            return addResultInstr(
+                    new RuntimeHelperCall(
+                            temp(),
+                            IS_DEFINED_BACKREF,
+                            new Operand[]{new FrozenString(DefinedMessage.GLOBAL_VARIABLE.getText())}
+                    )
+            );
+        } else if (node instanceof InstanceVariableReadNode) {
+            return addResultInstr(
+                    new RuntimeHelperCall(
+                            temp(),
+                            IS_DEFINED_INSTANCE_VAR,
+                            new Operand[]{
+                                    buildSelf(),
+                                    new FrozenString(symbolFor(node)),
+                                    new FrozenString(DefinedMessage.INSTANCE_VARIABLE.getText())
+                            }
+                    )
+            );
+        } else if (node instanceof ClassVariableReadNode) {
+            return addResultInstr(
+                    new RuntimeHelperCall(
+                            temp(),
+                            IS_DEFINED_CLASS_VAR,
+                            new Operand[]{
+                                    classVarDefinitionContainer(),
+                                    new FrozenString(symbolFor(node)),
+                                    new FrozenString(DefinedMessage.CLASS_VARIABLE.getText())
+                            }
+                    )
+            );
+        } else if (node instanceof SuperNode) {
+            Label undefLabel = getNewLabel();
+            Variable tmpVar = addResultInstr(
+                    new RuntimeHelperCall(
+                            temp(),
+                            IS_DEFINED_SUPER,
+                            new Operand[]{
+                                    buildSelf(),
+                                    new FrozenString(DefinedMessage.SUPER.getText())
+                            }
+                    )
+            );
+            addInstr(createBranch(tmpVar, nil(), undefLabel));
+            Operand superDefnVal = buildGetArgumentDefinition(((SuperNode) node).arguments, DefinedMessage.SUPER.getText());
+            return buildDefnCheckIfThenPaths(undefLabel, superDefnVal);
+        } else if (node instanceof CallNode) {
+            CallNode call = (CallNode) node;
+            RubySymbol name = symbolFor(call.message);
+
+            if (call.receiver == null && call.arguments == null) { // VCALL
+                return addResultInstr(
+                        new RuntimeHelperCall(temp(), IS_DEFINED_METHOD,
+                                new Operand[]{ buildSelf(), new FrozenString(name), fals(), new FrozenString(DefinedMessage.METHOD.getText()) }));
+            }
+
+            boolean isAttrAssign = "[]=".equals(name.idString());
+            String type = isAttrAssign ? DefinedMessage.ASSIGNMENT.getText() : DefinedMessage.METHOD.getText();
+
+            if (call.receiver == null) { // FCALL
+                /* ------------------------------------------------------------------
+                 * Generate IR for:
+                 *    r = self/receiver
+                 *    mc = r.metaclass
+                 *    return mc.methodBound(meth) ? buildGetArgumentDefn(..) : false
+                 * ----------------------------------------------------------------- */
+                Label undefLabel = getNewLabel();
+                Variable tmpVar = addResultInstr(
+                        new RuntimeHelperCall(
+                                temp(),
+                                IS_DEFINED_METHOD,
+                                new Operand[]{
+                                        buildSelf(),
+                                        new Symbol(symbolFor(call.message)),
+                                        fals(),
+                                        new FrozenString(DefinedMessage.METHOD.getText())
+                                }
+                        )
+                );
+                addInstr(createBranch(tmpVar, nil(), undefLabel));
+                Operand argsCheckDefn = buildGetArgumentDefinition(((CallNode) node).arguments, type);
+                return buildDefnCheckIfThenPaths(undefLabel, argsCheckDefn);
+            } else { // CALL
+                // protected main block
+                CodeBlock protectedCode = new CodeBlock() {
+                    public Operand run() {
+                        final Label undefLabel = getNewLabel();
+                        Operand receiverDefn = buildGetDefinition(call.receiver);
+                        addInstr(createBranch(receiverDefn, nil(), undefLabel));
+                        Variable tmpVar = temp();
+                        addInstr(new RuntimeHelperCall(tmpVar, IS_DEFINED_CALL,
+                                new Operand[]{
+                                        build(call.receiver),
+                                        new Symbol(symbolFor(call)),
+                                        new FrozenString(isAttrAssign ? DefinedMessage.ASSIGNMENT.getText() : DefinedMessage.METHOD.getText())
+                                }));
+                        return buildDefnCheckIfThenPaths(undefLabel, tmpVar);
+                    }
+                };
+
+                // Try verifying definition, and if we get an exception, throw it out, and return nil
+                return protectCodeWithRescue(protectedCode, () -> nil());
+            }
+        } else if (node instanceof YieldNode) {
+            return buildDefinitionCheck(new BlockGivenInstr(temp(), getYieldClosureVariable()), DefinedMessage.YIELD.getText());
+        } else if (node instanceof SuperNode) {
+            // FIXME: Current code missing way to tell zsuper from super
+            return addResultInstr(
+                    new RuntimeHelperCall(temp(), IS_DEFINED_SUPER,
+                            new Operand[]{buildSelf(), new FrozenString(DefinedMessage.SUPER.getText())}));
+        } else if (node instanceof ConstantReadNode) {
+            Label defLabel = getNewLabel();
+            Label doneLabel = getNewLabel();
+            Variable tmpVar = temp();
+            RubySymbol constName = symbolFor(node);
+            addInstr(new LexicalSearchConstInstr(tmpVar, CurrentScope.INSTANCE, constName));
+            addInstr(BNEInstr.create(defLabel, tmpVar, UndefinedValue.UNDEFINED));
+            addInstr(new InheritanceSearchConstInstr(tmpVar, findContainerModule(), constName)); // SSS FIXME: should this be the current-module var or something else?
+            addInstr(BNEInstr.create(defLabel, tmpVar, UndefinedValue.UNDEFINED));
+            addInstr(new CopyInstr(tmpVar, nil()));
+            addInstr(new JumpInstr(doneLabel));
+            addInstr(new LabelInstr(defLabel));
+            addInstr(new CopyInstr(tmpVar, new FrozenString(DefinedMessage.CONSTANT.getText())));
+            addInstr(new LabelInstr(doneLabel));
+            return tmpVar;
+        } else if (node instanceof ConstantPathNode) {
+            // SSS FIXME: Is there a reason to do this all with low-level IR?
+            // Can't this all be folded into a Java method that would be part
+            // of the runtime library, which then can be used by buildDefinitionCheck method above?
+            // This runtime library would be used both by the interpreter & the compiled code!
+
+            ConstantPathNode path = (ConstantPathNode) node;
+
+            final RubySymbol name = symbolFor(path);
+            final Variable errInfo = temp();
+
+            // store previous exception for restoration if we rescue something
+            addInstr(new GetErrorInfoInstr(errInfo));
+
+            CodeBlock protectedCode = new CodeBlock() {
+                public Operand run() {
+                    if (path.parent == null) { // colon3 (weird inheritance)
+                        return addResultInstr(
+                                new RuntimeHelperCall(
+                                        temp(),
+                                        IS_DEFINED_CONSTANT_OR_METHOD,
+                                        new Operand[]{
+                                                getManager().getObjectClass(),
+                                                new FrozenString(name),
+                                                new FrozenString(DefinedMessage.CONSTANT.getText()),
+                                                new FrozenString(DefinedMessage.METHOD.getText())
+                                        }
+                                )
+                        );
+                    }
+
+                    Label bad = getNewLabel();
+                    Label done = getNewLabel();
+                    Variable result = temp();
+                    Operand test = buildGetDefinition(path.parent);
+                    addInstr(createBranch(test, nil(), bad));
+                    Operand lhs = build(path.parent);
+                    addInstr(
+                            new RuntimeHelperCall(
+                                    result,
+                                    IS_DEFINED_CONSTANT_OR_METHOD,
+                                    new Operand[]{
+                                            lhs,
+                                            new FrozenString(name),
+                                            new FrozenString(DefinedMessage.CONSTANT.getText()),
+                                            new FrozenString(DefinedMessage.METHOD.getText())
+                                    }
+                            )
+                    );
+                    addInstr(new JumpInstr(done));
+                    addInstr(new LabelInstr(bad));
+                    addInstr(new CopyInstr(result, nil()));
+                    addInstr(new LabelInstr(done));
+
+                    return result;
+                }
+            };
+
+            // Try verifying definition, and if we get an JumpException exception, process it with the rescue block above
+            return protectCodeWithRescue(protectedCode, () -> {
+                addInstr(new RestoreErrorInfoInstr(errInfo)); // ignore and restore (we don't care about error)
+                return nil();
+            });
+        }
+
+        return new FrozenString("expression");
+    }
+
     Operand buildYield(Variable result, YieldNode node) {
         if (result == null) result = temp();
         if (scope instanceof IRScriptBody || scope instanceof IRModuleBody) throwSyntaxError(getLine(node), "Invalid yield");
@@ -1124,6 +1412,11 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
 
     boolean isLiteralHash(Node node) {
         return node instanceof HashNode && ((HashNode) node).opening != null;
+    }
+
+    @Override
+    boolean needsDefinitionCheck(Node node) {
+        return false;
     }
 
     @Override
