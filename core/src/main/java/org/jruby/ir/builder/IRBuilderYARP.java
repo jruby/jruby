@@ -115,7 +115,9 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
         if (node == null) return nil();
 
         // FIXME: Need node types if this is how we process
-        if (node instanceof AndNode) {
+        if (node instanceof AliasNode) {
+            return buildAlias((AliasNode) node);
+        } else if (node instanceof AndNode) {
             return buildAnd((AndNode) node);
         } else if (node instanceof ArrayNode) {
             return buildArray((ArrayNode) node);
@@ -189,6 +191,10 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
             return buildSelf();
         } else if (node instanceof SingletonClassNode) {
             return buildSingletonClass((SingletonClassNode) node);
+        } else if (node instanceof SourceFileNode) {
+            return buildSourceFile();
+        } else if (node instanceof SourceLineNode) {
+            return buildSourceLine(node);
         } else if (node instanceof SplatNode) {
             return buildSplat((SplatNode) node);
         } else if (node instanceof StatementsNode) {
@@ -210,6 +216,10 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
         } else {
             throw new RuntimeException("Unhandled Node type: " + node);
         }
+    }
+
+    private Operand buildAlias(AliasNode node) {
+        return buildAlias(build(node.new_name), build(node.old_name));
     }
 
     private Operand buildAnd(AndNode node) {
@@ -422,9 +432,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
         return buildCase(node.predicate, node.conditions, node.consequent);
     }
 
-    // FIXME: need to get enndline;
     private Operand buildClass(ClassNode node) {
-        return buildClass(byteListFrom(node.constant_path), node.superclass, node.constant_path, node.statements, node.scope, getLine(node), 0);
+        return buildClass(determineBaseName(node.constant_path), node.superclass, node.constant_path, node.statements, node.scope, getLine(node), getEndLine(node));
     }
 
     private Operand buildClassVariableRead(Variable result, ClassVariableReadNode node) {
@@ -573,7 +582,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
     }
 
     private Operand buildModule(ModuleNode node) {
-        return buildModule(determineModuleBaseName(node), node.constant_path, node.statements, node.scope,
+        return buildModule(determineBaseName(node.constant_path), node.constant_path, node.statements, node.scope,
                 getLine(node), getEndLine(node));
     }
 
@@ -632,7 +641,30 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
     }
 
     private Operand buildOperatorOrAssignment(OperatorOrAssignmentNode node) {
+        // FIXME: AST will make a var and an assign as target and value.  This just embeds a Write + Value.
+        Node[] hack = assignmentHack(node);
+
+        if (hack != null) {
+            return buildOpAsgnOr(hack[0], hack[1]);
+        }
         return buildOpAsgnOr(node.target, node.value);
+    }
+
+    private Node[] assignmentHack(OperatorOrAssignmentNode op) {
+        Node node = op.target;
+        if (node instanceof InstanceVariableWriteNode) {
+            return new Node[] { new InstanceVariableReadNode(node.startOffset, node.endOffset), new InstanceVariableWriteNode(new Location(node.startOffset, node.endOffset), op.value, node.startOffset, node.endOffset) };
+        } else if (node instanceof GlobalVariableWriteNode) {
+            return new Node[] { new GlobalVariableReadNode(((GlobalVariableWriteNode) node).name, node.startOffset, ((GlobalVariableWriteNode) node).name.endOffset),
+                    new GlobalVariableWriteNode(((GlobalVariableWriteNode) node).name, op.value, node.startOffset, node.endOffset) };
+        } else if (node instanceof ClassVariableWriteNode) {
+            return new Node[]{new ClassVariableReadNode(((ClassVariableWriteNode) node).name_loc.startOffset, ((ClassVariableWriteNode) node).name_loc.endOffset),
+                    new GlobalVariableWriteNode(((GlobalVariableWriteNode) node).name, op.value, node.startOffset, node.endOffset)};
+        }
+
+        // FIXME: Implement more or do this totally differently
+
+        return null;
     }
 
     private Operand buildOr(OrNode node) {
@@ -726,6 +758,14 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
 
     private Operand buildSingletonClass(SingletonClassNode node) {
         return buildSClass(node.expression, node.statements, node.scope, getLine(node), getEndLine(node));
+    }
+
+    private Operand buildSourceFile() {
+        return new FrozenString(scope.getFile());
+    }
+
+    private Operand buildSourceLine(Node node) {
+        return fix(getLine(node) + 1);
     }
 
     private Operand buildSplat(SplatNode node) {
@@ -1052,8 +1092,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
         if (node instanceof ClassVariableWriteNode ||
                 node instanceof ConstantPathWriteNode || node instanceof LocalVariableWriteNode ||
                 node instanceof GlobalVariableWriteNode || node instanceof MultiWriteNode ||
-                node instanceof OperatorOrAssignmentNode || node instanceof OperatorAssignmentNode ||
-                node instanceof OperatorAndAssignmentNode || node instanceof InstanceVariableWriteNode) {
+                node instanceof OperatorAssignmentNode || node instanceof InstanceVariableWriteNode) {
             return new FrozenString(DefinedMessage.ASSIGNMENT.getText());
         } else if (node instanceof OrNode || node instanceof AndNode ||
                 node instanceof InterpolatedRegularExpressionNode || node instanceof InterpolatedStringNode) {
@@ -1416,7 +1455,18 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
 
     @Override
     boolean needsDefinitionCheck(Node node) {
-        return false;
+        return !(node instanceof ClassVariableWriteNode ||
+                node instanceof ConstantPathWriteNode ||
+                node instanceof LocalVariableWriteNode ||
+                node instanceof LocalVariableReadNode ||
+                node instanceof FalseNode ||
+                node instanceof GlobalVariableWriteNode ||
+                node instanceof MatchRequiredNode ||
+                node instanceof MatchPredicateNode ||
+                node instanceof NilNode ||
+                node instanceof OperatorAssignmentNode ||
+                node instanceof SelfNode ||
+                node instanceof TrueNode);
     }
 
     @Override
@@ -1466,11 +1516,11 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
                 CallType.NORMAL;
     }
 
-    private ByteList determineModuleBaseName(ModuleNode node) {
-        if (node.constant_path instanceof ConstantReadNode) {
-            return byteListFrom(node.constant_path);
-        } else if (node.constant_path instanceof ConstantPathNode) {
-            return byteListFrom(((ConstantPathNode) node.constant_path).child);
+    private ByteList determineBaseName(Node node) {
+        if (node instanceof ConstantReadNode) {
+            return byteListFrom(node);
+        } else if (node instanceof ConstantPathNode) {
+            return byteListFrom(((ConstantPathNode) node).child);
         }
         throw notCompilable("Unsupported node in module path", node);
     }
