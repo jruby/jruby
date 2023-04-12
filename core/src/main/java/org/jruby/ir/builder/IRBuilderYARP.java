@@ -385,9 +385,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
     }
 
     private Operand buildBlockArgument(BlockArgumentNode node) {
-        System.out.println("NODE.expr: " + node.expression);
         if (node.expression instanceof SymbolNode && !scope.maybeUsingRefinements()) {
-            return new SymbolProc(symbolFor(node.expression));
+            return new SymbolProc(symbolFor(((SymbolNode) node.expression).value));
         } else if (node.expression == null) {
             return getYieldClosureVariable();
         }
@@ -404,10 +403,26 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
                 build(node.receiver);
         // FIXME: pretend always . and not &. for now.
         // FIXME: at least type arguments to ArgumentsNode
+        // FIXME: block would be a lot easier if both were in .block and not maybe in arguments
         Operand[] args = buildArguments(node.arguments);
-        Operand block = setupCallClosure(node.block);
+        Operand block;
+        if (node.block != null) {
+            block = setupCallClosure(node.block);
+        } else if (containsBlockArgument(node.arguments)) {
+            block = args[node.arguments.arguments.length - 1];
+            args = removeArg(args);
+        } else {
+            block = NullBlock.INSTANCE;
+        }
+
         // FIXME: Lots and lots of special logic in AST not here
         return addResultInstr(CallInstr.create(scope, callType, result, symbol(new String(node.name)), receiver, args, block, 0));
+    }
+
+    private boolean containsBlockArgument(ArgumentsNode node) {
+        if (node == null || node.arguments == null || node.arguments.length == 0) return false;
+
+        return node.arguments[node.arguments.length - 1] instanceof BlockArgumentNode;
     }
 
     protected Operand[] buildCallArgsArray(Node[] children, int[] flags) {
