@@ -325,7 +325,7 @@ project 'JRuby Base' do
                         'annotationProcessorPaths' => { 'path' => [ {
                                                                       'groupId' => 'com.google.errorprone',
                                                                       'artifactId' => 'error_prone_core',
-                                                                      'version' => '2.10.0'
+                                                                      'version' => '2.18.0'
                                                                     },
                                                                     {
                                                                       'groupId' => 'org.jruby',
