@@ -1,1 +1,0 @@
-fails:BigDecimal#to_s can use conventional floating point notation

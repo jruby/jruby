@@ -1,2 +1,0 @@
-fails:BigDecimal#to_r returns a Rational from a BigDecimal with an exponent
-fails:BigDecimal#to_r returns a Rational from a negative BigDecimal with an exponent
