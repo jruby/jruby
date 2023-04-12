@@ -3753,6 +3753,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     public static IRubyObject foreach(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
         if (!block.isGiven()) return enumeratorize(context.runtime, recv, "foreach", args);
 
+        Arity.checkArgumentCount(context, args, 1, 4);
+
         return foreachInternal(context, recv, args, block);
     }
 
