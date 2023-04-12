@@ -45,6 +45,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.API;
 import org.jruby.exceptions.JumpException;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock;
@@ -287,6 +288,8 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(required = 2, optional = 1, visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block unusedBlock) {
+        Arity.checkArgumentCount(context, args, 2, 3);
+
         if (this.isInited) throw context.runtime.newFrozenError("`initialize' called twice", this);
         checkFrozen();
         init(context, args[0], args[1], args.length > 2 && args[2].isTrue());

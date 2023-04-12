@@ -47,6 +47,7 @@ import org.jruby.anno.JRubyModule;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.platform.Platform;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock;
@@ -218,8 +219,10 @@ public class RubyProcess {
 
         @JRubyMethod(module = true, optional = 2)
         public static IRubyObject wait(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-            long pid = args.length > 0 ? args[0].convertToInteger().getLongValue() : -1;
-            int flags = args.length > 1 ? (int) args[1].convertToInteger().getLongValue() : 0;
+            int argc = Arity.checkArgumentCount(context, args, 0, 2);
+
+            long pid = argc > 0 ? args[0].convertToInteger().getLongValue() : -1;
+            int flags = argc > 1 ? (int) args[1].convertToInteger().getLongValue() : 0;
 
             return waitpidStatus(context, pid, flags);
             //checkErrno(runtime, pid, ECHILD);

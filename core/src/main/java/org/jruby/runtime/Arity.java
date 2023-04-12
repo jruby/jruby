@@ -261,6 +261,11 @@ public final class Arity implements Serializable {
     }
 
     // FIXME: JRuby 2/next should change this name since it only sometimes raises an error
+    public static void raiseArgumentError(ThreadContext context, IRubyObject[] args, int min, int max) {
+        raiseArgumentError(context.runtime, args.length, min, max);
+    }
+
+    // FIXME: JRuby 2/next should change this name since it only sometimes raises an error
     public static void raiseArgumentError(Ruby runtime, int length, int min, int max, boolean hasKwargs) {
         if (length < min) throw runtime.newArgumentError(length, min, max);
         if (max > UNLIMITED_ARGUMENTS && length > max) {

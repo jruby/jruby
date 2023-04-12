@@ -31,6 +31,7 @@ package org.jruby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -55,11 +56,13 @@ public class RubyGenerator extends RubyObject {
     // generator_initialize
     @JRubyMethod(visibility = Visibility.PRIVATE, optional = 1)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
+        int argc = Arity.checkArgumentCount(context, args, 0, 1);
+
         Ruby runtime = context.runtime;
 
         final RubyProc proc;
 
-        if (args.length == 0) {
+        if (argc == 0) {
             proc = RubyProc.newProc(runtime, block, Block.Type.PROC);
         } else {
             if (!(args[0] instanceof RubyProc)) {

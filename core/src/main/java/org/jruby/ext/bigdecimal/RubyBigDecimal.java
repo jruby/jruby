@@ -1929,6 +1929,8 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = "round", optional = 2)
     public IRubyObject round(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 0, 2);
+
         Ruby runtime = context.runtime;
 
         // Special treatment for BigDecimal::NAN and BigDecimal::INFINITY
@@ -1937,13 +1939,13 @@ public class RubyBigDecimal extends RubyNumeric {
         // FloatDomainError. Otherwise, we don't have to call round ;
         // we can simply return the number itself.
         if (isNaN()) {
-            if (args.length == 0) {
+            if (argc == 0) {
                 throw newNaNFloatDomainError(runtime);
             }
             return newNaN(runtime);
         }
         if (isInfinity()) {
-            if (args.length == 0) {
+            if (argc == 0) {
                 throw newInfinityFloatDomainError(runtime, infinitySign);
             }
             return newInfinity(runtime, infinitySign);
@@ -1953,7 +1955,6 @@ public class RubyBigDecimal extends RubyNumeric {
         int scale = 0;
         boolean roundToInt = false;
 
-        int argc = args.length;
         switch (argc) {
             case 2:
                 mode = javaRoundingModeFromRubyRoundingMode(context, args[1]);

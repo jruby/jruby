@@ -37,6 +37,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.compiler.Constantizable;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -246,6 +247,8 @@ public class RubyNil extends RubyObject implements Constantizable {
      */
     @JRubyMethod(optional = 1)
     public static IRubyObject rationalize(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 0, 1);
+
         return to_r(context, recv);
     }
 

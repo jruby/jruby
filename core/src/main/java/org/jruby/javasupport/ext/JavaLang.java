@@ -37,6 +37,7 @@ import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.util.ClassUtils;
 import org.jruby.javasupport.Java;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaInternalBlockBody;
@@ -660,6 +661,8 @@ public abstract class JavaLang {
         @SuppressWarnings("deprecation")
         @JRubyMethod(required = 1, rest = true)
         public static IRubyObject java_method(ThreadContext context, IRubyObject self, final IRubyObject[] args) {
+            Arity.checkArgumentCount(context, args, 1, -1);
+
             final java.lang.Class klass = unwrapJavaObject(self);
 
             final java.lang.String methodName = args[0].asJavaString();
@@ -676,6 +679,8 @@ public abstract class JavaLang {
         @SuppressWarnings("deprecation")
         @JRubyMethod(required = 1, rest = true)
         public static IRubyObject declared_method(ThreadContext context, IRubyObject self, final IRubyObject[] args) {
+            Arity.checkArgumentCount(context, args, 1, -1);
+
             final java.lang.Class klass = unwrapJavaObject(self);
 
             final java.lang.String methodName = args[0].asJavaString();
@@ -691,6 +696,8 @@ public abstract class JavaLang {
 
         @JRubyMethod(required = 1, rest = true)
         public static IRubyObject declared_method_smart(ThreadContext context, IRubyObject self, final IRubyObject[] args) {
+            Arity.checkArgumentCount(context, args, 1, -1);
+
             final java.lang.Class klass = unwrapJavaObject(self);
 
             final java.lang.String methodName = args[0].asJavaString();

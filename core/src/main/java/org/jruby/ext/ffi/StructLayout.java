@@ -50,6 +50,7 @@ import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -216,6 +217,7 @@ public final class StructLayout extends Type {
     @JRubyMethod(name = "new", meta = true, required = 3, optional = 1)
     public static final IRubyObject newStructLayout(ThreadContext context, IRubyObject klass, 
             IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 3, 4);
 
         IRubyObject rbFields = args[0], size = args[1], alignment = args[2];
 
@@ -649,6 +651,7 @@ public final class StructLayout extends Type {
 
         @JRubyMethod(name="initialize", visibility = PRIVATE, required = 3, optional = 1)
         public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+            Arity.checkArgumentCount(context, args, 3, 4);
             
             init(args[0], args[2], args[1]);
 
@@ -830,6 +833,7 @@ public final class StructLayout extends Type {
         @Override
         @JRubyMethod(name="initialize", visibility = PRIVATE, required = 3, optional = 1)
         public final IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+            Arity.checkArgumentCount(context, args, 3, 4);
             
             IRubyObject type = args[2];
 
@@ -852,6 +856,7 @@ public final class StructLayout extends Type {
         @Override
         @JRubyMethod(name="initialize", visibility = PRIVATE, required = 3, optional = 1)
         public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+            Arity.checkArgumentCount(context, args, 3, 4);
 
             IRubyObject type = args[2];
 
@@ -875,6 +880,7 @@ public final class StructLayout extends Type {
         @Override
         @JRubyMethod(name="initialize", visibility = PRIVATE, required = 3, optional = 1)
         public final IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+            Arity.checkArgumentCount(context, args, 3, 4);
 
             IRubyObject type = args[2];
             if (!(type instanceof Type.Array)) {

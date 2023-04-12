@@ -51,6 +51,7 @@ import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.TypeError;
 import org.jruby.java.proxies.JavaProxy;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
@@ -1334,6 +1335,8 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(optional = 1)
     public RubyTime round(ThreadContext context, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 0, 1);
+
         int ndigits = getNdigits(context, args);
 
         int _nsec = this.dt.getMillisOfSecond() * 1000000 + (int) (this.nsec);
@@ -1345,6 +1348,8 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(optional = 1)
     public RubyTime floor(ThreadContext context, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 0, 1);
+
         int ndigits = getNdigits(context, args);
 
         int _nsec = this.dt.getMillisOfSecond() * 1000000 + (int) (this.nsec);
@@ -1356,6 +1361,8 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(optional = 1)
     public RubyTime ceil(ThreadContext context, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 0, 1);
+
         int ndigits = getNdigits(context, args);
 
         int _nsec = this.dt.getMillisOfSecond() * 1000000 + (int) (this.nsec);
@@ -1404,8 +1411,10 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = "now", meta = true, optional = 1, keywords = true)
     public static RubyTime newInstance(ThreadContext context, IRubyObject recv, IRubyObject args[]) {
+        int argc = Arity.checkArgumentCount(context, args, 0, 1);
+
         RubyTime obj = allocateInstance((RubyClass) recv);
-        if (args.length == 1) {
+        if (argc == 1) {
             obj.getMetaClass().getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, recv, obj, args);
         } else {
             obj.getMetaClass().getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, recv, obj);
@@ -1611,6 +1620,8 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = {"local", "mktime"}, required = 1, optional = 9, meta = true)
     public static RubyTime local(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 1, 10);
+
         RubyTime time = allocateInstance((RubyClass) recv);
 
         TimeArgs timeArgs = new TimeArgs(context, args);
@@ -1707,17 +1718,18 @@ public class RubyTime extends RubyObject {
         context.resetCallInfo();
         IRubyObject nil = context.nil;
 
+        int argc = args.length;
         if (keywords) {
-            IRubyObject in = ArgsUtil.extractKeywordArg(context, (RubyHash) args[args.length - 1], "in");
-            if (in != null && args.length > 7) {
+            IRubyObject in = ArgsUtil.extractKeywordArg(context, (RubyHash) args[argc - 1], "in");
+            if (in != null && argc > 7) {
                 throw context.runtime.newArgumentError("timezone argument given as positional and keyword arguments");
             }
             zone = in;
-        } else if (args.length > 6) {
+        } else if (argc > 6) {
             zone = args[6];
         }
 
-        switch (args.length) {
+        switch (argc) {
             case 0:
                 return initialize(context);
             case 1:
@@ -1747,7 +1759,7 @@ public class RubyTime extends RubyObject {
             case 7:
                 return initialize(context, args[0], args[1], args[2], args[3], args[4], args[5], zone);
             default:
-                throw context.runtime.newArgumentError(args.length, 0, 7);
+                throw context.runtime.newArgumentError(argc, 0, 7);
         }
     }
 
@@ -1830,6 +1842,8 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = {"utc", "gm"}, required = 1, optional = 9, meta = true)
     public static RubyTime utc(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 1, 10);
+
         RubyTime time = allocateInstance((RubyClass) recv);
 
         TimeArgs timeArgs = new TimeArgs(context, args);

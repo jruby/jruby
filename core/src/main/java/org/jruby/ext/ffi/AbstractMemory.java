@@ -44,6 +44,7 @@ import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -166,11 +167,6 @@ abstract public class AbstractMemory extends MemoryObject {
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
         return context.runtime.newFixnum(hashCode());
-    }
-
-    @JRubyMethod(name = "to_s", optional = 1)
-    public IRubyObject to_s(ThreadContext context, IRubyObject[] args) {
-        return RubyString.newString(context.runtime, ABSTRACT_MEMORY_RUBY_CLASS + "[size=" + size + "]");
     }
 
     @JRubyMethod(name = "[]")
@@ -1933,9 +1929,11 @@ abstract public class AbstractMemory extends MemoryObject {
 
     @JRubyMethod(name = "put_bytes", required = 2, optional = 2)
     public IRubyObject put_bytes(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 2, 4);
+
         ByteList bl = args[1].convertToString().getByteList();
-        int idx = args.length > 2 ? Util.int32Value(args[2]) : 0;
-        int len = args.length > 3 ? Util.int32Value(args[3]) : (bl.length() - idx);
+        int idx = argc > 2 ? Util.int32Value(args[2]) : 0;
+        int len = argc > 3 ? Util.int32Value(args[3]) : (bl.length() - idx);
 
         return putBytes(context, getOffset(args[0]), bl, idx, len);
     }
@@ -1947,9 +1945,11 @@ abstract public class AbstractMemory extends MemoryObject {
 
     @JRubyMethod(name = "write_bytes", required = 1, optional = 2)
     public IRubyObject write_bytes(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 1, 3);
+
         ByteList bl = args[0].convertToString().getByteList();
-        int idx = args.length > 1 ? Util.int32Value(args[1]) : 0;
-        int len = args.length > 2 ? Util.int32Value(args[2]) : (bl.length() - idx);
+        int idx = argc > 1 ? Util.int32Value(args[1]) : 0;
+        int len = argc > 2 ? Util.int32Value(args[2]) : (bl.length() - idx);
         return putBytes(context, 0, bl, idx, len);
     }
 

@@ -79,6 +79,8 @@ public class Tempfile extends RubyFile implements Finalizable {
     @JRubyMethod(optional = 4, visibility = Visibility.PRIVATE, keywords = true)
     @Override
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block unused) {
+        Arity.checkArgumentCount(context, args, 0, 4);
+
         if (args.length == 0) {
             args = new IRubyObject[] { RubyString.newEmptyString(context.runtime) };
         }
@@ -162,7 +164,9 @@ public class Tempfile extends RubyFile implements Finalizable {
 
     @JRubyMethod(optional = 1)
     public IRubyObject close(ThreadContext context, IRubyObject[] args, Block block) {
-        boolean unlink = args.length == 1 ? args[0].isTrue() : false;
+        int argc = Arity.checkArgumentCount(context, args, 0, 1);
+
+        boolean unlink = argc == 1 ? args[0].isTrue() : false;
         return unlink ? close_bang(context) : _close(context);
     }
 

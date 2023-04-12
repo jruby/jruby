@@ -34,6 +34,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.PartialDelegatingMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -153,9 +154,11 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
 
     @JRubyMethod(required =  1, rest = true, keywords = true)
     public IRubyObject bind_call(ThreadContext context, IRubyObject[] args, Block block) {
+        int argc = Arity.checkArgumentCount(context, args, 1, -1);
+
         IRubyObject receiver = args[0];
-        IRubyObject[] newArgs = new IRubyObject[args.length - 1];
-        System.arraycopy(args, 1, newArgs, 0, args.length - 1);
+        IRubyObject[] newArgs = new IRubyObject[argc - 1];
+        System.arraycopy(args, 1, newArgs, 0, argc - 1);
 
         RubyClass receiverClass = receiver.getMetaClass();
 

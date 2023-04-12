@@ -41,6 +41,7 @@ import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaMethod;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.binding.MethodGatherer;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -401,11 +402,13 @@ public class JavaProxy extends RubyObject {
 
     @JRubyMethod(required = 1, rest = true)
     public IRubyObject java_send(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 1, -1);
+
         Ruby runtime = context.runtime;
 
         String name = args[0].asJavaString();
         RubyArray argTypesAry = args[1].convertToArray();
-        final int argsLen = args.length - 2;
+        final int argsLen = argc - 2;
 
         checkArgSizeMismatch(runtime, argsLen, argTypesAry);
 
@@ -660,7 +663,9 @@ public class JavaProxy extends RubyObject {
 
         @JRubyMethod(required = 1, rest = true, meta = true)
         public static IRubyObject java_send(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-            switch (args.length) {
+            int argc = Arity.checkArgumentCount(context, args, 1, -1);
+
+            switch (argc) {
                 case 1: return java_send(context, recv, args[0]);
                 case 2: return java_send(context, recv, args[0], args[1]);
                 case 3: return java_send(context, recv, args[0], args[1], args[2]);
@@ -670,7 +675,7 @@ public class JavaProxy extends RubyObject {
 
             String name = args[0].asJavaString();
             RubyArray argTypesAry = args[1].convertToArray();
-            final int argsLen = args.length - 2;
+            final int argsLen = argc - 2;
 
             checkArgSizeMismatch(runtime, argsLen, argTypesAry);
 
