@@ -275,7 +275,7 @@ public class Loader {
         return new Nodes.InterpolatedRegularExpressionNode(loadNodes(), startOffset, endOffset);
     }
     private Nodes.Node loadInterpolatedStringNode(int startOffset, int endOffset) {
-        return new Nodes.InterpolatedStringNode(loadNodes(), startOffset, endOffset);
+        return new Nodes.InterpolatedStringNode(loadOptionalToken(), loadNodes(), startOffset, endOffset);
     }
     private Nodes.Node loadInterpolatedSymbolNode(int startOffset, int endOffset) {
         return new Nodes.InterpolatedSymbolNode(loadNodes(), startOffset, endOffset);
@@ -422,7 +422,7 @@ public class Loader {
         return new Nodes.StringInterpolatedNode(loadOptionalNode(), startOffset, endOffset);
     }
     private Nodes.Node loadStringNode(int startOffset, int endOffset) {
-        return new Nodes.StringNode(loadToken(), loadString(), startOffset, endOffset);
+        return new Nodes.StringNode(loadOptionalToken(), loadToken(), loadString(), startOffset, endOffset);
     }
     private Nodes.Node loadSuperNode(int startOffset, int endOffset) {
         return new Nodes.SuperNode(loadOptionalNode(), loadOptionalNode(), startOffset, endOffset);

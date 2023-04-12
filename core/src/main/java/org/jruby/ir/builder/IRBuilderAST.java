@@ -38,7 +38,6 @@ import org.jruby.ir.operands.Filename;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.FrozenString;
 import org.jruby.ir.operands.Hash;
-import org.jruby.ir.operands.IRException;
 import org.jruby.ir.operands.ImmutableLiteral;
 import org.jruby.ir.operands.Integer;
 import org.jruby.ir.operands.Label;
@@ -2427,7 +2426,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
         return addResultInstr(new BuildRangeInstr(temp(), begin, end, dotNode.isExclusive()));
     }
 
-    int dynamicPiece(Operand[] pieces, int i, Node pieceNode) {
+    int dynamicPiece(Operand[] pieces, int i, Node pieceNode, boolean _interpolated) {
         Operand piece;
 
         // somewhat arbitrary minimum size for interpolated values
@@ -2466,17 +2465,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
     }
 
     public Operand buildDRegexp(Variable result, DRegexpNode node) {
-        Node[] nodePieces = node.children();
-        Operand[] pieces = new Operand[nodePieces.length];
-
-        for (int i = 0; i < pieces.length; i++) {
-            // dregexp does not use estimated size
-            dynamicPiece(pieces, i, nodePieces[i]);
-        }
-
-        if (result == null) result = temp();
-        addInstr(new BuildDynRegExpInstr(result, pieces, node.getOptions()));
-        return result;
+        return buildDRegex(result, node.children(), node.getOptions());
     }
 
     public Operand buildDStr(Variable result, DStrNode node) {
@@ -2489,7 +2478,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
         int estimatedSize = 0;
 
         for (int i = 0; i < pieces.length; i++) {
-            estimatedSize += dynamicPiece(pieces, i, nodePieces[i]);
+            estimatedSize += dynamicPiece(pieces, i, nodePieces[i], false);
         }
 
         if (result == null) result = temp();
@@ -2510,7 +2499,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
         int estimatedSize = 0;
 
         for (int i = 0; i < pieces.length; i++) {
-            estimatedSize += dynamicPiece(pieces, i, nodePieces[i]);
+            estimatedSize += dynamicPiece(pieces, i, nodePieces[i], false);
         }
 
         Variable stringResult = temp();
@@ -2680,7 +2669,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
         return result;
     }
 
-    private Operand setupCallClosure(Node node) {
+    Operand setupCallClosure(Node node) {
         if (node == null) return NullBlock.INSTANCE;
 
         switch (node.getNodeType()) {
@@ -3507,61 +3496,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
         return nil();
     }
 
-    private Operand processEnsureRescueBlocks(Operand retVal) {
-        // Before we return,
-        // - have to go execute all the ensure blocks if there are any.
-        //   this code also takes care of resetting "$!"
-        if (!activeEnsureBlockStack.isEmpty()) {
-            retVal = addResultInstr(new CopyInstr(temp(), retVal));
-            emitEnsureBlocks(null);
-        }
-       return retVal;
-    }
-
     public Operand buildReturn(ReturnNode returnNode) {
-        Operand retVal = build(returnNode.getValueNode());
-
-        if (scope instanceof IRClosure) {
-            if (scope.isWithinEND()) {
-                // ENDs do not allow returns
-                addInstr(new ThrowExceptionInstr(IRException.RETURN_LocalJumpError));
-            } else {
-                // Closures return behavior has several cases (which depend on runtime state):
-                // 1. closure in method (return). !method (error) except if in define_method (return)
-                // 2. lambda (return) [dynamic]  // FIXME: I believe ->() can be static and omit LJE check.
-                // 3. migrated closure (LJE) [dynamic]
-                // 4. eval/for (return) [static]
-                boolean definedWithinMethod = scope.getNearestMethod() != null;
-                if (!(scope instanceof IREvalScript) && !(scope instanceof IRFor)) {
-                    addInstr(new CheckForLJEInstr(definedWithinMethod));
-                }
-                // for non-local returns (from rescue block) we need to restore $! so it does not get carried over
-                if (!activeRescueBlockStack.isEmpty()) {
-                    RescueBlockInfo rbi = activeRescueBlockStack.peek();
-                    addInstr(new PutGlobalVarInstr(symbol("$!"), rbi.savedExceptionVariable));
-                }
-
-                addInstr(new NonlocalReturnInstr(retVal, definedWithinMethod ? scope.getNearestMethod().getId() : "--none--"));
-            }
-        } else if (scope.isModuleBody()) {
-            IRMethod sm = scope.getNearestMethod();
-
-            // Cannot return from top-level module bodies!
-            if (sm == null) addInstr(new ThrowExceptionInstr(IRException.RETURN_LocalJumpError));
-            if (sm != null) addInstr(new NonlocalReturnInstr(retVal, sm.getId()));
-        } else {
-            retVal = processEnsureRescueBlocks(retVal);
-
-            if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                addInstr(new TraceInstr(RubyEvent.RETURN, getCurrentModuleVariable(), getName(), getFileName(), returnNode.getLine() + 1));
-            }
-            addInstr(new ReturnInstr(retVal));
-        }
-
-        // The value of the return itself in the containing expression can never be used because of control-flow reasons.
-        // The expression that uses this result can never be executed beyond the return and hence the value itself is just
-        // a placeholder operand.
-        return U_NIL;
+        return buildReturn(build(returnNode.getValueNode()), returnNode.getLine());
     }
 
     public InterpreterContext buildEvalRoot(RootNode rootNode) {
@@ -3600,48 +3536,6 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
         if (strNode.isFrozen()) return new FrozenString(strNode.getValue(), strNode.getCodeRange(), scope.getFile(), line);
 
         return new MutableString(strNode.getValue(), strNode.getCodeRange(), scope.getFile(), line);
-    }
-
-    private Operand buildZSuper(Variable result, Operand block) {
-        List<Operand> callArgs = new ArrayList<>(5);
-        List<KeyValuePair<Operand, Operand>> keywordArgs = new ArrayList<>(3);
-        determineZSuperCallArgs(scope, this, callArgs, keywordArgs);
-
-        boolean inClassBody = scope instanceof IRMethod && scope.getLexicalParent() instanceof IRClassBody;
-        boolean isInstanceMethod = inClassBody && ((IRMethod) scope).isInstanceMethod;
-        Variable zsuperResult = result == null ? temp() : result;
-        int[] flags = new int[] { 0 };
-        if (keywordArgs.size() == 1 && keywordArgs.get(0).getKey().equals(Symbol.KW_REST_ARG_DUMMY)) {
-            flags[0] |= (CALL_KEYWORD | CALL_KEYWORD_REST);
-            Operand keywordRest = keywordArgs.get(0).getValue();
-            Operand[] args = callArgs.toArray(new Operand[callArgs.size()]);
-            Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { keywordRest }));
-            if_else(test, tru(),
-                    () -> receiveBreakException(block,
-                            determineSuperInstr(zsuperResult, args, block, flags[0], inClassBody, isInstanceMethod)),
-                    () -> receiveBreakException(block,
-                            determineSuperInstr(zsuperResult, addArg(args, keywordRest), block, flags[0], inClassBody, isInstanceMethod)));
-        } else {
-            Operand[] args = getZSuperCallOperands(scope, callArgs, keywordArgs, flags);
-            receiveBreakException(block,
-                    determineSuperInstr(zsuperResult, args, block, flags[0], inClassBody, isInstanceMethod));
-        }
-
-        return zsuperResult;
-    }
-
-    private CallInstr determineSuperInstr(Variable result, Operand[] args, Operand block, int flags,
-                                          boolean inClassBody, boolean isInstanceMethod) {
-        if (result == null) result = temp();
-        return inClassBody ?
-                isInstanceMethod ?
-                        new InstanceSuperInstr(scope, result, getCurrentModuleVariable(), getName(), args, block, flags, scope.maybeUsingRefinements()) :
-                        new ClassSuperInstr(scope, result, getCurrentModuleVariable(), getName(), args, block, flags, scope.maybeUsingRefinements()) :
-                // We dont always know the method name we are going to be invoking if the super occurs in a closure.
-                // This is because the super can be part of a block that will be used by 'define_method' to define
-                // a new method.  In that case, the method called by super will be determined by the 'name' argument
-                // to 'define_method'.
-                new UnresolvedSuperInstr(scope, result, buildSelf(), args, block, flags, scope.maybeUsingRefinements());
     }
 
     public Operand buildSuper(Variable aResult, SuperNode callNode) {

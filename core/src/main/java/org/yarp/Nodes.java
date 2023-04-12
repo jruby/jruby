@@ -1354,10 +1354,12 @@ public abstract class Nodes {
     //     "foo #{bar} baz"
     //     ^^^^^^^^^^^^^^^^
     public static final class InterpolatedStringNode extends Node {
+        public final Token opening; // optional
         public final Node[] parts;
 
-        public InterpolatedStringNode(Node[] parts, int startOffset, int endOffset) {
+        public InterpolatedStringNode(Token opening, Node[] parts, int startOffset, int endOffset) {
             super(startOffset, endOffset);
+            this.opening =  opening;
             this.parts =  parts;
         }
 
@@ -2471,11 +2473,13 @@ public abstract class Nodes {
     //     "foo #{bar} baz"
     //      ^^^^      ^^^^
     public static final class StringNode extends Node {
+        public final Token opening; // optional
         public final Token content;
         public final byte[] unescaped;
 
-        public StringNode(Token content, byte[] unescaped, int startOffset, int endOffset) {
+        public StringNode(Token opening, Token content, byte[] unescaped, int startOffset, int endOffset) {
             super(startOffset, endOffset);
+            this.opening =  opening;
             this.content =  content;
             this.unescaped =  unescaped;
         }

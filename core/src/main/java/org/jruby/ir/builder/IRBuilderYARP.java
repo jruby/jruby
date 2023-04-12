@@ -151,6 +151,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
             return buildElse((ElseNode) node);
         } else if (node instanceof FalseNode) {
             return fals();
+        } else if (node instanceof ForwardingSuperNode) {
+            return buildForwardingSuper(result, (ForwardingSuperNode) node);
         } else if (node instanceof GlobalVariableReadNode) {
             return buildGlobalVariableRead(result, (GlobalVariableReadNode) node);
         } else if (node instanceof GlobalVariableWriteNode) {
@@ -165,6 +167,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
             return buildInstanceVariableWrite((InstanceVariableWriteNode) node);
         } else if (node instanceof IntegerNode) {
             return buildInteger((IntegerNode) node);
+        } else if (node instanceof InterpolatedRegularExpressionNode) {
+            return buildInterpolatedRegularExpression(result, (InterpolatedRegularExpressionNode) node);
         } else if (node instanceof InterpolatedStringNode) {
             return buildInterpolatedString(result, (InterpolatedStringNode) node);
         } else if (node instanceof LocalVariableReadNode) {
@@ -187,6 +191,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
             return buildProgram((ProgramNode) node);
         } else if (node instanceof RegularExpressionNode) {
             return buildRegularExpression((RegularExpressionNode) node);
+        } else if (node instanceof ReturnNode) {
+            return buildReturn((ReturnNode) node);
         } else if (node instanceof SelfNode) {
             return buildSelf();
         } else if (node instanceof SingletonClassNode) {
@@ -379,6 +385,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
     }
 
     private Operand buildBlockArgument(BlockArgumentNode node) {
+        System.out.println("NODE.expr: " + node.expression);
         if (node.expression instanceof SymbolNode && !scope.maybeUsingRefinements()) {
             return new SymbolProc(symbolFor(node.expression));
         } else if (node.expression == null) {
@@ -494,9 +501,13 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
         return buildStatements(node.statements);
     }
 
+    private Operand buildForwardingSuper(Variable result, ForwardingSuperNode node) {
+        return buildZSuper(result, node.block);
+    }
+
     private Operand buildGlobalVariableRead(Variable result, GlobalVariableReadNode node) {
         // FIXME: Prefer a full node for nth ref.
-        if (node.name.type == TokenType.NTH_REFERENCE) {
+        if (node.name.type == TokenType.PARENTHESIS_LEFT) { // FIXME: it is not returning NTH_REFERENCE (seems to be something wrong on my branch
             // FIXME: Gruesome :)
             return buildNthRef(Integer.parseInt(new String(byteListFrom(node.name).getUnsafeBytes()).substring(1)));
         }
@@ -567,10 +578,16 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
         return fix(RubyNumeric.fix2long(RubyNumeric.str2inum(getManager().runtime, getManager().getRuntime().newString(value), 10)));
     }
 
+    private Operand buildInterpolatedRegularExpression(Variable result, InterpolatedRegularExpressionNode node) {
+        //String opts = new String(byteListFrom(node.closing).getUnsafeBytes()).substring(1);
+        //RegexpOptions options = RegexpOptions.newRegexpOptions(opts);
+        // FIXME: missing options token
+        return buildDRegex(result, node.parts, RegexpOptions.newRegexpOptions(""));
+    }
 
     private Operand buildInterpolatedString(Variable result, InterpolatedStringNode node) {
-        // FIXME: Missing encoding, frozen, line
-        return buildDStr(result, node.parts, UTF8Encoding.INSTANCE, false, 0);
+        // FIXME: Missing encoding, frozen
+        return buildDStr(result, node.parts, UTF8Encoding.INSTANCE, false, getLine(node));
     }
 
     private Operand buildLocalVariableRead(LocalVariableReadNode node) {
@@ -736,6 +753,25 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
         return new Regexp(content, options);
     }
 
+    private Operand buildReturn(ReturnNode node) {
+        Operand[] args = buildArguments(node.arguments);
+
+        // FIXME: This is weird.  If this is how this should work should this be a helper?
+        Operand value;
+        switch (args.length) {
+            case 0:
+                value = nil();
+                break;
+            case 1:
+                value = args[0];
+                break;
+            default:
+                value = new Array(args);
+        }
+
+        return buildReturn(value, getLine(node));
+    }
+
     private Operand buildRestKeywordArgs(HashNode keywordArgs, int[] flags) {
         flags[0] |= CALL_KEYWORD_REST;
         Node[] pairs = keywordArgs.elements;
@@ -829,7 +865,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
         return false;
     }
 
-    int dynamicPiece(Operand[] pieces, int i, Node pieceNode) {
+    int dynamicPiece(Operand[] pieces, int i, Node pieceNode, boolean interpolated) {
         Operand piece;
 
         // somewhat arbitrary minimum size for interpolated values
@@ -838,7 +874,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
         while (true) { // loop to unwrap EvStr
 
             if (pieceNode instanceof StringNode) {
-                piece = buildStrRaw((StringNode) pieceNode);
+                piece = buildString((StringNode) pieceNode, interpolated);
                 estimatedSize = byteListFrom(((StringNode) pieceNode).content).realSize();
             } else if (pieceNode instanceof StringInterpolatedNode) {
                 if (scope.maybeUsingRefinements()) {
@@ -1039,13 +1075,21 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
         return result;
     }
 
-    // FIXME: StringNode should enumerate types and not force us to decode strings to figure it out.
     private Operand buildString(StringNode node) {
-        // FIXME: only assuming normal strings and not words
+        boolean interpolated = node.opening != null && source[node.opening.startOffset] != '\'';
+        return buildString(node, interpolated);
+    }
+
+    private Operand buildString(StringNode node, boolean interpolated) {
         // FIXME: No code range
         // FIXME: how can we tell if frozen or not
-        // FIXME: no line
-        return new MutableString(byteListFrom(node.content), 0, scope.getFile(), 0);
+
+        // no opening is DNode-like string fragments.
+        if (interpolated) {
+            return new MutableString(new ByteList(node.unescaped), 0, scope.getFile(), getLine(node));
+        } else {
+            return new MutableString(byteListFrom(node.content), 0, scope.getFile(), getLine(node));
+        }
     }
 
     @Override
@@ -1175,6 +1219,10 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
             addInstr(createBranch(tmpVar, nil(), undefLabel));
             Operand superDefnVal = buildGetArgumentDefinition(((SuperNode) node).arguments, DefinedMessage.SUPER.getText());
             return buildDefnCheckIfThenPaths(undefLabel, superDefnVal);
+        } else if (node instanceof ForwardingSuperNode) {
+            return addResultInstr(
+                    new RuntimeHelperCall(temp(), IS_DEFINED_SUPER,
+                            new Operand[] { buildSelf(), new FrozenString(DefinedMessage.SUPER.getText()) }));
         } else if (node instanceof CallNode) {
             CallNode call = (CallNode) node;
             RubySymbol name = symbolFor(call.message);
@@ -1474,7 +1522,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
         buildParameters(defNode.parameters);
     }
 
-    private Operand setupCallClosure(Node node) {
+    Operand setupCallClosure(Node node) {
         if (node == null) return NullBlock.INSTANCE;
 
         if (node instanceof BlockNode) {
