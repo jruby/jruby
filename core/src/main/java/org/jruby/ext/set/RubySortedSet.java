@@ -31,6 +31,7 @@ package org.jruby.ext.set;
 
 import org.jruby.*;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -159,6 +160,8 @@ public class RubySortedSet extends RubySet implements SortedSet {
 
     @JRubyMethod(frame = true, keywords = true, required = 1, optional = 1)
     public IRubyObject initialize_clone(ThreadContext context, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 1, 2);
+
         super.initialize_clone(context, args);
         IRubyObject orig = args[0];
         if (this != orig) order.addAll(((RubySortedSet) orig).order);

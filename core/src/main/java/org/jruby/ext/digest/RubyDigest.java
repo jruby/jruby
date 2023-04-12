@@ -50,6 +50,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -274,7 +275,7 @@ public class RubyDigest {
 
         @JRubyMethod()
         public static IRubyObject digest_length(ThreadContext context, IRubyObject self) {
-            return digest(context, self, null).convertToString().bytesize();
+            return digest(context, self, IRubyObject.NULL_ARRAY).convertToString().bytesize();
         }
 
         @JRubyMethod()
@@ -290,8 +291,8 @@ public class RubyDigest {
             RubyString str1, str2;
             RubyModule instance = (RubyModule)context.runtime.getModule("Digest").getConstantAt("Instance");
             if (oth.getMetaClass().getRealClass().hasModuleInHierarchy(instance)) {
-                str1 = digest(context, self, null).convertToString();
-                str2 = digest(context, oth, null).convertToString();
+                str1 = digest(context, self, IRubyObject.NULL_ARRAY).convertToString();
+                str2 = digest(context, oth, IRubyObject.NULL_ARRAY).convertToString();
             } else {
                 str1 = to_s(context, self).convertToString();
                 str2 = oth.convertToString();
@@ -302,7 +303,7 @@ public class RubyDigest {
 
         @JRubyMethod()
         public static IRubyObject inspect(ThreadContext context, IRubyObject self) {
-            return RubyString.newStringNoCopy(self.getRuntime(), ByteList.plain("#<" + self.getMetaClass().getRealClass().getName() + ": " + hexdigest(context, self, null) + ">"));
+            return RubyString.newStringNoCopy(self.getRuntime(), ByteList.plain("#<" + self.getMetaClass().getRealClass().getName() + ": " + hexdigest(context, self, IRubyObject.NULL_ARRAY) + ">"));
         }
 
         /* instance methods that need not usually be overridden */
@@ -313,8 +314,10 @@ public class RubyDigest {
 
         @JRubyMethod(optional = 1)
         public static IRubyObject digest(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+            int argc = Arity.checkArgumentCount(context, args, 0, 1);
+
             final IRubyObject value;
-            if (args != null && args.length > 0) {
+            if (args != null && argc > 0) {
                 self.callMethod(context, "reset");
                 self.callMethod(context, "update", args[0]);
                 value = self.callMethod(context, "finish");

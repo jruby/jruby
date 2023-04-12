@@ -208,6 +208,8 @@ public class JZlibDeflate extends ZStream {
 
     @JRubyMethod(name = "flush", optional = 1)
     public IRubyObject flush(IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(getRuntime(), args, 0, 1);
+
         int flush = 2; // SYNC_FLUSH
         
         if (args.length == 1 && !args[0].isNil()) flush = RubyNumeric.fix2int(args[0]);

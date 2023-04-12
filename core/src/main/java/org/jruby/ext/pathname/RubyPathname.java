@@ -273,6 +273,8 @@ public class RubyPathname extends RubyObject {
 
     @JRubyMethod(alias = "fnmatch?", required = 1, optional = 1)
     public IRubyObject fnmatch(ThreadContext context, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 1, 2);
+
         args = insertPath(args, 1);
         return context.runtime.getFile().callMethod(context, "fnmatch?", args);
     }
@@ -319,13 +321,15 @@ public class RubyPathname extends RubyObject {
 
     @JRubyMethod(required = 1, optional = 1)
     public IRubyObject glob(ThreadContext context, IRubyObject[] _args, Block block) {
+        int argc = Arity.checkArgumentCount(context, _args, 1, 2);
+
         Ruby runtime = context.runtime;
 
         IRubyObject[] args = new IRubyObject[3];
         boolean blockGiven = block.isGiven();
 
         args[0] = _args[0];
-        if (_args.length == 1) {
+        if (argc == 1) {
             args[1] = RubyFixnum.zero(runtime);
         } else {
             args[1] = _args[1];

@@ -9,6 +9,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.util.ArrayUtils;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -105,7 +106,9 @@ public final class ArrayJavaProxy extends JavaProxy {
 
     @JRubyMethod(name = "[]", required = 1, rest = true)
     public final IRubyObject op_aref(ThreadContext context, IRubyObject[] args) {
-        if ( args.length == 1 ) return op_aref(context, args[0]);
+        int argc = Arity.checkArgumentCount(context, args, 1, -1);
+
+        if ( argc == 1 ) return op_aref(context, args[0]);
         return getRange(context, args);
     }
 
@@ -395,6 +398,8 @@ public final class ArrayJavaProxy extends JavaProxy {
 
     @JRubyMethod(name = "dig", required = 1, rest = true)
     public final IRubyObject dig(ThreadContext context, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 1, -1);
+
         return dig(context, args, 0);
     }
 

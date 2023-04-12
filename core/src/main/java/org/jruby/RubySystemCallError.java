@@ -175,6 +175,9 @@ public class RubySystemCallError extends RubyStandardError {
     @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         Ruby runtime = getRuntime();
+
+        int argc = Arity.checkArgumentCount(runtime, args, 0, 2);
+
         RubyClass sCallErorrClass = runtime.getSystemCallError();
         RubyClass klass = getMetaClass().getRealClass();
 
@@ -187,17 +190,17 @@ public class RubySystemCallError extends RubyStandardError {
             // one optional, one required args
             Arity.checkArgumentCount(runtime, args, 1, 2);
             msg = args[0];
-            if (args.length == 2) {
+            if (argc == 2) {
                 err = args[1];
             }
-            if (args.length == 1 && (msg instanceof RubyFixnum)) {
+            if (argc == 1 && (msg instanceof RubyFixnum)) {
                 err = msg;
                 msg = runtime.getNil();
             }
         } else {
             // one optional and no required args
             Arity.checkArgumentCount(runtime, args, 0, 1);
-            if (args.length == 1) {
+            if (argc == 1) {
                 msg = args[0];
             }
             // try to get errno value out of the class

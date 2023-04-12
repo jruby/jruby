@@ -1180,9 +1180,13 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     @JRubyMethod(name = "insert", required = 1, rest = true)
     public IRubyObject insert(IRubyObject[] args) {
+        final Ruby runtime = metaClass.runtime;
+
+        int argc = Arity.checkArgumentCount(runtime, args, 1, -1);
+
         modifyCheck();
 
-        if (args.length == 1) return this;
+        if (argc == 1) return this;
 
         unpack();
 
@@ -1191,12 +1195,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (pos == -1) pos = realLength;
         if (pos < 0) pos++;
 
-        final Ruby runtime = metaClass.runtime;
-
         RubyArray inserted = new RubyArray(runtime, false);
         inserted.values = args;
         inserted.begin = 1;
-        inserted.realLength = args.length - 1;
+        inserted.realLength = argc - 1;
 
         splice(runtime, checkInt(runtime, pos), 0, inserted, inserted.realLength); // rb_ary_new4
 
@@ -2687,17 +2689,19 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     @JRubyMethod(name = {"indexes", "indices"}, required = 1, rest = true)
     public IRubyObject indexes(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 1, -1);
+
         Ruby runtime = context.runtime;
         runtime.getWarnings().warn(ID.DEPRECATED_METHOD, "Array#indexes is deprecated; use Array#values_at");
 
-        if (args.length == 1) return newArray(runtime, args[0]);
+        if (argc == 1) return newArray(runtime, args[0]);
 
-        RubyArray ary = newBlankArrayInternal(runtime, args.length);
+        RubyArray ary = newBlankArrayInternal(runtime, argc);
 
-        for (int i = 0; i < args.length; i++) {
+        for (int i = 0; i < argc; i++) {
             ary.storeInternal(i, aref(context, args[i]));
         }
-        ary.realLength = args.length;
+        ary.realLength = argc;
 
         return ary;
     }
@@ -5485,8 +5489,10 @@ float_loop:
 
     @JRubyMethod(name = "dig", required = 1, rest = true)
     public IRubyObject dig(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 1, -1);
+
         final IRubyObject val = at( args[0] );
-        return args.length == 1 ? val : RubyObject.dig(context, val, args, 1);
+        return argc == 1 ? val : RubyObject.dig(context, val, args, 1);
     }
 
     private IRubyObject maxWithBlock(ThreadContext context, Block block) {

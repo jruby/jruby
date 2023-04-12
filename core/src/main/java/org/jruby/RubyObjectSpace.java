@@ -41,6 +41,7 @@ import java.util.Map;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.javasupport.JavaPackage;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
@@ -70,9 +71,12 @@ public class RubyObjectSpace {
     @JRubyMethod(required = 1, optional = 1, module = true, visibility = PRIVATE)
     public static IRubyObject define_finalizer(IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
+
+        int argc = Arity.checkArgumentCount(runtime, args, 1, 2);
+
         IRubyObject finalizer;
         IRubyObject obj = args[0];
-        if (args.length == 2) {
+        if (argc == 2) {
             finalizer = args[1];
             if (!finalizer.respondsTo("call")) {
                 throw runtime.newArgumentError("wrong type argument " + finalizer.getType() + " (should be callable)");
@@ -204,6 +208,8 @@ public class RubyObjectSpace {
 
     @JRubyMethod(name = "each_object", optional = 1, module = true, visibility = PRIVATE)
     public static IRubyObject each_object(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        Arity.checkArgumentCount(context, args, 0, 1);
+
         return block.isGiven() ? each_objectInternal(context, recv, args, block) : enumeratorize(context.runtime, recv, "each_object", args);
     }
 

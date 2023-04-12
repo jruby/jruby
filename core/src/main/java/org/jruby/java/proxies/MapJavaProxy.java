@@ -41,6 +41,7 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -293,7 +294,9 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
 
         @Override // re-invent @JRubyMethod(name = "any?")
         public IRubyObject any_p(ThreadContext context, IRubyObject[] args, Block block) {
-            boolean patternGiven = args.length > 0;
+            int argc = Arity.checkArgumentCount(context, args, 0, 1);
+
+            boolean patternGiven = argc > 0;
 
             if (isEmpty()) return context.fals;
 

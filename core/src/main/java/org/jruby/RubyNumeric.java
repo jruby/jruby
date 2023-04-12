@@ -41,6 +41,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
@@ -1013,6 +1014,8 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(optional = 2)
     public IRubyObject step(ThreadContext context, IRubyObject[] args, Block block) {
+        Arity.checkArgumentCount(context, args, 0, 2);
+
         if (!block.isGiven()) {
             IRubyObject[] newArgs = new IRubyObject[3];
             numExtractStepArgs(context, args, newArgs);

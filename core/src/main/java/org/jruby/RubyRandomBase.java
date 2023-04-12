@@ -2,6 +2,7 @@ package org.jruby;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -59,9 +60,11 @@ public class RubyRandomBase extends RubyObject {
 
     @JRubyMethod(visibility = PRIVATE, optional = 1)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 0, 1);
+
         checkFrozen();
 
-        random = new RubyRandom.RandomType((args.length == 0) ? RubyRandom.randomSeed(context.runtime) : args[0]);
+        random = new RubyRandom.RandomType((argc == 0) ? RubyRandom.randomSeed(context.runtime) : args[0]);
 
         return this;
     }
