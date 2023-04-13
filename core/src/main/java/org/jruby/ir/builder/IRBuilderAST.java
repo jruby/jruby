@@ -3500,23 +3500,6 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
         return buildReturn(build(returnNode.getValueNode()), returnNode.getLine());
     }
 
-    public InterpreterContext buildEvalRoot(RootNode rootNode) {
-        executesOnce = false;
-        coverageMode = CoverageData.NONE;  // Assuming there is no path into build eval root without actually being an eval.
-        addInstr(getManager().newLineNumber(scope.getLine()));
-
-        prepareImplicitState();                                    // recv_self, add frame block, etc)
-        addCurrentModule();                                        // %current_module
-
-        afterPrologueIndex = instructions.size() - 1;                      // added BEGINs start after scope prologue stuff
-
-        Operand returnValue = rootNode.getBodyNode() == null ? nil() : build(rootNode.getBodyNode());
-        addInstr(new ReturnInstr(returnValue));
-
-        computeScopeFlagsFrom(instructions);
-        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 2, flags);
-    }
-
     public Operand buildSplat(Variable result, SplatNode splatNode) {
         if (result == null) result = temp();
         return addResultInstr(new BuildSplatInstr(result, build(splatNode.getValue()), true));

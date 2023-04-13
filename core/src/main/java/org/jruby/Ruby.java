@@ -2738,10 +2738,29 @@ public final class Ruby implements Constantizable {
                 lineNumber, extraPositionInformation, false, true, config));
     }
 
-    public Node parseEval(ByteList content, String file, DynamicScope scope, int lineNumber) {
+    public ParseResult parseEval(ByteList content, String file, DynamicScope scope, int lineNumber) {
         addEvalParseToStats();
-        return parser.parse(file, content, scope, new ParserConfiguration(this,
-                lineNumber, false, false, false, config));
+/*
+        if (Options.PARSER_YARP.load() && in instanceof LoadServiceResourceInputStream) {
+            if (!loaded) {
+                org.yarp.Parser.loadLibrary("/home/enebo/work/jruby/lib/libjavaparser.so");
+                loaded = true;
+            }
+            byte[] source = ((LoadServiceResourceInputStream) in).getBytes();
+
+            long time = System.nanoTime();
+
+            //System.out.println("LOADING: " + scriptName);
+            byte[] blob = org.yarp.Parser.parseAndSerialize(source);
+            org.yarp.Nodes.Node node = org.yarp.Loader.load(file, source, blob);
+            long parseTime = System.nanoTime() - time;
+            //yarpTime += parseTime;
+            //System.out.println("TOTAL_TIME: " + yarpTime + ", TIME: " + parseTime + ", SRC SIZE = " + source.length + ", BLOB SIZE = " + blob.length + ", RATIO: " + (((float) blob.length) / source.length));
+            return new YarpParseResult(file, source, (Nodes.ProgramNode) node);
+        } else {*/
+            return (ParseResult) parser.parse(file, content, scope, new ParserConfiguration(this,
+                    lineNumber, false, false, false, config));
+        //}
     }
 
     public Node parse(ByteList content, String file, DynamicScope scope, int lineNumber,

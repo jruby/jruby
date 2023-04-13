@@ -218,7 +218,7 @@ public abstract class IRBuilder<U, V, W> {
         String file = rootNode.getFile();
         IRScriptBody script = new IRScriptBody(manager, file == null ? "(anon)" : file, rootNode.getStaticScope());
 
-        System.out.println("Building " + file);
+        //System.out.println("Building " + file);
         return topIRBuilder(manager, script, rootNode).buildRootInner(rootNode);
     }
 
@@ -240,6 +240,23 @@ public abstract class IRBuilder<U, V, W> {
         } else {
             return new IRBuilderYARP(manager, newScope, null, null);
         }
+    }
+
+    public InterpreterContext buildEvalRoot(ParseResult rootNode) {
+        executesOnce = false;
+        coverageMode = CoverageData.NONE;  // Assuming there is no path into build eval root without actually being an eval.
+        addInstr(getManager().newLineNumber(scope.getLine()));
+
+        prepareImplicitState();                                    // recv_self, add frame block, etc)
+        addCurrentModule();                                        // %current_module
+
+        afterPrologueIndex = instructions.size() - 1;                      // added BEGINs start after scope prologue stuff
+
+        Operand returnValue = build(rootNode);
+        addInstr(new ReturnInstr(returnValue));
+
+        computeScopeFlagsFrom(instructions);
+        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 2, flags);
     }
 
     InterpreterContext buildRootInner(ParseResult parseResult) {
