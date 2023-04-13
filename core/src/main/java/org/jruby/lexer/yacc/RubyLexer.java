@@ -1418,9 +1418,7 @@ public class RubyLexer extends LexingCommon {
                 if (!tokadd_ident(c)) return EOF;
 
                 last_state = lex_state;
-                yaccValue = createTokenByteList();
-                return tGVAR;
-
+                return identifierToken(tGVAR, createTokenByteList());
             }
             pushback(c);
             c = '_';
