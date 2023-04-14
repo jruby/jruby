@@ -941,7 +941,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         RubyString file = get_path(context, arg);
 
         // asJavaString should be ok here since windows drive shares will be charset representable and otherwise we look for "/" at front.
-        return context.runtime.newBoolean(isAbsolutePath(file.asJavaString()));
+        return context.runtime.newBoolean(isJRubyAbsolutePath(file.asJavaString()));
     }
 
     @JRubyMethod(required = 1, optional = 1, meta = true)
@@ -1697,6 +1697,14 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     private static boolean isAbsolutePath(String path) {
         return (path != null && path.length() > 1 && path.charAt(0) == '/') ||
                 startsWithDriveLetterOnWindows(path);
+    }
+
+    private static boolean isJRubyAbsolutePath(String path) {
+        return isAbsolutePath(path) ||
+                path.startsWith("classpath:uri:/") ||
+                path.startsWith("uri:/") ||
+                path.startsWith("file:/") ||
+                path.contains("!/");
     }
 
     private static boolean isWindowsDriveLetter(char c) {
