@@ -48,6 +48,7 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
 import static org.jruby.ext.ripper.RipperParser.*;
+import static org.jruby.parser.RubyParser.tGVAR;
 import static org.jruby.util.StringSupport.CR_7BIT;
 import static org.jruby.util.StringSupport.codeRangeScan;
 
@@ -1499,9 +1500,7 @@ public class RubyLexer extends LexingCommon {
                 if (!tokadd_ident(c)) return EOF;
 
                 last_state = lex_state;
-                setState(EXPR_END);
-                identValue = createTokenString().intern();
-                return tGVAR;
+                return identifierToken(last_state, tGVAR, createTokenString().intern());
             }
             pushback(c);
             c = '_';
