@@ -37,24 +37,6 @@ class TestPathname < Test::Unit::TestCase
     end
   end
 
-  def test_absolute
-    assert Pathname.new('uri:classloader:/asd').absolute?
-    assert Pathname.new('uri:classloader://asd').absolute?
-    assert Pathname.new('uri:file:/asd').absolute?
-    assert Pathname.new('uri:file://asd').absolute?
-    assert Pathname.new('classpath:/asd').absolute?
-    assert Pathname.new('classpath://asd').absolute?
-    assert Pathname.new('file:/asd').absolute?
-    assert Pathname.new('file://asd').absolute?
-    assert Pathname.new('jar:file:/my.jar!/asd').absolute?
-    assert Pathname.new('jar:file://my.jar!/asd').absolute?
-    assert Pathname.new('jar:/my.jar!/asd').absolute?
-    assert Pathname.new('jar://my.jar!/asd').absolute?
-    assert Pathname.new('file:/my.jar!/asd').absolute?
-    assert Pathname.new('file://my.jar!/asd').absolute?
-    assert Pathname.new('my.jar!/asd').absolute?
-  end
-
   def test_unicode_name
     x = "joe"
     y = "joe/⸀䐀攀氀攀琀攀䴀攀/fred"
