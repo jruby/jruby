@@ -8,6 +8,13 @@ describe "Pathname#absolute?" do
     expect(Pathname.new('http://10.1.1.1:32/').absolute?).to be false
   end
 
+    # This represents internal paths for files contain within jar files.
+  it "should return true for 'classpath:/'" do
+    expect(Pathname.new('classpath:/').absolute?).to be true
+    expect(Pathname.new('classpath://').absolute?).to be true
+    expect(Pathname.new('classpath:/home/me').absolute?).to be true
+  end
+
   # This represents internal paths for files contain within jar files.
   it "should return true for 'classpath:uri:/'" do
     expect(Pathname.new('classpath:uri:/').absolute?).to be true

@@ -17,24 +17,22 @@ class TestPathname < Test::Unit::TestCase
     assert Pathname.new(y).relative_path_from(Pathname.new(x)).to_s == 'pete!/bob'
   end
 
-  def test_root_and_absolute
-    [:root?, :absolute?].each do |method|
-      assert Pathname.new('uri:classloader:/').send method
-      assert Pathname.new('uri:classloader://').send method
-      assert Pathname.new('uri:file:/').send method
-      assert Pathname.new('uri:file://').send method
-      assert Pathname.new('classpath:/').send method
-      assert Pathname.new('classpath://').send method
-      assert Pathname.new('file:/').send method
-      assert Pathname.new('file://').send method
-      assert Pathname.new('jar:file:/my.jar!/').send method
-      assert Pathname.new('jar:file://my.jar!/').send method
-      assert Pathname.new('jar:/my.jar!/').send method
-      assert Pathname.new('jar://my.jar!/').send method
-      assert Pathname.new('file:/my.jar!/').send method
-      assert Pathname.new('file://my.jar!/').send method
-      assert Pathname.new('my.jar!/').send method
-    end
+  def test_root
+    assert Pathname.new('uri:classloader:/').root?
+    assert Pathname.new('uri:classloader://').root?
+    assert Pathname.new('uri:file:/').root?
+    assert Pathname.new('uri:file://').root?
+    assert Pathname.new('classpath:/').root?
+    assert Pathname.new('classpath://').root?
+    assert Pathname.new('file:/').root?
+    assert Pathname.new('file://').root?
+    assert Pathname.new('jar:file:/my.jar!/').root?
+    assert Pathname.new('jar:file://my.jar!/').root?
+    assert Pathname.new('jar:/my.jar!/').root?
+    assert Pathname.new('jar://my.jar!/').root?
+    assert Pathname.new('file:/my.jar!/').root?
+    assert Pathname.new('file://my.jar!/').root?
+    assert Pathname.new('my.jar!/').root?
   end
 
   def test_unicode_name
