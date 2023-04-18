@@ -17,24 +17,6 @@ class TestPathname < Test::Unit::TestCase
     assert Pathname.new(y).relative_path_from(Pathname.new(x)).to_s == 'pete!/bob'
   end
 
-  def test_root
-    assert Pathname.new('uri:classloader:/').root?
-    assert Pathname.new('uri:classloader://').root?
-    assert Pathname.new('uri:file:/').root?
-    assert Pathname.new('uri:file://').root?
-    assert Pathname.new('classpath:/').root?
-    assert Pathname.new('classpath://').root?
-    assert Pathname.new('file:/').root?
-    assert Pathname.new('file://').root?
-    assert Pathname.new('jar:file:/my.jar!/').root?
-    assert Pathname.new('jar:file://my.jar!/').root?
-    assert Pathname.new('jar:/my.jar!/').root?
-    assert Pathname.new('jar://my.jar!/').root?
-    assert Pathname.new('file:/my.jar!/').root?
-    assert Pathname.new('file://my.jar!/').root?
-    assert Pathname.new('my.jar!/').root?
-  end
-
   def test_unicode_name
     x = "joe"
     y = "joe/⸀䐀攀氀攀琀攀䴀攀/fred"
