@@ -1701,10 +1701,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     private static boolean isJRubyAbsolutePath(String path) {
         return isAbsolutePath(path) ||
+                path.startsWith("classpath:/") ||
                 path.startsWith("classpath:uri:/") ||
                 path.startsWith("uri:/") ||
+                path.startsWith("uri:classloader:/") ||
+                path.startsWith("uri:file:/") ||
                 path.startsWith("file:/") ||
-                path.contains("!/");
+                path.contains(".jar!/");
     }
 
     private static boolean isWindowsDriveLetter(char c) {
