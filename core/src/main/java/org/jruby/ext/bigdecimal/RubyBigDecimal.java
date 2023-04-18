@@ -1380,7 +1380,7 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private IRubyObject subInternal(ThreadContext context, RubyBigDecimal val, IRubyObject b, int prec) {
-        if (val == null) return callCoerced(context, sites(context).op_minus, b, true);
+        if (val == null) return ((RubyBigDecimal)callCoerced(context, sites(context).op_minus, b, true)).setResult(prec);
         RubyBigDecimal res = subSpecialCases(context, val);
         return res != null ? res : new RubyBigDecimal(context.runtime, value.subtract(val.value)).setResult(prec);
     }
