@@ -463,7 +463,7 @@ public abstract class RubyParserBase {
         switch (head.getNodeType()) {
             case BIGNUMNODE: case FIXNUMNODE: case FLOATNODE: // NODE_LIT
             case STRNODE: case SELFNODE: case TRUENODE: case FALSENODE: case NILNODE:
-                warning(ID.MISCELLANEOUS, lexer.getFile(), tail.getLine(), "unused literal ignored");
+                if (!(head instanceof InvisibleNode)) warning(ID.MISCELLANEOUS, lexer.getFile(), tail.getLine(), "unused literal ignored");
                 return tail;
         }
 
