@@ -1,7 +1,5 @@
-# https://github.com/jruby/jruby/issues/2132
-
-describe 'NonLocalReturn' do
-  it 'throwing a LocalJumpError should be properly rescued' do
+describe 'return' do
+  it 'should flow through what we expect (GH-2132)' do
     ret = [];
     Thread.new {
       begin

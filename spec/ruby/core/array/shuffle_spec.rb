@@ -47,6 +47,10 @@ describe "Array#shuffle" do
     [1, 2].shuffle(random: random).should be_an_instance_of(Array)
   end
 
+  it "accepts a Random class for the value for random: argument" do
+    [1, 2].shuffle(random: Random).should be_an_instance_of(Array)
+  end
+
   it "calls #to_int on the Object returned by #rand" do
     value = mock("array_shuffle_random_value")
     value.should_receive(:to_int).at_least(1).times.and_return(0)
