@@ -2981,9 +2981,11 @@ public class RubyModule extends RubyObject {
             if (method.getDefinedClass() == this) {
                 if (!method.isNative()) {
                     Signature signature = method.getSignature();
-                    if (signature.hasRest() && !signature.hasKwargs()) {
+                    if (!signature.hasRest()) {
+                        context.runtime.getWarnings().warn(ID.MISCELLANEOUS, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (method accepts keywords or method does not accept argument splat)"));
+                    } else if (!signature.hasKwargs()) {
                         method.setRuby2Keywords();
-                    } else {
+                    } else if (method instanceof AbstractIRMethod && ((AbstractIRMethod) method).getStaticScope().exists("...") == -1) {
                         context.runtime.getWarnings().warn(ID.MISCELLANEOUS, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (method accepts keywords or method does not accept argument splat)"));
                     }
                 } else {

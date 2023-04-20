@@ -2006,10 +2006,7 @@ public abstract class RubyParserBase {
     }
 
     public boolean check_forwarding_args() {
-        if (local_id(FWD_REST) &&
-                local_id(FWD_KWREST) &&
-                local_id(FWD_BLOCK)) return true;
-
+        if (local_id(FWD_ALL)) return true;
         compile_error("unexpected ...");
         return false;
     }
@@ -2018,6 +2015,7 @@ public abstract class RubyParserBase {
         arg_var(FWD_REST);
         arg_var(FWD_KWREST);
         arg_var(FWD_BLOCK);
+        arg_var(FWD_ALL);  // Add dummy value to make it easy to see later that is ...
     }
 
     public Node new_args_forward_call(int line, Node leadingArgs) {
