@@ -29,7 +29,7 @@ class Pathname
 
   if RUBY_ENGINE == 'jruby'
     # additional matching for paths that considers URI components to be roots
-    URI_ROOT_PAT = "|.+!/|[a-z:]+://?"
+    URI_ROOT_PAT = '|.+\.jar!/|(?:classpath:(?:uri:)?|(?:uri:|jar:)?file:|uri:classloader:|jar:)//?'
   else
     URI_ROOT_PAT = ""
   end
