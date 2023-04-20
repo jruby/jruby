@@ -265,10 +265,10 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
     public SplitSuperState<MethodSplitState> startSplitSuperCall(ThreadContext context, IRubyObject self,
             RubyModule clazz, String name, IRubyObject[] args, Block block) {
         // TODO: check if IR method, or is it guaranteed?
-        InterpreterContext ic = ((IRMethod) getIRScope()).builtInterperterContextForJavaConstructor();
-        if (!(ic instanceof ExitableInterpreterContext)) return null; // no super call/can't split this
+        ExitableInterpreterContext ic = ((IRMethod) getIRScope()).builtInterperterContextForJavaConstructor();
+        if (ic == null) return null; // no super call/can't split this
 
-        MethodSplitState state = new MethodSplitState(context, (ExitableInterpreterContext) ic, clazz, self, name);
+        MethodSplitState state = new MethodSplitState(context, ic, clazz, self, name);
 
         // TODO: JIT?
 

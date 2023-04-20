@@ -27,8 +27,13 @@
 package org.jruby.ir.interpreter;
 
 import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.List;
 
+import org.jruby.ir.IRFlags;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.CallBase;
+import org.jruby.ir.instructions.Instr;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -36,14 +41,19 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class ExitableInterpreterContext extends InterpreterContext {
 
+    public static final ExitableInterpreterContext NULL = new ExitableInterpreterContext(null, null, 0, null, null, 0);
+
     private final static ExitableInterpreterEngine EXITABLE_INTERPRETER = new ExitableInterpreterEngine();
 	
-    private CallBase superCall;
-    private int exitIPC;
+    private final CallBase superCall;
+    private final int exitIPC;
 
     public ExitableInterpreterContext(InterpreterContext originalIC, CallBase superCall, int exitIPC) {
-        super(originalIC.getScope(), Arrays.asList(originalIC.getInstructions()),
-                originalIC.getTemporaryVariableCount(), originalIC.getFlags());
+        this(originalIC.getScope(), Arrays.asList(originalIC.getInstructions()), originalIC.getTemporaryVariableCount(), originalIC.getFlags(), superCall, exitIPC);
+    }
+
+    private ExitableInterpreterContext(IRScope scope, List<Instr> instructions, int temporaryVariableCount, EnumSet<IRFlags> flags, CallBase superCall, int exitIPC) {
+        super(scope, instructions, temporaryVariableCount, flags);
 
         this.superCall = superCall;
         this.exitIPC = exitIPC;
@@ -58,8 +68,7 @@ public class ExitableInterpreterContext extends InterpreterContext {
     }
     
     @Override
-    public ExitableInterpreterEngine getEngine()
-    {
+    public ExitableInterpreterEngine getEngine() {
     	return EXITABLE_INTERPRETER;
     }
 

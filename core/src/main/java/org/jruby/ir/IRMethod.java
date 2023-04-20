@@ -126,6 +126,7 @@ public class IRMethod extends IRScope {
         return lazilyAcquireInterpreterContext();
     }
 
+    // 3 -> piling up here synchronized on the same method :
     /**
      * initialize methods in reified Java types will try and dispatch to the Java base classes
      * constructor when the Ruby in the initialize:
@@ -138,17 +139,33 @@ public class IRMethod extends IRScope {
      *
      * @return appropriate interpretercontext
      */
-    public synchronized InterpreterContext builtInterperterContextForJavaConstructor() {
-        InterpreterContext interpreterContext = builtInterpreterContext();
+    public ExitableInterpreterContext builtInterperterContextForJavaConstructor() {
+        ExitableInterpreterContext interpreterContextForJavaConstructor = this.interpreterContextForJavaConstructor;
+        if (interpreterContextForJavaConstructor == null) {
+            synchronized (this) {
+                interpreterContextForJavaConstructor = this.interpreterContextForJavaConstructor;
+                if (interpreterContextForJavaConstructor == null) {
+                    interpreterContextForJavaConstructor = doBuiltInterperterContextForJavaConstructor();
+                    this.interpreterContextForJavaConstructor = interpreterContextForJavaConstructor;
+                }
+            }
+        }
+        return interpreterContextForJavaConstructor == ExitableInterpreterContext.NULL ? null : interpreterContextForJavaConstructor;
+    }
 
-        if (usesSuper()) { // We know at least one super is in here somewhere
+    private volatile ExitableInterpreterContext interpreterContextForJavaConstructor;
+
+    private synchronized ExitableInterpreterContext doBuiltInterperterContextForJavaConstructor() {
+        final InterpreterContext interpreterContext = builtInterpreterContext();
+        if (usesSuper()) {
+            // We know at least one super is in here somewhere
             int ipc = 0;
             int superIPC = -1;
             CallBase superCall = null;
             Map<Label, Integer> labels = new HashMap<>();
             List<Label> earlyJumps = new ArrayList<>();
 
-            for(Instr instr: interpreterContext.getInstructions()) {
+            for (Instr instr: interpreterContext.getInstructions()) {
                 if (instr instanceof CallBase && ((CallBase) instr).getCallType() == CallType.SUPER) {
                     // We have already found one super call already.  No analysis yet to figure out if this is
                     // still ok or not so we will error.
@@ -186,7 +203,7 @@ public class IRMethod extends IRScope {
             }
         }
 
-        return interpreterContext;
+        return ExitableInterpreterContext.NULL;
     }
 
     final InterpreterContext lazilyAcquireInterpreterContext() {
