@@ -246,19 +246,19 @@ public class RuntimeCache {
      * Given a packed descriptor of other cache sizes, construct the cache arrays
      *
      * The format of the descriptor is the actual size cast to char in this order:
-     * <ol>
-       <li>scopeCount</li>
-       <li>inheritedSymbolCount</li>
-       <li>inheritedFixnumCount</li>
-       <li>inheritedConstantCount</li>
-       <li>inheritedRegexpCount</li>
-       <li>inheritedBigIntegerCount</li>
-       <li>inheritedVariableReaderCount</li>
-       <li>inheritedVariableWriterCount</li>
-       <li>inheritedBlockBodyCount</li>
-       <li>inheritedBlockCallbackCount</li>
-       <li>inheritedMethodCount</li>
-       <li>inheritedStringCount</li>
+     * <ul>
+     * <li>scopeCount</li>
+     * <li>inheritedSymbolCount</li>
+     * <li>inheritedFixnumCount</li>
+     * <li>inheritedConstantCount</li>
+     * <li>inheritedRegexpCount</li>
+     * <li>inheritedBigIntegerCount</li>
+     * <li>inheritedVariableReaderCount</li>
+     * <li>inheritedVariableWriterCount</li>
+     * <li>inheritedBlockBodyCount</li>
+     * <li>inheritedBlockCallbackCount</li>
+     * <li>inheritedMethodCount</li>
+     * <li>inheritedStringCount</li>
      * </ul>
      *
      * @param descriptor The descriptor to use for preparing caches

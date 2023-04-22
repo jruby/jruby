@@ -56,7 +56,7 @@ import java.io.ByteArrayInputStream;
  * Native part of require 'jruby', e.g. provides methods for swapping between the normal Ruby reference to an
  * object and the Java-integration-wrapped reference.
  *
- * Parts of JRuby name-space are loaded even without <code>require 'jruby'<code/>, those live under JRuby::Util.
+ * Parts of JRuby name-space are loaded even without <code>require 'jruby'</code>, those live under JRuby::Util.
  * @see JRubyUtilLibrary
  */
 @JRubyModule(name="JRuby")

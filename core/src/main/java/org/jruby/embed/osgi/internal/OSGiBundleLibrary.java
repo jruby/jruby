@@ -34,10 +34,10 @@ import org.jruby.runtime.load.Library;
 import org.osgi.framework.Bundle;
 
 /**
- * @author hmalphettes
- * 
  * Attempt at making an osgi bundle an acceptable container for a jruby library
  * TODO: track the state of the bundle and remove/add the library.
+ *
+ * @author hmalphettes
  */
 public class OSGiBundleLibrary implements Library {
     

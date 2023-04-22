@@ -3072,7 +3072,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     /**
      * sub! but without any frame globals ...
-     * @note Internal API, subject to change!
+     * <p>Note: Internal API, subject to change!</p>
      * @param context
      * @param regexp
      * @param repl
@@ -5428,8 +5428,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      * In the common case, removes CR and LF characters in various ways depending on the value of
      *   the optional args[0].
      * If args.length==0 removes one instance of CR, CRLF or LF from the end of the string.
-     * If args.length>0 and args[0] is "\n" then same behaviour as args.length==0 .
-     * If args.length>0 and args[0] is "" then removes trailing multiple LF or CRLF (but no CRs at
+     * If args.length&gt;0 and args[0] is "\n" then same behaviour as args.length==0 .
+     * If args.length&gt;0 and args[0] is "" then removes trailing multiple LF or CRLF (but no CRs at
      *   all(!)).
      */
     public IRubyObject chomp_bang(ThreadContext context) {

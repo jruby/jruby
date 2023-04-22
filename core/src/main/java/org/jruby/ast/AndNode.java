@@ -37,7 +37,7 @@ import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
 
 /** 
- * Represents a && (and) operator.
+ * Represents a &amp;&amp; (and) operator.
  */
 public class AndNode extends Node implements BinaryOperatorNode {
     private final Node firstNode;

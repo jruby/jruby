@@ -55,7 +55,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * Implementation of javax.script.ScriptEngine/Compilable/Invocable.
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
 

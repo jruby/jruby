@@ -1954,7 +1954,7 @@ public class PopenExecutor {
      * <>   Redirection
      * ()   Grouping Commands
      * ~    Tilde Expansion
-     * &    AND Lists, Asynchronous Lists
+     * &amp;    AND Lists, Asynchronous Lists
      * |    OR Lists, Pipelines
      * \    Escape Character
      * $    Parameter Expansion

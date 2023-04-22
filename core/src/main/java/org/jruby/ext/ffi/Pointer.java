@@ -128,7 +128,7 @@ public class Pointer extends AbstractMemory {
 
 
     /**
-     * Tests if this <tt>Pointer</tt> represents the C <tt>NULL</tt> value.
+     * Tests if this <code>Pointer</code> represents the C <code>NULL</code> value.
      *
      * @return true if the address is NULL.
      */

@@ -51,7 +51,7 @@ import org.jruby.internal.runtime.GlobalVariable;
 /**
  * A collection of JSR223 specific utility methods.
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class Utils {
     /**

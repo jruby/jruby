@@ -46,7 +46,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * This is a concrete class for javax.script.CompiledScript.
  * 
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class JRubyCompiledScript extends CompiledScript {
     private final ScriptingContainer container;

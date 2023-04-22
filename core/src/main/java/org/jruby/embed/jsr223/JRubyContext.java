@@ -43,7 +43,7 @@ import org.jruby.embed.ScriptingContainer;
 /**
  * Implementation of javax.script.ScriptContext.
  * 
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 class JRubyContext implements ScriptContext {
 

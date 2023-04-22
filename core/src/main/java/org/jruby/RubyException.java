@@ -434,7 +434,7 @@ public class RubyException extends RubyObject {
      * Retrieve the current backtrace object for a given exception.
      * @param exception
      * @return set (or already generated) backtrace, null otherwise
-     * @note Internal API.
+     * <p>Note: Internal API.</p>
      */
     public static IRubyObject retrieveBacktrace(RubyException exception) {
         return exception.backtrace.backtraceObject;

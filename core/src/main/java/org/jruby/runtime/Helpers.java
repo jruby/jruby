@@ -2772,7 +2772,7 @@ public class Helpers {
     }
 
     /**
-     * @note Assumes exception: ... to be the only (optional) keyword argument!
+     * <p>Note: Assumes exception: ... to be the only (optional) keyword argument!</p>
      * @param context
      * @param opts
      * @return false if `exception: false`, true otherwise
@@ -2782,7 +2782,7 @@ public class Helpers {
     }
 
     /**
-     * @note Assumes exception: ... to be the only (optional) keyword argument!
+     * <p>Note: Assumes exception: ... to be the only (optional) keyword argument!</p>
      * @param context
      * @param opts the keyword args hash
      * @param defValue to return when no keyword options
@@ -2797,7 +2797,7 @@ public class Helpers {
     }
 
     /**
-     * @note Assumes exception: ... to be the only (optional) keyword argument!
+     * <p>Note: Assumes exception: ... to be the only (optional) keyword argument!</p>
      * @param context
      * @param args method args
      * @param defValue to return when no keyword options

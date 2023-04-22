@@ -45,29 +45,29 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
     }
 
     /**
-     * Creates a new <tt>StructLayout</tt> instance using defaults.
+     * Creates a new <code>StructLayout</code> instance using defaults.
      *
-     * @param runtime The runtime for the <tt>StructLayout</tt>
+     * @param runtime The runtime for the <code>StructLayout</code>
      */
     Struct(Ruby runtime) {
         this(runtime, runtime.getFFI().structClass);
     }
 
     /**
-     * Creates a new <tt>StructLayout</tt> instance.
+     * Creates a new <code>StructLayout</code> instance.
      *
-     * @param runtime The runtime for the <tt>StructLayout</tt>
-     * @param klass the ruby class to use for the <tt>StructLayout</tt>
+     * @param runtime The runtime for the <code>StructLayout</code>
+     * @param klass the ruby class to use for the <code>StructLayout</code>
      */
     public Struct(Ruby runtime, RubyClass klass) {
         this(runtime, klass, getStructLayout(runtime, klass), null);
     }
 
     /**
-     * Creates a new <tt>StructLayout</tt> instance.
+     * Creates a new <code>StructLayout</code> instance.
      *
-     * @param runtime The runtime for the <tt>StructLayout</tt>
-     * @param klass the ruby class to use for the <tt>StructLayout</tt>
+     * @param runtime The runtime for the <code>StructLayout</code>
+     * @param klass the ruby class to use for the <code>StructLayout</code>
      */
     Struct(Ruby runtime, RubyClass klass, StructLayout layout, IRubyObject memory) {
         super(runtime, klass);

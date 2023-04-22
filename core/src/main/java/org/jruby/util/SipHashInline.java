@@ -61,28 +61,28 @@ public class SipHashInline {
                  *   N: v2=ROTL(v2,32);
                  *
                  * Each dependency:
-                 *   B -> A
-                 *   C -> A, B
-                 *   D -> C
-                 *   F -> E
-                 *   G -> E, F
-                 *   H -> D, G
-                 *   I -> H
-                 *   J -> H, I
-                 *   K -> C, G
-                 *   L -> K
-                 *   M -> K, L
-                 *   N -> M
+                 *   B$ -&gt; A
+                 *   C$ -&gt; A, B
+                 *   D$ -&gt; C
+                 *   F$ -&gt; E
+                 *   G$ -&gt; E, F
+                 *   H$ -&gt; D, G
+                 *   I$ -&gt; H
+                 *   J$ -&gt; H, I
+                 *   K$ -&gt; C, G
+                 *   L$ -&gt; K
+                 *   M$ -&gt; K, L
+                 *   N$ -&gt; M
                  *
                  * Dependency graph:
-                 *   D -> C -> B -> A
-                 *        G -> F -> E
-                 *   J -> I -> H -> D, G
-                 *   N -> M -> L -> K -> C, G
+                 *   D$ -&gt; C -> B -> A
+                 *        G$ -&gt; F -> E
+                 *   J$ -&gt; I -> H -> D, G
+                 *   N$ -&gt; M -> L -> K -> C, G
                  *
                  * Resulting parallel friendly execution order:
-                 *   -> ABCDHIJ
-                 *   -> EFGKLMN
+                 *  $ -&gt; ABCDHIJ
+                 *  $ -&gt; EFGKLMN
                  */
 
                 // SIPROUND {

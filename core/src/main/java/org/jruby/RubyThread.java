@@ -557,7 +557,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     /**
      * <code>Thread.new</code>
      * <p>
-     * Thread.new( <i>[ arg ]*</i> ) {| args | block } -> aThread
+     * Thread.new( <i>[ arg ]*</i> ) {| args | block }$ -&gt; aThread
      * <p>
      * Creates a new thread to execute the instructions given in block, and
      * begins running it. Any arguments passed to Thread.new are passed into the
@@ -2047,7 +2047,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * waiting for the requested operations or the given timeout.
      *
      * @param io the RubyIO that contains the channel, for managing blocked threads list.
-     * @param ops the operations to wait for, from {@see java.nio.channels.SelectionKey}.
+     * @param ops the operations to wait for, from {@link java.nio.channels.SelectionKey}.
      * @return true if the IO's channel became ready for the requested operations, false if
      *         it was not selectable.
      */
@@ -2060,7 +2060,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * waiting for the requested operations or the given timeout.
      *
      * @param io the RubyIO that contains the channel, for managing blocked threads list.
-     * @param ops the operations to wait for, from {@see java.nio.channels.SelectionKey}.
+     * @param ops the operations to wait for, from {@link java.nio.channels.SelectionKey}.
      * @param timeout a timeout in ms to limit the select. Less than zero selects forever,
      *                zero selects and returns ready channels or nothing immediately, and
      *                greater than zero selects for at most that many ms.
@@ -2078,7 +2078,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * @param channel the channel to perform a select against. If this is not
      *                a selectable channel, then this method will just return true.
      * @param fptr the fptr that contains the channel, for managing blocked threads list.
-     * @param ops the operations to wait for, from {@see java.nio.channels.SelectionKey}.
+     * @param ops the operations to wait for, from {@link java.nio.channels.SelectionKey}.
      * @return true if the channel became ready for the requested operations, false if
      *         it was not selectable.
      */
@@ -2093,7 +2093,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * @param channel the channel to perform a select against. If this is not
      *                a selectable channel, then this method will just return true.
      * @param io the RubyIO that contains the channel, for managing blocked threads list.
-     * @param ops the operations to wait for, from {@see java.nio.channels.SelectionKey}.
+     * @param ops the operations to wait for, from {@link java.nio.channels.SelectionKey}.
      * @return true if the channel became ready for the requested operations, false if
      *         it was not selectable.
      */
@@ -2108,7 +2108,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * @param channel the channel to perform a select against. If this is not
      *                a selectable channel, then this method will just return true.
      * @param io the RubyIO that contains the channel, for managing blocked threads list.
-     * @param ops the operations to wait for, from {@see java.nio.channels.SelectionKey}.
+     * @param ops the operations to wait for, from {@link java.nio.channels.SelectionKey}.
      * @param timeout a timeout in ms to limit the select. Less than zero selects forever,
      *                zero selects and returns ready channels or nothing immediately, and
      *                greater than zero selects for at most that many ms.
@@ -2126,7 +2126,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * @param channel the channel to perform a select against. If this is not
      *                a selectable channel, then this method will just return true.
      * @param fptr the fptr that contains the channel, for managing blocked threads list.
-     * @param ops the operations to wait for, from {@see java.nio.channels.SelectionKey}.
+     * @param ops the operations to wait for, from {@link java.nio.channels.SelectionKey}.
      * @param timeout a timeout in ms to limit the select. Less than zero selects forever,
      *                zero selects and returns ready channels or nothing immediately, and
      *                greater than zero selects for at most that many ms.
@@ -2473,7 +2473,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     /**
      * Customized for retrieving a Java thread from a Ruby one.
      *
-     * @param target The target type to which the object should be converted (e.g. <code></>java.lang.Thread.class</code>).
+     * @param target The target type to which the object should be converted (e.g. <code>java.lang.Thread.class</code>).
      * @since 9.4
      */
     @Override
@@ -2493,7 +2493,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     /**
      * Run the provided {@link BiFunction} without allowing for any cross-thread interrupts (equivalent to calling
-     * {@link #handle_interrupt(ThreadContext, IRubyObject, IRubyObject, Block)} with Object => :never.
+     * {@link #handle_interrupt(ThreadContext, IRubyObject, IRubyObject, Block)} with Object =&gt; :never.
      *
      * MRI: rb_uninterruptible
      *

@@ -5125,10 +5125,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
          *
          * The order of states is:
          *
-         * - is_fixnum => { is_bignum | is_rational | is_float | other }
-         * - is_bignum => { is_rational | is_float | other }
-         * - is_rational => { is_float | other }
-         * - is_float => { other }
+         * - is_fixnum =&gt; { is_bignum | is_rational | is_float | other }
+         * - is_bignum =&gt; { is_rational | is_float | other }
+         * - is_rational =&gt; { is_float | other }
+         * - is_float =&gt; { other }
          * - other [terminal]
          */
         boolean is_fixnum=false, is_bignum=false, is_rational=false, is_float=false;
@@ -6033,7 +6033,7 @@ float_loop:
     }
 
     /**
-     * Increases the capacity of this <tt>Array</tt>, if necessary.
+     * Increases the capacity of this <code>Array</code>, if necessary.
      * @param minCapacity the desired minimum capacity of the internal array
      */
     @Deprecated

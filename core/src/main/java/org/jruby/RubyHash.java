@@ -1002,7 +1002,7 @@ public class RubyHash extends RubyObject implements Map {
         }
     };
 
-    /** rb_hash_to_s & to_s_hash
+    /** rb_hash_to_s &amp; to_s_hash
      *
      */
     @JRubyMethod(name = "to_s")

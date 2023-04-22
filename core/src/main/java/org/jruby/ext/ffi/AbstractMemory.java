@@ -180,11 +180,11 @@ abstract public class AbstractMemory extends MemoryObject {
     }
 
     /**
-     * Compares this <tt>MemoryPointer</tt> to another <tt>MemoryPointer</tt>.
+     * Compares this <code>MemoryPointer</code> to another <code>MemoryPointer</code>.
      *
-     * @param obj The other <tt>MemoryPointer</tt> to compare to.
-     * @return true if the memory address of <tt>obj</tt> is equal to the address
-     * of this <tt>MemoryPointer</tt>.
+     * @param obj The other <code>MemoryPointer</code> to compare to.
+     * @return true if the memory address of <code>obj</code> is equal to the address
+     * of this <code>MemoryPointer</code>.
      */
     @Override
     public boolean equals(Object obj) {
@@ -202,7 +202,7 @@ abstract public class AbstractMemory extends MemoryObject {
     }
     
     /**
-     * Calculates the hash code for this <tt>MemoryPointer</tt>
+     * Calculates the hash code for this <code>MemoryPointer</code>
      *
      * @return The hashcode of the memory address.
      */
@@ -1118,9 +1118,10 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes an array of signed 8 bit integer values to the memory area.
      *
+     * @param context The thread context.
      * @param offset The offset from the start of the memory area to write the values.
-     * @param length The number of values to be written to memory.
-     * @return <tt>this</tt> object.
+     * @param arrParam Array of values to write to memory.
+     * @return <code>this</code> object.
      */
     @JRubyMethod(name = { "put_array_of_int8", "put_array_of_char" }, required = 2)
     public IRubyObject put_array_of_int8(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
@@ -1133,6 +1134,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads an array of unsigned 8 bit integer values from the memory address.
      *
+     * @param context The thread context.
      * @param offset The offset from the start of the memory area to read the values.
      * @param length The number of values to be read from memory.
      * @return An array containing the values.
@@ -1145,9 +1147,10 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes an array of unsigned 8 bit integer values to the memory area.
      *
+     * @param context The thread context.
      * @param offset The offset from the start of the memory area to write the values.
-     * @param length The number of values to be written to memory.
-     * @return <tt>this</tt> object.
+     * @param arrParam Array of values to write to memory.
+     * @return <code>this</code> object.
      */
     @JRubyMethod(name = { "put_array_of_uint8", "put_array_of_uchar" }, required = 2)
     public IRubyObject put_array_of_uint8(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
@@ -1160,6 +1163,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads an array of signed 16 bit integer values from the memory address.
      *
+     * @param context The thread context.
      * @param offset The offset from the start of the memory area to read the values.
      * @param length The number of values to be read from memory.
      * @return An array containing the values.
@@ -1172,9 +1176,10 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes an array of signed 16 bit integer values to the memory area.
      *
+     * @param context The thread context.
      * @param offset The offset from the start of the memory area to write the values.
-     * @param length The number of values to be written to memory.
-     * @return <tt>this</tt> object.
+     * @param arrParam Array of values to write to memory.
+     * @return <code>this</code> object.
      */
     @JRubyMethod(name = { "put_array_of_int16", "put_array_of_short" }, required = 2)
     public IRubyObject put_array_of_int16(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
@@ -1187,6 +1192,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads an array of unsigned 16 bit integer values from the memory address.
      *
+     * @param context The thread context.
      * @param offset The offset from the start of the memory area to read the values.
      * @param length The number of values to be read from memory.
      * @return An array containing the values.
@@ -1199,9 +1205,10 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes an array of unsigned 16 bit integer values to the memory area.
      *
+     * @param context The thread context.
      * @param offset The offset from the start of the memory area to write the values.
-     * @param length The number of values to be written to memory.
-     * @return <tt>this</tt> object.
+     * @param arrParam Array of values to write to memory.
+     * @return <code>this</code> object.
      */
     @JRubyMethod(name = { "put_array_of_uint16", "put_array_of_ushort" }, required = 2)
     public IRubyObject put_array_of_uint16(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
@@ -1214,6 +1221,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads an array of signed 32 bit integer values from the memory address.
      *
+     * @param context The thread context.
      * @param offset The offset from the start of the memory area to read the values.
      * @param length The number of values to be read from memory.
      * @return An array containing the values.
@@ -1226,9 +1234,10 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes an array of signed 32 bit integer values to the memory area.
      *
+     * @param context The thread context.
      * @param offset The offset from the start of the memory area to write the values.
-     * @param length The number of values to be written to memory.
-     * @return <tt>this</tt> object.
+     * @param arrParam Array of values to write to memory.
+     * @return <code>this</code> object.
      */
     @JRubyMethod(name = { "put_array_of_int32", "put_array_of_int" }, required = 2)
     public IRubyObject put_array_of_int32(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
@@ -1240,6 +1249,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads an array of unsigned 32 bit integer values from the memory address.
      *
+     * @param context The thread context.
      * @param offset The offset from the start of the memory area to read the values.
      * @param length The number of values to be read from memory.
      * @return An array containing the values.
@@ -1252,9 +1262,10 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes an array of unsigned 32 bit integer values to the memory area.
      *
+     * @param context The thread context.
      * @param offset The offset from the start of the memory area to write the values.
-     * @param length The number of values to be written to memory.
-     * @return <tt>this</tt> object.
+     * @param arrParam Array of values to write to memory.
+     * @return <code>this</code> object.
      */
     @JRubyMethod(name = { "put_array_of_uint32", "put_array_of_uint" }, required = 2)
     public IRubyObject put_array_of_uint32(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
@@ -1266,6 +1277,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads an array of signed long integer values from the memory address.
      *
+     * @param context The thread context.
      * @param offset The offset from the start of the memory area to read the values.
      * @param length The number of values to be read from memory.
      * @return An array containing the values.
@@ -1280,9 +1292,10 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes an array of signed long integer values to the memory area.
      *
+     * @param context The thread context.
      * @param offset The offset from the start of the memory area to write the values.
-     * @param length The number of values to be written to memory.
-     * @return <tt>this</tt> object.
+     * @param arr Array of values to write to memory.
+     * @return <code>this</code> object.
      */
     @JRubyMethod(name = "put_array_of_long", required = 2)
     public IRubyObject put_array_of_long(ThreadContext context, IRubyObject offset, IRubyObject arr) {
@@ -1294,6 +1307,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads an array of unsigned long integer values from the memory address.
      *
+     * @param context The thread context.
      * @param offset The offset from the start of the memory area to read the values.
      * @param length The number of values to be read from memory.
      * @return An array containing the values.
@@ -1308,9 +1322,10 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes an array of unsigned long integer values to the memory area.
      *
+     * @param context The thread context.
      * @param offset The offset from the start of the memory area to write the values.
-     * @param length The number of values to be written to memory.
-     * @return <tt>this</tt> object.
+     * @param arr Array of values to write to memory.
+     * @return <code>this</code> object.
      */
     @JRubyMethod(name = "put_array_of_ulong", required = 2)
     public IRubyObject put_array_of_ulong(ThreadContext context, IRubyObject offset, IRubyObject arr) {
@@ -1322,6 +1337,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads an array of signed 64 bit integer values from the memory address.
      *
+     * @param context The thread context.
      * @param offset The offset from the start of the memory area to read the values.
      * @param length The number of values to be read from memory.
      * @return An array containing the values.
@@ -1334,9 +1350,10 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes an array of signed 64 bit integer values to the memory area.
      *
+     * @param context The thread context.
      * @param offset The offset from the start of the memory area to write the values.
-     * @param length The number of values to be written to memory.
-     * @return <tt>this</tt> object.
+     * @param arrParam Array of values to write to memory.
+     * @return <code>this</code> object.
      */
     @JRubyMethod(name = { "put_array_of_int64", "put_array_of_long_long" }, required = 2)
     public IRubyObject put_array_of_int64(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
@@ -1349,6 +1366,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads an array of unsigned 64 bit integer values from the memory address.
      *
+     * @param context The thread context.
      * @param offset The offset from the start of the memory area to read the values.
      * @param length The number of values to be read from memory.
      * @return An array containing the values.
@@ -1361,9 +1379,10 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes an array of unsigned 64 bit integer values to the memory area.
      *
+     * @param context The thread context.
      * @param offset The offset from the start of the memory area to write the values.
-     * @param length The number of values to be written to memory.
-     * @return <tt>this</tt> object.
+     * @param arrParam Array of values to write to memory.
+     * @return <code>this</code> object.
      */
     @JRubyMethod(name = { "put_array_of_uint64", "put_array_of_ulong_long" }, required = 2)
     public IRubyObject put_array_of_uint64(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
@@ -1376,6 +1395,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads an array of signed 32 bit floating point values from the memory address.
      *
+     * @param context The thread context.
      * @param offset The offset from the start of the memory area to read the values.
      * @param length The number of values to be read from memory.
      * @return An array containing the values.
@@ -1388,9 +1408,10 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes an array of 32 bit floating point values to the memory area.
      *
+     * @param context The thread context.
      * @param offset The offset from the start of the memory area to write the values.
-     * @param length The number of values to be written to memory.
-     * @return <tt>this</tt> object.
+     * @param arrParam Array of values to write to memory.
+     * @return <code>this</code> object.
      */
     @JRubyMethod(name = { "put_array_of_float32", "put_array_of_float" }, required = 2)
     public IRubyObject put_array_of_float(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
@@ -1403,6 +1424,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads an array of signed 64 bit floating point values from the memory address.
      *
+     * @param context The thread context.
      * @param offset The offset from the start of the memory area to read the values.
      * @param length The number of values to be read from memory.
      * @return An array containing the values.
@@ -1415,9 +1437,10 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes an array of 64 bit floating point values to the memory area.
      *
+     * @param context The thread context.
      * @param offset The offset from the start of the memory area to write the values.
      * @param arrParam Array of values to write to memory.
-     * @return <tt>this</tt> object.
+     * @return <code>this</code> object.
      */
     @JRubyMethod(name = { "put_array_of_float64", "put_array_of_double" }, required = 2)
     public IRubyObject put_array_of_float64(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
@@ -1429,6 +1452,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads an array of signed 8 bit integer values from the memory address.
      *
+     * @param context The thread context.
      * @param length The number of values to be read from memory.
      * @return An array containing the values.
      */
@@ -1440,8 +1464,9 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes an array of signed 8 bit integer values to the memory area.
      *
+     * @param context The thread context.
      * @param ary The array of values to write to the memory area.
-     * @return <tt>this</tt> object.
+     * @return <code>this</code> object.
      */
     @JRubyMethod(name = { "write_array_of_int8", "write_array_of_char" }, required = 1)
     public IRubyObject write_array_of_int8(ThreadContext context, IRubyObject ary) {
@@ -1454,6 +1479,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads an array of unsigned 8 bit integer values from the memory address.
      *
+     * @param context The thread context.
      * @param length The number of values to be read from memory.
      * @return An array containing the values.
      */
@@ -1465,9 +1491,9 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes an array of unsigned 8 bit integer values to the memory area.
      *
-     * @param ary The array of values to write to the memory area.
+     * @param context The thread context.
      * @param ary Array of values to write to memory.
-     * @return <tt>this</tt> object.
+     * @return <code>this</code> object.
      */
     @JRubyMethod(name = { "write_array_of_uint8", "write_array_of_uchar" }, required = 1)
     public IRubyObject write_array_of_uint8(ThreadContext context, IRubyObject ary) {
@@ -1480,6 +1506,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads an array of signed 16 bit integer values from the memory address.
      *
+     * @param context The thread context.
      * @param length The number of values to be read from memory.
      * @return An array containing the values.
      */
@@ -1491,8 +1518,9 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes an array of signed 16 bit integer values to the memory area.
      *
+     * @param context The thread context.
      * @param ary The array of values to write to the memory area.
-     * @return <tt>this</tt> object.
+     * @return <code>this</code> object.
      */
     @JRubyMethod(name = { "write_array_of_int16", "write_array_of_short" }, required = 1)
     public IRubyObject write_array_of_int16(ThreadContext context, IRubyObject ary) {
@@ -1505,6 +1533,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads an array of unsigned 16 bit integer values from the memory address.
      *
+     * @param context The thread context.
      * @param length The number of values to be read from memory.
      * @return An array containing the values.
      */
@@ -1516,8 +1545,9 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes an array of unsigned 16 bit integer values to the memory area.
      *
+     * @param context The thread context.
      * @param ary The array of values to write to the memory area.
-     * @return <tt>this</tt> object.
+     * @return <code>this</code> object.
      */
     @JRubyMethod(name = { "write_array_of_uint16", "write_array_of_ushort" }, required = 1)
     public IRubyObject write_array_of_uint16(ThreadContext context, IRubyObject ary) {
@@ -1531,6 +1561,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads an array of signed 32 bit integer values from the memory address.
      *
+     * @param context The thread context.
      * @param length The number of values to be read from memory.
      * @return An array containing the values.
      */
@@ -1542,8 +1573,9 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes an array of signed 32 bit integer values to the memory area.
      *
+     * @param context The thread context.
      * @param ary The array of values to write to the memory area.
-     * @return <tt>this</tt> object.
+     * @return <code>this</code> object.
      */
     @JRubyMethod(name = { "write_array_of_int32", "write_array_of_int" }, required = 1)
     public IRubyObject write_array_of_int32(ThreadContext context, IRubyObject ary) {
@@ -1556,6 +1588,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads an array of unsigned 32 bit integer values from the memory address.
      *
+     * @param context The thread context.
      * @param length The number of values to be read from memory.
      * @return An array containing the values.
      */
@@ -1567,8 +1600,9 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes an array of unsigned 32 bit integer values to the memory area.
      *
+     * @param context The thread context.
      * @param ary The array of values to write to the memory area.
-     * @return <tt>this</tt> object.
+     * @return <code>this</code> object.
      */
     @JRubyMethod(name = { "write_array_of_uint32", "write_array_of_uint" }, required = 1)
     public IRubyObject write_array_of_uint32(ThreadContext context, IRubyObject ary) {
@@ -1581,6 +1615,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads an array of signed 64 bit integer values from the memory address.
      *
+     * @param context The thread context.
      * @param length The number of values to be read from memory.
      * @return An array containing the values.
      */
@@ -1592,8 +1627,9 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes an array of signed 64 bit integer values to the memory area.
      *
+     * @param context The thread context.
      * @param ary The array of values to write to the memory area.
-     * @return <tt>this</tt> object.
+     * @return <code>this</code> object.
      */
     @JRubyMethod(name = { "write_array_of_int64", "write_array_of_long_long" }, required = 1)
     public IRubyObject write_array_of_int64(ThreadContext context, IRubyObject ary) {
@@ -1606,6 +1642,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads an array of unsigned 64 bit integer values from the memory address.
      *
+     * @param context The thread context.
      * @param length The number of values to be read from memory.
      * @return An array containing the values.
      */
@@ -1617,8 +1654,9 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes an array of unsigned 64 bit integer values to the memory area.
      *
+     * @param context The thread context.
      * @param ary The array of values to write to the memory area.
-     * @return <tt>this</tt> object.
+     * @return <code>this</code> object.
      */
     @JRubyMethod(name = { "write_array_of_uint64", "write_array_of_ulong_long" }, required = 1)
     public IRubyObject write_array_of_uint64(ThreadContext context, IRubyObject ary) {
@@ -1631,6 +1669,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads an array of signed long integer values from the memory address.
      *
+     * @param context The thread context.
      * @param length The number of values to be read from memory.
      * @return An array containing the values.
      */
@@ -1644,8 +1683,9 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes an array of signed long integer values to the memory area.
      *
+     * @param context The thread context.
      * @param ary The array of values to write to the memory area.
-     * @return <tt>this</tt> object.
+     * @return <code>this</code> object.
      */
     @JRubyMethod(name = { "write_array_of_long" }, required = 1)
     public IRubyObject write_array_of_long(ThreadContext context, IRubyObject ary) {
@@ -1657,6 +1697,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads an array of unsigned long integer values from the memory address.
      *
+     * @param context The thread context.
      * @param length The number of values to be read from memory.
      * @return An array containing the values.
      */
@@ -1670,8 +1711,9 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes an array of unsigned long integer values to the memory area.
      *
+     * @param context The thread context.
      * @param ary The array of values to write to the memory area.
-     * @return <tt>this</tt> object.
+     * @return <code>this</code> object.
      */
     @JRubyMethod(name = { "write_array_of_ulong" }, required = 1)
     public IRubyObject write_array_of_ulong(ThreadContext context, IRubyObject ary) {
@@ -1683,6 +1725,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads an array of signed 32 bit floating point values from the memory address.
      *
+     * @param context The thread context.
      * @param length The number of values to be read from memory.
      * @return An array containing the values.
      */
@@ -1694,8 +1737,9 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes an array of 32 bit floating point values to the memory area.
      *
+     * @param context The thread context.
      * @param ary The array of values to write to the memory area.
-     * @return <tt>this</tt> object.
+     * @return <code>this</code> object.
      */
     @JRubyMethod(name = { "write_array_of_float32", "write_array_of_float" }, required = 1)
     public IRubyObject write_array_of_float(ThreadContext context, IRubyObject ary) {
@@ -1708,6 +1752,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads an array of signed 64 bit floating point values from the memory address.
      *
+     * @param context The thread context.
      * @param length The number of values to be read from memory.
      * @return An array containing the values.
      */
@@ -1719,8 +1764,9 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes an array of 64 bit floating point values to the memory area.
      *
+     * @param context The thread context.
      * @param ary The array of values to write to the memory area.
-     * @return <tt>this</tt> object.
+     * @return <code>this</code> object.
      */
     @JRubyMethod(name = { "write_array_of_float64", "write_array_of_double" }, required = 1)
     public IRubyObject write_array_of_float64(ThreadContext context, IRubyObject ary) {

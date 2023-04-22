@@ -38,7 +38,7 @@ import org.jruby.runtime.builtin.InstanceVariables;
 /**
  * An implementation of BiVariable for a Ruby instance variable.
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class InstanceVariable extends AbstractVariable {
 
@@ -48,7 +48,7 @@ public class InstanceVariable extends AbstractVariable {
      * Returns an instance of this class. This factory method is used when an instance
      * variable is put in {@link BiVariableMap}.
      *
-     * @param runtime Ruby runtime
+     * @param receiver Receiver object returned when a script is evaluated.
      * @param name a variable name
      * @param javaObject Java object that should be assigned to.
      * @return the instance of InstanceVariable
@@ -84,7 +84,6 @@ public class InstanceVariable extends AbstractVariable {
     /**
      * Retrieves instance variables from Ruby after the evaluation.
      *
-     * @param runtime Ruby runtime
      * @param receiver receiver object returned when a script is evaluated.
      * @param vars map to save retrieved instance variables.
      */
@@ -160,9 +159,6 @@ public class InstanceVariable extends AbstractVariable {
     /**
      * Injects an instance variable value to a parsed Ruby script. This method is
      * invoked during EvalUnit#run() is executed.
-     *
-     * @param runtime is environment where a variable injection occurs
-     * @param receiver is the instance that will have variable injection.
      */
     @Override
     public void inject() {

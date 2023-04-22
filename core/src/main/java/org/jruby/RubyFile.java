@@ -912,7 +912,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     /**
      * ---------------------------------------------------- File::absolute_path
-     *      File.absolute_path(file_name [, dir_string] ) -> abs_file_name
+     *      File.absolute_path(file_name [, dir_string] )$ -&gt; abs_file_name
      *
      *      From Ruby 1.9.1
      * ------------------------------------------------------------------------
@@ -922,7 +922,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      *      starting point. If the given pathname starts with a ``+~+'' it is
      *      NOT expanded, it is treated as a normal directory name.
      *
-     *         File.absolute_path("~oracle/bin")       #=> "<relative_path>/~oracle/bin"
+     *         File.absolute_path("~oracle/bin")       #=&gt; "&lt;relative_path&gt;/~oracle/bin"
      *
      * @param context
      * @param recv

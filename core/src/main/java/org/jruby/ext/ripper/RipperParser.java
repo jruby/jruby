@@ -1758,8 +1758,8 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
   protected org.jruby.parser.YYDebug yydebug;
 
   /** index-checked interface to {@link #yyNames}.
-      @param token single character or <tt>%token</tt> value.
-      @return token name or <tt>[illegal]</tt> or <tt>[unknown]</tt>.
+      @param token single character or <code>%token</code> value.
+      @return token name or <code>[illegal]</code> or <code>[unknown]</code>.
     */
   public static String yyName (int token) {
     if (token < 0 || token > yyNames.length) return "[illegal]";
@@ -1801,7 +1801,7 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
   /** the generated parser, with debugging messages.
       Maintains a dynamic state and value stack.
       @param yyLex scanner.
-      @param ayydebug debug message writer implementing <tt>yyDebug</tt>, or <tt>null</tt>.
+      @param ayydebug debug message writer implementing <code>yyDebug</code>, or <code>null</code>.
       @return result of the last reduction, if any.
     */
   public Object yyparse (RubyLexer yyLex, Object ayydebug)

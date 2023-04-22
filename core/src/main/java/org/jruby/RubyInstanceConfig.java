@@ -1652,39 +1652,39 @@ public class RubyInstanceConfig {
     /**
      * Enable a thread pool. Each Ruby thread will be mapped onto a thread from this pool.
      *
-     * Set with the <tt>jruby.thread.pool.enabled</tt> system property.
+     * Set with the <code>jruby.thread.pool.enabled</code> system property.
      */
     public static final boolean POOLING_ENABLED = false;
 
     /**
      * Maximum thread pool size (integer, default Integer.MAX_VALUE).
      *
-     * Set with the <tt>jruby.thread.pool.max</tt> system property.
+     * Set with the <code>jruby.thread.pool.max</code> system property.
      */
     public static final int POOL_MAX = Options.THREADPOOL_MAX.load();
     /**
      * Minimum thread pool size (integer, default 0).
      *
-     * Set with the <tt>jruby.thread.pool.min</tt> system property.
+     * Set with the <code>jruby.thread.pool.min</code> system property.
      */
     public static final int POOL_MIN = Options.THREADPOOL_MIN.load();
     /**
      * Thread pool time-to-live in seconds.
      *
-     * Set with the <tt>jruby.thread.pool.max</tt> system property.
+     * Set with the <code>jruby.thread.pool.max</code> system property.
      */
     public static final int POOL_TTL = Options.THREADPOOL_TTL.load();
     /**
      * Fiber thread pool time-to-live in seconds.
      *
-     * Set with the <tt>jruby.fiber.thread.pool.max</tt> system property.
+     * Set with the <code>jruby.fiber.thread.pool.max</code> system property.
      */
     public static final int FIBER_POOL_TTL = Options.FIBER_THREADPOOL_TTL.load();
 
     /**
      * Enable tracing of method calls.
      *
-     * Set with the <tt>jruby.debug.fullTrace</tt> system property.
+     * Set with the <code>jruby.debug.fullTrace</code> system property.
      */
     public static boolean FULL_TRACE_ENABLED = Options.DEBUG_FULLTRACE.load();
 
@@ -1694,7 +1694,7 @@ public class RubyInstanceConfig {
      *
      * Also supports excluding based on implementation_file.rb syntax.
      *
-     * Set with the <tt>jruby.jit.exclude</tt> system property.
+     * Set with the <code>jruby.jit.exclude</code> system property.
      */
     public static final String COMPILE_EXCLUDE = Options.JIT_EXCLUDE.load();
 
@@ -1702,7 +1702,7 @@ public class RubyInstanceConfig {
      * Indicates the global default for whether native code is enabled. Default
      * is true. This value is used to default new runtime configurations.
      *
-     * Set with the <tt>jruby.native.enabled</tt> system property.
+     * Set with the <code>jruby.native.enabled</code> system property.
      */
     public static final boolean NATIVE_ENABLED = Options.NATIVE_ENABLED.load();
 
@@ -1712,42 +1712,42 @@ public class RubyInstanceConfig {
     /**
      * Whether to reify (pre-compile and generate) a Java class per Ruby class.
      *
-     * Set with the <tt>jruby.reify.classes</tt> system property.
+     * Set with the <code>jruby.reify.classes</code> system property.
      */
     public static final boolean REIFY_RUBY_CLASSES = Options.REIFY_CLASSES.load();
 
     /**
      * Log errors that occur during reification.
      *
-     * Set with the <tt>jruby.reify.logErrors</tt> system property.
+     * Set with the <code>jruby.reify.logErrors</code> system property.
      */
     public static final boolean REIFY_LOG_ERRORS = Options.REIFY_LOGERRORS.load();
 
     /**
      * Turn on debugging of the load service (requires and loads).
      *
-     * Set with the <tt>jruby.debug.loadService</tt> system property.
+     * Set with the <code>jruby.debug.loadService</code> system property.
      */
     public static final boolean DEBUG_LOAD_SERVICE = Options.DEBUG_LOADSERVICE.load();
 
     /**
      * Turn on timings of the load service (requires and loads).
      *
-     * Set with the <tt>jruby.debug.loadService.timing</tt> system property.
+     * Set with the <code>jruby.debug.loadService.timing</code> system property.
      */
     public static final boolean DEBUG_LOAD_TIMINGS = Options.DEBUG_LOADSERVICE_TIMING.load();
 
     /**
      * Turn on debugging of subprocess launching.
      *
-     * Set with the <tt>jruby.debug.launch</tt> system property.
+     * Set with the <code>jruby.debug.launch</code> system property.
      */
     public static final boolean DEBUG_LAUNCHING = Options.DEBUG_LAUNCH.load();
 
     /**
      * Turn on debugging of script resolution with "-S".
      *
-     * Set with the <tt>jruby.debug.scriptResolution</tt> system property.
+     * Set with the <code>jruby.debug.scriptResolution</code> system property.
      */
     public static final boolean DEBUG_SCRIPT_RESOLUTION = Options.DEBUG_SCRIPTRESOLUTION.load();
 
@@ -1789,7 +1789,7 @@ public class RubyInstanceConfig {
      * Whether to calculate consistent hashes across JVM instances, or to ensure
      * un-predicatable hash values using SecureRandom.
      *
-     * Set with the <tt>jruby.consistent.hashing.enabled</tt> system property.
+     * Set with the <code>jruby.consistent.hashing.enabled</code> system property.
      */
     public static final boolean CONSISTENT_HASHING_ENABLED = Options.CONSISTENT_HASHING.load();
 

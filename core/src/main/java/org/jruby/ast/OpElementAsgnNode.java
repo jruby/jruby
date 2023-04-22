@@ -45,7 +45,7 @@ import org.jruby.util.CommonByteLists;
  * 
  * <pre>
  * a[4] += 5
- * a[3] &&= true
+ * a[3] &amp;&amp;= true
  * </pre>
  */
 public class OpElementAsgnNode extends Node {

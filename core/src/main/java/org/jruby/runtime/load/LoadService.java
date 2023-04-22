@@ -802,7 +802,7 @@ public class LoadService {
      * this method uses the appropriate lookup strategy to find a file.
      * It is used by Kernel#require.
      *
-     * @mri rb_find_file
+     * <p>MRI: rb_find_file</p>
      * @param name the file to find, this is a path name
      * @return the correct file
      */

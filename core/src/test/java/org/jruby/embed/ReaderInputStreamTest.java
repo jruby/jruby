@@ -57,7 +57,7 @@ import static org.junit.Assert.*;
 
 /**
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class ReaderInputStreamTest {
     private String basedir = new File(System.getProperty("user.dir")).getParent();

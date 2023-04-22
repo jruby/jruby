@@ -53,7 +53,7 @@ import static com.headius.backport9.buffer.Buffers.rewindBuffer;
  * so that users of this class can access the file that Reader read by using methods
  * defined in java.io.InputStream.
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class ReaderInputStream extends InputStream {
 

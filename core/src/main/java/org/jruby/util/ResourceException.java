@@ -7,7 +7,7 @@ import org.jruby.exceptions.RaiseException;
 import java.io.IOException;
 
 /**
- * @note Private API that might get removed later.
+ * <p>Note: Private API that might get removed later.</p>
  */
 // While it is public, please don't use this, since in master it will be
 // marked private and replaced by RaiseException usage.

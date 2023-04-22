@@ -38,7 +38,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * An implementation of BiVariable for a Ruby class variable.
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class ClassVariable extends AbstractVariable {
 
@@ -48,7 +48,7 @@ public class ClassVariable extends AbstractVariable {
      * Returns an instance of this class. This factory method is used when a class
      * variables is put in {@link BiVariableMap}. This variable is originated from Java.
      *
-     * @param runtime
+     * @param receiver Receiver object returned when a script is evaluated.
      * @param name a variable name
      * @param javaObject Java object that should be assigned to.
      * @return the instance of ClassVariable
@@ -63,7 +63,7 @@ public class ClassVariable extends AbstractVariable {
     /**
      * Constructor when the variable is originated from Java
      *
-     * @param receiver
+     * @param receiver Receiver object returned when a script is evaluated.
      * @param name
      * @param javaObject
      */
@@ -87,7 +87,6 @@ public class ClassVariable extends AbstractVariable {
     /**
      * Retrieves class variables from Ruby after the evaluation.
      *
-     * @param runtime Ruby runtime
      * @param receiver receiver object returned when a script is evaluated.
      * @param vars map to save retrieved class variables.
      */
@@ -156,9 +155,6 @@ public class ClassVariable extends AbstractVariable {
     /**
      * Injects a class variable value to a parsed Ruby script. This method is
      * invoked during EvalUnit#run() is executed.
-     *
-     * @param runtime is environment where a variable injection occurs
-     * @param receiver is the instance that will have variable injection.
      */
     @Override
     public void inject() {

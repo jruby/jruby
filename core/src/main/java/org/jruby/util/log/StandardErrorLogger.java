@@ -31,7 +31,7 @@ package org.jruby.util.log;
 import java.io.PrintStream;
 
 /**
- * Default JRuby logger implementation, using {@link System.err}.
+ * Default JRuby logger implementation, using System.err.
  */
 public class StandardErrorLogger extends OutputStreamLogger {
 

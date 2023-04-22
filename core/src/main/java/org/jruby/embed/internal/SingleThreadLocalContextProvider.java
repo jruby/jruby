@@ -36,7 +36,7 @@ import java.util.Map;
 
 /**
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class SingleThreadLocalContextProvider extends AbstractLocalContextProvider {
 

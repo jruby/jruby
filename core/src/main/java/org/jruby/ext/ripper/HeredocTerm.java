@@ -40,7 +40,7 @@ import static org.jruby.lexer.LexingCommon.*;
  * A lexing unit for scanning a heredoc element.
  * Example:
  * <pre>
- * foo(<<EOS, bar)
+ * foo(&lt;&lt;EOS, bar)
  * This is heredoc country!
  * EOF
  * 

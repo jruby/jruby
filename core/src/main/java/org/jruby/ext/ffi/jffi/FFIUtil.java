@@ -17,7 +17,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- * Some utility functions for FFI <=> jffi conversions
+ * Some utility functions for FFI &lt;=&gt; jffi conversions
  */
 public final class FFIUtil {
     private static final com.kenai.jffi.MemoryIO IO = com.kenai.jffi.MemoryIO.getInstance();

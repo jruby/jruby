@@ -149,9 +149,9 @@ public final class StructLayout extends Type {
     
     
     /**
-     * Creates a new <tt>StructLayout</tt> instance.
+     * Creates a new <code>StructLayout</code> instance.
      *
-     * @param runtime The runtime for the <tt>StructLayout</tt>.
+     * @param runtime The runtime for the <code>StructLayout</code>.
      * @param fields The fields map for this struct.
      * @param size the total size of the struct.
      * @param alignment The minimum alignment required when allocating memory.
@@ -232,7 +232,7 @@ public final class StructLayout extends Type {
     }
 
     /**
-     * Gets the value of the struct member corresponding to <tt>name</tt>.
+     * Gets the value of the struct member corresponding to <code>name</code>.
      * 
      * @param ptr The address of the structure in memory.
      * @param name The name of the member.
@@ -244,7 +244,7 @@ public final class StructLayout extends Type {
     }
     
     /**
-     * Sets the native value of the struct member corresponding to <tt>name</tt>.
+     * Sets the native value of the struct member corresponding to <code>name</code>.
      * 
      * @param ptr The address of the structure in memory.
      * @param name The name of the member.
@@ -260,7 +260,7 @@ public final class StructLayout extends Type {
     /**
      * Gets a ruby array of the names of all members of this struct.
      * 
-     * @return a <tt>RubyArray</tt> containing the names of all members.
+     * @return a <code>RubyArray</code> containing the names of all members.
      */
     @JRubyMethod(name = "members")
     public IRubyObject members(ThreadContext context) {
@@ -274,7 +274,7 @@ public final class StructLayout extends Type {
     /**
      * Gets a ruby array of the offsets of all members of this struct.
      *
-     * @return a <tt>RubyArray</tt> containing the offsets of all members.
+     * @return a <code>RubyArray</code> containing the offsets of all members.
      */
     @JRubyMethod(name = "offsets")
     public IRubyObject offsets(ThreadContext context) {
@@ -382,7 +382,7 @@ public final class StructLayout extends Type {
      * Returns a {@link Member} descriptor for a struct field.
      * 
      * @param name The name of the struct field.
-     * @return A <tt>Member</tt> descriptor.
+     * @return A <code>Member</code> descriptor.
      */
     final Member getMember(Ruby runtime, IRubyObject name) {
         Member m;
@@ -406,7 +406,7 @@ public final class StructLayout extends Type {
      * Returns a {@link Field} descriptor for a struct field.
      *
      * @param name The name of the struct field.
-     * @return A <tt>Member</tt> descriptor.
+     * @return A <code>Member</code> descriptor.
      */
     final Field getField(Ruby runtime, IRubyObject name) {
         return getMember(runtime, name).field;
@@ -560,14 +560,14 @@ public final class StructLayout extends Type {
         /**
          * Gets the cacheable status of this Struct member
          *
-         * @return <tt>true</tt> if this member type is cacheable
+         * @return <code>true</code> if this member type is cacheable
          */
         public abstract boolean isCacheable();
 
         /**
          * Checks if a reference to the ruby object assigned to this field needs to be stored
          *
-         * @return <tt>true</tt> if this member type requires the ruby value to be stored.
+         * @return <code>true</code> if this member type requires the ruby value to be stored.
          */
         public abstract boolean isValueReferenceNeeded();
     }
@@ -689,7 +689,7 @@ public final class StructLayout extends Type {
         /**
          * Gets the cacheable status of this Struct member
          *
-         * @return <tt>true</tt> if this member type is cacheable
+         * @return <code>true</code> if this member type is cacheable
          */
         public final boolean isCacheable() {
             return io.isCacheable();
@@ -698,7 +698,7 @@ public final class StructLayout extends Type {
         /**
          * Checks if a reference to the ruby object assigned to this field needs to be stored
          *
-         * @return <tt>true</tt> if this member type requires the ruby value to be stored.
+         * @return <code>true</code> if this member type requires the ruby value to be stored.
          */
         public final boolean isValueReferenceNeeded() {
             return io.isValueReferenceNeeded();
@@ -1057,7 +1057,7 @@ public final class StructLayout extends Type {
     }
 
     /**
-     * Enum (maps :foo => 1, :bar => 2, etc)
+     * Enum (maps :foo =&gt; 1, :bar => 2, etc)
      */
     static final class EnumFieldIO implements FieldIO {
         private final MemoryOp op;

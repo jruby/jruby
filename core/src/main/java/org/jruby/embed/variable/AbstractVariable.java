@@ -39,7 +39,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 abstract class AbstractVariable implements BiVariable {
     /*

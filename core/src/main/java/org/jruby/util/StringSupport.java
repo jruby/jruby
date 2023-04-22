@@ -99,8 +99,8 @@ public final class StringSupport {
      * @param sep the separator
      * @see String#split(String)
      *
-     * @note We differ from the non-limited {@link String#split(String)} in handling consecutive separator chars at the
-     * end of string. While <code>"1;;"split(";")<code/> returns `[ "1" ]` this version returns `[ "1", "" ]` which is
+     * <p>Note: We differ from the non-limited {@link String#split(String)} in handling consecutive separator chars at the</p>
+     * end of string. While <code>"1;;"split(";")</code> returns `[ "1" ]` this version returns `[ "1", "" ]` which is
      * consistent when consecutive separators occur elsewhere.
      */
     public static List<String> split(final String str, final char sep) {

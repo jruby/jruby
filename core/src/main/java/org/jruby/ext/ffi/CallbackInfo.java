@@ -74,7 +74,7 @@ public class CallbackInfo extends Type {
     }
     
     /**
-     * Creates a new <tt>CallbackInfo</tt> instance.
+     * Creates a new <code>CallbackInfo</code> instance.
      *
      * @param runtime The runtime to create the instance for
      * @param klazz The ruby class of the CallbackInfo instance
@@ -94,8 +94,7 @@ public class CallbackInfo extends Type {
      *
      * @param context The current ruby thread context
      * @param klass The ruby class of the CallbackInfo instance
-     * @param returnType The ruby return type
-     * @param paramTypes An array containing the ruby parameter types
+     * @param args An array containing the ruby parameter types
      *
      * @return A new CallbackInfo instance
      */
@@ -152,7 +151,7 @@ public class CallbackInfo extends Type {
     /**
      * Returns the {@link org.jruby.runtime.Arity} of this function.
      * 
-     * @return The <tt>Arity</tt> of the native function.
+     * @return The <code>Arity</code> of the native function.
      */
     public final Arity getArity() {
         return arity;
