@@ -1,7 +1,5 @@
 exclude :test_exception_overflow, "runs forever"
 
-exclude :test_BigMath_exp_under_gc_stress, "needs investigation"
-exclude :test_BigMath_log_under_gc_stress, "needs investigation"
 exclude :test_div, "does not pass due precision differences (ported to test/jruby/test_big_decimal.rb)"
 
 exclude :test_limit, "needs investigation"
