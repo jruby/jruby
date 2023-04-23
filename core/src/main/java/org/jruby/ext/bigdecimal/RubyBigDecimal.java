@@ -64,19 +64,19 @@ import org.jruby.util.StringSupport;
 public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyConstant
-    public final static int ROUND_DOWN = RoundingMode.DOWN.ordinal();
+    public final static int ROUND_DOWN = 2;
     @JRubyConstant
-    public final static int ROUND_CEILING = RoundingMode.CEILING.ordinal();
+    public final static int ROUND_CEILING = 5;
     @JRubyConstant
-    public final static int ROUND_UP = RoundingMode.UP.ordinal();
+    public final static int ROUND_UP = 1;
     @JRubyConstant
-    public final static int ROUND_HALF_DOWN = RoundingMode.HALF_DOWN.ordinal();
+    public final static int ROUND_HALF_DOWN = 4;
     @JRubyConstant
-    public final static int ROUND_HALF_EVEN = RoundingMode.HALF_EVEN.ordinal();
+    public final static int ROUND_HALF_EVEN = 7;
     @JRubyConstant
-    public final static int ROUND_HALF_UP = RoundingMode.HALF_UP.ordinal();
+    public final static int ROUND_HALF_UP = 3;
     @JRubyConstant
-    public final static int ROUND_FLOOR = RoundingMode.FLOOR.ordinal();
+    public final static int ROUND_FLOOR = 6;
 
     @JRubyConstant
     public final static int SIGN_POSITIVE_INFINITE = 3;
@@ -400,7 +400,7 @@ public class RubyBigDecimal extends RubyNumeric {
             }
 
             RoundingMode javaRoundingMode = javaRoundingModeFromRubyRoundingMode(context, value);
-            RubyFixnum roundingMode = runtime.newFixnum(javaRoundingMode.ordinal());
+            RubyFixnum roundingMode = runtime.newFixnum(rubyRoundingModeFromJavaRoundinggMode(context, javaRoundingMode));
             c.setInternalModuleVariable("vpRoundingMode", roundingMode);
 
             return roundingMode;
@@ -415,7 +415,8 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private static RoundingMode getRoundingMode(Ruby runtime) {
-        return RoundingMode.values()[(int) bigDecimalVar(runtime, "vpRoundingMode")];
+        IRubyObject mode = runtime.getClass("BigDecimal").searchInternalModuleVariable("vpRoundingMode");
+        return javaRoundingModeFromRubyRoundingMode(runtime.getCurrentContext(), mode);
     }
 
     private static boolean isNaNExceptionMode(Ruby runtime) {
@@ -1996,6 +1997,26 @@ public class RubyBigDecimal extends RubyNumeric {
         return round(context, new IRubyObject[]{scale, mode});
     }
 
+    private static int rubyRoundingModeFromJavaRoundinggMode(ThreadContext context, RoundingMode mode) {
+        if (mode.equals(RoundingMode.UP)) {
+            return ROUND_UP;
+        } else if (mode.equals(RoundingMode.DOWN)) {
+            return ROUND_DOWN;
+        } else if (mode.equals(RoundingMode.HALF_UP)) {
+            return ROUND_HALF_UP;
+        } else if (mode.equals(RoundingMode.HALF_DOWN)) {
+            return ROUND_HALF_DOWN;
+        } else if (mode.equals(RoundingMode.CEILING)) {
+            return ROUND_CEILING;
+        } else if (mode.equals(RoundingMode.FLOOR)) {
+            return ROUND_FLOOR;
+        } else if (mode.equals(RoundingMode.HALF_EVEN)) {
+            return ROUND_HALF_EVEN;
+        } else {
+            throw context.runtime.newArgumentError("invalid rounding mode");
+        }
+    }
+
     //this relies on the Ruby rounding enumerations == Java ones, which they (currently) all are
     private static RoundingMode javaRoundingModeFromRubyRoundingMode(ThreadContext context, IRubyObject arg) {
         if (arg == context.nil) return getRoundingMode(context.runtime);
@@ -2042,11 +2063,24 @@ public class RubyBigDecimal extends RubyNumeric {
             }
         } else {
             int ordinal = num2int(arg);
-            RoundingMode[] values = RoundingMode.values();
-            if (ordinal < 0 || ordinal >= values.length) {
-                throw context.runtime.newArgumentError("invalid rounding mode");
+            switch (ordinal) {
+                case ROUND_UP :
+                    return RoundingMode.UP;
+                case ROUND_DOWN :
+                    return RoundingMode.DOWN;
+                case ROUND_HALF_UP :
+                    return RoundingMode.HALF_UP;
+                case ROUND_HALF_DOWN :
+                    return RoundingMode.HALF_DOWN;
+                case ROUND_CEILING :
+                    return RoundingMode.CEILING;
+                case ROUND_FLOOR :
+                    return RoundingMode.FLOOR;
+                case ROUND_HALF_EVEN :
+                    return RoundingMode.HALF_EVEN;
+                default :
+                    throw context.runtime.newArgumentError("invalid rounding mode");
             }
-            return values[ordinal];
         }
     }
 
