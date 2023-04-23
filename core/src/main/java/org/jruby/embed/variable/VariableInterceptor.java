@@ -43,7 +43,7 @@ import org.jruby.runtime.scope.ManyVarsDynamicScope;
 /**
  * This class is responsible to local variable behavior dependent processing.
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class VariableInterceptor {
 
@@ -51,7 +51,8 @@ public class VariableInterceptor {
      * Returns an appropriate type of a variable instance to the specified local
      * variable behavior.
      *
-     * @param runtime Ruby runtime
+     * @param behavior
+     * @param receiver Receiver object returned when a script is evaluated.
      * @param name variable name
      * @param value variable value
      * @return an appropriate type of the variable instance.
@@ -153,7 +154,6 @@ public class VariableInterceptor {
      * invocation.
      *
      * @param map variable map that holds retrieved name-value pairs.
-     * @param runtime Ruby runtime
      * @param receiver a receiver when the script has been evaluated once
      */
     public static void retrieve(LocalVariableBehavior behavior, BiVariableMap map, RubyObject receiver) {
@@ -181,9 +181,7 @@ public class VariableInterceptor {
      * or method invocation only when it is requested.
      *
      * @param map variable map that holds retrieved name-value pairs.
-     * @param runtime Ruby runtime
      * @param receiver a receiver when the script has been evaluated once
-     * @
      */
     public static void tryLazyRetrieval(LocalVariableBehavior behavior, BiVariableMap map, IRubyObject receiver, Object key) {
         if (Argv.isValidName(key)) {

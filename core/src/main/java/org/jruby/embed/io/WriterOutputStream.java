@@ -46,7 +46,7 @@ import static com.headius.backport9.buffer.Buffers.flipBuffer;
 /**
  * A WriterOutputStream converts java.io.Writer to java.io.OutputStream.
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class WriterOutputStream extends OutputStream {
 
@@ -176,7 +176,7 @@ public class WriterOutputStream extends OutputStream {
      * <p>
      * If <code>off</code> is negative, or <code>len</code> is negative, or
      * <code>off+len</code> is greater than the length of the array
-     * <code>b</code>, then an <tt>IndexOutOfBoundsException</tt> is thrown.
+     * <code>b</code>, then an <code>IndexOutOfBoundsException</code> is thrown.
      *
      * @param      b     the data.
      * @param      off   the start offset in the data.

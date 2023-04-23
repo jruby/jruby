@@ -40,7 +40,7 @@ public interface IRubyWarnings {
     enum ID {
         /**
          * Generic identifier often used when there isn't an extra ID type.
-         * @implNote Some of the "MISCELLANEOUS" warnings might end up being re-categorized.
+         * <p>Note: Some of the "MISCELLANEOUS" warnings might end up being re-categorized.</p>
          */
         MISCELLANEOUS,
         AMBIGUOUS_ARGUMENT,

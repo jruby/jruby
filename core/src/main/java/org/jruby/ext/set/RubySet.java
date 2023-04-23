@@ -184,7 +184,7 @@ public class RubySet extends RubyObject implements Set {
     }
 
     /**
-     * initialize(enum = nil, &block)
+     * initialize(enum = nil, &amp;block)
      */
     @JRubyMethod(visibility = Visibility.PRIVATE) // def initialize(enum = nil, &block)
     public IRubyObject initialize(ThreadContext context, Block block) {
@@ -196,7 +196,7 @@ public class RubySet extends RubyObject implements Set {
     }
 
     /**
-     * initialize(enum = nil, &block)
+     * initialize(enum = nil, &amp;block)
      */
     @JRubyMethod(required = 1, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject enume, Block block) {
@@ -862,7 +862,7 @@ public class RubySet extends RubyObject implements Set {
 
     /**
      * Returns a new set containing elements exclusive between the set and the given enumerable object.
-     * `(set ^ enum)` is equivalent to `((set | enum) - (set & enum))`.
+     * `(set ^ enum)` is equivalent to `((set | enum) - (set &amp; enum))`.
      */
     @JRubyMethod(name = "^")
     public IRubyObject op_xor(final ThreadContext context, IRubyObject enume) {
@@ -961,10 +961,10 @@ public class RubySet extends RubyObject implements Set {
       *   require 'set'
       *   numbers = Set[1, 3, 4, 6, 9, 10, 11]
       *   set = numbers.divide { |i,j| (i - j).abs == 1 }
-      *   p set     # => #<Set: {#<Set: {1}>,
-      *             #            #<Set: {11, 9, 10}>,
-      *             #            #<Set: {3, 4}>,
-      *             #            #<Set: {6}>}>
+      *   p set     # =&gt; #&lt;Set: {#&lt;Set: {1}&gt;,
+      *             #            #&lt;Set: {11, 9, 10}&gt;,
+      *             #            #&lt;Set: {3, 4}&gt;,
+      *             #            #&lt;Set: {6}&gt;}&gt;
       */
     @JRubyMethod(name = "divide")
     public IRubyObject divide(ThreadContext context, final Block block) {

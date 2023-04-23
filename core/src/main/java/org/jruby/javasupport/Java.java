@@ -1701,7 +1701,7 @@ public class Java implements Library {
     /**
      * @param iface
      * @return the sole un-implemented method for a functional-style interface or null
-     * @note This method is internal and might be subject to change, do not assume its part of JRuby's API!
+     * <p>Note: This method is internal and might be subject to change, do not assume its part of JRuby's API!</p>
      */
     public static Method getFunctionalInterfaceMethod(final Class<?> iface) {
         assert iface.isInterface();

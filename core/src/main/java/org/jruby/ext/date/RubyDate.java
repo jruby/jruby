@@ -196,7 +196,7 @@ public class RubyDate extends RubyObject {
     }
 
     /**
-     * @note since <code>Date.new</code> is a <code>civil</code> alias, this won't ever get used
+     * <p>Note: since <code>Date.new</code> is a <code>civil</code> alias, this won't ever get used</p>
      * @deprecated kept due AR-JDBC (uses RubyClass.newInstance(...) to 'fast' allocate a Date instance)
      */
     @JRubyMethod(visibility = Visibility.PRIVATE)

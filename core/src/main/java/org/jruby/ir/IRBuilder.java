@@ -2731,8 +2731,8 @@ public class IRBuilder {
                      *    1. r  = receiver
                      *    2. mc = r.metaClass
                      *    3. v  = mc.getVisibility(methodName)
-                     *    4. f  = !v || v.isPrivate? || (v.isProtected? && receiver/self?.kindof(mc.getRealClass))
-                     *    5. return !f && mc.methodBound(attrmethod) ? buildGetArgumentDefn(..) : false
+                     *    4. f  = !v || v.isPrivate? || (v.isProtected? &amp;&amp; receiver/self?.kindof(mc.getRealClass))
+                     *    5. return !f &amp;&amp; mc.methodBound(attrmethod) ? buildGetArgumentDefn(..) : false
                      *
                      * Hide the complexity of instrs 2-4 into a verifyMethodIsPublicAccessible call
                      * which can executely entirely in Java-land.  No reason to expose the guts in IR.

@@ -123,7 +123,7 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
     }
 
     /**
-     * Is this call lazily execute because it was on right hand side of the lonely (&.) operator?
+     * Is this call lazily execute because it was on right hand side of the lonely (&amp;.) operator?
      *
      * @return true if so.
      */

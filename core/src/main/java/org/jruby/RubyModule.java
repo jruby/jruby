@@ -552,7 +552,7 @@ public class RubyModule extends RubyObject {
     }
 
     /**
-     * @note Internal API - only public as its used by generated code!
+     * <p>Note: Internal API - only public as its used by generated code!</p>
      * @param runtime
      * @param id identifier string (8859_1).  Matching entry in symbol table.
      * @param method
@@ -2079,9 +2079,9 @@ public class RubyModule extends RubyObject {
     }
 
     /**
-     * @note Internal API - only public as its used by generated code!
-     * @note Used by AnnotationBinder.
-     * @note Not safe for target methods that super, since the frame class will not reflect original source.
+     * <p>Note: Internal API - only public as its used by generated code!</p>
+     * <p>Note: Used by AnnotationBinder.</p>
+     * <p>Note: Not safe for target methods that super, since the frame class will not reflect original source.</p>
      * @param id
      * @param method
      * @param oldName

@@ -199,8 +199,8 @@ public class RubyClass extends RubyModule {
      *
      * @param clazz The class from which to grab a standard Ruby __allocate__ method.
      *
-     * @note Used with `jrubyc --java` generated (interoperability) class files.
-     * @note Used with new concrete extension.
+     * <p>Note: Used with `jrubyc --java` generated (interoperability) class files.</p>
+     * <p>Note: Used with new concrete extension.</p>
      */
     public void setRubyStaticAllocator(final Class<?> clazz) {
         try {
@@ -1420,7 +1420,7 @@ public class RubyClass extends RubyModule {
 
             if (concreteExt) {
                 // setAllocator(ConcreteJavaProxy.ALLOCATOR); // this should be already set
-                // Allocator "set" via clinit {@see JavaProxyClass#setProxyClassReified()}
+                // Allocator "set" via clinit {@link JavaProxyClass#setProxyClassReified()}
 
                 this.setInstanceVariable("@java_class", Java.wrapJavaObject(runtime, result));
                 JavaProxy.setJavaClass(this, result);

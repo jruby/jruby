@@ -114,7 +114,7 @@ public class JRubyUtilLibrary implements Library {
     }
 
     /**
-     * @note class_loader_resources alias exists since 9.2
+     * <p>Note: class_loader_resources alias exists since 9.2</p>
      * @param context
      * @param recv
      * @param args (name, raw: false, path: false)
@@ -202,7 +202,7 @@ public class JRubyUtilLibrary implements Library {
     }
 
     /**
-     * Preffered way to boot-up JRuby extensions (available as <code>>JRuby.load_ext</code>).
+     * Prefered way to boot-up JRuby extensions (available as <code>JRuby.load_ext</code>).
      * @param context
      * @param recv
      * @param klass

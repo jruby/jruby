@@ -47,7 +47,7 @@ import static org.jruby.util.RubyStringBuilder.str;
 /**
  * An unbound method representation (e.g. when retrieving an instance method from a class - isn't bound to any instance).
  *
- * @note This was renamed from UnboundMethod.java
+ * <p>Note: This was renamed from UnboundMethod.java</p>
  * @author jpetersen
  */
 @JRubyClass(name="UnboundMethod", parent="Method")

@@ -45,7 +45,7 @@ import org.jruby.embed.util.SystemPropertyCatcher;
 /**
  * This class implements javax.script.ScriptEngineFactory.
  * 
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class JRubyEngineFactory implements ScriptEngineFactory {
     private final String engineName;

@@ -1079,9 +1079,9 @@ public abstract class RealClassGenerator {
      * 
      * @param cw           class builder
      * @param initPosition source code position of initialize
-     * @param hasRuby      If this method accepts ruby & rubyclass on the end (auto-added)
+     * @param hasRuby      If this method accepts ruby &amp; rubyclass on the end (auto-added)
      * @param ctorTypes    signature, minus any ruby arguments
-     * @param nested       If this is a nested/secondary ruby class ([ruby <]+ ruby < java )
+     * @param nested       If this is a nested/secondary ruby class ([ruby &lt;]+ ruby &lt; java )
      */
     public static String makeConcreteConstructorProxy(ClassWriter cw, PositionAware initPosition, boolean hasRuby,
             ConcreteJavaReifier cjr, Class[] ctorTypes, boolean nested) {

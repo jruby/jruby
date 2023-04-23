@@ -52,7 +52,7 @@ import javax.script.SimpleBindings;
  * exception. Another one happens when you use livetribe version of javax.script
  * and GLOBAL_SCOPE. The livetribe javax.script has a bug to handle GLOBAL_SCOPE.
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class JRubyScriptEngineManager {
 

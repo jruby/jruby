@@ -9,7 +9,7 @@ import static org.jruby.RubyBasicObject.getMetaClass;
 /**
  * A bi-morphic call-site.
  *
- * @note used as a base for mixed Fixnum/Float ops
+ * <p>Note: used as a base for mixed Fixnum/Float ops</p>
  */
 abstract class BimorphicCallSite extends CachingCallSite {
 

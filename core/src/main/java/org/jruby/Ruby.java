@@ -803,7 +803,7 @@ public final class Ruby implements Constantizable {
 
     /**
      * Convenience method for java integrators who may need to switch the notion
-     * of "global" runtime. Use <tt>JRuby.runtime.use_as_global_runtime</tt>
+     * of "global" runtime. Use <code>JRuby.runtime.use_as_global_runtime</code>
      * from Ruby code to activate the current runtime as the global one.
      */
     public void useAsGlobalRuntime() {
@@ -848,7 +848,7 @@ public final class Ruby implements Constantizable {
      * and runtime preparation typical to normal script runs.
      *
      * @param script The scriptlet to run
-     * @returns The result of the eval
+     * @return The result of the eval
      */
     public IRubyObject evalScriptlet(String script) {
         ThreadContext context = getCurrentContext();
@@ -870,7 +870,7 @@ public final class Ruby implements Constantizable {
      * @param script The scriptlet to run
      * @param scope The scope to execute against (ManyVarsDynamicScope is
      * recommended, so it can grow as needed)
-     * @returns The result of the eval
+     * @return The result of the eval
      */
     public IRubyObject evalScriptlet(String script, DynamicScope scope) {
         ThreadContext context = getCurrentContext();
@@ -1033,7 +1033,7 @@ public final class Ruby implements Constantizable {
      *
      * @param inputStream The input stream from which to read the script
      * @param filename The filename to use for parsing
-     * @returns The root node of the parsed script
+     * @return The root node of the parsed script
      */
     public Node parseFromMain(InputStream inputStream, String filename) {
         if (config.isInlineScript()) {
@@ -1522,7 +1522,7 @@ public final class Ruby implements Constantizable {
      * rb_define_module in MRI.
      *
      * @param name The name of the new module
-     * @returns The new module
+     * @return The new module
      */
     @Extension
     public RubyModule defineModule(String name) {
@@ -1536,7 +1536,7 @@ public final class Ruby implements Constantizable {
      * @param name The name of the new module
      * @param parent The class or module namespace under which to define the
      * module
-     * @returns The new module
+     * @return The new module
      */
     @Extension
     public RubyModule defineModuleUnder(String name, RubyModule parent) {
@@ -1561,7 +1561,7 @@ public final class Ruby implements Constantizable {
      * new module is created.
      *
      * @param id The name of the module
-     * @returns The existing or new module
+     * @return The existing or new module
      */
     public RubyModule getOrCreateModule(String id) {
         IRubyObject module = objectClass.getConstantAt(id);
@@ -2551,7 +2551,7 @@ public final class Ruby implements Constantizable {
 
     /**
      * Sets the runtime verbosity ($VERBOSE global which usually gets set to nil/false or true).
-     * @note warnings get enabled whenever the verbose level is set to a value that is not nil.
+     * <p>Note: warnings get enabled whenever the verbose level is set to a value that is not nil.</p>
      * @param verbose the verbose ruby value
      */
     public void setVerbose(final IRubyObject verbose) {
@@ -4949,8 +4949,8 @@ public final class Ruby implements Constantizable {
     }
 
     /**
-     * @return Class -> extension initializer map
-     * @note Internal API, subject to change!
+     * @return Class$ -&gt; extension initializer map
+     * <p>Note: Internal API, subject to change!</p>
      */
     public Map<Class, Consumer<RubyModule>> getJavaExtensionDefinitions() { return javaExtensionDefinitions; }
 

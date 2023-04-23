@@ -754,8 +754,8 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
      * Document-method: Zlib::GzipReader.zcat
      *
      * call-seq:
-     *   Zlib::GzipReader.zcat(io, options = {}, &block) => nil
-     *   Zlib::GzipReader.zcat(io, options = {}) => string
+     *   Zlib::GzipReader.zcat(io, options = {}, &amp;block) =&gt; nil
+     *   Zlib::GzipReader.zcat(io, options = {}) =&gt; string
      *
      * Decompresses all gzip data in the +io+, handling multiple gzip
      * streams until the end of the +io+.  There should not be any non-gzip

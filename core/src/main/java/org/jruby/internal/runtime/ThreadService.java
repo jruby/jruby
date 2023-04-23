@@ -102,7 +102,7 @@ import org.jruby.runtime.ThreadContext;
  * and its finalizer will unregister that RubyThread from its RubyThreadGroup.
  * With the RubyThread gone, the Thread-to-RubyThread map will eventually clear,
  * releasing the hard reference to the Thread itself.</li>
- * <ul>
+ * </ul>
  */
 public class ThreadService extends ThreadLocal<SoftReference<ThreadContext>> {
     private final Ruby runtime;
