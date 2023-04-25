@@ -97,4 +97,14 @@ describe "Array#shuffle!" do
     -> { ArraySpecs.frozen_array.shuffle! }.should raise_error(FrozenError)
     -> { ArraySpecs.empty_frozen_array.shuffle! }.should raise_error(FrozenError)
   end
+
+  it "matches CRuby with random:" do
+    %w[a b c].shuffle(random: Random.new(1)).should == %w[a c b]
+    (0..10).to_a.shuffle(random: Random.new(10)).should == [2, 6, 8, 5, 7, 10, 3, 1, 0, 4, 9]
+  end
+
+  it "matches CRuby with srand" do
+    srand(123)
+    %w[a b c d e f g h i j k].shuffle.should == %w[a e f h i j d b g k c]
+  end
 end
