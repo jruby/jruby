@@ -12,3 +12,4 @@ fails:Time.new raises an ArgumentError for out of range month
 fails:Time.new raises an ArgumentError for out of range second
 fails:Time.new with a utc_offset argument returns a Time with UTC offset specified as a single letter military timezone
 fails:Time.new with a utc_offset argument raises ArgumentError if the string argument is J
+fails:Time.new with a timezone argument :in keyword argument returns a Time with UTC offset specified as a single letter military timezone

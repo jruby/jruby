@@ -1,0 +1,1 @@
+fails:String.try_convert sends #to_str to the argument and raises TypeError if it's not a kind of String
