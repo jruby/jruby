@@ -130,22 +130,6 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
     }
 
-    private RubyEnumerator(Ruby runtime, RubyClass type) {
-        super(runtime, type);
-        initialize(runtime, runtime.getNil(), RubyString.newEmptyString(runtime), NULL_ARRAY);
-    }
-
-    private RubyEnumerator(Ruby runtime, RubyClass type, IRubyObject object, RubySymbol method, IRubyObject[] args,
-                           IRubyObject size, SizeFn sizeFn, boolean keywords) {
-        super(runtime, type);
-        initialize(runtime, object, method, args, size, sizeFn, keywords);
-    }
-
-    private RubyEnumerator(Ruby runtime, RubyClass type, IRubyObject object, IRubyObject method, IRubyObject[] args) {
-        super(runtime, type);
-        initialize(runtime, object, method, args);
-    }
-
     /**
      * Transform object into an Enumerator with the given size
      */
@@ -227,7 +211,6 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
             sizeFn = RubyEnumerable::size;
         }
 
-        instance.initialize(context.runtime, object, method, methodArgs, size, sizeFn, keywords);
         // set: @receiver = obj.object, @method = obj.method || :each, *@args = obj.args || []
         // (for Lazy#inspect)
         instance.setInstanceVariable("@receiver", object);
@@ -586,20 +569,6 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
         RubyProducer producer = RubyProducer.newProducer(context, init, block);
         return enumeratorizeWithSize(context, producer, "each", RubyProducer::size);
-    }
-
-    @Deprecated
-    public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
-        Ruby runtime = context.runtime;
-
-        IRubyObject size = Arity.checkArgumentCount(runtime, args, 0, 1) == 1 ? args[0] : null;
-
-        return initializeWithSize(context, size, block);
-    }
-
-    @Deprecated
-    public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
-        return initialize(context, args, Block.NULL_BLOCK);
     }
 
     @Deprecated
