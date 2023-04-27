@@ -4546,7 +4546,7 @@ f_opt           : f_arg_asgn f_eq arg_value {
                     p.getLexContext().in_argdef = true;
                     $$ = new OptArgNode(@3.start(), p.assignableLabelOrIdentifier($1.getName().getBytes(), $3));
                     /*%
-                      $$ = p.new_assoc(p.assignable(@1.id, p.var_field($1)), $3);
+                      $$ = p.new_assoc(p.assignable(@1.id, $1), $3);
                     %*/
 
                 }
@@ -4557,7 +4557,7 @@ f_block_opt     : f_arg_asgn f_eq primary_value {
                     /*%%%*/
                     $$ = new OptArgNode(@3.start(), p.assignableLabelOrIdentifier($1.getName().getBytes(), $3));
                     /*%
-                      $$ = p.new_assoc(p.assignable(@1.id, p.var_field($1)), $3);
+                      $$ = p.new_assoc(p.assignable(@1.id, $1), $3);
                     %*/
                 }
 

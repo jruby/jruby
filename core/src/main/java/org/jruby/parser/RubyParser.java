@@ -6492,7 +6492,7 @@ states[760] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     p.getLexContext().in_argdef = true;
                     yyVal = new OptArgNode(yyVals[yyTop - count + 3].start(), p.assignableLabelOrIdentifier(((ArgumentNode)yyVals[-2+yyTop].value).getName().getBytes(), ((Node)yyVals[0+yyTop].value)));
                     /*%
-                      $$ = p.new_assoc(p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1)), $3);
+                      $$ = p.new_assoc(p.assignable(yyVals[yyTop - count + 1].id, $1), $3);
                     %*/
 
   return yyVal;
@@ -6503,7 +6503,7 @@ states[761] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     /*%%%*/
                     yyVal = new OptArgNode(yyVals[yyTop - count + 3].start(), p.assignableLabelOrIdentifier(((ArgumentNode)yyVals[-2+yyTop].value).getName().getBytes(), ((Node)yyVals[0+yyTop].value)));
                     /*%
-                      $$ = p.new_assoc(p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1)), $3);
+                      $$ = p.new_assoc(p.assignable(yyVals[yyTop - count + 1].id, $1), $3);
                     %*/
   return yyVal;
 };
