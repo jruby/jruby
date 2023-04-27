@@ -371,7 +371,7 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
 %token <@@token_type@@> tLSHFT               /* {{<<}} */
 %token <@@token_type@@> tRSHFT               /* {{>>}} */
 %token <@@token_type@@> tANDDOT              /* {{&.}} */
-%token <ByteList> tCOLON2                    /* {{::}} */
+%token <@@token_type@@> tCOLON2              /* {{::}} */
 %token <@@token_type@@> tCOLON3              /* {{:: at EXPR_BEG}} */
 %token <@@token_type@@> tOP_ASGN             /* {{operator assignment}} +=, etc. */
 %token <@@token_type@@> tASSOC               /* {{=>}} */
