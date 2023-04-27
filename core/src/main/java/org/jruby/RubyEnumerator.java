@@ -131,7 +131,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
     private RubyEnumerator(Ruby runtime, RubyClass type) {
         super(runtime, type);
-        initialize(runtime, runtime.getNil(), RubyString.newEmptyString(runtime), NULL_ARRAY);
+        initialize(runtime, runtime.getNil(), RubyString.newEmptyString(runtime), NULL_ARRAY, null, null, false);
     }
 
     private RubyEnumerator(Ruby runtime, RubyClass type, IRubyObject object, RubySymbol method, IRubyObject[] args,
@@ -142,7 +142,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
     private RubyEnumerator(Ruby runtime, RubyClass type, IRubyObject object, IRubyObject method, IRubyObject[] args) {
         super(runtime, type);
-        initialize(runtime, object, method, args);
+        initialize(runtime, object, method, args, null, null, false);
     }
 
     /**
@@ -236,11 +236,6 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         return instance;
     }
 
-    @Override
-    public IRubyObject initialize(ThreadContext context) {
-        return initialize(context, Block.NULL_BLOCK);
-    }
-
     private static void checkSize(IRubyObject size, Ruby runtime) {
         if (size != null &&
                 !(size.isNil() || size.respondsTo("call")) &&
@@ -259,10 +254,6 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         IRubyObject method = runtime.newSymbol("each");
 
         return initialize(runtime, object, method, NULL_ARRAY, size, null, false);
-    }
-
-    private IRubyObject initialize(Ruby runtime, IRubyObject object, IRubyObject method, IRubyObject[] methodArgs) {
-        return initialize(runtime, object, method, methodArgs, null, null, false);
     }
 
     private IRubyObject initialize(Ruby runtime, IRubyObject object, IRubyObject method, IRubyObject[] methodArgs,
