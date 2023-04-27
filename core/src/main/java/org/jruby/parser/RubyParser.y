@@ -3452,7 +3452,7 @@ p_kwnorest      : kwrest_mark keyword_nil {
                     /*%%%*/
                        $$ = KWNOREST;
                     /*%
-                       $$ = null;
+                       $$ = p.symbolID(KWNOREST);
                     %*/
                 }
 

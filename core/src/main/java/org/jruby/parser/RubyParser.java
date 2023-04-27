@@ -5338,7 +5338,7 @@ states[574] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     /*%%%*/
                        yyVal = KWNOREST;
                     /*%
-                       $$ = null;
+                       $$ = p.symbolID(KWNOREST);
                     %*/
   return yyVal;
 };

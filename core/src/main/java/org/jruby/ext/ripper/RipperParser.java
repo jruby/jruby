@@ -5379,7 +5379,7 @@ states[573] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[574] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                       yyVal = null;
+                       yyVal = p.symbolID(KWNOREST);
 
   return yyVal;
 };
