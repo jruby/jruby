@@ -3897,6 +3897,15 @@ states[319] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     yyVal = ((BlockPassNode)yyVals[0+yyTop].value);
   return yyVal;
 };
+states[320] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+                    /*%%%*/
+                    yyVal = null;
+                    /* Changed from MRI*/
+                    /*%
+                    $$ = p.fals();
+                    %*/
+  return yyVal;
+};
 states[321] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     int line = ((Node)yyVals[0+yyTop].value) instanceof NilImplicitNode ? p.src_line() : yyVals[yyTop - count + 1].start();
@@ -6775,7 +6784,7 @@ states[819] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4745 "parse.y"
+					// line 4752 "parse.y"
 
 }
-					// line 14559 "-"
+					// line 14570 "-"

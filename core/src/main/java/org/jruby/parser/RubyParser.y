@@ -2129,7 +2129,14 @@ block_arg       : tAMPER arg_value {
 opt_block_arg   : ',' block_arg {
                     $$ = $2;
                 }
-                | none_block_pass
+                | none_block_pass {
+                    /*%%%*/
+                    $$ = null;
+                    // Changed from MRI
+                    /*%
+                    $$ = p.fals();
+                    %*/
+                }
 
 // [!null]
 args            : arg_value { // ArrayNode

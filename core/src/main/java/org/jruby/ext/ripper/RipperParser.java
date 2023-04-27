@@ -3988,6 +3988,11 @@ states[319] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
                     yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
+states[320] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+                    yyVal = p.fals();
+
+  return yyVal;
+};
 states[321] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
 {IRubyObject v1, v2, v3, v4;
                     v1 = p.dispatch("on_args_new");
@@ -6622,7 +6627,7 @@ states[819] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 }
-					// line 4592 "ripper_RubyParser.out"
+					// line 4595 "ripper_RubyParser.out"
 
 }
-					// line 14406 "-"
+					// line 14413 "-"
