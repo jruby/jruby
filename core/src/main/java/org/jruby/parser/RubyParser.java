@@ -4638,7 +4638,11 @@ states[453] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[454] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+                    /*%%%*/
                     yyVal = p.new_args(p.src_line(), null, null, null, null, (ArgsTailHolder) null);
+                    /*%
+                      $$ = null;
+                      %*/
   return yyVal;
 };
 states[455] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6784,7 +6788,7 @@ states[819] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4752 "parse.y"
+					// line 4756 "parse.y"
 
 }
-					// line 14570 "-"
+					// line 14574 "-"

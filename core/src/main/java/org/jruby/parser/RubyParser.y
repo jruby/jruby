@@ -2807,7 +2807,11 @@ block_param     : f_arg ',' f_block_optarg ',' f_rest_arg opt_block_args_tail {
                 }
 
 opt_block_param : none {
+                    /*%%%*/
                     $$ = p.new_args(p.src_line(), null, null, null, null, (ArgsTailHolder) null);
+                    /*%
+                      $$ = null;
+                      %*/
                 }
                 | block_param_def {
                     p.setCommandStart(true);
