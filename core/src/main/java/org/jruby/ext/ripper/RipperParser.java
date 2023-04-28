@@ -59,6 +59,7 @@ import static org.jruby.lexer.yacc.RubyLexer.*;
 import static org.jruby.lexer.LexingCommon.AMPERSAND;
 import static org.jruby.lexer.LexingCommon.AMPERSAND_AMPERSAND;
 import static org.jruby.lexer.LexingCommon.AMPERSAND_DOT;
+import static org.jruby.lexer.LexingCommon.AND_KEYWORD;
 import static org.jruby.lexer.LexingCommon.BACKTICK;
 import static org.jruby.lexer.LexingCommon.BANG;
 import static org.jruby.lexer.LexingCommon.CARET;
@@ -76,6 +77,7 @@ import static org.jruby.lexer.LexingCommon.MINUS;
 import static org.jruby.lexer.LexingCommon.MINUS_AT;
 import static org.jruby.lexer.LexingCommon.PERCENT;
 import static org.jruby.lexer.LexingCommon.OR;
+import static org.jruby.lexer.LexingCommon.OR_KEYWORD; 
 import static org.jruby.lexer.LexingCommon.OR_OR;
 import static org.jruby.lexer.LexingCommon.PLUS;
 import static org.jruby.lexer.LexingCommon.RBRACKET;
@@ -99,7 +101,7 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
     public RipperParser(ThreadContext context, IRubyObject ripper, LexerSource source) {
         super(context, ripper, source);
     }
-					// line 103 "-"
+					// line 105 "-"
   // %token constants
   public static final int keyword_class = 257;
   public static final int keyword_module = 258;
@@ -2418,11 +2420,11 @@ states[53] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop,
   return yyVal;
 };
 states[56] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.logop(((IRubyObject)yyVals[-2+yyTop].value), AMPERSAND_AMPERSAND, ((IRubyObject)yyVals[0+yyTop].value));
+                    yyVal = p.logop(((IRubyObject)yyVals[-2+yyTop].value), AND_KEYWORD, ((IRubyObject)yyVals[0+yyTop].value));
   return yyVal;
 };
 states[57] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.logop(((IRubyObject)yyVals[-2+yyTop].value), OR_OR, ((IRubyObject)yyVals[0+yyTop].value));
+                    yyVal = p.logop(((IRubyObject)yyVals[-2+yyTop].value), OR_KEYWORD, ((IRubyObject)yyVals[0+yyTop].value));
   return yyVal;
 };
 states[58] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6631,7 +6633,7 @@ states[819] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 }
-					// line 4601 "ripper_RubyParser.out"
+					// line 4603 "ripper_RubyParser.out"
 
 }
-					// line 14417 "-"
+					// line 14419 "-"

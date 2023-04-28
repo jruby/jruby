@@ -133,6 +133,7 @@ import static org.jruby.lexer.yacc.RubyLexer.*;
 import static org.jruby.lexer.LexingCommon.AMPERSAND;
 import static org.jruby.lexer.LexingCommon.AMPERSAND_AMPERSAND;
 import static org.jruby.lexer.LexingCommon.AMPERSAND_DOT;
+import static org.jruby.lexer.LexingCommon.AND_KEYWORD;
 import static org.jruby.lexer.LexingCommon.BACKTICK;
 import static org.jruby.lexer.LexingCommon.BANG;
 import static org.jruby.lexer.LexingCommon.CARET;
@@ -150,6 +151,7 @@ import static org.jruby.lexer.LexingCommon.MINUS;
 import static org.jruby.lexer.LexingCommon.MINUS_AT;
 import static org.jruby.lexer.LexingCommon.PERCENT;
 import static org.jruby.lexer.LexingCommon.OR;
+import static org.jruby.lexer.LexingCommon.OR_KEYWORD; 
 import static org.jruby.lexer.LexingCommon.OR_OR;
 import static org.jruby.lexer.LexingCommon.PLUS;
 import static org.jruby.lexer.LexingCommon.RBRACKET;
@@ -777,10 +779,10 @@ command_rhs     : command_call %prec tOP_ASGN {
 // Node:expr *CURRENT* all but arg so far
 expr            : command_call
                 | expr keyword_and expr {
-                    $$ = p.logop($1, AMPERSAND_AMPERSAND, $3);
+                    $$ = p.logop($1, AND_KEYWORD, $3);
                 }
                 | expr keyword_or expr {
-                    $$ = p.logop($1, OR_OR, $3);
+                    $$ = p.logop($1, OR_KEYWORD, $3);
                 }
                 | keyword_not opt_nl expr {
                     $$ = p.call_uni_op(p.method_cond($3), NOT);
@@ -3194,7 +3196,7 @@ p_as            : p_expr tASSOC p_variable {
 
 p_alt           : p_alt '|' p_expr_basic {
                     /*%%%*/
-                    $$ = p.logop($1, OR_OR, $3);
+                    $$ = p.logop($1, OR, $3);
                     /*% %*/
                     /*% ripper: binary!($1, STATIC_ID2SYM(idOr), $3) %*/
                 }
