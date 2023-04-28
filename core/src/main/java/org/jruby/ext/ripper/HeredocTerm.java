@@ -190,6 +190,8 @@ public class HeredocTerm extends StrTerm {
                 if (token != 0) {
                     return token;
                 } else {
+                    // peekVariableName when it returns 0 still leaves significant char without pushing it back.
+                    lexer.pushback(c);
                     tok.append(c);
                     c = lexer.nextc();
                 }
