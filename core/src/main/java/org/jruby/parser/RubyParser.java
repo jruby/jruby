@@ -66,11 +66,14 @@ import static org.jruby.lexer.LexingCommon.COLON_COLON;
 import static org.jruby.lexer.LexingCommon.DOLLAR_BANG;
 import static org.jruby.lexer.LexingCommon.DOT;
 import static org.jruby.lexer.LexingCommon.GT;
+import static org.jruby.lexer.LexingCommon.GT_EQ;
 import static org.jruby.lexer.LexingCommon.LBRACKET_RBRACKET;
 import static org.jruby.lexer.LexingCommon.LCURLY;
 import static org.jruby.lexer.LexingCommon.LT;
+import static org.jruby.lexer.LexingCommon.LT_EQ;
 import static org.jruby.lexer.LexingCommon.LT_LT;
 import static org.jruby.lexer.LexingCommon.MINUS;
+import static org.jruby.lexer.LexingCommon.MINUS_AT;
 import static org.jruby.lexer.LexingCommon.PERCENT;
 import static org.jruby.lexer.LexingCommon.OR;
 import static org.jruby.lexer.LexingCommon.OR_OR;
@@ -96,7 +99,7 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
     public RubyParser(LexerSource source, IRubyWarnings warnings) {
         super(warnings); setLexer(new RubyLexer(this, source, warnings));
     }
-					// line 100 "-"
+					// line 103 "-"
   // %token constants
   public static final int keyword_class = 257;
   public static final int keyword_module = 258;
@@ -3555,7 +3558,7 @@ states[257] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[258] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.call_uni_op(p.call_bin_op(((NumericNode)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), p.src_line()), ((ByteList)yyVals[-3+yyTop].value));
+                    yyVal = p.call_uni_op(p.call_bin_op(((NumericNode)yyVals[-2+yyTop].value), STAR_STAR, ((Node)yyVals[0+yyTop].value), p.src_line()), MINUS_AT);
   return yyVal;
 };
 states[259] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -3700,19 +3703,19 @@ states[284] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[285] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = ((ByteList)yyVals[0+yyTop].value);
+                    yyVal = GT;
   return yyVal;
 };
 states[286] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = ((ByteList)yyVals[0+yyTop].value);
+                    yyVal = LT;
   return yyVal;
 };
 states[287] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = ((ByteList)yyVals[0+yyTop].value);
+                    yyVal = GT_EQ;
   return yyVal;
 };
 states[288] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = ((ByteList)yyVals[0+yyTop].value);
+                    yyVal = LT_EQ;
   return yyVal;
 };
 states[289] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6788,7 +6791,7 @@ states[819] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4756 "parse.y"
+					// line 4761 "parse.y"
 
 }
-					// line 14574 "-"
+					// line 14577 "-"

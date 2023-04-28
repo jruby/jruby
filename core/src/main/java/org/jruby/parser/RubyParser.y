@@ -140,11 +140,14 @@ import static org.jruby.lexer.LexingCommon.COLON_COLON;
 import static org.jruby.lexer.LexingCommon.DOLLAR_BANG;
 import static org.jruby.lexer.LexingCommon.DOT;
 import static org.jruby.lexer.LexingCommon.GT;
+import static org.jruby.lexer.LexingCommon.GT_EQ;
 import static org.jruby.lexer.LexingCommon.LBRACKET_RBRACKET;
 import static org.jruby.lexer.LexingCommon.LCURLY;
 import static org.jruby.lexer.LexingCommon.LT;
+import static org.jruby.lexer.LexingCommon.LT_EQ;
 import static org.jruby.lexer.LexingCommon.LT_LT;
 import static org.jruby.lexer.LexingCommon.MINUS;
+import static org.jruby.lexer.LexingCommon.MINUS_AT;
 import static org.jruby.lexer.LexingCommon.PERCENT;
 import static org.jruby.lexer.LexingCommon.OR;
 import static org.jruby.lexer.LexingCommon.OR_OR;
@@ -323,7 +326,9 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
 %type <@@token_type@@> f_norm_arg f_bad_arg
 %type <@@token_type@@> f_kwrest f_label 
 %type <@@prod_f_arg_asgn_type@@> f_arg_asgn
-%type <@@token_type@@> call_op call_op2 reswords relop dot_or_colon
+%type <@@token_type@@> call_op call_op2 reswords
+%type <ByteList> relop
+%type <@@token_type@@> dot_or_colon
 %type <@@token_type@@> p_rest p_kwrest p_kwnorest p_any_kwrest p_kw_label
 %type <@@token_type@@> f_no_kwarg f_any_kwrest args_forward
 %type <@@prod_excessed_comma_type@@> excessed_comma
@@ -336,7 +341,7 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
 %type <LexContext> k_class k_module
 %type <@@keyword_type@@> k_else k_when k_begin k_if k_do
 %type <@@keyword_type@@> k_do_block k_rescue k_ensure k_elsif
-%token <ByteList> tUMINUS_NUM
+%token <@@token_type@@> tUMINUS_NUM
 %type <@@keyword_type@@> rbrace
 %type <@@keyword_type@@> k_def k_end k_while k_until k_for k_case k_unless
 %type <@@prod_type@@> p_lparen p_lbracket
@@ -1825,7 +1830,7 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     $$ = p.call_bin_op($1, STAR_STAR, $3, p.src_line());
                 }
                 | tUMINUS_NUM simple_numeric tPOW arg {
-                    $$ = p.call_uni_op(p.call_bin_op($2, $3, $4, p.src_line()), $1);
+                    $$ = p.call_uni_op(p.call_bin_op($2, STAR_STAR, $4, p.src_line()), MINUS_AT);
                 }
                 | tUPLUS arg {
                     $$ = p.call_uni_op($2, PLUS_AT);
@@ -1943,16 +1948,16 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                 }
  
 relop           : '>' {
-                    $$ = $<@@token_type@@>1;
+                    $$ = GT;
                 }
                 | '<' {
-                    $$ = $<@@token_type@@>1;
+                    $$ = LT;
                 }
                 | tGEQ {
-                    $$ = $1;
+                    $$ = GT_EQ;
                 }
                 | tLEQ {
-                    $$ = $1;
+                    $$ = LT_EQ;
                 }
 
 rel_expr        : arg relop arg   %prec '>' {
