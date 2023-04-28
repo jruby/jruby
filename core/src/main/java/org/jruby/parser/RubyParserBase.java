@@ -57,6 +57,7 @@ import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.common.RubyWarnings;
 import org.jruby.ext.coverage.CoverageData;
+import org.jruby.lexer.LexingCommon;
 import org.jruby.lexer.yacc.LexContext;
 import org.jruby.lexer.yacc.RubyLexer;
 import org.jruby.lexer.yacc.StackState;
@@ -1007,7 +1008,7 @@ public abstract class RubyParserBase {
     public Node logop(Node left, ByteList op, Node right) {
         value_expr(left);
 
-        if (op == AMPERSAND_AMPERSAND) {
+        if (op == AND_KEYWORD || op == AMPERSAND_AMPERSAND) {
             if (left == null && right == null) return new AndNode(lexer.getRubySourceline(), makeNullNil(left), makeNullNil(right));
 
             return new AndNode(position(left, right), makeNullNil(left), makeNullNil(right));
@@ -1118,10 +1119,10 @@ public abstract class RubyParserBase {
     public Node new_op_assign(AssignableNode receiverNode, ByteList operatorName, Node valueNode) {
         int line = receiverNode.getLine();
 
-        if (operatorName == OR_OR) {
+        if (operatorName == OR_KEYWORD || operatorName == OR_OR) {
             receiverNode.setValueNode(valueNode);
             return new OpAsgnOrNode(line, gettable2(receiverNode), receiverNode);
-        } else if (operatorName == AMPERSAND_AMPERSAND) {
+        } else if (operatorName == AND_KEYWORD || operatorName == AMPERSAND_AMPERSAND) {
             receiverNode.setValueNode(valueNode);
             return new OpAsgnAndNode(line, gettable2(receiverNode), receiverNode);
         } else {

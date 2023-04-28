@@ -225,6 +225,10 @@ public class RipperParserBase {
     }
 
     protected IRubyObject call_bin_op(IRubyObject left, IRubyObject id, IRubyObject right, int line) {
+        if (id instanceof RubyString) {
+            id = intern(((RubyString) id).getByteList());
+        }
+
         return dispatch("on_binary", left, id, right);
     }
 
@@ -242,10 +246,6 @@ public class RipperParserBase {
 
     protected IRubyObject logop(IRubyObject left, ByteList id, IRubyObject right) {
         return call_bin_op(left, intern(id), right, -1);
-    }
-
-    protected IRubyObject logop(IRubyObject left, IRubyObject id, IRubyObject right) {
-        return call_bin_op(left, id, right, -1);
     }
 
     public Set<ByteList> push_pvtbl() {

@@ -133,6 +133,7 @@ import static org.jruby.lexer.yacc.RubyLexer.*;
 import static org.jruby.lexer.LexingCommon.AMPERSAND;
 import static org.jruby.lexer.LexingCommon.AMPERSAND_AMPERSAND;
 import static org.jruby.lexer.LexingCommon.AMPERSAND_DOT;
+import static org.jruby.lexer.LexingCommon.AND_KEYWORD;
 import static org.jruby.lexer.LexingCommon.BACKTICK;
 import static org.jruby.lexer.LexingCommon.BANG;
 import static org.jruby.lexer.LexingCommon.CARET;
@@ -140,13 +141,17 @@ import static org.jruby.lexer.LexingCommon.COLON_COLON;
 import static org.jruby.lexer.LexingCommon.DOLLAR_BANG;
 import static org.jruby.lexer.LexingCommon.DOT;
 import static org.jruby.lexer.LexingCommon.GT;
+import static org.jruby.lexer.LexingCommon.GT_EQ;
 import static org.jruby.lexer.LexingCommon.LBRACKET_RBRACKET;
 import static org.jruby.lexer.LexingCommon.LCURLY;
 import static org.jruby.lexer.LexingCommon.LT;
+import static org.jruby.lexer.LexingCommon.LT_EQ;
 import static org.jruby.lexer.LexingCommon.LT_LT;
 import static org.jruby.lexer.LexingCommon.MINUS;
+import static org.jruby.lexer.LexingCommon.MINUS_AT;
 import static org.jruby.lexer.LexingCommon.PERCENT;
 import static org.jruby.lexer.LexingCommon.OR;
+import static org.jruby.lexer.LexingCommon.OR_KEYWORD; 
 import static org.jruby.lexer.LexingCommon.OR_OR;
 import static org.jruby.lexer.LexingCommon.PLUS;
 import static org.jruby.lexer.LexingCommon.RBRACKET;
@@ -323,7 +328,9 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
 %type <@@token_type@@> f_norm_arg f_bad_arg
 %type <@@token_type@@> f_kwrest f_label 
 %type <@@prod_f_arg_asgn_type@@> f_arg_asgn
-%type <@@token_type@@> call_op call_op2 reswords relop dot_or_colon
+%type <@@token_type@@> call_op call_op2 reswords
+%type <ByteList> relop
+%type <@@token_type@@> dot_or_colon
 %type <@@token_type@@> p_rest p_kwrest p_kwnorest p_any_kwrest p_kw_label
 %type <@@token_type@@> f_no_kwarg f_any_kwrest args_forward
 %type <@@prod_excessed_comma_type@@> excessed_comma
@@ -336,7 +343,7 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
 %type <LexContext> k_class k_module
 %type <@@keyword_type@@> k_else k_when k_begin k_if k_do
 %type <@@keyword_type@@> k_do_block k_rescue k_ensure k_elsif
-%token <ByteList> tUMINUS_NUM
+%token <@@token_type@@> tUMINUS_NUM
 %type <@@keyword_type@@> rbrace
 %type <@@keyword_type@@> k_def k_end k_while k_until k_for k_case k_unless
 %type <@@prod_type@@> p_lparen p_lbracket
@@ -371,7 +378,7 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
 %token <@@token_type@@> tLSHFT               /* {{<<}} */
 %token <@@token_type@@> tRSHFT               /* {{>>}} */
 %token <@@token_type@@> tANDDOT              /* {{&.}} */
-%token <ByteList> tCOLON2                    /* {{::}} */
+%token <@@token_type@@> tCOLON2              /* {{::}} */
 %token <@@token_type@@> tCOLON3              /* {{:: at EXPR_BEG}} */
 %token <@@token_type@@> tOP_ASGN             /* {{operator assignment}} +=, etc. */
 %token <@@token_type@@> tASSOC               /* {{=>}} */
@@ -772,10 +779,10 @@ command_rhs     : command_call %prec tOP_ASGN {
 // Node:expr *CURRENT* all but arg so far
 expr            : command_call
                 | expr keyword_and expr {
-                    $$ = p.logop($1, AMPERSAND_AMPERSAND, $3);
+                    $$ = p.logop($1, AND_KEYWORD, $3);
                 }
                 | expr keyword_or expr {
-                    $$ = p.logop($1, OR_OR, $3);
+                    $$ = p.logop($1, OR_KEYWORD, $3);
                 }
                 | keyword_not opt_nl expr {
                     $$ = p.call_uni_op(p.method_cond($3), NOT);
@@ -1825,7 +1832,7 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     $$ = p.call_bin_op($1, STAR_STAR, $3, p.src_line());
                 }
                 | tUMINUS_NUM simple_numeric tPOW arg {
-                    $$ = p.call_uni_op(p.call_bin_op($2, $3, $4, p.src_line()), $1);
+                    $$ = p.call_uni_op(p.call_bin_op($2, STAR_STAR, $4, p.src_line()), MINUS_AT);
                 }
                 | tUPLUS arg {
                     $$ = p.call_uni_op($2, PLUS_AT);
@@ -1943,16 +1950,16 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                 }
  
 relop           : '>' {
-                    $$ = $<@@token_type@@>1;
+                    $$ = GT;
                 }
                 | '<' {
-                    $$ = $<@@token_type@@>1;
+                    $$ = LT;
                 }
                 | tGEQ {
-                    $$ = $1;
+                    $$ = GT_EQ;
                 }
                 | tLEQ {
-                    $$ = $1;
+                    $$ = LT_EQ;
                 }
 
 rel_expr        : arg relop arg   %prec '>' {
@@ -2129,7 +2136,14 @@ block_arg       : tAMPER arg_value {
 opt_block_arg   : ',' block_arg {
                     $$ = $2;
                 }
-                | none_block_pass
+                | none_block_pass {
+                    /*%%%*/
+                    $$ = null;
+                    // Changed from MRI
+                    /*%
+                    $$ = p.fals();
+                    %*/
+                }
 
 // [!null]
 args            : arg_value { // ArrayNode
@@ -2800,7 +2814,11 @@ block_param     : f_arg ',' f_block_optarg ',' f_rest_arg opt_block_args_tail {
                 }
 
 opt_block_param : none {
+                    /*%%%*/
                     $$ = p.new_args(p.src_line(), null, null, null, null, (ArgsTailHolder) null);
+                    /*%
+                      $$ = null;
+                      %*/
                 }
                 | block_param_def {
                     p.setCommandStart(true);
@@ -3178,7 +3196,7 @@ p_as            : p_expr tASSOC p_variable {
 
 p_alt           : p_alt '|' p_expr_basic {
                     /*%%%*/
-                    $$ = p.logop($1, OR_OR, $3);
+                    $$ = p.logop($1, OR, $3);
                     /*% %*/
                     /*% ripper: binary!($1, STATIC_ID2SYM(idOr), $3) %*/
                 }
@@ -3441,7 +3459,7 @@ p_kwnorest      : kwrest_mark keyword_nil {
                     /*%%%*/
                        $$ = KWNOREST;
                     /*%
-                       $$ = null;
+                       $$ = p.symbolID(KWNOREST);
                     %*/
                 }
 
