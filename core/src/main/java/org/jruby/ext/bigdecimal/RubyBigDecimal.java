@@ -2388,21 +2388,21 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private RubyString toStringImpl(final Ruby runtime, String arg) {
-        if ( isNaN() ) return runtime.newString("NaN");
+        if ( isNaN() ) return RubyString.newUSASCIIString(runtime, "NaN");
         if ( isInfinity() ) {
             if ( arg != null && infinitySign >= 0) {
-                if ( formatHasLeadingSpace(arg) ) return runtime.newString(" Infinity");
-                if ( formatHasLeadingPlus(arg) ) return runtime.newString("+Infinity");
+                if ( formatHasLeadingSpace(arg) ) return RubyString.newUSASCIIString(runtime, " Infinity");
+                if ( formatHasLeadingPlus(arg) ) return RubyString.newUSASCIIString(runtime, "+Infinity");
             }
-            return runtime.newString(infinityString(infinitySign));
+            return RubyString.newUSASCIIString(runtime, infinityString(infinitySign));
         }
         if ( isZero() ) {
             if ( zeroSign < 0 ) {
-                return runtime.newString("-0.0");
+                return RubyString.newUSASCIIString(runtime, "-0.0");
             } else {
-                if ( arg != null && formatHasLeadingSpace(arg) ) return runtime.newString(" 0.0");
-                if ( arg != null && formatHasLeadingPlus(arg) ) return runtime.newString("+0.0");
-                return runtime.newString("0.0");
+                if ( arg != null && formatHasLeadingSpace(arg) ) return RubyString.newUSASCIIString(runtime, " 0.0");
+                if ( arg != null && formatHasLeadingPlus(arg) ) return RubyString.newUSASCIIString(runtime, "+0.0");
+                return RubyString.newUSASCIIString(runtime, "0.0");
             }
         }
 
