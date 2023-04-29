@@ -1,1 +1,0 @@
-fails:Regexp.try_convert raises a TypeError if the object does not return an Regexp from #to_regexp

@@ -225,7 +225,7 @@ public class TypeConverter {
         IRubyObject val = convertToType(obj, target, convertMethod, false);
         if (val.isNil()) return val;
         if (!target.isInstance(val)) {
-            throw newTypeError(obj, target, convertMethod, val);
+            throw newTypeErrorMismatch(obj.getRuntime(), obj, target, convertMethod, val);
         }
         return val;
     }
@@ -244,7 +244,7 @@ public class TypeConverter {
         IRubyObject val = convertToType(context, obj, target, sites, false);
         if (val == context.nil) return val;
         if (!target.isInstance(val)) {
-            throw newTypeError(context.runtime, obj, target, sites.methodName, val);
+            throw newTypeErrorMismatch(context.runtime, obj, target, sites.methodName, val);
         }
         return val;
     }
