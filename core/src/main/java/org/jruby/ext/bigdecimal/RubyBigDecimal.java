@@ -708,8 +708,13 @@ public class RubyBigDecimal extends RubyNumeric {
 
         if ( exp != -1 ) {
             if (exp == e || (exp + 1 == e && (str[exp + 1] == '-' || str[exp + 1] == '+'))) {
-                if (!strict) return getZero(context.runtime, 1);
-                throw invalidArgumentError(context, arg);
+                if (!strict) {
+                    // exponential loosely
+                    if (exp == e) e--; // e.g. "1e".to_d
+                    if (exp + 1 == e) e-=2; // e.g. "1e+".to_d
+                } else {
+                    throw invalidArgumentError(context, arg);
+                }
             }
             else if (isExponentOutOfRange(str, exp + 1, e)) {
                 // Handle infinity (Integer.MIN_VALUE + 1) < expValue < Integer.MAX_VALUE
