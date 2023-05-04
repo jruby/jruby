@@ -243,7 +243,7 @@ public class RubyBigDecimal extends RubyNumeric {
     public static class BigDecimalKernelMethods {
         @JRubyMethod(name = "BigDecimal", module = true, visibility = Visibility.PRIVATE) // required = 1, optional = 1
         public static IRubyObject newBigDecimal(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-            return newInstance(context, context.runtime.getClass("BigDecimal"), arg, true, true);
+            return newBigDecimal(context, recv, arg, RubyFixnum.newFixnum(context.runtime, Integer.MAX_VALUE));
         }
 
         @JRubyMethod(name = "BigDecimal", module = true, visibility = Visibility.PRIVATE) // required = 1, optional = 1
@@ -261,7 +261,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
             boolean exception = exObj.isNil() ? true : exObj.isTrue();
 
-            return newInstance(context, bigDecimal, arg0, true, exception);
+            return newInstance(context, bigDecimal, arg0, RubyFixnum.newFixnum(context.runtime, Integer.MAX_VALUE), true, exception);
         }
 
         @JRubyMethod(name = "BigDecimal", module = true, visibility = Visibility.PRIVATE) // required = 1, optional = 1
@@ -295,8 +295,16 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyMethod(meta = true)
     public static RubyBigDecimal _load(ThreadContext context, IRubyObject recv, IRubyObject from) {
         String precisionAndValue = from.convertToString().asJavaString();
+        long m = 0;
+        // First get max prec
+        for (int i = 0; i != precisionAndValue.length() && precisionAndValue.charAt(i) != ':'; i++) {
+            if (!Character.isDigit(precisionAndValue.charAt(i))) {
+                throw context.runtime.newTypeError("load failed: invalid character in the marshaled string");
+            }
+            m = m * 10 + (precisionAndValue.charAt(i) - '0');
+        }
         String value = precisionAndValue.substring(precisionAndValue.indexOf(':') + 1);
-        return newInstance(context, recv, RubyString.newString(context.runtime, value));
+        return (RubyBigDecimal) newInstance(context, recv, RubyString.newString(context.runtime, value), RubyFixnum.newFixnum(context.runtime, m), true, true);
     }
 
     @JRubyMethod(meta = true)
@@ -345,7 +353,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(meta = true)
     public static IRubyObject interpret_loosely(ThreadContext context, IRubyObject recv, IRubyObject str) {
-        return newInstance(context, recv, str, false, true);
+        return newInstance(context, recv, str, RubyFixnum.newFixnum(context.runtime, Integer.MAX_VALUE), false, false );
     }
 
     private static IRubyObject modeExecute(final ThreadContext context, final RubyModule BigDecimal,
@@ -520,7 +528,7 @@ public class RubyBigDecimal extends RubyNumeric {
             case FLOAT:
                 return newInstance(context.runtime, context.runtime.getClass("BigDecimal"), (RubyFloat) value, new MathContext(RubyFloat.DIG));
             case RATIONAL:
-                return newInstance(context, (RubyRational) value, new MathContext(RubyFloat.DIG));
+                return newInstance(context.runtime, context.runtime.getClass("BigDecimal"), (RubyRational) value, new MathContext(RubyFloat.DIG));
         }
         return cannotBeCoerced(context, value, must);
     }
@@ -540,8 +548,8 @@ public class RubyBigDecimal extends RubyNumeric {
         return new RubyBigDecimal(runtime, (RubyClass) recv, new BigDecimal(value, mathContext));
     }
 
-    private static RubyBigDecimal newInstance(ThreadContext context, RubyRational arg, MathContext mathContext) {
-        if (arg.getNumerator().isZero()) return getZero(context.runtime, 1);
+    private static RubyBigDecimal newInstance(Ruby runtime, IRubyObject recv, RubyRational arg, MathContext mathContext) {
+        if (arg.getNumerator().isZero()) return getZero(runtime, 1);
 
         BigDecimal num = toBigDecimal(arg.getNumerator());
         BigDecimal den = toBigDecimal(arg.getDenominator());
@@ -552,7 +560,7 @@ public class RubyBigDecimal extends RubyNumeric {
             value = num.divide(den, MathContext.DECIMAL64);
         }
 
-        return new RubyBigDecimal(context.runtime, value);
+        return new RubyBigDecimal(runtime, (RubyClass) recv, value);
     }
 
     private static RubyBigDecimal newInstance(Ruby runtime, IRubyObject recv, RubyFloat arg, MathContext mathContext) {
@@ -802,16 +810,6 @@ public class RubyBigDecimal extends RubyNumeric {
         return false;
     }
 
-    @Deprecated
-    public static RubyBigDecimal newInstance(IRubyObject recv, IRubyObject[] args) {
-        final ThreadContext context = recv.getRuntime().getCurrentContext();
-        switch (args.length) {
-            case 1: return newInstance(context, recv, args[0]);
-            case 2: return newInstance(context, recv, args[0], args[1]);
-        }
-        throw new IllegalArgumentException("unexpected argument count: " + args.length);
-    }
-
     @Deprecated // no to be used in user-lang
     @JRubyMethod(name = "new", meta = true)
     public static IRubyObject new_(ThreadContext context, IRubyObject recv, IRubyObject arg) {
@@ -833,41 +831,6 @@ public class RubyBigDecimal extends RubyNumeric {
         return BigDecimalKernelMethods.newBigDecimal(context, recv, arg, mathArg, opts);
     }
 
-    public static RubyBigDecimal newInstance(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        return (RubyBigDecimal) newInstance(context, recv, arg, true, true);
-    }
-
-    public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject arg, boolean strict, boolean exception) {
-        switch (((RubyBasicObject) arg).getNativeClassIndex()) {
-            case RATIONAL:
-                return handleMissingPrecision(context, "Rational", strict, exception);
-            case FLOAT:
-                RubyBigDecimal res = newFloatSpecialCases(context.runtime, (RubyFloat) arg);
-                if (res != null) return res;
-                return handleMissingPrecision(context, "Float", strict, exception);
-            case FIXNUM:
-                return newInstance(context.runtime, recv, (RubyFixnum) arg, MathContext.UNLIMITED);
-            case BIGNUM:
-                return newInstance(context.runtime, recv, (RubyBignum) arg, MathContext.UNLIMITED);
-            case BIGDECIMAL:
-                return arg;
-            case COMPLEX:
-                RubyComplex c = (RubyComplex) arg;
-                if (!((RubyNumeric)c.image()).isZero()) {
-                    throw context.runtime.newArgumentError("Unable to make a BigDecimal from non-zero imaginary number");
-                }
-        }
-
-        IRubyObject maybeString = arg.checkStringType();
-
-        if (maybeString.isNil()) {
-            if (!strict) return getZero(context.runtime, 1);
-            if (!exception) return context.nil;
-            throw context.runtime.newTypeError("no implicit conversion of " + arg.inspect() + "into to String");
-        }
-        return newInstance(context, (RubyClass) recv, maybeString.convertToString(), MathContext.UNLIMITED, strict, exception);
-    }
-
     private static IRubyObject handleMissingPrecision(ThreadContext context, String name, boolean strict, boolean exception) {
         if (!strict) return getZero(context.runtime, 1);
         if (!exception) return context.nil;
@@ -879,6 +842,11 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject mathArg, boolean strict, boolean exception) {
+        if (arg.isNil() || arg instanceof RubyBoolean) {
+            if (!exception) return context.nil;
+            throw context.runtime.newTypeError("can't convert " + arg.inspect() + " into BigDecimal");
+        }
+
         int digits = (int) mathArg.convertToInteger().getLongValue();
         if (digits < 0) {
             if (!strict) return getZero(context.runtime, 1);
@@ -886,21 +854,49 @@ public class RubyBigDecimal extends RubyNumeric {
             throw context.runtime.newArgumentError("argument must be positive");
         }
 
-        MathContext mathContext = new MathContext(digits);
+        MathContext mathContext = new MathContext(digits, getRoundingMode(context.runtime));
 
         switch (((RubyBasicObject) arg).getNativeClassIndex()) {
             case RATIONAL:
-                return newInstance(context, (RubyRational) arg, mathContext);
+                // mri uses SIZE_MAX
+                if (digits == Integer.MAX_VALUE) {
+                    return handleMissingPrecision(context, "Rational", strict, exception);
+                }
+                return newInstance(context.runtime, recv, (RubyRational) arg, mathContext);
             case FLOAT:
+                RubyBigDecimal res = newFloatSpecialCases(context.runtime, (RubyFloat) arg);
+                if (res != null) return res;
+                // mri uses SIZE_MAX
+                if (digits == Integer.MAX_VALUE) {
+                    return handleMissingPrecision(context, "Float", strict, exception);
+                }
                 return newInstance(context.runtime, recv, (RubyFloat) arg, mathContext);
             case FIXNUM:
                 return newInstance(context.runtime, recv, (RubyFixnum) arg, mathContext);
             case BIGNUM:
                 return newInstance(context.runtime, recv, (RubyBignum) arg, mathContext);
             case BIGDECIMAL:
+                // mri uses SIZE_MAX
+                if (digits == Integer.MAX_VALUE) {
+                    return arg;
+                }
                 return newInstance(context.runtime, recv, (RubyBigDecimal) arg);
+            case COMPLEX:
+                RubyComplex c = (RubyComplex) arg;
+                if (!((RubyNumeric)c.image()).isZero()) {
+                    throw context.runtime.newArgumentError("Unable to make a BigDecimal from non-zero imaginary number");
+                }
+                return newInstance(context, recv, c.real(), mathArg, strict, exception);
         }
-        return newInstance(context, (RubyClass) recv, arg.convertToString(), MathContext.UNLIMITED, strict, exception);
+
+        IRubyObject maybeString = arg.checkStringType();
+
+        if (maybeString.isNil()) {
+            if (!exception) return context.nil;
+            throw context.runtime.newTypeError("can't convert " + arg.getMetaClass() + " into BigDecimal");
+        }
+
+        return newInstance(context, (RubyClass) recv, (RubyString) maybeString, MathContext.UNLIMITED, strict, exception);
     }
 
     private static RubyBigDecimal getZero(final Ruby runtime, final int sign) {
