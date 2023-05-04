@@ -1004,6 +1004,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static IRubyObject isDefinedSuper(ThreadContext context, IRubyObject receiver, String frameName, RubyModule frameClass, IRubyObject definedMessage) {
         boolean defined = frameName != null && frameClass != null &&
+                frameClass.getSuperClass() != null &&
                 frameClass.getSuperClass().isMethodBound(frameName, false);
 
         return defined ? definedMessage : context.nil;
