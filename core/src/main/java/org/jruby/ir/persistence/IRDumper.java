@@ -312,10 +312,6 @@ public class IRDumper extends IRVisitor {
             print("=>");
             visit(pair.getValue());
         }
-        if (hash.literal) {
-            if (comma) print(',');
-            print("literal=true");
-        }
     }
     public void Integer(org.jruby.ir.operands.Integer integer) { print(integer.getValue()); }
     public void IRException(IRException irexception) { print(irexception.getType()); }

@@ -44,6 +44,6 @@ public class IndyDynamicValueCompiler implements DynamicValueCompiler {
         if (length > IRBytecodeAdapter.MAX_ARGUMENTS / 2)
             throw new NotCompilableException("literal hash has more than " + (IRBytecodeAdapter.MAX_ARGUMENTS / 2) + " pairs");
 
-        compiler.adapter.invokedynamic("hash", sig(JVM.OBJECT, params(ThreadContext.class, boolean.class, JVM.OBJECT, length * 2)), Bootstrap.hash());
+        compiler.adapter.invokedynamic("hash", sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, length * 2)), Bootstrap.hash());
     }
 }
