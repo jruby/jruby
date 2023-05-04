@@ -410,10 +410,28 @@ public class Bootstrap {
                     .invokeStaticQuiet(LOOKUP, Bootstrap.class, "array");
 
     public static CallSite hash(Lookup lookup, String name, MethodType type) {
-        MethodHandle handle = Binder
-                .from(lookup, type)
-                .collect(1, IRubyObject[].class)
-                .invoke(HASH_HANDLE);
+        MethodHandle handle;
+
+        int parameterCount = type.parameterCount();
+        if (parameterCount == 1) {
+            handle = Binder
+                    .from(lookup, type)
+                    .cast(type.changeReturnType(RubyHash.class))
+                    .filter(0, RUNTIME_FROM_CONTEXT_HANDLE)
+                    .invokeStaticQuiet(lookup, RubyHash.class, "newHash");
+        } else if (!type.parameterType(parameterCount - 1).isArray()
+                && (parameterCount - 1) / 2 <= Helpers.MAX_SPECIFIC_ARITY_HASH) {
+            handle = Binder
+                    .from(lookup, type)
+                    .cast(type.changeReturnType(RubyHash.class))
+                    .filter(0, RUNTIME_FROM_CONTEXT_HANDLE)
+                    .invokeStaticQuiet(lookup, Helpers.class, "constructSmallHash");
+        } else {
+            handle = Binder
+                    .from(lookup, type)
+                    .collect(1, IRubyObject[].class)
+                    .invoke(HASH_HANDLE);
+        }
 
         return new ConstantCallSite(handle);
     }
@@ -600,6 +618,11 @@ public class Bootstrap {
             Binder
                     .from(Ruby.class, ThreadContext.class, MutableCallSite.class)
                     .invokeStaticQuiet(LOOKUP, Bootstrap.class, "runtime");
+
+    private static final MethodHandle RUNTIME_FROM_CONTEXT_HANDLE =
+            Binder
+                    .from(Ruby.class, ThreadContext.class)
+                    .getFieldQuiet("runtime");
 
     private static final MethodHandle NIL_HANDLE =
             Binder
