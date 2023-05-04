@@ -1154,13 +1154,18 @@ public class RubyBigDecimal extends RubyNumeric {
         return RubyNumeric.fix2int(vpPrecLimit(runtime));
     }
 
-    @Deprecated
-    public IRubyObject op_pow(IRubyObject arg) {
-        return op_pow(getRuntime().getCurrentContext(), arg);
+    @JRubyMethod(name = "**")
+    public IRubyObject op_pow(ThreadContext context, IRubyObject exp) {
+        return op_power(context, exp, context.nil);
     }
 
-    @JRubyMethod(name = {"**", "power"}, required = 1)
-    public IRubyObject op_pow(final ThreadContext context, IRubyObject exp) {
+    @JRubyMethod(name = "power")
+    public IRubyObject op_power(ThreadContext context, IRubyObject exp) {
+        return op_power(context, exp, context.nil);
+    }
+
+    @JRubyMethod(name = "power")
+    public IRubyObject op_power(ThreadContext context, IRubyObject exp, IRubyObject prec) {
         final Ruby runtime = context.runtime;
 
         if (isNaN()) return getNaN(runtime);
@@ -1202,17 +1207,17 @@ public class RubyBigDecimal extends RubyNumeric {
 
         final int times;
         final double rem; // exp's decimal part
-        final int nx = getPrec(context) * BASE_FIG;
+        final int nx = prec.isNil() ? getPrec(context) * BASE_FIG : num2int(prec);
         if (exp instanceof RubyBigDecimal) {
             RubyBigDecimal bdExp = (RubyBigDecimal)exp;
             int ny = bdExp.getPrec(context) * BASE_FIG;
-            return bigdecimal_power_by_bigdecimal(context, exp, nx + ny);
+            return bigdecimal_power_by_bigdecimal(context, exp, prec.isNil() ? nx + ny : nx);
         } else if ( exp instanceof RubyFloat ) {
             int ny = VP_DOUBLE_FIG;
-            return bigdecimal_power_by_bigdecimal(context, exp, nx + ny);
+            return bigdecimal_power_by_bigdecimal(context, exp, prec.isNil() ? nx + ny : nx);
         } else if ( exp instanceof RubyRational) {
             int ny = nx;
-            return bigdecimal_power_by_bigdecimal(context, exp, nx + ny);
+            return bigdecimal_power_by_bigdecimal(context, exp, prec.isNil() ? nx + ny : nx);
         } else if (exp instanceof RubyBignum) {
             BigDecimal absValue = value.abs();
             if (absValue.equals(BigDecimal.ONE)) {
@@ -1260,6 +1265,10 @@ public class RubyBigDecimal extends RubyNumeric {
             pow = pow.multiply( BigDecimal.valueOf(remPow) );
         }
 
+        if (!prec.isNil()) {
+            pow = pow.setScale(nx, getRoundingMode(context.runtime));
+        }
+
         return new RubyBigDecimal(runtime, pow);
     }
 
@@ -1269,11 +1278,6 @@ public class RubyBigDecimal extends RubyNumeric {
         RubyBigDecimal log_x = (RubyBigDecimal) bigMath.callMethod(context, "log", new IRubyObject[]{this, RubyFixnum.newFixnum(context.getRuntime(), precision + 1)});
         RubyBigDecimal multipled = (RubyBigDecimal) log_x.mult2(context, exp, RubyFixnum.newFixnum(context.getRuntime(), precision + 1));
         return bigMath.callMethod(context, "exp", new IRubyObject[]{multipled, RubyFixnum.newFixnum(context.getRuntime(), precision)});
-    }
-
-    @Deprecated
-    public IRubyObject op_pow19(IRubyObject exp) {
-        return op_pow(getRuntime().getCurrentContext(), exp);
     }
 
     private BigDecimal powNegative(final int times) {

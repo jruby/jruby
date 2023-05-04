@@ -6,7 +6,6 @@ exclude :test_limit, "needs investigation"
 exclude :test_marshal, "needs investigation"
 
 exclude :test_power_of_three, "pow's precision isn't calculated the same as in MRI (for 1/81)"
-exclude :test_power_with_prec, "needs investigation"
 exclude :test_power_without_prec, "needs investigation"
 
 exclude :test_round_up, "needs investigation"
