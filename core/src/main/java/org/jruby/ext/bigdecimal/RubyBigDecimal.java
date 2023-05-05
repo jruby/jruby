@@ -915,16 +915,30 @@ public class RubyBigDecimal extends RubyNumeric {
         return runtime.newFloatDomainError("Computation results to 'NaN'(Not a Number)");
     }
 
+    private enum InfinityErrorMsgType {To, In}
+
     private static RubyBigDecimal getInfinity(final Ruby runtime, final int sign) {
+        return getInfinity(runtime, sign, InfinityErrorMsgType.To);
+    }
+
+    private static RubyBigDecimal getInfinity(final Ruby runtime, final int sign, final InfinityErrorMsgType type) {
         if ( isInfinityExceptionMode(runtime) ) {
-            throw newInfinityFloatDomainError(runtime, sign);
+            throw newInfinityFloatDomainError(runtime, sign, type);
         }
         String constantName = sign < 0 ? "NEGATIVE_INFINITY" : "INFINITY";
         return (RubyBigDecimal)runtime.getClass("BigDecimal").getConstant(constantName);
     }
 
     private static RaiseException newInfinityFloatDomainError(final Ruby runtime, final int sign) {
-        return runtime.newFloatDomainError("Computation results to " + (sign < 0 ? "'-Infinity'" : "'Infinity'"));
+        return newInfinityFloatDomainError(runtime, sign, InfinityErrorMsgType.To);
+    }
+
+    private static RaiseException newInfinityFloatDomainError(final Ruby runtime, final int sign, final InfinityErrorMsgType type) {
+        if (type == InfinityErrorMsgType.To) {
+            return runtime.newFloatDomainError("Computation results to " + (sign < 0 ? "'-Infinity'" : "'Infinity'"));
+        } else {
+            return runtime.newFloatDomainError("Computation results in " + (sign < 0 ? "'-Infinity'" : "'Infinity'"));
+        }
     }
 
     private RubyBigDecimal setResult() {
@@ -1615,7 +1629,7 @@ public class RubyBigDecimal extends RubyNumeric {
                 throw context.runtime.newFloatDomainError("Divide by zero");
             }
             int sign1 = isInfinity() ? infinitySign : value.signum();
-            return getInfinity(context.runtime, sign1 * val.zeroSign);
+            return getInfinity(context.runtime, sign1 * val.zeroSign, InfinityErrorMsgType.In);
         }
         if (isZero()) return getZero(context.runtime, zeroSign * val.value.signum());
 
