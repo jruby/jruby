@@ -1435,8 +1435,9 @@ public class RubyBigDecimal extends RubyNumeric {
         return null;
     }
 
-    @JRubyMethod(name = {"/", "quo"})
-    public IRubyObject op_quo(ThreadContext context, IRubyObject other) {
+    // mri : BigDecimal_div
+    @JRubyMethod(name = "/")
+    public IRubyObject op_divide(ThreadContext context, IRubyObject other) {
         RubyBigDecimal val = getVpValueWithPrec(context, other, false);
         if (val == null) return callCoerced(context, sites(context).op_quo, other, true);
 
@@ -1446,6 +1447,23 @@ public class RubyBigDecimal extends RubyNumeric {
         if (div != null) return div;
 
         return quoImpl(context, val);
+    }
+
+    // mri : BigDecimal_quo
+    @JRubyMethod(name = "quo")
+    public IRubyObject op_quo(ThreadContext context, IRubyObject other) {
+        return op_divide(context, other);
+    }
+
+     // mri : BigDecimal_quo
+    @JRubyMethod(name = "quo")
+    public IRubyObject op_quo(ThreadContext context, IRubyObject object, IRubyObject digits) {
+        int n = num2int(digits);
+        if (n > 0) {
+            return op_div(context, object, digits);
+        } else {
+            return op_divide(context, object);
+        }
     }
 
     private RubyBigDecimal quoImpl(ThreadContext context, RubyBigDecimal that) {
@@ -1526,24 +1544,10 @@ public class RubyBigDecimal extends RubyNumeric {
         return op_quo(context, other);
     }
 
+    // mri : BigDecimal_div3
     @JRubyMethod(name = "div")
     public IRubyObject op_div(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyRational) return idiv(context, (RubyRational) other);
-
-        RubyBigDecimal val = getVpValue(context, other, false);
-        if (val == null) return callCoerced(context, sites(context).div, other, true);
-
-        if (isNaN() || val.isNaN()) throw newNaNFloatDomainError(context.runtime);
-        if (isInfinity()) { // NOTE: MRI is inconsistent with div(other, d) impl
-            if (val.isInfinity()) throw newNaNFloatDomainError(context.runtime);
-            throw newInfinityFloatDomainError(context.runtime, infinitySign);
-        }
-        if (val.isZero()) throw context.runtime.newZeroDivisionError();
-
-        if (val.isInfinity()) return RubyFixnum.zero(context.runtime);
-
-        BigDecimal result = this.value.divideToIntegralValue(val.value);
-        return toInteger(context.runtime, result);
+        return op_div(context, other, context.nil);
     }
 
     private RubyInteger idiv(ThreadContext context, RubyRational val) {
@@ -1568,10 +1572,22 @@ public class RubyBigDecimal extends RubyNumeric {
         return RubyBignum.newBignum(runtime, result.toBigInteger());
     }
 
+    // mri : BigDecimal_div2
     @JRubyMethod(name = "div")
     public IRubyObject op_div(ThreadContext context, IRubyObject other, IRubyObject digits) {
         RubyBigDecimal val = getVpValue(context, other, false);
         if (val == null) return callCoerced(context, sites(context).div, other, true);
+        if (digits.isNil()) {
+            if (isNaN() || val.isNaN()) throw newNaNFloatDomainError(context.runtime);
+            if (isInfinity()) { // NOTE: MRI is inconsistent with div(other, d) impl
+                if (val.isInfinity()) throw newNaNFloatDomainError(context.runtime);
+                throw newInfinityFloatDomainError(context.runtime, infinitySign);
+            }
+            if (val.isZero()) throw context.runtime.newZeroDivisionError();
+
+            if (val.isInfinity()) return RubyFixnum.zero(context.runtime);
+            return toInteger(context.runtime, this.value.divideToIntegralValue(val.value));
+        }
 
         if (isNaN() || val.isNaN()) return getNaN(context.runtime);
 
