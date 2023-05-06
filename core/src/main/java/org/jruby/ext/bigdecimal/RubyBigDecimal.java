@@ -421,7 +421,7 @@ public class RubyBigDecimal extends RubyNumeric {
             }
 
             RoundingMode javaRoundingMode = javaRoundingModeFromRubyRoundingMode(context, value);
-            RubyFixnum roundingMode = runtime.newFixnum(rubyRoundingModeFromJavaRoundinggMode(context, javaRoundingMode));
+            RubyFixnum roundingMode = runtime.newFixnum(rubyRoundingModeFromJavaRoundingMode(context, javaRoundingMode));
             c.setInternalModuleVariable("vpRoundingMode", roundingMode);
 
             return roundingMode;
@@ -2047,7 +2047,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return round(context, new IRubyObject[]{scale, mode});
     }
 
-    private static int rubyRoundingModeFromJavaRoundinggMode(ThreadContext context, RoundingMode mode) {
+    private static int rubyRoundingModeFromJavaRoundingMode(ThreadContext context, RoundingMode mode) {
         if (mode.equals(RoundingMode.UP)) {
             return ROUND_UP;
         } else if (mode.equals(RoundingMode.DOWN)) {
