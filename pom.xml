@@ -289,7 +289,7 @@ DO NOT MODIFY - GENERATED CODE
         </plugin>
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>3.0.0-M5</version>
+          <version>3.0.0</version>
         </plugin>
         <plugin>
           <artifactId>maven-plugin-plugin</artifactId>
