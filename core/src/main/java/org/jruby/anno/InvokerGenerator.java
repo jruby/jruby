@@ -33,7 +33,10 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -44,6 +47,9 @@ import org.jruby.util.ClassDefiningJRubyClassLoader;
 public class InvokerGenerator {
 
     private static final boolean DEBUG = false;
+
+    private static final Comparator<Method> DETERMINISTIC_METHOD_ORDER = Comparator.comparing(Method::getName)
+        .thenComparing(Method::toString); // when there's an overload (same name) compare with parameters included
 
     public static void main(String[] args) throws Exception {
         final FileReader fileReader;
@@ -73,9 +79,11 @@ public class InvokerGenerator {
 
             try {
                 if (DEBUG) System.err.println("generating for class " + name);
-                Class cls = Class.forName(name, false, InvokerGenerator.class.getClassLoader());
+                Class klass = Class.forName(name, false, InvokerGenerator.class.getClassLoader());
 
-                clumper.clump(cls);
+                Method[] declaredMethods = klass.getDeclaredMethods();
+                Arrays.sort(declaredMethods, DETERMINISTIC_METHOD_ORDER);
+                clumper.clump(declaredMethods);
 
                 for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getStaticAnnotatedMethods().entrySet()) {
                     dumper.getAnnotatedMethodClass(entry.getValue());
