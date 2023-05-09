@@ -691,7 +691,10 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
                     new GlobalVariableWriteNode(((GlobalVariableWriteNode) node).name, op.value, node.startOffset, node.endOffset) };
         } else if (node instanceof ClassVariableWriteNode) {
             return new Node[]{new ClassVariableReadNode(((ClassVariableWriteNode) node).name_loc.startOffset, ((ClassVariableWriteNode) node).name_loc.endOffset),
-                    new GlobalVariableWriteNode(((GlobalVariableWriteNode) node).name, op.value, node.startOffset, node.endOffset)};
+                    new ClassVariableWriteNode(((ClassVariableWriteNode) node).name_loc, op.value, node.startOffset, node.endOffset)};
+        } else if (node instanceof LocalVariableWriteNode) {
+            return new Node[]{new LocalVariableReadNode(((LocalVariableWriteNode) node).depth, node.startOffset, node.endOffset),
+                    new LocalVariableWriteNode(((LocalVariableWriteNode) node).name_loc, op.value, ((LocalVariableWriteNode) node).depth, node.startOffset, node.endOffset)};
         }
 
         // FIXME: Implement more or do this totally differently
