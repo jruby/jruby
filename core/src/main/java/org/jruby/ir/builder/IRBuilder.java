@@ -5,8 +5,7 @@ import org.jruby.EvalType;
 import org.jruby.ParseResult;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
-import org.jruby.ast.DotNode;
-import org.jruby.ast.RootNode;
+import org.jruby.ast.*;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.ext.coverage.CoverageData;
 import org.jruby.ir.IRClassBody;
@@ -963,6 +962,10 @@ public abstract class IRBuilder<U, V, W> {
                                 copy((Variable) ret, right.run()))));
     }
 
+    Operand[] setupCallArgs(U args, int[] flags) {
+        return args == null ? Operand.EMPTY_ARRAY : buildCallArgs(args, flags);
+    }
+
     public Operand buildCase(U predicate, U[] arms, U elsey) {
         // FIXME: Missing optimized homogeneous here (still in AST but will be missed by YARP).
 
@@ -1434,6 +1437,33 @@ public abstract class IRBuilder<U, V, W> {
         return scope.getSelf();
     }
 
+    public Operand buildSuper(Variable aResult, U iterNode, U argsNode, int line) {
+        Variable result = aResult == null ? temp() : aResult;
+        Operand tempBlock = setupCallClosure(iterNode);
+        if (tempBlock == NullBlock.INSTANCE) tempBlock = getYieldClosureVariable();
+        Operand block = tempBlock;
+
+        boolean inClassBody = scope instanceof IRMethod && scope.getLexicalParent() instanceof IRClassBody;
+        boolean isInstanceMethod = inClassBody && ((IRMethod) scope).isInstanceMethod;
+        int[] flags = new int[] { 0 };
+        Operand[] args = setupCallArgs(argsNode, flags);
+
+        if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
+            Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
+            if_else(test, tru(),
+                    () -> receiveBreakException(block,
+                            determineSuperInstr(result, removeArg(args), block, flags[0], inClassBody, isInstanceMethod)),
+                    () -> receiveBreakException(block,
+                            determineSuperInstr(result, args, block, flags[0], inClassBody, isInstanceMethod)));
+        } else {
+            determineIfWeNeedLineNumber(line); // buildOperand for fcall was papered over by args operand building so we check once more.
+            receiveBreakException(block,
+                    determineSuperInstr(result, args, block, flags[0], inClassBody, isInstanceMethod));
+        }
+
+        return result;
+    }
+
     abstract void buildWhenArgs(W whenNode, Operand testValue, Label bodyLabel, Set<IRubyObject> seenLiterals);
 
     void buildWhenValue(Variable eqqResult, Operand testValue, Label bodyLabel, U node,
@@ -1459,6 +1489,7 @@ public abstract class IRBuilder<U, V, W> {
     }
 
 
+    abstract Operand[] buildCallArgs(U args, int[] flags);
     abstract Operand buildGetDefinition(U node);
     abstract boolean containsVariableAssignment(U node);
     abstract Operand frozen_string(U node);
@@ -1675,6 +1706,13 @@ public abstract class IRBuilder<U, V, W> {
         } else {
             if (isUnderscore) underscoreVariableSeen = true;
             return getNewLocalVariable(name, 0);
+        }
+    }
+
+    private void determineIfWeNeedLineNumber(int line) {
+        if (line != lastProcessedLineNum) { // Do not emit multiple line number instrs for the same line
+            needsLineNumInfo = true;
+            lastProcessedLineNum = line;
         }
     }
 

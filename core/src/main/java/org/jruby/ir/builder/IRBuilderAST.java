@@ -571,10 +571,6 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
         }
     }
 
-    public Operand[] setupCallArgs(Node args, int[] flags) {
-        return args == null ? Operand.EMPTY_ARRAY : buildCallArgs(args, flags);
-    }
-
     // This method is called to build assignments for a multiple-assignment instruction
     public void buildAssignment(Node node, Variable rhsVal) {
         switch (node.getNodeType()) {
@@ -3512,31 +3508,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
         return new MutableString(strNode.getValue(), strNode.getCodeRange(), scope.getFile(), line);
     }
 
-    public Operand buildSuper(Variable aResult, SuperNode callNode) {
-        Variable result = aResult == null ? temp() : aResult;
-        Operand tempBlock = setupCallClosure(callNode.getIterNode());
-        if (tempBlock == NullBlock.INSTANCE) tempBlock = getYieldClosureVariable();
-        Operand block = tempBlock;
-
-        boolean inClassBody = scope instanceof IRMethod && scope.getLexicalParent() instanceof IRClassBody;
-        boolean isInstanceMethod = inClassBody && ((IRMethod) scope).isInstanceMethod;
-        int[] flags = new int[] { 0 };
-        Operand[] args = setupCallArgs(callNode.getArgsNode(), flags);
-
-        if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
-            Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
-            if_else(test, tru(),
-                    () -> receiveBreakException(block,
-                            determineSuperInstr(result, removeArg(args), block, flags[0], inClassBody, isInstanceMethod)),
-                    () -> receiveBreakException(block,
-                            determineSuperInstr(result, args, block, flags[0], inClassBody, isInstanceMethod)));
-        } else {
-            determineIfWeNeedLineNumber(callNode); // buildOperand for fcall was papered over by args operand building so we check once more.
-            receiveBreakException(block,
-                    determineSuperInstr(result, args, block, flags[0], inClassBody, isInstanceMethod));
-        }
-
-        return result;
+    public Operand buildSuper(Variable result, SuperNode node) {
+        return buildSuper(result, node.getIterNode(), node.getArgsNode(), node.getLine());
     }
 
     public Operand buildSValue(Variable result, SValueNode node) {

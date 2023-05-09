@@ -209,6 +209,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
             return buildStatements((StatementsNode) node);
         } else if (node instanceof StringNode) {
             return buildString((StringNode) node);
+        } else if (node instanceof SuperNode) {
+            return buildSuper(result, (SuperNode) node);
         } else if (node instanceof SymbolNode) {
             return buildSymbol((SymbolNode) node);
         } else if (node instanceof TrueNode) {
@@ -427,6 +429,12 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
         return node.arguments[node.arguments.length - 1] instanceof BlockArgumentNode;
     }
 
+
+    @Override
+    Operand[] buildCallArgs(Node args, int[] flags) {
+        return buildCallArgsArray(((ArgumentsNode) args).arguments, flags);
+
+    }
     protected Operand[] buildCallArgsArray(Node[] children, int[] flags) {
         int numberOfArgs = children.length;
         Operand[] builtArgs = new Operand[numberOfArgs];
@@ -845,6 +853,10 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
 
         // FIXME: need coderange.
         return new MutableString(byteListFrom(node.content), 0, scope.getFile(), line);
+    }
+
+    private Operand buildSuper(Variable result, SuperNode node) {
+        return buildSuper(result, node.block, node.arguments, getLine(node));
     }
 
     private Operand buildSymbol(SymbolNode node) {
