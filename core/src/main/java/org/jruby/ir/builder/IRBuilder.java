@@ -5,6 +5,7 @@ import org.jruby.EvalType;
 import org.jruby.ParseResult;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
+import org.jruby.ast.DotNode;
 import org.jruby.ast.RootNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.ext.coverage.CoverageData;
@@ -20,91 +21,11 @@ import org.jruby.ir.IRModuleBody;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.IRScriptBody;
-import org.jruby.ir.instructions.AliasInstr;
-import org.jruby.ir.instructions.BFalseInstr;
-import org.jruby.ir.instructions.BNEInstr;
-import org.jruby.ir.instructions.BNilInstr;
-import org.jruby.ir.instructions.BTrueInstr;
-import org.jruby.ir.instructions.BUndefInstr;
-import org.jruby.ir.instructions.BuildCompoundStringInstr;
-import org.jruby.ir.instructions.BuildDynRegExpInstr;
-import org.jruby.ir.instructions.CallInstr;
-import org.jruby.ir.instructions.CheckForLJEInstr;
-import org.jruby.ir.instructions.ClassSuperInstr;
-import org.jruby.ir.instructions.CopyInstr;
-import org.jruby.ir.instructions.DefineClassInstr;
-import org.jruby.ir.instructions.DefineClassMethodInstr;
-import org.jruby.ir.instructions.DefineInstanceMethodInstr;
-import org.jruby.ir.instructions.DefineMetaClassInstr;
-import org.jruby.ir.instructions.DefineModuleInstr;
-import org.jruby.ir.instructions.EQQInstr;
-import org.jruby.ir.instructions.ExceptionRegionEndMarkerInstr;
-import org.jruby.ir.instructions.ExceptionRegionStartMarkerInstr;
-import org.jruby.ir.instructions.GetClassVarContainerModuleInstr;
-import org.jruby.ir.instructions.GetClassVariableInstr;
-import org.jruby.ir.instructions.GetFieldInstr;
-import org.jruby.ir.instructions.GetGlobalVariableInstr;
-import org.jruby.ir.instructions.InheritanceSearchConstInstr;
-import org.jruby.ir.instructions.InstanceSuperInstr;
-import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.instructions.JumpInstr;
-import org.jruby.ir.instructions.LabelInstr;
-import org.jruby.ir.instructions.LineNumberInstr;
-import org.jruby.ir.instructions.LoadBlockImplicitClosureInstr;
-import org.jruby.ir.instructions.LoadFrameClosureInstr;
-import org.jruby.ir.instructions.LoadImplicitClosureInstr;
-import org.jruby.ir.instructions.NonlocalReturnInstr;
-import org.jruby.ir.instructions.NopInstr;
-import org.jruby.ir.instructions.ProcessModuleBodyInstr;
-import org.jruby.ir.instructions.PutClassVariableInstr;
-import org.jruby.ir.instructions.PutConstInstr;
-import org.jruby.ir.instructions.PutFieldInstr;
-import org.jruby.ir.instructions.PutGlobalVarInstr;
-import org.jruby.ir.instructions.ReceiveArgBase;
-import org.jruby.ir.instructions.ReceiveJRubyExceptionInstr;
-import org.jruby.ir.instructions.ReceiveKeywordArgInstr;
-import org.jruby.ir.instructions.ReceiveKeywordRestArgInstr;
-import org.jruby.ir.instructions.ReceiveRestArgInstr;
-import org.jruby.ir.instructions.ReceiveRubyExceptionInstr;
-import org.jruby.ir.instructions.RescueEQQInstr;
-import org.jruby.ir.instructions.ResultInstr;
-import org.jruby.ir.instructions.ReturnInstr;
-import org.jruby.ir.instructions.ReturnOrRethrowSavedExcInstr;
-import org.jruby.ir.instructions.RuntimeHelperCall;
-import org.jruby.ir.instructions.SearchConstInstr;
-import org.jruby.ir.instructions.SearchModuleForConstInstr;
-import org.jruby.ir.instructions.ThreadPollInstr;
-import org.jruby.ir.instructions.ThrowExceptionInstr;
-import org.jruby.ir.instructions.TraceInstr;
-import org.jruby.ir.instructions.UnresolvedSuperInstr;
-import org.jruby.ir.instructions.ZSuperInstr;
+import org.jruby.ir.instructions.*;
 import org.jruby.ir.interpreter.InterpreterContext;
+import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Boolean;
-import org.jruby.ir.operands.CurrentScope;
-import org.jruby.ir.operands.DepthCloneable;
-import org.jruby.ir.operands.Fixnum;
-import org.jruby.ir.operands.FrozenString;
-import org.jruby.ir.operands.Hash;
-import org.jruby.ir.operands.IRException;
-import org.jruby.ir.operands.ImmutableLiteral;
 import org.jruby.ir.operands.Integer;
-import org.jruby.ir.operands.Label;
-import org.jruby.ir.operands.LocalVariable;
-import org.jruby.ir.operands.MutableString;
-import org.jruby.ir.operands.Nil;
-import org.jruby.ir.operands.NthRef;
-import org.jruby.ir.operands.NullBlock;
-import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.ScopeModule;
-import org.jruby.ir.operands.Splat;
-import org.jruby.ir.operands.Symbol;
-import org.jruby.ir.operands.TemporaryClosureVariable;
-import org.jruby.ir.operands.TemporaryCurrentModuleVariable;
-import org.jruby.ir.operands.TemporaryVariable;
-import org.jruby.ir.operands.UndefinedValue;
-import org.jruby.ir.operands.UnexecutableNil;
-import org.jruby.ir.operands.Variable;
-import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.ArgumentType;
@@ -1437,6 +1358,19 @@ public abstract class IRBuilder<U, V, W> {
         addInstr(new LabelInstr(endOfExprLabel));
 
         return result;
+    }
+
+    public Operand buildRange(U beginNode, U endNode, boolean isExclusive) {
+        Operand begin = build(beginNode);
+        Operand end = build(endNode);
+
+        if (begin instanceof ImmutableLiteral && end instanceof ImmutableLiteral) {
+            // endpoints are free of side effects, cache the range after creation
+            return new Range((ImmutableLiteral) begin, (ImmutableLiteral) end, isExclusive);
+        }
+
+        // must be built every time
+        return addResultInstr(new BuildRangeInstr(temp(), begin, end, isExclusive));
     }
 
     public Operand buildReturn(Operand value, int line) {

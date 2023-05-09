@@ -189,6 +189,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
             return build(((ParenthesesNode) node).statements);
         } else if (node instanceof ProgramNode) {
             return buildProgram((ProgramNode) node);
+        } else if (node instanceof RangeNode) {
+            return buildRange((RangeNode) node);
         } else if (node instanceof RegularExpressionNode) {
             return buildRegularExpression((RegularExpressionNode) node);
         } else if (node instanceof ReturnNode) {
@@ -762,6 +764,11 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
 
         receiveBlockArg(parameters.block);
 
+    }
+
+    private Operand buildRange(RangeNode node) {
+        boolean isExclusive = node.operator_loc.endOffset - node.operator_loc.startOffset == 3;
+        return buildRange(node.left, node.right, isExclusive);
     }
 
     private Operand buildRegularExpression(RegularExpressionNode node) {

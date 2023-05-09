@@ -2413,17 +2413,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
         }
     }
 
-    public Operand buildDot(final DotNode dotNode) {
-        Operand begin = build(dotNode.getBeginNode());
-        Operand end = build(dotNode.getEndNode());
-
-        if (begin instanceof ImmutableLiteral && end instanceof ImmutableLiteral) {
-            // endpoints are free of side effects, cache the range after creation
-            return new Range((ImmutableLiteral) begin, (ImmutableLiteral) end, dotNode.isExclusive());
-        }
-
-        // must be built every time
-        return addResultInstr(new BuildRangeInstr(temp(), begin, end, dotNode.isExclusive()));
+    public Operand buildDot(final DotNode node) {
+        return buildRange(node.getBeginNode(), node.getEndNode(), node.isExclusive());
     }
 
     int dynamicPiece(Operand[] pieces, int i, Node pieceNode, boolean _interpolated) {
