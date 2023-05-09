@@ -175,6 +175,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
             return buildLocalVariableRead((LocalVariableReadNode) node);
         } else if (node instanceof LocalVariableWriteNode) {
             return buildLocalVariableWrite((LocalVariableWriteNode) node);
+        } else if (node instanceof MissingNode) {
+            return buildMissing((MissingNode) node);
         } else if (node instanceof ModuleNode) {
             return buildModule((ModuleNode) node);
         } else if (node instanceof MultiWriteNode) {
@@ -329,7 +331,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
     // FIXME: Try and genericize this with AST
     private Operand buildBlock(BlockNode node) {
         // FIXME: This needs to be calculated
-        Signature signature = Signature.OPTIONAL;
+        Signature signature = calculateSignature(node.parameters != null ? node.parameters.parameters : null);
         IRClosure closure = new IRClosure(getManager(), scope, getLine(node), node.scope, signature, coverageMode);
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
@@ -421,6 +423,25 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
 
         // FIXME: Lots and lots of special logic in AST not here
         return addResultInstr(CallInstr.create(scope, callType, result, symbol(new String(node.name)), receiver, args, block, 0));
+    }
+
+
+    private Signature calculateSignature(ParametersNode parameters) {
+        if (parameters == null) return Signature.NO_ARGUMENTS;
+        int pre = parameters.requireds.length;
+        int opt = parameters.optionals.length;
+        int post = parameters.posts.length;
+        int kws = parameters.keywords.length;
+        // FIXME: this needs more than norm
+        Signature.Rest rest = parameters.rest == null ? Signature.Rest.NONE : Signature.Rest.NORM;
+
+        int keywordRestIndex = parameters.keyword_rest == null ? -1 : pre + opt + post + kws;
+        // FIXME: need to diff opt kws vs req kws
+        Signature signature = new Signature(pre, opt, post, rest, kws, kws, keywordRestIndex);
+
+        scope.getStaticScope().setSignature(signature);
+
+        return signature;
     }
 
     private boolean containsBlockArgument(ArgumentsNode node) {
@@ -621,6 +642,11 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
 
     private Operand buildLocalVariableWrite(LocalVariableWriteNode node) {
         return buildLocalVariableAssign(symbolFor(node.name_loc), node.depth, node.value);
+    }
+
+    private Operand buildMissing(MissingNode node) {
+        System.out.println("uh oh");
+        return nil();
     }
 
     private Operand buildModule(ModuleNode node) {
