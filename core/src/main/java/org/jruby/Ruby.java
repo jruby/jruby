@@ -179,32 +179,13 @@ import org.objectweb.asm.ClassReader;
 import org.yarp.Nodes;
 import org.yarp.YarpParseResult;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.FileDescriptor;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintStream;
-import java.io.PrintWriter;
+import java.io.*;
 import java.lang.invoke.MethodHandle;
 import java.lang.ref.WeakReference;
 import java.net.BindException;
 import java.nio.charset.Charset;
 import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumMap;
-import java.util.EnumSet;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.IdentityHashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.WeakHashMap;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -2740,27 +2721,56 @@ public final class Ruby implements Constantizable {
 
     public ParseResult parseEval(ByteList content, String file, DynamicScope scope, int lineNumber) {
         addEvalParseToStats();
-/*
-        if (Options.PARSER_YARP.load() && in instanceof LoadServiceResourceInputStream) {
+
+        if (Options.PARSER_YARP.load()) {
             if (!loaded) {
                 org.yarp.Parser.loadLibrary("/home/enebo/work/jruby/lib/libjavaparser.so");
                 loaded = true;
             }
-            byte[] source = ((LoadServiceResourceInputStream) in).getBytes();
 
+            byte[] source = content.bytes(); // FIXME Extra arraycopy
             long time = System.nanoTime();
 
-            //System.out.println("LOADING: " + scriptName);
-            byte[] blob = org.yarp.Parser.parseAndSerialize(source);
+            byte[] encodedScopes = encodeEvalScopes(scope.getStaticScope());
+            System.out.println("LOADING: eval");
+            byte[] blob = org.yarp.Parser.parseAndSerialize(source, encodedScopes);
             org.yarp.Nodes.Node node = org.yarp.Loader.load(file, source, blob);
+            ((Nodes.ProgramNode) node).scope.setEnclosingScope(scope.getStaticScope());
             long parseTime = System.nanoTime() - time;
             //yarpTime += parseTime;
             //System.out.println("TOTAL_TIME: " + yarpTime + ", TIME: " + parseTime + ", SRC SIZE = " + source.length + ", BLOB SIZE = " + blob.length + ", RATIO: " + (((float) blob.length) / source.length));
             return new YarpParseResult(file, source, (Nodes.ProgramNode) node);
-        } else {*/
+        } else {
             return (ParseResult) parser.parse(file, content, scope, new ParserConfiguration(this,
                     lineNumber, false, false, false, config));
-        //}
+        }
+    }
+
+    private byte[] encodeEvalScopes(StaticScope scope) {
+        ByteList buf = new ByteList();
+        buf.append(0); // keep space for number of scopes.
+        int count = encodeEvalScopesInner(buf, scope, 0);
+        //System.out.println("COUNT: " + count);
+        buf.set(0, count); // FIXME: This only allows 256 vars
+
+        return buf.bytes();
+    }
+
+    private int encodeEvalScopesInner(ByteList buf, StaticScope scope, int count) {
+        if (scope.getEnclosingScope() != null && scope.isBlockScope()) {
+            count = encodeEvalScopesInner(buf, scope.getEnclosingScope(), count + 1);
+        }
+
+        // once more for method scope
+        String names[] = scope.getVariables();
+        buf.append(names.length);
+        for (String name : names) {
+            System.out.println("NAME: " + name);
+            buf.append(name.getBytes()); // FIXME: needs to be raw bytes
+            buf.append(0);
+        }
+
+        return count;
     }
 
     public Node parse(ByteList content, String file, DynamicScope scope, int lineNumber,
@@ -2989,8 +2999,8 @@ public final class Ruby implements Constantizable {
 
                 long time = System.nanoTime();
 
-                //System.out.println("LOADING: " + scriptName);
-                byte[] blob = org.yarp.Parser.parseAndSerialize(source);
+                System.out.println("LOADING: " + scriptName);
+                byte[] blob = org.yarp.Parser.parseAndSerialize(source, null);
                 org.yarp.Nodes.Node node = org.yarp.Loader.load(scriptName, source, blob);
                 long parseTime = System.nanoTime() - time;
                 //yarpTime += parseTime;

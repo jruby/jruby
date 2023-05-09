@@ -5,6 +5,6 @@ public class Parser {
         System.load(path);
     }
 
-    public static native byte[] parseAndSerialize(byte[] source);
+    public static native byte[] parseAndSerialize(byte[] source, byte[] evalScopes);
 
 }
