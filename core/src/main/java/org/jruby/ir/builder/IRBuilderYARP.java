@@ -285,6 +285,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
     // FIXME: Attrassign should be its own node.
     // This method is called to build assignments for a multiple-assignment instruction
     public void buildAssignment(Node node, Variable rhsVal) {
+        if (node == null) return; // case of 'a, = something'
+
         if (node instanceof CallNode) {
             RubySymbol name = symbol(new ByteList(((CallNode) node).name));
             if ("[]=".equals(name)) {
