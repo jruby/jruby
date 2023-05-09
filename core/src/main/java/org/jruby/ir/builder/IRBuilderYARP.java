@@ -14,39 +14,7 @@ import org.jruby.ir.IRModuleBody;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.Tuple;
-import org.jruby.ir.instructions.AsStringInstr;
-import org.jruby.ir.instructions.AttrAssignInstr;
-import org.jruby.ir.instructions.BNEInstr;
-import org.jruby.ir.instructions.BlockGivenInstr;
-import org.jruby.ir.instructions.BuildSplatInstr;
-import org.jruby.ir.instructions.CallInstr;
-import org.jruby.ir.instructions.CheckArityInstr;
-import org.jruby.ir.instructions.CopyInstr;
-import org.jruby.ir.instructions.InheritanceSearchConstInstr;
-import org.jruby.ir.instructions.JumpInstr;
-import org.jruby.ir.instructions.LabelInstr;
-import org.jruby.ir.instructions.LexicalSearchConstInstr;
-import org.jruby.ir.instructions.LoadImplicitClosureInstr;
-import org.jruby.ir.instructions.PutClassVariableInstr;
-import org.jruby.ir.instructions.PutFieldInstr;
-import org.jruby.ir.instructions.PutGlobalVarInstr;
-import org.jruby.ir.instructions.RaiseRequiredKeywordArgumentError;
-import org.jruby.ir.instructions.ReceiveKeywordArgInstr;
-import org.jruby.ir.instructions.ReceiveKeywordRestArgInstr;
-import org.jruby.ir.instructions.ReceiveKeywordsInstr;
-import org.jruby.ir.instructions.ReceiveOptArgInstr;
-import org.jruby.ir.instructions.ReceivePostReqdArgInstr;
-import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
-import org.jruby.ir.instructions.ReceiveRestArgInstr;
-import org.jruby.ir.instructions.ReifyClosureInstr;
-import org.jruby.ir.instructions.ReqdArgMultipleAsgnInstr;
-import org.jruby.ir.instructions.RestArgMultipleAsgnInstr;
-import org.jruby.ir.instructions.ReturnInstr;
-import org.jruby.ir.instructions.RuntimeHelperCall;
-import org.jruby.ir.instructions.SearchConstInstr;
-import org.jruby.ir.instructions.ToAryInstr;
-import org.jruby.ir.instructions.TraceInstr;
-import org.jruby.ir.instructions.YieldInstr;
+import org.jruby.ir.instructions.*;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.interpreter.InterpreterContext;
@@ -83,6 +51,8 @@ import java.util.List;
 import java.util.Set;
 
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
+import static org.jruby.runtime.CallType.FUNCTIONAL;
+import static org.jruby.runtime.CallType.NORMAL;
 import static org.jruby.runtime.ThreadContext.*;
 
 public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
@@ -183,6 +153,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
             return buildMultiWriteNode((MultiWriteNode) node);
         } else if (node instanceof NilNode) {
             return nil();
+        } else if (node instanceof OperatorAssignmentNode) {
+            return buildOperatorAssignment((OperatorAssignmentNode) node);
         } else if (node instanceof OperatorOrAssignmentNode) {
             return buildOperatorOrAssignment((OperatorOrAssignmentNode) node);
         } else if (node instanceof OrNode) {
@@ -708,6 +680,51 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
         for (Tuple<Node, Variable> assign: assigns) {
             buildAssignment(assign.a, assign.b);
         }
+    }
+
+    // FIXME: this lacks getting || or && so simpler than AST version but it would be nice to combine them.
+    private Operand buildOperatorAssignment(OperatorAssignmentNode node) {
+        // FIXME: we need to know if . after receiver is &.
+        boolean isLazy = false;
+        Label l;
+        Variable writerValue = temp();
+        Node receiver = node.target;
+        CallType callType = NORMAL;
+
+        // get attr
+        Operand  v1 = build(receiver);
+
+        Label lazyLabel = null;
+        Label endLabel = null;
+        Variable result = temp();
+        if (isLazy) {
+            lazyLabel = getNewLabel();
+            endLabel = getNewLabel();
+            addInstr(new BNilInstr(lazyLabel, v1));
+        }
+
+        RubySymbol operator = symbolFor(node.operator);
+        Variable readerValue = _call(temp(), callType, v1, operator);
+
+        // call operator
+        Operand  v2 = build(node.value);
+        Variable setValue = call(temp(), readerValue, operator, v2);
+
+            // set attr
+        _call(writerValue, callType, v1, operator.asWriter(), setValue);
+
+        // Returning writerValue is incorrect because the assignment method
+        // might return something else other than the value being set!
+        if (!isLazy) return setValue;
+
+        addInstr(new CopyInstr(result, setValue));
+
+        addInstr(new JumpInstr(endLabel));
+        addInstr(new LabelInstr(lazyLabel));
+        addInstr(new CopyInstr(result, nil()));
+        addInstr(new LabelInstr(endLabel));
+
+        return result;
     }
 
     private Operand buildOperatorOrAssignment(OperatorOrAssignmentNode node) {
