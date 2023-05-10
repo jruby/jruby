@@ -818,34 +818,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
         return retVal;
     }
 
-    public Operand buildBreak(BreakNode breakNode) {
-        IRLoop currLoop = getCurrentLoop();
-
-        if (currLoop != null) {
-            // If we have ensure blocks, have to run those first!
-            if (!activeEnsureBlockStack.isEmpty()) emitEnsureBlocks(currLoop);
-
-            addInstr(new CopyInstr(currLoop.loopResult, build(breakNode.getValueNode())));
-            addInstr(new JumpInstr(currLoop.loopEndLabel));
-        } else {
-            if (scope instanceof IRClosure) {
-                // This lexical scope value is only used (and valid) in regular block contexts.
-                // If this instruction is executed in a Proc or Lambda context, the lexical scope value is useless.
-                IRScope returnScope = scope.getLexicalParent();
-                if (scope instanceof IREvalScript || returnScope == null) {
-                    // We are not in a closure or a loop => bad break instr!
-                    throwSyntaxError(breakNode.getLine(), "Can't escape from eval with redo");
-                } else {
-                    addInstr(new BreakInstr(build(breakNode.getValueNode()), returnScope.getId()));
-                }
-            } else {
-                // We are not in a closure or a loop => bad break instr!
-                throwSyntaxError(breakNode.getLine(), "Invalid break");
-            }
-        }
-
-        // Once the break instruction executes, control exits this scope
-        return U_NIL;
+    public Operand buildBreak(BreakNode node) {
+        return buildBreak(() -> build(node.getValueNode()), node.getLine());
     }
 
     public Operand buildCall(Variable aResult, CallNode callNode, Label lazyLabel, Label endLabel) {
@@ -2963,7 +2937,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
     }
 
     public Operand buildNext(final NextNode nextNode) {
-        return buildNext(nextNode.getValueNode(), nextNode.getLine());
+        return buildNext(build(nextNode.getValueNode()), nextNode.getLine());
     }
 
     public Operand buildNthRef(NthRefNode node) {

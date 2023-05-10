@@ -97,6 +97,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
             return buildBlock((BlockNode) node);
         } else if (node instanceof BlockArgumentNode) {
             return buildBlockArgument((BlockArgumentNode) node);
+        } else if (node instanceof BreakNode) {
+            return buildBreak((BreakNode) node);
         } else if (node instanceof CallNode) {
             return buildCall(result, (CallNode) node);
         } else if (node instanceof CaseNode) {
@@ -226,6 +228,11 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
         return args;
     }
 
+    private Operand buildArgumentsAsArgument(ArgumentsNode node) {
+        Operand[] args = buildArguments(node);
+        return args.length == 0 ? nil() : args.length == 1 ? args[0] : new Array(args);
+    }
+
     private Operand buildArray(ArrayNode node) {
         Node[] nodes = node.elements;
         Operand[] elts = new Operand[nodes.length];
@@ -312,6 +319,10 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
         args = addArg(args, value);
         addInstr(AttrAssignInstr.create(scope, obj, name, args, flags[0], scope.maybeUsingRefinements()));
         return value;
+    }
+
+    private Operand buildBreak(BreakNode node) {
+        return buildBreak(() -> buildArgumentsAsArgument(node.arguments), getLine(node));
     }
 
     // FIXME: no rescue or ensure!!!!
@@ -700,7 +711,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
     }
 
     private Operand buildNext(NextNode node) {
-        return buildNext(node.arguments, getLine(node));
+        return buildNext(buildArgumentsAsArgument(node.arguments), getLine(node));
     }
 
     // FIXME: serialization should provide something we do not need to rewrite.

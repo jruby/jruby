@@ -962,6 +962,36 @@ public abstract class IRBuilder<U, V, W> {
                                 copy((Variable) ret, right.run()))));
     }
 
+    public Operand buildBreak(CodeBlock value, int line) {
+        IRLoop currLoop = getCurrentLoop();
+
+        if (currLoop != null) {
+            // If we have ensure blocks, have to run those first!
+            if (!activeEnsureBlockStack.isEmpty()) emitEnsureBlocks(currLoop);
+
+            addInstr(new CopyInstr(currLoop.loopResult, value.run()));
+            addInstr(new JumpInstr(currLoop.loopEndLabel));
+        } else {
+            if (scope instanceof IRClosure) {
+                // This lexical scope value is only used (and valid) in regular block contexts.
+                // If this instruction is executed in a Proc or Lambda context, the lexical scope value is useless.
+                IRScope returnScope = scope.getLexicalParent();
+                if (scope instanceof IREvalScript || returnScope == null) {
+                    // We are not in a closure or a loop => bad break instr!
+                    throwSyntaxError(line, "Can't escape from eval with redo");
+                } else {
+                    addInstr(new BreakInstr(value.run(), returnScope.getId()));
+                }
+            } else {
+                // We are not in a closure or a loop => bad break instr!
+                throwSyntaxError(line, "Invalid break");
+            }
+        }
+
+        // Once the break instruction executes, control exits this scope
+        return U_NIL;
+    }
+
     Operand[] setupCallArgs(U args, int[] flags) {
         return args == null ? Operand.EMPTY_ARRAY : buildCallArgs(args, flags);
     }
@@ -1308,10 +1338,8 @@ public abstract class IRBuilder<U, V, W> {
         return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
     }
 
-    public Operand buildNext(final U value, int line) {
+    public Operand buildNext(final Operand rv, int line) {
         IRLoop currLoop = getCurrentLoop();
-
-        Operand rv = build(value);
 
         // If we have ensure blocks, have to run those first!
         if (!activeEnsureBlockStack.isEmpty()) emitEnsureBlocks(currLoop);

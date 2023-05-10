@@ -2732,7 +2732,7 @@ public final class Ruby implements Constantizable {
             long time = System.nanoTime();
 
             byte[] encodedScopes = encodeEvalScopes(scope.getStaticScope());
-            System.out.println("LOADING: eval");
+            //System.out.println("LOADING: eval");
             byte[] blob = org.yarp.Parser.parseAndSerialize(source, encodedScopes);
             org.yarp.Nodes.Node node = org.yarp.Loader.load(file, source, blob);
             ((Nodes.ProgramNode) node).scope.setEnclosingScope(scope.getStaticScope());
@@ -2998,7 +2998,7 @@ public final class Ruby implements Constantizable {
 
                 long time = System.nanoTime();
 
-                System.out.println("LOADING: " + scriptName);
+                //System.out.println("LOADING: " + scriptName);
                 byte[] blob = org.yarp.Parser.parseAndSerialize(source, null);
                 org.yarp.Nodes.Node node = org.yarp.Loader.load(scriptName, source, blob);
                 long parseTime = System.nanoTime() - time;
