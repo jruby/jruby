@@ -2963,32 +2963,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
     }
 
     public Operand buildNext(final NextNode nextNode) {
-        IRLoop currLoop = getCurrentLoop();
-
-        Operand rv = build(nextNode.getValueNode());
-
-        // If we have ensure blocks, have to run those first!
-        if (!activeEnsureBlockStack.isEmpty()) emitEnsureBlocks(currLoop);
-
-        if (currLoop != null) {
-            // If a regular loop, the next is simply a jump to the end of the iteration
-            addInstr(new JumpInstr(currLoop.iterEndLabel));
-        } else {
-            addInstr(new ThreadPollInstr(true));
-            // If a closure, the next is simply a return from the closure!
-            if (scope instanceof IRClosure) {
-                if (scope instanceof IREvalScript) {
-                    throwSyntaxError(nextNode.getLine(), "Can't escape from eval with next");
-                } else {
-                    addInstr(new ReturnInstr(rv));
-                }
-            } else {
-                throwSyntaxError(nextNode.getLine(), "Invalid next");
-            }
-        }
-
-        // Once the "next instruction" (closure-return) executes, control exits this scope
-        return U_NIL;
+        return buildNext(nextNode.getValueNode(), nextNode.getLine());
     }
 
     public Operand buildNthRef(NthRefNode node) {

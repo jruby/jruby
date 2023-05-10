@@ -151,6 +151,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
             return buildModule((ModuleNode) node);
         } else if (node instanceof MultiWriteNode) {
             return buildMultiWriteNode((MultiWriteNode) node);
+        } else if (node instanceof NextNode) {
+            return buildNext((NextNode) node);
         } else if (node instanceof NilNode) {
             return nil();
         } else if (node instanceof OperatorAssignmentNode) {
@@ -229,11 +231,25 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
         Operand[] elts = new Operand[nodes.length];
         //boolean containsAssignments = node.containsVariableAssignment();
         Operand keywordRestSplat = null;
+
         for (int i = 0; i < nodes.length; i++) {
-            // FIXME: we need to know if this contains assignments to know if we need to preserve order.
-            elts[i] = build(nodes[i]);
-            if (nodes[i] instanceof HashNode && hasOnlyRestKwargs((HashNode) nodes[i])) keywordRestSplat = elts[i];
+            for (; i < nodes.length; i++) {
+                if (nodes[i] instanceof HashNode && hasOnlyRestKwargs((HashNode) nodes[i])) keywordRestSplat = elts[i];
+                if (nodes[i] instanceof SplatNode) {
+                    break;
+                }
+                elts[i] = build(nodes[i]);
+            }
+            if (i < nodes.length) { // splat found
+                Operand[] lhs = new Operand[i];
+                System.arraycopy(elts, 0, lhs, 0, i);
+                elts = new Operand[nodes.length - i];
+                // FIXME: This is broken...if more elements after splat then they need to be catted onto this (likely emulate argspush)
+                return addResultInstr(new BuildCompoundArrayInstr(temp(), new Array(lhs), build(((SplatNode) nodes[i]).expression), false, keywordRestSplat != null));
+                //if (keywordRestSplat != null) keywordRestSplat = null; // splat will handle this
+            }
         }
+
 
         // We have some amount of ** on the end of this array construction.  This is handled in IR since we
         // do not want arrays to have to know if it has an UNDEFINED on the end and then not include it.  Also
@@ -241,11 +257,12 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
         // complicating the array sizes computation.  Luckily, this is a rare feature to see used in actual code
         // so externalizing this in IR should not be a big deal.
         if (keywordRestSplat != null) {
+            Operand[] lambdaElts = elts; // Allow closures to see elts as final
             Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[]{ keywordRestSplat }));
             final Variable result = temp();
             if_else(test, tru(),
-                    () -> copy(result, new Array(removeArg(elts))),
-                    () -> copy(result, new Array(elts)));
+                    () -> copy(result, new Array(removeArg(lambdaElts))),
+                    () -> copy(result, new Array(lambdaElts)));
             return result;
         } else {
             Operand array = new Array(elts);
@@ -682,54 +699,42 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
         }
     }
 
-    // FIXME: this lacks getting || or && so simpler than AST version but it would be nice to combine them.
+    private Operand buildNext(NextNode node) {
+        return buildNext(node.arguments, getLine(node));
+    }
+
+    // FIXME: serialization should provide something we do not need to rewrite.
+    // This is a lot of post-processing.
     private Operand buildOperatorAssignment(OperatorAssignmentNode node) {
-        // FIXME: we need to know if . after receiver is &.
-        boolean isLazy = false;
-        Label l;
-        Variable writerValue = temp();
-        Node receiver = node.target;
-        CallType callType = NORMAL;
-
-        // get attr
-        Operand  v1 = build(receiver);
-
-        Label lazyLabel = null;
-        Label endLabel = null;
-        Variable result = temp();
-        if (isLazy) {
-            lazyLabel = getNewLabel();
-            endLabel = getNewLabel();
-            addInstr(new BNilInstr(lazyLabel, v1));
+        // Strip off '=' as we don't need it.
+        Token operator = new Token(node.operator.type, node.operator.startOffset, node.operator.endOffset - 1);
+        byte[] name = symbolFor(operator).getBytes().bytes();
+        Node target = node.target;
+        Node arguments = new ArgumentsNode(new Node[] { node.value }, -1, -1);
+        if (target instanceof InstanceVariableWriteNode) {
+            Node receiver = new InstanceVariableReadNode(target.startOffset, target.endOffset);
+            Node value = new CallNode(receiver, operator, arguments, null, name, -1, -1);
+            return build(new InstanceVariableWriteNode(new Location(target.startOffset, target.endOffset), value, target.startOffset, target.endOffset));
+        } else if (target instanceof GlobalVariableWriteNode) {
+            Node receiver = new GlobalVariableReadNode(((GlobalVariableWriteNode) target).name, target.startOffset, target.endOffset);
+            Node value = new CallNode(receiver, operator, arguments, null, name, -1, -1);
+            return build(new GlobalVariableWriteNode(((GlobalVariableWriteNode) target).name, value, target.startOffset, target.endOffset));
+        } else if (target instanceof ClassVariableWriteNode) {
+            Node receiver = new ClassVariableReadNode(target.startOffset, target.endOffset);
+            Node value = new CallNode(receiver, operator, arguments, null, name, -1, -1);
+            return build(new ClassVariableWriteNode(((ClassVariableWriteNode) target).name_loc, value, target.startOffset, target.endOffset));
+        } else if (target instanceof LocalVariableWriteNode) {
+            Node receiver = new LocalVariableReadNode(((LocalVariableWriteNode) target).depth, target.startOffset, target.endOffset);
+            Node value = new CallNode(receiver, operator, arguments, null, name, -1, -1);
+            return build(new LocalVariableWriteNode(((LocalVariableWriteNode) target).name_loc, value, ((LocalVariableWriteNode) target).depth, target.startOffset, target.endOffset));
         }
 
-        RubySymbol operator = symbolFor(node.operator);
-        Variable readerValue = _call(temp(), callType, v1, operator);
-
-        // call operator
-        Operand  v2 = build(node.value);
-        Variable setValue = call(temp(), readerValue, operator, v2);
-
-            // set attr
-        _call(writerValue, callType, v1, operator.asWriter(), setValue);
-
-        // Returning writerValue is incorrect because the assignment method
-        // might return something else other than the value being set!
-        if (!isLazy) return setValue;
-
-        addInstr(new CopyInstr(result, setValue));
-
-        addInstr(new JumpInstr(endLabel));
-        addInstr(new LabelInstr(lazyLabel));
-        addInstr(new CopyInstr(result, nil()));
-        addInstr(new LabelInstr(endLabel));
-
-        return result;
+        throw notCompilable("buildOperaatorAssignment node not known", node);
     }
 
     private Operand buildOperatorOrAssignment(OperatorOrAssignmentNode node) {
         // FIXME: AST will make a var and an assign as target and value.  This just embeds a Write + Value.
-        Node[] hack = assignmentHack(node);
+        Node[] hack = assignmentHack(node.target, node.value);
 
         if (hack != null) {
             return buildOpAsgnOr(hack[0], hack[1]);
@@ -737,19 +742,19 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
         return buildOpAsgnOr(node.target, node.value);
     }
 
-    private Node[] assignmentHack(OperatorOrAssignmentNode op) {
-        Node node = op.target;
-        if (node instanceof InstanceVariableWriteNode) {
-            return new Node[] { new InstanceVariableReadNode(node.startOffset, node.endOffset), new InstanceVariableWriteNode(new Location(node.startOffset, node.endOffset), op.value, node.startOffset, node.endOffset) };
-        } else if (node instanceof GlobalVariableWriteNode) {
-            return new Node[] { new GlobalVariableReadNode(((GlobalVariableWriteNode) node).name, node.startOffset, ((GlobalVariableWriteNode) node).name.endOffset),
-                    new GlobalVariableWriteNode(((GlobalVariableWriteNode) node).name, op.value, node.startOffset, node.endOffset) };
-        } else if (node instanceof ClassVariableWriteNode) {
-            return new Node[]{new ClassVariableReadNode(((ClassVariableWriteNode) node).name_loc.startOffset, ((ClassVariableWriteNode) node).name_loc.endOffset),
-                    new ClassVariableWriteNode(((ClassVariableWriteNode) node).name_loc, op.value, node.startOffset, node.endOffset)};
-        } else if (node instanceof LocalVariableWriteNode) {
-            return new Node[]{new LocalVariableReadNode(((LocalVariableWriteNode) node).depth, node.startOffset, node.endOffset),
-                    new LocalVariableWriteNode(((LocalVariableWriteNode) node).name_loc, op.value, ((LocalVariableWriteNode) node).depth, node.startOffset, node.endOffset)};
+    private Node[] assignmentHack(Node target, Node value) {
+        if (target instanceof InstanceVariableWriteNode) {
+            return new Node[] { new InstanceVariableReadNode(target.startOffset, target.endOffset),
+                    new InstanceVariableWriteNode(new Location(target.startOffset, target.endOffset), value, target.startOffset, target.endOffset) };
+        } else if (target instanceof GlobalVariableWriteNode) {
+            return new Node[] { new GlobalVariableReadNode(((GlobalVariableWriteNode) target).name, target.startOffset, ((GlobalVariableWriteNode) target).name.endOffset),
+                    new GlobalVariableWriteNode(((GlobalVariableWriteNode) target).name, value, target.startOffset, target.endOffset) };
+        } else if (target instanceof ClassVariableWriteNode) {
+            return new Node[]{new ClassVariableReadNode(((ClassVariableWriteNode) target).name_loc.startOffset, ((ClassVariableWriteNode) target).name_loc.endOffset),
+                    new ClassVariableWriteNode(((ClassVariableWriteNode) target).name_loc, value, target.startOffset, target.endOffset)};
+        } else if (target instanceof LocalVariableWriteNode) {
+            return new Node[]{new LocalVariableReadNode(((LocalVariableWriteNode) target).depth, target.startOffset, target.endOffset),
+                    new LocalVariableWriteNode(((LocalVariableWriteNode) target).name_loc, value, ((LocalVariableWriteNode) target).depth, target.startOffset, target.endOffset)};
         }
 
         // FIXME: Implement more or do this totally differently

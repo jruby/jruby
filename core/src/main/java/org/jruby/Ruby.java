@@ -2765,7 +2765,6 @@ public final class Ruby implements Constantizable {
         String names[] = scope.getVariables();
         buf.append(names.length);
         for (String name : names) {
-            System.out.println("NAME: " + name);
             buf.append(name.getBytes()); // FIXME: needs to be raw bytes
             buf.append(0);
         }

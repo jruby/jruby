@@ -1308,6 +1308,35 @@ public abstract class IRBuilder<U, V, W> {
         return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
     }
 
+    public Operand buildNext(final U value, int line) {
+        IRLoop currLoop = getCurrentLoop();
+
+        Operand rv = build(value);
+
+        // If we have ensure blocks, have to run those first!
+        if (!activeEnsureBlockStack.isEmpty()) emitEnsureBlocks(currLoop);
+
+        if (currLoop != null) {
+            // If a regular loop, the next is simply a jump to the end of the iteration
+            addInstr(new JumpInstr(currLoop.iterEndLabel));
+        } else {
+            addInstr(new ThreadPollInstr(true));
+            // If a closure, the next is simply a return from the closure!
+            if (scope instanceof IRClosure) {
+                if (scope instanceof IREvalScript) {
+                    throwSyntaxError(line, "Can't escape from eval with next");
+                } else {
+                    addInstr(new ReturnInstr(rv));
+                }
+            } else {
+                throwSyntaxError(line, "Invalid next");
+            }
+        }
+
+        // Once the "next instruction" (closure-return) executes, control exits this scope
+        return U_NIL;
+    }
+
     public Operand buildNthRef(int matchNumber) {
         return copy(new NthRef(scope, matchNumber));
     }
