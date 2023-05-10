@@ -2460,6 +2460,13 @@ public class IRRuntimeHelpers {
         }
     }
 
+    public static void traceRescue(ThreadContext context, String file, int line) {
+        TraceEventManager traceEvents = context.traceEvents;
+        if (traceEvents.hasEventHooks()) {
+            traceEvents.callEventHooks(context, RubyEvent.RESCUE, file, line, null, context.getErrorInfo());
+        }
+    }
+
     @JIT
     public static void callTrace(ThreadContext context, Block selfBlock, RubyEvent event, String name, String filename, int line) {
         TraceEventManager traceEvents = context.traceEvents;

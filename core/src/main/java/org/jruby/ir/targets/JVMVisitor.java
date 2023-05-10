@@ -2415,6 +2415,12 @@ public class JVMVisitor extends IRVisitor {
                 jvmMethod().invokeIRHelper("arrayLength", sig(int.class, RubyArray.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
+            case TRACE_RESCUE:
+                jvmMethod().loadContext();
+                jvmAdapter().ldc(((Stringable) runtimehelpercall.getOperands()[0]).getString());
+                visit(runtimehelpercall.getOperands()[1]);
+                jvmMethod().invokeIRHelper("traceRescue", sig(void.class, ThreadContext.class, String.class, int.class));
+                break;
             default:
                 throw new NotCompilableException("Unknown IR runtime helper method: " + runtimehelpercall.getHelperMethod() + "; INSTR: " + this);
         }
