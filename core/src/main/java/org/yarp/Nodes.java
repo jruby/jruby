@@ -180,6 +180,114 @@ public abstract class Nodes {
         __END__,
     }
 
+    public enum NodeType {
+        ALIAS,
+        ALTERNATIONPATTERN,
+        AND,
+        ARGUMENTS,
+        ARRAY,
+        ARRAYPATTERN,
+        ASSOC,
+        ASSOCSPLAT,
+        BEGIN,
+        BLOCKARGUMENT,
+        BLOCK,
+        BLOCKPARAMETER,
+        BLOCKPARAMETERS,
+        BREAK,
+        CALL,
+        CAPTUREPATTERN,
+        CASE,
+        CLASS,
+        CLASSVARIABLEREAD,
+        CLASSVARIABLEWRITE,
+        CONSTANTPATH,
+        CONSTANTPATHWRITE,
+        CONSTANTREAD,
+        DEF,
+        DEFINED,
+        ELSE,
+        ENSURE,
+        FALSE,
+        FINDPATTERN,
+        FLOAT,
+        FOR,
+        FORWARDINGARGUMENTS,
+        FORWARDINGPARAMETER,
+        FORWARDINGSUPER,
+        GLOBALVARIABLEREAD,
+        GLOBALVARIABLEWRITE,
+        HASH,
+        HASHPATTERN,
+        IF,
+        IMAGINARY,
+        IN,
+        INSTANCEVARIABLEREAD,
+        INSTANCEVARIABLEWRITE,
+        INTEGER,
+        INTERPOLATEDREGULAREXPRESSION,
+        INTERPOLATEDSTRING,
+        INTERPOLATEDSYMBOL,
+        INTERPOLATEDXSTRING,
+        KEYWORDPARAMETER,
+        KEYWORDRESTPARAMETER,
+        LAMBDA,
+        LOCALVARIABLEREAD,
+        LOCALVARIABLEWRITE,
+        MATCHPREDICATE,
+        MATCHREQUIRED,
+        MISSING,
+        MODULE,
+        MULTIWRITE,
+        NEXT,
+        NIL,
+        NOKEYWORDSPARAMETER,
+        OPERATORANDASSIGNMENT,
+        OPERATORASSIGNMENT,
+        OPERATORORASSIGNMENT,
+        OPTIONALPARAMETER,
+        OR,
+        PARAMETERS,
+        PARENTHESES,
+        PINNEDEXPRESSION,
+        PINNEDVARIABLE,
+        POSTEXECUTION,
+        PREEXECUTION,
+        PROGRAM,
+        RANGE,
+        RATIONAL,
+        REDO,
+        REGULAREXPRESSION,
+        REQUIREDDESTRUCTUREDPARAMETER,
+        REQUIREDPARAMETER,
+        RESCUEMODIFIER,
+        RESCUE,
+        RESTPARAMETER,
+        RETRY,
+        RETURN,
+        SCOPE,
+        SELF,
+        SINGLETONCLASS,
+        SOURCEENCODING,
+        SOURCEFILE,
+        SOURCELINE,
+        SPLAT,
+        STATEMENTS,
+        STRINGCONCAT,
+        STRINGINTERPOLATED,
+        STRING,
+        SUPER,
+        SYMBOL,
+        TRUE,
+        UNDEF,
+        UNLESS,
+        UNTIL,
+        WHEN,
+        WHILE,
+        XSTRING,
+        YIELD,
+    }
+
     static final TokenType[] TOKEN_TYPES = TokenType.values();
 
     public static final class Token {
@@ -217,6 +325,7 @@ public abstract class Nodes {
         }
 
         public abstract <T> T accept(AbstractNodeVisitor<T> visitor);
+        public abstract NodeType getNodeType();
 
         public abstract Node[] childNodes();
 
@@ -258,6 +367,10 @@ public abstract class Nodes {
             return new Node[] { new_name, old_name };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.ALIAS;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitAliasNode(this);
         }
@@ -283,6 +396,10 @@ public abstract class Nodes {
             return new Node[] { left, right };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.ALTERNATIONPATTERN;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitAlternationPatternNode(this);
         }
@@ -306,6 +423,10 @@ public abstract class Nodes {
             return new Node[] { left, right };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.AND;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitAndNode(this);
         }
@@ -325,6 +446,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return arguments;
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.ARGUMENTS;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -349,6 +474,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return elements;
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.ARRAY;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -399,6 +528,10 @@ public abstract class Nodes {
             return childNodes.toArray(EMPTY_ARRAY);
         }
 
+        public NodeType getNodeType() {
+            return NodeType.ARRAYPATTERN;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitArrayPatternNode(this);
         }
@@ -422,6 +555,10 @@ public abstract class Nodes {
             return new Node[] { key, value };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.ASSOC;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitAssocNode(this);
         }
@@ -441,6 +578,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return new Node[] { value };
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.ASSOCSPLAT;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -472,6 +613,10 @@ public abstract class Nodes {
             return new Node[] { statements, rescue_clause, else_clause, ensure_clause };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.BEGIN;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitBeginNode(this);
         }
@@ -491,6 +636,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return new Node[] { expression };
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.BLOCKARGUMENT;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -518,6 +667,10 @@ public abstract class Nodes {
             return new Node[] { parameters, statements };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.BLOCK;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitBlockNode(this);
         }
@@ -538,6 +691,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return EMPTY_ARRAY;
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.BLOCKPARAMETER;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -571,6 +728,10 @@ public abstract class Nodes {
             return new Node[] { parameters };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.BLOCKPARAMETERS;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitBlockParametersNode(this);
         }
@@ -592,6 +753,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return new Node[] { arguments };
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.BREAK;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -638,6 +803,10 @@ public abstract class Nodes {
             return new Node[] { receiver, arguments, block };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.CALL;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitCallNode(this);
         }
@@ -661,6 +830,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return new Node[] { value, target };
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.CAPTUREPATTERN;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -694,6 +867,10 @@ public abstract class Nodes {
             return childNodes.toArray(EMPTY_ARRAY);
         }
 
+        public NodeType getNodeType() {
+            return NodeType.CASE;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitCaseNode(this);
         }
@@ -721,6 +898,10 @@ public abstract class Nodes {
             return new Node[] { constant_path, superclass, statements };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.CLASS;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitClassNode(this);
         }
@@ -738,6 +919,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return EMPTY_ARRAY;
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.CLASSVARIABLEREAD;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -763,6 +948,10 @@ public abstract class Nodes {
             return new Node[] { value };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.CLASSVARIABLEWRITE;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitClassVariableWriteNode(this);
         }
@@ -784,6 +973,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return new Node[] { parent, child };
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.CONSTANTPATH;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -812,6 +1005,10 @@ public abstract class Nodes {
             return new Node[] { target, value };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.CONSTANTPATHWRITE;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitConstantPathWriteNode(this);
         }
@@ -829,6 +1026,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return EMPTY_ARRAY;
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.CONSTANTREAD;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -861,6 +1062,10 @@ public abstract class Nodes {
             return new Node[] { receiver, parameters, statements };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.DEF;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitDefNode(this);
         }
@@ -882,6 +1087,10 @@ public abstract class Nodes {
             return new Node[] { value };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.DEFINED;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitDefinedNode(this);
         }
@@ -901,6 +1110,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return new Node[] { statements };
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.ELSE;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -928,6 +1141,10 @@ public abstract class Nodes {
             return new Node[] { statements };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.ENSURE;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitEnsureNode(this);
         }
@@ -945,6 +1162,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return EMPTY_ARRAY;
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.FALSE;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -985,6 +1206,10 @@ public abstract class Nodes {
             return childNodes.toArray(EMPTY_ARRAY);
         }
 
+        public NodeType getNodeType() {
+            return NodeType.FINDPATTERN;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitFindPatternNode(this);
         }
@@ -1002,6 +1227,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return EMPTY_ARRAY;
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.FLOAT;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -1029,6 +1258,10 @@ public abstract class Nodes {
             return new Node[] { index, collection, statements };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.FOR;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitForNode(this);
         }
@@ -1050,6 +1283,10 @@ public abstract class Nodes {
             return EMPTY_ARRAY;
         }
 
+        public NodeType getNodeType() {
+            return NodeType.FORWARDINGARGUMENTS;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitForwardingArgumentsNode(this);
         }
@@ -1068,6 +1305,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return EMPTY_ARRAY;
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.FORWARDINGPARAMETER;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -1091,6 +1332,10 @@ public abstract class Nodes {
             return new Node[] { block };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.FORWARDINGSUPER;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitForwardingSuperNode(this);
         }
@@ -1110,6 +1355,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return EMPTY_ARRAY;
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.GLOBALVARIABLEREAD;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -1135,6 +1384,10 @@ public abstract class Nodes {
             return new Node[] { value };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.GLOBALVARIABLEWRITE;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitGlobalVariableWriteNode(this);
         }
@@ -1156,6 +1409,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return elements;
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.HASH;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -1190,6 +1447,10 @@ public abstract class Nodes {
             return childNodes.toArray(EMPTY_ARRAY);
         }
 
+        public NodeType getNodeType() {
+            return NodeType.HASHPATTERN;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitHashPatternNode(this);
         }
@@ -1218,6 +1479,10 @@ public abstract class Nodes {
             return new Node[] { predicate, statements, consequent };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.IF;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitIfNode(this);
         }
@@ -1235,6 +1500,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return EMPTY_ARRAY;
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.IMAGINARY;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -1262,6 +1531,10 @@ public abstract class Nodes {
             return new Node[] { pattern, statements };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.IN;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitInNode(this);
         }
@@ -1279,6 +1552,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return EMPTY_ARRAY;
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.INSTANCEVARIABLEREAD;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -1304,6 +1581,10 @@ public abstract class Nodes {
             return new Node[] { value };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.INSTANCEVARIABLEWRITE;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitInstanceVariableWriteNode(this);
         }
@@ -1321,6 +1602,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return EMPTY_ARRAY;
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.INTEGER;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -1342,6 +1627,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return parts;
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.INTERPOLATEDREGULAREXPRESSION;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -1367,6 +1656,10 @@ public abstract class Nodes {
             return parts;
         }
 
+        public NodeType getNodeType() {
+            return NodeType.INTERPOLATEDSTRING;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitInterpolatedStringNode(this);
         }
@@ -1388,6 +1681,10 @@ public abstract class Nodes {
             return parts;
         }
 
+        public NodeType getNodeType() {
+            return NodeType.INTERPOLATEDSYMBOL;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitInterpolatedSymbolNode(this);
         }
@@ -1407,6 +1704,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return parts;
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.INTERPOLATEDXSTRING;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -1437,6 +1738,10 @@ public abstract class Nodes {
             return new Node[] { value };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.KEYWORDPARAMETER;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitKeywordParameterNode(this);
         }
@@ -1457,6 +1762,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return EMPTY_ARRAY;
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.KEYWORDRESTPARAMETER;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -1486,6 +1795,10 @@ public abstract class Nodes {
             return new Node[] { parameters, statements };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.LAMBDA;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitLambdaNode(this);
         }
@@ -1507,6 +1820,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return EMPTY_ARRAY;
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.LOCALVARIABLEREAD;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -1534,6 +1851,10 @@ public abstract class Nodes {
             return new Node[] { value };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.LOCALVARIABLEWRITE;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitLocalVariableWriteNode(this);
         }
@@ -1555,6 +1876,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return new Node[] { value, pattern };
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.MATCHPREDICATE;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -1580,6 +1905,10 @@ public abstract class Nodes {
             return new Node[] { value, pattern };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.MATCHREQUIRED;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitMatchRequiredNode(this);
         }
@@ -1595,6 +1924,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return EMPTY_ARRAY;
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.MISSING;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -1620,6 +1953,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return new Node[] { constant_path, statements };
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.MODULE;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -1648,6 +1985,10 @@ public abstract class Nodes {
             return childNodes.toArray(EMPTY_ARRAY);
         }
 
+        public NodeType getNodeType() {
+            return NodeType.MULTIWRITE;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitMultiWriteNode(this);
         }
@@ -1669,6 +2010,10 @@ public abstract class Nodes {
             return new Node[] { arguments };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.NEXT;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitNextNode(this);
         }
@@ -1686,6 +2031,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return EMPTY_ARRAY;
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.NIL;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -1706,6 +2055,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return EMPTY_ARRAY;
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.NOKEYWORDSPARAMETER;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -1729,6 +2082,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return new Node[] { target, value };
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.OPERATORANDASSIGNMENT;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -1756,6 +2113,10 @@ public abstract class Nodes {
             return new Node[] { target, value };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.OPERATORASSIGNMENT;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitOperatorAssignmentNode(this);
         }
@@ -1777,6 +2138,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return new Node[] { target, value };
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.OPERATORORASSIGNMENT;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -1803,6 +2168,10 @@ public abstract class Nodes {
             return new Node[] { value };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.OPTIONALPARAMETER;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitOptionalParameterNode(this);
         }
@@ -1824,6 +2193,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return new Node[] { left, right };
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.OR;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -1868,6 +2241,10 @@ public abstract class Nodes {
             return childNodes.toArray(EMPTY_ARRAY);
         }
 
+        public NodeType getNodeType() {
+            return NodeType.PARAMETERS;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitParametersNode(this);
         }
@@ -1887,6 +2264,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return new Node[] { statements };
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.PARENTHESES;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -1911,6 +2292,10 @@ public abstract class Nodes {
             return new Node[] { expression };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.PINNEDEXPRESSION;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitPinnedExpressionNode(this);
         }
@@ -1931,6 +2316,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return new Node[] { variable };
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.PINNEDVARIABLE;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -1954,6 +2343,10 @@ public abstract class Nodes {
             return new Node[] { statements };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.POSTEXECUTION;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitPostExecutionNode(this);
         }
@@ -1975,6 +2368,10 @@ public abstract class Nodes {
             return new Node[] { statements };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.PREEXECUTION;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitPreExecutionNode(this);
         }
@@ -1993,6 +2390,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return new Node[] { statements };
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.PROGRAM;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -2023,6 +2424,10 @@ public abstract class Nodes {
             return new Node[] { left, right };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.RANGE;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitRangeNode(this);
         }
@@ -2042,6 +2447,10 @@ public abstract class Nodes {
             return EMPTY_ARRAY;
         }
 
+        public NodeType getNodeType() {
+            return NodeType.RATIONAL;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitRationalNode(this);
         }
@@ -2059,6 +2468,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return EMPTY_ARRAY;
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.REDO;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -2086,6 +2499,10 @@ public abstract class Nodes {
             return EMPTY_ARRAY;
         }
 
+        public NodeType getNodeType() {
+            return NodeType.REGULAREXPRESSION;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitRegularExpressionNode(this);
         }
@@ -2108,6 +2525,10 @@ public abstract class Nodes {
             return parameters;
         }
 
+        public NodeType getNodeType() {
+            return NodeType.REQUIREDDESTRUCTUREDPARAMETER;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitRequiredDestructuredParameterNode(this);
         }
@@ -2126,6 +2547,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return EMPTY_ARRAY;
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.REQUIREDPARAMETER;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -2149,6 +2574,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return new Node[] { expression, rescue_expression };
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.RESCUEMODIFIER;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -2186,6 +2615,10 @@ public abstract class Nodes {
             return childNodes.toArray(EMPTY_ARRAY);
         }
 
+        public NodeType getNodeType() {
+            return NodeType.RESCUE;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitRescueNode(this);
         }
@@ -2208,6 +2641,10 @@ public abstract class Nodes {
             return EMPTY_ARRAY;
         }
 
+        public NodeType getNodeType() {
+            return NodeType.RESTPARAMETER;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitRestParameterNode(this);
         }
@@ -2225,6 +2662,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return EMPTY_ARRAY;
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.RETRY;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -2248,6 +2689,10 @@ public abstract class Nodes {
             return new Node[] { arguments };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.RETURN;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitReturnNode(this);
         }
@@ -2267,6 +2712,10 @@ public abstract class Nodes {
             return EMPTY_ARRAY;
         }
 
+        public NodeType getNodeType() {
+            return NodeType.SCOPE;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitScopeNode(this);
         }
@@ -2284,6 +2733,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return EMPTY_ARRAY;
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.SELF;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -2311,6 +2764,10 @@ public abstract class Nodes {
             return new Node[] { expression, statements };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.SINGLETONCLASS;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitSingletonClassNode(this);
         }
@@ -2328,6 +2785,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return EMPTY_ARRAY;
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.SOURCEENCODING;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -2351,6 +2812,10 @@ public abstract class Nodes {
             return EMPTY_ARRAY;
         }
 
+        public NodeType getNodeType() {
+            return NodeType.SOURCEFILE;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitSourceFileNode(this);
         }
@@ -2368,6 +2833,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return EMPTY_ARRAY;
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.SOURCELINE;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -2391,6 +2860,10 @@ public abstract class Nodes {
             return new Node[] { expression };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.SPLAT;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitSplatNode(this);
         }
@@ -2410,6 +2883,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return body;
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.STATEMENTS;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -2435,6 +2912,10 @@ public abstract class Nodes {
             return new Node[] { left, right };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.STRINGCONCAT;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitStringConcatNode(this);
         }
@@ -2454,6 +2935,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return new Node[] { statements };
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.STRINGINTERPOLATED;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -2488,6 +2973,10 @@ public abstract class Nodes {
             return EMPTY_ARRAY;
         }
 
+        public NodeType getNodeType() {
+            return NodeType.STRING;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitStringNode(this);
         }
@@ -2512,6 +3001,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return new Node[] { arguments, block };
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.SUPER;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -2540,6 +3033,10 @@ public abstract class Nodes {
             return EMPTY_ARRAY;
         }
 
+        public NodeType getNodeType() {
+            return NodeType.SYMBOL;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitSymbolNode(this);
         }
@@ -2557,6 +3054,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return EMPTY_ARRAY;
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.TRUE;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -2578,6 +3079,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return names;
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.UNDEF;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -2608,6 +3113,10 @@ public abstract class Nodes {
             return new Node[] { predicate, statements, consequent };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.UNLESS;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitUnlessNode(this);
         }
@@ -2636,6 +3145,10 @@ public abstract class Nodes {
             return new Node[] { predicate, statements };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.UNTIL;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitUntilNode(this);
         }
@@ -2660,6 +3173,10 @@ public abstract class Nodes {
             childNodes.addAll(Arrays.asList(conditions));
             childNodes.add(statements);
             return childNodes.toArray(EMPTY_ARRAY);
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.WHEN;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -2690,6 +3207,10 @@ public abstract class Nodes {
             return new Node[] { predicate, statements };
         }
 
+        public NodeType getNodeType() {
+            return NodeType.WHILE;
+        }
+
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitWhileNode(this);
         }
@@ -2711,6 +3232,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return EMPTY_ARRAY;
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.XSTRING;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -2736,6 +3261,10 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             return new Node[] { arguments };
+        }
+
+        public NodeType getNodeType() {
+            return NodeType.YIELD;
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {

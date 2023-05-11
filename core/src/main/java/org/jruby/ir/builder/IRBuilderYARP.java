@@ -51,8 +51,6 @@ import java.util.List;
 import java.util.Set;
 
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
-import static org.jruby.runtime.CallType.FUNCTIONAL;
-import static org.jruby.runtime.CallType.NORMAL;
 import static org.jruby.runtime.ThreadContext.*;
 
 public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
@@ -85,124 +83,66 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
         if (node == null) return nil();
 
         // FIXME: Need node types if this is how we process
-        if (node instanceof AliasNode) {
-            return buildAlias((AliasNode) node);
-        } else if (node instanceof AndNode) {
-            return buildAnd((AndNode) node);
-        } else if (node instanceof ArrayNode) {
-            return buildArray((ArrayNode) node);
-        } else if (node instanceof BeginNode) {
-            return buildBegin((BeginNode) node);
-        } else if (node instanceof BlockNode) {
-            return buildBlock((BlockNode) node);
-        } else if (node instanceof BlockArgumentNode) {
-            return buildBlockArgument((BlockArgumentNode) node);
-        } else if (node instanceof BreakNode) {
-            return buildBreak((BreakNode) node);
-        } else if (node instanceof CallNode) {
-            return buildCall(result, (CallNode) node);
-        } else if (node instanceof CaseNode) {
-            return buildCase((CaseNode) node);
-        } else if (node instanceof ClassNode) {
-            return buildClass((ClassNode) node);
-        } else if (node instanceof ClassVariableReadNode) {
-            return buildClassVariableRead(result, (ClassVariableReadNode) node);
-        } else if (node instanceof ClassVariableWriteNode) {
-            return buildClassVariableWrite((ClassVariableWriteNode) node);
-        } else if (node instanceof ConstantPathNode) {
-            return buildConstantPath(result, (ConstantPathNode) node);
-        } else if (node instanceof ConstantPathWriteNode) {
-            return buildConstantWritePath((ConstantPathWriteNode) node);
-        } else if (node instanceof ConstantReadNode) {
-            return buildConstantRead((ConstantReadNode) node);
-        } else if (node instanceof DefNode) {
-            return buildDef((DefNode) node);
-        } else if (node instanceof DefinedNode) {
-            return buildDefined((DefinedNode) node);
-        } else if (node instanceof ElseNode) {
-            return buildElse((ElseNode) node);
-        } else if (node instanceof FalseNode) {
-            return fals();
-        } else if (node instanceof ForwardingSuperNode) {
-            return buildForwardingSuper(result, (ForwardingSuperNode) node);
-        } else if (node instanceof GlobalVariableReadNode) {
-            return buildGlobalVariableRead(result, (GlobalVariableReadNode) node);
-        } else if (node instanceof GlobalVariableWriteNode) {
-            return buildGlobalVariableWrite((GlobalVariableWriteNode) node);
-        } else if (node instanceof HashNode) {
-            return buildHash((HashNode) node);
-        } else if (node instanceof IfNode) {
-            return buildIf(result, (IfNode) node);
-        } else if (node instanceof InstanceVariableReadNode) {
-            return buildInstanceVariableRead((InstanceVariableReadNode) node);
-        } else if (node instanceof InstanceVariableWriteNode) {
-            return buildInstanceVariableWrite((InstanceVariableWriteNode) node);
-        } else if (node instanceof IntegerNode) {
-            return buildInteger((IntegerNode) node);
-        } else if (node instanceof InterpolatedRegularExpressionNode) {
-            return buildInterpolatedRegularExpression(result, (InterpolatedRegularExpressionNode) node);
-        } else if (node instanceof InterpolatedStringNode) {
-            return buildInterpolatedString(result, (InterpolatedStringNode) node);
-        } else if (node instanceof LocalVariableReadNode) {
-            return buildLocalVariableRead((LocalVariableReadNode) node);
-        } else if (node instanceof LocalVariableWriteNode) {
-            return buildLocalVariableWrite((LocalVariableWriteNode) node);
-        } else if (node instanceof MissingNode) {
-            return buildMissing((MissingNode) node);
-        } else if (node instanceof ModuleNode) {
-            return buildModule((ModuleNode) node);
-        } else if (node instanceof MultiWriteNode) {
-            return buildMultiWriteNode((MultiWriteNode) node);
-        } else if (node instanceof NextNode) {
-            return buildNext((NextNode) node);
-        } else if (node instanceof NilNode) {
-            return nil();
-        } else if (node instanceof OperatorAssignmentNode) {
-            return buildOperatorAssignment((OperatorAssignmentNode) node);
-        } else if (node instanceof OperatorOrAssignmentNode) {
-            return buildOperatorOrAssignment((OperatorOrAssignmentNode) node);
-        } else if (node instanceof OrNode) {
-            return buildOr((OrNode) node);
-        } else if (node instanceof ParenthesesNode) {
-            return build(((ParenthesesNode) node).statements);
-        } else if (node instanceof ProgramNode) {
-            return buildProgram((ProgramNode) node);
-        } else if (node instanceof RangeNode) {
-            return buildRange((RangeNode) node);
-        } else if (node instanceof RegularExpressionNode) {
-            return buildRegularExpression((RegularExpressionNode) node);
-        } else if (node instanceof ReturnNode) {
-            return buildReturn((ReturnNode) node);
-        } else if (node instanceof SelfNode) {
-            return buildSelf();
-        } else if (node instanceof SingletonClassNode) {
-            return buildSingletonClass((SingletonClassNode) node);
-        } else if (node instanceof SourceFileNode) {
-            return buildSourceFile();
-        } else if (node instanceof SourceLineNode) {
-            return buildSourceLine(node);
-        } else if (node instanceof SplatNode) {
-            return buildSplat((SplatNode) node);
-        } else if (node instanceof StatementsNode) {
-            return buildStatements((StatementsNode) node);
-        } else if (node instanceof StringNode) {
-            return buildString((StringNode) node);
-        } else if (node instanceof SuperNode) {
-            return buildSuper(result, (SuperNode) node);
-        } else if (node instanceof SymbolNode) {
-            return buildSymbol((SymbolNode) node);
-        } else if (node instanceof TrueNode) {
-            return tru();
-        } else if (node instanceof UnlessNode) {
-            return buildUnless(result, (UnlessNode) node);
-        } else if (node instanceof UntilNode) {
-            return buildUntil((UntilNode) node);
-        } else if (node instanceof WhileNode) {
-            return buildWhile((WhileNode) node);
-        } else if (node instanceof YieldNode) {
-            return buildYield(result, (YieldNode) node);
-        } else {
-            throw new RuntimeException("Unhandled Node type: " + node);
+        switch (node.getNodeType()) {
+            case ALIAS: return buildAlias((AliasNode) node);
+            case AND: return buildAnd((AndNode) node);
+            case ARRAY: return buildArray((ArrayNode) node);
+            case BEGIN: return buildBegin((BeginNode) node);
+            case BLOCK: return buildBlock((BlockNode) node);
+            case BLOCKARGUMENT: return buildBlockArgument((BlockArgumentNode) node);
+            case BREAK: return buildBreak((BreakNode) node);
+            case CALL: return buildCall(result, (CallNode) node);
+            case CASE: return buildCase((CaseNode) node);
+            case CLASS: return buildClass((ClassNode) node);
+            case CLASSVARIABLEREAD: return buildClassVariableRead(result, (ClassVariableReadNode) node);
+            case CLASSVARIABLEWRITE: return buildClassVariableWrite((ClassVariableWriteNode) node);
+            case CONSTANTPATH: return buildConstantPath(result, (ConstantPathNode) node);
+            case CONSTANTPATHWRITE: return buildConstantWritePath((ConstantPathWriteNode) node);
+            case CONSTANTREAD: return buildConstantRead((ConstantReadNode) node);
+            case DEF: return buildDef((DefNode) node);
+            case DEFINED: return buildDefined((DefinedNode) node);
+            case ELSE: return buildElse((ElseNode) node);
+            case FALSE: return fals();
+            case FORWARDINGSUPER: return buildForwardingSuper(result, (ForwardingSuperNode) node);
+            case GLOBALVARIABLEREAD: return buildGlobalVariableRead(result, (GlobalVariableReadNode) node);
+            case GLOBALVARIABLEWRITE: return buildGlobalVariableWrite((GlobalVariableWriteNode) node);
+            case HASH: return buildHash((HashNode) node);
+            case IF: return buildIf(result, (IfNode) node);
+            case INSTANCEVARIABLEREAD: return buildInstanceVariableRead((InstanceVariableReadNode) node);
+            case INSTANCEVARIABLEWRITE: return buildInstanceVariableWrite((InstanceVariableWriteNode) node);
+            case INTEGER: return buildInteger((IntegerNode) node);
+            case INTERPOLATEDREGULAREXPRESSION: return buildInterpolatedRegularExpression(result, (InterpolatedRegularExpressionNode) node);
+            case INTERPOLATEDSTRING: return buildInterpolatedString(result, (InterpolatedStringNode) node);
+            case LOCALVARIABLEREAD: return buildLocalVariableRead((LocalVariableReadNode) node);
+            case LOCALVARIABLEWRITE: return buildLocalVariableWrite((LocalVariableWriteNode) node);
+            case MISSING: return buildMissing((MissingNode) node);
+            case MODULE: return buildModule((ModuleNode) node);
+            case MULTIWRITE: return buildMultiWriteNode((MultiWriteNode) node);
+            case NEXT: return buildNext((NextNode) node);
+            case NIL: return nil();
+            case OPERATORASSIGNMENT: return buildOperatorAssignment((OperatorAssignmentNode) node);
+            case OPERATORORASSIGNMENT: return buildOperatorOrAssignment((OperatorOrAssignmentNode) node);
+            case OR: return buildOr((OrNode) node);
+            case PARENTHESES: return build(((ParenthesesNode) node).statements);
+            case PROGRAM: return buildProgram((ProgramNode) node);
+            case RANGE: return buildRange((RangeNode) node);
+            case REGULAREXPRESSION: return buildRegularExpression((RegularExpressionNode) node);
+            case RETURN: return buildReturn((ReturnNode) node);
+            case SELF: return buildSelf();
+            case SINGLETONCLASS: return buildSingletonClass((SingletonClassNode) node);
+            case SOURCEFILE: return buildSourceFile();
+            case SOURCELINE: return buildSourceLine(node);
+            case SPLAT: return buildSplat((SplatNode) node);
+            case STATEMENTS: return buildStatements((StatementsNode) node);
+            case STRING: return buildString((StringNode) node);
+            case SUPER: return buildSuper(result, (SuperNode) node);
+            case SYMBOL: return buildSymbol((SymbolNode) node);
+            case TRUE: return tru();
+            case UNLESS: return buildUnless(result, (UnlessNode) node);
+            case UNTIL: return buildUntil((UntilNode) node);
+            case WHILE: return buildWhile((WhileNode) node);
+            case YIELD: return buildYield(result, (YieldNode) node);
+            default: throw new RuntimeException("Unhandled Node type: " + node);
         }
     }
 
