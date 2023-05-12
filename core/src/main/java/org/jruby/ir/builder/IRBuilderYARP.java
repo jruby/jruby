@@ -53,7 +53,7 @@ import java.util.Set;
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 import static org.jruby.runtime.ThreadContext.*;
 
-public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
+public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode> {
     byte[] source = null;
 
     public IRBuilderYARP(IRManager manager, IRScope scope, IRBuilder parent, IRBuilder variableBuilder) {
@@ -900,6 +900,33 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode> {
     // FIXME: implement
     @Override
     boolean alwaysTrue(Node node) {
+        return false;
+    }
+
+    @Override
+    Node[] exceptionNodesFor(RescueNode node) {
+        return node.exceptions;
+    }
+
+    @Override
+    Node bodyFor(RescueNode node) {
+        return node.statements;
+    }
+
+    @Override
+    RescueNode optRescueFor(RescueNode node) {
+        return node.consequent;
+    }
+
+    // FIXME: Implement
+    @Override
+    boolean isSideEffectFree(Node node) {
+        return false;
+    }
+
+    // FIXME: Implement
+    @Override
+    boolean isErrorInfoGlobal(Node body) {
         return false;
     }
 

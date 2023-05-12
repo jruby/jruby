@@ -5,11 +5,11 @@ import org.jruby.ir.IRMethod;
 
 import java.util.List;
 
-public interface LazyMethodDefinition<U, V, W> {
+public interface LazyMethodDefinition<U, V, W, X> {
     int getEndLine();
     List<String> getMethodData();
     V getMethod();
     U getMethodArgs();
     U getMethodBody();
-    IRBuilder<U, V, W> getBuilder(IRManager manager, IRMethod methodScope);
+    IRBuilder<U, V, W, X> getBuilder(IRManager manager, IRMethod methodScope);
 }

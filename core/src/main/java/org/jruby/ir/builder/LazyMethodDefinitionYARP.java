@@ -10,12 +10,13 @@ import org.yarp.Nodes.DefNode;
 import org.yarp.Nodes.InstanceVariableReadNode;
 import org.yarp.Nodes.InstanceVariableWriteNode;
 import org.yarp.Nodes.Node;
+import org.yarp.Nodes.RescueNode;
 import org.yarp.Nodes.WhenNode;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class LazyMethodDefinitionYARP implements LazyMethodDefinition<Node, DefNode, WhenNode> {
+public class LazyMethodDefinitionYARP implements LazyMethodDefinition<Node, DefNode, WhenNode, RescueNode> {
     private DefNode node;
     private Ruby runtime;
     private byte[] source;
@@ -76,8 +77,8 @@ public class LazyMethodDefinitionYARP implements LazyMethodDefinition<Node, DefN
     }
 
     @Override
-    public IRBuilder<Node, DefNode, WhenNode> getBuilder(IRManager manager, IRMethod methodScope) {
-        IRBuilder<Node, DefNode, WhenNode> builder = IRBuilder.newIRBuilder(manager, methodScope, null, node);
+    public IRBuilder<Node, DefNode, WhenNode, RescueNode> getBuilder(IRManager manager, IRMethod methodScope) {
+        IRBuilder<Node, DefNode, WhenNode, RescueNode> builder = IRBuilder.newIRBuilder(manager, methodScope, null, node);
 
         ((IRBuilderYARP) builder).source = source;
 

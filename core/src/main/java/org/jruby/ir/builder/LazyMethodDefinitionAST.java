@@ -4,6 +4,7 @@ import org.jruby.ast.DefNode;
 import org.jruby.ast.InstAsgnNode;
 import org.jruby.ast.InstVarNode;
 import org.jruby.ast.Node;
+import org.jruby.ast.RescueBodyNode;
 import org.jruby.ast.WhenNode;
 import org.jruby.ast.visitor.AbstractNodeVisitor;
 import org.jruby.ir.IRManager;
@@ -12,8 +13,8 @@ import org.jruby.ir.IRMethod;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LazyMethodDefinitionAST implements LazyMethodDefinition<Node, DefNode, WhenNode> {
-    private DefNode node;
+public class LazyMethodDefinitionAST implements LazyMethodDefinition<Node, DefNode, WhenNode, RescueBodyNode> {
+    private final DefNode node;
 
     public LazyMethodDefinitionAST(DefNode node) {
         this.node = node;
@@ -64,7 +65,7 @@ public class LazyMethodDefinitionAST implements LazyMethodDefinition<Node, DefNo
     }
 
     @Override
-    public IRBuilder<Node, DefNode, WhenNode> getBuilder(IRManager manager, IRMethod methodScope) {
+    public IRBuilder<Node, DefNode, WhenNode, RescueBodyNode> getBuilder(IRManager manager, IRMethod methodScope) {
         return IRBuilder.newIRBuilder(manager, methodScope, null, node);
     }
 }

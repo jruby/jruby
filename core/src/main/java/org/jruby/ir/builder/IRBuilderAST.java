@@ -13,8 +13,6 @@ import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.compiler.NotCompilableException;
-import org.jruby.ext.coverage.CoverageData;
-import org.jruby.ir.IRClassBody;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRFor;
@@ -46,7 +44,6 @@ import org.jruby.ir.operands.MutableString;
 import org.jruby.ir.operands.Nil;
 import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.Range;
 import org.jruby.ir.operands.Rational;
 import org.jruby.ir.operands.Regexp;
 import org.jruby.ir.operands.SValue;
@@ -135,7 +132,7 @@ import static org.jruby.util.RubyStringBuilder.str;
 // This introduces artificial data dependencies, but fewer variables.  But, if we are going to implement SSA pass
 // this is not a big deal.  Think this through!
 
-public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
+public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyNode> {
     static final UnexecutableNil U_NIL = UnexecutableNil.U_NIL;
 
     public static Node buildAST(boolean isCommandLineScript, String arg) {
@@ -2513,90 +2510,6 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
         return buildEnsureInternal(null, null, null, null, null, false, ensureNode.getBodyNode(), ensureNode.getEnsureNode(), false);
     }
 
-    // FIXME: weird confused method of two different things with same overall logic.  Refactor later.
-    public Operand buildEnsureInternal(Node body, Node elseNode, Node[] exceptions, Node rescueBody,
-                                       RescueBodyNode optRescue, boolean isModifier,
-                                       Node ensureBodyNode, Node ensureNode, boolean isRescue) {
-        // Save $!
-        final Variable savedGlobalException = temp();
-        addInstr(new GetGlobalVariableInstr(savedGlobalException, symbol("$!")));
-
-        // ------------ Build the body of the ensure block ------------
-        //
-        // The ensure code is built first so that when the protected body is being built,
-        // the ensure code can be cloned at break/next/return sites in the protected body.
-
-        // Push a new ensure block node onto the stack of ensure bodies being built
-        // The body's instructions are stashed and emitted later.
-        EnsureBlockInfo ebi = new EnsureBlockInfo(scope, getCurrentLoop(), activeRescuers.peek());
-
-        // Record $! save var if we had a non-empty rescue node.
-        // $! will be restored from it where required.
-        if (isRescue) ebi.savedGlobalException = savedGlobalException;
-
-        ensureBodyBuildStack.push(ebi);
-        Operand ensureRetVal = ensureNode == null ? nil() : build(ensureNode);
-        ensureBodyBuildStack.pop();
-
-        // ------------ Build the protected region ------------
-        activeEnsureBlockStack.push(ebi);
-
-        // Start of protected region
-        addInstr(new LabelInstr(ebi.regionStart));
-        addInstr(new ExceptionRegionStartMarkerInstr(ebi.dummyRescueBlockLabel));
-        activeRescuers.push(ebi.dummyRescueBlockLabel);
-
-        // Generate IR for code being protected
-        Variable ensureExprValue = temp();
-        Operand rv;
-        if (isRescue) {
-            rv = buildRescueInternal(body, elseNode, exceptions, rescueBody, optRescue, isModifier, ebi);
-        } else {
-            rv = build(ensureBodyNode);
-        }
-
-        // End of protected region
-        addInstr(new ExceptionRegionEndMarkerInstr());
-        activeRescuers.pop();
-
-        // Is this a begin..(rescue..)?ensure..end node that actually computes a value?
-        // (vs. returning from protected body)
-        boolean isEnsureExpr = ensureNode != null && rv != U_NIL && !isRescue;
-
-        // Clone the ensure body and jump to the end
-        if (isEnsureExpr) {
-            addInstr(new CopyInstr(ensureExprValue, rv));
-            ebi.cloneIntoHostScope(this);
-            addInstr(new JumpInstr(ebi.end));
-        }
-
-        // Pop the current ensure block info node
-        activeEnsureBlockStack.pop();
-
-        // ------------ Emit the ensure body alongwith dummy rescue block ------------
-        // Now build the dummy rescue block that
-        // catches all exceptions thrown by the body
-        addInstr(new LabelInstr(ebi.dummyRescueBlockLabel));
-        Variable exc = addResultInstr(new ReceiveJRubyExceptionInstr(temp()));
-
-        // Now emit the ensure body's stashed instructions
-        if (ensureNode != null) ebi.emitBody(this);
-
-        // 1. Ensure block has no explicit return => the result of the entire ensure expression is the result of the protected body.
-        // 2. Ensure block has an explicit return => the result of the protected body is ignored.
-        // U_NIL => there was a return from within the ensure block!
-        if (ensureRetVal == U_NIL) rv = U_NIL;
-
-        // Return (rethrow exception/end)
-        // rethrows the caught exception from the dummy ensure block
-        addInstr(new ThrowExceptionInstr(exc));
-
-        // End label for the exception region
-        addInstr(new LabelInstr(ebi.end));
-
-        return isEnsureExpr ? ensureExprValue : rv;
-    }
-
     public Operand buildFCall(Variable aResult, FCallNode fcallNode) {
         RubySymbol name = methodName = fcallNode.getName();
         Node callArgsNode = fcallNode.getArgsNode();
@@ -3248,15 +3161,6 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
                 optRescueFor(clause), node instanceof RescueModNode, null, null, true);
     }
 
-    private boolean canBacktraceBeRemoved(Node[] exceptions, Node rescueBody, Node optRescue, Node elseNode, boolean isModifier) {
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) return false; // Tracing needs to trace
-        if (!isModifier && elseNode != null) return false; // only very simple rescues
-        if (optRescue != null) return false;                     // We will not handle multiple rescues
-        if (exceptions != null) return false;            // We cannot know if these are builtin or not statically.
-        if (isErrorInfoGlobal(rescueBody)) return false; // Captured backtrace info for the exception cannot optimize.
-        return isSideEffectFree(rescueBody);
-    }
-
     // FIXME: This MIGHT be able to expand to more complicated expressions like Hash or Array if they
     // contain only SideEffectFree nodes.  Constructing a literal out of these should be safe from
     // effecting or being able to access $!.
@@ -3264,7 +3168,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
         return node instanceof SideEffectFree;
     }
 
-    private static boolean isErrorInfoGlobal(final Node body) {
+    boolean isErrorInfoGlobal(final Node body) {
         if (!(body instanceof GlobalVarNode)) return false;
 
         String id = ((GlobalVarNode) body).getName().idString();
@@ -3281,133 +3185,11 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
         }
     }
 
-    private Operand buildRescueInternal(Node bodyNode, Node elseNode, Node[] exceptions, Node rescueBody,
-                                        RescueBodyNode optRescue, boolean isModifier, EnsureBlockInfo ensure) {
-        boolean needsBacktrace = !canBacktraceBeRemoved(exceptions, rescueBody, optRescue, elseNode, isModifier);
-
-        // Labels marking start, else, end of the begin-rescue(-ensure)-end block
-        Label rBeginLabel = getNewLabel();
-        Label rEndLabel   = ensure.end;
-        Label rescueLabel = getNewLabel(); // Label marking start of the first rescue code.
-        ensure.needsBacktrace = needsBacktrace;
-
-        addInstr(new LabelInstr(rBeginLabel));
-
-        // Placeholder rescue instruction that tells rest of the compiler passes the boundaries of the rescue block.
-        addInstr(new ExceptionRegionStartMarkerInstr(rescueLabel));
-        activeRescuers.push(rescueLabel);
-        addInstr(getManager().needsBacktrace(needsBacktrace));
-
-        // Body
-        Operand tmp = nil();  // default return value if for some strange reason, we neither have the body node or the else node!
-        Variable rv = temp();
-        if (bodyNode != null) tmp = build(bodyNode);
-
-        // Since rescued regions are well nested within Ruby, this bare marker is sufficient to
-        // let us discover the edge of the region during linear traversal of instructions during cfg construction.
-        addInstr(new ExceptionRegionEndMarkerInstr());
-        activeRescuers.pop();
-
-        // Else part of the body -- we simply fall through from the main body if there were no exceptions
-        if (elseNode != null) {
-            addInstr(new LabelInstr(getNewLabel()));
-            tmp = build(elseNode);
-        }
-
-        // Push rescue block *after* body has been built.
-        // If not, this messes up generation of retry in these scenarios like this:
-        //
-        //     begin    -- 1
-        //       ...
-        //     rescue
-        //       begin  -- 2
-        //         ...
-        //         retry
-        //       rescue
-        //         ...
-        //       end
-        //     end
-        //
-        // The retry should jump to 1, not 2.
-        // If we push the rescue block before building the body, we will jump to 2.
-        RescueBlockInfo rbi = new RescueBlockInfo(rBeginLabel, ensure.savedGlobalException);
-        activeRescueBlockStack.push(rbi);
-
-        if (tmp != U_NIL) {
-            addInstr(new CopyInstr(rv, tmp));
-
-            // No explicit return from the protected body
-            // - If we dont have any ensure blocks, simply jump to the end of the rescue block
-            // - If we do, execute the ensure code.
-            ensure.cloneIntoHostScope(this);
-            addInstr(new JumpInstr(rEndLabel));
-        }   //else {
-            // If the body had an explicit return, the return instruction IR build takes care of setting
-            // up execution of all necessary ensure blocks. So, nothing to do here!
-            //
-            // Additionally, the value in 'rv' will never be used, so no need to set it to any specific value.
-            // So, we can leave it undefined. If on the other hand, there was an exception in that block,
-            // 'rv' will get set in the rescue handler -- see the 'rv' being passed into
-            // buildRescueBodyInternal below. So, in either case, we are good!
-            //}
-
-        // Start of rescue logic
-        addInstr(new LabelInstr(rescueLabel));
-
-        // This is optimized no backtrace path so we need to reenable backtraces since we are
-        // exiting that region.
-        if (!needsBacktrace) addInstr(getManager().needsBacktrace(true));
-
-        // Save off exception & exception comparison type
-        Variable exc = addResultInstr(new ReceiveRubyExceptionInstr(temp()));
-
-        // Build the actual rescue block(s)
-        buildRescueBodyInternal(exceptions, rescueBody, optRescue, rv, exc, rEndLabel);
-
-        activeRescueBlockStack.pop();
-        return rv;
-    }
-
     // In order to line up with YARP we will spend some cost making Node[] in legacy parser.
     private Node[] asList(Node node) {
         if (node == null) return null;
         if (node instanceof ListNode) return ((ListNode) node).children();
         return new Node[] { node };
-    }
-
-    private void buildRescueBodyInternal(Node[] exceptions, Node body, RescueBodyNode consequent, Variable rv, Variable exc, Label endLabel) {
-        // Compare and branch as necessary!
-        Label uncaughtLabel = getNewLabel();
-        Label caughtLabel = getNewLabel();
-        if (exceptions != null) {
-            for (int i = 0; i < exceptions.length; i++) {
-                outputExceptionCheck(build(exceptions[i]), exc, caughtLabel);
-            }
-        } else {
-            outputExceptionCheck(getManager().getStandardError(), exc, caughtLabel);
-        }
-
-        // Uncaught exception -- build other rescue nodes or rethrow!
-        addInstr(new LabelInstr(uncaughtLabel));
-        if (consequent != null) {
-            buildRescueBodyInternal(exceptionNodesFor(consequent), bodyFor(consequent), optRescueFor(consequent), rv, exc, endLabel);
-        } else {
-            addInstr(new ThrowExceptionInstr(exc));
-        }
-
-        // Caught exception case -- build rescue body
-        addInstr(new LabelInstr(caughtLabel));
-        Operand x = build(body);
-        if (x != U_NIL) { // can be U_NIL if the rescue block has an explicit return
-            // Set up node return value 'rv'
-            addInstr(new CopyInstr(rv, x));
-
-            // Clone the topmost ensure block (which will be a wrapper
-            // around the current rescue block)
-            if (activeEnsureBlockStack.peek() != null) activeEnsureBlockStack.peek().cloneIntoHostScope(this);
-
-            addInstr(new JumpInstr(endLabel));
-        }
     }
 
     Node[] exceptionNodesFor(RescueBodyNode node) {
