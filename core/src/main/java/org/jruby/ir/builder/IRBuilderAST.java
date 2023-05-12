@@ -2510,11 +2510,13 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
 
      * ****************************************************************/
     public Operand buildEnsureNode(final EnsureNode ensureNode) {
-        return buildEnsureInternal(null, ensureNode.getBodyNode(), ensureNode.getEnsureNode());
+        return buildEnsureInternal(null, null, null, null, null, false, ensureNode.getBodyNode(), ensureNode.getEnsureNode(), false);
     }
 
-    public Operand buildEnsureInternal(RescueNode rescue, Node ensureBodyNode, Node ensureNode) {
-        boolean isRescue = rescue != null;
+    // FIXME: weird confused method of two different things with same overall logic.  Refactor later.
+    public Operand buildEnsureInternal(Node body, Node elseNode, Node[] exceptions, Node rescueBody,
+                                       RescueBodyNode optRescue, boolean isModifier,
+                                       Node ensureBodyNode, Node ensureNode, boolean isRescue) {
         // Save $!
         final Variable savedGlobalException = temp();
         addInstr(new GetGlobalVariableInstr(savedGlobalException, symbol("$!")));
@@ -2548,11 +2550,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
         Variable ensureExprValue = temp();
         Operand rv;
         if (isRescue) {
-            RescueBodyNode clause = rescue.getRescueNode();
-
-            rv = buildRescueInternal(rescue.getBodyNode(), rescue.getElseNode(),
-                    asList(clause.getExceptionNodes()), clause.getBodyNode(), clause.getOptRescueNode(),
-                    rescue instanceof RescueModNode, ebi);
+            rv = buildRescueInternal(body, elseNode, exceptions, rescueBody, optRescue, isModifier, ebi);
         } else {
             rv = build(ensureBodyNode);
         }
@@ -3245,7 +3243,9 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
     }
 
     public Operand buildRescue(RescueNode node) {
-        return buildEnsureInternal(node, null, null);
+        RescueBodyNode clause = node.getRescueNode();
+        return buildEnsureInternal(node.getBodyNode(), node.getElseNode(), exceptionNodesFor(clause), bodyFor(clause),
+                optRescueFor(clause), node instanceof RescueModNode, null, null, true);
     }
 
     private boolean canBacktraceBeRemoved(Node[] exceptions, Node rescueBody, Node optRescue, Node elseNode, boolean isModifier) {
@@ -3390,7 +3390,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
         // Uncaught exception -- build other rescue nodes or rethrow!
         addInstr(new LabelInstr(uncaughtLabel));
         if (consequent != null) {
-            buildRescueBodyInternal(asList(consequent.getExceptionNodes()), consequent.getBodyNode(), consequent.getOptRescueNode(), rv, exc, endLabel);
+            buildRescueBodyInternal(exceptionNodesFor(consequent), bodyFor(consequent), optRescueFor(consequent), rv, exc, endLabel);
         } else {
             addInstr(new ThrowExceptionInstr(exc));
         }
@@ -3408,6 +3408,18 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
 
             addInstr(new JumpInstr(endLabel));
         }
+    }
+
+    Node[] exceptionNodesFor(RescueBodyNode node) {
+        return asList(node.getExceptionNodes());
+    }
+
+    Node bodyFor(RescueBodyNode node) {
+        return node.getBodyNode();
+    }
+
+    RescueBodyNode optRescueFor(RescueBodyNode node) {
+        return node.getOptRescueNode();
     }
 
     public Operand buildRetry(RetryNode retryNode) {
