@@ -2510,11 +2510,11 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
 
      * ****************************************************************/
     public Operand buildEnsureNode(final EnsureNode ensureNode) {
-        return buildEnsureInternal(ensureNode.getBodyNode(), ensureNode.getEnsureNode());
+        return buildEnsureInternal(null, ensureNode.getBodyNode(), ensureNode.getEnsureNode());
     }
 
-    public Operand buildEnsureInternal(Node ensureBodyNode, Node ensureNode) {
-        boolean isRescue = ensureBodyNode instanceof RescueNode;
+    public Operand buildEnsureInternal(RescueNode rescue, Node ensureBodyNode, Node ensureNode) {
+        boolean isRescue = rescue != null;
         // Save $!
         final Variable savedGlobalException = temp();
         addInstr(new GetGlobalVariableInstr(savedGlobalException, symbol("$!")));
@@ -2548,7 +2548,6 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
         Variable ensureExprValue = temp();
         Operand rv;
         if (isRescue) {
-            RescueNode rescue = (RescueNode) ensureBodyNode;
             RescueBodyNode clause = rescue.getRescueNode();
 
             rv = buildRescueInternal(rescue.getBodyNode(), rescue.getElseNode(),
@@ -3246,39 +3245,44 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
     }
 
     public Operand buildRescue(RescueNode node) {
-        return buildEnsureInternal(node, null);
+        return buildEnsureInternal(node, null, null);
     }
 
     private boolean canBacktraceBeRemoved(Node[] exceptions, Node rescueBody, Node optRescue, Node elseNode, boolean isModifier) {
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED || !isModifier && elseNode != null) return false;
-
-        if (optRescue != null) return false;  // We will not handle multiple rescues
-        if (exceptions != null) return false; // We cannot know if these are builtin or not statically.
-
-        // This optimization omits backtrace info for the exception getting rescued so we cannot
-        // optimize the exception variable.
-        if (rescueBody instanceof GlobalVarNode && isErrorInfoGlobal(((GlobalVarNode) rescueBody).getName().idString())) return false;
-
-        // FIXME: This MIGHT be able to expand to more complicated expressions like Hash or Array if they
-        // contain only SideEffectFree nodes.  Constructing a literal out of these should be safe from
-        // effecting or being able to access $!.
-        return rescueBody instanceof SideEffectFree;
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) return false; // Tracing needs to trace
+        if (!isModifier && elseNode != null) return false; // only very simple rescues
+        if (optRescue != null) return false;                     // We will not handle multiple rescues
+        if (exceptions != null) return false;            // We cannot know if these are builtin or not statically.
+        if (isErrorInfoGlobal(rescueBody)) return false; // Captured backtrace info for the exception cannot optimize.
+        return isSideEffectFree(rescueBody);
     }
 
-    private static boolean isErrorInfoGlobal(final String name) {
+    // FIXME: This MIGHT be able to expand to more complicated expressions like Hash or Array if they
+    // contain only SideEffectFree nodes.  Constructing a literal out of these should be safe from
+    // effecting or being able to access $!.
+    boolean isSideEffectFree(final Node node) {
+        return node instanceof SideEffectFree;
+    }
+
+    private static boolean isErrorInfoGlobal(final Node body) {
+        if (!(body instanceof GlobalVarNode)) return false;
+
+        String id = ((GlobalVarNode) body).getName().idString();
+
         // Global names and aliases that reference the exception in flight
-        switch (name) {
-            case "$!" :
-            case "$ERROR_INFO" :
-            case "$@" :
-            case "$ERROR_POSITION" :
+        switch (id) {
+            case "$!":
+            case "$ERROR_INFO":
+            case "$@":
+            case "$ERROR_POSITION":
                 return true;
-            default :
+            default:
                 return false;
         }
     }
 
-    private Operand buildRescueInternal(Node bodyNode, Node elseNode, Node[] exceptions, Node rescueBody, RescueBodyNode optRescue, boolean isModifier, EnsureBlockInfo ensure) {
+    private Operand buildRescueInternal(Node bodyNode, Node elseNode, Node[] exceptions, Node rescueBody,
+                                        RescueBodyNode optRescue, boolean isModifier, EnsureBlockInfo ensure) {
         boolean needsBacktrace = !canBacktraceBeRemoved(exceptions, rescueBody, optRescue, elseNode, isModifier);
 
         // Labels marking start, else, end of the begin-rescue(-ensure)-end block
