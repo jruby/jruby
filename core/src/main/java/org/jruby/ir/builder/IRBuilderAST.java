@@ -2514,6 +2514,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
     }
 
     public Operand buildEnsureInternal(Node ensureBodyNode, Node ensureNode) {
+        boolean isRescue = ensureBodyNode instanceof RescueNode;
         // Save $!
         final Variable savedGlobalException = temp();
         addInstr(new GetGlobalVariableInstr(savedGlobalException, symbol("$!")));
@@ -2529,9 +2530,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
 
         // Record $! save var if we had a non-empty rescue node.
         // $! will be restored from it where required.
-        if (ensureBodyNode instanceof RescueNode) {
-            ebi.savedGlobalException = savedGlobalException;
-        }
+        if (isRescue) ebi.savedGlobalException = savedGlobalException;
 
         ensureBodyBuildStack.push(ebi);
         Operand ensureRetVal = ensureNode == null ? nil() : build(ensureNode);
@@ -2547,7 +2546,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
 
         // Generate IR for code being protected
         Variable ensureExprValue = temp();
-        Operand rv = ensureBodyNode instanceof RescueNode ? buildRescueInternal((RescueNode) ensureBodyNode, ebi) : build(ensureBodyNode);
+        Operand rv = isRescue ? buildRescueInternal((RescueNode) ensureBodyNode, ebi) : build(ensureBodyNode);
 
         // End of protected region
         addInstr(new ExceptionRegionEndMarkerInstr());
@@ -2555,7 +2554,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
 
         // Is this a begin..(rescue..)?ensure..end node that actually computes a value?
         // (vs. returning from protected body)
-        boolean isEnsureExpr = ensureNode != null && rv != U_NIL && !(ensureBodyNode instanceof RescueNode);
+        boolean isEnsureExpr = ensureNode != null && rv != U_NIL && !isRescue;
 
         // Clone the ensure body and jump to the end
         if (isEnsureExpr) {
@@ -2570,14 +2569,11 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
         // ------------ Emit the ensure body alongwith dummy rescue block ------------
         // Now build the dummy rescue block that
         // catches all exceptions thrown by the body
-        Variable exc = temp();
         addInstr(new LabelInstr(ebi.dummyRescueBlockLabel));
-        addInstr(new ReceiveJRubyExceptionInstr(exc));
+        Variable exc = addResultInstr(new ReceiveJRubyExceptionInstr(temp()));
 
         // Now emit the ensure body's stashed instructions
-        if (ensureNode != null) {
-            ebi.emitBody(this);
-        }
+        if (ensureNode != null) ebi.emitBody(this);
 
         // 1. Ensure block has no explicit return => the result of the entire ensure expression is the result of the protected body.
         // 2. Ensure block has an explicit return => the result of the protected body is ignored.
@@ -3400,7 +3396,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
 
             // Clone the topmost ensure block (which will be a wrapper
             // around the current rescue block)
-            activeEnsureBlockStack.peek().cloneIntoHostScope(this);
+            if (activeEnsureBlockStack.peek() != null) activeEnsureBlockStack.peek().cloneIntoHostScope(this);
 
             addInstr(new JumpInstr(endLabel));
         }
