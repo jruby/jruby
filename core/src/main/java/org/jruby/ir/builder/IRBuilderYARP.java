@@ -127,6 +127,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             case PROGRAM: return buildProgram((ProgramNode) node);
             case RANGE: return buildRange((RangeNode) node);
             case REGULAREXPRESSION: return buildRegularExpression((RegularExpressionNode) node);
+            case RESCUEMODIFIER: return buildRescueModifier((RescueModifierNode) node);
             case RETURN: return buildReturn((ReturnNode) node);
             case SELF: return buildSelf();
             case SINGLETONCLASS: return buildSingletonClass((SingletonClassNode) node);
@@ -265,8 +266,13 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         return buildBreak(() -> buildArgumentsAsArgument(node.arguments), getLine(node));
     }
 
-    // FIXME: no rescue or ensure!!!!
     private Operand buildBegin(BeginNode node) {
+        // FIXME: This is not processing ensure.  YARP is laying this out differently.
+        if (node.rescue_clause != null) {
+            RescueNode rescue = node.rescue_clause;
+            return buildEnsureInternal(node.statements, node.else_clause, rescue.exceptions, rescue.statements,
+                    rescue.consequent, false, null, null, true);
+        }
         return build(node.statements);
     }
 
@@ -778,6 +784,10 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     private Operand buildRange(RangeNode node) {
         boolean isExclusive = node.operator_loc.endOffset - node.operator_loc.startOffset == 3;
         return buildRange(node.left, node.right, isExclusive);
+    }
+
+    private Operand buildRescueModifier(RescueModifierNode node) {
+        return buildEnsureInternal(node.expression, null, null, node.rescue_expression, null, true, null, null, true);
     }
 
     private Operand buildRegularExpression(RegularExpressionNode node) {
