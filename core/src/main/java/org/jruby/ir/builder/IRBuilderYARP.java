@@ -136,6 +136,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             case SPLAT: return buildSplat((SplatNode) node);
             case STATEMENTS: return buildStatements((StatementsNode) node);
             case STRING: return buildString((StringNode) node);
+            case STRINGCONCAT: return buildStringConcat((StringConcatNode) node);
             case SUPER: return buildSuper(result, (SuperNode) node);
             case SYMBOL: return buildSymbol((SymbolNode) node);
             case TRUE: return tru();
@@ -1165,6 +1166,14 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         } else {
             return new MutableString(byteListFrom(node.content), 0, scope.getFile(), getLine(node));
         }
+    }
+
+    private Operand buildStringConcat(StringConcatNode node) {
+        // FIXME: maybe frozen maybe not?
+        ByteList str = byteListFrom(node.left);
+        str.append(byteListFrom(node.right));
+
+        return new FrozenString(str, 0, getFileName(), getLine(node));
     }
 
     @Override
