@@ -3353,26 +3353,27 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
         Variable exc = addResultInstr(new ReceiveRubyExceptionInstr(temp()));
 
         // Build the actual rescue block(s)
-        buildRescueBodyInternal(rescueNode.getRescueNode(), rv, exc, rEndLabel);
+        RescueBodyNode body = rescueNode.getRescueNode();
+        buildRescueBodyInternal(asList(body.getExceptionNodes()), body.getBodyNode(), body.getOptRescueNode(), rv, exc, rEndLabel);
 
         activeRescueBlockStack.pop();
         return rv;
     }
 
-    private void buildRescueBodyInternal(RescueBodyNode rescueBodyNode, Variable rv, Variable exc, Label endLabel) {
-        final Node exceptionList = rescueBodyNode.getExceptionNodes();
+    // In order to line up with YARP we will spend some cost making Node[] in legacy parser.
+    private Node[] asList(Node node) {
+        if (node == null) return null;
+        if (node instanceof ListNode) return ((ListNode) node).children();
+        return new Node[] { node };
+    }
 
+    private void buildRescueBodyInternal(Node[] exceptions, Node body, RescueBodyNode consequent, Variable rv, Variable exc, Label endLabel) {
         // Compare and branch as necessary!
         Label uncaughtLabel = getNewLabel();
         Label caughtLabel = getNewLabel();
-        if (exceptionList != null) {
-            if (exceptionList instanceof ListNode) {
-                Node[] exceptionNodes = ((ListNode) exceptionList).children();
-                for (int i = 0; i < exceptionNodes.length; i++) {
-                    outputExceptionCheck(build(exceptionNodes[i]), exc, caughtLabel);
-                }
-            } else { // splat/argscat/argspush
-                outputExceptionCheck(build(exceptionList), exc, caughtLabel);
+        if (exceptions != null) {
+            for (int i = 0; i < exceptions.length; i++) {
+                outputExceptionCheck(build(exceptions[i]), exc, caughtLabel);
             }
         } else {
             outputExceptionCheck(getManager().getStandardError(), exc, caughtLabel);
@@ -3380,16 +3381,15 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
 
         // Uncaught exception -- build other rescue nodes or rethrow!
         addInstr(new LabelInstr(uncaughtLabel));
-        if (rescueBodyNode.getOptRescueNode() != null) {
-            buildRescueBodyInternal(rescueBodyNode.getOptRescueNode(), rv, exc, endLabel);
+        if (consequent != null) {
+            buildRescueBodyInternal(asList(consequent.getExceptionNodes()), consequent.getBodyNode(), consequent.getOptRescueNode(), rv, exc, endLabel);
         } else {
             addInstr(new ThrowExceptionInstr(exc));
         }
 
         // Caught exception case -- build rescue body
         addInstr(new LabelInstr(caughtLabel));
-        Node realBody = rescueBodyNode.getBodyNode();
-        Operand x = build(realBody);
+        Operand x = build(body);
         if (x != U_NIL) { // can be U_NIL if the rescue block has an explicit return
             // Set up node return value 'rv'
             addInstr(new CopyInstr(rv, x));
