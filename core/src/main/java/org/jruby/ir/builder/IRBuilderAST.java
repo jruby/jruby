@@ -2546,7 +2546,17 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
 
         // Generate IR for code being protected
         Variable ensureExprValue = temp();
-        Operand rv = isRescue ? buildRescueInternal((RescueNode) ensureBodyNode, ebi) : build(ensureBodyNode);
+        Operand rv;
+        if (isRescue) {
+            RescueNode rescue = (RescueNode) ensureBodyNode;
+            RescueBodyNode clause = rescue.getRescueNode();
+
+            rv = buildRescueInternal(rescue.getBodyNode(), rescue.getElseNode(),
+                    asList(clause.getExceptionNodes()), clause.getBodyNode(), clause.getOptRescueNode(),
+                    rescue instanceof RescueModNode, ebi);
+        } else {
+            rv = build(ensureBodyNode);
+        }
 
         // End of protected region
         addInstr(new ExceptionRegionEndMarkerInstr());
@@ -3239,25 +3249,20 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
         return buildEnsureInternal(node, null);
     }
 
-    private boolean canBacktraceBeRemoved(RescueNode rescueNode) {
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED || !(rescueNode instanceof RescueModNode) &&
-                rescueNode.getElseNode() != null) return false;
+    private boolean canBacktraceBeRemoved(Node[] exceptions, Node rescueBody, Node optRescue, Node elseNode, boolean isModifier) {
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED || !isModifier && elseNode != null) return false;
 
-        RescueBodyNode rescueClause = rescueNode.getRescueNode();
-
-        if (rescueClause.getOptRescueNode() != null) return false;  // We will not handle multiple rescues
-        if (rescueClause.getExceptionNodes() != null) return false; // We cannot know if these are builtin or not statically.
-
-        Node body = rescueClause.getBodyNode();
+        if (optRescue != null) return false;  // We will not handle multiple rescues
+        if (exceptions != null) return false; // We cannot know if these are builtin or not statically.
 
         // This optimization omits backtrace info for the exception getting rescued so we cannot
         // optimize the exception variable.
-        if (body instanceof GlobalVarNode && isErrorInfoGlobal(((GlobalVarNode) body).getName().idString())) return false;
+        if (rescueBody instanceof GlobalVarNode && isErrorInfoGlobal(((GlobalVarNode) rescueBody).getName().idString())) return false;
 
         // FIXME: This MIGHT be able to expand to more complicated expressions like Hash or Array if they
         // contain only SideEffectFree nodes.  Constructing a literal out of these should be safe from
         // effecting or being able to access $!.
-        return body instanceof SideEffectFree;
+        return rescueBody instanceof SideEffectFree;
     }
 
     private static boolean isErrorInfoGlobal(final String name) {
@@ -3273,8 +3278,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
         }
     }
 
-    private Operand buildRescueInternal(RescueNode rescueNode, EnsureBlockInfo ensure) {
-        boolean needsBacktrace = !canBacktraceBeRemoved(rescueNode);
+    private Operand buildRescueInternal(Node bodyNode, Node elseNode, Node[] exceptions, Node rescueBody, RescueBodyNode optRescue, boolean isModifier, EnsureBlockInfo ensure) {
+        boolean needsBacktrace = !canBacktraceBeRemoved(exceptions, rescueBody, optRescue, elseNode, isModifier);
 
         // Labels marking start, else, end of the begin-rescue(-ensure)-end block
         Label rBeginLabel = getNewLabel();
@@ -3292,7 +3297,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
         // Body
         Operand tmp = nil();  // default return value if for some strange reason, we neither have the body node or the else node!
         Variable rv = temp();
-        if (rescueNode.getBodyNode() != null) tmp = build(rescueNode.getBodyNode());
+        if (bodyNode != null) tmp = build(bodyNode);
 
         // Since rescued regions are well nested within Ruby, this bare marker is sufficient to
         // let us discover the edge of the region during linear traversal of instructions during cfg construction.
@@ -3300,9 +3305,9 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
         activeRescuers.pop();
 
         // Else part of the body -- we simply fall through from the main body if there were no exceptions
-        if (rescueNode.getElseNode() != null) {
+        if (elseNode != null) {
             addInstr(new LabelInstr(getNewLabel()));
-            tmp = build(rescueNode.getElseNode());
+            tmp = build(elseNode);
         }
 
         // Push rescue block *after* body has been built.
@@ -3353,8 +3358,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode> {
         Variable exc = addResultInstr(new ReceiveRubyExceptionInstr(temp()));
 
         // Build the actual rescue block(s)
-        RescueBodyNode body = rescueNode.getRescueNode();
-        buildRescueBodyInternal(asList(body.getExceptionNodes()), body.getBodyNode(), body.getOptRescueNode(), rv, exc, rEndLabel);
+        buildRescueBodyInternal(exceptions, rescueBody, optRescue, rv, exc, rEndLabel);
 
         activeRescueBlockStack.pop();
         return rv;
