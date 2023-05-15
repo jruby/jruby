@@ -33,7 +33,6 @@ public class OutputStrings {
                 {"-rlibrary", "require the library, before executing your script"},
                 {"-s", "enable some switch parsing for switches after script name"},
                 {"-S", "look for the script in bin or using PATH environment variable"},
-                {"-T[level]", "turn on tainting checks"},
                 {"-U", "use UTF-8 as default internal encoding"},
                 {"-v", "print version number, then turn on verbose mode"},
                 {"-w", "turn warnings on for your script"},
