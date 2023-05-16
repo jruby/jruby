@@ -925,7 +925,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return kwargs;
     }
 
-    private CallInstr determineIfProcNew(Node receiverNode, CallInstr callInstr) {
+    CallInstr determineIfProcNew(Node receiverNode, CallInstr callInstr) {
         // This is to support the ugly Proc.new with no block, which must see caller's frame
         if (CommonByteLists.NEW_METHOD.equals(callInstr.getName().getBytes()) &&
                 receiverNode instanceof ConstNode && ((ConstNode)receiverNode).getName().idString().equals("Proc")) {

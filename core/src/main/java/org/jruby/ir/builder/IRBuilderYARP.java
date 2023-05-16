@@ -6,6 +6,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyNumeric;
 import org.jruby.RubySymbol;
+import org.jruby.ast.ConstNode;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRManager;
@@ -20,6 +21,7 @@ import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.CurrentScope;
+import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.FrozenString;
 import org.jruby.ir.operands.Hash;
 import org.jruby.ir.operands.Label;
@@ -43,6 +45,7 @@ import org.jruby.util.CommonByteLists;
 import org.jruby.util.DefinedMessage;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
+import org.jruby.util.SafeDoubleParser;
 import org.yarp.Nodes.*;
 import org.yarp.YarpParseResult;
 
@@ -51,6 +54,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
+import static org.jruby.runtime.CallType.NORMAL;
 import static org.jruby.runtime.ThreadContext.*;
 
 public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode> {
@@ -103,6 +107,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             case DEFINED: return buildDefined((DefinedNode) node);
             case ELSE: return buildElse((ElseNode) node);
             case FALSE: return fals();
+            case FLOAT: return buildFloat((FloatNode) node);
             case FORWARDINGSUPER: return buildForwardingSuper(result, (ForwardingSuperNode) node);
             case GLOBALVARIABLEREAD: return buildGlobalVariableRead(result, (GlobalVariableReadNode) node);
             case GLOBALVARIABLEWRITE: return buildGlobalVariableWrite((GlobalVariableWriteNode) node);
@@ -348,8 +353,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         return build(node.expression);
     }
 
-    private Operand buildCall(Variable result, CallNode node) {
-        if (result == null) result = temp();
+    private Operand buildCall(Variable resultArg, CallNode node) {
+        Variable result = resultArg == null ? temp() : resultArg;
 
         // FIXME: this should just be typed by parser.
         CallType callType = determineCallType(node.receiver);
@@ -359,7 +364,9 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         // FIXME: pretend always . and not &. for now.
         // FIXME: at least type arguments to ArgumentsNode
         // FIXME: block would be a lot easier if both were in .block and not maybe in arguments
-        Operand[] args = buildArguments(node.arguments);
+        // FIXME: Lots and lots of special logic in AST not here
+        int[] flags = new int[] { 0 };
+        Operand[] args = setupCallArgs(node.arguments, flags);
         Operand block;
         if (node.block != null) {
             block = setupCallClosure(node.block);
@@ -369,28 +376,26 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         } else {
             block = NullBlock.INSTANCE;
         }
+        Operand[] finalArgs = args;
+        RubySymbol name = symbol(new String(node.name));
 
-        // FIXME: Lots and lots of special logic in AST not here
-        return addResultInstr(CallInstr.create(scope, callType, result, symbol(new String(node.name)), receiver, args, block, 0));
-    }
+        if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
+            Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
+            if_else(test, tru(),
+                    () -> receiveBreakException(block,
+                            determineIfProcNew(node.receiver,
+                                    CallInstr.create(scope, callType, result, name, receiver, removeArg(finalArgs), block, flags[0]))),
+                    () -> receiveBreakException(block,
+                            determineIfProcNew(node.receiver,
+                                    CallInstr.create(scope, callType, result, name, receiver, finalArgs, block, flags[0]))));
+        } else {
+            determineIfWeNeedLineNumber(getLine(node)); // buildOperand for call was papered over by args operand building so we check once more.
+            receiveBreakException(block,
+                    determineIfProcNew(node.receiver,
+                            CallInstr.create(scope, callType, result, name, receiver, args, block, flags[0])));
+        }
 
-
-    private Signature calculateSignature(ParametersNode parameters) {
-        if (parameters == null) return Signature.NO_ARGUMENTS;
-        int pre = parameters.requireds.length;
-        int opt = parameters.optionals.length;
-        int post = parameters.posts.length;
-        int kws = parameters.keywords.length;
-        // FIXME: this needs more than norm
-        Signature.Rest rest = parameters.rest == null ? Signature.Rest.NONE : Signature.Rest.NORM;
-
-        int keywordRestIndex = parameters.keyword_rest == null ? -1 : pre + opt + post + kws;
-        // FIXME: need to diff opt kws vs req kws
-        Signature signature = new Signature(pre, opt, post, rest, kws, kws, keywordRestIndex);
-
-        scope.getStaticScope().setSignature(signature);
-
-        return signature;
+        return result;
     }
 
     private boolean containsBlockArgument(ArgumentsNode node) {
@@ -411,9 +416,12 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         boolean hasAssignments = containsVariableAssignment(children);
 
         for (int i = 0; i < numberOfArgs; i++) {
-            // FIXME: here and possibly AST make isKeywordsHash() method.
-            if (i == numberOfArgs - 1 && children[i] instanceof HashNode && !isLiteralHash(children[i])) {
-                builtArgs[i] = buildCallKeywordArguments((HashNode) children[i], flags);
+            Node child = children[i];
+
+            if (child instanceof SplatNode) {
+                builtArgs[i] = new Splat(addResultInstr(new BuildSplatInstr(temp(), build(((SplatNode) child).expression), false)));
+            } else if (i == numberOfArgs - 1 && children[i] instanceof HashNode && !isLiteralHash(children[i])) {
+                builtArgs[i] = buildCallKeywordArguments((HashNode) children[i], flags); // FIXME: here and possibly AST make isKeywordsHash() method.
             } else {
                 builtArgs[i] = buildWithOrder(children[i], hasAssignments);
             }
@@ -494,6 +502,21 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
 
     private Operand buildElse(ElseNode node) {
         return buildStatements(node.statements);
+    }
+
+    // FIXME: Do we need warn or will YARP provide it.
+    private Operand buildFloat(FloatNode node) {
+        String number = byteListFrom(node).toString();
+        double d;
+        try {
+            d = SafeDoubleParser.parseDouble(number);
+        } catch (NumberFormatException e) {
+            //warnings.warn(IRubyWarnings.ID.FLOAT_OUT_OF_RANGE, getFile(), ruby_sourceline, "Float " + number + " out of range.");
+
+            d = number.startsWith("-") ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
+        }
+
+        return new Float(d);
     }
 
     private Operand buildForwardingSuper(Variable result, ForwardingSuperNode node) {
@@ -741,7 +764,9 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             for (int i = 0; i < keywordsCount; i++) {
                 KeywordParameterNode kwarg = (KeywordParameterNode) kwArgs[i];
 
-                RubySymbol key = symbolFor(kwarg.name);
+                ByteList keyBytes = byteListFrom(kwarg.name);
+                keyBytes.view(0, keyBytes.realSize() - 1); // Remove ':'.  FIXME: This should not be this way.
+                RubySymbol key = symbol(keyBytes);
                 Variable av = getNewLocalVariable(key, 0);
                 Label l = getNewLabel();
                 if (scope instanceof IRMethod) addKeyArgDesc(kwarg, key);
@@ -823,7 +848,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         boolean containsVariableAssignment = containsVariableAssignment(keywordArgs);
 
         if (pairs.length == 1) { // Only a single rest arg here.  Do not bother to merge.
-            Operand splat = buildWithOrder(pairs[0], containsVariableAssignment);
+            Operand splat = buildWithOrder(((AssocSplatNode) pairs[0]).value, containsVariableAssignment);
 
             return addResultInstr(new RuntimeHelperCall(temp(), HASH_CHECK, new Operand[] { splat }));
         }
@@ -1459,17 +1484,22 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         if (scope instanceof IRScriptBody || scope instanceof IRModuleBody) throwSyntaxError(getLine(node), "Invalid yield");
 
         boolean unwrap = true;
-        Node[] args = node.arguments.arguments;
-        // Get rid of one level of array wrapping
-        if (args != null && args.length == 1) {
-            // We should not unwrap if it is a keyword argument.
-            if (!(args[0] instanceof HashNode) || ((HashNode) args[0]).opening != null) {
-                unwrap = false;
+        Operand value;
+        int[] flags = new int[]{0};
+        if (node.arguments != null) {
+            Node[] args = node.arguments.arguments;
+            // Get rid of one level of array wrapping
+            if (args != null && args.length == 1) {
+                // We should not unwrap if it is a keyword argument.
+                if (!(args[0] instanceof HashNode) || ((HashNode) args[0]).opening != null) {
+                    unwrap = false;
+                }
             }
-        }
 
-        int[] flags = new int[] { 0 };
-        Operand value = buildYieldArgs(args, flags);
+            value = buildYieldArgs(args, flags);
+        } else {
+            value = UndefinedValue.UNDEFINED;
+        }
 
         addInstr(new YieldInstr(result, getYieldClosureVariable(), value, flags[0], unwrap));
 
@@ -1642,6 +1672,24 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         return new ByteList(source, node.startOffset, node.endOffset - node.startOffset);
     }
 
+    private Signature calculateSignature(ParametersNode parameters) {
+        if (parameters == null) return Signature.NO_ARGUMENTS;
+        int pre = parameters.requireds.length;
+        int opt = parameters.optionals.length;
+        int post = parameters.posts.length;
+        int kws = parameters.keywords.length;
+        // FIXME: this needs more than norm
+        Signature.Rest rest = parameters.rest == null ? Signature.Rest.NONE : Signature.Rest.NORM;
+
+        int keywordRestIndex = parameters.keyword_rest == null ? -1 : pre + opt + post + kws;
+        // FIXME: need to diff opt kws vs req kws
+        Signature signature = new Signature(pre, opt, post, rest, kws, kws, keywordRestIndex);
+
+        scope.getStaticScope().setSignature(signature);
+
+        return signature;
+    }
+
     private CallType determineCallType(Node node) {
         return node == null ?
                 CallType.FUNCTIONAL :
@@ -1655,6 +1703,19 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             return byteListFrom(((ConstantPathNode) node).child);
         }
         throw notCompilable("Unsupported node in module path", node);
+    }
+
+    // FIXME: I think this can be removed since it has been removed at some point.
+    @Override
+    CallInstr determineIfProcNew(Node receiver, CallInstr callInstr) {
+        // This is to support the ugly Proc.new with no block, which must see caller's frame
+        if (CommonByteLists.NEW_METHOD.equals(callInstr.getName().getBytes()) &&
+                receiver instanceof ConstantReadNode &&
+                symbolFor((ConstantReadNode)receiver).idString().equals("Proc")) {
+            callInstr.setProcNew(true);
+        }
+
+        return callInstr;
     }
 
     // FIXME: need to know about breaks

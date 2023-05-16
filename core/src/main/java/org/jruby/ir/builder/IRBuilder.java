@@ -1769,6 +1769,7 @@ public abstract class IRBuilder<U, V, W, X> {
     abstract Operand[] buildCallArgs(U args, int[] flags);
     abstract Operand buildGetDefinition(U node);
     abstract boolean containsVariableAssignment(U node);
+    abstract CallInstr determineIfProcNew(U receiverNode, CallInstr callInstr);
     abstract Operand frozen_string(U node);
     abstract int getLine(U node);
     abstract IRubyObject getWhenLiteral(U node);
@@ -1986,7 +1987,7 @@ public abstract class IRBuilder<U, V, W, X> {
         }
     }
 
-    private void determineIfWeNeedLineNumber(int line) {
+    void determineIfWeNeedLineNumber(int line) {
         if (line != lastProcessedLineNum) { // Do not emit multiple line number instrs for the same line
             needsLineNumInfo = true;
             lastProcessedLineNum = line;
