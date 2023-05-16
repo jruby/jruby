@@ -1,12 +1,12 @@
 package org.jruby.ir.builder;
 
+import com.sun.beans.editors.ByteEditor;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.ParseResult;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyNumeric;
-import org.jruby.RubySymbol;
-import org.jruby.ast.ConstNode;
+import org.jruby.RubySymbol;;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRManager;
@@ -54,7 +54,6 @@ import java.util.List;
 import java.util.Set;
 
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
-import static org.jruby.runtime.CallType.NORMAL;
 import static org.jruby.runtime.ThreadContext.*;
 
 public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode> {
@@ -689,7 +688,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     private Operand buildOperatorAssignment(OperatorAssignmentNode node) {
         // Strip off '=' as we don't need it.
         Token operator = new Token(node.operator.type, node.operator.startOffset, node.operator.endOffset - 1);
-        byte[] name = symbolFor(operator).getBytes().bytes();
+        RubySymbol oper = symbolFor(operator);
+        byte[] name = oper.getBytes().bytes();
         Node target = node.target;
         Node arguments = new ArgumentsNode(new Node[] { node.value }, -1, -1);
         if (target instanceof InstanceVariableWriteNode) {
@@ -708,9 +708,14 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             Node receiver = new LocalVariableReadNode(((LocalVariableWriteNode) target).depth, target.startOffset, target.endOffset);
             Node value = new CallNode(receiver, operator, arguments, null, name, -1, -1);
             return build(new LocalVariableWriteNode(((LocalVariableWriteNode) target).name_loc, value, ((LocalVariableWriteNode) target).depth, target.startOffset, target.endOffset));
+        } else if (target instanceof CallNode) {
+            Operand receiver = build(target);
+            Variable value = call(temp(), receiver, oper, new Operand[] { build(node.value) });
+            RubySymbol writeName = symbol(new ByteList(((CallNode) target).name)).asWriter();
+            return call(temp(), build(((CallNode) target).receiver), writeName, new Operand[]{ value });
         }
 
-        throw notCompilable("buildOperaatorAssignment node not known", node);
+        throw notCompilable("buildOperatorAssignment node not known", target);
     }
 
     private Operand buildOperatorOrAssignment(OperatorOrAssignmentNode node) {
