@@ -65,7 +65,7 @@ project 'JRuby Base' do
   jar 'org.osgi:org.osgi.core:5.0.0', :scope => 'provided'
 
   # joda timezone must be before joda-time to be packed correctly
-  jar 'org.jruby:joda-timezones:${tzdata.version}', :scope => '${tzdata.scope}'
+  # jar 'org.jruby:joda-timezones:${tzdata.version}', :scope => '${tzdata.scope}'
   jar 'joda-time:joda-time:${joda.time.version}'
 
   # SLF4J only used within SLF4JLogger (JRuby logger impl) class
