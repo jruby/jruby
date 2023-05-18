@@ -13,6 +13,7 @@ import org.jruby.ir.IRManager;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRModuleBody;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.IRScopeType;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.Tuple;
 import org.jruby.ir.instructions.*;
@@ -298,6 +299,10 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     // FIXME: Try and genericize this with AST
     private InterpreterContext buildIterInner(RubySymbol methodName, BlockNode iterNode) {
         this.methodName = methodName;
+        // FIXME: this should get set by Loader
+        scope.getStaticScope().setScopeType(IRScopeType.CLOSURE);
+        // FIXME: this should be done initially by Loader.  This may be true for define_method???
+        scope.getStaticScope().setIsArgumentScope(false);
 
         boolean forNode = false; // FIXME: For will be handled separately.
         prepareClosureImplicitState();                                    // recv_self, add frame block, etc)
@@ -658,8 +663,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             }
         }
 
-        int preCount = restIndex;
-        int postCount = length - restIndex - 1;
+        int preCount = restIndex == -1 ? length : restIndex;
+        int postCount = restIndex == -1 ? -1 : length - restIndex - 1;
 
         for (int i = 0; i < preCount; i++) {
             assigns.add(new Tuple<>(targets[i], addResultInstr(new ReqdArgMultipleAsgnInstr(temp(), values, i))));
