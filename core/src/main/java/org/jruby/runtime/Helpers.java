@@ -570,18 +570,6 @@ public class Helpers {
         return (int) length;
     }
 
-    public static CacheEntry createDirectMethodMissingEntry(ThreadContext context, RubyClass selfClass, CallType callType, Visibility visibility, int token, String methodName) {
-        DynamicMethod method = selectMethodMissing(context, selfClass, visibility, methodName, callType);
-        if (method instanceof MethodMissingWrapper) {
-            return ((MethodMissingWrapper) method).entry;
-        } else {
-            return new CacheEntry(
-                    method,
-                    selfClass,
-                    token);
-        }
-    }
-
     public static CacheEntry createMethodMissingEntry(ThreadContext context, RubyClass selfClass, CallType callType, Visibility visibility, int token, String methodName) {
         DynamicMethod method = selectMethodMissing(context, selfClass, visibility, methodName, callType);
         return new CacheEntry(
