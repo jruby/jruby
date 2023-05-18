@@ -171,7 +171,7 @@ public class Helpers {
         if (methodMissing.isUndefined() || methodMissing.equals(runtime.getDefaultMethodMissing())) {
             return selectInternalMM(runtime, visibility, callType);
         }
-        return new MethodMissingMethod(entry, visibility, callType);
+        return new MethodMissingWrapper(entry, visibility, callType);
     }
 
     public static DynamicMethod selectMethodMissing(ThreadContext context, RubyClass selfClass, Visibility visibility, String name, CallType callType) {
@@ -187,7 +187,7 @@ public class Helpers {
         if (methodMissing.isUndefined() || methodMissing.equals(runtime.getDefaultMethodMissing())) {
             return selectInternalMM(runtime, visibility, callType);
         }
-        return new MethodMissingMethod(entry, visibility, callType);
+        return new MethodMissingWrapper(entry, visibility, callType);
     }
 
     public static DynamicMethod selectMethodMissing(RubyClass selfClass, Visibility visibility, String name, CallType callType) {
@@ -203,7 +203,7 @@ public class Helpers {
         if (methodMissing.isUndefined() || methodMissing.equals(runtime.getDefaultMethodMissing())) {
             return selectInternalMM(runtime, visibility, callType);
         }
-        return new MethodMissingMethod(entry, visibility, callType);
+        return new MethodMissingWrapper(entry, visibility, callType);
     }
 
     public static final Map<String, String> map(String... keyValues) {
@@ -572,8 +572,8 @@ public class Helpers {
 
     public static CacheEntry createDirectMethodMissingEntry(ThreadContext context, RubyClass selfClass, CallType callType, Visibility visibility, int token, String methodName) {
         DynamicMethod method = selectMethodMissing(context, selfClass, visibility, methodName, callType);
-        if (method instanceof MethodMissingMethod) {
-            return ((MethodMissingMethod) method).entry;
+        if (method instanceof MethodMissingWrapper) {
+            return ((MethodMissingWrapper) method).entry;
         } else {
             return new CacheEntry(
                     method,
@@ -589,14 +589,17 @@ public class Helpers {
                 selfClass,
                 token);
     }
-    
-    public static class MethodMissingMethod extends DynamicMethod {
+
+    /**
+     * Wraps the target method_missing implementation, passing the called method name as a leading symbol argument.
+     */
+    public static class MethodMissingWrapper extends DynamicMethod {
         public final CacheEntry entry;
         private final CallType lastCallStatus;
         private final Visibility lastVisibility;
         private RubySymbol lastName;
 
-        public MethodMissingMethod(CacheEntry entry, Visibility lastVisibility, CallType lastCallStatus) {
+        public MethodMissingWrapper(CacheEntry entry, Visibility lastVisibility, CallType lastCallStatus) {
             super(entry.method.getImplementationClass(), lastVisibility, entry.method.getName());
             this.entry = entry;
             this.lastCallStatus = lastCallStatus;
