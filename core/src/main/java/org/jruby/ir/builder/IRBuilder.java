@@ -1306,6 +1306,26 @@ public abstract class IRBuilder<U, V, W, X> {
         return addResultInstr(new GetFieldInstr(temp(), buildSelf(), name));
     }
 
+    InterpreterContext buildLambdaInner(U blockArgs, U body) {
+        prepareClosureImplicitState();
+
+        addCurrentModule();                                        // %current_module
+
+        receiveBlockArgs(blockArgs);
+
+        Operand closureRetVal = build(body);
+
+        // can be U_NIL if the node is an if node with returns in both branches.
+        if (closureRetVal != U_NIL) addInstr(new ReturnInstr(closureRetVal));
+
+        preloadBlockImplicitClosure();
+
+        handleBreakAndReturnsInLambdas();
+
+        computeScopeFlagsFrom(instructions);
+        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
+    }
+
     public Operand buildLocalVariableAssign(RubySymbol name, int depth, U valueNode) {
         Variable variable  = getLocalVariable(name, depth);
         Operand value = build(variable, valueNode);
@@ -1775,6 +1795,8 @@ public abstract class IRBuilder<U, V, W, X> {
     abstract IRubyObject getWhenLiteral(U node);
     abstract boolean isLiteralString(U node);
     abstract boolean needsDefinitionCheck(U node);
+
+    abstract void receiveBlockArgs(U node);
     abstract Operand setupCallClosure(U node);
 
     // returns true if we should emit an eqq for this value (e.g. it has not already been seen yet).

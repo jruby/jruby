@@ -1,6 +1,5 @@
 package org.jruby.ir.builder;
 
-import com.sun.beans.editors.ByteEditor;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.ParseResult;
 import org.jruby.Ruby;
@@ -118,6 +117,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             case INTEGER: return buildInteger((IntegerNode) node);
             case INTERPOLATEDREGULAREXPRESSION: return buildInterpolatedRegularExpression(result, (InterpolatedRegularExpressionNode) node);
             case INTERPOLATEDSTRING: return buildInterpolatedString(result, (InterpolatedStringNode) node);
+            case LAMBDA: return buildLambda((LambdaNode) node);
             case LOCALVARIABLEREAD: return buildLocalVariableRead((LocalVariableReadNode) node);
             case LOCALVARIABLEWRITE: return buildLocalVariableWrite((LocalVariableWriteNode) node);
             case MISSING: return buildMissing((MissingNode) node);
@@ -312,7 +312,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         }
 
         if (!forNode) addCurrentModule();                                // %current_module
-        receiveBlockArgs(iterNode);
+        receiveBlockArgs(iterNode.parameters);
         // for adds these after processing binding block args because and operations at that point happen relative
         // to the previous scope.
         if (forNode) addCurrentModule();                                 // %current_module
@@ -341,11 +341,12 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     }
 
     // FIXME: This is used for both for and blocks in AST but we do different path for for in YARP
-    public void receiveBlockArgs(BlockNode node) {
+    public void receiveBlockArgs(Node node) {
+        BlockParametersNode parameters = (BlockParametersNode) node;
         // FIXME: Impl
         //((IRClosure) scope).setArgumentDescriptors(Helpers.argsNodeToArgumentDescriptors(((ArgsNode) args)));
         // FIXME: Missing locals?  Not sure how we handle those but I would have thought with a scope?
-        if (node.parameters != null) buildParameters(node.parameters.parameters);
+        if (parameters != null) buildParameters(parameters.parameters);
     }
 
     private Operand buildBlockArgument(BlockArgumentNode node) {
@@ -432,6 +433,10 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         }
 
         return builtArgs;
+    }
+
+    private int keywordsArgsHash(Node arg) {
+
     }
 
     protected Operand buildCallKeywordArguments(HashNode node, int[] flags) {
@@ -610,6 +615,19 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     private Operand buildInterpolatedString(Variable result, InterpolatedStringNode node) {
         // FIXME: Missing encoding, frozen
         return buildDStr(result, node.parts, UTF8Encoding.INSTANCE, false, getLine(node));
+    }
+
+    // FIXME: Generify
+    private Operand buildLambda(LambdaNode node) {
+        IRClosure closure = new IRClosure(getManager(), scope, getLine(node), node.scope, calculateSignature(node.parameters), coverageMode);
+
+        // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
+        newIRBuilder(getManager(), closure, this, node).buildLambdaInner(node.parameters, node.statements);
+
+        Variable lambda = temp();
+        WrappedIRClosure lambdaBody = new WrappedIRClosure(closure.getSelf(), closure);
+        addInstr(new BuildLambdaInstr(lambda, lambdaBody));
+        return lambda;
     }
 
     private Operand buildLocalVariableRead(LocalVariableReadNode node) {
@@ -1020,7 +1038,9 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
      *  @param blockArg the arguments containing the block arg, if any
      *
      */
-    protected void receiveBlockArg(BlockParameterNode blockArg) {
+    protected void receiveBlockArg(Node node) {
+        BlockParameterNode blockArg = (BlockParameterNode) node;
+
         // reify to Proc if we have a block arg
         if (blockArg != null) {
             RubySymbol argName = symbolFor(blockArg.name);
@@ -1698,6 +1718,10 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         scope.getStaticScope().setSignature(signature);
 
         return signature;
+    }
+
+    private Signature calculateSignature(BlockParametersNode parameters) {
+        return parameters == null ? Signature.NO_ARGUMENTS : calculateSignature(parameters.parameters);
     }
 
     private CallType determineCallType(Node node) {

@@ -322,31 +322,11 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         }
     }
 
-    private InterpreterContext buildLambdaInner(LambdaNode node) {
-        prepareClosureImplicitState();
-
-        addCurrentModule();                                        // %current_module
-
-        receiveBlockArgs(node);
-
-        Operand closureRetVal = node.getBody() == null ? nil() : build(node.getBody());
-
-        // can be U_NIL if the node is an if node with returns in both branches.
-        if (closureRetVal != U_NIL) addInstr(new ReturnInstr(closureRetVal));
-
-        preloadBlockImplicitClosure();
-
-        handleBreakAndReturnsInLambdas();
-
-        computeScopeFlagsFrom(instructions);
-        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
-    }
-
     public Operand buildLambda(LambdaNode node) {
         IRClosure closure = new IRClosure(getManager(), scope, node.getLine(), node.getScope(), Signature.from(node), coverageMode);
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        newIRBuilder(getManager(), closure).buildLambdaInner(node);
+        newIRBuilder(getManager(), closure).buildLambdaInner(node.getArgs(), node.getBody());
 
         Variable lambda = temp();
         WrappedIRClosure lambdaBody = new WrappedIRClosure(closure.getSelf(), closure);
@@ -2369,7 +2349,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         receiveArgs(argsNode);
     }
 
-    public void receiveBlockArgs(final IterNode node) {
+    void receiveBlockArgs(Node aNode) {
+        final IterNode node = (IterNode) aNode;
         Node args = node.getVarNode();
         if (args instanceof ArgsNode) { // regular blocks
             ((IRClosure) scope).setArgumentDescriptors(Helpers.argsNodeToArgumentDescriptors(((ArgsNode) args)));
