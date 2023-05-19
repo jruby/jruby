@@ -36,26 +36,28 @@ public class LazyMethodDefinitionYARP implements LazyMethodDefinition<Node, DefN
     public List<String> getMethodData() {
         List<String> ivarNames = new ArrayList<>();
 
-        node.statements.accept(new AbstractNodeVisitor<Object>() {
-            @Override
-            protected Object defaultVisit(Node node) {
-                if (node == null) return null;
+        if (node.statements != null) {
+            node.statements.accept(new AbstractNodeVisitor<Object>() {
+                @Override
+                protected Object defaultVisit(Node node) {
+                    if (node == null) return null;
 
-                if (node instanceof InstanceVariableReadNode) {
-                    ivarNames.add(runtime.newSymbol(byteListFrom(node)).idString());
-                } else if (node instanceof InstanceVariableWriteNode) {
-                    ivarNames.add(runtime.newSymbol(byteListFrom(((InstanceVariableWriteNode) node).name_loc)).idString());
+                    if (node instanceof InstanceVariableReadNode) {
+                        ivarNames.add(runtime.newSymbol(byteListFrom(node)).idString());
+                    } else if (node instanceof InstanceVariableWriteNode) {
+                        ivarNames.add(runtime.newSymbol(byteListFrom(((InstanceVariableWriteNode) node).name_loc)).idString());
+                    }
+
+                    Node[] children = node.childNodes();
+
+                    for (int i = 0; i < children.length; i++) {
+                        defaultVisit(children[i]);
+                    }
+
+                    return null;
                 }
-
-                Node[] children = node.childNodes();
-
-                for (int i = 0; i < children.length; i++) {
-                    defaultVisit(children[i]);
-                }
-
-                return null;
-            }
-        });
+            });
+        }
 
         return ivarNames;
     }
