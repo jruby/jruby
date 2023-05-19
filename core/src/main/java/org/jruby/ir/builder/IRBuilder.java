@@ -1284,6 +1284,22 @@ public abstract class IRBuilder<U, V, W, X> {
         return result;
     }
 
+    public Operand buildDSymbol(Variable result, U[] nodePieces, Encoding encoding, int line) {
+        Operand[] pieces = new Operand[nodePieces.length];
+        int estimatedSize = 0;
+
+        for (int i = 0; i < pieces.length; i++) {
+            estimatedSize += dynamicPiece(pieces, i, nodePieces[i], false);
+        }
+
+        if (result == null) result = temp();
+
+        boolean debuggingFrozenStringLiteral = getManager().getInstanceConfig().isDebuggingFrozenStringLiteral();
+        addInstr(new BuildCompoundStringInstr(result, pieces, encoding, estimatedSize, false, debuggingFrozenStringLiteral, getFileName(), line));
+
+        return copy(new DynamicSymbol(result));
+    }
+
     public Operand buildGlobalAsgn(RubySymbol name, U valueNode) {
         Operand value = build(valueNode);
         addInstr(new PutGlobalVarInstr(name, value));

@@ -2410,20 +2410,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     public Operand buildDSymbol(Variable result, DSymbolNode node) {
-        Node[] nodePieces = node.children();
-        Operand[] pieces = new Operand[nodePieces.length];
-        int estimatedSize = 0;
-
-        for (int i = 0; i < pieces.length; i++) {
-            estimatedSize += dynamicPiece(pieces, i, nodePieces[i], false);
-        }
-
-        if (result == null) result = temp();
-
-        boolean debuggingFrozenStringLiteral = getManager().getInstanceConfig().isDebuggingFrozenStringLiteral();
-        addInstr(new BuildCompoundStringInstr(result, pieces, node.getEncoding(), estimatedSize, false, debuggingFrozenStringLiteral, getFileName(), node.getLine()));
-
-        return copy(new DynamicSymbol(result));
+        return buildDSymbol(result, node.children(), node.getEncoding(), node.getLine());
     }
 
     public Operand buildDVar(DVarNode node) {

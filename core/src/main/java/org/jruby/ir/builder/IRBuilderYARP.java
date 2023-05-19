@@ -116,6 +116,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             case INSTANCEVARIABLEWRITE: return buildInstanceVariableWrite((InstanceVariableWriteNode) node);
             case INTEGER: return buildInteger((IntegerNode) node);
             case INTERPOLATEDREGULAREXPRESSION: return buildInterpolatedRegularExpression(result, (InterpolatedRegularExpressionNode) node);
+            case INTERPOLATEDSYMBOL: return buildInterpolatedSymbol(result, (InterpolatedSymbolNode) node);
             case INTERPOLATEDSTRING: return buildInterpolatedString(result, (InterpolatedStringNode) node);
             case LAMBDA: return buildLambda((LambdaNode) node);
             case LOCALVARIABLEREAD: return buildLocalVariableRead((LocalVariableReadNode) node);
@@ -618,6 +619,11 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         return buildDStr(result, node.parts, UTF8Encoding.INSTANCE, false, getLine(node));
     }
 
+    private Operand buildInterpolatedSymbol(Variable result, InterpolatedSymbolNode node) {
+        // FIXME: Missing encoding
+        return buildDSymbol(result, node.parts, UTF8Encoding.INSTANCE, getLine(node));
+    }
+
     // FIXME: Generify
     private Operand buildLambda(LambdaNode node) {
         IRClosure closure = new IRClosure(getManager(), scope, getLine(node), node.scope, calculateSignature(node.parameters), coverageMode);
@@ -805,7 +811,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
                 // Required kwargs have no value and check_arity will throw if they are not provided.
                 if (kwarg.value != null) {
                     addInstr(new CopyInstr(av, nil())); // wipe out undefined value with nil
-                    build(kwarg.value);
+                    // FIXME: this is performing extra copy but something is generating a temp and not using local if we pass it to build
+                    copy(av, build(kwarg.value));
                 } else {
                     addInstr(new RaiseRequiredKeywordArgumentError(key));
                 }
@@ -1036,7 +1043,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     /**
      * Reify the implicit incoming block into a full Proc, for use as "block arg", but only if
      * a block arg is specified in this scope's arguments.
-     *  @param blockArg the arguments containing the block arg, if any
+     *  @param node the arguments containing the block arg, if any
      *
      */
     protected void receiveBlockArg(Node node) {
