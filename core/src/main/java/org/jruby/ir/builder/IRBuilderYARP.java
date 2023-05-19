@@ -134,6 +134,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             case RANGE: return buildRange((RangeNode) node);
             case REGULAREXPRESSION: return buildRegularExpression((RegularExpressionNode) node);
             case RESCUEMODIFIER: return buildRescueModifier((RescueModifierNode) node);
+            case RETRY: return buildRetry((RetryNode) node);
             case RETURN: return buildReturn((ReturnNode) node);
             case SELF: return buildSelf();
             case SINGLETONCLASS: return buildSingletonClass((SingletonClassNode) node);
@@ -857,6 +858,10 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         String opts = new String(byteListFrom(node.closing).getUnsafeBytes()).substring(1);
         RegexpOptions options = RegexpOptions.newRegexpOptions(opts);
         return new Regexp(content, options);
+    }
+    
+    private Operand buildRetry(RetryNode node) {
+        return buildRetry(getLine(node));
     }
 
     private Operand buildReturn(ReturnNode node) {

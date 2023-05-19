@@ -3170,30 +3170,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return node.getOptRescueNode();
     }
 
-    public Operand buildRetry(RetryNode retryNode) {
-        // JRuby only supports retry when present in rescue blocks!
-        // 1.9 doesn't support retry anywhere else.
-
-        // SSS FIXME: We should be able to use activeEnsureBlockStack for this
-        // But, see the code in buildRescueInternal that pushes/pops these and
-        // the documentation for retries.  There is a small ordering issue
-        // which is preventing me from getting rid of activeRescueBlockStack
-        // altogether!
-        //
-        // Jump back to the innermost rescue block
-        // We either find it, or we add code to throw a runtime exception
-        if (activeRescueBlockStack.isEmpty()) {
-            throwSyntaxError(retryNode.getLine(), "Invalid retry");
-        } else {
-            addInstr(new ThreadPollInstr(true));
-            // Restore $! and jump back to the entry of the rescue block
-            RescueBlockInfo rbi = activeRescueBlockStack.peek();
-            addInstr(new PutGlobalVarInstr(symbol("$!"), rbi.savedExceptionVariable));
-            addInstr(new JumpInstr(rbi.entryLabel));
-            // Retries effectively create a loop
-            scope.setHasLoops();
-        }
-        return nil();
+    public Operand buildRetry(RetryNode node) {
+        return buildRetry(node.getLine());
     }
 
     public Operand buildReturn(ReturnNode returnNode) {
