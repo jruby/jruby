@@ -2732,7 +2732,7 @@ public final class Ruby implements Constantizable {
             long time = System.nanoTime();
 
             byte[] encodedScopes = encodeEvalScopes(scope.getStaticScope());
-            System.out.println("LOADING: eval");
+            //System.out.println("LOADING: eval " + new ByteList(source));
             byte[] blob = org.yarp.Parser.parseAndSerialize(source, encodedScopes);
             org.yarp.Nodes.Node node = org.yarp.Loader.load(file, source, blob);
             ((Nodes.ProgramNode) node).scope.setEnclosingScope(scope.getStaticScope());
@@ -2741,6 +2741,7 @@ public final class Ruby implements Constantizable {
             //System.out.println("TOTAL_TIME: " + yarpTime + ", TIME: " + parseTime + ", SRC SIZE = " + source.length + ", BLOB SIZE = " + blob.length + ", RATIO: " + (((float) blob.length) / source.length));
             return new YarpParseResult(file, source, (Nodes.ProgramNode) node);
         } else {
+            //System.out.println("SRC: " + content);
             return (ParseResult) parser.parse(file, content, scope, new ParserConfiguration(this,
                     lineNumber, false, false, false, config));
         }

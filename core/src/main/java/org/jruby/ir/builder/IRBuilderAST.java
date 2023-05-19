@@ -2349,9 +2349,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         receiveArgs(argsNode);
     }
 
-    void receiveBlockArgs(Node aNode) {
-        final IterNode node = (IterNode) aNode;
-        Node args = node.getVarNode();
+    void receiveBlockArgs(Node args) {
         if (args instanceof ArgsNode) { // regular blocks
             ((IRClosure) scope).setArgumentDescriptors(Helpers.argsNodeToArgumentDescriptors(((ArgsNode) args)));
             receiveArgs((ArgsNode)args);
@@ -2682,7 +2680,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         }
 
         if (!forNode) addCurrentModule();                                // %current_module
-        receiveBlockArgs(iterNode);
+        receiveBlockArgs(iterNode.getArgsNode());
         // for adds these after processing binding block args because and operations at that point happen relative
         // to the previous scope.
         if (forNode) addCurrentModule();                                 // %current_module

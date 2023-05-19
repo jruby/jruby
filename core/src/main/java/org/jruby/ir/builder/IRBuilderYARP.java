@@ -425,7 +425,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
 
             if (child instanceof SplatNode) {
                 builtArgs[i] = new Splat(addResultInstr(new BuildSplatInstr(temp(), build(((SplatNode) child).expression), false)));
-            } else if (i == numberOfArgs - 1 && children[i] instanceof HashNode && !isLiteralHash(children[i])) {
+            } else if (isKeywordsArgsHash(child) &&
+                    (i == numberOfArgs - 1 || i == numberOfArgs - 2 && children[i + 1] instanceof BlockArgumentNode)) {
                 builtArgs[i] = buildCallKeywordArguments((HashNode) children[i], flags); // FIXME: here and possibly AST make isKeywordsHash() method.
             } else {
                 builtArgs[i] = buildWithOrder(children[i], hasAssignments);
@@ -435,8 +436,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         return builtArgs;
     }
 
-    private int keywordsArgsHash(Node arg) {
-
+    private boolean isKeywordsArgsHash(Node node) {
+        return node instanceof HashNode && !isLiteralHash(node);
     }
 
     protected Operand buildCallKeywordArguments(HashNode node, int[] flags) {
@@ -951,7 +952,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     }
 
     private Operand buildWhile(WhileNode node) {
-        boolean evaluateAtStart = node.keyword.type == TokenType.KEYWORD_WHILE;
+        boolean evaluateAtStart = node.keyword.type == TokenType.KEYWORD_WHILE || node.keyword.type == TokenType.KEYWORD_WHILE_MODIFIER;
         return buildConditionalLoop(node.predicate, node.statements, true, evaluateAtStart);
     }
 
