@@ -1555,12 +1555,12 @@ public abstract class IRBuilder<U, V, W, X> {
         // Compare and branch as necessary!
         Label uncaughtLabel = getNewLabel();
         Label caughtLabel = getNewLabel();
-        if (exceptions != null) {
+        if (exceptions == null || exceptions.length == 0) {
+            outputExceptionCheck(getManager().getStandardError(), exc, caughtLabel);
+        } else {
             for (int i = 0; i < exceptions.length; i++) {
                 outputExceptionCheck(build(exceptions[i]), exc, caughtLabel);
             }
-        } else {
-            outputExceptionCheck(getManager().getStandardError(), exc, caughtLabel);
         }
 
         // Uncaught exception -- build other rescue nodes or rethrow!
