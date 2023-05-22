@@ -552,7 +552,6 @@ jobs:
       fail-fast: false
 
     name: mvn ${{ matrix.package-flags }} (Java ${{ matrix.java-version }} Apple aarch64)
-    needs: bootstrap-build
 
     steps:
       - name: checkout
@@ -563,18 +562,8 @@ jobs:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
           architecture: arm
-      - name: Restore bootstrap build
-        id: cache-bootstrap-restore
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            bin
-            core
-            lib
-            shaded
-            test
-          key: ${{ github.sha }}-bootstrap
-          enableCrossOsArchive: true
+      - name: bootstrap
+        run: mvn -Pbootstrap clean package
       - name: mvn package ${{ matrix.package-flags }}
         run: tool/maven-ci-script.sh
         env:
