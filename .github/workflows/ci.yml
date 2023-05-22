@@ -372,7 +372,6 @@ jobs:
       fail-fast: false
 
     name: mvn -Ptest, rake test:jruby (Windows, Java 11)
-    needs: bootstrap-build
 
     env:
       JAVA_OPTS: "-Djdk.io.File.enableADS=true"
@@ -392,18 +391,12 @@ jobs:
         with:
           java-version: 11
           maven-version: '3.8.7'
-      - name: Restore bootstrap build
-        id: cache-bootstrap-restore
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            bin
-            core
-            lib
-            shaded
-            test
-          key: ${{ github.sha }}-bootstrap
-          enableCrossOsArchive: true
+      - name: bootstrap
+        run: mvn -Pbootstrap clean package
+      - name: install bundler
+        run: bin/jruby --dev -S gem install bundler
+      - name: bundle install
+        run: bin/jruby --dev -S bundle install
       - name: rake test:jruby
         run: bin/jruby -S rake test:jruby TESTOPTS="--no-show-detail-immediately"
         env:
