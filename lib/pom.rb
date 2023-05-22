@@ -98,7 +98,7 @@ default_gems = [
     ['strscan', '3.0.6'],
     ['subspawn', '0.1.1'], # has 3 transitive deps:
       ['subspawn-posix', '0.1.1'],
-      ['ffi-binary-libfixposix', '0.5.1.0'],
+      ['ffi-binary-libfixposix', '0.5.1.1'],
       ['ffi-bindings-libfixposix', '0.5.1.0'],
     # https://github.com/ruby/syslog/issues/1
     # ['syslog', '0.1.0'],
