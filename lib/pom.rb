@@ -106,7 +106,7 @@ default_gems = [
     # ['tempfile', '0.1.2'],
     # Depends on date gem
     # ['time', '0.2.0'],
-    ['time', '0.1.0'],
+    ['time', '0.1.1'],
     ['timeout', '0.3.0'],
     # https://github.com/ruby/tmpdir/issues/13
     # ['tmpdir', '0.1.2'],

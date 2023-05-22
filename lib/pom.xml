@@ -775,7 +775,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>time</artifactId>
-      <version>0.1.0</version>
+      <version>0.1.1</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1097,7 +1097,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/subspawn-posix-0.1.1*</include>
           <include>specifications/ffi-binary-libfixposix-0.5.1.0*</include>
           <include>specifications/ffi-bindings-libfixposix-0.5.1.0*</include>
-          <include>specifications/time-0.1.0*</include>
+          <include>specifications/time-0.1.1*</include>
           <include>specifications/timeout-0.3.0*</include>
           <include>specifications/tsort-0.1.0*</include>
           <include>specifications/un-0.2.0*</include>
@@ -1173,7 +1173,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/subspawn-posix-0.1.1*/**/*</include>
           <include>gems/ffi-binary-libfixposix-0.5.1.0*/**/*</include>
           <include>gems/ffi-bindings-libfixposix-0.5.1.0*/**/*</include>
-          <include>gems/time-0.1.0*/**/*</include>
+          <include>gems/time-0.1.1*/**/*</include>
           <include>gems/timeout-0.3.0*/**/*</include>
           <include>gems/tsort-0.1.0*/**/*</include>
           <include>gems/un-0.2.0*/**/*</include>
@@ -1249,7 +1249,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/subspawn-posix-0.1.1*</include>
           <include>cache/ffi-binary-libfixposix-0.5.1.0*</include>
           <include>cache/ffi-bindings-libfixposix-0.5.1.0*</include>
-          <include>cache/time-0.1.0*</include>
+          <include>cache/time-0.1.1*</include>
           <include>cache/timeout-0.3.0*</include>
           <include>cache/tsort-0.1.0*</include>
           <include>cache/un-0.2.0*</include>
