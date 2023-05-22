@@ -26,8 +26,9 @@ default_gems = [
     ['bundler', '2.3.25'],
     ['cgi', '0.3.5'],
     ['csv', '3.2.5'],
+    # Currently using a stub gem for JRuby until we can incorporate our code.
     # https://github.com/ruby/date/issues/48
-    # ['date', '3.2.2'],
+    ['date', '3.3.3'],
     ['debug', '0.2.1'],
     ['delegate', '0.2.0'],
     ['did_you_mean', '1.6.1'],
@@ -104,9 +105,7 @@ default_gems = [
     # ['syslog', '0.1.0'],
     # https://github.com/ruby/tempfile/issues/7
     # ['tempfile', '0.1.2'],
-    # Depends on date gem
-    # ['time', '0.2.0'],
-    ['time', '0.1.1'],
+    ['time', '0.2.2'],
     ['timeout', '0.3.0'],
     # https://github.com/ruby/tmpdir/issues/13
     # ['tmpdir', '0.1.2'],

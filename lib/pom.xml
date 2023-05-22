@@ -124,6 +124,19 @@ DO NOT MODIFY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>date</artifactId>
+      <version>3.3.3</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>rubygems</groupId>
+          <artifactId>jar-dependencies</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>debug</artifactId>
       <version>0.2.1</version>
       <type>gem</type>
@@ -775,7 +788,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>time</artifactId>
-      <version>0.1.1</version>
+      <version>0.2.2</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1047,6 +1060,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/bundler-2.3.25*</include>
           <include>specifications/cgi-0.3.5*</include>
           <include>specifications/csv-3.2.5*</include>
+          <include>specifications/date-3.3.3*</include>
           <include>specifications/debug-0.2.1*</include>
           <include>specifications/delegate-0.2.0*</include>
           <include>specifications/did_you_mean-1.6.1*</include>
@@ -1097,7 +1111,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/subspawn-posix-0.1.1*</include>
           <include>specifications/ffi-binary-libfixposix-0.5.1.0*</include>
           <include>specifications/ffi-bindings-libfixposix-0.5.1.0*</include>
-          <include>specifications/time-0.1.1*</include>
+          <include>specifications/time-0.2.2*</include>
           <include>specifications/timeout-0.3.0*</include>
           <include>specifications/tsort-0.1.0*</include>
           <include>specifications/un-0.2.0*</include>
@@ -1123,6 +1137,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/bundler-2.3.25*/**/*</include>
           <include>gems/cgi-0.3.5*/**/*</include>
           <include>gems/csv-3.2.5*/**/*</include>
+          <include>gems/date-3.3.3*/**/*</include>
           <include>gems/debug-0.2.1*/**/*</include>
           <include>gems/delegate-0.2.0*/**/*</include>
           <include>gems/did_you_mean-1.6.1*/**/*</include>
@@ -1173,7 +1188,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/subspawn-posix-0.1.1*/**/*</include>
           <include>gems/ffi-binary-libfixposix-0.5.1.0*/**/*</include>
           <include>gems/ffi-bindings-libfixposix-0.5.1.0*/**/*</include>
-          <include>gems/time-0.1.1*/**/*</include>
+          <include>gems/time-0.2.2*/**/*</include>
           <include>gems/timeout-0.3.0*/**/*</include>
           <include>gems/tsort-0.1.0*/**/*</include>
           <include>gems/un-0.2.0*/**/*</include>
@@ -1199,6 +1214,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/bundler-2.3.25*</include>
           <include>cache/cgi-0.3.5*</include>
           <include>cache/csv-3.2.5*</include>
+          <include>cache/date-3.3.3*</include>
           <include>cache/debug-0.2.1*</include>
           <include>cache/delegate-0.2.0*</include>
           <include>cache/did_you_mean-1.6.1*</include>
@@ -1249,7 +1265,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/subspawn-posix-0.1.1*</include>
           <include>cache/ffi-binary-libfixposix-0.5.1.0*</include>
           <include>cache/ffi-bindings-libfixposix-0.5.1.0*</include>
-          <include>cache/time-0.1.1*</include>
+          <include>cache/time-0.2.2*</include>
           <include>cache/timeout-0.3.0*</include>
           <include>cache/tsort-0.1.0*</include>
           <include>cache/un-0.2.0*</include>
