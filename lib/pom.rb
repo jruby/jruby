@@ -106,13 +106,13 @@ default_gems = [
     # ['tempfile', '0.1.2'],
     # Depends on date gem
     # ['time', '0.2.0'],
-    ['time', '0.1.0'],
+    ['time', '0.1.1'],
     ['timeout', '0.3.0'],
     # https://github.com/ruby/tmpdir/issues/13
     # ['tmpdir', '0.1.2'],
     ['tsort', '0.1.0'],
     ['un', '0.2.0'],
-    ['uri', '0.11.0'],
+    ['uri', '0.11.1'],
     ['weakref', '0.1.1'],
     # https://github.com/ruby/win32ole/issues/12
     # ['win32ole', '1.8.8'],
