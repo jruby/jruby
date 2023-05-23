@@ -63,7 +63,7 @@ public class SelectorPool {
      * @return a java.nio.channels.Selector
      * @throws IOException if there's a problem opening a new selector
      */
-    public synchronized Selector get() throws IOException{
+    public Selector get() throws IOException{
         return retrieveFromPool(SelectorProvider.provider());
     }
 
@@ -74,7 +74,7 @@ public class SelectorPool {
      * @return a java.nio.channels.Selector
      * @throws IOException if there's a problem opening a new selector
      */
-    public synchronized Selector get(SelectorProvider provider) throws IOException{
+    public Selector get(SelectorProvider provider) throws IOException{
         return retrieveFromPool(provider);
     }
 
@@ -125,11 +125,14 @@ public class SelectorPool {
     }
 
     private Selector retrieveFromPool(SelectorProvider provider) throws IOException {
-        List<Selector> providerPool = pool.get(provider);
-        if (providerPool != null && !providerPool.isEmpty()) {
-            return providerPool.remove(providerPool.size() - 1);
+        synchronized (this) {
+            List<Selector> providerPool = pool.get(provider);
+            if (providerPool != null && !providerPool.isEmpty()) {
+                return providerPool.remove(providerPool.size() - 1);
+            }
         }
 
+        // otherwise just return a new one
         return SelectorFactory.openWithRetryFrom(null, provider);
     }
 
