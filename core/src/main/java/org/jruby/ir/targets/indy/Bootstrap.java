@@ -1188,7 +1188,7 @@ public class Bootstrap {
         boolean isStatic = nativeCall.isStatic();
 
         // This logic does not handle closure conversion yet
-        if (site.fullSignature.lastArgType() == Block.class) {
+        if (site.signature.lastArgType() == Block.class) {
             if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
                 LOG.info(site.name() + "\tpassed a closure to Java method " + nativeCall + ": " + Bootstrap.logMethod(method));
             }
@@ -1196,7 +1196,7 @@ public class Bootstrap {
         }
 
         // mismatched arity not supported
-        if (isStatic) {
+        if (!isStatic) {
             if (site.arity != nativeCall.getNativeSignature().length - 1) {
                 return null;
             }
@@ -1326,20 +1326,6 @@ public class Bootstrap {
 
         // we can handle this; do remaining transforms and return
         if (returnFilter != null) {
-            Class[] newNativeParams = nativeTarget.type().parameterArray();
-            Class newNativeReturn = nativeTarget.type().returnType();
-
-            Binder exBinder = Binder
-                    .from(newNativeReturn, Throwable.class, newNativeParams)
-                    .drop(1, newNativeParams.length)
-                    .insert(0, runtime);
-            if (nativeReturn != void.class) {
-                exBinder = exBinder
-                        .filterReturn(Binder
-                                .from(newNativeReturn)
-                                .constant(nullValue(newNativeReturn)));
-            }
-
             nativeTarget = Binder
                     .from(site.type())
                     .drop(0, isStatic ? 3 : 2)
