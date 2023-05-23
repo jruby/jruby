@@ -1731,57 +1731,57 @@ public class Helpers {
     }
 
     public static RubyHash constructSmallHash(Ruby runtime,
-                                              IRubyObject key1, IRubyObject value1, boolean prepareString1) {
+                                              IRubyObject key1, IRubyObject value1) {
         RubyHash hash = RubyHash.newSmallHash(runtime);
-        hash.fastASetSmall(runtime, key1, value1, prepareString1);
+        hash.fastASetSmallCheckString(runtime, key1, value1);
         return hash;
     }
 
     public static RubyHash constructSmallHash(Ruby runtime,
-                                              IRubyObject key1, IRubyObject value1, boolean prepareString1,
-                                              IRubyObject key2, IRubyObject value2, boolean prepareString2) {
+                                              IRubyObject key1, IRubyObject value1,
+                                              IRubyObject key2, IRubyObject value2) {
         RubyHash hash = RubyHash.newSmallHash(runtime);
-        hash.fastASetSmall(runtime, key1, value1, prepareString1);
-        hash.fastASetSmall(runtime, key2, value2, prepareString2);
+        hash.fastASetSmallCheckString(runtime, key1, value1);
+        hash.fastASetSmallCheckString(runtime, key2, value2);
         return hash;
     }
 
     public static RubyHash constructSmallHash(Ruby runtime,
-                                              IRubyObject key1, IRubyObject value1, boolean prepareString1,
-                                              IRubyObject key2, IRubyObject value2, boolean prepareString2,
-                                              IRubyObject key3, IRubyObject value3, boolean prepareString3) {
+                                              IRubyObject key1, IRubyObject value1,
+                                              IRubyObject key2, IRubyObject value2,
+                                              IRubyObject key3, IRubyObject value3) {
         RubyHash hash = RubyHash.newSmallHash(runtime);
-        hash.fastASetSmall(runtime, key1, value1, prepareString1);
-        hash.fastASetSmall(runtime, key2, value2, prepareString2);
-        hash.fastASetSmall(runtime, key3, value3, prepareString3);
+        hash.fastASetSmallCheckString(runtime, key1, value1);
+        hash.fastASetSmallCheckString(runtime, key2, value2);
+        hash.fastASetSmallCheckString(runtime, key3, value3);
         return hash;
     }
 
     public static RubyHash constructSmallHash(Ruby runtime,
-                                              IRubyObject key1, IRubyObject value1, boolean prepareString1,
-                                              IRubyObject key2, IRubyObject value2, boolean prepareString2,
-                                              IRubyObject key3, IRubyObject value3, boolean prepareString3,
-                                              IRubyObject key4, IRubyObject value4, boolean prepareString4) {
+                                              IRubyObject key1, IRubyObject value1,
+                                              IRubyObject key2, IRubyObject value2,
+                                              IRubyObject key3, IRubyObject value3,
+                                              IRubyObject key4, IRubyObject value4) {
         RubyHash hash = RubyHash.newSmallHash(runtime);
-        hash.fastASetSmall(runtime, key1, value1, prepareString1);
-        hash.fastASetSmall(runtime, key2, value2, prepareString2);
-        hash.fastASetSmall(runtime, key3, value3, prepareString3);
-        hash.fastASetSmall(runtime, key4, value4, prepareString4);
+        hash.fastASetSmallCheckString(runtime, key1, value1);
+        hash.fastASetSmallCheckString(runtime, key2, value2);
+        hash.fastASetSmallCheckString(runtime, key3, value3);
+        hash.fastASetSmallCheckString(runtime, key4, value4);
         return hash;
     }
 
     public static RubyHash constructSmallHash(Ruby runtime,
-                                              IRubyObject key1, IRubyObject value1, boolean prepareString1,
-                                              IRubyObject key2, IRubyObject value2, boolean prepareString2,
-                                              IRubyObject key3, IRubyObject value3, boolean prepareString3,
-                                              IRubyObject key4, IRubyObject value4, boolean prepareString4,
-                                              IRubyObject key5, IRubyObject value5, boolean prepareString5) {
+                                              IRubyObject key1, IRubyObject value1,
+                                              IRubyObject key2, IRubyObject value2,
+                                              IRubyObject key3, IRubyObject value3,
+                                              IRubyObject key4, IRubyObject value4,
+                                              IRubyObject key5, IRubyObject value5) {
         RubyHash hash = RubyHash.newSmallHash(runtime);
-        hash.fastASetSmall(runtime, key1, value1, prepareString1);
-        hash.fastASetSmall(runtime, key2, value2, prepareString2);
-        hash.fastASetSmall(runtime, key3, value3, prepareString3);
-        hash.fastASetSmall(runtime, key4, value4, prepareString4);
-        hash.fastASetSmall(runtime, key5, value5, prepareString5);
+        hash.fastASetSmallCheckString(runtime, key1, value1);
+        hash.fastASetSmallCheckString(runtime, key2, value2);
+        hash.fastASetSmallCheckString(runtime, key3, value3);
+        hash.fastASetSmallCheckString(runtime, key4, value4);
+        hash.fastASetSmallCheckString(runtime, key5, value5);
         return hash;
     }
 

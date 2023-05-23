@@ -3757,7 +3757,7 @@ public class IRBuilder {
                 Node value = pair.getValue();
                  duplicateCheck = value instanceof HashNode && ((HashNode) value).isLiteral() ? tru() : fals();
                 if (hash == null) {                     // No hash yet. Define so order is preserved.
-                    hash = copy(new Hash(args, hashNode.isLiteral()));
+                    hash = copy(new Hash(args));
                     args = new ArrayList<>();           // Used args but we may find more after the splat so we reset
                 } else if (!args.isEmpty()) {
                     addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args), duplicateCheck}));
@@ -3774,7 +3774,7 @@ public class IRBuilder {
         }
 
         if (hash == null) {           // non-**arg ordinary hash
-            hash = copy(new Hash(args, hashNode.isLiteral()));
+            hash = copy(new Hash(args));
         } else if (!args.isEmpty()) { // ordinary hash values encountered after a **arg
             addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args), duplicateCheck}));
         }
@@ -5162,7 +5162,7 @@ public class IRBuilder {
             for (Operand arg: callArgs) {
                 args[i++] = arg;
             }
-            args[i] = new Hash(keywordArgs, false);
+            args[i] = new Hash(keywordArgs);
             return args;
         }
 

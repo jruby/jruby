@@ -1572,7 +1572,7 @@ public class IRRuntimeHelpers {
 
     // FIXME: Pass context instead of runtime.
     @JIT
-    public static RubyHash constructHashFromArray(Ruby runtime, boolean literal, IRubyObject[] pairs) {
+    public static RubyHash constructHashFromArray(Ruby runtime, IRubyObject[] pairs) {
         int length = pairs.length / 2;
         boolean useSmallHash = length <= 10;
 
