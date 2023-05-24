@@ -827,8 +827,7 @@ public class IRRuntimeHelpers {
 
     @JIT @Interp
     public static void setCallInfo(ThreadContext context, int flags) {
-        // FIXME: This may propagate empty more than the current call?   empty might need to be stuff elsewhere to prevent this.
-        context.callInfo = (context.callInfo & CALL_KEYWORD_EMPTY) | flags;
+        context.callInfo = flags;
     }
 
     // specific args of arity 0 does not receive kwargs so we have to reset this.
