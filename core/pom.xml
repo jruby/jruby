@@ -236,7 +236,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>com.headius</groupId>
       <artifactId>backport9</artifactId>
-      <version>1.12</version>
+      <version>1.13</version>
     </dependency>
     <dependency>
       <groupId>jakarta.annotation</groupId>
