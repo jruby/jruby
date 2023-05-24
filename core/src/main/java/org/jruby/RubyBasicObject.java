@@ -1067,7 +1067,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @see org.jruby.runtime.builtin.IRubyObject#dataWrapStruct(Object)
      */
     @Override
-    public synchronized void dataWrapStruct(Object obj) {
+    public void dataWrapStruct(Object obj) {
         if (obj == null) {
             removeInternalVariable("__wrap_struct__");
         } else {
@@ -1086,7 +1086,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @see org.jruby.runtime.builtin.IRubyObject#dataGetStruct()
      */
     @Override
-    public synchronized Object dataGetStruct() {
+    public Object dataGetStruct() {
         return getInternalVariable("__wrap_struct__");
     }
 
