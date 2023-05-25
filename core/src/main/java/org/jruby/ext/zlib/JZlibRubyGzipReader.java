@@ -136,6 +136,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         position = 0;
         line = 0;
         bufferedStream = new PushbackInputStream(new BufferedInputStream(io), 512);
+        mtime = org.jruby.RubyTime.newTime(runtime, io.getModifiedTime() * 1000);
 
         return this;
     }
