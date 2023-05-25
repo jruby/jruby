@@ -2510,7 +2510,7 @@ public class Helpers {
         return ((RubyArray)first.dup()).append(second);
     }
 
-    @JIT
+    @JIT @Interp
     public static RubyArray argsPush(ThreadContext context, IRubyObject first, IRubyObject second, boolean usesKeywords) {
         boolean isEmptyKeywordRest = usesKeywords && second instanceof RubyHash && ((RubyHash) second).isEmpty();
 
