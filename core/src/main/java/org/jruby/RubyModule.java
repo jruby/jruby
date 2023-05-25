@@ -1210,9 +1210,12 @@ public class RubyModule extends RubyObject {
         public Map<Set<FrameField>, List<String>> readGroups = Collections.EMPTY_MAP;
         public Map<Set<FrameField>, List<String>> writeGroups = Collections.EMPTY_MAP;
 
-        @SuppressWarnings("deprecation")
         public void clump(final Class klass) {
-            Method[] declaredMethods = MethodGatherer.DECLARED_METHODS.get(klass);
+            clump(MethodGatherer.DECLARED_METHODS.get(klass));
+        }
+
+        @SuppressWarnings("deprecation")
+        public void clump(final Method[] declaredMethods) {
             for (Method method: declaredMethods) {
                 JRubyMethod anno = method.getAnnotation(JRubyMethod.class);
 
