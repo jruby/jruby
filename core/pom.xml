@@ -174,7 +174,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>jzlib</artifactId>
-      <version>1.1.4</version>
+      <version>1.1.5</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>

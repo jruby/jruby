@@ -58,7 +58,7 @@ project 'JRuby Base' do
   jar 'com.headius:invokebinder:1.13'
   jar 'com.headius:options:1.6'
 
-  jar 'org.jruby:jzlib:1.1.4'
+  jar 'org.jruby:jzlib:1.1.5'
   jar 'junit:junit', :scope => 'test'
   jar 'org.awaitility:awaitility', :scope => 'test'
   jar 'org.apache.ant:ant:${ant.version}', :scope => 'provided'
