@@ -320,21 +320,22 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
 
     @JRubyMethod(name = "mtime=", required = 1)
     public IRubyObject set_mtime(IRubyObject arg) {
+        Ruby runtime = getRuntime();
+
         if (arg instanceof RubyTime) {
             this.mtime = ((RubyTime) arg);
         } else if (arg.isNil()) {
             // ...nothing
         } else {
-            this.mtime.setDateTime(new DateTime(RubyNumeric.fix2long(arg) * 1000));
+            this.mtime = RubyTime.newTime(runtime, RubyNumeric.fix2long(arg) * 1000);
         }
-        
         try {
             io.setModifiedTime(this.mtime.to_i().getLongValue());
         } catch (GZIPException e) {
-            throw RubyZlib.newGzipFileError(getRuntime(), "header is already written");
+            throw RubyZlib.newGzipFileError(runtime, "header is already written");
         }
         
-        return getRuntime().getNil();
+        return runtime.getNil();
     }
 
     @Override
