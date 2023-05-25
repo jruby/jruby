@@ -1162,7 +1162,7 @@ public abstract class IRBuilder<U, V, W, X> {
 
     public Operand buildClass(ByteList className, U superNode, U cpath, U bodyNode, StaticScope scope, int line, int endLine) {
         boolean executesOnce = this.executesOnce;
-        Operand superClass = (superNode == null) ? null : build(superNode);
+        Operand superClass = superNode == null ? null : build(superNode);
         Operand container = getContainerFromCPath(cpath);
 
         IRClassBody body = new IRClassBody(getManager(), this.scope, className, line, scope, executesOnce);
@@ -1801,6 +1801,10 @@ public abstract class IRBuilder<U, V, W, X> {
         }
 
         return result;
+    }
+
+    public Operand buildUndef(Operand name) {
+        return addResultInstr(new UndefMethodInstr(temp(), name));
     }
 
     abstract void buildWhenArgs(W whenNode, Operand testValue, Label bodyLabel, Set<IRubyObject> seenLiterals);

@@ -277,7 +277,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             case SVALUENODE: return buildSValue(result, (SValueNode) node);
             case SYMBOLNODE: return buildSymbol((SymbolNode) node);
             case TRUENODE: return tru();
-            case UNDEFNODE: return buildUndef(node);
+            case UNDEFNODE: return buildUndef((UndefNode) node);
             case UNTILNODE: return buildUntil((UntilNode) node);
             case VALIASNODE: return buildVAlias((VAliasNode) node);
             case VCALLNODE: return buildVCall(result, (VCallNode) node);
@@ -3212,9 +3212,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return new Symbol(node.getName());
     }
 
-    public Operand buildUndef(Node node) {
-        Operand methName = build(((UndefNode) node).getName());
-        return addResultInstr(new UndefMethodInstr(temp(), methName));
+    public Operand buildUndef(UndefNode node) {
+        return buildUndef(build(node.getName()));
     }
 
     public Operand buildUntil(UntilNode node) {

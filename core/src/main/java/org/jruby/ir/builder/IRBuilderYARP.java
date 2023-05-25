@@ -147,6 +147,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             case SUPER: return buildSuper(result, (SuperNode) node);
             case SYMBOL: return buildSymbol((SymbolNode) node);
             case TRUE: return tru();
+            case UNDEF: return buildUndef((UndefNode) node);
             case UNLESS: return buildUnless(result, (UnlessNode) node);
             case UNTIL: return buildUntil((UntilNode) node);
             case WHILE: return buildWhile((WhileNode) node);
@@ -164,14 +165,15 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     }
 
     private Operand[] buildArguments(ArgumentsNode node) {
-        if (node == null) return Operand.EMPTY_ARRAY;
+        return node == null ? Operand.EMPTY_ARRAY : buildNodeList(node.arguments);
+    }
 
-        int length = node.arguments.length;
-        if (length == 0) return Operand.EMPTY_ARRAY;
+    private Operand[] buildNodeList(Node[] list) {
+        if (list == null || list.length == 0) return Operand.EMPTY_ARRAY;
 
-        Operand[] args = new Operand[node.arguments.length];
-        for (int i = 0; i < length; i++) {
-            args[i] = build(node.arguments[i]);
+        Operand[] args = new Operand[list.length];
+        for (int i = 0; i < list.length; i++) {
+            args[i] = build(list[i]);
         }
 
         return args;
@@ -859,28 +861,13 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         RegexpOptions options = RegexpOptions.newRegexpOptions(opts);
         return new Regexp(content, options);
     }
-    
+
     private Operand buildRetry(RetryNode node) {
         return buildRetry(getLine(node));
     }
 
     private Operand buildReturn(ReturnNode node) {
-        Operand[] args = buildArguments(node.arguments);
-
-        // FIXME: This is weird.  If this is how this should work should this be a helper?
-        Operand value;
-        switch (args.length) {
-            case 0:
-                value = nil();
-                break;
-            case 1:
-                value = args[0];
-                break;
-            default:
-                value = new Array(args);
-        }
-
-        return buildReturn(value, getLine(node));
+        return buildReturn(operandListToOperand(buildArguments(node.arguments)), getLine(node));
     }
 
     private Operand buildRestKeywordArgs(HashNode keywordArgs, int[] flags) {
@@ -939,6 +926,18 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
 
     private Operand buildSymbol(SymbolNode node) {
         return new Symbol(symbol(byteListFrom(node.value)));
+    }
+
+    private Operand buildUndef(UndefNode node) {
+        return buildUndef(operandListToOperand(buildNodeList(node.names)));
+    }
+
+    private Operand operandListToOperand(Operand[] args) {
+        switch (args.length) {
+            case 0: return nil();
+            case 1: return args[0];
+            default: return new Array(args);
+        }
     }
 
     private Operand buildUnless(Variable result, UnlessNode node) {
