@@ -1446,15 +1446,59 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
+    public IRubyObject write(ThreadContext context, IRubyObject str) {
+        return writeSpecific(context, str);
+    }
+
     /**
      * Ruby method IO#write(str), equivalent to io_write_m.
      *
      * @param context the current context
      * @param str the string to write
      */
-    @JRubyMethod(name = "write", required = 1)
-    public IRubyObject write(ThreadContext context, IRubyObject str) {
+    @JRubyMethod(name = "write")
+    public IRubyObject writeSpecific(ThreadContext context, IRubyObject str) {
         return write(context, str, false);
+    }
+
+    /**
+     * Ruby method IO#write(str, ...), equivalent to io_write_m.
+     *
+     * @param context the current context
+     * @param arg0 the first string to write
+     * @param arg1 the second string to write
+     */
+    @JRubyMethod(name = "write")
+    public IRubyObject writeSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        long acc = RubyNumeric.num2long(write(context, arg0, false));
+        acc += RubyNumeric.num2long(write(context, arg1, false));
+        return RubyFixnum.newFixnum(context.runtime, acc);
+    }
+
+    /**
+     * Ruby method IO#write(str, ...), equivalent to io_write_m.
+     *
+     * @param context the current context
+     * @param arg0 the first string to write
+     * @param arg1 the second string to write
+     * @param arg2 the third string to write
+     */
+    @JRubyMethod(name = "write")
+    public IRubyObject writeSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        long acc = RubyNumeric.num2long(write(context, arg0, false));
+        acc += RubyNumeric.num2long(write(context, arg1, false));
+        acc += RubyNumeric.num2long(write(context, arg2, false));
+        return RubyFixnum.newFixnum(context.runtime, acc);
+    }
+
+    /**
+     * Ruby method IO#write(str, ...), equivalent to io_write_m.
+     *
+     * @param context the current context
+     * @param args the strings to write
+     */
+    public IRubyObject write(ThreadContext context, IRubyObject[] args) {
+        return writeSpecific(context, args);
     }
 
     /**
@@ -1464,7 +1508,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
      * @param args the strings to write
      */
     @JRubyMethod(name = "write", rest = true)
-    public IRubyObject write(ThreadContext context, IRubyObject[] args) {
+    public IRubyObject writeSpecific(ThreadContext context, IRubyObject[] args) {
         long acc = 0l;
         for (IRubyObject s : args) {
             IRubyObject write = write(context, s, false);
