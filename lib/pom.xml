@@ -203,7 +203,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>jruby-openssl</artifactId>
-      <version>0.14.0</version>
+      <version>0.14.1</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>

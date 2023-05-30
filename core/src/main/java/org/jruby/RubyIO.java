@@ -1418,9 +1418,39 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
      * @param context the current context
      * @param str the string to write
      */
-    @JRubyMethod(name = "write", required = 1)
+    @JRubyMethod(name = "write")
     public IRubyObject write(ThreadContext context, IRubyObject str) {
         return write(context, str, false);
+    }
+
+    /**
+     * Ruby method IO#write(str, ...), equivalent to io_write_m.
+     *
+     * @param context the current context
+     * @param arg0 the first string to write
+     * @param arg1 the second string to write
+     */
+    @JRubyMethod(name = "write")
+    public IRubyObject write2(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        long acc = RubyNumeric.num2long(write(context, arg0, false));
+        acc += RubyNumeric.num2long(write(context, arg1, false));
+        return RubyFixnum.newFixnum(context.runtime, acc);
+    }
+
+    /**
+     * Ruby method IO#write(str, ...), equivalent to io_write_m.
+     *
+     * @param context the current context
+     * @param arg0 the first string to write
+     * @param arg1 the second string to write
+     * @param arg2 the third string to write
+     */
+    @JRubyMethod(name = "write")
+    public IRubyObject write3(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        long acc = RubyNumeric.num2long(write(context, arg0, false));
+        acc += RubyNumeric.num2long(write(context, arg1, false));
+        acc += RubyNumeric.num2long(write(context, arg2, false));
+        return RubyFixnum.newFixnum(context.runtime, acc);
     }
 
     /**
