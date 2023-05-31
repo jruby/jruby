@@ -73,7 +73,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'asm.version' => '9.2',
               'jar-dependencies.version' => '0.4.1',
               'jffi.version' => '1.3.10',
-              'joda.time.version' => '2.10.10' )
+              'joda.time.version' => '2.12.5' )
 
   plugin_management do
     jar( 'junit:junit:4.13.1',
@@ -121,7 +121,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
     plugin :compiler, '3.8.1'
     plugin :shade, '3.2.4'
-    plugin :surefire, '3.0.0-M5'
+    plugin :surefire, '3.0.0'
     plugin :plugin, '3.6.0'
     plugin( :invoker, '3.2.1',
             'properties' => { 'jruby.version' => '${project.version}',

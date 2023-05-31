@@ -199,12 +199,6 @@ DO NOT MODIFY - GENERATED CODE
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.jruby</groupId>
-      <artifactId>joda-timezones</artifactId>
-      <version>${tzdata.version}</version>
-      <scope>${tzdata.scope}</scope>
-    </dependency>
-    <dependency>
       <groupId>joda-time</groupId>
       <artifactId>joda-time</artifactId>
       <version>${joda.time.version}</version>

@@ -1648,7 +1648,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         if (m.regs == null || m.regs.getBeg(0) == -1) return m.getRuntime().getNil();
 
         int i;
-        for (i = m.regs.getNumRegs() - 1; m.regs.getBeg(i) == -1 && i > 0; i--)
+        for (i = m.regs.getNumRegs() - 1; m.regs.getBeg(i) == -1 && i > 0; i--);
         if (i == 0) return m.getRuntime().getNil();
 
         return nth_match(i, m);

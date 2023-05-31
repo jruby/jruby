@@ -83,6 +83,7 @@ import static jnr.constants.platform.TCP.TCP_KEEPINTVL;
 import static jnr.constants.platform.TCP.TCP_NODELAY;
 import static org.jruby.runtime.Helpers.extractExceptionOnlyArg;
 import static org.jruby.runtime.Helpers.throwErrorFromException;
+import static com.headius.backport9.buffer.Buffers.flipBuffer;
 
 /**
  * Implementation of the BasicSocket class from Ruby.
@@ -230,7 +231,7 @@ public class RubyBasicSocket extends RubyIO {
 
                 dgram.receive(buffer);
 
-                buffer.flip();
+                flipBuffer(buffer);
                 bytes = new ByteList(buffer.array(), buffer.position(), buffer.limit());
             } catch (Exception e) {
                 throwErrorFromException(runtime, e);
@@ -289,7 +290,7 @@ public class RubyBasicSocket extends RubyIO {
                 if (buffer.position() == 0) {
                     bytes = null;
                 } else {
-                    buffer.flip();
+                    flipBuffer(buffer);
                     bytes = new ByteList(buffer.array(), buffer.position(), buffer.limit());
                 }
             } catch (Exception e) {
@@ -366,7 +367,7 @@ public class RubyBasicSocket extends RubyIO {
             if (buffer.position() == 0) {
                 bytes = null;
             } else {
-                buffer.flip();
+                flipBuffer(buffer);
                 bytes = new ByteList(buffer.array(), buffer.position(), buffer.limit());
             }
         } catch (Exception ex) {
@@ -434,7 +435,7 @@ public class RubyBasicSocket extends RubyIO {
                             if (ret != 0) {
                                 throw runtime.newErrnoEINVALError(SOCKOPT.strerror(ret));
                             }
-                            buf.flip();
+                            flipBuffer(buf);
                             ByteList bytes = new ByteList(buf.array(), buf.position(), len.getValue());
 
                             return new Option(runtime, ProtocolFamily.PF_INET, level, opt, bytes);
@@ -503,7 +504,7 @@ public class RubyBasicSocket extends RubyIO {
 
                             ByteBuffer buf = ByteBuffer.allocate(4);
                             buf.order(ByteOrder.nativeOrder());
-                            buf.putInt(val.convertToInteger().getIntValue()).flip();
+                            flipBuffer(buf.putInt(val.convertToInteger().getIntValue()));
                             int ret = SOCKOPT.setsockopt(fd.realFileno, intLevel, intOpt, buf, buf.remaining());
 
                             if (ret != 0) {
