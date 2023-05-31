@@ -879,7 +879,7 @@ public final class Ruby implements Constantizable {
         context.preEvalScriptlet(scope);
 
         try {
-            return interpreter.execute(this, rootNode, context.getFrameSelf());
+            return interpreter.execute(this, rootNode, getTopSelf());
         } finally {
             context.postEvalScriptlet();
         }
