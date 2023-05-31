@@ -31,8 +31,6 @@ jobs:
           cache: 'maven'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
-      - name: install bundler
-        run: bin/jruby --dev -S gem install bundler
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: Save bootstrap build
@@ -46,7 +44,6 @@ jobs:
             shaded
             test
           key: ${{ github.sha }}-bootstrap
-          enableCrossOsArchive: true
 
   rake-test:
     runs-on: ubuntu-latest
@@ -58,7 +55,6 @@ jobs:
       fail-fast: false
 
     name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }})
-    needs: bootstrap-build
 
     steps:
       - name: checkout
@@ -80,7 +76,9 @@ jobs:
             shaded
             test
           key: ${{ github.sha }}-bootstrap
-          enableCrossOsArchive: true
+      - name: conditional-bootstrap
+        if: ${{ steps.cache-bootstrap-restore.outputs.cache-hit == false }}
+        run: "mvn -Pbootstrap clean package && bin/jruby --dev -S gem install bundler && bin/jruby --dev -S bundle install"
       - name: rake ${{ matrix.target }}
         run: bin/jruby -S rake ${{ matrix.target }}
 
@@ -93,7 +91,6 @@ jobs:
       fail-fast: false
 
     name: rake ${{ matrix.target }} (Java 8)
-    needs: bootstrap-build
 
     steps:
       - name: checkout
@@ -120,7 +117,9 @@ jobs:
             shaded
             test
           key: ${{ github.sha }}-bootstrap
-          enableCrossOsArchive: true
+      - name: conditional-bootstrap
+        if: ${{ steps.cache-bootstrap-restore.outputs.cache-hit == false }}
+        run: "mvn -Pbootstrap clean package && bin/jruby --dev -S gem install bundler && bin/jruby --dev -S bundle install"
       - name: rake ${{ matrix.target }}
         run: bin/jruby -S rake ${{ matrix.target }}
 
@@ -133,8 +132,6 @@ jobs:
     env:
       JRUBY_OPTS: '--dev'
 
-    needs: bootstrap-build
-
     steps:
       - name: checkout
         uses: actions/checkout@v3
@@ -160,7 +157,9 @@ jobs:
             shaded
             test
           key: ${{ github.sha }}-bootstrap
-          enableCrossOsArchive: true
+      - name: conditional-bootstrap
+        if: ${{ steps.cache-bootstrap-restore.outputs.cache-hit == false }}
+        run: "mvn -Pbootstrap clean package && bin/jruby --dev -S gem install bundler && bin/jruby --dev -S bundle install"
       - name: rake test:jruby
         run: bin/jruby --dev -S rake test:jruby
 
@@ -174,7 +173,6 @@ jobs:
       fail-fast: false
 
     name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }} +indy)
-    needs: bootstrap-build
 
     env:
       JRUBY_OPTS: '-Xcompile.invokedynamic'
@@ -199,7 +197,9 @@ jobs:
             shaded
             test
           key: ${{ github.sha }}-bootstrap
-          enableCrossOsArchive: true
+      - name: conditional-bootstrap
+        if: ${{ steps.cache-bootstrap-restore.outputs.cache-hit == false }}
+        run: "mvn -Pbootstrap clean package && bin/jruby --dev -S gem install bundler && bin/jruby --dev -S bundle install"
       - name: rake ${{ matrix.target }}
         run: bin/jruby -S rake ${{ matrix.target }}
 
@@ -214,7 +214,6 @@ jobs:
       fail-fast: false
 
     name: mvn ${{ matrix.package-flags }} (Java ${{ matrix.java-version }})
-    needs: bootstrap-build
 
     steps:
       - name: checkout
@@ -236,7 +235,9 @@ jobs:
             shaded
             test
           key: ${{ github.sha }}-bootstrap
-          enableCrossOsArchive: true
+      - name: conditional-bootstrap
+        if: ${{ steps.cache-bootstrap-restore.outputs.cache-hit == false }}
+        run: "mvn -Pbootstrap clean package && bin/jruby --dev -S gem install bundler && bin/jruby --dev -S bundle install"
       - name: mvn package ${{ matrix.package-flags }}
         run: tool/maven-ci-script.sh
         env:
@@ -252,7 +253,6 @@ jobs:
       fail-fast: false
 
     name: mvn ${{ matrix.package-flags }} (Java 8)
-    needs: bootstrap-build
 
     steps:
       - name: checkout
@@ -279,7 +279,9 @@ jobs:
             shaded
             test
           key: ${{ github.sha }}-bootstrap
-          enableCrossOsArchive: true
+      - name: conditional-bootstrap
+        if: ${{ steps.cache-bootstrap-restore.outputs.cache-hit == false }}
+        run: "mvn -Pbootstrap clean package && bin/jruby --dev -S gem install bundler && bin/jruby --dev -S bundle install"
       - name: mvn package ${{ matrix.package-flags }}
         run: tool/maven-ci-script.sh
         env:
@@ -294,8 +296,6 @@ jobs:
     env:
       JRUBY_OPTS: '-Xcompile.invokedynamic'
 
-    needs: bootstrap-build
-
     steps:
       - name: checkout
         uses: actions/checkout@v3
@@ -321,7 +321,9 @@ jobs:
             shaded
             test
           key: ${{ github.sha }}-bootstrap
-          enableCrossOsArchive: true
+      - name: conditional-bootstrap
+        if: ${{ steps.cache-bootstrap-restore.outputs.cache-hit == false }}
+        run: "mvn -Pbootstrap clean package && bin/jruby --dev -S gem install bundler && bin/jruby --dev -S bundle install"
       - name: rake spec:ji
         run: bin/jruby -S rake spec:ji
 
@@ -334,8 +336,6 @@ jobs:
     env:
       JRUBY_OPTS: '-Xjit.threshold=0'
 
-    needs: bootstrap-build
-
     steps:
       - name: checkout
         uses: actions/checkout@v3
@@ -361,7 +361,9 @@ jobs:
             shaded
             test
           key: ${{ github.sha }}-bootstrap
-          enableCrossOsArchive: true
+      - name: conditional-bootstrap
+        if: ${{ steps.cache-bootstrap-restore.outputs.cache-hit == false }}
+        run: "mvn -Pbootstrap clean package && bin/jruby --dev -S gem install bundler && bin/jruby --dev -S bundle install"
       - name: rake spec:regression
         run: bin/jruby -S rake spec:regression
 
@@ -460,8 +462,6 @@ jobs:
     strategy:
       fail-fast: false
 
-    needs: bootstrap-build
-
     services:
       postgres:
         image: postgres:11.5
@@ -500,7 +500,9 @@ jobs:
             shaded
             test
           key: ${{ github.sha }}-bootstrap
-          enableCrossOsArchive: true
+      - name: conditional-bootstrap
+        if: ${{ steps.cache-bootstrap-restore.outputs.cache-hit == false }}
+        run: "mvn -Pbootstrap clean package && bin/jruby --dev -S gem install bundler && bin/jruby --dev -S bundle install"
       - name: sequel
         run: tool/sequel-github-actions.sh
 
@@ -509,8 +511,6 @@ jobs:
 
     strategy:
       fail-fast: false
-
-    needs: bootstrap-build
 
     steps:
       - name: checkout
@@ -537,7 +537,9 @@ jobs:
             shaded
             test
           key: ${{ github.sha }}-bootstrap
-          enableCrossOsArchive: true
+      - name: conditional-bootstrap
+        if: ${{ steps.cache-bootstrap-restore.outputs.cache-hit == false }}
+        run: "mvn -Pbootstrap clean package && bin/jruby --dev -S gem install bundler && bin/jruby --dev -S bundle install"
       - name: concurrent-ruby
         run: tool/concurrent-ruby-github-actions.sh
 
@@ -602,7 +604,6 @@ jobs:
             shaded
             test
           key: ${{ github.sha }}-bootstrap
-          enableCrossOsArchive: true
       - name: rake ${{ matrix.target }}
 #        run: "bin/jruby -S rake ${{ matrix.target }}"
         run: "true"
@@ -611,7 +612,6 @@ jobs:
     runs-on: ubuntu-latest
 
     name: mvn -Ptest (OpenJ9 Java 8; disabled)
-    needs: bootstrap-build
 
     steps:
       - name: checkout
@@ -638,7 +638,9 @@ jobs:
             shaded
             test
           key: ${{ github.sha }}-bootstrap
-          enableCrossOsArchive: true
+      - name: conditional-bootstrap
+        if: ${{ steps.cache-bootstrap-restore.outputs.cache-hit == false }}
+        run: "mvn -Pbootstrap clean package && bin/jruby --dev -S gem install bundler && bin/jruby --dev -S bundle install"
       - name: test profile
 #        run: "tool/maven-ci-script.sh"
         run: "true"
@@ -654,7 +656,6 @@ jobs:
       fail-fast: false
 
     name: rake ${{ matrix.target }} (Java 8)
-    needs: bootstrap-build
 
     steps:
       - name: checkout
@@ -681,7 +682,9 @@ jobs:
             shaded
             test
           key: ${{ github.sha }}-bootstrap
-          enableCrossOsArchive: true
+      - name: conditional-bootstrap
+        if: ${{ steps.cache-bootstrap-restore.outputs.cache-hit == false }}
+        run: "mvn -Pbootstrap clean package && bin/jruby --dev -S gem install bundler && bin/jruby --dev -S bundle install"
       - name: rake ${{ matrix.target }}
         continue-on-error: true
         run: "bin/jruby -S rake ${{ matrix.target }}"
