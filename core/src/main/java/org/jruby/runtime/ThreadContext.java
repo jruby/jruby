@@ -1152,11 +1152,9 @@ public final class ThreadContext {
     }
 
     public void preEvalScriptlet(DynamicScope scope) {
-        pushScope(scope);
     }
 
     public void postEvalScriptlet() {
-        popScope();
     }
 
     public Frame preEvalWithBinding(Binding binding) {
