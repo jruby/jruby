@@ -2211,29 +2211,21 @@ public class RubyBigDecimal extends RubyNumeric {
         if (isInfinity()) return RubyFloat.newFloat(runtime, infinitySign < 0 ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY);
         if (isZero()) return RubyFloat.newFloat(runtime, zeroSign < 0 ? -0.0 : 0.0);
 
-        if (-value.scale() <= RubyFloat.MAX_10_EXP) {
-            return RubyFloat.newFloat(runtime, SafeDoubleParser.doubleValue(value));
+        int exponent = getExponent();
+        if (exponent > RubyFloat.MAX_10_EXP + VP_DOUBLE_FIG) {
+            if (checkFlow && isOverflowExceptionMode(runtime)) {
+                throw runtime.newFloatDomainError("BigDecimal to Float conversion");
+            }
+            return RubyFloat.newFloat(getRuntime(), value.signum() > 0 ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY);
+        }
+        if (exponent < RubyFloat.MIN_10_EXP - VP_DOUBLE_FIG) {
+            if (checkFlow && isUnderflowExceptionMode(runtime)) {
+                throw runtime.newFloatDomainError("BigDecimal to Float conversion");
+            }
+            return RubyFloat.newFloat(getRuntime(), 0);
         }
 
-        switch (value.signum()) {
-            case -1:
-                if (checkFlow && isOverflowExceptionMode(runtime)) {
-                    throw runtime.newFloatDomainError("BigDecimal to Float conversion");
-                }
-                return RubyFloat.newFloat(getRuntime(), Double.NEGATIVE_INFINITY);
-            case 0:
-                if (checkFlow && isUnderflowExceptionMode(runtime)) {
-                    throw runtime.newFloatDomainError("BigDecimal to Float conversion");
-                }
-                return RubyFloat.newFloat(getRuntime(), 0);
-            case 1:
-                if (checkFlow && isOverflowExceptionMode(runtime)) {
-                    throw runtime.newFloatDomainError("BigDecimal to Float conversion");
-                }
-                return RubyFloat.newFloat(getRuntime(), Double.POSITIVE_INFINITY);
-            default :
-                throw new AssertionError("invalid signum: " + value.signum() + " for BigDecimal " + this);
-        }
+        return RubyFloat.newFloat(runtime, SafeDoubleParser.doubleValue(value));
     }
 
     @Override
