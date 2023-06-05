@@ -26,7 +26,7 @@ public class OutputStrings {
                 {"-G", "load a Bundler Gemspec before executing any user code"},
                 {"-i[extension]", "edit ARGV files in place (make backup if extension supplied)"},
                 {"-Idirectory", "specify $LOAD_PATH directory (may be used more than once)"},
-                {"-J[java option]", "pass an option on to the JVM (e.g. -J-Xmx512m)/nuse --properties to list JRuby properties run 'java -help' for a list of other Java options"},
+                {"-J[java option]", "pass an option on to the JVM (e.g. -J-Xmx512m); use --properties to list JRuby properties; run 'java -help' for a list of other Java options"},
                 {"-l", "enable line ending processing"},
                 {"-n", "assume 'while gets(); ... end' loop around your script"},
                 {"-p", "assume loop like -n but print line also like sed"},
@@ -44,8 +44,7 @@ public class OutputStrings {
                 {"--copyright", "print the copyright"},
                 {"--debug", "sets the execution mode most suitable for debugger functionality"},
                 {"--jdb", "runs JRuby process under JDB"},
-                {"--properties", "List all configuration Java properties (prepend \"jruby.\" when passing directly to Java)"},
-                {"--environment", "Log environment and command line flags but do not run JRuby"},
+                {"--properties", "List all JRuby configuration properties"},
                 {"--sample", "run with profiling using the JVM's sampling profiler"},
                 {"--profile", "run with instrumented (timed) profiling, flat format"},
                 {"--profile.api", "activate Ruby profiler API"},
@@ -120,13 +119,14 @@ public class OutputStrings {
     public static String getPropertyHelp() {
         StringBuilder sb = new StringBuilder();
         sb
-                .append("# These properties can be used to alter runtime behavior for perf or compatibility.\n")
-                .append("# Specify them by passing -X<property>=<value>\n")
-                .append("#   or if passing directly to Java, -Djruby.<property>=<value>\n")
-                .append("#   or put <property>=<value> in .jrubyrc\n")
+                .append("# These properties can be used to alter runtime behavior for performance\n")
+                .append("# or compatibility.\n")
                 .append("#\n")
-                .append("# This dump is a valid .jrubyrc file of current settings. Uncomment and modify\n")
-                .append("# settings to customize.\n");
+                .append("# Specify them by passing `-X<property>=<value>` to the jruby command,\n")
+                .append("# or put `<property>=<value>` in .jrubyrc. If passing to the java command,\n")
+                .append("# use the flag `-Djruby.<property>=<value>`\n")
+                .append("#\n")
+                .append("# This output is the current settings as a valid .jrubyrc file.\n");
 
         return sb.append(Option.formatOptions(Options.PROPERTIES)).toString();
     }
