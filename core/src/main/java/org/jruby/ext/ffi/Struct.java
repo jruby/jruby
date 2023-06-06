@@ -173,7 +173,7 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
             throw context.runtime.newTypeError("not an instance of Struct");
         }
         Struct orig = (Struct) other;
-        memory = (AbstractMemory) orig.getMemory().slice(context.runtime, 0, layout.getSize()).dup();
+        memory = (AbstractMemory) orig.getMemory().dup();
         if (orig.referenceCache != null) {
             referenceCache = new Object[layout.getReferenceFieldCount()];
             System.arraycopy(orig.referenceCache, 0, referenceCache, 0, referenceCache.length);
