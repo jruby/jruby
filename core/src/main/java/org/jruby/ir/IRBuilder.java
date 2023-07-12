@@ -1991,11 +1991,18 @@ public class IRBuilder {
         }
     }
 
+    // AST could be more expressive here (e.g. WhenValuesNode < ListNode)
+    private boolean isListOfWhenValues(Node expr) {
+        return expr instanceof ListNode &&
+                !(expr instanceof BlockNode || expr instanceof DNode ||
+                        expr instanceof ArrayNode || expr instanceof ZArrayNode);
+    }
+
     private void buildWhenArgs(WhenNode whenNode, Operand testValue, Label bodyLabel, Set<IRubyObject> seenLiterals) {
         Variable eqqResult = createTemporaryVariable();
         Node exprNodes = whenNode.getExpressionNodes();
 
-        if (exprNodes instanceof ListNode && !(exprNodes instanceof DNode) && !(exprNodes instanceof ArrayNode) && !(exprNodes instanceof ZArrayNode)) {
+        if (isListOfWhenValues(exprNodes)) {
             buildWhenValues(eqqResult, (ListNode) exprNodes, testValue, bodyLabel, seenLiterals);
         } else if (exprNodes instanceof ArgsPushNode || exprNodes instanceof SplatNode || exprNodes instanceof ArgsCatNode) {
             buildWhenSplatValues(eqqResult, exprNodes, testValue, bodyLabel, seenLiterals);
