@@ -1632,14 +1632,9 @@ public class RubyNumeric extends RubyObject {
     @Override
     @JRubyMethod(name = "clone")
     public final IRubyObject rbClone(ThreadContext context, IRubyObject arg) {
-        if (!(arg instanceof RubyHash)) {
-            throw context.runtime.newArgumentError("wrong number of arguments (given 1, expected 0)");
-        }
-
-        IRubyObject ret = ArgsUtil.getFreezeOpt(context, arg);
-        if (ret == context.fals) throw context.runtime.newArgumentError("can't unfreeze " + getType());
-
-        return this;
+        // BasicObject handles "special" objects like all numerics but we leave this because Ruby
+        // has an explicit Numeric#clone binding.
+        return super.rbClone(context, arg);
     }
 
     @Override

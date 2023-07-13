@@ -2306,11 +2306,14 @@ public class RubyHash extends RubyObject implements Map {
         return dup;
     }
 
-    @JRubyMethod(name = "clone")
-    public IRubyObject rbClone(ThreadContext context) {
-        RubyHash clone = (RubyHash) super.rbClone();
+    public IRubyObject rbClone(ThreadContext context, IRubyObject opts) {
+        RubyHash clone = (RubyHash) super.rbClone(context, opts);
         clone.setComparedByIdentity(isComparedByIdentity());
         return clone;
+    }
+
+    public IRubyObject rbClone(ThreadContext context) {
+        return rbClone(context, context.nil);
     }
 
     @JRubyMethod(name = "any?", optional = 1)
