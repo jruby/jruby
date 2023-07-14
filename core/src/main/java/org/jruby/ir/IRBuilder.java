@@ -1,5 +1,6 @@
 package org.jruby.ir;
 
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.EvalType;
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
@@ -1574,18 +1575,27 @@ public class IRBuilder {
             }
         } else {
             call(result, d, "empty?");
+            if (isSinglePattern) maybeGenerateIsNotEmptyErrorString(errorString, result, d);
             cond_ne(testEnd, result, tru());
         }
 
         if (pattern.hasRestArg()) {
             if (pattern.getRestArg() instanceof NilRestArgNode) {
                 call(result, d, "empty?");
+                if (isSinglePattern) maybeGenerateIsNotEmptyErrorString(errorString, result, d);
                 cond_ne(testEnd, result, tru());
             } else if (pattern.isNamedRestArg()) {
                 buildPatternEach(testEnd, result, copy(buildNil()), d, pattern.getRestArg(), inAlteration, isSinglePattern, errorString);
                 cond_ne(testEnd, result, tru());
             }
         }
+    }
+
+    private void maybeGenerateIsNotEmptyErrorString(Variable errorString, Operand result, Operand value) {
+        label("empty", (empty) ->
+                cond(empty, result, tru(), ()->
+                        addInstr(new BuildCompoundStringInstr(errorString, new Operand[] {value, new FrozenString(" is not empty")},
+                                UTF8Encoding.INSTANCE, 13, true, false, getFileName(), lastProcessedLineNum))));
     }
 
     public interface RunIt {
