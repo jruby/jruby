@@ -3591,7 +3591,7 @@ p_primitive     : literal
 p_variable      : tIDENTIFIER {
                     /*%%%*/
                     p.error_duplicate_pattern_variable($1);
-                    $$ = p.assignableInCurr($1, null);
+                    $$ = p.assignableLabelOrIdentifier($1, null);
                     /*%
                       $$ = p.assignable(@1.id, p.var_field($1));
                     %*/
