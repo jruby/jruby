@@ -5060,7 +5060,7 @@ states[520] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[522] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = p.logop(((Node)yyVals[-2+yyTop].value), OR_OR, ((Node)yyVals[0+yyTop].value));
+                    yyVal = p.logop(((Node)yyVals[-2+yyTop].value), OR, ((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: binary!($1, STATIC_ID2SYM(idOr), $3) %*/
   return yyVal;
@@ -5484,7 +5484,7 @@ states[602] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[603] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     p.error_duplicate_pattern_variable(((ByteList)yyVals[0+yyTop].value));
-                    yyVal = p.assignableInCurr(((ByteList)yyVals[0+yyTop].value), null);
+                    yyVal = p.assignableLabelOrIdentifier(((ByteList)yyVals[0+yyTop].value), null);
                     /*%
                       $$ = p.assignable(yyVals[yyTop - count + 1].id, p.var_field($1));
                     %*/
