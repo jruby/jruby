@@ -76,7 +76,7 @@ public class Tempfile extends RubyFile implements Finalizable {
         super(runtime, type);
     }
 
-    @JRubyMethod(optional = 4, visibility = Visibility.PRIVATE, keywords = true)
+    @JRubyMethod(optional = 4, checkArity = false, visibility = Visibility.PRIVATE, keywords = true)
     @Override
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block unused) {
         Arity.checkArgumentCount(context, args, 0, 4);
@@ -162,7 +162,7 @@ public class Tempfile extends RubyFile implements Finalizable {
         return !isClosed() ? super.close(context) : context.nil;
     }
 
-    @JRubyMethod(optional = 1)
+    @JRubyMethod(optional = 1, checkArity = false)
     public IRubyObject close(ThreadContext context, IRubyObject[] args, Block block) {
         int argc = Arity.checkArgumentCount(context, args, 0, 1);
 
@@ -236,7 +236,7 @@ public class Tempfile extends RubyFile implements Finalizable {
         return open(context, recv, args, block);
     }
 
-    @JRubyMethod(optional = 4, meta = true, keywords = true)
+    @JRubyMethod(optional = 4, checkArity = false, meta = true, keywords = true)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         RubyClass klass = (RubyClass) recv;
         Tempfile tempfile = (Tempfile) klass.newInstance(context, args, block);

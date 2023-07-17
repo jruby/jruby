@@ -121,7 +121,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         return runtime.newArray( runtime.newString("AF_UNIX"), path );
     }
 
-    @JRubyMethod(name = "recvfrom", required = 1, optional = 1)
+    @JRubyMethod(name = "recvfrom", required = 1, optional = 1, checkArity = false)
     public IRubyObject recvfrom(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 1, 2);
 
@@ -206,7 +206,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         return runtime.getNil();
     }
 
-    @JRubyMethod(optional = 2)
+    @JRubyMethod(optional = 2, checkArity = false)
     public IRubyObject recv_io(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 0, 2);
 
@@ -265,7 +265,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         }
     }
 
-    @JRubyMethod(name = {"socketpair", "pair"}, optional = 2, meta = true)
+    @JRubyMethod(name = {"socketpair", "pair"}, optional = 2, checkArity = false, meta = true)
     public static IRubyObject socketpair(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 2);
 

@@ -189,7 +189,7 @@ public class RubyBasicSocket extends RubyIO {
         return recv(context, length, null, null);
     }
 
-    @JRubyMethod(required = 1, optional = 2) // (length) required = 1 handled above
+    @JRubyMethod(required = 1, optional = 2, checkArity = false) // (length) required = 1 handled above
     public IRubyObject recv(ThreadContext context, IRubyObject[] args) {
         IRubyObject length; RubyString str; IRubyObject flags;
 
@@ -250,7 +250,7 @@ public class RubyBasicSocket extends RubyIO {
         return RubyString.newString(runtime, bytes);
     }
 
-    @JRubyMethod(required = 1, optional = 3)
+    @JRubyMethod(required = 1, optional = 3, checkArity = false)
     public IRubyObject recv_nonblock(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 1, 4);
 
@@ -320,7 +320,7 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     @Override
-    @JRubyMethod(required = 1, optional = 2)
+    @JRubyMethod(required = 1, optional = 2, checkArity = false)
     public IRubyObject read_nonblock(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         Channel channel = getChannel();
@@ -616,7 +616,7 @@ public class RubyBasicSocket extends RubyIO {
          throw runtime.newErrnoENOTCONNError();
     }
 
-    @JRubyMethod(optional = 1)
+    @JRubyMethod(optional = 1, checkArity = false)
     public IRubyObject shutdown(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 0, 1);
 

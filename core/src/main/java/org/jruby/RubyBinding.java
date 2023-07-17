@@ -117,7 +117,7 @@ public class RubyBinding extends RubyObject {
     }
 
     // c: bind_eval
-    @JRubyMethod(name = "eval", required = 1, optional = 2)
+    @JRubyMethod(name = "eval", required = 1, optional = 2, checkArity = false)
     public IRubyObject eval(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 1, 3);
 

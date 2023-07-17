@@ -133,7 +133,7 @@ public class Addrinfo extends RubyObject {
         return context.nil;
     }
 
-    @JRubyMethod(required = 1, optional = 3, visibility = Visibility.PRIVATE)
+    @JRubyMethod(required = 1, optional = 3, checkArity = false, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         switch (args.length) {
             case 1:

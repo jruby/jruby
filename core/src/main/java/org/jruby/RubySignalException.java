@@ -62,7 +62,7 @@ public class RubySignalException extends RubyException {
         return signalExceptionClass;
     }
 
-    @JRubyMethod(optional = 2, visibility = PRIVATE)
+    @JRubyMethod(optional = 2, checkArity = false, visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
         int argc = Arity.checkArgumentCount(context, args, 0, 2);
 

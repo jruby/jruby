@@ -171,7 +171,7 @@ public class RubySystemCallError extends RubyStandardError {
         return exceptionClass;
     }
     
-    @JRubyMethod(optional = 2, visibility = PRIVATE)
+    @JRubyMethod(optional = 2, checkArity = false, visibility = PRIVATE)
     @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         Ruby runtime = getRuntime();

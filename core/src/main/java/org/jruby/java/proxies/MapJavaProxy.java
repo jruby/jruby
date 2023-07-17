@@ -813,12 +813,12 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         return dupImpl("clone");
     }
 
-    @JRubyMethod(name = "any?", optional = 1)
+    @JRubyMethod(name = "any?", optional = 1, checkArity = false)
     public IRubyObject any_p(ThreadContext context, IRubyObject[] args, Block block) {
         return getOrCreateRubyHashMap(context.runtime).any_p(context, args, block);
     }
 
-    @JRubyMethod(name = "dig", required = 1, rest = true)
+    @JRubyMethod(name = "dig", required = 1, rest = true, checkArity = false)
     public IRubyObject dig(ThreadContext context, IRubyObject[] args) {
         return getOrCreateRubyHashMap(context.runtime).dig(context, args);
     }

@@ -130,7 +130,7 @@ public class SizedQueue extends Queue {
         }
     }
 
-    @JRubyMethod(name = {"push", "<<", "enq"}, required = 1, optional = 1)
+    @JRubyMethod(name = {"push", "<<", "enq"}, required = 1, optional = 1, checkArity = false)
     public IRubyObject push(ThreadContext context, final IRubyObject[] argv) {
         initializedCheck();
 

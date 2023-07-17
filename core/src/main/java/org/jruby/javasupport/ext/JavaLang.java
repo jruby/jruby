@@ -659,7 +659,7 @@ public abstract class JavaLang {
         //}
 
         @SuppressWarnings("deprecation")
-        @JRubyMethod(required = 1, rest = true)
+        @JRubyMethod(required = 1, rest = true, checkArity = false)
         public static IRubyObject java_method(ThreadContext context, IRubyObject self, final IRubyObject[] args) {
             Arity.checkArgumentCount(context, args, 1, -1);
 
@@ -677,7 +677,7 @@ public abstract class JavaLang {
         }
 
         @SuppressWarnings("deprecation")
-        @JRubyMethod(required = 1, rest = true)
+        @JRubyMethod(required = 1, rest = true, checkArity = false)
         public static IRubyObject declared_method(ThreadContext context, IRubyObject self, final IRubyObject[] args) {
             Arity.checkArgumentCount(context, args, 1, -1);
 
@@ -694,7 +694,7 @@ public abstract class JavaLang {
             }
         }
 
-        @JRubyMethod(required = 1, rest = true)
+        @JRubyMethod(required = 1, rest = true, checkArity = false)
         public static IRubyObject declared_method_smart(ThreadContext context, IRubyObject self, final IRubyObject[] args) {
             Arity.checkArgumentCount(context, args, 1, -1);
 

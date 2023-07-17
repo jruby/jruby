@@ -214,7 +214,7 @@ public class RubyStruct extends RubyObject {
      * MRI: rb_struct_s_def / make_struct
      *
      */
-    @JRubyMethod(name = "new", required = 1, rest = true, meta = true, keywords = true)
+    @JRubyMethod(name = "new", required = 1, rest = true, checkArity = false, meta = true, keywords = true)
     public static RubyClass newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
 
@@ -883,7 +883,7 @@ public class RubyStruct extends RubyObject {
         return RubyObject.dig2(context, val, arg1, arg2);
     }
 
-    @JRubyMethod(name = "dig", required = 1, rest = true)
+    @JRubyMethod(name = "dig", required = 1, rest = true, checkArity = false)
     public IRubyObject dig(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 1, -1);
 

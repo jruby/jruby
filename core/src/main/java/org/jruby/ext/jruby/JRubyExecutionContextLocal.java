@@ -49,7 +49,7 @@ public abstract class JRubyExecutionContextLocal extends RubyObject {
         default_proc = null;
     }
 
-    @JRubyMethod(name = "initialize", optional = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "initialize", optional = 1, checkArity = false, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
         if (block.isGiven()) {
             if (args.length != 0) {

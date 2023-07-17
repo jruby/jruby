@@ -73,7 +73,7 @@ public class RubyUncaughtThrowError extends RubyArgumentError {
     }
 
     @Override
-    @JRubyMethod(required = 2, optional = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(required = 2, optional = 1, checkArity = false, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         int argc = Arity.checkArgumentCount(getRuntime(), args, 2, 3);
 

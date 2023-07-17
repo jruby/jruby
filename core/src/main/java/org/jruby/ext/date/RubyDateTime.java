@@ -171,7 +171,7 @@ public class RubyDateTime extends RubyDate {
         return new RubyDateTime(context.runtime, (RubyClass) self, civilImpl(context, year, month), 0);
     }
 
-    @JRubyMethod(name = "civil", alias = "new", meta = true, optional = 8)
+    @JRubyMethod(name = "civil", alias = "new", meta = true, optional = 8, checkArity = false)
     public static RubyDateTime civil(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         // year=-4712, month=1, mday=1,
         //  hour=0, minute=0, second=0, offset=0, start=Date::ITALY
@@ -390,7 +390,7 @@ public class RubyDateTime extends RubyDate {
         return new RubyDateTime(context.runtime, (RubyClass) self, defaultDateTime, 0);
     }
 
-    @JRubyMethod(name = "jd", meta = true, optional = 6)
+    @JRubyMethod(name = "jd", meta = true, optional = 6, checkArity = false)
     public static RubyDateTime jd(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 0, 6);
 

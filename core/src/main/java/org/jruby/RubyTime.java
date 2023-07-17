@@ -1333,7 +1333,7 @@ public class RubyTime extends RubyObject {
         return string;
     }
 
-    @JRubyMethod(optional = 1)
+    @JRubyMethod(optional = 1, checkArity = false)
     public RubyTime round(ThreadContext context, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 1);
 
@@ -1346,7 +1346,7 @@ public class RubyTime extends RubyObject {
         return newTime(context.runtime, _dt, rounded % 1000000);
     }
 
-    @JRubyMethod(optional = 1)
+    @JRubyMethod(optional = 1, checkArity = false)
     public RubyTime floor(ThreadContext context, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 1);
 
@@ -1359,7 +1359,7 @@ public class RubyTime extends RubyObject {
         return newTime(context.runtime, _dt, floored % 1000000);
     }
 
-    @JRubyMethod(optional = 1)
+    @JRubyMethod(optional = 1, checkArity = false)
     public RubyTime ceil(ThreadContext context, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 1);
 
@@ -1409,7 +1409,7 @@ public class RubyTime extends RubyObject {
         return newInstance(context, recv, args);
     }
 
-    @JRubyMethod(name = "now", meta = true, optional = 1, keywords = true)
+    @JRubyMethod(name = "now", meta = true, optional = 1, checkArity = false, keywords = true)
     public static RubyTime newInstance(ThreadContext context, IRubyObject recv, IRubyObject args[]) {
         int argc = Arity.checkArgumentCount(context, args, 0, 1);
 
@@ -1451,7 +1451,7 @@ public class RubyTime extends RubyObject {
         return atOpts(context, recv, arg1, arg2, null, arg3);
     }
 
-    @JRubyMethod(required = 1, optional = 3, meta = true)
+    @JRubyMethod(required = 1, optional = 3, checkArity = false, meta = true)
     public static IRubyObject at(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         switch (args.length) {
             case 1:
@@ -1618,7 +1618,7 @@ public class RubyTime extends RubyObject {
         return time;
     }
 
-    @JRubyMethod(name = {"local", "mktime"}, required = 1, optional = 9, meta = true)
+    @JRubyMethod(name = {"local", "mktime"}, required = 1, optional = 9, checkArity = false, meta = true)
     public static RubyTime local(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 1, 10);
 
@@ -1711,7 +1711,7 @@ public class RubyTime extends RubyObject {
         return context.nil;
     }
 
-    @JRubyMethod(name = "initialize", optional = 7, visibility = PRIVATE, keywords = true)
+    @JRubyMethod(name = "initialize", optional = 7, checkArity = false, visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         boolean keywords = hasKeywords(context.resetCallInfo());
         IRubyObject zone = null;
@@ -1840,7 +1840,7 @@ public class RubyTime extends RubyObject {
         return Helpers.invokeChecked(context, metaClass, "find_timezone", zone);
     }
 
-    @JRubyMethod(name = {"utc", "gm"}, required = 1, optional = 9, meta = true)
+    @JRubyMethod(name = {"utc", "gm"}, required = 1, optional = 9, checkArity = false, meta = true)
     public static RubyTime utc(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 1, 10);
 

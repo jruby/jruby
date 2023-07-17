@@ -145,7 +145,7 @@ public class RubyTCPSocket extends RubyIPSocket {
 
     }
 
-    @JRubyMethod(required = 2, optional = 3, visibility = Visibility.PRIVATE)
+    @JRubyMethod(required = 2, optional = 3, checkArity = false, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 2, 5);
 

@@ -312,7 +312,7 @@ public class RubyDigest {
             return self.rbClone().callMethod(context, "reset");
         }
 
-        @JRubyMethod(optional = 1)
+        @JRubyMethod(optional = 1, checkArity = false)
         public static IRubyObject digest(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             int argc = Arity.checkArgumentCount(context, args, 0, 1);
 
@@ -337,7 +337,7 @@ public class RubyDigest {
             return value;
         }
 
-        @JRubyMethod(optional = 1)
+        @JRubyMethod(optional = 1, checkArity = false)
         public static IRubyObject hexdigest(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             return toHexString(context.runtime, digest(context, self, args).convertToString().getBytes());
         }
@@ -347,7 +347,7 @@ public class RubyDigest {
             return toHexString(context.runtime, digest_bang(context, self).convertToString().getBytes());
         }
 
-        @JRubyMethod(name = "bubblebabble", required = 1, optional = 1, meta = true)
+        @JRubyMethod(name = "bubblebabble", required = 1, optional = 1, checkArity = false, meta = true)
         public static IRubyObject bubblebabble(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
             byte[] digest = recv.callMethod(context, "digest", args, Block.NULL_BLOCK).convertToString().getBytes();
             return RubyString.newString(recv.getRuntime(), BubbleBabble.bubblebabble(digest, 0, digest.length));
@@ -371,7 +371,7 @@ public class RubyDigest {
             super(runtime, type);
         }
 
-        @JRubyMethod(name = "digest", required = 1, rest = true, meta = true)
+        @JRubyMethod(name = "digest", required = 1, rest = true, checkArity = false, meta = true)
         public static IRubyObject s_digest(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
             final Ruby runtime = context.runtime;
             if (args.length < 1) {
@@ -383,7 +383,7 @@ public class RubyDigest {
             return obj.callMethod(context, "digest", str);
         }
 
-        @JRubyMethod(name = "hexdigest", required = 1, optional = 1, meta = true)
+        @JRubyMethod(name = "hexdigest", required = 1, optional = 1, checkArity = false, meta = true)
         public static IRubyObject s_hexdigest(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
             Ruby runtime = recv.getRuntime();
             byte[] digest = recv.callMethod(context, "digest", args, Block.NULL_BLOCK).convertToString().getBytes();

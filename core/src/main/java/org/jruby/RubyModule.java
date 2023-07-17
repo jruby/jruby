@@ -2958,7 +2958,7 @@ public class RubyModule extends RubyObject {
         addAccessor(context, TypeConverter.checkID(context.runtime, name), PUBLIC, false, true);
     }
 
-    @JRubyMethod(required = 1, rest = true, visibility = PRIVATE)
+    @JRubyMethod(required = 1, rest = true, checkArity = false, visibility = PRIVATE)
     public IRubyObject ruby2_keywords(ThreadContext context, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 1, -1);
 
@@ -3178,7 +3178,7 @@ public class RubyModule extends RubyObject {
         return instance_methods19(args);
     }
 
-    @JRubyMethod(name = "instance_methods", optional = 1)
+    @JRubyMethod(name = "instance_methods", optional = 1, checkArity = false)
     public RubyArray instance_methods19(IRubyObject[] args) {
         Arity.checkArgumentCount(getRuntime(), args, 0, 1);
 
@@ -3189,7 +3189,7 @@ public class RubyModule extends RubyObject {
         return public_instance_methods19(args);
     }
 
-    @JRubyMethod(name = "public_instance_methods", optional = 1)
+    @JRubyMethod(name = "public_instance_methods", optional = 1, checkArity = false)
     public RubyArray public_instance_methods19(IRubyObject[] args) {
         Arity.checkArgumentCount(getRuntime(), args, 0, 1);
 
@@ -3213,7 +3213,7 @@ public class RubyModule extends RubyObject {
     /** rb_class_protected_instance_methods
      *
      */
-    @JRubyMethod(name = "protected_instance_methods", optional = 1)
+    @JRubyMethod(name = "protected_instance_methods", optional = 1, checkArity = false)
     public RubyArray protected_instance_methods(IRubyObject[] args) {
         Arity.checkArgumentCount(getRuntime(), args, 0, 1);
 
@@ -3228,7 +3228,7 @@ public class RubyModule extends RubyObject {
     /** rb_class_private_instance_methods
      *
      */
-    @JRubyMethod(name = "private_instance_methods", optional = 1)
+    @JRubyMethod(name = "private_instance_methods", optional = 1, checkArity = false)
     public RubyArray private_instance_methods(IRubyObject[] args) {
         Arity.checkArgumentCount(getRuntime(), args, 0, 1);
 
@@ -3295,7 +3295,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_include
      *
      */
-    @JRubyMethod(name = "include", required = 1, rest = true)
+    @JRubyMethod(name = "include", required = 1, rest = true, checkArity = false)
     public RubyModule include(IRubyObject[] modules) {
         Ruby runtime = getRuntime();
 
@@ -4171,7 +4171,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_const_get
      *
      */
-    @JRubyMethod(name = "const_get", required = 1, optional = 1)
+    @JRubyMethod(name = "const_get", required = 1, optional = 1, checkArity = false)
     public IRubyObject const_get(ThreadContext context, IRubyObject... args) {
         int argc = Arity.checkArgumentCount(context, args, 1, 2);
 
@@ -4216,7 +4216,7 @@ public class RubyModule extends RubyObject {
         return mod.getConstant(validateConstant(name, symbol), firstConstant && inherit, firstConstant && inherit);
     }
 
-    @JRubyMethod(required = 1, optional = 1)
+    @JRubyMethod(required = 1, optional = 1, checkArity = false)
     public IRubyObject const_source_location(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 1, 2);
 
@@ -4445,7 +4445,7 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(required = 1, rest = true)
+    @JRubyMethod(required = 1, rest = true, checkArity = false)
     public IRubyObject private_constant(ThreadContext context, IRubyObject[] rubyNames) {
         Arity.checkArgumentCount(context, rubyNames, 1, -1);
 
@@ -4466,7 +4466,7 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(required = 1, rest = true)
+    @JRubyMethod(required = 1, rest = true, checkArity = false)
     public IRubyObject public_constant(ThreadContext context, IRubyObject[] rubyNames) {
         Arity.checkArgumentCount(context, rubyNames, 1, -1);
 
@@ -4476,7 +4476,7 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "prepend", required = 1, rest = true)
+    @JRubyMethod(name = "prepend", required = 1, rest = true, checkArity = false)
     public IRubyObject prepend(ThreadContext context, IRubyObject[] modules) {
         int argc = Arity.checkArgumentCount(context, modules, 1, -1);
 
@@ -5968,7 +5968,7 @@ public class RubyModule extends RubyObject {
     }
 
     public static class RefinementMethods {
-        @JRubyMethod(required = 1, rest = true, visibility = PRIVATE)
+        @JRubyMethod(required = 1, rest = true, checkArity = false, visibility = PRIVATE)
         public static IRubyObject import_methods(ThreadContext context, IRubyObject self, IRubyObject[] modules) {
             Arity.checkArgumentCount(context, modules, 1, -1);
 

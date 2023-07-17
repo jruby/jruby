@@ -66,7 +66,7 @@ public abstract class ClassJavaAddons {
         return becomeJava(context, (RubyClass) self, null, true);
     }
 
-    @JRubyMethod(name = "become_java!", required = 1, optional = 1)
+    @JRubyMethod(name = "become_java!", required = 1, optional = 1, checkArity = false)
     public static IRubyObject become_java(ThreadContext context, final IRubyObject self, final IRubyObject[] args) {
         final RubyClass klass = (RubyClass) self;
 

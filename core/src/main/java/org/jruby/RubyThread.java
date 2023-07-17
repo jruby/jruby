@@ -865,12 +865,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         throw context.runtime.newArgumentError("unknown mask signature");
     }
 
-    @JRubyMethod(name = "pending_interrupt?", meta = true, optional = 1)
+    @JRubyMethod(name = "pending_interrupt?", meta = true, optional = 1, checkArity = false)
     public static IRubyObject pending_interrupt_p(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         return context.getThread().pending_interrupt_p(context, args);
     }
 
-    @JRubyMethod(name = "pending_interrupt?", optional = 1)
+    @JRubyMethod(name = "pending_interrupt?", optional = 1, checkArity = false)
     public IRubyObject pending_interrupt_p(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 0, 1);
 
@@ -1220,7 +1220,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return join(getRuntime().getCurrentContext(), args);
     }
 
-    @JRubyMethod(optional = 1)
+    @JRubyMethod(optional = 1, checkArity = false)
     public IRubyObject join(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 0, 1);
 
@@ -1483,7 +1483,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return genericRaise(context, context.getThread(), exception, message);
     }
 
-    @JRubyMethod(optional = 3)
+    @JRubyMethod(optional = 3, checkArity = false)
     public IRubyObject raise(ThreadContext context, IRubyObject[] args, Block block) {
         Arity.checkArgumentCount(context, args, 0, 3);
 

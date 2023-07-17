@@ -67,14 +67,14 @@ public class RubyGC {
         return result;        
     }
 
-    @JRubyMethod(module = true, visibility = PRIVATE, optional = 1)
+    @JRubyMethod(module = true, visibility = PRIVATE, optional = 1, checkArity = false)
     public static IRubyObject start(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 1);
 
         return context.nil;
     }
 
-    @JRubyMethod(optional = 1)
+    @JRubyMethod(optional = 1, checkArity = false)
     public static IRubyObject garbage_collect(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 1);
         return context.nil;

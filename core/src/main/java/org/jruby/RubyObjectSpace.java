@@ -68,7 +68,7 @@ public class RubyObjectSpace {
         return objectSpaceModule;
     }
 
-    @JRubyMethod(required = 1, optional = 1, module = true, visibility = PRIVATE)
+    @JRubyMethod(required = 1, optional = 1, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject define_finalizer(IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
 
@@ -206,14 +206,14 @@ public class RubyObjectSpace {
         return runtime.newFixnum(count);
     }
 
-    @JRubyMethod(name = "each_object", optional = 1, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "each_object", optional = 1, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject each_object(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Arity.checkArgumentCount(context, args, 0, 1);
 
         return block.isGiven() ? each_objectInternal(context, recv, args, block) : enumeratorize(context.runtime, recv, "each_object", args);
     }
 
-    @JRubyMethod(name = "garbage_collect", module = true, visibility = PRIVATE, optional = 1)
+    @JRubyMethod(name = "garbage_collect", module = true, visibility = PRIVATE, optional = 1, checkArity = false)
     public static IRubyObject garbage_collect(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return RubyGC.start(context, recv, args);
     }

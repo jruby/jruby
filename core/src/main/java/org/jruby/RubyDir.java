@@ -319,7 +319,7 @@ public class RubyDir extends RubyObject implements Closeable {
      * with each filename is passed to the block in turn. In this case, Nil is
      * returned.
      */
-    @JRubyMethod(required = 1, optional = 2, meta = true)
+    @JRubyMethod(required = 1, optional = 2, checkArity = false, meta = true)
     public static IRubyObject glob(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Arity.checkArgumentCount(context, args, 1, 3);
 
@@ -434,7 +434,7 @@ public class RubyDir extends RubyObject implements Closeable {
     }
 
     /** Changes the current directory to <code>path</code> */
-    @JRubyMethod(optional = 1, meta = true)
+    @JRubyMethod(optional = 1, checkArity = false, meta = true)
     public static IRubyObject chdir(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         int argc = Arity.checkArgumentCount(context, args, 0, 1);
         Ruby runtime = context.runtime;
@@ -652,7 +652,7 @@ public class RubyDir extends RubyObject implements Closeable {
      * <code>mode</code> parameter is provided only to support existing Ruby
      * code, and is ignored.
      */
-    @JRubyMethod(name = "mkdir", required = 1, optional = 1, meta = true)
+    @JRubyMethod(name = "mkdir", required = 1, optional = 1, checkArity = false, meta = true)
     public static IRubyObject mkdir(ThreadContext context, IRubyObject recv, IRubyObject... args) {
         Arity.checkArgumentCount(context, args, 1, 2);
         Ruby runtime = context.runtime;

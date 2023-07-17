@@ -1713,7 +1713,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return block.isGiven() && result != context.nil ? block.yield(context, result) : result;
     }
 
-    @JRubyMethod(name = "match", required = 1, rest = true)
+    @JRubyMethod(name = "match", required = 1, rest = true, checkArity = false)
     public IRubyObject match19(ThreadContext context, IRubyObject[] args, Block block) {
         if (args.length < 1) {
             Arity.checkArgumentCount(context, args, 1, -1);
@@ -5764,7 +5764,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     // MRI: rb_str_count for arity > 1, first half
-    @JRubyMethod(name = "count", required = 1, rest = true)
+    @JRubyMethod(name = "count", required = 1, rest = true, checkArity = false)
     public IRubyObject count(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 1, -1);
 
@@ -5802,7 +5802,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return str;
     }
 
-    @JRubyMethod(name = "delete", required = 1, rest = true)
+    @JRubyMethod(name = "delete", required = 1, rest = true, checkArity = false)
     public IRubyObject delete(ThreadContext context, IRubyObject[] args) {
         RubyString str = strDup(context.runtime, context.runtime.getString());
         str.delete_bang(context, args);
@@ -5831,7 +5831,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return this;
     }
 
-    @JRubyMethod(name = "delete!", required = 1, rest = true)
+    @JRubyMethod(name = "delete!", required = 1, rest = true, checkArity = false)
     public IRubyObject delete_bang(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 1, -1);
 
@@ -5904,7 +5904,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return str;
     }
 
-    @JRubyMethod(name = "squeeze", required = 1, rest = true)
+    @JRubyMethod(name = "squeeze", required = 1, rest = true, checkArity = false)
     public IRubyObject squeeze(ThreadContext context, IRubyObject[] args) {
         RubyString str = strDup(context.runtime, context.runtime.getString());
         str.squeeze_bang(context, args);
@@ -5958,7 +5958,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return this;
     }
 
-    @JRubyMethod(name = "squeeze!", required = 1, rest = true)
+    @JRubyMethod(name = "squeeze!", required = 1, rest = true, checkArity = false)
     public IRubyObject squeeze_bang(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 1, -1);
 
@@ -6615,7 +6615,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return encode_bang(context, new IRubyObject[]{arg0,arg1,arg2});
     }
 
-    @JRubyMethod(name = "encode!", optional = 3)
+    @JRubyMethod(name = "encode!", optional = 3, checkArity = false)
     public IRubyObject encode_bang(ThreadContext context, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 3);
 

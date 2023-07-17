@@ -1012,7 +1012,7 @@ public class RubyNumeric extends RubyObject {
     /**
      * num_step
      */
-    @JRubyMethod(optional = 2)
+    @JRubyMethod(optional = 2, checkArity = false)
     public IRubyObject step(ThreadContext context, IRubyObject[] args, Block block) {
         Arity.checkArgumentCount(context, args, 0, 2);
 

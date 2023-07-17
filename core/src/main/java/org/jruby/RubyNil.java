@@ -245,7 +245,7 @@ public class RubyNil extends RubyObject implements Constantizable {
     /** nilclass_rationalize
      *
      */
-    @JRubyMethod(optional = 1)
+    @JRubyMethod(optional = 1, checkArity = false)
     public static IRubyObject rationalize(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 1);
 

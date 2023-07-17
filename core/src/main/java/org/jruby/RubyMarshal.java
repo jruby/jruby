@@ -70,7 +70,7 @@ public class RubyMarshal {
         return module;
     }
 
-    @JRubyMethod(required = 1, optional = 2, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(required = 1, optional = 2, checkArity = false, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject dump(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         int argc = Arity.checkArgumentCount(context, args, 1, 3);
 
@@ -115,7 +115,7 @@ public class RubyMarshal {
         return dump(recv.getRuntime().getCurrentContext(), recv, args, unusedBlock);
     }
 
-    @JRubyMethod(name = {"load", "restore"}, required = 1, optional = 2, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = {"load", "restore"}, required = 1, optional = 2, checkArity = false, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject load(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         int argc = Arity.checkArgumentCount(context, args, 1, 3);
 

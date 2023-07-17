@@ -253,7 +253,7 @@ public class RubyKernel {
         return open(context, recv, args, block);
     }
 
-    @JRubyMethod(name = "open", required = 1, optional = 3, module = true, visibility = PRIVATE, keywords = true)
+    @JRubyMethod(name = "open", required = 1, optional = 3, checkArity = false, module = true, visibility = PRIVATE, keywords = true)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         int argc = Arity.checkArgumentCount(context, args, 1, 4);
 
@@ -302,7 +302,7 @@ public class RubyKernel {
     }
 
     // MRI: rb_f_gets
-    @JRubyMethod(optional = 1, module = true, visibility = PRIVATE)
+    @JRubyMethod(optional = 1, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject gets(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         IRubyObject argsFile = runtime.getArgsFile();
@@ -313,7 +313,7 @@ public class RubyKernel {
         return sites(context).gets.call(context, argsFile, argsFile, args);
     }
 
-    @JRubyMethod(optional = 1, module = true, visibility = PRIVATE)
+    @JRubyMethod(optional = 1, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject abort(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 0, 1);
 
@@ -668,7 +668,7 @@ public class RubyKernel {
         return context.nil;
     }
 
-    @JRubyMethod(optional = 1, module = true, visibility = PRIVATE)
+    @JRubyMethod(optional = 1, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject readline(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         IRubyObject line = gets(context, recv, args);
 
@@ -679,7 +679,7 @@ public class RubyKernel {
         return line;
     }
 
-    @JRubyMethod(optional = 1, module = true, visibility = PRIVATE)
+    @JRubyMethod(optional = 1, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject readlines(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return RubyArgsFile.readlines(context, context.runtime.getArgsFile(), args);
     }
@@ -711,12 +711,12 @@ public class RubyKernel {
         }
     }
 
-    @JRubyMethod(required = 1, optional = 3, module = true, visibility = PRIVATE)
+    @JRubyMethod(required = 1, optional = 3, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject select(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return RubyIO.select(context, recv, args);
     }
 
-    @JRubyMethod(optional = 1, module = true, visibility = PRIVATE)
+    @JRubyMethod(optional = 1, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject sleep(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 0, 1);
 
@@ -768,7 +768,7 @@ public class RubyKernel {
         return runtime.getNil(); // not reached
     }
 
-    @JRubyMethod(name = "exit!", optional = 1, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "exit!", optional = 1, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject exit_bang(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
 
@@ -867,7 +867,7 @@ public class RubyKernel {
         return RubyBoolean.newBoolean(context, context.getCurrentFrame().getBlock().isGiven());
     }
 
-    @JRubyMethod(name = {"sprintf", "format"}, required = 1, rest = true, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = {"sprintf", "format"}, required = 1, rest = true, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject sprintf(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         if (args.length == 0) {
             throw context.runtime.newArgumentError("sprintf must have at least one argument");
@@ -926,7 +926,7 @@ public class RubyKernel {
         throw raise;
     }
 
-    @JRubyMethod(name = {"raise", "fail"}, optional = 3, module = true, visibility = PRIVATE, omit = true)
+    @JRubyMethod(name = {"raise", "fail"}, optional = 3, checkArity = false, module = true, visibility = PRIVATE, omit = true)
     public static IRubyObject raise(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         int argc = Arity.checkArgumentCount(context, args, 0, 3);
 
@@ -1150,7 +1150,7 @@ public class RubyKernel {
         return runtime.getTrue();
     }
 
-    @JRubyMethod(name = "eval", required = 1, optional = 3, module = true, visibility = PRIVATE,
+    @JRubyMethod(name = "eval", required = 1, optional = 3, checkArity = false, module = true, visibility = PRIVATE,
             reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
             writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public static IRubyObject eval(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
@@ -1496,7 +1496,7 @@ public class RubyKernel {
         return trace_func;
     }
 
-    @JRubyMethod(required = 1, optional = 1, module = true, visibility = PRIVATE)
+    @JRubyMethod(required = 1, optional = 1, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject trace_var(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         int argc = Arity.checkArgumentCount(context, args, 1, 2);
 
@@ -1517,7 +1517,7 @@ public class RubyKernel {
         return context.nil;
     }
 
-    @JRubyMethod(required = 1, optional = 1, module = true, visibility = PRIVATE)
+    @JRubyMethod(required = 1, optional = 1, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject untrace_var(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         int argc = Arity.checkArgumentCount(context, args, 1, 2);
 
@@ -1543,7 +1543,7 @@ public class RubyKernel {
         return context.nil;
     }
 
-    @JRubyMethod(required = 1, optional = 1)
+    @JRubyMethod(required = 1, optional = 1, checkArity = false)
     public static IRubyObject define_singleton_method(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         int argc = Arity.checkArgumentCount(context, args, 1, 2);
 
@@ -1624,7 +1624,7 @@ public class RubyKernel {
         return RubyFloat.newFloat(context.runtime, RubyFloat.INFINITY);
     }
 
-    @JRubyMethod(required = 2, optional = 1, module = true, visibility = PRIVATE)
+    @JRubyMethod(required = 2, optional = 1, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject test(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 2, 3);
 
@@ -1815,12 +1815,12 @@ public class RubyKernel {
         return RubyProcess.spawn(context, recv, args);
     }
 
-    @JRubyMethod(required = 1, optional = 9, module = true, visibility = PRIVATE)
+    @JRubyMethod(required = 1, optional = 9, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject syscall(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         throw context.runtime.newNotImplementedError("Kernel#syscall is not implemented in JRuby");
     }
 
-    @JRubyMethod(name = "system", required = 1, rest = true, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "system", required = 1, rest = true, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject    system(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 1, -1);
 
@@ -2036,7 +2036,7 @@ public class RubyKernel {
         return recv;
     }
 
-    @JRubyMethod(name = {"to_enum", "enum_for"}, optional = 1, rest = true, keywords = true)
+    @JRubyMethod(name = {"to_enum", "enum_for"}, rest = true, keywords = true)
     public static IRubyObject obj_to_enum(final ThreadContext context, IRubyObject self, IRubyObject[] args, final Block block) {
         // to_enum is a bit strange in that it will propagate the arguments it passes to each element it calls.  We are determining
         // whether we have received keywords so we can propagate this info.
@@ -2212,7 +2212,7 @@ public class RubyKernel {
         return ((RubyBasicObject)self).dup();
     }
 
-    @JRubyMethod(optional = 1)
+    @JRubyMethod(optional = 1, checkArity = false)
     public static IRubyObject display(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 1);
 
@@ -2249,7 +2249,7 @@ public class RubyKernel {
         return ((RubyBasicObject)self).kind_of_p(context, type);
     }
 
-    @JRubyMethod(name = "methods", optional = 1)
+    @JRubyMethod(name = "methods", optional = 1, checkArity = false)
     public static IRubyObject methods(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 1);
 
@@ -2266,7 +2266,7 @@ public class RubyKernel {
         return self.id();
     }
 
-    @JRubyMethod(name = "public_methods", optional = 1)
+    @JRubyMethod(name = "public_methods", optional = 1, checkArity = false)
     public static IRubyObject public_methods(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 1);
 
@@ -2278,7 +2278,7 @@ public class RubyKernel {
         return ((RubyBasicObject)self).public_methods(context, args);
     }
 
-    @JRubyMethod(name = "protected_methods", optional = 1)
+    @JRubyMethod(name = "protected_methods", optional = 1, checkArity = false)
     public static IRubyObject protected_methods(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 1);
 
@@ -2290,7 +2290,7 @@ public class RubyKernel {
         return ((RubyBasicObject)self).protected_methods(context, args);
     }
 
-    @JRubyMethod(name = "private_methods", optional = 1)
+    @JRubyMethod(name = "private_methods", optional = 1, checkArity = false)
     public static IRubyObject private_methods(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 1);
 
@@ -2302,7 +2302,7 @@ public class RubyKernel {
         return ((RubyBasicObject)self).private_methods(context, args);
     }
 
-    @JRubyMethod(name = "singleton_methods", optional = 1)
+    @JRubyMethod(name = "singleton_methods", optional = 1, checkArity = false)
     public static RubyArray singleton_methods(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 1);
 
@@ -2329,7 +2329,7 @@ public class RubyKernel {
         return ((RubyBasicObject)self).to_s();
     }
 
-    @JRubyMethod(name = "extend", required = 1, rest = true)
+    @JRubyMethod(name = "extend", required = 1, rest = true, checkArity = false)
     public static IRubyObject extend(IRubyObject self, IRubyObject[] args) {
         Arity.checkArgumentCount(self.getRuntime(), args, 1, -1);
 
@@ -2348,7 +2348,7 @@ public class RubyKernel {
     public static IRubyObject send(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         return ((RubyBasicObject)self).send(context, arg0, arg1, arg2, block);
     }
-    @JRubyMethod(name = "send", required = 1, rest = true, omit = true, keywords = true)
+    @JRubyMethod(name = "send", required = 1, rest = true, checkArity = false, omit = true, keywords = true)
     public static IRubyObject send(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
         Arity.checkArgumentCount(context, args, 1, -1);
 

@@ -1392,7 +1392,7 @@ public class RubyRational extends RubyNumeric {
     /** nurat_rationalize
      *
      */
-    @JRubyMethod(name = "rationalize", optional = 1)
+    @JRubyMethod(name = "rationalize", optional = 1, checkArity = false)
     public IRubyObject rationalize(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 0, 1);
 
