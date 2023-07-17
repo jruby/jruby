@@ -85,6 +85,7 @@ import static org.jruby.lexer.LexingCommon.RCURLY;
 import static org.jruby.lexer.LexingCommon.RPAREN;
 import static org.jruby.lexer.LexingCommon.SLASH;
 import static org.jruby.lexer.LexingCommon.STAR;
+import static org.jruby.lexer.LexingCommon.STAR_STAR;
 import static org.jruby.lexer.LexingCommon.TILDE;
 import static org.jruby.lexer.LexingCommon.EXPR_BEG;
 import static org.jruby.lexer.LexingCommon.EXPR_FITEM;
@@ -101,7 +102,7 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
     public RubyParser(LexerSource source, IRubyWarnings warnings) {
         super(warnings); setLexer(new RubyLexer(this, source, warnings));
     }
-					// line 105 "-"
+					// line 106 "-"
   // %token constants
   public static final int keyword_class = 257;
   public static final int keyword_module = 258;
@@ -5336,7 +5337,7 @@ states[572] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[573] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = null;
+                    yyVal = STAR_STAR;
   return yyVal;
 };
 states[574] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6793,7 +6794,7 @@ states[819] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4763 "parse.y"
+					// line 4764 "parse.y"
 
 }
-					// line 14579 "-"
+					// line 14580 "-"

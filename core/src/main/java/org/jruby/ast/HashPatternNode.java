@@ -60,7 +60,7 @@ public class HashPatternNode extends Node {
     }
 
     public boolean hasKeywordArgs() {
-        return keywordArgs != null && !keywordArgs.isEmpty();
+        return keywordArgs != null && !keywordArgs.isEmpty() || restArg instanceof StarNode;
     }
 
     public HashNode getKeywordArgs() {
