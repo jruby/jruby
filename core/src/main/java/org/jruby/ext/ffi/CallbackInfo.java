@@ -98,7 +98,7 @@ public class CallbackInfo extends Type {
      *
      * @return A new CallbackInfo instance
      */
-    @JRubyMethod(name = "new", meta = true, required = 2, optional = 1)
+    @JRubyMethod(name = "new", meta = true, required = 2, optional = 1, checkArity = false)
     public static final IRubyObject newCallbackInfo(ThreadContext context, IRubyObject klass,
             IRubyObject[] args)
     {

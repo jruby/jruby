@@ -120,7 +120,7 @@ public class JRubyUtilLibrary implements Library {
      * @param args (name, raw: false, path: false)
      * @return an enumerable of class-loader resources
      */ // used from RGs' JRuby defaults (as well as jar_dependencies)
-    @JRubyMethod(module = true, name = "class_loader_resources", alias = "classloader_resources", required = 1, optional = 1)
+    @JRubyMethod(module = true, name = "class_loader_resources", alias = "classloader_resources", required = 1, optional = 1, checkArity = false)
     public static IRubyObject class_loader_resources(ThreadContext context, IRubyObject recv, IRubyObject... args) {
         int argc = Arity.checkArgumentCount(context, args, 1, 2);
 

@@ -82,7 +82,7 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return wrap19(context, recv, new IRubyObject[]{io}, block);
     }
     
-    @JRubyMethod(meta = true, name = "wrap", required = 1, optional = 1)
+    @JRubyMethod(meta = true, name = "wrap", required = 1, optional = 1, checkArity = false)
     public static IRubyObject wrap19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
         RubyGzipFile instance;

@@ -1678,7 +1678,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         return getMetaClass().finvokeWithRefinements(context, this, staticScope, name, arg1, arg2, block);
     }
-    @JRubyMethod(name = "__send__", required = 1, rest = true, omit = true, keywords = true)
+    @JRubyMethod(name = "__send__", required = 1, rest = true, checkArity = false, omit = true, keywords = true)
     public IRubyObject send(ThreadContext context, IRubyObject[] args, Block block) {
         int argc = Arity.checkArgumentCount(context, args, 1, -1);
         int callInfo = context.callInfo;
@@ -2594,7 +2594,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     k = Klass.new
      *     k.instance_exec(5) {|x| {@literal @}secret+x }   #=&gt; 104
      */
-    @JRubyMethod(name = "instance_exec", optional = 3, rest = true, keywords = true,
+    @JRubyMethod(name = "instance_exec", rest = true, keywords = true,
             reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
             writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject instance_exec(ThreadContext context, IRubyObject[] args, Block block) {

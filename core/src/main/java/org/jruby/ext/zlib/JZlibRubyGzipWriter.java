@@ -78,7 +78,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return result;
     }
 
-    @JRubyMethod(name = "open", required = 1, optional = 3, meta = true)
+    @JRubyMethod(name = "open", required = 1, optional = 3, checkArity = false, meta = true)
     public static IRubyObject open19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         int argc = Arity.checkArgumentCount(context, args, 1, 4);
 
@@ -197,7 +197,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return this;
     }
 
-    @JRubyMethod(name = "printf", required = 1, rest = true)
+    @JRubyMethod(name = "printf", required = 1, rest = true, checkArity = false)
     public IRubyObject printf(ThreadContext context, IRubyObject[] args) {
         write(RubyKernel.sprintf(context, this, args));
         
@@ -291,7 +291,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return realIo;
     }
 
-    @JRubyMethod(name = "flush", optional = 1)
+    @JRubyMethod(name = "flush", optional = 1, checkArity = false)
     public IRubyObject flush(IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(getRuntime(), args, 0, 1);
 

@@ -69,7 +69,7 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
         getSingletonClass().addMethod("call", createDynamicMethod(getSingletonClass()));
     }
     
-    @JRubyMethod(name = { "new" }, meta = true, required = 2, optional = 2)
+    @JRubyMethod(name = { "new" }, meta = true, required = 2, optional = 2, checkArity = false)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         int argc = Arity.checkArgumentCount(context, args, 2, 4);
 

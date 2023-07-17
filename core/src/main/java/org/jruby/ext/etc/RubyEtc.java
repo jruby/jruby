@@ -212,7 +212,7 @@ public class RubyEtc {
         return RubyString.newString(context.runtime, bytes);
     }
 
-    @JRubyMethod(optional=1, module = true)
+    @JRubyMethod(optional = 1, checkArity = false, module = true)
     public static synchronized IRubyObject getpwuid(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
 
@@ -396,7 +396,7 @@ public class RubyEtc {
         }
     }
 
-    @JRubyMethod(optional=1, module = true)
+    @JRubyMethod(optional = 1, checkArity = false, module = true)
     public static synchronized IRubyObject getgrgid(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
 

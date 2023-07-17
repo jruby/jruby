@@ -1178,7 +1178,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return insert(arg1, arg2);
     }
 
-    @JRubyMethod(name = "insert", required = 1, rest = true)
+    @JRubyMethod(name = "insert", required = 1, rest = true, checkArity = false)
     public IRubyObject insert(IRubyObject[] args) {
         final Ruby runtime = metaClass.runtime;
 
@@ -2687,7 +2687,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /** rb_ary_indexes
      *
      */
-    @JRubyMethod(name = {"indexes", "indices"}, required = 1, rest = true)
+    @JRubyMethod(name = {"indexes", "indices"}, required = 1, rest = true, checkArity = false)
     public IRubyObject indexes(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 1, -1);
 
@@ -3126,7 +3126,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /** rb_ary_zip
      *
      */
-    @JRubyMethod(optional = 1, rest = true)
+    @JRubyMethod(optional = 1, rest = true, checkArity = false)
     public IRubyObject zip(ThreadContext context, IRubyObject[] args, Block block) {
         final Ruby runtime = context.runtime;
         RubyClass array = runtime.getArray();
@@ -5487,7 +5487,7 @@ float_loop:
         return RubyObject.dig2(context, val, arg1, arg2);
     }
 
-    @JRubyMethod(name = "dig", required = 1, rest = true)
+    @JRubyMethod(name = "dig", required = 1, rest = true, checkArity = false)
     public IRubyObject dig(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 1, -1);
 

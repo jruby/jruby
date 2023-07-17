@@ -158,7 +158,7 @@ public class RubySortedSet extends RubySet implements SortedSet {
         return this;
     }
 
-    @JRubyMethod(frame = true, keywords = true, required = 1, optional = 1)
+    @JRubyMethod(frame = true, keywords = true, required = 1, optional = 1, checkArity = false)
     public IRubyObject initialize_clone(ThreadContext context, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 1, 2);
 

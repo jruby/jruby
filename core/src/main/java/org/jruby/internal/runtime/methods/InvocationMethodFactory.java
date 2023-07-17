@@ -367,6 +367,75 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         return ic;
     }
 
+    /**
+     * Emit code to check the arity of a call to a Java-based method.
+     *
+     * @param jrubyMethod The annotation of the called method
+     * @param method The code generator for the handle being created
+     */
+    private static void checkArity(JRubyMethod jrubyMethod, SkinnyMethodAdapter method, int specificArity) {
+        switch (specificArity) {
+        case 0:
+        case 1:
+        case 2:
+        case 3:
+            // for zero, one, two, three arities, JavaMethod.JavaMethod*.call(...IRubyObject[] args...) will check
+            return;
+        default:
+            final Label arityError = new Label();
+            final Label noArityError = new Label();
+            boolean checkArity = false;
+            if (jrubyMethod.rest()) {
+                if (jrubyMethod.required() > 0) {
+                    // just confirm minimum args provided
+                    method.aload(ARGS_INDEX);
+                    method.arraylength();
+                    method.ldc(jrubyMethod.required());
+                    method.if_icmplt(arityError);
+                    checkArity = true;
+                }
+            } else if (jrubyMethod.optional() > 0) {
+                if (jrubyMethod.required() > 0) {
+                    // confirm minimum args provided
+                    method.aload(ARGS_INDEX);
+                    method.arraylength();
+                    method.ldc(jrubyMethod.required());
+                    method.if_icmplt(arityError);
+                }
+
+                // confirm maximum not greater than optional
+                method.aload(ARGS_INDEX);
+                method.arraylength();
+                method.ldc(jrubyMethod.required() + jrubyMethod.optional());
+                method.if_icmpgt(arityError);
+                checkArity = true;
+            } else {
+                // just confirm args length == required
+                method.aload(ARGS_INDEX);
+                method.arraylength();
+                method.ldc(jrubyMethod.required());
+                method.if_icmpne(arityError);
+                checkArity = true;
+            }
+
+            if (checkArity) {
+                method.go_to(noArityError);
+
+                // Raise an error if arity does not match requirements
+                method.label(arityError);
+                method.aload(THREADCONTEXT_INDEX);
+                method.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
+                method.aload(ARGS_INDEX);
+                method.ldc(jrubyMethod.required());
+                method.ldc(jrubyMethod.required() + jrubyMethod.optional());
+                method.invokestatic(p(Arity.class), "checkArgumentCount", sig(int.class, Ruby.class, IRubyObject[].class, int.class, int.class));
+                method.pop();
+
+                method.label(noArityError);
+            }
+        }
+    }
+
     private static ClassWriter createJavaMethodCtor(String namePath, String sup, String parameterDesc) {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         String sourceFile = namePath.substring(namePath.lastIndexOf('/') + 1) + ".gen";
@@ -660,6 +729,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             method.aload(1);
             method.ldc(0);
             method.putfield("org/jruby/runtime/ThreadContext", "callInfo", "I");
+        }
+
+        if (desc.anno.checkArity()) {
+            checkArity(desc.anno, method, specificArity);
         }
 
         CallConfiguration callConfig = CallConfiguration.getCallConfigByAnno(desc.anno);

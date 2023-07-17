@@ -242,7 +242,7 @@ public class RubySocket extends RubyBasicSocket {
         return recvfrom(context, _length);
     }
 
-    @JRubyMethod(required = 1, optional = 3)
+    @JRubyMethod(required = 1, optional = 3, checkArity = false)
     public IRubyObject recvfrom_nonblock(ThreadContext context, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 1, 4);
 
@@ -262,7 +262,7 @@ public class RubySocket extends RubyBasicSocket {
         throw SocketUtils.sockerr(context.runtime, JRUBY_SERVER_SOCKET_ERROR);
     }
 
-    @JRubyMethod(notImplemented = true, optional = 1)
+    @JRubyMethod(notImplemented = true, optional = 1, checkArity = false)
     public IRubyObject accept_nonblock(ThreadContext context, IRubyObject[] args) {
         throw SocketUtils.sockerr(context.runtime, JRUBY_SERVER_SOCKET_ERROR);
     }
@@ -294,14 +294,14 @@ public class RubySocket extends RubyBasicSocket {
         return list;
     }
 
-    @JRubyMethod(required = 1, rest = true, meta = true)
+    @JRubyMethod(required = 1, rest = true, checkArity = false, meta = true)
     public static IRubyObject gethostbyaddr(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 1, -1);
 
         return SocketUtils.gethostbyaddr(context, args);
     }
 
-    @JRubyMethod(required = 1, optional = 1, meta = true)
+    @JRubyMethod(required = 1, optional = 1, checkArity = false, meta = true)
     public static IRubyObject getservbyname(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 1, 2);
 
@@ -334,14 +334,14 @@ public class RubySocket extends RubyBasicSocket {
         return SocketUtils.gethostbyname(context, hostname);
     }
 
-    @JRubyMethod(required = 2, optional = 5, meta = true)
+    @JRubyMethod(required = 2, optional = 5, checkArity = false, meta = true)
     public static IRubyObject getaddrinfo(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 2, 7);
 
         return SocketUtils.getaddrinfo(context, args);
     }
 
-    @JRubyMethod(required = 1, optional = 1, meta = true)
+    @JRubyMethod(required = 1, optional = 1, checkArity = false, meta = true)
     public static IRubyObject getnameinfo(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 1, 2);
 

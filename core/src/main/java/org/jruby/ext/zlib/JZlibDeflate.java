@@ -57,7 +57,7 @@ public class JZlibDeflate extends ZStream {
     private com.jcraft.jzlib.Deflater flater = null;
     private int flush = JZlib.Z_NO_FLUSH;
 
-    @JRubyMethod(name = "deflate", required = 1, optional = 1, meta = true)
+    @JRubyMethod(name = "deflate", required = 1, optional = 1, checkArity = false, meta = true)
     public static IRubyObject s_deflate(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         args = Arity.scanArgs(runtime, args, 1, 1);
@@ -84,7 +84,7 @@ public class JZlibDeflate extends ZStream {
         super(runtime, type);
     }
 
-    @JRubyMethod(name = "initialize", optional = 4, visibility = PRIVATE)
+    @JRubyMethod(name = "initialize", optional = 4, checkArity = false, visibility = PRIVATE)
     public IRubyObject _initialize(IRubyObject[] args) {
         args = Arity.scanArgs(getRuntime(), args, 0, 4);
         level = -1;
@@ -206,7 +206,7 @@ public class JZlibDeflate extends ZStream {
         }
     }
 
-    @JRubyMethod(name = "flush", optional = 1)
+    @JRubyMethod(name = "flush", optional = 1, checkArity = false)
     public IRubyObject flush(IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(getRuntime(), args, 0, 1);
 
@@ -217,7 +217,7 @@ public class JZlibDeflate extends ZStream {
         return flush(flush);
     }
 
-    @JRubyMethod(name = "deflate", required = 1, optional = 1)
+    @JRubyMethod(name = "deflate", required = 1, optional = 1, checkArity = false)
     public IRubyObject deflate(IRubyObject[] args) {
         args = Arity.scanArgs(getRuntime(), args, 1, 1);
         if (internalFinished()) throw RubyZlib.newStreamError(getRuntime(), "stream error");

@@ -33,6 +33,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.ArgumentError;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -47,6 +48,8 @@ public class TestMethodFactories extends Base {
         RubyModule mod = runtime.defineModule("Wombat" + hashCode());
 
         mod.defineAnnotatedMethods(MyBoundClass.class);
+
+        confirmCheckArity(mod);
     }
 
     public void testReflectionMethodFactory() {
@@ -66,6 +69,28 @@ public class TestMethodFactories extends Base {
                 mod.searchMethod("four_arg_method").call(context, mod, mod.getMetaClass(), "four_arg_method", new IRubyObject[] {nil, nil, nil, nil}).isTrue());
     }
 
+    // jruby/jruby#7851: Restore automatic arity checking with an opt-out
+    private void confirmCheckArity(RubyModule mod) {
+        ThreadContext context = runtime.getCurrentContext();
+
+        verifyCheckArityError(mod, context, "optWithCheckArityTrue", true);
+        verifyCheckArityError(mod, context, "optWithCheckArityFalse", false);
+        verifyCheckArityError(mod, context, "optWithCheckArityDefault", true);
+    }
+
+    private static void verifyCheckArityError(RubyModule mod, ThreadContext context, String method, boolean error) {
+        if (error) {
+            try {
+                mod.searchMethod(method).call(context, mod, mod.getMetaClass(), method);
+                if (error) fail("optCheckArityTrue should error with zero args");
+            } catch (ArgumentError ae) {
+                // pass
+                if (!error) fail(method + " should not error with zero args");
+                return;
+            }
+        }
+    }
+
     public static class MyBoundClass {
         // void methods should work
         @JRubyMethod
@@ -76,6 +101,24 @@ public class TestMethodFactories extends Base {
         @JRubyMethod(required = 4)
         public static IRubyObject four_arg_method(IRubyObject self, IRubyObject[] obj) {
             return self.getRuntime().getTrue();
+        }
+
+        // jruby/jruby#7851: Restore automatic arity checking with an opt-out
+        @JRubyMethod(required = 1, optional = 1, checkArity = true)
+        public static IRubyObject optWithCheckArityTrue(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+            return context.tru;
+        }
+
+        // jruby/jruby#7851: Restore automatic arity checking with an opt-out
+        @JRubyMethod(required = 1, optional = 1, checkArity = false)
+        public static IRubyObject optWithCheckArityFalse(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+            return context.tru;
+        }
+
+        // jruby/jruby#7851: Restore automatic arity checking with an opt-out
+        @JRubyMethod(required = 1, optional = 1)
+        public static IRubyObject optWithCheckArityDefault(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+            return context.tru;
         }
     }
 

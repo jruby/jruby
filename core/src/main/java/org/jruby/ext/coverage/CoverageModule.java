@@ -48,7 +48,7 @@ import static org.jruby.runtime.ThreadContext.hasKeywords;
  * Implementation of Ruby 1.9.2's "Coverage" module
  */
 public class CoverageModule {
-    @JRubyMethod(module = true, optional = 1, keywords = true)
+    @JRubyMethod(module = true, optional = 1, keywords = true, checkArity = false)
     public static IRubyObject setup(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 0, 1);
 
@@ -130,14 +130,14 @@ public class CoverageModule {
         return context.nil;
     }
 
-    @JRubyMethod(module = true, optional = 1, keywords = true)
+    @JRubyMethod(module = true, optional = 1, keywords = true, checkArity = false)
     public static IRubyObject start(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         setup(context, self, args);
         resume(context, self);
         return context.nil;
     }
 
-    @JRubyMethod(module = true, optional = 1, keywords = true)
+    @JRubyMethod(module = true, optional = 1, keywords = true, checkArity = false)
     public static IRubyObject result(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 0, 1);
 

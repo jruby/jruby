@@ -367,7 +367,7 @@ public class RubyBigDecimal extends RubyNumeric {
         }
     }
 
-    @JRubyMethod(required = 1, optional = 1, meta = true)
+    @JRubyMethod(required = 1, optional = 1, checkArity = false, meta = true)
     public static IRubyObject mode(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
 
@@ -1978,7 +1978,7 @@ public class RubyBigDecimal extends RubyNumeric {
                 context.runtime.newFixnum(((getAllDigits().length() / 4) + 1) * 4));
     }
 
-    @JRubyMethod(name = "round", optional = 2)
+    @JRubyMethod(name = "round", optional = 2, checkArity = false)
     public IRubyObject round(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 0, 2);
 

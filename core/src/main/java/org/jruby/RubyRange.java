@@ -286,7 +286,7 @@ public class RubyRange extends RubyObject {
         }
     }
 
-    @JRubyMethod(required = 2, optional = 1, visibility = PRIVATE)
+    @JRubyMethod(required = 2, optional = 1, checkArity = false, visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block unusedBlock) {
         Arity.checkArgumentCount(context, args, 2, 3);
 

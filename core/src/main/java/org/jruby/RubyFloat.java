@@ -812,7 +812,7 @@ public class RubyFloat extends RubyNumeric {
     /** float_rationalize
      *
      */
-    @JRubyMethod(name = "rationalize", optional = 1)
+    @JRubyMethod(name = "rationalize", optional = 1, checkArity = false)
     public IRubyObject rationalize(ThreadContext context, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 1);
 

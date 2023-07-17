@@ -156,7 +156,7 @@ public class JRubyLibrary implements Library {
         }
     }
 
-    @JRubyMethod(module = true, rest = true, optional = 1) // (loader = JRuby.runtime.jruby_class_loader)
+    @JRubyMethod(module = true, rest = true) // (loader = JRuby.runtime.jruby_class_loader)
     public static IRubyObject set_context_class_loader(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         final ClassLoader loader;
         if (args.length == 0 || args[0] == context.nil) {
@@ -194,7 +194,7 @@ public class JRubyLibrary implements Library {
         return context.runtime.newFixnum(System.identityHashCode(obj));
     }
 
-    @JRubyMethod(module = true, name = "parse", alias = "ast_for", required = 1, optional = 3)
+    @JRubyMethod(module = true, name = "parse", alias = "ast_for", required = 1, optional = 3, checkArity = false)
     public static IRubyObject parse(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         // def parse(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, lineno = 0, &block)
         return Java.wrapJavaObject(context.runtime, parseImpl(context, args, block));
@@ -245,7 +245,7 @@ public class JRubyLibrary implements Library {
         return parseResult;
     }
 
-    @JRubyMethod(module = true, name = "compile_ir", required = 1, optional = 3)
+    @JRubyMethod(module = true, name = "compile_ir", required = 1, optional = 3, checkArity = false)
     public static IRubyObject compile_ir(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         // def compile_ir(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, &block)
         return Java.wrapJavaObject(context.runtime, compileIR(context, args, block));
@@ -260,7 +260,7 @@ public class JRubyLibrary implements Library {
         return scope;
     }
 
-    @JRubyMethod(module = true, name = "compile", required = 1, optional = 3)
+    @JRubyMethod(module = true, name = "compile", required = 1, optional = 3, checkArity = false)
     public static IRubyObject compile(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         // def compile(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, &block)
 

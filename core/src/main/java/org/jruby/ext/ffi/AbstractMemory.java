@@ -1973,7 +1973,7 @@ abstract public class AbstractMemory extends MemoryObject {
         return this;
     }
 
-    @JRubyMethod(name = "put_bytes", required = 2, optional = 2)
+    @JRubyMethod(name = "put_bytes", required = 2, optional = 2, checkArity = false)
     public IRubyObject put_bytes(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 2, 4);
 
@@ -1989,7 +1989,7 @@ abstract public class AbstractMemory extends MemoryObject {
         return MemoryUtil.getTaintedByteString(context.runtime, getMemoryIO(), 0, Util.int32Value(lenArg));
     }
 
-    @JRubyMethod(name = "write_bytes", required = 1, optional = 2)
+    @JRubyMethod(name = "write_bytes", required = 1, optional = 2, checkArity = false)
     public IRubyObject write_bytes(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 1, 3);
 

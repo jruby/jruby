@@ -217,7 +217,7 @@ public class RubyProcess {
             return new RubyStatus(runtime, runtime.getProcStatus(), status, pid);
         }
 
-        @JRubyMethod(module = true, optional = 2)
+        @JRubyMethod(module = true, optional = 2, checkArity = false)
         public static IRubyObject wait(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             int argc = Arity.checkArgumentCount(context, args, 0, 2);
 
@@ -667,12 +667,12 @@ public class RubyProcess {
         }
     }
 
-    @JRubyMethod(name = "abort", optional = 1, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "abort", optional = 1, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject abort(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return RubyKernel.abort(context, recv, args);
     }
 
-    @JRubyMethod(name = "exit!", optional = 1, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "exit!", optional = 1, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject exit_bang(IRubyObject recv, IRubyObject[] args) {
         return RubyKernel.exit_bang(recv, args);
     }
@@ -1782,7 +1782,7 @@ public class RubyProcess {
         return RubyFixnum.newFixnum(runtime, ShellLauncher.runExternalWithoutWait(runtime, args));
     }
 
-    @JRubyMethod(name = "exit", optional = 1, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "exit", optional = 1, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject exit(IRubyObject recv, IRubyObject[] args) {
         return RubyKernel.exit(recv, args);
     }

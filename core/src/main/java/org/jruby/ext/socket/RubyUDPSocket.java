@@ -262,7 +262,7 @@ public class RubyUDPSocket extends RubyIPSocket {
         return (DatagramChannel) getChannel();
     }
 
-    @JRubyMethod(required = 1, optional = 3)
+    @JRubyMethod(required = 1, optional = 3, checkArity = false)
     public IRubyObject recvfrom_nonblock(ThreadContext context, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 1, 4);
 
@@ -361,7 +361,7 @@ public class RubyUDPSocket extends RubyIPSocket {
         }
     }
 
-    @JRubyMethod(required = 2, optional = 2)
+    @JRubyMethod(required = 2, optional = 2, checkArity = false)
     public IRubyObject send(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 2, 4);
 

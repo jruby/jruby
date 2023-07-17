@@ -202,7 +202,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
     // used internally to create lazy without block (from Enumerator/Enumerable)
     // and used internally to create enum from Enumerator::Lazy#eager
-    @JRubyMethod(name = "__from", meta = true, required = 2, optional = 2, visibility = PRIVATE, keywords = true)
+    @JRubyMethod(name = "__from", meta = true, required = 2, optional = 2, checkArity = false, visibility = PRIVATE, keywords = true)
     public static IRubyObject __from(ThreadContext context, IRubyObject klass, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 2, 4);
 
@@ -570,7 +570,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
     /** MRI: enumerator_s_produce
      *
      */
-    @JRubyMethod(meta = true, optional = 1)
+    @JRubyMethod(meta = true, optional = 1, checkArity = false)
     public static IRubyObject produce(ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
         int argc = Arity.checkArgumentCount(context, args, 0, 1);
 

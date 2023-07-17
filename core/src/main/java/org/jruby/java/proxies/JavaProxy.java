@@ -400,7 +400,7 @@ public class JavaProxy extends RubyObject {
         return method.invokeDirect(context, getObject(), arg0.toJava(argTypeClass));
     }
 
-    @JRubyMethod(required = 1, rest = true)
+    @JRubyMethod(required = 1, rest = true, checkArity = false)
     public IRubyObject java_send(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 1, -1);
 
@@ -661,7 +661,7 @@ public class JavaProxy extends RubyObject {
             return method.invokeStaticDirect(context, arg0.toJava(argTypeClass));
         }
 
-        @JRubyMethod(required = 1, rest = true, meta = true)
+        @JRubyMethod(required = 1, rest = true, checkArity = false, meta = true)
         public static IRubyObject java_send(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
             int argc = Arity.checkArgumentCount(context, args, 1, -1);
 

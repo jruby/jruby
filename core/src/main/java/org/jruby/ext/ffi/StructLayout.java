@@ -214,7 +214,7 @@ public final class StructLayout extends Type {
         this.isUnion = offset == 0 && memberList.size() > 1;
     }
     
-    @JRubyMethod(name = "new", meta = true, required = 3, optional = 1)
+    @JRubyMethod(name = "new", meta = true, required = 3, optional = 1, checkArity = false)
     public static final IRubyObject newStructLayout(ThreadContext context, IRubyObject klass, 
             IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 3, 4);
@@ -649,7 +649,7 @@ public final class StructLayout extends Type {
             init(args[0], args[2], args[1], io);
         }
 
-        @JRubyMethod(name="initialize", visibility = PRIVATE, required = 3, optional = 1)
+        @JRubyMethod(name="initialize", visibility = PRIVATE, required = 3, optional = 1, checkArity = false)
         public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
             Arity.checkArgumentCount(context, args, 3, 4);
             
@@ -831,7 +831,7 @@ public final class StructLayout extends Type {
         }
 
         @Override
-        @JRubyMethod(name="initialize", visibility = PRIVATE, required = 3, optional = 1)
+        @JRubyMethod(name="initialize", visibility = PRIVATE, required = 3, optional = 1, checkArity = false)
         public final IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
             Arity.checkArgumentCount(context, args, 3, 4);
             
@@ -854,7 +854,7 @@ public final class StructLayout extends Type {
         }
         
         @Override
-        @JRubyMethod(name="initialize", visibility = PRIVATE, required = 3, optional = 1)
+        @JRubyMethod(name="initialize", visibility = PRIVATE, required = 3, optional = 1, checkArity = false)
         public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
             Arity.checkArgumentCount(context, args, 3, 4);
 
@@ -878,7 +878,7 @@ public final class StructLayout extends Type {
         }
 
         @Override
-        @JRubyMethod(name="initialize", visibility = PRIVATE, required = 3, optional = 1)
+        @JRubyMethod(name="initialize", visibility = PRIVATE, required = 3, optional = 1, checkArity = false)
         public final IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
             Arity.checkArgumentCount(context, args, 3, 4);
 

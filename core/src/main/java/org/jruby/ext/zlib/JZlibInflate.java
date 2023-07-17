@@ -70,7 +70,7 @@ public class JZlibInflate extends ZStream {
         }
     }
 
-    @JRubyMethod(name = "initialize", optional = 1, visibility = PRIVATE)
+    @JRubyMethod(name = "initialize", optional = 1, checkArity = false, visibility = PRIVATE)
     public IRubyObject _initialize(IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(getRuntime(), args, 0, 1);
 

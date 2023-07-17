@@ -152,7 +152,7 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
         return newUnboundMethod(implementationModule, methodName, originModule, originName, entry);
     }
 
-    @JRubyMethod(required =  1, rest = true, keywords = true)
+    @JRubyMethod(required =  1, rest = true, checkArity = false, keywords = true)
     public IRubyObject bind_call(ThreadContext context, IRubyObject[] args, Block block) {
         int argc = Arity.checkArgumentCount(context, args, 1, -1);
 

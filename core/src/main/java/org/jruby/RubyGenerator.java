@@ -54,7 +54,7 @@ public class RubyGenerator extends RubyObject {
     }
 
     // generator_initialize
-    @JRubyMethod(visibility = Visibility.PRIVATE, optional = 1)
+    @JRubyMethod(visibility = Visibility.PRIVATE, optional = 1, checkArity = false)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
         int argc = Arity.checkArgumentCount(context, args, 0, 1);
 

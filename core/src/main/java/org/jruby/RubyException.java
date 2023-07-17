@@ -124,7 +124,7 @@ public class RubyException extends RubyObject {
         this.setMessage(message == null ? runtime.getNil() : runtime.newString(message));
     }
 
-    @JRubyMethod(name = "exception", optional = 1, rest = true, meta = true)
+    @JRubyMethod(name = "exception", rest = true, meta = true)
     public static IRubyObject exception(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         return ((RubyClass) recv).newInstance(context, args, block);
     }
@@ -291,7 +291,7 @@ public class RubyException extends RubyObject {
         return backtrace.backtraceLocations = backtrace.generateBacktraceLocations(context);
     }
 
-    @JRubyMethod(optional = 1)
+    @JRubyMethod(optional = 1, checkArity = false)
     public RubyException exception(IRubyObject[] args) {
         switch (args.length) {
             case 0 :

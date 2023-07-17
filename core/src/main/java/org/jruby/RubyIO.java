@@ -556,7 +556,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     // MRI: rb_io_reopen
-    @JRubyMethod(name = "reopen", required = 1, optional = 1)
+    @JRubyMethod(name = "reopen", required = 1, optional = 1, checkArity = false)
     public IRubyObject reopen(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 1, 2);
 
@@ -1171,7 +1171,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     // rb_io_s_open, 2014/5/16
-    @JRubyMethod(required = 1, rest = true, meta = true, keywords = true)
+    @JRubyMethod(required = 1, rest = true, checkArity = false, meta = true, keywords = true)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         IRubyObject io = ((RubyClass)recv).newInstance(context, args, Block.NULL_BLOCK);
 
@@ -1200,7 +1200,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     // rb_io_s_sysopen
-    @JRubyMethod(name = "sysopen", required = 1, optional = 2, meta = true)
+    @JRubyMethod(name = "sysopen", required = 1, optional = 2, checkArity = false, meta = true)
     public static IRubyObject sysopen(ThreadContext context, IRubyObject recv, IRubyObject[] argv, Block block) {
         int argc = Arity.checkArgumentCount(context, argv, 1, 3);
 
@@ -1379,7 +1379,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     // MRI: rb_io_write_nonblock
-    @JRubyMethod(name = "write_nonblock", required = 1, optional = 1)
+    @JRubyMethod(name = "write_nonblock", required = 1, optional = 1, checkArity = false)
     public IRubyObject write_nonblock(ThreadContext context, IRubyObject[] argv) {
         Arity.checkArgumentCount(context, argv, 1, 2);
 
@@ -1837,7 +1837,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return context.nil;
     }
 
-    @JRubyMethod(required = 1, rest = true)
+    @JRubyMethod(required = 1, rest = true, checkArity = false)
     public IRubyObject printf(ThreadContext context, IRubyObject[] args) {
         write(context, this, RubyKernel.sprintf(context, this, args));
         return context.nil;
@@ -1909,7 +1909,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     // This was a getOpt with one mandatory arg, but it did not work
     // so I am parsing it for now.
-    @JRubyMethod(required = 1, optional = 1)
+    @JRubyMethod(required = 1, optional = 1, checkArity = false)
     public RubyFixnum sysseek(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 1, 2);
 
@@ -2596,7 +2596,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return ctl(context, cmd, arg);
     }
 
-    @JRubyMethod(name = "ioctl", required = 1, optional = 1)
+    @JRubyMethod(name = "ioctl", required = 1, optional = 1, checkArity = false)
     public IRubyObject ioctl(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 1, 2);
 
@@ -3064,7 +3064,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return context.nil;
     }
 
-    @JRubyMethod(name = "read_nonblock", required = 1, optional = 2)
+    @JRubyMethod(name = "read_nonblock", required = 1, optional = 2, checkArity = false)
     public IRubyObject read_nonblock(ThreadContext context, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 1, 3);
 
@@ -3084,7 +3084,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         throw runtime.newEOFError();
     }
 
-    @JRubyMethod(name = "readpartial", required = 1, optional = 1)
+    @JRubyMethod(name = "readpartial", required = 1, optional = 1, checkArity = false)
     public IRubyObject readpartial(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 1, 2);
 
@@ -3188,7 +3188,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     // MRI: rb_io_sysread
-    @JRubyMethod(name = "sysread", required = 1, optional = 1)
+    @JRubyMethod(name = "sysread", required = 1, optional = 1, checkArity = false)
     public IRubyObject sysread(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 1, 2);
 
@@ -3779,7 +3779,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return nil;
     }
 
-    @JRubyMethod(name = "foreach", required = 1, optional = 3, meta = true, writes = LASTLINE)
+    @JRubyMethod(name = "foreach", required = 1, optional = 3, checkArity = false, meta = true, writes = LASTLINE)
     public static IRubyObject foreach(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
         Arity.checkArgumentCount(context, args, 1, 4);
 
@@ -3792,7 +3792,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return TypeConverter.ioGetIO(context.runtime, obj);
     }
 
-    @JRubyMethod(name = "select", required = 1, optional = 3, meta = true)
+    @JRubyMethod(name = "select", required = 1, optional = 3, checkArity = false, meta = true)
     public static IRubyObject select(ThreadContext context, IRubyObject recv, IRubyObject[] argv) {
         int argc = Arity.checkArgumentCount(context, argv, 1, 4);
 
@@ -3832,7 +3832,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     // MRI: rb_io_advise
-    @JRubyMethod(required = 1, optional = 2)
+    @JRubyMethod(required = 1, optional = 2, checkArity = false)
     public IRubyObject advise(ThreadContext context, IRubyObject[] argv) {
         Ruby runtime = context.runtime;
         IRubyObject advice, offset, len;
@@ -3996,7 +3996,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
      * @param args arguments; path [, length [, offset]]
      * @return the binary contents of the given file, at specified length and offset
      */
-    @JRubyMethod(meta = true, required = 1, optional = 2)
+    @JRubyMethod(meta = true, required = 1, optional = 2, checkArity = false)
     public static IRubyObject binread(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 1, 3);
 
@@ -4032,7 +4032,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     // Enebo: annotation processing forced me to do pangea method here...
-    @JRubyMethod(name = "read", meta = true, required = 1, optional = 3)
+    @JRubyMethod(name = "read", meta = true, required = 1, optional = 3, checkArity = false)
     public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         int argc = Arity.checkArgumentCount(context, args, 1, 4);
 
@@ -4084,13 +4084,13 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     // rb_io_s_binwrite
-    @JRubyMethod(meta = true, required = 2, optional = 2)
+    @JRubyMethod(meta = true, required = 2, optional = 2, checkArity = false)
     public static IRubyObject binwrite(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return ioStaticWrite(context, recv, args, true);
     }
 
     // MRI: rb_io_s_write
-    @JRubyMethod(name = "write", meta = true, required = 2, optional = 2)
+    @JRubyMethod(name = "write", meta = true, required = 2, optional = 2, checkArity = false)
     public static IRubyObject write(ThreadContext context, IRubyObject recv, IRubyObject[] argv) {
         return (ioStaticWrite(context, recv, argv, false));
     }
@@ -4161,7 +4161,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     // rb_io_s_readlines
-    @JRubyMethod(name = "readlines", required = 1, optional = 3, meta = true)
+    @JRubyMethod(name = "readlines", required = 1, optional = 3, checkArity = false, meta = true)
     public static IRubyObject readlines(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         IRubyObject opt = ArgsUtil.getOptionsArg(context.runtime, args);
         final RubyIO io = openKeyArgs(context, recv, args, opt);
@@ -4289,7 +4289,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    @JRubyMethod(name = "popen", required = 1, optional = 2, meta = true)
+    @JRubyMethod(name = "popen", required = 1, optional = 2, checkArity = false, meta = true)
     public static IRubyObject popen(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         int argc = Arity.checkArgumentCount(context, args, 1, 3);
 
@@ -4391,7 +4391,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return pipe(context, recv, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
     }
 
-    @JRubyMethod(name = "pipe", optional = 3, meta = true)
+    @JRubyMethod(name = "pipe", optional = 3, checkArity = false, meta = true)
     public static IRubyObject pipe(ThreadContext context, IRubyObject klass, IRubyObject[] argv, Block block) {
         int argc = Arity.checkArgumentCount(context, argv, 0, 3);
 
@@ -4514,7 +4514,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    @JRubyMethod(name = "copy_stream", required = 2, optional = 2, meta = true)
+    @JRubyMethod(name = "copy_stream", required = 2, optional = 2, checkArity = false, meta = true)
     public static IRubyObject copy_stream(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 2, 4);
 

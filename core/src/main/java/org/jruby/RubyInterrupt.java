@@ -64,7 +64,7 @@ public class RubyInterrupt extends RubySignalException {
         return new Interrupt(message, this);
     }
 
-    @JRubyMethod(optional = 1, visibility = PRIVATE)
+    @JRubyMethod(optional = 1, checkArity = false, visibility = PRIVATE)
     @Override
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
         Arity.checkArgumentCount(context, args, 0, 1);

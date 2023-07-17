@@ -276,7 +276,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         return context.nil;
     }
 
-    @JRubyMethod(required = 1, optional = 1)
+    @JRubyMethod(required = 1, optional = 1, checkArity = false)
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 1, 2);
 

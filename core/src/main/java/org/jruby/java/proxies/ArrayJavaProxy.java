@@ -104,7 +104,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         return ArrayUtils.arefDirect(context.runtime, getObject(), converter, i);
     }
 
-    @JRubyMethod(name = "[]", required = 1, rest = true)
+    @JRubyMethod(name = "[]", required = 1, rest = true, checkArity = false)
     public final IRubyObject op_aref(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 1, -1);
 
@@ -396,7 +396,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         return RubyFixnum.newFixnum(runtime, count);
     }
 
-    @JRubyMethod(name = "dig", required = 1, rest = true)
+    @JRubyMethod(name = "dig", required = 1, rest = true, checkArity = false)
     public final IRubyObject dig(ThreadContext context, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 1, -1);
 

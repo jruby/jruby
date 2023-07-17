@@ -135,7 +135,7 @@ public class RubyConverter extends RubyObject {
         super(runtime, runtime.getConverter());
     }
 
-    @JRubyMethod(visibility = PRIVATE, required = 1, optional = 2)
+    @JRubyMethod(visibility = PRIVATE, required = 1, optional = 2, checkArity = false)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 1, 3);
 
@@ -221,7 +221,7 @@ public class RubyConverter extends RubyObject {
     }
 
     // econv_primitive_convert
-    @JRubyMethod(required = 2, optional = 4)
+    @JRubyMethod(required = 2, optional = 4, checkArity = false)
     public IRubyObject primitive_convert(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 2, 6);
 
@@ -524,7 +524,7 @@ public class RubyConverter extends RubyObject {
         return ary;
     }
 
-    @JRubyMethod(meta = true, required = 2, optional = 1)
+    @JRubyMethod(meta = true, required = 2, optional = 1, checkArity = false)
     public static IRubyObject search_convpath(ThreadContext context, IRubyObject self, IRubyObject[] argv) {
         final Ruby runtime = context.runtime;
         final IRubyObject nil = context.nil;
@@ -596,7 +596,7 @@ public class RubyConverter extends RubyObject {
     }
 
     // econv_putback
-    @JRubyMethod(optional = 1)
+    @JRubyMethod(optional = 1, checkArity = false)
     public IRubyObject putback(ThreadContext context, IRubyObject[] argv)
     {
         int argc = Arity.checkArgumentCount(context, argv, 0, 1);

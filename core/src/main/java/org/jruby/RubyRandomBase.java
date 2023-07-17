@@ -58,7 +58,7 @@ public class RubyRandomBase extends RubyObject {
 
     protected RubyRandom.RandomType random = null;
 
-    @JRubyMethod(visibility = PRIVATE, optional = 1)
+    @JRubyMethod(visibility = PRIVATE, optional = 1, checkArity = false)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 0, 1);
 
