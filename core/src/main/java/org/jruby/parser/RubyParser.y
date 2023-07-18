@@ -159,6 +159,7 @@ import static org.jruby.lexer.LexingCommon.RCURLY;
 import static org.jruby.lexer.LexingCommon.RPAREN;
 import static org.jruby.lexer.LexingCommon.SLASH;
 import static org.jruby.lexer.LexingCommon.STAR;
+import static org.jruby.lexer.LexingCommon.STAR_STAR;
 import static org.jruby.lexer.LexingCommon.TILDE;
 import static org.jruby.lexer.LexingCommon.EXPR_BEG;
 import static org.jruby.lexer.LexingCommon.EXPR_FITEM;
@@ -3451,8 +3452,12 @@ p_kw_label      : tLABEL
 p_kwrest        : kwrest_mark tIDENTIFIER {
                     $$ = $2;
                 }
-                | kwrest_mark {
-                    $$ = null;
+                | kwrest_mark { 
+                    /*%%%*/
+                    $$ = STAR_STAR;
+                    /*%
+                       $$ = null;
+                    %*/
                 }
 
 p_kwnorest      : kwrest_mark keyword_nil {

@@ -57,7 +57,6 @@ import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.common.RubyWarnings;
 import org.jruby.ext.coverage.CoverageData;
-import org.jruby.lexer.LexingCommon;
 import org.jruby.lexer.yacc.LexContext;
 import org.jruby.lexer.yacc.RubyLexer;
 import org.jruby.lexer.yacc.StackState;
@@ -76,6 +75,7 @@ import static org.jruby.lexer.LexingCommon.*;
 import static org.jruby.lexer.LexingCommon.AMPERSAND_AMPERSAND;
 import static org.jruby.lexer.LexingCommon.DOT;
 import static org.jruby.lexer.LexingCommon.OR_OR;
+import static org.jruby.lexer.LexingCommon.STAR_STAR;
 import static org.jruby.lexer.yacc.RubyLexer.Keyword.*;
 import static org.jruby.parser.RubyParserBase.IDType.*;
 import static org.jruby.util.CommonByteLists.*;
@@ -1941,10 +1941,12 @@ public abstract class RubyParserBase {
 
         if (keywordRestArg == KWNOREST) {          // '**nil'
             restArg = new NilRestArgNode(line);
+        } else if (keywordRestArg == STAR_STAR) { // '**' (MRI uses null but something wrong and this is more explicit)
+            restArg = new StarNode(lexer.getRubySourceline());
         } else if (keywordRestArg != null) {       // '**something'
             restArg = assignableLabelOrIdentifier(keywordRestArg, null);
-        } else {                                   // '**'
-            restArg = new StarNode(lexer.getRubySourceline());
+        } else {
+            restArg = null;
         }
 
         return new HashPatternNode(line, restArg, keywordArgs == null ? new HashNode(line) : keywordArgs);
