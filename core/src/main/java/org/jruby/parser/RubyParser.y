@@ -3452,8 +3452,12 @@ p_kw_label      : tLABEL
 p_kwrest        : kwrest_mark tIDENTIFIER {
                     $$ = $2;
                 }
-                | kwrest_mark {
+                | kwrest_mark { 
+                    /*%%%*/
                     $$ = STAR_STAR;
+                    /*%
+                       $$ = null;
+                    %*/
                 }
 
 p_kwnorest      : kwrest_mark keyword_nil {

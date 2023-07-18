@@ -5061,7 +5061,7 @@ states[520] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[522] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = p.logop(((Node)yyVals[-2+yyTop].value), OR_OR, ((Node)yyVals[0+yyTop].value));
+                    yyVal = p.logop(((Node)yyVals[-2+yyTop].value), OR, ((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: binary!($1, STATIC_ID2SYM(idOr), $3) %*/
   return yyVal;
@@ -5337,7 +5337,11 @@ states[572] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[573] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+                    /*%%%*/
                     yyVal = STAR_STAR;
+                    /*%
+                       $$ = null;
+                    %*/
   return yyVal;
 };
 states[574] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6794,7 +6798,7 @@ states[819] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4764 "parse.y"
+					// line 4768 "parse.y"
 
 }
-					// line 14580 "-"
+					// line 14584 "-"
