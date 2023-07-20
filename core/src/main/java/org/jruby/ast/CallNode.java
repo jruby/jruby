@@ -42,7 +42,7 @@ import org.jruby.ast.visitor.NodeVisitor;
 /**
  * A method or operator call.
  */
-public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcceptingNode {
+public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcceptingNode, CanRaise {
     private final Node receiverNode;
     private Node argsNode;
     protected Node iterNode;
@@ -60,7 +60,6 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
         this.argsNode = argsNode;
         this.iterNode = iterNode;
         this.isLazy = isLazy;
-        setNewline();
     }
 
     public NodeType getNodeType() {
