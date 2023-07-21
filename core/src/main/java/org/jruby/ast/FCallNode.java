@@ -42,7 +42,7 @@ import org.jruby.ast.visitor.NodeVisitor;
 /** 
  * Represents a method call with self as an implicit receiver.
  */
-public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAcceptingNode, CanRaise {
+public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAcceptingNode {
     private final RubySymbol name;
     protected Node argsNode;
     protected Node iterNode;
@@ -56,6 +56,7 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
         this.name = name;
         this.argsNode = argsNode;
         this.iterNode = iterNode;
+        setNewline();
     }
 
 

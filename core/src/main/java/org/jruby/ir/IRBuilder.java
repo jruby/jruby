@@ -304,13 +304,6 @@ public class IRBuilder {
 
     private int lastProcessedLineNum = -1;
 
-    // anything which can raise needs a line instr before it so we can emit proper line
-    // number in the backtrace.  In most cases this will be handled by ordinary line
-    // code by seeing newline nodes.  Nested calls within things like hash or array
-    // literals are not newlines leading to this secondary field to emit extra
-    // line instrs when it calls for it.
-    private int raiseLineNum = -1;
-
     // We do not need n consecutive line num instrs but only the last one in the sequence.
     // We set this flag to indicate that we need to emit a line number but have not yet.
     // addInstr will then appropriately add line info when it is called (which will never be
@@ -385,11 +378,8 @@ public class IRBuilder {
         if (needsLineNumInfo) {
             needsLineNumInfo = false;
 
-            if (needsCodeCoverage() || lastProcessedLineNum != -1 && lastProcessedLineNum == raiseLineNum) {
+            if (needsCodeCoverage()) {
                 addInstr(new LineNumberInstr(lastProcessedLineNum, coverageMode));
-            } else if (raiseLineNum != -1 && lastProcessedLineNum != raiseLineNum) {
-                addInstr(manager.newLineNumber(raiseLineNum));
-                raiseLineNum = -1;
             } else {
                 addInstr(manager.newLineNumber(lastProcessedLineNum));
             }
@@ -450,8 +440,6 @@ public class IRBuilder {
                 needsLineNumInfo = true;
                 lastProcessedLineNum = currLineNum;
             }
-        } else if (node instanceof CanRaise) { // calls in things like hashes can raise and we need a linenum instr for backtraces.
-            raiseLineNum = node.getLine();
         }
     }
 
