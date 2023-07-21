@@ -43,13 +43,14 @@ import org.jruby.ast.visitor.NodeVisitor;
  * RubyMethod call without any arguments
  *
  */
-public class VCallNode extends Node implements INameNode, CanRaise {
+public class VCallNode extends Node implements INameNode {
     private final RubySymbol name;
 
     public VCallNode(int line, RubySymbol name) {
         super(line, false);
 
         this.name = name;
+        setNewline();
     }
 
     public NodeType getNodeType() {
