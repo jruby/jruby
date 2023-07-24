@@ -304,18 +304,15 @@ public class IRBuilder {
 
     private int lastProcessedLineNum = -1;
 
-    // anything which can raise needs a line instr before it so we can emit proper line
-    // number in the backtrace.  In most cases this will be handled by ordinary line
-    // code by seeing newline nodes.  Nested calls within things like hash or array
-    // literals are not newlines leading to this secondary field to emit extra
-    // line instrs when it calls for it.
-    private int raiseLineNum = -1;
-
+    enum LineInfo {
+        Coverage,
+        Backtrace
+    }
     // We do not need n consecutive line num instrs but only the last one in the sequence.
     // We set this flag to indicate that we need to emit a line number but have not yet.
     // addInstr will then appropriately add line info when it is called (which will never be
     // called by a linenum instr).
-    private boolean needsLineNumInfo = false;
+    private LineInfo needsLineNumInfo = null;
 
     public boolean underscoreVariableSeen = false;
 
@@ -382,14 +379,12 @@ public class IRBuilder {
     }
 
     public void addInstr(Instr instr) {
-        if (needsLineNumInfo) {
-            needsLineNumInfo = false;
+        if (needsLineNumInfo != null) {
+            LineInfo type = needsLineNumInfo;
+            needsLineNumInfo = null;
 
-            if (needsCodeCoverage() || lastProcessedLineNum != -1 && lastProcessedLineNum == raiseLineNum) {
+            if (type == LineInfo.Coverage) {
                 addInstr(new LineNumberInstr(lastProcessedLineNum, coverageMode));
-            } else if (raiseLineNum != -1 && lastProcessedLineNum != raiseLineNum) {
-                addInstr(manager.newLineNumber(raiseLineNum));
-                raiseLineNum = -1;
             } else {
                 addInstr(manager.newLineNumber(lastProcessedLineNum));
             }
@@ -444,14 +439,10 @@ public class IRBuilder {
     }
 
     private void determineIfWeNeedLineNumber(Node node) {
-        if (node.isNewline()) {
-            int currLineNum = node.getLine();
-            if (currLineNum != lastProcessedLineNum && !(node instanceof NilImplicitNode)) { // Do not emit multiple line number instrs for the same line
-                needsLineNumInfo = true;
-                lastProcessedLineNum = currLineNum;
-            }
-        } else if (node instanceof CanRaise) { // calls in things like hashes can raise and we need a linenum instr for backtraces.
-            raiseLineNum = node.getLine();
+        int currLineNum = node.getLine();
+        if (currLineNum != lastProcessedLineNum && !(node instanceof NilImplicitNode)) { // Do not emit multiple line number instrs for the same line
+            needsLineNumInfo = node.isNewline() ? LineInfo.Coverage : LineInfo.Backtrace;
+            lastProcessedLineNum = currLineNum;
         }
     }
 
@@ -463,7 +454,7 @@ public class IRBuilder {
     }
 
     private Operand buildOperand(Variable result, Node node) throws NotCompilableException {
-        determineIfWeNeedLineNumber(node);
+        if (node.isNewline()) determineIfWeNeedLineNumber(node);
 
         switch (node.getNodeType()) {
             case ALIASNODE: return buildAlias((AliasNode) node);
@@ -1345,6 +1336,7 @@ public class IRBuilder {
         Operand[] args = setupCallArgs(callNode.getArgsNode(), flags);
         Operand block = setupCallClosure(callNode.getIterNode());
 
+        determineIfWeNeedLineNumber(callNode); // backtrace needs line of call in case of exception.
         if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
             Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
             if_else(test, manager.getTrue(),
@@ -1355,7 +1347,6 @@ public class IRBuilder {
                             determineIfProcNew(receiverNode,
                                     CallInstr.create(scope, NORMAL, result, name, receiver, args, block, flags[0]))));
         } else {
-            determineIfWeNeedLineNumber(callNode); // buildOperand for call was papered over by args operand building so we check once more.
             receiveBreakException(block,
                     determineIfProcNew(receiverNode,
                             CallInstr.create(scope, NORMAL, result, name, receiver, args, block, flags[0])));
@@ -3650,6 +3641,7 @@ public class IRBuilder {
         determineIfMaybeRefined(fcallNode.getName(), args);
 
         Operand block = setupCallClosure(fcallNode.getIterNode());
+        determineIfWeNeedLineNumber(fcallNode); // backtrace needs line of call in case of exception.
 
         if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
             Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
@@ -3668,7 +3660,6 @@ public class IRBuilder {
                 }
             }
 
-            determineIfWeNeedLineNumber(fcallNode); // buildOperand for fcall was papered over by args operand building so we check once more.
             receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), args, block, flags[0]));
         }
 
@@ -4827,6 +4818,7 @@ public class IRBuilder {
         Variable result = createTemporaryVariable();
         int[] flags = new int[] { 0 };
         Operand[] args = setupCallArgs(callNode.getArgsNode(), flags);
+        determineIfWeNeedLineNumber(callNode); // backtrace needs line of call in case of exception.
 
         if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
             Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
@@ -4836,7 +4828,6 @@ public class IRBuilder {
                     () -> receiveBreakException(block,
                             determineSuperInstr(result, args, block, flags[0], inClassBody, isInstanceMethod)));
         } else {
-            determineIfWeNeedLineNumber(callNode); // buildOperand for fcall was papered over by args operand building so we check once more.
             receiveBreakException(block,
                     determineSuperInstr(result, args, block, flags[0], inClassBody, isInstanceMethod));
         }
