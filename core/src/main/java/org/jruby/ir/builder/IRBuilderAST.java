@@ -2666,7 +2666,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         }
 
         if (!forNode) addCurrentModule();                                // %current_module
-        receiveBlockArgs(iterNode.getArgsNode());
+        receiveBlockArgs(iterNode.getVarNode());
         // for adds these after processing binding block args because and operations at that point happen relative
         // to the previous scope.
         if (forNode) addCurrentModule();                                 // %current_module
