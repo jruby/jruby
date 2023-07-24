@@ -68,7 +68,6 @@ import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.anno.TypePopulator;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.embed.Extension;
 import org.jruby.exceptions.LoadError;
@@ -553,7 +552,7 @@ public class RubyModule extends RubyObject {
     }
 
     /**
-     * @note Internal API - only public as its used by generated code!
+     * <p>Note: Internal API - only public as its used by generated code!</p>
      * @param runtime
      * @param id identifier string (8859_1).  Matching entry in symbol table.
      * @param method
@@ -1273,9 +1272,12 @@ public class RubyModule extends RubyObject {
         public Map<Set<FrameField>, List<String>> readGroups = Collections.EMPTY_MAP;
         public Map<Set<FrameField>, List<String>> writeGroups = Collections.EMPTY_MAP;
 
-        @SuppressWarnings("deprecation")
         public void clump(final Class klass) {
-            Method[] declaredMethods = MethodGatherer.DECLARED_METHODS.get(klass);
+            clump(MethodGatherer.DECLARED_METHODS.get(klass));
+        }
+
+        @SuppressWarnings("deprecation")
+        public void clump(final Method[] declaredMethods) {
             for (Method method: declaredMethods) {
                 JRubyMethod anno = method.getAnnotation(JRubyMethod.class);
 
@@ -2064,11 +2066,11 @@ public class RubyModule extends RubyObject {
         DynamicMethod method = getMethods().get(name);
         if (method != null && entry.method.getRealMethod() != method.getRealMethod() && !method.isUndefined()) {
             // warn if overwriting an existing method on this module
-            if (method.getRealMethod().getAliasCount() == 0) runtime.getWarnings().warning("method redefined; discarding old " + name);
+            if (method.getRealMethod().getAliasCount() == 0) runtime.getWarnings().warning(ID.REDEFINING_METHOD, "method redefined; discarding old " + name);
 
             if (method instanceof PositionAware) {
                 PositionAware posAware = (PositionAware) method;
-                runtime.getWarnings().warning(posAware.getFile(), posAware.getLine(), "previous definition of bar " + name);
+                runtime.getWarnings().warning(ID.REDEFINING_METHOD, posAware.getFile(), posAware.getLine() + 1, "previous definition of " + name + " was here");
             }
         }
 
@@ -2080,9 +2082,9 @@ public class RubyModule extends RubyObject {
     }
 
     /**
-     * @note Internal API - only public as its used by generated code!
-     * @note Used by AnnotationBinder.
-     * @note Not safe for target methods that super, since the frame class will not reflect original source.
+     * <p>Note: Internal API - only public as its used by generated code!</p>
+     * <p>Note: Used by AnnotationBinder.</p>
+     * <p>Note: Not safe for target methods that super, since the frame class will not reflect original source.</p>
      * @param id
      * @param method
      * @param oldName
@@ -2956,8 +2958,10 @@ public class RubyModule extends RubyObject {
         addAccessor(context, TypeConverter.checkID(context.runtime, name), PUBLIC, false, true);
     }
 
-    @JRubyMethod(required = 1, rest = true, visibility = PRIVATE)
+    @JRubyMethod(required = 1, rest = true, checkArity = false, visibility = PRIVATE)
     public IRubyObject ruby2_keywords(ThreadContext context, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 1, -1);
+
         Ruby runtime = context.runtime;
 
         checkFrozen();
@@ -2980,16 +2984,18 @@ public class RubyModule extends RubyObject {
             if (method.getDefinedClass() == this) {
                 if (!method.isNative()) {
                     Signature signature = method.getSignature();
-                    if (signature.hasRest() && !signature.hasKwargs()) {
+                    if (!signature.hasRest()) {
+                        context.runtime.getWarnings().warn(ID.MISCELLANEOUS, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (method accepts keywords or method does not accept argument splat)"));
+                    } else if (!signature.hasKwargs()) {
                         method.setRuby2Keywords();
-                    } else {
-                        context.runtime.getWarnings().warn(IRubyWarnings.ID.MISCELLANEOUS, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (method accepts keywords or method does not accept argument splat)"));
+                    } else if (method instanceof AbstractIRMethod && ((AbstractIRMethod) method).getStaticScope().exists("...") == -1) {
+                        context.runtime.getWarnings().warn(ID.MISCELLANEOUS, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (method accepts keywords or method does not accept argument splat)"));
                     }
                 } else {
-                    context.runtime.getWarnings().warn(IRubyWarnings.ID.MISCELLANEOUS, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (method not defined in Ruby)"));
+                    context.runtime.getWarnings().warn(ID.MISCELLANEOUS, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (method not defined in Ruby)"));
                 }
             } else {
-                context.runtime.getWarnings().warn(IRubyWarnings.ID.MISCELLANEOUS, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (can only set in method defining module)"));
+                context.runtime.getWarnings().warn(ID.MISCELLANEOUS, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (can only set in method defining module)"));
             }
         }
         return context.nil;
@@ -3172,8 +3178,10 @@ public class RubyModule extends RubyObject {
         return instance_methods19(args);
     }
 
-    @JRubyMethod(name = "instance_methods", optional = 1)
+    @JRubyMethod(name = "instance_methods", optional = 1, checkArity = false)
     public RubyArray instance_methods19(IRubyObject[] args) {
+        Arity.checkArgumentCount(getRuntime(), args, 0, 1);
+
         return instanceMethods(args, PRIVATE, false, true);
     }
 
@@ -3181,8 +3189,10 @@ public class RubyModule extends RubyObject {
         return public_instance_methods19(args);
     }
 
-    @JRubyMethod(name = "public_instance_methods", optional = 1)
+    @JRubyMethod(name = "public_instance_methods", optional = 1, checkArity = false)
     public RubyArray public_instance_methods19(IRubyObject[] args) {
+        Arity.checkArgumentCount(getRuntime(), args, 0, 1);
+
         return instanceMethods(args, PUBLIC, false, false);
     }
 
@@ -3203,8 +3213,10 @@ public class RubyModule extends RubyObject {
     /** rb_class_protected_instance_methods
      *
      */
-    @JRubyMethod(name = "protected_instance_methods", optional = 1)
+    @JRubyMethod(name = "protected_instance_methods", optional = 1, checkArity = false)
     public RubyArray protected_instance_methods(IRubyObject[] args) {
+        Arity.checkArgumentCount(getRuntime(), args, 0, 1);
+
         return instanceMethods(args, PROTECTED, false, false);
     }
 
@@ -3216,8 +3228,10 @@ public class RubyModule extends RubyObject {
     /** rb_class_private_instance_methods
      *
      */
-    @JRubyMethod(name = "private_instance_methods", optional = 1)
+    @JRubyMethod(name = "private_instance_methods", optional = 1, checkArity = false)
     public RubyArray private_instance_methods(IRubyObject[] args) {
+        Arity.checkArgumentCount(getRuntime(), args, 0, 1);
+
         return instanceMethods(args, PRIVATE, false, false);
     }
 
@@ -3281,19 +3295,23 @@ public class RubyModule extends RubyObject {
     /** rb_mod_include
      *
      */
-    @JRubyMethod(name = "include", required = 1, rest = true)
+    @JRubyMethod(name = "include", required = 1, rest = true, checkArity = false)
     public RubyModule include(IRubyObject[] modules) {
+        Ruby runtime = getRuntime();
+
+        int argc = Arity.checkArgumentCount(runtime, modules, 1, -1);
+
         if (this.isRefinement()) {
-            getRuntime().getWarnings().warnDeprecated(ID.DEPRECATED_METHOD, "deprecated method to be removed: Refinement#include");
+            runtime.getWarnings().warnDeprecated(ID.DEPRECATED_METHOD, "deprecated method to be removed: Refinement#include");
         }
 
         for (IRubyObject module: modules) {
-            if (!module.isModule()) throw getRuntime().newTypeError(module, getRuntime().getModule());
+            if (!module.isModule()) throw runtime.newTypeError(module, runtime.getModule());
         }
 
-        ThreadContext context = getRuntime().getCurrentContext();
+        ThreadContext context = runtime.getCurrentContext();
 
-        for (int i = modules.length - 1; i >= 0; i--) {
+        for (int i = argc - 1; i >= 0; i--) {
             IRubyObject module = modules[i];
             module.callMethod(context, "append_features", this);
             module.callMethod(context, "included", this);
@@ -4153,10 +4171,12 @@ public class RubyModule extends RubyObject {
     /** rb_mod_const_get
      *
      */
-    @JRubyMethod(name = "const_get", required = 1, optional = 1)
+    @JRubyMethod(name = "const_get", required = 1, optional = 1, checkArity = false)
     public IRubyObject const_get(ThreadContext context, IRubyObject... args) {
+        int argc = Arity.checkArgumentCount(context, args, 1, 2);
+
         final Ruby runtime = context.runtime;
-        boolean inherit = args.length == 1 || ( ! args[1].isNil() && args[1].isTrue() );
+        boolean inherit = argc == 1 || ( ! args[1].isNil() && args[1].isTrue() );
 
         final IRubyObject symbol = args[0];
         RubySymbol fullName = TypeConverter.checkID(symbol);
@@ -4196,10 +4216,12 @@ public class RubyModule extends RubyObject {
         return mod.getConstant(validateConstant(name, symbol), firstConstant && inherit, firstConstant && inherit);
     }
 
-    @JRubyMethod(required = 1, optional = 1)
+    @JRubyMethod(required = 1, optional = 1, checkArity = false)
     public IRubyObject const_source_location(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 1, 2);
+
         final Ruby runtime = context.runtime;
-        boolean inherit = args.length == 1 || ( ! args[1].isNil() && args[1].isTrue() );
+        boolean inherit = argc == 1 || ( ! args[1].isNil() && args[1].isTrue() );
 
         final IRubyObject symbol = args[0];
         String name;
@@ -4423,8 +4445,10 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(required = 1, rest = true)
+    @JRubyMethod(required = 1, rest = true, checkArity = false)
     public IRubyObject private_constant(ThreadContext context, IRubyObject[] rubyNames) {
+        Arity.checkArgumentCount(context, rubyNames, 1, -1);
+
         for (IRubyObject rubyName : rubyNames) {
             private_constant(context, rubyName);
         }
@@ -4442,28 +4466,32 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(required = 1, rest = true)
+    @JRubyMethod(required = 1, rest = true, checkArity = false)
     public IRubyObject public_constant(ThreadContext context, IRubyObject[] rubyNames) {
+        Arity.checkArgumentCount(context, rubyNames, 1, -1);
+
         for (IRubyObject rubyName : rubyNames) {
             public_constant(context, rubyName);
         }
         return this;
     }
 
-    @JRubyMethod(name = "prepend", required = 1, rest = true)
+    @JRubyMethod(name = "prepend", required = 1, rest = true, checkArity = false)
     public IRubyObject prepend(ThreadContext context, IRubyObject[] modules) {
+        int argc = Arity.checkArgumentCount(context, modules, 1, -1);
+
         if (this.isRefinement()) {
             context.runtime.getWarnings().warnDeprecated(ID.DEPRECATED_METHOD, "deprecated method to be removed: Refinement#prepend");
         }
 
         // MRI checks all types first:
-        for (int i = modules.length; --i >= 0; ) {
+        for (int i = argc; --i >= 0; ) {
             IRubyObject obj = modules[i];
             if (!obj.isModule()) {
                 throw context.runtime.newTypeError(obj, context.runtime.getModule());
             }
         }
-        for (int i = modules.length - 1; i >= 0; i--) {
+        for (int i = argc - 1; i >= 0; i--) {
             modules[i].callMethod(context, "prepend_features", this);
             modules[i].callMethod(context, "prepended", this);
         }
@@ -4903,9 +4931,9 @@ public class RubyModule extends RubyObject {
             if (notAutoload || !setAutoloadConstant(name, value, file, line)) {
                 if (warn && notAutoload) {
                     if (this.equals(getRuntime().getObject())) {
-                        getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name);
+                        getRuntime().getWarnings().warning(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name);
                     } else {
-                        getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + this + "::" + name);
+                        getRuntime().getWarnings().warning(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + this + "::" + name);
                     }
                 }
 
@@ -5940,8 +5968,10 @@ public class RubyModule extends RubyObject {
     }
 
     public static class RefinementMethods {
-        @JRubyMethod(required = 1, rest = true, visibility = PRIVATE)
+        @JRubyMethod(required = 1, rest = true, checkArity = false, visibility = PRIVATE)
         public static IRubyObject import_methods(ThreadContext context, IRubyObject self, IRubyObject[] modules) {
+            Arity.checkArgumentCount(context, modules, 1, -1);
+
             Ruby runtime = context.runtime;
 
             RubyModule selfModule = (RubyModule) self;

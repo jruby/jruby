@@ -42,7 +42,7 @@ import org.jruby.runtime.Helpers;
 
 /**
  * Represents the argument declarations of a method.  The fields:
- * foo(p1, ..., pn, o1 = v1, ..., on = v2, *r, q1, ..., qn, k1:, ..., kn:, **K, &b)
+ * foo(p1, ..., pn, o1 = v1, ..., on = v2, *r, q1, ..., qn, k1:, ..., kn:, **K, &amp;b)
  *
  * p1...pn = pre arguments
  * o1...on = optional arguments
@@ -190,7 +190,7 @@ public class ArgsNode extends Node {
     }
 
     /**
-     * Gets the explicit block argument of the parameter list (&block).
+     * Gets the explicit block argument of the parameter list (&amp;block).
      *
      * @return Returns a BlockArgNode
      */

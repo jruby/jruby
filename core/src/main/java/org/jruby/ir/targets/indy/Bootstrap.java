@@ -410,17 +410,35 @@ public class Bootstrap {
                     .invokeStaticQuiet(LOOKUP, Bootstrap.class, "array");
 
     public static CallSite hash(Lookup lookup, String name, MethodType type) {
-        MethodHandle handle = Binder
-                .from(lookup, type)
-                .collect(2, IRubyObject[].class)
-                .invoke(HASH_HANDLE);
+        MethodHandle handle;
+
+        int parameterCount = type.parameterCount();
+        if (parameterCount == 1) {
+            handle = Binder
+                    .from(lookup, type)
+                    .cast(type.changeReturnType(RubyHash.class))
+                    .filter(0, RUNTIME_FROM_CONTEXT_HANDLE)
+                    .invokeStaticQuiet(lookup, RubyHash.class, "newHash");
+        } else if (!type.parameterType(parameterCount - 1).isArray()
+                && (parameterCount - 1) / 2 <= Helpers.MAX_SPECIFIC_ARITY_HASH) {
+            handle = Binder
+                    .from(lookup, type)
+                    .cast(type.changeReturnType(RubyHash.class))
+                    .filter(0, RUNTIME_FROM_CONTEXT_HANDLE)
+                    .invokeStaticQuiet(lookup, Helpers.class, "constructSmallHash");
+        } else {
+            handle = Binder
+                    .from(lookup, type)
+                    .collect(1, IRubyObject[].class)
+                    .invoke(HASH_HANDLE);
+        }
 
         return new ConstantCallSite(handle);
     }
 
     private static final MethodHandle HASH_HANDLE =
             Binder
-                    .from(RubyHash.class, ThreadContext.class, boolean.class, IRubyObject[].class)
+                    .from(RubyHash.class, ThreadContext.class, IRubyObject[].class)
                     .invokeStaticQuiet(LOOKUP, Bootstrap.class, "hash");
 
     public static CallSite kwargsHash(Lookup lookup, String name, MethodType type) {
@@ -601,6 +619,11 @@ public class Bootstrap {
                     .from(Ruby.class, ThreadContext.class, MutableCallSite.class)
                     .invokeStaticQuiet(LOOKUP, Bootstrap.class, "runtime");
 
+    private static final MethodHandle RUNTIME_FROM_CONTEXT_HANDLE =
+            Binder
+                    .from(Ruby.class, ThreadContext.class)
+                    .getFieldQuiet("runtime");
+
     private static final MethodHandle NIL_HANDLE =
             Binder
                     .from(IRubyObject.class, ThreadContext.class, MutableCallSite.class)
@@ -686,7 +709,7 @@ public class Bootstrap {
         return encoding;
     }
 
-    public static RubyHash hash(ThreadContext context, boolean literal, IRubyObject[] pairs) {
+    public static RubyHash hash(ThreadContext context, IRubyObject[] pairs) {
         Ruby runtime = context.runtime;
         RubyHash hash = new RubyHash(runtime, pairs.length / 2 + 1);
         for (int i = 0; i < pairs.length;) {
@@ -1096,11 +1119,11 @@ public class Bootstrap {
                     if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
                         LOG.info(site.name() + "\tbound directly to JVM method " + Bootstrap.logMethod(method));
                     }
-                }
 
-                JRubyMethod anno = nativeCall.getMethod().getAnnotation(JRubyMethod.class);
-                if (anno != null && anno.frame()) {
-                    mh = InvocationLinker.wrapWithFrameOnly(site.signature, entry.sourceModule, site.name(), mh);
+                    JRubyMethod anno = nativeCall.getMethod().getAnnotation(JRubyMethod.class);
+                    if (anno != null && anno.frame()) {
+                        mh = InvocationLinker.wrapWithFrameOnly(site.signature, entry.sourceModule, site.name(), mh);
+                    }
                 }
             }
         }
@@ -1188,7 +1211,7 @@ public class Bootstrap {
         boolean isStatic = nativeCall.isStatic();
 
         // This logic does not handle closure conversion yet
-        if (site.fullSignature.lastArgType() == Block.class) {
+        if (site.signature.lastArgType() == Block.class) {
             if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
                 LOG.info(site.name() + "\tpassed a closure to Java method " + nativeCall + ": " + Bootstrap.logMethod(method));
             }
@@ -1196,7 +1219,7 @@ public class Bootstrap {
         }
 
         // mismatched arity not supported
-        if (isStatic) {
+        if (!isStatic) {
             if (site.arity != nativeCall.getNativeSignature().length - 1) {
                 return null;
             }
@@ -1326,20 +1349,6 @@ public class Bootstrap {
 
         // we can handle this; do remaining transforms and return
         if (returnFilter != null) {
-            Class[] newNativeParams = nativeTarget.type().parameterArray();
-            Class newNativeReturn = nativeTarget.type().returnType();
-
-            Binder exBinder = Binder
-                    .from(newNativeReturn, Throwable.class, newNativeParams)
-                    .drop(1, newNativeParams.length)
-                    .insert(0, runtime);
-            if (nativeReturn != void.class) {
-                exBinder = exBinder
-                        .filterReturn(Binder
-                                .from(newNativeReturn)
-                                .constant(nullValue(newNativeReturn)));
-            }
-
             nativeTarget = Binder
                     .from(site.type())
                     .drop(0, isStatic ? 3 : 2)

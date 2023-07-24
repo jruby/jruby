@@ -171,7 +171,7 @@ public class Helpers {
         if (methodMissing.isUndefined() || methodMissing.equals(runtime.getDefaultMethodMissing())) {
             return selectInternalMM(runtime, visibility, callType);
         }
-        return new MethodMissingMethod(entry, visibility, callType);
+        return new MethodMissingWrapper(entry, visibility, callType);
     }
 
     public static DynamicMethod selectMethodMissing(ThreadContext context, RubyClass selfClass, Visibility visibility, String name, CallType callType) {
@@ -187,7 +187,7 @@ public class Helpers {
         if (methodMissing.isUndefined() || methodMissing.equals(runtime.getDefaultMethodMissing())) {
             return selectInternalMM(runtime, visibility, callType);
         }
-        return new MethodMissingMethod(entry, visibility, callType);
+        return new MethodMissingWrapper(entry, visibility, callType);
     }
 
     public static DynamicMethod selectMethodMissing(RubyClass selfClass, Visibility visibility, String name, CallType callType) {
@@ -203,7 +203,7 @@ public class Helpers {
         if (methodMissing.isUndefined() || methodMissing.equals(runtime.getDefaultMethodMissing())) {
             return selectInternalMM(runtime, visibility, callType);
         }
-        return new MethodMissingMethod(entry, visibility, callType);
+        return new MethodMissingWrapper(entry, visibility, callType);
     }
 
     public static final Map<String, String> map(String... keyValues) {
@@ -570,18 +570,6 @@ public class Helpers {
         return (int) length;
     }
 
-    public static CacheEntry createDirectMethodMissingEntry(ThreadContext context, RubyClass selfClass, CallType callType, Visibility visibility, int token, String methodName) {
-        DynamicMethod method = selectMethodMissing(context, selfClass, visibility, methodName, callType);
-        if (method instanceof MethodMissingMethod) {
-            return ((MethodMissingMethod) method).entry;
-        } else {
-            return new CacheEntry(
-                    method,
-                    selfClass,
-                    token);
-        }
-    }
-
     public static CacheEntry createMethodMissingEntry(ThreadContext context, RubyClass selfClass, CallType callType, Visibility visibility, int token, String methodName) {
         DynamicMethod method = selectMethodMissing(context, selfClass, visibility, methodName, callType);
         return new CacheEntry(
@@ -589,14 +577,17 @@ public class Helpers {
                 selfClass,
                 token);
     }
-    
-    public static class MethodMissingMethod extends DynamicMethod {
+
+    /**
+     * Wraps the target method_missing implementation, passing the called method name as a leading symbol argument.
+     */
+    public static class MethodMissingWrapper extends DynamicMethod {
         public final CacheEntry entry;
         private final CallType lastCallStatus;
         private final Visibility lastVisibility;
         private RubySymbol lastName;
 
-        public MethodMissingMethod(CacheEntry entry, Visibility lastVisibility, CallType lastCallStatus) {
+        public MethodMissingWrapper(CacheEntry entry, Visibility lastVisibility, CallType lastCallStatus) {
             super(entry.method.getImplementationClass(), lastVisibility, entry.method.getName());
             this.entry = entry;
             this.lastCallStatus = lastCallStatus;
@@ -1740,57 +1731,57 @@ public class Helpers {
     }
 
     public static RubyHash constructSmallHash(Ruby runtime,
-                                              IRubyObject key1, IRubyObject value1, boolean prepareString1) {
+                                              IRubyObject key1, IRubyObject value1) {
         RubyHash hash = RubyHash.newSmallHash(runtime);
-        hash.fastASetSmall(runtime, key1, value1, prepareString1);
+        hash.fastASetSmallCheckString(runtime, key1, value1);
         return hash;
     }
 
     public static RubyHash constructSmallHash(Ruby runtime,
-                                              IRubyObject key1, IRubyObject value1, boolean prepareString1,
-                                              IRubyObject key2, IRubyObject value2, boolean prepareString2) {
+                                              IRubyObject key1, IRubyObject value1,
+                                              IRubyObject key2, IRubyObject value2) {
         RubyHash hash = RubyHash.newSmallHash(runtime);
-        hash.fastASetSmall(runtime, key1, value1, prepareString1);
-        hash.fastASetSmall(runtime, key2, value2, prepareString2);
+        hash.fastASetSmallCheckString(runtime, key1, value1);
+        hash.fastASetSmallCheckString(runtime, key2, value2);
         return hash;
     }
 
     public static RubyHash constructSmallHash(Ruby runtime,
-                                              IRubyObject key1, IRubyObject value1, boolean prepareString1,
-                                              IRubyObject key2, IRubyObject value2, boolean prepareString2,
-                                              IRubyObject key3, IRubyObject value3, boolean prepareString3) {
+                                              IRubyObject key1, IRubyObject value1,
+                                              IRubyObject key2, IRubyObject value2,
+                                              IRubyObject key3, IRubyObject value3) {
         RubyHash hash = RubyHash.newSmallHash(runtime);
-        hash.fastASetSmall(runtime, key1, value1, prepareString1);
-        hash.fastASetSmall(runtime, key2, value2, prepareString2);
-        hash.fastASetSmall(runtime, key3, value3, prepareString3);
+        hash.fastASetSmallCheckString(runtime, key1, value1);
+        hash.fastASetSmallCheckString(runtime, key2, value2);
+        hash.fastASetSmallCheckString(runtime, key3, value3);
         return hash;
     }
 
     public static RubyHash constructSmallHash(Ruby runtime,
-                                              IRubyObject key1, IRubyObject value1, boolean prepareString1,
-                                              IRubyObject key2, IRubyObject value2, boolean prepareString2,
-                                              IRubyObject key3, IRubyObject value3, boolean prepareString3,
-                                              IRubyObject key4, IRubyObject value4, boolean prepareString4) {
+                                              IRubyObject key1, IRubyObject value1,
+                                              IRubyObject key2, IRubyObject value2,
+                                              IRubyObject key3, IRubyObject value3,
+                                              IRubyObject key4, IRubyObject value4) {
         RubyHash hash = RubyHash.newSmallHash(runtime);
-        hash.fastASetSmall(runtime, key1, value1, prepareString1);
-        hash.fastASetSmall(runtime, key2, value2, prepareString2);
-        hash.fastASetSmall(runtime, key3, value3, prepareString3);
-        hash.fastASetSmall(runtime, key4, value4, prepareString4);
+        hash.fastASetSmallCheckString(runtime, key1, value1);
+        hash.fastASetSmallCheckString(runtime, key2, value2);
+        hash.fastASetSmallCheckString(runtime, key3, value3);
+        hash.fastASetSmallCheckString(runtime, key4, value4);
         return hash;
     }
 
     public static RubyHash constructSmallHash(Ruby runtime,
-                                              IRubyObject key1, IRubyObject value1, boolean prepareString1,
-                                              IRubyObject key2, IRubyObject value2, boolean prepareString2,
-                                              IRubyObject key3, IRubyObject value3, boolean prepareString3,
-                                              IRubyObject key4, IRubyObject value4, boolean prepareString4,
-                                              IRubyObject key5, IRubyObject value5, boolean prepareString5) {
+                                              IRubyObject key1, IRubyObject value1,
+                                              IRubyObject key2, IRubyObject value2,
+                                              IRubyObject key3, IRubyObject value3,
+                                              IRubyObject key4, IRubyObject value4,
+                                              IRubyObject key5, IRubyObject value5) {
         RubyHash hash = RubyHash.newSmallHash(runtime);
-        hash.fastASetSmall(runtime, key1, value1, prepareString1);
-        hash.fastASetSmall(runtime, key2, value2, prepareString2);
-        hash.fastASetSmall(runtime, key3, value3, prepareString3);
-        hash.fastASetSmall(runtime, key4, value4, prepareString4);
-        hash.fastASetSmall(runtime, key5, value5, prepareString5);
+        hash.fastASetSmallCheckString(runtime, key1, value1);
+        hash.fastASetSmallCheckString(runtime, key2, value2);
+        hash.fastASetSmallCheckString(runtime, key3, value3);
+        hash.fastASetSmallCheckString(runtime, key4, value4);
+        hash.fastASetSmallCheckString(runtime, key5, value5);
         return hash;
     }
 
@@ -2519,7 +2510,7 @@ public class Helpers {
         return ((RubyArray)first.dup()).append(second);
     }
 
-    @JIT
+    @JIT @Interp
     public static RubyArray argsPush(ThreadContext context, IRubyObject first, IRubyObject second, boolean usesKeywords) {
         boolean isEmptyKeywordRest = usesKeywords && second instanceof RubyHash && ((RubyHash) second).isEmpty();
 
@@ -2772,7 +2763,7 @@ public class Helpers {
     }
 
     /**
-     * @note Assumes exception: ... to be the only (optional) keyword argument!
+     * <p>Note: Assumes exception: ... to be the only (optional) keyword argument!</p>
      * @param context
      * @param opts
      * @return false if `exception: false`, true otherwise
@@ -2782,7 +2773,7 @@ public class Helpers {
     }
 
     /**
-     * @note Assumes exception: ... to be the only (optional) keyword argument!
+     * <p>Note: Assumes exception: ... to be the only (optional) keyword argument!</p>
      * @param context
      * @param opts the keyword args hash
      * @param defValue to return when no keyword options
@@ -2797,7 +2788,7 @@ public class Helpers {
     }
 
     /**
-     * @note Assumes exception: ... to be the only (optional) keyword argument!
+     * <p>Note: Assumes exception: ... to be the only (optional) keyword argument!</p>
      * @param context
      * @param args method args
      * @param defValue to return when no keyword options

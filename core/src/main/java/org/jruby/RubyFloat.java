@@ -47,6 +47,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.FloatSites;
@@ -811,8 +812,10 @@ public class RubyFloat extends RubyNumeric {
     /** float_rationalize
      *
      */
-    @JRubyMethod(name = "rationalize", optional = 1)
+    @JRubyMethod(name = "rationalize", optional = 1, checkArity = false)
     public IRubyObject rationalize(ThreadContext context, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 0, 1);
+
         if (f_negative_p(context, this)) {
             return f_negate(context, f_abs(context, this).rationalize(context, args));
         }

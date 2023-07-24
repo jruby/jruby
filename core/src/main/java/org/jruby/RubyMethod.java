@@ -381,7 +381,7 @@ public class RubyMethod extends AbstractRubyMethod {
         return Helpers.methodToParameters(context.runtime, this);
     }
 
-    @JRubyMethod(optional = 1)
+    @JRubyMethod(optional = 1, checkArity = false)
     public IRubyObject curry(ThreadContext context, IRubyObject[] args) {
         return to_proc(context).callMethod(context, "curry", args);
     }

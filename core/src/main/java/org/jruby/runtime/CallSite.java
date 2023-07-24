@@ -180,7 +180,7 @@ public abstract class CallSite {
     // with block pass
     /**
      * Call the site's method against the target object passing no arguments and
-     * a non-literal (block pass, &) block.
+     * a non-literal (block pass, &amp;) block.
      *
      * @param context the ThreadContext for the current thread
      * @param caller the caller, for visibility checks
@@ -192,7 +192,7 @@ public abstract class CallSite {
 
     /**
      * Call the site's method against the target object passing one argument and
-     * a non-literal (block pass, &) block.
+     * a non-literal (block pass, &amp;) block.
      *
      * @param context the ThreadContext for the current thread
      * @param caller the caller, for visibility checks
@@ -205,7 +205,7 @@ public abstract class CallSite {
 
     /**
      * Call the site's method against the target object passing two arguments and
-     * a non-literal (block pass, &) block.
+     * a non-literal (block pass, &amp;) block.
      *
      * @param context the ThreadContext for the current thread
      * @param caller the caller, for visibility checks
@@ -219,7 +219,7 @@ public abstract class CallSite {
 
     /**
      * Call the site's method against the target object passing three arguments and
-     * a non-literal (block pass, &) block.
+     * a non-literal (block pass, &amp;) block.
      *
      * @param context the ThreadContext for the current thread
      * @param caller the caller, for visibility checks
@@ -234,7 +234,7 @@ public abstract class CallSite {
 
     /**
      * Call the site's method against the target object passing one argument and
-     * a non-literal (block pass, &) block.
+     * a non-literal (block pass, &amp;) block.
      *
      * @param context the ThreadContext for the current thread
      * @param caller the caller, for visibility checks
@@ -247,7 +247,7 @@ public abstract class CallSite {
 
     /**
      * Call the site's method against the target object passing one argument and
-     * a non-literal (block pass, &) block.
+     * a non-literal (block pass, &amp;) block.
      * 
      * As a "varargs" method, this will use the length of the args array to
      * dispatch to the correct arity call, rather than dispatching unconditionally

@@ -145,7 +145,7 @@ public class TraceType {
     }
 
     /**
-     * @deprecated use {@link #logWarning(org.jruby.runtime.backtrace.RubyStackTraceElement[])
+     * @deprecated use {@link #logWarning(org.jruby.runtime.backtrace.RubyStackTraceElement[])}
      */
     public static void dumpWarning(RubyStackTraceElement[] trace) {
         logWarning(trace);

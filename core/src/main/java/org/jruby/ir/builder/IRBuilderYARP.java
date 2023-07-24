@@ -398,7 +398,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
                             determineIfProcNew(node.receiver,
                                     CallInstr.create(scope, callType, result, name, receiver, finalArgs, block, flags[0]))));
         } else {
-            determineIfWeNeedLineNumber(getLine(node)); // buildOperand for call was papered over by args operand building so we check once more.
+            determineIfWeNeedLineNumber(getLine(node), getNewline(node)); // buildOperand for call was papered over by args operand building so we check once more.
             receiveBreakException(block,
                     determineIfProcNew(node.receiver,
                             CallInstr.create(scope, callType, result, name, receiver, args, block, flags[0])));
@@ -571,7 +571,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
                 duplicateCheck = isLiteral ? tru() : fals();
 
                 if (hash == null) {                     // No hash yet. Define so order is preserved.
-                    hash = copy(new Hash(args, isLiteral));
+                    hash = copy(new Hash(args));
                     args = new ArrayList<>();           // Used args but we may find more after the splat so we reset
                 } else if (!args.isEmpty()) {
                     addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args), duplicateCheck}));
@@ -583,7 +583,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         }
 
         if (hash == null) {           // non-**arg ordinary hash
-            hash = copy(new Hash(args, true));
+            hash = copy(new Hash(args));
         } else if (!args.isEmpty()) { // ordinary hash values encountered after a **arg
             addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args), duplicateCheck}));
         }
@@ -921,7 +921,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     }
 
     private Operand buildSuper(Variable result, SuperNode node) {
-        return buildSuper(result, node.block, node.arguments, getLine(node));
+        return buildSuper(result, node.block, node.arguments, getLine(node), getNewline(node));
     }
 
     private Operand buildSymbol(SymbolNode node) {
@@ -1609,6 +1609,11 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     @Override
     int getLine(Node node) {
         return 0;
+    }
+
+    // FIXME: need to get newline status
+    private boolean getNewline(Node node) {
+        return false;
     }
 
     @Override

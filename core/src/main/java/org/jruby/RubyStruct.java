@@ -214,13 +214,16 @@ public class RubyStruct extends RubyObject {
      * MRI: rb_struct_s_def / make_struct
      *
      */
-    @JRubyMethod(name = "new", required = 1, rest = true, meta = true, keywords = true)
+    @JRubyMethod(name = "new", required = 1, rest = true, checkArity = false, meta = true, keywords = true)
     public static RubyClass newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
-        String name = null;
-        boolean nilName = false;
         Ruby runtime = recv.getRuntime();
 
-        if (args.length > 0) {
+        int argc = Arity.checkArgumentCount(runtime, args, 1, -1);
+
+        String name = null;
+        boolean nilName = false;
+
+        if (argc > 0) {
             IRubyObject firstArgAsString = args[0].checkStringType();
             if (!firstArgAsString.isNil()) {
                 RubySymbol nameSym = ((RubyString)firstArgAsString).intern();
@@ -236,8 +239,7 @@ public class RubyStruct extends RubyObject {
         RubyArray member = runtime.newArray();
         IRubyObject keywordInitValue = runtime.getNil();
 
-        int argc = args.length;
-        final IRubyObject opts = args[args.length - 1];
+        final IRubyObject opts = args[argc - 1];
         if (opts instanceof RubyHash) {
             argc--;
             keywordInitValue = ArgsUtil.extractKeywordArg(runtime.getCurrentContext(), (RubyHash) opts, "keyword_init");
@@ -292,8 +294,8 @@ public class RubyStruct extends RubyObject {
         newStruct.getSingletonClass().defineAnnotatedMethods(StructMethods.class);
 
         // define access methods.
-        for (int i = (name == null && !nilName) ? 0 : 1; i < args.length; i++) {
-            if (i == args.length - 1 && args[i] instanceof RubyHash) break;
+        for (int i = (name == null && !nilName) ? 0 : 1; i < argc; i++) {
+            if (i == argc - 1 && args[i] instanceof RubyHash) break;
             final String memberName = args[i].asJavaString();
             // if we are storing a name as well, index is one too high for values
             final int index = (name == null && !nilName) ? i : i - 1;
@@ -881,10 +883,12 @@ public class RubyStruct extends RubyObject {
         return RubyObject.dig2(context, val, arg1, arg2);
     }
 
-    @JRubyMethod(name = "dig", required = 1, rest = true)
+    @JRubyMethod(name = "dig", required = 1, rest = true, checkArity = false)
     public IRubyObject dig(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 1, -1);
+
         final IRubyObject val = arefImpl( args[0], true );
-        return args.length == 1 ? val : RubyObject.dig(context, val, args, 1);
+        return argc == 1 ? val : RubyObject.dig(context, val, args, 1);
     }
 
     public static void marshalTo(RubyStruct struct, MarshalStream output) throws java.io.IOException {

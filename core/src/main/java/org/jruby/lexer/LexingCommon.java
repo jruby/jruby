@@ -88,6 +88,7 @@ public abstract class LexingCommon {
 
     private ByteList id;
 
+    public static final ByteList AND_KEYWORD = new ByteList(new byte[] {'a', 'n', 'd'}, USASCIIEncoding.INSTANCE);
     public static final ByteList BACKTICK = new ByteList(new byte[] {'`'}, USASCIIEncoding.INSTANCE);
     public static final ByteList EQ_EQ_EQ = new ByteList(new byte[] {'=', '=', '='}, USASCIIEncoding.INSTANCE);
     public static final ByteList EQ_EQ = new ByteList(new byte[] {'=', '='}, USASCIIEncoding.INSTANCE);
@@ -125,6 +126,7 @@ public abstract class LexingCommon {
     public static final ByteList PERCENT = new ByteList(new byte[] {'%'}, USASCIIEncoding.INSTANCE);
     public static final ByteList OR_OR = CommonByteLists.OR_OR;
     public static final ByteList OR = new ByteList(new byte[] {'|'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList OR_KEYWORD = new ByteList(new byte[] {'o', 'r'}, USASCIIEncoding.INSTANCE);
     public static final ByteList PLUS_AT = new ByteList(new byte[] {'+', '@'}, USASCIIEncoding.INSTANCE);
     public static final ByteList PLUS = new ByteList(new byte[] {'+'}, USASCIIEncoding.INSTANCE);
     public static final ByteList QUESTION = new ByteList(new byte[] {'?'}, USASCIIEncoding.INSTANCE);

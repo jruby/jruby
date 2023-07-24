@@ -37,6 +37,7 @@ package org.jruby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.ripper.RubyLexer;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
@@ -116,14 +117,16 @@ public class RubyBinding extends RubyObject {
     }
 
     // c: bind_eval
-    @JRubyMethod(name = "eval", required=1, optional=2)
+    @JRubyMethod(name = "eval", required = 1, optional = 2, checkArity = false)
     public IRubyObject eval(ThreadContext context, IRubyObject[] args) {
-        IRubyObject[] newArgs = new IRubyObject[args.length+1];
+        int argc = Arity.checkArgumentCount(context, args, 1, 3);
+
+        IRubyObject[] newArgs = new IRubyObject[argc+1];
         newArgs[0] = args[0]; // eval string
         newArgs[1] = this; // binding
-        if(args.length>1) {
+        if (argc > 1) {
             newArgs[2] = args[1]; // file
-            if(args.length>2) {
+            if (argc > 2) {
                 newArgs[3] = args[2]; // line
             }
         }

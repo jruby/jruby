@@ -196,7 +196,7 @@ public class RubyDate extends RubyObject {
     }
 
     /**
-     * @note since <code>Date.new</code> is a <code>civil</code> alias, this won't ever get used
+     * <p>Note: since <code>Date.new</code> is a <code>civil</code> alias, this won't ever get used</p>
      * @deprecated kept due AR-JDBC (uses RubyClass.newInstance(...) to 'fast' allocate a Date instance)
      */
     @JRubyMethod(visibility = Visibility.PRIVATE)
@@ -422,10 +422,12 @@ public class RubyDate extends RubyObject {
         return date;
     }
 
-    @JRubyMethod(name = "civil", alias = "new", meta = true, optional = 4) // 4 args case
+    @JRubyMethod(name = "civil", alias = "new", meta = true, optional = 4, checkArity = false) // 4 args case
     public static RubyDate civil(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         // IRubyObject year, IRubyObject month, IRubyObject mday, IRubyObject start
-        switch (args.length) {
+        int argc = Arity.checkArgumentCount(context, args, 0, 4);
+
+        switch (argc) {
             // NOTE: slightly annoying but send might route its Date.send(:civil, *args) here
             case 0: return civil(context, self);
             case 1: return civil(context, self, args[0]);
@@ -472,9 +474,11 @@ public class RubyDate extends RubyObject {
         return (m < 0) ? m + 13 : m;
     }
 
-    @JRubyMethod(name = "valid_civil?", alias = "valid_date?", meta = true, required = 3, optional = 1)
+    @JRubyMethod(name = "valid_civil?", alias = "valid_date?", meta = true, required = 3, optional = 1, checkArity = false)
     public static IRubyObject valid_civil_p(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        final long sg = args.length > 3 ? val2sg(context, args[3]) : ITALY;
+        int argc = Arity.checkArgumentCount(context, args, 3, 4);
+
+        final long sg = argc > 3 ? val2sg(context, args[3]) : ITALY;
         final Long jd = validCivilImpl(args[0], args[1], args[2], sg);
         return jd == null ? context.fals : context.tru;
     }
@@ -619,15 +623,14 @@ public class RubyDate extends RubyObject {
         return jd;
     }
 
-    @JRubyMethod(name = "ordinal", meta = true, optional = 3)
+    @JRubyMethod(name = "ordinal", meta = true, optional = 3, checkArity = false)
     public static RubyDate ordinal(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         // ordinal(y=-4712, d=1, sg=ITALY)
+        int argc = Arity.checkArgumentCount(context, args, 0, 3);
 
-        final int len = args.length;
-
-        final long sg = len > 2 ? val2sg(context, args[2]) : ITALY;
-        IRubyObject year = (len > 0) ? args[0] : RubyFixnum.newFixnum(context.runtime, -4712);
-        IRubyObject day = (len > 1) ? args[1] : RubyFixnum.newFixnum(context.runtime, 1);
+        final long sg = argc > 2 ? val2sg(context, args[2]) : ITALY;
+        IRubyObject year = (argc > 0) ? args[0] : RubyFixnum.newFixnum(context.runtime, -4712);
+        IRubyObject day = (argc > 1) ? args[1] : RubyFixnum.newFixnum(context.runtime, 1);
 
         final long[] rest = new long[] { 0, 1 };
         final int d = (int) RubyDateTime.getDay(context, day, rest);
@@ -638,9 +641,11 @@ public class RubyDate extends RubyObject {
         return new RubyDate(context, (RubyClass) self, jd_to_ajd(context, jd), rest, 0, sg);
     }
 
-    @JRubyMethod(name = "valid_ordinal?", meta = true, required = 2, optional = 1)
+    @JRubyMethod(name = "valid_ordinal?", meta = true, required = 2, optional = 1, checkArity = false)
     public static IRubyObject valid_ordinal_p(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        final long sg = args.length > 2 ? val2sg(context, args[2]) : ITALY;
+        int argc = Arity.checkArgumentCount(context, args, 2, 3);
+
+        final long sg = argc > 2 ? val2sg(context, args[2]) : ITALY;
         final Long jd = validOrdinalImpl(args[0], args[1], sg);
         return jd == null ? context.fals : context.tru;
     }
@@ -655,29 +660,30 @@ public class RubyDate extends RubyObject {
     }
 
     @Deprecated // NOTE: should go away once no date.rb is using it
-    @JRubyMethod(name = "_valid_ordinal?", meta = true, required = 2, optional = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "_valid_ordinal?", meta = true, required = 2, optional = 1, checkArity = false, visibility = Visibility.PRIVATE)
     public static IRubyObject _valid_ordinal_p(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        final long sg = args.length > 2 ? val2sg(context, args[2]) : GREGORIAN;
+        int argc = Arity.checkArgumentCount(context, args, 2, 3);
+
+        final long sg = argc > 2 ? val2sg(context, args[2]) : GREGORIAN;
         final Long jd = validOrdinalImpl(args[0], args[1], sg);
         return jd == null ? context.nil : RubyFixnum.newFixnum(context.runtime, jd);
     }
 
     @Deprecated // NOTE: should go away once no date.rb is using it
-    @JRubyMethod(name = "_valid_ordinal?", required = 2, optional = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "_valid_ordinal?", required = 2, optional = 1, checkArity = false, visibility = Visibility.PRIVATE)
     public IRubyObject _valid_ordinal_p(ThreadContext context, IRubyObject[] args) {
         return RubyDate._valid_ordinal_p(context, null, args);
     }
 
-    @JRubyMethod(name = "commercial", meta = true, optional = 4)
+    @JRubyMethod(name = "commercial", meta = true, optional = 4, checkArity = false)
     public static RubyDate commercial(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         // commercial(y=-4712, w=1, d=1, sg=ITALY)
+        int argc = Arity.checkArgumentCount(context, args, 0, 4);
 
-        final int len = args.length;
-
-        final long sg = len > 3 ? val2sg(context, args[3]) : ITALY;
-        IRubyObject year = (len > 0) ? args[0] : RubyFixnum.newFixnum(context.runtime, -4712);
-        IRubyObject week = (len > 1) ? args[1] : RubyFixnum.newFixnum(context.runtime, 1);
-        IRubyObject day = (len > 2) ? args[2] : RubyFixnum.newFixnum(context.runtime, 1);
+        final long sg = argc > 3 ? val2sg(context, args[3]) : ITALY;
+        IRubyObject year = (argc > 0) ? args[0] : RubyFixnum.newFixnum(context.runtime, -4712);
+        IRubyObject week = (argc > 1) ? args[1] : RubyFixnum.newFixnum(context.runtime, 1);
+        IRubyObject day = (argc > 2) ? args[2] : RubyFixnum.newFixnum(context.runtime, 1);
 
         Long jd = validCommercialImpl(year, week, day, sg);
         if (jd == null) throw newDateError(context, "invalid date");
@@ -685,9 +691,11 @@ public class RubyDate extends RubyObject {
         return new RubyDate(context, (RubyClass) self, jd_to_ajd(context, jd), 0, sg);
     }
 
-    @JRubyMethod(name = "valid_commercial?", meta = true, required = 3, optional = 1)
+    @JRubyMethod(name = "valid_commercial?", meta = true, required = 3, optional = 1, checkArity = false)
     public static IRubyObject valid_commercial_p(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        final long sg = args.length > 3 ? val2sg(context, args[3]) : ITALY;
+        int argc = Arity.checkArgumentCount(context, args, 3, 4);
+
+        final long sg = argc > 3 ? val2sg(context, args[3]) : ITALY;
         final Long jd = validCommercialImpl(args[0], args[1], args[2], sg);
         return jd == null ? context.fals : context.tru;
     }
@@ -700,17 +708,21 @@ public class RubyDate extends RubyObject {
     }
 
     @Deprecated // NOTE: should go away once no date.rb is using it
-    @JRubyMethod(name = "_valid_commercial?", meta = true, required = 3, optional = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "_valid_commercial?", meta = true, required = 3, optional = 1, checkArity = false, visibility = Visibility.PRIVATE)
     public static IRubyObject _valid_commercial_p(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        final long sg = args.length > 3 ? val2sg(context, args[3]) : GREGORIAN;
+        int argc = Arity.checkArgumentCount(context, args, 3, 4);
+
+        final long sg = argc > 3 ? val2sg(context, args[3]) : GREGORIAN;
         final Long jd = validCommercialImpl(args[0], args[1], args[2], sg);
         return jd == null ? context.nil : RubyFixnum.newFixnum(context.runtime, jd);
     }
 
     @Deprecated // NOTE: should go away once no date.rb is using it
-    @JRubyMethod(name = "_valid_weeknum?", meta = true, required = 4, optional = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "_valid_weeknum?", meta = true, required = 4, optional = 1, checkArity = false, visibility = Visibility.PRIVATE)
     public static IRubyObject _valid_weeknum_p(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        final long sg = args.length > 4 ? val2sg(context, args[4]) : GREGORIAN;
+        int argc = Arity.checkArgumentCount(context, args, 4, 5);
+
+        final long sg = argc > 4 ? val2sg(context, args[4]) : GREGORIAN;
         final int y = args[0].convertToInteger().getIntValue();
         final int w = args[1].convertToInteger().getIntValue();
         final int d = args[2].convertToInteger().getIntValue();
@@ -742,15 +754,17 @@ public class RubyDate extends RubyObject {
         return new DateTime(today.getYear(), today.getMonthOfYear(), today.getDayOfMonth(), 0, 0, chrono);
     }
 
-    @JRubyMethod(name = "_valid_civil?", meta = true, required = 3, optional = 1)
+    @JRubyMethod(name = "_valid_civil?", meta = true, required = 3, optional = 1, checkArity = false)
     public static IRubyObject _valid_civil_p(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        final long sg = args.length > 3 ? val2sg(context, args[3]) : GREGORIAN;
+        int argc = Arity.checkArgumentCount(context, args, 3, 4);
+
+        final long sg = argc > 3 ? val2sg(context, args[3]) : GREGORIAN;
         final Long jd = validCivilImpl(args[0], args[1], args[2], sg);
         return jd == null ? context.nil : RubyFixnum.newFixnum(context.runtime, jd);
     }
 
     @Deprecated // NOTE: should go away once no date.rb is using it
-    @JRubyMethod(name = "_valid_civil?", required = 3, optional = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "_valid_civil?", required = 3, optional = 1, checkArity = false, visibility = Visibility.PRIVATE)
     public IRubyObject _valid_civil_p(ThreadContext context, IRubyObject[] args) {
         return RubyDate._valid_civil_p(context, null, args);
     }
@@ -1129,9 +1143,11 @@ public class RubyDate extends RubyObject {
         return RubyRational.newRationalCanonicalize(context, offset, DAY_MS);
     }
 
-    @JRubyMethod(optional = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(optional = 1, checkArity = false, visibility = Visibility.PRIVATE)
     public IRubyObject new_offset(ThreadContext context, IRubyObject[] args) {
-        IRubyObject of = args.length > 0 ? args[0] : RubyFixnum.zero(context.runtime);
+        int argc = Arity.checkArgumentCount(context, args, 0, 1);
+
+        IRubyObject of = argc > 0 ? args[0] : RubyFixnum.zero(context.runtime);
 
         final int off = val2off(context, of);
         DateTime dt = this.dt.withChronology(getChronology(context, start, off));
@@ -1496,12 +1512,14 @@ public class RubyDate extends RubyObject {
         return (RubyNumeric) ((RubyNumeric) tmp.op_plus(context, fr)).op_plus(context, MINUS_HALF);
     }
 
-    @JRubyMethod(meta = true, required = 2, optional = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(meta = true, required = 2, optional = 1, checkArity = false, visibility = Visibility.PRIVATE)
     public static RubyNumeric jd_to_ajd(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 2, 3);
+
         RubyNumeric jd = (RubyNumeric) args[0];
         RubyNumeric fr = (RubyNumeric) args[1];
         int of_sec = 0;
-        if (args.length > 2 && ! ((RubyNumeric) args[2]).isZero()) {
+        if (argc > 2 && ! ((RubyNumeric) args[2]).isZero()) {
             RubyNumeric of = (RubyNumeric) f_mul(context, args[2], RubyFixnum.newFixnum(context.runtime, DAY_IN_SECONDS));
             of_sec = of.getIntValue();
         }
@@ -2348,15 +2366,17 @@ public class RubyDate extends RubyObject {
         return ((RubyRegexp) reg).match_m(context, str, false);
     }
 
-    @JRubyMethod(name = "s3e", meta = true, required = 4, optional = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "s3e", meta = true, required = 4, optional = 1, checkArity = false, visibility = Visibility.PRIVATE)
     public static IRubyObject _s3e(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 4, 5);
+
         final IRubyObject nil = context.nil;
 
         RubyString y = args[1] == nil ? null : (RubyString) args[1];
         RubyString m = args[2] == nil ? null : (RubyString) args[2];
         RubyString d = args[3] == nil ? null : (RubyString) args[3];
 
-        return s3e(context, (RubyHash) args[0], y, m, d, args.length > 4 ? args[4].isTrue() : false);
+        return s3e(context, (RubyHash) args[0], y, m, d, argc > 4 ? args[4].isTrue() : false);
     }
 
     private static IRubyObject s3e(ThreadContext context, final RubyHash hash,

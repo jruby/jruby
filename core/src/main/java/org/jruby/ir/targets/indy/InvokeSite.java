@@ -29,6 +29,7 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.invokedynamic.JRubyCallSite;
@@ -164,8 +165,9 @@ public abstract class InvokeSite extends MutableCallSite {
         if (methodMissing(entry, caller)) {
             entry = methodMissingEntry(context, selfClass, methodName, entry);
             // only pass symbol below if we be calling a user-defined method_missing (default ones do it for us)
-            passSymbol = !(entry.method instanceof RubyKernel.MethodMissingMethod);
-            mh = methodMissingHandle(self, entry);
+            passSymbol = !(entry.method instanceof RubyKernel.MethodMissingMethod ||
+                    entry.method instanceof Helpers.MethodMissingWrapper);
+            mh = Bootstrap.buildGenericHandle(this, entry);
         } else {
             mh = getHandle(self, entry);
         }
@@ -186,8 +188,9 @@ public abstract class InvokeSite extends MutableCallSite {
         if (methodMissing(entry)) {
             entry = methodMissingEntry(context, selfClass, methodName, entry);
             // only pass symbol below if we be calling a user-defined method_missing (default ones do it for us)
-            passSymbol = !(entry.method instanceof RubyKernel.MethodMissingMethod);
-            mh = methodMissingHandle(self, entry);
+            passSymbol = !(entry.method instanceof RubyKernel.MethodMissingMethod ||
+                    entry.method instanceof Helpers.MethodMissingWrapper);
+            mh = Bootstrap.buildGenericHandle(this, entry);
         } else {
             mh = getHandle(self, entry);
         }
@@ -205,23 +208,8 @@ public abstract class InvokeSite extends MutableCallSite {
         } else {
             logMethodMissing();
         }
-        return Helpers.createDirectMethodMissingEntry(context, selfClass, callType, entry.method.getVisibility(), entry.token, methodName);
-    }
-
-    private MethodHandle methodMissingHandle(IRubyObject self, CacheEntry entry) {
-        try {
-            if (entry.method instanceof RubyKernel.MethodMissingMethod) {
-                // the built-in special-case handles pass symbol for us, so just invoke generically
-                return Bootstrap.buildGenericHandle(this, entry);
-            }
-
-            // otherwise, it's a user-defined method_missing and we should insert a symbol into the handle
-            return Bootstrap.buildMethodMissingHandle(this, entry, self);
-        } catch (Throwable t) {
-            t.printStackTrace();
-            Helpers.throwException(t);
-        }
-        return null;
+        Visibility visibility = entry.method.getVisibility();
+        return Helpers.createMethodMissingEntry(context, selfClass, callType, visibility, entry.token, methodName);
     }
 
     private void finishBinding(CacheEntry entry, MethodHandle mh, IRubyObject self, RubyClass selfClass, SwitchPoint switchPoint) {
@@ -252,7 +240,7 @@ public abstract class InvokeSite extends MutableCallSite {
         if (literalClosure) {
             try {
                 if (passSymbol) {
-                    return method.call(context, self, sourceModule, methodName, Helpers.arrayOf(context.runtime.newSymbol(methodName), args), block);
+                    return method.call(context, self, sourceModule, "method_missing", Helpers.arrayOf(context.runtime.newSymbol(methodName), args), block);
                 } else {
                     return method.call(context, self, sourceModule, methodName, args, block);
                 }

@@ -1003,6 +1003,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static IRubyObject isDefinedSuper(ThreadContext context, IRubyObject receiver, String frameName, RubyModule frameClass, IRubyObject definedMessage) {
         boolean defined = frameName != null && frameClass != null &&
+                frameClass.getSuperClass() != null &&
                 frameClass.getSuperClass().isMethodBound(frameName, false);
 
         return defined ? definedMessage : context.nil;
@@ -1570,7 +1571,7 @@ public class IRRuntimeHelpers {
 
     // FIXME: Pass context instead of runtime.
     @JIT
-    public static RubyHash constructHashFromArray(Ruby runtime, boolean literal, IRubyObject[] pairs) {
+    public static RubyHash constructHashFromArray(Ruby runtime, IRubyObject[] pairs) {
         int length = pairs.length / 2;
         boolean useSmallHash = length <= 10;
 

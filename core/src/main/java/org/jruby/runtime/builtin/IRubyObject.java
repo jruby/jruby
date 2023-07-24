@@ -126,13 +126,13 @@ public interface IRubyObject {
     boolean isSpecialConst();
 
     /**
-     * Retrieve <code></>self.class<</code>.
+     * Retrieve <code>self.class</code>.
      * @return the Ruby (meta) class
      */
     RubyClass getMetaClass();
     
     /**
-     * Retrieve <code></>self.singleton_class<</code>.
+     * Retrieve <code>self.singleton_class</code>.
      * @return the Ruby singleton class
      */
     RubyClass getSingletonClass();
@@ -270,14 +270,14 @@ public interface IRubyObject {
     IRubyObject rbClone();
 
     /**
-     * @return true if an object is Ruby Module instance (note that it will return false for Ruby Classes).
      * If is_a? semantics is required, use <code>(someObject instanceof RubyModule)</code> instead.
+     * @return true if an object is Ruby Module instance (note that it will return false for Ruby Classes).
      */
     boolean isModule();    
     
     /**
-     * @return true if an object is Ruby Class instance (note that it will return false for Ruby singleton classes). 
      * If is_a? semantics is required, use <code>(someObject instanceof RubyClass/MetaClass)</code> instead.
+     * @return true if an object is Ruby Class instance (note that it will return false for Ruby singleton classes). 
      */
     boolean isClass();
     
@@ -360,6 +360,13 @@ public interface IRubyObject {
      * @return a list of all variables (ivar/cvar/constant/internal)
      */
     List<Variable<Object>> getVariableList();
+
+    /**
+     * @return a list of all marshalable variables (ivar/cvar/constant/internal)
+     */
+    default List<Variable<Object>> getMarshalVariableList() {
+        return getVariableList();
+    }
 
     //
     // INSTANCE VARIABLE METHODS

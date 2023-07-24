@@ -402,7 +402,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
          *
          * [subbu@earth ~/jruby] cat /tmp/pgm.rb
          * class Module
-         *   class << self
+         *   class &lt;&lt; self
          *     alias_method :foobar, :nesting
          *   end
          * end

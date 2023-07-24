@@ -250,7 +250,7 @@ public class Platform {
     }
 
     /**
-     * Gets the current <tt>Platform</tt>
+     * Gets the current <code>Platform</code>
      *
      * @return The current platform.
      */
@@ -261,7 +261,7 @@ public class Platform {
     /**
      * Gets the current Operating System.
      *
-     * @return A <tt>OS</tt> value representing the current Operating System.
+     * @return A <code>OS</code> value representing the current Operating System.
      */
     public final OS_TYPE getOS() {
         return OS;
@@ -270,7 +270,7 @@ public class Platform {
     /**
      * Gets the current processor architecture the JVM is running on.
      *
-     * @return A <tt>CPU</tt> value representing the current processor architecture.
+     * @return A <code>CPU</code> value representing the current processor architecture.
      */
     public final CPU_TYPE getCPU() {
         return CPU;
@@ -401,7 +401,7 @@ public class Platform {
     }
 
     /**
-     * Gets the name of this <tt>Platform</tt>.
+     * Gets the name of this <code>Platform</code>.
      *
      * @return The name of this platform.
      */

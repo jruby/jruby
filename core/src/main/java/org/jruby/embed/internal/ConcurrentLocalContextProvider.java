@@ -41,7 +41,7 @@ import org.jruby.embed.LocalVariableBehavior;
  * Ruby runtime returned from the getRuntime() method is a classloader-global runtime.
  * While variables (except global variables) and constants are thread local.
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class ConcurrentLocalContextProvider extends AbstractLocalContextProvider {
     private volatile ConcurrentLinkedQueue<AtomicReference<LocalContext>> contextRefs =

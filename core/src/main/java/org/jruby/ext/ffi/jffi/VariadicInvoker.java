@@ -60,7 +60,7 @@ public class VariadicInvoker extends RubyObject {
     /**
      * Returns the {@link org.jruby.runtime.Arity} of this function.
      *
-     * @return The <tt>Arity</tt> of the native function.
+     * @return The <code>Arity</code> of the native function.
      */
     public final Arity getArity() {
         return Arity.OPTIONAL;

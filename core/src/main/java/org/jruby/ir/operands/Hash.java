@@ -5,7 +5,6 @@ import org.jruby.RubyHash;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
-import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -25,27 +24,20 @@ import java.util.Map;
 // that actually build the hash
 public class Hash extends Operand {
     final public KeyValuePair<Operand, Operand>[] pairs;
-    /** Is this a literal Hash */
-    final public boolean literal;
 
-    public Hash(List<KeyValuePair<Operand, Operand>> pairs, boolean literal) {
-        this(pairs.toArray(new KeyValuePair[pairs.size()]), literal);
+    public Hash(List<KeyValuePair<Operand, Operand>> pairs) {
+        this(pairs.toArray(new KeyValuePair[pairs.size()]));
     }
 
-    protected Hash(KeyValuePair<Operand, Operand>[] pairs, boolean literal) {
+    protected Hash(KeyValuePair<Operand, Operand>[] pairs) {
         super();
 
         this.pairs = pairs;
-        this.literal = literal;
     }
 
     @Override
     public OperandType getOperandType() {
         return OperandType.HASH;
-    }
-
-    public Hash(List<KeyValuePair<Operand, Operand>> pairs) {
-        this(pairs, true);
     }
 
     public boolean isBlank() {
@@ -71,7 +63,7 @@ public class Hash extends Operand {
                                 pair.getValue().getSimplifiedOperand(valueMap, force)))
                 .toArray(n -> new KeyValuePair[n]);
 
-        return new Hash(newPairs, literal);
+        return new Hash(newPairs);
     }
 
     /** Append the list of variables used in this operand to the input list */
@@ -91,7 +83,7 @@ public class Hash extends Operand {
                                 ((DepthCloneable) pair.getValue()).cloneForDepth(newDepth)))
                 .toArray(n -> new KeyValuePair[n]);
 
-        return new Hash(newPairs, literal);
+        return new Hash(newPairs);
     }
 
     @Override
@@ -106,7 +98,7 @@ public class Hash extends Operand {
                                 pair.getValue().cloneForInlining(ii)))
                 .toArray(n -> new KeyValuePair[n]);
 
-        return new Hash(newPairs, literal);
+        return new Hash(newPairs);
     }
 
     public boolean isKeywordRest() {
@@ -162,7 +154,6 @@ public class Hash extends Operand {
             e.encode(pair.getKey());
             e.encode(pair.getValue());
         }
-        e.encode(literal);
     }
 
     public static Hash decode(IRReaderDecoder d) {
@@ -173,7 +164,7 @@ public class Hash extends Operand {
             pairs[i] = new KeyValuePair(d.decodeOperand(), d.decodeOperand());
         }
 
-        return new Hash(pairs, d.decodeBoolean());
+        return new Hash(pairs);
     }
 
     @Override
@@ -190,7 +181,6 @@ public class Hash extends Operand {
             }
         }
         builder.append("}");
-        builder.append("(" +  (literal ? "literal" : "keyword") + ")");
         return builder.toString();
     }
 

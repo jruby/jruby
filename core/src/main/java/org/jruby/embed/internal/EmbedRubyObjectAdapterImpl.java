@@ -57,7 +57,7 @@ import static org.jruby.embed.internal.EmbedRubyRuntimeAdapterImpl.createLocalVa
  * Implementation of {@link EmbedRubyObjectAdapter}. Users get an instance of this
  * class by newObjectAdapter() method of {@link ScriptingContainer}.
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
 

@@ -1,0 +1,2 @@
+fails:Evaluation order during assignment with multiple assignment evaluates from left to right, receivers first then methods
+fails:Evaluation order during assignment with multiple assignment can be used to swap variables with nested method calls

@@ -36,6 +36,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -144,14 +145,16 @@ public class RubyTCPSocket extends RubyIPSocket {
 
     }
 
-    @JRubyMethod(required = 2, optional = 3, visibility = Visibility.PRIVATE)
+    @JRubyMethod(required = 2, optional = 3, checkArity = false, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 2, 5);
+
         String localHost = null;
         int localPort = 0;
         IRubyObject maybeOpts;
         RubyHash opts = null;
 
-        switch (args.length) {
+        switch (argc) {
             case 2:
                 return initialize(context, args[0], args[1]);
             case 3:
@@ -165,7 +168,7 @@ public class RubyTCPSocket extends RubyIPSocket {
         final String remoteHost = host.isNil() ? "localhost" : host.convertToString().toString();
         final int remotePort = SocketUtils.getPortFrom(context, port);
 
-        switch (args.length) {
+        switch (argc) {
             case 4:
                 if (!args[2].isNil()) localHost = args[2].convertToString().toString();
 
@@ -180,8 +183,6 @@ public class RubyTCPSocket extends RubyIPSocket {
             case 5:
                 if (!args[4].isNil()) opts = (RubyHash) ArgsUtil.getOptionsArg(context.runtime, args[4], true);
                 break;
-            default:
-                throw context.runtime.newArgumentError(args.length, 2, 4);
         }
 
         return initialize(context, remoteHost, remotePort, host, localHost, localPort, opts);

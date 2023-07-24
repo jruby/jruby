@@ -78,7 +78,6 @@ ruby/test_pattern_matching.rb
 ruby/test_pipe.rb
 ruby/test_primitive.rb
 ruby/test_proc.rb
-ruby/test_process.rb
 ruby/test_rand.rb
 ruby/test_range.rb
 ruby/test_rational.rb
@@ -89,7 +88,6 @@ ruby/test_regexp.rb
 ruby/test_require.rb
 ruby/test_require_lib.rb
 ruby/test_rubyoptions.rb
-ruby/test_signal.rb
 ruby/test_sleep.rb
 ruby/test_sprintf.rb
 ruby/test_sprintf_comb.rb
@@ -114,7 +112,6 @@ ruby/test_variable.rb
 ruby/test_vm_dump.rb
 ruby/test_weakmap.rb
 ruby/test_whileuntil.rb
-ruby/test_yield.rb
 
 # Tests below are disabled for various reasons
 
@@ -131,3 +128,6 @@ ruby/test_yield.rb
 # Heavy subprocess tests, moved to mri.extra.index
 #ruby/test_settracefunc.rb
 #ruby/test_syntax.rb
+#ruby/test_process.rb
+#ruby/test_signal.rb
+#ruby/test_yield.rb

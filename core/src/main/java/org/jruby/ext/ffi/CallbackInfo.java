@@ -74,7 +74,7 @@ public class CallbackInfo extends Type {
     }
     
     /**
-     * Creates a new <tt>CallbackInfo</tt> instance.
+     * Creates a new <code>CallbackInfo</code> instance.
      *
      * @param runtime The runtime to create the instance for
      * @param klazz The ruby class of the CallbackInfo instance
@@ -94,15 +94,16 @@ public class CallbackInfo extends Type {
      *
      * @param context The current ruby thread context
      * @param klass The ruby class of the CallbackInfo instance
-     * @param returnType The ruby return type
-     * @param paramTypes An array containing the ruby parameter types
+     * @param args An array containing the ruby parameter types
      *
      * @return A new CallbackInfo instance
      */
-    @JRubyMethod(name = "new", meta = true, required = 2, optional = 1)
+    @JRubyMethod(name = "new", meta = true, required = 2, optional = 1, checkArity = false)
     public static final IRubyObject newCallbackInfo(ThreadContext context, IRubyObject klass,
             IRubyObject[] args)
     {
+        int argc = Arity.checkArgumentCount(context, args, 2, 3);
+
         IRubyObject returnType = args[0], paramTypes = args[1];
 
         if (!(returnType instanceof Type)) {
@@ -110,13 +111,13 @@ public class CallbackInfo extends Type {
                     + returnType.getMetaClass().getName() + " (expected FFI::Type)");
         }
 
-        if (returnType instanceof MappedType) {
-            returnType = ((MappedType) returnType).getRealType();
-        }
-
         if (!(paramTypes instanceof RubyArray)) {
             throw context.runtime.newTypeError("wrong argument type "
                     + paramTypes.getMetaClass().getName() + " (expected Array)");
+        }
+
+        if (returnType instanceof MappedType) {
+            returnType = ((MappedType) returnType).getRealType();
         }
 
         Type[] nativeParamTypes = new Type[((RubyArray)paramTypes).size()];
@@ -130,7 +131,7 @@ public class CallbackInfo extends Type {
         }
 
         boolean stdcall = false;
-        if (args.length > 2) {
+        if (argc > 2) {
             if (!(args[2] instanceof RubyHash)) {
                 throw context.runtime.newTypeError("wrong argument type "
                         + args[2].getMetaClass().getName() + " (expected Enums or Hash)");
@@ -150,7 +151,7 @@ public class CallbackInfo extends Type {
     /**
      * Returns the {@link org.jruby.runtime.Arity} of this function.
      * 
-     * @return The <tt>Arity</tt> of the native function.
+     * @return The <code>Arity</code> of the native function.
      */
     public final Arity getArity() {
         return arity;

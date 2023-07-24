@@ -30,6 +30,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.UncaughtThrowError;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -72,10 +73,12 @@ public class RubyUncaughtThrowError extends RubyArgumentError {
     }
 
     @Override
-    @JRubyMethod(required = 2, optional = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(required = 2, optional = 1, checkArity = false, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block block) {
+        int argc = Arity.checkArgumentCount(getRuntime(), args, 2, 3);
+
         this.tag = args[0]; this.value = args[1];
-        if ( args.length > 2 ) this.message = args[2];
+        if ( argc > 2 ) this.message = args[2];
         // makes no-sense for us to have a cause or does it ?!
         // super.initialize(NULL_ARRAY, block); // already set message
         return this;

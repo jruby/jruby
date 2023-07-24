@@ -1,5 +1,6 @@
 package org.jruby.ir.builder;
 
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.ParseResult;
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
@@ -31,7 +32,6 @@ import org.jruby.ir.operands.Bignum;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Complex;
 import org.jruby.ir.operands.CurrentScope;
-import org.jruby.ir.operands.DynamicSymbol;
 import org.jruby.ir.operands.Filename;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.FrozenString;
@@ -171,16 +171,6 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         this(manager, scope, parent, null);
     }
 
-    private void determineIfWeNeedLineNumber(Node node) {
-        if (node.isNewline()) {
-            int currLineNum = node.getLine();
-            if (currLineNum != lastProcessedLineNum && !(node instanceof NilImplicitNode)) { // Do not emit multiple line number instrs for the same line
-                needsLineNumInfo = true;
-                lastProcessedLineNum = currLineNum;
-            }
-        }
-    }
-
     private NotCompilableException notCompilable(String message, Node node) {
         int line = node != null ? node.getLine() : scope.getLine();
         String loc = scope.getFile() + ":" + line;
@@ -189,7 +179,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     private Operand buildOperand(Variable result, Node node) throws NotCompilableException {
-        determineIfWeNeedLineNumber(node);
+        if (node.isNewline()) determineIfWeNeedLineNumber(node.getLine(), node.isNewline());
 
         switch (node.getNodeType()) {
             case ALIASNODE: return buildAlias((AliasNode) node);
@@ -871,6 +861,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         Operand[] args = setupCallArgs(callNode.getArgsNode(), flags);
         Operand block = setupCallClosure(callNode.getIterNode());
 
+        determineIfWeNeedLineNumber(callNode.getLine(), callNode.isNewline()); // backtrace needs line of call in case of exception.
         if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
             Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
             if_else(test, tru(),
@@ -881,7 +872,6 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
                             determineIfProcNew(receiverNode,
                                     CallInstr.create(scope, NORMAL, result, name, receiver, args, block, flags[0]))));
         } else {
-            determineIfWeNeedLineNumber(callNode); // buildOperand for call was papered over by args operand building so we check once more.
             receiveBreakException(block,
                     determineIfProcNew(receiverNode,
                             CallInstr.create(scope, NORMAL, result, name, receiver, args, block, flags[0])));
@@ -1113,18 +1103,27 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             }
         } else {
             call(result, d, "empty?");
+            if (isSinglePattern) maybeGenerateIsNotEmptyErrorString(errorString, result, d);
             cond_ne(testEnd, result, tru());
         }
 
         if (pattern.hasRestArg()) {
             if (pattern.getRestArg() instanceof NilRestArgNode) {
                 call(result, d, "empty?");
+                if (isSinglePattern) maybeGenerateIsNotEmptyErrorString(errorString, result, d);
                 cond_ne(testEnd, result, tru());
             } else if (pattern.isNamedRestArg()) {
                 buildPatternEach(testEnd, result, copy(buildNil()), d, pattern.getRestArg(), inAlteration, isSinglePattern, errorString);
                 cond_ne(testEnd, result, tru());
             }
         }
+    }
+
+    private void maybeGenerateIsNotEmptyErrorString(Variable errorString, Operand result, Operand value) {
+        label("empty", (empty) ->
+                cond(empty, result, tru(), ()->
+                        addInstr(new BuildCompoundStringInstr(errorString, new Operand[] {value, new FrozenString(" is not empty")},
+                                UTF8Encoding.INSTANCE, 13, true, false, getFileName(), lastProcessedLineNum))));
     }
 
     private void buildPatternMatch(Variable result, Variable deconstructed, Node arg, Operand obj,
@@ -1899,8 +1898,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
                      *    1. r  = receiver
                      *    2. mc = r.metaClass
                      *    3. v  = mc.getVisibility(methodName)
-                     *    4. f  = !v || v.isPrivate? || (v.isProtected? && receiver/self?.kindof(mc.getRealClass))
-                     *    5. return !f && mc.methodBound(attrmethod) ? buildGetArgumentDefn(..) : false
+                     *    4. f  = !v || v.isPrivate? || (v.isProtected? &amp;&amp; receiver/self?.kindof(mc.getRealClass))
+                     *    5. return !f &amp;&amp; mc.methodBound(attrmethod) ? buildGetArgumentDefn(..) : false
                      *
                      * Hide the complexity of instrs 2-4 into a verifyMethodIsPublicAccessible call
                      * which can executely entirely in Java-land.  No reason to expose the guts in IR.
@@ -2487,6 +2486,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         determineIfMaybeRefined(fcallNode.getName(), args);
 
         Operand block = setupCallClosure(fcallNode.getIterNode());
+        determineIfWeNeedLineNumber(fcallNode.getLine(), fcallNode.isNewline()); // backtrace needs line of call in case of exception.
 
         if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
             Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
@@ -2505,7 +2505,6 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
                 }
             }
 
-            determineIfWeNeedLineNumber(fcallNode); // buildOperand for fcall was papered over by args operand building so we check once more.
             receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), args, block, flags[0]));
         }
 
@@ -2619,7 +2618,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
                 Node value = pair.getValue();
                  duplicateCheck = value instanceof HashNode && ((HashNode) value).isLiteral() ? tru() : fals();
                 if (hash == null) {                     // No hash yet. Define so order is preserved.
-                    hash = copy(new Hash(args, hashNode.isLiteral()));
+                    hash = copy(new Hash(args));
                     args = new ArrayList<>();           // Used args but we may find more after the splat so we reset
                 } else if (!args.isEmpty()) {
                     addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args), duplicateCheck}));
@@ -2636,7 +2635,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         }
 
         if (hash == null) {           // non-**arg ordinary hash
-            hash = copy(new Hash(args, hashNode.isLiteral()));
+            hash = copy(new Hash(args));
         } else if (!args.isEmpty()) { // ordinary hash values encountered after a **arg
             addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args), duplicateCheck}));
         }
@@ -3200,7 +3199,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     public Operand buildSuper(Variable result, SuperNode node) {
-        return buildSuper(result, node.getIterNode(), node.getArgsNode(), node.getLine());
+        return buildSuper(result, node.getIterNode(), node.getArgsNode(), node.getLine(), node.isNewline());
     }
 
     public Operand buildSValue(Variable result, SValueNode node) {

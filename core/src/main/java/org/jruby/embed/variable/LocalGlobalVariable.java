@@ -39,7 +39,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * An implementation of BiVariable for JSR223 style global variable. The assigned
  * name is like a local variables in Java, but a global in Ruby.
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class LocalGlobalVariable extends GlobalVariable {
 
@@ -49,7 +49,7 @@ public class LocalGlobalVariable extends GlobalVariable {
      * Returns an instance of this class. This factory method is used when a local
      * global type variable is put into {@link BiVariableMap}.
      *
-     * @param runtime Ruby runtime
+     * @param receiver Receiver object returned when a script is evaluated.
      * @param name a variable name
      * @param javaObject Java object that should be assigned to.
      * @return the instance of LocalGlobalVariable
@@ -157,8 +157,6 @@ public class LocalGlobalVariable extends GlobalVariable {
 
     /**
      * Removes this object from {@link BiVariableMap}.
-     *
-     * @param runtime environment where a variable is removed.
      */
     @Override
     public void remove() {

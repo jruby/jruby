@@ -145,7 +145,7 @@ public final class DefaultMethodFactory extends MethodFactory {
      * Gets a marshaller to convert from a ruby type to a native type.
      *
      * @param type The native type to convert to.
-     * @return A new <tt>Marshaller</tt>
+     * @return A new <code>Marshaller</code>
      */
     static ParameterMarshaller getMarshaller(Type type, CallingConvention convention, IRubyObject enums) {
         if (enums != null && !enums.isNil() && !(enums instanceof RubyHash || enums instanceof Enums)) {
@@ -189,7 +189,7 @@ public final class DefaultMethodFactory extends MethodFactory {
      *
      * @param type The native type to convert to.
      * @param enums The enum map
-     * @return A new <tt>ParameterMarshaller</tt>
+     * @return A new <code>ParameterMarshaller</code>
      */
     static ParameterMarshaller getEnumMarshaller(Type type, CallingConvention convention, IRubyObject enums) {
         if (enums != null && !enums.isNil() && !(enums instanceof RubyHash || enums instanceof Enums)) {
@@ -205,7 +205,7 @@ public final class DefaultMethodFactory extends MethodFactory {
      * Gets a marshaller to convert from a ruby type to a native type.
      *
      * @param type The native type to convert to.
-     * @return A new <tt>ParameterMarshaller</tt>
+     * @return A new <code>ParameterMarshaller</code>
      */
     static ParameterMarshaller getMarshaller(NativeType type) {
         switch (type) {

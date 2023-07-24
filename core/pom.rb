@@ -43,29 +43,29 @@ project 'JRuby Base' do
 
   # exclude jnr-ffi to avoid problems with shading and relocation of the asm packages
   jar 'com.github.jnr:jnr-netdb:1.2.0', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-enxio:0.32.14', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-unixsocket:0.38.19', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-posix:3.1.16', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-enxio:0.32.15', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-unixsocket:0.38.20', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-posix:3.1.17', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-constants:0.10.4', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-ffi:2.2.13'
+  jar 'com.github.jnr:jnr-ffi:2.2.14'
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
-  jar 'org.jruby.joni:joni:2.1.48'
+  jar 'org.jruby.joni:joni:2.2.1'
   jar 'org.jruby.jcodings:jcodings:1.0.58'
   jar 'org.jruby:dirgra:0.3'
 
   jar 'com.headius:invokebinder:1.13'
   jar 'com.headius:options:1.6'
 
-  jar 'com.jcraft:jzlib:1.1.3'
+  jar 'org.jruby:jzlib:1.1.5'
   jar 'junit:junit', :scope => 'test'
   jar 'org.awaitility:awaitility', :scope => 'test'
   jar 'org.apache.ant:ant:${ant.version}', :scope => 'provided'
   jar 'org.osgi:org.osgi.core:5.0.0', :scope => 'provided'
 
   # joda timezone must be before joda-time to be packed correctly
-  jar 'org.jruby:joda-timezones:${tzdata.version}', :scope => '${tzdata.scope}'
+  # jar 'org.jruby:joda-timezones:${tzdata.version}', :scope => '${tzdata.scope}'
   jar 'joda-time:joda-time:${joda.time.version}'
 
   # SLF4J only used within SLF4JLogger (JRuby logger impl) class
@@ -74,7 +74,7 @@ project 'JRuby Base' do
 
   jar 'me.qmx.jitescript:jitescript:0.4.1', :exclusions => ['org.ow2.asm:asm-all']
 
-  jar 'com.headius:backport9:1.12'
+  jar 'com.headius:backport9:1.13'
 
   jar 'jakarta.annotation:jakarta.annotation-api:2.0.0', scope: 'provided'
 

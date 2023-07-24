@@ -60,6 +60,7 @@ import org.joni.Region;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.JumpException;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
@@ -1712,10 +1713,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return block.isGiven() && result != context.nil ? block.yield(context, result) : result;
     }
 
-    @JRubyMethod(name = "match", required = 1, rest = true)
+    @JRubyMethod(name = "match", required = 1, rest = true, checkArity = false)
     public IRubyObject match19(ThreadContext context, IRubyObject[] args, Block block) {
         if (args.length < 1) {
-            Arity.checkArgumentCount(context, args, 1, 2);
+            Arity.checkArgumentCount(context, args, 1, -1);
         }
         RubyRegexp pattern = getPattern(context.runtime, args[0]);
         args[0] = this;
@@ -3071,7 +3072,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     /**
      * sub! but without any frame globals ...
-     * @note Internal API, subject to change!
+     * <p>Note: Internal API, subject to change!</p>
      * @param context
      * @param regexp
      * @param repl
@@ -4533,7 +4534,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
             if (splitPattern.isNil()) return context.nil;
 
-            context.runtime.getWarnings().warnDeprecated("$; is set to non-nil value");
+            context.runtime.getWarnings().warnDeprecated(ID.MISCELLANEOUS, "$; is set to non-nil value");
 
             pattern = splitPattern;
         }
@@ -5427,8 +5428,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      * In the common case, removes CR and LF characters in various ways depending on the value of
      *   the optional args[0].
      * If args.length==0 removes one instance of CR, CRLF or LF from the end of the string.
-     * If args.length>0 and args[0] is "\n" then same behaviour as args.length==0 .
-     * If args.length>0 and args[0] is "" then removes trailing multiple LF or CRLF (but no CRs at
+     * If args.length&gt;0 and args[0] is "\n" then same behaviour as args.length==0 .
+     * If args.length&gt;0 and args[0] is "" then removes trailing multiple LF or CRLF (but no CRs at
      *   all(!)).
      */
     public IRubyObject chomp_bang(ThreadContext context) {
@@ -5763,8 +5764,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     // MRI: rb_str_count for arity > 1, first half
-    @JRubyMethod(name = "count", required = 1, rest = true)
+    @JRubyMethod(name = "count", required = 1, rest = true, checkArity = false)
     public IRubyObject count(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 1, -1);
+
         final Ruby runtime = context.runtime;
 
         if ( value.length() == 0 ) return RubyFixnum.zero(runtime);
@@ -5774,7 +5777,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         final boolean[] table = new boolean[StringSupport.TRANS_SIZE + 1];
         StringSupport.TrTables tables = StringSupport.trSetupTable(countStr.value, runtime, table, null, true, enc);
-        for ( int i = 1; i < args.length; i++ ) {
+        for (int i = 1; i < argc; i++ ) {
             countStr = args[i].convertToString();
             enc = checkEncoding(countStr);
             tables = StringSupport.trSetupTable(countStr.value, runtime, table, tables, false, enc);
@@ -5799,7 +5802,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return str;
     }
 
-    @JRubyMethod(name = "delete", required = 1, rest = true)
+    @JRubyMethod(name = "delete", required = 1, rest = true, checkArity = false)
     public IRubyObject delete(ThreadContext context, IRubyObject[] args) {
         RubyString str = strDup(context.runtime, context.runtime.getString());
         str.delete_bang(context, args);
@@ -5828,8 +5831,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return this;
     }
 
-    @JRubyMethod(name = "delete!", required = 1, rest = true)
+    @JRubyMethod(name = "delete!", required = 1, rest = true, checkArity = false)
     public IRubyObject delete_bang(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 1, -1);
+
         if (value.getRealSize() == 0) return context.nil;
 
         final Ruby runtime = context.runtime;
@@ -5838,7 +5843,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         boolean[] squeeze = new boolean[StringSupport.TRANS_SIZE + 1];
         StringSupport.TrTables tables = null;
 
-        for (int i=0; i<args.length; i++) {
+        for (int i = 0; i < argc; i++) {
             otherStr = args[i].convertToString();
             enc = checkEncoding(otherStr);
             tables = StringSupport.trSetupTable(otherStr.value, runtime, squeeze, tables, i == 0, enc);
@@ -5899,7 +5904,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return str;
     }
 
-    @JRubyMethod(name = "squeeze", required = 1, rest = true)
+    @JRubyMethod(name = "squeeze", required = 1, rest = true, checkArity = false)
     public IRubyObject squeeze(ThreadContext context, IRubyObject[] args) {
         RubyString str = strDup(context.runtime, context.runtime.getString());
         str.squeeze_bang(context, args);
@@ -5953,8 +5958,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return this;
     }
 
-    @JRubyMethod(name = "squeeze!", required = 1, rest = true)
+    @JRubyMethod(name = "squeeze!", required = 1, rest = true, checkArity = false)
     public IRubyObject squeeze_bang(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 1, -1);
+
         if (value.getRealSize() == 0) {
             modifyCheck();
             return context.nil;
@@ -5967,7 +5974,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr.value, runtime, squeeze, null, true, enc);
 
         boolean singleByte = singleByteOptimizable() && otherStr.singleByteOptimizable();
-        for (int i=1; i<args.length; i++) {
+        for (int i = 1; i< argc; i++) {
             otherStr = args[i].convertToString();
             enc = checkEncoding(otherStr);
             singleByte = singleByte && otherStr.singleByteOptimizable();
@@ -6239,7 +6246,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         if (block.isGiven()) {
             if (wantarray) {
-                runtime.getWarnings().warning("passing a block to String#" + name + " is deprecated");
+                runtime.getWarnings().warning(ID.BLOCK_DEPRECATED, "passing a block to String#" + name + " is deprecated");
                 wantarray = false;
             }
         }
@@ -6292,7 +6299,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         if (block.isGiven()) {
             if (wantarray) {
-                runtime.getWarnings().warning("passing a block to String#" + name + " is deprecated");
+                runtime.getWarnings().warning(ID.BLOCK_DEPRECATED, "passing a block to String#" + name + " is deprecated");
                 wantarray = false;
             }
         }
@@ -6325,7 +6332,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         if (block.isGiven()) {
             if (wantarray) {
-                runtime.getWarnings().warning("passing a block to String#" + name + " is deprecated");
+                runtime.getWarnings().warning(ID.BLOCK_DEPRECATED, "passing a block to String#" + name + " is deprecated");
                 wantarray = false;
             }
         }
@@ -6391,7 +6398,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         if (block.isGiven()) {
             if (wantarray) {
-                runtime.getWarnings().warning("passing a block to String#" + name + " is deprecated");
+                runtime.getWarnings().warning(ID.BLOCK_DEPRECATED, "passing a block to String#" + name + " is deprecated");
                 wantarray = false;
             }
         }
@@ -6608,8 +6615,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return encode_bang(context, new IRubyObject[]{arg0,arg1,arg2});
     }
 
-    @JRubyMethod(name = "encode!", optional = 3)
+    @JRubyMethod(name = "encode!", optional = 3, checkArity = false)
     public IRubyObject encode_bang(ThreadContext context, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 0, 3);
+
         IRubyObject[] newstr_p;
         Encoding encindex;
 

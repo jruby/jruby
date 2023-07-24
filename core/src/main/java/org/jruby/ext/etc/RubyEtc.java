@@ -28,6 +28,7 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.RubyStruct;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -211,9 +212,12 @@ public class RubyEtc {
         return RubyString.newString(context.runtime, bytes);
     }
 
-    @JRubyMethod(optional=1, module = true)
+    @JRubyMethod(optional = 1, checkArity = false, module = true)
     public static synchronized IRubyObject getpwuid(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
+
+        int argc = Arity.checkArgumentCount(runtime, args, 0, 1);
+
         POSIX posix = runtime.getPosix();
         IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
         try {
@@ -392,13 +396,16 @@ public class RubyEtc {
         }
     }
 
-    @JRubyMethod(optional=1, module = true)
+    @JRubyMethod(optional = 1, checkArity = false, module = true)
     public static synchronized IRubyObject getgrgid(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
+
+        int argc = Arity.checkArgumentCount(runtime, args, 0, 1);
+
         POSIX posix = runtime.getPosix();
 
         try {
-            int gid = args.length == 0 ? posix.getgid() : RubyNumeric.fix2int(args[0]);
+            int gid = argc == 0 ? posix.getgid() : RubyNumeric.fix2int(args[0]);
             Group gr = posix.getgrgid(gid);
             if(gr == null) {
                 if (Platform.IS_WINDOWS) {  // MRI behavior

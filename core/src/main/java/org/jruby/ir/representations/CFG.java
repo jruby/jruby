@@ -381,8 +381,8 @@ public class CFG {
      * an edge type of EXIT.
      *
      * Special BasicBlocks worth noting:
-     * 1. Exceptions, Returns, Entry(why?) -> ExitBB
-     * 2. Returns -> ExitBB
+     * 1. Exceptions, Returns, Entry(why?)$ -&gt; ExitBB
+     * 2. Returns$ -&gt; ExitBB
      */
     private BasicBlock buildExitBasicBlock(Stack<ExceptionRegion> nestedExceptionRegions, BasicBlock firstBB,
             List<BasicBlock> returnBBs, List<BasicBlock> exceptionBBs, boolean nextIsFallThrough, BasicBlock currBB, BasicBlock entryBB) {

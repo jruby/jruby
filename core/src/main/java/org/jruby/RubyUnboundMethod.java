@@ -34,6 +34,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.PartialDelegatingMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -46,7 +47,7 @@ import static org.jruby.util.RubyStringBuilder.str;
 /**
  * An unbound method representation (e.g. when retrieving an instance method from a class - isn't bound to any instance).
  *
- * @note This was renamed from UnboundMethod.java
+ * <p>Note: This was renamed from UnboundMethod.java</p>
  * @author jpetersen
  */
 @JRubyClass(name="UnboundMethod", parent="Method")
@@ -151,11 +152,13 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
         return newUnboundMethod(implementationModule, methodName, originModule, originName, entry);
     }
 
-    @JRubyMethod(required =  1, rest = true, keywords = true)
+    @JRubyMethod(required =  1, rest = true, checkArity = false, keywords = true)
     public IRubyObject bind_call(ThreadContext context, IRubyObject[] args, Block block) {
+        int argc = Arity.checkArgumentCount(context, args, 1, -1);
+
         IRubyObject receiver = args[0];
-        IRubyObject[] newArgs = new IRubyObject[args.length - 1];
-        System.arraycopy(args, 1, newArgs, 0, args.length - 1);
+        IRubyObject[] newArgs = new IRubyObject[argc - 1];
+        System.arraycopy(args, 1, newArgs, 0, argc - 1);
 
         RubyClass receiverClass = receiver.getMetaClass();
 

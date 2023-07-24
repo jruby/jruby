@@ -243,7 +243,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         return new RuntimeException("Dead code... If you see this, file a bug: JPCtIEC fail"); // greppable
     }
 
-    @JRubyMethod(required = 1, optional = 1)
+    @JRubyMethod(required = 1, optional = 1, checkArity = false)
     public IRubyObject new_instance(IRubyObject[] args, Block block) {
         final Ruby runtime = getRuntime();
 

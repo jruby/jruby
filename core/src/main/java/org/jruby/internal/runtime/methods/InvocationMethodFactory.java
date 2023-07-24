@@ -731,7 +731,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             method.putfield("org/jruby/runtime/ThreadContext", "callInfo", "I");
         }
 
-        checkArity(desc.anno, method, specificArity);
+        if (desc.anno.checkArity()) {
+            checkArity(desc.anno, method, specificArity);
+        }
 
         CallConfiguration callConfig = CallConfiguration.getCallConfigByAnno(desc.anno);
         if (!callConfig.isNoop()) {

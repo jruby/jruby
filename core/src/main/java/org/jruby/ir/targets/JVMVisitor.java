@@ -2721,8 +2721,6 @@ public class JVMVisitor extends IRVisitor {
             jvmAdapter().checkcast(p(RubyHash.class));
 
             iter.next();
-        } else {
-            jvmMethod().adapter.ldc(hash.literal);
         }
 
         for (; iter.hasNext() ;) {

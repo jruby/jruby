@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'socket'
+require 'ipaddr'
 require 'timeout'
 require 'io/wait'
 

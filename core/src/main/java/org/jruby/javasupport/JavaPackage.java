@@ -52,7 +52,7 @@ import static org.jruby.runtime.Visibility.PRIVATE;
  * A "thin" Java package wrapper (for the runtime to see them as Ruby objects).
  *
  * @since 9K
- * @note previously <code>JavaPackageModuleTemplate</code> in Ruby code
+ * <p>Note: previously <code>JavaPackageModuleTemplate</code> in Ruby code</p>
  * @author kares
  */
 @JRubyClass(name="Java::JavaPackage", parent="Module")

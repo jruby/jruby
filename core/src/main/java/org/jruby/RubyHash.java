@@ -796,7 +796,7 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_initialize
      *
      */
-    @JRubyMethod(optional = 1, visibility = PRIVATE)
+    @JRubyMethod(optional = 1, checkArity = false, visibility = PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, final Block block) {
         modify();
 
@@ -1002,7 +1002,7 @@ public class RubyHash extends RubyObject implements Map {
         }
     };
 
-    /** rb_hash_to_s & to_s_hash
+    /** rb_hash_to_s &amp; to_s_hash
      *
      */
     @JRubyMethod(name = "to_s")
@@ -1651,7 +1651,7 @@ public class RubyHash extends RubyObject implements Map {
         return block.isGiven() ? each_keyCommon(context, block) : enumeratorizeWithSize(context, this, "each_key", RubyHash::size);
     }
 
-    @JRubyMethod(name = "transform_keys", optional =  1, rest = true)
+    @JRubyMethod(name = "transform_keys", rest = true)
     public IRubyObject transform_keys(final ThreadContext context, IRubyObject[] args, final Block block) {
         if (args.length == 0 && !block.isGiven()) {
             return enumeratorizeWithSize(context, this, "transform_keys", RubyHash::size);
@@ -1692,7 +1692,7 @@ public class RubyHash extends RubyObject implements Map {
         return hashCopyWithIdentity(context).transform_values_bang(context, block);
     }
 
-    @JRubyMethod(name = "transform_keys!", optional =  1, rest = true)
+    @JRubyMethod(name = "transform_keys!", rest = true)
     public IRubyObject transform_keys_bang(final ThreadContext context, IRubyObject[] args, final Block block) {
         if (args.length == 0 && !block.isGiven()) {
             return enumeratorizeWithSize(context, this, "transform_keys!", RubyHash::size);
@@ -2306,16 +2306,21 @@ public class RubyHash extends RubyObject implements Map {
         return dup;
     }
 
-    @JRubyMethod(name = "clone")
-    public IRubyObject rbClone(ThreadContext context) {
-        RubyHash clone = (RubyHash) super.rbClone();
+    public IRubyObject rbClone(ThreadContext context, IRubyObject opts) {
+        RubyHash clone = (RubyHash) super.rbClone(context, opts);
         clone.setComparedByIdentity(isComparedByIdentity());
         return clone;
     }
 
-    @JRubyMethod(name = "any?", optional = 1)
+    public IRubyObject rbClone(ThreadContext context) {
+        return rbClone(context, context.nil);
+    }
+
+    @JRubyMethod(name = "any?", optional = 1, checkArity = false)
     public IRubyObject any_p(ThreadContext context, IRubyObject[] args, Block block) {
-        IRubyObject pattern = args.length > 0 ? args[0] : null;
+        int argc = Arity.checkArgumentCount(context, args, 0, 1);
+
+        IRubyObject pattern = argc > 0 ? args[0] : null;
         boolean patternGiven = pattern != null;
 
         if (isEmpty()) return context.fals;
@@ -2429,10 +2434,12 @@ public class RubyHash extends RubyObject implements Map {
         return RubyObject.dig2(context, val, arg1, arg2);
     }
 
-    @JRubyMethod(name = "dig", required = 1, rest = true)
+    @JRubyMethod(name = "dig", required = 1, rest = true, checkArity = false)
     public IRubyObject dig(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 1, -1);
+
         final IRubyObject val = op_aref(context, args[0] );
-        return args.length == 1 ? val : RubyObject.dig(context, val, args, 1);
+        return argc == 1 ? val : RubyObject.dig(context, val, args, 1);
     }
 
     @JRubyMethod

@@ -557,7 +557,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     /**
      * <code>Thread.new</code>
      * <p>
-     * Thread.new( <i>[ arg ]*</i> ) {| args | block } -> aThread
+     * Thread.new( <i>[ arg ]*</i> ) {| args | block }$ -&gt; aThread
      * <p>
      * Creates a new thread to execute the instructions given in block, and
      * begins running it. Any arguments passed to Thread.new are passed into the
@@ -865,17 +865,19 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         throw context.runtime.newArgumentError("unknown mask signature");
     }
 
-    @JRubyMethod(name = "pending_interrupt?", meta = true, optional = 1)
+    @JRubyMethod(name = "pending_interrupt?", meta = true, optional = 1, checkArity = false)
     public static IRubyObject pending_interrupt_p(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         return context.getThread().pending_interrupt_p(context, args);
     }
 
-    @JRubyMethod(name = "pending_interrupt?", optional = 1)
+    @JRubyMethod(name = "pending_interrupt?", optional = 1, checkArity = false)
     public IRubyObject pending_interrupt_p(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 0, 1);
+
         if (pendingInterruptQueue.isEmpty()) {
             return context.fals;
         }
-        if (args.length == 1) {
+        if (argc == 1) {
             IRubyObject err = args[0];
             if (!(err instanceof RubyModule)) {
                 throw context.runtime.newTypeError("class or module required for rescue clause");
@@ -1218,14 +1220,16 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return join(getRuntime().getCurrentContext(), args);
     }
 
-    @JRubyMethod(optional = 1)
+    @JRubyMethod(optional = 1, checkArity = false)
     public IRubyObject join(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 0, 1);
+
         Ruby runtime = context.runtime;
         long timeoutMillis = Long.MAX_VALUE;
 
-        if (args.length > 0 && !args[0].isNil()) {
-            if (args.length > 1) {
-                throw runtime.newArgumentError(args.length, 1);
+        if (argc > 0 && !args[0].isNil()) {
+            if (argc > 1) {
+                throw runtime.newArgumentError(argc, 1);
             }
             // MRI behavior: value given in seconds; converted to Float; less
             // than or equal to zero returns immediately; returns nil
@@ -1479,8 +1483,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return genericRaise(context, context.getThread(), exception, message);
     }
 
-    @JRubyMethod(optional = 3)
+    @JRubyMethod(optional = 3, checkArity = false)
     public IRubyObject raise(ThreadContext context, IRubyObject[] args, Block block) {
+        Arity.checkArgumentCount(context, args, 0, 3);
+
         return genericRaise(context, context.getThread(), args);
     }
 
@@ -1512,7 +1518,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     private IRubyObject genericRaise(ThreadContext context, RubyThread currentThread, IRubyObject... args) {
         if (!isAlive()) return context.nil;
-
 
         pendingInterruptEnqueue(prepareRaiseException(context, args));
         interrupt();
@@ -2042,7 +2047,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * waiting for the requested operations or the given timeout.
      *
      * @param io the RubyIO that contains the channel, for managing blocked threads list.
-     * @param ops the operations to wait for, from {@see java.nio.channels.SelectionKey}.
+     * @param ops the operations to wait for, from {@link java.nio.channels.SelectionKey}.
      * @return true if the IO's channel became ready for the requested operations, false if
      *         it was not selectable.
      */
@@ -2055,7 +2060,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * waiting for the requested operations or the given timeout.
      *
      * @param io the RubyIO that contains the channel, for managing blocked threads list.
-     * @param ops the operations to wait for, from {@see java.nio.channels.SelectionKey}.
+     * @param ops the operations to wait for, from {@link java.nio.channels.SelectionKey}.
      * @param timeout a timeout in ms to limit the select. Less than zero selects forever,
      *                zero selects and returns ready channels or nothing immediately, and
      *                greater than zero selects for at most that many ms.
@@ -2073,7 +2078,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * @param channel the channel to perform a select against. If this is not
      *                a selectable channel, then this method will just return true.
      * @param fptr the fptr that contains the channel, for managing blocked threads list.
-     * @param ops the operations to wait for, from {@see java.nio.channels.SelectionKey}.
+     * @param ops the operations to wait for, from {@link java.nio.channels.SelectionKey}.
      * @return true if the channel became ready for the requested operations, false if
      *         it was not selectable.
      */
@@ -2088,7 +2093,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * @param channel the channel to perform a select against. If this is not
      *                a selectable channel, then this method will just return true.
      * @param io the RubyIO that contains the channel, for managing blocked threads list.
-     * @param ops the operations to wait for, from {@see java.nio.channels.SelectionKey}.
+     * @param ops the operations to wait for, from {@link java.nio.channels.SelectionKey}.
      * @return true if the channel became ready for the requested operations, false if
      *         it was not selectable.
      */
@@ -2103,7 +2108,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * @param channel the channel to perform a select against. If this is not
      *                a selectable channel, then this method will just return true.
      * @param io the RubyIO that contains the channel, for managing blocked threads list.
-     * @param ops the operations to wait for, from {@see java.nio.channels.SelectionKey}.
+     * @param ops the operations to wait for, from {@link java.nio.channels.SelectionKey}.
      * @param timeout a timeout in ms to limit the select. Less than zero selects forever,
      *                zero selects and returns ready channels or nothing immediately, and
      *                greater than zero selects for at most that many ms.
@@ -2121,7 +2126,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * @param channel the channel to perform a select against. If this is not
      *                a selectable channel, then this method will just return true.
      * @param fptr the fptr that contains the channel, for managing blocked threads list.
-     * @param ops the operations to wait for, from {@see java.nio.channels.SelectionKey}.
+     * @param ops the operations to wait for, from {@link java.nio.channels.SelectionKey}.
      * @param timeout a timeout in ms to limit the select. Less than zero selects forever,
      *                zero selects and returns ready channels or nothing immediately, and
      *                greater than zero selects for at most that many ms.
@@ -2468,7 +2473,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     /**
      * Customized for retrieving a Java thread from a Ruby one.
      *
-     * @param target The target type to which the object should be converted (e.g. <code></>java.lang.Thread.class</code>).
+     * @param target The target type to which the object should be converted (e.g. <code>java.lang.Thread.class</code>).
      * @since 9.4
      */
     @Override
@@ -2488,7 +2493,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     /**
      * Run the provided {@link BiFunction} without allowing for any cross-thread interrupts (equivalent to calling
-     * {@link #handle_interrupt(ThreadContext, IRubyObject, IRubyObject, Block)} with Object => :never.
+     * {@link #handle_interrupt(ThreadContext, IRubyObject, IRubyObject, Block)} with Object =&gt; :never.
      *
      * MRI: rb_uninterruptible
      *

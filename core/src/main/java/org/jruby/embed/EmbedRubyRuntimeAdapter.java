@@ -37,7 +37,7 @@ import org.jruby.RubyRuntimeAdapter;
  * Wrapper interface of {@link RubyRuntimeAdapter} for embedding.
  * This interface defines Java friendly parse methods.
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public interface EmbedRubyRuntimeAdapter extends RubyRuntimeAdapter {
     /**

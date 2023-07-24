@@ -75,6 +75,7 @@ import static org.jruby.lexer.LexingCommon.*;
 import static org.jruby.lexer.LexingCommon.AMPERSAND_AMPERSAND;
 import static org.jruby.lexer.LexingCommon.DOT;
 import static org.jruby.lexer.LexingCommon.OR_OR;
+import static org.jruby.lexer.LexingCommon.STAR_STAR;
 import static org.jruby.lexer.yacc.RubyLexer.Keyword.*;
 import static org.jruby.parser.RubyParserBase.IDType.*;
 import static org.jruby.util.CommonByteLists.*;
@@ -133,7 +134,7 @@ public abstract class RubyParserBase {
         }
 
         if (warnOnUnusedVariables) {
-            scopedParserState.warnUnusedVariables(configuration.getRuntime(), warnings, currentScope.getFile());
+            scopedParserState.warnUnusedVariables(this, currentScope.getFile());
         }
 
         currentScope = currentScope.getEnclosingScope();
@@ -463,7 +464,7 @@ public abstract class RubyParserBase {
         switch (head.getNodeType()) {
             case BIGNUMNODE: case FIXNUMNODE: case FLOATNODE: // NODE_LIT
             case STRNODE: case SELFNODE: case TRUENODE: case FALSENODE: case NILNODE:
-                warnings.warning(ID.MISCELLANEOUS, lexer.getFile(), tail.getLine(), "unused literal ignored");
+                if (!(head instanceof InvisibleNode)) warning(ID.MISCELLANEOUS, lexer.getFile(), tail.getLine(), "unused literal ignored");
                 return tail;
         }
 
@@ -472,7 +473,7 @@ public abstract class RubyParserBase {
         }
 
         if (warnings.isVerbose() && isBreakStatement(((ListNode) head).getLast()) && Options.PARSER_WARN_NOT_REACHED.load()) {
-            warnings.warning(ID.STATEMENT_NOT_REACHED, lexer.getFile(), tail.getLine(), "statement not reached");
+            warning(ID.STATEMENT_NOT_REACHED, lexer.getFile(), tail.getLine(), "statement not reached");
         }
 
         // Assumption: tail is never a list node
@@ -636,7 +637,7 @@ public abstract class RubyParserBase {
     
     public void warnUnlessEOption(ID id, Node node, String message) {
         if (!configuration.isInlineSource()) {
-            warnings.warn(id, lexer.getFile(), node.getLine(), message);
+            warning(id, lexer.getFile(), node.getLine(), message);
         }
     }
 
@@ -679,7 +680,7 @@ public abstract class RubyParserBase {
 
     private void handleUselessWarn(Node node, String useless) {
         if (Options.PARSER_WARN_USELESSS_USE_OF.load()) {
-            warnings.warn(ID.USELESS_EXPRESSION, lexer.getFile(), node.getLine(), "possibly useless use of " + useless + " in void context");
+            warn(node.getLine(), "possibly useless use of " + useless + " in void context");
         }
     }
 
@@ -852,7 +853,7 @@ public abstract class RubyParserBase {
         if (node instanceof MultipleAsgnNode || node instanceof LocalAsgnNode || node instanceof DAsgnNode || node instanceof GlobalAsgnNode || node instanceof InstAsgnNode) {
             Node valueNode = ((AssignableNode) node).getValueNode();
             if (isStaticContent(valueNode)) {
-                warnings.warn(ID.ASSIGNMENT_IN_CONDITIONAL, lexer.getFile(), valueNode.getLine(), "found `= literal' in conditional, should be ==");
+                warning(ID.ASSIGNMENT_IN_CONDITIONAL, lexer.getFile(), valueNode.getLine(), "found `= literal' in conditional, should be ==");
             }
             return true;
         } 
@@ -1007,7 +1008,7 @@ public abstract class RubyParserBase {
     public Node logop(Node left, ByteList op, Node right) {
         value_expr(left);
 
-        if (op == AMPERSAND_AMPERSAND) {
+        if (op == AND_KEYWORD || op == AMPERSAND_AMPERSAND) {
             if (left == null && right == null) return new AndNode(lexer.getRubySourceline(), makeNullNil(left), makeNullNil(right));
 
             return new AndNode(position(left, right), makeNullNil(left), makeNullNil(right));
@@ -1118,10 +1119,10 @@ public abstract class RubyParserBase {
     public Node new_op_assign(AssignableNode receiverNode, ByteList operatorName, Node valueNode) {
         int line = receiverNode.getLine();
 
-        if (operatorName == OR_OR) {
+        if (operatorName == OR_KEYWORD || operatorName == OR_OR) {
             receiverNode.setValueNode(valueNode);
             return new OpAsgnOrNode(line, gettable2(receiverNode), receiverNode);
-        } else if (operatorName == AMPERSAND_AMPERSAND) {
+        } else if (operatorName == AND_KEYWORD || operatorName == AMPERSAND_AMPERSAND) {
             receiverNode.setValueNode(valueNode);
             return new OpAsgnAndNode(line, gettable2(receiverNode), receiverNode);
         } else {
@@ -1521,7 +1522,7 @@ public abstract class RubyParserBase {
             if (index >= 0) {
                 Ruby runtime = getConfiguration().getRuntime();
                 IRubyObject value = ((LiteralValue) key).literalValue(runtime);
-                warnings.warn(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), hash.getLine(), str(runtime, "key ", value.inspect(),
+                warning(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), hash.getLine(), str(runtime, "key ", value.inspect(),
                         " is duplicated and overwritten on line " + (encounteredKeys.get(index).getLine() + 1)));
             } else {
                 encounteredKeys.add(key);
@@ -1567,16 +1568,20 @@ public abstract class RubyParserBase {
     }
 
     public void warn(String message) {
-        warnings.warn(ID.USELESS_EXPRESSION, lexer.getFile(), src_line(), message);
+        warn(src_line(), message);
     }
 
     public void warn(int line, String message) {
-        warnings.warn(ID.USELESS_EXPRESSION, lexer.getFile(), line, message);
+        warnings.warn(ID.USELESS_EXPRESSION, lexer.getFile(), line + 1, message); // node/lexer lines are 0 based
     }
 
     // FIXME: Replace this with file/line version and stop using ISourcePosition
     public void warning(int line, String message) {
-        if (warnings.isVerbose()) warnings.warning(ID.USELESS_EXPRESSION, lexer.getFile(), line, message);
+        if (warnings.isVerbose()) warning(ID.USELESS_EXPRESSION, lexer.getFile(), line, message);
+    }
+
+    public void warning(ID id, String file, int line, String message) {
+        warnings.warning(id, file, line + 1, message); // node/lexer lines are 0 based
     }
 
     // ENEBO: Totally weird naming (in MRI is not allocated and is a local var name) [1.9]
@@ -1936,10 +1941,12 @@ public abstract class RubyParserBase {
 
         if (keywordRestArg == KWNOREST) {          // '**nil'
             restArg = new NilRestArgNode(line);
+        } else if (keywordRestArg == STAR_STAR) { // '**' (MRI uses null but something wrong and this is more explicit)
+            restArg = new StarNode(lexer.getRubySourceline());
         } else if (keywordRestArg != null) {       // '**something'
             restArg = assignableLabelOrIdentifier(keywordRestArg, null);
-        } else {                                   // '**'
-            restArg = new StarNode(lexer.getRubySourceline());
+        } else {
+            restArg = null;
         }
 
         return new HashPatternNode(line, restArg, keywordArgs == null ? new HashNode(line) : keywordArgs);
@@ -2002,10 +2009,7 @@ public abstract class RubyParserBase {
     }
 
     public boolean check_forwarding_args() {
-        if (local_id(FWD_REST) &&
-                local_id(FWD_KWREST) &&
-                local_id(FWD_BLOCK)) return true;
-
+        if (local_id(FWD_ALL)) return true;
         compile_error("unexpected ...");
         return false;
     }
@@ -2014,6 +2018,7 @@ public abstract class RubyParserBase {
         arg_var(FWD_REST);
         arg_var(FWD_KWREST);
         arg_var(FWD_BLOCK);
+        arg_var(FWD_ALL);  // Add dummy value to make it easy to see later that is ...
     }
 
     public Node new_args_forward_call(int line, Node leadingArgs) {

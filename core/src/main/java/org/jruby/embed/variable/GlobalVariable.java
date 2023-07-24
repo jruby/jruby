@@ -41,7 +41,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * An implementation of BiVariable for a Ruby global variable.
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class GlobalVariable extends AbstractVariable {
 
@@ -51,7 +51,7 @@ public class GlobalVariable extends AbstractVariable {
      * Returns an instance of this class. This factory method is used when a global
      * variable is put in {@link BiVariableMap}.
      *
-     * @param runtime Ruby runtime
+     * @param receiver Receiver object returned when a script is evaluated.
      * @param name a variable name
      * @param javaObject Java object that should be assigned to.
      * @return the instance of GlobalVariable
@@ -83,7 +83,6 @@ public class GlobalVariable extends AbstractVariable {
     /**
      * Retrieves global variables from Ruby after the evaluation.
      *
-     * @param runtime Ruby runtime
      * @param receiver receiver object returned when a script is evaluated.
      * @param vars map to save retrieved global variables.
      */
@@ -114,7 +113,6 @@ public class GlobalVariable extends AbstractVariable {
      * Retrieves a global variable by key from Ruby after the evaluation.
      *
      * @param runtime Ruby runtime
-     * @param receiver receiver object returned when a script is evaluated.
      * @param vars map to save a retrieved global variable.
      * @param key name of the global variable
      */
@@ -206,7 +204,6 @@ public class GlobalVariable extends AbstractVariable {
      * Injects a global variable value to a parsed Ruby script. This method is
      * invoked during EvalUnit#run() is executed.
      *
-     * @param runtime is environment where a variable injection occurs
      * @param receiver is the instance that will have variable injection.
      */
     public void tryEagerInjection(final IRubyObject receiver) {

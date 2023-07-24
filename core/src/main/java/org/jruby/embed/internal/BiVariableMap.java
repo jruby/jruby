@@ -54,7 +54,7 @@ import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
  * should be String, and values should be {@link BiVariable} type object.
  * This map does not permit null or empty key. Each operation of this class is not
  * synchronized; however, concurrent access to values are synchronized. When
- * {@link ScriptingContainer} is shared by multiple threads, specify thread safe
+ * {@link org.jruby.embed.ScriptingContainer ScriptingContainer} is shared by multiple threads, specify thread safe
  * for a local context scope, which makes a map thread local.
  *
  * Usage example:
@@ -63,11 +63,11 @@ import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
  *         Map map = container.getVarMap();
  *         map.put("@coefficient", new Float(3.14));</pre>
  * or, using a shortcut method:
- * * <pre>
+ * <pre>
  *         ScriptingContainer container = new ScriptingContainer();
  *         container.put("@coefficient", new Float(3.14));</pre>
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class BiVariableMap implements Map<String, Object> {
 
@@ -81,8 +81,8 @@ public class BiVariableMap implements Map<String, Object> {
      * Constructs an empty map. Users do not instantiate this map. The map is created
      * internally.
      *
-     * @param runtime is environment where variables are used to execute Ruby scripts.
-     * @param behavior is one of variable behaviors defined in VariableBehavior.
+     * @param provider
+     * @param lazy
      */
     public BiVariableMap(LocalContextProvider provider, boolean lazy) {
         this.provider = provider;
@@ -144,9 +144,9 @@ public class BiVariableMap implements Map<String, Object> {
     }
 
     /**
-     * Returns <tt>true</tt> if this map contains no key-value mappings.
+     * Returns <code>true</code> if this map contains no key-value mappings.
      *
-     * @return <tt>true</tt> if this map contains no key-value mappings
+     * @return <code>true</code> if this map contains no key-value mappings
      */
     @Override
     public boolean isEmpty() {
@@ -167,11 +167,11 @@ public class BiVariableMap implements Map<String, Object> {
     }
 
     /**
-     * Returns <tt>true</tt> if this map contains a mapping for the specified
+     * Returns <code>true</code> if this map contains a mapping for the specified
      * key.
      *
      * @param key is a key to be tested its presence
-     * @return <tt>true</tt> if this map contains a mapping for the specified key
+     * @return <code>true</code> if this map contains a mapping for the specified key
      */
     @Override
     public boolean containsKey(final Object key) {
@@ -180,11 +180,11 @@ public class BiVariableMap implements Map<String, Object> {
     }
 
     /**
-     * Returns <tt>true</tt> if this map maps one or more keys to the
+     * Returns <code>true</code> if this map maps one or more keys to the
      * specified value.
      *
      * @param value is a Java object to be tested it presence
-     * @return Returns <tt>true</tt> if this map maps one or more keys to the
+     * @return Returns <code>true</code> if this map maps one or more keys to the
      * specified value.
      */
     @Override
@@ -305,8 +305,8 @@ public class BiVariableMap implements Map<String, Object> {
      *
      * @param key the key with which the specified value is to be associated
      * @param value a simple Java object to be associated with the specified key
-     * @return the previous value associated with <tt>key</tt>, or
-     *         <tt>null</tt> if there was no mapping for <tt>key</tt>.
+     * @return the previous value associated with <code>key</code>, or
+     *         <code>null</code> if there was no mapping for <code>key</code>.
      */
     @Override
     public Object put(String key, Object value) {
@@ -321,8 +321,8 @@ public class BiVariableMap implements Map<String, Object> {
      * @param receiver a receiver object to associate a given key-value pair with
      * @param key the key with which the specified value is to be associated
      * @param value a simple Java object to be associated with the specified key
-     * @return the previous value associated with <tt>key</tt>, or
-     *         <tt>null</tt> if there was no mapping for <tt>key</tt>.
+     * @return the previous value associated with <code>key</code>, or
+     *         <code>null</code> if there was no mapping for <code>key</code>.
      */
     public Object put(Object receiver, String key, Object value) {
         checkKey(key);
@@ -394,11 +394,11 @@ public class BiVariableMap implements Map<String, Object> {
      * Removes the mapping for a key from this map if it is present in a top level.
      *
      * <p>Returns the value to which this map previously associated the key,
-     * or <tt>null</tt> if the map contained no mapping for the key.
+     * or <code>null</code> if the map contained no mapping for the key.
 
      * @param key the key whose mapping is to be removed from the map
-     * @return the previous value associated with <tt>key</tt>, or
-     *         <tt>null</tt> if there was no mapping for <tt>key</tt>.
+     * @return the previous value associated with <code>key</code>, or
+     *         <code>null</code> if there was no mapping for <code>key</code>.
      */
     @Override
     public Object remove(final Object key) {
@@ -410,11 +410,11 @@ public class BiVariableMap implements Map<String, Object> {
      * receiver.
      *
      * <p>Returns the value to which this map previously associated the key,
-     * or <tt>null</tt> if the map contained no mapping for the key.
+     * or <code>null</code> if the map contained no mapping for the key.
 
      * @param key the key whose mapping is to be removed from the map
-     * @return the previous value associated with <tt>key</tt>, or
-     *         <tt>null</tt> if there was no mapping for <tt>key</tt>.
+     * @return the previous value associated with <code>key</code>, or
+     *         <code>null</code> if there was no mapping for <code>key</code>.
      */
     public Object removeFrom(final Object receiver, final Object key) {
         if ( variables == null ) return null;
@@ -436,9 +436,8 @@ public class BiVariableMap implements Map<String, Object> {
     /**
      * Copies all of the mappings from the specified map to this map.
      *
-     * @param t mappings to be stored in this map
+     * @param map mappings to be stored in this map
      */
-
     @Override
     public void putAll(final Map<? extends String, ? extends Object> map) {
         if (map == null) {

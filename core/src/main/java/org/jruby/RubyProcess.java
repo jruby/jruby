@@ -47,6 +47,7 @@ import org.jruby.anno.JRubyModule;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.platform.Platform;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock;
@@ -172,7 +173,7 @@ public class RubyProcess {
             RubyStatus status = (RubyStatus) obj;
 
             marshalStream.registerLinkTarget(status);
-            List<Variable<Object>> attrs = status.getVariableList();
+            List<Variable<Object>> attrs = status.getMarshalVariableList();
 
             attrs.add(new VariableEntry("status", runtime.newFixnum(status.status)));
             attrs.add(new VariableEntry("pid", runtime.newFixnum(status.pid)));
@@ -216,10 +217,12 @@ public class RubyProcess {
             return new RubyStatus(runtime, runtime.getProcStatus(), status, pid);
         }
 
-        @JRubyMethod(module = true, optional = 2)
+        @JRubyMethod(module = true, optional = 2, checkArity = false)
         public static IRubyObject wait(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-            long pid = args.length > 0 ? args[0].convertToInteger().getLongValue() : -1;
-            int flags = args.length > 1 ? (int) args[1].convertToInteger().getLongValue() : 0;
+            int argc = Arity.checkArgumentCount(context, args, 0, 2);
+
+            long pid = argc > 0 ? args[0].convertToInteger().getLongValue() : -1;
+            int flags = argc > 1 ? (int) args[1].convertToInteger().getLongValue() : 0;
 
             return waitpidStatus(context, pid, flags);
             //checkErrno(runtime, pid, ECHILD);
@@ -664,12 +667,12 @@ public class RubyProcess {
         }
     }
 
-    @JRubyMethod(name = "abort", optional = 1, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "abort", optional = 1, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject abort(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return RubyKernel.abort(context, recv, args);
     }
 
-    @JRubyMethod(name = "exit!", optional = 1, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "exit!", optional = 1, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject exit_bang(IRubyObject recv, IRubyObject[] args) {
         return RubyKernel.exit_bang(recv, args);
     }
@@ -1779,7 +1782,7 @@ public class RubyProcess {
         return RubyFixnum.newFixnum(runtime, ShellLauncher.runExternalWithoutWait(runtime, args));
     }
 
-    @JRubyMethod(name = "exit", optional = 1, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "exit", optional = 1, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject exit(IRubyObject recv, IRubyObject[] args) {
         return RubyKernel.exit(recv, args);
     }

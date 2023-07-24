@@ -48,6 +48,7 @@ import org.jruby.RubyEncoding;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -98,8 +99,8 @@ public final class StringSupport {
      * @param sep the separator
      * @see String#split(String)
      *
-     * @note We differ from the non-limited {@link String#split(String)} in handling consecutive separator chars at the
-     * end of string. While <code>"1;;"split(";")<code/> returns `[ "1" ]` this version returns `[ "1", "" ]` which is
+     * <p>Note: We differ from the non-limited {@link String#split(String)} in handling consecutive separator chars at the</p>
+     * end of string. While <code>"1;;"split(";")</code> returns `[ "1" ]` this version returns `[ "1", "" ]` which is
      * consistent when consecutive separators occur elsewhere.
      */
     public static List<String> split(final String str, final char sep) {
@@ -2070,9 +2071,9 @@ public final class StringSupport {
             if (wantarray) {
                 // this code should be live in 3.0
                 if (false) { // #if STRING_ENUMERATORS_WANTARRAY
-                    runtime.getWarnings().warn("given block not used");
+                    runtime.getWarnings().warning(ID.BLOCK_UNUSED, "given block not used");
                 } else {
-                    runtime.getWarnings().warning("passing a block to String#lines is deprecated");
+                    runtime.getWarnings().warning(ID.BLOCK_DEPRECATED, "passing a block to String#lines is deprecated");
                     wantarray = false;
                 }
             }

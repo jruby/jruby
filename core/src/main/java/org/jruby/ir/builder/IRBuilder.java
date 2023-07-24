@@ -77,7 +77,11 @@ public abstract class IRBuilder<U, V, W, X> {
     // We set this flag to indicate that we need to emit a line number but have not yet.
     // addInstr will then appropriately add line info when it is called (which will never be
     // called by a linenum instr).
-    boolean needsLineNumInfo = false;
+    enum LineInfo {
+        Coverage,
+        Backtrace
+    }
+    LineInfo needsLineNumInfo = null;
 
     // SSS FIXME: Currently only used for retries -- we should be able to eliminate this
     // Stack of nested rescue blocks -- this just tracks the start label of the blocks
@@ -333,10 +337,11 @@ public abstract class IRBuilder<U, V, W, X> {
     }
 
     public void addInstr(Instr instr) {
-        if (needsLineNumInfo) {
-            needsLineNumInfo = false;
+        if (needsLineNumInfo != null) {
+            LineInfo type = needsLineNumInfo;
+            needsLineNumInfo = null;
 
-            if (needsCodeCoverage()) {
+            if (type == LineInfo.Coverage) {
                 addInstr(new LineNumberInstr(lastProcessedLineNum, coverageMode));
             } else {
                 addInstr(manager.newLineNumber(lastProcessedLineNum));
@@ -995,7 +1000,7 @@ public abstract class IRBuilder<U, V, W, X> {
             for (Operand arg : callArgs) {
                 args[i++] = arg;
             }
-            args[i] = new Hash(keywordArgs, false);
+            args[i] = new Hash(keywordArgs);
             return args;
         }
 
@@ -1776,7 +1781,7 @@ public abstract class IRBuilder<U, V, W, X> {
         return scope.getSelf();
     }
 
-    public Operand buildSuper(Variable aResult, U iterNode, U argsNode, int line) {
+    public Operand buildSuper(Variable aResult, U iterNode, U argsNode, int line, boolean isNewline) {
         Variable result = aResult == null ? temp() : aResult;
         Operand tempBlock = setupCallClosure(iterNode);
         if (tempBlock == NullBlock.INSTANCE) tempBlock = getYieldClosureVariable();
@@ -1787,6 +1792,7 @@ public abstract class IRBuilder<U, V, W, X> {
         int[] flags = new int[] { 0 };
         Operand[] args = setupCallArgs(argsNode, flags);
 
+        determineIfWeNeedLineNumber(line, isNewline); // backtrace needs line of call in case of exception.
         if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
             Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
             if_else(test, tru(),
@@ -1795,7 +1801,6 @@ public abstract class IRBuilder<U, V, W, X> {
                     () -> receiveBreakException(block,
                             determineSuperInstr(result, args, block, flags[0], inClassBody, isInstanceMethod)));
         } else {
-            determineIfWeNeedLineNumber(line); // buildOperand for fcall was papered over by args operand building so we check once more.
             receiveBreakException(block,
                     determineSuperInstr(result, args, block, flags[0], inClassBody, isInstanceMethod));
         }
@@ -2055,9 +2060,9 @@ public abstract class IRBuilder<U, V, W, X> {
         }
     }
 
-    void determineIfWeNeedLineNumber(int line) {
+    void determineIfWeNeedLineNumber(int line, boolean isNewline) {
         if (line != lastProcessedLineNum) { // Do not emit multiple line number instrs for the same line
-            needsLineNumInfo = true;
+            needsLineNumInfo = isNewline ? LineInfo.Coverage : LineInfo.Backtrace;
             lastProcessedLineNum = line;
         }
     }

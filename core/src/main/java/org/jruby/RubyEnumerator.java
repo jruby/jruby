@@ -202,8 +202,10 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
     // used internally to create lazy without block (from Enumerator/Enumerable)
     // and used internally to create enum from Enumerator::Lazy#eager
-    @JRubyMethod(name = "__from", meta = true, required = 2, optional = 2, visibility = PRIVATE, keywords = true)
+    @JRubyMethod(name = "__from", meta = true, required = 2, optional = 2, checkArity = false, visibility = PRIVATE, keywords = true)
     public static IRubyObject __from(ThreadContext context, IRubyObject klass, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 2, 4);
+
         boolean keywords = (context.callInfo & CALL_KEYWORD) != 0 && (context.callInfo & ThreadContext.CALL_KEYWORD_EMPTY) == 0;
         context.resetCallInfo();
 
@@ -212,9 +214,9 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         IRubyObject method = args[1];
         IRubyObject[] methodArgs;
         IRubyObject size = null; SizeFn sizeFn = null;
-        if (args.length > 2) {
+        if (argc > 2) {
             methodArgs = ((RubyArray) args[2]).toJavaArrayMaybeUnsafe();
-            if (args.length > 3) size = args[3];
+            if (argc > 3) size = args[3];
         } else {
             methodArgs = NULL_ARRAY;
         }
@@ -568,13 +570,15 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
     /** MRI: enumerator_s_produce
      *
      */
-    @JRubyMethod(meta = true, optional = 1)
+    @JRubyMethod(meta = true, optional = 1, checkArity = false)
     public static IRubyObject produce(ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
+        int argc = Arity.checkArgumentCount(context, args, 0, 1);
+
         IRubyObject init;
 
         if (!block.isGiven()) throw context.runtime.newArgumentError("no block given");
 
-        if (args.length == 0) {
+        if (argc == 0) {
             init = null;
         } else {
             init = args[0];

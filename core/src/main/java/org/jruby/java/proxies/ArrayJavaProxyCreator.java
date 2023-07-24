@@ -47,7 +47,7 @@ public class ArrayJavaProxyCreator extends RubyObject {
         this.elementType = elementType;
     }
 
-    @JRubyMethod(name = "[]", required = 1, rest = true)
+    @JRubyMethod(name = "[]", required = 1, rest = true, checkArity = false)
     public final IRubyObject op_aref(ThreadContext context, IRubyObject[] sizes) {
         Arity.checkArgumentCount(context.runtime, sizes, 1, -1);
         aggregateDimensions(sizes);

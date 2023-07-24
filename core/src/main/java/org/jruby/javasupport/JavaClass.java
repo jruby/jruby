@@ -134,7 +134,7 @@ public class JavaClass extends JavaObject {
     }
 
     /**
-     * @note Interal API
+     * <p>Note: Interal API</p>
      * @see Java#isProxyType(RubyModule)
      */
     public static boolean isProxyType(final ThreadContext context, final RubyModule proxy) {

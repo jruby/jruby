@@ -37,7 +37,7 @@ import org.jruby.runtime.Block;
  * simple Java objects for easiness. Each methods converts returned object
  * to a Java type specified in the argument.
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public interface EmbedRubyObjectAdapter extends RubyObjectAdapter {
     /**

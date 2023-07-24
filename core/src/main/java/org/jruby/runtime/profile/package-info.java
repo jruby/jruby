@@ -9,7 +9,7 @@
  * <pre>
  *public class MyProfiler implements ProfilingService {
  *
- *  private final ConcurrentMap<Long, String> methods = new ConcurrentHashMap<Long, String>(1000);
+ *  private final ConcurrentMap&lt;Long, String&gt; methods = new ConcurrentHashMap&lt;Long, String&gt;(1000);
  *
  *  public ProfileCollection newProfileCollection(ThreadContext threadContext) {
  *    return new MyCollection();
@@ -50,7 +50,7 @@
  *    }
  *
  *    private boolean isMyApp( DynamicMethod method ) {
- *      //if( delegate.getRealMethod() instanceof PositionAware && ((PositionAware)delegate.getRealMethod()).getFile().contains(""))
+ *      //if( delegate.getRealMethod() instanceof PositionAware &amp;&amp; ((PositionAware)delegate.getRealMethod()).getFile().contains(""))
  *      return method.getRealMethod().getImplementationClass().getId().startsWith("MyApp::");
  *    }
  *  }

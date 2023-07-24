@@ -26,7 +26,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * RubyArray{@link #collect(org.jruby.runtime.ThreadContext, org.jruby.runtime.Block)}
  * RubyArray{@link #copyInto(IRubyObject[], int)}
  * RubyArray{@link #copyInto(IRubyObject[], int, int)}
- * RubyArray{@link #dupImpl()}
+ * RubyArray{@link #dupImpl(Ruby, RubyClass)}
  * RubyArray{@link #includes(org.jruby.runtime.ThreadContext, IRubyObject)}
  * RubyArray{@link #indexOf(Object)}
  * RubyArray{@link #inspectAry(org.jruby.runtime.ThreadContext)}

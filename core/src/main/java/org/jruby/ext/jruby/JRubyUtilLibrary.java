@@ -40,6 +40,7 @@ import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.javasupport.Java;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -113,14 +114,16 @@ public class JRubyUtilLibrary implements Library {
     }
 
     /**
-     * @note class_loader_resources alias exists since 9.2
+     * <p>Note: class_loader_resources alias exists since 9.2</p>
      * @param context
      * @param recv
      * @param args (name, raw: false, path: false)
      * @return an enumerable of class-loader resources
      */ // used from RGs' JRuby defaults (as well as jar_dependencies)
-    @JRubyMethod(module = true, name = "class_loader_resources", alias = "classloader_resources", required = 1, optional = 1)
+    @JRubyMethod(module = true, name = "class_loader_resources", alias = "classloader_resources", required = 1, optional = 1, checkArity = false)
     public static IRubyObject class_loader_resources(ThreadContext context, IRubyObject recv, IRubyObject... args) {
+        int argc = Arity.checkArgumentCount(context, args, 1, 2);
+
         final Ruby runtime = context.runtime;
 
         final ClassLoader loader = runtime.getJRubyClassLoader();
@@ -128,7 +131,7 @@ public class JRubyUtilLibrary implements Library {
         final RubyArray resources = RubyArray.newArray(runtime);
 
         boolean raw = false, path = false;
-        if (args.length > 1 && args[1] instanceof RubyHash) {
+        if (argc > 1 && args[1] instanceof RubyHash) {
             IRubyObject[] values = ArgsUtil.extractKeywordArgs(context, (RubyHash) args[1], "raw", "path");
             raw  = values[0] != null && values[0].isTrue();
             path = values[1] != null && values[1].isTrue();
@@ -199,7 +202,7 @@ public class JRubyUtilLibrary implements Library {
     }
 
     /**
-     * Preffered way to boot-up JRuby extensions (available as <code>>JRuby.load_ext</code>).
+     * Prefered way to boot-up JRuby extensions (available as <code>JRuby.load_ext</code>).
      * @param context
      * @param recv
      * @param klass

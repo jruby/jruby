@@ -1397,8 +1397,6 @@ public class EncodingUtils {
     /**
      * Perform the inner transcoding loop.
      *
-     * @see #transcodeLoop(EConv, TranscodeFallback, Object, Object, byte[], Ptr, byte[], Ptr, int, int, ByteList, ResizeFunction)
-     *
      * This version will determine fallback function and encoding options from the given options object.
      *
      * MRI: transcode_loop Ruby-related bits

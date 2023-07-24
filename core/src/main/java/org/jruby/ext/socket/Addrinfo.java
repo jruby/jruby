@@ -16,6 +16,7 @@ import org.jruby.RubyInteger;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -132,7 +133,7 @@ public class Addrinfo extends RubyObject {
         return context.nil;
     }
 
-    @JRubyMethod(required = 1, optional = 4, visibility = Visibility.PRIVATE)
+    @JRubyMethod(required = 1, optional = 3, checkArity = false, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         switch (args.length) {
             case 1:
@@ -141,6 +142,11 @@ public class Addrinfo extends RubyObject {
                 return initialize(context, args[0], args[1]);
             case 3:
                 return initialize(context, args[0], args[1], args[2]);
+            case 4:
+                // use logic below
+                break;
+            default:
+                Arity.raiseArgumentError(context, args.length, 1, 4);
         }
 
         IRubyObject _sockaddr = args[0];
@@ -733,10 +739,26 @@ public class Addrinfo extends RubyObject {
         }
     }
 
-    @JRubyMethod(optional = 1)
-    public IRubyObject getnameinfo(ThreadContext context, IRubyObject[] args) {
+    @JRubyMethod
+    public IRubyObject getnameinfo(ThreadContext context) {
+        return initializeCommon(context.runtime, null);
+    }
+
+    @JRubyMethod
+    public IRubyObject getnameinfo(ThreadContext context, IRubyObject _flags) {
         Ruby runtime = context.runtime;
 
+        RubyString rubyService = null;
+
+        int flags = _flags.convertToInteger().getIntValue();
+        if ((flags & NameInfo.NI_NUMERICSERV.intValue()) != 0) {
+            rubyService = runtime.newString(Integer.toString(getPort()));
+        }
+
+        return initializeCommon(runtime, rubyService);
+    }
+
+    private RubyArray initializeCommon(Ruby runtime, RubyString rubyService) {
         RubyString hostname;
 
         InetSocketAddress inet = getInetSocketAddress();
@@ -745,15 +767,6 @@ public class Addrinfo extends RubyObject {
         } else {
             UnixSocketAddress unix = getUnixSocketAddress();
             hostname = runtime.newString(unix.path());
-        }
-
-        RubyString rubyService = null;
-
-        if (args.length > 0) {
-            int flags = args[0].convertToInteger().getIntValue();
-            if ((flags & NameInfo.NI_NUMERICSERV.intValue()) != 0) {
-                rubyService = runtime.newString(Integer.toString(getPort()));
-            }
         }
 
         if (rubyService == null) {

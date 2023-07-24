@@ -41,6 +41,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
@@ -1011,8 +1012,10 @@ public class RubyNumeric extends RubyObject {
     /**
      * num_step
      */
-    @JRubyMethod(optional = 2)
+    @JRubyMethod(optional = 2, checkArity = false)
     public IRubyObject step(ThreadContext context, IRubyObject[] args, Block block) {
+        Arity.checkArgumentCount(context, args, 0, 2);
+
         if (!block.isGiven()) {
             IRubyObject[] newArgs = new IRubyObject[3];
             numExtractStepArgs(context, args, newArgs);
@@ -1629,14 +1632,9 @@ public class RubyNumeric extends RubyObject {
     @Override
     @JRubyMethod(name = "clone")
     public final IRubyObject rbClone(ThreadContext context, IRubyObject arg) {
-        if (!(arg instanceof RubyHash)) {
-            throw context.runtime.newArgumentError("wrong number of arguments (given 1, expected 0)");
-        }
-
-        IRubyObject ret = ArgsUtil.getFreezeOpt(context, arg);
-        if (ret == context.fals) throw context.runtime.newArgumentError("can't unfreeze " + getType());
-
-        return this;
+        // BasicObject handles "special" objects like all numerics but we leave this because Ruby
+        // has an explicit Numeric#clone binding.
+        return super.rbClone(context, arg);
     }
 
     @Override

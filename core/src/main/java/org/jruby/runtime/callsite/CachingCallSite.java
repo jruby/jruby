@@ -74,7 +74,7 @@ public abstract class CachingCallSite extends CallSite {
         if (cache.typeOk(selfType)) {
             return cache.method.call(context, self, cache.sourceModule, methodName, args);
         }
-        return cacheAndCall(caller, selfType, args, context, self);
+        return cacheAndCall(context, caller, self, selfType, args);
     }
 
     public IRubyObject fcall(ThreadContext context, IRubyObject self, IRubyObject... args) {
@@ -89,7 +89,7 @@ public abstract class CachingCallSite extends CallSite {
         if (cache.typeOk(selfType)) {
             return cache.method.call(context, self, cache.sourceModule, methodName, args, block);
         }
-        return cacheAndCall(caller, selfType, block, args, context, self);
+        return cacheAndCall(context, caller, self, selfType, args, block);
     }
 
     public IRubyObject fcall(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
@@ -192,7 +192,7 @@ public abstract class CachingCallSite extends CallSite {
         if (cache.typeOk(selfType)) {
             return cache.method.call(context, self, cache.sourceModule, methodName);
         }
-        return cacheAndCall(caller, selfType, context, self);
+        return cacheAndCall(context, caller, self, selfType);
     }
 
     public IRubyObject fcall(ThreadContext context, IRubyObject self) {
@@ -207,7 +207,7 @@ public abstract class CachingCallSite extends CallSite {
         if (cache.typeOk(selfType)) {
             return cache.method.call(context, self, cache.sourceModule, methodName, block);
         }
-        return cacheAndCall(caller, selfType, block, context, self);
+        return cacheAndCall(context, caller, self, selfType, block);
     }
 
     public IRubyObject fcall(ThreadContext context, IRubyObject self, Block block) {
@@ -241,7 +241,7 @@ public abstract class CachingCallSite extends CallSite {
         if (cache.typeOk(selfType)) {
             return cache.method.call(context, self, cache.sourceModule, methodName, arg1);
         }
-        return cacheAndCall(caller, selfType, context, self, arg1);
+        return cacheAndCall(context, caller, self, selfType, arg1);
     }
 
     public IRubyObject fcall(ThreadContext context, IRubyObject self, IRubyObject arg1) {
@@ -256,7 +256,7 @@ public abstract class CachingCallSite extends CallSite {
         if (cache.typeOk(selfType)) {
             return cache.method.call(context, self, cache.sourceModule, methodName, arg1, block);
         }
-        return cacheAndCall(caller, selfType, block, context, self, arg1);
+        return cacheAndCall(context, caller, self, selfType, arg1, block);
     }
 
     public IRubyObject fcall(ThreadContext context, IRubyObject self, IRubyObject arg1, Block block) {
@@ -290,7 +290,7 @@ public abstract class CachingCallSite extends CallSite {
         if (cache.typeOk(selfType)) {
             return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2);
         }
-        return cacheAndCall(caller, selfType, context, self, arg1, arg2);
+        return cacheAndCall(context, caller, self, selfType, arg1, arg2);
     }
 
     public IRubyObject fcall(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
@@ -305,7 +305,7 @@ public abstract class CachingCallSite extends CallSite {
         if (cache.typeOk(selfType)) {
             return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2, block);
         }
-        return cacheAndCall(caller, selfType, block, context, self, arg1, arg2);
+        return cacheAndCall(context, caller, self, selfType, arg1, arg2, block);
     }
 
     public IRubyObject fcall(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block) {
@@ -339,7 +339,7 @@ public abstract class CachingCallSite extends CallSite {
         if (cache.typeOk(selfType)) {
             return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2, arg3);
         }
-        return cacheAndCall(caller, selfType, context, self, arg1, arg2, arg3);
+        return cacheAndCall(context, caller, self, selfType, arg1, arg2, arg3);
     }
 
     public IRubyObject fcall(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
@@ -354,7 +354,7 @@ public abstract class CachingCallSite extends CallSite {
         if (cache.typeOk(selfType)) {
             return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2, arg3, block);
         }
-        return cacheAndCall(caller, selfType, block, context, self, arg1, arg2, arg3);
+        return cacheAndCall(context, caller, self, selfType, block, arg1, arg2, arg3);
     }
 
     public IRubyObject fcall(ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
@@ -441,60 +441,52 @@ public abstract class CachingCallSite extends CallSite {
         return entry;
     }
 
-    protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
-        IRubyObject[] args, ThreadContext context, IRubyObject self) {
+    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass selfType, IRubyObject[] args, Block block) {
         CacheEntry entry = populateCacheEntry(caller, selfType, context, self);
         return entry.method.call(context, self, entry.sourceModule, methodName, args, block);
     }
 
-    protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType,
-        IRubyObject[] args, ThreadContext context, IRubyObject self) {
+    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass selfType, IRubyObject[] args) {
         CacheEntry entry = populateCacheEntry(caller, selfType, context, self);
         return entry.method.call(context, self, entry.sourceModule, methodName, args);
     }
 
-    protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType,
-        ThreadContext context, IRubyObject self) {
+    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass selfType) {
         CacheEntry entry = populateCacheEntry(caller, selfType, context, self);
         return entry.method.call(context, self, entry.sourceModule, methodName);
     }
 
-    protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
-        ThreadContext context, IRubyObject self) {
+    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass selfType, Block block) {
         CacheEntry entry = populateCacheEntry(caller, selfType, context, self);
         return entry.method.call(context, self, entry.sourceModule, methodName, block);
     }
 
-    protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg) {
+    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass selfType, IRubyObject arg) {
         CacheEntry entry = populateCacheEntry(caller, selfType, context, self);
         return entry.method.call(context, self, entry.sourceModule, methodName, arg);
     }
 
-    protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
-        ThreadContext context, IRubyObject self, IRubyObject arg) {
+    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass selfType, IRubyObject arg, Block block) {
         CacheEntry entry = populateCacheEntry(caller, selfType, context, self);
         return entry.method.call(context, self, entry.sourceModule, methodName, arg, block);
     }
 
-    protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
+    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass selfType, IRubyObject arg1, IRubyObject arg2) {
         CacheEntry entry = populateCacheEntry(caller, selfType, context, self);
         return entry.method.call(context, self, entry.sourceModule, methodName, arg1, arg2);
     }
 
-    protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
-        ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
+    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass selfType, IRubyObject arg1, IRubyObject arg2, Block block) {
         CacheEntry entry = populateCacheEntry(caller, selfType, context, self);
         return entry.method.call(context, self, entry.sourceModule, methodName, arg1, arg2, block);
     }
 
-    protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType,
-        ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass selfType, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
         CacheEntry entry = populateCacheEntry(caller, selfType, context, self);
         return entry.method.call(context, self, entry.sourceModule, methodName, arg1, arg2, arg3);
     }
 
-    protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
-        ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+    protected IRubyObject cacheAndCall(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass selfType, Block block, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
         CacheEntry entry = populateCacheEntry(caller, selfType, context, self);
         return entry.method.call(context, self, entry.sourceModule, methodName, arg1, arg2, arg3, block);
     }

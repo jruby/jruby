@@ -556,8 +556,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     // MRI: rb_io_reopen
-    @JRubyMethod(name = "reopen", required = 1, optional = 1)
+    @JRubyMethod(name = "reopen", required = 1, optional = 1, checkArity = false)
     public IRubyObject reopen(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 1, 2);
+
         final Ruby runtime = context.runtime;
         final IRubyObject nil = context.nil;
         RubyIO file = this;
@@ -565,7 +567,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         int[] oflags_p = {0};
         OpenFile fptr;
 
-        switch (args.length) {
+        switch (argc) {
             case 3:
                 opt = TypeConverter.checkHashType(runtime, args[2]);
                 if (opt == nil) throw getRuntime().newArgumentError(3, 2);
@@ -582,7 +584,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             case 1:
                 fname = args[0];
         }
-        if (args.length == 1) {
+        if (argc == 1) {
             IRubyObject tmp = TypeConverter.ioCheckIO(runtime, fname);
             if (tmp != nil) {
                 return file.reopenIO(context, (RubyIO) tmp);
@@ -1169,7 +1171,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     // rb_io_s_open, 2014/5/16
-    @JRubyMethod(required = 1, rest = true, meta = true)
+    @JRubyMethod(required = 1, rest = true, checkArity = false, meta = true, keywords = true)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         IRubyObject io = ((RubyClass)recv).newInstance(context, args, Block.NULL_BLOCK);
 
@@ -1198,8 +1200,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     // rb_io_s_sysopen
-    @JRubyMethod(name = "sysopen", required = 1, optional = 2, meta = true)
+    @JRubyMethod(name = "sysopen", required = 1, optional = 2, checkArity = false, meta = true)
     public static IRubyObject sysopen(ThreadContext context, IRubyObject recv, IRubyObject[] argv, Block block) {
+        int argc = Arity.checkArgumentCount(context, argv, 1, 3);
+
         Ruby runtime = context.runtime;
         IRubyObject fname, vmode, vperm;
         fname = vmode = vperm = context.nil;
@@ -1207,7 +1211,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         int oflags;
         ChannelFD fd;
 
-        switch (argv.length) {
+        switch (argc) {
             case 3:
                 vperm = argv[2];
             case 2:
@@ -1375,8 +1379,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     // MRI: rb_io_write_nonblock
-    @JRubyMethod(name = "write_nonblock", required = 1, optional = 1)
+    @JRubyMethod(name = "write_nonblock", required = 1, optional = 1, checkArity = false)
     public IRubyObject write_nonblock(ThreadContext context, IRubyObject[] argv) {
+        Arity.checkArgumentCount(context, argv, 1, 2);
+
         boolean exception = ArgsUtil.extractKeywordArg(context, "exception", argv) != context.fals;
 
         IRubyObject str = argv[0];
@@ -1446,9 +1452,39 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
      * @param context the current context
      * @param str the string to write
      */
-    @JRubyMethod(name = "write", required = 1)
+    @JRubyMethod(name = "write")
     public IRubyObject write(ThreadContext context, IRubyObject str) {
         return write(context, str, false);
+    }
+
+    /**
+     * Ruby method IO#write(str, ...), equivalent to io_write_m.
+     *
+     * @param context the current context
+     * @param arg0 the first string to write
+     * @param arg1 the second string to write
+     */
+    @JRubyMethod(name = "write")
+    public IRubyObject write2(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        long acc = RubyNumeric.num2long(write(context, arg0, false));
+        acc += RubyNumeric.num2long(write(context, arg1, false));
+        return RubyFixnum.newFixnum(context.runtime, acc);
+    }
+
+    /**
+     * Ruby method IO#write(str, ...), equivalent to io_write_m.
+     *
+     * @param context the current context
+     * @param arg0 the first string to write
+     * @param arg1 the second string to write
+     * @param arg2 the third string to write
+     */
+    @JRubyMethod(name = "write")
+    public IRubyObject write3(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        long acc = RubyNumeric.num2long(write(context, arg0, false));
+        acc += RubyNumeric.num2long(write(context, arg1, false));
+        acc += RubyNumeric.num2long(write(context, arg2, false));
+        return RubyFixnum.newFixnum(context.runtime, acc);
     }
 
     /**
@@ -1801,7 +1837,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return context.nil;
     }
 
-    @JRubyMethod(required = 1, rest = true)
+    @JRubyMethod(required = 1, rest = true, checkArity = false)
     public IRubyObject printf(ThreadContext context, IRubyObject[] args) {
         write(context, this, RubyKernel.sprintf(context, this, args));
         return context.nil;
@@ -1873,15 +1909,17 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     // This was a getOpt with one mandatory arg, but it did not work
     // so I am parsing it for now.
-    @JRubyMethod(required = 1, optional = 1)
+    @JRubyMethod(required = 1, optional = 1, checkArity = false)
     public RubyFixnum sysseek(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 1, 2);
+
         final Ruby runtime = context.runtime;
         IRubyObject offset = context.nil;
         int whence = PosixShim.SEEK_SET;
         OpenFile fptr;
         long pos;
 
-        switch (args.length) {
+        switch (argc) {
             case 2:
                 IRubyObject ptrname = args[1];
                 whence = interpretSeekWhence(ptrname);
@@ -2558,12 +2596,14 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return ctl(context, cmd, arg);
     }
 
-    @JRubyMethod(name = "ioctl", required = 1, optional = 1)
+    @JRubyMethod(name = "ioctl", required = 1, optional = 1, checkArity = false)
     public IRubyObject ioctl(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 1, 2);
+
         IRubyObject cmd = args[0];
         IRubyObject arg;
 
-        if (args.length == 2) {
+        if (argc == 2) {
             arg = args[1];
         } else {
             arg = context.nil;
@@ -3024,8 +3064,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return context.nil;
     }
 
-    @JRubyMethod(name = "read_nonblock", required = 1, optional = 2)
+    @JRubyMethod(name = "read_nonblock", required = 1, optional = 2, checkArity = false)
     public IRubyObject read_nonblock(ThreadContext context, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 1, 3);
+
         boolean exception = ArgsUtil.extractKeywordArg(context, "exception", args) != context.fals;
         return doReadNonblock(context, args, exception);
     }
@@ -3042,10 +3084,12 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         throw runtime.newEOFError();
     }
 
-    @JRubyMethod(name = "readpartial", required = 1, optional = 1)
+    @JRubyMethod(name = "readpartial", required = 1, optional = 1, checkArity = false)
     public IRubyObject readpartial(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 1, 2);
+
         // ruby bug 11885
-        if (args.length == 2) {
+        if (argc == 2) {
             args[1] = args[1].convertToString();
         }
 
@@ -3144,12 +3188,14 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     // MRI: rb_io_sysread
-    @JRubyMethod(name = "sysread", required = 1, optional = 1)
+    @JRubyMethod(name = "sysread", required = 1, optional = 1, checkArity = false)
     public IRubyObject sysread(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 1, 2);
+
         final Ruby runtime = context.runtime;
 
-        final int length = RubyNumeric.num2int(args.length >= 1 ? args[0] : context.nil);
-        RubyString str = EncodingUtils.setStrBuf(runtime, args.length >= 2 ? args[1] : context.nil, length);
+        final int length = RubyNumeric.num2int(argc >= 1 ? args[0] : context.nil);
+        RubyString str = EncodingUtils.setStrBuf(runtime, argc >= 2 ? args[1] : context.nil, length);
         if (length == 0) return str;
 
         final OpenFile fptr = getOpenFileChecked();
@@ -3733,8 +3779,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return nil;
     }
 
-    @JRubyMethod(name = "foreach", required = 1, optional = 3, meta = true, writes = LASTLINE)
+    @JRubyMethod(name = "foreach", required = 1, optional = 3, checkArity = false, meta = true, writes = LASTLINE)
     public static IRubyObject foreach(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
+        Arity.checkArgumentCount(context, args, 1, 4);
+
         if (!block.isGiven()) return enumeratorize(context.runtime, recv, "foreach", args);
 
         return foreachInternal(context, recv, args, block);
@@ -3744,12 +3792,14 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return TypeConverter.ioGetIO(context.runtime, obj);
     }
 
-    @JRubyMethod(name = "select", required = 1, optional = 3, meta = true)
+    @JRubyMethod(name = "select", required = 1, optional = 3, checkArity = false, meta = true)
     public static IRubyObject select(ThreadContext context, IRubyObject recv, IRubyObject[] argv) {
+        int argc = Arity.checkArgumentCount(context, argv, 1, 4);
+
         IRubyObject read, write, except, _timeout;
         read = write = except = _timeout = context.nil;
 
-        switch (argv.length) {
+        switch (argc) {
             case 4:
                 _timeout = argv[3];
             case 3:
@@ -3782,7 +3832,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     // MRI: rb_io_advise
-    @JRubyMethod(required = 1, optional = 2)
+    @JRubyMethod(required = 1, optional = 2, checkArity = false)
     public IRubyObject advise(ThreadContext context, IRubyObject[] argv) {
         Ruby runtime = context.runtime;
         IRubyObject advice, offset, len;
@@ -3796,6 +3846,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 offset = argv[1];
             case 1:
                 advice = argv[0];
+                break;
+            default:
+                Arity.raiseArgumentError(runtime, argv, 1, 3);
         }
 
         PosixFadvise fadvise = adviceArgCheck(context, advice);
@@ -3943,8 +3996,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
      * @param args arguments; path [, length [, offset]]
      * @return the binary contents of the given file, at specified length and offset
      */
-    @JRubyMethod(meta = true, required = 1, optional = 2)
+    @JRubyMethod(meta = true, required = 1, optional = 2, checkArity = false)
     public static IRubyObject binread(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 1, 3);
+
         Ruby runtime = context.runtime;
         IRubyObject path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, args[0]));
         IRubyObject length, offset;
@@ -3955,10 +4010,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         OpenFlags oBinary = OpenFlags.O_BINARY;
         int oflags = OpenFlags.O_RDONLY.intValue() | (oBinary.defined() ? oBinary.intValue() : 0);
 
-        if (args.length > 2) {
+        if (argc > 2) {
             offset = args[2];
             length = args[1];
-        } else if (args.length > 1) {
+        } else if (argc > 1) {
             length = args[1];
         }
         convconfig.setEnc(ASCIIEncoding.INSTANCE);
@@ -3977,27 +4032,29 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     // Enebo: annotation processing forced me to do pangea method here...
-    @JRubyMethod(name = "read", meta = true, required = 1, optional = 3)
+    @JRubyMethod(name = "read", meta = true, required = 1, optional = 3, checkArity = false)
     public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
+        int argc = Arity.checkArgumentCount(context, args, 1, 4);
+
         Ruby runtime = context.runtime;
         IRubyObject path = args[0];
         IRubyObject length, offset, options;
         length = offset = options = context.nil;
 
         { // rb_scan_args logic, basically
-            if (args.length > 3) {
+            if (argc > 3) {
                 if (!(args[3] instanceof RubyHash)) throw runtime.newTypeError("Must be a hash");
                 options = (RubyHash) args[3];
                 offset = args[2];
                 length = args[1];
-            } else if (args.length > 2) {
+            } else if (argc > 2) {
                 if (args[2] instanceof RubyHash) {
                     options = (RubyHash) args[2];
                 } else {
                     offset = args[2];
                 }
                 length = args[1];
-            } else if (args.length > 1) {
+            } else if (argc > 1) {
                 if (args[1] instanceof RubyHash) {
                     options = (RubyHash) args[1];
                 } else {
@@ -4027,13 +4084,13 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     // rb_io_s_binwrite
-    @JRubyMethod(meta = true, required = 2, optional = 2)
+    @JRubyMethod(meta = true, required = 2, optional = 2, checkArity = false)
     public static IRubyObject binwrite(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return ioStaticWrite(context, recv, args, true);
     }
 
     // MRI: rb_io_s_write
-    @JRubyMethod(name = "write", meta = true, required = 2, optional = 2)
+    @JRubyMethod(name = "write", meta = true, required = 2, optional = 2, checkArity = false)
     public static IRubyObject write(ThreadContext context, IRubyObject recv, IRubyObject[] argv) {
         return (ioStaticWrite(context, recv, argv, false));
     }
@@ -4104,7 +4161,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     // rb_io_s_readlines
-    @JRubyMethod(name = "readlines", required = 1, optional = 3, meta = true)
+    @JRubyMethod(name = "readlines", required = 1, optional = 3, checkArity = false, meta = true)
     public static IRubyObject readlines(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         IRubyObject opt = ArgsUtil.getOptionsArg(context.runtime, args);
         final RubyIO io = openKeyArgs(context, recv, args, opt);
@@ -4232,8 +4289,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    @JRubyMethod(name = "popen", required = 1, optional = 2, meta = true)
+    @JRubyMethod(name = "popen", required = 1, optional = 2, checkArity = false, meta = true)
     public static IRubyObject popen(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        int argc = Arity.checkArgumentCount(context, args, 1, 3);
+
         Ruby runtime = context.runtime;
 
         if (PopenExecutor.nativePopenAvailable(runtime)) {
@@ -4247,14 +4306,13 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         IRubyObject tmp;
 
         int firstArg = 0;
-        int argc = args.length;
 
         if (argc > 0 && !TypeConverter.checkHashType(runtime, args[0]).isNil()) {
             firstArg++;
             argc--;
         }
 
-        if (argc > 0 && !(tmp = TypeConverter.checkHashType(runtime, args[args.length - 1])).isNil()) {
+        if (argc > 0 && !(tmp = TypeConverter.checkHashType(runtime, args[argc - 1])).isNil()) {
             options = (RubyHash)tmp;
             argc--;
         }
@@ -4274,9 +4332,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         // FIXME: Reprocessing logic twice for now...
         // for 1.9 mode, strip off the trailing options hash, if there
-        if (args.length > 1 && args[args.length - 1] instanceof RubyHash) {
-            options = (RubyHash) args[args.length - 1];
-            args = ArraySupport.newCopy(args, 0, args.length - 1);
+        if (argc > 1 && args[argc - 1] instanceof RubyHash) {
+            options = (RubyHash) args[argc - 1];
+            args = ArraySupport.newCopy(args, 0, argc - 1);
         }
 
         RubyPOpen pOpen = new RubyPOpen(runtime, args);
@@ -4333,8 +4391,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return pipe(context, recv, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
     }
 
-    @JRubyMethod(name = "pipe", optional = 3, meta = true)
+    @JRubyMethod(name = "pipe", optional = 3, checkArity = false, meta = true)
     public static IRubyObject pipe(ThreadContext context, IRubyObject klass, IRubyObject[] argv, Block block) {
+        int argc = Arity.checkArgumentCount(context, argv, 0, 3);
+
         Ruby runtime = context.runtime;
         int state;
         RubyIO r, w;
@@ -4345,7 +4405,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         OpenFile fptr, fptr2;
         int[] fmode_p = {0};
         IRubyObject ret;
-        int argc = argv.length;
 
         switch (argc) {
             case 3:
@@ -4455,8 +4514,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    @JRubyMethod(name = "copy_stream", required = 2, optional = 2, meta = true)
+    @JRubyMethod(name = "copy_stream", required = 2, optional = 2, checkArity = false, meta = true)
     public static IRubyObject copy_stream(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 2, 4);
+
         Ruby runtime = context.runtime;
 
         IRubyObject arg1 = args[0];
@@ -4471,11 +4532,11 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         Channel channel1 = null;
         Channel channel2 = null;
 
-        if (args.length >= 3 && !args[2].isNil()) {
+        if (argc >= 3 && !args[2].isNil()) {
             length = args[2].convertToInteger();
         }
 
-        if (args.length == 4 && !args[3].isNil()) {
+        if (argc == 4 && !args[3].isNil()) {
             offset = args[3].convertToInteger();
         }
 

@@ -9,7 +9,7 @@ import java.util.function.Consumer;
 /**
  * Lazy Java class extensions initialization.
  *
- * @note Internal API
+ * <p>Note: Internal API</p>
  * @author kares
  */
 public class JavaExtensions {

@@ -65,7 +65,7 @@ public class ExitableInterpreterContext extends InterpreterContext {
     }
 
     /**
-     * @returns the live ruby values for the operand to the original super call.
+     * @return the live ruby values for the operand to the original super call.
       */
     public IRubyObject[] getArgs(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temps) {
     	IRubyObject[] args = superCall.prepareArguments(context, self, currScope, currDynScope, temps);

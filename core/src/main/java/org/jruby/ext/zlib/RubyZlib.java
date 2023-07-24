@@ -183,7 +183,7 @@ public class RubyZlib {
         return ((RubyModule)recv).getConstant("ZLIB_VERSION");
     }
 
-    @JRubyMethod(name = "crc32", optional = 2, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "crc32", optional = 2, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject crc32(IRubyObject recv, IRubyObject[] args) {
         args = Arity.scanArgs(recv.getRuntime(),args,0,2);
         long start = 0;
@@ -206,7 +206,7 @@ public class RubyZlib {
         return recv.getRuntime().newFixnum(result);
     }
 
-    @JRubyMethod(name = "adler32", optional = 2, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "adler32", optional = 2, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject adler32(IRubyObject recv, IRubyObject[] args) {
         args = Arity.scanArgs(recv.getRuntime(),args,0,2);
         int start = 1;
@@ -230,7 +230,7 @@ public class RubyZlib {
         return JZlibInflate.s_inflate(context, recv, string);
     }
 
-    @JRubyMethod(required = 1, optional = 1, module = true)
+    @JRubyMethod(required = 1, optional = 1, checkArity = false, module = true)
     public static IRubyObject deflate(IRubyObject recv, IRubyObject[] args) {
         return JZlibDeflate.s_deflate(recv, args);
     }

@@ -43,6 +43,7 @@ import org.jruby.RubyString;
 import org.jruby.RubyTime;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -77,8 +78,10 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return result;
     }
 
-    @JRubyMethod(name = "open", required = 1, optional = 3, meta = true)
+    @JRubyMethod(name = "open", required = 1, optional = 3, checkArity = false, meta = true)
     public static IRubyObject open19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        int argc = Arity.checkArgumentCount(context, args, 1, 4);
+
         Ruby runtime = recv.getRuntime();
         
         args[0] = Helpers.invoke(context, runtime.getFile(), "open", args[0], runtime.newString("wb"));
@@ -194,7 +197,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return this;
     }
 
-    @JRubyMethod(name = "printf", required = 1, rest = true)
+    @JRubyMethod(name = "printf", required = 1, rest = true, checkArity = false)
     public IRubyObject printf(ThreadContext context, IRubyObject[] args) {
         write(RubyKernel.sprintf(context, this, args));
         
@@ -288,11 +291,13 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return realIo;
     }
 
-    @JRubyMethod(name = "flush", optional = 1)
+    @JRubyMethod(name = "flush", optional = 1, checkArity = false)
     public IRubyObject flush(IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(getRuntime(), args, 0, 1);
+
         int flush = JZlib.Z_SYNC_FLUSH;
         
-        if (args.length > 0 && !args[0].isNil()) {
+        if (argc > 0 && !args[0].isNil()) {
             flush = RubyNumeric.fix2int(args[0]);
         }
         
@@ -315,21 +320,22 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
 
     @JRubyMethod(name = "mtime=", required = 1)
     public IRubyObject set_mtime(IRubyObject arg) {
+        Ruby runtime = getRuntime();
+
         if (arg instanceof RubyTime) {
             this.mtime = ((RubyTime) arg);
         } else if (arg.isNil()) {
             // ...nothing
         } else {
-            this.mtime.setDateTime(new DateTime(RubyNumeric.fix2long(arg) * 1000));
+            this.mtime = RubyTime.newTime(runtime, RubyNumeric.fix2long(arg) * 1000);
         }
-        
         try {
             io.setModifiedTime(this.mtime.to_i().getLongValue());
         } catch (GZIPException e) {
-            throw RubyZlib.newGzipFileError(getRuntime(), "header is already written");
+            throw RubyZlib.newGzipFileError(runtime, "header is already written");
         }
         
-        return getRuntime().getNil();
+        return runtime.getNil();
     }
 
     @Override

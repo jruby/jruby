@@ -80,9 +80,9 @@ public abstract class Factory {
     }
 
     /**
-     * Gets an instance of <tt>FFIProvider</tt>
+     * Gets an instance of <code>FFIProvider</code>
      * 
-     * @return an instance of <tt>FFIProvider</tt>
+     * @return an instance of <code>FFIProvider</code>
      */
     public static final Factory getInstance() {
         return SingletonHolder.INSTANCE;
@@ -91,7 +91,8 @@ public abstract class Factory {
     /**
      * Registers FFI ruby classes/modules
      * 
-     * @param module the module to register the classes under
+     * @param runtime The ruby runtime
+     * @param ffi the module to register the classes under
      */
     public void init(Ruby runtime, RubyModule ffi) {
         synchronized (ffi) {
@@ -148,40 +149,40 @@ public abstract class Factory {
     }
     
     /**
-     * Allocates memory on the native C heap and wraps it in a <tt>MemoryIO</tt> accessor.
+     * Allocates memory on the native C heap and wraps it in a <code>MemoryIO</code> accessor.
      *
      * @param size The number of bytes to allocate.
      * @param clear If the memory should be cleared.
-     * @return A new <tt>AllocatedDirectMemoryIO</tt>.
+     * @return A new <code>AllocatedDirectMemoryIO</code>.
      */
     public abstract MemoryIO allocateDirectMemory(Ruby runtime, int size, boolean clear);
 
     /**
-     * Allocates memory on the native C heap and wraps it in a <tt>MemoryIO</tt> accessor.
+     * Allocates memory on the native C heap and wraps it in a <code>MemoryIO</code> accessor.
      *
      * @param size The number of bytes to allocate.
      * @param align The minimum alignment of the memory
      * @param clear If the memory should be cleared.
-     * @return A new <tt>AllocatedDirectMemoryIO</tt>.
+     * @return A new <code>AllocatedDirectMemoryIO</code>.
      */
     public abstract MemoryIO allocateDirectMemory(Ruby runtime, int size, int align, boolean clear);
 
     /**
-     * Allocates transient native memory (not from C heap) and wraps it in a <tt>MemoryIO</tt> accessor.
+     * Allocates transient native memory (not from C heap) and wraps it in a <code>MemoryIO</code> accessor.
      *
      * @param size The number of bytes to allocate.
      * @param align The minimum alignment of the memory
      * @param clear If the memory should be cleared.
-     * @return A new <tt>AllocatedDirectMemoryIO</tt>.
+     * @return A new <code>AllocatedDirectMemoryIO</code>.
      */
     public abstract MemoryIO allocateTransientDirectMemory(Ruby runtime, int size, int align, boolean clear);
 
     /**
-     * Wraps a  native C memory address in a <tt>MemoryIO</tt> accessor.
+     * Wraps a  native C memory address in a <code>MemoryIO</code> accessor.
      *
      * @param address The native address to wrap.
      * 
-     * @return A new <tt>MemoryIO</tt>.
+     * @return A new <code>MemoryIO</code>.
      */
     public abstract MemoryIO wrapDirectMemory(Ruby runtime, long address);
 
