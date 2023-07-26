@@ -91,7 +91,7 @@ module JITSpecUtils
       scope.setModule currModule = runtime.top_self.class
     end
 
-    method = org.jruby.ir.IRBuilder.build_root(runtime.getIRManager(), node).scope
+    method = org.jruby.ir.builder.IRBuilder.build_root(runtime.getIRManager(), node).scope
     method.prepareForCompilation
 
     compiler = new_visitor(runtime)
