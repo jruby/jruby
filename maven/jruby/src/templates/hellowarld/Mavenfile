@@ -10,9 +10,9 @@ name '${cmd} ${framework} from ${package}'
 packaging 'pom' 
 
 # TODO add extension to .mvn/extensions.xml
-extension 'de.saumya.mojo', 'jruby9-extensions', '${jruby9.plugins.version}'
+extension 'org.jruby.maven', 'jruby9-extensions', '${jruby9.plugins.version}'
 
-properties( 'jruby.plugins.version' => '1.1.0',
+properties( 'jruby.plugins.version' => '3.0.0',
             'jruby9.plugins.version' => '0.2.0' )
 
 # integration tests

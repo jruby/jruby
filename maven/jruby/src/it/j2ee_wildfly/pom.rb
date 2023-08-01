@@ -2,7 +2,7 @@
 packaging 'war'
 
 # default versions will be overwritten by pom.rb from root directory
-properties( 'jruby.plugins.version' => '1.0.10',
+properties( 'jruby.plugins.version' => '3.0.0',
             'wildfly.version' => '9.0.2.Final',
             'project.build.sourceEncoding' => 'utf-8' )
 
@@ -11,7 +11,7 @@ pom( 'org.jruby:jruby', '${jruby.version}' )
 # a gem to be used
 gem 'virtus', '0.5.5'
 
-extension 'org.torquebox.mojo:mavengem-wagon:1.0.3'
+extension 'org.jruby.maven:mavengem-wagon:2.0.0'
 repository :id => :mavengems, :url => 'mavengem:https://rubygems.org'
 
 jruby_plugin :gem, :includeRubygemsInResources => true, :jrubyVersion => '9.0.0.0' do

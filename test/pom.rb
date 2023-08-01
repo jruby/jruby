@@ -8,7 +8,7 @@ project 'JRuby Integration Tests' do
   inherit 'org.jruby:jruby-parent', version
   id 'org.jruby:jruby-tests'
 
-  extension 'org.torquebox.mojo:mavengem-wagon:1.0.3'
+  extension 'org.jruby.maven:mavengem-wagon:2.0.0'
 
   repository :id => :mavengems, :url => 'mavengem:http://rubygems.org'
   plugin_repository :id => :mavengems, :url => 'mavengem:http://rubygems.org'
@@ -41,7 +41,7 @@ project 'JRuby Integration Tests' do
     plugin( 'org.eclipse.m2e:lifecycle-mapping:1.0.0',
             'lifecycleMappingMetadata' => {
               'pluginExecutions' => [ { 'pluginExecutionFilter' => {
-                                          'groupId' =>  'de.saumya.mojo',
+                                          'groupId' =>  'org.jruby.maven',
                                           'artifactId' =>  'gem-maven-plugin',
                                           'versionRange' =>  '[1.0.0-rc3,)',
                                           'goals' => [ 'initialize' ]
@@ -58,7 +58,6 @@ project 'JRuby Integration Tests' do
       'gemHome' => '${gem.home}',
       'binDirectory' => '${jruby.home}/bin',
       'includeRubygemsInTestResources' => 'false',
-      'jrubyVersion' => '9.2.9.0'
     }
 
     execute_goals( 'initialize', options )
