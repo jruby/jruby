@@ -409,7 +409,7 @@ public class RubyException extends RubyObject {
 
     // NOTE: can not have IRubyObject as NativeException has getCause() returning Throwable
     public Object getCause() {
-        return cause;
+        return cause == this ? null : cause;
     }
 
     public RubyStackTraceElement[] getBacktraceElements() {
