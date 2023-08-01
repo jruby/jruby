@@ -2547,42 +2547,36 @@ public class RubyKernel {
     }
 
     @Deprecated
-    @JRubyMethod(name = "tainted?")
     public static RubyBoolean tainted_p(ThreadContext context, IRubyObject self) {
         context.runtime.getWarnings().warnDeprecatedForRemoval("Object#tainted?", "3.2");
         return context.fals;
     }
 
     @Deprecated
-    @JRubyMethod(name = "taint")
     public static IRubyObject taint(ThreadContext context, IRubyObject self) {
         context.runtime.getWarnings().warnDeprecatedForRemoval("Object#taint", "3.2");
         return self;
     }
 
     @Deprecated
-    @JRubyMethod(name = "untaint")
     public static IRubyObject untaint(ThreadContext context, IRubyObject self) {
         context.runtime.getWarnings().warnDeprecatedForRemoval("Object#untaint", "3.2");
         return self;
     }
 
     @Deprecated
-    @JRubyMethod(name = "untrusted?")
     public static RubyBoolean untrusted_p(ThreadContext context, IRubyObject self) {
         context.runtime.getWarnings().warnDeprecatedForRemoval("Object#untrusted?", "3.2");
         return context.fals;
     }
 
     @Deprecated
-    @JRubyMethod(name = "untrust")
     public static IRubyObject untrust(ThreadContext context, IRubyObject self) {
         context.runtime.getWarnings().warnDeprecatedForRemoval("Object#untrust", "3.2");
         return self;
     }
 
     @Deprecated
-    @JRubyMethod(name = "trust")
     public static IRubyObject trust(ThreadContext context, IRubyObject self) {
         context.runtime.getWarnings().warnDeprecatedForRemoval("Object#trust", "3.2");
         return self;
