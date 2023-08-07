@@ -376,7 +376,6 @@ project 'JRuby Lib Setup' do
     # maintainers like OpenBSD (see #1989).
     hack = File.join jruby_gems, 'gems', 'axiom-types-*'
     (Dir[File.join(hack, '**/*')] + Dir[File.join(hack, '**/.*' )]).each do |f|
-      puts "F: #{f}"
       FileUtils.chmod 'u+rw,go+r' rescue nil if File.file?(f)
     end
   end
