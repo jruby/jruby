@@ -126,7 +126,6 @@ public class IRMethod extends IRScope {
         return lazilyAcquireInterpreterContext();
     }
 
-    // 3 -> piling up here synchronized on the same method :
     /**
      * initialize methods in reified Java types will try and dispatch to the Java base classes
      * constructor when the Ruby in the initialize:
@@ -139,13 +138,13 @@ public class IRMethod extends IRScope {
      *
      * @return appropriate interpretercontext
      */
-    public ExitableInterpreterContext builtInterperterContextForJavaConstructor() {
+    public ExitableInterpreterContext builtInterpreterContextForJavaConstructor() {
         ExitableInterpreterContext interpreterContextForJavaConstructor = this.interpreterContextForJavaConstructor;
         if (interpreterContextForJavaConstructor == null) {
             synchronized (this) {
                 interpreterContextForJavaConstructor = this.interpreterContextForJavaConstructor;
                 if (interpreterContextForJavaConstructor == null) {
-                    interpreterContextForJavaConstructor = doBuiltInterperterContextForJavaConstructor();
+                    interpreterContextForJavaConstructor = builtInterpreterContextForJavaConstructorImpl();
                     this.interpreterContextForJavaConstructor = interpreterContextForJavaConstructor;
                 }
             }
@@ -155,7 +154,7 @@ public class IRMethod extends IRScope {
 
     private volatile ExitableInterpreterContext interpreterContextForJavaConstructor;
 
-    private synchronized ExitableInterpreterContext doBuiltInterperterContextForJavaConstructor() {
+    private synchronized ExitableInterpreterContext builtInterpreterContextForJavaConstructorImpl() {
         final InterpreterContext interpreterContext = builtInterpreterContext();
         if (usesSuper()) {
             // We know at least one super is in here somewhere
@@ -204,6 +203,15 @@ public class IRMethod extends IRScope {
         }
 
         return ExitableInterpreterContext.NULL;
+    }
+
+    /**
+     * This method was renamed (due a typo).
+     * @see #builtInterpreterContextForJavaConstructor()
+     */
+    @Deprecated
+    public ExitableInterpreterContext builtInterperterContextForJavaConstructor() {
+        return builtInterpreterContextForJavaConstructor();
     }
 
     final InterpreterContext lazilyAcquireInterpreterContext() {

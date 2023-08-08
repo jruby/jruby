@@ -129,7 +129,7 @@ public class CompiledIRNoProtocolMethod extends AbstractIRMethod {
     public SplitSuperState<MethodSplitState> startSplitSuperCall(ThreadContext context, IRubyObject self,
             RubyModule clazz, String name, IRubyObject[] args, Block block) {
         // TODO: check if IR method, or is it guaranteed?
-        ExitableInterpreterContext ic = ((IRMethod) getIRScope()).builtInterperterContextForJavaConstructor();
+        ExitableInterpreterContext ic = ((IRMethod) getIRScope()).builtInterpreterContextForJavaConstructor();
         if (ic == null) return null; // no super call/can't split this
 
         MethodSplitState state = new MethodSplitState(context, ic, clazz, self, name);

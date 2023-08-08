@@ -288,7 +288,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
             RubyModule clazz, String name, IRubyObject[] args, Block block) {
         // TODO: check if IR method, or is it guaranteed?
         // 2 -> IRMethod
-        ExitableInterpreterContext ic = ((IRMethod) getIRScope()).builtInterperterContextForJavaConstructor();
+        ExitableInterpreterContext ic = ((IRMethod) getIRScope()).builtInterpreterContextForJavaConstructor();
         if (ic == null) return null; // no super call/can't split this
 
         MethodSplitState state = new MethodSplitState(context, ic, clazz, self, name);
