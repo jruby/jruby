@@ -33,10 +33,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.internal.runtime.SplitSuperState;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -45,20 +43,17 @@ import org.jruby.java.invokers.RubyToJavaInvoker;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.Java.JCreateMethod;
 import org.jruby.javasupport.Java.JCtorCache;
-import org.jruby.javasupport.JavaConstructor;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.proxy.JavaProxyConstructor;
 import org.jruby.javasupport.proxy.ReifiedJavaProxy;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
-import org.jruby.runtime.JavaInternalBlockBody;
 import org.jruby.runtime.MethodIndex;
-import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CacheEntry;
 
 public class ConcreteJavaProxy extends JavaProxy {
 
@@ -209,12 +204,12 @@ public class ConcreteJavaProxy extends JavaProxy {
      */
     public static class StaticJCreateMethod extends JavaMethodNBlock {
 
-        private Constructor<? extends ReifiedJavaProxy> withBlock;
-        private DynamicMethod oldInit;
+        private final Constructor<? extends ReifiedJavaProxy> withBlock;
+        final DynamicMethod oldInit;
 
-        StaticJCreateMethod(RubyModule cls, Constructor<? extends ReifiedJavaProxy> withBlock2, DynamicMethod oldinit) {
-            super(cls, PUBLIC, "__jcreate_static!");
-            this.withBlock = withBlock2;
+        StaticJCreateMethod(RubyModule implClass, Constructor<? extends ReifiedJavaProxy> javaProxyConstructor, DynamicMethod oldinit) {
+            super(implClass, PUBLIC, "__jcreate_static!");
+            this.withBlock = javaProxyConstructor;
             this.oldInit = oldinit;
         }
 
@@ -234,10 +229,6 @@ public class ConcreteJavaProxy extends JavaProxy {
                 throw JavaProxyConstructor.mapInstantiationException(context.runtime, e);
             }
             return self;
-        }
-
-        public DynamicMethod getOriginal() {
-            return oldInit;
         }
 
         public static void tryInstall(Ruby runtime, RubyClass clazz, JavaProxyClass proxyClass,
@@ -335,36 +326,36 @@ public class ConcreteJavaProxy extends JavaProxy {
          * Picks and converts arguments for the super call
          * Leaves ctorIndex and arguments ready for the super call
          */
-        public SplitCtorData(IRubyObject[] args, JCtorCache cache, Ruby rt) {
+        public SplitCtorData(IRubyObject[] args, JCtorCache cache, Ruby runtime) {
             rbarguments = args;
             if (cache == null) { // (ruby < ruby < java) super call from one IRO to another IRO ctor
                 ctorIndex = -1;
                 arguments = null;
             } else {
-                ctorIndex = JCreateMethod.forTypes(args, cache, rt);
+                ctorIndex = JCreateMethod.forTypes(args, cache, runtime);
                 arguments = RubyToJavaInvoker.convertArguments(cache.constructors[ctorIndex], args);
             }
         }
 
-        public SplitCtorData(IRubyObject[] args, JCtorCache cache, Ruby rt, AbstractIRMethod air2, SplitSuperState<?> state2,
-                Block blk2) {
-            this(args, cache, rt);
-            air = air2;
-            state =state2;
-            blk = blk2;
+        public SplitCtorData(IRubyObject[] args, JCtorCache cache, Ruby runtime, AbstractIRMethod method, SplitSuperState<?> state,
+                Block block) {
+            this(args, cache, runtime);
+            this.method = method;
+            this.state =state;
+            blk = block;
         }
 
-        public SplitCtorData(IRubyObject[] args, JCtorCache cache, Ruby rt, AbstractIRMethod air2, String name2, Block blk2) {
-            this(args, cache, rt);
-            air = air2;
-            name = name2;
-            blk = blk2;
+        public SplitCtorData(IRubyObject[] args, JCtorCache cache, Ruby runtime, AbstractIRMethod method, String name, Block block) {
+            this(args, cache, runtime);
+            this.method = method;
+            this.name = name;
+            blk = block;
         }
 
         // fields below are only used in ConcreteJavaProxy finishInitialize
-        private AbstractIRMethod air = null;
-        private String name = null;
-        private SplitSuperState<?> state = null;
+        AbstractIRMethod method;
+        String name;
+        SplitSuperState<?> state;
     }
 
     /**
@@ -372,27 +363,37 @@ public class ConcreteJavaProxy extends JavaProxy {
      * Do not refactor without looking at RCG
      * @return An object used by reified code and the finishInitialize method
      */
-    public SplitCtorData splitInitialized(RubyClass base, IRubyObject[] args, Block blk, JCtorCache jcc) {
-        String name = base.getClassConfig().javaCtorMethodName;
-        DynamicMethod dm = base.searchMethod(name);
-        if (dm != null && (dm instanceof StaticJCreateMethod)) dm = ((StaticJCreateMethod) dm).getOriginal();
-        DynamicMethod dm1 = base.searchMethodLateral(name); // only on ourself //TODO: missing default
+    public SplitCtorData splitInitialized(RubyClass base, IRubyObject[] args, Block block, JCtorCache jcc) {
+        final Ruby runtime = getRuntime();
+        final String name = base.getClassConfig().javaCtorMethodName;
+        final CacheEntry methodEntry = base.searchWithCache(name);
+        final boolean isLateral = isClassOrIncludedPrependedModule(methodEntry.sourceModule, base);
+        DynamicMethod method = methodEntry.method;
+        if (method instanceof StaticJCreateMethod) method = ((StaticJCreateMethod) method).oldInit;
 
         // jcreate is for nested ruby classes from a java class
-        if ((dm1 != null && !(dm instanceof InitializeMethod) && !(dm instanceof StaticJCreateMethod))) {
+        if (isLateral && method instanceof AbstractIRMethod) {
 
-            AbstractIRMethod air = (AbstractIRMethod) dm; // TODO: getMetaClass() ? or base? (below v)
+            AbstractIRMethod air = (AbstractIRMethod) method; // TODO: getMetaClass() ? or base? (below v)
 
-            SplitSuperState<?> state = air.startSplitSuperCall(getRuntime().getCurrentContext(), this, getMetaClass(),
-                    name, args, blk);
+            SplitSuperState<?> state = air.startSplitSuperCall(runtime.getCurrentContext(), this, getMetaClass(), name, args, block);
             if (state == null) { // no super in method
-                return new SplitCtorData(args, jcc, getRuntime(), air, name, blk);
-            } else {
-                return new SplitCtorData(state.callArrayArgs.toJavaArrayMaybeUnsafe(), jcc, getRuntime(), air, state, blk);
+                return new SplitCtorData(args, jcc, runtime, air, name, block);
             }
-        } else {
-            return new SplitCtorData(args, jcc, getRuntime());
+            return new SplitCtorData(state.callArrayArgs.toJavaArrayMaybeUnsafe(), jcc, runtime, air, state, block);
         }
+        return new SplitCtorData(args, jcc, runtime);
+    }
+
+    private static boolean isClassOrIncludedPrependedModule(final RubyModule methodSource, final RubyClass klass) {
+        if (methodSource == klass) return true;
+
+        RubyClass candidate = klass.getSuperClass();
+        while (candidate != null && (candidate.isIncluded() || candidate.isPrepended())) { // up till 'real' superclass
+            if (candidate == klass) return true;
+        }
+
+        return false;
     }
 
     /**
@@ -400,12 +401,12 @@ public class ConcreteJavaProxy extends JavaProxy {
      * Do not refactor without looking at RCG
      */
     public void finishInitialize(SplitCtorData returned) {
-        if (returned.air != null) {
+        if (returned.method != null) {
+            ThreadContext context = getRuntime().getCurrentContext();
             if (returned.state != null) {
-                returned.air.finishSplitCall(returned.state);
+                returned.method.finishSplitCall(returned.state);
             } else { // no super, direct call
-                returned.air.call(getRuntime().getCurrentContext(), this, getMetaClass(),
-                        returned.name, returned.rbarguments, returned.blk);
+                returned.method.call(context, this, getMetaClass(), returned.name, returned.rbarguments, returned.blk);
             }
         }
         // Ignore other cases
