@@ -34,9 +34,6 @@ class MSpecScript
   jruby = File.expand_path("../../bin/#{jruby}", __FILE__)
   set :target, jruby
 
-  # exclude stringio specs until we can address ruby/stringio#57
-  get(:library) << '^' + SPEC_DIR + '/library/stringio'
-
   slow_specs = [
       SPEC_DIR + '/core/process',
       SPEC_DIR + '/core/io/popen',
