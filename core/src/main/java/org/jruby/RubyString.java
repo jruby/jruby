@@ -1723,12 +1723,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "match?")
     public IRubyObject match_p(ThreadContext context, IRubyObject pattern) {
-        return getPattern(context.runtime, pattern).match_p(context, this);
+        return getPattern(context.runtime, pattern).matchP(context, this, 0);
     }
 
     @JRubyMethod(name = "match?")
     public IRubyObject match_p(ThreadContext context, IRubyObject pattern, IRubyObject pos) {
-        return getPattern(context.runtime, pattern).match_p(context, this, pos);
+        return getPattern(context.runtime, pattern).matchP(context, this, RubyNumeric.num2int(pos));
     }
 
     public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
