@@ -82,8 +82,7 @@ public class Binding {
 
     public Binding(IRubyObject self, Frame frame,
                    Visibility visibility, DynamicScope dynamicScope, String method, String filename, int line) {
-        frame.getClass(); // null check
-
+        assert frame != null;
         this.self = self;
         this.frame = frame;
         this.visibility = visibility;
@@ -95,8 +94,7 @@ public class Binding {
 
     private Binding(IRubyObject self, Frame frame,
                     Visibility visibility, DynamicScope dynamicScope, String method, String filename, int line, DynamicScope dummyScope) {
-        frame.getClass(); // null check
-
+        assert frame != null;
         this.self = self;
         this.frame = frame;
         this.visibility = visibility;
@@ -108,8 +106,7 @@ public class Binding {
     }
     
     public Binding(Frame frame, DynamicScope dynamicScope, String method, String filename, int line) {
-        frame.getClass(); // null check
-
+        assert frame != null;
         this.self = frame.getSelf();
         this.frame = frame;
         this.visibility = frame.getVisibility();
@@ -127,8 +124,7 @@ public class Binding {
 
     public Binding(IRubyObject self, Frame frame,
                    Visibility visibility) {
-        frame.getClass(); // null check
-
+        assert frame != null;
         this.self = self;
         this.frame = frame;
         this.visibility = visibility;
@@ -143,8 +139,7 @@ public class Binding {
 
     public Binding(IRubyObject self, Frame frame,
                    Visibility visibility, DynamicScope dynamicScope) {
-        frame.getClass(); // null check
-
+        assert frame != null;
         this.self = self;
         this.frame = frame;
         this.visibility = visibility;
@@ -245,12 +240,13 @@ public class Binding {
         this.method = method;
     }
 
+    @Override
     public boolean equals(Object other) {
-        if(this == other) {
+        if (this == other) {
             return true;
         }
 
-        if(!(other instanceof Binding)) {
+        if (!(other instanceof Binding)) {
             return false;
         }
 
@@ -258,6 +254,11 @@ public class Binding {
 
         return this.self == bOther.self &&
             this.dynamicScope == bOther.dynamicScope;
+    }
+
+    @Override
+    public int hashCode() {
+        return (self == null ? 1 : self.hashCode()) * dynamicScope.hashCode();
     }
 
     // FIXME: This is because we clone the same explicit binding whenever we execute because both the captured Frame

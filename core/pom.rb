@@ -167,12 +167,21 @@ project 'JRuby Base' do
     end
   end
 
+  fork_compiler_args = [ '-XDignore.symbol.file=true',
+                         '-J-Duser.language=en',
+                         '-J-Dfile.encoding=UTF-8',
+                         '-J-Xmx${jruby.compile.memory}' ]
+
+  default_compile_configuration = {
+    'fork' => 'true',
+    'annotationProcessors' => [ 'org.jruby.anno.AnnotationBinder' ],
+    'generatedSourcesDirectory' =>  'target/generated-sources',
+    'compilerArgs' => fork_compiler_args
+  }
+
   plugin( :compiler,
           'encoding' => 'utf-8',
-          'debug' => 'true',
           'verbose' => 'false',
-          'fork' => 'true',
-          'compilerArgs' => { 'arg' => '-J-Xmx1G' },
           'showWarnings' => 'true',
           'showDeprecation' => 'true',
           'source' => [ '${base.java.version}', '1.8' ],
@@ -190,24 +199,19 @@ project 'JRuby Base' do
                                    'org/jruby/util/CodegenUtils.java',
                                    'org/jruby/util/SafePropertyAccessor.java' ] )
     execute_goals( 'compile',
-                   :id => 'default-compile',
-                   :phase => 'compile',
-                   'debug' => 'true',
-                   'annotationProcessors' => [ 'org.jruby.anno.AnnotationBinder' ],
-                   'generatedSourcesDirectory' =>  'target/generated-sources',
-                   'compilerArgs' => [ '-XDignore.symbol.file=true',
-                                       '-J-Duser.language=en',
-                                       '-J-Dfile.encoding=UTF-8',
-                                       '-J-Xmx${jruby.compile.memory}' ] )
+                   default_compile_configuration.merge(
+                     :id => 'default-compile',
+                     :phase => 'compile'
+                   ))
+
     execute_goals( 'compile',
                    :id => 'populators',
                    :phase => 'process-classes',
-                   'debug' => 'true',
-                   'compilerArgs' => [ '-XDignore.symbol.file=true',
-                                       '-J-Duser.language=en',
-                                       '-J-Dfile.encoding=UTF-8',
-                                       '-J-Xmx${jruby.compile.memory}' ],
+                   'debug' => 'false',
+                   'fork' => 'true',
+                   'compilerArgs' => fork_compiler_args,
                    'includes' => [ 'org/jruby/gen/**/*.java' ] )
+
     execute_goals( 'compile',
                    :id => 'eclipse-hack',
                    :phase => 'process-classes',
@@ -296,6 +300,40 @@ project 'JRuby Base' do
       plugin 'org.codehaus.mojo:exec-maven-plugin' do
         execute_goals( *copy_goal )
       end
+    end
+  end
+
+  profile 'error-prone' do
+    activation do
+      jdk('11') # even an older (2.10.0) version of error-prone would need an adjusted setup on Java 8
+      property(name: 'env.CI') # for keeping fast development cycle, by default only run on CI
+    end
+
+    plugin :compiler do
+      execute_goals( 'compile',
+                     :id => 'default-compile',
+                     :phase => 'none' ) # do not execute default-compile, we have a replacement bellow
+
+      execute_goals( 'compile',
+                     default_compile_configuration.merge(
+                       :id => 'default-compile_with_error_prone',
+                       :phase => 'compile',
+                       'fork' => 'true',
+                       'compilerArgs' => default_compile_configuration['compilerArgs'] + [
+                         '-XDcompilePolicy=simple', '-Xplugin:ErrorProne'
+                       ],
+                        'annotationProcessorPaths' => { 'path' => [ {
+                                                                      'groupId' => 'com.google.errorprone',
+                                                                      'artifactId' => 'error_prone_core',
+                                                                      'version' => '2.18.0'
+                                                                    },
+                                                                    {
+                                                                      'groupId' => 'org.jruby',
+                                                                      'artifactId' => 'jruby-base',
+                                                                      'version' => version
+                                                                    } ]
+                        }
+                    ) )
     end
   end
 

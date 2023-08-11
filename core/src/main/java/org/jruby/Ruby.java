@@ -1616,6 +1616,7 @@ public final class Ruby implements Constantizable {
         loadService.loadFromClassLoader(getClassLoader(), "jruby/bundler/startup.rb", false);
     }
 
+    @SuppressWarnings("ReturnValueIgnored")
     private boolean doesReflectionWork() {
         try {
             ClassLoader.class.getDeclaredMethod("getResourceAsStream", String.class);
@@ -2889,7 +2890,6 @@ public final class Ruby implements Constantizable {
             throw newRaiseException(getTypeError(), str(this, "can't retrieve anonymous class ", ids(this, path)));
         }
 
-        ThreadContext context = getCurrentContext();
         RubyModule c = getObject();
         int pbeg = 0, p = 0;
         for (int l = path.length(); p < l; ) {
@@ -2905,8 +2905,7 @@ public final class Ruby implements Constantizable {
             }
 
             // FIXME: JI depends on const_missing getting called from Marshal.load (ruby objests do not).  We should marshal JI objects differently so we do not differentiate here.
-            boolean isJava = c instanceof JavaPackage || ClassUtils.isJavaClassProxyType(context, c);
-            IRubyObject cc = flexibleSearch || isJava ? c.getConstant(str) : c.getConstantAt(str);
+            IRubyObject cc = flexibleSearch || isJavaPackageOrJavaClassProxyType(c) ? c.getConstant(str) : c.getConstantAt(str);
 
             if (!flexibleSearch && cc == null) return null;
 
@@ -2917,6 +2916,10 @@ public final class Ruby implements Constantizable {
         }
 
         return c;
+    }
+
+    private static boolean isJavaPackageOrJavaClassProxyType(final RubyModule type) {
+        return type instanceof JavaPackage || ClassUtils.isJavaClassProxyType(type);
     }
 
     /** Prints an error with backtrace to the error stream.
@@ -3266,11 +3269,12 @@ public final class Ruby implements Constantizable {
         }
     }
 
-    private void systemTeardown(ThreadContext context) {
+    @SuppressWarnings("ReturnValueIgnored")
+    private void systemTeardown(final ThreadContext context) {
         // Run post-user exit hooks, such as for shutting down internal JRuby services
         while (!postExitBlocks.isEmpty()) {
             ExitFunction fun = postExitBlocks.remove(0);
-            fun.applyAsInt(context);
+            fun.applyAsInt(context); // return value ignored
         }
 
         synchronized (internalFinalizersMutex) {

@@ -939,7 +939,7 @@ public class Sprintf {
                     arg = args.getArg();
 
                     double fval = RubyKernel.new_float(runtime, arg).getDoubleValue();
-                    boolean isnan = fval != fval;
+                    boolean isnan = Double.isNaN(fval);
                     boolean isinf = fval == Double.POSITIVE_INFINITY || fval == Double.NEGATIVE_INFINITY;
                     boolean negative = fval < 0.0d || (fval == 0.0d && Double.doubleToLongBits(fval) == Double.doubleToLongBits(-0.0));
 

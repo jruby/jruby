@@ -185,7 +185,7 @@ public final class IdUtil {
 
     @Deprecated
     public static boolean isNameCharacter19(char c) {
-        return isNameCharacter19(c);
+        return isNameCharacter(c);
     }
 
     @Deprecated

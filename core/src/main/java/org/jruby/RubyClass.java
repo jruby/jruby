@@ -2429,7 +2429,6 @@ public class RubyClass extends RubyModule {
         if (target == Class.class) {
             if (reifiedClass == null) reifyWithAncestors(); // possibly auto-reify
             // Class requested; try java_class or else return nearest reified class
-            final ThreadContext context = runtime.getCurrentContext();
             Class<?> javaClass = JavaUtil.getJavaClass(this, null);
             if (javaClass != null) return (T) javaClass;
 

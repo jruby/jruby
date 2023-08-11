@@ -207,7 +207,6 @@ public class RubyModule extends RubyObject {
      *
      * @param classIndex the ClassIndex for this type
      */
-    @SuppressWarnings("deprecated")
     void setClassIndex(ClassIndex classIndex) {
         this.classIndex = classIndex;
         this.index = classIndex.ordinal();
@@ -5896,7 +5895,6 @@ public class RubyModule extends RubyObject {
     @Override
     public <T> T toJava(Class<T> target) {
         if (target == Class.class) { // try java_class for proxy modules
-            final ThreadContext context = metaClass.runtime.getCurrentContext();
             Class<?> javaClass = JavaUtil.getJavaClass(this, null);
             if (javaClass != null) return (T) javaClass;
         }

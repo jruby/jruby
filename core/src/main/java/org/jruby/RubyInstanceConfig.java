@@ -1555,7 +1555,6 @@ public class RubyInstanceConfig {
     private boolean shouldRunInterpreter = true;
     private boolean shouldPrintUsage = Options.CLI_HELP.load();
     private boolean shouldPrintProperties=Options.CLI_PROPERTIES.load();
-    private boolean dumpConfig=false;
     private KCode kcode = Options.CLI_KCODE.load();
     private String recordSeparator = Options.CLI_RECORD_SEPARATOR.load();
     private boolean shouldCheckSyntax = Options.CLI_CHECK_SYNTAX.load();

@@ -211,11 +211,11 @@ public class SelectExecutor {
                 RubyIO io = TypeConverter.ioGetIO(runtime, obj);
                 RubyIO write_io = io.GetWriteIO();
                 fptr = io.getOpenFileChecked();
-                if (errorKeyList.contains(fptr.fd())) {
+                if (fdIsSet(errorKeyList, fptr.fd(), READ_ACCEPT_OPS | WRITE_CONNECT_OPS)) {
                     list.push(obj);
                 } else if (io != write_io) {
                     fptr = write_io.getOpenFileChecked();
-                    if (errorKeyList.contains(fptr.fd())) {
+                    if (fdIsSet(errorKeyList, fptr.fd(), READ_ACCEPT_OPS | WRITE_CONNECT_OPS)) {
                         list.push(obj);
                     }
                 }
@@ -265,7 +265,7 @@ public class SelectExecutor {
         writeKeyList.add(key);
     }
 
-    private boolean fdIsSet(List<SelectionKey> fds, ChannelFD fd, int operations) {
+    private boolean fdIsSet(List<SelectionKey> fds, ChannelFD fd, final int operations) {
         if (fds == null) return false;
 
         for (SelectionKey key : fds) {
@@ -349,7 +349,7 @@ public class SelectExecutor {
     }
 
     // MRI: rb_thread_fd_select
-    private int threadFdSelect(ThreadContext context) throws IOException {
+    private int threadFdSelect(ThreadContext context) {
         if (readKeyList == null && writeKeyList == null && errorKeyList == null) {
             if (timeout == null) { // sleep forever
                 try {

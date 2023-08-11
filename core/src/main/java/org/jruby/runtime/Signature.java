@@ -360,6 +360,7 @@ public class Signature {
         }
     }
 
+    @Override
     public boolean equals(Object other) {
         if (!(other instanceof Signature)) return false;
 
@@ -372,5 +373,10 @@ public class Signature {
                 kwargs == otherSig.kwargs &&
                 requiredKwargs == otherSig.requiredKwargs &&
                 keyRest == otherSig.keyRest;
+    }
+
+    @Override
+    public int hashCode() {
+        return rest.hashCode() + pre * 3 + opt * 5 + post * 7 + kwargs * 11 + requiredKwargs * 13 + arityValue * 17 + keyRest * 19;
     }
 }

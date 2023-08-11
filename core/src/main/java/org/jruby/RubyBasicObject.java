@@ -120,6 +120,7 @@ import org.jruby.runtime.ivars.VariableTableManager;
  * with care; reification of Ruby classes into Java classes can produce
  * conflicting method names in rare cases. See JRUBY-5906 for an example.
  */
+@SuppressWarnings("ComparableType")
 public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Comparable<IRubyObject>, CoreObjectType, InstanceVariables, InternalVariables {
 
     //private static final Logger LOG = LoggerFactory.getLogger(RubyBasicObject.class);
