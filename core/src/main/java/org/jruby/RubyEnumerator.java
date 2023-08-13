@@ -47,6 +47,9 @@ import org.jruby.util.ByteList;
 import java.util.Spliterator;
 import java.util.stream.Stream;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
@@ -689,4 +692,50 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         RubyProducer producer = RubyProducer.newProducer(context, init, block);
         return enumeratorizeWithSize(context, producer, "each", RubyProducer::size);
     }
+    
+    public static IRubyObject enumeratorProduct(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
+        RubyEnumerator enumerator = (RubyEnumerator) recv;
+
+        int argc = args.length;
+        RubyEnumerable[] arrays = new RubyEnumerable[argc];
+
+        for (int i = 0; i < argc; i++) {
+            RubyEnumerable arg = (RubyEnumerable) args[i];
+            arrays[i] = arg;
+        }
+
+        List<IRubyObject[]> productList = new ArrayList<IRubyObject[]>();
+        for (IRubyObject element : enumerator) {
+            for (IRubyObject[] array : generateCartesianProduct(arrays)) {
+                IRubyObject[] product = new IRubyObject[array.length + 1];
+                product[0] = element;
+                System.arraycopy(array, 0, product, 1, array.length);
+                productList.add(product);
+            }
+        }
+
+        RubyArray productArray = RubyArray.newArray(runtime, productList.size());
+        for (int i = 0; i < productList.size(); i++) {
+            productArray.put(i, RubyArray.newArrayNoCopy(runtime, productList.get(i)));
+        }
+        return enumerator.dup(runtime, productArray);
+    }
+
+    private static List<IRubyObject[]> generateCartesianProduct(RubyEnumerable[] arrays) {
+        List<IRubyObject[]> productList = new ArrayList<IRubyObject[]>();
+        generateCartesianProductHelper(arrays, new IRubyObject[arrays.length], 0, productList);
+        return productList;
+    }
+
+    private static void generateCartesianProductHelper(RubyEnumerable[] arrays, IRubyObject[] currentProduct, int index, List<IRubyObject[]> productList) {
+        if (index == arrays.length) {
+            productList.add(currentProduct.clone());
+        } else {
+            for (IRubyObject element : arrays[index]) {
+                currentProduct[index] = element;
+                generateCartesianProductHelper(arrays, currentProduct.clone(), index + 1, productList);
+            }
+        }
+    }  
 }
