@@ -1533,7 +1533,10 @@ public abstract class RubyParserBase {
             encounteredKeys.put(key, pair);
         }
 
-        if (pairsToRemove != null) hash.removeAll(pairsToRemove);
+        // NOTE: we do not really remove the value part (RHS) as in that case we should evaluate the code - despite
+        // the value being dropped the side effects are desired and something MRI evaluates explicitly during removal
+        // with JRuby the modification of the hash should be done in the IR and not here (during the parsing phase)...
+        // if (pairsToRemove != null) hash.removeAll(pairsToRemove);
 
         return hash;
     }
