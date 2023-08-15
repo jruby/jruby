@@ -57,28 +57,14 @@ jobs:
     name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }})
 
     steps:
-      - name: checkout
-        uses: actions/checkout@v3
+      - name: Bootstrap build
+        uses: headius/jruby-ci-build@1f3b75ee85067fd6e8a91c19d662149601644a68
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
-      - name: Restore bootstrap build
-        id: cache-bootstrap-restore
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            bin
-            core
-            lib
-            shaded
-            test
-          key: ${{ github.sha }}-bootstrap
-      - name: conditional-bootstrap
-        if: ${{ steps.cache-bootstrap-restore.outputs.cache-hit == false }}
-        run: "./mvnw -Pbootstrap clean package && bin/jruby --dev -S gem install bundler && bin/jruby --dev -S bundle install"
       - name: rake ${{ matrix.target }}
         run: bin/jruby -S rake ${{ matrix.target }}
 
