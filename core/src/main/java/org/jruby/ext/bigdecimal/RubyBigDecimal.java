@@ -1985,9 +1985,14 @@ public class RubyBigDecimal extends RubyNumeric {
             return (precisionScale[0] + (BASE_FIG - (precisionScale[0] - precisionScale[1])) + 8) / BASE_FIG;
         }
         // precision = scale
+        // e.g. "0.000123456789" is represented as "0 .000123456 789 * 1000000000 ^ 0" in MRI BigDecimal internal.
+        // so, in this case Prec becomes 2.
+        if (getExponent() > -9) {
+            return (value.toString().length() - 2 + 8) / BASE_FIG;
+        }
         // e.g. "0.0000000000123456789" is represented as "0 .012345678 9 * 1000000000 ^ -1" in MRI BigDecimal internal.
-        // so, in this case Prec becomes 1.
-        return (value.toBigInteger().toString().length() + 8) / BASE_FIG;
+        // so, in this case Prec becomes 2.
+        return (value.unscaledValue().toString().length() + 8) / BASE_FIG;
     }
 
     @Deprecated
