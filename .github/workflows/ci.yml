@@ -208,20 +208,14 @@ jobs:
       JDK_JAVA_OPTS: "-Djdk.io.File.enableADS=true"
 
     steps:
-      - name: checkout
-        uses: actions/checkout@v3
+      - name: Bootstrap build
+        uses: headius/jruby-ci-build@v1
       - name: set up java 11
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: 11
           cache: 'maven'
-      - name: bootstrap
-        run: ./mvnw -Pbootstrap clean package
-      - name: install bundler
-        run: bin/jruby --dev -S gem install bundler
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
       - name: rake test:jruby
         run: bin/jruby -S rake test:jruby TESTOPTS="--no-show-detail-immediately"
         env:
