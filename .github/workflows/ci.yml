@@ -387,8 +387,6 @@ jobs:
           distribution: 'adopt-openj9'
           java-version: '8'
           cache: 'maven'
-      - name: Bootstrap build
-        uses: headius/jruby-ci-build@v1
       - name: test profile
 #        run: "tool/maven-ci-script.sh"
         run: "true"
