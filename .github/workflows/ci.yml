@@ -52,11 +52,6 @@ jobs:
           distribution: 'zulu'
           java-version: '8'
           cache: 'maven'
-      - name: Setup Maven Action
-        uses: s4u/setup-maven-action@v1.6.0
-        with:
-          java-version: '8'
-          maven-version: '3.8.7'
       - name: rake ${{ matrix.target }}
         run: bin/jruby -S rake ${{ matrix.target }}
 
@@ -78,11 +73,6 @@ jobs:
           distribution: 'zulu'
           java-version: 8
           cache: 'maven'
-      - name: Setup Maven Action
-        uses: s4u/setup-maven-action@v1.6.0
-        with:
-          java-version: 8
-          maven-version: '3.8.7'
       - name: rake test:jruby
         run: bin/jruby --dev -S rake test:jruby
 
@@ -158,11 +148,6 @@ jobs:
           distribution: 'zulu'
           java-version: '8'
           cache: 'maven'
-      - name: Setup Maven Action
-        uses: s4u/setup-maven-action@v1.6.0
-        with:
-          java-version: '8'
-          maven-version: '3.8.7'
       - name: mvn package ${{ matrix.package-flags }}
         run: tool/maven-ci-script.sh
         env:
@@ -186,11 +171,6 @@ jobs:
           distribution: 'zulu'
           java-version: 8
           cache: 'maven'
-      - name: Setup Maven Action
-        uses: s4u/setup-maven-action@v1.6.0
-        with:
-          java-version: 8
-          maven-version: '3.8.7'
       - name: rake spec:ji
         run: bin/jruby -S rake spec:ji
 
@@ -212,11 +192,6 @@ jobs:
           distribution: 'zulu'
           java-version: 8
           cache: 'maven'
-      - name: Setup Maven Action
-        uses: s4u/setup-maven-action@v1.6.0
-        with:
-          java-version: 8
-          maven-version: '3.8.7'
       - name: rake spec:regression
         run: bin/jruby -S rake spec:regression
 
@@ -241,11 +216,6 @@ jobs:
           distribution: 'zulu'
           java-version: 11
           cache: 'maven'
-      - name: Setup Maven Action
-        uses: s4u/setup-maven-action@v1.6.0
-        with:
-          java-version: 11
-          maven-version: '3.8.7'
       - name: bootstrap
         run: ./mvnw -Pbootstrap clean package
       - name: install bundler
@@ -273,11 +243,6 @@ jobs:
           distribution: 'zulu'
           java-version: '8'
           cache: 'maven'
-      - name: Setup Maven Action
-        uses: s4u/setup-maven-action@v1.6.0
-        with:
-          java-version: '8'
-          maven-version: '3.8.7'
       - name: dependency convergence
         run: tool/maven-ci-script.sh
         env:
@@ -299,11 +264,6 @@ jobs:
           distribution: 'zulu'
           java-version: 8
           cache: 'maven'
-      - name: Setup Maven Action
-        uses: s4u/setup-maven-action@v1.6.0
-        with:
-          java-version: 8
-          maven-version: '3.8.7'
       - name: maven-ci-script.sh
         run: tool/maven-ci-script.sh
         env:
@@ -339,11 +299,6 @@ jobs:
           distribution: 'zulu'
           java-version: 11
           cache: 'maven'
-      - name: Setup Maven Action
-        uses: s4u/setup-maven-action@v1.6.0
-        with:
-          java-version: 11
-          maven-version: '3.8.7'
       - name: sequel
         run: tool/sequel-github-actions.sh
 
@@ -362,11 +317,6 @@ jobs:
           distribution: 'zulu'
           java-version: 8
           cache: 'maven'
-      - name: Setup Maven Action
-        uses: s4u/setup-maven-action@v1.6.0
-        with:
-          java-version: 8
-          maven-version: '3.8.7'
       - name: concurrent-ruby
         run: tool/concurrent-ruby-github-actions.sh
 
@@ -437,11 +387,6 @@ jobs:
           distribution: 'adopt-openj9'
           java-version: '8'
           cache: 'maven'
-      - name: Setup Maven Action
-        uses: s4u/setup-maven-action@v1.6.0
-        with:
-          java-version: '8'
-          maven-version: '3.8.7'
       - name: Bootstrap build
         uses: headius/jruby-ci-build@v1
       - name: test profile
@@ -469,11 +414,6 @@ jobs:
           distribution: 'zulu'
           java-version: '8'
           cache: 'maven'
-      - name: Setup Maven Action
-        uses: s4u/setup-maven-action@v1.6.0
-        with:
-          java-version: '8'
-          maven-version: '3.8.7'
       - name: rake ${{ matrix.target }}
         continue-on-error: true
         run: "bin/jruby -S rake ${{ matrix.target }}"
