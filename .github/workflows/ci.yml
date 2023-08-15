@@ -10,41 +10,6 @@ permissions:
 
 jobs:
 
-  bootstrap-build:
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        java-version: ['8']
-      fail-fast: true
-
-    name: bootstrap JRuby build
-
-    steps:
-      - name: checkout
-        uses: actions/checkout@v3
-      - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'zulu'
-          java-version: ${{ matrix.java-version }}
-          cache: 'maven'
-      - name: bootstrap
-        run: ./mvnw -Pbootstrap clean package
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
-      - name: Save bootstrap build
-        id: cache-bootstrap-save
-        uses: actions/cache/save@v3
-        with:
-          path: |
-            bin
-            core
-            lib
-            shaded
-            test
-          key: ${{ github.sha }}-bootstrap
-
   rake-test:
     runs-on: ubuntu-latest
 
@@ -57,28 +22,14 @@ jobs:
     name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }})
 
     steps:
-      - name: checkout
-        uses: actions/checkout@v3
+      - name: Bootstrap build
+        uses: jruby/jruby-ci-build@v1
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
-      - name: Restore bootstrap build
-        id: cache-bootstrap-restore
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            bin
-            core
-            lib
-            shaded
-            test
-          key: ${{ github.sha }}-bootstrap
-      - name: conditional-bootstrap
-        if: ${{ steps.cache-bootstrap-restore.outputs.cache-hit == false }}
-        run: "./mvnw -Pbootstrap clean package && bin/jruby --dev -S gem install bundler && bin/jruby --dev -S bundle install"
       - name: rake ${{ matrix.target }}
         run: bin/jruby -S rake ${{ matrix.target }}
 
@@ -93,33 +44,14 @@ jobs:
     name: rake ${{ matrix.target }} (Java 8)
 
     steps:
-      - name: checkout
-        uses: actions/checkout@v3
+      - name: Bootstrap build
+        uses: jruby/jruby-ci-build@v1
       - name: set up java 8
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: '8'
           cache: 'maven'
-      - name: Setup Maven Action
-        uses: s4u/setup-maven-action@v1.6.0
-        with:
-          java-version: '8'
-          maven-version: '3.8.7'
-      - name: Restore bootstrap build
-        id: cache-bootstrap-restore
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            bin
-            core
-            lib
-            shaded
-            test
-          key: ${{ github.sha }}-bootstrap
-      - name: conditional-bootstrap
-        if: ${{ steps.cache-bootstrap-restore.outputs.cache-hit == false }}
-        run: "./mvnw -Pbootstrap clean package && bin/jruby --dev -S gem install bundler && bin/jruby --dev -S bundle install"
       - name: rake ${{ matrix.target }}
         run: bin/jruby -S rake ${{ matrix.target }}
 
@@ -133,33 +65,14 @@ jobs:
       JRUBY_OPTS: '--dev'
 
     steps:
-      - name: checkout
-        uses: actions/checkout@v3
+      - name: Bootstrap build
+        uses: jruby/jruby-ci-build@v1
       - name: set up java 8
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: 8
           cache: 'maven'
-      - name: Setup Maven Action
-        uses: s4u/setup-maven-action@v1.6.0
-        with:
-          java-version: 8
-          maven-version: '3.8.7'
-      - name: Restore bootstrap build
-        id: cache-bootstrap-restore
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            bin
-            core
-            lib
-            shaded
-            test
-          key: ${{ github.sha }}-bootstrap
-      - name: conditional-bootstrap
-        if: ${{ steps.cache-bootstrap-restore.outputs.cache-hit == false }}
-        run: "./mvnw -Pbootstrap clean package && bin/jruby --dev -S gem install bundler && bin/jruby --dev -S bundle install"
       - name: rake test:jruby
         run: bin/jruby --dev -S rake test:jruby
 
@@ -178,28 +91,14 @@ jobs:
       JRUBY_OPTS: '-Xcompile.invokedynamic'
 
     steps:
-      - name: checkout
-        uses: actions/checkout@v3
+      - name: Bootstrap build
+        uses: jruby/jruby-ci-build@v1
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
-      - name: Restore bootstrap build
-        id: cache-bootstrap-restore
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            bin
-            core
-            lib
-            shaded
-            test
-          key: ${{ github.sha }}-bootstrap
-      - name: conditional-bootstrap
-        if: ${{ steps.cache-bootstrap-restore.outputs.cache-hit == false }}
-        run: "./mvnw -Pbootstrap clean package && bin/jruby --dev -S gem install bundler && bin/jruby --dev -S bundle install"
       - name: rake ${{ matrix.target }}
         run: bin/jruby -S rake ${{ matrix.target }}
 
@@ -216,28 +115,14 @@ jobs:
     name: mvn ${{ matrix.package-flags }} (Java ${{ matrix.java-version }})
 
     steps:
-      - name: checkout
-        uses: actions/checkout@v3
+      - name: Bootstrap build
+        uses: jruby/jruby-ci-build@v1
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
-      - name: Restore bootstrap build
-        id: cache-bootstrap-restore
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            bin
-            core
-            lib
-            shaded
-            test
-          key: ${{ github.sha }}-bootstrap
-      - name: conditional-bootstrap
-        if: ${{ steps.cache-bootstrap-restore.outputs.cache-hit == false }}
-        run: "./mvnw -Pbootstrap clean package && bin/jruby --dev -S gem install bundler && bin/jruby --dev -S bundle install"
       - name: mvn package ${{ matrix.package-flags }}
         run: tool/maven-ci-script.sh
         env:
@@ -255,33 +140,14 @@ jobs:
     name: mvn ${{ matrix.package-flags }} (Java 8)
 
     steps:
-      - name: checkout
-        uses: actions/checkout@v3
+      - name: Bootstrap build
+        uses: jruby/jruby-ci-build@v1
       - name: set up java 8
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: '8'
           cache: 'maven'
-      - name: Setup Maven Action
-        uses: s4u/setup-maven-action@v1.6.0
-        with:
-          java-version: '8'
-          maven-version: '3.8.7'
-      - name: Restore bootstrap build
-        id: cache-bootstrap-restore
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            bin
-            core
-            lib
-            shaded
-            test
-          key: ${{ github.sha }}-bootstrap
-      - name: conditional-bootstrap
-        if: ${{ steps.cache-bootstrap-restore.outputs.cache-hit == false }}
-        run: "./mvnw -Pbootstrap clean package && bin/jruby --dev -S gem install bundler && bin/jruby --dev -S bundle install"
       - name: mvn package ${{ matrix.package-flags }}
         run: tool/maven-ci-script.sh
         env:
@@ -297,33 +163,14 @@ jobs:
       JRUBY_OPTS: '-Xcompile.invokedynamic'
 
     steps:
-      - name: checkout
-        uses: actions/checkout@v3
+      - name: Bootstrap build
+        uses: jruby/jruby-ci-build@v1
       - name: set up java 8
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: 8
           cache: 'maven'
-      - name: Setup Maven Action
-        uses: s4u/setup-maven-action@v1.6.0
-        with:
-          java-version: 8
-          maven-version: '3.8.7'
-      - name: Restore bootstrap build
-        id: cache-bootstrap-restore
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            bin
-            core
-            lib
-            shaded
-            test
-          key: ${{ github.sha }}-bootstrap
-      - name: conditional-bootstrap
-        if: ${{ steps.cache-bootstrap-restore.outputs.cache-hit == false }}
-        run: "./mvnw -Pbootstrap clean package && bin/jruby --dev -S gem install bundler && bin/jruby --dev -S bundle install"
       - name: rake spec:ji
         run: bin/jruby -S rake spec:ji
 
@@ -337,33 +184,14 @@ jobs:
       JRUBY_OPTS: '-Xjit.threshold=0'
 
     steps:
-      - name: checkout
-        uses: actions/checkout@v3
+      - name: Bootstrap build
+        uses: jruby/jruby-ci-build@v1
       - name: set up java 8
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: 8
           cache: 'maven'
-      - name: Setup Maven Action
-        uses: s4u/setup-maven-action@v1.6.0
-        with:
-          java-version: 8
-          maven-version: '3.8.7'
-      - name: Restore bootstrap build
-        id: cache-bootstrap-restore
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            bin
-            core
-            lib
-            shaded
-            test
-          key: ${{ github.sha }}-bootstrap
-      - name: conditional-bootstrap
-        if: ${{ steps.cache-bootstrap-restore.outputs.cache-hit == false }}
-        run: "./mvnw -Pbootstrap clean package && bin/jruby --dev -S gem install bundler && bin/jruby --dev -S bundle install"
       - name: rake spec:regression
         run: bin/jruby -S rake spec:regression
 
@@ -380,25 +208,14 @@ jobs:
       JDK_JAVA_OPTS: "-Djdk.io.File.enableADS=true"
 
     steps:
-      - name: checkout
-        uses: actions/checkout@v3
+      - name: Bootstrap build
+        uses: jruby/jruby-ci-build@v1
       - name: set up java 11
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: 11
           cache: 'maven'
-      - name: Setup Maven Action
-        uses: s4u/setup-maven-action@v1.6.0
-        with:
-          java-version: 11
-          maven-version: '3.8.7'
-      - name: bootstrap
-        run: ./mvnw -Pbootstrap clean package
-      - name: install bundler
-        run: bin/jruby --dev -S gem install bundler
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
       - name: rake test:jruby
         run: bin/jruby -S rake test:jruby TESTOPTS="--no-show-detail-immediately"
         env:
@@ -420,11 +237,6 @@ jobs:
           distribution: 'zulu'
           java-version: '8'
           cache: 'maven'
-      - name: Setup Maven Action
-        uses: s4u/setup-maven-action@v1.6.0
-        with:
-          java-version: '8'
-          maven-version: '3.8.7'
       - name: dependency convergence
         run: tool/maven-ci-script.sh
         env:
@@ -446,11 +258,6 @@ jobs:
           distribution: 'zulu'
           java-version: 8
           cache: 'maven'
-      - name: Setup Maven Action
-        uses: s4u/setup-maven-action@v1.6.0
-        with:
-          java-version: 8
-          maven-version: '3.8.7'
       - name: maven-ci-script.sh
         run: tool/maven-ci-script.sh
         env:
@@ -478,33 +285,14 @@ jobs:
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
 
     steps:
-      - name: checkout
-        uses: actions/checkout@v3
+      - name: Bootstrap build
+        uses: jruby/jruby-ci-build@v1
       - name: set up java 8
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: 11
           cache: 'maven'
-      - name: Setup Maven Action
-        uses: s4u/setup-maven-action@v1.6.0
-        with:
-          java-version: 11
-          maven-version: '3.8.7'
-      - name: Restore bootstrap build
-        id: cache-bootstrap-restore
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            bin
-            core
-            lib
-            shaded
-            test
-          key: ${{ github.sha }}-bootstrap
-      - name: conditional-bootstrap
-        if: ${{ steps.cache-bootstrap-restore.outputs.cache-hit == false }}
-        run: "./mvnw -Pbootstrap clean package && bin/jruby --dev -S gem install bundler && bin/jruby --dev -S bundle install"
       - name: sequel
         run: tool/sequel-github-actions.sh
 
@@ -515,33 +303,14 @@ jobs:
       fail-fast: false
 
     steps:
-      - name: checkout
-        uses: actions/checkout@v3
+      - name: Bootstrap build
+        uses: jruby/jruby-ci-build@v1
       - name: set up java 8
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: 8
           cache: 'maven'
-      - name: Setup Maven Action
-        uses: s4u/setup-maven-action@v1.6.0
-        with:
-          java-version: 8
-          maven-version: '3.8.7'
-      - name: Restore bootstrap build
-        id: cache-bootstrap-restore
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            bin
-            core
-            lib
-            shaded
-            test
-          key: ${{ github.sha }}-bootstrap
-      - name: conditional-bootstrap
-        if: ${{ steps.cache-bootstrap-restore.outputs.cache-hit == false }}
-        run: "./mvnw -Pbootstrap clean package && bin/jruby --dev -S gem install bundler && bin/jruby --dev -S bundle install"
       - name: concurrent-ruby
         run: tool/concurrent-ruby-github-actions.sh
 
@@ -583,11 +352,10 @@ jobs:
       fail-fast: false
 
     name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }} Apple aarch64)
-    needs: bootstrap-build
 
     steps:
-      - name: checkout
-        uses: actions/checkout@v3
+      - name: Bootstrap build
+        uses: jruby/jruby-ci-build@v1
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v3
         with:
@@ -595,17 +363,6 @@ jobs:
           java-version: ${{ matrix.java-version }}
           architecture: arm
           cache: 'maven'
-      - name: Restore bootstrap build
-        id: cache-bootstrap-restore
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            bin
-            core
-            lib
-            shaded
-            test
-          key: ${{ github.sha }}-bootstrap
       - name: rake ${{ matrix.target }}
 #        run: "bin/jruby -S rake ${{ matrix.target }}"
         run: "true"
@@ -616,33 +373,14 @@ jobs:
     name: mvn -Ptest (OpenJ9 Java 8; disabled)
 
     steps:
-      - name: checkout
-        uses: actions/checkout@v3
+      - name: Bootstrap build
+        uses: jruby/jruby-ci-build@v1
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v3
         with:
           distribution: 'adopt-openj9'
           java-version: '8'
           cache: 'maven'
-      - name: Setup Maven Action
-        uses: s4u/setup-maven-action@v1.6.0
-        with:
-          java-version: '8'
-          maven-version: '3.8.7'
-      - name: Restore bootstrap build
-        id: cache-bootstrap-restore
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            bin
-            core
-            lib
-            shaded
-            test
-          key: ${{ github.sha }}-bootstrap
-      - name: conditional-bootstrap
-        if: ${{ steps.cache-bootstrap-restore.outputs.cache-hit == false }}
-        run: "./mvnw -Pbootstrap clean package && bin/jruby --dev -S gem install bundler && bin/jruby --dev -S bundle install"
       - name: test profile
 #        run: "tool/maven-ci-script.sh"
         run: "true"
@@ -660,33 +398,14 @@ jobs:
     name: rake ${{ matrix.target }} (Java 8)
 
     steps:
-      - name: checkout
-        uses: actions/checkout@v3
+      - name: Bootstrap build
+        uses: jruby/jruby-ci-build@v1
       - name: set up java 8
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: '8'
           cache: 'maven'
-      - name: Setup Maven Action
-        uses: s4u/setup-maven-action@v1.6.0
-        with:
-          java-version: '8'
-          maven-version: '3.8.7'
-      - name: Restore bootstrap build
-        id: cache-bootstrap-restore
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            bin
-            core
-            lib
-            shaded
-            test
-          key: ${{ github.sha }}-bootstrap
-      - name: conditional-bootstrap
-        if: ${{ steps.cache-bootstrap-restore.outputs.cache-hit == false }}
-        run: "./mvnw -Pbootstrap clean package && bin/jruby --dev -S gem install bundler && bin/jruby --dev -S bundle install"
       - name: rake ${{ matrix.target }}
         continue-on-error: true
         run: "bin/jruby -S rake ${{ matrix.target }}"
