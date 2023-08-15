@@ -166,7 +166,7 @@ public class ParserConfiguration {
     public DynamicScope finalizeDynamicScope(StaticScope staticScope) {
         // Eval scooped up some new variables changing the size of the scope.
         if (existingScope != null && existingScope.getStaticScope().getNumberOfVariables() > initialVariableCount) {
-            existingScope = DynamicScope.newDynamicScope(existingScope.getStaticScope(), existingScope.getParentScope());
+            existingScope.growIfNeeded();
         }
 
         return asBlock ?
