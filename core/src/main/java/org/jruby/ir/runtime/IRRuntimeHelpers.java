@@ -862,7 +862,6 @@ public class IRRuntimeHelpers {
             DynamicScope tlbScope = ((IRScriptBody) irScope).getScriptDynamicScope();
             if (tlbScope != null) {
                 context.preScopedBody(tlbScope);
-                tlbScope.growIfNeeded();
                 return tlbScope;
             }
         }

@@ -146,22 +146,32 @@ public class ParserConfiguration {
     public Ruby getRuntime() {
         return runtime;
     }
-    
-    /**
-     * This method returns the appropriate first scope for the parser.
-     * 
-     * @return correct top scope for source to be parsed
-     */
-    public DynamicScope getScope(String file) {
-        if (asBlock) return existingScope;
 
-        // FIXME: We should really not be creating the dynamic scope for the root
-        // of the AST before parsing.  This makes us end up needing to readjust
-        // this dynamic scope coming out of parse (and for local static scopes it
-        // will always happen because of $~ and $_).
-        // FIXME: Because we end up adjusting this after-the-fact, we can't use
-        // any of the specific-size scopes.
-        return new ManyVarsDynamicScope(runtime.getStaticScopeFactory().newLocalScope(null, file), existingScope);
+    /**
+     * Returns the static scope which represents the top of the parse.  If an eval
+     * then we will have an existing scope to return.  If not then we make a new
+     * one since we are starting from scratch.
+     *
+     * @param file to name top scope if we have a new scope
+     * @return a static scope
+     */
+    private int initialVariableCount = 0;
+    public StaticScope getTopStaticScope(String file) {
+        if (existingScope != null) initialVariableCount = existingScope.getStaticScope().getNumberOfVariables();
+        return asBlock ?
+                existingScope.getStaticScope() :
+                runtime.getStaticScopeFactory().newLocalScope(null, file);
+    }
+
+    public DynamicScope finalizeDynamicScope(StaticScope staticScope) {
+        // Eval scooped up some new variables changing the size of the scope.
+        if (existingScope != null && existingScope.getStaticScope().getNumberOfVariables() > initialVariableCount) {
+            existingScope = DynamicScope.newDynamicScope(existingScope.getStaticScope(), existingScope.getParentScope());
+        }
+
+        return asBlock ?
+                existingScope :
+                DynamicScope.newDynamicScope(staticScope, existingScope);
     }
 
     public boolean isCoverageEnabled() {
