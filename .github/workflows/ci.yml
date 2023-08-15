@@ -23,7 +23,7 @@ jobs:
 
     steps:
       - name: Bootstrap build
-        uses: headius/jruby-ci-build@v1
+        uses: jruby/jruby-ci-build@v1
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v3
         with:
@@ -45,7 +45,7 @@ jobs:
 
     steps:
       - name: Bootstrap build
-        uses: headius/jruby-ci-build@v1
+        uses: jruby/jruby-ci-build@v1
       - name: set up java 8
         uses: actions/setup-java@v3
         with:
@@ -66,7 +66,7 @@ jobs:
 
     steps:
       - name: Bootstrap build
-        uses: headius/jruby-ci-build@v1
+        uses: jruby/jruby-ci-build@v1
       - name: set up java 8
         uses: actions/setup-java@v3
         with:
@@ -92,7 +92,7 @@ jobs:
 
     steps:
       - name: Bootstrap build
-        uses: headius/jruby-ci-build@v1
+        uses: jruby/jruby-ci-build@v1
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v3
         with:
@@ -116,7 +116,7 @@ jobs:
 
     steps:
       - name: Bootstrap build
-        uses: headius/jruby-ci-build@v1
+        uses: jruby/jruby-ci-build@v1
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v3
         with:
@@ -141,7 +141,7 @@ jobs:
 
     steps:
       - name: Bootstrap build
-        uses: headius/jruby-ci-build@v1
+        uses: jruby/jruby-ci-build@v1
       - name: set up java 8
         uses: actions/setup-java@v3
         with:
@@ -164,7 +164,7 @@ jobs:
 
     steps:
       - name: Bootstrap build
-        uses: headius/jruby-ci-build@v1
+        uses: jruby/jruby-ci-build@v1
       - name: set up java 8
         uses: actions/setup-java@v3
         with:
@@ -185,7 +185,7 @@ jobs:
 
     steps:
       - name: Bootstrap build
-        uses: headius/jruby-ci-build@v1
+        uses: jruby/jruby-ci-build@v1
       - name: set up java 8
         uses: actions/setup-java@v3
         with:
@@ -209,7 +209,7 @@ jobs:
 
     steps:
       - name: Bootstrap build
-        uses: headius/jruby-ci-build@v1
+        uses: jruby/jruby-ci-build@v1
       - name: set up java 11
         uses: actions/setup-java@v3
         with:
@@ -286,7 +286,7 @@ jobs:
 
     steps:
       - name: Bootstrap build
-        uses: headius/jruby-ci-build@v1
+        uses: jruby/jruby-ci-build@v1
       - name: set up java 8
         uses: actions/setup-java@v3
         with:
@@ -304,7 +304,7 @@ jobs:
 
     steps:
       - name: Bootstrap build
-        uses: headius/jruby-ci-build@v1
+        uses: jruby/jruby-ci-build@v1
       - name: set up java 8
         uses: actions/setup-java@v3
         with:
@@ -355,7 +355,7 @@ jobs:
 
     steps:
       - name: Bootstrap build
-        uses: headius/jruby-ci-build@v1
+        uses: jruby/jruby-ci-build@v1
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v3
         with:
@@ -374,7 +374,7 @@ jobs:
 
     steps:
       - name: Bootstrap build
-        uses: headius/jruby-ci-build@v1
+        uses: jruby/jruby-ci-build@v1
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v3
         with:
@@ -399,7 +399,7 @@ jobs:
 
     steps:
       - name: Bootstrap build
-        uses: headius/jruby-ci-build@v1
+        uses: jruby/jruby-ci-build@v1
       - name: set up java 8
         uses: actions/setup-java@v3
         with:
