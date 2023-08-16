@@ -511,7 +511,7 @@ public class RubyBigDecimal extends RubyNumeric {
             return new RubyBigDecimal(context.runtime, new BigDecimal(value.toString(), mathContext));
         }
         if (value instanceof RubyRational) {
-            return div2Impl(context, ((RubyRational) value).getNumerator(), ((RubyRational) value).getDenominator(), this.value.precision() * BASE_FIG);
+            return div2Impl(context, ((RubyRational) value).getNumerator(), ((RubyRational) value).getDenominator(), this.getPrec() * BASE_FIG);
         }
 
         return getVpValue(context, value, must);
@@ -1660,7 +1660,12 @@ public class RubyBigDecimal extends RubyNumeric {
 
     private IRubyObject cmp(ThreadContext context, final IRubyObject arg, final char op) {
         final int e;
-        RubyBigDecimal rb = getVpValue(context, arg, false);
+        RubyBigDecimal rb;
+        if (arg instanceof RubyRational) {
+            rb = getVpValueWithPrec(context, arg, false);
+        } else {
+            rb = getVpValue(context, arg, false);
+        }
         if (rb == null) {
             String id = "!=";
             switch (op) {
