@@ -43,14 +43,14 @@ import org.jruby.util.KCode;
 import java.util.Arrays;
 
 public class ParserConfiguration {
-    // Scope passed in during an eval since we can see outside the root of this parse.
     private DynamicScope existingScope = null;
 
     // What linenumber will the source think it starts from?
     private int lineNumber = 0;
     // Is this inline source (aka -e "...source...")
     private boolean inlineSource = false;
-
+    // We parse evals more often in source so assume an eval parse.
+    private boolean isEvalParse = true;
     // Should we display extra debug information while parsing?
     private boolean isDebug = true;
     // whether we should save the end-of-file data as DATA
@@ -69,6 +69,7 @@ public class ParserConfiguration {
         this.runtime = runtime;
         this.inlineSource = inlineSource;
         this.lineNumber = lineNumber;
+        this.isEvalParse = !isFileParse;
         this.saveData = saveData;
     }
 
@@ -119,7 +120,7 @@ public class ParserConfiguration {
      * @return true if for eval
      */
     public boolean isEvalParse() {
-        return existingScope != null;
+        return isEvalParse;
     }
 
     public KCode getKCode() {
@@ -153,14 +154,14 @@ public class ParserConfiguration {
      * @return a static scope
      */
     public StaticScope getTopStaticScope(String file) {
-        return isEvalParse() ?
+        return existingScope != null ?
                 existingScope.getStaticScope() :
                 runtime.getStaticScopeFactory().newLocalScope(null, file);
     }
 
     public DynamicScope finalizeDynamicScope(StaticScope staticScope) {
         // Eval scooped up some new variables changing the size of the scope.
-        if (isEvalParse()) {
+        if (existingScope != null) {
             existingScope.growIfNeeded();
             return existingScope;
         }
