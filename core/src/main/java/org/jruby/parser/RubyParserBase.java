@@ -1275,12 +1275,13 @@ public abstract class RubyParserBase {
     *  Description of the RubyMethod
     */
     public void initTopLocalVariables() {
-        DynamicScope scope = configuration.getScope(lexer.getFile());
-        currentScope = scope.getStaticScope();
+        currentScope = configuration.getTopStaticScope(lexer.getFile());
         scopedParserState = new ScopedParserState(null);
         warnOnUnusedVariables = warnings.isVerbose() && !configuration.isEvalParse() && !configuration.isInlineSource();
-        
-        result.setScope(scope);
+    }
+
+    public void finalizeDynamicScope() {
+        getResult().setScope(configuration.finalizeDynamicScope(currentScope));
     }
     /**
      * Gets the result.

@@ -1999,6 +1999,7 @@ states[2] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, in
                       expr = p.remove_begin(expr);
                       p.void_expr(expr);
                   }
+                  p.finalizeDynamicScope();
                   p.getResult().setAST(p.addRootNode(((Node)yyVals[0+yyTop].value)));
                   /*% %*/
                   /*% ripper[final]: program!($2) %*/
@@ -6798,7 +6799,7 @@ states[819] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4768 "parse.y"
+					// line 4769 "parse.y"
 
 }
-					// line 14584 "-"
+					// line 14585 "-"
