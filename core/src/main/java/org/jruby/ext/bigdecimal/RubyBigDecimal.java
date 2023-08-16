@@ -1493,16 +1493,23 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private RubyBigDecimal quoImpl(ThreadContext context, RubyBigDecimal that) {
-        int mx = this.value.precision();
-        int mxb = that.value.precision();
+        Ruby runtime = context.runtime;
+        int mx = this.getPrecisionScale()[0];
+        int mxb = that.getPrecisionScale()[0];
         if (mx < mxb) mx = mxb;
-        mx = (mx + 1) * BASE_FIG;
+        mx *= 2;
+        if (VP_DOUBLE_FIG * 2> mx) {
+            mx = VP_DOUBLE_FIG * 2;
+        }
 
-        final int limit = getPrecLimit(context.runtime);
+        final int limit = getPrecLimit(runtime);
         if (limit > 0 && limit < mx) mx = limit;
+        mx = (mx + 8) / BASE_FIG * BASE_FIG;
 
-        MathContext mathContext = new MathContext(mx, getRoundingMode(context.runtime));
-        return new RubyBigDecimal(context.runtime, divide(this.value, that.value, mathContext)).setResult(limit);
+        RoundingMode mode = getRoundingMode(runtime);
+        MathContext mathContext = new MathContext(mx * 2, mode);
+        BigDecimal ret = divide(this.value, that.value, mathContext).setScale(mx, mode);
+        return new RubyBigDecimal(context.runtime, ret).setResult(limit);
     }
 
     // NOTE: base on Android's
