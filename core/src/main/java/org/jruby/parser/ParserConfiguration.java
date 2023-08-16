@@ -155,9 +155,7 @@ public class ParserConfiguration {
      * @param file to name top scope if we have a new scope
      * @return a static scope
      */
-    private int initialVariableCount = 0;
     public StaticScope getTopStaticScope(String file) {
-        if (existingScope != null) initialVariableCount = existingScope.getStaticScope().getNumberOfVariables();
         return asBlock ?
                 existingScope.getStaticScope() :
                 runtime.getStaticScopeFactory().newLocalScope(null, file);
@@ -165,9 +163,7 @@ public class ParserConfiguration {
 
     public DynamicScope finalizeDynamicScope(StaticScope staticScope) {
         // Eval scooped up some new variables changing the size of the scope.
-        if (existingScope != null && existingScope.getStaticScope().getNumberOfVariables() > initialVariableCount) {
-            existingScope.growIfNeeded();
-        }
+        if (existingScope != null) existingScope.growIfNeeded();
 
         return asBlock ?
                 existingScope :
