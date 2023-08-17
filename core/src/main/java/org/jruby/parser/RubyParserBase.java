@@ -1515,7 +1515,6 @@ public abstract class RubyParserBase {
 
     public Node remove_duplicate_keys(final HashNode hash) {
         final Map<Node, KeyValuePair<Node, Node>> encounteredKeys = new HashMap<>();
-        List<KeyValuePair<Node, Node>> pairsToRemove = null;
 
         for (KeyValuePair<Node,Node> pair: hash.getPairs()) {
             final Node key = pair.getKey();
@@ -1525,9 +1524,6 @@ public abstract class RubyParserBase {
                 IRubyObject value = ((LiteralValue) key).literalValue(runtime);
                 warning(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), hash.getLine(), str(runtime, "key ", value.inspect(),
                         " is duplicated and overwritten on line " + (key.getLine() + 1)));
-
-                if (pairsToRemove == null) pairsToRemove = new ArrayList<>(4);
-                pairsToRemove.add(encounteredKeys.get(key));
             }
             // even if the key was previously seen, we replace the value to properly remove multiple duplicates
             encounteredKeys.put(key, pair);
@@ -1536,7 +1532,6 @@ public abstract class RubyParserBase {
         // NOTE: we do not really remove the value part (RHS) as in that case we should evaluate the code - despite
         // the value being dropped the side effects are desired and something MRI evaluates explicitly during removal
         // with JRuby the modification of the hash should be done in the IR and not here (during the parsing phase)...
-        // if (pairsToRemove != null) hash.removeAll(pairsToRemove);
 
         return hash;
     }
