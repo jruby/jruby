@@ -192,6 +192,7 @@ public class Block implements FunctionOneOrTwoOrThree<ThreadContext, IRubyObject
     /**
      * @see Function#apply(Object)
      */
+    @Override
     public IRubyObject apply(ThreadContext context) {
         return call(context);
     }
@@ -199,6 +200,7 @@ public class Block implements FunctionOneOrTwoOrThree<ThreadContext, IRubyObject
     /**
      * @see BiFunction#apply(Object, Object)
      */
+    @Override
     public IRubyObject apply(ThreadContext context, IRubyObject arg0) {
         return call(context, arg0);
     }
@@ -206,6 +208,7 @@ public class Block implements FunctionOneOrTwoOrThree<ThreadContext, IRubyObject
     /**
      * @see TriFunction#apply(Object, Object, Object)
      */
+    @Override
     public IRubyObject apply(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         return call(context, arg0, arg1);
     }
@@ -316,7 +319,7 @@ public class Block implements FunctionOneOrTwoOrThree<ThreadContext, IRubyObject
     /**
      * Set the proc object associated with this block
      *
-     * @param procObject
+     * @param procObject the proc tu associate
      */
     public void setProcObject(RubyProc procObject) {
     	this.proc = procObject;
@@ -327,6 +330,7 @@ public class Block implements FunctionOneOrTwoOrThree<ThreadContext, IRubyObject
      *
      * @return true if this is a valid block or false otherwise
      */
+    @SuppressWarnings("ReferenceEquality")
     public final boolean isGiven() {
         return this != NULL_BLOCK;
     }

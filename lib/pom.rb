@@ -58,7 +58,7 @@ default_gems = [
     ['irb', '1.4.2'],
     ['jar-dependencies', '0.4.1'],
     ['jruby-readline', '1.3.7'],
-    ['jruby-openssl', '0.14.1'],
+    ['jruby-openssl', '0.14.2'],
     ['json', '2.6.1'],
     ['logger', '1.5.1'],
     ['mutex_m', '0.1.1'],
@@ -97,7 +97,7 @@ default_gems = [
     # ['set', '1.0.2'],
     ['shellwords', '0.1.0'],
     ['singleton', '0.1.1'],
-    ['stringio', '3.0.5'],
+    ['stringio', '3.0.8'],
     ['strscan', '3.0.6'],
     ['subspawn', '0.1.1'], # has 3 transitive deps:
       ['subspawn-posix', '0.1.1'],
@@ -376,7 +376,6 @@ project 'JRuby Lib Setup' do
     # maintainers like OpenBSD (see #1989).
     hack = File.join jruby_gems, 'gems', 'axiom-types-*'
     (Dir[File.join(hack, '**/*')] + Dir[File.join(hack, '**/.*' )]).each do |f|
-      puts "F: #{f}"
       FileUtils.chmod 'u+rw,go+r' rescue nil if File.file?(f)
     end
   end

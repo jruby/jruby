@@ -58,12 +58,17 @@ public class UndefinedValue extends Operand implements IRubyObject {
         return new RuntimeException("IR compiler/interpreter bug: org.jruby.ir.operands.UndefinedValue should not be used as a valid value during execution.");
     }
 
+    @Override
     @Deprecated
     public IRubyObject callSuper(ThreadContext context, IRubyObject[] args, Block block) { throw undefinedOperation(); }
 
+    @Override
     public IRubyObject callMethod(ThreadContext context, String name) { throw undefinedOperation(); }
+    @Override
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject arg) { throw undefinedOperation(); }
+    @Override
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args) { throw undefinedOperation(); }
+    @Override
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args, Block block) { throw undefinedOperation(); }
 
     @Deprecated
@@ -71,155 +76,93 @@ public class UndefinedValue extends Operand implements IRubyObject {
     @Deprecated
     public IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject arg) { throw undefinedOperation(); }
 
+    @Override
     public IRubyObject checkCallMethod(ThreadContext context, String name) { throw undefinedOperation(); }
 
+    @Override
     public IRubyObject checkCallMethod(ThreadContext context, JavaSites.CheckedSites sites) { throw undefinedOperation(); }
 
+    @Override
     public boolean isNil() { throw undefinedOperation(); }
 
-    /**
-     *
-     * @return
-     */
+    @Override
     public boolean isTrue() { throw undefinedOperation(); }
 
     /**
      * RubyMethod isFrozen.
      * @return boolean
      */
+    @Override
     public boolean isFrozen() { throw undefinedOperation(); }
 
     /**
      * RubyMethod setFrozen.
      * @param b
      */
+    @Override
     public void setFrozen(boolean b) { throw undefinedOperation(); }
 
-    /**
-     *
-     * @return
-     */
+    @Override
     public boolean isImmediate() { throw undefinedOperation(); }
 
     @Override
     public boolean isSpecialConst() { throw undefinedOperation(); }
 
-    /**
-     * RubyMethod getRubyClass.
-     * @return
-     */
+    @Override
     public RubyClass getMetaClass() { throw undefinedOperation(); }
 
-    /**
-     * RubyMethod getSingletonClass.
-     * @return RubyClass
-     */
+    @Override
     public RubyClass getSingletonClass() { throw undefinedOperation(); }
 
-    /**
-     * RubyMethod getType.
-     * @return RubyClass
-     */
+    @Override
     public RubyClass getType() { throw undefinedOperation(); }
 
-    /**
-     * RubyMethod respondsTo.
-     * @param string
-     * @return boolean
-     */
+    @Override
     public boolean respondsTo(String string) { throw undefinedOperation(); }
 
-    /**
-     * RubyMethod respondsTo.
-     * @param string
-     * @return boolean
-     */
+    @Override
     public boolean respondsToMissing(String string) { throw undefinedOperation(); }
 
-    /**
-     * RubyMethod respondsTo.
-     * @param string
-     * @return boolean
-     */
+    @Override
     public boolean respondsToMissing(String string, boolean priv) { throw undefinedOperation(); }
 
-    /**
-     * RubyMethod getRuntime.
-     * @return
-     */
+    @Override
     public Ruby getRuntime() { throw undefinedOperation(); }
 
-    /**
-     * RubyMethod getJavaClass.
-     * @return Class
-     */
+    @Override
     public Class getJavaClass() { throw undefinedOperation(); }
 
-    /**
-     * Convert the object into a symbol name if possible.
-     *
-     * @return String the symbol name
-     */
+    @Override
     public String asJavaString() { throw undefinedOperation(); }
 
-    /** rb_obj_as_string
-     * @return
-     */
+    @Override
     public RubyString asString() { throw undefinedOperation(); }
 
-    /**
-     * Methods which perform to_xxx if the object has such a method
-     * @return
-     */
+    @Override
     public RubyArray convertToArray() { throw undefinedOperation(); }
-    /**
-     *
-     * @return
-     */
+
+    @Override
     public RubyHash convertToHash() { throw undefinedOperation(); }
-    /**
-    *
-    * @return
-    */
+
+    @Override
     public RubyFloat convertToFloat() { throw undefinedOperation(); }
-    /**
-     *
-     * @return
-     */
+
+    @Override
     public RubyInteger convertToInteger() { throw undefinedOperation(); }
-    /**
-     *
-     * @return
-     */
-    @Deprecated
-    public RubyInteger convertToInteger(int convertMethodIndex, String convertMethod) { throw undefinedOperation(); }
-    /**
-     *
-     * @return
-     */
+
+    @Override
     public RubyInteger convertToInteger(String convertMethod) { throw undefinedOperation(); }
-    /**
-     *
-     * @return
-     */
+
+    @Override
     public RubyString convertToString() { throw undefinedOperation(); }
 
-    /**
-     *
-     * @return
-     */
+    @Override
     public IRubyObject anyToString() { throw undefinedOperation(); }
 
-    /**
-     *
-     * @return
-     */
+    @Override
     public IRubyObject checkStringType() { throw undefinedOperation(); }
 
-    /**
-     *
-     * @return
-     */
+    @Override
     public IRubyObject checkArrayType() { throw undefinedOperation(); }
 
     /**
@@ -227,36 +170,34 @@ public class UndefinedValue extends Operand implements IRubyObject {
      *
      * @param cls The target type to which the object should be converted.
      */
+    @Override
     public Object toJava(Class cls) { throw undefinedOperation(); }
 
-    /**
-     * RubyMethod dup.
-     * @return
-     */
+    @Override
     public IRubyObject dup() { throw undefinedOperation(); }
 
-    /**
-     * RubyMethod inspect.
-     * @return String
-     */
+    @Override
     public IRubyObject inspect() { throw undefinedOperation(); }
 
     /**
      * RubyMethod rbClone.
      * @return IRubyObject
      */
+    @Override
     public IRubyObject rbClone() { throw undefinedOperation(); }
 
     /**
      * @return true if an object is Ruby Module instance (note that it will return false for Ruby Classes).
      * If is_a? semantics is required, use <code>(someObject instanceof RubyModule)</code> instead.
      */
+    @Override
     public boolean isModule() { throw undefinedOperation(); }
 
     /**
      * @return true if an object is Ruby Class instance (note that it will return false for Ruby singleton classes).
      * If is_a? semantics is required, use <code>(someObject instanceof RubyClass/MetaClass)</code> instead.
      */
+    @Override
     public boolean isClass() { throw undefinedOperation(); }
 
     /**
@@ -267,6 +208,7 @@ public class UndefinedValue extends Operand implements IRubyObject {
      *
      * @param obj the object to wrap
      */
+    @Override
     public void dataWrapStruct(Object obj) { throw undefinedOperation(); }
 
     /**
@@ -276,88 +218,68 @@ public class UndefinedValue extends Operand implements IRubyObject {
      *
      * @return the object wrapped.
      */
+    @Override
     public Object dataGetStruct() { throw undefinedOperation(); }
 
-    /**
-     *
-     * @return
-     */
+    @Override
     public IRubyObject id() { throw undefinedOperation(); }
 
-
+    @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) { throw undefinedOperation(); }
+    @Override
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) { throw undefinedOperation(); }
+    @Override
     public boolean eql(IRubyObject other) { throw undefinedOperation(); }
 
+    @Override
     public void addFinalizer(IRubyObject finalizer) { throw undefinedOperation(); }
 
+    @Override
     public void removeFinalizers() { throw undefinedOperation(); }
 
     //
     // COMMON VARIABLE METHODS
     //
 
-    /**
-     * Returns true if object has any variables, defined as:
-     * <ul>
-     * <li> instance variables
-     * <li> class variables
-     * <li> constants
-     * <li> internal variables, such as those used when marshalling Ranges and Exceptions
-     * </ul>
-     * @return true if object has any variables, else false
-     */
+    @Override
     public boolean hasVariables() { throw undefinedOperation(); }
 
-    /**
-     * @return the count of all variables (ivar/cvar/constant/internal)
-     */
+    @Override
     public int getVariableCount() { throw undefinedOperation(); }
 
-    /**
-     * Sets object's variables to those in the supplied list,
-     * removing/replacing any previously defined variables.  Applies
-     * to all variable types (ivar/cvar/constant/internal).
-     *
-     * @param variables the variables to be set for object
-     */
+    @Override
     @Deprecated
     public void syncVariables(List<Variable<Object>> variables) { throw undefinedOperation(); }
 
-    /**
-     * Sets object's variables to those in the supplied object,
-     * removing/replacing any previously defined variables of the same name.
-     * Applies to all variable types (ivar/cvar/constant/internal).
-     *
-     * @param source the source object containing the variables to sync
-     */
+    @Override
     public void syncVariables(IRubyObject source) { throw undefinedOperation(); }
 
-    /**
-     * @return a list of all variables (ivar/cvar/constant/internal)
-     */
+    @Override
     public List<Variable<Object>> getVariableList() { throw undefinedOperation(); }
 
     //
     // INSTANCE VARIABLE METHODS
     //
 
+    @Override
     public InstanceVariables getInstanceVariables() { throw undefinedOperation(); }
 
     //
     // INTERNAL VARIABLE METHODS
     //
 
+    @Override
     public InternalVariables getInternalVariables() { throw undefinedOperation(); }
 
-    /**
-     * @return a list of all variable names (ivar/cvar/constant/internal)
-     */
+    @Override
     public List<String> getVariableNameList() { throw undefinedOperation(); }
 
+    @Override
     public void copySpecialInstanceVariables(IRubyObject clone) { throw undefinedOperation(); }
 
+    @Override
     public Object getVariable(int index) { throw undefinedOperation(); }
+    @Override
     public void setVariable(int index, Object value) { throw undefinedOperation(); }
 
     @Override
@@ -370,21 +292,27 @@ public class UndefinedValue extends Operand implements IRubyObject {
         visitor.UndefinedValue(this);
     }
 
+    @Override
     @Deprecated
     public Object dataGetStructChecked() { throw undefinedOperation(); }
 
+    @Override
     @Deprecated
     public boolean isTaint() { throw undefinedOperation(); }
 
+    @Override
     @Deprecated
     public void setTaint(boolean b) { throw undefinedOperation(); }
 
+    @Override
     @Deprecated
     public IRubyObject infectBy(IRubyObject obj) { throw undefinedOperation(); }
 
+    @Override
     @Deprecated
     public boolean isUntrusted() { throw undefinedOperation(); }
 
+    @Override
     @Deprecated
     public void setUntrusted(boolean b) { throw undefinedOperation(); }
 }

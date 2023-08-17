@@ -1229,7 +1229,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     private RubyBoolean matchP(ThreadContext context, IRubyObject arg, int pos) {
         if (arg == context.nil) return context.fals;
         RubyString str = arg instanceof RubySymbol ? ((RubySymbol) arg).to_s(context.runtime) : arg.convertToString();
+        return matchP(context, str, pos);
+    }
 
+    final RubyBoolean matchP(ThreadContext context, RubyString str, int pos) {
         if (pos != 0) {
             if (pos < 0) {
                 pos += str.strLength();

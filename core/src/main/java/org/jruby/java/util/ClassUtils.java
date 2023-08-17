@@ -192,7 +192,7 @@ public class ClassUtils {
         catch (SecurityException e) { return new Constructor[0]; }
     }
 
-    public static boolean isJavaClassProxyType(ThreadContext context, RubyModule c) {
-        return JavaUtil.getJavaClass(c, null) != null;
+    public static boolean isJavaClassProxyType(final RubyModule clazz) {
+        return JavaUtil.getJavaClass(clazz, null) != null;
     }
 }

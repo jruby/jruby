@@ -41,11 +41,11 @@ public class InterpreterContext {
     protected boolean hasExplicitCallProtocol; // Only can be true in Full+
     protected boolean dynamicScopeEliminated; // Only can be true in Full+
     private boolean reuseParentDynScope; // Only can be true in Full+
-    private boolean metaClassBodyScope;
+    private final boolean metaClassBodyScope;
 
     private InterpreterEngine engine;
     public final Supplier<List<Instr>> instructionsCallback;
-    private EnumSet<IRFlags> flags;
+    private final EnumSet<IRFlags> flags;
 
     private final IRScope scope;
 

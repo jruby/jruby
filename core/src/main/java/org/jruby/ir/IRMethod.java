@@ -120,17 +120,33 @@ public class IRMethod extends IRScope {
      *
      * @return appropriate interpretercontext
      */
-    public synchronized InterpreterContext builtInterperterContextForJavaConstructor() {
-        InterpreterContext interpreterContext = builtInterpreterContext();
+    public ExitableInterpreterContext builtInterpreterContextForJavaConstructor() {
+        ExitableInterpreterContext interpreterContextForJavaConstructor = this.interpreterContextForJavaConstructor;
+        if (interpreterContextForJavaConstructor == null) {
+            synchronized (this) {
+                interpreterContextForJavaConstructor = this.interpreterContextForJavaConstructor;
+                if (interpreterContextForJavaConstructor == null) {
+                    interpreterContextForJavaConstructor = builtInterpreterContextForJavaConstructorImpl();
+                    this.interpreterContextForJavaConstructor = interpreterContextForJavaConstructor;
+                }
+            }
+        }
+        return interpreterContextForJavaConstructor == ExitableInterpreterContext.NULL ? null : interpreterContextForJavaConstructor;
+    }
 
-        if (usesSuper()) { // We know at least one super is in here somewhere
+    private volatile ExitableInterpreterContext interpreterContextForJavaConstructor;
+
+    private synchronized ExitableInterpreterContext builtInterpreterContextForJavaConstructorImpl() {
+        final InterpreterContext interpreterContext = builtInterpreterContext();
+        if (usesSuper()) {
+            // We know at least one super is in here somewhere
             int ipc = 0;
             int superIPC = -1;
             CallBase superCall = null;
             Map<Label, Integer> labels = new HashMap<>();
             List<Label> earlyJumps = new ArrayList<>();
 
-            for(Instr instr: interpreterContext.getInstructions()) {
+            for (Instr instr: interpreterContext.getInstructions()) {
                 if (instr instanceof CallBase && ((CallBase) instr).getCallType() == CallType.SUPER) {
                     // We have already found one super call already.  No analysis yet to figure out if this is
                     // still ok or not so we will error.
@@ -168,7 +184,16 @@ public class IRMethod extends IRScope {
             }
         }
 
-        return interpreterContext;
+        return ExitableInterpreterContext.NULL;
+    }
+
+    /**
+     * This method was renamed (due a typo).
+     * @see #builtInterpreterContextForJavaConstructor()
+     */
+    @Deprecated
+    public ExitableInterpreterContext builtInterperterContextForJavaConstructor() {
+        return builtInterpreterContextForJavaConstructor();
     }
 
     public final InterpreterContext lazilyAcquireInterpreterContext() {

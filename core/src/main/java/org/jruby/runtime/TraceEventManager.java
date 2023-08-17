@@ -257,6 +257,11 @@ public class TraceEventManager {
         }
 
         @Override
+        public int hashCode() {
+            return 13 * traceFunc.hashCode() + 5 * (thread == null ? 0 : thread.hashCode());
+        }
+
+        @Override
         public boolean isInterestedInEvent(RubyEvent event) {
             return interest.contains(event);
         }

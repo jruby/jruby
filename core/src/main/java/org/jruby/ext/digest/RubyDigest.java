@@ -70,15 +70,23 @@ public class RubyDigest {
     static {
         // standard digests from JCA specification; if we can retrieve and clone, save them
         for (String name : new String[] {"MD2", "MD5", "SHA-1", "SHA-256", "SHA-384", "SHA-512"}) {
-            try {
-                MessageDigest digest = MessageDigest.getInstance(name);
-                digest.clone();
-                CLONEABLE_DIGESTS.put(name, digest);
-            }
-            catch (Exception e) {
-                logger().debug(name + " not clonable", e);
-            }
+            MessageDigest digest = getCloneableMessageDigestInstance(name);
+            if (digest != null) CLONEABLE_DIGESTS.put(name, digest);
         }
+    }
+
+    @SuppressWarnings("ReturnValueIgnored")
+    private static MessageDigest getCloneableMessageDigestInstance(final String name) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance(name);
+            digest.clone(); // ignored return value - we're checking clone-ability
+            return digest;
+        } catch (NoSuchAlgorithmException e) {
+            logger().warn("digest '" + name + "' not supported", e);
+        } catch (Exception e) {
+            logger().debug("digest '" + name + "' not cloneable", e);
+        }
+        return null;
     }
 
     private static Logger logger() { return LoggerFactory.getLogger(RubyDigest.class); }

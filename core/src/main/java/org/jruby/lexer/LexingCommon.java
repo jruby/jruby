@@ -213,19 +213,23 @@ public abstract class LexingCommon {
         return createAsEncodedString(lexb.getUnsafeBytes(), lexb.begin() + start, lex_p - start);
     }
 
+    @SuppressWarnings({"DefaultCharset", "ReferenceEquality"})
     public String createAsEncodedString(byte[] bytes, int start, int length) {
         // FIXME: We should be able to move some faster non-exception cache using Encoding.isDefined
+        Charset charset;
         try {
-            Charset charset = EncodingUtils.charsetForEncoding(getEncoding());
-            if (charset != null) {
-                if (charset == RubyEncoding.UTF8) {
-                    return RubyEncoding.decodeUTF8(bytes, start, length);
-                } else {
-                    return new String(bytes, start, length, charset);
-                }
-            }
-        } catch (UnsupportedCharsetException e) {}
+            charset = EncodingUtils.charsetForEncoding(getEncoding());
+        } catch (UnsupportedCharsetException e) {
+            charset = null; // fallback to platform's default charset
+        }
 
+        if (charset == RubyEncoding.UTF8) { // common path first
+            return RubyEncoding.decodeUTF8(bytes, start, length);
+        }
+
+        if (charset != null) {
+            return new String(bytes, start, length, charset);
+        }
         return new String(bytes, start, length);
     }
 
@@ -1241,6 +1245,7 @@ public abstract class LexingCommon {
 
     protected abstract void mismatchedRegexpEncodingError(Encoding optionEncoding, Encoding encoding);
 
+    @SuppressWarnings("ReferenceEquality")
     // MRI: reg_fragment_setenc_gen
     public void setRegexpEncoding(Ruby runtime, ByteList value, RegexpOptions options) {
         Encoding optionsEncoding = options.setup(runtime);
@@ -1266,10 +1271,11 @@ public abstract class LexingCommon {
         }
     }
 
-    private boolean is7BitASCII(ByteList value) {
-      return StringSupport.codeRangeScan(value.getEncoding(), value) == StringSupport.CR_7BIT;
+    private static boolean is7BitASCII(ByteList value) {
+        return StringSupport.codeRangeScan(value.getEncoding(), value) == StringSupport.CR_7BIT;
     }
 
+    @SuppressWarnings("ReferenceEquality")
     // TODO: Put somewhere more consolidated (similiar
     protected char optionsEncodingChar(Encoding optionEncoding) {
         if (optionEncoding == USASCIIEncoding.INSTANCE) return 'n';
@@ -1418,6 +1424,7 @@ public abstract class LexingCommon {
         return scanHex(count, false, errorMessage);
     }
 
+    @SuppressWarnings("ReferenceEquality")
     protected void readUTF8EscapeIntoBuffer(int codepoint, ByteList buffer, boolean stringLiteral, boolean[] encodingDetermined) throws IOException {
         if (codepoint >= 0x80) {
             if (encodingDetermined[0] && buffer.getEncoding() != UTF8Encoding.INSTANCE) {

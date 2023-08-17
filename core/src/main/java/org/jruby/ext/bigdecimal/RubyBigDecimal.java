@@ -511,7 +511,7 @@ public class RubyBigDecimal extends RubyNumeric {
             return new RubyBigDecimal(context.runtime, new BigDecimal(value.toString(), mathContext));
         }
         if (value instanceof RubyRational) {
-            return div2Impl(context, ((RubyRational) value).getNumerator(), ((RubyRational) value).getDenominator(), this.value.precision() * BASE_FIG);
+            return div2Impl(context, ((RubyRational) value).getNumerator(), ((RubyRational) value).getDenominator(), this.getPrec() * BASE_FIG);
         }
 
         return getVpValue(context, value, must);
@@ -1217,10 +1217,10 @@ public class RubyBigDecimal extends RubyNumeric {
 
         final int times;
         final double rem; // exp's decimal part
-        final int nx = prec.isNil() ? getPrec(context) * BASE_FIG : num2int(prec);
+        final int nx = prec.isNil() ? getPrec() * BASE_FIG : num2int(prec);
         if (exp instanceof RubyBigDecimal) {
             RubyBigDecimal bdExp = (RubyBigDecimal)exp;
-            int ny = bdExp.getPrec(context) * BASE_FIG;
+            int ny = bdExp.getPrec() * BASE_FIG;
             return bigdecimal_power_by_bigdecimal(context, exp, prec.isNil() ? nx + ny : nx);
         } else if ( exp instanceof RubyFloat ) {
             int ny = VP_DOUBLE_FIG;
@@ -1292,9 +1292,21 @@ public class RubyBigDecimal extends RubyNumeric {
 
     private BigDecimal powNegative(final int times) {
         // Note: MRI has a very non-trivial way of calculating the precision,
-        // so we use very simple approximation here:
-        int precision = (-times + 4) * (getAllDigits().length() + 4);
-        return value.pow(times, new MathContext(precision, RoundingMode.HALF_UP));
+        // so we use approximation here :
+        int mp = getPrec() * (BASE_FIG + 1) * (-times + 1);
+        int precision = (mp + 8) / BASE_FIG * BASE_FIG;
+        BigDecimal pow = value.pow(times, new MathContext(precision * 2, RoundingMode.DOWN));
+        // calculates exponent of pow
+        BigDecimal tmp = pow.abs().stripTrailingZeros();
+        int exponent = tmp.precision() - tmp.scale();
+        // adjusts precision using exponent. it seems like to match MRI behavior.
+        if (exponent < 0) {
+            precision += Math.abs(exponent) / BASE_FIG * BASE_FIG;
+        } else {
+            precision -= (exponent + 8) / BASE_FIG * BASE_FIG;
+        }
+        pow = pow.setScale(precision, RoundingMode.DOWN);
+        return pow;
     }
 
     @JRubyMethod(name = "+")
@@ -1481,16 +1493,23 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private RubyBigDecimal quoImpl(ThreadContext context, RubyBigDecimal that) {
-        int mx = this.value.precision();
-        int mxb = that.value.precision();
+        Ruby runtime = context.runtime;
+        int mx = this.getPrecisionScale()[0];
+        int mxb = that.getPrecisionScale()[0];
         if (mx < mxb) mx = mxb;
-        mx = (mx + 1) * BASE_FIG;
+        mx *= 2;
+        if (VP_DOUBLE_FIG * 2> mx) {
+            mx = VP_DOUBLE_FIG * 2;
+        }
 
-        final int limit = getPrecLimit(context.runtime);
+        final int limit = getPrecLimit(runtime);
         if (limit > 0 && limit < mx) mx = limit;
+        mx = (mx + 8) / BASE_FIG * BASE_FIG;
 
-        MathContext mathContext = new MathContext(mx, getRoundingMode(context.runtime));
-        return new RubyBigDecimal(context.runtime, divide(this.value, that.value, mathContext)).setResult(limit);
+        RoundingMode mode = getRoundingMode(runtime);
+        MathContext mathContext = new MathContext(mx * 2, mode);
+        BigDecimal ret = divide(this.value, that.value, mathContext).setScale(mx, mode);
+        return new RubyBigDecimal(context.runtime, ret).setResult(limit);
     }
 
     // NOTE: base on Android's
@@ -1648,7 +1667,12 @@ public class RubyBigDecimal extends RubyNumeric {
 
     private IRubyObject cmp(ThreadContext context, final IRubyObject arg, final char op) {
         final int e;
-        RubyBigDecimal rb = getVpValue(context, arg, false);
+        RubyBigDecimal rb;
+        if (arg instanceof RubyRational) {
+            rb = getVpValueWithPrec(context, arg, false);
+        } else {
+            rb = getVpValue(context, arg, false);
+        }
         if (rb == null) {
             String id = "!=";
             switch (op) {
@@ -1933,12 +1957,11 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyMethod
     public RubyArray precision_scale(ThreadContext context) {
         Ruby runtime = context.runtime;
-        int [] ary = getPrecisionScale(context);
+        int [] ary = getPrecisionScale();
         return runtime.newArray(runtime.newFixnum(ary[0]), runtime.newFixnum(ary[1]));
     }
 
-    private int [] getPrecisionScale(ThreadContext context) {
-        Ruby runtime = context.runtime;
+    private int [] getPrecisionScale() {
         int precision = 0;
         int scale = 0;
         String plainString = value.toPlainString();
@@ -1965,8 +1988,23 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     // mri x->Prec
-    private int getPrec(ThreadContext context) {
-        return getPrecisionScale(context)[0] / 8 + 1;
+    private int getPrec() {
+        // precision > scale (exponent > 0)
+        // e.g. "123.456789" is represented as "0. 000000123 456789 * 1000000000 ^ 1" in MRI BigDecimal internal..
+        // so, in this case Prec becomes 2.
+        int [] precisionScale = getPrecisionScale();
+        if (precisionScale[0] > precisionScale[1]) {
+            return (precisionScale[0] + (BASE_FIG - (precisionScale[0] - precisionScale[1])) + 8) / BASE_FIG;
+        }
+        // precision = scale
+        // e.g. "0.000123456789" is represented as "0 .000123456 789 * 1000000000 ^ 0" in MRI BigDecimal internal.
+        // so, in this case Prec becomes 2.
+        if (getExponent() > -9) {
+            return (value.toString().length() - 2 + 8) / BASE_FIG;
+        }
+        // e.g. "0.0000000000123456789" is represented as "0 .012345678 9 * 1000000000 ^ -1" in MRI BigDecimal internal.
+        // so, in this case Prec becomes 2.
+        return (value.unscaledValue().toString().length() + 8) / BASE_FIG;
     }
 
     @Deprecated

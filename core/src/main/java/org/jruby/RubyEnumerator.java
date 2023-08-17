@@ -511,10 +511,6 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         }
     }
 
-    private IRubyObject getGenerator() {
-        return getInstanceVariable(GENERATOR);
-    }
-
     private IRubyObject getMethod() {
         return getInstanceVariable(METHOD);
     }

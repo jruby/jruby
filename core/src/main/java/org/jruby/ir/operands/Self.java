@@ -37,6 +37,11 @@ public class Self extends Variable {
     }
 
     @Override
+    public int hashCode() {
+        return System.identityHashCode(this);
+    }
+
+    @Override
     public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
         return self;
     }
@@ -65,11 +70,6 @@ public class Self extends Variable {
     @Override
     public void visit(IRVisitor visitor) {
         visitor.Self(this);
-    }
-
-    @Override
-    public int compareTo(Object o) {
-        return this == o ? 0 : -1;
     }
 
     @Override
