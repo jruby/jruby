@@ -959,12 +959,6 @@ public class IRRuntimeHelpers {
     }
 
     @JIT @Interp
-    public static IRubyObject isDefinedInstanceVar(ThreadContext context, IRubyObject receiver, String name, IRubyObject definedMessage) {
-        return receiver.getInstanceVariables().hasInstanceVariable(name) ?
-                definedMessage : context.nil;
-    }
-
-    @JIT @Interp
     public static IRubyObject isDefinedCall(ThreadContext context, IRubyObject self, IRubyObject receiver, String name, IRubyObject definedMessage) {
         IRubyObject boundValue = Helpers.getDefinedCall(context, self, receiver, name, definedMessage);
 

@@ -2295,14 +2295,6 @@ public class JVMVisitor extends IRVisitor {
                 jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedGlobal", sig(IRubyObject.class, ThreadContext.class, String.class, IRubyObject.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
-            case IS_DEFINED_INSTANCE_VAR:
-                jvmMethod().loadContext();
-                visit(runtimehelpercall.getArgs()[0]);
-                jvmAdapter().ldc(((Stringable)runtimehelpercall.getArgs()[1]).getString());
-                visit(runtimehelpercall.getArgs()[2]);
-                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedInstanceVar", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject.class));
-                jvmStoreLocal(runtimehelpercall.getResult());
-                break;
             case IS_DEFINED_CLASS_VAR:
                 jvmMethod().loadContext();
                 visit(runtimehelpercall.getArgs()[0]);

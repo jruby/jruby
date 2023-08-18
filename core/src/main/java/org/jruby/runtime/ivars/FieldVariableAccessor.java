@@ -30,6 +30,7 @@ package org.jruby.runtime.ivars;
 import com.headius.invokebinder.Binder;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
+import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -91,6 +92,21 @@ public class FieldVariableAccessor extends VariableAccessor {
         }
     }
 
+    /**
+     * Retrieve the variable's value from the given object.
+     *
+     * @param object the object from which to retrieve this variable
+     * @return the variable's value or %undefined
+     */
+    public Object getOrUndefined(Object object) {
+        try {
+            Object value =  getter.invoke(object);
+            return value == null ? UndefinedValue.UNDEFINED : (IRubyObject) value;
+        } catch (Throwable t) {
+            Helpers.throwException(t);
+            return null;
+        }
+    }
     /**
      * Retrieve the variable's value from the given object.
      *
