@@ -2,6 +2,7 @@ package org.jruby.runtime.invokedynamic;
 
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
+import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.lang.invoke.CallSite;
@@ -31,15 +32,18 @@ import static org.jruby.util.CodegenUtils.sig;
 public class VariableSite extends MutableCallSite {
     private final String name;
     private VariableAccessor accessor = VariableAccessor.DUMMY_ACCESSOR;
+
+    private boolean rawValue;
     private final String file;
     private final int line;
     private int chainCount;
 
     private static final Logger LOG = LoggerFactory.getLogger(VariableSite.class);
 
-    public VariableSite(MethodType type, String name, String file, int line) {
+    public VariableSite(MethodType type, String name, boolean rawValue, String file, int line) {
         super(type);
         this.name = name;
+        this.rawValue = rawValue;
         this.file = file;
         this.line = line;
         this.chainCount = 0;
@@ -80,7 +84,8 @@ public class VariableSite extends MutableCallSite {
         String[] names = name.split(":");
         String operation = names[0];
         String varName = names[1];
-        VariableSite site = new VariableSite(type, varName, "noname", 0);
+        boolean rawValue = names.length > 2;
+        VariableSite site = new VariableSite(type, varName, rawValue, "noname", 0);
         MethodHandle handle;
 
         handle = lookup.findVirtual(VariableSite.class, operation, type);
@@ -156,7 +161,7 @@ public class VariableSite extends MutableCallSite {
         if (value != null) {
             return value;
         }
-        return self.getRuntime().getNil();
+        return rawValue ? UndefinedValue.UNDEFINED : self.getRuntime().getNil();
     }
 
     public void ivarSet(IRubyObject self, IRubyObject value) throws Throwable {

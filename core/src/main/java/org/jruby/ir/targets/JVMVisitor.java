@@ -1614,7 +1614,7 @@ public class JVMVisitor extends IRVisitor {
             throw new NotCompilableException("non-propagatable target for PutField: " + source);
         }
 
-        jvmMethod().getInstanceVariableCompiler().getField(() -> visit(source), getfieldinstr.getId());
+        jvmMethod().getInstanceVariableCompiler().getField(() -> visit(source), getfieldinstr.getId(), getfieldinstr.rawValue);
         jvmStoreLocal(getfieldinstr.getResult());
     }
 

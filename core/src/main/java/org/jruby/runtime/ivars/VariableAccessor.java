@@ -27,8 +27,10 @@
 
 package org.jruby.runtime.ivars;
 
+import org.jruby.Ruby;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
+import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -98,6 +100,15 @@ public abstract class VariableAccessor {
      */
     public Object get(Object object) {
         return getVariable((RubyBasicObject)object, index);
+    }
+
+    /**
+     * Retrieve object or IR %undefined
+     */
+    public Object getOrUndefined(Object object) {
+        Object value = getVariable((RubyBasicObject) object, index);
+
+        return value == null ? UndefinedValue.UNDEFINED : value;
     }
 
     /**
