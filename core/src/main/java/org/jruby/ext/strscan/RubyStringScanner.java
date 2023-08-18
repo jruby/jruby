@@ -101,99 +101,6 @@ public class RubyStringScanner extends RubyObject {
         return scannerClass;
     }
 
-    // Provided temporarily to bridge the gap between joni 2.1 and 2.2
-    private static final RegionAdapter REGION_ADAPTER;
-    static {
-        RegionAdapter adapter;
-        try {
-            Region.class.getMethod("newRegion", int.class, int.class);
-            // ok, proceed with factory-based adapter
-            adapter = new FactoryRegionAdapter();
-        } catch (NoSuchMethodException | SecurityException ex) {
-            adapter = new OldRegionAdapter();
-        }
-        REGION_ADAPTER = adapter;
-    }
-
-    private interface RegionAdapter {
-        Region newRegion(int beg, int end);
-        int getBeg(Region region, int index);
-        int getEnd(Region region, int index);
-        int setBeg(Region region, int index, int value);
-        int setEnd(Region region, int index, int value);
-        int getNumRegs(Region region);
-    }
-
-    private static class OldRegionAdapter implements RegionAdapter {
-        @Override
-        @SuppressWarnings("deprecation")
-        public Region newRegion(int beg, int end) {
-            return new Region(beg, end);
-        }
-
-        @Override
-        @SuppressWarnings("deprecation")
-        public int getBeg(Region region, int index) {
-            return region.beg[index];
-        }
-
-        @Override
-        @SuppressWarnings("deprecation")
-        public int getEnd(Region region, int index) {
-            return region.end[index];
-        }
-
-        @Override
-        @SuppressWarnings("deprecation")
-        public int setBeg(Region region, int index, int value) {
-            return region.beg[index] = value;
-        }
-
-        @Override
-        @SuppressWarnings("deprecation")
-        public int setEnd(Region region, int index, int value) {
-            return region.end[index] = value;
-        }
-
-        @Override
-        @SuppressWarnings("deprecation")
-        public int getNumRegs(Region region) {
-            return region.numRegs;
-        }
-    }
-
-    private static class FactoryRegionAdapter implements RegionAdapter {
-        @Override
-        public Region newRegion(int beg, int end) {
-            return Region.newRegion(beg, end);
-        }
-
-        @Override
-        public int getBeg(Region region, int index) {
-            return region.getBeg(index);
-        }
-
-        @Override
-        public int getEnd(Region region, int index) {
-            return region.getEnd(index);
-        }
-
-        @Override
-        public int setBeg(Region region, int index, int value) {
-            return region.setBeg(index, value);
-        }
-
-        @Override
-        public int setEnd(Region region, int index, int value) {
-            return region.setEnd(index, value);
-        }
-
-        @Override
-        public int getNumRegs(Region region) {
-            return region.getNumRegs();
-        }
-    }
-
     private void clearMatched() {
         scannerFlags &= ~MATCHED_STR_SCN_F;
     }
@@ -223,7 +130,7 @@ public class RubyStringScanner extends RubyObject {
     public IRubyObject initialize(ThreadContext context, IRubyObject string, IRubyObject dupOrOpts) {
         this.str = string.convertToString();
         this.fixedAnchor = ArgsUtil.extractKeywordArg(context, "fixed_anchor", dupOrOpts).isTrue();
-        this.regs = REGION_ADAPTER.newRegion(0, 0);
+        this.regs = Region.newRegion(0, 0);
 
         return this;
     }
@@ -405,7 +312,7 @@ public class RubyStringScanner extends RubyObject {
 
             Region matchRegion = matcher.getRegion();
             if (matchRegion == null) {
-                regs = REGION_ADAPTER.newRegion(matcher.getBegin(), matcher.getEnd());
+                regs = Region.newRegion(matcher.getBegin(), matcher.getEnd());
             } else {
                 regs = matchRegion;
             }
@@ -451,17 +358,17 @@ public class RubyStringScanner extends RubyObject {
 
     private int lastMatchLength() {
         if (fixedAnchor) {
-            return REGION_ADAPTER.getEnd(regs, 0) - prev;
+            return regs.getEnd(0) - prev;
         } else {
-            return REGION_ADAPTER.getEnd(regs, 0);
+            return regs.getEnd(0);
         }
     }
 
     private void succ() {
         if (fixedAnchor) {
-            this.curr = REGION_ADAPTER.getEnd(regs, 0);
+            this.curr = regs.getEnd(0);
         } else {
-            this.curr += REGION_ADAPTER.getEnd(regs, 0);
+            this.curr += regs.getEnd(0);
         }
     }
 
@@ -484,9 +391,9 @@ public class RubyStringScanner extends RubyObject {
     // MRI: set_registers
     private void setRegisters(int length) {
         if (fixedAnchor) {
-            regs = REGION_ADAPTER.newRegion(curr, curr + length);
+            regs = Region.newRegion(curr, curr + length);
         } else {
-            regs = REGION_ADAPTER.newRegion(0, length);
+            regs = Region.newRegion(0, length);
         }
     }
 
@@ -543,9 +450,9 @@ public class RubyStringScanner extends RubyObject {
     // MRI: adjust_register_to_matched
     private void adjustRegisters() {
         if (fixedAnchor) {
-            regs = REGION_ADAPTER.newRegion(prev, curr);
+            regs = Region.newRegion(prev, curr);
         } else {
-            regs = REGION_ADAPTER.newRegion(0, curr - prev);
+            regs = Region.newRegion(0, curr - prev);
         }
     }
 
@@ -585,8 +492,8 @@ public class RubyStringScanner extends RubyObject {
         adjustRegisters();
 
         return extractRange(runtime,
-                adjustRegisterPosition(REGION_ADAPTER.getBeg(regs, 0)),
-                adjustRegisterPosition(REGION_ADAPTER.getEnd(regs, 0)));
+                adjustRegisterPosition(regs.getBeg(0)),
+                adjustRegisterPosition(regs.getEnd(0)));
     }
 
     @JRubyMethod(name = "get_byte")
@@ -602,8 +509,8 @@ public class RubyStringScanner extends RubyObject {
         adjustRegisters();
 
         return extractRange(context.runtime,
-                adjustRegisterPosition(REGION_ADAPTER.getBeg(regs, 0)),
-                adjustRegisterPosition(REGION_ADAPTER.getEnd(regs, 0)));
+                adjustRegisterPosition(regs.getBeg(0)),
+                adjustRegisterPosition(regs.getEnd(0)));
     }
 
     @JRubyMethod(name = "getbyte")
@@ -699,15 +606,15 @@ public class RubyStringScanner extends RubyObject {
         check(context);
         if (!isMatched()) return context.nil;
         return extractRange(context.runtime,
-                adjustRegisterPosition(REGION_ADAPTER.getBeg(regs, 0)),
-                adjustRegisterPosition(REGION_ADAPTER.getEnd(regs, 0)));
+                adjustRegisterPosition(regs.getBeg(0)),
+                adjustRegisterPosition(regs.getEnd(0)));
     }
 
     @JRubyMethod(name = "matched_size")
     public IRubyObject matched_size(ThreadContext context) {
         check(context);
         if (!isMatched()) return context.nil;
-        return RubyFixnum.newFixnum(context.runtime, REGION_ADAPTER.getEnd(regs, 0) - REGION_ADAPTER.getBeg(regs, 0));
+        return RubyFixnum.newFixnum(context.runtime, regs.getEnd(0) - regs.getBeg(0));
     }
 
     @JRubyMethod(name = "matchedsize")
@@ -739,16 +646,16 @@ public class RubyStringScanner extends RubyObject {
     }
 
     private IRubyObject extractRegion(ThreadContext context, int i) {
-        int numRegs = REGION_ADAPTER.getNumRegs(regs);
+        int numRegs = regs.getNumRegs();
 
         if (i < 0) i += numRegs;
-        if (i < 0 || i >= numRegs || REGION_ADAPTER.getBeg(regs, i) == -1) {
+        if (i < 0 || i >= numRegs || regs.getBeg(i) == -1) {
             return context.nil;
         }
 
         return extractRange(context.runtime,
-                adjustRegisterPosition(REGION_ADAPTER.getBeg(regs, i)),
-                adjustRegisterPosition(REGION_ADAPTER.getEnd(regs, i)));
+                adjustRegisterPosition(regs.getBeg(i)),
+                adjustRegisterPosition(regs.getEnd(i)));
     }
 
     @JRubyMethod(name = "pre_match")
@@ -757,7 +664,7 @@ public class RubyStringScanner extends RubyObject {
         if (!isMatched()) {
             return context.nil;
         }
-        return extractRange(context.runtime, 0, adjustRegisterPosition(REGION_ADAPTER.getBeg(regs, 0)));
+        return extractRange(context.runtime, 0, adjustRegisterPosition(regs.getBeg(0)));
     }
 
     @JRubyMethod(name = "post_match")
@@ -769,7 +676,7 @@ public class RubyStringScanner extends RubyObject {
         }
 
         return extractRange(context.runtime,
-                adjustRegisterPosition(REGION_ADAPTER.getEnd(regs, 0)),
+                adjustRegisterPosition(regs.getEnd(0)),
                 str.getByteList().getRealSize());
     }
 
@@ -829,6 +736,8 @@ public class RubyStringScanner extends RubyObject {
 
         RubyHash captures = RubyHash.newHash(runtime);
 
+        if (pattern == null) return captures;
+
         Iterator<NameEntry> nameEntryIterator = pattern.namedBackrefIterator();
 
         while (nameEntryIterator.hasNext()) {
@@ -877,7 +786,7 @@ public class RubyStringScanner extends RubyObject {
     @JRubyMethod(name = "size")
     public IRubyObject size(ThreadContext context) {
         if (!isMatched()) return context.nil;
-        return context.runtime.newFixnum(REGION_ADAPTER.getNumRegs(regs));
+        return context.runtime.newFixnum(regs.getNumRegs());
     }
 
     @JRubyMethod(name = "captures")
@@ -889,13 +798,13 @@ public class RubyStringScanner extends RubyObject {
 
         Ruby runtime = context.runtime;
 
-        numRegs = REGION_ADAPTER.getNumRegs(regs);
+        numRegs = regs.getNumRegs();
         newAry = RubyArray.newArray(runtime, numRegs);
 
         for (i = 1; i < numRegs; i++) {
             IRubyObject str = extractRange(runtime,
-                    adjustRegisterPosition(REGION_ADAPTER.getBeg(regs, i)),
-                    adjustRegisterPosition(REGION_ADAPTER.getEnd(regs, i)));
+                    adjustRegisterPosition(regs.getBeg(i)),
+                    adjustRegisterPosition(regs.getEnd(i)));
             newAry.push(str);
         }
 
