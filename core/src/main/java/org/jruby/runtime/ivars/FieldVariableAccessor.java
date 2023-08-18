@@ -96,21 +96,6 @@ public class FieldVariableAccessor extends VariableAccessor {
      * Retrieve the variable's value from the given object.
      *
      * @param object the object from which to retrieve this variable
-     * @return the variable's value or %undefined
-     */
-    public Object getOrUndefined(Object object) {
-        try {
-            Object value =  getter.invoke(object);
-            return value == null ? UndefinedValue.UNDEFINED : (IRubyObject) value;
-        } catch (Throwable t) {
-            Helpers.throwException(t);
-            return null;
-        }
-    }
-    /**
-     * Retrieve the variable's value from the given object.
-     *
-     * @param object the object from which to retrieve this variable
      * @return the variable's value
      */
     public IRubyObject getOrNil(Object object, ThreadContext context) {

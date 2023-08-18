@@ -106,8 +106,7 @@ public abstract class VariableAccessor {
      * Retrieve object or IR %undefined
      */
     public Object getOrUndefined(Object object) {
-        Object value = getVariable((RubyBasicObject) object, index);
-
+        Object value = get(object);
         return value == null ? UndefinedValue.UNDEFINED : value;
     }
 
