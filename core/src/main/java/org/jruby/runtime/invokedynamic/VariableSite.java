@@ -101,7 +101,9 @@ public class VariableSite extends MutableCallSite {
         VariableAccessor accessor = realClass.getVariableAccessorForRead(name());
 
         // produce nil if the variable has not been initialize
-        MethodHandle nullToNil = self.getRuntime().getNullToNilHandle();
+        MethodHandle nullToNil = rawValue ?
+                self.getRuntime().getNullToUndefinedHandle() :
+                self.getRuntime().getNullToNilHandle();
 
         // get variable value and filter with nullToNil
         MethodHandle getValue;
