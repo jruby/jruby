@@ -1609,8 +1609,9 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyMethod(name = "div")
     public IRubyObject op_div(ThreadContext context, IRubyObject other, IRubyObject digits) {
         RubyBigDecimal val = getVpValue(context, other, false);
-        if (val == null) return callCoerced(context, sites(context).div, other, true);
         if (digits.isNil()) {
+            if (val == null) return callCoerced(context, sites(context).div, other, true);
+
             if (isNaN() || val.isNaN()) throw newNaNFloatDomainError(context.runtime);
             if (isInfinity()) { // NOTE: MRI is inconsistent with div(other, d) impl
                 if (val.isInfinity()) throw newNaNFloatDomainError(context.runtime);
@@ -1622,14 +1623,16 @@ public class RubyBigDecimal extends RubyNumeric {
             return toInteger(context.runtime, this.value.divideToIntegralValue(val.value));
         }
 
+        final int scale = RubyNumeric.fix2int(digits);
+
+        // MRI behavior: "If digits is 0, the result is the same as the / operator."
+        if (scale == 0) return op_divide(context, other);
+
+        val = getVpValue(context, other, true);
         if (isNaN() || val.isNaN()) return getNaN(context.runtime);
 
         RubyBigDecimal div = divSpecialCases(context, val);
         if (div != null) return div;
-
-        final int scale = RubyNumeric.fix2int(digits);
-        // MRI behavior: "If digits is 0, the result is the same as the / operator."
-        if (scale == 0) return quoImpl(context, val);
 
         MathContext mathContext = new MathContext(scale, getRoundingMode(context.runtime));
         return new RubyBigDecimal(context.runtime, value.divide(val.value, mathContext)).setResult(scale);
