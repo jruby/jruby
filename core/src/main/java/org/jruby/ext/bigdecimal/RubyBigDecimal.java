@@ -1027,7 +1027,8 @@ public class RubyBigDecimal extends RubyNumeric {
     private IRubyObject remainderInternal(ThreadContext context, RubyBigDecimal val, IRubyObject arg) {
         if (isInfinity() || isNaN()) return getNaN(context.runtime);
         if (val == null) return callCoerced(context, sites(context).remainder, arg, true);
-        if (val.isInfinity() || val.isNaN() || val.isZero()) return getNaN(context.runtime);
+        if (val.isInfinity()) return this;
+        if (val.isNaN() || val.isZero()) return getNaN(context.runtime);
 
         // Java and MRI definitions of remainder are the same.
         return new RubyBigDecimal(context.runtime, value.remainder(val.value)).setResult();
