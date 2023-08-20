@@ -110,7 +110,7 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyConstant
     public final static int EXCEPTION_ALL = 255;
 
-    private static final ByteList VERSION = ByteList.create("1.3.4");
+    private static final ByteList VERSION = ByteList.create("3.1.4");
 
     // (MRI-like) internals
 
