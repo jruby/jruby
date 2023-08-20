@@ -2113,7 +2113,12 @@ public class RubyBigDecimal extends RubyNumeric {
         if (opts != context.nil) {
             arg = ArgsUtil.extractKeywordArg(context, (RubyHash) opts, "half");
             if (arg == null || arg == context.nil) return getRoundingMode(context.runtime);
-            String roundingMode = arg.asJavaString();
+            String roundingMode;
+            if (arg instanceof RubySymbol) {
+                roundingMode = arg.asJavaString();
+            } else {
+                roundingMode = arg.toString();
+            }
             switch (roundingMode) {
                 case "up":
                     return RoundingMode.HALF_UP;
@@ -2122,7 +2127,7 @@ public class RubyBigDecimal extends RubyNumeric {
                 case "even" :
                     return RoundingMode.HALF_EVEN;
                 default :
-                    throw context.runtime.newArgumentError("invalid rounding mode: " + roundingMode);
+                    throw context.runtime.newArgumentError("invalid rounding mode (" + roundingMode + ")");
             }
         }
         if (arg instanceof RubySymbol) {
@@ -2148,7 +2153,7 @@ public class RubyBigDecimal extends RubyNumeric {
                 case "floor" :
                     return RoundingMode.FLOOR;
                 default :
-                    throw context.runtime.newArgumentError("invalid rounding mode: " + roundingMode);
+                    throw context.runtime.newArgumentError("invalid rounding mode (" + roundingMode + ")");
             }
         } else {
             int ordinal = num2int(arg);
