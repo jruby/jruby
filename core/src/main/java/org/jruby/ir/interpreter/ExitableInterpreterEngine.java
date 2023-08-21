@@ -178,17 +178,6 @@ public class ExitableInterpreterEngine extends InterpreterEngine {
                 setResult(temp, currDynScope, c.getResult(), retrieveOp(c.getSource(), context, self, currDynScope, currScope, temp));
                 break;
             }
-            case GET_FIELD: {
-                GetFieldInstr gfi = (GetFieldInstr)instr;
-                IRubyObject object = (IRubyObject)gfi.getSource().retrieve(context, self, currScope, currDynScope, temp);
-                VariableAccessor a = gfi.getAccessor(object);
-                Object result = a == null ? null : (IRubyObject)a.get(object);
-                if (result == null) {
-                    result = context.nil;
-                }
-                setResult(temp, currDynScope, gfi.getResult(), result);
-                break;
-            }
             case RUNTIME_HELPER: {
                 RuntimeHelperCall rhc = (RuntimeHelperCall)instr;
                 setResult(temp, currDynScope, rhc.getResult(),

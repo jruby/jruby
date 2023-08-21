@@ -38,14 +38,13 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.ext.coverage.CoverageData;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.encoding.EncodingService;
-import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.util.KCode;
 
 import java.util.Arrays;
 
 public class ParserConfiguration {
     private DynamicScope existingScope = null;
-    private boolean asBlock = false;
+
     // What linenumber will the source think it starts from?
     private int lineNumber = 0;
     // Is this inline source (aka -e "...source...")
@@ -139,29 +138,35 @@ public class ParserConfiguration {
      * @param existingScope is the scope that captures new vars, etc...
      */
     public void parseAsBlock(DynamicScope existingScope) {
-        this.asBlock = true;
         this.existingScope = existingScope;
     }
 
     public Ruby getRuntime() {
         return runtime;
     }
-    
-    /**
-     * This method returns the appropriate first scope for the parser.
-     * 
-     * @return correct top scope for source to be parsed
-     */
-    public DynamicScope getScope(String file) {
-        if (asBlock) return existingScope;
 
-        // FIXME: We should really not be creating the dynamic scope for the root
-        // of the AST before parsing.  This makes us end up needing to readjust
-        // this dynamic scope coming out of parse (and for local static scopes it
-        // will always happen because of $~ and $_).
-        // FIXME: Because we end up adjusting this after-the-fact, we can't use
-        // any of the specific-size scopes.
-        return new ManyVarsDynamicScope(runtime.getStaticScopeFactory().newLocalScope(null, file), existingScope);
+    /**
+     * Returns the static scope which represents the top of the parse.  If an eval
+     * then we will have an existing scope to return.  If not then we make a new
+     * one since we are starting from scratch.
+     *
+     * @param file to name top scope if we have a new scope
+     * @return a static scope
+     */
+    public StaticScope getTopStaticScope(String file) {
+        return existingScope != null ?
+                existingScope.getStaticScope() :
+                runtime.getStaticScopeFactory().newLocalScope(null, file);
+    }
+
+    public DynamicScope finalizeDynamicScope(StaticScope staticScope) {
+        // Eval scooped up some new variables changing the size of the scope.
+        if (existingScope != null) {
+            existingScope.growIfNeeded();
+            return existingScope;
+        }
+
+        return DynamicScope.newDynamicScope(staticScope, existingScope);
     }
 
     public boolean isCoverageEnabled() {

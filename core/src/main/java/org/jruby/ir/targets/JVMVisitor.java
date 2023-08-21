@@ -1614,7 +1614,7 @@ public class JVMVisitor extends IRVisitor {
             throw new NotCompilableException("non-propagatable target for PutField: " + source);
         }
 
-        jvmMethod().getInstanceVariableCompiler().getField(() -> visit(source), getfieldinstr.getId());
+        jvmMethod().getInstanceVariableCompiler().getField(() -> visit(source), getfieldinstr.getId(), getfieldinstr.rawValue);
         jvmStoreLocal(getfieldinstr.getResult());
     }
 
@@ -2293,14 +2293,6 @@ public class JVMVisitor extends IRVisitor {
                 jvmAdapter().ldc(((Stringable)runtimehelpercall.getArgs()[0]).getString());
                 visit(runtimehelpercall.getArgs()[1]);
                 jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedGlobal", sig(IRubyObject.class, ThreadContext.class, String.class, IRubyObject.class));
-                jvmStoreLocal(runtimehelpercall.getResult());
-                break;
-            case IS_DEFINED_INSTANCE_VAR:
-                jvmMethod().loadContext();
-                visit(runtimehelpercall.getArgs()[0]);
-                jvmAdapter().ldc(((Stringable)runtimehelpercall.getArgs()[1]).getString());
-                visit(runtimehelpercall.getArgs()[2]);
-                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedInstanceVar", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
             case IS_DEFINED_CLASS_VAR:

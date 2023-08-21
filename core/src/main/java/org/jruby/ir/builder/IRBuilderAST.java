@@ -1674,17 +1674,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             );
         }
         case INSTVARNODE:
-            return addResultInstr(
-                    new RuntimeHelperCall(
-                            temp(),
-                            IS_DEFINED_INSTANCE_VAR,
-                            new Operand[] {
-                                    buildSelf(),
-                                    new FrozenString(((InstVarNode) node).getName()),
-                                    new FrozenString(DefinedMessage.INSTANCE_VARIABLE.getText())
-                            }
-                    )
-            );
+            return buildInstVarGetDefinition(((InstVarNode) node).getName());
         case CLASSVARNODE:
             return addResultInstr(
                     new RuntimeHelperCall(
@@ -2966,7 +2956,20 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     public Operand buildOpAsgnOr(final OpAsgnOrNode orNode) {
+        if (orNode.getFirstNode() instanceof InstVarNode) return buildInstVarOpAsgnOrNode(orNode);
+
         return buildOpAsgnOr(orNode.getFirstNode(), orNode.getSecondNode());
+    }
+
+    private Operand buildInstVarOpAsgnOrNode(OpAsgnOrNode node) {
+        Label done = getNewLabel();
+        Variable result = addResultInstr(new GetFieldInstr(temp(), buildSelf(), ((InstVarNode) node.getFirstNode()).getName(), false));
+        addInstr(createBranch(result, getManager().getTrue(), done));
+        Operand value = build(node.getSecondNode()); // This is an AST node that sets x = y, so nothing special to do here.
+        copy(result, value);
+        addInstr(new LabelInstr(done));
+
+        return result;
     }
 
     public Operand buildOpElementAsgn(OpElementAsgnNode node) {

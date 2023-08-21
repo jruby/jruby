@@ -4993,6 +4993,17 @@ public final class Ruby implements Constantizable {
         return this.nullToNil = nullToNil;
     }
 
+    public MethodHandle getNullToUndefinedHandle() {
+        MethodHandle filter = this.nullToUndefined;
+
+        if (filter != null) return filter;
+
+        filter = InvokeDynamicSupport.findStatic(Helpers.class, "nullToUndefined", methodType(IRubyObject.class, IRubyObject.class));
+        filter = explicitCastArguments(filter, methodType(IRubyObject.class, Object.class));
+
+        return this.nullToUndefined = filter;
+    }
+
     // Parser stats methods
     private void addLoadParseToStats() {
         if (parserStats != null) parserStats.addLoadParse();
@@ -5799,6 +5810,7 @@ public final class Ruby implements Constantizable {
      * The nullToNil filter for this runtime.
      */
     private MethodHandle nullToNil;
+    private MethodHandle nullToUndefined;
 
     public final ClassValue<TypePopulator> POPULATORS = new ClassValue<TypePopulator>() {
         @Override

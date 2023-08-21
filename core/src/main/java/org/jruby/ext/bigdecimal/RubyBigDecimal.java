@@ -110,7 +110,7 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyConstant
     public final static int EXCEPTION_ALL = 255;
 
-    private static final ByteList VERSION = ByteList.create("1.3.4");
+    private static final ByteList VERSION = ByteList.create("3.1.4");
 
     // (MRI-like) internals
 
@@ -140,8 +140,6 @@ public class RubyBigDecimal extends RubyNumeric {
 
         bigDecimal.defineAnnotatedMethods(RubyBigDecimal.class);
         bigDecimal.defineAnnotatedConstants(RubyBigDecimal.class);
-
-        bigDecimal.getSingletonClass().undefineMethod("allocate");
 
         //RubyModule bigMath = runtime.defineModule("BigMath");
         // NOTE: BigMath.exp and BigMath.pow should be implemented as native
@@ -1029,7 +1027,8 @@ public class RubyBigDecimal extends RubyNumeric {
     private IRubyObject remainderInternal(ThreadContext context, RubyBigDecimal val, IRubyObject arg) {
         if (isInfinity() || isNaN()) return getNaN(context.runtime);
         if (val == null) return callCoerced(context, sites(context).remainder, arg, true);
-        if (val.isInfinity() || val.isNaN() || val.isZero()) return getNaN(context.runtime);
+        if (val.isInfinity()) return this;
+        if (val.isNaN() || val.isZero()) return getNaN(context.runtime);
 
         // Java and MRI definitions of remainder are the same.
         return new RubyBigDecimal(context.runtime, value.remainder(val.value)).setResult();
@@ -1609,8 +1608,9 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyMethod(name = "div")
     public IRubyObject op_div(ThreadContext context, IRubyObject other, IRubyObject digits) {
         RubyBigDecimal val = getVpValue(context, other, false);
-        if (val == null) return callCoerced(context, sites(context).div, other, true);
         if (digits.isNil()) {
+            if (val == null) return callCoerced(context, sites(context).div, other, true);
+
             if (isNaN() || val.isNaN()) throw newNaNFloatDomainError(context.runtime);
             if (isInfinity()) { // NOTE: MRI is inconsistent with div(other, d) impl
                 if (val.isInfinity()) throw newNaNFloatDomainError(context.runtime);
@@ -1622,14 +1622,16 @@ public class RubyBigDecimal extends RubyNumeric {
             return toInteger(context.runtime, this.value.divideToIntegralValue(val.value));
         }
 
+        final int scale = RubyNumeric.fix2int(digits);
+
+        // MRI behavior: "If digits is 0, the result is the same as the / operator."
+        if (scale == 0) return op_divide(context, other);
+
+        val = getVpValue(context, other, true);
         if (isNaN() || val.isNaN()) return getNaN(context.runtime);
 
         RubyBigDecimal div = divSpecialCases(context, val);
         if (div != null) return div;
-
-        final int scale = RubyNumeric.fix2int(digits);
-        // MRI behavior: "If digits is 0, the result is the same as the / operator."
-        if (scale == 0) return quoImpl(context, val);
 
         MathContext mathContext = new MathContext(scale, getRoundingMode(context.runtime));
         return new RubyBigDecimal(context.runtime, value.divide(val.value, mathContext)).setResult(scale);
@@ -2112,7 +2114,12 @@ public class RubyBigDecimal extends RubyNumeric {
         if (opts != context.nil) {
             arg = ArgsUtil.extractKeywordArg(context, (RubyHash) opts, "half");
             if (arg == null || arg == context.nil) return getRoundingMode(context.runtime);
-            String roundingMode = arg.asJavaString();
+            String roundingMode;
+            if (arg instanceof RubySymbol) {
+                roundingMode = arg.asJavaString();
+            } else {
+                roundingMode = arg.toString();
+            }
             switch (roundingMode) {
                 case "up":
                     return RoundingMode.HALF_UP;
@@ -2121,7 +2128,7 @@ public class RubyBigDecimal extends RubyNumeric {
                 case "even" :
                     return RoundingMode.HALF_EVEN;
                 default :
-                    throw context.runtime.newArgumentError("invalid rounding mode: " + roundingMode);
+                    throw context.runtime.newArgumentError("invalid rounding mode (" + roundingMode + ")");
             }
         }
         if (arg instanceof RubySymbol) {
@@ -2147,7 +2154,7 @@ public class RubyBigDecimal extends RubyNumeric {
                 case "floor" :
                     return RoundingMode.FLOOR;
                 default :
-                    throw context.runtime.newArgumentError("invalid rounding mode: " + roundingMode);
+                    throw context.runtime.newArgumentError("invalid rounding mode (" + roundingMode + ")");
             }
         } else {
             int ordinal = num2int(arg);

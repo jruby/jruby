@@ -1332,17 +1332,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
                     )
             );
         } else if (node instanceof InstanceVariableReadNode) {
-            return addResultInstr(
-                    new RuntimeHelperCall(
-                            temp(),
-                            IS_DEFINED_INSTANCE_VAR,
-                            new Operand[]{
-                                    buildSelf(),
-                                    new FrozenString(symbolFor(node)),
-                                    new FrozenString(DefinedMessage.INSTANCE_VARIABLE.getText())
-                            }
-                    )
-            );
+            return buildInstVarGetDefinition(symbolFor(node));
         } else if (node instanceof ClassVariableReadNode) {
             return addResultInstr(
                     new RuntimeHelperCall(

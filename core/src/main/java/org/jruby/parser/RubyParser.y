@@ -458,6 +458,7 @@ program       : {
                       expr = p.remove_begin(expr);
                       p.void_expr(expr);
                   }
+                  p.finalizeDynamicScope();
                   p.getResult().setAST(p.addRootNode($2));
                   /*% %*/
                   /*% ripper[final]: program!($2) %*/

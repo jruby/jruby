@@ -861,7 +861,6 @@ public class IRRuntimeHelpers {
             DynamicScope tlbScope = ((IRScriptBody) irScope).getScriptDynamicScope();
             if (tlbScope != null) {
                 context.preScopedBody(tlbScope);
-                tlbScope.growIfNeeded();
                 return tlbScope;
             }
         }
@@ -956,12 +955,6 @@ public class IRRuntimeHelpers {
         }
 
         return defined ? definedMessage : context.nil;
-    }
-
-    @JIT @Interp
-    public static IRubyObject isDefinedInstanceVar(ThreadContext context, IRubyObject receiver, String name, IRubyObject definedMessage) {
-        return receiver.getInstanceVariables().hasInstanceVariable(name) ?
-                definedMessage : context.nil;
     }
 
     @JIT @Interp

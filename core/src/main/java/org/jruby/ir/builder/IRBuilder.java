@@ -33,6 +33,7 @@ import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
+import org.jruby.util.DefinedMessage;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
 
@@ -1324,7 +1325,22 @@ public abstract class IRBuilder<U, V, W, X> {
     }
 
     public Operand buildInstVar(RubySymbol name) {
-        return addResultInstr(new GetFieldInstr(temp(), buildSelf(), name));
+        return addResultInstr(new GetFieldInstr(temp(), buildSelf(), name, false));
+    }
+
+    Operand buildInstVarGetDefinition(RubySymbol name) {
+        Variable result = temp();
+        Label done = getNewLabel();
+        Label undefined = getNewLabel();
+        Variable value = addResultInstr(new GetFieldInstr(temp(), buildSelf(), name, true));
+        addInstr(createBranch(value, UndefinedValue.UNDEFINED, undefined));
+        copy(result, new FrozenString(DefinedMessage.INSTANCE_VARIABLE.getText()));
+        jump(done);
+        addInstr(new LabelInstr(undefined));
+        copy(result, nil());
+        addInstr(new LabelInstr(done));
+
+        return result;
     }
 
     InterpreterContext buildLambdaInner(U blockArgs, U body) {
