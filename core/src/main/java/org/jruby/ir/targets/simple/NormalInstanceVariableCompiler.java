@@ -33,12 +33,16 @@ public class NormalInstanceVariableCompiler implements InstanceVariableCompiler 
         compiler.adapter.invokevirtual(p(VariableAccessor.class), "set", sig(void.class, Object.class, Object.class));
     }
 
-    public void getField(Runnable source, String name) {
+    public void getField(Runnable source, String name, boolean rawValue) {
         source.run();
         cacheVariableAccessor(name, false);
         source.run();
-        compiler.loadContext();
-        compiler.adapter.invokevirtual(p(VariableAccessor.class), "getOrNil", sig(IRubyObject.class, Object.class, ThreadContext.class));
+        if (rawValue) {
+            compiler.adapter.invokevirtual(p(VariableAccessor.class), "getOrUndefined", sig(Object.class, Object.class));
+        } else {
+            compiler.loadContext();
+            compiler.adapter.invokevirtual(p(VariableAccessor.class), "getOrNil", sig(IRubyObject.class, Object.class, ThreadContext.class));
+        }
     }
 
     /**

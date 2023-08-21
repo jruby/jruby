@@ -2527,17 +2527,7 @@ public class IRBuilder {
             );
         }
         case INSTVARNODE:
-            return addResultInstr(
-                    new RuntimeHelperCall(
-                            createTemporaryVariable(),
-                            IS_DEFINED_INSTANCE_VAR,
-                            new Operand[] {
-                                    buildSelf(),
-                                    new FrozenString(((InstVarNode) node).getName()),
-                                    new FrozenString(DefinedMessage.INSTANCE_VARIABLE.getText())
-                            }
-                    )
-            );
+            return buildInstVarGetDefinition((InstVarNode) node);
         case CLASSVARNODE:
             return addResultInstr(
                     new RuntimeHelperCall(
@@ -3879,7 +3869,7 @@ public class IRBuilder {
     }
 
     public Operand buildInstVar(InstVarNode node) {
-        return addResultInstr(new GetFieldInstr(createTemporaryVariable(), buildSelf(), node.getName()));
+        return addResultInstr(new GetFieldInstr(createTemporaryVariable(), buildSelf(), node.getName(), false));
     }
 
     private InterpreterContext buildIterInner(RubySymbol methodName, IterNode iterNode) {
@@ -4229,6 +4219,32 @@ public class IRBuilder {
         return result;
     }
 
+    private Operand buildInstVarOpAsgnOrNode(OpAsgnOrNode node) {
+        Label done = getNewLabel();
+        Variable result = addResultInstr(new GetFieldInstr(temp(), buildSelf(), ((InstVarNode) node.getFirstNode()).getName(), false));
+        addInstr(createBranch(result, manager.getTrue(), done));
+        Operand value = build(node.getSecondNode()); // This is an AST node that sets x = y, so nothing special to do here.
+        copy(result, value);
+        addInstr(new LabelInstr(done));
+
+        return result;
+    }
+
+    private Operand buildInstVarGetDefinition(InstVarNode node) {
+        Variable result = temp();
+        Label done = getNewLabel();
+        Label undefined = getNewLabel();
+        Variable value = addResultInstr(new GetFieldInstr(temp(), buildSelf(), node.getName(), true));
+        addInstr(createBranch(value, UndefinedValue.UNDEFINED, undefined));
+        copy(result, new FrozenString(DefinedMessage.INSTANCE_VARIABLE.getText()));
+        jump(done);
+        addInstr(new LabelInstr(undefined));
+        copy(result, buildNil());
+        addInstr(new LabelInstr(done));
+
+        return result;
+    }
+
     // "x ||= y"
     // --> "x = (is_defined(x) && is_true(x) ? x : y)"
     // --> v = -- build(x) should return a variable! --
@@ -4238,6 +4254,8 @@ public class IRBuilder {
     //   L:
     //
     public Operand buildOpAsgnOr(final OpAsgnOrNode orNode) {
+        if (orNode.getFirstNode() instanceof InstVarNode) return buildInstVarOpAsgnOrNode(orNode);
+
         Label    l1 = getNewLabel();
         Label    l2 = null;
         Variable flag = createTemporaryVariable();

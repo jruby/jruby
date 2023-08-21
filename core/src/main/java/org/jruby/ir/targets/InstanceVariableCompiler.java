@@ -21,6 +21,7 @@ public interface InstanceVariableCompiler {
      *
      * @param source runnable to push source object, may be called twice
      * @param name name of variable to load
+     * @param rawValue should the result be null instead of nil on non-existent field
      */
-    public abstract void getField(Runnable source, String name);
+    public abstract void getField(Runnable source, String name, boolean rawValue);
 }

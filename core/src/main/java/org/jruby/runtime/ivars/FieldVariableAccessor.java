@@ -30,6 +30,7 @@ package org.jruby.runtime.ivars;
 import com.headius.invokebinder.Binder;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
+import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;

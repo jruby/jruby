@@ -920,6 +920,10 @@ public class Helpers {
         return value != null ? value : nil;
     }
 
+    public static IRubyObject nullToUndefined(IRubyObject value) {
+        return value != null ? value : UndefinedValue.UNDEFINED;
+    }
+
     public static void handleArgumentSizes(ThreadContext context, Ruby runtime, int given, int required, int opt, int rest) {
         if (opt == 0) {
             if (rest < 0) {
