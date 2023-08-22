@@ -1368,8 +1368,24 @@ public class RubyHash extends RubyObject implements Map {
     private static final VisitorWithState<long[]> CalculateHashVisitor = new VisitorWithState<long[]>() {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, long[] hval) {
-            ByteBuffer.wrap(HASH_16_BYTE.get()).putLong(Helpers.safeHash(context, key).value).putLong(Helpers.safeHash(context, value).value);
-            hval[0] ^= Helpers.multAndMix(context.runtime.getHashSeedK0(), Arrays.hashCode(HASH_16_BYTE.get()));
+            byte[] bytes = HASH_16_BYTE.get();
+
+            // This array must not be shared with recursive hash calls, so we clear it.
+            // If already cleared we create a new array.
+            // FIXME: This means only a top-level Hash#hash will benefit from the caching; recursive calls will alloc.
+            if (bytes == null) {
+                bytes = new byte[16];
+            } else {
+                HASH_16_BYTE.set(null);
+            }
+
+            try {
+                ByteBuffer.wrap(bytes).putLong(Helpers.safeHash(context, key).value).putLong(Helpers.safeHash(context, value).value);
+                hval[0] ^= Helpers.multAndMix(context.runtime.getHashSeedK0(), Arrays.hashCode(bytes));
+            } finally {
+                // Restore the cache with bytes in hand
+                HASH_16_BYTE.set(bytes);
+            }
         }
     };
 
