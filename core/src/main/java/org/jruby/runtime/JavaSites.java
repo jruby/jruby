@@ -537,6 +537,13 @@ public class JavaSites {
         public final CallSite proper_superset = new FunctionalCachingCallSite("proper_superset?");
         public final CallSite to_a = new FunctionalCachingCallSite("to_a");
         public final CallSite ary_join = new FunctionalCachingCallSite("join");
+        public final CallSite add = new FunctionalCachingCallSite("add");
+        public final CallSite each_strongly_connected_component = new FunctionalCachingCallSite("each_strongly_connected_component");
+        public final CallSite each = new FunctionalCachingCallSite("each");
+        public final RespondToCallSite respond_to_each = new RespondToCallSite("each");
+        public final CallSite each_entry = new FunctionalCachingCallSite("each_entry");
+        public final RespondToCallSite respond_to_each_entry = new RespondToCallSite("each_entry");
+        public final CallSite merge = new FunctionalCachingCallSite("merge");
     }
 
     public static class CheckedSites {
