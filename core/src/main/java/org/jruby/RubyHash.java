@@ -1356,11 +1356,18 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
         final int size = size();
-        long[] hval = { Helpers.hashStart(context.runtime, size) };
-        if (size > 0) {
+
+        long hash = Helpers.hashStart(context.runtime, size);
+
+        if (size != 0) {
+            long[] hval = {hash};
+
             iteratorVisitAll(context, CalculateHashVisitor, hval);
+
+            hash = hval[0];
         }
-        return context.runtime.newFixnum(hval[0]);
+
+        return context.runtime.newFixnum(hash);
     }
 
     private static final ThreadLocal<ByteBuffer> HASH_16_BYTE = ThreadLocal.withInitial(() -> ByteBuffer.allocate(16));
