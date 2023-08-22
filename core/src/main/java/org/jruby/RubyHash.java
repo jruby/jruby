@@ -1363,29 +1363,19 @@ public class RubyHash extends RubyObject implements Map {
         return context.runtime.newFixnum(hval[0]);
     }
 
-    private static final ThreadLocal<byte[]> HASH_16_BYTE = ThreadLocal.withInitial(() -> {return new byte[16];});
+    private static final ThreadLocal<ByteBuffer> HASH_16_BYTE = ThreadLocal.withInitial(() -> ByteBuffer.allocate(16));
 
     private static final VisitorWithState<long[]> CalculateHashVisitor = new VisitorWithState<long[]>() {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, long[] hval) {
-            byte[] bytes = HASH_16_BYTE.get();
+            // perform hashing of key and value before populating shared buffer
+            long keyHash = Helpers.safeHash(context, key).value;
+            long valueHash = Helpers.safeHash(context, value).value;
 
-            // This array must not be shared with recursive hash calls, so we clear it.
-            // If already cleared we create a new array.
-            // FIXME: This means only a top-level Hash#hash will benefit from the caching; recursive calls will alloc.
-            if (bytes == null) {
-                bytes = new byte[16];
-            } else {
-                HASH_16_BYTE.set(null);
-            }
+            ByteBuffer buffer = HASH_16_BYTE.get();
+            ((ByteBuffer)buffer.clear()).putLong(keyHash).putLong(valueHash);
 
-            try {
-                ByteBuffer.wrap(bytes).putLong(Helpers.safeHash(context, key).value).putLong(Helpers.safeHash(context, value).value);
-                hval[0] ^= Helpers.multAndMix(context.runtime.getHashSeedK0(), Arrays.hashCode(bytes));
-            } finally {
-                // Restore the cache with bytes in hand
-                HASH_16_BYTE.set(bytes);
-            }
+            hval[0] ^= Helpers.multAndMix(context.runtime.getHashSeedK0(), Arrays.hashCode(buffer.array()));
         }
     };
 
