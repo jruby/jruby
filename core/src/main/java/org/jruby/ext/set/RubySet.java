@@ -207,7 +207,7 @@ public class RubySet extends RubyObject implements Set {
         }
 
         allocHash(context.runtime);
-        return callMethod(context, "merge", enume); // TODO site-cache
+        return sites(context).merge.call(context, this, this, enume); // TODO site-cache
     }
 
     protected IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
@@ -251,11 +251,12 @@ public class RubySet extends RubyObject implements Set {
 
     // set.rb do_with_enum (block is required)
     private static IRubyObject doWithEnum(final ThreadContext context, final IRubyObject enume, final EachBody blockImpl) {
-        if ( enume.respondsTo("each_entry") ) {
-            return enume.callMethod(context, "each_entry", IRubyObject.NULL_ARRAY, new Block(blockImpl));
+        JavaSites.SetSites sites = sites(context);
+        if ( sites.respond_to_each_entry.respondsTo(context, enume, enume) ) {
+            return sites.each_entry.call(context, enume, enume, new Block(blockImpl));
         }
-        if ( enume.respondsTo("each") ) {
-            return enume.callMethod(context, "each", IRubyObject.NULL_ARRAY, new Block(blockImpl));
+        if ( sites.respond_to_each.respondsTo(context, enume, enume) ) {
+            return sites.each.call(context, enume, enume, new Block(blockImpl));
         }
 
         throw context.runtime.newArgumentError("value must be enumerable");
@@ -274,7 +275,7 @@ public class RubySet extends RubyObject implements Set {
     }
 
     IRubyObject invokeAdd(final ThreadContext context, final IRubyObject val) {
-        return this.callMethod(context,"add", val); // TODO site-cache
+        return sites(context).add.call(context, this, this, val);
     }
 
     private static abstract class EachBody extends JavaInternalBlockBody {
@@ -445,7 +446,7 @@ public class RubySet extends RubyObject implements Set {
             }
         }
         else {
-            set.callMethod(context, "each", IRubyObject.NULL_ARRAY, new Block(
+            sites(context).each.call(context, set, set, new Block(
                 new EachBody(context.runtime) {
                     IRubyObject yieldImpl(ThreadContext context, IRubyObject e) {
                         addFlattened(context, seen, e); return context.nil;
@@ -1017,7 +1018,7 @@ public class RubySet extends RubyObject implements Set {
         final RubyClass Set = runtime.getClass("Set");
         final RubySet set = new RubySet(runtime, Set);
         set.allocHash(runtime, dig.size());
-        dig.callMethod(context, "each_strongly_connected_component", IRubyObject.NULL_ARRAY, new Block(
+        sites(context).each_strongly_connected_component.call(context, this, dig, new Block(
             new JavaInternalBlockBody(runtime, Signature.ONE_REQUIRED) {
                 @Override
                 public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
@@ -1087,7 +1088,7 @@ public class RubySet extends RubyObject implements Set {
                 return ((RubySet) set).each(context, block);
             }
             // some Enumerable (we do not expect this to happen)
-            return set.callMethod(context, "each", IRubyObject.NULL_ARRAY, block);
+            return sites(context).each.call(context, this, set, block);
         }
 
     }
