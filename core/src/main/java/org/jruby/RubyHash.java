@@ -1356,20 +1356,33 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
         final int size = size();
-        long[] hval = { Helpers.hashStart(context.runtime, size) };
-        if (size > 0) {
+
+        long hash = Helpers.hashStart(context.runtime, size);
+
+        if (size != 0) {
+            long[] hval = {hash};
+
             iteratorVisitAll(context, CalculateHashVisitor, hval);
+
+            hash = hval[0];
         }
-        return context.runtime.newFixnum(hval[0]);
+
+        return context.runtime.newFixnum(hash);
     }
 
-    private static final ThreadLocal<byte[]> HASH_16_BYTE = ThreadLocal.withInitial(() -> {return new byte[16];});
+    private static final ThreadLocal<ByteBuffer> HASH_16_BYTE = ThreadLocal.withInitial(() -> ByteBuffer.allocate(16));
 
     private static final VisitorWithState<long[]> CalculateHashVisitor = new VisitorWithState<long[]>() {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, long[] hval) {
-            ByteBuffer.wrap(HASH_16_BYTE.get()).putLong(Helpers.safeHash(context, key).value).putLong(Helpers.safeHash(context, value).value);
-            hval[0] ^= Helpers.multAndMix(context.runtime.getHashSeedK0(), Arrays.hashCode(HASH_16_BYTE.get()));
+            // perform hashing of key and value before populating shared buffer
+            long keyHash = Helpers.safeHash(context, key).value;
+            long valueHash = Helpers.safeHash(context, value).value;
+
+            ByteBuffer buffer = HASH_16_BYTE.get();
+            ((ByteBuffer)buffer.clear()).putLong(keyHash).putLong(valueHash);
+
+            hval[0] ^= Helpers.multAndMix(context.runtime.getHashSeedK0(), Arrays.hashCode(buffer.array()));
         }
     };
 
