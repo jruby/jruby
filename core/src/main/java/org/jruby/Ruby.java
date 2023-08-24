@@ -187,6 +187,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.ref.WeakReference;
 import java.net.BindException;
 import java.nio.charset.Charset;
+import java.nio.charset.UnsupportedCharsetException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -2746,9 +2747,7 @@ public final class Ruby implements Constantizable {
     private byte[] encodeToBytes(String string) {
         Charset charset = getDefaultCharset();
 
-        byte[] bytes = charset == null ? string.getBytes() : string.getBytes(charset);
-
-        return bytes;
+        return charset == null ? string.getBytes() : string.getBytes(charset);
     }
 
     @Deprecated
@@ -2822,11 +2821,11 @@ public final class Ruby implements Constantizable {
      * Get the default java.nio.charset.Charset for the current default internal encoding.
      */
     public Charset getDefaultCharset() {
-        Encoding enc = getDefaultEncoding();
-
-        Charset charset = EncodingUtils.charsetForEncoding(enc);
-
-        return charset;
+        try {
+            return EncodingUtils.charsetForEncoding(getDefaultEncoding());
+        } catch (UnsupportedCharsetException e) {
+            return null;
+        }
     }
 
     /**
