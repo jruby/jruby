@@ -5,7 +5,7 @@ import org.jruby.ParseResult;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyNumeric;
-import org.jruby.RubySymbol;;
+import org.jruby.RubySymbol;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRManager;
@@ -35,6 +35,8 @@ import org.jruby.ir.operands.SymbolProc;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
+import org.jruby.parser.StaticScope;
+import org.jruby.parser.StaticScopeFactory;
 import org.jruby.runtime.ArgumentType;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.RubyEvent;
@@ -57,7 +59,9 @@ import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 import static org.jruby.runtime.ThreadContext.*;
 
 public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode> {
+    String fileName = null;
     byte[] source = null;
+    StaticScope staticScope = null;
 
     public IRBuilderYARP(IRManager manager, IRScope scope, IRBuilder parent, IRBuilder variableBuilder) {
         super(manager, scope, parent, variableBuilder);
@@ -85,74 +89,150 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     Operand build(Variable result, Node node) {
         if (node == null) return nil();
 
-        // FIXME: Need node types if this is how we process
-        switch (node.getNodeType()) {
-            case ALIAS: return buildAlias((AliasNode) node);
-            case AND: return buildAnd((AndNode) node);
-            case ARRAY: return buildArray((ArrayNode) node);
-            case BEGIN: return buildBegin((BeginNode) node);
-            case BLOCK: return buildBlock((BlockNode) node);
-            case BLOCKARGUMENT: return buildBlockArgument((BlockArgumentNode) node);
-            case BREAK: return buildBreak((BreakNode) node);
-            case CALL: return buildCall(result, (CallNode) node);
-            case CASE: return buildCase((CaseNode) node);
-            case CLASS: return buildClass((ClassNode) node);
-            case CLASSVARIABLEREAD: return buildClassVariableRead(result, (ClassVariableReadNode) node);
-            case CLASSVARIABLEWRITE: return buildClassVariableWrite((ClassVariableWriteNode) node);
-            case CONSTANTPATH: return buildConstantPath(result, (ConstantPathNode) node);
-            case CONSTANTPATHWRITE: return buildConstantWritePath((ConstantPathWriteNode) node);
-            case CONSTANTREAD: return buildConstantRead((ConstantReadNode) node);
-            case DEF: return buildDef((DefNode) node);
-            case DEFINED: return buildDefined((DefinedNode) node);
-            case ELSE: return buildElse((ElseNode) node);
-            case FALSE: return fals();
-            case FLOAT: return buildFloat((FloatNode) node);
-            case FORWARDINGSUPER: return buildForwardingSuper(result, (ForwardingSuperNode) node);
-            case GLOBALVARIABLEREAD: return buildGlobalVariableRead(result, (GlobalVariableReadNode) node);
-            case GLOBALVARIABLEWRITE: return buildGlobalVariableWrite((GlobalVariableWriteNode) node);
-            case HASH: return buildHash((HashNode) node);
-            case IF: return buildIf(result, (IfNode) node);
-            case INSTANCEVARIABLEREAD: return buildInstanceVariableRead((InstanceVariableReadNode) node);
-            case INSTANCEVARIABLEWRITE: return buildInstanceVariableWrite((InstanceVariableWriteNode) node);
-            case INTEGER: return buildInteger((IntegerNode) node);
-            case INTERPOLATEDREGULAREXPRESSION: return buildInterpolatedRegularExpression(result, (InterpolatedRegularExpressionNode) node);
-            case INTERPOLATEDSYMBOL: return buildInterpolatedSymbol(result, (InterpolatedSymbolNode) node);
-            case INTERPOLATEDSTRING: return buildInterpolatedString(result, (InterpolatedStringNode) node);
-            case LAMBDA: return buildLambda((LambdaNode) node);
-            case LOCALVARIABLEREAD: return buildLocalVariableRead((LocalVariableReadNode) node);
-            case LOCALVARIABLEWRITE: return buildLocalVariableWrite((LocalVariableWriteNode) node);
-            case MISSING: return buildMissing((MissingNode) node);
-            case MODULE: return buildModule((ModuleNode) node);
-            case MULTIWRITE: return buildMultiWriteNode((MultiWriteNode) node);
-            case NEXT: return buildNext((NextNode) node);
-            case NIL: return nil();
-            case OPERATORASSIGNMENT: return buildOperatorAssignment((OperatorAssignmentNode) node);
-            case OPERATORORASSIGNMENT: return buildOperatorOrAssignment((OperatorOrAssignmentNode) node);
-            case OR: return buildOr((OrNode) node);
-            case PARENTHESES: return build(((ParenthesesNode) node).statements);
-            case PROGRAM: return buildProgram((ProgramNode) node);
-            case RANGE: return buildRange((RangeNode) node);
-            case REGULAREXPRESSION: return buildRegularExpression((RegularExpressionNode) node);
-            case RESCUEMODIFIER: return buildRescueModifier((RescueModifierNode) node);
-            case RETRY: return buildRetry((RetryNode) node);
-            case RETURN: return buildReturn((ReturnNode) node);
-            case SELF: return buildSelf();
-            case SINGLETONCLASS: return buildSingletonClass((SingletonClassNode) node);
-            case SOURCEFILE: return buildSourceFile();
-            case SOURCELINE: return buildSourceLine(node);
-            case SPLAT: return buildSplat((SplatNode) node);
-            case STATEMENTS: return buildStatements((StatementsNode) node);
-            case STRING: return buildString((StringNode) node);
-            case STRINGCONCAT: return buildStringConcat((StringConcatNode) node);
-            case SUPER: return buildSuper(result, (SuperNode) node);
-            case SYMBOL: return buildSymbol((SymbolNode) node);
-            case TRUE: return tru();
-            case UNDEF: return buildUndef((UndefNode) node);
-            case UNLESS: return buildUnless(result, (UnlessNode) node);
-            case UNTIL: return buildUntil((UntilNode) node);
-            case WHILE: return buildWhile((WhileNode) node);
-            case YIELD: return buildYield(result, (YieldNode) node);
-            default: throw new RuntimeException("Unhandled Node type: " + node);
+        if (node instanceof AliasNode) {
+            return buildAlias((AliasNode) node);
+        } else if (node instanceof AndNode) {
+            return buildAnd((AndNode) node);
+        } else if (node instanceof ArrayNode) {
+            return buildArray((ArrayNode) node);
+        } else if (node instanceof BeginNode) {
+            return buildBegin((BeginNode) node);
+        } else if (node instanceof BlockNode) {
+            return buildBlock((BlockNode) node);
+        } else if (node instanceof BlockArgumentNode) {
+            return buildBlockArgument((BlockArgumentNode) node);
+        } else if (node instanceof BreakNode) {
+            return buildBreak((BreakNode) node);
+        } else if (node instanceof CallNode) {
+            return buildCall(result, (CallNode) node, symbol(((CallNode) node).name));
+        } else if (node instanceof CaseNode) {
+            return buildCase((CaseNode) node);
+        } else if (node instanceof ClassNode) {
+            return buildClass((ClassNode) node);
+        } else if (node instanceof ClassVariableReadNode) {
+            return buildClassVariableRead(result, (ClassVariableReadNode) node);
+        } else if (node instanceof ClassVariableWriteNode) {
+            return buildClassVariableWrite((ClassVariableWriteNode) node);
+    //    } else if (node instanceof ConstantOperatorWriteNode) {
+    //        return buildConstantOperatorWrite((ConstantOperatorWriteNode) node);
+        } else if (node instanceof ConstantPathNode) {
+            return buildConstantPath(result, (ConstantPathNode) node);
+        } else if (node instanceof ConstantPathWriteNode) {
+            return buildConstantWritePath((ConstantPathWriteNode) node);
+        } else if (node instanceof ConstantReadNode) {
+            return buildConstantRead((ConstantReadNode) node);
+        } else if (node instanceof DefNode) {
+            return buildDef((DefNode) node);
+        } else if (node instanceof DefinedNode) {
+            return buildDefined((DefinedNode) node);
+        } else if (node instanceof ElseNode) {
+            return buildElse((ElseNode) node);
+        } else if (node instanceof FalseNode) {
+            return fals();
+        } else if (node instanceof FloatNode) {
+            return buildFloat((FloatNode) node);
+        } else if (node instanceof ForwardingSuperNode) {
+            return buildForwardingSuper(result, (ForwardingSuperNode) node);
+   //     } else if (node instanceof GlobalVariableOperatorWriteNode) {
+   //         return buildGlobalVariableOperatorWrite((GlobalVariableOperatorWriteNode) node);
+        } else if (node instanceof GlobalVariableReadNode) {
+            return buildGlobalVariableRead(result, (GlobalVariableReadNode) node);
+        } else if (node instanceof GlobalVariableWriteNode) {
+            return buildGlobalVariableWrite((GlobalVariableWriteNode) node);
+        } else if (node instanceof HashNode) {
+            return buildHash((HashNode) node);
+        } else if (node instanceof IfNode) {
+            return buildIf(result, (IfNode) node);
+    //    } else if (node instanceof InstanceVariableOperatorOrWriteNode) {
+    //        return buildInstanceVariableOperatorOrWrite((InstanceVariableOperatorOrWriteNode) node);
+    //    } else if (node instanceof InstanceVariableOperatorWriteNode) {
+    //        return buildInstanceVariableOperatorWrite((InstanceVariableOperatorWriteNode) node);
+        } else if (node instanceof InstanceVariableReadNode) {
+            return buildInstanceVariableRead((InstanceVariableReadNode) node);
+        } else if (node instanceof InstanceVariableWriteNode) {
+            return buildInstanceVariableWrite((InstanceVariableWriteNode) node);
+        } else if (node instanceof IntegerNode) {
+            return buildInteger((IntegerNode) node);
+        } else if (node instanceof InterpolatedRegularExpressionNode) {
+            return buildInterpolatedRegularExpression(result, (InterpolatedRegularExpressionNode) node);
+        } else if (node instanceof InterpolatedStringNode) {
+            return buildInterpolatedString(result, (InterpolatedStringNode) node);
+        } else if (node instanceof InterpolatedSymbolNode) {
+            return buildInterpolatedSymbol(result, (InterpolatedSymbolNode) node);
+        } else if (node instanceof LambdaNode) {
+            return buildLambda((LambdaNode) node);
+      //  } else if (node instanceof LocalVariableOperatorWriteNode) {
+      //      return buildLocalVariableOperatorWrite((LocalVariableOperatorWriteNode) node);
+        } else if (node instanceof LocalVariableReadNode) {
+            return buildLocalVariableRead((LocalVariableReadNode) node);
+        } else if (node instanceof LocalVariableWriteNode) {
+            return buildLocalVariableWrite((LocalVariableWriteNode) node);
+        } else if (node instanceof MissingNode) {
+            return buildMissing((MissingNode) node);
+        } else if (node instanceof ModuleNode) {
+            return buildModule((ModuleNode) node);
+        } else if (node instanceof MultiWriteNode) {
+            return buildMultiWriteNode((MultiWriteNode) node);
+        } else if (node instanceof NextNode) {
+            return buildNext((NextNode) node);
+        } else if (node instanceof NilNode) {
+            return nil();
+        } else if (node instanceof OperatorWriteNode) { // @a += bar
+            return buildOperatorWrite((OperatorWriteNode) node);
+        } else if (node instanceof CallOperatorWriteNode) { // foo.bar += baz
+            return buildCallOperatorWrite((CallOperatorWriteNode) node);
+      //  } else if (node instanceof ClassVariableOperatorWriteNode) { // @@foo += bar
+      //      return buildClassVariableOperatorWrite((ClassVariableOperatorWriteNode) node);
+        } else if (node instanceof OrNode) {
+            return buildOr((OrNode) node);
+        } else if (node instanceof ParenthesesNode) {
+            return build(((ParenthesesNode) node).body);
+        } else if (node instanceof ProgramNode) {
+            return buildProgram((ProgramNode) node);
+        } else if (node instanceof RangeNode) {
+            return buildRange((RangeNode) node);
+        } else if (node instanceof RegularExpressionNode) {
+            return buildRegularExpression((RegularExpressionNode) node);
+        } else if (node instanceof RescueModifierNode) {
+            return buildRescueModifier((RescueModifierNode) node);
+        } else if (node instanceof RetryNode) {
+            return buildRetry((RetryNode) node);
+        } else if (node instanceof ReturnNode) {
+            return buildReturn((ReturnNode) node);
+        } else if (node instanceof SelfNode) {
+            return buildSelf();
+        } else if (node instanceof SingletonClassNode) {
+            return buildSingletonClass((SingletonClassNode) node);
+        } else if (node instanceof SourceFileNode) {
+            return buildSourceFile();
+        } else if (node instanceof SourceLineNode) {
+            return buildSourceLine(node);
+        } else if (node instanceof SplatNode) {
+            return buildSplat((SplatNode) node);
+        } else if (node instanceof StatementsNode) {
+            return buildStatements((StatementsNode) node);
+        } else if (node instanceof StringNode) {
+            return buildString((StringNode) node);
+        } else if (node instanceof StringConcatNode) {
+            return buildStringConcat((StringConcatNode) node);
+        } else if (node instanceof SuperNode) {
+            return buildSuper(result, (SuperNode) node);
+        } else if (node instanceof SymbolNode) {
+            return buildSymbol((SymbolNode) node);
+        } else if (node instanceof TrueNode) {
+            return tru();
+        } else if (node instanceof UndefNode) {
+            return buildUndef((UndefNode) node);
+        } else if (node instanceof UnlessNode) {
+            return buildUnless(result, (UnlessNode) node);
+        } else if (node instanceof UntilNode) {
+            return buildUntil((UntilNode) node);
+        } else if (node instanceof WhileNode) {
+            return buildWhile((WhileNode) node);
+        } else if (node instanceof YieldNode) {
+            return buildYield(result, (YieldNode) node);
+        } else {
+            throw new RuntimeException("Unhandled Node type: " + node);
         }
     }
 
@@ -249,7 +329,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             LocalVariableWriteNode variable = (LocalVariableWriteNode) node;
             copy(getLocalVariable(symbolFor(variable.name_loc), variable.depth), rhsVal);
         } else if (node instanceof GlobalVariableWriteNode) {
-            addInstr(new PutGlobalVarInstr(symbolFor(((GlobalVariableWriteNode) node).name), rhsVal));
+            addInstr(new PutGlobalVarInstr(symbolFor(((GlobalVariableWriteNode) node).name_loc), rhsVal));
         } else if (node instanceof InstanceVariableWriteNode) {
             // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
             addInstr(new PutFieldInstr(buildSelf(), symbolFor(((InstanceVariableWriteNode) node).name_loc), rhsVal));
@@ -290,7 +370,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     private Operand buildBlock(BlockNode node) {
         // FIXME: This needs to be calculated
         Signature signature = calculateSignature(node.parameters != null ? node.parameters.parameters : null);
-        IRClosure closure = new IRClosure(getManager(), scope, getLine(node), node.scope, signature, coverageMode);
+        IRClosure closure = new IRClosure(getManager(), scope, getLine(node),
+                createStaticScopeFrom(node.locals, StaticScope.Type.BLOCK), signature, coverageMode);
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
         ((IRBuilderYARP) newIRBuilder(getManager(), closure, this, node)).buildIterInner(methodName, node);
@@ -325,7 +406,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         afterPrologueIndex = instructions.size() - 1;
 
         // Build closure body and return the result of the closure
-        Operand closureRetVal = iterNode.statements == null ? nil() : build(iterNode.statements);
+        Operand closureRetVal = build(iterNode.body);
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             addInstr(new TraceInstr(RubyEvent.B_RETURN, getCurrentModuleVariable(), getName(), getFileName(), getEndLine(iterNode) + 1));
@@ -355,14 +436,15 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
 
     private Operand buildBlockArgument(BlockArgumentNode node) {
         if (node.expression instanceof SymbolNode && !scope.maybeUsingRefinements()) {
-            return new SymbolProc(symbolFor(((SymbolNode) node.expression).value));
+            return new SymbolProc(symbolFor(((SymbolNode) node.expression).value_loc));
         } else if (node.expression == null) {
             return getYieldClosureVariable();
         }
         return build(node.expression);
     }
 
-    private Operand buildCall(Variable resultArg, CallNode node) {
+    // We do name processing outside of this rather than from the node to support stripping '=' off of opelasgns
+    private Operand buildCall(Variable resultArg, CallNode node, RubySymbol name) {
         Variable result = resultArg == null ? temp() : resultArg;
 
         // FIXME: this should just be typed by parser.
@@ -386,7 +468,6 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             block = NullBlock.INSTANCE;
         }
         Operand[] finalArgs = args;
-        RubySymbol name = symbol(new String(node.name));
 
         if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
             Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
@@ -452,13 +533,70 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         return buildHash(node);
     }
 
+    //     foo.bar += baz
+    private Operand buildCallOperatorWrite(CallOperatorWriteNode node) {
+        Operand receiver = build(node.target.receiver);
+        Variable lhs = call(temp(), receiver, chompedSymbol(node.target.name));
+        Operand rhs = build(node.value);
+        return call(temp(), receiver, symbol(node.target.name), new Operand[] { lhs, rhs});
+    }
+
     private Operand buildCase(CaseNode node) {
         return buildCase(node.predicate, node.conditions, node.consequent);
     }
 
     private Operand buildClass(ClassNode node) {
-        return buildClass(determineBaseName(node.constant_path), node.superclass, node.constant_path, node.statements, node.scope, getLine(node), getEndLine(node));
+        return buildClass(determineBaseName(node.constant_path), node.superclass, node.constant_path,
+                node.body, createStaticScopeFrom(node.locals, StaticScope.Type.LOCAL), getLine(node), getEndLine(node));
     }
+
+    /*
+    private Operand buildConstantOperatorWrite(ConstantOperatorWriteNode node) {
+        RubySymbol name = symbolFor(node.name_loc);
+        Operand lhs = searchConst(temp(), name);
+        Operand rhs = build(node.value);
+        Variable value = call(temp(), lhs, symbolFor(node.operator_loc), new Operand[] { rhs});
+        putConstant(buildSelf(), name, value);
+        return value;
+    }
+
+    private Operand buildClassVariableOperatorWrite(ClassVariableOperatorWriteNode node) {
+        RubySymbol name = symbolFor(node.name_loc);
+        Operand lhs = buildClassVar(temp(), name);
+        Operand rhs = build(node.value);
+        Variable value = call(temp(), lhs, symbolFor(node.operator_loc), new Operand[] { rhs});
+        addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), name, value));
+        return value;
+    }
+
+    private Operand buildInstanceVariableOperatorWrite(InstanceVariableOperatorWriteNode node) {
+        RubySymbol name = symbolFor(node.name_loc);
+        Operand lhs = buildInstVar(name);
+        Operand rhs = build(node.value);
+        Variable value = call(temp(), lhs, symbolFor(node.operator_loc), new Operand[] { rhs});
+        addInstr(new PutFieldInstr(buildSelf(), name, value));
+        return value;
+    }
+
+    private Operand buildGlobalVariableOperatorWrite(GlobalVariableOperatorWriteNode node) {
+        RubySymbol name = symbolFor(node.name_loc);
+        Operand lhs = buildGlobalVar(temp(), name);
+        Operand rhs = build(node.value);
+        Variable value = call(temp(), lhs, symbolFor(node.operator_loc), new Operand[] { rhs});
+        addInstr(new PutGlobalVarInstr(name, value));
+        return value;
+    }
+
+    private Operand buildLocalVariableOperatorWrite(LocalVariableOperatorWriteNode node) {
+        RubySymbol name = symbolFor(node.name_loc);
+        int depth = staticScope.isDefined(name.idString()) >> 16;
+        Variable lhs = getLocalVariable(name, depth);
+        Operand rhs = build(node.value);
+        Variable value = call(lhs, lhs, symbolFor(node.operator_loc), new Operand[] { rhs});
+        return value;
+    }
+
+     */
 
     private Operand buildClassVariableRead(Variable result, ClassVariableReadNode node) {
         return buildClassVar(result, symbolFor(node));
@@ -481,9 +619,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
 
     // Multiple assignments provide the value otherwise it is grabbed from .value on the node.
     private Operand buildConstantWritePath(ConstantPathWriteNode node, Operand value) {
-        if (node.target instanceof ConstantReadNode) return putConstant(symbolFor(node.target), value);
-
-        ConstantPathNode path = (ConstantPathNode) node.target;
+        ConstantPathNode path = node.target;
 
         return putConstant(build(path.parent), symbolFor(path.child), value);
     }
@@ -506,12 +642,14 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
 
     private Operand buildDefn(DefNode node) {
         LazyMethodDefinition def = new LazyMethodDefinitionYARP(getManager().getRuntime(), source, node);
-        return buildDefn(defineNewMethod(def, byteListFrom(node.name), 0, node.scope, true));
+        return buildDefn(defineNewMethod(def, byteListFrom(node.name_loc), 0,
+                createStaticScopeFrom(node.locals, StaticScope.Type.LOCAL), true));
     }
 
     private Operand buildDefs(DefNode node) {
         LazyMethodDefinition def = new LazyMethodDefinitionYARP(getManager().getRuntime(), source, node);
-        return buildDefs(node.receiver, defineNewMethod(def, byteListFrom(node.name), 0, node.scope, false));
+        return buildDefs(node.receiver, defineNewMethod(def, byteListFrom(node.name_loc), 0,
+                createStaticScopeFrom(node.locals, StaticScope.Type.LOCAL), false));
     }
 
     private Operand buildElse(ElseNode node) {
@@ -538,17 +676,11 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     }
 
     private Operand buildGlobalVariableRead(Variable result, GlobalVariableReadNode node) {
-        // FIXME: Prefer a full node for nth ref.
-        if (node.name.type == TokenType.PARENTHESIS_LEFT) { // FIXME: it is not returning NTH_REFERENCE (seems to be something wrong on my branch
-            // FIXME: Gruesome :)
-            return buildNthRef(Integer.parseInt(new String(byteListFrom(node.name).getUnsafeBytes()).substring(1)));
-        }
-
-        return buildGlobalVar(result, symbolFor(node.name));
+        return buildGlobalVar(result, symbolFor(node));
     }
 
     private Operand buildGlobalVariableWrite(GlobalVariableWriteNode node) {
-        return buildGlobalAsgn(symbolFor(node.name), node.value);
+        return buildGlobalAsgn(symbolFor(node.name_loc), node.value);
     }
 
     private Operand buildHash(HashNode node) {
@@ -629,10 +761,12 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
 
     // FIXME: Generify
     private Operand buildLambda(LambdaNode node) {
-        IRClosure closure = new IRClosure(getManager(), scope, getLine(node), node.scope, calculateSignature(node.parameters), coverageMode);
+        IRClosure closure = new IRClosure(getManager(), scope, getLine(node),
+                createStaticScopeFrom(node.locals, StaticScope.Type.BLOCK), calculateSignature(node.parameters),
+                coverageMode);
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        newIRBuilder(getManager(), closure, this, node).buildLambdaInner(node.parameters, node.statements);
+        newIRBuilder(getManager(), closure, this, node).buildLambdaInner(node.parameters, node.body);
 
         Variable lambda = temp();
         WrappedIRClosure lambdaBody = new WrappedIRClosure(closure.getSelf(), closure);
@@ -654,7 +788,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     }
 
     private Operand buildModule(ModuleNode node) {
-        return buildModule(determineBaseName(node.constant_path), node.constant_path, node.statements, node.scope,
+        return buildModule(determineBaseName(node.constant_path), node.constant_path, node.body,
+                createStaticScopeFrom(node.locals, StaticScope.Type.LOCAL),
                 getLine(node), getEndLine(node));
     }
 
@@ -716,6 +851,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         return buildNext(buildArgumentsAsArgument(node.arguments), getLine(node));
     }
 
+    /*
     // FIXME: serialization should provide something we do not need to rewrite.
     // This is a lot of post-processing.
     private Operand buildOperatorAssignment(OperatorAssignmentNode node) {
@@ -779,6 +915,11 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         // FIXME: Implement more or do this totally differently
 
         return null;
+    }*/
+
+
+    private Operand buildOperatorWrite(OperatorWriteNode node) {
+        return null;
     }
 
     private Operand buildOr(OrNode node) {
@@ -802,7 +943,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             for (int i = 0; i < keywordsCount; i++) {
                 KeywordParameterNode kwarg = (KeywordParameterNode) kwArgs[i];
 
-                ByteList keyBytes = byteListFrom(kwarg.name);
+                ByteList keyBytes = byteListFrom(kwarg.name_loc);
                 keyBytes.view(0, keyBytes.realSize() - 1); // Remove ':'.  FIXME: This should not be this way.
                 RubySymbol key = symbol(keyBytes);
                 Variable av = getNewLocalVariable(key, 0);
@@ -826,7 +967,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         // 2.0 keyword rest arg
         KeywordRestParameterNode keyRest = (KeywordRestParameterNode) parameters.keyword_rest;
         if (keyRest != null) {
-            RubySymbol key = symbolFor(keyRest.name);
+            RubySymbol key = symbolFor(keyRest.name_loc);
             ArgumentType type = ArgumentType.keyrest;
 
             // anonymous keyrest
@@ -847,8 +988,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     }
 
     private Operand buildRange(RangeNode node) {
-        boolean isExclusive = node.operator_loc.endOffset - node.operator_loc.startOffset == 3;
-        return buildRange(node.left, node.right, isExclusive);
+        return buildRange(node.left, node.right, node.isExcludeEnd());
     }
 
     private Operand buildRescueModifier(RescueModifierNode node) {
@@ -856,10 +996,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     }
 
     private Operand buildRegularExpression(RegularExpressionNode node) {
-        ByteList content = byteListFrom(node.content);
-        String opts = new String(byteListFrom(node.closing).getUnsafeBytes()).substring(1);
-        RegexpOptions options = RegexpOptions.newRegexpOptions(opts);
-        return new Regexp(content, options);
+        return new Regexp(byteListFrom(node.content_loc), RegexpOptions.fromJoniOptions(node.flags));
     }
 
     private Operand buildRetry(RetryNode node) {
@@ -891,7 +1028,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     }
 
     private Operand buildSingletonClass(SingletonClassNode node) {
-        return buildSClass(node.expression, node.statements, node.scope, getLine(node), getEndLine(node));
+        return buildSClass(node.expression, node.body,
+                createStaticScopeFrom(node.locals, StaticScope.Type.LOCAL), getLine(node), getEndLine(node));
     }
 
     private Operand buildSourceFile() {
@@ -917,7 +1055,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         //if (strNode.isFrozen()) return new FrozenString(strNode.getValue(), strNode.getCodeRange(), scope.getFile(), line);
 
         // FIXME: need coderange.
-        return new MutableString(byteListFrom(node.content), 0, scope.getFile(), line);
+        return new MutableString(byteListFrom(node.content_loc), 0, scope.getFile(), line);
     }
 
     private Operand buildSuper(Variable result, SuperNode node) {
@@ -925,7 +1063,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     }
 
     private Operand buildSymbol(SymbolNode node) {
-        return new Symbol(symbol(byteListFrom(node.value)));
+        return new Symbol(symbol(byteListFrom(node.value_loc)));
     }
 
     private Operand buildUndef(UndefNode node) {
@@ -946,7 +1084,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
 
     // FIXME: until and while should have field for whether normal or modifer and no keyword at all.
     private Operand buildUntil(UntilNode node) {
-        boolean evaluateAtStart = node.keyword.type == TokenType.KEYWORD_UNTIL;
+        // FIXME: Is this correct?
+        boolean evaluateAtStart = node.flags == 0;
         return buildConditionalLoop(node.predicate, node.statements, false, evaluateAtStart);
     }
 
@@ -963,7 +1102,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     }
 
     private Operand buildWhile(WhileNode node) {
-        boolean evaluateAtStart = node.keyword.type == TokenType.KEYWORD_WHILE || node.keyword.type == TokenType.KEYWORD_WHILE_MODIFIER;
+        // FIXME: flags processing
+        boolean evaluateAtStart = node.flags == 0 || node.flags == 1;
         return buildConditionalLoop(node.predicate, node.statements, true, evaluateAtStart);
     }
 
@@ -1007,6 +1147,11 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     }
 
     int dynamicPiece(Operand[] pieces, int i, Node pieceNode, boolean interpolated) {
+        throw new RuntimeException("ddkdkldkld");
+    }
+
+    /*
+    int dynamicPiece(Operand[] pieces, int i, Node pieceNode, boolean interpolated) {
         Operand piece;
 
         // somewhat arbitrary minimum size for interpolated values
@@ -1016,7 +1161,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
 
             if (pieceNode instanceof StringNode) {
                 piece = buildString((StringNode) pieceNode, interpolated);
-                estimatedSize = byteListFrom(((StringNode) pieceNode).content).realSize();
+                estimatedSize = byteListFrom(((StringNode) pieceNode).content_loc).realSize();
             } else if (pieceNode instanceof StringInterpolatedNode) {
                 if (scope.maybeUsingRefinements()) {
                     // refined asString must still go through dispatch
@@ -1042,7 +1187,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         pieces[i] = piece == null ? nil() : piece;
 
         return estimatedSize;
-    }
+    }*/
 
     /**
      * Reify the implicit incoming block into a full Proc, for use as "block arg", but only if
@@ -1055,7 +1200,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
 
         // reify to Proc if we have a block arg
         if (blockArg != null) {
-            RubySymbol argName = symbolFor(blockArg.name);
+            RubySymbol argName = symbolFor(blockArg.name_loc);
             Variable blockVar = argumentResult(argName);
             if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.block, argName);
             Variable tmp = temp();
@@ -1109,7 +1254,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
                 // We fall through or jump to variableAssigned once we know we have a valid value in place.
                 Label variableAssigned = getNewLabel();
                 OptionalParameterNode optArg = (OptionalParameterNode) opts[j];
-                RubySymbol argName = symbolFor(optArg.name);
+                RubySymbol argName = symbolFor(optArg.name_loc);
                 Variable argVar = argumentResult(argName);
                 if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.opt, argName);
                 // You need at least required+j+1 incoming args for this opt arg to get an arg at all
@@ -1132,15 +1277,15 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             RestParameterNode restArgNode = args.rest;
             if (scope instanceof IRMethod) {
                 // FIXME: how do we annotate generated AST types to have isAnonymous etc...
-                if (restArgNode.name == null) {
+                if (restArgNode.name_loc == null) {
                     addArgumentDescription(ArgumentType.anonrest, symbol("*"));
                 } else {
-                    addArgumentDescription(ArgumentType.rest, symbolFor(restArgNode.name));
+                    addArgumentDescription(ArgumentType.rest, symbolFor(restArgNode.name_loc));
                 }
             }
 
-            RubySymbol argName =  restArgNode.name == null ?
-                    scope.getManager().getRuntime().newSymbol(CommonByteLists.STAR) : symbolFor(restArgNode.name);
+            RubySymbol argName =  restArgNode.name_loc == null ?
+                    scope.getManager().getRuntime().newSymbol(CommonByteLists.STAR) : symbolFor(restArgNode.name_loc);
 
             // You need at least required+opt+1 incoming args for the rest arg to get any args at all
             // If it is going to get something, then it should ignore required+opt args from the beginning
@@ -1219,7 +1364,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     }
 
     private Operand buildString(StringNode node) {
-        boolean interpolated = node.opening != null && source[node.opening.startOffset] != '\'';
+        boolean interpolated = node.opening_loc != null && source[node.opening_loc.startOffset] != '\'';
         return buildString(node, interpolated);
     }
 
@@ -1231,7 +1376,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         if (interpolated) {
             return new MutableString(new ByteList(node.unescaped), 0, scope.getFile(), getLine(node));
         } else {
-            return new MutableString(byteListFrom(node.content), 0, scope.getFile(), getLine(node));
+            return new MutableString(byteListFrom(node.content_loc), 0, scope.getFile(), getLine(node));
         }
     }
 
@@ -1284,10 +1429,11 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     Operand buildGetDefinition(Node node) {
         if (node == null) return new FrozenString("expression");
 
+        // FIXME: all opassignments needs to return assignment
         if (node instanceof ClassVariableWriteNode ||
                 node instanceof ConstantPathWriteNode || node instanceof LocalVariableWriteNode ||
                 node instanceof GlobalVariableWriteNode || node instanceof MultiWriteNode ||
-                node instanceof OperatorAssignmentNode || node instanceof InstanceVariableWriteNode) {
+                 node instanceof InstanceVariableWriteNode) {
             return new FrozenString(DefinedMessage.ASSIGNMENT.getText());
         } else if (node instanceof OrNode || node instanceof AndNode ||
                 node instanceof InterpolatedRegularExpressionNode || node instanceof InterpolatedStringNode) {
@@ -1366,7 +1512,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
                             new Operand[] { buildSelf(), new FrozenString(DefinedMessage.SUPER.getText()) }));
         } else if (node instanceof CallNode) {
             CallNode call = (CallNode) node;
-            RubySymbol name = symbolFor(call.message);
+            RubySymbol name = symbolFor(call.message_loc);
 
             if (call.receiver == null && call.arguments == null) { // VCALL
                 return addResultInstr(
@@ -1391,7 +1537,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
                                 IS_DEFINED_METHOD,
                                 new Operand[]{
                                         buildSelf(),
-                                        new Symbol(symbolFor(call.message)),
+                                        new Symbol(symbolFor(call.message_loc)),
                                         fals(),
                                         new FrozenString(DefinedMessage.METHOD.getText())
                                 }
@@ -1523,7 +1669,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             // Get rid of one level of array wrapping
             if (args != null && args.length == 1) {
                 // We should not unwrap if it is a keyword argument.
-                if (!(args[0] instanceof HashNode) || ((HashNode) args[0]).opening != null) {
+                if (!(args[0] instanceof HashNode) || ((HashNode) args[0]).opening_loc != null) {
                     unwrap = false;
                 }
             }
@@ -1635,9 +1781,9 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         } else if (node instanceof FalseNode) {
             return runtime.getFalse();
         } else if (node instanceof SymbolNode) {
-            return symbolFor(((SymbolNode) node).value);
+            return symbolFor(((SymbolNode) node).value_loc);
         } else if (node instanceof StringNode) {
-            return runtime.newString((byteListFrom(((StringNode) node).content)));
+            return runtime.newString((byteListFrom(((StringNode) node).content_loc)));
         }
 
         return null;
@@ -1649,9 +1795,10 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     }
 
     boolean isLiteralHash(Node node) {
-        return node instanceof HashNode && ((HashNode) node).opening != null;
+        return node instanceof HashNode && ((HashNode) node).opening_loc != null;
     }
 
+    // FIXME: This only seems to be used in opelasgnor on the first element (lhs) but it is very unclear what is possible here.
     @Override
     boolean needsDefinitionCheck(Node node) {
         return !(node instanceof ClassVariableWriteNode ||
@@ -1663,7 +1810,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
                 node instanceof MatchRequiredNode ||
                 node instanceof MatchPredicateNode ||
                 node instanceof NilNode ||
-                node instanceof OperatorAssignmentNode ||
+                //node instanceof OperatorAssignmentNode ||
                 node instanceof SelfNode ||
                 node instanceof TrueNode);
     }
@@ -1685,10 +1832,6 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         throw notCompilable("Encountered unexpected block node", node);
     }
 
-    private RubySymbol symbolFor(Token token) {
-        return symbol(byteListFrom(token));
-    }
-
     private RubySymbol symbolFor(Location location) {
         return symbol(byteListFrom(location));
     }
@@ -1697,16 +1840,16 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         return symbol(byteListFrom(node));
     }
 
-    private ByteList byteListFrom(Token token) {
-        return new ByteList(source, token.startOffset, token.endOffset - token.startOffset);
+    private RubySymbol chompedSymbol(byte[] name) {
+        return symbol(new ByteList(name, 0, name.length - 1));
     }
 
     private ByteList byteListFrom(Location location) {
-        return new ByteList(source, location.startOffset, location.endOffset - location.startOffset);
+        return new ByteList(source, location.startOffset, location.length);
     }
 
     private ByteList byteListFrom(Node node) {
-        return new ByteList(source, node.startOffset, node.endOffset - node.startOffset);
+        return new ByteList(source, node.startOffset, node.length);
     }
 
     private Signature calculateSignature(ParametersNode parameters) {
@@ -1731,6 +1874,24 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         return parameters == null ? Signature.NO_ARGUMENTS : calculateSignature(parameters.parameters);
     }
 
+    // FIXME: we allocate extra byte[] just to make it a String[].  Extra work to consider?
+    public StaticScope createStaticScopeFrom(byte[][] tokens, StaticScope.Type type) {
+        staticScope = createStaticScopeFrom(fileName, tokens, type, staticScope);
+
+        return staticScope;
+    }
+
+    public static StaticScope createStaticScopeFrom(String fileName, byte[][] tokens, StaticScope.Type type, StaticScope parent) {
+        String[] strings = new String[tokens.length];
+        // FIXME: this should be iso_8859_1 strings and not default charset.
+        for(int i = 0; i < tokens.length; i++) {
+            strings[i] = new String(tokens[i]);
+        }
+
+        // FIXME: keywordArgIndex?
+        return StaticScopeFactory.newStaticScope(parent, type, fileName, strings, -1);
+    }
+
     private CallType determineCallType(Node node) {
         return node == null ?
                 CallType.FUNCTIONAL :
@@ -1752,7 +1913,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         // This is to support the ugly Proc.new with no block, which must see caller's frame
         if (CommonByteLists.NEW_METHOD.equals(callInstr.getName().getBytes()) &&
                 receiver instanceof ConstantReadNode &&
-                symbolFor((ConstantReadNode)receiver).idString().equals("Proc")) {
+                symbolFor(receiver).idString().equals("Proc")) {
             callInstr.setProcNew(true);
         }
 

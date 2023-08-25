@@ -907,6 +907,11 @@ public abstract class IRBuilder<U, V, W, X> {
         return manager.getNil();
     }
 
+    RubySymbol symbol(byte[] bytes) {
+        // FIXME: should be iso8859_1 and not charset java string.
+        return symbol(new String(bytes));
+    }
+
     RubySymbol symbol(String id) {
         return manager.runtime.newSymbol(id);
     }

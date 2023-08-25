@@ -36,8 +36,8 @@ public class LazyMethodDefinitionYARP implements LazyMethodDefinition<Node, DefN
     public List<String> getMethodData() {
         List<String> ivarNames = new ArrayList<>();
 
-        if (node.statements != null) {
-            node.statements.accept(new AbstractNodeVisitor<Object>() {
+        if (node.body != null) {
+            node.body.accept(new AbstractNodeVisitor<Object>() {
                 @Override
                 protected Object defaultVisit(Node node) {
                     if (node == null) return null;
@@ -75,7 +75,7 @@ public class LazyMethodDefinitionYARP implements LazyMethodDefinition<Node, DefN
 
     @Override
     public Node getMethodBody() {
-        return node.statements;
+        return node.body;
     }
 
     @Override
@@ -88,11 +88,11 @@ public class LazyMethodDefinitionYARP implements LazyMethodDefinition<Node, DefN
     }
 
     private ByteList byteListFrom(Nodes.Location location) {
-        return new ByteList(source, location.startOffset, location.endOffset - location.startOffset);
+        return new ByteList(source, location.startOffset, location.length);
     }
 
     private ByteList byteListFrom(Node node) {
-        return new ByteList(source, node.startOffset, node.endOffset - node.startOffset);
+        return new ByteList(source, node.startOffset, node.length);
     }
 
 }

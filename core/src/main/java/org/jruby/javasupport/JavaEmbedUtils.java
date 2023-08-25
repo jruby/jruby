@@ -31,6 +31,7 @@ package org.jruby.javasupport;
 import java.io.InputStream;
 import java.util.List;
 
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyInstanceConfig;
@@ -161,7 +162,7 @@ public class JavaEmbedUtils {
              * @return an object which can be run
              */
             public EvalUnit parse(Ruby runtime, String script, String filename, int lineNumber) {
-                return new InterpretedEvalUnit(runtime, runtime.parseEval(script, filename, null, lineNumber));
+                return new InterpretedEvalUnit(runtime, (Node) runtime.getParserManager().parseEval(filename, lineNumber, script, null).getAST());
             }
 
             /**
@@ -174,7 +175,7 @@ public class JavaEmbedUtils {
              * @return an object which can be run
              */
             public EvalUnit parse(Ruby runtime, InputStream in, String filename, int lineNumber) {
-                return new InterpretedEvalUnit(runtime, runtime.parseFile(in, filename, null, lineNumber));
+                return new InterpretedEvalUnit(runtime, (Node) runtime.getParserManager().parseFile(filename, lineNumber, in, runtime.setupSourceEncoding(UTF8Encoding.INSTANCE), null, 0).getAST());
             }
         };
     }

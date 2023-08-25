@@ -126,4 +126,8 @@ public class RootNode extends Node implements ParseResult {
     public boolean executesOnce() {
         return true;
     }
+
+    public Object getAST() {
+        return this;
+    }
 }

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.EnumSet;
 
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
@@ -404,7 +405,7 @@ public class IRManager {
 
     private Node parse(ThreadContext context, FileResource file, String fileName) throws IOException {
         try (InputStream stream = file.openInputStream()) {
-            return context.runtime.parseFile(stream, fileName, null, 0);
+            return (Node) context.runtime.getParserManager().parseFile(fileName, 0, stream, UTF8Encoding.INSTANCE, null, 0).getAST();
         }
     }
 }

@@ -39,6 +39,7 @@ import java.io.StringReader;
 import java.net.URL;
 import java.util.Objects;
 
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.RubyRuntimeAdapter;
@@ -184,9 +185,9 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
         try {
             final Node node;
             if (input instanceof String) {
-                node = runtime.parseEval((String) input, filename, scope, line);
+                node = (Node) runtime.getParserManager().parseEval(filename, line, (String) input, scope).getAST();
             } else {
-                node = runtime.parseFile((InputStream) input, filename, scope, line);
+                node = (Node) runtime.getParserManager().parseFile(filename, line, (InputStream) input, runtime.setupSourceEncoding(UTF8Encoding.INSTANCE), scope, 0).getAST();
             }
             CompileMode compileMode = runtime.getInstanceConfig().getCompileMode();
             if (compileMode == CompileMode.FORCE) {

@@ -26,6 +26,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
+import org.jruby.util.ByteList;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -192,7 +193,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                                                         String file, int lineNumber, EvalType evalType, boolean bindingGiven) {
         Ruby runtime = context.runtime;
         IRScope containingIRScope = evalScope.getStaticScope().getEnclosingScope().getIRScope();
-        ParseResult result = runtime.parseEval(src.convertToString().getByteList(), file, evalScope, lineNumber);
+        ParseResult result = runtime.getParserManager().parseEval(file, lineNumber, src.convertToString().getByteList(), evalScope);
         StaticScope staticScope = evalScope.getStaticScope();
 
         // Top-level script!

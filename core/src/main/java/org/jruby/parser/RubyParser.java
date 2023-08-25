@@ -36,12 +36,14 @@ package org.jruby.parser;
 import java.io.IOException;
 import java.util.Set;
 
+import org.jruby.Ruby;
 import org.jruby.RubySymbol;
 import org.jruby.ast.*;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.LexingCommon;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.lexer.yacc.StrTerm;
 
 import org.jruby.util.ByteList;
@@ -97,12 +99,13 @@ import static org.jruby.lexer.LexingCommon.EXPR_LABEL;
 import static org.jruby.util.CommonByteLists.ANON_BLOCK;
 import static org.jruby.util.CommonByteLists.FWD_BLOCK;
 import static org.jruby.util.CommonByteLists.FWD_KWREST;
+import static org.jruby.parser.ParserManager.isEval;
  
  public class RubyParser extends RubyParserBase {
-    public RubyParser(LexerSource source, IRubyWarnings warnings) {
-        super(warnings); setLexer(new RubyLexer(this, source, warnings));
+    public RubyParser(Ruby runtime, LexerSource source, DynamicScope scope, int flags) {
+        super(runtime, source, scope, flags);
     }
-					// line 106 "-"
+					// line 109 "-"
   // %token constants
   public static final int keyword_class = 257;
   public static final int keyword_module = 258;
@@ -1989,7 +1992,7 @@ states[1] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, in
 states[2] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                   /*%%%*/
                   Node expr = ((Node)yyVals[0+yyTop].value);
-                  if (expr != null && !p.getConfiguration().isEvalParse()) {
+                  if (expr != null && !isEval(p.flags)) {
                       /* last expression should not be void */
                       if (((Node)yyVals[0+yyTop].value) instanceof BlockNode) {
                         expr = ((BlockNode)yyVals[0+yyTop].value).getLast();
@@ -6799,7 +6802,7 @@ states[819] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4769 "parse.y"
+					// line 4772 "parse.y"
 
 }
-					// line 14585 "-"
+					// line 14588 "-"

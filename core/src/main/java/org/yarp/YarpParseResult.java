@@ -1,10 +1,12 @@
 package org.yarp;
 
 import org.jruby.ParseResult;
+import org.jruby.ir.builder.IRBuilderYARP;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 
 public class YarpParseResult implements ParseResult {
+    StaticScope rootScope;
     Nodes.ProgramNode root;
     String fileName;
     byte[] source;
@@ -21,7 +23,9 @@ public class YarpParseResult implements ParseResult {
 
     @Override
     public StaticScope getStaticScope() {
-        return root.scope;
+        // FIXME: How does this work for evals?
+        if (rootScope == null) rootScope = IRBuilderYARP.createStaticScopeFrom(fileName, root.locals, StaticScope.Type.LOCAL, null);
+        return rootScope;
     }
 
     @Override
@@ -46,5 +50,9 @@ public class YarpParseResult implements ParseResult {
 
     public byte[] getSource() {
         return source;
+    }
+
+    public Object getAST() {
+        return root;
     }
 }

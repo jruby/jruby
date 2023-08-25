@@ -70,12 +70,12 @@ import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaSupportImpl;
 import org.jruby.management.Caches;
 import org.jruby.management.InlineStats;
+import org.jruby.parser.ParserManager;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.TraceEventManager;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
-import org.jruby.runtime.load.LoadServiceResourceInputStream;
 import org.jruby.util.CommonByteLists;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.MRIRecursionGuard;
@@ -126,7 +126,6 @@ import org.jruby.ir.persistence.util.IRFileExpert;
 import org.jruby.management.BeanManager;
 import org.jruby.management.BeanManagerFactory;
 import org.jruby.management.Config;
-import org.jruby.management.ParserStats;
 import org.jruby.parser.Parser;
 import org.jruby.parser.ParserConfiguration;
 import org.jruby.parser.StaticScopeFactory;
@@ -205,6 +204,8 @@ import static java.lang.invoke.MethodType.methodType;
 import static org.jruby.RubyBoolean.FALSE_BYTES;
 import static org.jruby.RubyBoolean.TRUE_BYTES;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.GLOBAL;
+import static org.jruby.parser.ParserManager.DATA;
+import static org.jruby.parser.ParserManager.INLINE;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
 import static org.jruby.util.RubyStringBuilder.types;
@@ -251,7 +252,7 @@ public final class Ruby implements Constantizable {
         this.staticScopeFactory = new StaticScopeFactory(this);
         this.beanManager        = BeanManagerFactory.create(this, config.isManagementEnabled());
         this.jitCompiler        = new JITCompiler(this);
-        this.parserStats        = new ParserStats(this);
+        this.parserManager      = new ParserManager(this);
         this.inlineStats        = new InlineStats();
         this.caches             = new Caches();
 
@@ -669,7 +670,7 @@ public final class Ruby implements Constantizable {
     public void registerMBeans() {
         this.beanManager.register(jitCompiler);
         this.beanManager.register(configBean);
-        this.beanManager.register(parserStats);
+        this.beanManager.register(getParserManager().getParserStats());
         this.beanManager.register(runtimeBean);
         this.beanManager.register(caches);
         this.beanManager.register(inlineStats);
@@ -836,9 +837,8 @@ public final class Ruby implements Constantizable {
      * @return The result of the eval
      */
     public IRubyObject evalScriptlet(String script) {
-        ThreadContext context = getCurrentContext();
-        DynamicScope currentScope = context.getCurrentScope();
-        ManyVarsDynamicScope newScope = new ManyVarsDynamicScope(getStaticScopeFactory().newEvalScope(currentScope.getStaticScope()), currentScope);
+        DynamicScope currentScope = getCurrentContext().getCurrentScope();
+        DynamicScope newScope = new ManyVarsDynamicScope(getStaticScopeFactory().newEvalScope(currentScope.getStaticScope()), currentScope);
 
         return evalScriptlet(script, newScope);
     }
@@ -859,7 +859,7 @@ public final class Ruby implements Constantizable {
      */
     public IRubyObject evalScriptlet(String script, DynamicScope scope) {
         ThreadContext context = getCurrentContext();
-        RootNode rootNode = (RootNode) parseEval(script, "<script>", scope, 0);
+        RootNode rootNode = (RootNode) getParserManager().parseEval("<script>", 0, script, scope).getAST();
 
         context.preEvalScriptlet(scope);
 
@@ -877,13 +877,14 @@ public final class Ruby implements Constantizable {
      * way to start up a new script when calling directly into the Ruby object (which is
      * generally *dis*couraged.
      *
+     * Note: This is used by compiler/java_class.rb
+     *
      * @param script The contents of the script to run as a normal, root script
      * @return The last value of the script
      */
     public IRubyObject executeScript(String script, String filename) {
-        byte[] bytes = encodeToBytes(script);
-
-        ParseResult root = (ParseResult) parseInline(new ByteArrayInputStream(bytes), filename, null);
+        InputStream in = new ByteArrayInputStream(encodeToBytes(script));
+        ParseResult root = getParserManager().parseFile(filename, 0, in, setupSourceEncoding(getEncodingService().getLocaleEncoding()), null, INLINE);
         ThreadContext context = getCurrentContext();
 
         String oldFile = context.getFile();
@@ -1021,11 +1022,8 @@ public final class Ruby implements Constantizable {
      * @return The root node of the parsed script
      */
     public Node parseFromMain(InputStream inputStream, String filename) {
-        if (config.isInlineScript()) {
-            return parseInline(inputStream, filename, getCurrentContext().getCurrentScope());
-        } else {
-            return parseFileFromMain(inputStream, filename, getCurrentContext().getCurrentScope());
-        }
+        int flags = config.isInlineScript() ? INLINE : 0;
+        return (Node) getParserManager().parseFile(filename, 0, inputStream, setupSourceEncoding(UTF8Encoding.INSTANCE), getCurrentContext().getCurrentScope(), flags).getAST();
     }
 
     public ParseResult parseFromMain(String fileName, InputStream in) {
@@ -1315,8 +1313,9 @@ public final class Ruby implements Constantizable {
         return runInterpreter(scriptNode);
     }
 
+    @Deprecated
     public Parser getParser() {
-        return parser;
+        return getParserManager().getParser();
     }
 
     public BeanManager getBeanManager() {
@@ -2636,96 +2635,72 @@ public final class Ruby implements Constantizable {
     }
 
     // Obsolete parseFile function
+    @Deprecated
     public Node parseFile(InputStream in, String file, DynamicScope scope) {
-        return parseFile(in, file, scope, 0);
+        return (Node) getParserManager().parseFile(file, 0, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, 0).getAST();
     }
 
-    // Modern variant of parsFile function above
+    @Deprecated
     public ParseResult parseFile(String file, InputStream in, DynamicScope scope) {
-       return parseFile(file, in, scope, 0);
+       return getParserManager().parseFile(file, 0, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, 0);
     }
 
-    // Obsolete parseFile function
+    @Deprecated
     public Node parseFile(InputStream in, String file, DynamicScope scope, int lineNumber) {
-        addLoadParseToStats();
-        return parseFileAndGetAST(in, file, scope, lineNumber, false);
+        return (Node) getParserManager().parseFile(file, lineNumber, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, 0).getAST();
     }
 
-    // Modern variant of parseFile function above
+    @Deprecated
     public ParseResult parseFile(String file, InputStream in, DynamicScope scope, int lineNumber) {
-        addLoadParseToStats();
-
-        if (!RubyInstanceConfig.IR_READING) return (ParseResult) parseFileAndGetAST(in, file, scope, lineNumber, false);
-
-        try {
-            // Get IR from .ir file
-            return IRReader.load(getIRManager(), new IRReaderStream(getIRManager(), IRFileExpert.getIRPersistedFile(file), file));
-        } catch (IOException e) {
-            // FIXME: What is something actually throws IOException
-            return (ParseResult) parseFileAndGetAST(in, file, scope, lineNumber, false);
-        }
-    }
-
-    // Obsolete parseFileFromMain function
-    public Node parseFileFromMain(InputStream in, String file, DynamicScope scope) {
-        addLoadParseToStats();
-
-        return parseFileFromMainAndGetAST(in, file, scope);
-    }
-
-    // Modern variant of parseFileFromMain function above
-    public ParseResult parseFileFromMain(String file, InputStream in, DynamicScope scope) {
-        addLoadParseToStats();
-
-        if (!RubyInstanceConfig.IR_READING) return (ParseResult) parseFileFromMainAndGetAST(in, file, scope);
-
-        try {
-            return IRReader.load(getIRManager(), new IRReaderStream(getIRManager(), IRFileExpert.getIRPersistedFile(file), file));
-        } catch (IOException ex) {
-            if (config.isVerbose()) {
-                LOG.info(ex);
-            }
-            else {
-                LOG.debug(ex);
-            }
-            return (ParseResult) parseFileFromMainAndGetAST(in, file, scope);
-        }
-    }
-
-     private Node parseFileFromMainAndGetAST(InputStream in, String file, DynamicScope scope) {
-         return parseFileAndGetAST(in, file, scope, 0, true);
-     }
-
-     private Node parseFileAndGetAST(InputStream in, String file, DynamicScope scope, int lineNumber, boolean isFromMain) {
-         ParserConfiguration parserConfig =
-                 new ParserConfiguration(this, lineNumber, false, true, isFromMain, config);
-         setupSourceEncoding(parserConfig, UTF8Encoding.INSTANCE);
-         return parser.parse(file, in, scope, parserConfig);
-     }
-
-    public Node parseInline(InputStream in, String file, DynamicScope scope) {
-        addEvalParseToStats();
-        ParserConfiguration parserConfig =
-                new ParserConfiguration(this, 0, false, true, false, config);
-        setupSourceEncoding(parserConfig, getEncodingService().getLocaleEncoding());
-        return parser.parse(file, in, scope, parserConfig);
-    }
-
-    private void setupSourceEncoding(ParserConfiguration parserConfig, Encoding defaultEncoding) {
-        if (config.getSourceEncoding() != null) {
-            if (config.isVerbose()) {
-                config.getError().println("-K is specified; it is for 1.8 compatibility and may cause odd behavior");
-            }
-            parserConfig.setDefaultEncoding(getEncodingService().getEncodingFromString(config.getSourceEncoding()));
+        if (!RubyInstanceConfig.IR_READING) {
+            return getParserManager().parseFile(file, lineNumber, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, 0);
         } else {
-            parserConfig.setDefaultEncoding(defaultEncoding);
+            return getParserManager().loadFileFromIRPersistence(file, lineNumber, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, 0);
         }
     }
 
-    public Node parseEval(String content, String file, DynamicScope scope, int lineNumber) {
-        addEvalParseToStats();
+    @Deprecated
+    public Node parseFileFromMain(InputStream in, String file, DynamicScope scope) {
+        return (Node) getParserManager().parseFile(file, 0, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, DATA).getAST();
+    }
 
-        return parser.parse(file, encodeToBytes(content), scope, new ParserConfiguration(this, lineNumber, false, false, config));
+    @Deprecated
+    public ParseResult parseFileFromMain(String file, InputStream in, DynamicScope scope) {
+        if (!RubyInstanceConfig.IR_READING) {
+            return getParserManager().parseFile(file, 0, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, DATA);
+        } else {
+            return getParserManager().loadFileFromIRPersistence(file, 0, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, DATA);
+        }
+    }
+
+    @Deprecated
+    private Node parseFileFromMainAndGetAST(InputStream in, String file, DynamicScope scope) {
+        return (Node) getParserManager().parseFile(file, 0, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, DATA).getAST();
+    }
+
+    @Deprecated
+    private Node parseFileAndGetAST(InputStream in, String file, DynamicScope scope, int lineNumber, boolean isFromMain) {
+         int flags = isFromMain ? DATA : 0;
+         return (Node) getParserManager().parseFile(file, lineNumber, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, flags).getAST();
+     }
+
+    @Deprecated
+    public Node parseInline(InputStream in, String file, DynamicScope scope) {
+        return (Node) getParserManager().parseFile(file, 0, in, setupSourceEncoding(getEncodingService().getLocaleEncoding()), scope, INLINE).getAST();
+    }
+
+    public Encoding setupSourceEncoding(Encoding defaultEncoding) {
+        if (config.getSourceEncoding() == null) return defaultEncoding;
+
+        if (config.isVerbose()) {
+            config.getError().println("-K is specified; it is for 1.8 compatibility and may cause odd behavior");
+        }
+        return getEncodingService().getEncodingFromString(config.getSourceEncoding());
+    }
+
+    @Deprecated
+    public Node parseEval(String source, String file, DynamicScope scope, int lineNumber) {
+        return (Node) getParserManager().parseEval(file, lineNumber, source, scope).getAST();
     }
 
     private byte[] encodeToBytes(String string) {
@@ -2735,73 +2710,20 @@ public final class Ruby implements Constantizable {
     }
 
     @Deprecated
-    public Node parse(String content, String file, DynamicScope scope, int lineNumber,
-            boolean extraPositionInformation) {
-        return parser.parse(file, content.getBytes(), scope, new ParserConfiguration(this,
-                lineNumber, extraPositionInformation, false, true, config));
+    public Node parse(String content, String file, DynamicScope scope, int lineNumber, boolean extraPositionInformation) {
+        InputStream in = new ByteArrayInputStream(encodeToBytes(content));
+        return (Node) getParserManager().parseFile(file, lineNumber, in, setupSourceEncoding(getEncodingService().getLocaleEncoding()), scope, extraPositionInformation ? INLINE : 0).getAST();
     }
 
-    public ParseResult parseEval(ByteList content, String file, DynamicScope scope, int lineNumber) {
-        addEvalParseToStats();
-
-        if (Options.PARSER_YARP.load()) {
-            if (!loaded) {
-                org.yarp.Parser.loadLibrary("/home/enebo/work/jruby/lib/libjavaparser.so");
-                loaded = true;
-            }
-
-            byte[] source = content.bytes(); // FIXME Extra arraycopy
-            long time = System.nanoTime();
-
-            byte[] encodedScopes = encodeEvalScopes(scope.getStaticScope());
-            //System.out.println("LOADING: eval " + new ByteList(source));
-            byte[] blob = org.yarp.Parser.parseAndSerialize(source, encodedScopes);
-            org.yarp.Nodes.Node node = org.yarp.Loader.load(file, source, blob);
-            ((Nodes.ProgramNode) node).scope.setEnclosingScope(scope.getStaticScope());
-            long parseTime = System.nanoTime() - time;
-            //yarpTime += parseTime;
-            //System.out.println("TOTAL_TIME: " + yarpTime + ", TIME: " + parseTime + ", SRC SIZE = " + source.length + ", BLOB SIZE = " + blob.length + ", RATIO: " + (((float) blob.length) / source.length));
-            return new YarpParseResult(file, source, (Nodes.ProgramNode) node);
-        } else {
-            //System.out.println("SRC: " + content);
-            return (ParseResult) parser.parse(file, content, scope, new ParserConfiguration(this,
-                    lineNumber, false, false, false, config));
-        }
+    @Deprecated
+    public ParseResult parseEval(ByteList source, String file, DynamicScope scope, int lineNumber) {
+        return getParserManager().parseEval(file, lineNumber, source, scope);
     }
 
-    private byte[] encodeEvalScopes(StaticScope scope) {
-        ByteList buf = new ByteList();
-        buf.append(0); // keep space for number of scopes.
-        int count = encodeEvalScopesInner(buf, scope, 0);
-        //System.out.println("COUNT: " + count);
-        buf.set(0, count); // FIXME: This only allows 256 vars
-
-        return buf.bytes();
+    @Deprecated
+    public Node parse(ByteList content, String file, DynamicScope scope, int lineNumber, boolean extraPositionInformation) {
+        return (Node) getParserManager().parseFile(file, lineNumber, content, scope, extraPositionInformation ? INLINE : 0).getAST();
     }
-
-    private int encodeEvalScopesInner(ByteList buf, StaticScope scope, int count) {
-        if (scope.getEnclosingScope() != null && scope.isBlockScope()) {
-            count = encodeEvalScopesInner(buf, scope.getEnclosingScope(), count + 1);
-        }
-
-        // once more for method scope
-        String names[] = scope.getVariables();
-        buf.append(names.length);
-        for (String name : names) {
-            buf.append(name.getBytes()); // FIXME: needs to be raw bytes
-            buf.append(0);
-        }
-
-        return count;
-    }
-
-    public Node parse(ByteList content, String file, DynamicScope scope, int lineNumber,
-            boolean extraPositionInformation) {
-        addEvalParseToStats();
-        return parser.parse(file, content, scope, new ParserConfiguration(this,
-                lineNumber, extraPositionInformation, false, true, config));
-    }
-
 
     public ThreadService getThreadService() {
         return threadService;
@@ -3014,6 +2936,7 @@ public final class Ruby implements Constantizable {
         try {
             ParseResult parseResult;
             context.preNodeEval(self);
+            /*
             if (Options.PARSER_YARP.load() && in instanceof LoadServiceResourceInputStream) {
                 if (!loaded) {
                     org.yarp.Parser.loadLibrary("/home/enebo/work/jruby/lib/libjavaparser.so");
@@ -3032,8 +2955,10 @@ public final class Ruby implements Constantizable {
                 parseResult = new YarpParseResult(scriptName, source, (Nodes.ProgramNode) node);
   //              parseResult = parseFile(scriptName, in, null);
             } else {
-                parseResult = parseFile(scriptName, in, null);
-            }
+
+             */
+            parseResult = getParserManager().parseFile(scriptName, 0, in, setupSourceEncoding(UTF8Encoding.INSTANCE), null, 0);
+            //}
 
             // toss an anonymous module into the search path
             if (wrap) wrapWithModule((RubyBasicObject) self, parseResult);
@@ -3067,7 +2992,7 @@ public final class Ruby implements Constantizable {
             }
         }
 
-        ParseResult parseResult = parseFile(filename, in, null);
+        ParseResult parseResult = getParserManager().parseFile(filename, 0, in, setupSourceEncoding(UTF8Encoding.INSTANCE), null, 0);
         RootNode root = (RootNode) parseResult;
 
         if (wrap) {
@@ -4920,6 +4845,18 @@ public final class Ruby implements Constantizable {
         return deduped;
     }
 
+    public ParserManager getParserManager() {
+        return parserManager;
+    }
+
+    // FIXME: This feels like a race but this was in parser for 2 decades without synchronization?
+    public void defineDATA(IRubyObject io) {
+        IRubyObject verbose = getVerbose();
+        setVerbose(getNil());
+        defineGlobalConstant("DATA", io);
+        setVerbose(verbose);
+    }
+
     static class FStringEqual {
         RubyString string;
         public boolean equals(Object other) {
@@ -5001,15 +4938,6 @@ public final class Ruby implements Constantizable {
         filter = explicitCastArguments(filter, methodType(IRubyObject.class, Object.class));
 
         return this.nullToUndefined = filter;
-    }
-
-    // Parser stats methods
-    private void addLoadParseToStats() {
-        if (parserStats != null) parserStats.addLoadParse();
-    }
-
-    private void addEvalParseToStats() {
-        if (parserStats != null) parserStats.addEvalParse();
     }
 
     public FilenoUtil getFilenoUtil() {
@@ -5527,9 +5455,6 @@ public final class Ruby implements Constantizable {
     // Management/monitoring
     private final BeanManager beanManager;
 
-    // Parser stats
-    private final ParserStats parserStats;
-
     private final InlineStats inlineStats;
 
     // Compilation
@@ -5557,8 +5482,6 @@ public final class Ruby implements Constantizable {
             }
         }
     }
-
-    private final Parser parser = new Parser(this);
 
     private final LoadService loadService;
 
@@ -5830,6 +5753,8 @@ public final class Ruby implements Constantizable {
     private final Map<String, List<StrptimeToken>> strptimeFormatCache = new ConcurrentHashMap<>();
 
     transient RubyString tzVar;
+
+    ParserManager parserManager;
 
     @Deprecated
     private void setNetworkStack() {

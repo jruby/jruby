@@ -36,12 +36,14 @@ package org.jruby.ext.ripper;
 import java.io.IOException;
 import java.util.Set;
 
+import org.jruby.Ruby;
 import org.jruby.RubySymbol;
 import org.jruby.ast.*;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.LexingCommon;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.ext.ripper.StrTerm;
 import org.jruby.util.KeyValuePair; import org.jruby.RubyArray;
 import org.jruby.util.ByteList;
@@ -97,12 +99,13 @@ import static org.jruby.lexer.LexingCommon.EXPR_LABEL;
 import static org.jruby.util.CommonByteLists.ANON_BLOCK;
 import static org.jruby.util.CommonByteLists.FWD_BLOCK;
 import static org.jruby.util.CommonByteLists.FWD_KWREST;
+import static org.jruby.parser.ParserManager.isEval;
  
  public class RipperParser extends RipperParserBase {
     public RipperParser(ThreadContext context, IRubyObject ripper, LexerSource source) {
         super(context, ripper, source);
     }
-					// line 106 "-"
+					// line 109 "-"
   // %token constants
   public static final int keyword_class = 257;
   public static final int keyword_module = 258;
@@ -6635,7 +6638,7 @@ states[819] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 }
-					// line 4605 "ripper_RubyParser.out"
+					// line 4608 "ripper_RubyParser.out"
 
 }
-					// line 14421 "-"
+					// line 14424 "-"

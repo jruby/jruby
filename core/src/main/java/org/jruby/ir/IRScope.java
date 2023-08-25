@@ -1010,4 +1010,8 @@ public abstract class IRScope implements ParseResult {
             return EnumSet.noneOf(IRFlags.class);
         }
     }
+
+    public Object getAST() {
+        throw new RuntimeException("IRScopes and their descendants should never be asked for a syntax tree");
+    }
 }

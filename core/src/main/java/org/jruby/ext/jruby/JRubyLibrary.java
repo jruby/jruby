@@ -31,7 +31,9 @@
 
 package org.jruby.ext.jruby;
 
+import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.*;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
@@ -51,6 +53,8 @@ import org.jruby.runtime.load.Library;
 import org.jruby.util.ByteList;
 
 import java.io.ByteArrayInputStream;
+
+import static org.jruby.parser.ParserManager.INLINE;
 
 /**
  * Native part of require 'jruby', e.g. provides methods for swapping between the normal Ruby reference to an
@@ -207,7 +211,7 @@ public class JRubyLibrary implements Library {
 
         final RubyString content = args[0].convertToString();
         final String filename;
-        boolean extra_position_info = false; int lineno = 0;
+        boolean inlineSource = false; int lineno = 0;
 
         switch (args.length) {
             case 1 :
@@ -218,11 +222,11 @@ public class JRubyLibrary implements Library {
                 break;
             case 3 :
                 filename = args[1].convertToString().toString();
-                extra_position_info = args[2].isTrue();
+                inlineSource = args[2].isTrue();
                 break;
             case 4 :
                 filename = args[1].convertToString().toString();
-                extra_position_info = args[2].isTrue();
+                inlineSource = args[2].isTrue();
                 lineno = args[3].convertToInteger().getIntValue();
                 break;
             default :
@@ -230,19 +234,10 @@ public class JRubyLibrary implements Library {
         }
 
         final ByteList bytes = content.getByteList();
-        final DynamicScope scope = null;
+        ByteArrayInputStream stream = new ByteArrayInputStream(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getRealSize());
+        Encoding encoding = content.getEncoding() == ASCIIEncoding.INSTANCE ? context.runtime.setupSourceEncoding(UTF8Encoding.INSTANCE) : bytes.getEncoding();
 
-        final Node parseResult;
-        if (content.getEncoding() == ASCIIEncoding.INSTANCE) {
-            // binary content, parse as though from a stream
-            ByteArrayInputStream stream = new ByteArrayInputStream(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getRealSize());
-            parseResult = context.runtime.parseFile(stream, filename, scope, lineno);
-        }
-        else {
-            parseResult = context.runtime.parse(bytes, filename, scope, lineno, extra_position_info);
-        }
-
-        return parseResult;
+        return (Node) context.runtime.getParserManager().parseFile(filename, lineno, stream, encoding, null, inlineSource ? INLINE : 0).getAST();
     }
 
     @JRubyMethod(module = true, name = "compile_ir", required = 1, optional = 3, checkArity = false)

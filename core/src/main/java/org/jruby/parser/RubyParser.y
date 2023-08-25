@@ -11,11 +11,11 @@
          '%type <IRubyObject> program'
     ],
     'ParserConstructorParams' => [
-        'LexerSource source, IRubyWarnings warnings',
+        'Ruby runtime, LexerSource source, DynamicScope scope, int flags',
         'ThreadContext context, IRubyObject ripper, LexerSource source'
     ],
     'ParserConstructorBody' => [
-        'super(warnings); setLexer(new RubyLexer(this, source, warnings));',
+        'super(runtime, source, scope, flags);',
         'super(context, ripper, source);'
     ],
     'lexer' => [
@@ -110,12 +110,14 @@ package @@package@@;
 import java.io.IOException;
 import java.util.Set;
 
+import org.jruby.Ruby;
 import org.jruby.RubySymbol;
 import org.jruby.ast.*;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.LexingCommon;
+import org.jruby.runtime.DynamicScope;
 import @@lex_package@@.StrTerm;
 @@import_ripper@@
 import org.jruby.util.ByteList;
@@ -171,6 +173,7 @@ import static org.jruby.lexer.LexingCommon.EXPR_LABEL;
 import static org.jruby.util.CommonByteLists.ANON_BLOCK;
 import static org.jruby.util.CommonByteLists.FWD_BLOCK;
 import static org.jruby.util.CommonByteLists.FWD_KWREST;
+import static org.jruby.parser.ParserManager.isEval;
  
  public class @@Parser@@Parser extends @@Parser@@ParserBase {
     public @@Parser@@Parser(@@ParserConstructorParams@@) {
@@ -448,7 +451,7 @@ program       : {
               } top_compstmt {
                   /*%%%*/
                   Node expr = $2;
-                  if (expr != null && !p.getConfiguration().isEvalParse()) {
+                  if (expr != null && !isEval(p.flags)) {
                       /* last expression should not be void */
                       if ($2 instanceof BlockNode) {
                         expr = $<BlockNode>2.getLast();

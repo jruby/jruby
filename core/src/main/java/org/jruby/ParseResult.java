@@ -9,4 +9,5 @@ public interface ParseResult {
     int getLine();
     String getFile();
     int getCoverageMode();
+    Object getAST();
 }

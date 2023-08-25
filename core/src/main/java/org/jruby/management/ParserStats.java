@@ -40,13 +40,13 @@ public class ParserStats implements ParserStatsMBean {
     public double getTotalParseTime() {
         Ruby runtime = ruby.get();
         if (runtime == null) return 0;
-        return runtime.getParser().getTotalTime() / 1000000000.0;
+        return runtime.getParserManager().getTotalTime() / 1000000000.0;
     }
 
     public long getTotalParsedBytes() {
         Ruby runtime = ruby.get();
         if (runtime == null) return 0;
-        return runtime.getParser().getTotalBytes();
+        return runtime.getParserManager().getTotalBytes();
     }
 
     public double getParseTimePerKB() {
