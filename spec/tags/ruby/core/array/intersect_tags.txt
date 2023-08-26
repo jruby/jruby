@@ -1,1 +1,0 @@
-fails:Array#intersect? determines equivalence between elements in the sense of eql?
