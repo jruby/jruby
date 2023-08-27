@@ -49,7 +49,7 @@ jobs:
     
     strategy:
       matrix:
-        target: ['spec:ffi']
+        target: ['spec:ffi', 'spec:ruby:fast']
         java-version: ['11']
       fail-fast: false
 
