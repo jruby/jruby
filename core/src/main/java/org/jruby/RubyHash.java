@@ -1912,6 +1912,7 @@ public class RubyHash extends RubyObject implements Map {
             return result;
         }
 
+        if (isEmpty()) return context.nil;
 
         CachingCallSite self_default = sites(context).self_default;
         if (self_default.isBuiltin(this)) return default_value_get(context, context.nil);
