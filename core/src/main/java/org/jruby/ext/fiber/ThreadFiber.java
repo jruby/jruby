@@ -19,6 +19,7 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -38,28 +39,29 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     private static final MethodHandle VTHREAD_START_METHOD;
 
     static {
-        BiConsumer<Ruby, Runnable> fiberLauncher;
-        MethodHandle start;
+        BiConsumer<Ruby, Runnable> fiberLauncher = ThreadFiber::nativeThreadLauncher;
+        MethodHandle start = null;
 
-        try {
-            // test that API is available
-            Method ofVirtualMethod = Thread.class.getMethod("ofVirtual");
-            Object builder = ofVirtualMethod.invoke(null);
-            Method startMethod = Class.forName("java.lang.Thread$Builder").getMethod("start", Runnable.class);
+        if (Options.FIBER_VTHREADS.load()) {
+            try {
+                // test that API is available
+                Method ofVirtualMethod = Thread.class.getMethod("ofVirtual");
+                Object builder = ofVirtualMethod.invoke(null);
+                Method startMethod = Class.forName("java.lang.Thread$Builder").getMethod("start", Runnable.class);
 
-            start = MethodHandles.publicLookup().unreflect(startMethod).bindTo(builder);
+                start = MethodHandles.publicLookup().unreflect(startMethod).bindTo(builder);
 
-            fiberLauncher = new VirtualThreadLauncher();
-        } catch (Throwable t) {
-            start = null;
-            fiberLauncher = ThreadFiber::accept;
+                fiberLauncher = new VirtualThreadLauncher();
+            } catch (Throwable t) {
+                // default impl set below
+            }
         }
 
         VTHREAD_START_METHOD = start;
         FIBER_LAUNCHER = fiberLauncher;
     }
 
-    private static void accept(Ruby runtime, Runnable runnable) {
+    private static void nativeThreadLauncher(Ruby runtime, Runnable runnable) {
         runtime.getFiberExecutor().submit(runnable);
     }
 
