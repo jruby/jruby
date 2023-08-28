@@ -1598,7 +1598,7 @@ public class IRBuilder {
         label("empty", (empty) ->
                 cond(empty, result, tru(), ()->
                         addInstr(new BuildCompoundStringInstr(errorString, new Operand[] {value, new FrozenString(" is not empty")},
-                                UTF8Encoding.INSTANCE, 13, true, false, getFileName(), lastProcessedLineNum))));
+                                UTF8Encoding.INSTANCE, 13, true, getFileName(), lastProcessedLineNum))));
     }
 
     public interface RunIt {
@@ -3418,8 +3418,7 @@ public class IRBuilder {
 
         if (result == null) result = createTemporaryVariable();
 
-        boolean debuggingFrozenStringLiteral = manager.getInstanceConfig().isDebuggingFrozenStringLiteral();
-        addInstr(new BuildCompoundStringInstr(result, pieces, node.getEncoding(), estimatedSize, node.isFrozen(), debuggingFrozenStringLiteral, getFileName(), node.getLine()));
+        addInstr(new BuildCompoundStringInstr(result, pieces, node.getEncoding(), estimatedSize, node.isFrozen(), getFileName(), node.getLine()));
 
         return result;
     }
@@ -3436,7 +3435,7 @@ public class IRBuilder {
         if (result == null) result = createTemporaryVariable();
 
         boolean debuggingFrozenStringLiteral = manager.getInstanceConfig().isDebuggingFrozenStringLiteral();
-        addInstr(new BuildCompoundStringInstr(result, pieces, node.getEncoding(), estimatedSize, false, debuggingFrozenStringLiteral, getFileName(), node.getLine()));
+        addInstr(new BuildCompoundStringInstr(result, pieces, node.getEncoding(), estimatedSize, false, getFileName(), node.getLine()));
 
         return copy(new DynamicSymbol(result));
     }
@@ -3458,7 +3457,7 @@ public class IRBuilder {
         if (result == null) result = createTemporaryVariable();
 
         boolean debuggingFrozenStringLiteral = manager.getInstanceConfig().isDebuggingFrozenStringLiteral();
-        addInstr(new BuildCompoundStringInstr(stringResult, pieces, node.getEncoding(), estimatedSize, false, debuggingFrozenStringLiteral, getFileName(), node.getLine()));
+        addInstr(new BuildCompoundStringInstr(stringResult, pieces, node.getEncoding(), estimatedSize, false, getFileName(), node.getLine()));
 
         return fcall(result, Self.SELF, "`", stringResult);
     }

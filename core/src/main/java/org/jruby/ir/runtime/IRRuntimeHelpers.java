@@ -2370,18 +2370,11 @@ public class IRRuntimeHelpers {
     public static RubyString newFrozenString(ThreadContext context, ByteList bytelist, int coderange, String file, int line) {
         Ruby runtime = context.runtime;
 
-        RubyString string = RubyString.newString(runtime, bytelist, coderange);
-
         if (runtime.getInstanceConfig().isDebuggingFrozenStringLiteral()) {
-            // stuff location info into the string and then freeze it
-            RubyArray info = (RubyArray) runtime.newArray(runtime.newString(file).freeze(context), runtime.newFixnum(line + 1)).freeze(context);
-            string.setInstanceVariable(RubyString.DEBUG_INFO_FIELD, info);
-            string.setFrozen(true);
-        } else {
-            string = runtime.freezeAndDedupString(string);
+            return RubyString.newDebugFrozenString(runtime, runtime.getString(), bytelist, coderange, file, line + 1);
         }
 
-        return string;
+        return runtime.freezeAndDedupString(RubyString.newString(runtime, bytelist, coderange));
     }
 
     @JIT @Interp
@@ -2389,19 +2382,6 @@ public class IRRuntimeHelpers {
         string.setFrozen(true);
 
         return string;
-    }
-
-    @JIT @Interp
-    public static RubyString freezeLiteralString(RubyString string, ThreadContext context, String file, int line) {
-        Ruby runtime = context.runtime;
-
-        if (runtime.getInstanceConfig().isDebuggingFrozenStringLiteral()) {
-            // stuff location info into the string and then freeze it
-            RubyArray info = (RubyArray) runtime.newArray(runtime.newString(file).freeze(context), runtime.newFixnum(line + 1)).freeze(context);
-            string.setInstanceVariable(RubyString.DEBUG_INFO_FIELD, info);
-        }
-
-        return freezeLiteralString(string);
     }
 
     @JIT
