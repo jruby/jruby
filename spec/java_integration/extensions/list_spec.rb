@@ -64,25 +64,6 @@ describe "List Ruby extensions" do
     expect( list.rindex.each { |x| x < 2 } ).to eq(3)
   end
 
-  # Java 8 adds a single-parameter sort method to List that sorts in-place
-  # if ENV_JAVA['java.specification.version'] < '1.8'
-  #   it "should be sortable with sort() without block" do
-  #     expect(@list.sort.to_a).to eq(@data.sort)
-  #   end
-  #
-  #   it "should be sortable with sort() with block" do
-  #     result = @list.sort do |a, b|
-  #       a.length <=> b.length
-  #     end
-  #
-  #     expected = @data.sort do |a, b|
-  #       a.length <=> b.length
-  #     end
-  #
-  #     expect(result.to_a).to eq(expected)
-  #   end
-  # end
-
   it "should be sortable with sort!() without block" do
     list = java.util.LinkedList.new(@data)
     list.sort!
@@ -210,12 +191,14 @@ describe "List Ruby extensions" do
   end
 
   it 'supports (Array-like) first/last' do
-    expect( @list.first ).to eq 'foo'
+    # Java 21 adds getFirst and getLast via a new SequencedCollection interface, so we always test the "ruby_" prefixed
+    # versions here. Prior to Java 21, they are equivalent to the #first and #last methods.
+    expect( @list.ruby_first ).to eq 'foo'
     list = java.util.ArrayList.new [1, 2, 3]
-    expect( list.first(2).to_a ).to eq [1, 2]
-    expect( list.first(1).to_a ).to eq [1]
-    expect( list.first(0).to_a ).to eq []
-    expect( list.first(5).to_a ).to eq [1, 2, 3]
+    expect( list.ruby_first(2).to_a ).to eq [1, 2]
+    expect( list.ruby_first(1).to_a ).to eq [1]
+    expect( list.ruby_first(0).to_a ).to eq []
+    expect( list.ruby_first(5).to_a ).to eq [1, 2, 3]
 
     # LinkedList does getList, unless we alias first ruby_first
     expect( java.util.LinkedList.new.ruby_first ).to be nil
@@ -223,7 +206,7 @@ describe "List Ruby extensions" do
 
     list = java.util.LinkedList.new [1, 2, 3]
     expect( list.ruby_last ).to eq 3
-    expect( java.util.Vector.new.last ).to be nil
+    expect( java.util.Vector.new.ruby_last ).to be nil
     expect( list.ruby_last(1).to_a ).to eq [3]
     expect( list.ruby_last(2) ).to be_a java.util.List
     expect( list.ruby_last(2).to_a ).to eq [2, 3]
