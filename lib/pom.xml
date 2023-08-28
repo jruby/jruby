@@ -20,7 +20,7 @@ DO NOT MODIFY - GENERATED CODE
     <gem.home>${basedir}/ruby/gems/shared</gem.home>
     <jruby.complete.gems>${jruby.complete.home}/lib/ruby/gems/shared</jruby.complete.gems>
     <jruby.complete.home>${project.build.outputDirectory}/META-INF/jruby.home</jruby.complete.home>
-    <jruby.plugins.version>1.1.2</jruby.plugins.version>
+    <jruby.plugins.version>3.0.1</jruby.plugins.version>
     <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
     <polyglot.dump.readonly>true</polyglot.dump.readonly>
   </properties>
@@ -548,9 +548,9 @@ DO NOT MODIFY - GENERATED CODE
   <build>
     <extensions>
       <extension>
-        <groupId>org.torquebox.mojo</groupId>
+        <groupId>org.jruby.maven</groupId>
         <artifactId>mavengem-wagon</artifactId>
-        <version>1.0.3</version>
+        <version>2.0.1</version>
       </extension>
     </extensions>
     <resources>
@@ -757,7 +757,7 @@ DO NOT MODIFY - GENERATED CODE
       <plugin>
         <groupId>io.takari.polyglot</groupId>
         <artifactId>polyglot-maven-plugin</artifactId>
-        <version>0.4.7</version>
+        <version>0.4.11</version>
         <executions>
           <execution>
             <id>install_gems</id>
@@ -808,7 +808,7 @@ DO NOT MODIFY - GENERATED CODE
           <dependency>
             <groupId>io.takari.polyglot</groupId>
             <artifactId>polyglot-ruby</artifactId>
-            <version>0.4.7</version>
+            <version>0.4.11</version>
           </dependency>
         </dependencies>
         <inherited>false</inherited>
