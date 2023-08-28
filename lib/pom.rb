@@ -72,7 +72,7 @@ project 'JRuby Lib Setup' do
 
   properties( 'polyglot.dump.pom' => 'pom.xml',
               'polyglot.dump.readonly' => true,
-              'jruby.plugins.version' => '3.0.0',
+              'jruby.plugins.version' => '3.0.1',
               'gem.home' => '${basedir}/ruby/gems/shared',
               # we copy everything into the target/classes/META-INF
               # so the jar plugin just packs it - see build/resources below
@@ -82,7 +82,7 @@ project 'JRuby Lib Setup' do
   # just depends on jruby-core so we are sure the jruby.jar is in place
   jar "org.jruby:jruby-core:#{version}", :scope => 'test'
 
-  extension 'org.jruby.maven:mavengem-wagon:2.0.0'
+  extension 'org.jruby.maven:mavengem-wagon:2.0.1'
 
   repository :id => :mavengems, :url => 'mavengem:https://rubygems.org'
 

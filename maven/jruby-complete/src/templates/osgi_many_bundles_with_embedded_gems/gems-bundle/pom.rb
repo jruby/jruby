@@ -4,7 +4,7 @@ gemfile
 
 model.repositories.clear
 
-extension 'org.jruby.maven:mavengem-wagon:2.0.0'
+extension 'org.jruby.maven:mavengem-wagon:2.0.1'
 repository :id => :mavengems, :url => 'mavengem:https://rubygems.org'
 
 id 'org.jruby.osgi:gems-bundle', '1.0'
@@ -12,7 +12,7 @@ id 'org.jruby.osgi:gems-bundle', '1.0'
 packaging 'bundle'
 
 # default versions will be overwritten by pom.rb from root directory
-properties( 'jruby.plugins.version' => '3.0.0',
+properties( 'jruby.plugins.version' => '3.0.1',
             # needed bundle plugin
             'polyglot.dump.pom' => 'pom.xml' )
 

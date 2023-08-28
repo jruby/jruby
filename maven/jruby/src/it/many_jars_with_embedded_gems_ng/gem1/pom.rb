@@ -4,7 +4,7 @@ gemfile
 
 model.repositories.clear
 
-extension 'org.jruby.maven:mavengem-wagon:2.0.0'
+extension 'org.jruby.maven:mavengem-wagon:2.0.1'
 repository :id => :mavengems, :url => 'mavengem:https://rubygems.org'
 
 id 'org.rubygems:gem1', '1'
