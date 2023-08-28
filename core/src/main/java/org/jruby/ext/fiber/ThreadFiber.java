@@ -19,10 +19,12 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -34,32 +36,44 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     private static final Logger LOG = LoggerFactory.getLogger(ThreadFiber.class);
 
     private static final BiConsumer<Ruby, Runnable> FIBER_LAUNCHER;
+    private static final MethodHandle VTHREAD_START_METHOD;
 
     static {
-        BiConsumer<Ruby, Runnable> fiberLauncher = null;
+        BiConsumer<Ruby, Runnable> fiberLauncher = ThreadFiber::nativeThreadLauncher;
         MethodHandle start = null;
 
-        try {
-            // test that API is available
-            Method ofVirtualMethod = Thread.class.getMethod("ofVirtual");
-            Object builder = ofVirtualMethod.invoke(null);
-            Method startMethod = Class.forName("java.lang.Thread$Builder").getMethod("start", Runnable.class);
+        if (Options.FIBER_VTHREADS.load()) {
+            try {
+                // test that API is available
+                Method ofVirtualMethod = Thread.class.getMethod("ofVirtual");
+                Object builder = ofVirtualMethod.invoke(null);
+                Method startMethod = Class.forName("java.lang.Thread$Builder").getMethod("start", Runnable.class);
 
-            fiberLauncher = (runtime, runnable) -> {
-                try {
-                    startMethod.invoke(builder, runnable);
-                } catch (Throwable t) {
-                    Helpers.throwException(t);
-                }
-            };
-        } catch (Throwable t) {
-            fiberLauncher = (runtime, runnable) -> runtime.getFiberExecutor().submit(runnable);
+                start = MethodHandles.publicLookup().unreflect(startMethod).bindTo(builder);
+
+                fiberLauncher = new VirtualThreadLauncher();
+            } catch (Throwable t) {
+                // default impl set below
+            }
         }
 
-        if (fiberLauncher == null) {
-        }
-
+        VTHREAD_START_METHOD = start;
         FIBER_LAUNCHER = fiberLauncher;
+    }
+
+    private static void nativeThreadLauncher(Ruby runtime, Runnable runnable) {
+        runtime.getFiberExecutor().submit(runnable);
+    }
+
+    private static class VirtualThreadLauncher implements BiConsumer<Ruby, Runnable> {
+        @Override
+        public void accept(Ruby ruby, Runnable runnable) {
+            try {
+                VTHREAD_START_METHOD.invokeWithArguments(runnable);
+            } catch (Throwable t) {
+                Helpers.throwException(t);
+            }
+        }
     }
 
     public ThreadFiber(Ruby runtime, RubyClass klass) {
