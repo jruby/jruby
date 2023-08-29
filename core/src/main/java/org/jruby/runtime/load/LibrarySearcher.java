@@ -255,7 +255,7 @@ public class LibrarySearcher {
                 || file.endsWith(".jar");
     }
 
-    private static class StringWrapper implements CharSequence {
+    protected static class StringWrapper implements CharSequence {
         private String str;
         private int beg;
         private int len;
@@ -319,7 +319,7 @@ public class LibrarySearcher {
 
         @Override
         public String toString() {
-            return str.substring(beg, beg + len);
+            return "StringWrapper(" + (str == null ? "" : str.substring(beg, beg + len)) + ")";
         }
 
         @Override
