@@ -35,6 +35,7 @@ import org.jcodings.EncodingDB;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
+import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyEncoding;
@@ -1194,12 +1195,6 @@ public class Bootstrap {
     ////////////////////////////////////////////////////////////////////////////
 
     private static MethodHandle createJavaHandle(InvokeSite site, DynamicMethod method) {
-        MethodHandle nativeTarget = (MethodHandle)method.getHandle();
-
-        if (nativeTarget != null) return nativeTarget;
-
-        MethodHandle returnFilter = null;
-
         Ruby runtime = method.getImplementationClass().getRuntime();
 
         if (!(method instanceof NativeCallMethod)) return null;
@@ -1231,6 +1226,12 @@ public class Bootstrap {
 
         // Scala singletons have slightly different JI logic, so skip for now
         if (method instanceof SingletonMethodInvoker) return null;
+
+        // it's bindable, so return existing handle if it exists
+        MethodHandle nativeTarget = (MethodHandle)method.getHandle();
+        if (nativeTarget != null) return nativeTarget;
+
+        // proceed to construct the handle
 
         // the "apparent" type from the NativeCall, excluding receiver
         MethodType apparentType = methodType(nativeCall.getNativeReturn(), nativeCall.getNativeSignature());
@@ -1271,6 +1272,7 @@ public class Bootstrap {
         Class[] convertedParams = CodegenUtils.params(IRubyObject.class, nativeTarget.type().parameterCount());
 
         // handle return value
+        MethodHandle returnFilter;
         if (nativeReturn == byte.class
                 || nativeReturn == short.class
                 || nativeReturn == char.class
@@ -1331,9 +1333,19 @@ public class Bootstrap {
             // void return, produce nil
             returnFilter = constant(IRubyObject.class, runtime.getNil());
         } else if (nativeReturn == ByteList.class) {
-            // not handled yet
+            // bytelist, produce a String or nil
+            nativeTarget = explicitCastArguments(nativeTarget, methodType(ByteList.class, convertedParams));
+            returnFilter = insertArguments(
+                    findStatic(Bootstrap.class, "stringOrNil", methodType(IRubyObject.class, Ruby.class, ByteList.class)),
+                    0,
+                    runtime);
         } else if (nativeReturn == BigInteger.class) {
-            // not handled yet
+            // bytelist, produce a String or nil
+            nativeTarget = explicitCastArguments(nativeTarget, methodType(BigInteger.class, convertedParams));
+            returnFilter = insertArguments(
+                    findStatic(Bootstrap.class, "bignumOrNil", methodType(IRubyObject.class, Ruby.class, BigInteger.class)),
+                    0,
+                    runtime);
         } else {
             // all other object types
             nativeTarget = explicitCastArguments(nativeTarget, methodType(Object.class, convertedParams));
@@ -1343,19 +1355,14 @@ public class Bootstrap {
                     runtime);
         }
 
-        // we can handle this; do remaining transforms and return
-        if (returnFilter != null) {
-            nativeTarget = Binder
-                    .from(site.type())
-                    .drop(0, isStatic ? 3 : 2)
-                    .filterReturn(returnFilter)
-                    .invoke(nativeTarget);
+        nativeTarget = Binder
+                .from(site.type())
+                .drop(0, isStatic ? 3 : 2)
+                .filterReturn(returnFilter)
+                .invoke(nativeTarget);
 
-            method.setHandle(nativeTarget);
-            return nativeTarget;
-        }
-
-        return null;
+        method.setHandle(nativeTarget);
+        return nativeTarget;
     }
 
     public static boolean subclassProxyTest(Object target) {
@@ -1409,6 +1416,14 @@ public class Bootstrap {
 
     public static IRubyObject stringOrNil(Ruby runtime, CharSequence cs) {
         return cs == null ? runtime.getNil() : RubyString.newUnicodeString(runtime, cs);
+    }
+
+    public static IRubyObject stringOrNil(Ruby runtime, ByteList bl) {
+        return bl == null ? runtime.getNil() : RubyString.newString(runtime, bl);
+    }
+
+    public static IRubyObject bignumOrNil(Ruby runtime, BigInteger bi) {
+        return bi == null ? runtime.getNil() : RubyBignum.newBignum(runtime, bi);
     }
 
     ///////////////////////////////////////////////////////////////////////////
