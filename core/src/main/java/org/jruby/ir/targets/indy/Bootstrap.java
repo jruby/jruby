@@ -1219,11 +1219,7 @@ public class Bootstrap {
         }
 
         // mismatched arity not supported
-        if (!isStatic) {
-            if (site.arity != nativeCall.getNativeSignature().length - 1) {
-                return null;
-            }
-        } else if (site.arity != nativeCall.getNativeSignature().length) {
+        if (site.arity != nativeCall.getNativeSignature().length) {
             return null;
         }
 
