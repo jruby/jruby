@@ -428,7 +428,7 @@ public class Main {
         final ThreadContext context = runtime.getCurrentContext();
         final IRubyObject $ex = context.getErrorInfo();
         try {
-            runtime.parseFromMain(in, filename);
+            runtime.parseFromMain(filename, in);
             config.getOutput().println("Syntax OK");
             return true;
         } catch (RaiseException re) {

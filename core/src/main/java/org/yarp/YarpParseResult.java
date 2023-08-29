@@ -21,10 +21,13 @@ public class YarpParseResult implements ParseResult {
         return null;
     }
 
+    // This is only used for non-eval uses.  Eval sets its own and builds through a different code path.
     @Override
     public StaticScope getStaticScope() {
-        // FIXME: How does this work for evals?
-        if (rootScope == null) rootScope = IRBuilderYARP.createStaticScopeFrom(fileName, root.locals, StaticScope.Type.LOCAL, null);
+        if (rootScope == null) {
+            rootScope = IRBuilderYARP.createStaticScopeFrom(fileName, root.locals, StaticScope.Type.LOCAL, null);
+        }
+
         return rootScope;
     }
 

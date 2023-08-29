@@ -70,6 +70,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         if (parent instanceof IRBuilderYARP) {
             source = ((IRBuilderYARP) parent).source;
         }
+
+        staticScope = scope.getStaticScope();
     }
 
     @Override
@@ -113,8 +115,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             return buildClassVariableRead(result, (ClassVariableReadNode) node);
         } else if (node instanceof ClassVariableWriteNode) {
             return buildClassVariableWrite((ClassVariableWriteNode) node);
-    //    } else if (node instanceof ConstantOperatorWriteNode) {
-    //        return buildConstantOperatorWrite((ConstantOperatorWriteNode) node);
+        } else if (node instanceof ConstantOperatorWriteNode) {
+            return buildConstantOperatorWrite((ConstantOperatorWriteNode) node);
         } else if (node instanceof ConstantPathNode) {
             return buildConstantPath(result, (ConstantPathNode) node);
         } else if (node instanceof ConstantPathWriteNode) {
@@ -133,8 +135,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             return buildFloat((FloatNode) node);
         } else if (node instanceof ForwardingSuperNode) {
             return buildForwardingSuper(result, (ForwardingSuperNode) node);
-   //     } else if (node instanceof GlobalVariableOperatorWriteNode) {
-   //         return buildGlobalVariableOperatorWrite((GlobalVariableOperatorWriteNode) node);
+        } else if (node instanceof GlobalVariableOperatorWriteNode) {
+            return buildGlobalVariableOperatorWrite((GlobalVariableOperatorWriteNode) node);
         } else if (node instanceof GlobalVariableReadNode) {
             return buildGlobalVariableRead(result, (GlobalVariableReadNode) node);
         } else if (node instanceof GlobalVariableWriteNode) {
@@ -143,10 +145,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             return buildHash((HashNode) node);
         } else if (node instanceof IfNode) {
             return buildIf(result, (IfNode) node);
-    //    } else if (node instanceof InstanceVariableOperatorOrWriteNode) {
-    //        return buildInstanceVariableOperatorOrWrite((InstanceVariableOperatorOrWriteNode) node);
-    //    } else if (node instanceof InstanceVariableOperatorWriteNode) {
-    //        return buildInstanceVariableOperatorWrite((InstanceVariableOperatorWriteNode) node);
+        } else if (node instanceof InstanceVariableOperatorWriteNode) {
+            return buildInstanceVariableOperatorWrite((InstanceVariableOperatorWriteNode) node);
         } else if (node instanceof InstanceVariableReadNode) {
             return buildInstanceVariableRead((InstanceVariableReadNode) node);
         } else if (node instanceof InstanceVariableWriteNode) {
@@ -161,8 +161,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             return buildInterpolatedSymbol(result, (InterpolatedSymbolNode) node);
         } else if (node instanceof LambdaNode) {
             return buildLambda((LambdaNode) node);
-      //  } else if (node instanceof LocalVariableOperatorWriteNode) {
-      //      return buildLocalVariableOperatorWrite((LocalVariableOperatorWriteNode) node);
+        } else if (node instanceof LocalVariableOperatorWriteNode) {
+            return buildLocalVariableOperatorWrite((LocalVariableOperatorWriteNode) node);
         } else if (node instanceof LocalVariableReadNode) {
             return buildLocalVariableRead((LocalVariableReadNode) node);
         } else if (node instanceof LocalVariableWriteNode) {
@@ -177,12 +177,10 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             return buildNext((NextNode) node);
         } else if (node instanceof NilNode) {
             return nil();
-        } else if (node instanceof OperatorWriteNode) { // @a += bar
-            return buildOperatorWrite((OperatorWriteNode) node);
         } else if (node instanceof CallOperatorWriteNode) { // foo.bar += baz
             return buildCallOperatorWrite((CallOperatorWriteNode) node);
-      //  } else if (node instanceof ClassVariableOperatorWriteNode) { // @@foo += bar
-      //      return buildClassVariableOperatorWrite((ClassVariableOperatorWriteNode) node);
+        } else if (node instanceof ClassVariableOperatorWriteNode) { // @@foo += bar
+            return buildClassVariableOperatorWrite((ClassVariableOperatorWriteNode) node);
         } else if (node instanceof OrNode) {
             return buildOr((OrNode) node);
         } else if (node instanceof ParenthesesNode) {
@@ -550,7 +548,6 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
                 node.body, createStaticScopeFrom(node.locals, StaticScope.Type.LOCAL), getLine(node), getEndLine(node));
     }
 
-    /*
     private Operand buildConstantOperatorWrite(ConstantOperatorWriteNode node) {
         RubySymbol name = symbolFor(node.name_loc);
         Operand lhs = searchConst(temp(), name);
@@ -595,8 +592,6 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         Variable value = call(lhs, lhs, symbolFor(node.operator_loc), new Operand[] { rhs});
         return value;
     }
-
-     */
 
     private Operand buildClassVariableRead(Variable result, ClassVariableReadNode node) {
         return buildClassVar(result, symbolFor(node));
@@ -917,10 +912,6 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         return null;
     }*/
 
-
-    private Operand buildOperatorWrite(OperatorWriteNode node) {
-        return null;
-    }
 
     private Operand buildOr(OrNode node) {
         return buildOr(build(node.left), () -> build(node.right), binaryType(node.left));

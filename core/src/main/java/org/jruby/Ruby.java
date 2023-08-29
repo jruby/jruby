@@ -1021,15 +1021,15 @@ public final class Ruby implements Constantizable {
      * @param filename The filename to use for parsing
      * @return The root node of the parsed script
      */
+    @Deprecated
     public Node parseFromMain(InputStream inputStream, String filename) {
         int flags = config.isInlineScript() ? INLINE : 0;
         return (Node) getParserManager().parseFile(filename, 0, inputStream, setupSourceEncoding(UTF8Encoding.INSTANCE), getCurrentContext().getCurrentScope(), flags).getAST();
     }
 
     public ParseResult parseFromMain(String fileName, InputStream in) {
-        if (config.isInlineScript()) return (ParseResult) parseInline(in, fileName, getCurrentContext().getCurrentScope());
-
-        return parseFileFromMain(fileName, in, getCurrentContext().getCurrentScope());
+        int flags = config.isInlineScript() ? INLINE : 0;
+        return getParserManager().parseFile(fileName, 0, in, setupSourceEncoding(UTF8Encoding.INSTANCE), getCurrentContext().getCurrentScope(), flags);
     }
 
     /**
