@@ -1527,8 +1527,20 @@ public abstract class IRBuilder<U, V, W, X> {
         return U_NIL;
     }
 
-    public Operand buildNthRef(int matchNumber) {
+    Operand buildNthRef(int matchNumber) {
         return copy(new NthRef(scope, matchNumber));
+    }
+
+
+    Operand buildInstVarOpAsgnOrNode(RubySymbol name, U valueNode) {
+        Label done = getNewLabel();
+        Variable result = addResultInstr(new GetFieldInstr(temp(), buildSelf(), name, false));
+        addInstr(createBranch(result, getManager().getTrue(), done));
+        Operand value = build(valueNode); // This is an AST node that sets x = y, so nothing special to do here.
+        copy(result, value);
+        addInstr(new LabelInstr(done));
+
+        return result;
     }
 
     // "x ||= y"

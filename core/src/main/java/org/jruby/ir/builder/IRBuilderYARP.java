@@ -151,6 +151,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             return buildInstanceVariableOperatorWrite((InstanceVariableOperatorWriteNode) node);
         } else if (node instanceof InstanceVariableReadNode) {
             return buildInstanceVariableRead((InstanceVariableReadNode) node);
+        } else if (node instanceof InstanceVariableOrWriteNode) {
+            return buildInstanceVariableOrWrite((InstanceVariableOrWriteNode) node);
         } else if (node instanceof InstanceVariableWriteNode) {
             return buildInstanceVariableWrite((InstanceVariableWriteNode) node);
         } else if (node instanceof IntegerNode) {
@@ -730,6 +732,20 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
 
     private Operand buildInstanceVariableRead(InstanceVariableReadNode node) {
         return buildInstVar(symbolFor(node));
+    }
+
+
+    // FIXME: YARP does value and legacy does InstVarAsgn(value).  We cannot share here without closure?
+    private Operand buildInstanceVariableOrWrite(InstanceVariableOrWriteNode node) {
+        RubySymbol name = symbolFor(node.name_loc);
+        Label done = getNewLabel();
+        Variable result = addResultInstr(new GetFieldInstr(temp(), buildSelf(), name, false));
+        addInstr(createBranch(result, getManager().getTrue(), done));
+        Operand value = buildInstAsgn(name, node.value);
+        copy(result, value);
+        addInstr(new LabelInstr(done));
+
+        return result;
     }
 
     private Operand buildInstanceVariableWrite(InstanceVariableWriteNode node) {

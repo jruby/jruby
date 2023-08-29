@@ -2956,20 +2956,11 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     public Operand buildOpAsgnOr(final OpAsgnOrNode orNode) {
-        if (orNode.getFirstNode() instanceof InstVarNode) return buildInstVarOpAsgnOrNode(orNode);
+        if (orNode.getFirstNode() instanceof InstVarNode) {
+            return buildInstVarOpAsgnOrNode(((InstVarNode) orNode.getFirstNode()).getName(), orNode.getSecondNode());
+        }
 
         return buildOpAsgnOr(orNode.getFirstNode(), orNode.getSecondNode());
-    }
-
-    private Operand buildInstVarOpAsgnOrNode(OpAsgnOrNode node) {
-        Label done = getNewLabel();
-        Variable result = addResultInstr(new GetFieldInstr(temp(), buildSelf(), ((InstVarNode) node.getFirstNode()).getName(), false));
-        addInstr(createBranch(result, getManager().getTrue(), done));
-        Operand value = build(node.getSecondNode()); // This is an AST node that sets x = y, so nothing special to do here.
-        copy(result, value);
-        addInstr(new LabelInstr(done));
-
-        return result;
     }
 
     public Operand buildOpElementAsgn(OpElementAsgnNode node) {
