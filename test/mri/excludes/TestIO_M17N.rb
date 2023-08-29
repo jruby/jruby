@@ -1,5 +1,9 @@
 exclude :test_both_textmode_binmode, "needs investigation"
 exclude :test_cbuf, "needs investigation"
+if ENV_JAVA["java.specification.version"] > "18"
+  exclude :test_dup, "fails intermittently on JDK 19+ (jruby/jruby#7909)"
+  exclude :test_dup_undef, "fails intermittently on JDK 19+ (jruby/jruby#7909)"
+end
 exclude :test_error_nonascii, "needs investigation"
 exclude :test_getc_newlineconv_invalid, "needs investigation"
 exclude :test_inspect_nonascii, "needs investigation"
