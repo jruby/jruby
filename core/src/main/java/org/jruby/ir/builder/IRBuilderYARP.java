@@ -323,18 +323,21 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             } else {
                 throw notCompilable("call node found on lhs of masgn", node);
             }
-        } else if (node instanceof ClassVariableWriteNode) {
-            addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), symbolFor(((ClassVariableWriteNode)node).name_loc), rhsVal));
-        } else if (node instanceof ConstantPathWriteNode) {
-            buildConstantWritePath((ConstantPathWriteNode) node, rhsVal);
-        } else if (node instanceof LocalVariableWriteNode) {
-            LocalVariableWriteNode variable = (LocalVariableWriteNode) node;
-            copy(getLocalVariable(symbolFor(variable.name_loc), variable.depth), rhsVal);
-        } else if (node instanceof GlobalVariableWriteNode) {
+        } else if (node instanceof ClassVariableTargetNode) {
+            addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), symbolFor(node), rhsVal));
+        } else if (node instanceof ConstantPathTargetNode) {
+            Operand parent = build(((ConstantPathTargetNode) node).parent);
+            addInstr(new PutConstInstr(parent, symbolFor(node), rhsVal));
+        } else if (node instanceof ConstantTargetNode) {
+            // FIXME: is this always current module?
+            addInstr(new PutConstInstr(createCurrentModuleVariable(), symbolFor(node), rhsVal));
+        } else if (node instanceof LocalVariableTargetNode) {
+            LocalVariableTargetNode variable = (LocalVariableTargetNode) node;
+            copy(getLocalVariable(symbolFor(variable), variable.depth), rhsVal);
+        } else if (node instanceof GlobalVariableTargetNode) {
             addInstr(new PutGlobalVarInstr(symbolFor(((GlobalVariableWriteNode) node).name_loc), rhsVal));
-        } else if (node instanceof InstanceVariableWriteNode) {
-            // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
-            addInstr(new PutFieldInstr(buildSelf(), symbolFor(((InstanceVariableWriteNode) node).name_loc), rhsVal));
+        } else if (node instanceof InstanceVariableTargetNode) {
+            addInstr(new PutFieldInstr(buildSelf(), symbolFor(node), rhsVal));
         } else if (node instanceof MultiWriteNode) {
             buildMultiAssignment((MultiWriteNode) node, addResultInstr(new ToAryInstr(temp(), rhsVal)));
         } else if (node instanceof SplatNode) {
