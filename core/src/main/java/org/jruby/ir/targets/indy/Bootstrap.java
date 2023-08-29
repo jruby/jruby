@@ -1355,9 +1355,24 @@ public class Bootstrap {
                     runtime);
         }
 
+        int dropCount;
+        if (isStatic) {
+            if (site.functional) {
+                dropCount = 2; // context, self
+            } else {
+                dropCount = 3; // context, caller, self
+            }
+        } else {
+            if (site.functional) {
+                dropCount = 1; // context
+            } else {
+                dropCount = 2; // context, caller
+            }
+        }
+        
         nativeTarget = Binder
                 .from(site.type())
-                .drop(0, isStatic ? 3 : 2)
+                .drop(0, dropCount)
                 .filterReturn(returnFilter)
                 .invoke(nativeTarget);
 
