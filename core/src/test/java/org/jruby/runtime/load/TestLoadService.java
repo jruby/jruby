@@ -27,13 +27,14 @@
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 
-package org.jruby.test;
+package org.jruby.runtime.load;
 
 import org.jruby.Ruby;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.load.ClassExtensionLibrary;
 import org.jruby.runtime.load.LoadService;
-
+import org.jruby.test.Base;
+import org.jruby.test.BasicLibraryTestService;
 
 public class TestLoadService extends Base {
 
@@ -112,5 +113,13 @@ public class TestLoadService extends Base {
         leftmost = ClassExtensionLibrary.findLeftmostIdentifier(elts);
 
         assertEquals(2, leftmost);
+    }
+
+    public void testNullStringWrapperToString() {
+        LibrarySearcher.StringWrapper sw = new LibrarySearcher.StringWrapper("foo", 0, 3);
+
+        sw.clear();
+
+        assertEquals("StringWrapper()", sw.toString());
     }
 }
