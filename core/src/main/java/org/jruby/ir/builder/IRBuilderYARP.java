@@ -121,6 +121,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             return buildConstantPath(result, (ConstantPathNode) node);
         } else if (node instanceof ConstantPathWriteNode) {
             return buildConstantWritePath((ConstantPathWriteNode) node);
+        } else if (node instanceof ConstantWriteNode) {
+            return buildConstantWrite((ConstantWriteNode) node);
         } else if (node instanceof ConstantReadNode) {
             return buildConstantRead((ConstantReadNode) node);
         } else if (node instanceof DefNode) {
@@ -555,6 +557,10 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         Variable value = call(temp(), lhs, symbolFor(node.operator_loc), new Operand[] { rhs});
         putConstant(buildSelf(), name, value);
         return value;
+    }
+
+    private Operand buildConstantWrite(ConstantWriteNode node) {
+        return putConstant(symbolFor(node.name_loc), build(node.value));
     }
 
     private Operand buildClassVariableOperatorWrite(ClassVariableOperatorWriteNode node) {
@@ -1138,11 +1144,6 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     }
 
     int dynamicPiece(Operand[] pieces, int i, Node pieceNode, boolean interpolated) {
-        throw new RuntimeException("ddkdkldkld");
-    }
-
-    /*
-    int dynamicPiece(Operand[] pieces, int i, Node pieceNode, boolean interpolated) {
         Operand piece;
 
         // somewhat arbitrary minimum size for interpolated values
@@ -1153,15 +1154,15 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             if (pieceNode instanceof StringNode) {
                 piece = buildString((StringNode) pieceNode, interpolated);
                 estimatedSize = byteListFrom(((StringNode) pieceNode).content_loc).realSize();
-            } else if (pieceNode instanceof StringInterpolatedNode) {
+            } else if (pieceNode instanceof EmbeddedStatementsNode) {
                 if (scope.maybeUsingRefinements()) {
                     // refined asString must still go through dispatch
                     Variable result = temp();
-                    addInstr(new AsStringInstr(scope, result, build(((StringInterpolatedNode) pieceNode).statements), scope.maybeUsingRefinements()));
+                    addInstr(new AsStringInstr(scope, result, build(((EmbeddedStatementsNode) pieceNode).statements), scope.maybeUsingRefinements()));
                     piece = result;
                 } else {
                     // evstr/asstring logic lives in BuildCompoundString now, unwrap and try again
-                    pieceNode = ((StringInterpolatedNode) pieceNode).statements;
+                    pieceNode = ((EmbeddedStatementsNode) pieceNode).statements;
                     continue;
                 }
             } else {
@@ -1178,7 +1179,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         pieces[i] = piece == null ? nil() : piece;
 
         return estimatedSize;
-    }*/
+    }
 
     /**
      * Reify the implicit incoming block into a full Proc, for use as "block arg", but only if
