@@ -331,7 +331,7 @@ public class LibrarySearcher {
 
         @Override
         public String toString() {
-            return str.substring(beg, beg + len);
+            return "StringWrapper(" + (str == null ? "" : str.substring(beg, beg + len)) + ")";
         }
 
         @Override
