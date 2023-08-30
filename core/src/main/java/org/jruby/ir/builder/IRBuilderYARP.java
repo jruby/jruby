@@ -185,6 +185,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             return buildNext((NextNode) node);
         } else if (node instanceof NilNode) {
             return nil();
+        } else if (node instanceof NumberedReferenceReadNode) {
+            return buildNumberedReferenceRead((NumberedReferenceReadNode) node);
         } else if (node instanceof CallOperatorWriteNode) { // foo.bar += baz
             return buildCallOperatorWrite((CallOperatorWriteNode) node);
         } else if (node instanceof ClassVariableOperatorWriteNode) { // @@foo += bar
@@ -897,6 +899,13 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
 
     private Operand buildNext(NextNode node) {
         return buildNext(buildArgumentsAsArgument(node.arguments), getLine(node));
+    }
+
+    private Operand buildNumberedReferenceRead(NumberedReferenceReadNode node) {
+        ByteList num = byteListFrom(node);
+        num.view(1, num.realSize() - 1);
+        int value = Integer.parseInt(num.toString());
+        return buildNthRef(value);
     }
 
     /*
