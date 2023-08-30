@@ -175,6 +175,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             return buildLocalVariableRead((LocalVariableReadNode) node);
         } else if (node instanceof LocalVariableWriteNode) {
             return buildLocalVariableWrite((LocalVariableWriteNode) node);
+        } else if (node instanceof LocalVariableOrWriteNode) {
+            return buildLocalOrVariableWrite((LocalVariableOrWriteNode) node);
         } else if (node instanceof MissingNode) {
             return buildMissing((MissingNode) node);
         } else if (node instanceof ModuleNode) {
@@ -826,6 +828,19 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
 
     private Operand buildLocalVariableRead(LocalVariableReadNode node) {
         return getLocalVariable(symbolFor(node), node.depth);
+    }
+
+
+    // FIXME: consider more generic impl of OR logic?
+    private Operand buildLocalOrVariableWrite(LocalVariableOrWriteNode node) {
+        RubySymbol name = symbolFor(node);
+        Label done = getNewLabel();
+        Variable result = getLocalVariable(name, node.depth);
+        addInstr(createBranch(result, getManager().getTrue(), done));
+        buildLocalVariableAssign(name, node.depth, node.value);
+        addInstr(new LabelInstr(done));
+
+        return result;
     }
 
     private Operand buildLocalVariableWrite(LocalVariableWriteNode node) {
