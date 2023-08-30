@@ -120,6 +120,21 @@ describe "An overloaded Java instance method" do
       CoreTypeMethods.new.getTypeInstance()
     end.to raise_error(ArgumentError)
   end
+
+  it "should be callable with all arities" do
+    expect(CoreTypeMethods.manyArityStatic()).to eq(0)
+    expect(CoreTypeMethods.manyArityStatic("foo")).to eq(1)
+    expect(CoreTypeMethods.manyArityStatic("foo", "foo")).to eq(2)
+    expect(CoreTypeMethods.manyArityStatic("foo", "foo", "foo")).to eq(3)
+    expect(CoreTypeMethods.manyArityStatic("foo", "foo", "foo", "foo")).to eq(4)
+
+    ctm = CoreTypeMethods.new
+    expect(ctm.manyArityInstance()).to eq(0)
+    expect(ctm.manyArityInstance("foo")).to eq(1)
+    expect(ctm.manyArityInstance("foo", "foo")).to eq(2)
+    expect(ctm.manyArityInstance("foo", "foo", "foo")).to eq(3)
+    expect(ctm.manyArityInstance("foo", "foo", "foo", "foo")).to eq(4)
+  end
 end
 
 describe "A class with varargs constructors" do
