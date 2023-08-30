@@ -2483,11 +2483,22 @@ public class IRRuntimeHelpers {
         }
     }
 
-    @JIT
+    @Interp
     public static void putConst(ThreadContext context, IRubyObject self, RubyModule module, String id, IRubyObject value) {
+        putConst(context, self, module, id, value, context.getFile(), context.getLine() + 1);
+    }
+
+    @JIT
+    public static void putConst(ThreadContext context, IRubyObject self, RubyModule module, String id, IRubyObject value, StaticScope scope, int line) {
         warnSetConstInRefinement(context, self);
 
-        module.setConstant(id, value, context.getFile(), context.getLine() + 1);
+        module.setConstant(id, value, scope.getFile(), line);
+    }
+
+    private static void putConst(ThreadContext context, IRubyObject self, RubyModule module, String id, IRubyObject value, String filename, int line) {
+        warnSetConstInRefinement(context, self);
+
+        module.setConstant(id, value, filename, line);
     }
 
     @Interp @JIT
