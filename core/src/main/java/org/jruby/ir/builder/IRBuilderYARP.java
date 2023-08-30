@@ -107,6 +107,10 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             return buildBreak((BreakNode) node);
         } else if (node instanceof CallNode) {
             return buildCall(result, (CallNode) node, symbol(((CallNode) node).name));
+        } else if (node instanceof CallOperatorWriteNode) {
+            return buildCallOperatorWrite((CallOperatorWriteNode) node);
+        } else if (node instanceof CallOperatorOrWriteNode) {
+            return buildCallOperatorOrWrite((CallOperatorOrWriteNode) node);
         } else if (node instanceof CaseNode) {
             return buildCase((CaseNode) node);
         } else if (node instanceof ClassNode) {
@@ -536,6 +540,30 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         if (hasOnlyRestKwargs(node)) return buildRestKeywordArgs(node, flags);
 
         return buildHash(node);
+    }
+
+    private Operand buildCallOperatorOrWrite(CallOperatorOrWriteNode node) {
+        Operand receiver = build(node.target.receiver);
+        Variable result;
+        Operand[] args = null;
+        if (node.target.arguments != null) {
+            // FIXME: can [] accept kwargs?
+            int[] flags = new int[]{0};
+            args = buildCallArgs(node.target.arguments, flags);
+            result = call(temp(), receiver, chompedSymbol(node.target.name), args);
+        } else {
+            result = call(temp(), receiver, chompedSymbol(node.target.name));
+        }
+        Label end = getNewLabel("end_or");
+        addInstr(createBranch(result, tru(), end));  // if v1 is defined and true, we are done!
+        Operand rhs = build(node.value); // This is an AST node that sets x = y, so nothing special to do here.
+        if (args != null) {
+            call(result, receiver, symbol(node.target.name), addArg(args, rhs));
+        } else {
+            call(result, receiver, symbol(node.target.name), new Operand[]{ rhs });
+        }
+        addInstr(new LabelInstr(end));
+        return result;
     }
 
     //     foo.bar += baz
