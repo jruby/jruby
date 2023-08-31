@@ -6,6 +6,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyNumeric;
 import org.jruby.RubySymbol;
+import org.jruby.ast.FCallNode;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRManager;
@@ -56,6 +57,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
+import static org.jruby.runtime.CallType.FUNCTIONAL;
 import static org.jruby.runtime.ThreadContext.*;
 
 public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode> {
@@ -97,6 +99,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             return buildAnd((AndNode) node);
         } else if (node instanceof ArrayNode) {
             return buildArray((ArrayNode) node);
+        } else if (node instanceof BackReferenceReadNode) {
+            return buildBackReferenceRead(result, (BackReferenceReadNode) node);
         } else if (node instanceof BeginNode) {
             return buildBegin((BeginNode) node);
         } else if (node instanceof BlockNode) {
@@ -117,6 +121,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             return buildClass((ClassNode) node);
         } else if (node instanceof ClassVariableReadNode) {
             return buildClassVariableRead(result, (ClassVariableReadNode) node);
+        } else if (node instanceof ClassVariableOrWriteNode) {
+            return buildClassOrVariableWrite((ClassVariableOrWriteNode) node);
         } else if (node instanceof ClassVariableWriteNode) {
             return buildClassVariableWrite((ClassVariableWriteNode) node);
         } else if (node instanceof ConstantOperatorWriteNode) {
@@ -167,6 +173,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             return buildInterpolatedString(result, (InterpolatedStringNode) node);
         } else if (node instanceof InterpolatedSymbolNode) {
             return buildInterpolatedSymbol(result, (InterpolatedSymbolNode) node);
+        } else if (node instanceof KeywordHashNode) {
+            return buildKeywordHash((KeywordHashNode) node);
         } else if (node instanceof LambdaNode) {
             return buildLambda((LambdaNode) node);
         } else if (node instanceof LocalVariableOperatorWriteNode) {
@@ -363,6 +371,11 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         args = addArg(args, value);
         addInstr(AttrAssignInstr.create(scope, obj, name, args, flags[0], scope.maybeUsingRefinements()));
         return value;
+    }
+
+    // FIXME: optimization simplifying this from other globals
+    private Operand buildBackReferenceRead(Variable result, BackReferenceReadNode node) {
+        return buildGlobalVar(result, symbolFor(node));
     }
 
     private Operand buildBreak(BreakNode node) {
@@ -628,16 +641,41 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     }
 
     private Operand buildLocalVariableOperatorWrite(LocalVariableOperatorWriteNode node) {
-        RubySymbol name = symbolFor(node.name_loc);
+        RubySymbol name = symbolFor(node.name);
         int depth = staticScope.isDefined(name.idString()) >> 16;
         Variable lhs = getLocalVariable(name, depth);
         Operand rhs = build(node.value);
-        Variable value = call(lhs, lhs, symbolFor(node.operator_loc), new Operand[] { rhs});
+        Variable value = call(lhs, lhs, symbolFor(node.operator), new Operand[] { rhs});
         return value;
     }
 
     private Operand buildClassVariableRead(Variable result, ClassVariableReadNode node) {
         return buildClassVar(result, symbolFor(node));
+    }
+
+    // FIXME: simplify logic here but also fix this on legacy side. double retrieval is at a minimum wrong.
+    private Operand buildClassOrVariableWrite(ClassVariableOrWriteNode node) {
+        RubySymbol name = symbolFor(node.name_loc);
+        Label existsDone = getNewLabel();
+        Label done = getNewLabel();
+        Variable result = addResultInstr(new RuntimeHelperCall(
+                temp(),
+                IS_DEFINED_CLASS_VAR,
+                new Operand[]{
+                        classVarDefinitionContainer(),
+                        new FrozenString(name),
+                        new FrozenString(DefinedMessage.CLASS_VARIABLE.getText())
+                }
+        ));
+        addInstr(createBranch(result, nil(), existsDone));
+        addInstr(new GetClassVariableInstr(result, buildSelf(), name));
+        addInstr(new LabelInstr(existsDone));
+        addInstr(createBranch(result, getManager().getTrue(), done));
+        Operand value = buildClassVarAsgn(name, node.value);
+        copy(result, value);
+        addInstr(new LabelInstr(done));
+
+        return result;
     }
 
     private Operand buildClassVariableWrite(ClassVariableWriteNode node) {
@@ -811,6 +849,47 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         return buildDSymbol(result, node.parts, UTF8Encoding.INSTANCE, getLine(node));
     }
 
+    // FIXME: This and buildHash probably have different logic now.
+    private Operand buildKeywordHash(KeywordHashNode node) {
+        List<KeyValuePair<Operand, Operand>> args = new ArrayList<>();
+        boolean hasAssignments = containsVariableAssignment(node);
+        Variable hash = null;
+        // Duplication checks happen when **{} are literals and not **h variable references.
+        Operand duplicateCheck = fals();
+
+        // pair is AssocNode or AssocSplatNode
+        for (Node pair: node.elements) {
+            Operand keyOperand;
+
+            if (pair instanceof AssocNode) {
+                keyOperand = build(((AssocNode) pair).key);
+                args.add(new KeyValuePair<>(keyOperand, buildWithOrder(((AssocNode) pair).value, hasAssignments)));
+            } else {  // AssocHashNode
+                AssocSplatNode assoc = (AssocSplatNode) pair;
+                boolean isLiteral = assoc.value instanceof HashNode;
+                duplicateCheck = isLiteral ? tru() : fals();
+
+                if (hash == null) {                     // No hash yet. Define so order is preserved.
+                    hash = copy(new Hash(args));
+                    args = new ArrayList<>();           // Used args but we may find more after the splat so we reset
+                } else if (!args.isEmpty()) {
+                    addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args), duplicateCheck}));
+                    args = new ArrayList<>();
+                }
+                Operand splat = buildWithOrder(assoc.value, hasAssignments);
+                addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, splat, duplicateCheck}));
+            }
+        }
+
+        if (hash == null) {           // non-**arg ordinary hash
+            hash = copy(new Hash(args));
+        } else if (!args.isEmpty()) { // ordinary hash values encountered after a **arg
+            addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args), duplicateCheck}));
+        }
+
+        return hash;
+    }
+
     // FIXME: Generify
     private Operand buildLambda(LambdaNode node) {
         IRClosure closure = new IRClosure(getManager(), scope, getLine(node),
@@ -833,11 +912,12 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
 
     // FIXME: consider more generic impl of OR logic?
     private Operand buildLocalOrVariableWrite(LocalVariableOrWriteNode node) {
-        RubySymbol name = symbolFor(node);
+        RubySymbol name = symbolFor(node.name_loc);
         Label done = getNewLabel();
         Variable result = getLocalVariable(name, node.depth);
         addInstr(createBranch(result, getManager().getTrue(), done));
-        buildLocalVariableAssign(name, node.depth, node.value);
+        Operand value = buildLocalVariableAssign(name, node.depth, node.value);
+        copy(result, value);
         addInstr(new LabelInstr(done));
 
         return result;
@@ -1901,6 +1981,11 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
 
     private RubySymbol symbolFor(Node node) {
         return symbol(byteListFrom(node));
+    }
+
+    // FIXME: should use proper encoding.
+    private RubySymbol symbolFor(byte[] name) {
+        return symbol(new ByteList(name, 0, name.length));
     }
 
     private RubySymbol chompedSymbol(byte[] name) {

@@ -5,6 +5,7 @@ import jnr.ffi.LibraryLoader;
 import org.jcodings.Encoding;
 import org.jruby.ParseResult;
 import org.jruby.Ruby;
+import org.jruby.lexer.ByteListLexerSource;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.load.LoadServiceResourceInputStream;
 import org.jruby.util.ByteList;
@@ -15,6 +16,8 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+
+import static org.jruby.parser.ParserManager.isEval;
 
 public class YARPParser extends Parser {
     YARPParserBindings yarpLibrary;
@@ -30,10 +33,11 @@ public class YARPParser extends Parser {
     // FIXME: lots of missing stuff.
     // FIXME: main source file should be IO in case of __END__/DATA.
     // FIXME: has memory leak.
+    @Override
     public ParseResult parse(String fileName, int lineNumber, ByteList content, DynamicScope blockScope, int flags) {
         // FIXME: this is duplicated source array when it usually will not need it.
         byte[] source = content.bytes();
-        byte[] metadata = new byte[] {0, 0, 0, 0, 0, 0, 0, 0};
+        byte[] metadata = generateMetadata(blockScope, flags);
         byte[] serialized = parse(source, metadata);
         org.yarp.ParseResult res = org.yarp.Loader.load(serialized, new Nodes.Source(source));
 
@@ -45,10 +49,11 @@ public class YARPParser extends Parser {
         return result;
     }
 
+    @Override
     public ParseResult parse(String fileName, int lineNumber, InputStream in, Encoding encoding,
                              DynamicScope blockScope, int flags) {
         byte[] source = getSourceAsBytes(fileName, in);
-        byte[] metadata = new byte[] {0, 0, 0, 0, 0, 0, 0, 0};
+        byte[] metadata = generateMetadata(blockScope, flags);
         byte[] serialized = parse(source, metadata);
         org.yarp.ParseResult res = org.yarp.Loader.load(serialized, new Nodes.Source(source));
 
@@ -94,13 +99,41 @@ public class YARPParser extends Parser {
         return src;
     }
 
-    private byte[] encodeEvalScopes(StaticScope scope) {
-        ByteList buf = new ByteList();
-        buf.append(0); // keep space for number of scopes.
-        int count = encodeEvalScopesInner(buf, scope, 0);
-        //System.out.println("COUNT: " + count);
-        buf.set(0, count); // FIXME: This only allows 256 vars
+    private byte[] generateMetadata(DynamicScope scope, int flags) {
+        ByteList metadata = new ByteList();
 
+        // FIXME: zero out file path for now
+        appendUnsignedInt(metadata, 0);
+
+        // all evals should provide some scope
+        if (isEval(flags)) {
+            encodeEvalScopes(metadata, scope.getStaticScope());
+        } else {
+            appendUnsignedInt(metadata, 0);
+        }
+
+        return metadata.bytes(); // FIXME: extra arraycopy
+    }
+
+    private void writeUnsignedInt(ByteList buf, int index, int value) {
+        buf.set(index, value);
+        buf.set(index+1, value >>> 8);
+        buf.set(index+2, value >>> 16);
+        buf.set(index+3, value >>> 24);
+    }
+
+    private void appendUnsignedInt(ByteList buf, int value) {
+        buf.append(value);
+        buf.append(value >>> 8);
+        buf.append(value >>> 16);
+        buf.append(value >>> 24);
+    }
+
+    private byte[] encodeEvalScopes(ByteList buf, StaticScope scope) {
+        int startIndex = buf.realSize();
+        appendUnsignedInt(buf, 0);
+        int count = encodeEvalScopesInner(buf, scope, 0);
+        writeUnsignedInt(buf, startIndex, count);
         return buf.bytes();
     }
 
@@ -111,10 +144,11 @@ public class YARPParser extends Parser {
 
         // once more for method scope
         String names[] = scope.getVariables();
-        buf.append(names.length);
+        appendUnsignedInt(buf, names.length);
         for (String name : names) {
-            buf.append(name.getBytes()); // FIXME: needs to be raw bytes
-            buf.append(0);
+            byte[] bytes = name.getBytes(); // FIXME: needs to be raw bytes
+            appendUnsignedInt(buf, bytes.length);
+            buf.append(bytes);
         }
 
         return count;
