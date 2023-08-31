@@ -325,9 +325,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     public Operand buildEncoding(EncodingNode node) {
-        Variable ret = temp();
-        addInstr(new GetEncodingInstr(ret, node.getEncoding()));
-        return ret;
+        return buildEncoding(node.getEncoding());
     }
 
     // Non-arg masgn
@@ -2553,9 +2551,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return fix(node.getValue());
     }
 
-    public Operand buildFlip(FlipNode flipNode) {
-        addRaiseError("NotImplementedError", "flip-flop is no longer supported in JRuby");
-        return nil(); // not-reached
+    public Operand buildFlip(FlipNode node) {
+        return buildFlip(node.getBeginNode(), node.getEndNode(), node.isExclusive());
     }
 
     public Operand buildFloat(FloatNode node) {
@@ -3073,10 +3070,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return nil();
     }
 
-    public Operand buildRational(RationalNode rationalNode) {
-
-        return new Rational((ImmutableLiteral) build(rationalNode.getNumerator()),
-                (ImmutableLiteral) build(rationalNode.getDenominator()));
+    public Operand buildRational(RationalNode node) {
+        return buildRational(node.getNumerator(), node.getDenominator());
     }
 
     public Operand buildRedo(RedoNode redoNode) {

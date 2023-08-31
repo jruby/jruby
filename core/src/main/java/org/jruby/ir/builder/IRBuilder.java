@@ -30,6 +30,7 @@ import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.ArgumentType;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.RubyEvent;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
@@ -50,6 +51,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import static org.jruby.ir.IRFlags.*;
+import static org.jruby.ir.instructions.Instr.EMPTY_OPERANDS;
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 import static org.jruby.ir.operands.ScopeModule.SCOPE_MODULE;
 import static org.jruby.runtime.CallType.FUNCTIONAL;
@@ -1044,7 +1046,7 @@ public abstract class IRBuilder<U, V, W, X> {
     // build methods
     public abstract Operand build(ParseResult result);
 
-    protected Operand buildWithOrder(U node, boolean preserveOrder) {
+    Operand buildWithOrder(U node, boolean preserveOrder) {
         Operand value = build(node);
 
         // We need to preserve order in cases (like in presence of assignments) except that immutable
@@ -1052,14 +1054,14 @@ public abstract class IRBuilder<U, V, W, X> {
         return preserveOrder && !(value instanceof ImmutableLiteral) ? copy(value) : value;
     }
 
-    public Operand buildAlias(Operand newName, Operand oldName) {
+    Operand buildAlias(Operand newName, Operand oldName) {
         addInstr(new AliasInstr(newName, oldName));
 
         return nil();
     }
 
     // Note: passing NORMAL just removes ability to remove a branch and will be semantically correct.
-    public Operand buildAnd(Operand left, CodeBlock right, BinaryType truth) {
+    Operand buildAnd(Operand left, CodeBlock right, BinaryType truth) {
         switch(truth) {
             case LeftTrue:  // left is statically true so we return whatever right expr is.
                 return right.run();
@@ -1073,7 +1075,7 @@ public abstract class IRBuilder<U, V, W, X> {
                                 copy((Variable) ret, right.run()))));
     }
 
-    public Operand buildBreak(CodeBlock value, int line) {
+    Operand buildBreak(CodeBlock value, int line) {
         IRLoop currLoop = getCurrentLoop();
 
         if (currLoop != null) {
@@ -1107,7 +1109,7 @@ public abstract class IRBuilder<U, V, W, X> {
         return args == null ? Operand.EMPTY_ARRAY : buildCallArgs(args, flags);
     }
 
-    public Operand buildCase(U predicate, U[] arms, U elsey) {
+    Operand buildCase(U predicate, U[] arms, U elsey) {
         // FIXME: Missing optimized homogeneous here (still in AST but will be missed by YARP).
 
         Operand testValue = buildCaseTestValue(predicate); // what each when arm gets tested against.
@@ -1173,7 +1175,7 @@ public abstract class IRBuilder<U, V, W, X> {
         return testValue == null ? UndefinedValue.UNDEFINED : testValue;
     }
 
-    public Operand buildClass(ByteList className, U superNode, U cpath, U bodyNode, StaticScope scope, int line, int endLine) {
+    Operand buildClass(ByteList className, U superNode, U cpath, U bodyNode, StaticScope scope, int line, int endLine) {
         boolean executesOnce = this.executesOnce;
         Operand superClass = superNode == null ? null : build(superNode);
         Operand container = getContainerFromCPath(cpath);
@@ -1187,14 +1189,14 @@ public abstract class IRBuilder<U, V, W, X> {
 
     abstract Operand getContainerFromCPath(U cpath);
 
-    public Operand buildClassVar(Variable result, RubySymbol name) {
+    Operand buildClassVar(Variable result, RubySymbol name) {
         if (result == null) result = temp();
         if (isTopScope()) return addRaiseError("RuntimeError", "class variable access from toplevel");
 
         return addResultInstr(new GetClassVariableInstr(result, classVarDefinitionContainer(), name));
     }
 
-    public Operand buildClassVarAsgn(RubySymbol name, U valueNode) {
+    Operand buildClassVarAsgn(RubySymbol name, U valueNode) {
         if (isTopScope()) return addRaiseError("RuntimeError", "class variable access from toplevel");
 
         Operand value = build(valueNode);
@@ -1203,7 +1205,7 @@ public abstract class IRBuilder<U, V, W, X> {
     }
 
     // FIXME: AST needs variable passed in to work which I think means some context really needs to pass in the result at least in AST build?
-    public Operand buildConditional(Variable result, U predicate, U statements, U consequent) {
+    Operand buildConditional(Variable result, U predicate, U statements, U consequent) {
         Label    falseLabel = getNewLabel();
         Label    doneLabel  = getNewLabel();
         Operand thenResult;
@@ -1259,12 +1261,12 @@ public abstract class IRBuilder<U, V, W, X> {
         }
     }
 
-    public Operand buildDefn(IRMethod method) {
+    Operand buildDefn(IRMethod method) {
         addInstr(new DefineInstanceMethodInstr(method));
         return new Symbol(method.getName());
     }
 
-    public Operand buildDefs(U receiver, IRMethod method) {
+    Operand buildDefs(U receiver, IRMethod method) {
         addInstr(new DefineClassMethodInstr(build(receiver), method));
         return new Symbol(method.getName());
     }
@@ -1281,7 +1283,7 @@ public abstract class IRBuilder<U, V, W, X> {
         return result;
     }
 
-    public Operand buildDStr(Variable result, U[] nodePieces, Encoding encoding, boolean isFrozen, int line) {
+    Operand buildDStr(Variable result, U[] nodePieces, Encoding encoding, boolean isFrozen, int line) {
         if (result == null) result = temp();
 
         Operand[] pieces = new Operand[nodePieces.length];
@@ -1297,7 +1299,7 @@ public abstract class IRBuilder<U, V, W, X> {
         return result;
     }
 
-    public Operand buildDSymbol(Variable result, U[] nodePieces, Encoding encoding, int line) {
+    Operand buildDSymbol(Variable result, U[] nodePieces, Encoding encoding, int line) {
         Operand[] pieces = new Operand[nodePieces.length];
         int estimatedSize = 0;
 
@@ -1313,25 +1315,34 @@ public abstract class IRBuilder<U, V, W, X> {
         return copy(new DynamicSymbol(result));
     }
 
-    public Operand buildGlobalAsgn(RubySymbol name, U valueNode) {
+    Operand buildEncoding(Encoding encoding) {
+        return addResultInstr(new GetEncodingInstr(temp(), encoding));
+    }
+
+    Operand buildFlip(U begin, U end, boolean isExclusive) {
+        addRaiseError("NotImplementedError", "flip-flop is no longer supported in JRuby");
+        return nil(); // not-reached
+    }
+
+    Operand buildGlobalAsgn(RubySymbol name, U valueNode) {
         Operand value = build(valueNode);
         addInstr(new PutGlobalVarInstr(name, value));
         return value;
     }
 
-    public Operand buildGlobalVar(Variable result, RubySymbol name) {
+    Operand buildGlobalVar(Variable result, RubySymbol name) {
         if (result == null) result = temp();
 
         return addResultInstr(new GetGlobalVariableInstr(result, name));
     }
 
-    public Operand buildInstAsgn(RubySymbol name, U valueNode) {
+    Operand buildInstAsgn(RubySymbol name, U valueNode) {
         Operand value = build(valueNode);
         addInstr(new PutFieldInstr(buildSelf(), name, value));
         return value;
     }
 
-    public Operand buildInstVar(RubySymbol name) {
+    Operand buildInstVar(RubySymbol name) {
         return addResultInstr(new GetFieldInstr(temp(), buildSelf(), name, false));
     }
 
@@ -1370,7 +1381,7 @@ public abstract class IRBuilder<U, V, W, X> {
         return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
     }
 
-    public Operand buildLocalVariableAssign(RubySymbol name, int depth, U valueNode) {
+    Operand buildLocalVariableAssign(RubySymbol name, int depth, U valueNode) {
         Variable variable  = getLocalVariable(name, depth);
         Operand value = build(variable, valueNode);
 
@@ -1452,14 +1463,14 @@ public abstract class IRBuilder<U, V, W, X> {
         }
     }
 
-    protected Variable buildDefinitionCheck(ResultInstr definedInstr, String definedReturnValue) {
+    Variable buildDefinitionCheck(ResultInstr definedInstr, String definedReturnValue) {
         Label undefLabel = getNewLabel();
         addInstr((Instr) definedInstr);
         addInstr(createBranch(definedInstr.getResult(), fals(), undefLabel));
         return buildDefnCheckIfThenPaths(undefLabel, new FrozenString(definedReturnValue));
     }
 
-    protected Variable buildDefnCheckIfThenPaths(Label undefLabel, Operand defVal) {
+    Variable buildDefnCheckIfThenPaths(Label undefLabel, Operand defVal) {
         Label defLabel = getNewLabel();
         Variable tmpVar = getValueInTemporaryVariable(defVal);
         addInstr(new JumpInstr(defLabel));
@@ -1469,7 +1480,7 @@ public abstract class IRBuilder<U, V, W, X> {
         return tmpVar;
     }
 
-    public Operand buildModule(ByteList name, U cpath, U bodyNode, StaticScope scope, int line, int endLine) {
+    Operand buildModule(ByteList name, U cpath, U bodyNode, StaticScope scope, int line, int endLine) {
         boolean executesOnce = this.executesOnce;
         Operand container = getContainerFromCPath(cpath);
 
@@ -1500,7 +1511,7 @@ public abstract class IRBuilder<U, V, W, X> {
         return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
     }
 
-    public Operand buildNext(final Operand rv, int line) {
+    Operand buildNext(final Operand rv, int line) {
         IRLoop currLoop = getCurrentLoop();
 
         // If we have ensure blocks, have to run those first!
@@ -1551,7 +1562,7 @@ public abstract class IRBuilder<U, V, W, X> {
     //     -- build(x = y) --
     //   L:
     //
-    public Operand buildOpAsgnOr(final U first, U second) {
+    Operand buildOpAsgnOr(final U first, U second) {
         Label    l1 = getNewLabel();
         Label    l2 = null;
         Variable flag = temp();
@@ -1578,7 +1589,7 @@ public abstract class IRBuilder<U, V, W, X> {
         return result;
     }
 
-    public Operand buildOr(Operand left, CodeBlock right, BinaryType type) {
+    Operand buildOr(Operand left, CodeBlock right, BinaryType type) {
         // lazy evaluation opt.  Don't bother building rhs of expr is lhs is unconditionally true.
         if (type == BinaryType.LeftTrue) return left;
 
@@ -1594,7 +1605,54 @@ public abstract class IRBuilder<U, V, W, X> {
         return result;
     }
 
-    public Operand buildRange(U beginNode, U endNode, boolean isExclusive) {
+    Operand buildPostExe(U body, int line) {
+        IRScope topLevel = scope.getRootLexicalScope();
+        IRScope nearestLVarScope = scope.getNearestTopLocalVariableScope();
+        StaticScope parentScope = nearestLVarScope.getStaticScope();
+        StaticScope staticScope = parentScope.duplicate();
+        staticScope.setEnclosingScope(parentScope);
+        IRClosure endClosure = new IRClosure(getManager(), scope, line, staticScope, Signature.NO_ARGUMENTS,
+                CommonByteLists._END_, true);
+        staticScope.setIRScope(endClosure);
+        endClosure.setIsEND();
+        // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
+        newIRBuilder(getManager(), endClosure, null, body).buildPrePostExeInner(body);
+
+        // Add an instruction in 's' to record the end block in the 'topLevel' scope.
+        // SSS FIXME: IR support for end-blocks that access vars in non-toplevel-scopes
+        // might be broken currently. We could either fix it or consider dropping support
+        // for END blocks altogether or only support them in the toplevel. Not worth the pain.
+        addInstr(new RecordEndBlockInstr(topLevel, new WrappedIRClosure(buildSelf(), endClosure)));
+        return nil();
+    }
+
+    private InterpreterContext buildPrePostExeInner(U body) {
+        addInstr(new CopyInstr(getCurrentModuleVariable(), SCOPE_MODULE[0]));
+        build(body);
+
+        // END does not have either explicit or implicit return, so we add one
+        addInstr(new ReturnInstr(nil()));
+
+        computeScopeFlagsFrom(instructions);
+        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
+    }
+
+    Operand buildPreExe(U body) {
+        List<Instr> beginInstrs = newIRBuilder(getManager(), scope, this, body).buildPreExeInner(body);
+
+        instructions.addAll(afterPrologueIndex, beginInstrs);
+        afterPrologueIndex += beginInstrs.size();
+
+        return nil();
+    }
+
+    private List<Instr> buildPreExeInner(U body) {
+        build(body);
+
+        return instructions;
+    }
+
+    Operand buildRange(U beginNode, U endNode, boolean isExclusive) {
         Operand begin = build(beginNode);
         Operand end = build(endNode);
 
@@ -1605,6 +1663,10 @@ public abstract class IRBuilder<U, V, W, X> {
 
         // must be built every time
         return addResultInstr(new BuildRangeInstr(temp(), begin, end, isExclusive));
+    }
+
+    Operand buildRational(U numerator, U denominator) {
+        return new Rational((ImmutableLiteral) build(numerator), (ImmutableLiteral) build(denominator));
     }
 
     void buildRescueBodyInternal(U[] exceptions, U body, X consequent, Variable rv, Variable exc, Label endLabel) {
@@ -1729,7 +1791,7 @@ public abstract class IRBuilder<U, V, W, X> {
         return rv;
     }
 
-    public Operand buildRetry(int line) {
+    Operand buildRetry(int line) {
         // JRuby only supports retry when present in rescue blocks!
         // 1.9 doesn't support retry anywhere else.
 
@@ -1755,7 +1817,7 @@ public abstract class IRBuilder<U, V, W, X> {
         return nil();
     }
 
-    public Operand buildReturn(Operand value, int line) {
+    Operand buildReturn(Operand value, int line) {
         Operand retVal = value;
 
         if (scope instanceof IRClosure) {
@@ -1801,7 +1863,7 @@ public abstract class IRBuilder<U, V, W, X> {
         return U_NIL;
     }
 
-    public Operand buildSClass(U receiverNode, U bodyNode, StaticScope scope, int line, int endLine) {
+    Operand buildSClass(U receiverNode, U bodyNode, StaticScope scope, int line, int endLine) {
         Operand receiver = build(receiverNode);
         IRModuleBody body = new IRMetaClassBody(getManager(), this.scope, getManager().getMetaClassName().getBytes(), line, scope);
         Variable sClassVar = addResultInstr(new DefineMetaClassInstr(temp(), receiver, body));
@@ -1812,11 +1874,11 @@ public abstract class IRBuilder<U, V, W, X> {
         return bodyResult;
     }
 
-    public Variable buildSelf() {
+    Variable buildSelf() {
         return scope.getSelf();
     }
 
-    public Operand buildSuper(Variable aResult, U iterNode, U argsNode, int line, boolean isNewline) {
+    Operand buildSuper(Variable aResult, U iterNode, U argsNode, int line, boolean isNewline) {
         Variable result = aResult == null ? temp() : aResult;
         Operand tempBlock = setupCallClosure(iterNode);
         if (tempBlock == NullBlock.INSTANCE) tempBlock = getYieldClosureVariable();
@@ -1843,7 +1905,7 @@ public abstract class IRBuilder<U, V, W, X> {
         return result;
     }
 
-    public Operand buildUndef(Operand name) {
+    Operand buildUndef(Operand name) {
         return addResultInstr(new UndefMethodInstr(temp(), name));
     }
 
@@ -1903,7 +1965,7 @@ public abstract class IRBuilder<U, V, W, X> {
         return true;
     }
 
-    public Operand buildZSuper(Variable result, U iter) {
+    Operand buildZSuper(Variable result, U iter) {
         Operand block = setupCallClosure(iter);
         if (block == NullBlock.INSTANCE) block = getYieldClosureVariable();
 
