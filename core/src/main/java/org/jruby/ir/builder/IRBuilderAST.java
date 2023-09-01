@@ -2524,16 +2524,6 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return result;
     }
 
-    public Operand buildForIter(Node var, Node body, StaticScope staticScope, Signature signature, int line, int endLine) {
-        // Create a new closure context
-        IRClosure closure = new IRFor(getManager(), scope, line, staticScope, signature);
-
-        // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        newIRBuilder(getManager(), closure).buildIterInner(null, var, body, endLine);
-
-        return new WrappedIRClosure(buildSelf(), closure);
-    }
-
     public Operand buildGlobalAsgn(GlobalAsgnNode node) {
         return buildGlobalAsgn(node.getName(), node.getValueNode());
     }
@@ -2598,7 +2588,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         IRClosure closure = new IRClosure(getManager(), scope, iterNode.getLine(), iterNode.getScope(), Signature.from(iterNode), coverageMode);
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        newIRBuilder(getManager(), closure).buildIterInner(methodName, iterNode.getVarNode(), iterNode.getBodyNode(), iterNode.getEndLine());
+        newIRBuilder(getManager(), closure, this, iterNode).buildIterInner(methodName, iterNode.getVarNode(), iterNode.getBodyNode(), iterNode.getEndLine());
 
         methodName = null;
 

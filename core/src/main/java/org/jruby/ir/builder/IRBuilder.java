@@ -1339,6 +1339,16 @@ public abstract class IRBuilder<U, V, W, X> {
         return nil(); // not-reached
     }
 
+    Operand buildForIter(U var, U body, StaticScope staticScope, Signature signature, int line, int endLine) {
+        // Create a new closure context
+        IRClosure closure = new IRFor(getManager(), scope, line, staticScope, signature);
+
+        // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
+        newIRBuilder(getManager(), closure, this, var).buildIterInner(null, var, body, endLine);
+
+        return new WrappedIRClosure(buildSelf(), closure);
+    }
+
     Operand buildGlobalAsgn(RubySymbol name, U valueNode) {
         Operand value = build(valueNode);
         addInstr(new PutGlobalVarInstr(name, value));
