@@ -144,8 +144,6 @@ public abstract class IRBuilder<U, V, W, X> {
     public static InterpreterContext buildRoot(IRManager manager, ParseResult rootNode) {
         String file = rootNode.getFile();
         IRScriptBody script = new IRScriptBody(manager, file == null ? "(anon)" : file, rootNode.getStaticScope());
-        // FIXME: YarpParseResult does not have runtime so it cannot get Object.
-        rootNode.getStaticScope().setModule(manager.getRuntime().getObject());
 
         //System.out.println("Building " + file);
         return topIRBuilder(manager, script, rootNode).buildRootInner(rootNode);
