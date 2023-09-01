@@ -37,6 +37,7 @@ import org.jruby.util.CommonByteLists;
 import org.jruby.util.DefinedMessage;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
+import org.yarp.Nodes;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -51,7 +52,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import static org.jruby.ir.IRFlags.*;
-import static org.jruby.ir.instructions.Instr.EMPTY_OPERANDS;
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 import static org.jruby.ir.operands.ScopeModule.SCOPE_MODULE;
 import static org.jruby.runtime.CallType.FUNCTIONAL;
@@ -1344,6 +1344,50 @@ public abstract class IRBuilder<U, V, W, X> {
         return addResultInstr(new GetFieldInstr(temp(), buildSelf(), name, false));
     }
 
+    Variable buildClassVarGetDefinition(RubySymbol name) {
+        return addResultInstr(
+                new RuntimeHelperCall(
+                        temp(),
+                        IS_DEFINED_CLASS_VAR,
+                        new Operand[]{
+                                classVarDefinitionContainer(),
+                                new FrozenString(name),
+                                new FrozenString(DefinedMessage.CLASS_VARIABLE.getText())
+                        }
+                )
+        );
+    }
+
+    // FIXME: This could be a helper
+    Variable buildConstantGetDefinition(RubySymbol name) {
+        Label defLabel = getNewLabel();
+        Label doneLabel = getNewLabel();
+        Variable tmpVar = temp();
+        addInstr(new LexicalSearchConstInstr(tmpVar, CurrentScope.INSTANCE, name));
+        addInstr(BNEInstr.create(defLabel, tmpVar, UndefinedValue.UNDEFINED));
+        addInstr(new InheritanceSearchConstInstr(tmpVar, findContainerModule(), name)); // SSS FIXME: should this be the current-module var or something else?
+        addInstr(BNEInstr.create(defLabel, tmpVar, UndefinedValue.UNDEFINED));
+        addInstr(new CopyInstr(tmpVar, nil()));
+        addInstr(new JumpInstr(doneLabel));
+        addInstr(new LabelInstr(defLabel));
+        addInstr(new CopyInstr(tmpVar, new FrozenString(DefinedMessage.CONSTANT.getText())));
+        addInstr(new LabelInstr(doneLabel));
+        return tmpVar;
+    }
+
+    Variable buildGlobalVarGetDefinition(RubySymbol name) {
+        return addResultInstr(
+                new RuntimeHelperCall(
+                        temp(),
+                        IS_DEFINED_GLOBAL,
+                        new Operand[] {
+                                new FrozenString(name),
+                                new FrozenString(DefinedMessage.GLOBAL_VARIABLE.getText())
+                        }
+                )
+        );
+    }
+
     Operand buildInstVarGetDefinition(RubySymbol name) {
         Variable result = temp();
         Label done = getNewLabel();
@@ -1540,15 +1584,32 @@ public abstract class IRBuilder<U, V, W, X> {
         return copy(new NthRef(scope, matchNumber));
     }
 
-
-    Operand buildInstVarOpAsgnOrNode(RubySymbol name, U valueNode) {
+    // Translate "x &&= y" --> "x = y if is_true(x)" -->
+    //
+    //    x = -- build(x) should return a variable! --
+    //    f = is_true(x)
+    //    beq(f, false, L)
+    //    x = -- build(y) --
+    // L:
+    //
+    Operand buildOpAsgnAnd(CodeBlock lhs, CodeBlock rhs) {
         Label done = getNewLabel();
-        Variable result = addResultInstr(new GetFieldInstr(temp(), buildSelf(), name, false));
-        addInstr(createBranch(result, getManager().getTrue(), done));
-        Operand value = build(valueNode); // This is an AST node that sets x = y, so nothing special to do here.
+        Operand leftValue = lhs.run();
+        Variable result = getValueInTemporaryVariable(leftValue);
+        addInstr(createBranch(result, fals(), done));
+        Operand value = rhs.run();
         copy(result, value);
         addInstr(new LabelInstr(done));
+        return result;
+    }
 
+    Operand buildOpAsgnOr(CodeBlock lhs, CodeBlock rhs) {
+        Label done = getNewLabel();
+        Variable result = (Variable) lhs.run();
+        addInstr(createBranch(result, tru(), done));
+        Operand value = rhs.run();
+        copy(result, value);
+        addInstr(new LabelInstr(done));
         return result;
     }
 
@@ -1560,30 +1621,38 @@ public abstract class IRBuilder<U, V, W, X> {
     //     -- build(x = y) --
     //   L:
     //
-    Operand buildOpAsgnOr(final U first, U second) {
+    Operand buildOpAsgnOrWithDefined(final U first, U second) {
         Label    l1 = getNewLabel();
-        Label    l2 = null;
+        Label    l2 = getNewLabel();
         Variable flag = temp();
-        Operand  v1;
-        boolean  needsDefnCheck = needsDefinitionCheck(first);
-        if (needsDefnCheck) {
-            l2 = getNewLabel();
-            v1 = buildGetDefinition(first);
-            addInstr(new CopyInstr(flag, v1));
-            addInstr(createBranch(flag, nil(), l2)); // if v1 is undefined, go to v2's computation
-        }
+        Operand  v1 = buildGetDefinition(first);
+        addInstr(new CopyInstr(flag, v1));
+        addInstr(createBranch(flag, nil(), l2)); // if v1 is undefined, go to v2's computation
         v1 = build(first); // build of 'x'
         addInstr(new CopyInstr(flag, v1));
         Variable result = getValueInTemporaryVariable(v1);
-        if (needsDefnCheck) {
-            addInstr(new LabelInstr(l2));
-        }
+        addInstr(new LabelInstr(l2));
         addInstr(createBranch(flag, tru(), l1));  // if v1 is defined and true, we are done!
         Operand v2 = build(second); // This is an AST node that sets x = y, so nothing special to do here.
         addInstr(new CopyInstr(result, v2));
         addInstr(new LabelInstr(l1));
 
         // Return value of x ||= y is always 'x'
+        return result;
+    }
+
+    Operand buildOpAsgnOrWithDefined(U definitionNode, VoidCodeBlockOne getter, CodeBlock setter) {
+        Label existsDone = getNewLabel();
+        Label done = getNewLabel();
+        Variable result = (Variable) buildGetDefinition(definitionNode);
+        addInstr(createBranch(result, nil(), existsDone));
+        getter.run(result);
+        addInstr(new LabelInstr(existsDone));
+        addInstr(createBranch(result, getManager().getTrue(), done));
+        Operand value = setter.run();
+        copy(result, value);
+        addInstr(new LabelInstr(done));
+
         return result;
     }
 
@@ -1665,6 +1734,35 @@ public abstract class IRBuilder<U, V, W, X> {
 
     Operand buildRational(U numerator, U denominator) {
         return new Rational((ImmutableLiteral) build(numerator), (ImmutableLiteral) build(denominator));
+    }
+
+    Operand buildRedo(int line) {
+        // If we have ensure blocks, have to run those first!
+        if (!activeEnsureBlockStack.isEmpty()) {
+            emitEnsureBlocks(getCurrentLoop());
+        }
+
+        // If in a loop, a redo is a jump to the beginning of the loop.
+        // If not, for closures, a redo is a jump to the beginning of the closure.
+        // If not in a loop or a closure, it is a compile/syntax error
+        IRLoop currLoop = getCurrentLoop();
+        if (currLoop != null) {
+            addInstr(new JumpInstr(currLoop.iterStartLabel));
+        } else {
+            if (scope instanceof IRClosure) {
+                if (scope instanceof IREvalScript) {
+                    throwSyntaxError(line, "Can't escape from eval with redo");
+                } else {
+                    addInstr(new ThreadPollInstr(true));
+                    Label startLabel = new Label(scope.getId() + "_START", 0);
+                    instructions.add(afterPrologueIndex, new LabelInstr(startLabel));
+                    addInstr(new JumpInstr(startLabel));
+                }
+            } else {
+                throwSyntaxError(line, "Invalid redo");
+            }
+        }
+        return nil();
     }
 
     void buildRescueBodyInternal(U[] exceptions, U body, X consequent, Variable rv, Variable exc, Label endLabel) {
@@ -2228,6 +2326,10 @@ public abstract class IRBuilder<U, V, W, X> {
 
     interface VoidCodeBlock {
         void run();
+    }
+
+    interface VoidCodeBlockOne {
+        void run(Operand arg);
     }
 
     public enum BinaryType {

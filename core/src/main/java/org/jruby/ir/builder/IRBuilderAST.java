@@ -44,7 +44,6 @@ import org.jruby.ir.operands.MutableString;
 import org.jruby.ir.operands.Nil;
 import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.Rational;
 import org.jruby.ir.operands.Regexp;
 import org.jruby.ir.operands.SValue;
 import org.jruby.ir.operands.Self;
@@ -1649,16 +1648,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
                     )
             );
         case GLOBALVARNODE:
-            return addResultInstr(
-                    new RuntimeHelperCall(
-                            temp(),
-                            IS_DEFINED_GLOBAL,
-                            new Operand[] {
-                                    new FrozenString(((GlobalVarNode) node).getName()),
-                                    new FrozenString(DefinedMessage.GLOBAL_VARIABLE.getText())
-                            }
-                    )
-            );
+            return buildGlobalVarGetDefinition(((GlobalVarNode) node).getName());
         case NTHREFNODE: {
             return addResultInstr(
                     new RuntimeHelperCall(
@@ -1674,17 +1664,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         case INSTVARNODE:
             return buildInstVarGetDefinition(((InstVarNode) node).getName());
         case CLASSVARNODE:
-            return addResultInstr(
-                    new RuntimeHelperCall(
-                            temp(),
-                            IS_DEFINED_CLASS_VAR,
-                            new Operand[]{
-                                    classVarDefinitionContainer(),
-                                    new FrozenString(((ClassVarNode) node).getName()),
-                                    new FrozenString(DefinedMessage.CLASS_VARIABLE.getText())
-                            }
-                    )
-            );
+            return buildClassVarGetDefinition(((ClassVarNode) node).getName());
         case SUPERNODE: {
             Label undefLabel = getNewLabel();
             Variable tmpVar  = addResultInstr(
@@ -1727,22 +1707,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
                             }
                     )
             );
-        case CONSTNODE: {
-            Label defLabel = getNewLabel();
-            Label doneLabel = getNewLabel();
-            Variable tmpVar  = temp();
-            RubySymbol constName = ((ConstNode) node).getName();
-            addInstr(new LexicalSearchConstInstr(tmpVar, CurrentScope.INSTANCE, constName));
-            addInstr(BNEInstr.create(defLabel, tmpVar, UndefinedValue.UNDEFINED));
-            addInstr(new InheritanceSearchConstInstr(tmpVar, findContainerModule(), constName)); // SSS FIXME: should this be the current-module var or something else?
-            addInstr(BNEInstr.create(defLabel, tmpVar, UndefinedValue.UNDEFINED));
-            addInstr(new CopyInstr(tmpVar, nil()));
-            addInstr(new JumpInstr(doneLabel));
-            addInstr(new LabelInstr(defLabel));
-            addInstr(new CopyInstr(tmpVar, new FrozenString(DefinedMessage.CONSTANT.getText())));
-            addInstr(new LabelInstr(doneLabel));
-            return tmpVar;
-        }
+        case CONSTNODE:
+            return buildConstantGetDefinition(((ConstNode) node).getName());
         case COLON3NODE: case COLON2NODE: {
             // SSS FIXME: Is there a reason to do this all with low-level IR?
             // Can't this all be folded into a Java method that would be part
@@ -2933,31 +2899,16 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return addResultInstr(new CopyInstr(temp(), putConstantAssignment(node, result)));
     }
 
-    // Translate "x &&= y" --> "x = y if is_true(x)" -->
-    //
-    //    x = -- build(x) should return a variable! --
-    //    f = is_true(x)
-    //    beq(f, false, L)
-    //    x = -- build(y) --
-    // L:
-    //
-    public Operand buildOpAsgnAnd(OpAsgnAndNode andNode) {
-        Label    l  = getNewLabel();
-        Operand  v1 = build(andNode.getFirstNode());
-        Variable result = getValueInTemporaryVariable(v1);
-        addInstr(createBranch(v1, fals(), l));
-        Operand v2 = build(andNode.getSecondNode());  // This does the assignment!
-        addInstr(new CopyInstr(result, v2));
-        addInstr(new LabelInstr(l));
-        return result;
+    public Operand buildOpAsgnAnd(OpAsgnAndNode node) {
+        return buildOpAsgnAnd(() -> build(node.getFirstNode()), () -> build(node.getSecondNode()));
     }
 
     public Operand buildOpAsgnOr(final OpAsgnOrNode orNode) {
-        if (orNode.getFirstNode() instanceof InstVarNode) {
-            return buildInstVarOpAsgnOrNode(((InstVarNode) orNode.getFirstNode()).getName(), orNode.getSecondNode());
+        if (!orNode.getFirstNode().needsDefinitionCheck()) {
+            return buildOpAsgnOr(() -> build(orNode.getFirstNode()), () -> build(orNode.getSecondNode()));
         }
 
-        return buildOpAsgnOr(orNode.getFirstNode(), orNode.getSecondNode());
+        return buildOpAsgnOrWithDefined(orNode.getFirstNode(), orNode.getSecondNode());
     }
 
     public Operand buildOpElementAsgn(OpElementAsgnNode node) {
@@ -3075,32 +3026,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     public Operand buildRedo(RedoNode redoNode) {
-        // If we have ensure blocks, have to run those first!
-        if (!activeEnsureBlockStack.isEmpty()) {
-            emitEnsureBlocks(getCurrentLoop());
-        }
-
-        // If in a loop, a redo is a jump to the beginning of the loop.
-        // If not, for closures, a redo is a jump to the beginning of the closure.
-        // If not in a loop or a closure, it is a compile/syntax error
-        IRLoop currLoop = getCurrentLoop();
-        if (currLoop != null) {
-             addInstr(new JumpInstr(currLoop.iterStartLabel));
-        } else {
-            if (scope instanceof IRClosure) {
-                if (scope instanceof IREvalScript) {
-                    throwSyntaxError(redoNode.getLine(), "Can't escape from eval with redo");
-                } else {
-                    addInstr(new ThreadPollInstr(true));
-                    Label startLabel = new Label(scope.getId() + "_START", 0);
-                    instructions.add(afterPrologueIndex, new LabelInstr(startLabel));
-                    addInstr(new JumpInstr(startLabel));
-                }
-            } else {
-                throwSyntaxError(redoNode.getLine(), "Invalid redo");
-            }
-        }
-        return nil();
+        return buildRedo(redoNode.getLine());
     }
 
     public Operand buildRegexp(RegexpNode reNode) {
