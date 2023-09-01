@@ -1420,6 +1420,45 @@ public abstract class IRBuilder<U, V, W, X> {
         return result;
     }
 
+    InterpreterContext buildIterInner(RubySymbol methodName, U var, U body, int endLine) {
+        this.methodName = methodName;
+
+        boolean forNode = scope instanceof IRFor;
+        prepareClosureImplicitState();                                    // recv_self, add frame block, etc)
+
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            addInstr(new TraceInstr(RubyEvent.B_CALL, getCurrentModuleVariable(), getName(), getFileName(), scope.getLine() + 1));
+        }
+
+        if (!forNode) addCurrentModule();                                // %current_module
+        receiveBlockArgs(var);
+        // for adds these after processing binding block args because and operations at that point happen relative
+        // to the previous scope.
+        if (forNode) addCurrentModule();                                 // %current_module
+
+        // conceptually abstract prologue scope instr creation so we can put this at the end of it instead of replicate it.
+        afterPrologueIndex = instructions.size() - 1;
+
+        // Build closure body and return the result of the closure
+        Operand closureRetVal = body == null ? nil() : build(body);
+
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            addInstr(new TraceInstr(RubyEvent.B_RETURN, getCurrentModuleVariable(), getName(), getFileName(), endLine + 1));
+        }
+
+        // can be U_NIL if the node is an if node with returns in both branches.
+        if (closureRetVal != U_NIL) addInstr(new ReturnInstr(closureRetVal));
+
+        preloadBlockImplicitClosure();
+
+        // Add break/return handling in case it is a lambda (we cannot know at parse time what it is).
+        // SSS FIXME: At a later time, see if we can optimize this and do this on demand.
+        if (!forNode) handleBreakAndReturnsInLambdas();
+
+        computeScopeFlagsFrom(instructions);
+        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
+    }
+
     InterpreterContext buildLambdaInner(U blockArgs, U body) {
         prepareClosureImplicitState();
 

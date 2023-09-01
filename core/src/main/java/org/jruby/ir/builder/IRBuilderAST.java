@@ -2516,7 +2516,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     public Operand buildFor(ForNode forNode) {
         Variable result = temp();
         Operand  receiver = build(forNode.getIterNode());
-        Operand  forBlock = buildForIter(forNode);
+        Operand  forBlock = buildForIter(forNode.getVarNode(), forNode.getBodyNode(), forNode.getScope(), Signature.from(forNode), forNode.getLine(), forNode.getEndLine());
         CallInstr callInstr = new CallInstr(scope, CallType.NORMAL, result, getManager().runtime.newSymbol(CommonByteLists.EACH), receiver, EMPTY_OPERANDS,
                 forBlock, 0, scope.maybeUsingRefinements());
         receiveBreakException(forBlock, callInstr);
@@ -2524,12 +2524,12 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return result;
     }
 
-    public Operand buildForIter(final ForNode forNode) {
+    public Operand buildForIter(Node var, Node body, StaticScope staticScope, Signature signature, int line, int endLine) {
         // Create a new closure context
-        IRClosure closure = new IRFor(getManager(), scope, forNode.getLine(), forNode.getScope(), Signature.from(forNode));
+        IRClosure closure = new IRFor(getManager(), scope, line, staticScope, signature);
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        newIRBuilder(getManager(), closure).buildIterInner(null, forNode);
+        newIRBuilder(getManager(), closure).buildIterInner(null, var, body, endLine);
 
         return new WrappedIRClosure(buildSelf(), closure);
     }
@@ -2594,50 +2594,11 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return buildInstVar(node.getName());
     }
 
-    private InterpreterContext buildIterInner(RubySymbol methodName, IterNode iterNode) {
-        this.methodName = methodName;
-
-        boolean forNode = iterNode instanceof ForNode;
-        prepareClosureImplicitState();                                    // recv_self, add frame block, etc)
-
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            addInstr(new TraceInstr(RubyEvent.B_CALL, getCurrentModuleVariable(), getName(), getFileName(), scope.getLine() + 1));
-        }
-
-        if (!forNode) addCurrentModule();                                // %current_module
-        receiveBlockArgs(iterNode.getVarNode());
-        // for adds these after processing binding block args because and operations at that point happen relative
-        // to the previous scope.
-        if (forNode) addCurrentModule();                                 // %current_module
-
-        // conceptually abstract prologue scope instr creation so we can put this at the end of it instead of replicate it.
-        afterPrologueIndex = instructions.size() - 1;
-
-        // Build closure body and return the result of the closure
-        Operand closureRetVal = iterNode.getBodyNode() == null ? nil() : build(iterNode.getBodyNode());
-
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            addInstr(new TraceInstr(RubyEvent.B_RETURN, getCurrentModuleVariable(), getName(), getFileName(), iterNode.getEndLine() + 1));
-        }
-
-        // can be U_NIL if the node is an if node with returns in both branches.
-        if (closureRetVal != U_NIL) addInstr(new ReturnInstr(closureRetVal));
-
-        preloadBlockImplicitClosure();
-
-        // Add break/return handling in case it is a lambda (we cannot know at parse time what it is).
-        // SSS FIXME: At a later time, see if we can optimize this and do this on demand.
-        if (!forNode) handleBreakAndReturnsInLambdas();
-
-        computeScopeFlagsFrom(instructions);
-        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
-    }
-
     public Operand buildIter(final IterNode iterNode) {
         IRClosure closure = new IRClosure(getManager(), scope, iterNode.getLine(), iterNode.getScope(), Signature.from(iterNode), coverageMode);
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        newIRBuilder(getManager(), closure).buildIterInner(methodName, iterNode);
+        newIRBuilder(getManager(), closure).buildIterInner(methodName, iterNode.getVarNode(), iterNode.getBodyNode(), iterNode.getEndLine());
 
         methodName = null;
 
