@@ -1313,6 +1313,23 @@ public abstract class IRBuilder<U, V, W, X> {
         return copy(new DynamicSymbol(result));
     }
 
+    public Operand buildDXStr(Variable result, U[] nodePieces, Encoding encoding, int line) {
+        Operand[] pieces = new Operand[nodePieces.length];
+        int estimatedSize = 0;
+
+        for (int i = 0; i < pieces.length; i++) {
+            estimatedSize += dynamicPiece(pieces, i, nodePieces[i], false);
+        }
+
+        Variable stringResult = temp();
+        if (result == null) result = temp();
+
+        boolean debuggingFrozenStringLiteral = getManager().getInstanceConfig().isDebuggingFrozenStringLiteral();
+        addInstr(new BuildCompoundStringInstr(stringResult, pieces, encoding, estimatedSize, false, debuggingFrozenStringLiteral, getFileName(), line));
+
+        return fcall(result, Self.SELF, "`", stringResult);
+    }
+
     Operand buildEncoding(Encoding encoding) {
         return addResultInstr(new GetEncodingInstr(temp(), encoding));
     }

@@ -2371,21 +2371,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     public Operand buildDXStr(Variable result, DXStrNode node) {
-        Node[] nodePieces = node.children();
-        Operand[] pieces = new Operand[nodePieces.length];
-        int estimatedSize = 0;
-
-        for (int i = 0; i < pieces.length; i++) {
-            estimatedSize += dynamicPiece(pieces, i, nodePieces[i], false);
-        }
-
-        Variable stringResult = temp();
-        if (result == null) result = temp();
-
-        boolean debuggingFrozenStringLiteral = getManager().getInstanceConfig().isDebuggingFrozenStringLiteral();
-        addInstr(new BuildCompoundStringInstr(stringResult, pieces, node.getEncoding(), estimatedSize, false, debuggingFrozenStringLiteral, getFileName(), node.getLine()));
-
-        return fcall(result, Self.SELF, "`", stringResult);
+        return buildDXStr(result, node.children(), node.getEncoding(), node.getLine());
     }
 
     /* ****************************************************************

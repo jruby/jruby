@@ -318,10 +318,6 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         throw new RuntimeException("Unhandled Node type: " + node);
     }
 
-    private Operand buildInterpolatedXString(Variable result, InterpolatedXStringNode node) {
-        throw new RuntimeException("Unhandled Node type: " + node);
-    }
-
     private Operand buildIn(InNode node) {
         throw new RuntimeException("Unhandled Node type: " + node);
     }
@@ -1199,6 +1195,10 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     private Operand buildInterpolatedSymbol(Variable result, InterpolatedSymbolNode node) {
         // FIXME: Missing encoding
         return buildDSymbol(result, node.parts, UTF8Encoding.INSTANCE, getLine(node));
+    }
+
+    private Operand buildInterpolatedXString(Variable result, InterpolatedXStringNode node) {
+        return buildDXStr(result, node.parts, getEncoding(), getLine(node));
     }
 
     // FIXME: This and buildHash probably have different logic now.
