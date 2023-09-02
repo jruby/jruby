@@ -4,7 +4,6 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.ParseResult;
 import org.jruby.Ruby;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyNumeric;
 import org.jruby.RubySymbol;
 import org.jruby.compiler.NotCompilableException;
@@ -13,13 +12,11 @@ import org.jruby.ir.IRManager;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRModuleBody;
 import org.jruby.ir.IRScope;
-import org.jruby.ir.IRScopeType;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.Tuple;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
-import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.CurrentScope;
 import org.jruby.ir.operands.Float;
@@ -36,12 +33,10 @@ import org.jruby.ir.operands.Symbol;
 import org.jruby.ir.operands.SymbolProc;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.StaticScopeFactory;
 import org.jruby.runtime.ArgumentType;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -322,10 +317,6 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         throw new RuntimeException("Unhandled Node type: " + node);
     }
 
-    private Operand buildFor(ForNode node) {
-        throw new RuntimeException("Unhandled Node type: " + node);
-    }
-
     private Operand buildAlias(AliasNode node) {
         return buildAlias(build(node.new_name), build(node.old_name));
     }
@@ -464,72 +455,23 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         return build(node.statements);
     }
 
-    // FIXME: Try and genericize this with AST
     private Operand buildBlock(BlockNode node) {
-        // FIXME: This needs to be calculated
-        Signature signature = calculateSignature(node.parameters != null ? node.parameters.parameters : null);
-        IRClosure closure = new IRClosure(getManager(), scope, getLine(node),
-                createStaticScopeFrom(node.locals, StaticScope.Type.BLOCK), signature, coverageMode);
-
-        // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        ((IRBuilderYARP) newIRBuilder(getManager(), closure, this, node)).buildIterInner(methodName, node);
-
-        methodName = null;
-
-        return new WrappedIRClosure(buildSelf(), closure);
-    }
-
-    // FIXME: Try and genericize this with AST
-    private InterpreterContext buildIterInner(RubySymbol methodName, BlockNode iterNode) {
-        this.methodName = methodName;
-        // FIXME: this should get set by Loader
-        scope.getStaticScope().setScopeType(IRScopeType.CLOSURE);
-        // FIXME: this should be done initially by Loader.  This may be true for define_method???
-        scope.getStaticScope().setIsArgumentScope(false);
-
-        boolean forNode = false; // FIXME: For will be handled separately.
-        prepareClosureImplicitState();                                    // recv_self, add frame block, etc)
-
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            addInstr(new TraceInstr(RubyEvent.B_CALL, getCurrentModuleVariable(), getName(), getFileName(), scope.getLine() + 1));
-        }
-
-        if (!forNode) addCurrentModule();                                // %current_module
-        receiveBlockArgs(iterNode.parameters);
-        // for adds these after processing binding block args because and operations at that point happen relative
-        // to the previous scope.
-        if (forNode) addCurrentModule();                                 // %current_module
-
-        // conceptually abstract prologue scope instr creation so we can put this at the end of it instead of replicate it.
-        afterPrologueIndex = instructions.size() - 1;
-
-        // Build closure body and return the result of the closure
-        Operand closureRetVal = build(iterNode.body);
-
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            addInstr(new TraceInstr(RubyEvent.B_RETURN, getCurrentModuleVariable(), getName(), getFileName(), getEndLine(iterNode) + 1));
-        }
-
-        // can be U_NIL if the node is an if node with returns in both branches.
-        if (closureRetVal != U_NIL) addInstr(new ReturnInstr(closureRetVal));
-
-        preloadBlockImplicitClosure();
-
-        // Add break/return handling in case it is a lambda (we cannot know at parse time what it is).
-        // SSS FIXME: At a later time, see if we can optimize this and do this on demand.
-        if (!forNode) handleBreakAndReturnsInLambdas();
-
-        computeScopeFlagsFrom(instructions);
-        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
+        return buildIter(node.parameters, node.body, createStaticScopeFrom(node.locals, StaticScope.Type.BLOCK),
+                calculateSignature(node.parameters), getLine(node), getEndLine(node));
     }
 
     // FIXME: This is used for both for and blocks in AST but we do different path for for in YARP
     public void receiveBlockArgs(Node node) {
-        BlockParametersNode parameters = (BlockParametersNode) node;
-        // FIXME: Impl
-        //((IRClosure) scope).setArgumentDescriptors(Helpers.argsNodeToArgumentDescriptors(((ArgsNode) args)));
-        // FIXME: Missing locals?  Not sure how we handle those but I would have thought with a scope?
-        if (parameters != null) buildParameters(parameters.parameters);
+        if (node instanceof MultiWriteNode) { // for
+            // FIXME: we do not have the values at this point.  We need to decouple for from the other iter types.
+            buildMultiWriteNode((MultiWriteNode) node);
+        } else {
+            BlockParametersNode parameters = (BlockParametersNode) node;
+            // FIXME: Impl
+            //((IRClosure) scope).setArgumentDescriptors(Helpers.argsNodeToArgumentDescriptors(((ArgsNode) args)));
+            // FIXME: Missing locals?  Not sure how we handle those but I would have thought with a scope?
+            if (parameters != null) buildParameters(parameters.parameters);
+        }
     }
 
     private Operand buildBlockArgument(BlockArgumentNode node) {
@@ -841,6 +783,11 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         }
 
         return new Float(d);
+    }
+
+    private Operand buildFor(ForNode node) {
+        return buildFor(node.collection, node.index, node.statements, scope.getStaticScope(),
+                calculateSignatureFor(node.index), getLine(node), getEndLine(node));
     }
 
     private Operand buildForwardingSuper(Variable result, ForwardingSuperNode node) {
@@ -1242,19 +1189,9 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         return hash;
     }
 
-    // FIXME: Generify
     private Operand buildLambda(LambdaNode node) {
-        IRClosure closure = new IRClosure(getManager(), scope, getLine(node),
-                createStaticScopeFrom(node.locals, StaticScope.Type.BLOCK), calculateSignature(node.parameters),
-                coverageMode);
-
-        // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        newIRBuilder(getManager(), closure, this, node).buildLambdaInner(node.parameters, node.body);
-
-        Variable lambda = temp();
-        WrappedIRClosure lambdaBody = new WrappedIRClosure(closure.getSelf(), closure);
-        addInstr(new BuildLambdaInstr(lambda, lambdaBody));
-        return lambda;
+        return buildLambda(node.parameters, node.body, createStaticScopeFrom(node.locals, StaticScope.Type.BLOCK),
+                calculateSignature(node.parameters), getLine(node));
     }
 
     private Operand buildLocalVariableRead(LocalVariableReadNode node) {
@@ -2144,6 +2081,11 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
 
     private Signature calculateSignature(BlockParametersNode parameters) {
         return parameters == null ? Signature.NO_ARGUMENTS : calculateSignature(parameters.parameters);
+    }
+
+    private Signature calculateSignatureFor(Node node) {
+        // FIXME: #1383 will change all this for masn case so impl once done
+        return Signature.ONE_REQUIRED;
     }
 
     // FIXME: we allocate extra byte[] just to make it a String[].  Extra work to consider?

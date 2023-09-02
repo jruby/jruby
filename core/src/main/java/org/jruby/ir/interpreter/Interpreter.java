@@ -29,6 +29,7 @@ import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.util.ByteList;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+import org.yarp.YarpParseResult;
 
 public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     public static final Logger LOG = LoggerFactory.getLogger(Interpreter.class);
@@ -208,7 +209,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         // we end up growing dynamicscope potentially based on any changes made.
         staticScope.setIRScope(script);
 
-        IRBuilder builder = IRBuilder.newIRBuilder(runtime.getIRManager(), script, null, result);
+        IRBuilder builder = IRBuilder.newIRBuilder(runtime.getIRManager(), script, null, result instanceof YarpParseResult);
         builder.evalType = !bindingGiven && evalType == EvalType.BINDING_EVAL ? EvalType.INSTANCE_EVAL : evalType;
         InterpreterContext ic = builder.buildEvalRoot(result);
 

@@ -80,7 +80,7 @@ public class LazyMethodDefinitionYARP implements LazyMethodDefinition<Node, DefN
 
     @Override
     public IRBuilder<Node, DefNode, WhenNode, RescueNode> getBuilder(IRManager manager, IRMethod methodScope) {
-        IRBuilder<Node, DefNode, WhenNode, RescueNode> builder = IRBuilder.newIRBuilder(manager, methodScope, null, node);
+        IRBuilder<Node, DefNode, WhenNode, RescueNode> builder = IRBuilder.newIRBuilder(manager, methodScope, null, true);
 
         ((IRBuilderYARP) builder).source = source;
 

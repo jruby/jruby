@@ -6,7 +6,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyComplex;
 import org.jruby.RubyFixnum;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyRational;
 import org.jruby.RubySymbol;
 import org.jruby.ast.*;
@@ -15,7 +14,6 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.IRClosure;
-import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRFor;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRMethod;
@@ -31,7 +29,6 @@ import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.Bignum;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Complex;
-import org.jruby.ir.operands.CurrentScope;
 import org.jruby.ir.operands.Filename;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.FrozenString;
@@ -58,7 +55,6 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentType;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -73,7 +69,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.function.Function;
 
-import static org.jruby.ir.instructions.Instr.EMPTY_OPERANDS;
 import static org.jruby.ir.instructions.IntegerMathInstr.Op.ADD;
 import static org.jruby.ir.instructions.IntegerMathInstr.Op.SUBTRACT;
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
@@ -312,15 +307,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     public Operand buildLambda(LambdaNode node) {
-        IRClosure closure = new IRClosure(getManager(), scope, node.getLine(), node.getScope(), Signature.from(node), coverageMode);
-
-        // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        newIRBuilder(getManager(), closure).buildLambdaInner(node.getArgs(), node.getBody());
-
-        Variable lambda = temp();
-        WrappedIRClosure lambdaBody = new WrappedIRClosure(closure.getSelf(), closure);
-        addInstr(new BuildLambdaInstr(lambda, lambdaBody));
-        return lambda;
+        return buildLambda(node.getArgs(), node.getBody(), node.getScope(), Signature.from(node), node.getLine());
     }
 
     public Operand buildEncoding(EncodingNode node) {
@@ -2508,20 +2495,12 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     public Operand buildFloat(FloatNode node) {
-        // Since flaot literals are effectively interned objects, no need to copyAndReturnValue(...)
-        // SSS FIXME: Or is this a premature optimization?
         return new Float(node.getValue());
     }
 
-    public Operand buildFor(ForNode forNode) {
-        Variable result = temp();
-        Operand  receiver = build(forNode.getIterNode());
-        Operand  forBlock = buildForIter(forNode.getVarNode(), forNode.getBodyNode(), forNode.getScope(), Signature.from(forNode), forNode.getLine(), forNode.getEndLine());
-        CallInstr callInstr = new CallInstr(scope, CallType.NORMAL, result, getManager().runtime.newSymbol(CommonByteLists.EACH), receiver, EMPTY_OPERANDS,
-                forBlock, 0, scope.maybeUsingRefinements());
-        receiveBreakException(forBlock, callInstr);
-
-        return result;
+    public Operand buildFor(ForNode node) {
+        return buildFor(node.getIterNode(), node.getVarNode(), node.getBodyNode(), node.getScope(),
+                Signature.from(node), node.getLine(), node.getEndLine());
     }
 
     public Operand buildGlobalAsgn(GlobalAsgnNode node) {
@@ -2584,15 +2563,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return buildInstVar(node.getName());
     }
 
-    public Operand buildIter(final IterNode iterNode) {
-        IRClosure closure = new IRClosure(getManager(), scope, iterNode.getLine(), iterNode.getScope(), Signature.from(iterNode), coverageMode);
-
-        // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        newIRBuilder(getManager(), closure, this, iterNode).buildIterInner(methodName, iterNode.getVarNode(), iterNode.getBodyNode(), iterNode.getEndLine());
-
-        methodName = null;
-
-        return new WrappedIRClosure(buildSelf(), closure);
+    public Operand buildIter(final IterNode iter) {
+        return buildIter(iter.getVarNode(), iter.getBodyNode(), iter.getScope(), Signature.from(iter), iter.getLine(), iter.getEndLine());
     }
 
     public Operand buildLiteral(LiteralNode literalNode) {
