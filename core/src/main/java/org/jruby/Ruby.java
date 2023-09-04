@@ -3077,12 +3077,12 @@ public final class Ruby implements Constantizable {
     }
 
     public void addBoundMethod(String className, String methodName, String rubyName) {
-        Map<String, String> javaToRuby = boundMethods.computeIfAbsent(className, s -> new HashMap<>());
+        Map<String, String> javaToRuby = boundMethods.computeIfAbsent(className, s -> new ConcurrentHashMap<>(2, 0.9f, 2));
         javaToRuby.putIfAbsent(methodName, rubyName);
     }
 
     public void addBoundMethods(String className, String... tuples) {
-        Map<String, String> javaToRuby = boundMethods.computeIfAbsent(className, s -> new HashMap<>());
+        Map<String, String> javaToRuby = boundMethods.computeIfAbsent(className, s -> new ConcurrentHashMap<>(2, 0.9f, 2));
         for (int i = 0; i < tuples.length; i += 2) {
             javaToRuby.putIfAbsent(tuples[i], tuples[i+1]);
         }
@@ -3097,10 +3097,9 @@ public final class Ruby implements Constantizable {
 
         for (int i = 0; i < tuplesIndex; i++) {
             String className = classNamesAndTuples[i];
-            if (boundMethods.containsKey(className)) {
-                boundMethods.get(className).putAll(javaToRuby);
-            } else {
-                boundMethods.put(className, new HashMap<>(javaToRuby));
+            Map<String, String> javaToRubyForClass = boundMethods.computeIfAbsent(className, s -> new ConcurrentHashMap<>((int)(javaToRuby.size() / 0.9f) + 1, 0.9f, 2));
+            for (Map.Entry<String, String> entry : javaToRuby.entrySet()) {
+                javaToRubyForClass.putIfAbsent(entry.getKey(), entry.getValue());
             }
         }
     }
@@ -5578,7 +5577,7 @@ public final class Ruby implements Constantizable {
     private final AtomicInteger moduleGeneration = new AtomicInteger(1);
 
     // A list of Java class+method names to include in backtraces
-    private final Map<String, Map<String, String>> boundMethods = new HashMap();
+    private final Map<String, Map<String, String>> boundMethods = new ConcurrentHashMap<>();
 
     // A soft pool of selectors for blocking IO operations
     private final SelectorPool selectorPool = new SelectorPool();
