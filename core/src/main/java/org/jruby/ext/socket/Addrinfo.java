@@ -528,6 +528,19 @@ public class Addrinfo extends RubyObject {
         return RubyBoolean.newBoolean(context, ((InetSocketAddress) socketAddress).getAddress().isSiteLocalAddress());
     }
 
+    @JRubyMethod(name = "ipv6_unique_local?")
+    public IRubyObject ipv6_unique_local_p(ThreadContext context) {
+        if (getAddressFamily() != AF_INET6) {
+            return context.fals;
+        }
+        Inet6Address address = getInet6Address();
+        if (address == null) {
+            return context.fals;
+        }
+        int firstAddrByte = address.getAddress()[0] & 0xff;
+        return RubyBoolean.newBoolean(context, firstAddrByte == 0xfc || firstAddrByte == 0xfd);
+    }
+
     @JRubyMethod(name = "ipv6_v4mapped?")
     public IRubyObject ipv6_v4mapped_p(ThreadContext context) {
         Inet6Address in6 = getInet6Address();
