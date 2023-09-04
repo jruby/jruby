@@ -17,7 +17,7 @@ public class OneShotClassLoader extends ClassLoader implements ClassDefiningClas
     }
 
     public Class<?> defineClass(String name, byte[] bytes) {
-        Class<?> cls = super.defineClass(name, bytes, 0, bytes.length);
+        Class<?> cls = super.defineClass(name, bytes, 0, bytes.length, ClassDefiningJRubyClassLoader.DEFAULT_DOMAIN);
         resolveClass(cls);
         return cls;
     }
