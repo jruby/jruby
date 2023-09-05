@@ -41,7 +41,6 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     private transient boolean targetRequiresCallersFrame;    // Does this call make use of the caller's frame?
     private transient boolean dontInline;
     private transient boolean[] splatMap;
-    protected transient boolean procNew;
     private final boolean potentiallyRefined;
     private final int flags;  // call info the callee is interested in: CALL_SPLATS, CALL_KEYWORDS...
     private transient Set<FrameField> frameReads;
@@ -72,7 +71,6 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         targetRequiresCallersBinding = true;
         targetRequiresCallersFrame = true;
         dontInline = false;
-        procNew = false;
         this.potentiallyRefined = potentiallyRefined;
 
         captureFrameReadsAndWrites();
@@ -174,10 +172,6 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         return splatMap;
     }
 
-    public void setProcNew(boolean procNew) {
-        this.procNew = procNew;
-    }
-
     public void blockInlining() {
         dontInline = true;
     }
@@ -252,11 +246,6 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         if (hasLiteralClosure()) {
             modifiedScope = true;
             flags.addAll(IRFlags.REQUIRE_ALL_FRAME_FIELDS);
-        }
-
-        if (procNew) {
-            modifiedScope = true;
-            flags.add(IRFlags.REQUIRES_BLOCK);
         }
 
         if (canBeEval()) {
@@ -432,8 +421,6 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
 
         // literal closures can be used to capture surrounding binding
         if (hasLiteralClosure()) return true;
-
-        if (procNew) return true;
 
         String mname = getId();
         if (frameReads.size() > 0 || frameWrites.size() > 0) {

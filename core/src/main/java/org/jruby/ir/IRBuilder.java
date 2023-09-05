@@ -1341,15 +1341,12 @@ public class IRBuilder {
             Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
             if_else(test, manager.getTrue(),
                     () -> receiveBreakException(block,
-                            determineIfProcNew(receiverNode,
-                                    CallInstr.create(scope, NORMAL, result, name, receiver, removeArg(args), block, flags[0]))),
+                            CallInstr.create(scope, NORMAL, result, name, receiver, removeArg(args), block, flags[0])),
                     () -> receiveBreakException(block,
-                            determineIfProcNew(receiverNode,
-                                    CallInstr.create(scope, NORMAL, result, name, receiver, args, block, flags[0]))));
+                            CallInstr.create(scope, NORMAL, result, name, receiver, args, block, flags[0])));
         } else {
             receiveBreakException(block,
-                    determineIfProcNew(receiverNode,
-                            CallInstr.create(scope, NORMAL, result, name, receiver, args, block, flags[0])));
+                    CallInstr.create(scope, NORMAL, result, name, receiver, args, block, flags[0]));
         }
 
         if (compileLazyLabel) {
@@ -1368,16 +1365,6 @@ public class IRBuilder {
             kwargs.add(new KeyValuePair<>(build(pair.getKey()), build(pair.getValue())));
         }
         return kwargs;
-    }
-
-    private CallInstr determineIfProcNew(Node receiverNode, CallInstr callInstr) {
-        // This is to support the ugly Proc.new with no block, which must see caller's frame
-        if (CommonByteLists.NEW_METHOD.equals(callInstr.getName().getBytes()) &&
-                receiverNode instanceof ConstNode && ((ConstNode)receiverNode).getName().idString().equals("Proc")) {
-            callInstr.setProcNew(true);
-        }
-
-        return callInstr;
     }
 
     private void buildFindPattern(Label testEnd, Variable result, Variable deconstructed, FindPatternNode pattern,
