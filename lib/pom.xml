@@ -85,6 +85,19 @@ DO NOT MODIFY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>bigdecimal</artifactId>
+      <version>3.1.4</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>rubygems</groupId>
+          <artifactId>jar-dependencies</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>bundler</artifactId>
       <version>2.3.26</version>
       <type>gem</type>
@@ -1057,6 +1070,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/abbrev-0.1.0*</include>
           <include>specifications/base64-0.1.1*</include>
           <include>specifications/benchmark-0.2.0*</include>
+          <include>specifications/bigdecimal-3.1.4*</include>
           <include>specifications/bundler-2.3.26*</include>
           <include>specifications/cgi-0.3.6*</include>
           <include>specifications/csv-3.2.5*</include>
@@ -1134,6 +1148,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/abbrev-0.1.0*/**/*</include>
           <include>gems/base64-0.1.1*/**/*</include>
           <include>gems/benchmark-0.2.0*/**/*</include>
+          <include>gems/bigdecimal-3.1.4*/**/*</include>
           <include>gems/bundler-2.3.26*/**/*</include>
           <include>gems/cgi-0.3.6*/**/*</include>
           <include>gems/csv-3.2.5*/**/*</include>
@@ -1211,6 +1226,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/abbrev-0.1.0*</include>
           <include>cache/base64-0.1.1*</include>
           <include>cache/benchmark-0.2.0*</include>
+          <include>cache/bigdecimal-3.1.4*</include>
           <include>cache/bundler-2.3.26*</include>
           <include>cache/cgi-0.3.6*</include>
           <include>cache/csv-3.2.5*</include>
