@@ -21,8 +21,7 @@ default_gems = [
     ['abbrev', '0.1.0'],
     ['base64', '0.1.1'],
     ['benchmark', '0.2.0'],
-    # https://github.com/ruby/bigdecimal/issues/169
-    # ['bigdecimal', '3.1.1'],
+    ['bigdecimal', '3.1.4'],
     ['bundler', '2.3.26'],
     ['cgi', '0.3.6'],
     ['csv', '3.2.5'],

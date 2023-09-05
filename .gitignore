@@ -60,6 +60,7 @@ lib/ruby/stdlib/abbrev*
 lib/ruby/stdlib/ant*
 lib/ruby/stdlib/base64*
 lib/ruby/stdlib/benchmark*
+lib/ruby/stdlib/bigdecimal*
 lib/ruby/stdlib/bundler*
 lib/ruby/stdlib/cgi*
 lib/ruby/stdlib/csv*
