@@ -840,15 +840,12 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
             if_else(test, tru(),
                     () -> receiveBreakException(block,
-                            determineIfProcNew(receiverNode,
-                                    CallInstr.create(scope, NORMAL, result, name, receiver, removeArg(args), block, flags[0]))),
+                            CallInstr.create(scope, NORMAL, result, name, receiver, removeArg(args), block, flags[0])),
                     () -> receiveBreakException(block,
-                            determineIfProcNew(receiverNode,
-                                    CallInstr.create(scope, NORMAL, result, name, receiver, args, block, flags[0]))));
+                            CallInstr.create(scope, NORMAL, result, name, receiver, args, block, flags[0])));
         } else {
             receiveBreakException(block,
-                    determineIfProcNew(receiverNode,
-                            CallInstr.create(scope, NORMAL, result, name, receiver, args, block, flags[0])));
+                    CallInstr.create(scope, NORMAL, result, name, receiver, args, block, flags[0]));
         }
 
         if (compileLazyLabel) {
@@ -867,16 +864,6 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             kwargs.add(new KeyValuePair<>(build(pair.getKey()), build(pair.getValue())));
         }
         return kwargs;
-    }
-
-    CallInstr determineIfProcNew(Node receiverNode, CallInstr callInstr) {
-        // This is to support the ugly Proc.new with no block, which must see caller's frame
-        if (CommonByteLists.NEW_METHOD.equals(callInstr.getName().getBytes()) &&
-                receiverNode instanceof ConstNode && ((ConstNode)receiverNode).getName().idString().equals("Proc")) {
-            callInstr.setProcNew(true);
-        }
-
-        return callInstr;
     }
 
     private void buildFindPattern(Label testEnd, Variable result, Variable deconstructed, FindPatternNode pattern,
@@ -1097,7 +1084,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         label("empty", (empty) ->
                 cond(empty, result, tru(), ()->
                         addInstr(new BuildCompoundStringInstr(errorString, new Operand[] {value, new FrozenString(" is not empty")},
-                                UTF8Encoding.INSTANCE, 13, true, false, getFileName(), lastProcessedLineNum))));
+                                UTF8Encoding.INSTANCE, 13, true, getFileName(), lastProcessedLineNum))));
     }
 
     private void buildPatternMatch(Variable result, Variable deconstructed, Node arg, Operand obj,

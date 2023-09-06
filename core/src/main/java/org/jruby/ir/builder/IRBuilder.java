@@ -1292,8 +1292,7 @@ public abstract class IRBuilder<U, V, W, X> {
             estimatedSize += dynamicPiece(pieces, i, nodePieces[i], true);
         }
 
-        boolean debuggingFrozenStringLiteral = getManager().getInstanceConfig().isDebuggingFrozenStringLiteral();
-        addInstr(new BuildCompoundStringInstr(result, pieces, encoding, estimatedSize, isFrozen, debuggingFrozenStringLiteral, getFileName(), line));
+        addInstr(new BuildCompoundStringInstr(result, pieces, encoding, estimatedSize, isFrozen, getFileName(), line));
 
         return result;
     }
@@ -1308,8 +1307,7 @@ public abstract class IRBuilder<U, V, W, X> {
 
         if (result == null) result = temp();
 
-        boolean debuggingFrozenStringLiteral = getManager().getInstanceConfig().isDebuggingFrozenStringLiteral();
-        addInstr(new BuildCompoundStringInstr(result, pieces, encoding, estimatedSize, false, debuggingFrozenStringLiteral, getFileName(), line));
+        addInstr(new BuildCompoundStringInstr(result, pieces, encoding, estimatedSize, false, getFileName(), line));
 
         return copy(new DynamicSymbol(result));
     }
@@ -1325,8 +1323,7 @@ public abstract class IRBuilder<U, V, W, X> {
         Variable stringResult = temp();
         if (result == null) result = temp();
 
-        boolean debuggingFrozenStringLiteral = getManager().getInstanceConfig().isDebuggingFrozenStringLiteral();
-        addInstr(new BuildCompoundStringInstr(stringResult, pieces, encoding, estimatedSize, false, debuggingFrozenStringLiteral, getFileName(), line));
+        addInstr(new BuildCompoundStringInstr(stringResult, pieces, encoding, estimatedSize, false, getFileName(), line));
 
         return fcall(result, Self.SELF, "`", stringResult);
     }
@@ -2134,7 +2131,6 @@ public abstract class IRBuilder<U, V, W, X> {
     abstract Operand[] buildCallArgs(U args, int[] flags);
     abstract Operand buildGetDefinition(U node);
     abstract boolean containsVariableAssignment(U node);
-    abstract CallInstr determineIfProcNew(U receiverNode, CallInstr callInstr);
     abstract Operand frozen_string(U node);
     abstract int getLine(U node);
     abstract IRubyObject getWhenLiteral(U node);

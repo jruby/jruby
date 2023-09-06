@@ -40,7 +40,7 @@ public enum Category {
     JIT("jit"),
     IR("intermediate representation"),
     NATIVE("native"),
-    THREADPOOL("thread pooling"),
+    THREADPOOL("thread pooling and launching"),
     MISCELLANEOUS("miscellaneous"),
     DEBUG("debugging and logging"),
     JAVA_INTEGRATION("java integration"),

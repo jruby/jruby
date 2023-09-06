@@ -2037,7 +2037,9 @@ public class JVMVisitor extends IRVisitor {
         m.adapter.checkcast(p(RubyModule.class));
         m.adapter.ldc(putconstinstr.getId());
         visit(putconstinstr.getValue());
-        m.invokeIRHelper("putConst", sig(void.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class));
+        jvmMethod().loadStaticScope();
+        m.adapter.pushInt(m.getLastLine());
+        m.invokeIRHelper("putConst", sig(void.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, StaticScope.class, int.class));
     }
 
     @Override

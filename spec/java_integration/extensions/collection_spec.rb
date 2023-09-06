@@ -51,18 +51,20 @@ describe "Collection Ruby extensions" do
   end
 
   it 'supports (Enumerable\'s) first' do
+    # Java 21 adds getFirst and getLast via a new SequencedCollection interface, so we always test the prefixed
+    # ruby_first method here. Prior to Java 21, it is equivalent to the #first methods.
     set = java.util.LinkedHashSet.new [ 'foo', 'bar', 'baz' ]
-    expect( set.first ).to eq 'foo'
-    expect( set.first(2) ).to eq ['foo', 'bar']
-    expect( set.first(1) ).to eq ['foo']
-    expect( set.first(8) ).to eq ['foo', 'bar', 'baz']
-    expect( set.first(0) ).to eq []
+    expect( set.ruby_first ).to eq 'foo'
+    expect( set.ruby_first(2) ).to eq ['foo', 'bar']
+    expect( set.ruby_first(1) ).to eq ['foo']
+    expect( set.ruby_first(8) ).to eq ['foo', 'bar', 'baz']
+    expect( set.ruby_first(0) ).to eq []
     set.clear
-    expect( set.first ).to be nil
+    expect( set.ruby_first ).to be nil
 
-    # java.util.Queue conflicts since it has getFirst :
+    # java.util.Queue also conflicts since it has getFirst
     que = java.util.ArrayDeque.new [1, 2, 3]
-    expect( que.first ).to eq 1
+    expect( que.ruby_first ).to eq 1
     expect( que.ruby_first(2).to_a ).to eq [1, 2]
     expect( que.ruby_first(0).to_a ).to eq []
     que.clear

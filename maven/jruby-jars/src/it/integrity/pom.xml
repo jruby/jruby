@@ -16,17 +16,14 @@
   <build>
     <plugins>
       <plugin>
-	<groupId>de.saumya.mojo</groupId>
+	<groupId>org.jruby.maven</groupId>
 	<artifactId>gem-maven-plugin</artifactId>
-	<version>1.0.5</version>
+	<version>3.0.1</version>
 	<executions>
 	  <execution>
 	    <goals><goal>initialize</goal></goals>
 	  </execution>
 	</executions>
-        <configuration>
-          <jrubyVersion>1.7.22</jrubyVersion>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>

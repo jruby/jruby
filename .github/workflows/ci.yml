@@ -81,14 +81,14 @@ jobs:
 
     strategy:
       matrix:
-        target: ['test:mri:core:jit', 'test:jruby:jit', 'spec:compiler', 'spec:ruby:fast:jit']
-        java-version: ['17']
+        target: ['test:mri:core:jit', 'test:jruby:jit', 'spec:compiler', 'spec:ruby:fast:jit', 'spec:ji']
+        java-version: ['21-ea']
       fail-fast: false
 
     name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }} +indy)
 
     env:
-      JRUBY_OPTS: '-Xcompile.invokedynamic'
+      JRUBY_OPTS: '-Xcompile.invokedynamic -X+C -Xjit.threshold=0'
 
     steps:
       - name: Bootstrap build
@@ -152,27 +152,6 @@ jobs:
         run: tool/maven-ci-script.sh
         env:
           PHASE: 'package ${{ matrix.package-flags }}'
-
-  ji-specs-8-indy:
-    runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: false
-
-    env:
-      JRUBY_OPTS: '-Xcompile.invokedynamic'
-
-    steps:
-      - name: Bootstrap build
-        uses: jruby/jruby-ci-build@v1
-      - name: set up java 8
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'zulu'
-          java-version: 8
-          cache: 'maven'
-      - name: rake spec:ji
-        run: bin/jruby -S rake spec:ji
 
   regression-specs-jit:
     runs-on: ubuntu-latest
@@ -415,7 +394,7 @@ jobs:
     permissions:
       contents: none
     if: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/heads/jruby-9.3' }}
-    needs: [mvn-test, mvn-test-8, mvn-test-windows, dependency-check, rake-test, rake-test-17-indy, rake-test-8, test-versions, sequel, concurrent-ruby, jruby-tests-dev, ji-specs-8-indy, regression-specs-jit, mvn-test-m1]
+    needs: [mvn-test, mvn-test-8, mvn-test-windows, dependency-check, rake-test, rake-test-17-indy, rake-test-8, test-versions, sequel, concurrent-ruby, jruby-tests-dev, regression-specs-jit, mvn-test-m1]
     uses: jruby/jruby/.github/workflows/snapshot-publish.yml@6cd0d4d96d9406635183d81cf91acc82cd78245f
     secrets:
       SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}

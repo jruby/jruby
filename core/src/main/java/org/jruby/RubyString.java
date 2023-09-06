@@ -120,8 +120,6 @@ import static org.jruby.util.StringSupport.offset;
  */
 @JRubyClass(name="String", include={"Enumerable", "Comparable"})
 public class RubyString extends RubyObject implements CharSequence, EncodingCapable, MarshalEncoding, CodeRangeable {
-    public static final String DEBUG_INFO_FIELD = "@debug_created_info";
-
     static final ASCIIEncoding ASCII = ASCIIEncoding.INSTANCE;
     static final UTF8Encoding UTF8 = UTF8Encoding.INSTANCE;
 
@@ -956,20 +954,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (value.getUnsafeBytes() != b || value.getRealSize() != len || value.getEncoding() != enc) throw getRuntime().newRuntimeError("string modified");
     }
 
-    private void frozenCheck() {
+    protected void frozenCheck() {
         if (isFrozen()) {
-            if (getRuntime().getInstanceConfig().isDebuggingFrozenStringLiteral()) {
-                IRubyObject obj = getInstanceVariable(DEBUG_INFO_FIELD);
-
-                if (obj != null && obj instanceof RubyArray) {
-                    RubyArray info = (RubyArray) obj;
-                    if (info.getLength() == 2) {
-                        throw getRuntime().newRaiseException(getRuntime().getFrozenError(),
-                                "can't modify frozen String, created at " + info.eltInternal(0) + ":" + info.eltInternal(1));
-                    }
-                }
-            }
-
             throw getRuntime().newFrozenError("String", this);
         }
     }
@@ -1050,6 +1036,30 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         str.setCodeRange(getCodeRange());
         str.setFrozen(true);
         return str;
+    }
+
+    public static RubyString newDebugFrozenString(Ruby runtime, RubyClass rubyClass, ByteList value, int cr, String file, int line) {
+        return new DebugFrozenString(runtime, runtime.getString(), value, cr, file, line);
+    }
+
+    static class DebugFrozenString extends RubyString {
+        private final String file;
+        private final int line;
+
+        protected DebugFrozenString(Ruby runtime, RubyClass rubyClass, ByteList value, int cr, String file, int line) {
+            super(runtime, rubyClass, value, cr);
+
+            this.file = file;
+            this.line = line;
+        }
+
+        @Override
+        protected void frozenCheck() {
+            Ruby runtime = getRuntime();
+            
+            throw runtime.newRaiseException(runtime.getFrozenError(),
+                    "can't modify frozen String, created at " + file + ":" + line);
+        }
     }
 
     /** rb_str_resize
@@ -2625,30 +2635,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      *
      */
     public RubyString append(IRubyObject other) {
-        modifyCheck();
-
-        if (other instanceof RubyFixnum) {
-            cat(ConvertBytes.longToByteList(((RubyFixnum) other).value));
-            return this;
-        }
-        if (other instanceof RubyFloat) {
-            return cat((RubyString) ((RubyFloat) other).to_s());
-        }
-        if (other instanceof RubySymbol) {
-            cat(((RubySymbol) other).getBytes());
-            return this;
-        }
-        RubyString otherStr = other.convertToString();
-        return cat(otherStr.value);
-    }
-
-    public RubyString append(RubyString other) {
-        modifyCheck();
-        return cat(other.value);
-    }
-
-    public RubyString append19(IRubyObject other) {
-        // fast path for fixnum straight into ascii-compatible bytelist
+        // fast path for fixnum straight into ascii-compatible bytelist (modify check happens inside here as well)
         if (other instanceof RubyFixnum && value.getEncoding().isAsciiCompatible()) {
             ConvertBytes.longIntoString(this, ((RubyFixnum) other).value);
             return this;
@@ -2659,11 +2646,21 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (other instanceof RubyFloat) {
             return cat19((RubyString) ((RubyFloat) other).to_s());
         } else if (other instanceof RubySymbol) {
-            cat19(((RubySymbol) other).getBytes(), 0);
+            cat19(((RubySymbol) other).getBytes(), CR_UNKNOWN);
             return this;
         }
 
         return cat19(other.convertToString());
+    }
+
+    public RubyString append(RubyString other) {
+        modifyCheck();
+        return cat19(other);
+    }
+
+    @Deprecated
+    public RubyString append19(IRubyObject other) {
+        return append(other);
     }
 
     public RubyString appendAsDynamicString(IRubyObject other) {

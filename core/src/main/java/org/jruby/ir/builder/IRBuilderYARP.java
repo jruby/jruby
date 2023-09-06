@@ -509,16 +509,13 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
             if_else(test, tru(),
                     () -> receiveBreakException(block,
-                            determineIfProcNew(node.receiver,
-                                    CallInstr.create(scope, callType, result, name, receiver, removeArg(finalArgs), block, flags[0]))),
+                            CallInstr.create(scope, callType, result, name, receiver, removeArg(finalArgs), block, flags[0])),
                     () -> receiveBreakException(block,
-                            determineIfProcNew(node.receiver,
-                                    CallInstr.create(scope, callType, result, name, receiver, finalArgs, block, flags[0]))));
+                            CallInstr.create(scope, callType, result, name, receiver, finalArgs, block, flags[0])));
         } else {
             determineIfWeNeedLineNumber(getLine(node), getNewline(node)); // buildOperand for call was papered over by args operand building so we check once more.
             receiveBreakException(block,
-                    determineIfProcNew(node.receiver,
-                            CallInstr.create(scope, callType, result, name, receiver, args, block, flags[0])));
+                    CallInstr.create(scope, callType, result, name, receiver, args, block, flags[0]));
         }
 
         return result;
@@ -2048,19 +2045,6 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             return byteListFrom(((ConstantPathNode) node).child);
         }
         throw notCompilable("Unsupported node in module path", node);
-    }
-
-    @Override
-    CallInstr determineIfProcNew(Node receiver, CallInstr callInstr) {
-        // This is to support the ugly Proc.new with no block, which must see caller's frame
-        if (receiver != null &&
-                CommonByteLists.NEW_METHOD.equals(callInstr.getName().getBytes()) &&
-                receiver instanceof ConstantReadNode &&
-                symbolFor(receiver).idString().equals("Proc")) {
-            callInstr.setProcNew(true);
-        }
-
-        return callInstr;
     }
 
     // FIXME: need to know about breaks

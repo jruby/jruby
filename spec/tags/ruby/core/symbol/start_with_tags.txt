@@ -1,0 +1,1 @@
+fails:Symbol#start_with? checks that we are not matching part of a character

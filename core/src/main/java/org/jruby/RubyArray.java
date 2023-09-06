@@ -2089,7 +2089,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                 IRubyObject val = eltInternal(i);
                 if (!(val instanceof RubyString)) break;
                 if (i > 0 && sep != null) result.cat19(sep);
-                result.append19(val);
+                result.append(val);
             }
         } catch (ArrayIndexOutOfBoundsException e) {
             throw concurrentModification(getRuntime(), e);
@@ -3822,7 +3822,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
         if (len <= SMALL_ARRAY_LEN && ary2.realLength <= SMALL_ARRAY_LEN) {
             for (int i = 0; i < len; i++) {
-                if (ary2.include_p(context, elt(i)).isTrue()) return context.tru;
+                if (ary2.includesByEql(context, elt(i))) return context.tru;
             }
             return context.fals;
         }
