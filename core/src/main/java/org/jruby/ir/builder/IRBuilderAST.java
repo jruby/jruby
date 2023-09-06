@@ -583,26 +583,6 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         }
     }
 
-    public void buildVersionSpecificBlockArgsAssignment(Node node) {
-        if (!(scope instanceof IRFor)) throw notCompilable("Should not have come here for block args assignment", node);
-
-        // Argh!  For-loop bodies and regular iterators are different in terms of block-args!
-        switch (node.getNodeType()) {
-            case MULTIPLEASGNNODE: {
-                ListNode sourceArray = ((MultipleAsgnNode) node).getPre();
-                int i = 0;
-                for (Node an: sourceArray.children()) {
-                    // Use 1.8 mode version for this
-                    buildBlockArgsAssignment(an, null, i, false);
-                    i++;
-                }
-                break;
-            }
-            default:
-                throw notCompilable("Can't build assignment node", node);
-        }
-    }
-
     // This method is called to build arguments for a block!
     public void buildBlockArgsAssignment(Node node, Operand argsArray, int argIndex, boolean isSplat) {
         Variable v;
@@ -647,8 +627,18 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             }
             case ZEROARGNODE:
                 throw notCompilable("Shouldn't get here; zeroarg does not do assignment", node);
+            case MULTIPLEASGNNODE: { // only for 'for' nodes.
+                ListNode sourceArray = ((MultipleAsgnNode) node).getPre();
+                int i = 0;
+                for (Node an: sourceArray.children()) {
+                    // Use 1.8 mode version for this
+                    buildBlockArgsAssignment(an, null, i, false);
+                    i++;
+                }
+                break;
+            }
             default:
-                buildVersionSpecificBlockArgsAssignment(node);
+                throw notCompilable("Can't build assignment node", node);
         }
     }
 
@@ -2408,11 +2398,12 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         Variable result = aResult == null ? temp() : aResult;
         int[] flags = new int[] { 0 };
         Operand[] args = setupCallArgs(callArgsNode, flags);
+        Node iter = fcallNode.getIterNode();
 
         // check for refinement calls before building any closure
-        determineIfMaybeRefined(fcallNode.getName(), args);
+        determineIfMaybeRefined(name, args);
 
-        Operand block = setupCallClosure(fcallNode.getIterNode());
+        Operand block = setupCallClosure(iter);
         determineIfWeNeedLineNumber(fcallNode.getLine(), fcallNode.isNewline()); // backtrace needs line of call in case of exception.
 
         if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
@@ -2421,21 +2412,27 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
                     () -> receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), removeArg(args), block, flags[0])),
                     () -> receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), args, block, flags[0])));
         } else {
-            // We will stuff away the iters AST source into the closure in the hope we can convert
-            // this closure to a method.
-            if (CommonByteLists.DEFINE_METHOD_METHOD.equals(fcallNode.getName().getBytes()) && block instanceof WrappedIRClosure) {
-                IRClosure closure = ((WrappedIRClosure) block).getClosure();
-
-                // To convert to a method we need its variable scoping to appear like a normal method.
-                if (!closure.accessesParentsLocalVariables() && fcallNode.getIterNode() instanceof IterNode) {
-                    closure.setSource((IterNode) fcallNode.getIterNode());
-                }
-            }
+            checkForOptimizableDefineMethod(name, iter, block);
 
             receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), args, block, flags[0]));
         }
 
         return result;
+    }
+
+    // If we see define_method as a call we can potentially convert the closure into a method to
+    // avoid the costs associated with executing blocks.
+    private static void checkForOptimizableDefineMethod(RubySymbol name, Node iter, Operand block) {
+        // We will stuff away the iters AST source into the closure in the hope we can convert
+        // this closure to a method.
+        if (CommonByteLists.DEFINE_METHOD_METHOD.equals(name.getBytes()) && block instanceof WrappedIRClosure) {
+            IRClosure closure = ((WrappedIRClosure) block).getClosure();
+
+            // To convert to a method we need its variable scoping to appear like a normal method.
+            if (!closure.accessesParentsLocalVariables() && iter instanceof IterNode) {
+                closure.setSource((IterNode) iter);
+            }
+        }
     }
 
     Operand setupCallClosure(Node node) {

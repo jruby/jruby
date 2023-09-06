@@ -64,11 +64,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     public IRBuilderYARP(IRManager manager, IRScope scope, IRBuilder parent, IRBuilder variableBuilder) {
         super(manager, scope, parent, variableBuilder);
 
-        // FIXME: remove once all paths consstently use same parser.
-        if (parent instanceof IRBuilderYARP) {
-            source = ((IRBuilderYARP) parent).source;
-        }
-
+        source = ((IRBuilderYARP) parent).source;
         staticScope = scope.getStaticScope();
     }
 
@@ -436,7 +432,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         return value;
     }
 
-    // FIXME: optimization simplifying this from other globals
+    // FIXME(feature): optimization simplifying this from other globals
     private Operand buildBackReferenceRead(Variable result, BackReferenceReadNode node) {
         return buildGlobalVar(result, symbolFor(node));
     }
@@ -1290,73 +1286,6 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         return buildNthRef(value);
     }
 
-    /*
-    // FIXME: serialization should provide something we do not need to rewrite.
-    // This is a lot of post-processing.
-    private Operand buildOperatorAssignment(OperatorAssignmentNode node) {
-        // Strip off '=' as we don't need it.
-        Token operator = new Token(node.operator.type, node.operator.startOffset, node.operator.endOffset - 1);
-        RubySymbol oper = symbolFor(operator);
-        byte[] name = oper.getBytes().bytes();
-        Node target = node.target;
-        Node arguments = new ArgumentsNode(new Node[] { node.value }, -1, -1);
-        if (target instanceof InstanceVariableWriteNode) {
-            Node receiver = new InstanceVariableReadNode(target.startOffset, target.endOffset);
-            Node value = new CallNode(receiver, operator, arguments, null, name, -1, -1);
-            return build(new InstanceVariableWriteNode(new Location(target.startOffset, target.endOffset), value, target.startOffset, target.endOffset));
-        } else if (target instanceof GlobalVariableWriteNode) {
-            Node receiver = new GlobalVariableReadNode(((GlobalVariableWriteNode) target).name, target.startOffset, target.endOffset);
-            Node value = new CallNode(receiver, operator, arguments, null, name, -1, -1);
-            return build(new GlobalVariableWriteNode(((GlobalVariableWriteNode) target).name, value, target.startOffset, target.endOffset));
-        } else if (target instanceof ClassVariableWriteNode) {
-            Node receiver = new ClassVariableReadNode(target.startOffset, target.endOffset);
-            Node value = new CallNode(receiver, operator, arguments, null, name, -1, -1);
-            return build(new ClassVariableWriteNode(((ClassVariableWriteNode) target).name_loc, value, target.startOffset, target.endOffset));
-        } else if (target instanceof LocalVariableWriteNode) {
-            Node receiver = new LocalVariableReadNode(((LocalVariableWriteNode) target).depth, target.startOffset, target.endOffset);
-            Node value = new CallNode(receiver, operator, arguments, null, name, -1, -1);
-            return build(new LocalVariableWriteNode(((LocalVariableWriteNode) target).name_loc, value, ((LocalVariableWriteNode) target).depth, target.startOffset, target.endOffset));
-        } else if (target instanceof CallNode) {
-            Operand receiver = build(target);
-            Variable value = call(temp(), receiver, oper, new Operand[] { build(node.value) });
-            RubySymbol writeName = symbol(new ByteList(((CallNode) target).name)).asWriter();
-            return call(temp(), build(((CallNode) target).receiver), writeName, new Operand[]{ value });
-        }
-
-        throw notCompilable("buildOperatorAssignment node not known", target);
-    }
-
-    private Operand buildOperatorOrAssignment(OperatorOrAssignmentNode node) {
-        // FIXME: AST will make a var and an assign as target and value.  This just embeds a Write + Value.
-        Node[] hack = assignmentHack(node.target, node.value);
-
-        if (hack != null) {
-            return buildOpAsgnOr(hack[0], hack[1]);
-        }
-        return buildOpAsgnOr(node.target, node.value);
-    }
-
-    private Node[] assignmentHack(Node target, Node value) {
-        if (target instanceof InstanceVariableWriteNode) {
-            return new Node[] { new InstanceVariableReadNode(target.startOffset, target.endOffset),
-                    new InstanceVariableWriteNode(new Location(target.startOffset, target.endOffset), value, target.startOffset, target.endOffset) };
-        } else if (target instanceof GlobalVariableWriteNode) {
-            return new Node[] { new GlobalVariableReadNode(((GlobalVariableWriteNode) target).name, target.startOffset, ((GlobalVariableWriteNode) target).name.endOffset),
-                    new GlobalVariableWriteNode(((GlobalVariableWriteNode) target).name, value, target.startOffset, target.endOffset) };
-        } else if (target instanceof ClassVariableWriteNode) {
-            return new Node[]{new ClassVariableReadNode(((ClassVariableWriteNode) target).name_loc.startOffset, ((ClassVariableWriteNode) target).name_loc.endOffset),
-                    new ClassVariableWriteNode(((ClassVariableWriteNode) target).name_loc, value, target.startOffset, target.endOffset)};
-        } else if (target instanceof LocalVariableWriteNode) {
-            return new Node[]{new LocalVariableReadNode(((LocalVariableWriteNode) target).depth, target.startOffset, target.endOffset),
-                    new LocalVariableWriteNode(((LocalVariableWriteNode) target).name_loc, value, ((LocalVariableWriteNode) target).depth, target.startOffset, target.endOffset)};
-        }
-
-        // FIXME: Implement more or do this totally differently
-
-        return null;
-    }*/
-
-
     private Operand buildOr(OrNode node) {
         return buildOr(build(node.left), () -> build(node.right), binaryType(node.left));
     }
@@ -2121,11 +2050,11 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         throw notCompilable("Unsupported node in module path", node);
     }
 
-    // FIXME: I think this can be removed since it has been removed at some point.
     @Override
     CallInstr determineIfProcNew(Node receiver, CallInstr callInstr) {
         // This is to support the ugly Proc.new with no block, which must see caller's frame
-        if (CommonByteLists.NEW_METHOD.equals(callInstr.getName().getBytes()) &&
+        if (receiver != null &&
+                CommonByteLists.NEW_METHOD.equals(callInstr.getName().getBytes()) &&
                 receiver instanceof ConstantReadNode &&
                 symbolFor(receiver).idString().equals("Proc")) {
             callInstr.setProcNew(true);
