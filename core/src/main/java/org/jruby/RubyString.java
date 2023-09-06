@@ -2635,30 +2635,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      *
      */
     public RubyString append(IRubyObject other) {
-        modifyCheck();
-
-        if (other instanceof RubyFixnum) {
-            cat(ConvertBytes.longToByteList(((RubyFixnum) other).value));
-            return this;
-        }
-        if (other instanceof RubyFloat) {
-            return cat((RubyString) ((RubyFloat) other).to_s());
-        }
-        if (other instanceof RubySymbol) {
-            cat(((RubySymbol) other).getBytes());
-            return this;
-        }
-        RubyString otherStr = other.convertToString();
-        return cat(otherStr.value);
-    }
-
-    public RubyString append(RubyString other) {
-        modifyCheck();
-        return cat(other.value);
-    }
-
-    public RubyString append19(IRubyObject other) {
-        // fast path for fixnum straight into ascii-compatible bytelist
+        // fast path for fixnum straight into ascii-compatible bytelist (modify check happens inside here as well)
         if (other instanceof RubyFixnum && value.getEncoding().isAsciiCompatible()) {
             ConvertBytes.longIntoString(this, ((RubyFixnum) other).value);
             return this;
@@ -2669,11 +2646,21 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (other instanceof RubyFloat) {
             return cat19((RubyString) ((RubyFloat) other).to_s());
         } else if (other instanceof RubySymbol) {
-            cat19(((RubySymbol) other).getBytes(), 0);
+            cat19(((RubySymbol) other).getBytes(), CR_UNKNOWN);
             return this;
         }
 
         return cat19(other.convertToString());
+    }
+
+    public RubyString append(RubyString other) {
+        modifyCheck();
+        return cat19(other);
+    }
+
+    @Deprecated
+    public RubyString append19(IRubyObject other) {
+        return append(other);
     }
 
     public RubyString appendAsDynamicString(IRubyObject other) {

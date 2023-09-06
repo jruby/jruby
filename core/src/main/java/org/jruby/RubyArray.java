@@ -2095,7 +2095,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                 IRubyObject val = eltInternal(i);
                 if (!(val instanceof RubyString)) break;
                 if (i > 0 && sep != null) result.cat19(sep);
-                result.append19(val);
+                result.append(val);
             }
         } catch (ArrayIndexOutOfBoundsException e) {
             throw concurrentModification(getRuntime(), e);
