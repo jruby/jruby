@@ -1968,7 +1968,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         try {
             for (int i = 0; i < max; i++) {
                 if (i > 0 && sep != null) result.cat19(sep);
-                result.append19(eltInternal(i));
+                result.append(eltInternal(i));
             }
         } catch (ArrayIndexOutOfBoundsException e) {
             throw concurrentModification(getRuntime(), e);

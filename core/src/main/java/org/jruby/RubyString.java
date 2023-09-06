@@ -2640,32 +2640,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      *
      */
     public RubyString append(IRubyObject other) {
-        modifyCheck();
-
-        if (other instanceof RubyFixnum) {
-            cat(ConvertBytes.longToByteList(((RubyFixnum) other).value));
-            return this;
-        }
-        if (other instanceof RubyFloat) {
-            return cat((RubyString) ((RubyFloat) other).to_s());
-        }
-        if (other instanceof RubySymbol) {
-            cat(((RubySymbol) other).getBytes());
-            return this;
-        }
-        RubyString otherStr = other.convertToString();
-        infectBy(otherStr);
-        return cat(otherStr.value);
-    }
-
-    public RubyString append(RubyString other) {
-        modifyCheck();
-        infectBy(other);
-        return cat(other.value);
-    }
-
-    public RubyString append19(IRubyObject other) {
-        // fast path for fixnum straight into ascii-compatible bytelist
+        // fast path for fixnum straight into ascii-compatible bytelist (modify check performed in here)
         if (other instanceof RubyFixnum && value.getEncoding().isAsciiCompatible()) {
             ConvertBytes.longIntoString(this, ((RubyFixnum) other).value);
             return this;
@@ -2681,6 +2656,17 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         }
 
         return cat19(other.convertToString());
+    }
+
+    public RubyString append(RubyString other) {
+        modifyCheck();
+        infectBy(other);
+        return cat19(other);
+    }
+
+    @Deprecated
+    public RubyString append19(IRubyObject other) {
+        return append(other);
     }
 
     public RubyString appendAsDynamicString(IRubyObject other) {
