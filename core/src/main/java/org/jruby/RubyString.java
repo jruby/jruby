@@ -2635,7 +2635,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      *
      */
     public RubyString append(IRubyObject other) {
-        // fast path for fixnum straight into ascii-compatible bytelist (modify check happens inside here as well)
+        // fast path for fixnum straight into ascii-compatible bytelist (modify check performed in here)
         if (other instanceof RubyFixnum && value.getEncoding().isAsciiCompatible()) {
             ConvertBytes.longIntoString(this, ((RubyFixnum) other).value);
             return this;
