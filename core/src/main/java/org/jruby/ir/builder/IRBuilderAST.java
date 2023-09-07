@@ -831,28 +831,38 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
 
         if (callNode.isLazy()) addInstr(new BNilInstr(lazyLabel, receiver));
 
-        int[] flags = new int[] { 0 };
-        Operand[] args = setupCallArgs(callNode.getArgsNode(), flags);
-        Operand block = setupCallClosure(callNode.getIterNode());
-
-        determineIfWeNeedLineNumber(callNode.getLine(), callNode.isNewline()); // backtrace needs line of call in case of exception.
-        if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
-            Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
-            if_else(test, tru(),
-                    () -> receiveBreakException(block,
-                            CallInstr.create(scope, NORMAL, result, name, receiver, removeArg(args), block, flags[0])),
-                    () -> receiveBreakException(block,
-                            CallInstr.create(scope, NORMAL, result, name, receiver, args, block, flags[0])));
-        } else {
-            receiveBreakException(block,
-                    CallInstr.create(scope, NORMAL, result, name, receiver, args, block, flags[0]));
-        }
+        createCall(result, receiver, NORMAL, name, callNode.getArgsNode(), callNode.getIterNode(), callNode.getLine(), callNode.isNewline());
 
         if (compileLazyLabel) {
             addInstr(new JumpInstr(endLabel));
             addInstr(new LabelInstr(lazyLabel));
             addInstr(new CopyInstr(result, nil()));
             addInstr(new LabelInstr(endLabel));
+        }
+
+        return result;
+    }
+
+    private Variable createCall(Variable result, Operand receiver, CallType callType, RubySymbol name, Node argsNode,
+                            Node iter, int line, boolean isNewline) {
+        int[] flags = new int[] { 0 };
+        Operand[] args = setupCallArgs(argsNode, flags);
+        // check for refinement calls before building any closure
+        if (callType == FUNCTIONAL) determineIfMaybeRefined(name, args);
+        Operand block = setupCallClosure(iter);
+        determineIfWeNeedLineNumber(line, isNewline); // backtrace needs line of call in case of exception.
+        if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
+            Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
+            if_else(test, tru(),
+                    () -> receiveBreakException(block,
+                            CallInstr.create(scope, callType, result, name, receiver, removeArg(args), block, flags[0])),
+                    () -> receiveBreakException(block,
+                            CallInstr.create(scope, callType, result, name, receiver, args, block, flags[0])));
+        } else {
+            if (callType == FUNCTIONAL) checkForOptimizableDefineMethod(name, iter, block);
+
+            receiveBreakException(block,
+                    CallInstr.create(scope, callType, result, name, receiver, args, block, flags[0]));
         }
 
         return result;
@@ -2379,32 +2389,12 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return buildEnsureInternal(null, null, null, null, null, false, ensureNode.getBodyNode(), ensureNode.getEnsureNode(), false);
     }
 
-    public Operand buildFCall(Variable aResult, FCallNode fcallNode) {
-        RubySymbol name = methodName = fcallNode.getName();
-        Node callArgsNode = fcallNode.getArgsNode();
-        Variable result = aResult == null ? temp() : aResult;
-        int[] flags = new int[] { 0 };
-        Operand[] args = setupCallArgs(callArgsNode, flags);
-        Node iter = fcallNode.getIterNode();
+    public Operand buildFCall(Variable result, FCallNode node) {
+        if (result == null) result = temp();
+        RubySymbol name = methodName = node.getName();
 
-        // check for refinement calls before building any closure
-        determineIfMaybeRefined(name, args);
-
-        Operand block = setupCallClosure(iter);
-        determineIfWeNeedLineNumber(fcallNode.getLine(), fcallNode.isNewline()); // backtrace needs line of call in case of exception.
-
-        if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
-            Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
-            if_else(test, tru(),
-                    () -> receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), removeArg(args), block, flags[0])),
-                    () -> receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), args, block, flags[0])));
-        } else {
-            checkForOptimizableDefineMethod(name, iter, block);
-
-            receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), args, block, flags[0]));
-        }
-
-        return result;
+        return createCall(result, buildSelf(), FUNCTIONAL, name, node.getArgsNode(), node.getIterNode(),
+                node.getLine(), node.isNewline());
     }
 
     // If we see define_method as a call we can potentially convert the closure into a method to
