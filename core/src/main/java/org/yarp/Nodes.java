@@ -512,8 +512,10 @@ public abstract class Nodes {
     //     ^^^^^^^^^
     public static final class ArrayNode extends Node {
         public final Node[] elements;
-        public final Location opening_loc; // optional
-        public final Location closing_loc; // optional
+        /** optional (can be null) */
+        public final Location opening_loc;
+        /** optional (can be null) */
+        public final Location closing_loc;
 
         public ArrayNode(Node[] elements, Location opening_loc, Location closing_loc, int startOffset, int length) {
             super(startOffset, length);
@@ -554,12 +556,16 @@ public abstract class Nodes {
     //     foo in Bar[1, 2, 3]
     //     ^^^^^^^^^^^^^^^^^^^
     public static final class ArrayPatternNode extends Node {
-        public final Node constant; // optional
+        /** optional (can be null) */
+        public final Node constant;
         public final Node[] requireds;
-        public final Node rest; // optional
+        /** optional (can be null) */
+        public final Node rest;
         public final Node[] posts;
-        public final Location opening_loc; // optional
-        public final Location closing_loc; // optional
+        /** optional (can be null) */
+        public final Location opening_loc;
+        /** optional (can be null) */
+        public final Location closing_loc;
 
         public ArrayPatternNode(Node constant, Node[] requireds, Node rest, Node[] posts, Location opening_loc, Location closing_loc, int startOffset, int length) {
             super(startOffset, length);
@@ -606,8 +612,10 @@ public abstract class Nodes {
     //       ^^^^^^
     public static final class AssocNode extends Node {
         public final Node key;
-        public final Node value; // optional
-        public final Location operator_loc; // optional
+        /** optional (can be null) */
+        public final Node value;
+        /** optional (can be null) */
+        public final Location operator_loc;
 
         public AssocNode(Node key, Node value, Location operator_loc, int startOffset, int length) {
             super(startOffset, length);
@@ -637,7 +645,8 @@ public abstract class Nodes {
     //     { **foo }
     //       ^^^^^
     public static final class AssocSplatNode extends Node {
-        public final Node value; // optional
+        /** optional (can be null) */
+        public final Node value;
         public final Location operator_loc;
 
         public AssocSplatNode(Node value, Location operator_loc, int startOffset, int length) {
@@ -690,12 +699,18 @@ public abstract class Nodes {
     //     end
     //     ^^^^^
     public static final class BeginNode extends Node {
-        public final Location begin_keyword_loc; // optional
-        public final StatementsNode statements; // optional
-        public final RescueNode rescue_clause; // optional
-        public final ElseNode else_clause; // optional
-        public final EnsureNode ensure_clause; // optional
-        public final Location end_keyword_loc; // optional
+        /** optional (can be null) */
+        public final Location begin_keyword_loc;
+        /** optional (can be null) */
+        public final StatementsNode statements;
+        /** optional (can be null) */
+        public final RescueNode rescue_clause;
+        /** optional (can be null) */
+        public final ElseNode else_clause;
+        /** optional (can be null) */
+        public final EnsureNode ensure_clause;
+        /** optional (can be null) */
+        public final Location end_keyword_loc;
 
         public BeginNode(Location begin_keyword_loc, StatementsNode statements, RescueNode rescue_clause, ElseNode else_clause, EnsureNode ensure_clause, Location end_keyword_loc, int startOffset, int length) {
             super(startOffset, length);
@@ -741,7 +756,8 @@ public abstract class Nodes {
     //     bar(&args)
     //     ^^^^^^^^^^
     public static final class BlockArgumentNode extends Node {
-        public final Node expression; // optional
+        /** optional (can be null) */
+        public final Node expression;
         public final Location operator_loc;
 
         public BlockArgumentNode(Node expression, Location operator_loc, int startOffset, int length) {
@@ -765,14 +781,40 @@ public abstract class Nodes {
         }
     }
 
+    // Represents a block local variable.
+    // 
+    //     a { |; b| }
+    //            ^
+    public static final class BlockLocalVariableNode extends Node {
+        public final byte[] name;
+
+        public BlockLocalVariableNode(byte[] name, int startOffset, int length) {
+            super(startOffset, length);
+            this.name = name;
+        }
+                
+        public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
+        }
+
+        public Node[] childNodes() {
+            return EMPTY_ARRAY;
+        }
+
+        public <T> T accept(AbstractNodeVisitor<T> visitor) {
+            return visitor.visitBlockLocalVariableNode(this);
+        }
+    }
+
     // Represents a block of ruby code.
     // 
     // [1, 2, 3].each { |i| puts x }
     //                ^^^^^^^^^^^^^^
     public static final class BlockNode extends Node {
         public final byte[][] locals;
-        public final BlockParametersNode parameters; // optional
-        public final Node body; // optional
+        /** optional (can be null) */
+        public final BlockParametersNode parameters;
+        /** optional (can be null) */
+        public final Node body;
         public final Location opening_loc;
         public final Location closing_loc;
 
@@ -809,11 +851,15 @@ public abstract class Nodes {
     //           ^^
     //     end
     public static final class BlockParameterNode extends Node {
-        public final Location name_loc; // optional
+        /** optional (can be null) */
+        public final byte[] name;
+        /** optional (can be null) */
+        public final Location name_loc;
         public final Location operator_loc;
 
-        public BlockParameterNode(Location name_loc, Location operator_loc, int startOffset, int length) {
+        public BlockParameterNode(byte[] name, Location name_loc, Location operator_loc, int startOffset, int length) {
             super(startOffset, length);
+            this.name = name;
             this.name_loc = name_loc;
             this.operator_loc = operator_loc;
         }
@@ -839,12 +885,15 @@ public abstract class Nodes {
     //            ^^^^^^^^^^^^^^^^^
     //     end
     public static final class BlockParametersNode extends Node {
-        public final ParametersNode parameters; // optional
-        public final Location[] locals;
-        public final Location opening_loc; // optional
-        public final Location closing_loc; // optional
+        /** optional (can be null) */
+        public final ParametersNode parameters;
+        public final Node[] locals;
+        /** optional (can be null) */
+        public final Location opening_loc;
+        /** optional (can be null) */
+        public final Location closing_loc;
 
-        public BlockParametersNode(ParametersNode parameters, Location[] locals, Location opening_loc, Location closing_loc, int startOffset, int length) {
+        public BlockParametersNode(ParametersNode parameters, Node[] locals, Location opening_loc, Location closing_loc, int startOffset, int length) {
             super(startOffset, length);
             this.parameters = parameters;
             this.locals = locals;
@@ -856,10 +905,16 @@ public abstract class Nodes {
             if (this.parameters != null) {
                 this.parameters.accept(visitor);
             }
+            for (Nodes.Node child : this.locals) {
+                child.accept(visitor);
+            }
         }
 
         public Node[] childNodes() {
-            return new Node[] { this.parameters };
+            ArrayList<Node> childNodes = new ArrayList<>();
+            childNodes.add(this.parameters);
+            childNodes.addAll(Arrays.asList(this.locals));
+            return childNodes.toArray(EMPTY_ARRAY);
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -872,7 +927,8 @@ public abstract class Nodes {
     //     break foo
     //     ^^^^^^^^^
     public static final class BreakNode extends Node {
-        public final ArgumentsNode arguments; // optional
+        /** optional (can be null) */
+        public final ArgumentsNode arguments;
         public final Location keyword_loc;
 
         public BreakNode(ArgumentsNode arguments, Location keyword_loc, int startOffset, int length) {
@@ -896,6 +952,71 @@ public abstract class Nodes {
         }
     }
 
+    // Represents the use of the `&&=` operator on a call.
+    // 
+    //     foo.bar &&= value
+    //     ^^^^^^^^^^^^^^^^^
+    public static final class CallAndWriteNode extends Node {
+        /** optional (can be null) */
+        public final Node receiver;
+        /** optional (can be null) */
+        public final Location call_operator_loc;
+        /** optional (can be null) */
+        public final Location message_loc;
+        /** optional (can be null) */
+        public final Location opening_loc;
+        /** optional (can be null) */
+        public final ArgumentsNode arguments;
+        /** optional (can be null) */
+        public final Location closing_loc;
+        public final short flags;
+        public final byte[] read_name;
+        public final byte[] write_name;
+        public final Location operator_loc;
+        public final Node value;
+
+        public CallAndWriteNode(Node receiver, Location call_operator_loc, Location message_loc, Location opening_loc, ArgumentsNode arguments, Location closing_loc, short flags, byte[] read_name, byte[] write_name, Location operator_loc, Node value, int startOffset, int length) {
+            super(startOffset, length);
+            this.receiver = receiver;
+            this.call_operator_loc = call_operator_loc;
+            this.message_loc = message_loc;
+            this.opening_loc = opening_loc;
+            this.arguments = arguments;
+            this.closing_loc = closing_loc;
+            this.flags = flags;
+            this.read_name = read_name;
+            this.write_name = write_name;
+            this.operator_loc = operator_loc;
+            this.value = value;
+        }
+        
+        public boolean isSafeNavigation() {
+            return CallNodeFlags.isSafeNavigation(this.flags);
+        }
+
+        public boolean isVariableCall() {
+            return CallNodeFlags.isVariableCall(this.flags);
+        }
+        
+        public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
+            if (this.receiver != null) {
+                this.receiver.accept(visitor);
+            }
+            if (this.arguments != null) {
+                this.arguments.accept(visitor);
+            }
+            this.value.accept(visitor);
+        }
+
+        public Node[] childNodes() {
+            return new Node[] { this.receiver, this.arguments, this.value };
+        }
+
+        public <T> T accept(AbstractNodeVisitor<T> visitor) {
+            return visitor.visitCallAndWriteNode(this);
+        }
+    }
+
     // Represents a method call, in all of the various forms that can take.
     // 
     //     foo
@@ -916,20 +1037,27 @@ public abstract class Nodes {
     //     foo&.bar
     //     ^^^^^^^^
     public static final class CallNode extends Node {
-        public final Node receiver; // optional
-        public final Location operator_loc; // optional
-        public final Location message_loc; // optional
-        public final Location opening_loc; // optional
-        public final ArgumentsNode arguments; // optional
-        public final Location closing_loc; // optional
-        public final BlockNode block; // optional
+        /** optional (can be null) */
+        public final Node receiver;
+        /** optional (can be null) */
+        public final Location call_operator_loc;
+        /** optional (can be null) */
+        public final Location message_loc;
+        /** optional (can be null) */
+        public final Location opening_loc;
+        /** optional (can be null) */
+        public final ArgumentsNode arguments;
+        /** optional (can be null) */
+        public final Location closing_loc;
+        /** optional (can be null) */
+        public final BlockNode block;
         public final short flags;
         public final byte[] name;
 
-        public CallNode(Node receiver, Location operator_loc, Location message_loc, Location opening_loc, ArgumentsNode arguments, Location closing_loc, BlockNode block, short flags, byte[] name, int startOffset, int length) {
+        public CallNode(Node receiver, Location call_operator_loc, Location message_loc, Location opening_loc, ArgumentsNode arguments, Location closing_loc, BlockNode block, short flags, byte[] name, int startOffset, int length) {
             super(startOffset, length);
             this.receiver = receiver;
-            this.operator_loc = operator_loc;
+            this.call_operator_loc = call_operator_loc;
             this.message_loc = message_loc;
             this.opening_loc = opening_loc;
             this.arguments = arguments;
@@ -968,33 +1096,70 @@ public abstract class Nodes {
         }
     }
 
-    // Represents the use of the `&&=` operator on a call.
+    // Represents the use of an assignment operator on a call.
     // 
-    //     foo.bar &&= value
-    //     ^^^^^^^^^^^^^^^^^
-    public static final class CallOperatorAndWriteNode extends Node {
-        public final CallNode target;
+    //     foo.bar += baz
+    //     ^^^^^^^^^^^^^^
+    public static final class CallOperatorWriteNode extends Node {
+        /** optional (can be null) */
+        public final Node receiver;
+        /** optional (can be null) */
+        public final Location call_operator_loc;
+        /** optional (can be null) */
+        public final Location message_loc;
+        /** optional (can be null) */
+        public final Location opening_loc;
+        /** optional (can be null) */
+        public final ArgumentsNode arguments;
+        /** optional (can be null) */
+        public final Location closing_loc;
+        public final short flags;
+        public final byte[] read_name;
+        public final byte[] write_name;
+        public final byte[] operator;
         public final Location operator_loc;
         public final Node value;
 
-        public CallOperatorAndWriteNode(CallNode target, Location operator_loc, Node value, int startOffset, int length) {
+        public CallOperatorWriteNode(Node receiver, Location call_operator_loc, Location message_loc, Location opening_loc, ArgumentsNode arguments, Location closing_loc, short flags, byte[] read_name, byte[] write_name, byte[] operator, Location operator_loc, Node value, int startOffset, int length) {
             super(startOffset, length);
-            this.target = target;
+            this.receiver = receiver;
+            this.call_operator_loc = call_operator_loc;
+            this.message_loc = message_loc;
+            this.opening_loc = opening_loc;
+            this.arguments = arguments;
+            this.closing_loc = closing_loc;
+            this.flags = flags;
+            this.read_name = read_name;
+            this.write_name = write_name;
+            this.operator = operator;
             this.operator_loc = operator_loc;
             this.value = value;
         }
-                
+        
+        public boolean isSafeNavigation() {
+            return CallNodeFlags.isSafeNavigation(this.flags);
+        }
+
+        public boolean isVariableCall() {
+            return CallNodeFlags.isVariableCall(this.flags);
+        }
+        
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
-            this.target.accept(visitor);
+            if (this.receiver != null) {
+                this.receiver.accept(visitor);
+            }
+            if (this.arguments != null) {
+                this.arguments.accept(visitor);
+            }
             this.value.accept(visitor);
         }
 
         public Node[] childNodes() {
-            return new Node[] { this.target, this.value };
+            return new Node[] { this.receiver, this.arguments, this.value };
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
-            return visitor.visitCallOperatorAndWriteNode(this);
+            return visitor.visitCallOperatorWriteNode(this);
         }
     }
 
@@ -1002,61 +1167,64 @@ public abstract class Nodes {
     // 
     //     foo.bar ||= value
     //     ^^^^^^^^^^^^^^^^^
-    public static final class CallOperatorOrWriteNode extends Node {
-        public final CallNode target;
-        public final Node value;
+    public static final class CallOrWriteNode extends Node {
+        /** optional (can be null) */
+        public final Node receiver;
+        /** optional (can be null) */
+        public final Location call_operator_loc;
+        /** optional (can be null) */
+        public final Location message_loc;
+        /** optional (can be null) */
+        public final Location opening_loc;
+        /** optional (can be null) */
+        public final ArgumentsNode arguments;
+        /** optional (can be null) */
+        public final Location closing_loc;
+        public final short flags;
+        public final byte[] read_name;
+        public final byte[] write_name;
         public final Location operator_loc;
+        public final Node value;
 
-        public CallOperatorOrWriteNode(CallNode target, Node value, Location operator_loc, int startOffset, int length) {
+        public CallOrWriteNode(Node receiver, Location call_operator_loc, Location message_loc, Location opening_loc, ArgumentsNode arguments, Location closing_loc, short flags, byte[] read_name, byte[] write_name, Location operator_loc, Node value, int startOffset, int length) {
             super(startOffset, length);
-            this.target = target;
-            this.value = value;
+            this.receiver = receiver;
+            this.call_operator_loc = call_operator_loc;
+            this.message_loc = message_loc;
+            this.opening_loc = opening_loc;
+            this.arguments = arguments;
+            this.closing_loc = closing_loc;
+            this.flags = flags;
+            this.read_name = read_name;
+            this.write_name = write_name;
             this.operator_loc = operator_loc;
+            this.value = value;
         }
-                
+        
+        public boolean isSafeNavigation() {
+            return CallNodeFlags.isSafeNavigation(this.flags);
+        }
+
+        public boolean isVariableCall() {
+            return CallNodeFlags.isVariableCall(this.flags);
+        }
+        
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
-            this.target.accept(visitor);
+            if (this.receiver != null) {
+                this.receiver.accept(visitor);
+            }
+            if (this.arguments != null) {
+                this.arguments.accept(visitor);
+            }
             this.value.accept(visitor);
         }
 
         public Node[] childNodes() {
-            return new Node[] { this.target, this.value };
+            return new Node[] { this.receiver, this.arguments, this.value };
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
-            return visitor.visitCallOperatorOrWriteNode(this);
-        }
-    }
-
-    // Represents the use of an assignment operator on a call.
-    // 
-    //     foo.bar += baz
-    //     ^^^^^^^^^^^^^^
-    public static final class CallOperatorWriteNode extends Node {
-        public final CallNode target;
-        public final Location operator_loc;
-        public final Node value;
-        public final byte[] operator;
-
-        public CallOperatorWriteNode(CallNode target, Location operator_loc, Node value, byte[] operator, int startOffset, int length) {
-            super(startOffset, length);
-            this.target = target;
-            this.operator_loc = operator_loc;
-            this.value = value;
-            this.operator = operator;
-        }
-                
-        public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
-            this.target.accept(visitor);
-            this.value.accept(visitor);
-        }
-
-        public Node[] childNodes() {
-            return new Node[] { this.target, this.value };
-        }
-
-        public <T> T accept(AbstractNodeVisitor<T> visitor) {
-            return visitor.visitCallOperatorWriteNode(this);
+            return visitor.visitCallOrWriteNode(this);
         }
     }
 
@@ -1097,9 +1265,11 @@ public abstract class Nodes {
     // when false
     // end
     public static final class CaseNode extends Node {
-        public final Node predicate; // optional
+        /** optional (can be null) */
+        public final Node predicate;
         public final Node[] conditions;
-        public final ElseNode consequent; // optional
+        /** optional (can be null) */
+        public final ElseNode consequent;
         public final Location case_keyword_loc;
         public final Location end_keyword_loc;
 
@@ -1145,9 +1315,12 @@ public abstract class Nodes {
         public final byte[][] locals;
         public final Location class_keyword_loc;
         public final Node constant_path;
-        public final Location inheritance_operator_loc; // optional
-        public final Node superclass; // optional
-        public final Node body; // optional
+        /** optional (can be null) */
+        public final Location inheritance_operator_loc;
+        /** optional (can be null) */
+        public final Node superclass;
+        /** optional (can be null) */
+        public final Node body;
         public final Location end_keyword_loc;
         public final byte[] name;
 
@@ -1187,12 +1360,14 @@ public abstract class Nodes {
     //     @@target &&= value
     //     ^^^^^^^^^^^^^^^^
     public static final class ClassVariableAndWriteNode extends Node {
+        public final byte[] name;
         public final Location name_loc;
         public final Location operator_loc;
         public final Node value;
 
-        public ClassVariableAndWriteNode(Location name_loc, Location operator_loc, Node value, int startOffset, int length) {
+        public ClassVariableAndWriteNode(byte[] name, Location name_loc, Location operator_loc, Node value, int startOffset, int length) {
             super(startOffset, length);
+            this.name = name;
             this.name_loc = name_loc;
             this.operator_loc = operator_loc;
             this.value = value;
@@ -1216,13 +1391,15 @@ public abstract class Nodes {
     //     @@target += value
     //     ^^^^^^^^^^^^^^^^^
     public static final class ClassVariableOperatorWriteNode extends Node {
+        public final byte[] name;
         public final Location name_loc;
         public final Location operator_loc;
         public final Node value;
         public final byte[] operator;
 
-        public ClassVariableOperatorWriteNode(Location name_loc, Location operator_loc, Node value, byte[] operator, int startOffset, int length) {
+        public ClassVariableOperatorWriteNode(byte[] name, Location name_loc, Location operator_loc, Node value, byte[] operator, int startOffset, int length) {
             super(startOffset, length);
+            this.name = name;
             this.name_loc = name_loc;
             this.operator_loc = operator_loc;
             this.value = value;
@@ -1247,12 +1424,14 @@ public abstract class Nodes {
     //     @@target ||= value
     //     ^^^^^^^^^^^^^^^^^^
     public static final class ClassVariableOrWriteNode extends Node {
+        public final byte[] name;
         public final Location name_loc;
         public final Location operator_loc;
         public final Node value;
 
-        public ClassVariableOrWriteNode(Location name_loc, Location operator_loc, Node value, int startOffset, int length) {
+        public ClassVariableOrWriteNode(byte[] name, Location name_loc, Location operator_loc, Node value, int startOffset, int length) {
             super(startOffset, length);
+            this.name = name;
             this.name_loc = name_loc;
             this.operator_loc = operator_loc;
             this.value = value;
@@ -1276,9 +1455,11 @@ public abstract class Nodes {
     //     @@foo
     //     ^^^^^
     public static final class ClassVariableReadNode extends Node {
+        public final byte[] name;
 
-        public ClassVariableReadNode(int startOffset, int length) {
+        public ClassVariableReadNode(byte[] name, int startOffset, int length) {
             super(startOffset, length);
+            this.name = name;
         }
                 
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
@@ -1298,9 +1479,11 @@ public abstract class Nodes {
     //     @@foo, @@bar = baz
     //     ^^^^^  ^^^^^
     public static final class ClassVariableTargetNode extends Node {
+        public final byte[] name;
 
-        public ClassVariableTargetNode(int startOffset, int length) {
+        public ClassVariableTargetNode(byte[] name, int startOffset, int length) {
             super(startOffset, length);
+            this.name = name;
         }
                 
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
@@ -1320,21 +1503,22 @@ public abstract class Nodes {
     //     @@foo = 1
     //     ^^^^^^^^^
     public static final class ClassVariableWriteNode extends Node {
+        public final byte[] name;
         public final Location name_loc;
-        public final Node value; // optional
-        public final Location operator_loc; // optional
+        public final Node value;
+        /** optional (can be null) */
+        public final Location operator_loc;
 
-        public ClassVariableWriteNode(Location name_loc, Node value, Location operator_loc, int startOffset, int length) {
+        public ClassVariableWriteNode(byte[] name, Location name_loc, Node value, Location operator_loc, int startOffset, int length) {
             super(startOffset, length);
+            this.name = name;
             this.name_loc = name_loc;
             this.value = value;
             this.operator_loc = operator_loc;
         }
                 
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
-            if (this.value != null) {
-                this.value.accept(visitor);
-            }
+            this.value.accept(visitor);
         }
 
         public Node[] childNodes() {
@@ -1351,12 +1535,14 @@ public abstract class Nodes {
     //     Target &&= value
     //     ^^^^^^^^^^^^^^^^
     public static final class ConstantAndWriteNode extends Node {
+        public final byte[] name;
         public final Location name_loc;
         public final Location operator_loc;
         public final Node value;
 
-        public ConstantAndWriteNode(Location name_loc, Location operator_loc, Node value, int startOffset, int length) {
+        public ConstantAndWriteNode(byte[] name, Location name_loc, Location operator_loc, Node value, int startOffset, int length) {
             super(startOffset, length);
+            this.name = name;
             this.name_loc = name_loc;
             this.operator_loc = operator_loc;
             this.value = value;
@@ -1380,13 +1566,15 @@ public abstract class Nodes {
     //     Target += value
     //     ^^^^^^^^^^^^^^^
     public static final class ConstantOperatorWriteNode extends Node {
+        public final byte[] name;
         public final Location name_loc;
         public final Location operator_loc;
         public final Node value;
         public final byte[] operator;
 
-        public ConstantOperatorWriteNode(Location name_loc, Location operator_loc, Node value, byte[] operator, int startOffset, int length) {
+        public ConstantOperatorWriteNode(byte[] name, Location name_loc, Location operator_loc, Node value, byte[] operator, int startOffset, int length) {
             super(startOffset, length);
+            this.name = name;
             this.name_loc = name_loc;
             this.operator_loc = operator_loc;
             this.value = value;
@@ -1411,12 +1599,14 @@ public abstract class Nodes {
     //     Target ||= value
     //     ^^^^^^^^^^^^^^^^
     public static final class ConstantOrWriteNode extends Node {
+        public final byte[] name;
         public final Location name_loc;
         public final Location operator_loc;
         public final Node value;
 
-        public ConstantOrWriteNode(Location name_loc, Location operator_loc, Node value, int startOffset, int length) {
+        public ConstantOrWriteNode(byte[] name, Location name_loc, Location operator_loc, Node value, int startOffset, int length) {
             super(startOffset, length);
+            this.name = name;
             this.name_loc = name_loc;
             this.operator_loc = operator_loc;
             this.value = value;
@@ -1470,7 +1660,8 @@ public abstract class Nodes {
     //     Foo::Bar
     //     ^^^^^^^^
     public static final class ConstantPathNode extends Node {
-        public final Node parent; // optional
+        /** optional (can be null) */
+        public final Node parent;
         public final Node child;
         public final Location delimiter_loc;
 
@@ -1564,7 +1755,8 @@ public abstract class Nodes {
     //     Foo::Foo, Bar::Bar = baz
     //     ^^^^^^^^  ^^^^^^^^
     public static final class ConstantPathTargetNode extends Node {
-        public final Node parent; // optional
+        /** optional (can be null) */
+        public final Node parent;
         public final Node child;
         public final Location delimiter_loc;
 
@@ -1632,9 +1824,11 @@ public abstract class Nodes {
     //     Foo
     //     ^^^
     public static final class ConstantReadNode extends Node {
+        public final byte[] name;
 
-        public ConstantReadNode(int startOffset, int length) {
+        public ConstantReadNode(byte[] name, int startOffset, int length) {
             super(startOffset, length);
+            this.name = name;
         }
                 
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
@@ -1654,9 +1848,11 @@ public abstract class Nodes {
     //     Foo, Bar = baz
     //     ^^^  ^^^
     public static final class ConstantTargetNode extends Node {
+        public final byte[] name;
 
-        public ConstantTargetNode(int startOffset, int length) {
+        public ConstantTargetNode(byte[] name, int startOffset, int length) {
             super(startOffset, length);
+            this.name = name;
         }
                 
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
@@ -1676,12 +1872,14 @@ public abstract class Nodes {
     //     Foo = 1
     //     ^^^^^^^
     public static final class ConstantWriteNode extends Node {
+        public final byte[] name;
         public final Location name_loc;
         public final Node value;
         public final Location operator_loc;
 
-        public ConstantWriteNode(Location name_loc, Node value, Location operator_loc, int startOffset, int length) {
+        public ConstantWriteNode(byte[] name, Location name_loc, Node value, Location operator_loc, int startOffset, int length) {
             super(startOffset, length);
+            this.name = name;
             this.name_loc = name_loc;
             this.value = value;
             this.operator_loc = operator_loc;
@@ -1707,21 +1905,31 @@ public abstract class Nodes {
     //     ^^^^^^^^^^
     public static final class DefNode extends Node {
         public final int serializedLength;
+        public final byte[] name;
         public final Location name_loc;
-        public final Node receiver; // optional
-        public final ParametersNode parameters; // optional
-        public final Node body; // optional
+        /** optional (can be null) */
+        public final Node receiver;
+        /** optional (can be null) */
+        public final ParametersNode parameters;
+        /** optional (can be null) */
+        public final Node body;
         public final byte[][] locals;
         public final Location def_keyword_loc;
-        public final Location operator_loc; // optional
-        public final Location lparen_loc; // optional
-        public final Location rparen_loc; // optional
-        public final Location equal_loc; // optional
-        public final Location end_keyword_loc; // optional
+        /** optional (can be null) */
+        public final Location operator_loc;
+        /** optional (can be null) */
+        public final Location lparen_loc;
+        /** optional (can be null) */
+        public final Location rparen_loc;
+        /** optional (can be null) */
+        public final Location equal_loc;
+        /** optional (can be null) */
+        public final Location end_keyword_loc;
 
-        public DefNode(int serializedLength, Location name_loc, Node receiver, ParametersNode parameters, Node body, byte[][] locals, Location def_keyword_loc, Location operator_loc, Location lparen_loc, Location rparen_loc, Location equal_loc, Location end_keyword_loc, int startOffset, int length) {
+        public DefNode(int serializedLength, byte[] name, Location name_loc, Node receiver, ParametersNode parameters, Node body, byte[][] locals, Location def_keyword_loc, Location operator_loc, Location lparen_loc, Location rparen_loc, Location equal_loc, Location end_keyword_loc, int startOffset, int length) {
             super(startOffset, length);
             this.serializedLength = serializedLength;
+            this.name = name;
             this.name_loc = name_loc;
             this.receiver = receiver;
             this.parameters = parameters;
@@ -1761,9 +1969,11 @@ public abstract class Nodes {
     //     defined?(a)
     //     ^^^^^^^^^^^
     public static final class DefinedNode extends Node {
-        public final Location lparen_loc; // optional
+        /** optional (can be null) */
+        public final Location lparen_loc;
         public final Node value;
-        public final Location rparen_loc; // optional
+        /** optional (can be null) */
+        public final Location rparen_loc;
         public final Location keyword_loc;
 
         public DefinedNode(Location lparen_loc, Node value, Location rparen_loc, Location keyword_loc, int startOffset, int length) {
@@ -1793,8 +2003,10 @@ public abstract class Nodes {
     //                 ^^^^^^^^^^
     public static final class ElseNode extends Node {
         public final Location else_keyword_loc;
-        public final StatementsNode statements; // optional
-        public final Location end_keyword_loc; // optional
+        /** optional (can be null) */
+        public final StatementsNode statements;
+        /** optional (can be null) */
+        public final Location end_keyword_loc;
 
         public ElseNode(Location else_keyword_loc, StatementsNode statements, Location end_keyword_loc, int startOffset, int length) {
             super(startOffset, length);
@@ -1824,7 +2036,8 @@ public abstract class Nodes {
     //          ^^^^^^
     public static final class EmbeddedStatementsNode extends Node {
         public final Location opening_loc;
-        public final StatementsNode statements; // optional
+        /** optional (can be null) */
+        public final StatementsNode statements;
         public final Location closing_loc;
 
         public EmbeddedStatementsNode(Location opening_loc, StatementsNode statements, Location closing_loc, int startOffset, int length) {
@@ -1886,7 +2099,8 @@ public abstract class Nodes {
     //     end
     public static final class EnsureNode extends Node {
         public final Location ensure_keyword_loc;
-        public final StatementsNode statements; // optional
+        /** optional (can be null) */
+        public final StatementsNode statements;
         public final Location end_keyword_loc;
 
         public EnsureNode(Location ensure_keyword_loc, StatementsNode statements, Location end_keyword_loc, int startOffset, int length) {
@@ -1944,12 +2158,15 @@ public abstract class Nodes {
     //     foo in Foo(*bar, baz, *qux)
     //     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
     public static final class FindPatternNode extends Node {
-        public final Node constant; // optional
+        /** optional (can be null) */
+        public final Node constant;
         public final Node left;
         public final Node[] requireds;
         public final Node right;
-        public final Location opening_loc; // optional
-        public final Location closing_loc; // optional
+        /** optional (can be null) */
+        public final Location opening_loc;
+        /** optional (can be null) */
+        public final Location closing_loc;
 
         public FindPatternNode(Node constant, Node left, Node[] requireds, Node right, Location opening_loc, Location closing_loc, int startOffset, int length) {
             super(startOffset, length);
@@ -1991,8 +2208,10 @@ public abstract class Nodes {
     //     baz if foo .. bar
     //            ^^^^^^^^^^
     public static final class FlipFlopNode extends Node {
-        public final Node left; // optional
-        public final Node right; // optional
+        /** optional (can be null) */
+        public final Node left;
+        /** optional (can be null) */
+        public final Node right;
         public final Location operator_loc;
         public final short flags;
 
@@ -2055,10 +2274,12 @@ public abstract class Nodes {
     public static final class ForNode extends Node {
         public final Node index;
         public final Node collection;
-        public final StatementsNode statements; // optional
+        /** optional (can be null) */
+        public final StatementsNode statements;
         public final Location for_keyword_loc;
         public final Location in_keyword_loc;
-        public final Location do_keyword_loc; // optional
+        /** optional (can be null) */
+        public final Location do_keyword_loc;
         public final Location end_keyword_loc;
 
         public ForNode(Node index, Node collection, StatementsNode statements, Location for_keyword_loc, Location in_keyword_loc, Location do_keyword_loc, Location end_keyword_loc, int startOffset, int length) {
@@ -2141,7 +2362,8 @@ public abstract class Nodes {
     //     super
     //     ^^^^^
     public static final class ForwardingSuperNode extends Node {
-        public final BlockNode block; // optional
+        /** optional (can be null) */
+        public final BlockNode block;
 
         public ForwardingSuperNode(BlockNode block, int startOffset, int length) {
             super(startOffset, length);
@@ -2168,12 +2390,14 @@ public abstract class Nodes {
     //     $target &&= value
     //     ^^^^^^^^^^^^^^^^^
     public static final class GlobalVariableAndWriteNode extends Node {
+        public final byte[] name;
         public final Location name_loc;
         public final Location operator_loc;
         public final Node value;
 
-        public GlobalVariableAndWriteNode(Location name_loc, Location operator_loc, Node value, int startOffset, int length) {
+        public GlobalVariableAndWriteNode(byte[] name, Location name_loc, Location operator_loc, Node value, int startOffset, int length) {
             super(startOffset, length);
+            this.name = name;
             this.name_loc = name_loc;
             this.operator_loc = operator_loc;
             this.value = value;
@@ -2197,13 +2421,15 @@ public abstract class Nodes {
     //     $target += value
     //     ^^^^^^^^^^^^^^^^
     public static final class GlobalVariableOperatorWriteNode extends Node {
+        public final byte[] name;
         public final Location name_loc;
         public final Location operator_loc;
         public final Node value;
         public final byte[] operator;
 
-        public GlobalVariableOperatorWriteNode(Location name_loc, Location operator_loc, Node value, byte[] operator, int startOffset, int length) {
+        public GlobalVariableOperatorWriteNode(byte[] name, Location name_loc, Location operator_loc, Node value, byte[] operator, int startOffset, int length) {
             super(startOffset, length);
+            this.name = name;
             this.name_loc = name_loc;
             this.operator_loc = operator_loc;
             this.value = value;
@@ -2228,12 +2454,14 @@ public abstract class Nodes {
     //     $target ||= value
     //     ^^^^^^^^^^^^^^^^^
     public static final class GlobalVariableOrWriteNode extends Node {
+        public final byte[] name;
         public final Location name_loc;
         public final Location operator_loc;
         public final Node value;
 
-        public GlobalVariableOrWriteNode(Location name_loc, Location operator_loc, Node value, int startOffset, int length) {
+        public GlobalVariableOrWriteNode(byte[] name, Location name_loc, Location operator_loc, Node value, int startOffset, int length) {
             super(startOffset, length);
+            this.name = name;
             this.name_loc = name_loc;
             this.operator_loc = operator_loc;
             this.value = value;
@@ -2257,9 +2485,11 @@ public abstract class Nodes {
     //     $foo
     //     ^^^^
     public static final class GlobalVariableReadNode extends Node {
+        public final byte[] name;
 
-        public GlobalVariableReadNode(int startOffset, int length) {
+        public GlobalVariableReadNode(byte[] name, int startOffset, int length) {
             super(startOffset, length);
+            this.name = name;
         }
                 
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
@@ -2279,9 +2509,11 @@ public abstract class Nodes {
     //     $foo, $bar = baz
     //     ^^^^  ^^^^
     public static final class GlobalVariableTargetNode extends Node {
+        public final byte[] name;
 
-        public GlobalVariableTargetNode(int startOffset, int length) {
+        public GlobalVariableTargetNode(byte[] name, int startOffset, int length) {
             super(startOffset, length);
+            this.name = name;
         }
                 
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
@@ -2301,15 +2533,17 @@ public abstract class Nodes {
     //     $foo = 1
     //     ^^^^^^^^
     public static final class GlobalVariableWriteNode extends Node {
+        public final byte[] name;
         public final Location name_loc;
-        public final Location operator_loc;
         public final Node value;
+        public final Location operator_loc;
 
-        public GlobalVariableWriteNode(Location name_loc, Location operator_loc, Node value, int startOffset, int length) {
+        public GlobalVariableWriteNode(byte[] name, Location name_loc, Node value, Location operator_loc, int startOffset, int length) {
             super(startOffset, length);
+            this.name = name;
             this.name_loc = name_loc;
-            this.operator_loc = operator_loc;
             this.value = value;
+            this.operator_loc = operator_loc;
         }
                 
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
@@ -2364,11 +2598,15 @@ public abstract class Nodes {
     //     foo => { a: 1, b: 2, **c }
     //            ^^^^^^^^^^^^^^^^^^^
     public static final class HashPatternNode extends Node {
-        public final Node constant; // optional
+        /** optional (can be null) */
+        public final Node constant;
         public final Node[] assocs;
-        public final Node kwrest; // optional
-        public final Location opening_loc; // optional
-        public final Location closing_loc; // optional
+        /** optional (can be null) */
+        public final Node kwrest;
+        /** optional (can be null) */
+        public final Location opening_loc;
+        /** optional (can be null) */
+        public final Location closing_loc;
 
         public HashPatternNode(Node constant, Node[] assocs, Node kwrest, Location opening_loc, Location closing_loc, int startOffset, int length) {
             super(startOffset, length);
@@ -2412,11 +2650,15 @@ public abstract class Nodes {
     //     if foo then bar end
     //     ^^^^^^^^^^^^^^^^^^^
     public static final class IfNode extends Node {
-        public final Location if_keyword_loc; // optional
+        /** optional (can be null) */
+        public final Location if_keyword_loc;
         public final Node predicate;
-        public final StatementsNode statements; // optional
-        public final Node consequent; // optional
-        public final Location end_keyword_loc; // optional
+        /** optional (can be null) */
+        public final StatementsNode statements;
+        /** optional (can be null) */
+        public final Node consequent;
+        /** optional (can be null) */
+        public final Location end_keyword_loc;
 
         public IfNode(Location if_keyword_loc, Node predicate, StatementsNode statements, Node consequent, Location end_keyword_loc, int startOffset, int length) {
             super(startOffset, length);
@@ -2482,9 +2724,11 @@ public abstract class Nodes {
     //             ^^^^^^^^^^^
     public static final class InNode extends Node {
         public final Node pattern;
-        public final StatementsNode statements; // optional
+        /** optional (can be null) */
+        public final StatementsNode statements;
         public final Location in_loc;
-        public final Location then_loc; // optional
+        /** optional (can be null) */
+        public final Location then_loc;
 
         public InNode(Node pattern, StatementsNode statements, Location in_loc, Location then_loc, int startOffset, int length) {
             super(startOffset, length);
@@ -2515,12 +2759,14 @@ public abstract class Nodes {
     //     @target &&= value
     //     ^^^^^^^^^^^^^^^^^
     public static final class InstanceVariableAndWriteNode extends Node {
+        public final byte[] name;
         public final Location name_loc;
         public final Location operator_loc;
         public final Node value;
 
-        public InstanceVariableAndWriteNode(Location name_loc, Location operator_loc, Node value, int startOffset, int length) {
+        public InstanceVariableAndWriteNode(byte[] name, Location name_loc, Location operator_loc, Node value, int startOffset, int length) {
             super(startOffset, length);
+            this.name = name;
             this.name_loc = name_loc;
             this.operator_loc = operator_loc;
             this.value = value;
@@ -2544,13 +2790,15 @@ public abstract class Nodes {
     //     @target += value
     //     ^^^^^^^^^^^^^^^^
     public static final class InstanceVariableOperatorWriteNode extends Node {
+        public final byte[] name;
         public final Location name_loc;
         public final Location operator_loc;
         public final Node value;
         public final byte[] operator;
 
-        public InstanceVariableOperatorWriteNode(Location name_loc, Location operator_loc, Node value, byte[] operator, int startOffset, int length) {
+        public InstanceVariableOperatorWriteNode(byte[] name, Location name_loc, Location operator_loc, Node value, byte[] operator, int startOffset, int length) {
             super(startOffset, length);
+            this.name = name;
             this.name_loc = name_loc;
             this.operator_loc = operator_loc;
             this.value = value;
@@ -2575,12 +2823,14 @@ public abstract class Nodes {
     //     @target ||= value
     //     ^^^^^^^^^^^^^^^^^
     public static final class InstanceVariableOrWriteNode extends Node {
+        public final byte[] name;
         public final Location name_loc;
         public final Location operator_loc;
         public final Node value;
 
-        public InstanceVariableOrWriteNode(Location name_loc, Location operator_loc, Node value, int startOffset, int length) {
+        public InstanceVariableOrWriteNode(byte[] name, Location name_loc, Location operator_loc, Node value, int startOffset, int length) {
             super(startOffset, length);
+            this.name = name;
             this.name_loc = name_loc;
             this.operator_loc = operator_loc;
             this.value = value;
@@ -2604,9 +2854,11 @@ public abstract class Nodes {
     //     @foo
     //     ^^^^
     public static final class InstanceVariableReadNode extends Node {
+        public final byte[] name;
 
-        public InstanceVariableReadNode(int startOffset, int length) {
+        public InstanceVariableReadNode(byte[] name, int startOffset, int length) {
             super(startOffset, length);
+            this.name = name;
         }
                 
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
@@ -2626,9 +2878,11 @@ public abstract class Nodes {
     //     @foo, @bar = baz
     //     ^^^^  ^^^^
     public static final class InstanceVariableTargetNode extends Node {
+        public final byte[] name;
 
-        public InstanceVariableTargetNode(int startOffset, int length) {
+        public InstanceVariableTargetNode(byte[] name, int startOffset, int length) {
             super(startOffset, length);
+            this.name = name;
         }
                 
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
@@ -2648,12 +2902,14 @@ public abstract class Nodes {
     //     @foo = 1
     //     ^^^^^^^^
     public static final class InstanceVariableWriteNode extends Node {
+        public final byte[] name;
         public final Location name_loc;
         public final Node value;
         public final Location operator_loc;
 
-        public InstanceVariableWriteNode(Location name_loc, Node value, Location operator_loc, int startOffset, int length) {
+        public InstanceVariableWriteNode(byte[] name, Location name_loc, Node value, Location operator_loc, int startOffset, int length) {
             super(startOffset, length);
+            this.name = name;
             this.name_loc = name_loc;
             this.value = value;
             this.operator_loc = operator_loc;
@@ -2772,9 +3028,11 @@ public abstract class Nodes {
     //     "foo #{bar} baz"
     //     ^^^^^^^^^^^^^^^^
     public static final class InterpolatedStringNode extends Node {
-        public final Location opening_loc; // optional
+        /** optional (can be null) */
+        public final Location opening_loc;
         public final Node[] parts;
-        public final Location closing_loc; // optional
+        /** optional (can be null) */
+        public final Location closing_loc;
 
         public InterpolatedStringNode(Location opening_loc, Node[] parts, Location closing_loc, int startOffset, int length) {
             super(startOffset, length);
@@ -2811,9 +3069,11 @@ public abstract class Nodes {
     //     :"foo #{bar} baz"
     //     ^^^^^^^^^^^^^^^^^
     public static final class InterpolatedSymbolNode extends Node {
-        public final Location opening_loc; // optional
+        /** optional (can be null) */
+        public final Location opening_loc;
         public final Node[] parts;
-        public final Location closing_loc; // optional
+        /** optional (can be null) */
+        public final Location closing_loc;
 
         public InterpolatedSymbolNode(Location opening_loc, Node[] parts, Location closing_loc, int startOffset, int length) {
             super(startOffset, length);
@@ -2921,11 +3181,14 @@ public abstract class Nodes {
     //           ^^^^
     //     end
     public static final class KeywordParameterNode extends Node {
+        public final byte[] name;
         public final Location name_loc;
-        public final Node value; // optional
+        /** optional (can be null) */
+        public final Node value;
 
-        public KeywordParameterNode(Location name_loc, Node value, int startOffset, int length) {
+        public KeywordParameterNode(byte[] name, Location name_loc, Node value, int startOffset, int length) {
             super(startOffset, length);
+            this.name = name;
             this.name_loc = name_loc;
             this.value = value;
         }
@@ -2951,13 +3214,17 @@ public abstract class Nodes {
     //           ^^^
     //     end
     public static final class KeywordRestParameterNode extends Node {
+        /** optional (can be null) */
+        public final byte[] name;
+        /** optional (can be null) */
+        public final Location name_loc;
         public final Location operator_loc;
-        public final Location name_loc; // optional
 
-        public KeywordRestParameterNode(Location operator_loc, Location name_loc, int startOffset, int length) {
+        public KeywordRestParameterNode(byte[] name, Location name_loc, Location operator_loc, int startOffset, int length) {
             super(startOffset, length);
-            this.operator_loc = operator_loc;
+            this.name = name;
             this.name_loc = name_loc;
+            this.operator_loc = operator_loc;
         }
                 
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
@@ -2981,8 +3248,10 @@ public abstract class Nodes {
         public final Location operator_loc;
         public final Location opening_loc;
         public final Location closing_loc;
-        public final BlockParametersNode parameters; // optional
-        public final Node body; // optional
+        /** optional (can be null) */
+        public final BlockParametersNode parameters;
+        /** optional (can be null) */
+        public final Node body;
 
         public LambdaNode(byte[][] locals, Location operator_loc, Location opening_loc, Location closing_loc, BlockParametersNode parameters, Node body, int startOffset, int length) {
             super(startOffset, length);
@@ -3174,16 +3443,16 @@ public abstract class Nodes {
     public static final class LocalVariableWriteNode extends Node {
         public final byte[] name;
         public final int depth;
-        public final Node value;
         public final Location name_loc;
+        public final Node value;
         public final Location operator_loc;
 
-        public LocalVariableWriteNode(byte[] name, int depth, Node value, Location name_loc, Location operator_loc, int startOffset, int length) {
+        public LocalVariableWriteNode(byte[] name, int depth, Location name_loc, Node value, Location operator_loc, int startOffset, int length) {
             super(startOffset, length);
             this.name = name;
             this.depth = depth;
-            this.value = value;
             this.name_loc = name_loc;
+            this.value = value;
             this.operator_loc = operator_loc;
         }
                 
@@ -3288,7 +3557,8 @@ public abstract class Nodes {
         public final byte[][] locals;
         public final Location module_keyword_loc;
         public final Node constant_path;
-        public final Node body; // optional
+        /** optional (can be null) */
+        public final Node body;
         public final Location end_keyword_loc;
         public final byte[] name;
 
@@ -3324,10 +3594,14 @@ public abstract class Nodes {
     //     ^^^^^^^^^^^^^^^^^
     public static final class MultiWriteNode extends Node {
         public final Node[] targets;
-        public final Location operator_loc; // optional
-        public final Node value; // optional
-        public final Location lparen_loc; // optional
-        public final Location rparen_loc; // optional
+        /** optional (can be null) */
+        public final Location operator_loc;
+        /** optional (can be null) */
+        public final Node value;
+        /** optional (can be null) */
+        public final Location lparen_loc;
+        /** optional (can be null) */
+        public final Location rparen_loc;
 
         public MultiWriteNode(Node[] targets, Location operator_loc, Node value, Location lparen_loc, Location rparen_loc, int startOffset, int length) {
             super(startOffset, length);
@@ -3364,7 +3638,8 @@ public abstract class Nodes {
     //     next 1
     //     ^^^^^^
     public static final class NextNode extends Node {
-        public final ArgumentsNode arguments; // optional
+        /** optional (can be null) */
+        public final ArgumentsNode arguments;
         public final Location keyword_loc;
 
         public NextNode(ArgumentsNode arguments, Location keyword_loc, int startOffset, int length) {
@@ -3442,9 +3717,11 @@ public abstract class Nodes {
     //     $1
     //     ^^
     public static final class NumberedReferenceReadNode extends Node {
+        public final int number;
 
-        public NumberedReferenceReadNode(int startOffset, int length) {
+        public NumberedReferenceReadNode(int number, int startOffset, int length) {
             super(startOffset, length);
+            this.number = number;
         }
                 
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
@@ -3530,10 +3807,13 @@ public abstract class Nodes {
         public final Node[] requireds;
         public final Node[] optionals;
         public final Node[] posts;
-        public final RestParameterNode rest; // optional
+        /** optional (can be null) */
+        public final RestParameterNode rest;
         public final Node[] keywords;
-        public final Node keyword_rest; // optional
-        public final BlockParameterNode block; // optional
+        /** optional (can be null) */
+        public final Node keyword_rest;
+        /** optional (can be null) */
+        public final BlockParameterNode block;
 
         public ParametersNode(Node[] requireds, Node[] optionals, Node[] posts, RestParameterNode rest, Node[] keywords, Node keyword_rest, BlockParameterNode block, int startOffset, int length) {
             super(startOffset, length);
@@ -3592,7 +3872,8 @@ public abstract class Nodes {
     //     (10 + 34)
     //     ^^^^^^^^^
     public static final class ParenthesesNode extends Node {
-        public final Node body; // optional
+        /** optional (can be null) */
+        public final Node body;
         public final Location opening_loc;
         public final Location closing_loc;
 
@@ -3688,7 +3969,8 @@ public abstract class Nodes {
     //     END { foo }
     //     ^^^^^^^^^^^
     public static final class PostExecutionNode extends Node {
-        public final StatementsNode statements; // optional
+        /** optional (can be null) */
+        public final StatementsNode statements;
         public final Location keyword_loc;
         public final Location opening_loc;
         public final Location closing_loc;
@@ -3721,7 +4003,8 @@ public abstract class Nodes {
     //     BEGIN { foo }
     //     ^^^^^^^^^^^^^
     public static final class PreExecutionNode extends Node {
-        public final StatementsNode statements; // optional
+        /** optional (can be null) */
+        public final StatementsNode statements;
         public final Location keyword_loc;
         public final Location opening_loc;
         public final Location closing_loc;
@@ -3781,8 +4064,10 @@ public abstract class Nodes {
     //     c if a =~ /left/ ... b =~ /right/
     //          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     public static final class RangeNode extends Node {
-        public final Node left; // optional
-        public final Node right; // optional
+        /** optional (can be null) */
+        public final Node left;
+        /** optional (can be null) */
+        public final Node right;
         public final Location operator_loc;
         public final short flags;
 
@@ -4032,10 +4317,14 @@ public abstract class Nodes {
     public static final class RescueNode extends Node {
         public final Location keyword_loc;
         public final Node[] exceptions;
-        public final Location operator_loc; // optional
-        public final Node reference; // optional
-        public final StatementsNode statements; // optional
-        public final RescueNode consequent; // optional
+        /** optional (can be null) */
+        public final Location operator_loc;
+        /** optional (can be null) */
+        public final Node reference;
+        /** optional (can be null) */
+        public final StatementsNode statements;
+        /** optional (can be null) */
+        public final RescueNode consequent;
 
         public RescueNode(Location keyword_loc, Node[] exceptions, Location operator_loc, Node reference, StatementsNode statements, RescueNode consequent, int startOffset, int length) {
             super(startOffset, length);
@@ -4082,13 +4371,17 @@ public abstract class Nodes {
     //           ^^
     //     end
     public static final class RestParameterNode extends Node {
+        /** optional (can be null) */
+        public final byte[] name;
+        /** optional (can be null) */
+        public final Location name_loc;
         public final Location operator_loc;
-        public final Location name_loc; // optional
 
-        public RestParameterNode(Location operator_loc, Location name_loc, int startOffset, int length) {
+        public RestParameterNode(byte[] name, Location name_loc, Location operator_loc, int startOffset, int length) {
             super(startOffset, length);
-            this.operator_loc = operator_loc;
+            this.name = name;
             this.name_loc = name_loc;
+            this.operator_loc = operator_loc;
         }
                 
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
@@ -4131,7 +4424,8 @@ public abstract class Nodes {
     //     ^^^^^^^^
     public static final class ReturnNode extends Node {
         public final Location keyword_loc;
-        public final ArgumentsNode arguments; // optional
+        /** optional (can be null) */
+        public final ArgumentsNode arguments;
 
         public ReturnNode(Location keyword_loc, ArgumentsNode arguments, int startOffset, int length) {
             super(startOffset, length);
@@ -4185,7 +4479,8 @@ public abstract class Nodes {
         public final Location class_keyword_loc;
         public final Location operator_loc;
         public final Node expression;
-        public final Node body; // optional
+        /** optional (can be null) */
+        public final Node body;
         public final Location end_keyword_loc;
 
         public SingletonClassNode(byte[][] locals, Location class_keyword_loc, Location operator_loc, Node expression, Node body, Location end_keyword_loc, int startOffset, int length) {
@@ -4288,7 +4583,8 @@ public abstract class Nodes {
     //      ^^
     public static final class SplatNode extends Node {
         public final Location operator_loc;
-        public final Node expression; // optional
+        /** optional (can be null) */
+        public final Node expression;
 
         public SplatNode(Location operator_loc, Node expression, int startOffset, int length) {
             super(startOffset, length);
@@ -4378,9 +4674,11 @@ public abstract class Nodes {
     //     "foo #{bar} baz"
     //      ^^^^      ^^^^
     public static final class StringNode extends Node {
-        public final Location opening_loc; // optional
+        /** optional (can be null) */
+        public final Location opening_loc;
         public final Location content_loc;
-        public final Location closing_loc; // optional
+        /** optional (can be null) */
+        public final Location closing_loc;
         public final byte[] unescaped;
 
         public StringNode(Location opening_loc, Location content_loc, Location closing_loc, byte[] unescaped, int startOffset, int length) {
@@ -4412,10 +4710,14 @@ public abstract class Nodes {
     //     ^^^^^^^^^^^^^^
     public static final class SuperNode extends Node {
         public final Location keyword_loc;
-        public final Location lparen_loc; // optional
-        public final ArgumentsNode arguments; // optional
-        public final Location rparen_loc; // optional
-        public final BlockNode block; // optional
+        /** optional (can be null) */
+        public final Location lparen_loc;
+        /** optional (can be null) */
+        public final ArgumentsNode arguments;
+        /** optional (can be null) */
+        public final Location rparen_loc;
+        /** optional (can be null) */
+        public final BlockNode block;
 
         public SuperNode(Location keyword_loc, Location lparen_loc, ArgumentsNode arguments, Location rparen_loc, BlockNode block, int startOffset, int length) {
             super(startOffset, length);
@@ -4452,9 +4754,12 @@ public abstract class Nodes {
     //     %i[foo]
     //        ^^^
     public static final class SymbolNode extends Node {
-        public final Location opening_loc; // optional
-        public final Location value_loc; // optional
-        public final Location closing_loc; // optional
+        /** optional (can be null) */
+        public final Location opening_loc;
+        /** optional (can be null) */
+        public final Location value_loc;
+        /** optional (can be null) */
+        public final Location closing_loc;
         public final byte[] unescaped;
 
         public SymbolNode(Location opening_loc, Location value_loc, Location closing_loc, byte[] unescaped, int startOffset, int length) {
@@ -4538,9 +4843,12 @@ public abstract class Nodes {
     public static final class UnlessNode extends Node {
         public final Location keyword_loc;
         public final Node predicate;
-        public final StatementsNode statements; // optional
-        public final ElseNode consequent; // optional
-        public final Location end_keyword_loc; // optional
+        /** optional (can be null) */
+        public final StatementsNode statements;
+        /** optional (can be null) */
+        public final ElseNode consequent;
+        /** optional (can be null) */
+        public final Location end_keyword_loc;
 
         public UnlessNode(Location keyword_loc, Node predicate, StatementsNode statements, ElseNode consequent, Location end_keyword_loc, int startOffset, int length) {
             super(startOffset, length);
@@ -4584,9 +4892,11 @@ public abstract class Nodes {
     //     ^^^^^^^^^^^^^^^^^^^^
     public static final class UntilNode extends Node {
         public final Location keyword_loc;
-        public final Location closing_loc; // optional
+        /** optional (can be null) */
+        public final Location closing_loc;
         public final Node predicate;
-        public final StatementsNode statements; // optional
+        /** optional (can be null) */
+        public final StatementsNode statements;
         public final short flags;
 
         public UntilNode(Location keyword_loc, Location closing_loc, Node predicate, StatementsNode statements, short flags, int startOffset, int length) {
@@ -4632,7 +4942,8 @@ public abstract class Nodes {
     public static final class WhenNode extends Node {
         public final Location keyword_loc;
         public final Node[] conditions;
-        public final StatementsNode statements; // optional
+        /** optional (can be null) */
+        public final StatementsNode statements;
 
         public WhenNode(Location keyword_loc, Node[] conditions, StatementsNode statements, int startOffset, int length) {
             super(startOffset, length);
@@ -4671,9 +4982,11 @@ public abstract class Nodes {
     //     ^^^^^^^^^^^^^^^^^^^^
     public static final class WhileNode extends Node {
         public final Location keyword_loc;
-        public final Location closing_loc; // optional
+        /** optional (can be null) */
+        public final Location closing_loc;
         public final Node predicate;
-        public final StatementsNode statements; // optional
+        /** optional (can be null) */
+        public final StatementsNode statements;
         public final short flags;
 
         public WhileNode(Location keyword_loc, Location closing_loc, Node predicate, StatementsNode statements, short flags, int startOffset, int length) {
@@ -4746,9 +5059,12 @@ public abstract class Nodes {
     //     ^^^^^^^
     public static final class YieldNode extends Node {
         public final Location keyword_loc;
-        public final Location lparen_loc; // optional
-        public final ArgumentsNode arguments; // optional
-        public final Location rparen_loc; // optional
+        /** optional (can be null) */
+        public final Location lparen_loc;
+        /** optional (can be null) */
+        public final ArgumentsNode arguments;
+        /** optional (can be null) */
+        public final Location rparen_loc;
 
         public YieldNode(Location keyword_loc, Location lparen_loc, ArgumentsNode arguments, Location rparen_loc, int startOffset, int length) {
             super(startOffset, length);

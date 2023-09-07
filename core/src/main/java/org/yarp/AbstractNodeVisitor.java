@@ -56,6 +56,10 @@ public abstract class AbstractNodeVisitor<T> {
         return defaultVisit(node);
     }
 
+    public T visitBlockLocalVariableNode(Nodes.BlockLocalVariableNode node) {
+        return defaultVisit(node);
+    }
+
     public T visitBlockNode(Nodes.BlockNode node) {
         return defaultVisit(node);
     }
@@ -72,19 +76,19 @@ public abstract class AbstractNodeVisitor<T> {
         return defaultVisit(node);
     }
 
+    public T visitCallAndWriteNode(Nodes.CallAndWriteNode node) {
+        return defaultVisit(node);
+    }
+
     public T visitCallNode(Nodes.CallNode node) {
         return defaultVisit(node);
     }
 
-    public T visitCallOperatorAndWriteNode(Nodes.CallOperatorAndWriteNode node) {
-        return defaultVisit(node);
-    }
-
-    public T visitCallOperatorOrWriteNode(Nodes.CallOperatorOrWriteNode node) {
-        return defaultVisit(node);
-    }
-
     public T visitCallOperatorWriteNode(Nodes.CallOperatorWriteNode node) {
+        return defaultVisit(node);
+    }
+
+    public T visitCallOrWriteNode(Nodes.CallOrWriteNode node) {
         return defaultVisit(node);
     }
 
