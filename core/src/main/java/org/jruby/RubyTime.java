@@ -1323,11 +1323,11 @@ public class RubyTime extends RubyObject {
         if (zone != DateTimeZone.UTC) {
             long offset = zone.getOffset(dt.getMillis());
             string.setInternalVariable("offset", runtime.newFixnum(offset / 1000));
+        }
 
-            String zoneName = zone.getShortName(dt.getMillis());
-            if (!TIME_OFFSET_PATTERN.matcher(zoneName).matches()) {
-                string.setInternalVariable("zone", runtime.newString(zoneName));
-            }
+        String zoneName = zone.getShortName(dt.getMillis());
+        if (!TIME_OFFSET_PATTERN.matcher(zoneName).matches()) {
+            string.setInternalVariable("zone", RubyString.newUSASCIIString(runtime, zoneName));
         }
 
         return string;
