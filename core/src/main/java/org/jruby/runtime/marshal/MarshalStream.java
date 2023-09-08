@@ -390,7 +390,12 @@ public class MarshalStream extends FilterOutputStream {
 
         write(TYPE_USERDEF);
 
-        writeAndRegisterSymbol(RubySymbol.newSymbol(runtime, klass.getRealClass().getName()).getBytes());
+        // must_not_be_anonymous
+        RubyClass type = klass.getRealClass();
+        String path = type.getName();
+        mustNotBeAnonymous(runtime, type.isClass() ? "class" : "module", path);
+
+        writeAndRegisterSymbol(RubySymbol.newSymbol(runtime, path).getBytes());
 
         writeString(marshaled.getByteList());
 
@@ -404,17 +409,20 @@ public class MarshalStream extends FilterOutputStream {
     public void writeUserClass(IRubyObject obj, RubyClass type) throws IOException {
         write(TYPE_UCLASS);
         
-        // w_unique
-        if (type.getName().charAt(0) == '#') {
-            Ruby runtime = obj.getRuntime();
+        // must_not_be_anonymous
+        String path = type.getName();
+        mustNotBeAnonymous(runtime, type.isClass() ? "class" : "module", path);
 
-            throw runtime.newTypeError(str(runtime, "can't dump anonymous class ", types(runtime, type)));
-        }
-        
         // w_symbol
-        writeAndRegisterSymbol(RubySymbol.newSymbol(runtime, type.getName()).getBytes());
+        writeAndRegisterSymbol(RubySymbol.newSymbol(runtime, path).getBytes());
     }
-    
+
+    private static void mustNotBeAnonymous(Ruby runtime, String clsOrMod, String path) {
+        if (path.charAt(0) == '#') {
+            throw runtime.newTypeError("can't dump anonymous " + clsOrMod + " " + path);
+        }
+    }
+
     public void dumpVariablesWithEncoding(List<Variable<Object>> vars, IRubyObject obj) throws IOException {
         if (shouldMarshalEncoding(obj)) {
             writeInt(vars.size() + 1); // vars preceded by encoding
