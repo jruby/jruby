@@ -2350,11 +2350,75 @@ public abstract class IRBuilder<U, V, W, X> {
         }
     }
 
+    // If we see define_method as a call we can potentially convert the closure into a method to
+    // avoid the costs associated with executing blocks.
+    private void checkForOptimizableDefineMethod(RubySymbol name, U iter, Operand block) {
+        // We will stuff away the iters AST source into the closure in the hope we can convert
+        // this closure to a method.
+        if (CommonByteLists.DEFINE_METHOD_METHOD.equals(name.getBytes()) && block instanceof WrappedIRClosure) {
+            IRClosure closure = ((WrappedIRClosure) block).getClosure();
+
+            // FIXME: YARP will never do this because it will never be old IterNode.
+            // To convert to a method we need its variable scoping to appear like a normal method.
+            if (!closure.accessesParentsLocalVariables() && iter instanceof IterNode) {
+                closure.setSource((IterNode) iter);
+            }
+        }
+    }
+
+    Variable createCall(Variable result, Operand receiver, CallType callType, RubySymbol name, U argsNode,
+                                U iter, int line, boolean isNewline) {
+        int[] flags = new int[] { 0 };
+        Operand[] args = setupCallArgs(argsNode, flags);
+        // check for refinement calls before building any closure
+        if (callType == FUNCTIONAL) determineIfMaybeRefined(name, args);
+        Operand block = setupCallClosure(iter);
+        determineIfWeNeedLineNumber(line, isNewline); // backtrace needs line of call in case of exception.
+        if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
+            Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
+            if_else(test, tru(),
+                    () -> receiveBreakException(block,
+                            CallInstr.create(scope, callType, result, name, receiver, removeArg(args), block, flags[0])),
+                    () -> receiveBreakException(block,
+                            CallInstr.create(scope, callType, result, name, receiver, args, block, flags[0])));
+        } else {
+            if (callType == FUNCTIONAL) checkForOptimizableDefineMethod(name, iter, block);
+
+            receiveBreakException(block,
+                    CallInstr.create(scope, callType, result, name, receiver, args, block, flags[0]));
+        }
+
+        return result;
+    }
+
     void determineIfWeNeedLineNumber(int line, boolean isNewline) {
         if (line != lastProcessedLineNum) { // Do not emit multiple line number instrs for the same line
             needsLineNumInfo = isNewline ? LineInfo.Coverage : LineInfo.Backtrace;
             lastProcessedLineNum = line;
         }
+    }
+
+    // FIXME: This needs to be called on super/zsuper too
+    private void determineIfMaybeRefined(RubySymbol methodName, Operand[] args) {
+        IRScope outerScope = scope.getNearestTopLocalVariableScope();
+
+        // 'using single_mod_arg' possible nearly everywhere but method scopes.
+        boolean refinement = false;
+        if (!(outerScope instanceof IRMethod)) {
+            ByteList methodBytes = methodName.getBytes();
+            if (args.length == 1) {
+                refinement = isRefinementCall(methodBytes);
+            } else if (args.length == 2
+                    && CommonByteLists.SEND.equal(methodBytes)) {
+                if (args[0] instanceof Symbol) {
+                    Symbol sendName = (Symbol) args[0];
+                    methodBytes = sendName.getBytes();
+                    refinement = isRefinementCall(methodBytes);
+                }
+            }
+        }
+
+        if (refinement) scope.setIsMaybeUsingRefinements();
     }
 
     CallInstr determineSuperInstr(Variable result, Operand[] args, Operand block, int flags,
@@ -2386,6 +2450,12 @@ public abstract class IRBuilder<U, V, W, X> {
 
     public IRManager getManager() {
         return manager;
+    }
+
+    private static boolean isRefinementCall(ByteList methodBytes) {
+        return CommonByteLists.USING_METHOD.equals(methodBytes)
+                // FIXME: This sets the bit for the whole module, but really only the refine block needs it
+                || CommonByteLists.REFINE_METHOD.equals(methodBytes);
     }
 
     Operand processEnsureRescueBlocks(Operand retVal) {

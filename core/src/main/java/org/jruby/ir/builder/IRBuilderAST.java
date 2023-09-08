@@ -48,7 +48,6 @@ import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.Symbol;
 import org.jruby.ir.operands.SymbolProc;
 import org.jruby.ir.operands.UndefinedValue;
-import org.jruby.ir.operands.UnexecutableNil;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.parser.StaticScope;
@@ -127,8 +126,6 @@ import static org.jruby.util.RubyStringBuilder.str;
 // this is not a big deal.  Think this through!
 
 public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyNode> {
-    static final UnexecutableNil U_NIL = UnexecutableNil.U_NIL;
-
     public static Node buildAST(boolean isCommandLineScript, String arg) {
         Ruby ruby = Ruby.getGlobalRuntime();
 
@@ -838,31 +835,6 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             addInstr(new LabelInstr(lazyLabel));
             addInstr(new CopyInstr(result, nil()));
             addInstr(new LabelInstr(endLabel));
-        }
-
-        return result;
-    }
-
-    private Variable createCall(Variable result, Operand receiver, CallType callType, RubySymbol name, Node argsNode,
-                            Node iter, int line, boolean isNewline) {
-        int[] flags = new int[] { 0 };
-        Operand[] args = setupCallArgs(argsNode, flags);
-        // check for refinement calls before building any closure
-        if (callType == FUNCTIONAL) determineIfMaybeRefined(name, args);
-        Operand block = setupCallClosure(iter);
-        determineIfWeNeedLineNumber(line, isNewline); // backtrace needs line of call in case of exception.
-        if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
-            Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
-            if_else(test, tru(),
-                    () -> receiveBreakException(block,
-                            CallInstr.create(scope, callType, result, name, receiver, removeArg(args), block, flags[0])),
-                    () -> receiveBreakException(block,
-                            CallInstr.create(scope, callType, result, name, receiver, args, block, flags[0])));
-        } else {
-            if (callType == FUNCTIONAL) checkForOptimizableDefineMethod(name, iter, block);
-
-            receiveBreakException(block,
-                    CallInstr.create(scope, callType, result, name, receiver, args, block, flags[0]));
         }
 
         return result;
@@ -2397,21 +2369,6 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
                 node.getLine(), node.isNewline());
     }
 
-    // If we see define_method as a call we can potentially convert the closure into a method to
-    // avoid the costs associated with executing blocks.
-    private static void checkForOptimizableDefineMethod(RubySymbol name, Node iter, Operand block) {
-        // We will stuff away the iters AST source into the closure in the hope we can convert
-        // this closure to a method.
-        if (CommonByteLists.DEFINE_METHOD_METHOD.equals(name.getBytes()) && block instanceof WrappedIRClosure) {
-            IRClosure closure = ((WrappedIRClosure) block).getClosure();
-
-            // To convert to a method we need its variable scoping to appear like a normal method.
-            if (!closure.accessesParentsLocalVariables() && iter instanceof IterNode) {
-                closure.setSource((IterNode) iter);
-            }
-        }
-    }
-
     Operand setupCallClosure(Node node) {
         if (node == null) return NullBlock.INSTANCE;
 
@@ -2429,35 +2386,6 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             default:
                 throw notCompilable("ERROR: Encountered a method with a non-block, non-blockpass iter node", node);
         }
-    }
-
-    // FIXME: This needs to be called on super/zsuper too
-    private void determineIfMaybeRefined(RubySymbol methodName, Operand[] args) {
-        IRScope outerScope = scope.getNearestTopLocalVariableScope();
-
-        // 'using single_mod_arg' possible nearly everywhere but method scopes.
-        boolean refinement = false;
-        if (!(outerScope instanceof IRMethod)) {
-            ByteList methodBytes = methodName.getBytes();
-            if (args.length == 1) {
-                refinement = isRefinementCall(methodBytes);
-            } else if (args.length == 2
-                    && CommonByteLists.SEND.equal(methodBytes)) {
-                if (args[0] instanceof Symbol) {
-                    Symbol sendName = (Symbol) args[0];
-                    methodBytes = sendName.getBytes();
-                    refinement = isRefinementCall(methodBytes);
-                }
-            }
-        }
-
-        if (refinement) scope.setIsMaybeUsingRefinements();
-    }
-
-    private static boolean isRefinementCall(ByteList methodBytes) {
-        return CommonByteLists.USING_METHOD.equals(methodBytes)
-                // FIXME: This sets the bit for the whole module, but really only the refine block needs it
-                || CommonByteLists.REFINE_METHOD.equals(methodBytes);
     }
 
     public Operand buildFixnum(FixnumNode node) {

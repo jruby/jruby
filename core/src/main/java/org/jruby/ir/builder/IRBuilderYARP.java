@@ -505,7 +505,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         } else {
             block = NullBlock.INSTANCE;
         }
-        Operand[] finalArgs = args;
+        Operand[] finalArgs = args; // for lambda to see
 
         if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
             Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
