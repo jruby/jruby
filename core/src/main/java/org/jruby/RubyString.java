@@ -1051,6 +1051,19 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
             this.file = file;
             this.line = line;
+
+            // set flag for code that does not use isFrozen
+            setFrozen(true);
+        }
+
+        @Override
+        public boolean isFrozen() {
+            return true;
+        }
+
+        @Override
+        public void setFrozen(boolean frozen) {
+            // ignore, cannot be unfrozen
         }
 
         @Override
