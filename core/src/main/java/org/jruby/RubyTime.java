@@ -1305,18 +1305,18 @@ public class RubyTime extends RubyObject {
         if (nanosec != 0) {
             string.setInternalVariable("nano_num", runtime.newFixnum(nanosec));
             string.setInternalVariable("nano_den", runtime.newFixnum(1));
-        }
 
-        // submicro for 1.9.1 compat
-        byte[] submicro = new byte[2];
-        int len = 2;
-        submicro[1] = (byte)((nanosec % 10) << 4);
-        nanosec /= 10;
-        submicro[0] = (byte)(nanosec % 10);
-        nanosec /= 10;
-        submicro[0] |= (byte)((nanosec % 10) << 4);
-        if (submicro[1] == 0) len = 1;
-        string.setInternalVariable("submicro", RubyString.newString(runtime, submicro, 0, len));
+            // submicro for 1.9.1 compat
+            byte[] submicro = new byte[2];
+            int len = 2;
+            submicro[1] = (byte) ((nanosec % 10) << 4);
+            nanosec /= 10;
+            submicro[0] = (byte) (nanosec % 10);
+            nanosec /= 10;
+            submicro[0] |= (byte) ((nanosec % 10) << 4);
+            if (submicro[1] == 0) len = 1;
+            string.setInternalVariable("submicro", RubyString.newString(runtime, submicro, 0, len));
+        }
 
         // time zone
         final DateTimeZone zone = dt.getZone();
