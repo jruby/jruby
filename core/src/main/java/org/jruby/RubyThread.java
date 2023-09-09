@@ -83,6 +83,7 @@ import org.jruby.runtime.ExecutionContext;
 import org.jruby.runtime.backtrace.FrameType;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.load.LoadService;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.BlockingIO;
@@ -496,7 +497,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         @JRubyMethod
         public IRubyObject absolute_path(ThreadContext context) {
-            return context.runtime.newString(element.getFileName());
+            Ruby runtime = context.runtime;
+            return runtime.newString(
+                    runtime.getLoadService().getPathForLocation(element.getFileName()));
         }
 
         @JRubyMethod
