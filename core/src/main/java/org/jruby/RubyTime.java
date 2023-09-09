@@ -410,7 +410,9 @@ public class RubyTime extends RubyObject {
         // validate_zone_name
         zoneName = zoneName.trim();
 
-        String zone = zoneName + offset;
+        String zone = zoneName;
+
+        if (offset != 0) zone = zone + offset;
 
         DateTimeZone cachedZone = runtime.getTimezoneCache().get(zone);
         if (cachedZone != null) {
@@ -431,9 +433,13 @@ public class RubyTime extends RubyObject {
     private static DateTimeZone timeZoneWithOffset(String zoneName, int offset) {
         if (zoneName.isEmpty()) {
             return DateTimeZone.forOffsetMillis(offset);
-        } else {
-            return new FixedDateTimeZone(zoneName, null, offset, offset);
+        } else if (offset == 0) {
+            DateTimeZone zone = DateTimeZone.forID(zoneName);
+
+            if (zone != null) return zone;
         }
+
+        return new FixedDateTimeZone(zoneName, null, offset, offset);
     }
 
     public RubyTime(Ruby runtime, RubyClass rubyClass) {
