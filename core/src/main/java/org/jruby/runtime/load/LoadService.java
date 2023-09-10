@@ -192,6 +192,9 @@ public class LoadService {
     protected final Ruby runtime;
     protected LibrarySearcher librarySearcher;
 
+    protected String mainScript;
+    protected String mainScriptPath;
+
     public LoadService(Ruby runtime) {
         this.runtime = runtime;
         if (RubyInstanceConfig.DEBUG_LOAD_TIMINGS) {
@@ -1026,6 +1029,37 @@ public class LoadService {
             }
         }
         return resolveLoadName(foundResource, previousPath);
+    }
+
+    public String getMainScript() {
+        return mainScript;
+    }
+
+    public String getMainScriptPath() {
+        return mainScriptPath;
+    }
+
+    public void setMainScript(String filename, String cwd) {
+        this.mainScript = filename;
+        File mainFile = new File(filename);
+
+        if (!mainFile.isAbsolute()) {
+            mainFile = new File(cwd, filename);
+        }
+
+        if (mainFile.exists()) {
+            this.mainScriptPath = mainFile.getAbsolutePath();
+        } else {
+            this.mainScriptPath = filename;
+        }
+    }
+
+    public String getPathForLocation(String filename) {
+        if (filename.equals(mainScript)) {
+            return mainScriptPath;
+        }
+
+        return filename;
     }
 
     //<editor-fold desc="Deprecated" defaultstate="collapsed">
