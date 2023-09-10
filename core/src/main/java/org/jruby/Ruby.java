@@ -936,6 +936,9 @@ public final class Ruby implements Constantizable {
         getGlobalVariables().define("$PROGRAM_NAME", d, GLOBAL);
         getGlobalVariables().define("$0", d, GLOBAL);
 
+        // set main script and canonical path for require_relative use
+        loadService.setMainScript(filename, getCurrentDirectory());
+
         for (Map.Entry<String, String> entry : config.getOptionGlobals().entrySet()) {
             final IRubyObject varvalue;
             if (entry.getValue() != null) {
