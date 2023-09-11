@@ -448,8 +448,12 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         // FIXME: This is not processing ensure.  YARP is laying this out differently.
         if (node.rescue_clause != null) {
             RescueNode rescue = node.rescue_clause;
+            Node ensureBody = node.ensure_clause != null ? node.ensure_clause.statements : null;
             return buildEnsureInternal(node.statements, node.else_clause, rescue.exceptions, rescue.statements,
-                    rescue.consequent, false, null, null, true);
+                    rescue.consequent, false, ensureBody, true);
+        } else if (node.ensure_clause != null) {
+            EnsureNode ensure = node.ensure_clause;
+            return buildEnsureInternal(node.statements, null, null, null, null, false, ensure.statements, false);
         }
         return build(node.statements);
     }
@@ -1373,7 +1377,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     }
 
     private Operand buildRescueModifier(RescueModifierNode node) {
-        return buildEnsureInternal(node.expression, null, null, node.rescue_expression, null, true, null, null, true);
+        return buildEnsureInternal(node.expression, null, null, node.rescue_expression, null, true, null, true);
     }
 
     private Operand buildRetry(RetryNode node) {

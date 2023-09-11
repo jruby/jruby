@@ -172,7 +172,7 @@ public abstract class IRBuilder<U, V, W, X> {
 
     // FIXME: weird confused method of two different things with same overall logic.  Refactor later.
     Operand buildEnsureInternal(U body, U elseNode, U[] exceptions, U rescueBody, X optRescue, boolean isModifier,
-                                       U ensureBodyNode, U ensureNode, boolean isRescue) {
+                                U ensureNode, boolean isRescue) {
         // Save $!
         final Variable savedGlobalException = temp();
         addInstr(new GetGlobalVariableInstr(savedGlobalException, symbol("$!")));
@@ -208,7 +208,7 @@ public abstract class IRBuilder<U, V, W, X> {
         if (isRescue) {
             rv = buildRescueInternal(body, elseNode, exceptions, rescueBody, optRescue, isModifier, ebi);
         } else {
-            rv = build(ensureBodyNode);
+            rv = build(body);
         }
 
         // End of protected region
