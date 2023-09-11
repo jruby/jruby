@@ -376,6 +376,10 @@ public abstract class AbstractNodeVisitor<T> {
         return defaultVisit(node);
     }
 
+    public T visitMultiTargetNode(Nodes.MultiTargetNode node) {
+        return defaultVisit(node);
+    }
+
     public T visitMultiWriteNode(Nodes.MultiWriteNode node) {
         return defaultVisit(node);
     }

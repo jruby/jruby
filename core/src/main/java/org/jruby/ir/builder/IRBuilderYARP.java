@@ -67,6 +67,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
 
         if (parent != null) source = ((IRBuilderYARP) parent).source;
         staticScope = scope.getStaticScope();
+        staticScope.setFile(scope.getFile()); // staticScope and IRScope contain the same field.
     }
 
     @Override

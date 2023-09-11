@@ -276,11 +276,11 @@ public abstract class Nodes {
         // i - ignores the case of characters when matching
         public static final short IGNORE_CASE = 1 << 0;
 
-        // m - allows $ to match the end of lines within strings
-        public static final short MULTI_LINE = 1 << 1;
-
         // x - ignores whitespace and allows comments in regular expressions
-        public static final short EXTENDED = 1 << 2;
+        public static final short EXTENDED = 1 << 1;
+
+        // m - allows $ to match the end of lines within strings
+        public static final short MULTI_LINE = 1 << 2;
 
         // e - forces the EUC-JP encoding
         public static final short EUC_JP = 1 << 3;
@@ -301,12 +301,12 @@ public abstract class Nodes {
             return (flags & IGNORE_CASE) != 0;
         }
 
-        public static boolean isMultiLine(short flags) {
-            return (flags & MULTI_LINE) != 0;
-        }
-
         public static boolean isExtended(short flags) {
             return (flags & EXTENDED) != 0;
+        }
+
+        public static boolean isMultiLine(short flags) {
+            return (flags & MULTI_LINE) != 0;
         }
 
         public static boolean isEucJp(short flags) {
@@ -358,12 +358,12 @@ public abstract class Nodes {
             return (flags & IGNORE_CASE) != 0;
         }
 
-        public boolean isMultiLine() {
-            return (flags & MULTI_LINE) != 0;
-        }
-
         public boolean isExtended() {
             return (flags & EXTENDED) != 0;
+        }
+
+        public boolean isMultiLine() {
+            return (flags & MULTI_LINE) != 0;
         }
 
         public boolean isEucJp() {
@@ -2972,12 +2972,12 @@ public abstract class Nodes {
             return RegularExpressionFlags.isIgnoreCase(this.flags);
         }
 
-        public boolean isMultiLine() {
-            return RegularExpressionFlags.isMultiLine(this.flags);
-        }
-
         public boolean isExtended() {
             return RegularExpressionFlags.isExtended(this.flags);
+        }
+
+        public boolean isMultiLine() {
+            return RegularExpressionFlags.isMultiLine(this.flags);
         }
 
         public boolean isEucJp() {
@@ -3591,23 +3591,17 @@ public abstract class Nodes {
     // Represents a multi-target expression.
     // 
     //     a, b, c = 1, 2, 3
-    //     ^^^^^^^^^^^^^^^^^
-    public static final class MultiWriteNode extends Node {
+    //     ^^^^^^^
+    public static final class MultiTargetNode extends Node {
         public final Node[] targets;
-        /** optional (can be null) */
-        public final Location operator_loc;
-        /** optional (can be null) */
-        public final Node value;
         /** optional (can be null) */
         public final Location lparen_loc;
         /** optional (can be null) */
         public final Location rparen_loc;
 
-        public MultiWriteNode(Node[] targets, Location operator_loc, Node value, Location lparen_loc, Location rparen_loc, int startOffset, int length) {
+        public MultiTargetNode(Node[] targets, Location lparen_loc, Location rparen_loc, int startOffset, int length) {
             super(startOffset, length);
             this.targets = targets;
-            this.operator_loc = operator_loc;
-            this.value = value;
             this.lparen_loc = lparen_loc;
             this.rparen_loc = rparen_loc;
         }
@@ -3616,9 +3610,44 @@ public abstract class Nodes {
             for (Nodes.Node child : this.targets) {
                 child.accept(visitor);
             }
-            if (this.value != null) {
-                this.value.accept(visitor);
+        }
+
+        public Node[] childNodes() {
+            return this.targets;
+        }
+
+        public <T> T accept(AbstractNodeVisitor<T> visitor) {
+            return visitor.visitMultiTargetNode(this);
+        }
+    }
+
+    // Represents a write to a multi-target expression.
+    // 
+    //     a, b, c = 1, 2, 3
+    //     ^^^^^^^^^^^^^^^^^
+    public static final class MultiWriteNode extends Node {
+        public final Node[] targets;
+        /** optional (can be null) */
+        public final Location lparen_loc;
+        /** optional (can be null) */
+        public final Location rparen_loc;
+        public final Location operator_loc;
+        public final Node value;
+
+        public MultiWriteNode(Node[] targets, Location lparen_loc, Location rparen_loc, Location operator_loc, Node value, int startOffset, int length) {
+            super(startOffset, length);
+            this.targets = targets;
+            this.lparen_loc = lparen_loc;
+            this.rparen_loc = rparen_loc;
+            this.operator_loc = operator_loc;
+            this.value = value;
+        }
+                
+        public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
+            for (Nodes.Node child : this.targets) {
+                child.accept(visitor);
             }
+            this.value.accept(visitor);
         }
 
         public Node[] childNodes() {
@@ -4172,12 +4201,12 @@ public abstract class Nodes {
             return RegularExpressionFlags.isIgnoreCase(this.flags);
         }
 
-        public boolean isMultiLine() {
-            return RegularExpressionFlags.isMultiLine(this.flags);
-        }
-
         public boolean isExtended() {
             return RegularExpressionFlags.isExtended(this.flags);
+        }
+
+        public boolean isMultiLine() {
+            return RegularExpressionFlags.isMultiLine(this.flags);
         }
 
         public boolean isEucJp() {
