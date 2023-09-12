@@ -404,12 +404,11 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         } else if (node instanceof ClassVariableTargetNode) {
             addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), symbol(((ClassVariableTargetNode) node).name), rhsVal));
         } else if (node instanceof ConstantPathTargetNode) {
-            Operand parent = build(((ConstantPathTargetNode) node).parent);
+            Operand parent = buildModuleParent(((ConstantPathTargetNode) node).parent);
             // FIXME can this be anything else for child?  calls for child will just end up being callnodes.
             addInstr(new PutConstInstr(parent, symbol((((ConstantTargetNode) ((ConstantPathTargetNode) node).child)).name), rhsVal));
         } else if (node instanceof ConstantTargetNode) {
-            // FIXME: is this always current module?
-            addInstr(new PutConstInstr(createCurrentModuleVariable(), symbol(((ConstantTargetNode) node).name), rhsVal));
+            addInstr(new PutConstInstr(getCurrentModuleVariable(), symbol(((ConstantTargetNode) node).name), rhsVal));
         } else if (node instanceof LocalVariableTargetNode) {
             LocalVariableTargetNode variable = (LocalVariableTargetNode) node;
             copy(getLocalVariable(symbol(variable.name), variable.depth), rhsVal);
@@ -427,6 +426,10 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         } else {
             throw notCompilable("Can't build assignment node", node);
         }
+    }
+
+    private Operand buildModuleParent(Node parent) {
+        return parent == null ? getCurrentModuleVariable() : build(parent);
     }
 
     // FIXME: no kwargs logic (can there be with attrassign?)
@@ -739,7 +742,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
 
     // Multiple assignments provide the value otherwise it is grabbed from .value on the node.
     private Operand buildConstantWritePath(ConstantPathNode path, Operand value) {
-        return putConstant(build(path.parent), symbol(((ConstantReadNode) path.child).name), value);
+        return putConstant(buildModuleParent(path.parent), symbol(((ConstantReadNode) path.child).name), value);
     }
 
     private Operand buildDef(DefNode node) {

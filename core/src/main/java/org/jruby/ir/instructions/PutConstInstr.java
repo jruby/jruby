@@ -26,7 +26,11 @@ public class PutConstInstr extends PutInstr implements FixedArityInstr {
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         IRubyObject value = (IRubyObject) getValue().retrieve(context, self, currScope, currDynScope, temp);
-        RubyModule module = (RubyModule) getTarget().retrieve(context, self, currScope, currDynScope, temp);
+        IRubyObject target = (IRubyObject) getTarget().retrieve(context, self, currScope, currDynScope, temp);
+        if (!(target instanceof RubyModule)) {
+            System.out.println("EHEEeH");
+        }
+        RubyModule module = (RubyModule) target;
 
         assert module != null : "MODULE should always be something";
 
