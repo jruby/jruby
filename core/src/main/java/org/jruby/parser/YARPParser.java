@@ -26,7 +26,7 @@ public class YARPParser extends Parser {
         super(runtime);
 
         String path = runtime.getInstanceConfig().getJRubyHome() + "/lib/libyarp.so";
-        System.out.println("Binding to " + path);
+        //System.out.println("Binding to " + path);
         yarpLibrary = LibraryLoader.create(YARPParserBindings.class).load(path);
     }
 
