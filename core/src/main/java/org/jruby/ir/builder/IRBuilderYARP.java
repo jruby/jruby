@@ -1662,7 +1662,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             RestParameterNode restArgNode = args.rest;
             if (scope instanceof IRMethod) {
                 // FIXME: how do we annotate generated AST types to have isAnonymous etc...
-                if (restArgNode.name_loc == null) {
+                if (restArgNode.name == null) {
                     addArgumentDescription(ArgumentType.anonrest, symbol("*"));
                 } else {
                     addArgumentDescription(ArgumentType.rest, symbol(restArgNode.name));
@@ -1801,7 +1801,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             // Get rid of one level of array wrapping
             if (args != null && args.length == 1) {
                 // We should not unwrap if it is a keyword argument.
-                if (!(args[0] instanceof HashNode) || ((HashNode) args[0]).opening_loc != null) {
+                if (!(args[0] instanceof KeywordHashNode)) {
                     unwrap = false;
                 }
             }
@@ -1928,10 +1928,6 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     @Override
     boolean isLiteralString(Node node) {
         return node instanceof StringNode;
-    }
-
-    boolean isLiteralHash(Node node) {
-        return node instanceof HashNode && ((HashNode) node).opening_loc != null;
     }
 
     // FIXME: This only seems to be used in opelasgnor on the first element (lhs) but it is very unclear what is possible here.
