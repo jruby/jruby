@@ -462,8 +462,10 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     }
 
     private Operand buildBlock(BlockNode node) {
-        return buildIter(node.parameters, node.body, createStaticScopeFrom(node.locals, StaticScope.Type.BLOCK),
-                calculateSignature(node.parameters), getLine(node), getEndLine(node));
+        StaticScope staticScope = createStaticScopeFrom(node.locals, StaticScope.Type.BLOCK);
+        Signature signature = calculateSignature(node.parameters);
+        staticScope.setSignature(signature);
+        return buildIter(node.parameters, node.body, staticScope, signature, getLine(node), getEndLine(node));
     }
 
     // FIXME: This is used for both for and blocks in AST but we do different path for for in YARP
@@ -752,15 +754,19 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     }
 
     private Operand buildDefn(DefNode node) {
+        // FIXME: due to how lazy methods work we need this set on method before we actually parse the method.
+        StaticScope staticScope = createStaticScopeFrom(node.locals, StaticScope.Type.LOCAL);
+        staticScope.setSignature(calculateSignature(node.parameters));
         LazyMethodDefinition def = new LazyMethodDefinitionYARP(getManager().getRuntime(), source, node);
-        return buildDefn(defineNewMethod(def, symbol(node.name).getBytes(), 0,
-                createStaticScopeFrom(node.locals, StaticScope.Type.LOCAL), true));
+        return buildDefn(defineNewMethod(def, symbol(node.name).getBytes(), 0, staticScope, true));
     }
 
     private Operand buildDefs(DefNode node) {
+        // FIXME: due to how lazy methods work we need this set on method before we actually parse the method.
+        StaticScope staticScope = createStaticScopeFrom(node.locals, StaticScope.Type.LOCAL);
+        staticScope.setSignature(calculateSignature(node.parameters));
         LazyMethodDefinition def = new LazyMethodDefinitionYARP(getManager().getRuntime(), source, node);
-        return buildDefs(node.receiver, defineNewMethod(def, symbol(node.name).getBytes(), 0,
-                createStaticScopeFrom(node.locals, StaticScope.Type.LOCAL), false));
+        return buildDefs(node.receiver, defineNewMethod(def, symbol(node.name).getBytes(), 0, staticScope, false));
     }
 
     private Operand buildElse(ElseNode node) {
@@ -1190,8 +1196,10 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     }
 
     private Operand buildLambda(LambdaNode node) {
-        return buildLambda(node.parameters, node.body, createStaticScopeFrom(node.locals, StaticScope.Type.BLOCK),
-                calculateSignature(node.parameters), getLine(node));
+        StaticScope staticScope = createStaticScopeFrom(node.locals, StaticScope.Type.BLOCK);
+        Signature signature = calculateSignature(node.parameters);
+        staticScope.setSignature(signature);
+        return buildLambda(node.parameters, node.body, staticScope, signature, getLine(node));
     }
 
     private Operand buildLocalVariableRead(LocalVariableReadNode node) {
@@ -1972,8 +1980,9 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         return new ByteList(bytes);
     }
 
-    private Signature calculateSignature(ParametersNode parameters) {
+    public static Signature calculateSignature(ParametersNode parameters) {
         if (parameters == null) return Signature.NO_ARGUMENTS;
+
         int pre = parameters.requireds.length;
         int opt = parameters.optionals.length;
         int post = parameters.posts.length;
@@ -1983,11 +1992,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
 
         int keywordRestIndex = parameters.keyword_rest == null ? -1 : pre + opt + post + kws;
         // FIXME: need to diff opt kws vs req kws
-        Signature signature = new Signature(pre, opt, post, rest, kws, kws, keywordRestIndex);
-
-        scope.getStaticScope().setSignature(signature);
-
-        return signature;
+        return new Signature(pre, opt, post, rest, kws, kws, keywordRestIndex);
     }
 
     private Signature calculateSignature(BlockParametersNode parameters) {
