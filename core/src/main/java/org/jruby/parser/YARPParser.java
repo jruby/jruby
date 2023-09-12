@@ -5,7 +5,9 @@ import jnr.ffi.LibraryLoader;
 import org.jcodings.Encoding;
 import org.jruby.ParseResult;
 import org.jruby.Ruby;
+import org.jruby.exceptions.SyntaxError;
 import org.jruby.lexer.ByteListLexerSource;
+import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.load.LoadServiceResourceInputStream;
 import org.jruby.util.ByteList;
@@ -15,6 +17,7 @@ import org.yarp.YarpParseResult;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.SyncFailedException;
 import java.nio.ByteBuffer;
 
 import static org.jruby.parser.ParserManager.isEval;
@@ -39,7 +42,16 @@ public class YARPParser extends Parser {
         byte[] source = content.bytes();
         byte[] metadata = generateMetadata(blockScope, flags);
         byte[] serialized = parse(source, metadata);
+        return parseInternal(fileName, blockScope, source, serialized);
+    }
+
+    private ParseResult parseInternal(String fileName, DynamicScope blockScope, byte[] source, byte[] serialized) {
         org.yarp.ParseResult res = org.yarp.Loader.load(serialized, new Nodes.Source(source));
+
+        if (res.errors != null && res.errors.length > 0) {
+            // FIXME: need line number from offsets
+            throw runtime.newSyntaxError(fileName + ":" + 1 + ": " + res.errors[0].message);
+        }
 
         ParseResult result = new YarpParseResult(fileName, source, (Nodes.ProgramNode) res.value);
         if (blockScope != null) {
@@ -55,15 +67,9 @@ public class YARPParser extends Parser {
         byte[] source = getSourceAsBytes(fileName, in);
         byte[] metadata = generateMetadata(blockScope, flags);
         byte[] serialized = parse(source, metadata);
-        org.yarp.ParseResult res = org.yarp.Loader.load(serialized, new Nodes.Source(source));
-
-        ParseResult result = new YarpParseResult(fileName, source, (Nodes.ProgramNode) res.value);
-        if (blockScope != null) {
-            result.getStaticScope().setEnclosingScope(blockScope.getStaticScope());
-        }
-
-        return result;
+        return parseInternal(fileName, blockScope, source, serialized);
     }
+
 
     private byte[] getSourceAsBytes(String fileName, InputStream in) {
         if (in instanceof LoadServiceResourceInputStream) {
