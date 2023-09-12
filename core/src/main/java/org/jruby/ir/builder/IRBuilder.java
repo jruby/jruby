@@ -1031,6 +1031,7 @@ public abstract class IRBuilder<U, V, W, X> {
     abstract U[] exceptionNodesFor(X node);
     abstract U bodyFor(X node);
     abstract X optRescueFor(X node);
+    abstract U referenceFor(X node);
     abstract boolean isSideEffectFree(final U node);
     abstract boolean isErrorInfoGlobal(final U body);
     /**
@@ -1880,7 +1881,8 @@ public abstract class IRBuilder<U, V, W, X> {
         // Uncaught exception -- build other rescue nodes or rethrow!
         addInstr(new LabelInstr(uncaughtLabel));
         if (consequent != null) {
-            buildRescueBodyInternal(exceptionNodesFor(consequent), bodyFor(consequent), optRescueFor(consequent), rv, exc, endLabel, reference);
+            buildRescueBodyInternal(exceptionNodesFor(consequent), bodyFor(consequent), optRescueFor(consequent), rv,
+                    exc, endLabel, referenceFor(consequent));
         } else {
             addInstr(new ThrowExceptionInstr(exc));
         }

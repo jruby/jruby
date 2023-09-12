@@ -2056,6 +2056,10 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         return true;
     }
 
+    Node referenceFor(RescueNode node) {
+        return node.reference;
+    }
+
     @Override
     Node whenBody(WhenNode arm) {
         return arm.statements;

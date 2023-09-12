@@ -2896,6 +2896,11 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return node.getOptRescueNode();
     }
 
+    @Override
+    Node referenceFor(RescueBodyNode node) {
+        return null;
+    }
+
     public Operand buildRetry(RetryNode node) {
         return buildRetry(node.getLine());
     }
