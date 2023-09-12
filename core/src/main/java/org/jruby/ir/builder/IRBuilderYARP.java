@@ -23,6 +23,7 @@ import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.FrozenString;
 import org.jruby.ir.operands.Hash;
 import org.jruby.ir.operands.Label;
+import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.MutableString;
 import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
@@ -453,10 +454,10 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             RescueNode rescue = node.rescue_clause;
             Node ensureBody = node.ensure_clause != null ? node.ensure_clause.statements : null;
             return buildEnsureInternal(node.statements, node.else_clause, rescue.exceptions, rescue.statements,
-                    rescue.consequent, false, ensureBody, true);
+                    rescue.consequent, false, ensureBody, true, rescue.reference);
         } else if (node.ensure_clause != null) {
             EnsureNode ensure = node.ensure_clause;
-            return buildEnsureInternal(node.statements, null, null, null, null, false, ensure.statements, false);
+            return buildEnsureInternal(node.statements, null, null, null, null, false, ensure.statements, false, null);
         }
         return build(node.statements);
     }
@@ -1381,7 +1382,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     }
 
     private Operand buildRescueModifier(RescueModifierNode node) {
-        return buildEnsureInternal(node.expression, null, null, node.rescue_expression, null, true, null, true);
+        return buildEnsureInternal(node.expression, null, null, node.rescue_expression, null, true, null, true, null);
     }
 
     private Operand buildRetry(RetryNode node) {

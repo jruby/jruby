@@ -2358,7 +2358,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
 
      * ****************************************************************/
     public Operand buildEnsureNode(final EnsureNode ensureNode) {
-        return buildEnsureInternal(ensureNode.getBodyNode(), null, null, null, null, false, ensureNode.getEnsureNode(), false);
+        return buildEnsureInternal(ensureNode.getBodyNode(), null, null, null, null, false, ensureNode.getEnsureNode(),
+                false, null);
     }
 
     public Operand buildFCall(Variable result, FCallNode node) {
@@ -2849,7 +2850,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     public Operand buildRescue(RescueNode node) {
         RescueBodyNode clause = node.getRescueNode();
         return buildEnsureInternal(node.getBodyNode(), node.getElseNode(), exceptionNodesFor(clause), bodyFor(clause),
-                optRescueFor(clause), node instanceof RescueModNode, null, true);
+                optRescueFor(clause), node instanceof RescueModNode, null, true, null);
     }
 
     // FIXME: This MIGHT be able to expand to more complicated expressions like Hash or Array if they

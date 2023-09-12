@@ -170,9 +170,10 @@ public abstract class IRBuilder<U, V, W, X> {
         }
     }
 
-    // FIXME: weird confused method of two different things with same overall logic.  Refactor later.
+    // FIXME: consider mod_rescue, rescue, and pure ensure as separate entries
+    // Note: reference is only passed in via YARP on legacy this is desugared into AST.
     Operand buildEnsureInternal(U body, U elseNode, U[] exceptions, U rescueBody, X optRescue, boolean isModifier,
-                                U ensureNode, boolean isRescue) {
+                                U ensureNode, boolean isRescue, U reference) {
         // Save $!
         final Variable savedGlobalException = temp();
         addInstr(new GetGlobalVariableInstr(savedGlobalException, symbol("$!")));
@@ -206,7 +207,7 @@ public abstract class IRBuilder<U, V, W, X> {
         Variable ensureExprValue = temp();
         Operand rv;
         if (isRescue) {
-            rv = buildRescueInternal(body, elseNode, exceptions, rescueBody, optRescue, isModifier, ebi);
+            rv = buildRescueInternal(body, elseNode, exceptions, rescueBody, optRescue, isModifier, ebi, reference);
         } else {
             rv = build(body);
         }
@@ -1863,7 +1864,8 @@ public abstract class IRBuilder<U, V, W, X> {
         return nil();
     }
 
-    void buildRescueBodyInternal(U[] exceptions, U body, X consequent, Variable rv, Variable exc, Label endLabel) {
+    void buildRescueBodyInternal(U[] exceptions, U body, X consequent, Variable rv, Variable exc, Label endLabel,
+                                 U reference) {
         // Compare and branch as necessary!
         Label uncaughtLabel = getNewLabel();
         Label caughtLabel = getNewLabel();
@@ -1878,13 +1880,14 @@ public abstract class IRBuilder<U, V, W, X> {
         // Uncaught exception -- build other rescue nodes or rethrow!
         addInstr(new LabelInstr(uncaughtLabel));
         if (consequent != null) {
-            buildRescueBodyInternal(exceptionNodesFor(consequent), bodyFor(consequent), optRescueFor(consequent), rv, exc, endLabel);
+            buildRescueBodyInternal(exceptionNodesFor(consequent), bodyFor(consequent), optRescueFor(consequent), rv, exc, endLabel, reference);
         } else {
             addInstr(new ThrowExceptionInstr(exc));
         }
 
         // Caught exception case -- build rescue body
         addInstr(new LabelInstr(caughtLabel));
+        if (reference != null) buildAssignment(reference, exc);  // YARP does not desugar
         Operand x = build(body);
         if (x != U_NIL) { // can be U_NIL if the rescue block has an explicit return
             // Set up node return value 'rv'
@@ -1898,8 +1901,10 @@ public abstract class IRBuilder<U, V, W, X> {
         }
     }
 
+    protected abstract void buildAssignment(U reference, Variable rhs);
+
     Operand buildRescueInternal(U bodyNode, U elseNode, U[] exceptions, U rescueBody,
-                                        X optRescue, boolean isModifier, EnsureBlockInfo ensure) {
+                                        X optRescue, boolean isModifier, EnsureBlockInfo ensure, U reference) {
         boolean needsBacktrace = !canBacktraceBeRemoved(exceptions, rescueBody, optRescue, elseNode, isModifier);
 
         // Labels marking start, else, end of the begin-rescue(-ensure)-end block
@@ -1979,7 +1984,7 @@ public abstract class IRBuilder<U, V, W, X> {
         Variable exc = addResultInstr(new ReceiveRubyExceptionInstr(temp()));
 
         // Build the actual rescue block(s)
-        buildRescueBodyInternal(exceptions, rescueBody, optRescue, rv, exc, rEndLabel);
+        buildRescueBodyInternal(exceptions, rescueBody, optRescue, rv, exc, rEndLabel, reference);
 
         activeRescueBlockStack.pop();
         return rv;
