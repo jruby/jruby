@@ -179,7 +179,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         } else if (node instanceof GlobalVariableWriteNode) {
             return buildGlobalVariableWrite((GlobalVariableWriteNode) node);
         } else if (node instanceof HashNode) {
-            return buildHash((HashNode) node);
+            return buildHash(((HashNode) node).elements, containsVariableAssignment(node));
         } else if (node instanceof IfNode) {
             return buildIf(result, (IfNode) node);
         } else if (node instanceof InNode) {
@@ -351,7 +351,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
 
         for (int i = 0; i < nodes.length; i++) {
             for (; i < nodes.length; i++) {
-                if (nodes[i] instanceof HashNode && hasOnlyRestKwargs((HashNode) nodes[i])) keywordRestSplat = elts[i];
+                if (nodes[i] instanceof HashNode && hasOnlyRestKwargs(((HashNode) nodes[i]).elements)) keywordRestSplat = elts[i];
                 if (nodes[i] instanceof SplatNode) {
                     break;
                 }
@@ -417,7 +417,10 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         } else if (node instanceof InstanceVariableTargetNode) {
             addInstr(new PutFieldInstr(buildSelf(), symbol(((InstanceVariableTargetNode) node).name), rhsVal));
         } else if (node instanceof MultiWriteNode) {
-            buildMultiAssignment((MultiWriteNode) node, addResultInstr(new ToAryInstr(temp(), rhsVal)));
+            buildMultiAssignment(((MultiWriteNode) node).targets, addResultInstr(new ToAryInstr(temp(), rhsVal)));
+        } else if (node instanceof RequiredParameterNode) {
+            RequiredParameterNode variable = (RequiredParameterNode) node;
+            copy(getLocalVariable(symbol(variable.name), 0), rhsVal);
         } else if (node instanceof SplatNode) {
             buildSplat((SplatNode) node, rhsVal);
         } else {
@@ -533,13 +536,6 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
                 node.receiver, node.arguments, node.value, fals());
     }
 
-    private boolean containsBlockArgument(ArgumentsNode node) {
-        if (node == null || node.arguments == null || node.arguments.length == 0) return false;
-
-        return node.arguments[node.arguments.length - 1] instanceof BlockArgumentNode;
-    }
-
-
     @Override
     Operand[] buildCallArgs(Node args, int[] flags) {
         return buildCallArgsArray(((ArgumentsNode) args).arguments, flags);
@@ -555,9 +551,9 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
 
             if (child instanceof SplatNode) {
                 builtArgs[i] = new Splat(addResultInstr(new BuildSplatInstr(temp(), build(((SplatNode) child).expression), false)));
-            } else if (isKeywordsArgsHash(child) &&
+            } else if (child instanceof KeywordHashNode &&
                     (i == numberOfArgs - 1 || i == numberOfArgs - 2 && children[i + 1] instanceof BlockArgumentNode)) {
-                builtArgs[i] = buildCallKeywordArguments((HashNode) children[i], flags); // FIXME: here and possibly AST make isKeywordsHash() method.
+                builtArgs[i] = buildCallKeywordArguments((KeywordHashNode) children[i], flags); // FIXME: here and possibly AST make isKeywordsHash() method.
             } else {
                 builtArgs[i] = buildWithOrder(children[i], hasAssignments);
             }
@@ -566,16 +562,18 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         return builtArgs;
     }
 
-    private boolean isKeywordsArgsHash(Node node) {
-        return node instanceof HashNode && !isLiteralHash(node);
+    private boolean containsBlockArgument(ArgumentsNode node) {
+        if (node == null || node.arguments == null || node.arguments.length == 0) return false;
+
+        return node.arguments[node.arguments.length - 1] instanceof BlockArgumentNode;
     }
 
-    protected Operand buildCallKeywordArguments(HashNode node, int[] flags) {
+    protected Operand buildCallKeywordArguments(KeywordHashNode node, int[] flags) {
         flags[0] |= CALL_KEYWORD;
 
-        if (hasOnlyRestKwargs(node)) return buildRestKeywordArgs(node, flags);
+        if (hasOnlyRestKwargs(node.elements)) return buildRestKeywordArgs(node, flags);
 
-        return buildHash(node);
+        return buildHash(node.elements, containsVariableAssignment(node.elements));
     }
 
     private Operand buildCallOperatorLogicalWrite(RubySymbol readName, RubySymbol writeName, Node receiverNode,
@@ -1059,15 +1057,14 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         return buildGlobalAsgn(symbol(node.name), node.value);
     }
 
-    private Operand buildHash(HashNode node) {
+    private Operand buildHash(Node[] elements, boolean hasAssignments) {
         List<KeyValuePair<Operand, Operand>> args = new ArrayList<>();
-        boolean hasAssignments = containsVariableAssignment(node);
         Variable hash = null;
         // Duplication checks happen when **{} are literals and not **h variable references.
         Operand duplicateCheck = fals();
 
         // pair is AssocNode or AssocSplatNode
-        for (Node pair: node.elements) {
+        for (Node pair: elements) {
             Operand keyOperand;
 
             if (pair instanceof AssocNode) {
@@ -1233,22 +1230,21 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         Operand values = build(valueNode);
         Variable ret = getValueInTemporaryVariable(values);
         if (valueNode instanceof ArrayNode) {
-            buildMultiAssignment(node, ret);
+            buildMultiAssignment(node.targets, ret);
             // FIXME: need to know equiv of ILiteralNode so we can opt this case.
         /*} else if (valueNode instanceof ILiteralNode) {
             // treat a single literal value as a single-element array
             buildMultiAssignment(node, new Array(new Operand[]{ret}));*/
         } else {
             Variable tmp = addResultInstr(new ToAryInstr(temp(), ret));
-            buildMultiAssignment(node, tmp);
+            buildMultiAssignment(node.targets, tmp);
         }
         return ret;
     }
 
     // SplatNode, MultiWriteNode, LocalVariableWrite and lots of other normal writes
-    private void buildMultiAssignment(MultiWriteNode node, Operand values) {
+    private void buildMultiAssignment(Node[] targets, Operand values) {
         final List<Tuple<Node, Variable>> assigns = new ArrayList<>();
-        Node[] targets = node.targets;
         int length = targets.length;
         int restIndex = -1;
 
@@ -1388,7 +1384,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         return buildReturn(operandListToOperand(buildArguments(node.arguments)), getLine(node));
     }
 
-    private Operand buildRestKeywordArgs(HashNode keywordArgs, int[] flags) {
+    private Operand buildRestKeywordArgs(KeywordHashNode keywordArgs, int[] flags) {
         flags[0] |= CALL_KEYWORD_REST;
         Node[] pairs = keywordArgs.elements;
         boolean containsVariableAssignment = containsVariableAssignment(keywordArgs);
@@ -1694,10 +1690,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
                 Variable tmp = temp();
                 addInstr(new ToAryInstr(tmp, v));
 
-                // FIXME: Impl
-            //((RequiredDestructuredParameterNode) node).parameters;
-//                buildMultipleAsgn19Assignment(childNode, tmp, null);
-            throw notCompilable("Can't run destructured params yet", node);
+                buildMultiAssignment(((RequiredDestructuredParameterNode) node).parameters, tmp);
         } else {
             throw notCompilable("Can't build required parameter node", node);
         }
@@ -1719,9 +1712,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             Variable tmp = temp();
             addInstr(new ToAryInstr(tmp, v));
 
-            //((RequiredDestructuredParameterNode) node).parameters;
-//                buildMultipleAsgn19Assignment(childNode, tmp, null);
-            throw notCompilable("Can't run destructured params yet", node);
+            buildMultiAssignment(((RequiredDestructuredParameterNode) node).parameters, tmp);
         } else {
             throw notCompilable("Can't build required parameter node", node);
         }
@@ -2052,8 +2043,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     }
 
     // All splats on array construction will stuff them into a hash.
-    private boolean hasOnlyRestKwargs(HashNode node) {
-        for (Node element: node.elements) {
+    private boolean hasOnlyRestKwargs(Node[] elements) {
+        for (Node element: elements) {
             if (!(element instanceof AssocSplatNode)) return false;
         }
 
