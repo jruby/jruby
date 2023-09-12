@@ -2010,9 +2010,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
 
     // FIXME: we allocate extra byte[] just to make it a String[].  Extra work to consider?
     public StaticScope createStaticScopeFrom(byte[][] tokens, StaticScope.Type type) {
-        staticScope = createStaticScopeFrom(fileName, tokens, type, staticScope);
-
-        return staticScope;
+        return createStaticScopeFrom(fileName, tokens, type, staticScope);
     }
 
     public static StaticScope createStaticScopeFrom(String fileName, byte[][] tokens, StaticScope.Type type, StaticScope parent) {
@@ -2034,9 +2032,9 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
 
     private ByteList determineBaseName(Node node) {
         if (node instanceof ConstantReadNode) {
-            return byteListFrom(node);
+            return bytelist(((ConstantReadNode) node).name);
         } else if (node instanceof ConstantPathNode) {
-            return byteListFrom(((ConstantPathNode) node).child);
+            return determineBaseName(((ConstantPathNode) node).child);
         }
         throw notCompilable("Unsupported node in module path", node);
     }
