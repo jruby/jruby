@@ -1023,7 +1023,8 @@ public final class Ruby implements Constantizable {
 
     public ParseResult parseFromMain(String fileName, InputStream in) {
         int flags = config.isInlineScript() ? INLINE : 0;
-        return getParserManager().parseFile(fileName, 0, in, setupSourceEncoding(UTF8Encoding.INSTANCE), getCurrentContext().getCurrentScope(), flags);
+        return getParserManager().parseFile(fileName, 0, in, setupSourceEncoding(UTF8Encoding.INSTANCE),
+                getCurrentContext().getCurrentScope(), flags | DATA);
     }
 
     /**
