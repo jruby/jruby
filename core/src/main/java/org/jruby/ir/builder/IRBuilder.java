@@ -37,6 +37,7 @@ import org.jruby.util.CommonByteLists;
 import org.jruby.util.DefinedMessage;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
+import org.jruby.util.cli.Options;
 import org.yarp.Nodes;
 
 import java.util.ArrayDeque;
@@ -61,6 +62,7 @@ import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_REST;
 
 public abstract class IRBuilder<U, V, W, X> {
+    static final boolean PARSER_TIMING = Options.PARSER_SUMMARY.load();
     static final UnexecutableNil U_NIL = UnexecutableNil.U_NIL;
 
     private final IRManager manager;
@@ -272,6 +274,8 @@ public abstract class IRBuilder<U, V, W, X> {
     }
 
     InterpreterContext buildRootInner(ParseResult parseResult) {
+        long time = 0;
+        if (PARSER_TIMING) time = System.nanoTime();
         coverageMode = parseResult.getCoverageMode();
         prepareImplicitState();                                    // recv_self, add frame block, etc)
         addCurrentModule();                                        // %current_module
@@ -285,7 +289,10 @@ public abstract class IRBuilder<U, V, W, X> {
         // Root scope can receive returns now, so we add non-local return logic if necessary (2.5+)
         if (scope.canReceiveNonlocalReturns()) handleNonlocalReturnInMethod();
 
-        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
+        InterpreterContext ic = scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
+
+        if (PARSER_TIMING) manager.getRuntime().getParserManager().getParserStats().addIRBuildTime(System.nanoTime() - time);
+        return ic;
     }
 
     public void computeScopeFlagsFrom(List<Instr> instructions) {
@@ -1453,6 +1460,8 @@ public abstract class IRBuilder<U, V, W, X> {
     }
 
     InterpreterContext buildIterInner(RubySymbol methodName, U var, U body, int endLine) {
+        long time = 0;
+        if (PARSER_TIMING) time = System.nanoTime();
         this.methodName = methodName;
 
         boolean forNode = scope instanceof IRFor;
@@ -1488,7 +1497,11 @@ public abstract class IRBuilder<U, V, W, X> {
         if (!forNode) handleBreakAndReturnsInLambdas();
 
         computeScopeFlagsFrom(instructions);
-        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
+        InterpreterContext ic = scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
+
+        if (PARSER_TIMING) manager.getRuntime().getParserManager().getParserStats().addIRBuildTime(System.nanoTime() - time);
+
+        return ic;
     }
 
     public Operand buildLambda(U args, U body, StaticScope staticScope, Signature signature, int line) {
@@ -1504,6 +1517,8 @@ public abstract class IRBuilder<U, V, W, X> {
     }
 
     InterpreterContext buildLambdaInner(U blockArgs, U body) {
+        long time = 0;
+        if (PARSER_TIMING) time = System.nanoTime();
         prepareClosureImplicitState();
 
         addCurrentModule();                                        // %current_module
@@ -1520,7 +1535,11 @@ public abstract class IRBuilder<U, V, W, X> {
         handleBreakAndReturnsInLambdas();
 
         computeScopeFlagsFrom(instructions);
-        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
+        InterpreterContext ic = scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
+
+        if (PARSER_TIMING) manager.getRuntime().getParserManager().getParserStats().addIRBuildTime(System.nanoTime() - time);
+
+        return ic;
     }
 
     Operand buildLocalVariableAssign(RubySymbol name, int depth, U valueNode) {
@@ -2276,6 +2295,8 @@ public abstract class IRBuilder<U, V, W, X> {
 
 
     public InterpreterContext defineMethodInner(LazyMethodDefinition<U, V, W, X> defNode, IRScope parent, int coverageMode) {
+        long time = 0;
+        if (PARSER_TIMING) time = System.nanoTime();
         this.coverageMode = coverageMode;
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
@@ -2317,7 +2338,11 @@ public abstract class IRBuilder<U, V, W, X> {
 
         computeScopeFlagsFrom(instructions);
 
-        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
+        InterpreterContext ic = scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
+
+        if (PARSER_TIMING) manager.getRuntime().getParserManager().getParserStats().addIRBuildTime(System.nanoTime() - time);
+
+        return ic;
     }
 
     ArgumentDescriptor[] createArgumentDescriptor() {

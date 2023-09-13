@@ -6,6 +6,7 @@ import org.jruby.Ruby;
 import org.jruby.util.cli.Options;
 
 public class ParserStats implements ParserStatsMBean {
+    private final AtomicLong totalIRBuildTime = new AtomicLong(0); // nanos
     private final AtomicLong totalParseTime = new AtomicLong(0); // nanos
     private final AtomicLong totalYARPDeserializingTime = new AtomicLong(0); // nanos
     private final AtomicLong totalYARPCParseSerializingTime = new AtomicLong(0); // nanos
@@ -92,7 +93,8 @@ public class ParserStats implements ParserStatsMBean {
         System.out.println("    bytes processed: " + getTotalParsedBytes());
         System.out.println("    files parsed: " + getNumberOfLoadParses());
         System.out.println("    evals parsed: " + getNumberOfEvalParses());
-        System.out.println("    time spent(s): " + getTotalParseTime());
+        System.out.println("    time spent parsing(s): " + getTotalParseTime());
+        System.out.println("    time spend parsing + building: " + (getTotalParseTime() + getIRBuildTime()));
         if (Options.PARSER_YARP.load()) {
             System.out.println("  YARP:");
             System.out.println("    time C parse+serialize: " + getYARPCParseSerializeTime());
@@ -101,5 +103,15 @@ public class ParserStats implements ParserStatsMBean {
             System.out.println("    serialized to source ratio: x" +
                     ((float)getTotalYARPSerializedBytes() / getTotalParsedBytes()));
         }
+        System.out.println("  IRBuild:");
+        System.out.println("    build time: " + getIRBuildTime());
+    }
+
+    private double getIRBuildTime() {
+        return totalIRBuildTime.get() / 1_000_000_000.0;
+    }
+
+    public void addIRBuildTime(long time) {
+        totalIRBuildTime.addAndGet(time);
     }
 }
