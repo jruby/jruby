@@ -95,6 +95,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     Operand build(Variable result, Node node) {
         if (node == null) return nil();
 
+        if (node.hasNewLineFlag()) determineIfWeNeedLineNumber(getLine(node), true);
+
         if (node instanceof AliasMethodNode) {
             return buildAliasMethod((AliasMethodNode) node);
         } else if (node instanceof AndNode) {
@@ -395,7 +397,6 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         }
     }
 
-    // FIXME: Idea make common operator + nodetype so we can try and generify stuff like this
     // FIXME: Attrassign should be its own node.
     // This method is called to build assignments for a multiple-assignment instruction
     public void buildAssignment(Node node, Variable rhsVal) {
@@ -459,7 +460,6 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     }
 
     private Operand buildBegin(BeginNode node) {
-        // FIXME: This is not processing ensure.  YARP is laying this out differently.
         if (node.rescue_clause != null) {
             RescueNode rescue = node.rescue_clause;
             Node ensureBody = node.ensure_clause != null ? node.ensure_clause.statements : null;
@@ -1891,7 +1891,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     // FIXME: need to get line.
     @Override
     int getLine(Node node) {
-        return nodeSource.line(node.startOffset);
+        // internals expect 0-based value.
+        return nodeSource.line(node.startOffset) - 1;
     }
 
     // FIXME: need to get newline status

@@ -170,7 +170,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     private Operand buildOperand(Variable result, Node node) throws NotCompilableException {
-        if (node.isNewline()) determineIfWeNeedLineNumber(node.getLine(), node.isNewline());
+        if (node.isNewline()) determineIfWeNeedLineNumber(node.getLine(), true);
 
         switch (node.getNodeType()) {
             case ALIASNODE: return buildAlias((AliasNode) node);
