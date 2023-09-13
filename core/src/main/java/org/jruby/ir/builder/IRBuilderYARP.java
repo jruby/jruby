@@ -517,12 +517,12 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         // FIXME: Lots and lots of special logic in AST not here
         int[] flags = new int[] { 0 };
         Operand[] args = setupCallArgs(node.arguments, flags);
+        int argsLength = args.length;
         Operand block;
         if (node.block != null) {
             block = setupCallClosure(node.block);
-        } else if (containsBlockArgument(node.arguments)) {
-            block = args[node.arguments.arguments.length - 1];
-            args = removeArg(args);
+        } else if (node.arguments != null && argsLength != node.arguments.arguments.length) {
+            block = build(node.arguments.arguments[argsLength]);
         } else {
             block = NullBlock.INSTANCE;
         }
@@ -556,6 +556,13 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     }
     protected Operand[] buildCallArgsArray(Node[] children, int[] flags) {
         int numberOfArgs = children.length;
+        // FIXME: hack
+        if (numberOfArgs > 0 && children[numberOfArgs - 1] instanceof BlockArgumentNode) {
+            Node[] temp = children;
+            numberOfArgs--;
+            children = new Node[numberOfArgs];
+            System.arraycopy(temp, 0, children, 0, numberOfArgs);
+        }
         Operand[] builtArgs = new Operand[numberOfArgs];
         boolean hasAssignments = containsVariableAssignment(children);
 
@@ -564,8 +571,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
 
             if (child instanceof SplatNode) {
                 builtArgs[i] = new Splat(addResultInstr(new BuildSplatInstr(temp(), build(((SplatNode) child).expression), false)));
-            } else if (child instanceof KeywordHashNode &&
-                    (i == numberOfArgs - 1 || i == numberOfArgs - 2 && children[i + 1] instanceof BlockArgumentNode)) {
+            } else if (child instanceof KeywordHashNode && i == numberOfArgs - 1) {
                 builtArgs[i] = buildCallKeywordArguments((KeywordHashNode) children[i], flags); // FIXME: here and possibly AST make isKeywordsHash() method.
             } else {
                 builtArgs[i] = buildWithOrder(children[i], hasAssignments);
@@ -1909,7 +1915,9 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     }
 
     private int getEndLine(Node node) {
-        return nodeSource.line(node.endOffset());
+        return 0;
+        // FIXME: assert during test:jruby
+        //return nodeSource.line(node.endOffset());
     }
 
     @Override
