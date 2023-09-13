@@ -536,7 +536,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
                     () -> receiveBreakException(block,
                             CallInstr.create(scope, callType, result, name, receiver, finalArgs, block, flags[0])));
         } else {
-            determineIfWeNeedLineNumber(getLine(node), getNewline(node)); // buildOperand for call was papered over by args operand building so we check once more.
+            determineIfWeNeedLineNumber(getLine(node), node.hasNewLineFlag()); // buildOperand for call was papered over by args operand building so we check once more.
             receiveBreakException(block,
                     CallInstr.create(scope, callType, result, name, receiver, args, block, flags[0]));
         }
@@ -1459,7 +1459,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     }
 
     private Operand buildSuper(Variable result, SuperNode node) {
-        return buildSuper(result, node.block, node.arguments, getLine(node), getNewline(node));
+        return buildSuper(result, node.block, node.arguments, getLine(node), node.hasNewLineFlag());
     }
 
     private Operand buildSymbol(SymbolNode node) {
@@ -1888,16 +1888,10 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         return nodeSource.line(node.endOffset());
     }
 
-    // FIXME: need to get line.
     @Override
     int getLine(Node node) {
         // internals expect 0-based value.
         return nodeSource.line(node.startOffset) - 1;
-    }
-
-    // FIXME: need to get newline status
-    private boolean getNewline(Node node) {
-        return false;
     }
 
     @Override
