@@ -8,6 +8,7 @@ import org.jruby.Ruby;
 import org.jruby.exceptions.SyntaxError;
 import org.jruby.lexer.ByteListLexerSource;
 import org.jruby.lexer.yacc.SyntaxException;
+import org.jruby.management.ParserStats;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.load.LoadServiceResourceInputStream;
 import org.jruby.util.ByteList;
@@ -46,7 +47,17 @@ public class YARPParser extends Parser {
     }
 
     private ParseResult parseInternal(String fileName, DynamicScope blockScope, byte[] source, byte[] serialized) {
+        long time = 0;
+
+        if (ParserManager.PARSER_TIMING) time = System.nanoTime();
         org.yarp.ParseResult res = org.yarp.Loader.load(serialized, new Nodes.Source(source));
+        if (ParserManager.PARSER_TIMING) {
+            ParserStats stats = runtime.getParserManager().getParserStats();
+
+            stats.addYARPTimeDeserializing(System.nanoTime() - time);
+            stats.addYARPSerializedBytes(serialized.length);
+            stats.addParsedBytes(source.length);
+        }
 
         if (res.errors != null && res.errors.length > 0) {
             // FIXME: need line number from offsets
@@ -62,7 +73,7 @@ public class YARPParser extends Parser {
     }
 
     @Override
-    public ParseResult parse(String fileName, int lineNumber, InputStream in, Encoding encoding,
+    ParseResult parse(String fileName, int lineNumber, InputStream in, Encoding encoding,
                              DynamicScope blockScope, int flags) {
         byte[] source = getSourceAsBytes(fileName, in);
         byte[] metadata = generateMetadata(blockScope, flags);
@@ -93,10 +104,16 @@ public class YARPParser extends Parser {
 
     // FIXME: metadata is formed via some other method and how this is packaged as API needs to be figured out.
     private byte[] parse(byte[] source, byte[] metadata) {
-        //yarpLibrary.yp_version();
+        long time = 0;
+        if (ParserManager.PARSER_TIMING) time = System.nanoTime();
         YARPParserBindings.Buffer buffer = new YARPParserBindings.Buffer(jnr.ffi.Runtime.getRuntime(yarpLibrary));
         yarpLibrary.yp_buffer_init(buffer);
         yarpLibrary.yp_parse_serialize(source, source.length, buffer, metadata);
+        if (ParserManager.PARSER_TIMING) {
+            ParserStats stats = runtime.getParserManager().getParserStats();
+
+            stats.addYARPTimeCParseSerialize(System.nanoTime() - time);
+        }
 
         int length = buffer.length.intValue();
         byte[] src = new byte[length];

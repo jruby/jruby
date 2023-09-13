@@ -25,7 +25,7 @@ import java.nio.charset.Charset;
  *   1. file parses can deserialize from IR but evals never do.
  */
 public class ParserManager {
-    private static final boolean PARSER_TIMING = Options.PARSER_SUMMARY.load();
+    static final boolean PARSER_TIMING = Options.PARSER_SUMMARY.load();
     public static final int INLINE = 1;      // is it -e source
     public static final int DATA = 2;        // should we provide DATA for data after __END__
     public static final int EVAL = 4;
@@ -125,16 +125,5 @@ public class ParserManager {
         Charset charset = runtime.getDefaultCharset();
 
         return charset == null ? string.getBytes() : string.getBytes(charset);
-    }
-
-    public long getTotalBytes() {
-        return parser.getTotalBytes();
-    }
-
-    public void printParserStatistics() {
-        System.out.println("Parser Statistics:");
-        System.out.println("  files parsed: " + parserStats.getNumberOfLoadParses());
-        System.out.println("  evals parsed: " + parserStats.getNumberOfEvalParses());
-        System.out.println("  time spent(s): " + parserStats.getTotalParseTime());
     }
 }

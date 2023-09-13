@@ -3282,9 +3282,7 @@ public final class Ruby implements Constantizable {
             printProfileData(profileCollection);
         }
 
-        if (Options.PARSER_SUMMARY.load()) {
-            parserManager.printParserStatistics();
-        }
+        if (Options.PARSER_SUMMARY.load()) parserManager.getParserStats().printParserStatistics();
 
         // clear out old style recursion guards so they don't leak
         mriRecursionGuard = null;

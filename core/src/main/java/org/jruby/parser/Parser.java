@@ -62,14 +62,9 @@ import static org.jruby.parser.ParserManager.*;
  */
 public class Parser {
     protected final Ruby runtime;
-    private volatile int totalBytes;
 
     public Parser(Ruby runtime) {
         this.runtime = runtime;
-    }
-
-    public int getTotalBytes() {
-        return totalBytes;
     }
 
     public ParseResult parse(String fileName, int lineNumber, ByteList content, DynamicScope blockScope, int flags) {
@@ -77,7 +72,7 @@ public class Parser {
                 blockScope, flags);
     }
 
-    public ParseResult parse(String fileName, int lineNumber, InputStream in, Encoding encoding,
+    ParseResult parse(String fileName, int lineNumber, InputStream in, Encoding encoding,
                              DynamicScope blockScope, int flags) {
         RubyArray list = getLines(isEval(flags), fileName);
 
@@ -120,7 +115,7 @@ public class Parser {
             throw runtime.newSyntaxError(e.getFile() + ":" + (e.getLine() + 1) + ": " + e.getMessage());
         }
 
-        totalBytes += lexerSource.getOffset();
+        runtime.getParserManager().getParserStats().addParsedBytes(lexerSource.getOffset());
 
         return (ParseResult) result.getAST();
     }
@@ -204,11 +199,7 @@ public class Parser {
             throw runtime.newSyntaxError(e.getFile() + ":" + (e.getLine() + 1) + ": " + e.getMessage());
         }
 
-        Node ast = result.getAST();
-
-        totalBytes += lexerSource.getOffset();
-
-        return ast;
+        return result.getAST();
     }
 
     private RubyArray getLines(boolean isEvalParse, String file) {
