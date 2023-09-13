@@ -62,15 +62,10 @@ import static org.jruby.parser.ParserManager.*;
  */
 public class Parser {
     protected final Ruby runtime;
-    private volatile long totalTime;
     private volatile int totalBytes;
 
     public Parser(Ruby runtime) {
         this.runtime = runtime;
-    }
-
-    public long getTotalTime() {
-        return totalTime;
     }
 
     public int getTotalBytes() {
@@ -114,7 +109,6 @@ public class Parser {
     }
 
     private ParseResult parse(LexerSource lexerSource, DynamicScope blockScope, int flags) {
-        long startTime = System.nanoTime();
         RubyParser parser = new RubyParser(runtime, lexerSource, blockScope, flags);
         RubyParserResult result;
         try {
@@ -126,7 +120,6 @@ public class Parser {
             throw runtime.newSyntaxError(e.getFile() + ":" + (e.getLine() + 1) + ": " + e.getMessage());
         }
 
-        totalTime += System.nanoTime() - startTime;
         totalBytes += lexerSource.getOffset();
 
         return (ParseResult) result.getAST();
@@ -193,7 +186,6 @@ public class Parser {
                 (configuration.isInlineSource() ? INLINE : 0) |
                 (configuration.isSaveData() ? DATA : 0);
 
-        long startTime = System.nanoTime();
         RubyParser parser = new RubyParser(runtime, lexerSource, blockScope, flags);
         RubyParserResult result;
         try {
@@ -213,8 +205,7 @@ public class Parser {
         }
 
         Node ast = result.getAST();
-        
-        totalTime += System.nanoTime() - startTime;
+
         totalBytes += lexerSource.getOffset();
 
         return ast;

@@ -7,7 +7,7 @@ import org.jruby.Ruby;
 
 public class ParserStats implements ParserStatsMBean {
     private final SoftReference<Ruby> ruby;
-    private final AtomicInteger totalParseTime = new AtomicInteger(0);
+    private final AtomicLong totalParseTime = new AtomicLong(0);
     private final AtomicLong totalParsedBytes = new AtomicLong(0);
     private final AtomicInteger totalEvalParses = new AtomicInteger(0);
     private final AtomicInteger totalLoadParses = new AtomicInteger(0);
@@ -17,7 +17,7 @@ public class ParserStats implements ParserStatsMBean {
         this.ruby = new SoftReference<Ruby>(ruby);
     }
 
-    public void addParseTime(int time) {
+    public void addParseTime(long time) {
         totalParseTime.addAndGet(time);
     }
 
@@ -39,8 +39,8 @@ public class ParserStats implements ParserStatsMBean {
 
     public double getTotalParseTime() {
         Ruby runtime = ruby.get();
-        if (runtime == null) return 0;
-        return runtime.getParserManager().getTotalTime() / 1000000000.0;
+        if (runtime == null) return 0.0;
+        return totalParseTime.get() / 1_000_000_000.0;
     }
 
     public long getTotalParsedBytes() {
@@ -51,8 +51,8 @@ public class ParserStats implements ParserStatsMBean {
 
     public double getParseTimePerKB() {
         long totalBytes = getTotalParsedBytes();
-        if (totalBytes == 0) return 0;
-        return getTotalParseTime() / (totalBytes / 1000.0);
+        if (totalBytes == 0) return 0.0;
+        return getTotalParseTime() / (totalBytes / 1_000.0);
     }
 
     public int getNumberOfEvalParses() {

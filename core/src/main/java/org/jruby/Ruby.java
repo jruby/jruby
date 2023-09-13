@@ -120,14 +120,10 @@ import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.ir.Compiler;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.interpreter.Interpreter;
-import org.jruby.ir.persistence.IRReader;
-import org.jruby.ir.persistence.IRReaderStream;
-import org.jruby.ir.persistence.util.IRFileExpert;
 import org.jruby.management.BeanManager;
 import org.jruby.management.BeanManagerFactory;
 import org.jruby.management.Config;
 import org.jruby.parser.Parser;
-import org.jruby.parser.ParserConfiguration;
 import org.jruby.parser.StaticScopeFactory;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Binding;
@@ -175,8 +171,6 @@ import org.jruby.util.io.SelectorPool;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.ClassReader;
-import org.yarp.Nodes;
-import org.yarp.YarpParseResult;
 
 import java.io.*;
 import java.lang.invoke.MethodHandle;
@@ -3285,6 +3279,10 @@ public final class Ruby implements Constantizable {
             // not using logging because it's formatted
             ProfileCollection profileCollection = threadService.getMainThread().getContext().getProfileCollection();
             printProfileData(profileCollection);
+        }
+
+        if (Options.PARSER_SUMMARY.load()) {
+            parserManager.printParserStatistics();
         }
 
         // clear out old style recursion guards so they don't leak
