@@ -46,6 +46,7 @@ import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
+import org.yarp.Nodes;
 import org.yarp.Nodes.*;
 import org.yarp.YarpParseResult;
 
@@ -60,12 +61,18 @@ import static org.jruby.util.CommonByteLists.DOLLAR_BACKTICK;
 public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode> {
     String fileName = null;
     byte[] source;
+
+    Nodes.Source nodeSource;
+
     StaticScope staticScope;
 
     public IRBuilderYARP(IRManager manager, IRScope scope, IRBuilder parent, IRBuilder variableBuilder) {
         super(manager, scope, parent, variableBuilder);
 
-        if (parent != null) source = ((IRBuilderYARP) parent).source;
+        if (parent != null) {
+            source = ((IRBuilderYARP) parent).source;
+            nodeSource = ((IRBuilderYARP) parent).nodeSource;
+        }
         staticScope = scope.getStaticScope();
         staticScope.setFile(scope.getFile()); // staticScope and IRScope contain the same field.
     }
@@ -73,6 +80,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     @Override
     public Operand build(ParseResult result) {
         this.source = ((YarpParseResult) result).getSource();
+        this.nodeSource = ((YarpParseResult) result).getSourceNode();
         return build(((YarpParseResult) result).getRoot().statements);
     }
 
@@ -395,7 +403,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
 
         if (node instanceof CallNode) {
             RubySymbol name = symbol(new ByteList(((CallNode) node).name));
-            if ("[]=".equals(name)) {
+            if ("[]=".equals(name.idString())) {
                 buildAttrAssignAssignment((CallNode) node, name, rhsVal);
             } else {
                 throw notCompilable("call node found on lhs of masgn", node);
@@ -760,7 +768,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         // FIXME: due to how lazy methods work we need this set on method before we actually parse the method.
         StaticScope staticScope = createStaticScopeFrom(node.locals, StaticScope.Type.LOCAL);
         staticScope.setSignature(calculateSignature(node.parameters));
-        LazyMethodDefinition def = new LazyMethodDefinitionYARP(getManager().getRuntime(), source, node);
+        LazyMethodDefinition def = new LazyMethodDefinitionYARP(getManager().getRuntime(), source, nodeSource, node);
         return buildDefn(defineNewMethod(def, symbol(node.name).getBytes(), 0, staticScope, true));
     }
 
@@ -768,7 +776,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         // FIXME: due to how lazy methods work we need this set on method before we actually parse the method.
         StaticScope staticScope = createStaticScopeFrom(node.locals, StaticScope.Type.LOCAL);
         staticScope.setSignature(calculateSignature(node.parameters));
-        LazyMethodDefinition def = new LazyMethodDefinitionYARP(getManager().getRuntime(), source, node);
+        LazyMethodDefinition def = new LazyMethodDefinitionYARP(getManager().getRuntime(), source, nodeSource, node);
         return buildDefs(node.receiver, defineNewMethod(def, symbol(node.name).getBytes(), 0, staticScope, false));
     }
 
@@ -1877,13 +1885,13 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     }
 
     private int getEndLine(Node node) {
-        return 0;
+        return nodeSource.line(node.endOffset());
     }
 
     // FIXME: need to get line.
     @Override
     int getLine(Node node) {
-        return 0;
+        return nodeSource.line(node.startOffset);
     }
 
     // FIXME: need to get newline status

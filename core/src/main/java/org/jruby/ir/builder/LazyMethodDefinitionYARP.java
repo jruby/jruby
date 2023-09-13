@@ -17,14 +17,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class LazyMethodDefinitionYARP implements LazyMethodDefinition<Node, DefNode, WhenNode, RescueNode> {
+    private final Nodes.Source nodeSource;
     private DefNode node;
     private Ruby runtime;
     private byte[] source;
 
-    public LazyMethodDefinitionYARP(Ruby runtime, byte[] source, DefNode node) {
+    public LazyMethodDefinitionYARP(Ruby runtime, byte[] source, Nodes.Source nodeSource, DefNode node) {
         this.runtime = runtime;
         this.source = source;
         this.node = node;
+        this.nodeSource = nodeSource;
     }
     @Override
     public int getEndLine() {
@@ -83,6 +85,7 @@ public class LazyMethodDefinitionYARP implements LazyMethodDefinition<Node, DefN
         IRBuilder<Node, DefNode, WhenNode, RescueNode> builder = IRBuilder.newIRBuilder(manager, methodScope, null, true);
 
         ((IRBuilderYARP) builder).source = source;
+        ((IRBuilderYARP) builder).nodeSource = nodeSource;
 
         return builder;
     }

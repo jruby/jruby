@@ -8,13 +8,16 @@ import org.jruby.runtime.DynamicScope;
 public class YarpParseResult implements ParseResult {
     StaticScope rootScope;
     Nodes.ProgramNode root;
+
+    Nodes.Source nodeSource;
     String fileName;
     byte[] source;
 
-    public YarpParseResult( String fileName, byte[] source, Nodes.ProgramNode root) {
+    public YarpParseResult(String fileName, byte[] source, Nodes.ProgramNode root, Nodes.Source nodeSource) {
         this.root = root;
         this.fileName = fileName;
         this.source = source;
+        this.nodeSource = nodeSource;
     }
 
     public DynamicScope getDynamicScope() {
@@ -57,5 +60,9 @@ public class YarpParseResult implements ParseResult {
 
     public Object getAST() {
         return root;
+    }
+
+    public Nodes.Source getSourceNode() {
+        return nodeSource;
     }
 }

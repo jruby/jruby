@@ -58,7 +58,7 @@ public class ParserYARP extends Parser {
             throw runtime.newSyntaxError(fileName + ":" + nodeSource.line(res.errors[0].location.startOffset) + ": " + res.errors[0].message);
         }
 
-        ParseResult result = new YarpParseResult(fileName, source, (Nodes.ProgramNode) res.value);
+        ParseResult result = new YarpParseResult(fileName, source, (Nodes.ProgramNode) res.value, nodeSource);
         if (blockScope != null) {
             result.getStaticScope().setEnclosingScope(blockScope.getStaticScope());
         }
