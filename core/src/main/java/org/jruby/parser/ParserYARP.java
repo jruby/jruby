@@ -1,13 +1,9 @@
 package org.jruby.parser;
 
-import jnr.ffi.Pointer;
 import jnr.ffi.LibraryLoader;
 import org.jcodings.Encoding;
 import org.jruby.ParseResult;
 import org.jruby.Ruby;
-import org.jruby.exceptions.SyntaxError;
-import org.jruby.lexer.ByteListLexerSource;
-import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.management.ParserStats;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.load.LoadServiceResourceInputStream;
@@ -18,31 +14,29 @@ import org.yarp.YarpParseResult;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.SyncFailedException;
-import java.nio.ByteBuffer;
 
 import static org.jruby.parser.ParserManager.isEval;
 
-public class YARPParser extends Parser {
-    YARPParserBindings yarpLibrary;
+public class ParserYARP extends Parser {
+    ParserBindingYARP yarpLibrary;
 
-    public YARPParser(Ruby runtime) {
+    public ParserYARP(Ruby runtime) {
         super(runtime);
 
         String path = runtime.getInstanceConfig().getJRubyHome() + "/lib/libyarp.so";
         //System.out.println("Binding to " + path);
-        yarpLibrary = LibraryLoader.create(YARPParserBindings.class).load(path);
+        yarpLibrary = LibraryLoader.create(ParserBindingYARP.class).load(path);
     }
+    // FIXME: error/warn when cannot bind to yarp (probably silent fail-over option too)
 
-    // FIXME: lots of missing stuff.
+    // FIXME: Need to connect DATA
     // FIXME: main source file should be IO in case of __END__/DATA.
-    // FIXME: has memory leak.
     @Override
     public ParseResult parse(String fileName, int lineNumber, ByteList content, DynamicScope blockScope, int flags) {
-        // FIXME: this is duplicated source array when it usually will not need it.
-        byte[] source = content.bytes();
-        byte[] metadata = generateMetadata(blockScope, flags);
-        byte[] serialized = parse(source, metadata);
+        int sourceLength = content.realSize();
+        byte[] source = content.begin() == 0 ? content.unsafeBytes() : content.bytes();
+        byte[] metadata = generateMetadata(fileName, blockScope, flags);
+        byte[] serialized = parse(source, sourceLength, metadata);
         return parseInternal(fileName, blockScope, source, serialized);
     }
 
@@ -50,7 +44,8 @@ public class YARPParser extends Parser {
         long time = 0;
 
         if (ParserManager.PARSER_TIMING) time = System.nanoTime();
-        org.yarp.ParseResult res = org.yarp.Loader.load(serialized, new Nodes.Source(source));
+        Nodes.Source nodeSource = new Nodes.Source(source);
+        org.yarp.ParseResult res = org.yarp.Loader.load(serialized, nodeSource);
         if (ParserManager.PARSER_TIMING) {
             ParserStats stats = runtime.getParserManager().getParserStats();
 
@@ -60,8 +55,7 @@ public class YARPParser extends Parser {
         }
 
         if (res.errors != null && res.errors.length > 0) {
-            // FIXME: need line number from offsets
-            throw runtime.newSyntaxError(fileName + ":" + 1 + ": " + res.errors[0].message);
+            throw runtime.newSyntaxError(fileName + ":" + nodeSource.line(res.errors[0].location.startOffset) + ": " + res.errors[0].message);
         }
 
         ParseResult result = new YarpParseResult(fileName, source, (Nodes.ProgramNode) res.value);
@@ -76,8 +70,8 @@ public class YARPParser extends Parser {
     ParseResult parse(String fileName, int lineNumber, InputStream in, Encoding encoding,
                              DynamicScope blockScope, int flags) {
         byte[] source = getSourceAsBytes(fileName, in);
-        byte[] metadata = generateMetadata(blockScope, flags);
-        byte[] serialized = parse(source, metadata);
+        byte[] metadata = generateMetadata(fileName, blockScope, flags);
+        byte[] serialized = parse(source, source.length, metadata);
         return parseInternal(fileName, blockScope, source, serialized);
     }
 
@@ -103,12 +97,12 @@ public class YARPParser extends Parser {
     }
 
     // FIXME: metadata is formed via some other method and how this is packaged as API needs to be figured out.
-    private byte[] parse(byte[] source, byte[] metadata) {
+    private byte[] parse(byte[] source, int sourceLength, byte[] metadata) {
         long time = 0;
         if (ParserManager.PARSER_TIMING) time = System.nanoTime();
-        YARPParserBindings.Buffer buffer = new YARPParserBindings.Buffer(jnr.ffi.Runtime.getRuntime(yarpLibrary));
+        ParserBindingYARP.Buffer buffer = new ParserBindingYARP.Buffer(jnr.ffi.Runtime.getRuntime(yarpLibrary));
         yarpLibrary.yp_buffer_init(buffer);
-        yarpLibrary.yp_parse_serialize(source, source.length, buffer, metadata);
+        yarpLibrary.yp_parse_serialize(source, sourceLength, buffer, metadata);
         if (ParserManager.PARSER_TIMING) {
             ParserStats stats = runtime.getParserManager().getParserStats();
 
@@ -122,11 +116,12 @@ public class YARPParser extends Parser {
         return src;
     }
 
-    private byte[] generateMetadata(DynamicScope scope, int flags) {
+    private byte[] generateMetadata(String fileName, DynamicScope scope, int flags) {
         ByteList metadata = new ByteList();
 
-        // FIXME: zero out file path for now
-        appendUnsignedInt(metadata, 0);
+        byte[] name = fileName.getBytes();
+        appendUnsignedInt(metadata, name.length);
+        metadata.append(name);
 
         // all evals should provide some scope
         if (isEval(flags)) {

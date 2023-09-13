@@ -39,7 +39,7 @@ public class ParserManager {
 
     public ParserManager(Ruby runtime) {
         this.runtime = runtime;
-        parser = Options.PARSER_YARP.load() ? new YARPParser(runtime) : new Parser(runtime);
+        parser = Options.PARSER_YARP.load() ? new ParserYARP(runtime) : new Parser(runtime);
         parserStats = new ParserStats(runtime);
     }
 
