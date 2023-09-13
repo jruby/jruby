@@ -268,7 +268,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         // RequiredDestructuredParamterNode, RequiredParameterNode processed by def
         } else if (node instanceof RescueModifierNode) {
             return buildRescueModifier((RescueModifierNode) node);
-        // RescueNode handled by begin (FIXME: are there others?)
+        // RescueNode handled by begin
         // RestParameterNode handled by def
         } else if (node instanceof RetryNode) {
             return buildRetry((RetryNode) node);
@@ -1313,7 +1313,6 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     }
 
     private void buildParameters(ParametersNode parameters) {
-        // FIXME: If we setup signature here we need to do it for no params before returning.
         if (parameters == null) return;
         boolean hasRest = parameters.rest != null;
         boolean hasKeywords = parameters.keywords.length != 0 || parameters.keyword_rest != null;
@@ -1767,6 +1766,36 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
 
     private Operand buildStringConcat(StringConcatNode node) {
         // FIXME: maybe frozen maybe not?
+        boolean isInterpolated = node.left instanceof InterpolatedStringNode ||
+                node.right instanceof InterpolatedStringNode;
+
+        if (isInterpolated) {
+            Node[] pieces;
+
+            if (node.left instanceof InterpolatedStringNode) {
+                pieces = ((InterpolatedStringNode) node.left).parts;
+            } else {
+                pieces = new Node[] { node.left };
+            }
+
+            if (node.right instanceof InterpolatedStringNode) {
+                Node[] otherPieces = ((InterpolatedStringNode) node.right).parts;
+                Node[] temp = pieces;
+
+                pieces = new Node[pieces.length + otherPieces.length];
+                System.arraycopy(temp, 0, pieces, 0, temp.length);
+                System.arraycopy(otherPieces, 0, pieces, temp.length, otherPieces.length);
+            } else {
+                Node[] temp = pieces;
+
+                pieces = new Node[pieces.length + 1];
+                System.arraycopy(temp, 0, pieces, 0, temp.length);
+                pieces[temp.length] = node.right;
+            }
+
+            return buildDStr(temp(), pieces, UTF8Encoding.INSTANCE, false, getLine(node));
+        }
+
         ByteList str = byteListFrom(node.left);
         str.append(byteListFrom(node.right));
 
