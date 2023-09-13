@@ -23,7 +23,6 @@ import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.FrozenString;
 import org.jruby.ir.operands.Hash;
 import org.jruby.ir.operands.Label;
-import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.MutableString;
 import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
@@ -88,8 +87,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     Operand build(Variable result, Node node) {
         if (node == null) return nil();
 
-        if (node instanceof AliasNode) {
-            return buildAlias((AliasNode) node);
+        if (node instanceof AliasMethodNode) {
+            return buildAliasMethod((AliasMethodNode) node);
         } else if (node instanceof AndNode) {
             return buildAnd((AndNode) node);
         } else if (node instanceof ArrayNode) {
@@ -316,7 +315,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         throw new RuntimeException("Unhandled Node type: " + node);
     }
 
-    private Operand buildAlias(AliasNode node) {
+    private Operand buildAliasMethod(AliasMethodNode node) {
         return buildAlias(build(node.new_name), build(node.old_name));
     }
 

@@ -191,6 +191,79 @@ public abstract class Nodes {
 
     }
 
+    public static final class IntegerBaseFlags implements Comparable<IntegerBaseFlags> {
+
+        // 0b prefix
+        public static final short BINARY = 1 << 0;
+
+        // 0o or 0 prefix
+        public static final short OCTAL = 1 << 1;
+
+        // 0d or no prefix
+        public static final short DECIMAL = 1 << 2;
+
+        // 0x prefix
+        public static final short HEXADECIMAL = 1 << 3;
+
+        public static boolean isBinary(short flags) {
+            return (flags & BINARY) != 0;
+        }
+
+        public static boolean isOctal(short flags) {
+            return (flags & OCTAL) != 0;
+        }
+
+        public static boolean isDecimal(short flags) {
+            return (flags & DECIMAL) != 0;
+        }
+
+        public static boolean isHexadecimal(short flags) {
+            return (flags & HEXADECIMAL) != 0;
+        }
+
+        private final short flags;
+
+        public IntegerBaseFlags(short flags) {
+            this.flags = flags;
+        }
+
+        @Override
+        public int hashCode() {
+            return flags;
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if (!(other instanceof IntegerBaseFlags)) {
+                return false;
+            }
+
+            return flags == ((IntegerBaseFlags) other).flags;
+        }
+
+        @Override
+        public int compareTo(IntegerBaseFlags other) {
+            return flags - other.flags;
+        }
+
+        public boolean isBinary() {
+            return (flags & BINARY) != 0;
+        }
+
+        public boolean isOctal() {
+            return (flags & OCTAL) != 0;
+        }
+
+        public boolean isDecimal() {
+            return (flags & DECIMAL) != 0;
+        }
+
+        public boolean isHexadecimal() {
+            return (flags & HEXADECIMAL) != 0;
+        }
+
+    }
+
     public static final class LoopFlags implements Comparable<LoopFlags> {
 
         // a loop after a begin statement, so the body is executed first before the condition
@@ -388,16 +461,16 @@ public abstract class Nodes {
 
     }
 
-    // Represents the use of the `alias` keyword.
+    // Represents the use of the `alias` keyword to alias a global variable.
     // 
-    //     alias foo bar
-    //     ^^^^^^^^^^^^^
-    public static final class AliasNode extends Node {
+    //     alias $foo $bar
+    //     ^^^^^^^^^^^^^^^
+    public static final class AliasGlobalVariableNode extends Node {
         public final Node new_name;
         public final Node old_name;
         public final Location keyword_loc;
 
-        public AliasNode(Node new_name, Node old_name, Location keyword_loc, int startOffset, int length) {
+        public AliasGlobalVariableNode(Node new_name, Node old_name, Location keyword_loc, int startOffset, int length) {
             super(startOffset, length);
             this.new_name = new_name;
             this.old_name = old_name;
@@ -414,7 +487,37 @@ public abstract class Nodes {
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
-            return visitor.visitAliasNode(this);
+            return visitor.visitAliasGlobalVariableNode(this);
+        }
+    }
+
+    // Represents the use of the `alias` keyword to alias a method.
+    // 
+    //     alias foo bar
+    //     ^^^^^^^^^^^^^
+    public static final class AliasMethodNode extends Node {
+        public final Node new_name;
+        public final Node old_name;
+        public final Location keyword_loc;
+
+        public AliasMethodNode(Node new_name, Node old_name, Location keyword_loc, int startOffset, int length) {
+            super(startOffset, length);
+            this.new_name = new_name;
+            this.old_name = old_name;
+            this.keyword_loc = keyword_loc;
+        }
+                
+        public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
+            this.new_name.accept(visitor);
+            this.old_name.accept(visitor);
+        }
+
+        public Node[] childNodes() {
+            return new Node[] { this.new_name, this.old_name };
+        }
+
+        public <T> T accept(AbstractNodeVisitor<T> visitor) {
+            return visitor.visitAliasMethodNode(this);
         }
     }
 
@@ -2933,11 +3036,29 @@ public abstract class Nodes {
     //     1
     //     ^
     public static final class IntegerNode extends Node {
+        public final short flags;
 
-        public IntegerNode(int startOffset, int length) {
+        public IntegerNode(short flags, int startOffset, int length) {
             super(startOffset, length);
+            this.flags = flags;
         }
-                
+        
+        public boolean isBinary() {
+            return IntegerBaseFlags.isBinary(this.flags);
+        }
+
+        public boolean isOctal() {
+            return IntegerBaseFlags.isOctal(this.flags);
+        }
+
+        public boolean isDecimal() {
+            return IntegerBaseFlags.isDecimal(this.flags);
+        }
+
+        public boolean isHexadecimal() {
+            return IntegerBaseFlags.isHexadecimal(this.flags);
+        }
+        
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
         }
 
@@ -2947,6 +3068,81 @@ public abstract class Nodes {
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
             return visitor.visitIntegerNode(this);
+        }
+    }
+
+    // Represents a regular expression literal that contains interpolation that
+    // is being used in the predicate of a conditional to implicitly match
+    // against the last line read by an IO object.
+    // 
+    //     if /foo #{bar} baz/ then end
+    //        ^^^^^^^^^^^^^^^^
+    public static final class InterpolatedMatchLastLineNode extends Node {
+        public final Location opening_loc;
+        public final Node[] parts;
+        public final Location closing_loc;
+        public final short flags;
+
+        public InterpolatedMatchLastLineNode(Location opening_loc, Node[] parts, Location closing_loc, short flags, int startOffset, int length) {
+            super(startOffset, length);
+            this.opening_loc = opening_loc;
+            this.parts = parts;
+            this.closing_loc = closing_loc;
+            this.flags = flags;
+        }
+        
+        public boolean isIgnoreCase() {
+            return RegularExpressionFlags.isIgnoreCase(this.flags);
+        }
+
+        public boolean isExtended() {
+            return RegularExpressionFlags.isExtended(this.flags);
+        }
+
+        public boolean isMultiLine() {
+            return RegularExpressionFlags.isMultiLine(this.flags);
+        }
+
+        public boolean isEucJp() {
+            return RegularExpressionFlags.isEucJp(this.flags);
+        }
+
+        public boolean isAscii8bit() {
+            return RegularExpressionFlags.isAscii8bit(this.flags);
+        }
+
+        public boolean isWindows31j() {
+            return RegularExpressionFlags.isWindows31j(this.flags);
+        }
+
+        public boolean isUtf8() {
+            return RegularExpressionFlags.isUtf8(this.flags);
+        }
+
+        public boolean isOnce() {
+            return RegularExpressionFlags.isOnce(this.flags);
+        }
+        
+        @Override
+        public void setNewLineFlag(Source source, boolean[] newlineMarked) {
+            Node first = this.parts.length > 0 ? this.parts[0] : null;
+            if (first != null) {
+                first.setNewLineFlag(source, newlineMarked);
+            }
+        }
+
+        public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
+            for (Nodes.Node child : this.parts) {
+                child.accept(visitor);
+            }
+        }
+
+        public Node[] childNodes() {
+            return this.parts;
+        }
+
+        public <T> T accept(AbstractNodeVisitor<T> visitor) {
+            return visitor.visitInterpolatedMatchLastLineNode(this);
         }
     }
 
@@ -3469,6 +3665,72 @@ public abstract class Nodes {
         }
     }
 
+    // Represents a regular expression literal used in the predicate of a
+    // conditional to implicitly match against the last line read by an IO
+    // object.
+    // 
+    //     if /foo/i then end
+    //        ^^^^^^
+    public static final class MatchLastLineNode extends Node {
+        public final Location opening_loc;
+        public final Location content_loc;
+        public final Location closing_loc;
+        public final byte[] unescaped;
+        public final short flags;
+
+        public MatchLastLineNode(Location opening_loc, Location content_loc, Location closing_loc, byte[] unescaped, short flags, int startOffset, int length) {
+            super(startOffset, length);
+            this.opening_loc = opening_loc;
+            this.content_loc = content_loc;
+            this.closing_loc = closing_loc;
+            this.unescaped = unescaped;
+            this.flags = flags;
+        }
+        
+        public boolean isIgnoreCase() {
+            return RegularExpressionFlags.isIgnoreCase(this.flags);
+        }
+
+        public boolean isExtended() {
+            return RegularExpressionFlags.isExtended(this.flags);
+        }
+
+        public boolean isMultiLine() {
+            return RegularExpressionFlags.isMultiLine(this.flags);
+        }
+
+        public boolean isEucJp() {
+            return RegularExpressionFlags.isEucJp(this.flags);
+        }
+
+        public boolean isAscii8bit() {
+            return RegularExpressionFlags.isAscii8bit(this.flags);
+        }
+
+        public boolean isWindows31j() {
+            return RegularExpressionFlags.isWindows31j(this.flags);
+        }
+
+        public boolean isUtf8() {
+            return RegularExpressionFlags.isUtf8(this.flags);
+        }
+
+        public boolean isOnce() {
+            return RegularExpressionFlags.isOnce(this.flags);
+        }
+        
+        public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
+        }
+
+        public Node[] childNodes() {
+            return EMPTY_ARRAY;
+        }
+
+        public <T> T accept(AbstractNodeVisitor<T> visitor) {
+            return visitor.visitMatchLastLineNode(this);
+        }
+    }
+
     // Represents the use of the modifier `in` operator.
     // 
     //     foo in bar
@@ -3835,21 +4097,21 @@ public abstract class Nodes {
     public static final class ParametersNode extends Node {
         public final Node[] requireds;
         public final Node[] optionals;
-        public final Node[] posts;
         /** optional (can be null) */
         public final RestParameterNode rest;
+        public final Node[] posts;
         public final Node[] keywords;
         /** optional (can be null) */
         public final Node keyword_rest;
         /** optional (can be null) */
         public final BlockParameterNode block;
 
-        public ParametersNode(Node[] requireds, Node[] optionals, Node[] posts, RestParameterNode rest, Node[] keywords, Node keyword_rest, BlockParameterNode block, int startOffset, int length) {
+        public ParametersNode(Node[] requireds, Node[] optionals, RestParameterNode rest, Node[] posts, Node[] keywords, Node keyword_rest, BlockParameterNode block, int startOffset, int length) {
             super(startOffset, length);
             this.requireds = requireds;
             this.optionals = optionals;
-            this.posts = posts;
             this.rest = rest;
+            this.posts = posts;
             this.keywords = keywords;
             this.keyword_rest = keyword_rest;
             this.block = block;
@@ -3862,11 +4124,11 @@ public abstract class Nodes {
             for (Nodes.Node child : this.optionals) {
                 child.accept(visitor);
             }
-            for (Nodes.Node child : this.posts) {
-                child.accept(visitor);
-            }
             if (this.rest != null) {
                 this.rest.accept(visitor);
+            }
+            for (Nodes.Node child : this.posts) {
+                child.accept(visitor);
             }
             for (Nodes.Node child : this.keywords) {
                 child.accept(visitor);
@@ -3883,8 +4145,8 @@ public abstract class Nodes {
             ArrayList<Node> childNodes = new ArrayList<>();
             childNodes.addAll(Arrays.asList(this.requireds));
             childNodes.addAll(Arrays.asList(this.optionals));
-            childNodes.addAll(Arrays.asList(this.posts));
             childNodes.add(this.rest);
+            childNodes.addAll(Arrays.asList(this.posts));
             childNodes.addAll(Arrays.asList(this.keywords));
             childNodes.add(this.keyword_rest);
             childNodes.add(this.block);

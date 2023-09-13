@@ -12,7 +12,11 @@ public abstract class AbstractNodeVisitor<T> {
 
     protected abstract T defaultVisit(Nodes.Node node);
 
-    public T visitAliasNode(Nodes.AliasNode node) {
+    public T visitAliasGlobalVariableNode(Nodes.AliasGlobalVariableNode node) {
+        return defaultVisit(node);
+    }
+
+    public T visitAliasMethodNode(Nodes.AliasMethodNode node) {
         return defaultVisit(node);
     }
 
@@ -304,6 +308,10 @@ public abstract class AbstractNodeVisitor<T> {
         return defaultVisit(node);
     }
 
+    public T visitInterpolatedMatchLastLineNode(Nodes.InterpolatedMatchLastLineNode node) {
+        return defaultVisit(node);
+    }
+
     public T visitInterpolatedRegularExpressionNode(Nodes.InterpolatedRegularExpressionNode node) {
         return defaultVisit(node);
     }
@@ -357,6 +365,10 @@ public abstract class AbstractNodeVisitor<T> {
     }
 
     public T visitLocalVariableWriteNode(Nodes.LocalVariableWriteNode node) {
+        return defaultVisit(node);
+    }
+
+    public T visitMatchLastLineNode(Nodes.MatchLastLineNode node) {
         return defaultVisit(node);
     }
 
