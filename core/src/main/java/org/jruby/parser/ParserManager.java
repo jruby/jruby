@@ -48,14 +48,12 @@ public class ParserManager {
     }
 
     public ParseResult parseEval(String fileName, int lineNumber, String source, DynamicScope scope) {
-        addEvalParseToStats();
-        ByteList src = new ByteList(encodeToBytes(source), runtime.getDefaultEncoding());
-        return parseEval(fileName, lineNumber, src, scope);
+        return parseEval(fileName, lineNumber, new ByteList(encodeToBytes(source), runtime.getDefaultEncoding()), scope);
     }
 
     public ParseResult parseEval(String fileName, int lineNumber, ByteList source, DynamicScope scope) {
         long nanos = 0;
-        addEvalParseToStats();
+        parserStats.addEvalParse();
 
         if (PARSER_TIMING) nanos = System.nanoTime();
         ParseResult result = parser.parse(fileName, lineNumber, source, scope, EVAL);
@@ -66,7 +64,7 @@ public class ParserManager {
 
     public ParseResult parseFile(String fileName, int lineNumber, InputStream in, Encoding encoding, DynamicScope scope, int flags) {
         long nanos = 0;
-        addLoadParseToStats();
+        parserStats.addLoadParse();
 
         if (PARSER_TIMING) nanos = System.nanoTime();
         ParseResult result;
@@ -81,7 +79,8 @@ public class ParserManager {
     }
 
     public ParseResult parseFile(String fileName, int lineNumber, ByteList source, DynamicScope scope, int flags) {
-        addLoadParseToStats();
+        parserStats.addLoadParse();
+
         if (RubyInstanceConfig.IR_READING) {
             InputStream in = new ByteArrayInputStream(source.getUnsafeBytes(), source.begin(), source.length());
             return loadFileFromIRPersistence(fileName, lineNumber, in, source.getEncoding(), scope, flags);
@@ -93,10 +92,8 @@ public class ParserManager {
     public ParseResult loadFileFromIRPersistence(String fileName, int lineNumber, InputStream in, Encoding encoding, DynamicScope scope, int flags) {
         try {
             // Get IR from .ir file
-            ParseResult result = IRReader.load(runtime.getIRManager(), new IRReaderStream(runtime.getIRManager(),
+            return IRReader.load(runtime.getIRManager(), new IRReaderStream(runtime.getIRManager(),
                     IRFileExpert.getIRPersistedFile(fileName), fileName));
-            addLoadParseToStats();
-            return result;
         } catch (IOException e) {
             // FIXME: What if something actually throws IOException
             return parseFile(fileName, lineNumber, in, encoding, scope, flags);
@@ -122,15 +119,6 @@ public class ParserManager {
 
     public ParserStats getParserStats() {
         return parserStats;
-    }
-
-    // FIXME: These two methods may be able to go away.
-    public void addLoadParseToStats() {
-        parserStats.addLoadParse();
-    }
-
-    public void addEvalParseToStats() {
-        parserStats.addEvalParse();
     }
 
     private byte[] encodeToBytes(String string) {
