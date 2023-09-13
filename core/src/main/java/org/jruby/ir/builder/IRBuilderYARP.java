@@ -1482,11 +1482,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         return buildConditional(result, node.predicate, node.consequent, node.statements);
     }
 
-    // FIXME: until and while should have field for whether normal or modifer and no keyword at all.
     private Operand buildUntil(UntilNode node) {
-        // FIXME: Is this correct?
-        boolean evaluateAtStart = node.flags == 0;
-        return buildConditionalLoop(node.predicate, node.statements, false, evaluateAtStart);
+        return buildConditionalLoop(node.predicate, node.statements, false, !node.isBeginModifier());
     }
 
     private void buildWhenSplatValues(Variable eqqResult, Node node, Operand testValue, Label bodyLabel,
@@ -1502,9 +1499,7 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     }
 
     private Operand buildWhile(WhileNode node) {
-        // FIXME: flags processing
-        boolean evaluateAtStart = node.flags == 0 || node.flags == 1;
-        return buildConditionalLoop(node.predicate, node.statements, true, evaluateAtStart);
+        return buildConditionalLoop(node.predicate, node.statements, true, true);
     }
 
     // FIXME: implement
