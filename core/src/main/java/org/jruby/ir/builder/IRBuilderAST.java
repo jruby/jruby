@@ -565,7 +565,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return getLocalVariable(name, depth);
     }
 
-    protected void receiveBlockArg(Variable v, Operand argsArray, int argIndex, boolean isSplat) {
+    protected Variable receiveBlockArg(Variable v, Operand argsArray, int argIndex, boolean isSplat) {
         if (argsArray != null) {
             // We are in a nested receive situation -- when we are not at the root of a masgn tree
             // Ex: We are trying to receive (b,c) in this example: "|a, (b,c), d| = ..."
@@ -578,57 +578,44 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             Variable keywords = copy(UndefinedValue.UNDEFINED);
             addInstr(isSplat ? new ReceiveRestArgInstr(v, keywords, argIndex, argIndex) : new ReceivePreReqdArgInstr(v, keywords, argIndex));
         }
+
+        return v;
     }
 
     // This method is called to build arguments for a block!
     public void buildBlockArgsAssignment(Node node, Operand argsArray, int argIndex, boolean isSplat) {
-        Variable v;
         switch (node.getNodeType()) {
             case ATTRASSIGNNODE:
-                v = temp();
-                receiveBlockArg(v, argsArray, argIndex, isSplat);
-                buildAttrAssignAssignment(node, v);
+                buildAttrAssignAssignment(node,
+                        receiveBlockArg(temp(), argsArray, argIndex, isSplat));
                 break;
-            case DASGNNODE: {
-                DAsgnNode dynamicAsgn = (DAsgnNode) node;
-                v = getBlockArgVariable(dynamicAsgn.getName(), dynamicAsgn.getDepth());
-                receiveBlockArg(v, argsArray, argIndex, isSplat);
+            case LOCALASGNNODE:
+            case DASGNNODE:
+                receiveBlockArg(getBlockArgVariable(((INameNode) node).getName(), ((IScopedNode) node).getDepth()),
+                        argsArray, argIndex, isSplat);
                 break;
-            }
             case CLASSVARASGNNODE:
-                v = temp();
-                receiveBlockArg(v, argsArray, argIndex, isSplat);
-                addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), ((ClassVarAsgnNode)node).getName(), v));
+                addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), ((ClassVarAsgnNode)node).getName(),
+                        receiveBlockArg(temp(), argsArray, argIndex, isSplat)));
                 break;
             case CONSTDECLNODE:
-                v = temp();
-                receiveBlockArg(v, argsArray, argIndex, isSplat);
-                buildConstDeclAssignment((ConstDeclNode) node, v);
+                buildConstDeclAssignment((ConstDeclNode) node, receiveBlockArg(temp(), argsArray, argIndex, isSplat));
                 break;
             case GLOBALASGNNODE:
-                v = temp();
-                receiveBlockArg(v, argsArray, argIndex, isSplat);
-                addInstr(new PutGlobalVarInstr(((GlobalAsgnNode)node).getName(), v));
+                addInstr(new PutGlobalVarInstr(((GlobalAsgnNode)node).getName(),
+                        receiveBlockArg(temp(), argsArray, argIndex, isSplat)));
                 break;
             case INSTASGNNODE:
-                v = temp();
-                receiveBlockArg(v, argsArray, argIndex, isSplat);
                 // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
-                addInstr(new PutFieldInstr(buildSelf(), ((InstAsgnNode)node).getName(), v));
+                addInstr(new PutFieldInstr(buildSelf(), ((InstAsgnNode)node).getName(),
+                        receiveBlockArg(temp(), argsArray, argIndex, isSplat)));
                 break;
-            case LOCALASGNNODE: {
-                LocalAsgnNode localVariable = (LocalAsgnNode) node;
-                v = getBlockArgVariable(localVariable.getName(), localVariable.getDepth());
-                receiveBlockArg(v, argsArray, argIndex, isSplat);
-                break;
-            }
             case ZEROARGNODE:
                 throw notCompilable("Shouldn't get here; zeroarg does not do assignment", node);
             case MULTIPLEASGNNODE: { // only for 'for' nodes.
                 ListNode sourceArray = ((MultipleAsgnNode) node).getPre();
                 int i = 0;
                 for (Node an: sourceArray.children()) {
-                    // Use 1.8 mode version for this
                     buildBlockArgsAssignment(an, null, i, false);
                     i++;
                 }

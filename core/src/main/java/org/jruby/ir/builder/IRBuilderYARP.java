@@ -485,17 +485,62 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         return buildIter(node.parameters, node.body, staticScope, signature, getLine(node), getEndLine(node));
     }
 
+    protected Variable receiveBlockArg(Variable v, Operand argsArray, int argIndex, boolean isSplat) {
+        if (argsArray != null) {
+            // We are in a nested receive situation -- when we are not at the root of a masgn tree
+            // Ex: We are trying to receive (b,c) in this example: "|a, (b,c), d| = ..."
+            if (isSplat) addInstr(new RestArgMultipleAsgnInstr(v, argsArray, argIndex));
+            else addInstr(new ReqdArgMultipleAsgnInstr(v, argsArray, argIndex));
+        } else {
+            // argsArray can be null when the first node in the args-node-ast is a multiple-assignment
+            // For example, for-nodes
+            // FIXME: We can have keywords here but this is more complicated to get here
+            Variable keywords = copy(UndefinedValue.UNDEFINED);
+            addInstr(isSplat ? new ReceiveRestArgInstr(v, keywords, argIndex, argIndex) : new ReceivePreReqdArgInstr(v, keywords, argIndex));
+        }
+
+        return v;
+    }
+
     // FIXME: This is used for both for and blocks in AST but we do different path for for in YARP
     public void receiveBlockArgs(Node node) {
-        if (node instanceof MultiWriteNode) { // for
-            // FIXME: we do not have the values at this point.  We need to decouple for from the other iter types.
-            buildMultiWriteNode((MultiWriteNode) node);
+        if (node instanceof MultiTargetNode) { // for loops
+            buildBlockArgsAssignment(node, null, 0, false);
         } else {
             BlockParametersNode parameters = (BlockParametersNode) node;
             // FIXME: Impl
             //((IRClosure) scope).setArgumentDescriptors(Helpers.argsNodeToArgumentDescriptors(((ArgsNode) args)));
             // FIXME: Missing locals?  Not sure how we handle those but I would have thought with a scope?
             if (parameters != null) buildParameters(parameters.parameters);
+        }
+    }
+
+    private void buildBlockArgsAssignment(Node node, Operand argsArray, int argIndex, boolean isSplat) {
+        if (node instanceof CallNode) { // attribute assignment: a[0], b = 1, 2
+            buildAttrAssignAssignment((CallNode) node, symbol(((CallNode) node).name),
+                    receiveBlockArg(temp(), argsArray, argIndex, isSplat));
+        } else if (node instanceof LocalVariableTargetNode) {
+            LocalVariableTargetNode lvar = (LocalVariableTargetNode) node;
+            receiveBlockArg(getLocalVariable(symbol(lvar.name), lvar.depth), argsArray, argIndex, isSplat);
+        } else if (node instanceof ClassVariableTargetNode) {
+            addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), symbol(((ClassVariableTargetNode) node).name),
+                    receiveBlockArg(temp(), argsArray, argIndex, isSplat)));
+        } else if (node instanceof ConstantTargetNode) {
+            putConstant(symbol(((ConstantTargetNode) node).name), receiveBlockArg(temp(), argsArray, argIndex, isSplat));
+        } else if (node instanceof GlobalVariableTargetNode) {
+            addInstr(new PutGlobalVarInstr(symbol(((GlobalVariableTargetNode) node).name),
+                    receiveBlockArg(temp(), argsArray, argIndex, isSplat)));
+        } else if (node instanceof InstanceVariableTargetNode) {
+            addInstr(new PutFieldInstr(buildSelf(), symbol(((InstanceVariableTargetNode) node).name),
+                    receiveBlockArg(temp(), argsArray, argIndex, isSplat)));
+        } else if (node instanceof MultiTargetNode) {
+            Node[] targets = ((MultiTargetNode) node).targets;
+
+            for (int i = 0; i < targets.length; i++) {
+                buildBlockArgsAssignment(targets[i], null, i, false);
+            }
+        } else {
+            throw notCompilable("Can't build assignment node", node);
         }
     }
 
