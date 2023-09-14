@@ -2129,6 +2129,12 @@ public abstract class IRBuilder<U, V, W, X> {
         return addResultInstr(new UndefMethodInstr(temp(), name));
     }
 
+    public Operand buildVAlias(RubySymbol left, RubySymbol right) {
+        addInstr(new GVarAliasInstr(new MutableString(left), new MutableString(right)));
+
+        return nil();
+    }
+
     abstract void buildWhenArgs(W whenNode, Operand testValue, Label bodyLabel, Set<IRubyObject> seenLiterals);
 
     void buildWhenValue(Variable eqqResult, Operand testValue, Label bodyLabel, U node,

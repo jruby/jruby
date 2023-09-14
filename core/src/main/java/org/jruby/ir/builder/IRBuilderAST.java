@@ -2952,9 +2952,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     public Operand buildVAlias(VAliasNode valiasNode) {
-        addInstr(new GVarAliasInstr(new MutableString(valiasNode.getNewName()), new MutableString(valiasNode.getOldName())));
-
-        return nil();
+        return buildVAlias(valiasNode.getNewName(), valiasNode.getOldName());
     }
 
     public Operand buildVCall(Variable result, VCallNode node) {

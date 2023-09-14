@@ -97,7 +97,9 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
 
         if (node.hasNewLineFlag()) determineIfWeNeedLineNumber(getLine(node), true);
 
-        if (node instanceof AliasMethodNode) {
+        if (node instanceof AliasGlobalVariableNode) {
+            return buildAliasGlobalVariable((AliasGlobalVariableNode) node);
+        } else if (node instanceof AliasMethodNode) {
             return buildAliasMethod((AliasMethodNode) node);
         } else if (node instanceof AndNode) {
             return buildAnd((AndNode) node);
@@ -323,6 +325,10 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
 
     private Operand buildIn(InNode node) {
         throw new RuntimeException("Unhandled Node type: " + node);
+    }
+
+    private Operand buildAliasGlobalVariable(AliasGlobalVariableNode node) {
+        return buildVAlias(symbol(byteListFrom(node.new_name)), symbol(byteListFrom(node.old_name)));
     }
 
     private Operand buildAliasMethod(AliasMethodNode node) {
