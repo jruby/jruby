@@ -676,7 +676,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
         Operand receiver = build(node.receiver);
         Variable lhs = call(temp(), receiver, symbol(node.read_name));
         Operand rhs = build(node.value);
-        return call(temp(), receiver, symbol(node.write_name), lhs, rhs);
+        Operand value = call(temp(), lhs, symbol(node.operator), rhs);
+        return call(temp(), receiver, symbol(node.write_name), value);
     }
 
     private Operand buildCallOrWrite(CallOrWriteNode node) {
