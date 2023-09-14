@@ -1763,7 +1763,8 @@ public abstract class IRBuilder<U, V, W, X> {
     Operand buildOpAsgnOrWithDefined(U definitionNode, VoidCodeBlockOne getter, CodeBlock setter) {
         Label existsDone = getNewLabel();
         Label done = getNewLabel();
-        Variable result = (Variable) buildGetDefinition(definitionNode);
+        Operand def = buildGetDefinition(definitionNode);
+        Variable result = def instanceof Variable ? (Variable) def : copy(temp(), def);
         addInstr(createBranch(result, nil(), existsDone));
         getter.run(result);
         addInstr(new LabelInstr(existsDone));

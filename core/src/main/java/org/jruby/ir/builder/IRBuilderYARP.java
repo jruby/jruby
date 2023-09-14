@@ -410,11 +410,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
 
         if (node instanceof CallNode) {
             RubySymbol name = symbol(new ByteList(((CallNode) node).name));
-            if ("[]=".equals(name.idString())) {
-                buildAttrAssignAssignment((CallNode) node, name, rhsVal);
-            } else {
-                throw notCompilable("call node found on lhs of masgn", node);
-            }
+            // FIXME: Confused why GC.force= in masgn works with this?
+            buildAttrAssignAssignment((CallNode) node, name, rhsVal);
         } else if (node instanceof ClassVariableTargetNode) {
             addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), symbol(((ClassVariableTargetNode) node).name), rhsVal));
         } else if (node instanceof ConstantPathTargetNode) {
@@ -1922,7 +1919,55 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
             return build(args[0]);
         }
 
-        return new Array(buildCallArgsArray(args, flags));
+        Operand lastSplat = null;
+        List<Operand> singles = new ArrayList<>();
+
+        for(Node arg: args) {
+            if (arg instanceof SplatNode) {
+                flags[0] |= CALL_SPLATS;
+                if (lastSplat == null) {
+                    lastSplat = catArgs(singles, (SplatNode) arg, flags);
+                } else {
+                    lastSplat = catArgs(singles, lastSplat, flags);
+                    lastSplat = catArgs(lastSplat, (SplatNode) arg, flags);
+                }
+            } else {
+                singles.add(build(arg));
+            }
+        }
+
+        if (lastSplat != null) {
+            if (singles.isEmpty()) {
+                return new Splat(lastSplat);
+            } else {
+                Operand rhs = buildArray(singles);
+                return addResultInstr(new BuildCompoundArrayInstr(temp(), lastSplat, rhs, false, (flags[0] & CALL_KEYWORD_REST) != 0));
+            }
+        } else {
+            return buildArray(singles);
+        }
+    }
+
+    private Operand catArgs(List<Operand> args, Operand splat, int[] flags) {
+        Operand lhs = buildArray(args);
+        args.clear();
+        return addResultInstr(new BuildCompoundArrayInstr(temp(), splat, lhs, false, (flags[0] & CALL_KEYWORD_REST) != 0));
+    }
+
+    private Operand catArgs(Operand lhs, SplatNode splat, int[] flags) {
+        Operand rhs = build(splat.expression);
+        return addResultInstr(new BuildCompoundArrayInstr(temp(), lhs, rhs, false, (flags[0] & CALL_KEYWORD_REST) != 0));
+    }
+    private Operand catArgs(List<Operand> args, SplatNode splat, int[] flags) {
+        Operand lhs = buildArray(args);
+        args.clear();
+        Operand rhs = build(splat.expression);
+        return addResultInstr(new BuildCompoundArrayInstr(temp(), lhs, rhs, false, (flags[0] & CALL_KEYWORD_REST) != 0));
+    }
+
+    private Operand buildArray(List<Operand> elts) {
+        Operand[] args= new Operand[elts.size()];
+        return new Array(elts.toArray(args));
     }
 
     // FIXME: needs to derive this walking down tree.
