@@ -780,7 +780,8 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     }
 
     private Operand buildConstantPath(Variable result, RubySymbol name, Node parent) {
-        return parent == null ? searchConst(result, name) : searchModuleForConst(result, build(parent), name);
+        Operand where = parent == null ? getManager().getObjectClass() : build(parent);
+        return searchModuleForConst(result, where, name);
     }
 
     private Operand buildConstantPathOperatorWrite(ConstantPathOperatorWriteNode node) {
