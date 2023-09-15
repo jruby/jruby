@@ -212,6 +212,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     /** Short circuit to avoid-re-scanning for interrupts */
     private volatile boolean pendingInterruptQueueChecked = false;
 
+    private volatile BlockingTask currentBlockingTask;
+
     private volatile Selector currentSelector;
 
     private volatile RubyThread fiberCurrentThread;
@@ -2556,102 +2558,5 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 RubyHash.newHash(runtime, runtime.getObject(), runtime.newSymbol("never")),
                 state,
                 f);
-    }
-
-    private static final String MUTEX_FOR_THREAD_EXCLUSIVE = "MUTEX_FOR_THREAD_EXCLUSIVE";
-
-    @Deprecated // Thread.exclusive(&block)
-    @JRubyMethod(meta = true)
-    public static IRubyObject exclusive(ThreadContext context, IRubyObject recv, Block block) {
-        recv.callMethod(context, "warn", context.runtime.newString("Thread.exclusive is deprecated, use Thread::Mutex"));
-        return getMutexForThreadExclusive(context, (RubyClass) recv).synchronize(context, block);
-    }
-
-    private static Mutex getMutexForThreadExclusive(ThreadContext context, RubyClass recv) {
-        Mutex mutex = (Mutex) recv.getConstantNoConstMissing(MUTEX_FOR_THREAD_EXCLUSIVE, false, false);
-        if (mutex != null) return mutex;
-        synchronized (recv) {
-            mutex = (Mutex) recv.getConstantNoConstMissing(MUTEX_FOR_THREAD_EXCLUSIVE, false, false);
-            if (mutex == null) {
-                mutex = Mutex.newInstance(context, context.runtime.getMutex(), NULL_ARRAY, Block.NULL_BLOCK);
-                recv.setConstant(MUTEX_FOR_THREAD_EXCLUSIVE, mutex, true);
-            }
-            return mutex;
-        }
-    }
-
-    /**
-     * This is intended to be used to raise exceptions in Ruby threads from non-
-     * Ruby threads like Timeout's thread.
-     *
-     * @param args Same args as for Thread#raise
-     */
-    @Deprecated
-    public void internalRaise(IRubyObject[] args) {
-        ThreadContext context = getRuntime().getCurrentContext();
-        genericRaise(context, context.getThread(), args);
-    }
-
-    @Deprecated
-    public void receiveMail(ThreadService.Event event) {
-    }
-
-    @Deprecated
-    public void checkMail(ThreadContext context) {
-    }
-
-    @Deprecated
-    private volatile BlockingTask currentBlockingTask;
-
-    @Deprecated
-    public boolean selectForAccept(RubyIO io) {
-        return select(io, SelectionKey.OP_ACCEPT);
-    }
-
-    @Deprecated
-    public IRubyObject backtrace20(ThreadContext context, IRubyObject[] args) {
-        return backtrace(context);
-    }
-
-    @Deprecated
-    public IRubyObject backtrace(ThreadContext context, IRubyObject[] args) {
-        switch (args.length) {
-            case 0:
-                return backtrace(context);
-            case 1:
-                return backtrace(context, args[0]);
-            case 2:
-                return backtrace(context, args[0], args[1]);
-            default:
-                Arity.checkArgumentCount(context.runtime, args, 0, 2);
-                return null; // not reached
-        }
-    }
-
-    @Deprecated
-    public IRubyObject backtrace_locations(ThreadContext context, IRubyObject[] args) {
-        switch (args.length) {
-            case 0:
-                return backtrace_locations(context);
-            case 1:
-                return backtrace_locations(context, args[0]);
-            case 2:
-                return backtrace_locations(context, args[0], args[1]);
-            default:
-                Arity.checkArgumentCount(context.runtime, args, 0, 2);
-                return null; // not reached
-        }
-    }
-
-    @Deprecated
-    public static IRubyObject pass(IRubyObject recv) {
-        Ruby runtime = recv.getRuntime();
-
-        return pass(runtime.getCurrentContext(), recv);
-    }
-
-    @Deprecated
-    public IRubyObject safe_level() {
-        throw getRuntime().newNotImplementedError("Thread-specific SAFE levels are not supported");
     }
 }
