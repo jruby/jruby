@@ -3794,6 +3794,12 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @JRubyMethod(name = "select", required = 1, optional = 3, checkArity = false, meta = true)
     public static IRubyObject select(ThreadContext context, IRubyObject recv, IRubyObject[] argv) {
+        IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
+        if (!scheduler.isNil()) {
+            IRubyObject result = FiberScheduler.ioSelectv(context, scheduler, argv);
+            if (result != UNDEF) return result;
+        }
+
         int argc = Arity.checkArgumentCount(context, argv, 1, 4);
 
         IRubyObject read, write, except, _timeout;

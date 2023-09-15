@@ -443,6 +443,7 @@ public final class Ruby implements Constantizable {
             randomClass = null;
         }
         ioClass = RubyIO.createIOClass(this);
+        ioBufferClass = RubyIOBuffer.createIOBufferClass(this);
 
         structClass = profile.allowClass("Struct") ? RubyStruct.createStructClass(this) : null;
         bindingClass = profile.allowClass("Binding") ? RubyBinding.createBindingClass(this) : null;
@@ -1714,6 +1715,14 @@ public final class Ruby implements Constantizable {
         ifAllowed("KeyError",               (ruby) -> keyError = RubyKeyError.define(ruby, indexError));
         ifAllowed("DomainError",            (ruby) -> mathDomainError = RubyDomainError.define(ruby, argumentError, mathModule));
 
+        RubyClass runtimeError = this.runtimeError;
+        ObjectAllocator runtimeErrorAllocator = runtimeError.getAllocator();
+        bufferLockedError = ioBufferClass.defineClassUnder("LockedError", runtimeError, runtimeErrorAllocator);
+        ioBufferClass.defineClassUnder("AllocationError", runtimeError, runtimeErrorAllocator);
+        ioBufferClass.defineClassUnder("AccessError", runtimeError, runtimeErrorAllocator);
+        ioBufferClass.defineClassUnder("InvalidatedError", runtimeError, runtimeErrorAllocator);
+        ioBufferClass.defineClassUnder("MaskError", runtimeError, runtimeErrorAllocator);
+
         initErrno();
 
         initNativeException();
@@ -2174,6 +2183,10 @@ public final class Ruby implements Constantizable {
         return ioClass;
     }
 
+    public RubyClass getIOBuffer() {
+        return ioBufferClass;
+    }
+
     public RubyClass getThread() {
         return threadClass;
     }
@@ -2483,6 +2496,10 @@ public final class Ruby implements Constantizable {
 
     public RubyClass getInvalidByteSequenceError() {
         return invalidByteSequenceError;
+    }
+
+    public RubyClass getBufferLockedError() {
+        return bufferLockedError;
     }
 
     @Deprecated
@@ -4246,6 +4263,10 @@ public final class Ruby implements Constantizable {
         return newRaiseException(getInvalidByteSequenceError(), message);
     }
 
+    public RaiseException newBufferLockedError(String message) {
+        return newRaiseException(getBufferLockedError(), message);
+    }
+
     /**
      * Construct a new RaiseException wrapping a new Ruby exception object appropriate to the given exception class.
      *
@@ -5361,6 +5382,7 @@ public final class Ruby implements Constantizable {
     private final RubyClass fileClass;
     private final RubyClass fileStatClass;
     private final RubyClass ioClass;
+    private final RubyClass ioBufferClass;
     private final RubyClass threadClass;
     private final RubyClass threadGroupClass;
     private final RubyClass continuationClass;
@@ -5422,6 +5444,11 @@ public final class Ruby implements Constantizable {
     private RubyClass keyError;
     private RubyClass locationClass;
     private RubyClass interruptedRegexpError;
+    private RubyClass bufferLockedError;
+    private RubyClass bufferAllocationError;
+    private RubyClass bufferAccessError;
+    private RubyClass bufferInvalidatedError;
+    private RubyClass bufferMaskError;
 
     /**
      * All the core modules we keep direct references to, for quick access and

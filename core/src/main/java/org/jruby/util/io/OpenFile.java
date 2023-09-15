@@ -9,7 +9,6 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.HashSet;
@@ -28,12 +27,14 @@ import org.jcodings.transcode.EConvResult;
 import org.jruby.Finalizable;
 import org.jruby.Ruby;
 import org.jruby.RubyArgsFile;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyBignum;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyException;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyIO;
 import org.jruby.RubyNumeric;
+import org.jruby.FiberScheduler;
 import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.exceptions.RaiseException;
@@ -457,6 +458,8 @@ public class OpenFile implements Finalizable {
 
     // rb_io_wait_writable
     public boolean waitWritable(ThreadContext context, long timeout) {
+        IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
+
         boolean locked = lock();
         try {
             if (posix.getErrno() == null) return false;
@@ -470,6 +473,10 @@ public class OpenFile implements Finalizable {
                     return true;
                 case EAGAIN:
                 case EWOULDBLOCK:
+                    if (!scheduler.isNil()) {
+                        return FiberScheduler.ioWaitWritable(context, scheduler, RubyIO.newIO(context.runtime, channel())).isTrue();
+                    }
+
                     ready(runtime, context.getThread(), SelectExecutor.WRITE_CONNECT_OPS, timeout);
                     return true;
                 default:
@@ -487,6 +494,8 @@ public class OpenFile implements Finalizable {
 
     // rb_io_wait_readable
     public boolean waitReadable(ThreadContext context, long timeout) {
+        IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
+
         boolean locked = lock();
         try {
             if (posix.getErrno() == null) return false;
@@ -500,6 +509,10 @@ public class OpenFile implements Finalizable {
                     return true;
                 case EAGAIN:
                 case EWOULDBLOCK:
+                    if (!scheduler.isNil()) {
+                        return FiberScheduler.ioWaitReadable(context, scheduler, RubyIO.newIO(context.runtime, channel())).isTrue();
+                    }
+
                     ready(runtime, context.getThread(), SelectionKey.OP_READ, timeout);
                     return true;
                 default:
@@ -1371,8 +1384,16 @@ public class OpenFile implements Finalizable {
         }
     };
 
-    // rb_read_internal
+    // rb_read_internal, rb_io_read_memory
     public static int readInternal(ThreadContext context, OpenFile fptr, ChannelFD fd, byte[] bufBytes, int buf, int count) {
+        IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
+        if (!scheduler.isNil()) {
+            IRubyObject result = FiberScheduler.ioReadMemory(context, scheduler, fptr.tiedIOForWriting, bufBytes, buf, count);
+
+            if (result != RubyBasicObject.UNDEF) {
+                FiberScheduler.resultApply(context, result);
+            }
+        }
         // if we can do selection and this is not a non-blocking call, do selection
 
         /*
@@ -2312,8 +2333,17 @@ public class OpenFile implements Finalizable {
         return fptr.writeInternal2(fptr.fd, bytes, start, l);
     }
 
-    // rb_write_internal
+    // rb_write_internal, rb_io_write_memory
     public static int writeInternal(ThreadContext context, OpenFile fptr, byte[] bufBytes, int buf, int count) {
+        IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
+        if (!scheduler.isNil()) {
+            IRubyObject result = FiberScheduler.ioWriteMemory(context, scheduler, fptr.tiedIOForWriting, bufBytes, buf, count);
+
+            if (result != RubyBasicObject.UNDEF) {
+                FiberScheduler.resultApply(context, result);
+            }
+        }
+
         try {
             return context.getThread().executeReadWrite(context, fptr, bufBytes, buf, count, WRITE_TASK);
         } catch (InterruptedException ie) {

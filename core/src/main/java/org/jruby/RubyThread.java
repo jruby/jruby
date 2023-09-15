@@ -64,7 +64,6 @@ import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.exceptions.Unrescuable;
-import org.jruby.ext.thread.Mutex;
 import org.jruby.internal.runtime.RubyNativeThread;
 import org.jruby.internal.runtime.RubyRunnable;
 import org.jruby.internal.runtime.ThreadLike;
@@ -84,7 +83,6 @@ import org.jruby.runtime.ExecutionContext;
 import org.jruby.runtime.backtrace.FrameType;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.load.LoadService;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.BlockingIO;
@@ -218,6 +216,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     private volatile RubyThread fiberCurrentThread;
 
+    private IRubyObject scheduler;
+    private boolean blocking = true;
+
     private static final AtomicIntegerFieldUpdater<RubyThread> INTERRUPT_FLAG_UPDATER =
             AtomicIntegerFieldUpdater.newUpdater(RubyThread.class, "interruptFlag");
 
@@ -236,6 +237,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         finalResult = errorInfo = runtime.getNil();
         reportOnException = runtime.isReportOnException();
+        scheduler = runtime.getNil();
 
         this.adopted = adopted;
     }
@@ -2558,5 +2560,41 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 RubyHash.newHash(runtime, runtime.getObject(), runtime.newSymbol("never")),
                 state,
                 f);
+    }
+
+    /**
+     * Set the scheduler for the current thread.
+     *
+     * MRI: rb_fiber_scheduler_set
+     */
+    public IRubyObject setFiberScheduler(IRubyObject scheduler) {
+//        VM_ASSERT(ruby_thread_has_gvl_p());
+
+        scheduler.getClass(); // !null
+
+        if (scheduler != null && !scheduler.isNil()) {
+            FiberScheduler.verifyInterface(scheduler);
+        }
+
+        if (!this.scheduler.isNil()) {
+            FiberScheduler.close(getContext(), this.scheduler);
+        }
+
+        this.scheduler = scheduler;
+
+        return scheduler;
+    }
+
+    public IRubyObject getScheduler() {
+        return scheduler;
+    }
+
+    // MRI: rb_fiber_scheduler_current_for_threadptr, rb_fiber_scheduler_current
+    public IRubyObject getSchedulerCurrent() {
+        if (!blocking) {
+            return scheduler;
+        }
+
+        return getRuntime().getNil();
     }
 }
