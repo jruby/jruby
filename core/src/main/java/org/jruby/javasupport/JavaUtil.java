@@ -1538,7 +1538,7 @@ public class JavaUtil {
             }
             break;
         case FLOAT:
-            javaObject = new Double(((RubyFloat) object).getValue());
+            javaObject = Double.valueOf(((RubyFloat) object).getValue());
             break;
         case STRING:
             ByteList bytes = ((RubyString) object).getByteList();
