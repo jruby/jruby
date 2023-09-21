@@ -1348,7 +1348,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @SuppressWarnings("NonOverridingEquals")
     final boolean equals(RubyString other) {
-        return ((RubyString) other).value.equal(value);
+        return other.value.equal(value);
     }
 
     /** rb_obj_as_string
