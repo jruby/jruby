@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         target: ['test:jruby:int', 'spec:ruby:fast', 'spec:ji', 'spec:ffi']
-        java-version: ['8', '17']
+        java-version: ['8', '17', '21']
       fail-fast: false
 
     name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }})
@@ -76,13 +76,13 @@ jobs:
       - name: rake test:jruby
         run: bin/jruby --dev -S rake test:jruby
 
-  rake-test-17-indy:
+  rake-test-21-indy:
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
         target: ['test:mri:core:jit', 'test:jruby:jit', 'spec:compiler', 'spec:ruby:fast:jit', 'spec:ji']
-        java-version: ['21-ea']
+        java-version: 21
       fail-fast: false
 
     name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }} +indy)
@@ -146,7 +146,7 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
-          java-version: '8'
+          java-version: 8
           cache: 'maven'
       - name: mvn package ${{ matrix.package-flags }}
         run: tool/maven-ci-script.sh
