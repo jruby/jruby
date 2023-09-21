@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         target: ['test:jruby:int', 'spec:ruby:fast', 'spec:ji', 'spec:ffi']
-        java-version: ['8', '17', '21']
+        java-version: ['8', '11', '17', '21']
       fail-fast: false
 
     name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }})
@@ -70,19 +70,19 @@ jobs:
       - name: set up java 8
         uses: actions/setup-java@v3
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: 8
           cache: 'maven'
       - name: rake test:jruby
         run: bin/jruby --dev -S rake test:jruby
 
-  rake-test-21-indy:
+  rake-test-17-indy:
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
         target: ['test:mri:core:jit', 'test:jruby:jit', 'spec:compiler', 'spec:ruby:fast:jit', 'spec:ji']
-        java-version: 21
+        java-version: ['17', '21']
       fail-fast: false
 
     name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }} +indy)
@@ -266,10 +266,10 @@ jobs:
     steps:
       - name: Bootstrap build
         uses: jruby/jruby-ci-build@v1
-      - name: set up java 8
+      - name: set up java
         uses: actions/setup-java@v3
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: 11
           cache: 'maven'
       - name: sequel
@@ -287,7 +287,7 @@ jobs:
       - name: set up java 8
         uses: actions/setup-java@v3
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: 8
           cache: 'maven'
       - name: concurrent-ruby
