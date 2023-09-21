@@ -272,7 +272,13 @@ public class JavaPackage extends RubyModule {
 
     public final boolean isAvailable() {
         // may be null if no package information is available from the archive or codebase
-        return Package.getPackage(packageName) != null;
+        return getPackage() != null;
+    }
+
+    @SuppressWarnings("deprecation")
+    private Package getPackage() {
+        // NOTE: can not switch to getRuntime().getJRubyClassLoader().getDefinedPackage(packageName) as it's Java 9+
+        return Package.getPackage(packageName);
     }
 
     @JRubyMethod(name = "available?")
@@ -282,7 +288,7 @@ public class JavaPackage extends RubyModule {
 
     @JRubyMethod(name = "sealed?")
     public IRubyObject sealed_p(ThreadContext context) {
-        final Package pkg = Package.getPackage(packageName);
+        final Package pkg = getPackage();
         if ( pkg == null ) return context.nil;
         return RubyBoolean.newBoolean(context, pkg.isSealed());
     }
@@ -291,7 +297,7 @@ public class JavaPackage extends RubyModule {
     @SuppressWarnings("unchecked")
     public <T> T toJava(Class<T> target) {
         if ( target.isAssignableFrom( Package.class ) ) {
-            return target.cast(Package.getPackage(packageName));
+            return target.cast(getPackage());
         }
         return super.toJava(target);
     }
