@@ -127,7 +127,7 @@ project 'JRuby Integration Tests' do
 
     plugin :antrun do
       [ 'jruby', 'objectspace', 'slow' ].each do |index|
-        files = []
+        filenames = []
         File.open(File.join(basedir, index + '.index')) do |file|
           file.each_line do |line|
             next if line =~ /^#/ || line.strip.empty?
@@ -137,15 +137,29 @@ project 'JRuby Integration Tests' do
             next if filename =~ /mri\/psych\//
             next if filename =~ /mri\/net\/http\//
             next unless File.exist? File.join(basedir, filename)
-            files << "<arg value='test/#{filename}'/>"
+            filenames << filename
           end
         end
-        files = files.join('')
 
         execute_goals( 'run',
                        :id => "jruby_complete_jar_#{index}",
                        :phase => 'test',
-                       :configuration => [ xml( "<target><exec dir='${jruby.home}' executable='java' failonerror='true'><arg value='-cp'/><arg value='core/target/test-classes:test/target/test-classes:maven/jruby-complete/target/jruby-complete-${project.version}.jar'/><arg value='-Djruby.home=${jruby.home}'/><arg value='-Djruby.aot.loadClasses=true'/><arg value='org.jruby.Main'/><arg value='-I.'/><arg value='-Itest'/><arg value='lib/ruby/gems/shared/gems/rake-${rake.version}/lib/rake/rake_test_loader.rb'/>#{files}<arg value='-v'/></exec></target>" ) ] )
+                       :configuration => [
+                         xml( "<target>" +
+                                "<exec dir='${jruby.home}' executable='java' failonerror='true'>" +
+                                  "<arg value='-cp'/>" +
+                                  "<arg value='core/target/test-classes:test/target/test-classes:maven/jruby-complete/target/jruby-complete-${project.version}.jar'/>" +
+                                  "<arg value='-Djruby.home=${jruby.home}'/>" +
+                                  "<arg value='-Djruby.aot.loadClasses=true'/>" +
+                                  "<arg value='org.jruby.Main'/>" +
+                                  "<arg value='-I.'/>" +
+                                  "<arg value='-Itest'/>" +
+                                  "<arg value='lib/ruby/gems/shared/gems/rake-${rake.version}/lib/rake/rake_test_loader.rb'/>" +
+                                  filenames.map { |filename| "<arg value='test/#{filename}'/>" }.join('') +
+                                  "<arg value='-v'/>
+                                </exec>
+                              </target>" )
+                       ] )
       end
     end
 
