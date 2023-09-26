@@ -136,10 +136,6 @@ jobs:
         java-version: [11, 17]
       fail-fast: false
 
-    env:
-      # some tests from jruby_complete_jar_extended (test/jruby/test_kernel.rb, test/jruby/test_socket.rb) need sub-process control
-      MAVEN_OPTS: '--add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED'
-
 
     name: mvn ${{ matrix.package-flags }} (Java ${{ matrix.java-version }})
 

@@ -141,12 +141,21 @@ project 'JRuby Integration Tests' do
           end
         end
 
+        # some tests from jruby suite (test/jruby/test_kernel.rb, test/jruby/test_socket.rb) need sub-process control
+        if ENV_JAVA['java.specification.version'].to_i > 8
+          add_opens = ['java.base/java.io=ALL-UNNAMED', 'java.base/sun.nio.ch=ALL-UNNAMED']
+        else
+          add_opens = []
+        end
+
         execute_goals( 'run',
                        :id => "jruby_complete_jar_#{index}",
                        :phase => 'test',
                        :configuration => [
-                         xml( "<target>" +
+                         xml( "<target unless='maven.test.skip'>" +
                                 "<exec dir='${jruby.home}' executable='java' failonerror='true'>" +
+                                  add_opens.map { |value| "<arg value='--add-opens'/><arg value='#{value}'/>" }.join +
+                                  "<arg value='-Djruby.home=${jruby.home}'/>" +
                                   "<arg value='-cp'/>" +
                                   "<arg value='core/target/test-classes:test/target/test-classes:maven/jruby-complete/target/jruby-complete-${project.version}.jar'/>" +
                                   "<arg value='-Djruby.home=${jruby.home}'/>" +
@@ -155,7 +164,7 @@ project 'JRuby Integration Tests' do
                                   "<arg value='-I.'/>" +
                                   "<arg value='-Itest'/>" +
                                   "<arg value='lib/ruby/gems/shared/gems/rake-${rake.version}/lib/rake/rake_test_loader.rb'/>" +
-                                  filenames.map { |filename| "<arg value='test/#{filename}'/>" }.join('') +
+                                  filenames.map { |filename| "<arg value='test/#{filename}'/>" }.join +
                                   "<arg value='-v'/>
                                 </exec>
                               </target>" )
