@@ -13,6 +13,7 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyKernel;
 import org.jruby.RubyModule;
 import org.jruby.RubyNil;
+import org.jruby.RubyProc;
 import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
 import org.jruby.internal.runtime.methods.AliasMethod;
@@ -25,8 +26,11 @@ import org.jruby.java.invokers.InstanceFieldGetter;
 import org.jruby.java.invokers.InstanceFieldSetter;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.CompiledIRBlockBody;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.MixedModeIRBlockBody;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -523,6 +527,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
         MethodHandle mh = buildNewInstanceHandle(entry, self);
         if (mh == null) mh = buildNotEqualHandle(entry, self);
+        if (mh == null) mh = buildProcCallHandle(entry, self);
         if (mh == null) mh = Bootstrap.buildNativeHandle(this, entry, blockGiven);
         if (mh == null) mh = buildJavaFieldHandle(this, entry, self);
         if (mh == null) mh = Bootstrap.buildIndyHandle(this, entry);
@@ -682,6 +687,75 @@ public abstract class InvokeSite extends MutableCallSite {
                 if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
                     LOG.info(name() + "\tbound as specialized " + name() + ":" + Bootstrap.logMethod(method));
                 }
+            }
+        }
+
+        return mh;
+    }
+
+    MethodHandle buildProcCallHandle(CacheEntry entry, IRubyObject self) {
+        MethodHandle mh = null;
+        DynamicMethod method = entry.method;
+
+        Ruby runtime = self.getRuntime();
+        Block block = null;
+        MethodHandle blockHandle = null;
+
+        if (
+                method.isBuiltin() &&
+                self instanceof RubyProc &&
+                name().equals("call") &&
+                method.getImplementationClass() == runtime.getProc()
+        ) {
+            RubyProc proc = (RubyProc) self;
+
+            block = proc.getBlock();
+            BlockBody body = block.getBody();
+
+            if (body.canCallDirect()) {
+
+                while (true) {
+                    if (body instanceof CompiledIRBlockBody) {
+                        blockHandle = ((CompiledIRBlockBody) body).getCallHandle();
+                    } else if (body instanceof MixedModeIRBlockBody) {
+                        body = ((MixedModeIRBlockBody) body).getJittedBody();
+                        continue;
+                    }
+                    break;
+                }
+            }
+        }
+
+        if (blockHandle != null) {
+            SmartBinder binder = SmartBinder.from(signature);
+
+            if (arity == 0) {
+                binder = binder.insert(3, "args", IRubyObject.NULL_ARRAY);
+            } else if (arity > 0) {
+                binder = binder.collect("args", "arg.*", Helpers.constructObjectArrayHandle(arity));
+            }
+
+            if (signature.lastArgType() != Block.class) {
+                binder = binder.append("block", Block.NULL_BLOCK);
+            }
+
+            SmartHandle target = binder
+                    .append("selfBlock", block)
+                    .permute("context", "selfBlock", "args", "block")
+                    .invoke(blockHandle);
+
+            SmartHandle test = SmartBinder.from(signature.changeReturn(boolean.class))
+                    .permute("self")
+                    .append("oldSelf", self)
+                    .cast(Signature.from(boolean.class, Helpers.arrayOf(Object.class, Object.class), "self", "otherSelf"))
+                    .invokeVirtualQuiet(LOOKUP, "equals");
+
+            MethodHandle fail = Bootstrap.buildGenericHandle(this, entry);
+
+            mh = test.guard(target.handle(), fail);
+
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                LOG.info(name() + "\tbound as direct block call " + name() + ":" + Bootstrap.logMethod(method));
             }
         }
 
