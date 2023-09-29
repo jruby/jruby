@@ -1,5 +1,6 @@
 package org.jruby;
 
+import jnr.constants.platform.Errno;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -195,11 +196,11 @@ public class FiberScheduler {
         }
     }
 
-    public static IRubyObject result(Ruby runtime, int result, int error) {
+    public static IRubyObject result(Ruby runtime, int result, Errno error) {
         if (result == -1) {
-            return RubyFixnum.newFixnum(runtime, error);
+            return RubyFixnum.newFixnum(runtime, error.value());
         } else {
-            return RubyFixnum.newFixnum(runtime, error);
+            return RubyFixnum.newFixnum(runtime, result);
         }
     }
 }

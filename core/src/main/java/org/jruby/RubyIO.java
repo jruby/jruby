@@ -3137,7 +3137,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         fptr = getOpenFileChecked();
 
-        final boolean locked = fptr.lock(); int n;
+        final boolean locked = fptr.lock();
+        int n;
         try {
             fptr.checkByteReadable(context);
 

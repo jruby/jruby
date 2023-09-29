@@ -85,9 +85,28 @@ public class RubyIOBuffer extends RubyObject {
         this.flags = flags;
     }
 
-    @JRubyMethod(name = "for")
-    public static IRubyObject rbFor(ThreadContext context, IRubyObject self, IRubyObject string) {
-        return context.nil;
+    @JRubyMethod(name = "for", meta = true)
+    public static IRubyObject rbFor(ThreadContext context, IRubyObject self, IRubyObject _string, Block block) {
+        RubyString string = _string.convertToString();
+
+        // If the string is frozen, both code paths are okay.
+        // If the string is not frozen, if a block is not given, it must be frozen.
+        boolean isGiven = block.isGiven();
+        if (!isGiven) {
+            // This internally returns the source string if it's already frozen.
+            string = string.newFrozen();
+        }
+
+        ByteList bytes = string.getByteList();
+        int size = bytes.realSize();
+
+        RubyIOBuffer buffer = newBuffer(context.runtime, ByteBuffer.wrap(bytes.unsafeBytes(), bytes.begin(), size), size, flagsForSize(size));
+
+        if (isGiven) {
+            return block.yieldSpecific(context, buffer);
+        }
+
+        return buffer;
     }
 
     @JRubyMethod(name = "initialize")
@@ -385,7 +404,9 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "resize")
     public IRubyObject resize(ThreadContext context, IRubyObject size) {
-        return context.nil;
+        resize(context, size.convertToInteger().getIntValue());
+
+        return this;
     }
 
     // MRI: rb_io_buffer_resize
@@ -506,7 +527,7 @@ public class RubyIOBuffer extends RubyObject {
         return false;
     }
 
-    @JRubyMethod(name = "size_of")
+    @JRubyMethod(name = "size_of", meta = true)
     public static IRubyObject size_of(ThreadContext context, IRubyObject self, IRubyObject dataType) {
         if (dataType instanceof RubyArray) {
             long total = 0;
@@ -905,40 +926,58 @@ public class RubyIOBuffer extends RubyObject {
         switch (dataType) {
             case S8:
                 writeByte(context, buffer, offset, (byte) unwrapLong(value));
+                return;
             case U8:
                 writeUnsignedByte(context, buffer, offset, (int) unwrapLong(value));
+                return;
             case u16:
                 writeUnsignedShort(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, (int) unwrapLong(value));
+                return;
             case U16:
                 writeUnsignedShort(context, buffer, offset, ByteOrder.BIG_ENDIAN, (int) unwrapLong(value));
+                return;
             case s16:
                 writeShort(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, (short) unwrapLong(value));
+                return;
             case S16:
                 writeShort(context, buffer, offset, ByteOrder.BIG_ENDIAN, (short) unwrapLong(value));
+                return;
             case u32:
-                writeUnsignedInt(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, (long) unwrapLong(value));
+                writeUnsignedInt(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, unwrapLong(value));
+                return;
             case U32:
-                writeUnsignedInt(context, buffer, offset, ByteOrder.BIG_ENDIAN, (long) unwrapLong(value));
+                writeUnsignedInt(context, buffer, offset, ByteOrder.BIG_ENDIAN, unwrapLong(value));
+                return;
             case s32:
                 writeInt(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, (int) unwrapLong(value));
+                return;
             case S32:
                 writeInt(context, buffer, offset, ByteOrder.BIG_ENDIAN, (int) unwrapLong(value));
+                return;
             case u64:
                 writeUnsignedLong(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, unwrapUnsignedLong(value));
+                return;
             case U64:
                 writeUnsignedLong(context, buffer, offset, ByteOrder.BIG_ENDIAN, unwrapUnsignedLong(value));
+                return;
             case s64:
                 writeLong(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, unwrapLong(value));
+                return;
             case S64:
                 writeLong(context, buffer, offset, ByteOrder.BIG_ENDIAN, unwrapLong(value));
+                return;
             case f32:
                 writeFloat(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, (float) unwrapDouble(value));
+                return;
             case F32:
                 writeFloat(context, buffer, offset, ByteOrder.BIG_ENDIAN, (float) unwrapDouble(value));
+                return;
             case f64:
                 writeDouble(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, unwrapDouble(value));
+                return;
             case F64:
                 writeDouble(context, buffer, offset, ByteOrder.BIG_ENDIAN, unwrapDouble(value));
+                return;
         }
 
         throw context.runtime.newArgumentError("Unknown data_type: " + dataType); // should never happen
@@ -1240,7 +1279,7 @@ public class RubyIOBuffer extends RubyObject {
         return outputBuffer;
     }
 
-    @JRubyMethod(name = "~")
+    @JRubyMethod(name = "~@")
     public IRubyObject op_not(ThreadContext context) {
         ByteBuffer buffer = getBufferForReading(context);
 
@@ -1296,8 +1335,14 @@ public class RubyIOBuffer extends RubyObject {
     }
 
     private static IRubyObject readInternal(ThreadContext context, RubyIO io, ByteBuffer base, int offset, int size) {
-        int result = OpenFile.readInternal(context, io.openFile, io.openFile.fd(), base, offset, size);
-        return FiberScheduler.result(context.runtime, result, io.openFile.posix.getErrno().value());
+        OpenFile fptr = io.getOpenFileChecked();
+        final boolean locked = fptr.lock();
+        try {
+            int result = OpenFile.readInternal(context, fptr, fptr.fd(), base, offset, size);
+            return FiberScheduler.result(context.runtime, result, fptr.errno());
+        } finally {
+            if (locked) fptr.unlock();
+        }
     }
 
     @JRubyMethod(name = "pread")
@@ -1366,8 +1411,14 @@ public class RubyIOBuffer extends RubyObject {
     }
 
     private static IRubyObject writeInternal(ThreadContext context, RubyIO io, ByteBuffer base, int offset, int size) {
-        int result = OpenFile.writeInternal(context, io.openFile, base, offset, size);
-        return FiberScheduler.result(context.runtime, result, io.openFile.posix.getErrno().value());
+        OpenFile fptr = io.getOpenFileChecked();
+        final boolean locked = fptr.lock();
+        try {
+            int result = OpenFile.writeInternal(context, fptr, base, offset, size);
+            return FiberScheduler.result(context.runtime, result, fptr.errno());
+        } finally {
+            if (locked) fptr.unlock();
+        }
     }
     
     @JRubyMethod(name = "pwrite")
