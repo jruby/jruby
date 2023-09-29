@@ -2,6 +2,7 @@ package org.jruby.util.io;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
@@ -1334,6 +1335,25 @@ public class OpenFile implements Finalizable {
     final static RubyThread.ReadWrite<OpenFile> READ_TASK = new RubyThread.ReadWrite<OpenFile>() {
         @Override
         public int run(ThreadContext context, OpenFile fptr, byte[] buffer, int start, int length) throws InterruptedException {
+            ChannelFD fd = preRead(context, fptr);
+            try {
+                return fptr.posix.read(fd, buffer, start, length, fptr.nonblock);
+            } finally {
+                fptr.lock();
+            }
+        }
+
+        @Override
+        public int run(ThreadContext context, OpenFile fptr, ByteBuffer buffer, int start, int length) throws InterruptedException {
+            ChannelFD fd = preRead(context, fptr);
+            try {
+                return fptr.posix.read(fd, buffer, start, length, fptr.nonblock);
+            } finally {
+                fptr.lock();
+            }
+        }
+
+        private ChannelFD preRead(ThreadContext context, OpenFile fptr) {
             ChannelFD fd = fptr.fd;
 
             if (fd == null) {
@@ -1344,11 +1364,7 @@ public class OpenFile implements Finalizable {
             assert fptr.lockedByMe();
 
             fptr.unlock();
-            try {
-                return fptr.posix.read(fd, buffer, start, length, fptr.nonblock);
-            } finally {
-                fptr.lock();
-            }
+            return fd;
         }
 
         @Override
@@ -1360,6 +1376,25 @@ public class OpenFile implements Finalizable {
     final static RubyThread.ReadWrite<OpenFile> WRITE_TASK = new RubyThread.ReadWrite<OpenFile>() {
         @Override
         public int run(ThreadContext context, OpenFile fptr, byte[] bytes, int start, int length) throws InterruptedException {
+            ChannelFD fd = preWrite(context, fptr);
+            try {
+                return fptr.posix.write(fd, bytes, start, length, fptr.nonblock);
+            } finally {
+                fptr.lock();
+            }
+        }
+
+        @Override
+        public int run(ThreadContext context, OpenFile fptr, ByteBuffer bytes, int start, int length) throws InterruptedException {
+            ChannelFD fd = preWrite(context, fptr);
+            try {
+                return fptr.posix.write(fd, bytes, start, length, fptr.nonblock);
+            } finally {
+                fptr.lock();
+            }
+        }
+
+        private ChannelFD preWrite(ThreadContext context, OpenFile fptr) {
             ChannelFD fd = fptr.fd;
 
             if (fd == null) {
@@ -1370,11 +1405,7 @@ public class OpenFile implements Finalizable {
             assert fptr.lockedByMe();
 
             fptr.unlock();
-            try {
-                return fptr.posix.write(fd, bytes, start, length, fptr.nonblock);
-            } finally {
-                fptr.lock();
-            }
+            return fd;
         }
 
         @Override
@@ -1384,7 +1415,7 @@ public class OpenFile implements Finalizable {
         }
     };
 
-    // rb_read_internal, rb_io_read_memory
+    // rb_read_internal, rb_io_read_memory, rb_io_buffer_read_internal
     public static int readInternal(ThreadContext context, OpenFile fptr, ChannelFD fd, byte[] bufBytes, int buf, int count) {
         IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
         if (!scheduler.isNil()) {
@@ -1407,6 +1438,48 @@ public class OpenFile implements Finalizable {
             working with any native descriptor.
          */
 
+        preRead(context, fptr, fd);
+
+        try {
+            return context.getThread().executeReadWrite(context, fptr, bufBytes, buf, count, READ_TASK);
+        } catch (InterruptedException ie) {
+            throw context.runtime.newConcurrencyError("IO operation interrupted");
+        }
+    }
+
+    // rb_io_buffer_read_internal
+    public static int readInternal(ThreadContext context, OpenFile fptr, ChannelFD fd, ByteBuffer bufBytes, int buf, int count) {
+        IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
+        if (!scheduler.isNil()) {
+            IRubyObject result = FiberScheduler.ioReadMemory(context, scheduler, fptr.tiedIOForWriting, bufBytes, buf, count);
+
+            if (result != RubyBasicObject.UNDEF) {
+                FiberScheduler.resultApply(context, result);
+            }
+        }
+        // if we can do selection and this is not a non-blocking call, do selection
+
+        /*
+            NOTE CON: We only do this selection because on the JDK, blocking calls to NIO channels can't be
+            interrupted, and we need to be able to interrupt blocking reads. In MRI, this logic is always just a
+            simple read(2) because EINTR does not damage the descriptor.
+
+            Doing selects here on ENXIO native channels caused FIFOs to block for read all the time, even when no
+            writers are connected. This may or may not be correct behavior for selects against FIFOs, but in any
+            case since MRI does not do a select here at all I believe correct logic is to skip the select when
+            working with any native descriptor.
+         */
+
+        preRead(context, fptr, fd);
+
+        try {
+            return context.getThread().executeReadWrite(context, fptr, bufBytes, buf, count, READ_TASK);
+        } catch (InterruptedException ie) {
+            throw context.runtime.newConcurrencyError("IO operation interrupted");
+        }
+    }
+
+    private static void preRead(ThreadContext context, OpenFile fptr, ChannelFD fd) {
         if (fd == null) {
             // stream was closed on its way in, raise appropriate error
             throw context.runtime.newErrnoEBADFError();
@@ -1421,12 +1494,6 @@ public class OpenFile implements Finalizable {
             }
         } finally {
             fptr.lock();
-        }
-
-        try {
-            return context.getThread().executeReadWrite(context, fptr, bufBytes, buf, count, READ_TASK);
-        } catch (InterruptedException ie) {
-            throw context.runtime.newConcurrencyError("IO operation interrupted");
         }
     }
 
@@ -2335,6 +2402,24 @@ public class OpenFile implements Finalizable {
 
     // rb_write_internal, rb_io_write_memory
     public static int writeInternal(ThreadContext context, OpenFile fptr, byte[] bufBytes, int buf, int count) {
+        IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
+        if (!scheduler.isNil()) {
+            IRubyObject result = FiberScheduler.ioWriteMemory(context, scheduler, fptr.tiedIOForWriting, bufBytes, buf, count);
+
+            if (result != RubyBasicObject.UNDEF) {
+                FiberScheduler.resultApply(context, result);
+            }
+        }
+
+        try {
+            return context.getThread().executeReadWrite(context, fptr, bufBytes, buf, count, WRITE_TASK);
+        } catch (InterruptedException ie) {
+            throw context.runtime.newConcurrencyError("IO operation interrupted");
+        }
+    }
+
+    // rb_io_buffer_write_internal
+    public static int writeInternal(ThreadContext context, OpenFile fptr, ByteBuffer bufBytes, int buf, int count) {
         IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
         if (!scheduler.isNil()) {
             IRubyObject result = FiberScheduler.ioWriteMemory(context, scheduler, fptr.tiedIOForWriting, bufBytes, buf, count);

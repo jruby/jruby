@@ -36,6 +36,7 @@ package org.jruby;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.ref.WeakReference;
+import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
@@ -1789,25 +1790,48 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             ReadWrite<Data> task) throws InterruptedException {
         Status oldStatus = STATUS.get(this);
         try {
-            this.unblockArg = data;
-            this.unblockFunc = task;
-
-            // check for interrupt before going into blocking call
-            blockingThreadPoll(context);
-
-            STATUS.set(this, Status.SLEEP);
+            preReadWrite(context, data, task);
 
             return task.run(context, data, bytes, start, length);
         } finally {
-            STATUS.set(this, oldStatus);
-            this.unblockFunc = null;
-            this.unblockArg = null;
-            pollThreadEvents(context);
+            postReadWrite(context, oldStatus);
         }
+    }
+
+    public <Data> int executeReadWrite(
+            ThreadContext context,
+            Data data, ByteBuffer bytes, int start, int length,
+            ReadWrite<Data> task) throws InterruptedException {
+        Status oldStatus = STATUS.get(this);
+        try {
+            preReadWrite(context, data, task);
+
+            return task.run(context, data, bytes, start, length);
+        } finally {
+            postReadWrite(context, oldStatus);
+        }
+    }
+
+    private void postReadWrite(ThreadContext context, Status oldStatus) {
+        STATUS.set(this, oldStatus);
+        this.unblockFunc = null;
+        this.unblockArg = null;
+        pollThreadEvents(context);
+    }
+
+    private <Data> void preReadWrite(ThreadContext context, Data data, ReadWrite<Data> task) {
+        this.unblockArg = data;
+        this.unblockFunc = task;
+
+        // check for interrupt before going into blocking call
+        blockingThreadPoll(context);
+
+        STATUS.set(this, Status.SLEEP);
     }
 
     public interface ReadWrite<Data> extends Unblocker<Data> {
         public int run(ThreadContext context, Data data, byte[] bytes, int start, int length) throws InterruptedException;
+        public int run(ThreadContext context, Data data, ByteBuffer bytes, int start, int length) throws InterruptedException;
         public void wakeup(RubyThread thread, Data data);
     }
 
