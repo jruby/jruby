@@ -4,6 +4,8 @@ import jnr.ffi.NativeType;
 import jnr.ffi.Platform;
 import jnr.ffi.Runtime;
 import jnr.ffi.Type;
+import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
@@ -11,6 +13,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 import org.jruby.util.func.ObjectLongFunction;
 
 import java.math.BigInteger;
@@ -96,12 +99,22 @@ public class RubyIOBuffer extends RubyObject {
     }
 
     @JRubyMethod(name = "initialize")
-    public IRubyObject initialize(ThreadContext context, IRubyObject size, IRubyObject flags) {
-        return initialize(context, size.convertToInteger().getIntValue(), flags.convertToInteger().getIntValue(), context.nil);
+    public IRubyObject initialize(ThreadContext context, IRubyObject _size, IRubyObject flags) {
+        IRubyObject nil = context.nil;
+
+        int size = _size.convertToInteger().getIntValue();
+
+        initialize(context, new byte[size], size, flags.convertToInteger().getIntValue(), nil);
+
+        return nil;
     }
 
     public IRubyObject initialize(ThreadContext context, int size) {
-        return initialize(context, size, flagsForSize(size), context.nil);
+        IRubyObject nil = context.nil;
+
+        initialize(context, new byte[size], size, flagsForSize(size), nil);
+
+        return nil;
     }
 
     // MRI: io_buffer_initialize
@@ -350,6 +363,7 @@ public class RubyIOBuffer extends RubyObject {
         return newBuffer(context.runtime, slice, length, flags);
     }
 
+    // MRI: io_buffer_validate_range
     private void validateRange(ThreadContext context, int offset, int length) {
         if (offset + length > size) {
             throw context.runtime.newArgumentError("Specified offset+length exceeds data size!");
@@ -1041,43 +1055,106 @@ public class RubyIOBuffer extends RubyObject {
         return RubyFixnum.newFixnum(context.runtime, length);
     }
 
+    public IRubyObject copy(ThreadContext context, RubyString source, int offset, int length, int sourceOffset) {
+        if (sourceOffset > length) {
+            throw context.runtime.newArgumentError("The given source offset is bigger than the source itself!");
+        }
+
+        bufferCopy(context, offset, source.getByteList(), sourceOffset, source.size(), length);
+
+        return RubyFixnum.newFixnum(context.runtime, length);
+    }
+
     private void bufferCopy(ThreadContext context, int offset, ByteBuffer sourceBuffer, int sourceOffset, int sourceSize, int length) {
         ByteBuffer destBuffer = getBufferForWriting(context);
 
         sourceBuffer.position(sourceOffset);
         sourceBuffer.limit(sourceOffset + length);
-        destBuffer.put(sourceBuffer);
+        if (offset == 0) {
+            destBuffer.put(sourceBuffer);
+        } else {
+            destBuffer.position(offset);
+            destBuffer.put(sourceBuffer);
+            destBuffer.clear();
+        }
         sourceBuffer.clear();
     }
 
-    @JRubyMethod(name = "get_string")
-    public IRubyObject get_string(ThreadContext context, IRubyObject offset) {
-        return context.nil;
+    private void bufferCopy(ThreadContext context, int offset, ByteList sourceBuffer, int sourceOffset, int sourceSize, int length) {
+        ByteBuffer destBuffer = getBufferForWriting(context);
+
+        if (offset == 0) {
+            destBuffer.put(sourceBuffer.getUnsafeBytes(), sourceBuffer.begin() + sourceOffset, length);
+        } else {
+            destBuffer.position(offset);
+            destBuffer.put(sourceBuffer.getUnsafeBytes(), sourceBuffer.begin() + sourceOffset, length);
+            destBuffer.clear();
+        }
     }
 
     @JRubyMethod(name = "get_string")
-    public IRubyObject get_string(ThreadContext context, IRubyObject offset, IRubyObject length) {
-        return context.nil;
+    public IRubyObject get_string(ThreadContext context, IRubyObject _offset) {
+        int offset = RubyNumeric.num2int(_offset);
+
+        return getString(context, offset, size, ASCIIEncoding.INSTANCE);
     }
 
     @JRubyMethod(name = "get_string")
-    public IRubyObject get_string(ThreadContext context, IRubyObject offset, IRubyObject length, IRubyObject encoding) {
-        return context.nil;
+    public IRubyObject get_string(ThreadContext context, IRubyObject _offset, IRubyObject _length) {
+        int offset = RubyNumeric.num2int(_offset);
+        int length = RubyNumeric.num2int(_length);
+
+        return getString(context, offset, length, ASCIIEncoding.INSTANCE);
+    }
+
+    @JRubyMethod(name = "get_string")
+    public IRubyObject get_string(ThreadContext context, IRubyObject _offset, IRubyObject _length, IRubyObject _encoding) {
+        int offset = RubyNumeric.num2int(_offset);
+        int length = RubyNumeric.num2int(_length);
+        Encoding encoding = context.runtime.getEncodingService().getEncodingFromObject(_encoding);
+
+        return getString(context, offset, length, encoding);
+    }
+
+    private IRubyObject getString(ThreadContext context, int offset, int length, Encoding encoding) {
+        ByteBuffer buffer = getBufferForReading(context);
+
+        validateRange(context, offset, length);
+
+        byte[] bytes = new byte[length];
+        if (offset == 0) {
+            buffer.get(bytes, 0, length);
+        } else {
+            buffer.position(offset);
+            buffer.get(bytes, 0, length);
+            buffer.clear();
+        }
+
+        return RubyString.newString(context.runtime, bytes, 0, length, encoding);
     }
 
     @JRubyMethod(name = "set_string")
-    public IRubyObject set_string(ThreadContext context, IRubyObject string) {
-        return context.nil;
+    public IRubyObject set_string(ThreadContext context, IRubyObject _string) {
+        RubyString string = _string.convertToString();
+
+        return copy(context, string, 0, string.size(), 0);
     }
 
     @JRubyMethod(name = "set_string")
-    public IRubyObject set_string(ThreadContext context, IRubyObject string, IRubyObject offset) {
-        return context.nil;
+    public IRubyObject set_string(ThreadContext context, IRubyObject _string, IRubyObject _offset) {
+        RubyString string = _string.convertToString();
+        int offset = RubyNumeric.num2int(_offset);
+
+        return copy(context, string, offset, string.size(), 0);
     }
 
     @JRubyMethod(name = "set_string")
-    public IRubyObject set_string(ThreadContext context, IRubyObject string, IRubyObject offset, IRubyObject length) {
-        return context.nil;
+    public IRubyObject set_string(ThreadContext context, IRubyObject _string, IRubyObject _offset, IRubyObject _length) {
+        RubyString string = _string.convertToString();
+        int offset = RubyNumeric.num2int(_offset);
+        int length = RubyNumeric.num2int(_length);
+
+        return copy(context, string, offset, length, 0);
     }
 
     @JRubyMethod(name = "set_string", required = 1, optional = 3, checkArity = false)
@@ -1098,8 +1175,13 @@ public class RubyIOBuffer extends RubyObject {
         return context.nil;
     }
 
-    public IRubyObject set_string(ThreadContext context, IRubyObject string, IRubyObject offset, IRubyObject length, IRubyObject encoding) {
-        return context.nil;
+    public IRubyObject set_string(ThreadContext context, IRubyObject _string, IRubyObject _offset, IRubyObject _length, IRubyObject _stringOffset) {
+        RubyString string = _string.convertToString();
+        int offset = RubyNumeric.num2int(_offset);
+        int length = RubyNumeric.num2int(_length);
+        int stringOffset = RubyNumeric.num2int(_stringOffset);
+
+        return copy(context, string, offset, length, stringOffset);
     }
 
     @JRubyMethod(name = "&")
@@ -1189,58 +1271,32 @@ public class RubyIOBuffer extends RubyObject {
     }
 
     enum DataType {
-        U8(NativeType.UCHAR, BIG_ENDIAN, DataType::ubyteToNum, RubyNumeric::num2ulong, LongUnaryOperator.identity()),
-        S8(NativeType.SCHAR, BIG_ENDIAN, RubyFixnum::newFixnum, RubyNumeric::num2long, LongUnaryOperator.identity()),
-        u16(NativeType.USHORT, LITTLE_ENDIAN, DataType::ushortToNum, RubyNumeric::num2ulong, DataType::swapAsShort),
-        U16(NativeType.USHORT, BIG_ENDIAN, DataType::ushortToNum, RubyNumeric::num2ulong, DataType::swapAsShort),
-        s16(NativeType.SSHORT, LITTLE_ENDIAN, RubyFixnum::newFixnum, RubyNumeric::num2ulong, DataType::swapAsShort),
-        S16(NativeType.SSHORT, BIG_ENDIAN, RubyFixnum::newFixnum, RubyNumeric::num2ulong, DataType::swapAsShort),
-        u32(NativeType.UINT, LITTLE_ENDIAN, DataType::uintToNum, RubyNumeric::num2ulong, DataType::swapAsInt),
-        U32(NativeType.UINT, BIG_ENDIAN, DataType::uintToNum, RubyNumeric::num2ulong, DataType::swapAsInt),
-        s32(NativeType.SINT, LITTLE_ENDIAN, RubyFixnum::newFixnum, RubyNumeric::num2ulong, DataType::swapAsInt),
-        S32(NativeType.SINT, BIG_ENDIAN, RubyFixnum::newFixnum, RubyNumeric::num2ulong, DataType::swapAsInt),
-        u64(NativeType.ULONG, LITTLE_ENDIAN, DataType::uintToNum, RubyNumeric::num2ulong, DataType::swapAsLong),
-        U64(NativeType.ULONG, BIG_ENDIAN, DataType::uintToNum, RubyNumeric::num2ulong, DataType::swapAsLong),
-        s64(NativeType.SLONG, LITTLE_ENDIAN, RubyFixnum::newFixnum, RubyNumeric::num2ulong, DataType::swapAsLong),
-        S64(NativeType.SLONG, BIG_ENDIAN, RubyFixnum::newFixnum, RubyNumeric::num2ulong, DataType::swapAsLong),
-        f32(NativeType.FLOAT,LITTLE_ENDIAN, RubyFloat::newFloat, DataType::num2FloatBits, DataType::swapAsInt),
-        F32(NativeType.FLOAT, BIG_ENDIAN, RubyFloat::newFloat, DataType::num2FloatBits, DataType::swapAsInt),
-        f64(NativeType.DOUBLE, LITTLE_ENDIAN, RubyFloat::newFloat, DataType::num2DoubleBits, DataType::swapAsLong),
-        F64(NativeType.DOUBLE, BIG_ENDIAN, RubyFloat::newFloat, DataType::num2DoubleBits, DataType::swapAsLong);
+        U8(NativeType.UCHAR, BIG_ENDIAN),
+        S8(NativeType.SCHAR, BIG_ENDIAN),
+        u16(NativeType.USHORT, LITTLE_ENDIAN),
+        U16(NativeType.USHORT, BIG_ENDIAN),
+        s16(NativeType.SSHORT, LITTLE_ENDIAN),
+        S16(NativeType.SSHORT, BIG_ENDIAN),
+        u32(NativeType.UINT, LITTLE_ENDIAN),
+        U32(NativeType.UINT, BIG_ENDIAN),
+        s32(NativeType.SINT, LITTLE_ENDIAN),
+        S32(NativeType.SINT, BIG_ENDIAN),
+        u64(NativeType.ULONG, LITTLE_ENDIAN),
+        U64(NativeType.ULONG, BIG_ENDIAN),
+        s64(NativeType.SLONG, LITTLE_ENDIAN),
+        S64(NativeType.SLONG, BIG_ENDIAN),
+        f32(NativeType.FLOAT,LITTLE_ENDIAN),
+        F32(NativeType.FLOAT, BIG_ENDIAN),
+        f64(NativeType.DOUBLE, LITTLE_ENDIAN),
+        F64(NativeType.DOUBLE, BIG_ENDIAN);
 
-        DataType(NativeType type, int endian, ObjectLongFunction<Ruby, IRubyObject> toNum, ToLongFunction<IRubyObject> fromNum, LongUnaryOperator swap, Function<Byte>) {
+        DataType(NativeType type, int endian) {
             this.type = FFI_RUNTIME.findType(type);
             this.endian = endian;
-            this.toNum = toNum;
-            this.fromNum = fromNum;
-            this.swap = swap;
         }
 
         private final Type type;
         private final int endian;
-        private final ObjectLongFunction<Ruby, IRubyObject> toNum;
-        private final ToLongFunction<IRubyObject> fromNum;
-        private final LongUnaryOperator swap;
-
-        private static IRubyObject uintToNum(Ruby r, long l) {
-            return RubyFixnum.newFixnum(r, Integer.toUnsignedLong((int) l));
-        }
-
-        private static IRubyObject ushortToNum(Ruby r, long l) {
-            return RubyFixnum.newFixnum(r, Short.toUnsignedLong((short) l));
-        }
-
-        private static IRubyObject ubyteToNum(Ruby r, long l) {
-            return RubyFixnum.newFixnum(r, Byte.toUnsignedLong((byte) l));
-        }
-
-        private static long num2FloatBits(IRubyObject d) {
-            return Float.floatToIntBits((float) RubyNumeric.num2dbl(d));
-        }
-
-        private static long num2DoubleBits(IRubyObject d) {
-            return Double.doubleToLongBits(RubyNumeric.num2dbl(d));
-        }
     }
 
     private static long swapAsShort(long l) {
