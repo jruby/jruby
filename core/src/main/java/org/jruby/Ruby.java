@@ -1718,10 +1718,10 @@ public final class Ruby implements Constantizable {
         RubyClass runtimeError = this.runtimeError;
         ObjectAllocator runtimeErrorAllocator = runtimeError.getAllocator();
         bufferLockedError = ioBufferClass.defineClassUnder("LockedError", runtimeError, runtimeErrorAllocator);
-        ioBufferClass.defineClassUnder("AllocationError", runtimeError, runtimeErrorAllocator);
-        ioBufferClass.defineClassUnder("AccessError", runtimeError, runtimeErrorAllocator);
-        ioBufferClass.defineClassUnder("InvalidatedError", runtimeError, runtimeErrorAllocator);
-        ioBufferClass.defineClassUnder("MaskError", runtimeError, runtimeErrorAllocator);
+        bufferAllocationError = ioBufferClass.defineClassUnder("AllocationError", runtimeError, runtimeErrorAllocator);
+        bufferAccessError = ioBufferClass.defineClassUnder("AccessError", runtimeError, runtimeErrorAllocator);
+        bufferInvalidatedError = ioBufferClass.defineClassUnder("InvalidatedError", runtimeError, runtimeErrorAllocator);
+        bufferMaskError = ioBufferClass.defineClassUnder("MaskError", runtimeError, runtimeErrorAllocator);
 
         initErrno();
 
@@ -2500,6 +2500,22 @@ public final class Ruby implements Constantizable {
 
     public RubyClass getBufferLockedError() {
         return bufferLockedError;
+    }
+
+    public RubyClass getBufferAllocationError() {
+        return bufferAllocationError;
+    }
+
+    public RubyClass getBufferAccessError() {
+        return bufferAccessError;
+    }
+
+    public RubyClass getBufferInvalidatedError() {
+        return bufferInvalidatedError;
+    }
+
+    public RubyClass getBufferMaskError() {
+        return bufferMaskError;
     }
 
     @Deprecated
@@ -4265,6 +4281,22 @@ public final class Ruby implements Constantizable {
 
     public RaiseException newBufferLockedError(String message) {
         return newRaiseException(getBufferLockedError(), message);
+    }
+
+    public RaiseException newBufferAllocationError(String message) {
+        return newRaiseException(getBufferAllocationError(), message);
+    }
+
+    public RaiseException newBufferAccessError(String message) {
+        return newRaiseException(getBufferAccessError(), message);
+    }
+
+    public RaiseException newBufferInvalidatedError(String message) {
+        return newRaiseException(getBufferInvalidatedError(), message);
+    }
+
+    public RaiseException newBufferMaskError(String message) {
+        return newRaiseException(getBufferMaskError(), message);
     }
 
     /**

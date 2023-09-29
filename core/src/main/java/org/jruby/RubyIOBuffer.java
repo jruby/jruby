@@ -1,14 +1,31 @@
 package org.jruby;
 
+import jnr.ffi.NativeType;
 import jnr.ffi.Platform;
+import jnr.ffi.Runtime;
+import jnr.ffi.Type;
 import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.func.ObjectLongFunction;
+
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.Arrays;
+import java.util.function.LongUnaryOperator;
+import java.util.function.ToLongFunction;
+
+import static org.jruby.RubyBoolean.newBoolean;
 
 public class RubyIOBuffer extends RubyObject {
+
+    public static final Runtime FFI_RUNTIME = Runtime.getSystemRuntime();
+
     public static RubyClass createIOBufferClass(Ruby runtime) {
         RubyClass IOBuffer = runtime.getIO().defineClassUnder("Buffer", runtime.getObject(), RubyIOBuffer::new);
 
@@ -47,7 +64,7 @@ public class RubyIOBuffer extends RubyObject {
     @JRubyConstant
     public static final int NETWORK_ENDIAN = BIG_ENDIAN;
 
-    public static RubyIOBuffer newBuffer(Ruby runtime, byte[] base, int size, int flags) {
+    public static RubyIOBuffer newBuffer(Ruby runtime, ByteBuffer base, int size, int flags) {
         return new RubyIOBuffer(runtime, runtime.getIO(), base, size, flags);
     }
 
@@ -55,7 +72,7 @@ public class RubyIOBuffer extends RubyObject {
         super(runtime, metaClass);
     }
 
-    public RubyIOBuffer(Ruby runtime, RubyClass metaClass, byte[] base, int size, int flags) {
+    public RubyIOBuffer(Ruby runtime, RubyClass metaClass, ByteBuffer base, int size, int flags) {
         super(runtime, metaClass);
 
         this.base = base;
@@ -70,17 +87,60 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "initialize")
     public IRubyObject initialize(ThreadContext context) {
-        return context.nil;
+        return initialize(context, DEFAULT_SIZE);
     }
 
     @JRubyMethod(name = "initialize")
     public IRubyObject initialize(ThreadContext context, IRubyObject size) {
-        return context.nil;
+        return initialize(context, size.convertToInteger().getIntValue());
     }
 
     @JRubyMethod(name = "initialize")
     public IRubyObject initialize(ThreadContext context, IRubyObject size, IRubyObject flags) {
-        return context.nil;
+        return initialize(context, size.convertToInteger().getIntValue(), flags.convertToInteger().getIntValue(), context.nil);
+    }
+
+    public IRubyObject initialize(ThreadContext context, int size) {
+        return initialize(context, size, flagsForSize(size), context.nil);
+    }
+
+    // MRI: io_buffer_initialize
+    public void initialize(ThreadContext context, byte[] baseBytes, int size, int flags, IRubyObject source) {
+        ByteBuffer base = null;
+
+        if (baseBytes != null) {
+            // If we are provided a pointer, we use it.
+            base = ByteBuffer.wrap(baseBytes);
+        } else if (size != 0) {
+            // If we are provided a non-zero size, we allocate it:
+            if ((flags & INTERNAL) == INTERNAL) {
+                base = ByteBuffer.allocate(size);
+            } else if ((flags & MAPPED) == MAPPED) {
+                // no support for SHARED, PRIVATE yet
+                base = ByteBuffer.allocateDirect(size);
+            }
+
+            if (base == null) {
+                throw context.runtime.newBufferAllocationError("Could not allocate buffer!");
+            }
+        } else {
+            // Otherwise we don't do anything.
+            return;
+        }
+
+        this.base = base;
+        this.size = size;
+        this.flags = flags;
+        this.source = source;
+    }
+
+    // MRI: io_flags_for_size
+    private static int flagsForSize(int size) {
+        if (size >= PAGE_SIZE) {
+            return MAPPED;
+        }
+
+        return INTERNAL;
     }
 
     @JRubyMethod(name = "initialize_copy")
@@ -105,7 +165,7 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "size")
     public IRubyObject size(ThreadContext context) {
-        return context.nil;
+        return context.runtime.newFixnum(size);
     }
 
     @JRubyMethod(name = "valid?")
@@ -115,58 +175,110 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "transfer")
     public IRubyObject transfer(ThreadContext context) {
-        return context.nil;
+        if (isLocked()) {
+            throw context.runtime.newBufferLockedError("Cannot transfer ownership of locked buffer!");
+        }
+
+        RubyIOBuffer instance = new RubyIOBuffer(context.runtime, getMetaClass());
+
+        instance.base = base;
+        instance.size = size;
+        instance.flags = flags;
+        instance.source = source;
+
+        zero(context);
+
+        return instance;
+    }
+
+    private void zero(ThreadContext context) {
+        base = null;
+        size = 0;
+        source = context.nil;
     }
 
     @JRubyMethod(name = "null?")
     public IRubyObject null_p(ThreadContext context) {
-        return context.nil;
+        return newBoolean(context, base == null);
     }
 
     @JRubyMethod(name = "empty?")
     public IRubyObject empty_p(ThreadContext context) {
-        return context.nil;
+        return newBoolean(context, size == 0);
     }
 
     @JRubyMethod(name = "external?")
     public IRubyObject external_p(ThreadContext context) {
-        return context.nil;
+        return newBoolean(context, isExternal());
+    }
+
+    private boolean isExternal() {
+        return (flags & EXTERNAL) == EXTERNAL;
     }
 
     @JRubyMethod(name = "internal?")
     public IRubyObject internal_p(ThreadContext context) {
-        return context.nil;
+        return newBoolean(context, isInternal());
+    }
+
+    private boolean isInternal() {
+        return (flags & INTERNAL) == INTERNAL;
     }
 
     @JRubyMethod(name = "mapped?")
     public IRubyObject mapped_p(ThreadContext context) {
-        return context.nil;
+        return newBoolean(context, isMapped());
+    }
+
+    private boolean isMapped() {
+        return (flags & MAPPED) == MAPPED;
     }
 
     @JRubyMethod(name = "shared?")
     public IRubyObject shared_p(ThreadContext context) {
-        return context.nil;
+        // no support for shared yet
+        return newBoolean(context, false);
     }
 
     @JRubyMethod(name = "locked?")
     public IRubyObject locked_p(ThreadContext context) {
-        return context.nil;
+        return newBoolean(context, isLocked());
+    }
+
+    private boolean isLocked() {
+        return (flags & LOCKED) == LOCKED;
     }
 
     @JRubyMethod(name = "readonly?")
     public IRubyObject readonly_p(ThreadContext context) {
-        return context.nil;
+        return newBoolean(context, isReadonly());
+    }
+
+    private boolean isReadonly() {
+        return (flags & READONLY) == READONLY;
     }
 
     @JRubyMethod(name = "locked")
     public IRubyObject locked(ThreadContext context, Block block) {
-        return context.nil;
+        checkLocked(context);
+
+        flags |= LOCKED;
+
+        IRubyObject result = block.yield(context, this);
+
+        flags &= ~LOCKED;
+
+        return result;
+    }
+
+    private void checkLocked(ThreadContext context) {
+        if (isLocked()) {
+            throw context.runtime.newBufferLockedError("Buffer already locked!");
+        }
     }
 
     public IRubyObject lock(ThreadContext context) {
-        if ((flags & LOCKED) == LOCKED) {
-            throw context.runtime.newBufferLockedError("Buffer already locked!");
-        }
+        checkLocked(context);
 
         flags |= LOCKED;
 
@@ -183,24 +295,70 @@ public class RubyIOBuffer extends RubyObject {
         return this;
     }
 
+    private boolean tryUnlock() {
+        if (isLocked()) {
+            flags &= ~LOCKED;
+            return true;
+        }
+
+        return false;
+    }
+
     @JRubyMethod(name = "slice")
     public IRubyObject slice(ThreadContext context) {
-        return context.nil;
+        return slice(context, 0, size);
     }
 
     @JRubyMethod(name = "slice")
-    public IRubyObject slice(ThreadContext context, IRubyObject offset) {
-        return context.nil;
+    public IRubyObject slice(ThreadContext context, IRubyObject _offset) {
+        int offset = RubyNumeric.num2int(_offset);
+
+        if (offset < 0) {
+            throw context.runtime.newArgumentError("Offset can't be negative!");
+        }
+
+        return slice(context, offset, size - offset);
     }
 
     @JRubyMethod(name = "slice")
-    public IRubyObject slice(ThreadContext context, IRubyObject offset, IRubyObject length) {
-        return context.nil;
+    public IRubyObject slice(ThreadContext context, IRubyObject _offset, IRubyObject _length) {
+        int offset = RubyNumeric.num2int(_offset);
+
+        if (offset < 0) {
+            throw context.runtime.newArgumentError("Offset can't be negative!");
+        }
+        
+        int length = RubyNumeric.num2int(_length);
+
+        if (length < 0) {
+            throw context.runtime.newArgumentError("Length can't be negative!");
+        }
+
+        return slice(context, offset, length);
+    }
+
+    // MRI: rb_io_buffer_slice
+    public IRubyObject slice(ThreadContext context, int offset, int length) {
+        validateRange(context, offset, length);
+
+        // gross, but slice(int, int) is 13+
+        base.position(offset);
+        base.limit(offset + length);
+        ByteBuffer slice = base.slice();
+        base.clear();
+
+        return newBuffer(context.runtime, slice, length, flags);
+    }
+
+    private void validateRange(ThreadContext context, int offset, int length) {
+        if (offset + length > size) {
+            throw context.runtime.newArgumentError("Specified offset+length exceeds data size!");
+        }
     }
 
     @JRubyMethod(name = "<=>")
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
-        return context.nil;
+        return context.runtime.newFixnum(base.compareTo(((RubyIOBuffer) other).base));
     }
 
     @JRubyMethod(name = "resize")
@@ -208,117 +366,642 @@ public class RubyIOBuffer extends RubyObject {
         return context.nil;
     }
 
+    // MRI: rb_io_buffer_resize
+    public void resize(ThreadContext context, int size) {
+        if (isLocked()) {
+            throw context.runtime.newBufferLockedError("Cannot resize locked buffer!");
+        }
+
+        if (this.base == null) {
+            initialize(context, null, size, flagsForSize(size), context.nil);
+            return;
+        }
+
+        if (isExternal()) {
+            throw context.runtime.newBufferAccessError("Cannot resize external buffer!");
+        }
+
+        // no special behavior  for isInternal=true since we do not control the internals of ByteBuffers.
+
+        ByteBuffer newBase = this.base.isDirect() ? ByteBuffer.allocateDirect(size) : ByteBuffer.allocate(size);
+        newBase.put(this.base);
+
+        this.base = newBase;
+        this.size = size;
+    }
+
+    // MRI: io_buffer_clear
     @JRubyMethod(name = "clear")
     public IRubyObject clear(ThreadContext context) {
-        return context.nil;
+        return clear(context, 0, 0, size);
     }
 
     @JRubyMethod(name = "clear")
     public IRubyObject clear(ThreadContext context, IRubyObject value) {
-        return context.nil;
+        return clear(context, RubyNumeric.num2int(value), 0, size);
     }
 
     @JRubyMethod(name = "clear")
-    public IRubyObject clear(ThreadContext context, IRubyObject value, IRubyObject offset) {
-        return context.nil;
+    public IRubyObject clear(ThreadContext context, IRubyObject _value, IRubyObject _offset) {
+        int value = RubyNumeric.num2int(_value);
+        int offset = RubyNumeric.num2int(_offset);
+        return clear(context, value, offset, size - offset);
     }
 
     @JRubyMethod(name = "clear")
-    public IRubyObject clear(ThreadContext context, IRubyObject value, IRubyObject offset, IRubyObject length) {
-        return context.nil;
+    public IRubyObject clear(ThreadContext context, IRubyObject _value, IRubyObject _offset, IRubyObject _length) {
+        int value = RubyNumeric.num2int(_value);
+        int offset = RubyNumeric.num2int(_offset);
+        int length = RubyNumeric.num2int(_length);
+        return clear(context, value, offset, length);
+    }
+
+    // MRI: rb_io_buffer_clear
+    private IRubyObject clear(ThreadContext context, int value, int offset, int length) {
+        ByteBuffer buffer = getBufferForWriting(context);
+
+        if (offset + length > size) {
+            throw context.runtime.newArgumentError("The given offset + length out of bounds!");
+        }
+
+        if (buffer.hasArray()) {
+            Arrays.fill(buffer.array(), offset, offset + length, (byte) value);
+        }
+
+        return this;
+    }
+
+    private ByteBuffer getBufferForWriting(ThreadContext context) {
+        if (isReadonly()) {
+            throw context.runtime.newBufferAccessError("Buffer is not writable!");
+        }
+
+        // TODO: validate our buffer
+
+        if (base != null) {
+            return base;
+        }
+
+        throw context.runtime.newBufferAllocationError("The buffer is not allocated!");
+    }
+
+    private ByteBuffer getBufferForReading(ThreadContext context) {
+        // TODO: validate our buffer
+
+        if (base != null) {
+            return base;
+        }
+
+        throw context.runtime.newBufferAllocationError("The buffer is not allocated!");
     }
 
     @JRubyMethod(name = "free")
     public IRubyObject free(ThreadContext context) {
-        return context.nil;
+        if (isLocked()) {
+            throw context.runtime.newBufferLockedError("Buffer is locked!");
+        }
+
+        freeInternal(context);
+
+        return this;
+    }
+
+    private boolean freeInternal(ThreadContext context) {
+        if (this.base != null) {
+            // No special handling for internal yet
+
+            // No special handling for mapped yet
+
+            // We can only dereference and allow GC to clean it up
+            this.base = null;
+            this.size = 0;
+            this.flags = 0;
+            this.source = context.nil;
+
+            return true;
+        }
+
+        return false;
     }
 
     @JRubyMethod(name = "size_of")
     public static IRubyObject size_of(ThreadContext context, IRubyObject self, IRubyObject dataType) {
-        return context.nil;
+        if (dataType instanceof RubyArray) {
+            long total = 0;
+            RubyArray<?> array = (RubyArray<?>) dataType;
+            int size = array.size();
+            for (int i = 0; i < size; i++) {
+                IRubyObject elt = array.eltOk(i);
+                total += getDataType(elt).type.size();
+            }
+        }
+
+        return RubyFixnum.newFixnum(context.runtime, getDataType(dataType).type.size());
+    }
+
+    private boolean isBigEndian() {
+        return (flags & BIG_ENDIAN) == BIG_ENDIAN;
+    }
+
+    private boolean isLittleEndian() {
+        return (flags & LITTLE_ENDIAN) == LITTLE_ENDIAN;
+    }
+
+    private boolean isHostEndian() {
+        return (flags & (BIG_ENDIAN | LITTLE_ENDIAN)) == HOST_ENDIAN;
+    }
+
+    private static DataType getDataType(IRubyObject dataType) {
+        return DataType.valueOf(RubySymbol.objectToSymbolString(dataType));
+    }
+
+    private static byte readByte(ThreadContext context, ByteBuffer buffer, int offset) {
+        return buffer.get(offset);
+    }
+
+    private static int readUnsignedByte(ThreadContext context, ByteBuffer buffer, int offset) {
+        return Byte.toUnsignedInt(buffer.get(offset));
+    }
+
+    private static void writeByte(ThreadContext context, ByteBuffer buffer, int offset, byte value) {
+        buffer.put(offset, (byte) value);
+    }
+
+    private static void writeUnsignedByte(ThreadContext context, ByteBuffer buffer, int offset, int value) {
+        buffer.put(offset, (byte) value);
+    }
+
+    private static short readShort(ThreadContext context, ByteBuffer buffer, int offset, ByteOrder order) {
+        short s = buffer.getShort(offset);
+
+        if (order == ByteOrder.BIG_ENDIAN) return s;
+
+        return Short.reverseBytes(s);
+    }
+
+    private static int readUnsignedShort(ThreadContext context, ByteBuffer buffer, int offset, ByteOrder order) {
+        return Short.toUnsignedInt(readShort(context, buffer, offset, order));
+    }
+
+    private static void writeShort(ThreadContext context, ByteBuffer buffer, int offset, ByteOrder order, short value) {
+        if (order == ByteOrder.BIG_ENDIAN) buffer.putShort(offset, value);
+
+        buffer.putShort(offset, Short.reverseBytes(value));
+    }
+
+    private static void writeUnsignedShort(ThreadContext context, ByteBuffer buffer, int offset, ByteOrder order, int value) {
+        writeShort(context, buffer, offset, order, (short) value);
+    }
+
+    private static int readInt(ThreadContext context, ByteBuffer buffer, int offset, ByteOrder order) {
+        int i = buffer.getInt(offset);
+
+        if (order == ByteOrder.BIG_ENDIAN) return i;
+
+        return Integer.reverseBytes(i);
+    }
+
+    private static long readUnsignedInt(ThreadContext context, ByteBuffer buffer, int offset, ByteOrder order) {
+        return Integer.toUnsignedLong(readInt(context, buffer, offset, order));
+    }
+
+    private static void writeInt(ThreadContext context, ByteBuffer buffer, int offset, ByteOrder order, int value) {
+        if (order == ByteOrder.BIG_ENDIAN) buffer.putInt(offset, value);
+
+        buffer.putInt(offset, Integer.reverseBytes(value));
+    }
+
+    private static void writeUnsignedInt(ThreadContext context, ByteBuffer buffer, int offset, ByteOrder order, long value) {
+        writeInt(context, buffer, offset, order, (int) value);
+    }
+
+    private static long readLong(ThreadContext context, ByteBuffer buffer, int offset, ByteOrder order) {
+        long l = buffer.getLong(offset);
+
+        if (order == ByteOrder.BIG_ENDIAN) return l;
+
+        return Long.reverseBytes(l);
+    }
+
+    private static BigInteger readUnsignedLong(ThreadContext context, ByteBuffer buffer, int offset, ByteOrder order) {
+        long l = readLong(context, buffer, offset, order);
+        if (l > 0L) return BigInteger.valueOf(l);
+
+        byte[] bytes = new byte[8];
+        for (int i = 7; i >= 0; i--) {
+            bytes[i] = (byte)(l & 0xFF);
+            l >>= 8;
+        }
+
+        return new BigInteger(1, bytes);
+    }
+
+    private static void writeLong(ThreadContext context, ByteBuffer buffer, int offset, ByteOrder order, long value) {
+        if (order == ByteOrder.BIG_ENDIAN) buffer.putLong(offset, value);
+
+        buffer.putLong(offset, Long.reverseBytes(value));
+    }
+
+    private static void writeUnsignedLong(ThreadContext context, ByteBuffer buffer, int offset, ByteOrder order, long value) {
+        writeLong(context, buffer, offset, order, value);
+    }
+
+    private static float readFloat(ThreadContext context, ByteBuffer buffer, int offset, ByteOrder order) {
+        float f = buffer.getFloat(offset);
+
+        if (order == ByteOrder.BIG_ENDIAN) return f;
+
+        return Float.intBitsToFloat(Integer.reverseBytes(Float.floatToIntBits(f)));
+    }
+
+    private static void writeFloat(ThreadContext context, ByteBuffer buffer, int offset, ByteOrder order, float value) {
+        if (order == ByteOrder.BIG_ENDIAN) buffer.putFloat(offset, value);
+
+        buffer.putFloat(offset, Float.intBitsToFloat(Integer.reverseBytes(Float.floatToIntBits(value))));
+    }
+
+    private static double readDouble(ThreadContext context, ByteBuffer buffer, int offset, ByteOrder order) {
+        double f = buffer.getDouble(offset);
+
+        if (order == ByteOrder.BIG_ENDIAN) return f;
+
+        return Double.longBitsToDouble(Long.reverseBytes(Double.doubleToLongBits(f)));
+    }
+
+    private static void writeDouble(ThreadContext context, ByteBuffer buffer, int offset, ByteOrder order, double value) {
+        if (order == ByteOrder.BIG_ENDIAN) buffer.putDouble(offset, value);
+
+        buffer.putDouble(offset, Double.longBitsToDouble(Long.reverseBytes(Double.doubleToLongBits(value))));
+    }
+
+    private static IRubyObject wrap(Ruby runtime, long value) {
+        return RubyFixnum.newFixnum(runtime, value);
+    }
+
+    private static IRubyObject wrap(Ruby runtime, BigInteger value) {
+        return RubyBignum.newBignum(runtime, value);
+    }
+
+    private static IRubyObject wrap(Ruby runtime, double value) {
+        return RubyFloat.newFloat(runtime, value);
+    }
+
+    private static long unwrapLong(IRubyObject value) {
+        return value.convertToInteger().getLongValue();
+    }
+
+    private static double unwrapDouble(IRubyObject value) {
+        return value.convertToFloat().getDoubleValue();
+    }
+
+    private static long unwrapUnsignedLong(IRubyObject value) {
+        return RubyNumeric.num2ulong(value);
     }
 
     @JRubyMethod(name = "get_value")
-    public IRubyObject get_value(ThreadContext context, IRubyObject type, IRubyObject offset) {
-        return context.nil;
+    public IRubyObject get_value(ThreadContext context, IRubyObject type, IRubyObject _offset) {
+        ByteBuffer buffer = getBufferForReading(context);
+
+        DataType dataType = getDataType(type);
+        int offset = RubyNumeric.num2int(_offset);
+        int size = this.size;
+
+        return getValue(context, buffer, size, dataType, offset);
+    }
+
+    private static IRubyObject getValue(ThreadContext context, ByteBuffer buffer, int size, DataType dataType, int offset) {
+        Ruby runtime = context.runtime;
+
+        // TODO: validate size
+
+        switch (dataType) {
+            case S8:
+                return wrap(runtime, readByte(context, buffer, offset));
+            case U8:
+                return wrap(runtime, readUnsignedByte(context, buffer, offset));
+            case u16:
+                return wrap(runtime, readUnsignedShort(context, buffer, offset, ByteOrder.LITTLE_ENDIAN));
+            case U16:
+                return wrap(runtime, readUnsignedShort(context, buffer, offset, ByteOrder.BIG_ENDIAN));
+            case s16:
+                return wrap(runtime, readShort(context, buffer, offset, ByteOrder.LITTLE_ENDIAN));
+            case S16:
+                return wrap(runtime, readShort(context, buffer, offset, ByteOrder.BIG_ENDIAN));
+            case u32:
+                return wrap(runtime, readUnsignedInt(context, buffer, offset, ByteOrder.LITTLE_ENDIAN));
+            case U32:
+                return wrap(runtime, readUnsignedInt(context, buffer, offset, ByteOrder.BIG_ENDIAN));
+            case s32:
+                return wrap(runtime, readInt(context, buffer, offset, ByteOrder.LITTLE_ENDIAN));
+            case S32:
+                return wrap(runtime, readInt(context, buffer, offset, ByteOrder.BIG_ENDIAN));
+            case u64:
+                return wrap(runtime, readUnsignedLong(context, buffer, offset, ByteOrder.LITTLE_ENDIAN));
+            case U64:
+                return wrap(runtime, readUnsignedLong(context, buffer, offset, ByteOrder.BIG_ENDIAN));
+            case s64:
+                return wrap(runtime, readLong(context, buffer, offset, ByteOrder.LITTLE_ENDIAN));
+            case S64:
+                return wrap(runtime, readLong(context, buffer, offset, ByteOrder.BIG_ENDIAN));
+            case f32:
+                return wrap(runtime, readFloat(context, buffer, offset, ByteOrder.LITTLE_ENDIAN));
+            case F32:
+                return wrap(runtime, readFloat(context, buffer, offset, ByteOrder.BIG_ENDIAN));
+            case f64:
+                return wrap(runtime, readDouble(context, buffer, offset, ByteOrder.LITTLE_ENDIAN));
+            case F64:
+                return wrap(runtime, readDouble(context, buffer, offset, ByteOrder.BIG_ENDIAN));
+        }
+
+        throw runtime.newArgumentError("Unknown data_type: " + dataType); // should never happen
     }
 
     @JRubyMethod(name = "get_values")
-    public IRubyObject get_values(ThreadContext context, IRubyObject data_types, IRubyObject offset) {
-        return context.nil;
+    public IRubyObject get_values(ThreadContext context, IRubyObject dataTypes, IRubyObject _offset) {
+        Ruby runtime = context.runtime;
+
+        int offset = RubyNumeric.num2int(_offset);
+
+        int size = this.size;
+
+        ByteBuffer buffer = getBufferForReading(context);
+
+        if (!(dataTypes instanceof RubyArray)) {
+            throw runtime.newArgumentError("Argument data_types should be an array!");
+        }
+
+        RubyArray<?> dataTypesArray = (RubyArray<?>) dataTypes;
+        int dataTypesSize = dataTypesArray.size();
+        RubyArray values = RubyArray.newArray(runtime, dataTypesSize);
+
+        for (long i = 0; i < dataTypesSize; i++) {
+            IRubyObject type = dataTypesArray.eltOk(i);
+            DataType dataType = getDataType(type);
+
+            IRubyObject value = getValue(context, buffer, size, dataType, offset);
+
+            offset += dataType.type.size();
+
+            values.push(value);
+        }
+
+        return values;
     }
 
     @JRubyMethod(name = "each")
-    public IRubyObject each(ThreadContext context, IRubyObject dataType, Block block) {
-        return context.nil;
+    public IRubyObject each(ThreadContext context, IRubyObject _dataType, Block block) {
+        if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, this, "each", _dataType);
+
+        ByteBuffer buffer = getBufferForReading(context);
+        DataType dataType = getDataType(_dataType);
+
+        return each(context, buffer, dataType, 0, size, block);
     }
 
     @JRubyMethod(name = "each")
-    public IRubyObject each(ThreadContext context, IRubyObject dataType, IRubyObject offset, Block block) {
-        return context.nil;
+    public IRubyObject each(ThreadContext context, IRubyObject _dataType, IRubyObject _offset, Block block) {
+        if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, this, "each", Helpers.arrayOf(_dataType, _offset));
+
+        ByteBuffer buffer = getBufferForReading(context);
+        DataType dataType = getDataType(_dataType);
+        int offset = _offset.convertToInteger().getIntValue();
+
+        return each(context, buffer, dataType, offset, size - offset, block);
     }
 
     @JRubyMethod(name = "each")
-    public IRubyObject each(ThreadContext context, IRubyObject dataType, IRubyObject offset, IRubyObject count, Block block) {
-        return context.nil;
+    public IRubyObject each(ThreadContext context, IRubyObject _dataType, IRubyObject _offset, IRubyObject _count, Block block) {
+        if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, this, "each", Helpers.arrayOf(_dataType, _offset, _count));
+
+        ByteBuffer buffer = getBufferForReading(context);
+        DataType dataType = getDataType(_dataType);
+        int offset = _offset.convertToInteger().getIntValue();
+        int count = _count.convertToInteger().getIntValue();
+
+        return each(context, buffer, dataType, offset, count, block);
+    }
+
+    private IRubyObject each(ThreadContext context, ByteBuffer buffer, DataType dataType, int offset, int count, Block block) {
+        Ruby runtime = context.runtime;
+
+        for (int i = 0 ; i < count; i++) {
+            int currentOffset = offset;
+            IRubyObject value = getValue(context, buffer, size, dataType, offset);
+            offset += dataType.type.size();
+            block.yieldSpecific(context, RubyFixnum.newFixnum(runtime, currentOffset), value);
+        }
+
+        return this;
     }
 
     @JRubyMethod(name = "values")
-    public IRubyObject values(ThreadContext context, IRubyObject dataType) {
-        return context.nil;
+    public IRubyObject values(ThreadContext context, IRubyObject _dataType) {
+        ByteBuffer buffer = getBufferForReading(context);
+        DataType dataType = getDataType(_dataType);
+
+        return values(context, buffer, dataType, 0, size);
     }
 
     @JRubyMethod(name = "values")
-    public IRubyObject values(ThreadContext context, IRubyObject dataType, IRubyObject offset) {
-        return context.nil;
+    public IRubyObject values(ThreadContext context, IRubyObject _dataType, IRubyObject _offset) {
+        ByteBuffer buffer = getBufferForReading(context);
+        DataType dataType = getDataType(_dataType);
+        int offset = _offset.convertToInteger().getIntValue();
+
+        return values(context, buffer, dataType, offset, size - offset);
     }
 
     @JRubyMethod(name = "values")
-    public IRubyObject values(ThreadContext context, IRubyObject dataType, IRubyObject offset, IRubyObject count) {
-        return context.nil;
+    public IRubyObject values(ThreadContext context, IRubyObject _dataType, IRubyObject _offset, IRubyObject _count) {
+        ByteBuffer buffer = getBufferForReading(context);
+        DataType dataType = getDataType(_dataType);
+        int offset = _offset.convertToInteger().getIntValue();
+        int count = _count.convertToInteger().getIntValue();
+
+        return values(context, buffer, dataType, offset, count);
+    }
+
+    private RubyArray values(ThreadContext context, ByteBuffer buffer, DataType dataType, int offset, int count) {
+        Ruby runtime = context.runtime;
+
+        RubyArray values = RubyArray.newArray(runtime, count);
+
+        for (int i = 0 ; i < count; i++) {
+            int currentOffset = offset;
+            IRubyObject value = getValue(context, buffer, size, dataType, offset);
+            offset += dataType.type.size();
+            values.push(value);
+        }
+
+        return values;
     }
 
     @JRubyMethod(name = "each_byte")
     public IRubyObject each_byte(ThreadContext context, Block block) {
-        return context.nil;
+        if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, this, "each");
+
+        ByteBuffer buffer = getBufferForReading(context);
+
+        return eachByte(context, buffer, 0, size, block);
     }
 
     @JRubyMethod(name = "each_byte")
-    public IRubyObject each_byte(ThreadContext context, IRubyObject offset, Block block) {
-        return context.nil;
+    public IRubyObject each_byte(ThreadContext context, IRubyObject _offset, Block block) {
+        if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, this, "each", Helpers.arrayOf(_offset));
+
+        ByteBuffer buffer = getBufferForReading(context);
+        int offset = _offset.convertToInteger().getIntValue();
+
+        return eachByte(context, buffer, offset, size - offset, block);
     }
 
     @JRubyMethod(name = "each_byte")
-    public IRubyObject each_byte(ThreadContext context, IRubyObject offset, IRubyObject count, Block block) {
-        return context.nil;
+    public IRubyObject each_byte(ThreadContext context, IRubyObject _offset, IRubyObject _count, Block block) {
+        if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, this, "each", Helpers.arrayOf(_offset, _count));
+
+        ByteBuffer buffer = getBufferForReading(context);
+        int offset = _offset.convertToInteger().getIntValue();
+        int count = _count.convertToInteger().getIntValue();
+
+        return eachByte(context, buffer, offset, count, block);
+    }
+
+    private IRubyObject eachByte(ThreadContext context, ByteBuffer buffer, int offset, int count, Block block) {
+        Ruby runtime = context.runtime;
+
+        for (int i = 0 ; i < count; i++) {
+            IRubyObject value = wrap(runtime, readByte(context, buffer, offset));
+            block.yieldSpecific(context, value);
+        }
+
+        return this;
+    }
+
+    private static void setValue(ThreadContext context, ByteBuffer buffer, int size, DataType dataType, int offset, IRubyObject value) {
+        // TODO: validate size
+
+        switch (dataType) {
+            case S8:
+                writeByte(context, buffer, offset, (byte) unwrapLong(value));
+            case U8:
+                writeUnsignedByte(context, buffer, offset, (int) unwrapLong(value));
+            case u16:
+                writeUnsignedShort(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, (int) unwrapLong(value));
+            case U16:
+                writeUnsignedShort(context, buffer, offset, ByteOrder.BIG_ENDIAN, (int) unwrapLong(value));
+            case s16:
+                writeShort(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, (short) unwrapLong(value));
+            case S16:
+                writeShort(context, buffer, offset, ByteOrder.BIG_ENDIAN, (short) unwrapLong(value));
+            case u32:
+                writeUnsignedInt(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, (long) unwrapLong(value));
+            case U32:
+                writeUnsignedInt(context, buffer, offset, ByteOrder.BIG_ENDIAN, (long) unwrapLong(value));
+            case s32:
+                writeInt(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, (int) unwrapLong(value));
+            case S32:
+                writeInt(context, buffer, offset, ByteOrder.BIG_ENDIAN, (int) unwrapLong(value));
+            case u64:
+                writeUnsignedLong(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, unwrapUnsignedLong(value));
+            case U64:
+                writeUnsignedLong(context, buffer, offset, ByteOrder.BIG_ENDIAN, unwrapUnsignedLong(value));
+            case s64:
+                writeLong(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, unwrapLong(value));
+            case S64:
+                writeLong(context, buffer, offset, ByteOrder.BIG_ENDIAN, unwrapLong(value));
+            case f32:
+                writeFloat(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, (float) unwrapDouble(value));
+            case F32:
+                writeFloat(context, buffer, offset, ByteOrder.BIG_ENDIAN, (float) unwrapDouble(value));
+            case f64:
+                writeDouble(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, unwrapDouble(value));
+            case F64:
+                writeDouble(context, buffer, offset, ByteOrder.BIG_ENDIAN, unwrapDouble(value));
+        }
+
+        throw context.runtime.newArgumentError("Unknown data_type: " + dataType); // should never happen
     }
 
     @JRubyMethod(name = "set_value")
-    public IRubyObject set_value(ThreadContext context, IRubyObject dataType, IRubyObject offset, IRubyObject value) {
-        return context.nil;
+    public IRubyObject set_value(ThreadContext context, IRubyObject _dataType, IRubyObject _offset, IRubyObject _value) {
+        ByteBuffer buffer = getBufferForWriting(context);
+
+        DataType dataType = getDataType(_dataType);
+        int offset = RubyNumeric.num2int(_offset);
+        int size = this.size;
+
+        setValue(context, buffer, size, dataType, offset, _value);
+
+        return RubyFixnum.newFixnum(context.runtime, offset + dataType.type.size());
     }
 
     @JRubyMethod(name = "set_values")
-    public IRubyObject set_values(ThreadContext context, IRubyObject dataTypes, IRubyObject offset, IRubyObject values) {
-        return context.nil;
+    public IRubyObject set_values(ThreadContext context, IRubyObject _dataTypes, IRubyObject _offset, IRubyObject _values) {
+        Ruby runtime = context.runtime;
+
+        int offset = RubyNumeric.num2int(_offset);
+
+        int size = this.size;
+
+        ByteBuffer buffer = getBufferForWriting(context);
+
+        if (!(_dataTypes instanceof RubyArray)) {
+            throw runtime.newArgumentError("Argument data_types should be an array!");
+        }
+        RubyArray<?> dataTypes = (RubyArray<?>) _dataTypes;
+
+        if (!(_values instanceof RubyArray)) {
+            throw runtime.newArgumentError("Argument values should be an array!");
+        }
+        RubyArray<?> values = (RubyArray<?>) _values;
+
+        if (dataTypes.size() != values.size()) {
+            throw runtime.newArgumentError("Argument data_types and values should have the same length!");
+        }
+
+        int dataTypesSize = dataTypes.size();
+
+        for (long i = 0; i < dataTypesSize; i++) {
+            IRubyObject type = dataTypes.eltOk(i);
+            DataType dataType = getDataType(type);
+
+            IRubyObject value = values.eltOk(i);
+
+            setValue(context, buffer, size, dataType, offset, value);
+
+            offset += dataType.type.size();
+        }
+
+        return RubyFixnum.newFixnum(runtime, offset);
     }
 
     @JRubyMethod(name = "copy")
     public IRubyObject copy(ThreadContext context, IRubyObject source) {
-        return context.nil;
+        RubyIOBuffer sourceBuffer = (RubyIOBuffer) source;
+
+        return copy(context, sourceBuffer, 0, sourceBuffer.size, 0);
     }
 
     @JRubyMethod(name = "copy")
-    public IRubyObject copy(ThreadContext context, IRubyObject source, IRubyObject offset) {
-        return context.nil;
+    public IRubyObject copy(ThreadContext context, IRubyObject source, IRubyObject _offset) {
+        RubyIOBuffer sourceBuffer = (RubyIOBuffer) source;
+
+        int offset = RubyNumeric.num2int(_offset);
+
+        return copy(context, sourceBuffer, offset, sourceBuffer.size, 0);
     }
 
     @JRubyMethod(name = "copy")
-    public IRubyObject copy(ThreadContext context, IRubyObject source, IRubyObject offset, IRubyObject length) {
-        return context.nil;
+    public IRubyObject copy(ThreadContext context, IRubyObject source, IRubyObject _offset, IRubyObject _length) {
+        RubyIOBuffer sourceBuffer = (RubyIOBuffer) source;
+
+        int offset = RubyNumeric.num2int(_offset);
+        int length = RubyNumeric.num2int(_length);
+
+        return copy(context, sourceBuffer, offset, length, 0);
     }
 
-    @JRubyMethod(name = "copy", required = 1, optional = 3)
+    @JRubyMethod(name = "copy", required = 1, optional = 3, checkArity = false)
     public IRubyObject copy(ThreadContext context, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 1, 3);
 
@@ -336,8 +1019,35 @@ public class RubyIOBuffer extends RubyObject {
         return context.nil;
     }
 
-    public IRubyObject copy(ThreadContext context, IRubyObject source, IRubyObject offset, IRubyObject length, IRubyObject sourceOffset) {
-        return context.nil;
+    public IRubyObject copy(ThreadContext context, IRubyObject source, IRubyObject _offset, IRubyObject _length, IRubyObject _sourceOffset) {
+        RubyIOBuffer sourceBuffer = (RubyIOBuffer) source;
+
+        int offset = RubyNumeric.num2int(_offset);
+        int length = RubyNumeric.num2int(_length);
+        int sourceOffset = RubyNumeric.num2int(_sourceOffset);
+
+        return copy(context, sourceBuffer, offset, length, sourceOffset);
+    }
+
+    public IRubyObject copy(ThreadContext context, RubyIOBuffer source, int offset, int length, int sourceOffset) {
+        if (sourceOffset > length) {
+            throw context.runtime.newArgumentError("The given source offset is bigger than the source itself!");
+        }
+
+        ByteBuffer sourceBuffer = source.getBufferForReading(context);
+
+        bufferCopy(context, offset, sourceBuffer, sourceOffset, source.size, length);
+
+        return RubyFixnum.newFixnum(context.runtime, length);
+    }
+
+    private void bufferCopy(ThreadContext context, int offset, ByteBuffer sourceBuffer, int sourceOffset, int sourceSize, int length) {
+        ByteBuffer destBuffer = getBufferForWriting(context);
+
+        sourceBuffer.position(sourceOffset);
+        sourceBuffer.limit(sourceOffset + length);
+        destBuffer.put(sourceBuffer);
+        sourceBuffer.clear();
     }
 
     @JRubyMethod(name = "get_string")
@@ -370,7 +1080,7 @@ public class RubyIOBuffer extends RubyObject {
         return context.nil;
     }
 
-    @JRubyMethod(name = "set_string", required = 1, optional = 3)
+    @JRubyMethod(name = "set_string", required = 1, optional = 3, checkArity = false)
     public IRubyObject set_string(ThreadContext context, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 1, 3);
 
@@ -427,7 +1137,7 @@ public class RubyIOBuffer extends RubyObject {
         return context.nil;
     }
 
-    @JRubyMethod(name = "pread", required = 1, optional = 3)
+    @JRubyMethod(name = "pread", required = 1, optional = 3, checkArity = false)
     public IRubyObject pread(ThreadContext context, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 3, 4);
 
@@ -460,7 +1170,7 @@ public class RubyIOBuffer extends RubyObject {
         return context.nil;
     }
 
-    @JRubyMethod(name = "pwrite", required = 1, optional = 3)
+    @JRubyMethod(name = "pwrite", required = 1, optional = 3, checkArity = false)
     public IRubyObject pwrite(ThreadContext context, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 3, 4);
 
@@ -478,7 +1188,91 @@ public class RubyIOBuffer extends RubyObject {
         return context.nil;
     }
 
-    private byte[] base;
+    enum DataType {
+        U8(NativeType.UCHAR, BIG_ENDIAN, DataType::ubyteToNum, RubyNumeric::num2ulong, LongUnaryOperator.identity()),
+        S8(NativeType.SCHAR, BIG_ENDIAN, RubyFixnum::newFixnum, RubyNumeric::num2long, LongUnaryOperator.identity()),
+        u16(NativeType.USHORT, LITTLE_ENDIAN, DataType::ushortToNum, RubyNumeric::num2ulong, DataType::swapAsShort),
+        U16(NativeType.USHORT, BIG_ENDIAN, DataType::ushortToNum, RubyNumeric::num2ulong, DataType::swapAsShort),
+        s16(NativeType.SSHORT, LITTLE_ENDIAN, RubyFixnum::newFixnum, RubyNumeric::num2ulong, DataType::swapAsShort),
+        S16(NativeType.SSHORT, BIG_ENDIAN, RubyFixnum::newFixnum, RubyNumeric::num2ulong, DataType::swapAsShort),
+        u32(NativeType.UINT, LITTLE_ENDIAN, DataType::uintToNum, RubyNumeric::num2ulong, DataType::swapAsInt),
+        U32(NativeType.UINT, BIG_ENDIAN, DataType::uintToNum, RubyNumeric::num2ulong, DataType::swapAsInt),
+        s32(NativeType.SINT, LITTLE_ENDIAN, RubyFixnum::newFixnum, RubyNumeric::num2ulong, DataType::swapAsInt),
+        S32(NativeType.SINT, BIG_ENDIAN, RubyFixnum::newFixnum, RubyNumeric::num2ulong, DataType::swapAsInt),
+        u64(NativeType.ULONG, LITTLE_ENDIAN, DataType::uintToNum, RubyNumeric::num2ulong, DataType::swapAsLong),
+        U64(NativeType.ULONG, BIG_ENDIAN, DataType::uintToNum, RubyNumeric::num2ulong, DataType::swapAsLong),
+        s64(NativeType.SLONG, LITTLE_ENDIAN, RubyFixnum::newFixnum, RubyNumeric::num2ulong, DataType::swapAsLong),
+        S64(NativeType.SLONG, BIG_ENDIAN, RubyFixnum::newFixnum, RubyNumeric::num2ulong, DataType::swapAsLong),
+        f32(NativeType.FLOAT,LITTLE_ENDIAN, RubyFloat::newFloat, DataType::num2FloatBits, DataType::swapAsInt),
+        F32(NativeType.FLOAT, BIG_ENDIAN, RubyFloat::newFloat, DataType::num2FloatBits, DataType::swapAsInt),
+        f64(NativeType.DOUBLE, LITTLE_ENDIAN, RubyFloat::newFloat, DataType::num2DoubleBits, DataType::swapAsLong),
+        F64(NativeType.DOUBLE, BIG_ENDIAN, RubyFloat::newFloat, DataType::num2DoubleBits, DataType::swapAsLong);
+
+        DataType(NativeType type, int endian, ObjectLongFunction<Ruby, IRubyObject> toNum, ToLongFunction<IRubyObject> fromNum, LongUnaryOperator swap, Function<Byte>) {
+            this.type = FFI_RUNTIME.findType(type);
+            this.endian = endian;
+            this.toNum = toNum;
+            this.fromNum = fromNum;
+            this.swap = swap;
+        }
+
+        private final Type type;
+        private final int endian;
+        private final ObjectLongFunction<Ruby, IRubyObject> toNum;
+        private final ToLongFunction<IRubyObject> fromNum;
+        private final LongUnaryOperator swap;
+
+        private static IRubyObject uintToNum(Ruby r, long l) {
+            return RubyFixnum.newFixnum(r, Integer.toUnsignedLong((int) l));
+        }
+
+        private static IRubyObject ushortToNum(Ruby r, long l) {
+            return RubyFixnum.newFixnum(r, Short.toUnsignedLong((short) l));
+        }
+
+        private static IRubyObject ubyteToNum(Ruby r, long l) {
+            return RubyFixnum.newFixnum(r, Byte.toUnsignedLong((byte) l));
+        }
+
+        private static long num2FloatBits(IRubyObject d) {
+            return Float.floatToIntBits((float) RubyNumeric.num2dbl(d));
+        }
+
+        private static long num2DoubleBits(IRubyObject d) {
+            return Double.doubleToLongBits(RubyNumeric.num2dbl(d));
+        }
+    }
+
+    private static long swapAsShort(long l) {
+        short s = (short) l;
+
+        return (s >>> 8) | (int) (s << 8);
+    }
+
+    private static short swap(short s) {
+        return (short) ((s >>> 8) | (s << 8));
+    }
+
+    private static long swapAsInt(long l) {
+        int s = (int) l;
+
+        return (s >>> 16) | (int) (s << 16);
+    }
+
+    private static long swapAsLong(long l) {
+        return (l >>> 32) | (l << 32);
+    }
+
+    private static long swapAsFloat(long l) {
+        return swapAsInt(l);
+    }
+
+    private static long swapAsDouble(long l) {
+        return swapAsLong(l);
+    }
+
+    private ByteBuffer base;
     private int size;
     private int flags;
+    private IRubyObject source;
 }
