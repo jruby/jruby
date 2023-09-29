@@ -68,7 +68,11 @@ public class RubyIOBuffer extends RubyObject {
     public static final int NETWORK_ENDIAN = BIG_ENDIAN;
 
     public static RubyIOBuffer newBuffer(Ruby runtime, ByteBuffer base, int size, int flags) {
-        return new RubyIOBuffer(runtime, runtime.getIO(), base, size, flags);
+        return new RubyIOBuffer(runtime, runtime.getIOBuffer(), base, size, flags);
+    }
+
+    public static RubyIOBuffer newBuffer(Ruby runtime, int size, int flags) {
+        return new RubyIOBuffer(runtime, runtime.getIOBuffer(), newBufferBase(runtime, size, flags), size, flags);
     }
 
     public RubyIOBuffer(Ruby runtime, RubyClass metaClass) {
@@ -125,17 +129,7 @@ public class RubyIOBuffer extends RubyObject {
             // If we are provided a pointer, we use it.
             base = ByteBuffer.wrap(baseBytes);
         } else if (size != 0) {
-            // If we are provided a non-zero size, we allocate it:
-            if ((flags & INTERNAL) == INTERNAL) {
-                base = ByteBuffer.allocate(size);
-            } else if ((flags & MAPPED) == MAPPED) {
-                // no support for SHARED, PRIVATE yet
-                base = ByteBuffer.allocateDirect(size);
-            }
-
-            if (base == null) {
-                throw context.runtime.newBufferAllocationError("Could not allocate buffer!");
-            }
+            base = newBufferBase(context.runtime, size, flags, base);
         } else {
             // Otherwise we don't do anything.
             return;
@@ -145,6 +139,22 @@ public class RubyIOBuffer extends RubyObject {
         this.size = size;
         this.flags = flags;
         this.source = source;
+    }
+
+    private static ByteBuffer newBufferBase(Ruby runtime, int size, int flags) {
+        ByteBuffer base;
+
+        // If we are provided a non-zero size, we allocate it:
+        if ((flags & INTERNAL) == INTERNAL) {
+            base = ByteBuffer.allocate(size);
+        } else if ((flags & MAPPED) == MAPPED) {
+            // no support for SHARED, PRIVATE yet
+            base = ByteBuffer.allocateDirect(size);
+        } else {
+            throw runtime.newBufferAllocationError("Could not allocate buffer!");
+        }
+
+        return base;
     }
 
     // MRI: io_flags_for_size
@@ -1185,23 +1195,65 @@ public class RubyIOBuffer extends RubyObject {
     }
 
     @JRubyMethod(name = "&")
-    public IRubyObject op_and(ThreadContext context, IRubyObject mask) {
-        return context.nil;
+    public IRubyObject op_and(ThreadContext context, IRubyObject _mask) {
+        ByteBuffer buffer = getBufferForReading(context);
+
+        int mask = _mask.convertToInteger().getIntValue();
+
+        RubyIOBuffer outputBuffer = newBuffer(context.runtime, size, flags);
+        ByteBuffer output = outputBuffer.base;
+
+        for (int i = 0; i < buffer.capacity(); i++) {
+            output.put(i, (byte) (buffer.get(i) & mask));
+        }
+
+        return outputBuffer;
     }
 
     @JRubyMethod(name = "|")
-    public IRubyObject op_or(ThreadContext context, IRubyObject mask) {
-        return context.nil;
+    public IRubyObject op_or(ThreadContext context, IRubyObject _mask) {
+        ByteBuffer buffer = getBufferForReading(context);
+
+        int mask = _mask.convertToInteger().getIntValue();
+
+        RubyIOBuffer outputBuffer = newBuffer(context.runtime, size, flags);
+        ByteBuffer output = outputBuffer.base;
+
+        for (int i = 0; i < buffer.capacity(); i++) {
+            output.put(i, (byte) (buffer.get(i) | mask));
+        }
+
+        return outputBuffer;
     }
 
     @JRubyMethod(name = "^")
-    public IRubyObject op_xor(ThreadContext context, IRubyObject mask) {
-        return context.nil;
+    public IRubyObject op_xor(ThreadContext context, IRubyObject _mask) {
+        ByteBuffer buffer = getBufferForReading(context);
+
+        int mask = _mask.convertToInteger().getIntValue();
+
+        RubyIOBuffer outputBuffer = newBuffer(context.runtime, size, flags);
+        ByteBuffer output = outputBuffer.base;
+
+        for (int i = 0; i < buffer.capacity(); i++) {
+            output.put(i, (byte) (buffer.get(i) ^ mask));
+        }
+
+        return outputBuffer;
     }
 
     @JRubyMethod(name = "~")
     public IRubyObject op_not(ThreadContext context) {
-        return context.nil;
+        ByteBuffer buffer = getBufferForReading(context);
+
+        RubyIOBuffer outputBuffer = newBuffer(context.runtime, size, flags);
+        ByteBuffer output = outputBuffer.base;
+
+        for (int i = 0; i < buffer.capacity(); i++) {
+            output.put(i, (byte) ~buffer.get(i));
+        }
+
+        return outputBuffer;
     }
 
     @JRubyMethod(name = "read")
