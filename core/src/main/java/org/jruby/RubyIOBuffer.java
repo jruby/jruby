@@ -14,17 +14,12 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.func.ObjectLongFunction;
 import org.jruby.util.io.OpenFile;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
-import java.util.function.LongUnaryOperator;
-import java.util.function.ToLongFunction;
 
 import static org.jruby.RubyBoolean.newBoolean;
 
