@@ -155,7 +155,7 @@ public class RubyIOBuffer extends RubyObject {
         this.base = base;
         this.size = size;
         this.flags = flags;
-        this.source = source;
+        this.source = source.isNil() ? null : source;
     }
 
     private static ByteBuffer newBufferBase(Ruby runtime, int size, int flags) {
@@ -185,22 +185,166 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "initialize_copy")
     public IRubyObject initialize_copy(ThreadContext context, IRubyObject other) {
-        return context.nil;
+        RubyIOBuffer otherBuffer = (RubyIOBuffer) other;
+        ByteBuffer sourceBase = otherBuffer.getBufferForReading(context);
+        int sourceSize = otherBuffer.size;
+
+        initialize(context, null, sourceSize, flagsForSize(size), context.nil);
+
+        return copy(context, otherBuffer, 0, sourceSize, 0);
     }
 
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect(ThreadContext context) {
-        return context.nil;
+        RubyString result = to_s(context);
+
+        if (validate()) {
+            // Limit the maximum size genearted by inspect.
+            if (size <= 256) {
+                hexdump(context, result, 16, base, size, false);
+            }
+        }
+
+        return result;
+    }
+
+    private boolean validate() {
+        if (source != null) {
+            return validateSlice(source, base, size);
+        }
+
+        return true;
+    }
+
+    private boolean validateSlice(IRubyObject source, ByteBuffer base, int size) {
+        ByteBuffer sourceBase = null;
+        int sourceSize = 0;
+
+        if (source instanceof RubyString) {
+            ByteList sourceBytes = ((RubyString) source).getByteList();
+            sourceSize = sourceBytes.getRealSize();
+            sourceBase = ByteBuffer.wrap(sourceBytes.getUnsafeBytes(), sourceBytes.begin(), sourceSize);
+        } else {
+            RubyIOBuffer sourceBuffer = (RubyIOBuffer) source;
+            sourceBase = sourceBuffer.base;
+            sourceSize = sourceBuffer.size;
+        }
+
+        // Source is invalid:
+        if (sourceBase == null) return false;
+
+        // Base is out of range:
+        if (base.hasArray() && sourceBase.hasArray() && base.array() != sourceBase.array()) return false;
+
+        int sourceEnd = sourceSize;
+        int end = size;
+
+        // End is out of range:
+        if (end > sourceEnd) return false;
+
+        // It seems okay:
+        return true;
     }
 
     @JRubyMethod(name = "hexdump")
     public IRubyObject hexdump(ThreadContext context) {
+        ByteBuffer base = this.base;
+        int size = this.size;
+        if (validate() && base != null) {
+            RubyString result = RubyString.newStringLight(context.runtime, size * 3 + (size / 16) * 12 + 1);
+
+            hexdump(context, result, 16, base, size, true);
+
+            return result;
+        }
+
         return context.nil;
     }
 
+    private static RubyString hexdump(ThreadContext context, RubyString string, int width, ByteBuffer base, int size, boolean first) {
+        byte[] text = new byte[width+1];
+        text[width] = '\0';
+
+        for (int offset = 0; offset < size; offset += width) {
+            Arrays.fill(text, (byte) 0);
+            if (first) {
+                string.cat("0x".getBytes());
+                String hex = String.format("0x%08x ", offset);
+                string.cat(hex.getBytes());
+                first = false;
+            } else {
+                string.cat(String.format("\n0x%08x ", offset).getBytes());
+            }
+
+            for (int i = 0; i < width; i += 1) {
+                if (offset+i < size) {
+                    int value = Byte.toUnsignedInt(base.get(offset+i));
+
+                    if (value < 127 && value >= 32) {
+                        text[i] = (byte)value;
+                    }
+                    else {
+                        text[i] = '.';
+                    }
+
+                    string.cat(String.format("%02x", value).getBytes());
+                }
+                else {
+                    string.cat("   ".getBytes());
+                }
+            }
+
+            string.cat(' ');
+            string.cat(text);
+        }
+
+        return string;
+    }
+
     @JRubyMethod(name = "to_s")
-    public IRubyObject to_s(ThreadContext context) {
-        return context.nil;
+    public RubyString to_s(ThreadContext context) {
+        RubyString result = RubyString.newString(context.runtime, "#<");
+
+        result.append(this.getMetaClass().name(context));
+        result.cat(String.format(" %d+%d", System.identityHashCode(base), size).getBytes());
+
+        if (base == null) {
+            result.cat(" NULL".getBytes());
+        }
+
+        if (isExternal()) {
+            result.cat(" EXTERNAL".getBytes());
+        }
+
+        if (isInternal()) {
+            result.cat(" INTERNAL".getBytes());
+        }
+
+        if (isMapped()) {
+            result.cat(" MAPPED".getBytes());
+        }
+
+        if (isShared()) {
+            result.cat(" SHARED".getBytes());
+        }
+
+        if (isLocked()) {
+            result.cat(" LOCKED".getBytes());
+        }
+
+        if (isReadonly()) {
+            result.cat(" READONLY".getBytes());
+        }
+
+        if (source != null) {
+            result.cat(" SLICE".getBytes());
+        }
+
+        if (!validate()) {
+            result.cat(" INVALID".getBytes());
+        }
+
+        return result.cat(">".getBytes());
     }
 
     @JRubyMethod(name = "size")
@@ -210,7 +354,7 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "valid?")
     public IRubyObject valid_p(ThreadContext context) {
-        return context.nil;
+        return RubyBoolean.newBoolean(context, validate());
     }
 
     @JRubyMethod(name = "transfer")
@@ -234,7 +378,7 @@ public class RubyIOBuffer extends RubyObject {
     private void zero(ThreadContext context) {
         base = null;
         size = 0;
-        source = context.nil;
+        source = null;
     }
 
     @JRubyMethod(name = "null?")
@@ -278,6 +422,10 @@ public class RubyIOBuffer extends RubyObject {
     public IRubyObject shared_p(ThreadContext context) {
         // no support for shared yet
         return newBoolean(context, false);
+    }
+
+    private boolean isShared() {
+        return (flags & SHARED) == SHARED;
     }
 
     @JRubyMethod(name = "locked?")
@@ -428,6 +576,8 @@ public class RubyIOBuffer extends RubyObject {
 
         ByteBuffer newBase = this.base.isDirect() ? ByteBuffer.allocateDirect(size) : ByteBuffer.allocate(size);
         newBase.put(this.base);
+        this.base.clear();
+        newBase.clear();
 
         this.base = newBase;
         this.size = size;
@@ -519,7 +669,7 @@ public class RubyIOBuffer extends RubyObject {
             this.base = null;
             this.size = 0;
             this.flags = 0;
-            this.source = context.nil;
+            this.source = null;
 
             return true;
         }
@@ -1122,8 +1272,8 @@ public class RubyIOBuffer extends RubyObject {
         } else {
             destBuffer.position(offset);
             destBuffer.put(sourceBuffer);
-            destBuffer.clear();
         }
+        destBuffer.clear();
         sourceBuffer.clear();
     }
 
@@ -1291,6 +1441,128 @@ public class RubyIOBuffer extends RubyObject {
         }
 
         return outputBuffer;
+    }
+
+    @JRubyMethod(name = "and!")
+    public IRubyObject and_bang(ThreadContext context, IRubyObject _mask) {
+        if (!(_mask instanceof RubyIOBuffer)) {
+            throw context.runtime.newTypeError(_mask, context.runtime.getIOBuffer());
+        }
+
+        RubyIOBuffer maskData = (RubyIOBuffer) _mask;
+
+        checkMask(context, maskData);
+        checkOverlaps(context, maskData);
+
+        ByteBuffer base = getBufferForWriting(context);
+        ByteBuffer maskBase = maskData.getBufferForReading(context);
+
+        bufferAndInPlace(base, size, maskBase, maskData.size);
+
+        return this;
+    }
+
+    @JRubyMethod(name = "or!")
+    public IRubyObject or_bang(ThreadContext context, IRubyObject _mask) {
+        if (!(_mask instanceof RubyIOBuffer)) {
+            throw context.runtime.newTypeError(_mask, context.runtime.getIOBuffer());
+        }
+
+        RubyIOBuffer maskData = (RubyIOBuffer) _mask;
+
+        checkMask(context, maskData);
+        checkOverlaps(context, maskData);
+
+        ByteBuffer base = getBufferForWriting(context);
+        ByteBuffer maskBase = maskData.getBufferForReading(context);
+
+        bufferOrInPlace(base, size, maskBase, maskData.size);
+
+        return this;
+    }
+
+    @JRubyMethod(name = "xor!")
+    public IRubyObject xor_bang(ThreadContext context, IRubyObject _mask) {
+        if (!(_mask instanceof RubyIOBuffer)) {
+            throw context.runtime.newTypeError(_mask, context.runtime.getIOBuffer());
+        }
+
+        RubyIOBuffer maskData = (RubyIOBuffer) _mask;
+
+        checkMask(context, maskData);
+        checkOverlaps(context, maskData);
+
+        ByteBuffer base = getBufferForWriting(context);
+        ByteBuffer maskBase = maskData.getBufferForReading(context);
+
+        bufferXorInPlace(base, size, maskBase, maskData.size);
+
+        return this;
+    }
+
+    @JRubyMethod(name = "not!")
+    public IRubyObject not_bang(ThreadContext context) {
+        ByteBuffer base = getBufferForWriting(context);
+
+        bufferNotInPlace(base, size);
+
+        return this;
+    }
+
+    private static void checkMask(ThreadContext context, RubyIOBuffer buffer) {
+        if (buffer.size == 0) {
+            throw context.runtime.newBufferMaskError("Zero-length mask given!");
+        }
+    }
+
+    private void checkOverlaps(ThreadContext context, RubyIOBuffer other) {
+        if (bufferOverlaps(other)) {
+            throw context.runtime.newBufferMaskError("Mask overlaps source data!");
+        }
+    }
+
+    private boolean bufferOverlaps(RubyIOBuffer other) {
+        if (base != null && base.hasArray() && other.base != null && other.base.hasArray()) {
+            if (base.array() == other.base.array()) {
+                return true;
+            }
+        }
+
+        // unsure how to detect overlap for native buffers
+        return false;
+    }
+
+    private static void bufferAndInPlace(ByteBuffer a, int aSize, ByteBuffer b, int bSize) {
+        for (int aIndex = 0; aIndex < aSize;) {
+            for (int bIndex = 0; aIndex < aSize && bIndex < bSize; bIndex++) {
+                int curIndex = aIndex++;
+                a.put(curIndex, (byte) (a.get(curIndex) & b.get(bIndex)));
+            }
+        }
+    }
+
+    private static void bufferOrInPlace(ByteBuffer a, int aSize, ByteBuffer b, int bSize) {
+        for (int aIndex = 0; aIndex < aSize;) {
+            for (int bIndex = 0; aIndex < aSize && bIndex < bSize; bIndex++) {
+                int curIndex = aIndex++;
+                a.put(curIndex, (byte) (a.get(curIndex) | b.get(bIndex)));
+            }
+        }
+    }
+
+    private static void bufferXorInPlace(ByteBuffer a, int aSize, ByteBuffer b, int bSize) {
+        for (int aIndex = 0; aIndex < aSize;) {
+            for (int bIndex = 0; aIndex < aSize && bIndex < bSize; bIndex++) {
+                int curIndex = aIndex++;
+                a.put(curIndex, (byte) (a.get(curIndex) ^ b.get(bIndex)));
+            }
+        }
+    }
+
+    private static void bufferNotInPlace(ByteBuffer a, int aSize) {
+        for (int aIndex = 0; aIndex < aSize; aIndex++) {
+            a.put(aIndex, (byte) ~a.get(aIndex));
+        }
     }
 
     @JRubyMethod(name = "read")
