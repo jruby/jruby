@@ -1691,7 +1691,6 @@ public class RubyIOBuffer extends RubyObject {
     public IRubyObject write(ThreadContext context, IRubyObject io, int length, int offset) {
         validateRange(context, offset, length);
 
-
         ByteBuffer buffer = getBufferForWriting(context);
 
         return writeInternal(context, RubyIO.convertToIO(context, io), buffer, offset, length);
