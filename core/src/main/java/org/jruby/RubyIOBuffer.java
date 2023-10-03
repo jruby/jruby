@@ -1300,8 +1300,8 @@ public class RubyIOBuffer extends RubyObject {
         } else {
             destBuffer.position(offset);
             destBuffer.put(sourceBuffer.getUnsafeBytes(), sourceBuffer.begin() + sourceOffset, length);
-            destBuffer.clear();
         }
+        destBuffer.clear();
     }
 
     @JRubyMethod(name = "get_string")
