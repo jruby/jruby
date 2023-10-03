@@ -737,7 +737,10 @@ public class RubyIOBuffer extends RubyObject {
     }
 
     private static void writeShort(ThreadContext context, ByteBuffer buffer, int offset, ByteOrder order, short value) {
-        if (order == ByteOrder.BIG_ENDIAN) buffer.putShort(offset, value);
+        if (order == ByteOrder.BIG_ENDIAN) {
+            buffer.putShort(offset, value);
+            return;
+        }
 
         buffer.putShort(offset, Short.reverseBytes(value));
     }
@@ -759,7 +762,10 @@ public class RubyIOBuffer extends RubyObject {
     }
 
     private static void writeInt(ThreadContext context, ByteBuffer buffer, int offset, ByteOrder order, int value) {
-        if (order == ByteOrder.BIG_ENDIAN) buffer.putInt(offset, value);
+        if (order == ByteOrder.BIG_ENDIAN) {
+            buffer.putInt(offset, value);
+            return;
+        }
 
         buffer.putInt(offset, Integer.reverseBytes(value));
     }
@@ -790,7 +796,10 @@ public class RubyIOBuffer extends RubyObject {
     }
 
     private static void writeLong(ThreadContext context, ByteBuffer buffer, int offset, ByteOrder order, long value) {
-        if (order == ByteOrder.BIG_ENDIAN) buffer.putLong(offset, value);
+        if (order == ByteOrder.BIG_ENDIAN) {
+            buffer.putLong(offset, value);
+            return;
+        }
 
         buffer.putLong(offset, Long.reverseBytes(value));
     }
@@ -808,7 +817,10 @@ public class RubyIOBuffer extends RubyObject {
     }
 
     private static void writeFloat(ThreadContext context, ByteBuffer buffer, int offset, ByteOrder order, float value) {
-        if (order == ByteOrder.BIG_ENDIAN) buffer.putFloat(offset, value);
+        if (order == ByteOrder.BIG_ENDIAN) {
+            buffer.putFloat(offset, value);
+            return;
+        }
 
         buffer.putFloat(offset, Float.intBitsToFloat(Integer.reverseBytes(Float.floatToIntBits(value))));
     }
@@ -822,7 +834,10 @@ public class RubyIOBuffer extends RubyObject {
     }
 
     private static void writeDouble(ThreadContext context, ByteBuffer buffer, int offset, ByteOrder order, double value) {
-        if (order == ByteOrder.BIG_ENDIAN) buffer.putDouble(offset, value);
+        if (order == ByteOrder.BIG_ENDIAN) {
+            buffer.putDouble(offset, value);
+            return;
+        }
 
         buffer.putDouble(offset, Double.longBitsToDouble(Long.reverseBytes(Double.doubleToLongBits(value))));
     }
