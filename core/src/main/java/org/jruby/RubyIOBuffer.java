@@ -1621,6 +1621,19 @@ public class RubyIOBuffer extends RubyObject {
         return readInternal(context, RubyIO.convertToIO(context, io), buffer, offset, length);
     }
 
+    /**
+     * Read from the given io into the given buffer base at the given offset and size limit. The buffer will be left
+     * with its position after the last byte read.
+     *
+     * MRI: io_buffer_read_internal
+     *
+     * @param context
+     * @param io
+     * @param base
+     * @param offset
+     * @param size
+     * @return
+     */
     private static IRubyObject readInternal(ThreadContext context, RubyIO io, ByteBuffer base, int offset, int size) {
         OpenFile fptr = io.getOpenFileChecked();
         final boolean locked = fptr.lock();
@@ -1628,6 +1641,7 @@ public class RubyIOBuffer extends RubyObject {
             int result = OpenFile.readInternal(context, fptr, fptr.fd(), base, offset, size);
             return FiberScheduler.result(context.runtime, result, fptr.errno());
         } finally {
+            base.clear();
             if (locked) fptr.unlock();
         }
     }
