@@ -1046,7 +1046,7 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "each_byte")
     public IRubyObject each_byte(ThreadContext context, Block block) {
-        if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, this, "each");
+        if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, this, "each_byte");
 
         ByteBuffer buffer = getBufferForReading(context);
 
@@ -1055,7 +1055,7 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "each_byte")
     public IRubyObject each_byte(ThreadContext context, IRubyObject _offset, Block block) {
-        if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, this, "each", Helpers.arrayOf(_offset));
+        if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, this, "each_byte", Helpers.arrayOf(_offset));
 
         ByteBuffer buffer = getBufferForReading(context);
         int offset = _offset.convertToInteger().getIntValue();
@@ -1065,7 +1065,7 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "each_byte")
     public IRubyObject each_byte(ThreadContext context, IRubyObject _offset, IRubyObject _count, Block block) {
-        if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, this, "each", Helpers.arrayOf(_offset, _count));
+        if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, this, "each_byte", Helpers.arrayOf(_offset, _count));
 
         ByteBuffer buffer = getBufferForReading(context);
         int offset = _offset.convertToInteger().getIntValue();
@@ -1078,7 +1078,7 @@ public class RubyIOBuffer extends RubyObject {
         Ruby runtime = context.runtime;
 
         for (int i = 0 ; i < count; i++) {
-            IRubyObject value = wrap(runtime, readByte(context, buffer, offset));
+            IRubyObject value = wrap(runtime, readByte(context, buffer, offset + i));
             block.yieldSpecific(context, value);
         }
 
