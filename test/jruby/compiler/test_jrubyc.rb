@@ -127,6 +127,38 @@ class TestJRubyc < Test::Unit::TestCase
       File.delete("C.class") rescue nil
     end
 
+    # encode/decode ends up correcting depth for real static scopes.  Some mixture of nesting
+    # here to sample various counting scenarios.
+    def test_for
+       File.open("test_for1.rb", "w") { |file| file.write(<<-RUBY
+      def npe_when_compiled(arr)
+        x = []
+        for j in 0..1
+          o = "o"
+          1.times do |g|
+            for i in 0..1
+              arr.collect { |e| x << e << o}
+            end
+          end
+        end
+        x.join('')
+      end
+
+      puts npe_when_compiled(["x"])
+      RUBY
+      )}
+
+      JRuby::Compiler::compile_argv(["--verbose", "--javac", "test_for1.rb"])
+      output = File.read(@tempfile_stderr.path)
+
+      assert_equal("xoxoxoxo", output)
+    rescue
+
+    ensure
+      File.delete("test_for1.rb") rescue nil
+      File.delete("test_for1.class") rescue nil
+    end
+
   end
 
   private

@@ -385,14 +385,20 @@ public abstract class IRScope implements ParseResult {
         return lineNumber;
     }
 
-    public int countForLoops() {
-        int count = 0;
+    public int correctVariableDepthForForLoopsForEncoding(int depth) {
+        int forCount = 0;
+        int currentDepth = 0;
         
         for (IRScope current = this; current != null && !current.isTopLocalVariableScope(); current = current.getLexicalParent()) {
-            if (current instanceof IRFor) count++;
+            if (currentDepth == depth) break;
+            if (current instanceof IRFor) {
+                forCount++;
+            } else {
+                currentDepth++;
+            }
         }
 
-        return count;
+        return depth - forCount;
     }
 
     /**
