@@ -127,7 +127,8 @@ public class Dir {
                         if (isEnd(sbytes, s, send)) {
                           return 0;
                         }
-                        // failed
+
+                        // failed: duplicated below due to inability to goto
                         if (ptmp != -1 && stmp != -1) {
                           p = ptmp;
                           stmp++; /* !ISEND(*stmp) */
@@ -207,14 +208,17 @@ public class Dir {
                             continue;
                     }
 
-                    failed: // reached by breaking from above switch rather than continuing
-                    if (ptmp != -1 && stmp != -1) {
-                        p = ptmp;
-                        stmp++; /* !ISEND(*stmp) */
-                        s = stmp;
-                        continue;
+                    // failed: duplicated above due to inability to goto
+                    // reached by breaking from above switch rather than continuing
+                    {
+                        if (ptmp != -1 && stmp != -1) {
+                            p = ptmp;
+                            stmp++; /* !ISEND(*stmp) */
+                            s = stmp;
+                            continue;
+                        }
+                        return FNM_NOMATCH;
                     }
-                    return FNM_NOMATCH;
                 }
             } finally {
                 // RETURN macro in MRI
