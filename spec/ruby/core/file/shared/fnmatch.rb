@@ -125,6 +125,13 @@ describe :file_fnmatch, shared: true do
     end
   end
 
+  it "matches wildcard with characters when flags includes FNM_PATHNAME" do
+    File.send(@method, '*a', 'aa', File::FNM_PATHNAME).should == true
+    File.send(@method, 'a*', 'aa', File::FNM_PATHNAME).should == true
+    File.send(@method, 'a*', 'aaa', File::FNM_PATHNAME).should == true
+    File.send(@method, '*a', 'aaa', File::FNM_PATHNAME).should == true
+  end
+
   it "does not match '/' characters with ? or * when flags includes FNM_PATHNAME" do
     File.send(@method, '?', '/', File::FNM_PATHNAME).should == false
     File.send(@method, '*', '/', File::FNM_PATHNAME).should == false

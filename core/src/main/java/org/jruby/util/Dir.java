@@ -124,7 +124,17 @@ public class Dir {
                 while (true) {
                     // in place of expected C null char check that falls into default in switch below
                     if (p >= pend) {
-                        return isEnd(sbytes, s, send) ? 0 : FNM_NOMATCH;
+                        if (isEnd(sbytes, s, send)) {
+                          return 0;
+                        }
+                        // failed
+                        if (ptmp != -1 && stmp != -1) {
+                          p = ptmp;
+                          stmp++; /* !ISEND(*stmp) */
+                          s = stmp;
+                          continue;
+                        }
+                        return FNM_NOMATCH;
                     }
 
                     switch (pbytes[p]) {
