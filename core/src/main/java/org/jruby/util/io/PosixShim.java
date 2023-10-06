@@ -151,6 +151,8 @@ public class PosixShim {
         try {
             if (checkForBlocking(fd, nonblock)) return -1;
 
+            buffer.position(offset);
+            buffer.limit(offset + length);
             return performRead(fd, buffer, nonblock);
         } catch (IOException ioe) {
             setErrno(Helpers.errnoFromException(ioe));

@@ -1830,7 +1830,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     public interface ReadWrite<Data> extends Unblocker<Data> {
-        public int run(ThreadContext context, Data data, byte[] bytes, int start, int length) throws InterruptedException;
+        /**
+         * @deprecated Prefer version that receives ByteBuffer rather than recreating every time.
+         */
+        public default int run(ThreadContext context, Data data, byte[] bytes, int start, int length) throws InterruptedException {
+            return run(context, data, ByteBuffer.wrap(bytes), start, length);
+        }
         public int run(ThreadContext context, Data data, ByteBuffer bytes, int start, int length) throws InterruptedException;
         public void wakeup(RubyThread thread, Data data);
     }

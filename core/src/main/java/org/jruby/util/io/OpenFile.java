@@ -42,6 +42,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -1334,16 +1335,6 @@ public class OpenFile implements Finalizable {
 
     final static RubyThread.ReadWrite<OpenFile> READ_TASK = new RubyThread.ReadWrite<OpenFile>() {
         @Override
-        public int run(ThreadContext context, OpenFile fptr, byte[] buffer, int start, int length) throws InterruptedException {
-            ChannelFD fd = preRead(context, fptr);
-            try {
-                return fptr.posix.read(fd, buffer, start, length, fptr.nonblock);
-            } finally {
-                fptr.lock();
-            }
-        }
-
-        @Override
         public int run(ThreadContext context, OpenFile fptr, ByteBuffer buffer, int start, int length) throws InterruptedException {
             ChannelFD fd = preRead(context, fptr);
             try {
@@ -1375,19 +1366,11 @@ public class OpenFile implements Finalizable {
 
     final static RubyThread.ReadWrite<OpenFile> WRITE_TASK = new RubyThread.ReadWrite<OpenFile>() {
         @Override
-        public int run(ThreadContext context, OpenFile fptr, byte[] bytes, int start, int length) throws InterruptedException {
-            ChannelFD fd = preWrite(context, fptr);
-            try {
-                return fptr.posix.write(fd, bytes, start, length, fptr.nonblock);
-            } finally {
-                fptr.lock();
-            }
-        }
-
-        @Override
         public int run(ThreadContext context, OpenFile fptr, ByteBuffer bytes, int start, int length) throws InterruptedException {
             ChannelFD fd = preWrite(context, fptr);
             try {
+                bytes.position(start);
+                bytes.limit(start + length);
                 return fptr.posix.write(fd, bytes, start, length, fptr.nonblock);
             } finally {
                 fptr.lock();
@@ -1415,8 +1398,54 @@ public class OpenFile implements Finalizable {
         }
     };
 
+    public static final RubyThread.ReadWrite<ChannelFD> PREAD_TASK = new RubyThread.ReadWrite<ChannelFD>() {
+        @Override
+        public int run(ThreadContext context, ChannelFD fd, ByteBuffer bytes, int from, int length) throws InterruptedException {
+            Ruby runtime = context.runtime;
+
+            int read = 0;
+
+            try {
+                if (fd.chFile != null) {
+                    read = fd.chFile.read(bytes, from);
+
+                    if (read == -1) {
+                        throw runtime.newEOFError();
+                    }
+                } else if (fd.chNative != null) {
+                    read = (int) runtime.getPosix().pread(fd.chNative.getFD(), bytes, length, from);
+
+                    if (read == 0) {
+                        throw runtime.newEOFError();
+                    } else if (read == -1) {
+                        throw runtime.newErrnoFromInt(runtime.getPosix().errno());
+                    }
+                } else if (fd.chRead != null) {
+                    read = fd.chRead.read(bytes);
+                } else {
+                    throw runtime.newIOError("not opened for reading");
+                }
+
+                return read;
+            } catch (IOException ioe) {
+                throw Helpers.newIOErrorFromException(runtime, ioe);
+            }
+        }
+
+        @Override
+        public void wakeup(RubyThread thread, ChannelFD channelFD) {
+            // FIXME: NO! This will kill many native channels. Must be nonblocking to interrupt.
+            thread.getNativeThread().interrupt();
+        }
+    };
+
     // rb_read_internal, rb_io_read_memory, rb_io_buffer_read_internal
     public static int readInternal(ThreadContext context, OpenFile fptr, ChannelFD fd, byte[] bufBytes, int buf, int count) {
+        return readInternal(context, fptr, fd, ByteBuffer.wrap(bufBytes), buf, count);
+    }
+
+    // rb_io_buffer_read_internal
+    public static int readInternal(ThreadContext context, OpenFile fptr, ChannelFD fd, ByteBuffer bufBytes, int buf, int count) {
         IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
         if (!scheduler.isNil()) {
             IRubyObject result = FiberScheduler.ioReadMemory(context, scheduler, fptr.tiedIOForWriting, bufBytes, buf, count);
@@ -1447,33 +1476,9 @@ public class OpenFile implements Finalizable {
         }
     }
 
-    // rb_io_buffer_read_internal
-    public static int readInternal(ThreadContext context, OpenFile fptr, ChannelFD fd, ByteBuffer bufBytes, int buf, int count) {
-        IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
-        if (!scheduler.isNil()) {
-            IRubyObject result = FiberScheduler.ioReadMemory(context, scheduler, fptr.tiedIOForWriting, bufBytes, buf, count);
-
-            if (result != RubyBasicObject.UNDEF) {
-                FiberScheduler.resultApply(context, result);
-            }
-        }
-        // if we can do selection and this is not a non-blocking call, do selection
-
-        /*
-            NOTE CON: We only do this selection because on the JDK, blocking calls to NIO channels can't be
-            interrupted, and we need to be able to interrupt blocking reads. In MRI, this logic is always just a
-            simple read(2) because EINTR does not damage the descriptor.
-
-            Doing selects here on ENXIO native channels caused FIFOs to block for read all the time, even when no
-            writers are connected. This may or may not be correct behavior for selects against FIFOs, but in any
-            case since MRI does not do a select here at all I believe correct logic is to skip the select when
-            working with any native descriptor.
-         */
-
-        preRead(context, fptr, fd);
-
+    public static int preadInternal(ThreadContext context, ChannelFD fd, ByteBuffer buffer, int from, int length) {
         try {
-            return context.getThread().executeReadWrite(context, fptr, bufBytes, buf, count, READ_TASK);
+            return context.getThread().executeReadWrite(context, fd, buffer, from, length, PREAD_TASK);
         } catch (InterruptedException ie) {
             throw context.runtime.newConcurrencyError("IO operation interrupted");
         }
@@ -2402,20 +2407,7 @@ public class OpenFile implements Finalizable {
 
     // rb_write_internal, rb_io_write_memory
     public static int writeInternal(ThreadContext context, OpenFile fptr, byte[] bufBytes, int buf, int count) {
-        IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
-        if (!scheduler.isNil()) {
-            IRubyObject result = FiberScheduler.ioWriteMemory(context, scheduler, fptr.tiedIOForWriting, bufBytes, buf, count);
-
-            if (result != RubyBasicObject.UNDEF) {
-                FiberScheduler.resultApply(context, result);
-            }
-        }
-
-        try {
-            return context.getThread().executeReadWrite(context, fptr, bufBytes, buf, count, WRITE_TASK);
-        } catch (InterruptedException ie) {
-            throw context.runtime.newConcurrencyError("IO operation interrupted");
-        }
+        return writeInternal(context, fptr, ByteBuffer.wrap(bufBytes), buf, count);
     }
 
     // rb_io_buffer_write_internal

@@ -4797,14 +4797,14 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     @JRubyMethod(name = "pread")
-    public IRubyObject pread(ThreadContext context, IRubyObject len, IRubyObject offset, IRubyObject str) {
+    public IRubyObject pread(ThreadContext context, IRubyObject _length, IRubyObject _from, IRubyObject str) {
         Ruby runtime = context.runtime;
 
-        int count = len.convertToInteger().getIntValue();
-        long off = offset.convertToInteger().getIntValue();
+        int length = _length.convertToInteger().getIntValue();
+        int from = _from.convertToInteger().getIntValue();
 
-        RubyString string = EncodingUtils.setStrBuf(runtime, str, count);
-        if (count == 0) return string;
+        RubyString string = EncodingUtils.setStrBuf(runtime, str, length);
+        if (length == 0) return string;
 
         OpenFile fptr = getOpenFile();
         fptr.checkByteReadable(context);
@@ -4813,54 +4813,14 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         fptr.checkClosed();
 
         ByteList strByteList = string.getByteList();
+        int read;
 
-        try {
-            return context.getThread().executeTaskBlocking(context, fd, new RubyThread.Task<ChannelFD, IRubyObject>() {
-                @Override
-                public IRubyObject run(ThreadContext context, ChannelFD channelFD) throws InterruptedException {
-                    Ruby runtime = context.runtime;
+        ByteBuffer wrap = ByteBuffer.wrap(strByteList.unsafeBytes(), strByteList.begin(), length);
+        read = OpenFile.preadInternal(context, fd, wrap, from, length);
 
-                    ByteBuffer wrap = ByteBuffer.wrap(strByteList.unsafeBytes(), strByteList.begin(), count);
-                    int read = 0;
+        string.setReadLength(read);
 
-                    try {
-                        if (fd.chFile != null) {
-                            read = fd.chFile.read(wrap, off);
-
-                            if (read == -1) {
-                                throw runtime.newEOFError();
-                            }
-                        } else if (fd.chNative != null) {
-                            read = (int) runtime.getPosix().pread(fd.chNative.getFD(), wrap, count, off);
-
-                            if (read == 0) {
-                                throw runtime.newEOFError();
-                            } else if (read == -1) {
-                                throw runtime.newErrnoFromInt(runtime.getPosix().errno());
-                            }
-                        } else if (fd.chRead != null) {
-                            read = fd.chRead.read(wrap);
-                        } else {
-                            throw runtime.newIOError("not opened for reading");
-                        }
-                    } catch (IOException ioe) {
-                        throw Helpers.newIOErrorFromException(runtime, ioe);
-                    }
-
-                    string.setReadLength(read);
-
-                    return string;
-                }
-
-                @Override
-                public void wakeup(RubyThread thread, ChannelFD channelFD) {
-                    // FIXME: NO! This will kill many native channels. Must be nonblocking to interrupt.
-                    thread.getNativeThread().interrupt();
-                }
-            });
-        } catch (InterruptedException ie) {
-            throw context.runtime.newConcurrencyError("IO operation interrupted");
-        }
+        return string;
     }
 
     @JRubyMethod(name = "pwrite")

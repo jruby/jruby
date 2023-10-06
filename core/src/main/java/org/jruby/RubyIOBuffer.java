@@ -1647,15 +1647,32 @@ public class RubyIOBuffer extends RubyObject {
     }
 
     @JRubyMethod(name = "pread")
-    public IRubyObject pread(ThreadContext context, IRubyObject io, IRubyObject from, IRubyObject length) {
-        return context.nil;
+    public IRubyObject pread(ThreadContext context, IRubyObject io, IRubyObject _from) {
+        int from = RubyNumeric.num2int(_from);
+
+        int offset = 0;
+        int length = defaultLength(context, offset);
+
+        return pread(context, RubyIO.convertToIO(context, io), from, length, offset);
     }
 
-    @JRubyMethod(name = "pread", required = 1, optional = 3, checkArity = false)
+    @JRubyMethod(name = "pread")
+    public IRubyObject pread(ThreadContext context, IRubyObject io, IRubyObject _from, IRubyObject _length) {
+        int from = RubyNumeric.num2int(_from);
+
+        int offset = 0;
+        int length = extractLength(context, _length, offset);
+
+        return pread(context, RubyIO.convertToIO(context, io), from, length, offset);
+    }
+
+    @JRubyMethod(name = "pread", required = 2, optional = 2, checkArity = false)
     public IRubyObject pread(ThreadContext context, IRubyObject[] args) {
-        Arity.checkArgumentCount(context, args, 3, 4);
+        Arity.checkArgumentCount(context, args, 2, 4);
 
         switch (args.length) {
+            case 2:
+                return pread(context, args[0], args[1]);
             case 3:
                 return pread(context, args[0], args[1], args[2]);
             case 4:
@@ -1665,8 +1682,88 @@ public class RubyIOBuffer extends RubyObject {
         return context.nil;
     }
 
-    public IRubyObject pread(ThreadContext context, IRubyObject io, IRubyObject from, IRubyObject length, IRubyObject offset) {
-        throw context.runtime.newNotImplementedError("pread");
+    public IRubyObject pread(ThreadContext context, IRubyObject io, IRubyObject _from, IRubyObject _length, IRubyObject _offset) {
+        int from = RubyNumeric.num2int(_from);
+
+        int offset = extractOffset(context, _offset);
+        int length = extractLength(context, _length, offset);
+
+        return pread(context, RubyIO.convertToIO(context, io), from, length, offset);
+    }
+
+    public IRubyObject pread(ThreadContext context, RubyIO io, int from, int length, int offset) {
+        IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
+        if (!scheduler.isNil()) {
+            IRubyObject result = FiberScheduler.ioPRead(context, scheduler, io, this, length, offset);
+
+            if (result != UNDEF) {
+                return result;
+            }
+        }
+
+        validateRange(context, offset, length);
+
+        ByteBuffer buffer = getBufferForWriting(context);
+
+        return preadInternal(context, io, buffer, from, offset, length);
+    }
+
+    /**
+     * Read from the given io into the given buffer base at the given offset, from location, and size limit. The buffer will be left
+     * with its position unchanged.
+     *
+     * MRI: io_buffer_pread_internal
+     *
+     * @param context
+     * @param io
+     * @param base
+     * @param from
+     * @param offset
+     * @param size
+     * @return
+     */
+    private static IRubyObject preadInternal(ThreadContext context, RubyIO io, ByteBuffer base, int from, int offset, int size) {
+        OpenFile fptr = io.getOpenFileChecked();
+        final boolean locked = fptr.lock();
+        try {
+            base.position(offset);
+            int result = OpenFile.preadInternal(context, fptr.fd(), base, from, size);
+            return FiberScheduler.result(context.runtime, result, fptr.errno());
+        } finally {
+            base.clear();
+            if (locked) fptr.unlock();
+        }
+    }
+
+    // MRI: length parts of io_buffer_extract_length_offset and io_buffer_extract_length
+    private int extractLength(ThreadContext context, IRubyObject _length, int offset) {
+        if (!_length.isNil()) {
+            if (RubyNumeric.negativeInt(context, _length)) {
+                throw context.runtime.newArgumentError("Length can't be negative!");
+            }
+
+            return RubyNumeric.num2int(_length);
+        }
+
+        return defaultLength(context, offset);
+    }
+
+    private int defaultLength(ThreadContext context, int offset) {
+        if (offset > size) {
+            throw context.runtime.newArgumentError("The given offset is bigger than the buffer size!");
+        }
+
+        // Note that the "length" is computed by the size the offset.
+        return size - offset;
+    }
+
+    // MRI: offset parts of io_buffer_extract_length_offset and io_buffer_extract_offset
+    private int extractOffset(ThreadContext context, IRubyObject _offset) {
+        if (RubyNumeric.negativeInt(context, _offset)) {
+            throw context.runtime.newArgumentError("Offset can't be negative!");
+        }
+
+        return RubyNumeric.num2int(_offset);
     }
 
     @JRubyMethod(name = "write")
