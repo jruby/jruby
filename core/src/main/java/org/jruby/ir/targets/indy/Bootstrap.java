@@ -620,9 +620,10 @@ public class Bootstrap {
                     .from(Ruby.class, ThreadContext.class, MutableCallSite.class)
                     .invokeStaticQuiet(LOOKUP, Bootstrap.class, "runtime");
 
+    // We use LOOKUP here to have a full-featured MethodHandles.Lookup, avoiding jruby/jruby#7911
     private static final MethodHandle RUNTIME_FROM_CONTEXT_HANDLE =
             Binder
-                    .from(Ruby.class, ThreadContext.class)
+                    .from(LOOKUP, Ruby.class, ThreadContext.class)
                     .getFieldQuiet("runtime");
 
     private static final MethodHandle NIL_HANDLE =
