@@ -6,9 +6,7 @@ import org.jruby.ParseResult;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
-import org.jruby.ast.RootNode;
 import org.jruby.ir.builder.IRBuilder;
-import org.jruby.ir.builder.IRBuilderAST;
 import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
@@ -17,6 +15,7 @@ import org.jruby.ir.operands.IRException;
 import org.jruby.ir.persistence.IRDumper;
 import org.jruby.ir.runtime.IRBreakJump;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
+import org.jruby.parser.ParseResultPrism;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
@@ -26,10 +25,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
-import org.jruby.util.ByteList;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
-import org.yarp.YarpParseResult;
 
 public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     public static final Logger LOG = LoggerFactory.getLogger(Interpreter.class);
@@ -205,11 +202,11 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             script.setIsMaybeUsingRefinements();
         }
 
-        // We link IRScope to StaticScope because we may add additional variables (like %block).  During execution
+        // We link IRScope to StaticScope because we may add additional variables (like %block).  During execution,
         // we end up growing dynamicscope potentially based on any changes made.
         staticScope.setIRScope(script);
 
-        IRBuilder builder = IRBuilder.newIRBuilder(runtime.getIRManager(), script, null, result instanceof YarpParseResult);
+        IRBuilder builder = IRBuilder.newIRBuilder(runtime.getIRManager(), script, null, result instanceof ParseResultPrism);
         builder.evalType = !bindingGiven && evalType == EvalType.BINDING_EVAL ? EvalType.INSTANCE_EVAL : evalType;
         InterpreterContext ic = builder.buildEvalRoot(result);
 

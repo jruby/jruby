@@ -8,8 +8,7 @@ import org.jruby.management.ParserStats;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.load.LoadServiceResourceInputStream;
 import org.jruby.util.ByteList;
-import org.yarp.Nodes;
-import org.yarp.YarpParseResult;
+import org.prism.Nodes;
 
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -17,15 +16,15 @@ import java.io.InputStream;
 
 import static org.jruby.parser.ParserManager.isEval;
 
-public class ParserYARP extends Parser {
-    ParserBindingYARP yarpLibrary;
+public class ParserPrism extends Parser {
+    ParserBindingPrism prismLibrary;
 
-    public ParserYARP(Ruby runtime) {
+    public ParserPrism(Ruby runtime) {
         super(runtime);
 
-        String path = runtime.getInstanceConfig().getJRubyHome() + "/lib/libyarp.so";
+        String path = runtime.getInstanceConfig().getJRubyHome() + "/lib/prism.so";
         //System.out.println("Binding to " + path);
-        yarpLibrary = LibraryLoader.create(ParserBindingYARP.class).load(path);
+        prismLibrary = LibraryLoader.create(ParserBindingPrism.class).load(path);
     }
     // FIXME: error/warn when cannot bind to yarp (probably silent fail-over option too)
 
@@ -45,7 +44,7 @@ public class ParserYARP extends Parser {
 
         if (ParserManager.PARSER_TIMING) time = System.nanoTime();
         Nodes.Source nodeSource = new Nodes.Source(source);
-        org.yarp.ParseResult res = org.yarp.Loader.load(serialized, nodeSource);
+        org.prism.ParseResult res = LoaderPrism.load(runtime, serialized, nodeSource);
         if (ParserManager.PARSER_TIMING) {
             ParserStats stats = runtime.getParserManager().getParserStats();
 
@@ -58,7 +57,7 @@ public class ParserYARP extends Parser {
             throw runtime.newSyntaxError(fileName + ":" + nodeSource.line(res.errors[0].location.startOffset) + ": " + res.errors[0].message);
         }
 
-        ParseResult result = new YarpParseResult(fileName, source, (Nodes.ProgramNode) res.value, nodeSource);
+        ParseResult result = new ParseResultPrism(fileName, source, (Nodes.ProgramNode) res.value, nodeSource);
         if (blockScope != null) {
             result.getStaticScope().setEnclosingScope(blockScope.getStaticScope());
         }
@@ -100,9 +99,9 @@ public class ParserYARP extends Parser {
     private byte[] parse(byte[] source, int sourceLength, byte[] metadata) {
         long time = 0;
         if (ParserManager.PARSER_TIMING) time = System.nanoTime();
-        ParserBindingYARP.Buffer buffer = new ParserBindingYARP.Buffer(jnr.ffi.Runtime.getRuntime(yarpLibrary));
-        yarpLibrary.yp_buffer_init(buffer);
-        yarpLibrary.yp_parse_serialize(source, sourceLength, buffer, metadata);
+        ParserBindingPrism.Buffer buffer = new ParserBindingPrism.Buffer(jnr.ffi.Runtime.getRuntime(prismLibrary));
+        prismLibrary.pm_buffer_init(buffer);
+        prismLibrary.pm_parse_serialize(source, sourceLength, buffer, metadata);
         if (ParserManager.PARSER_TIMING) {
             ParserStats stats = runtime.getParserManager().getParserStats();
 

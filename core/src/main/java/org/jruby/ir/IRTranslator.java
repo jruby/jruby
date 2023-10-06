@@ -3,14 +3,11 @@ package org.jruby.ir;
 import org.jruby.ParseResult;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
-import org.jruby.ast.RootNode;
 import org.jruby.ir.builder.IRBuilder;
-import org.jruby.ir.builder.IRBuilderAST;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.persistence.IRWriter;
 import org.jruby.ir.persistence.IRWriterStream;
 import org.jruby.ir.persistence.util.IRFileExpert;
-import org.yarp.YarpParseResult;
 
 import java.io.IOException;
 
@@ -22,7 +19,7 @@ import java.io.IOException;
  */
 public abstract class IRTranslator<R, S> {
     public R execute(Ruby runtime, ParseResult result, S specificObject) {
-        IRScriptBody scope = null;
+        IRScriptBody scope;
 
         if (result instanceof IRScriptBody) { // Already have it (likely from read from persistent store).
             scope = (IRScriptBody) result;

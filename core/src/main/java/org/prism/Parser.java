@@ -1,4 +1,4 @@
-package org.yarp;
+package org.prism;
 
 public class Parser {
 

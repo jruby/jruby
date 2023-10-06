@@ -95,7 +95,7 @@ public class ParserStats implements ParserStatsMBean {
         System.out.println("    evals parsed: " + getNumberOfEvalParses());
         System.out.println("    time spent parsing(s): " + getTotalParseTime());
         System.out.println("    time spend parsing + building: " + (getTotalParseTime() + getIRBuildTime()));
-        if (Options.PARSER_YARP.load()) {
+        if (Options.PARSER_PRISM.load()) {
             System.out.println("  YARP:");
             System.out.println("    time C parse+serialize: " + getYARPCParseSerializeTime());
             System.out.println("    time deserializing: " + getYARPDeserializingTime());

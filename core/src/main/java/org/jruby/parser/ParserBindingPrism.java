@@ -4,9 +4,9 @@ import jnr.ffi.Struct;
 import jnr.ffi.annotations.In;
 
 /**
- * JNR binding to libyarp.{so,dylib,dll}
+ * JNR binding to prism.{so,jnilib,dll}
  */
-public interface ParserBindingYARP {
+public interface ParserBindingPrism {
 
     class Buffer extends Struct {
         public Struct.Pointer value = new Struct.Pointer();
@@ -19,6 +19,7 @@ public interface ParserBindingYARP {
     }
 
     // FIXME: buffer could be @Out with mechanism to free it but perhaps it is ByteBuffer?
-    void yp_buffer_init(Buffer buffer);
-    void yp_parse_serialize(@In byte[] source, int size, Buffer buffer, @In byte[] metadata);
+    // FIXME: consider source to add begin so that we can not be forced to arraycopy to right-sized byte[]
+    void pm_buffer_init(Buffer buffer);
+    void pm_parse_serialize(@In byte[] source, int size, Buffer buffer, @In byte[] metadata);
 }

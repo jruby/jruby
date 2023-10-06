@@ -1,4 +1,4 @@
-package org.yarp;
+package org.prism;
 
 // Keep in sync with Ruby MarkNewlinesVisitor
 final class MarkNewlinesVisitor extends AbstractNodeVisitor<Void> {

@@ -1,29 +1,26 @@
 package org.jruby.ir.builder;
 
-import org.jruby.Ruby;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRMethod;
 import org.jruby.util.ByteList;
-import org.yarp.AbstractNodeVisitor;
-import org.yarp.Nodes;
-import org.yarp.Nodes.DefNode;
-import org.yarp.Nodes.InstanceVariableReadNode;
-import org.yarp.Nodes.InstanceVariableWriteNode;
-import org.yarp.Nodes.Node;
-import org.yarp.Nodes.RescueNode;
-import org.yarp.Nodes.WhenNode;
+import org.prism.AbstractNodeVisitor;
+import org.prism.Nodes;
+import org.prism.Nodes.DefNode;
+import org.prism.Nodes.InstanceVariableReadNode;
+import org.prism.Nodes.InstanceVariableWriteNode;
+import org.prism.Nodes.Node;
+import org.prism.Nodes.RescueNode;
+import org.prism.Nodes.WhenNode;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class LazyMethodDefinitionYARP implements LazyMethodDefinition<Node, DefNode, WhenNode, RescueNode> {
+public class LazyMethodDefinitionPrism implements LazyMethodDefinition<Node, DefNode, WhenNode, RescueNode> {
     private final Nodes.Source nodeSource;
     private DefNode node;
-    private Ruby runtime;
     private byte[] source;
 
-    public LazyMethodDefinitionYARP(Ruby runtime, byte[] source, Nodes.Source nodeSource, DefNode node) {
-        this.runtime = runtime;
+    public LazyMethodDefinitionPrism(byte[] source, Nodes.Source nodeSource, DefNode node) {
         this.source = source;
         this.node = node;
         this.nodeSource = nodeSource;
@@ -45,9 +42,9 @@ public class LazyMethodDefinitionYARP implements LazyMethodDefinition<Node, DefN
                     if (node == null) return null;
 
                     if (node instanceof InstanceVariableReadNode) {
-                        ivarNames.add(runtime.newSymbol(byteListFrom(node)).idString());
+                        ivarNames.add(((InstanceVariableReadNode) node).name.idString());
                     } else if (node instanceof InstanceVariableWriteNode) {
-                        ivarNames.add(runtime.newSymbol(byteListFrom(((InstanceVariableWriteNode) node).name_loc)).idString());
+                        ivarNames.add(((InstanceVariableWriteNode) node).name.idString());
                     }
 
                     Node[] children = node.childNodes();
@@ -84,8 +81,8 @@ public class LazyMethodDefinitionYARP implements LazyMethodDefinition<Node, DefN
     public IRBuilder<Node, DefNode, WhenNode, RescueNode> getBuilder(IRManager manager, IRMethod methodScope) {
         IRBuilder<Node, DefNode, WhenNode, RescueNode> builder = IRBuilder.newIRBuilder(manager, methodScope, null, true);
 
-        ((IRBuilderYARP) builder).source = source;
-        ((IRBuilderYARP) builder).nodeSource = nodeSource;
+        ((IRBuilderPrism) builder).source = source;
+        ((IRBuilderPrism) builder).nodeSource = nodeSource;
 
         return builder;
     }

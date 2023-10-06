@@ -38,7 +38,6 @@ import org.jruby.util.DefinedMessage;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.cli.Options;
-import org.yarp.Nodes;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -158,7 +157,7 @@ public abstract class IRBuilder<U, V, W, X> {
 
     public static IRBuilder newIRBuilder(IRManager manager, IRScope newScope, IRBuilder parent, boolean yarp) {
         if (yarp) {
-            return new IRBuilderYARP(manager, newScope, parent, null);
+            return new IRBuilderPrism(manager, newScope, parent, null);
         } else {
             return new IRBuilderAST(manager, newScope, parent, null);
         }
@@ -168,7 +167,7 @@ public abstract class IRBuilder<U, V, W, X> {
         if (rootNode instanceof RootNode) {
             return new IRBuilderAST(manager, newScope, null, null);
         } else {
-            return new IRBuilderYARP(manager, newScope, null, null);
+            return new IRBuilderPrism(manager, newScope, null, null);
         }
     }
 
@@ -1196,7 +1195,7 @@ public abstract class IRBuilder<U, V, W, X> {
         IRClassBody body = new IRClassBody(getManager(), this.scope, className, line, scope, executesOnce);
         Variable bodyResult = addResultInstr(new DefineClassInstr(temp(), body, container, superClass));
 
-        newIRBuilder(getManager(), body, this, this instanceof IRBuilderYARP).buildModuleOrClassBody(bodyNode, line, endLine);
+        newIRBuilder(getManager(), body, this, this instanceof IRBuilderPrism).buildModuleOrClassBody(bodyNode, line, endLine);
         return bodyResult;
     }
 
@@ -1367,7 +1366,7 @@ public abstract class IRBuilder<U, V, W, X> {
         IRClosure closure = new IRFor(getManager(), scope, line, staticScope, signature);
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        newIRBuilder(getManager(), closure, this, this instanceof IRBuilderYARP).buildIterInner(null, var, body, endLine);
+        newIRBuilder(getManager(), closure, this, this instanceof IRBuilderPrism).buildIterInner(null, var, body, endLine);
 
         return new WrappedIRClosure(buildSelf(), closure);
     }
@@ -1457,7 +1456,7 @@ public abstract class IRBuilder<U, V, W, X> {
         IRClosure closure = new IRClosure(getManager(), scope, line, staticScope, signature, coverageMode);
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        newIRBuilder(getManager(), closure, this, this instanceof IRBuilderYARP).buildIterInner(methodName, var, body, endLine);
+        newIRBuilder(getManager(), closure, this, this instanceof IRBuilderPrism).buildIterInner(methodName, var, body, endLine);
 
         methodName = null;
 
@@ -1513,7 +1512,7 @@ public abstract class IRBuilder<U, V, W, X> {
         IRClosure closure = new IRClosure(getManager(), scope, line, staticScope, signature, coverageMode);
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        newIRBuilder(getManager(), closure, this, this instanceof IRBuilderYARP).buildLambdaInner(args, body);
+        newIRBuilder(getManager(), closure, this, this instanceof IRBuilderPrism).buildLambdaInner(args, body);
 
         Variable lambda = temp();
         WrappedIRClosure lambdaBody = new WrappedIRClosure(closure.getSelf(), closure);
@@ -1653,7 +1652,7 @@ public abstract class IRBuilder<U, V, W, X> {
         IRModuleBody body = new IRModuleBody(getManager(), this.scope, name, line, scope, executesOnce);
         Variable bodyResult = addResultInstr(new DefineModuleInstr(temp(), container, body));
 
-        newIRBuilder(getManager(), body, this, this instanceof IRBuilderYARP).buildModuleOrClassBody(bodyNode, line, endLine);
+        newIRBuilder(getManager(), body, this, this instanceof IRBuilderPrism).buildModuleOrClassBody(bodyNode, line, endLine);
 
         return bodyResult;
     }
@@ -1808,7 +1807,7 @@ public abstract class IRBuilder<U, V, W, X> {
         staticScope.setIRScope(endClosure);
         endClosure.setIsEND();
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        newIRBuilder(getManager(), endClosure, null, this instanceof IRBuilderYARP).buildPrePostExeInner(body);
+        newIRBuilder(getManager(), endClosure, null, this instanceof IRBuilderPrism).buildPrePostExeInner(body);
 
         // Add an instruction in 's' to record the end block in the 'topLevel' scope.
         // SSS FIXME: IR support for end-blocks that access vars in non-toplevel-scopes
@@ -1830,7 +1829,7 @@ public abstract class IRBuilder<U, V, W, X> {
     }
 
     Operand buildPreExe(U body) {
-        List<Instr> beginInstrs = newIRBuilder(getManager(), scope, this, this instanceof IRBuilderYARP).buildPreExeInner(body);
+        List<Instr> beginInstrs = newIRBuilder(getManager(), scope, this, this instanceof IRBuilderPrism).buildPreExeInner(body);
 
         instructions.addAll(afterPrologueIndex, beginInstrs);
         afterPrologueIndex += beginInstrs.size();
@@ -2096,7 +2095,7 @@ public abstract class IRBuilder<U, V, W, X> {
 
         // sclass bodies inherit the block of their containing method
         Variable bodyResult = addResultInstr(new ProcessModuleBodyInstr(temp(), sClassVar, getYieldClosureVariable()));
-        newIRBuilder(getManager(), body, this, this instanceof IRBuilderYARP).buildModuleOrClassBody(bodyNode, line, endLine);
+        newIRBuilder(getManager(), body, this, this instanceof IRBuilderPrism).buildModuleOrClassBody(bodyNode, line, endLine);
         return bodyResult;
     }
 

@@ -1,11 +1,11 @@
-package org.yarp;
+package org.jruby.parser;
 
 import org.jruby.ParseResult;
-import org.jruby.ir.builder.IRBuilderYARP;
-import org.jruby.parser.StaticScope;
+import org.jruby.ir.builder.IRBuilderPrism;
 import org.jruby.runtime.DynamicScope;
+import org.prism.Nodes;
 
-public class YarpParseResult implements ParseResult {
+public class ParseResultPrism implements ParseResult {
     StaticScope rootScope;
     Nodes.ProgramNode root;
 
@@ -13,7 +13,7 @@ public class YarpParseResult implements ParseResult {
     String fileName;
     byte[] source;
 
-    public YarpParseResult(String fileName, byte[] source, Nodes.ProgramNode root, Nodes.Source nodeSource) {
+    public ParseResultPrism(String fileName, byte[] source, Nodes.ProgramNode root, Nodes.Source nodeSource) {
         this.root = root;
         this.fileName = fileName;
         this.source = source;
@@ -28,7 +28,7 @@ public class YarpParseResult implements ParseResult {
     @Override
     public StaticScope getStaticScope() {
         if (rootScope == null) {
-            rootScope = IRBuilderYARP.createStaticScopeFrom(fileName, root.locals, StaticScope.Type.LOCAL, null);
+            rootScope = IRBuilderPrism.createStaticScopeFrom(fileName, root.locals, StaticScope.Type.LOCAL, null);
         }
 
         return rootScope;
