@@ -767,10 +767,25 @@ public class IRBuilderYARP extends IRBuilder<Node, DefNode, WhenNode, RescueNode
     }
 
     private Operand buildConstantOrWritePath(ConstantPathOrWriteNode node) {
+        // FIXME: unify with AST
         RubySymbol name = symbol(((ConstantReadNode) node.target.child).name);
-        return buildOpAsgnOrWithDefined(node,
-                (result) -> buildConstantPath((Variable) result, name, node.target.parent),
-                () -> buildConstantWritePath(node.target, build(node.value)));
+        Variable result = temp();
+        Label falseCheck = getNewLabel();
+        Label done = getNewLabel();
+        Label assign = getNewLabel();
+        // FIXME: this is semi-duplicated from buildConstantPath since we want out param of module and value returned to result
+        Operand module = node.target.parent == null ? getManager().getObjectClass() : build(node.target.parent);
+        searchModuleForConstNoFrills(result, module, name);
+        addInstr(BNEInstr.create(falseCheck, result, UndefinedValue.UNDEFINED));
+        addInstr(new JumpInstr(assign));
+        addInstr(new LabelInstr(falseCheck));
+        addInstr(BNEInstr.create(done, result, fals()));
+        addInstr(new LabelInstr(assign));
+        Operand rhsValue = build(node.value);
+        copy(result, rhsValue);
+        addInstr(new PutConstInstr(module, name, rhsValue));
+        addInstr(new LabelInstr(done));
+        return result;
     }
 
     private Operand buildConstantPath(Variable result, ConstantPathNode node) {

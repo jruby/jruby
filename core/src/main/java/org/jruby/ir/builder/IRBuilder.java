@@ -647,6 +647,11 @@ public abstract class IRBuilder<U, V, W, X> {
         return addResultInstr(new SearchModuleForConstInstr(result, startingModule, name, true));
     }
 
+    Operand searchModuleForConstNoFrills(Variable result, Operand startingModule, RubySymbol name) {
+        if (result == null) result = temp();
+        return addResultInstr(new SearchModuleForConstInstr(result, startingModule, name, false, false));
+    }
+
     Operand searchConst(Variable result, RubySymbol name) {
         if (result == null) result = temp();
         return addResultInstr(new SearchConstInstr(result, CurrentScope.INSTANCE, name, false));
