@@ -93,21 +93,27 @@ public class RubyIOBuffer extends RubyObject {
     @JRubyMethod(name = "for", meta = true)
     public static IRubyObject rbFor(ThreadContext context, IRubyObject self, IRubyObject _string, Block block) {
         RubyString string = _string.convertToString();
+        int flags = string.isFrozen() ? READONLY : 0;
 
         // If the string is frozen, both code paths are okay.
         // If the string is not frozen, if a block is not given, it must be frozen.
-        boolean isGiven = block.isGiven();
-        if (!isGiven) {
+        if (!block.isGiven()) {
             // This internally returns the source string if it's already frozen.
             string = string.newFrozen();
+            flags = READONLY;
+        } else {
+            if ((flags & READONLY) != READONLY) {
+                string.modify();
+            }
         }
 
         ByteList bytes = string.getByteList();
         int size = bytes.realSize();
+        ByteBuffer wrap = ByteBuffer.wrap(bytes.unsafeBytes(), bytes.begin(), size);
 
-        RubyIOBuffer buffer = newBuffer(context.runtime, ByteBuffer.wrap(bytes.unsafeBytes(), bytes.begin(), size), size, READONLY);
+        RubyIOBuffer buffer = newBuffer(context.runtime, wrap, size, flags);
 
-        if (isGiven) {
+        if (block.isGiven()) {
             return block.yieldSpecific(context, buffer);
         }
 
