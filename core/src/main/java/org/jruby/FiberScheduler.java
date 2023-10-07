@@ -69,12 +69,12 @@ public class FiberScheduler {
     }
 
     // MRI: rb_fiber_scheduler_io_pread
-    public static IRubyObject ioPRead(ThreadContext context, IRubyObject scheduler, IRubyObject io, IRubyObject buffer, int length, int offset) {
-        return Helpers.invokeChecked(context, scheduler, "io_pread", io, buffer, context.runtime.newFixnum(length), context.runtime.newFixnum(offset));
+    public static IRubyObject ioPRead(ThreadContext context, IRubyObject scheduler, IRubyObject io, IRubyObject buffer, int from, int length, int offset) {
+        return Helpers.invokeChecked(context, scheduler, "io_pread", io, buffer, context.runtime.newFixnum(from), context.runtime.newFixnum(length), context.runtime.newFixnum(offset));
     }
 
-    public static IRubyObject ioPRead(ThreadContext context, IRubyObject scheduler, IRubyObject io, IRubyObject buffer, IRubyObject length, IRubyObject offset) {
-        return Helpers.invokeChecked(context, scheduler, "io_pread", io, buffer, length, offset);
+    public static IRubyObject ioPRead(ThreadContext context, IRubyObject scheduler, IRubyObject io, IRubyObject buffer, RubyInteger from, RubyInteger length, RubyInteger offset) {
+        return Helpers.invokeChecked(context, scheduler, "io_pread", io, buffer, from, length, offset);
     }
 
     // MRI: rb_fiber_scheduler_io_write
@@ -87,12 +87,12 @@ public class FiberScheduler {
     }
 
     // MRI: rb_fiber_scheduler_io_pwrite
-    public static IRubyObject ioPWrite(ThreadContext context, IRubyObject scheduler, IRubyObject io, IRubyObject buffer, int length, int offset) {
-        return Helpers.invokeChecked(context, scheduler, "io_pwrite", io, buffer, context.runtime.newFixnum(length), context.runtime.newFixnum(offset));
+    public static IRubyObject ioPWrite(ThreadContext context, IRubyObject scheduler, IRubyObject io, IRubyObject buffer, int from, int length, int offset) {
+        return Helpers.invokeChecked(context, scheduler, "io_pwrite", io, buffer, context.runtime.newFixnum(from), context.runtime.newFixnum(length), context.runtime.newFixnum(offset));
     }
 
-    public static IRubyObject ioPWrite(ThreadContext context, IRubyObject scheduler, IRubyObject io, IRubyObject buffer, IRubyObject length, IRubyObject offset) {
-        return Helpers.invokeChecked(context, scheduler, "io_pwrite", io, buffer, length, offset);
+    public static IRubyObject ioPWrite(ThreadContext context, IRubyObject scheduler, IRubyObject io, IRubyObject buffer, RubyInteger from, RubyInteger length, RubyInteger offset) {
+        return Helpers.invokeChecked(context, scheduler, "io_pwrite", io, buffer, from, length, offset);
     }
 
     // MRI: rb_fiber_scheduler_io_read_memory

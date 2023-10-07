@@ -4835,7 +4835,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             string = str.convertToString();
         }
 
-        long off = offset.convertToInteger().getLongValue();
+        int off = offset.convertToInteger().getIntValue();
 
         RubyIO io = GetWriteIO();
         fptr = io.getOpenFile();
@@ -4846,41 +4846,14 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         ByteList strByteList = buf.getByteList();
 
-        try {
-            return context.getThread().executeTaskBlocking(context, fd, new RubyThread.Task<ChannelFD, IRubyObject>() {
-                @Override
-                public IRubyObject run(ThreadContext context, ChannelFD channelFD) throws InterruptedException {
-                    Ruby runtime = context.runtime;
+        int length = strByteList.realSize();
+        ByteBuffer wrap = ByteBuffer.wrap(strByteList.unsafeBytes(), strByteList.begin(), length);
 
-                    int length = strByteList.realSize();
-                    ByteBuffer wrap = ByteBuffer.wrap(strByteList.unsafeBytes(), strByteList.begin(), length);
-                    int written = 0;
+        int written;
 
-                    try {
-                        if (fd.chFile != null) {
-                            written = fd.chFile.write(wrap, off);
-                        } else if (fd.chNative != null) {
-                            written = (int) runtime.getPosix().pwrite(fd.chNative.getFD(), wrap, length, off);
-                        } else if (fd.chWrite != null) {
-                            written = fd.chWrite.write(wrap);
-                        } else {
-                            throw runtime.newIOError("not opened for writing");
-                        }
-                    } catch (IOException ioe) {
-                        throw Helpers.newIOErrorFromException(runtime, ioe);
-                    }
-                    return runtime.newFixnum(written);
-                }
+        written = OpenFile.pwriteInternal(context, fd, wrap, off, length);
 
-                @Override
-                public void wakeup(RubyThread thread, ChannelFD channelFD) {
-                    // FIXME: NO! This will kill many native channels. Must be nonblocking to interrupt.
-                    thread.getNativeThread().interrupt();
-                }
-            });
-        } catch (InterruptedException ie) {
-            throw context.runtime.newConcurrencyError("IO operation interrupted");
-        }
+        return context.runtime.newFixnum(written);
     }
 
     /**

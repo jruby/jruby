@@ -1638,6 +1638,8 @@ public class RubyIOBuffer extends RubyObject {
         OpenFile fptr = io.getOpenFileChecked();
         final boolean locked = fptr.lock();
         try {
+            base.position(offset);
+            base.limit(offset + size);
             int result = OpenFile.readInternal(context, fptr, fptr.fd(), base, offset, size);
             return FiberScheduler.result(context.runtime, result, fptr.errno());
         } finally {
@@ -1648,20 +1650,44 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "pread")
     public IRubyObject pread(ThreadContext context, IRubyObject io, IRubyObject _from) {
-        int from = RubyNumeric.num2int(_from);
-
+        IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
+        RubyInteger fromInteger = _from.convertToInteger();
         int offset = 0;
         int length = defaultLength(context, offset);
+
+        if (!scheduler.isNil()) {
+            Ruby runtime = context.runtime;
+            IRubyObject result = FiberScheduler.ioPRead(context, scheduler, io, this, fromInteger, RubyFixnum.newFixnum(runtime, length), RubyFixnum.zero(runtime));
+
+            if (result != UNDEF) {
+                return result;
+            }
+        }
+
+        int from = RubyNumeric.num2int(_from);
+
 
         return pread(context, RubyIO.convertToIO(context, io), from, length, offset);
     }
 
     @JRubyMethod(name = "pread")
     public IRubyObject pread(ThreadContext context, IRubyObject io, IRubyObject _from, IRubyObject _length) {
-        int from = RubyNumeric.num2int(_from);
+        IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
+        RubyInteger fromInteger = _from.convertToInteger();
+        RubyInteger lengthInteger = _length.convertToInteger();
+
+        if (!scheduler.isNil()) {
+            IRubyObject result = FiberScheduler.ioPRead(context, scheduler, io, this, fromInteger, lengthInteger, RubyFixnum.zero(context.runtime));
+
+            if (result != UNDEF) {
+                return result;
+            }
+        }
+
+        int from = RubyNumeric.num2int(fromInteger);
 
         int offset = 0;
-        int length = extractLength(context, _length, offset);
+        int length = extractLength(context, lengthInteger, offset);
 
         return pread(context, RubyIO.convertToIO(context, io), from, length, offset);
     }
@@ -1683,24 +1709,28 @@ public class RubyIOBuffer extends RubyObject {
     }
 
     public IRubyObject pread(ThreadContext context, IRubyObject io, IRubyObject _from, IRubyObject _length, IRubyObject _offset) {
-        int from = RubyNumeric.num2int(_from);
-
-        int offset = extractOffset(context, _offset);
-        int length = extractLength(context, _length, offset);
-
-        return pread(context, RubyIO.convertToIO(context, io), from, length, offset);
-    }
-
-    public IRubyObject pread(ThreadContext context, RubyIO io, int from, int length, int offset) {
         IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
+        RubyInteger fromInteger = _from.convertToInteger();
+        RubyInteger lengthInteger = _length.convertToInteger();
+        RubyInteger offsetInteger = _offset.convertToInteger();
+
         if (!scheduler.isNil()) {
-            IRubyObject result = FiberScheduler.ioPRead(context, scheduler, io, this, length, offset);
+            IRubyObject result = FiberScheduler.ioPRead(context, scheduler, io, this, fromInteger, lengthInteger, offsetInteger);
 
             if (result != UNDEF) {
                 return result;
             }
         }
 
+        int from = RubyNumeric.num2int(fromInteger);
+
+        int offset = extractOffset(context, offsetInteger);
+        int length = extractLength(context, lengthInteger, offset);
+
+        return pread(context, RubyIO.convertToIO(context, io), from, length, offset);
+    }
+
+    public IRubyObject pread(ThreadContext context, RubyIO io, int from, int length, int offset) {
         validateRange(context, offset, length);
 
         ByteBuffer buffer = getBufferForWriting(context);
@@ -1727,6 +1757,7 @@ public class RubyIOBuffer extends RubyObject {
         final boolean locked = fptr.lock();
         try {
             base.position(offset);
+            base.limit(offset + size);
             int result = OpenFile.preadInternal(context, fptr.fd(), base, from, size);
             return FiberScheduler.result(context.runtime, result, fptr.errno());
         } finally {
@@ -1758,12 +1789,20 @@ public class RubyIOBuffer extends RubyObject {
     }
 
     // MRI: offset parts of io_buffer_extract_length_offset and io_buffer_extract_offset
-    private int extractOffset(ThreadContext context, IRubyObject _offset) {
+    private static int extractOffset(ThreadContext context, IRubyObject _offset) {
         if (RubyNumeric.negativeInt(context, _offset)) {
             throw context.runtime.newArgumentError("Offset can't be negative!");
         }
 
         return RubyNumeric.num2int(_offset);
+    }
+
+    private static int extractSize(ThreadContext context, IRubyObject _size) {
+        if (RubyNumeric.negativeInt(context, _size)) {
+            throw context.runtime.newArgumentError("Size can't be negative!");
+        }
+
+        return RubyNumeric.num2int(_size);
     }
 
     @JRubyMethod(name = "write")
@@ -1811,23 +1850,66 @@ public class RubyIOBuffer extends RubyObject {
         OpenFile fptr = io.getOpenFileChecked();
         final boolean locked = fptr.lock();
         try {
+            base.position(offset);
+            base.limit(offset + size);
             int result = OpenFile.writeInternal(context, fptr, base, offset, size);
             return FiberScheduler.result(context.runtime, result, fptr.errno());
         } finally {
+            base.clear();
             if (locked) fptr.unlock();
         }
     }
     
     @JRubyMethod(name = "pwrite")
-    public IRubyObject pwrite(ThreadContext context, IRubyObject io, IRubyObject from, IRubyObject length) {
-        return context.nil;
+    public IRubyObject pwrite(ThreadContext context, IRubyObject io, IRubyObject _from) {
+        IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
+        RubyInteger fromInteger = _from.convertToInteger();
+        int offset = 0;
+        int length = defaultLength(context, offset);
+
+        if (!scheduler.isNil()) {
+            Ruby runtime = context.runtime;
+            IRubyObject result = FiberScheduler.ioPWrite(context, scheduler, io, this, fromInteger, RubyFixnum.newFixnum(runtime, length), RubyFixnum.zero(runtime));
+
+            if (result != UNDEF) {
+                return result;
+            }
+        }
+
+        int from = RubyNumeric.num2int(fromInteger);
+
+        return pwrite(context, RubyIO.convertToIO(context, io), from, length, offset);
     }
 
-    @JRubyMethod(name = "pwrite", required = 1, optional = 3, checkArity = false)
+    @JRubyMethod(name = "pwrite")
+    public IRubyObject pwrite(ThreadContext context, IRubyObject io, IRubyObject _from, IRubyObject _length) {
+        IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
+        RubyInteger fromInteger = _from.convertToInteger();
+        RubyInteger lengthInteger = _length.convertToInteger();
+
+        if (!scheduler.isNil()) {
+            IRubyObject result = FiberScheduler.ioPWrite(context, scheduler, io, this, fromInteger, lengthInteger, RubyFixnum.zero(context.runtime));
+
+            if (result != UNDEF) {
+                return result;
+            }
+        }
+
+        int from = RubyNumeric.num2int(fromInteger);
+
+        int offset = 0;
+        int length = extractLength(context, lengthInteger, offset);
+
+        return pwrite(context, RubyIO.convertToIO(context, io), from, length, offset);
+    }
+
+    @JRubyMethod(name = "pwrite", required = 2, optional = 2, checkArity = false)
     public IRubyObject pwrite(ThreadContext context, IRubyObject[] args) {
-        Arity.checkArgumentCount(context, args, 3, 4);
+        Arity.checkArgumentCount(context, args, 2, 4);
 
         switch (args.length) {
+            case 2:
+                return pwrite(context, args[0], args[1]);
             case 3:
                 return pwrite(context, args[0], args[1], args[2]);
             case 4:
@@ -1837,8 +1919,49 @@ public class RubyIOBuffer extends RubyObject {
         return context.nil;
     }
 
-    public IRubyObject pwrite(ThreadContext context, IRubyObject io, IRubyObject from, IRubyObject length, IRubyObject offset) {
-        return context.nil;
+    public IRubyObject pwrite(ThreadContext context, IRubyObject io, IRubyObject _from, IRubyObject _length, IRubyObject _offset) {
+        IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
+        RubyInteger fromInteger = _from.convertToInteger();
+        RubyInteger lengthInteger = _length.convertToInteger();
+        RubyInteger offsetInteger = _offset.convertToInteger();
+
+        if (!scheduler.isNil()) {
+            IRubyObject result = FiberScheduler.ioPWrite(context, scheduler, io, this, fromInteger, lengthInteger, offsetInteger);
+
+            if (result != UNDEF) {
+                return result;
+            }
+        }
+
+        int from = RubyNumeric.num2int(fromInteger);
+
+        int offset = extractOffset(context, offsetInteger);
+        int length = extractLength(context, lengthInteger, offset);
+
+        return pwrite(context, RubyIO.convertToIO(context, io), from, length, offset);
+    }
+
+    public IRubyObject pwrite(ThreadContext context, RubyIO io, int from, int length, int offset) {
+        validateRange(context, offset, length);
+
+        ByteBuffer buffer = getBufferForReading(context);
+        int size = this.size - offset;
+
+        return pwriteInternal(context, RubyIO.convertToIO(context, io), buffer, from, offset, length);
+    }
+
+    private static IRubyObject pwriteInternal(ThreadContext context, RubyIO io, ByteBuffer base, int from, int offset, int size) {
+        OpenFile fptr = io.getOpenFileChecked();
+        final boolean locked = fptr.lock();
+        try {
+            base.position(offset);
+            base.limit(offset + size);
+            int result = OpenFile.pwriteInternal(context, fptr.fd(), base, from, size);
+            return FiberScheduler.result(context.runtime, result, fptr.errno());
+        } finally {
+            base.clear();
+            if (locked) fptr.unlock();
+        }
     }
 
     enum DataType {

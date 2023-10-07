@@ -1439,9 +1439,38 @@ public class OpenFile implements Finalizable {
         }
     };
 
+    public static final RubyThread.ReadWrite<ChannelFD> PWRITE_TASK = new RubyThread.ReadWrite<ChannelFD>() {
+        @Override
+        public int run(ThreadContext context, ChannelFD fd, ByteBuffer bytes, int from, int length) throws InterruptedException {
+            Ruby runtime = context.runtime;
+            int written = 0;
+
+            try {
+                if (fd.chFile != null) {
+                    written = fd.chFile.write(bytes, from);
+                } else if (fd.chNative != null) {
+                    written = (int) runtime.getPosix().pwrite(fd.chNative.getFD(), bytes, length, from);
+                } else if (fd.chWrite != null) {
+                    written = fd.chWrite.write(bytes);
+                } else {
+                    throw runtime.newIOError("not opened for writing");
+                }
+            } catch (IOException ioe) {
+                throw Helpers.newIOErrorFromException(runtime, ioe);
+            }
+            return written;
+        }
+
+        @Override
+        public void wakeup(RubyThread thread, ChannelFD channelFD) {
+            // FIXME: NO! This will kill many native channels. Must be nonblocking to interrupt.
+            thread.getNativeThread().interrupt();
+        }
+    };
+
     // rb_read_internal, rb_io_read_memory, rb_io_buffer_read_internal
     public static int readInternal(ThreadContext context, OpenFile fptr, ChannelFD fd, byte[] bufBytes, int buf, int count) {
-        return readInternal(context, fptr, fd, ByteBuffer.wrap(bufBytes), buf, count);
+        return readInternal(context, fptr, fd, ByteBuffer.wrap(bufBytes, buf, count), buf, count);
     }
 
     // rb_io_buffer_read_internal
@@ -1482,6 +1511,16 @@ public class OpenFile implements Finalizable {
         } catch (InterruptedException ie) {
             throw context.runtime.newConcurrencyError("IO operation interrupted");
         }
+    }
+
+    public static int pwriteInternal(ThreadContext context, ChannelFD fd, ByteBuffer bytes, int from, int length) {
+        int written;
+        try {
+            written = context.getThread().executeReadWrite(context, fd, bytes, from, length, PWRITE_TASK);
+        } catch (InterruptedException ie) {
+            throw context.runtime.newConcurrencyError("IO operation interrupted");
+        }
+        return written;
     }
 
     private static void preRead(ThreadContext context, OpenFile fptr, ChannelFD fd) {
@@ -2407,7 +2446,7 @@ public class OpenFile implements Finalizable {
 
     // rb_write_internal, rb_io_write_memory
     public static int writeInternal(ThreadContext context, OpenFile fptr, byte[] bufBytes, int buf, int count) {
-        return writeInternal(context, fptr, ByteBuffer.wrap(bufBytes), buf, count);
+        return writeInternal(context, fptr, ByteBuffer.wrap(bufBytes, buf, count), buf, count);
     }
 
     // rb_io_buffer_write_internal
