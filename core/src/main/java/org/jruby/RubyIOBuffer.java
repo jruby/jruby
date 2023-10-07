@@ -105,7 +105,7 @@ public class RubyIOBuffer extends RubyObject {
         ByteList bytes = string.getByteList();
         int size = bytes.realSize();
 
-        RubyIOBuffer buffer = newBuffer(context.runtime, ByteBuffer.wrap(bytes.unsafeBytes(), bytes.begin(), size), size, flagsForSize(size));
+        RubyIOBuffer buffer = newBuffer(context.runtime, ByteBuffer.wrap(bytes.unsafeBytes(), bytes.begin(), size), size, READONLY);
 
         if (isGiven) {
             return block.yieldSpecific(context, buffer);
