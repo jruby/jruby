@@ -1403,62 +1403,48 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "&")
     public IRubyObject op_and(ThreadContext context, IRubyObject _mask) {
-        ByteBuffer buffer = getBufferForReading(context);
+        RubyIOBuffer maskBuffer = (RubyIOBuffer) _mask;
 
-        int mask = _mask.convertToInteger().getIntValue();
+        checkMask(context, maskBuffer);
 
-        RubyIOBuffer outputBuffer = newBuffer(context.runtime, size, flags);
-        ByteBuffer output = outputBuffer.base;
+        RubyIOBuffer outputBuffer = newBuffer(context.runtime, size, flagsForSize(size));
 
-        for (int i = 0; i < buffer.capacity(); i++) {
-            output.put(i, (byte) (buffer.get(i) & mask));
-        }
+        bufferAnd(outputBuffer.base, base, size, maskBuffer.base, maskBuffer.size);
 
         return outputBuffer;
     }
 
     @JRubyMethod(name = "|")
     public IRubyObject op_or(ThreadContext context, IRubyObject _mask) {
-        ByteBuffer buffer = getBufferForReading(context);
+        RubyIOBuffer maskBuffer = (RubyIOBuffer) _mask;
 
-        int mask = _mask.convertToInteger().getIntValue();
+        checkMask(context, maskBuffer);
 
-        RubyIOBuffer outputBuffer = newBuffer(context.runtime, size, flags);
-        ByteBuffer output = outputBuffer.base;
+        RubyIOBuffer outputBuffer = newBuffer(context.runtime, size, flagsForSize(size));
 
-        for (int i = 0; i < buffer.capacity(); i++) {
-            output.put(i, (byte) (buffer.get(i) | mask));
-        }
+        bufferOr(outputBuffer.base, base, size, maskBuffer.base, maskBuffer.size);
 
         return outputBuffer;
     }
 
     @JRubyMethod(name = "^")
     public IRubyObject op_xor(ThreadContext context, IRubyObject _mask) {
-        ByteBuffer buffer = getBufferForReading(context);
+        RubyIOBuffer maskBuffer = (RubyIOBuffer) _mask;
 
-        int mask = _mask.convertToInteger().getIntValue();
+        checkMask(context, maskBuffer);
 
-        RubyIOBuffer outputBuffer = newBuffer(context.runtime, size, flags);
-        ByteBuffer output = outputBuffer.base;
+        RubyIOBuffer outputBuffer = newBuffer(context.runtime, size, flagsForSize(size));
 
-        for (int i = 0; i < buffer.capacity(); i++) {
-            output.put(i, (byte) (buffer.get(i) ^ mask));
-        }
+        bufferXor(outputBuffer.base, base, size, maskBuffer.base, maskBuffer.size);
 
         return outputBuffer;
     }
 
-    @JRubyMethod(name = "~@")
+    @JRubyMethod(name = "~")
     public IRubyObject op_not(ThreadContext context) {
-        ByteBuffer buffer = getBufferForReading(context);
+        RubyIOBuffer outputBuffer = newBuffer(context.runtime, size, flagsForSize(size));
 
-        RubyIOBuffer outputBuffer = newBuffer(context.runtime, size, flags);
-        ByteBuffer output = outputBuffer.base;
-
-        for (int i = 0; i < buffer.capacity(); i++) {
-            output.put(i, (byte) ~buffer.get(i));
-        }
+        bufferNot(outputBuffer.base, base, size);
 
         return outputBuffer;
     }
@@ -1552,37 +1538,44 @@ public class RubyIOBuffer extends RubyObject {
         return false;
     }
 
+    private static void bufferAnd(ByteBuffer output, ByteBuffer base, int size, ByteBuffer mask, int maskSize) {
+        for (int offset = 0; offset < size; offset += 1) {
+            output.put(offset, (byte) (base.get(offset) & mask.get(offset % maskSize)));
+        }
+    }
+
     private static void bufferAndInPlace(ByteBuffer a, int aSize, ByteBuffer b, int bSize) {
-        for (int aIndex = 0; aIndex < aSize;) {
-            for (int bIndex = 0; aIndex < aSize && bIndex < bSize; bIndex++) {
-                int curIndex = aIndex++;
-                a.put(curIndex, (byte) (a.get(curIndex) & b.get(bIndex)));
-            }
+        bufferAnd(a, a, aSize, b, bSize);
+    }
+
+    private static void bufferOr(ByteBuffer output, ByteBuffer base, int size, ByteBuffer mask, int maskSize) {
+        for (int offset = 0; offset < size; offset += 1) {
+            output.put(offset, (byte) (base.get(offset) | mask.get(offset % maskSize)));
         }
     }
 
     private static void bufferOrInPlace(ByteBuffer a, int aSize, ByteBuffer b, int bSize) {
-        for (int aIndex = 0; aIndex < aSize;) {
-            for (int bIndex = 0; aIndex < aSize && bIndex < bSize; bIndex++) {
-                int curIndex = aIndex++;
-                a.put(curIndex, (byte) (a.get(curIndex) | b.get(bIndex)));
-            }
+        bufferOr(a, a, aSize, b, bSize);
+    }
+
+    private static void bufferXor(ByteBuffer output, ByteBuffer base, int size, ByteBuffer mask, int maskSize) {
+        for (int offset = 0; offset < size; offset += 1) {
+            output.put(offset, (byte) (base.get(offset) ^ mask.get(offset % maskSize)));
         }
     }
 
     private static void bufferXorInPlace(ByteBuffer a, int aSize, ByteBuffer b, int bSize) {
-        for (int aIndex = 0; aIndex < aSize;) {
-            for (int bIndex = 0; aIndex < aSize && bIndex < bSize; bIndex++) {
-                int curIndex = aIndex++;
-                a.put(curIndex, (byte) (a.get(curIndex) ^ b.get(bIndex)));
-            }
+        bufferXor(a, a, aSize, b, bSize);
+    }
+
+    private static void bufferNot(ByteBuffer output, ByteBuffer base, int size) {
+        for (int offset = 0; offset < size; offset += 1) {
+            output.put(offset, (byte) ~base.get(offset));
         }
     }
 
     private static void bufferNotInPlace(ByteBuffer a, int aSize) {
-        for (int aIndex = 0; aIndex < aSize; aIndex++) {
-            a.put(aIndex, (byte) ~a.get(aIndex));
-        }
+        bufferNot(a, a, aSize);
     }
 
     @JRubyMethod(name = "read")
