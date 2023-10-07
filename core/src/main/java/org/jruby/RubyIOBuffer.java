@@ -735,8 +735,8 @@ public class RubyIOBuffer extends RubyObject {
         // no special behavior  for isInternal=true since we do not control the internals of ByteBuffers.
 
         ByteBuffer newBase = this.base.isDirect() ? ByteBuffer.allocateDirect(size) : ByteBuffer.allocate(size);
+        this.base.limit(Math.min(size, this.base.capacity()));
         newBase.put(this.base);
-        this.base.clear();
         newBase.clear();
 
         this.base = newBase;
