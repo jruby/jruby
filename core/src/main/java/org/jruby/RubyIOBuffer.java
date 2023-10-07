@@ -14,11 +14,14 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.OpenFile;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
 import java.util.Arrays;
 
 import static org.jruby.RubyBoolean.newBoolean;
@@ -107,6 +110,155 @@ public class RubyIOBuffer extends RubyObject {
         }
 
         return buffer;
+    }
+
+    @JRubyMethod(name = "map", meta = true)
+    public static IRubyObject map(ThreadContext context, IRubyObject self, IRubyObject _file) {
+        RubyFile file = checkFile(context, _file);
+
+        int size = getSizeFromFile(context, file);
+
+        return map(context, file, size, 0, 0);
+    }
+
+    private static RubyFile checkFile(ThreadContext context, IRubyObject _file) {
+        RubyIO io = RubyIO.convertToIO(context, _file);
+
+        if (!(io instanceof RubyFile)) {
+            throw context.runtime.newTypeError(_file, context.runtime.getFile());
+        }
+
+        RubyFile file = (RubyFile) io;
+        return file;
+    }
+
+    @JRubyMethod(name = "map", meta = true)
+    public static IRubyObject map(ThreadContext context, IRubyObject self, IRubyObject _file, IRubyObject _size) {
+        RubyFile file = checkFile(context, _file);
+
+        int size = getSizeForMap(context, file, _size);
+
+        return map(context, file, size, 0, 0);
+    }
+
+    @JRubyMethod(name = "map", meta = true)
+    public static IRubyObject map(ThreadContext context, IRubyObject self, IRubyObject _file, IRubyObject _size, IRubyObject _offset) {
+        RubyFile file = checkFile(context, _file);
+
+        int size = getSizeForMap(context, file, _size);
+
+        // This is the file offset, not the buffer offset:
+        int offset = RubyNumeric.num2int(_offset);
+
+        return map(context, file, size, offset, 0);
+    }
+
+    private static int getSizeForMap(ThreadContext context, RubyFile file, IRubyObject _size) {
+        int size;
+        if (!_size.isNil()) {
+            size = extractSize(context, _size);
+        } else {
+            size = getSizeFromFile(context, file);
+        }
+        return size;
+    }
+
+    private static int getSizeFromFile(ThreadContext context, RubyFile _file) {
+        int size;
+        long file_size = _file.getSize(context);
+
+        // Compiler can confirm that we handled file_size < 0 case:
+        if (file_size < 0) {
+            throw context.runtime.newArgumentError("Invalid negative file size!");
+        }
+        // Here, we assume that file_size is positive:
+        else if (file_size > Integer.MAX_VALUE) {
+            throw context.runtime.newArgumentError("File larger than address space!");
+        }
+        else {
+            // This conversion should be safe:
+            size = (int) file_size;
+        }
+        return size;
+    }
+
+    @JRubyMethod(name = "map", required = 1, optional = 3, meta = true)
+    public static IRubyObject map(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        switch (args.length) {
+            case 1:
+                return map(context, self, args[0]);
+            case 2:
+                return map(context, self, args[0], args[1]);
+            case 3:
+                return map(context, self, args[0], args[1], args[2]);
+            case 4:
+                return map(context, self, args[0], args[1], args[2], args[3]);
+        }
+        return context.nil;
+    }
+
+    public static IRubyObject map(ThreadContext context, IRubyObject self, IRubyObject _file, IRubyObject _size, IRubyObject _offset, IRubyObject _flags) {
+        RubyFile file = checkFile(context, _file);
+
+        int size = getSizeForMap(context, file, _size);
+
+        // This is the file offset, not the buffer offset:
+        int offset = RubyNumeric.num2int(_offset);
+
+        int flags = RubyNumeric.num2int(_flags);
+
+        return map(context, file, size, offset, flags);
+    }
+
+    private static RubyIOBuffer map(ThreadContext context, RubyFile file, int size, int offset, int flags) {
+        RubyIOBuffer buffer = new RubyIOBuffer(context.runtime, context.runtime.getIOBuffer());
+
+        ChannelFD descriptor = file.getOpenFileChecked().fd();
+
+        mapFile(context, buffer, descriptor, size, offset, flags);
+
+        return buffer;
+    }
+
+    private static void mapFile(ThreadContext context, RubyIOBuffer buffer, ChannelFD descriptor, int size, int offset, int flags) {
+        FileChannel.MapMode protect = FileChannel.MapMode.READ_ONLY;
+        int access = 0;
+
+        if ((flags & READONLY) == READONLY) {
+            buffer.flags |= READONLY;
+        } else {
+            protect = FileChannel.MapMode.READ_WRITE;
+        }
+
+        if ((flags & PRIVATE) == PRIVATE) {
+            buffer.flags |= PRIVATE;
+            protect = FileChannel.MapMode.PRIVATE;
+        } else {
+            // This buffer refers to external buffer.
+            buffer.flags |= EXTERNAL;
+            buffer.flags |= SHARED;
+        }
+
+        ByteBuffer base;
+
+        if (descriptor.chFile == null) {
+            throw context.runtime.newTypeError("Cannot map non-file resource: " + descriptor.ch);
+        }
+
+        try {
+            base = descriptor.chFile.map(protect, offset, size);
+        } catch (IOException ioe) {
+            throw Helpers.newIOErrorFromException(context.runtime, ioe);
+        }
+
+        buffer.base = base;
+        buffer.size = size;
+
+        buffer.flags |= MAPPED;
+    }
+
+    public static IRubyObject map(ThreadContext context, IRubyObject self, RubyFile _file, int _size, int _offset, int _flags) {
+        return context.nil;
     }
 
     @JRubyMethod(name = "initialize")
