@@ -69,6 +69,8 @@ public class RubyIOBuffer extends RubyObject {
     public static final int NETWORK_ENDIAN = BIG_ENDIAN;
 
     public static RubyIOBuffer newBuffer(Ruby runtime, ByteBuffer base, int size, int flags) {
+        if (base == null) return newBuffer(runtime, size, flags);
+
         return new RubyIOBuffer(runtime, runtime.getIOBuffer(), base, size, flags);
     }
 
