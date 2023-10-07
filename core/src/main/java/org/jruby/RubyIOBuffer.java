@@ -1305,6 +1305,11 @@ public class RubyIOBuffer extends RubyObject {
     }
 
     @JRubyMethod(name = "get_string")
+    public IRubyObject get_string(ThreadContext context) {
+        return getString(context, 0, size, ASCIIEncoding.INSTANCE);
+    }
+
+    @JRubyMethod(name = "get_string")
     public IRubyObject get_string(ThreadContext context, IRubyObject _offset) {
         int offset = RubyNumeric.num2int(_offset);
 
