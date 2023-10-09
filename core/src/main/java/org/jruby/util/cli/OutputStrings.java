@@ -7,6 +7,7 @@ import org.jruby.runtime.Constants;
 import org.jruby.util.SafePropertyAccessor;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 
 /**
  * Utility methods to generate the command-line output strings for help,
@@ -167,13 +168,23 @@ public class OutputStrings {
         return "\033[1m" + str + "\033[0m";
     }
 
+    private static final int SPACES_MAX = 256;
+    private static final char[] SPACES = new char[SPACES_MAX];
+    static {
+        Arrays.fill(SPACES, ' ');
+    }
+
     private static String generateSpaces(int total) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < total; i++) {
-            sb.append(" ");
+        char[] spaces;
+
+        if (total > SPACES_MAX) {
+            spaces = new char[total];
+            Arrays.fill(spaces, ' ');
+        } else {
+            spaces = SPACES;
         }
 
-        return sb.toString();
+        return new String(spaces, 0, total);
     }
 
     private static String breakLine(String str, int index, int spaces) {
