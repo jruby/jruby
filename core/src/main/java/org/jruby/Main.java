@@ -463,9 +463,13 @@ public class Main {
         if (config.getShouldPrintUsage() || force) {
             String rubyPager = getRubyPagerEnv();
 
+            // Do not want to boot native subsystem here, so we do best guess based on System.console. It will be
+            // non-null only if both STDIN and STDOUT are tty.
+            boolean tty = System.console() != null;
+
             if (rubyPager == null) {
-                config.getOutput().print(OutputStrings.getBasicUsageHelp());
-                config.getOutput().print(OutputStrings.getFeaturesHelp());
+                config.getOutput().print(OutputStrings.getBasicUsageHelp(tty));
+                config.getOutput().print(OutputStrings.getFeaturesHelp(tty));
             } else {
                 try {
                     ProcessBuilder builder = new ProcessBuilder(rubyPager);
@@ -477,7 +481,7 @@ public class Main {
                     Process process = builder.start();
                     OutputStream in = process.getOutputStream();
 
-                    String fullHelp = OutputStrings.getBasicUsageHelp() + OutputStrings.getFeaturesHelp();
+                    String fullHelp = OutputStrings.getBasicUsageHelp(tty) + OutputStrings.getFeaturesHelp(tty);
                     in.write(fullHelp.getBytes(StandardCharsets.UTF_8));
 
                     in.flush();
