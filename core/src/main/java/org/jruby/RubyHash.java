@@ -39,6 +39,7 @@
 
 package org.jruby;
 
+import com.headius.backport9.buffer.Buffers;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -1380,7 +1381,7 @@ public class RubyHash extends RubyObject implements Map {
             long valueHash = Helpers.safeHash(context, value).value;
 
             ByteBuffer buffer = HASH_16_BYTE.get();
-            ((ByteBuffer)buffer.clear()).putLong(keyHash).putLong(valueHash);
+            Buffers.clearBuffer(buffer).putLong(keyHash).putLong(valueHash);
 
             hval[0] ^= Helpers.multAndMix(context.runtime.getHashSeedK0(), Arrays.hashCode(buffer.array()));
         }
