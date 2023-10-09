@@ -2484,50 +2484,58 @@ public final class StringSupport {
         }
     }
 
-    public static int multiByteCasecmp(Encoding enc, ByteList value, ByteList otherValue) {
-        byte[]bytes = value.getUnsafeBytes();
-        int p = value.getBegin();
-        int end = p + value.getRealSize();
+    // MRI: multibyte portion of str_casecmp
+    public static int multiByteCasecmp(Encoding enc, ByteList value1, ByteList value2) {
+        byte[] bytes = value1.getUnsafeBytes();
+        int p1 = value1.getBegin();
+        int size1 = value1.getRealSize();
+        int end1 = p1 + size1;
 
-        byte[]obytes = otherValue.getUnsafeBytes();
-        int op = otherValue.getBegin();
-        int oend = op + otherValue.getRealSize();
+        byte[] bytes2 = value2.getUnsafeBytes();
+        int p2 = value2.getBegin();
+        int size2 = value2.getRealSize();
+        int end2 = p2 + size2;
 
-        while (p < end && op < oend) {
-            final int c, oc;
-            if (enc.isAsciiCompatible()) {
-                c = bytes[p] & 0xff;
-                oc = obytes[op] & 0xff;
-            } else {
-                c = preciseCodePoint(enc, bytes, p, end);
-                oc = preciseCodePoint(enc, obytes, op, oend);
-            }
+        int[] lenAry = {0};
 
-            final int cl, ocl;
-            if (Encoding.isAscii(c) && Encoding.isAscii(oc)) {
-                int dc = AsciiTables.ToUpperCaseTable[c];
-                int odc = AsciiTables.ToUpperCaseTable[oc];
-                if (dc != odc) return dc < odc ? -1 : 1;
 
-                if (enc.isAsciiCompatible()) {
-                    cl = ocl = 1;
-                } else {
-                    cl = preciseLength(enc, bytes, p, end);
-                    ocl = preciseLength(enc, obytes, op, oend);
+        while (p1 < end1 && p2 < end2) {
+            final int c1, c2;
+            int l1, l2;
+
+            c1 = EncodingUtils.encAscget(bytes, p1, end1, lenAry, enc);
+            l1 = lenAry[0];
+            c2 = EncodingUtils.encAscget(bytes2, p2, end2, lenAry, enc);
+            l2 = lenAry[0];
+
+            if (0 <= c1 && 0 <= c2) {
+                int dc = AsciiTables.ToLowerCaseTable[c1];
+                int odc = AsciiTables.ToLowerCaseTable[c2];
+
+                if (dc != odc) {
+                    return dc < odc ? -1 : 1;
                 }
             } else {
-                cl = length(enc, bytes, p, end);
-                ocl = length(enc, obytes, op, oend);
-                int ret = caseCmp(bytes, p, obytes, op, cl < ocl ? cl : ocl);
-                if (ret != 0) return ret < 0 ? -1 : 1;
-                if (cl != ocl) return cl < ocl ? -1 : 1;
+                l1 = length(enc, bytes, p1, end1);
+                l2 = length(enc, bytes2, p2, end2);
+
+                int len = Math.min(l1, l2);
+                int ret = ByteList.memcmp(bytes, p1, bytes2, p2, len);
+
+                if (ret != 0) {
+                    return ret < 0 ? -1 : 1;
+                }
+
+                if (l1 != l2) {
+                    return l1 < l2 ? -1 : 1;
+                }
             }
 
-            p += cl;
-            op += ocl;
+            p1 += l1;
+            p2 += l2;
         }
-        if (end - p == oend - op) return 0;
-        return end - p > oend - op ? 1 : -1;
+        if (size1 == size2) return 0;
+        return size1 > size2 ? 1 : -1;
     }
 
     public static boolean singleByteSqueeze(ByteList value, boolean squeeze[]) {
