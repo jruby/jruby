@@ -7,6 +7,7 @@ import org.jruby.runtime.Constants;
 import org.jruby.util.SafePropertyAccessor;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 
 /**
  * Utility methods to generate the command-line output strings for help,
@@ -14,6 +15,10 @@ import java.time.LocalDate;
  */
 public class OutputStrings {
     public static String getBasicUsageHelp() {
+        return getBasicUsageHelp(false);
+    }
+
+    public static String getBasicUsageHelp(boolean tty) {
         String[][] basicUsageOptions = {
                 {"-0[octal]", "specify record separator (\\0, if no argument)"},
                 {"-a", "autosplit mode with -n or -p (splits $_ into $F)"},
@@ -65,13 +70,13 @@ public class OutputStrings {
                 {"--enable=feature[,...], --disable=feature[,...]", "enable or disable features"}
         };
 
-        String header = strBold("Usage:") + " jruby [switches] [--] [programfile] [arguments]";
-        return buildOutputOptions(basicUsageOptions, header);
+        String header = strBold("Usage:", tty) + " jruby [switches] [--] [programfile] [arguments]";
+        return buildOutputOptions(basicUsageOptions, header, tty);
     }
 
-    private static String buildOutputOptions(String[][] options, String header) {
+    private static String buildOutputOptions(String[][] options, String header, boolean tty) {
         StringBuilder sb = new StringBuilder();
-        sb.append(strBold(header)).append("\n");
+        sb.append(strBold(header, tty)).append("\n");
 
         int max = Integer.MIN_VALUE;
         for (String[] strings : options) {
@@ -86,12 +91,16 @@ public class OutputStrings {
             String value = option[1];
 
             String text = breakLine(value, 60, max + 8);
-            sb.append("   ").append(strBold(key)).append(generateSpaces(max + 5 - key.length())).append(text).append("\n");
+            sb.append("   ").append(strBold(key, tty)).append(generateSpaces(max + 5 - key.length())).append(text).append("\n");
         }
         return sb.toString();
     }
 
     public static String getFeaturesHelp() {
+        return getFeaturesHelp(false);
+    }
+
+    public static String getFeaturesHelp(boolean tty) {
         String header = "Features:";
 
         String[][] options = {
@@ -100,7 +109,7 @@ public class OutputStrings {
                 {"rubyopt", "RUBYOPT environment variable (default: " + (Options.CLI_RUBYOPT_ENABLE.defaultValue() ? "enabled" : "disabled") + ")"},
                 {"frozen-string-literal", "freeze all string literals (default: disabled)"}};
 
-        return buildOutputOptions(options, header);
+        return buildOutputOptions(options, header, tty);
     }
 
     public static String getExtendedHelp() { return
@@ -152,20 +161,30 @@ public class OutputStrings {
         return String.format("JRuby - Copyright (C) 2001-%s The JRuby Community (and contribs)", LocalDate.now().getYear());
     }
 
-    private static String strBold(String str) {
-        if(Platform.IS_WINDOWS)
+    private static String strBold(String str, boolean tty) {
+        if (!tty || Platform.IS_WINDOWS)
             return str;
 
         return "\033[1m" + str + "\033[0m";
     }
 
+    private static final int SPACES_MAX = 256;
+    private static final char[] SPACES = new char[SPACES_MAX];
+    static {
+        Arrays.fill(SPACES, ' ');
+    }
+
     private static String generateSpaces(int total) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < total; i++) {
-            sb.append(" ");
+        char[] spaces;
+
+        if (total > SPACES_MAX) {
+            spaces = new char[total];
+            Arrays.fill(spaces, ' ');
+        } else {
+            spaces = SPACES;
         }
 
-        return sb.toString();
+        return new String(spaces, 0, total);
     }
 
     private static String breakLine(String str, int index, int spaces) {
