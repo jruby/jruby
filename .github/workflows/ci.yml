@@ -294,7 +294,7 @@ jobs:
         run: tool/concurrent-ruby-github-actions.sh
 
   mvn-test-m1:
-    runs-on: [self-hosted, macos, aarch64]
+    runs-on: macos-latest-xlarge
 
     strategy:
       matrix:
@@ -322,7 +322,7 @@ jobs:
           PHASE: 'package ${{ matrix.package-flags }}'
 
   spec-m1:
-    runs-on: [self-hosted, macos, aarch64]
+    runs-on: macos-latest-xlarge
 
     strategy:
       matrix:
