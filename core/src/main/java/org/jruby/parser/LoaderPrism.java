@@ -27,7 +27,9 @@ public class LoaderPrism extends Loader {
     }
 
     public org.jruby.RubySymbol bytesToName(byte[] bytes) {
-        if (encoding == null) encoding = runtime.getEncodingService().findEncodingEntry(encodingName.getBytes()).getEncoding();
+        if (encoding == null) {
+            encoding = runtime.getEncodingService().findEncodingOrAliasEntry(encodingName.getBytes()).getEncoding();
+        }
         return runtime.newSymbol(new ByteList(bytes, encoding));
     }
 }
