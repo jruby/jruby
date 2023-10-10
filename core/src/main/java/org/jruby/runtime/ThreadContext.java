@@ -910,14 +910,13 @@ public final class ThreadContext {
         return backTrace;
     }
 
-    private RubyStackTraceElement[] getFullTrace(Integer length, Stream<StackWalker.StackFrame> stackStream) {
-        if (length != null && length == 0) return RubyStackTraceElement.EMPTY_ARRAY;
-        return TraceType.Gather.CALLER.getBacktraceData(this, stackStream).getBacktrace(runtime);
-    }
-
     private RubyStackTraceElement[] getPartialTrace(int level, Integer length, Stream<StackWalker.StackFrame> stackStream) {
         if (length != null && length == 0) return RubyStackTraceElement.EMPTY_ARRAY;
         return TraceType.Gather.CALLER.getBacktraceData(this, stackStream).getPartialBacktrace(runtime, level + length);
+    }
+
+    private RubyStackTraceElement[] getWarnTrace(int level, Stream<StackWalker.StackFrame> stackStream) {
+        return TraceType.Gather.WARN.getBacktraceData(this, stackStream).getPartialBacktrace(runtime, level + 1);
     }
 
     private static int safeLength(int level, Integer length, RubyStackTraceElement[] trace) {
@@ -935,7 +934,7 @@ public final class ThreadContext {
     public RubyStackTraceElement getSingleBacktrace(int level) {
         runtime.incrementWarningCount();
 
-        RubyStackTraceElement[] trace = WALKER.walk(stream -> getPartialTrace(level, 1, stream));
+        RubyStackTraceElement[] trace = WALKER.walk(stream -> getWarnTrace(level, stream));
 
         if (RubyInstanceConfig.LOG_WARNINGS) TraceType.logWarning(trace);
 
@@ -948,7 +947,7 @@ public final class ThreadContext {
     public RubyStackTraceElement getSingleBacktraceExact(int level) {
         runtime.incrementWarningCount();
 
-        RubyStackTraceElement[] trace = WALKER.walk(stream -> getPartialTrace(level, 1, stream));
+        RubyStackTraceElement[] trace = WALKER.walk(stream -> getWarnTrace(level, stream));
 
         if (RubyInstanceConfig.LOG_WARNINGS) TraceType.logWarning(trace);
 
@@ -991,7 +990,7 @@ public final class ThreadContext {
     public static String createRawBacktraceStringFromThrowable(final Throwable ex, final boolean color) {
         return WALKER.walk(ex.getStackTrace(), stream ->
             TraceType.printBacktraceJRuby(null,
-                    new BacktraceData(stream, Stream.empty(), true, true, false, false).getBacktraceWithoutRuby(),
+                    new BacktraceData(stream, Stream.empty(), true, true, false, false, false).getBacktraceWithoutRuby(),
                     ex.getClass().getName(),
                     ex.getLocalizedMessage(),
                     color));
