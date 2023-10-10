@@ -432,6 +432,8 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         } else if (node instanceof RequiredParameterNode) {
             RequiredParameterNode variable = (RequiredParameterNode) node;
             copy(getLocalVariable(variable.name, 0), rhsVal);
+        } else if (node instanceof  RequiredDestructuredParameterNode) {
+            buildMultiAssignment(((RequiredDestructuredParameterNode) node).parameters, addResultInstr(new ToAryInstr(temp(), rhsVal)));
         } else if (node instanceof SplatNode) {
             buildSplat((SplatNode) node, rhsVal);
         } else {
