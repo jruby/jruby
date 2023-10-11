@@ -81,6 +81,10 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     public Operand build(ParseResult result) {
         this.source = ((ParseResultPrism) result).getSource();
         this.nodeSource = ((ParseResultPrism) result).getSourceNode();
+
+//        System.out.println("NAME: " + fileName);
+//        System.out.println(((ParseResultPrism) result).getRoot());
+
         return build(((ParseResultPrism) result).getRoot().statements);
     }
 
@@ -194,6 +198,9 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             return buildHash(((HashNode) node).elements, containsVariableAssignment(node));
         } else if (node instanceof IfNode) {
             return buildIf(result, (IfNode) node);
+        } else if (node instanceof ImplicitNode) {
+            // Making a huge assumption the implicit node is what we always want for execution?
+            return build(((ImplicitNode) node).value);
         } else if (node instanceof InNode) {
             return buildIn((InNode) node);
         } else if (node instanceof InstanceVariableAndWriteNode) {

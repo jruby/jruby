@@ -571,6 +571,7 @@ public class InterpreterEngine {
             // * one for FLOAT
             temp[((TemporaryLocalVariable)resultVar).offset] = result;
         } else {
+//            if (result instanceof Exception) ((Exception) result).printStackTrace();
             LocalVariable lv = (LocalVariable)resultVar;
             currDynScope.setValueVoid((IRubyObject) result, lv.getLocation(), lv.getScopeDepth());
         }
