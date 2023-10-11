@@ -25,6 +25,7 @@ import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Integer;
+import org.jruby.parser.ParseResultPrism;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.ArgumentType;
@@ -78,6 +79,9 @@ public abstract class IRBuilder<U, V, W, X> {
     int lastProcessedLineNum = -1;
     private Variable currentModuleVariable = null;
 
+    // FIXME: AST does not use this but YARP does.  AST could put encoding up to RootNode since it is same
+    Encoding encoding;
+
     // We do not need n consecutive line num instrs but only the last one in the sequence.
     // We set this flag to indicate that we need to emit a line number but have not yet.
     // addInstr will then appropriately add line info when it is called (which will never be
@@ -129,7 +133,7 @@ public abstract class IRBuilder<U, V, W, X> {
 
     EnumSet<IRFlags> flags;
 
-    public IRBuilder(IRManager manager, IRScope scope, IRBuilder parent, IRBuilder variableBuilder) {
+    public IRBuilder(IRManager manager, IRScope scope, IRBuilder parent, IRBuilder variableBuilder, Encoding encoding) {
         this.manager = manager;
         this.scope = scope;
         this.parent = parent;
@@ -141,6 +145,7 @@ public abstract class IRBuilder<U, V, W, X> {
 
         this.variableBuilder = variableBuilder;
         this.flags = IRScope.allocateInitialFlags(scope);
+        this.encoding = encoding;
     }
 
     public static InterpreterContext buildRoot(IRManager manager, ParseResult rootNode) {
@@ -151,23 +156,19 @@ public abstract class IRBuilder<U, V, W, X> {
         return topIRBuilder(manager, script, rootNode).buildRootInner(rootNode);
     }
 
-    public static IRBuilderAST topIRBuilder(IRManager manager, IRScope newScope) {
-        return new IRBuilderAST(manager, newScope, null);
-    }
-
-    public static IRBuilder newIRBuilder(IRManager manager, IRScope newScope, IRBuilder parent, boolean yarp) {
+    public static IRBuilder newIRBuilder(IRManager manager, IRScope newScope, IRBuilder parent, Encoding encoding, boolean yarp) {
         if (yarp) {
-            return new IRBuilderPrism(manager, newScope, parent, null);
+            return new IRBuilderPrism(manager, newScope, parent, null, encoding);
         } else {
-            return new IRBuilderAST(manager, newScope, parent, null);
+            return new IRBuilderAST(manager, newScope, parent, null, encoding);
         }
     }
 
     public static IRBuilder topIRBuilder(IRManager manager, IRScope newScope, ParseResult rootNode) {
         if (rootNode instanceof RootNode) {
-            return new IRBuilderAST(manager, newScope, null, null);
+            return new IRBuilderAST(manager, newScope, null, null, null);
         } else {
-            return new IRBuilderPrism(manager, newScope, null, null);
+            return new IRBuilderPrism(manager, newScope, null, null, ((ParseResultPrism) rootNode).getEncoding());
         }
     }
 
@@ -1195,7 +1196,7 @@ public abstract class IRBuilder<U, V, W, X> {
         IRClassBody body = new IRClassBody(getManager(), this.scope, className, line, scope, executesOnce);
         Variable bodyResult = addResultInstr(new DefineClassInstr(temp(), body, container, superClass));
 
-        newIRBuilder(getManager(), body, this, this instanceof IRBuilderPrism).buildModuleOrClassBody(bodyNode, line, endLine);
+        newIRBuilder(getManager(), body, this, encoding, this instanceof IRBuilderPrism).buildModuleOrClassBody(bodyNode, line, endLine);
         return bodyResult;
     }
 
@@ -1366,7 +1367,7 @@ public abstract class IRBuilder<U, V, W, X> {
         IRClosure closure = new IRFor(getManager(), scope, line, staticScope, signature);
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        newIRBuilder(getManager(), closure, this, this instanceof IRBuilderPrism).buildIterInner(null, var, body, endLine);
+        newIRBuilder(getManager(), closure, this, encoding, this instanceof IRBuilderPrism).buildIterInner(null, var, body, endLine);
 
         return new WrappedIRClosure(buildSelf(), closure);
     }
@@ -1456,7 +1457,7 @@ public abstract class IRBuilder<U, V, W, X> {
         IRClosure closure = new IRClosure(getManager(), scope, line, staticScope, signature, coverageMode);
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        newIRBuilder(getManager(), closure, this, this instanceof IRBuilderPrism).buildIterInner(methodName, var, body, endLine);
+        newIRBuilder(getManager(), closure, this, encoding, this instanceof IRBuilderPrism).buildIterInner(methodName, var, body, endLine);
 
         methodName = null;
 
@@ -1512,7 +1513,7 @@ public abstract class IRBuilder<U, V, W, X> {
         IRClosure closure = new IRClosure(getManager(), scope, line, staticScope, signature, coverageMode);
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        newIRBuilder(getManager(), closure, this, this instanceof IRBuilderPrism).buildLambdaInner(args, body);
+        newIRBuilder(getManager(), closure, this, encoding, this instanceof IRBuilderPrism).buildLambdaInner(args, body);
 
         Variable lambda = temp();
         WrappedIRClosure lambdaBody = new WrappedIRClosure(closure.getSelf(), closure);
@@ -1652,7 +1653,7 @@ public abstract class IRBuilder<U, V, W, X> {
         IRModuleBody body = new IRModuleBody(getManager(), this.scope, name, line, scope, executesOnce);
         Variable bodyResult = addResultInstr(new DefineModuleInstr(temp(), container, body));
 
-        newIRBuilder(getManager(), body, this, this instanceof IRBuilderPrism).buildModuleOrClassBody(bodyNode, line, endLine);
+        newIRBuilder(getManager(), body, this, encoding, this instanceof IRBuilderPrism).buildModuleOrClassBody(bodyNode, line, endLine);
 
         return bodyResult;
     }
@@ -1807,7 +1808,7 @@ public abstract class IRBuilder<U, V, W, X> {
         staticScope.setIRScope(endClosure);
         endClosure.setIsEND();
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        newIRBuilder(getManager(), endClosure, null, this instanceof IRBuilderPrism).buildPrePostExeInner(body);
+        newIRBuilder(getManager(), endClosure, null, encoding, this instanceof IRBuilderPrism).buildPrePostExeInner(body);
 
         // Add an instruction in 's' to record the end block in the 'topLevel' scope.
         // SSS FIXME: IR support for end-blocks that access vars in non-toplevel-scopes
@@ -1829,7 +1830,7 @@ public abstract class IRBuilder<U, V, W, X> {
     }
 
     Operand buildPreExe(U body) {
-        List<Instr> beginInstrs = newIRBuilder(getManager(), scope, this, this instanceof IRBuilderPrism).buildPreExeInner(body);
+        List<Instr> beginInstrs = newIRBuilder(getManager(), scope, this, encoding, this instanceof IRBuilderPrism).buildPreExeInner(body);
 
         instructions.addAll(afterPrologueIndex, beginInstrs);
         afterPrologueIndex += beginInstrs.size();
@@ -2095,7 +2096,7 @@ public abstract class IRBuilder<U, V, W, X> {
 
         // sclass bodies inherit the block of their containing method
         Variable bodyResult = addResultInstr(new ProcessModuleBodyInstr(temp(), sClassVar, getYieldClosureVariable()));
-        newIRBuilder(getManager(), body, this, this instanceof IRBuilderPrism).buildModuleOrClassBody(bodyNode, line, endLine);
+        newIRBuilder(getManager(), body, this, encoding, this instanceof IRBuilderPrism).buildModuleOrClassBody(bodyNode, line, endLine);
         return bodyResult;
     }
 
@@ -2546,6 +2547,11 @@ public abstract class IRBuilder<U, V, W, X> {
         Normal,    // Left is unknown expression
         LeftTrue,  // Statically true
         LeftFalse  // Statically false
+    }
+
+    // FIXME: Currently only valid value in Prism.
+    Encoding getEncoding() {
+        return encoding;
     }
 }
 

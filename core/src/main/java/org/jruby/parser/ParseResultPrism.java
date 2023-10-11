@@ -1,23 +1,26 @@
 package org.jruby.parser;
 
+import org.jcodings.Encoding;
 import org.jruby.ParseResult;
 import org.jruby.ir.builder.IRBuilderPrism;
 import org.jruby.runtime.DynamicScope;
 import org.prism.Nodes;
 
 public class ParseResultPrism implements ParseResult {
+    final Encoding encoding;
     StaticScope rootScope;
-    Nodes.ProgramNode root;
+    final Nodes.ProgramNode root;
 
-    Nodes.Source nodeSource;
-    String fileName;
-    byte[] source;
+    final Nodes.Source nodeSource;
+    final String fileName;
+    final byte[] source;
 
-    public ParseResultPrism(String fileName, byte[] source, Nodes.ProgramNode root, Nodes.Source nodeSource) {
+    public ParseResultPrism(String fileName, byte[] source, Nodes.ProgramNode root, Nodes.Source nodeSource, Encoding encoding) {
         this.root = root;
         this.fileName = fileName;
         this.source = source;
         this.nodeSource = nodeSource;
+        this.encoding = encoding;
     }
 
     public DynamicScope getDynamicScope() {
@@ -64,5 +67,9 @@ public class ParseResultPrism implements ParseResult {
 
     public Nodes.Source getSourceNode() {
         return nodeSource;
+    }
+
+    public Encoding getEncoding() {
+        return encoding;
     }
 }

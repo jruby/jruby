@@ -66,8 +66,8 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
     StaticScope staticScope;
 
-    public IRBuilderPrism(IRManager manager, IRScope scope, IRBuilder parent, IRBuilder variableBuilder) {
-        super(manager, scope, parent, variableBuilder);
+    public IRBuilderPrism(IRManager manager, IRScope scope, IRBuilder parent, IRBuilder variableBuilder, Encoding encoding) {
+        super(manager, scope, parent, variableBuilder, encoding);
 
         if (parent != null) {
             source = ((IRBuilderPrism) parent).source;
@@ -836,7 +836,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         // FIXME: due to how lazy methods work we need this set on method before we actually parse the method.
         StaticScope staticScope = createStaticScopeFrom(node.locals, StaticScope.Type.LOCAL);
         staticScope.setSignature(calculateSignature(node.parameters));
-        LazyMethodDefinition def = new LazyMethodDefinitionPrism(source, nodeSource, node);
+        LazyMethodDefinition def = new LazyMethodDefinitionPrism(source, nodeSource, encoding, node);
         return buildDefn(defineNewMethod(def, node.name.getBytes(), 0, staticScope, true));
     }
 
@@ -844,7 +844,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         // FIXME: due to how lazy methods work we need this set on method before we actually parse the method.
         StaticScope staticScope = createStaticScopeFrom(node.locals, StaticScope.Type.LOCAL);
         staticScope.setSignature(calculateSignature(node.parameters));
-        LazyMethodDefinition def = new LazyMethodDefinitionPrism(source, nodeSource, node);
+        LazyMethodDefinition def = new LazyMethodDefinitionPrism(source, nodeSource, encoding, node);
         return buildDefs(node.receiver, defineNewMethod(def, node.name.getBytes(), 0, staticScope, false));
     }
 
@@ -2006,11 +2006,6 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         }
         // FIXME: We may not need these based on whether there are more possible nodes.
         throw notCompilable("Unsupported node in module path", node);
-    }
-
-    private Encoding getEncoding() {
-        // FIXME: impl
-        return UTF8Encoding.INSTANCE;
     }
 
     private int getEndLine(Node node) {

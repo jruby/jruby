@@ -44,7 +44,10 @@ public class ParserPrism extends Parser {
 
         if (ParserManager.PARSER_TIMING) time = System.nanoTime();
         Nodes.Source nodeSource = new Nodes.Source(source);
-        org.prism.ParseResult res = LoaderPrism.load(runtime, serialized, nodeSource);
+        LoaderPrism loader = new LoaderPrism(runtime, serialized, nodeSource);
+        org.prism.ParseResult res = loader.load();
+        Encoding encoding = loader.getEncoding();
+
         if (ParserManager.PARSER_TIMING) {
             ParserStats stats = runtime.getParserManager().getParserStats();
 
@@ -57,7 +60,7 @@ public class ParserPrism extends Parser {
             throw runtime.newSyntaxError(fileName + ":" + nodeSource.line(res.errors[0].location.startOffset) + ": " + res.errors[0].message);
         }
 
-        ParseResult result = new ParseResultPrism(fileName, source, (Nodes.ProgramNode) res.value, nodeSource);
+        ParseResult result = new ParseResultPrism(fileName, source, (Nodes.ProgramNode) res.value, nodeSource, encoding);
         if (blockScope != null) {
             result.getStaticScope().setEnclosingScope(blockScope.getStaticScope());
         }

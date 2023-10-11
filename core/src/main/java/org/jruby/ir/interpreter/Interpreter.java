@@ -1,6 +1,8 @@
 package org.jruby.ir.interpreter;
 
 import java.io.ByteArrayOutputStream;
+
+import org.jcodings.Encoding;
 import org.jruby.EvalType;
 import org.jruby.ParseResult;
 import org.jruby.Ruby;
@@ -206,7 +208,9 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         // we end up growing dynamicscope potentially based on any changes made.
         staticScope.setIRScope(script);
 
-        IRBuilder builder = IRBuilder.newIRBuilder(runtime.getIRManager(), script, null, result instanceof ParseResultPrism);
+        boolean yarp = result instanceof ParseResultPrism;
+        Encoding encoding = yarp ? ((ParseResultPrism) result).getEncoding() : null;
+        IRBuilder builder = IRBuilder.newIRBuilder(runtime.getIRManager(), script, null, encoding, yarp);
         builder.evalType = !bindingGiven && evalType == EvalType.BINDING_EVAL ? EvalType.INSTANCE_EVAL : evalType;
         InterpreterContext ic = builder.buildEvalRoot(result);
 

@@ -1,5 +1,6 @@
 package org.jruby.ir.builder;
 
+import org.jcodings.Encoding;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRMethod;
 import org.jruby.util.ByteList;
@@ -20,10 +21,13 @@ public class LazyMethodDefinitionPrism implements LazyMethodDefinition<Node, Def
     private DefNode node;
     private byte[] source;
 
-    public LazyMethodDefinitionPrism(byte[] source, Nodes.Source nodeSource, DefNode node) {
+    final private Encoding encoding;
+
+    public LazyMethodDefinitionPrism(byte[] source, Nodes.Source nodeSource, Encoding encoding, DefNode node) {
         this.source = source;
         this.node = node;
         this.nodeSource = nodeSource;
+        this.encoding = encoding;
     }
     @Override
     public int getEndLine() {
@@ -79,7 +83,7 @@ public class LazyMethodDefinitionPrism implements LazyMethodDefinition<Node, Def
 
     @Override
     public IRBuilder<Node, DefNode, WhenNode, RescueNode> getBuilder(IRManager manager, IRMethod methodScope) {
-        IRBuilder<Node, DefNode, WhenNode, RescueNode> builder = IRBuilder.newIRBuilder(manager, methodScope, null, true);
+        IRBuilder<Node, DefNode, WhenNode, RescueNode> builder = IRBuilder.newIRBuilder(manager, methodScope, null, encoding, true);
 
         ((IRBuilderPrism) builder).source = source;
         ((IRBuilderPrism) builder).nodeSource = nodeSource;

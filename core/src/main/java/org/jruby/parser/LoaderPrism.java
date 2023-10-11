@@ -12,24 +12,36 @@ public class LoaderPrism extends Loader {
 
     private Encoding encoding = null;
 
-    public static ParseResult load(Ruby runtime, byte[] serialized, Nodes.Source source) {
-        return new LoaderPrism(runtime, serialized, source).load();
-    }
-
     // FIXME: could not override impl (made constructor protected)
     // FIXME: could not access encodingName so made protected
     // FIXME: extra work done for encodingCharset which we do not use (but TR probably does)
     // FIXME: consider abstract methods for Loader
-    private LoaderPrism(Ruby runtime, byte[] serialized, Nodes.Source source) {
+    LoaderPrism(Ruby runtime, byte[] serialized, Nodes.Source source) {
         super(serialized, source);
 
         this.runtime = runtime;
     }
 
+    public ParseResult load() {
+        ParseResult result = super.load();
+
+        resolveEncoding();
+
+        return result;
+    }
+
     public org.jruby.RubySymbol bytesToName(byte[] bytes) {
+        resolveEncoding();
+        return runtime.newSymbol(new ByteList(bytes, encoding));
+    }
+
+    private void resolveEncoding() {
         if (encoding == null) {
             encoding = runtime.getEncodingService().findEncodingOrAliasEntry(encodingName.getBytes()).getEncoding();
         }
-        return runtime.newSymbol(new ByteList(bytes, encoding));
+    }
+
+    public Encoding getEncoding() {
+        return encoding;
     }
 }

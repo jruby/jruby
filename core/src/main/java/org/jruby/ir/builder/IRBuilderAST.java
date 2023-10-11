@@ -1,5 +1,6 @@
 package org.jruby.ir.builder;
 
+import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.ParseResult;
 import org.jruby.Ruby;
@@ -149,8 +150,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         }
     }
 
-    public IRBuilderAST(IRManager manager, IRScope scope, IRBuilder parent, IRBuilder variableBuilder) {
-        super(manager, scope, parent, variableBuilder);
+    public IRBuilderAST(IRManager manager, IRScope scope, IRBuilder parent, IRBuilder variableBuilder, Encoding encoding) {
+        super(manager, scope, parent, variableBuilder, encoding);
     }
 
     @Override
@@ -159,7 +160,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     public IRBuilderAST(IRManager manager, IRScope scope, IRBuilder parent) {
-        this(manager, scope, parent, null);
+        this(manager, scope, parent, null, null);
     }
 
     private NotCompilableException notCompilable(String message, Node node) {
@@ -2809,7 +2810,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     public Operand buildPreExe(PreExeNode preExeNode) {
-        IRBuilderAST builder = new IRBuilderAST(getManager(), scope, this, this);
+        IRBuilderAST builder = new IRBuilderAST(getManager(), scope, this, this, null);
 
         List<Instr> beginInstrs = builder.buildPreExeInner(preExeNode.getBodyNode());
 
