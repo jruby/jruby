@@ -4,6 +4,8 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.ParseResult;
 import org.jruby.Ruby;
+import org.jruby.RubyBignum;
+import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.RubySymbol;
 import org.jruby.compiler.NotCompilableException;
@@ -18,6 +20,7 @@ import org.jruby.ir.instructions.*;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.operands.Array;
+import org.jruby.ir.operands.Bignum;
 import org.jruby.ir.operands.CurrentScope;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.FrozenString;
@@ -56,7 +59,7 @@ import java.util.Set;
 
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 import static org.jruby.runtime.ThreadContext.*;
-import static org.jruby.util.CommonByteLists.DOLLAR_BACKTICK;
+import static org.jruby.util.CommonByteLists.*;
 
 public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNode> {
     String fileName = null;
@@ -79,6 +82,8 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
     @Override
     public Operand build(ParseResult result) {
+        // FIXME: Missing support for executes once
+        this.executesOnce = false;
         this.source = ((ParseResultPrism) result).getSource();
         this.nodeSource = ((ParseResultPrism) result).getSourceNode();
 
@@ -367,47 +372,53 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildArray(ArrayNode node) {
-        Node[] nodes = node.elements;
-        Operand[] elts = new Operand[nodes.length];
-        //boolean containsAssignments = node.containsVariableAssignment();
-        Operand keywordRestSplat = null;
+        Node[] children = node.elements;
+        Operand[] elts = new Operand[children.length];
+        Variable result = temp();
+        int splatIndex = -1;
 
-        for (int i = 0; i < nodes.length; i++) {
-            for (; i < nodes.length; i++) {
-                if (nodes[i] instanceof HashNode && hasOnlyRestKwargs(((HashNode) nodes[i]).elements)) keywordRestSplat = elts[i];
-                if (nodes[i] instanceof SplatNode) {
-                    break;
+        for (int i = 0; i < children.length; i++) {
+            Node child = children[i];
+
+            if (child instanceof SplatNode) {
+                int length = i - splatIndex - 1;
+
+                if (length == 0) {
+                    // FIXME: This is wasteful to force this all through argscat+empty array
+                    if (splatIndex == -1) copy(result, new Array());
+                    addResultInstr(new BuildCompoundArrayInstr(result, result, build(((SplatNode) child).expression), false, false));
+                } else {
+                    Operand[] lhs = new Operand[length];
+                    System.arraycopy(elts, splatIndex + 1, lhs, 0, length);
+
+                    // no actual splat until now.
+                    if (splatIndex == -1) {
+                        copy(result, new Array(lhs));
+                    } else {
+                        addResultInstr(new BuildCompoundArrayInstr(result, result, new Array(lhs), false, false));
+                    }
+
+                    addResultInstr(new BuildCompoundArrayInstr(result, result, build(((SplatNode) child).expression), false, false));
                 }
-                elts[i] = build(nodes[i]);
-            }
-            if (i < nodes.length) { // splat found
-                Operand[] lhs = new Operand[i];
-                System.arraycopy(elts, 0, lhs, 0, i);
-                elts = new Operand[nodes.length - i];
-                // FIXME: This is broken...if more elements after splat then they need to be catted onto this (likely emulate argspush)
-                return addResultInstr(new BuildCompoundArrayInstr(temp(), new Array(lhs), build(((SplatNode) nodes[i]).expression), false, keywordRestSplat != null));
-                //if (keywordRestSplat != null) keywordRestSplat = null; // splat will handle this
+                splatIndex = i;
+            } else {
+                elts[i] = build(child);
             }
         }
 
+        // FIXME: Can we just return the operand only in this case.
+        // No splats present.  Just make a simple array Operand.
+        if (splatIndex == -1) return copy(result, new Array(elts));
 
-        // We have some amount of ** on the end of this array construction.  This is handled in IR since we
-        // do not want arrays to have to know if it has an UNDEFINED on the end and then not include it.  Also
-        // since we must evaluate array values left to right we cannot look at last argument first to eliminate
-        // complicating the array sizes computation.  Luckily, this is a rare feature to see used in actual code
-        // so externalizing this in IR should not be a big deal.
-        if (keywordRestSplat != null) {
-            Operand[] lambdaElts = elts; // Allow closures to see elts as final
-            Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[]{ keywordRestSplat }));
-            final Variable result = temp();
-            if_else(test, tru(),
-                    () -> copy(result, new Array(removeArg(lambdaElts))),
-                    () -> copy(result, new Array(lambdaElts)));
-            return result;
-        } else {
-            Operand array = new Array(elts);
-            return copy(array);
+        int length = children.length - splatIndex - 1;
+        if (length > 0) {
+            Operand[] rhs = new Operand[length];
+            System.arraycopy(elts, splatIndex + 1, rhs, 0, length);
+
+            addResultInstr(new BuildCompoundArrayInstr(result, result, new Array(rhs), false, false));
         }
+
+        return result;
     }
 
     // FIXME: Attrassign should be its own node.
@@ -431,10 +442,12 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             LocalVariableTargetNode variable = (LocalVariableTargetNode) node;
             copy(getLocalVariable(variable.name, variable.depth), rhsVal);
         } else if (node instanceof GlobalVariableTargetNode) {
-            addInstr(new PutGlobalVarInstr(((GlobalVariableWriteNode) node).name, rhsVal));
+            addInstr(new PutGlobalVarInstr(((GlobalVariableTargetNode) node).name, rhsVal));
         } else if (node instanceof InstanceVariableTargetNode) {
             addInstr(new PutFieldInstr(buildSelf(), ((InstanceVariableTargetNode) node).name, rhsVal));
-        } else if (node instanceof MultiWriteNode) {
+        } else if (node instanceof MultiTargetNode) {
+            buildMultiAssignment(((MultiTargetNode) node).targets, addResultInstr(new ToAryInstr(temp(), rhsVal)));
+        } else if (node instanceof MultiWriteNode) { // FIXME: Is this possible with Multitarget now existing?
             buildMultiAssignment(((MultiWriteNode) node).targets, addResultInstr(new ToAryInstr(temp(), rhsVal)));
         } else if (node instanceof RequiredParameterNode) {
             RequiredParameterNode variable = (RequiredParameterNode) node;
@@ -632,18 +645,14 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
                 builtArgs[i] = new Splat(addResultInstr(new BuildSplatInstr(temp(), build(((SplatNode) child).expression), false)));
             } else if (child instanceof KeywordHashNode && i == numberOfArgs - 1) {
                 builtArgs[i] = buildCallKeywordArguments((KeywordHashNode) children[i], flags); // FIXME: here and possibly AST make isKeywordsHash() method.
+            } else if (child instanceof ForwardingArgumentsNode) {
+                notCompilable("need to impl *,**,& logic for ... at callsite (which means calcing depth to original hard scope", child);
             } else {
                 builtArgs[i] = buildWithOrder(children[i], hasAssignments);
             }
         }
 
         return builtArgs;
-    }
-
-    private boolean containsBlockArgument(ArgumentsNode node) {
-        if (node == null || node.arguments == null || node.arguments.length == 0) return false;
-
-        return node.arguments[node.arguments.length - 1] instanceof BlockArgumentNode;
     }
 
     protected Operand buildCallKeywordArguments(KeywordHashNode node, int[] flags) {
@@ -1207,8 +1216,11 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     private Operand buildInteger(IntegerNode node) {
         // FIXME: HAHAHAH horrible hack around integer being too much postprocessing.
         ByteList value = byteListFrom(node);
+        RubyInteger number = RubyNumeric.str2inum(getManager().runtime, getManager().getRuntime().newString(value), 10);
 
-        return fix(RubyNumeric.fix2long(RubyNumeric.str2inum(getManager().runtime, getManager().getRuntime().newString(value), 10)));
+        return number instanceof RubyBignum ?
+                new Bignum(number.getBigIntegerValue()) :
+                fix(RubyNumeric.fix2long(number));
     }
 
     private Operand buildInterpolatedRegularExpression(Variable result, InterpolatedRegularExpressionNode node) {
@@ -1310,18 +1322,11 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildMultiWriteNode(MultiWriteNode node) {
-        Node valueNode = node.value;
-        Operand values = build(valueNode);
-        Variable ret = getValueInTemporaryVariable(values);
-        if (valueNode instanceof ArrayNode) {
+        Variable ret = getValueInTemporaryVariable(build(node.value));
+        if (node.value instanceof ArrayNode) {
             buildMultiAssignment(node.targets, ret);
-            // FIXME: need to know equiv of ILiteralNode so we can opt this case.
-        /*} else if (valueNode instanceof ILiteralNode) {
-            // treat a single literal value as a single-element array
-            buildMultiAssignment(node, new Array(new Operand[]{ret}));*/
         } else {
-            Variable tmp = addResultInstr(new ToAryInstr(temp(), ret));
-            buildMultiAssignment(node.targets, tmp);
+            buildMultiAssignment(node.targets, addResultInstr(new ToAryInstr(temp(), ret)));
         }
         return ret;
     }
@@ -1331,13 +1336,23 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         final List<Tuple<Node, Variable>> assigns = new ArrayList<>();
         int length = targets.length;
         int restIndex = -1;
+        SplatNode splat = null;
 
         // FIXME: May be nice to have more info in MultiWriteNode rather than walking it twice
         for (int i = 0; i < length; i++) { // Figure out indices
             Node child = targets[i];
 
-            if (child instanceof  SplatNode) {
+            // FIXME: remove once https://github.com/ruby/prism/issues/1642 is fixed.
+            if (child instanceof MultiTargetNode) {
+                MultiTargetNode target = (MultiTargetNode) child;
+
+                if (target.targets.length == 1 && target.targets[0] instanceof SplatNode) {
+                    restIndex = i;
+                    splat = (SplatNode) target.targets[0];
+                }
+            } else if (child instanceof SplatNode) {
                 restIndex = i;
+                splat = (SplatNode) child;
             }
         }
 
@@ -1349,7 +1364,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         }
 
         if (restIndex >= 0) {
-            Node realTarget = ((SplatNode) targets[restIndex]).expression;
+            Node realTarget = splat.expression;
             assigns.add(new Tuple<>(realTarget, addResultInstr(new RestArgMultipleAsgnInstr(temp(), values, 0, restIndex, postCount))));
         }
 
@@ -1412,21 +1427,27 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             }
         }
 
-        // 2.0 keyword rest arg
-        KeywordRestParameterNode keyRest = (KeywordRestParameterNode) parameters.keyword_rest;
-        if (keyRest != null) {
-            RubySymbol key = keyRest.name;
-            ArgumentType type = ArgumentType.keyrest;
+        if (parameters.keyword_rest instanceof ForwardingParameterNode) {
+            Variable av = getNewLocalVariable(symbol(FWD_REST), 0);
+            // FIXME: Missing arg descriptor for ... to methods???
+            ArgumentType type = ArgumentType.anonkeyrest;
+            addInstr(new ReceiveKeywordRestArgInstr(av, keywords));
+        } else if (parameters.keyword_rest instanceof NoKeywordsParameterNode) {
+            // FIXME: need to add :nokey and also fix in legacy for argument description.
+            if_not(keywords, UndefinedValue.UNDEFINED, () -> addRaiseError("ArgumentError", "no keywords accepted"));
+        } else {
+            KeywordRestParameterNode keyRest = (KeywordRestParameterNode) parameters.keyword_rest;
+            if (keyRest != null) {
+                RubySymbol key = keyRest.name;
+                ArgumentType type = ArgumentType.keyrest;
 
-            // anonymous keyrest
-            if (key == null || key.getBytes().realSize() == 0) type = ArgumentType.anonkeyrest;
+                // FIXME: anon may not happen here anymore.  run through anon types
+                // anonymous keyrest
+                if (key == null || key.getBytes().realSize() == 0) type = ArgumentType.anonkeyrest;
 
-            Variable av = getNewLocalVariable(key, 0);
-            if (scope instanceof IRMethod) addArgumentDescription(type, key);
+                Variable av = getNewLocalVariable(key, 0);
+                if (scope instanceof IRMethod) addArgumentDescription(type, key);
 
-            if (key != null && "nil".equals(key.idString())) {
-                if_not(keywords, UndefinedValue.UNDEFINED, () -> addRaiseError("ArgumentError", "no keywords accepted"));
-            } else {
                 addInstr(new ReceiveKeywordRestArgInstr(av, keywords));
             }
         }
@@ -1655,8 +1676,10 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
         // reify to Proc if we have a block arg
         if (blockArg != null) {
-            Variable blockVar = argumentResult(blockArg.name);
-            if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.block, blockArg.name);
+            // FIXME: Handle bare '&' case?
+            RubySymbol name = blockArg.name == null ? symbol(FWD_BLOCK) : blockArg.name;
+            Variable blockVar = argumentResult(name);
+            if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.block, name);
             Variable tmp = temp();
             addInstr(new LoadImplicitClosureInstr(tmp));
             addInstr(new ReifyClosureInstr(blockVar, tmp));
@@ -1804,11 +1827,15 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildStatements(StatementsNode node) {
-        Operand result = temp();
-        for (Node child: node.body) {
+        if (node == null) return nil();
+
+        Operand result = null;
+
+        for (Node child : node.body) {
             result = build(child);
         }
-        return result;
+
+        return result == null ? nil() : result;
     }
 
     private Operand buildString(StringNode node) {
