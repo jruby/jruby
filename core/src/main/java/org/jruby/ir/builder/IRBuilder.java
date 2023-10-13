@@ -1288,7 +1288,7 @@ public abstract class IRBuilder<U, V, W, X> {
         Operand[] pieces = new Operand[children.length];
 
         for (int i = 0; i < children.length; i++) {
-            dynamicPiece(pieces, i, children[i], false); // dregexp does not use estimated size
+            dynamicPiece(pieces, i, children[i]); // dregexp does not use estimated size
         }
 
         if (result == null) result = temp();
@@ -1303,7 +1303,7 @@ public abstract class IRBuilder<U, V, W, X> {
         int estimatedSize = 0;
 
         for (int i = 0; i < pieces.length; i++) {
-            estimatedSize += dynamicPiece(pieces, i, nodePieces[i], true);
+            estimatedSize += dynamicPiece(pieces, i, nodePieces[i]);
         }
 
         addInstr(new BuildCompoundStringInstr(result, pieces, encoding, estimatedSize, isFrozen, getFileName(), line));
@@ -1316,7 +1316,7 @@ public abstract class IRBuilder<U, V, W, X> {
         int estimatedSize = 0;
 
         for (int i = 0; i < pieces.length; i++) {
-            estimatedSize += dynamicPiece(pieces, i, nodePieces[i], false);
+            estimatedSize += dynamicPiece(pieces, i, nodePieces[i]);
         }
 
         if (result == null) result = temp();
@@ -1331,7 +1331,7 @@ public abstract class IRBuilder<U, V, W, X> {
         int estimatedSize = 0;
 
         for (int i = 0; i < pieces.length; i++) {
-            estimatedSize += dynamicPiece(pieces, i, nodePieces[i], false);
+            estimatedSize += dynamicPiece(pieces, i, nodePieces[i]);
         }
 
         Variable stringResult = temp();
@@ -1807,8 +1807,18 @@ public abstract class IRBuilder<U, V, W, X> {
                 CommonByteLists._END_, true);
         staticScope.setIRScope(endClosure);
         endClosure.setIsEND();
+
+        boolean prism = this instanceof IRBuilderPrism;
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        newIRBuilder(getManager(), endClosure, null, encoding, this instanceof IRBuilderPrism).buildPrePostExeInner(body);
+        IRBuilder builder = newIRBuilder(getManager(), endClosure, null, encoding, prism);
+
+        // FIXME: Hack around depending on source to compile in prism (remove once source is removalable).
+        if (prism) {
+            ((IRBuilderPrism) builder).nodeSource = ((IRBuilderPrism) this).nodeSource;
+            ((IRBuilderPrism) builder).source = ((IRBuilderPrism) this).source;
+        }
+
+        builder.buildPrePostExeInner(body);
 
         // Add an instruction in 's' to record the end block in the 'topLevel' scope.
         // SSS FIXME: IR support for end-blocks that access vars in non-toplevel-scopes
@@ -2292,8 +2302,7 @@ public abstract class IRBuilder<U, V, W, X> {
     abstract boolean alwaysTrue(U node);
     abstract Operand build(Variable result, U node);
     abstract Operand build(U node);
-    // FIXME: YARP strings are confounding me but the text I am getting requires me to treat strings from regexp or str differently.
-    abstract int dynamicPiece(Operand[] pieces, int index, U piece, boolean interpolated);
+    abstract int dynamicPiece(Operand[] pieces, int index, U piece);
     abstract void receiveMethodArgs(V defNode);
 
     IRMethod defineNewMethod(LazyMethodDefinition<U, V, W, X> defn, ByteList name, int line, StaticScope scope, boolean isInstanceMethod) {

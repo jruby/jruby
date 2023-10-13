@@ -5177,13 +5177,11 @@ public abstract class Nodes {
     //     if /foo/i then end
     //        ^^^^^^
     public static final class MatchLastLineNode extends Node {
-        public final Location content_loc;
         public final byte[] unescaped;
         public final short flags;
 
-        public MatchLastLineNode(Location content_loc, byte[] unescaped, short flags, int startOffset, int length) {
+        public MatchLastLineNode(byte[] unescaped, short flags, int startOffset, int length) {
             super(startOffset, length);
-            this.content_loc = content_loc;
             this.unescaped = unescaped;
             this.flags = flags;
         }
@@ -6357,13 +6355,11 @@ public abstract class Nodes {
     //     /foo/i
     //     ^^^^^^
     public static final class RegularExpressionNode extends Node {
-        public final Location content_loc;
         public final byte[] unescaped;
         public final short flags;
 
-        public RegularExpressionNode(Location content_loc, byte[] unescaped, short flags, int startOffset, int length) {
+        public RegularExpressionNode(byte[] unescaped, short flags, int startOffset, int length) {
             super(startOffset, length);
-            this.content_loc = content_loc;
             this.unescaped = unescaped;
             this.flags = flags;
         }
@@ -7122,16 +7118,11 @@ public abstract class Nodes {
     //      ^^^^      ^^^^
     public static final class StringNode extends Node {
         public final short flags;
-        /** optional (can be null) */
-        public final Location opening_loc;
-        public final Location content_loc;
         public final byte[] unescaped;
 
-        public StringNode(short flags, Location opening_loc, Location content_loc, byte[] unescaped, int startOffset, int length) {
+        public StringNode(short flags, byte[] unescaped, int startOffset, int length) {
             super(startOffset, length);
             this.flags = flags;
-            this.opening_loc = opening_loc;
-            this.content_loc = content_loc;
             this.unescaped = unescaped;
         }
         

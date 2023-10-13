@@ -60,6 +60,7 @@ import java.util.Set;
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 import static org.jruby.runtime.ThreadContext.*;
 import static org.jruby.util.CommonByteLists.*;
+import static org.jruby.util.StringSupport.CR_UNKNOWN;
 
 public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNode> {
     String fileName = null;
@@ -340,7 +341,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildAliasGlobalVariable(AliasGlobalVariableNode node) {
-        return buildVAlias(symbol(byteListFrom(node.new_name)), symbol(byteListFrom(node.old_name)));
+        return buildVAlias(globalVariableName(node.new_name), globalVariableName(node.old_name));
     }
 
     private Operand buildAliasMethod(AliasMethodNode node) {
@@ -521,10 +522,22 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return v;
     }
 
-    // FIXME: This is used for both for and blocks in AST but we do different path for for in YARP
+    // FIXME: This is used for both for and blocks in AST but we do different path for for in YARP!!!
     public void receiveBlockArgs(Node node) {
         if (node instanceof MultiTargetNode) { // for loops
             buildBlockArgsAssignment(node, null, 0, false);
+        } else if (node instanceof LocalVariableTargetNode) {
+            // FIXME: madness on `for` processing and how we share with ordinary block processing.
+            // This is for `for` loops.  This is rather strange and I believe it may need arity checks and other
+            // branches for multiple assignment.
+            Variable keywords = copy(temp(), UndefinedValue.UNDEFINED);
+            receivePreArg(node, keywords, 0);
+        } else if (node instanceof InstanceVariableTargetNode) {
+            // FIXME: madness on `for` processing and how we share with ordinary block processing.
+            // This is for `for` loops.  This is rather strange and I believe it may need arity checks and other
+            // branches for multiple assignment.
+            Variable keywords = copy(temp(), UndefinedValue.UNDEFINED);
+            receivePreArg(node, keywords, 0);
         } else {
             BlockParametersNode parameters = (BlockParametersNode) node;
             // FIXME: Impl
@@ -1382,10 +1395,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildNumberedReferenceRead(NumberedReferenceReadNode node) {
-        ByteList num = byteListFrom(node);
-        num.view(1, num.realSize() - 1);
-        int value = Integer.parseInt(num.toString());
-        return buildNthRef(value);
+        return buildNthRef(node.number);
     }
 
     private Operand buildOr(OrNode node) {
@@ -1473,7 +1483,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildRegularExpression(RegularExpressionNode node) {
-        return new Regexp(byteListFrom(node.content_loc), RegexpOptions.fromJoniOptions(node.flags));
+        return new Regexp(bytelist(node.unescaped), RegexpOptions.fromJoniOptions(node.flags));
     }
 
     private Operand buildRescueModifier(RescueModifierNode node) {
@@ -1626,7 +1636,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return false;
     }
 
-    int dynamicPiece(Operand[] pieces, int i, Node pieceNode, boolean interpolated) {
+    int dynamicPiece(Operand[] pieces, int i, Node pieceNode) {
         Operand piece;
 
         // somewhat arbitrary minimum size for interpolated values
@@ -1636,7 +1646,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
             // FIXME: missing EmbddedVariableNode.
             if (pieceNode instanceof StringNode) {
-                piece = buildString((StringNode) pieceNode, interpolated);
+                piece = buildString((StringNode) pieceNode);
                 estimatedSize = bytelist(((StringNode) pieceNode).unescaped).realSize();
             } else if (pieceNode instanceof EmbeddedStatementsNode) {
                 if (scope.maybeUsingRefinements()) {
@@ -1839,22 +1849,13 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildString(StringNode node) {
-        boolean interpolated = node.opening_loc != null && source[node.opening_loc.startOffset] != '\'';
-        return buildString(node, interpolated);
-    }
-
-    private Operand buildString(StringNode node, boolean interpolated) {
-        // FIXME: No code range
         // FIXME: how can we tell if frozen or not
-
-        // no opening is DNode-like string fragments.
-        if (interpolated) {
-            return new MutableString(bytelist(node.unescaped), 0, scope.getFile(), getLine(node));
-        } else {
-            return new MutableString(byteListFrom(node.content_loc), 0, scope.getFile(), getLine(node));
-        }
+        // FIXME: No code range
+        return new MutableString(bytelist(node.unescaped), CR_UNKNOWN, scope.getFile(), getLine(node));
     }
 
+    // FIXME: This is a big tar ball.  I need to figure out when nested stringconcats exist and how they can lead
+    // to chains of interpolation.  This is pushing a lot of work into builder which did not exist.
     private Operand buildStringConcat(StringConcatNode node) {
         // FIXME: maybe frozen maybe not?
         boolean isInterpolated = node.left instanceof InterpolatedStringNode ||
@@ -1919,23 +1920,14 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         if (result == null) result = temp();
         if (scope instanceof IRScriptBody || scope instanceof IRModuleBody) throwSyntaxError(getLine(node), "Invalid yield");
 
-        boolean unwrap = true;
-        Operand value;
+        boolean unwrap = false;
         int[] flags = new int[]{0};
-        if (node.arguments != null) {
-            Node[] args = node.arguments.arguments;
-            // Get rid of one level of array wrapping
-            if (args != null && args.length == 1) {
-                // We should not unwrap if it is a keyword argument.
-                if (!(args[0] instanceof KeywordHashNode)) {
-                    unwrap = false;
-                }
-            }
+        Node[] args = node.arguments != null ? node.arguments.arguments : null;
+        Operand value = buildYieldArgs(args, flags);
 
-            value = buildYieldArgs(args, flags);
-        } else {
-            value = UndefinedValue.UNDEFINED;
-        }
+        if ((flags[0] & CALL_SPLATS) != 0) unwrap = true;
+
+        if (args != null && args[args.length - 1] instanceof KeywordHashNode) unwrap = false;
 
         addInstr(new YieldInstr(result, getYieldClosureVariable(), value, flags[0], unwrap));
 
@@ -1966,6 +1958,9 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
                     lastSplat = catArgs(singles, lastSplat, flags);
                     lastSplat = catArgs(lastSplat, (SplatNode) arg, flags);
                 }
+            } else if (arg instanceof KeywordHashNode) {
+                singles.add(buildKeywordHash((KeywordHashNode) arg));
+                flags[0] |= CALL_KEYWORD;
             } else {
                 singles.add(build(arg));
             }
@@ -2130,10 +2125,6 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         throw notCompilable("Encountered unexpected block node", node);
     }
 
-    private ByteList byteListFrom(Location location) {
-        return new ByteList(source, location.startOffset, location.length);
-    }
-
     private ByteList byteListFrom(Node node) {
         return new ByteList(source, node.startOffset, node.length);
     }
@@ -2200,6 +2191,15 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     // FIXME: need to know about breaks
     boolean canBeLazyMethod(DefNode node) {
         return true;
+    }
+
+    // FIXME: We need abstraction for getting names from nodes.
+    private RubySymbol globalVariableName(Node node) {
+        if (node instanceof GlobalVariableReadNode) return ((GlobalVariableReadNode) node).name;
+        if (node instanceof BackReferenceReadNode) return symbol(DOLLAR_SINGLEQUOTE);
+        if (node instanceof NumberedReferenceReadNode) return symbol("$" + ((NumberedReferenceReadNode) node).number);
+
+        throw notCompilable("Unknown global variable type", node);
     }
 
     private NotCompilableException notCompilable(String message, Node node) {

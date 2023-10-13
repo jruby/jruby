@@ -472,7 +472,7 @@ public class Loader {
             case 90:
                 return new Nodes.LocalVariableWriteNode(loadConstant(), loadVarInt(), loadNode(), startOffset, length);
             case 91:
-                return new Nodes.MatchLastLineNode(loadLocation(), loadString(), loadFlags(), startOffset, length);
+                return new Nodes.MatchLastLineNode(loadString(), loadFlags(), startOffset, length);
             case 92:
                 return new Nodes.MatchPredicateNode(loadNode(), loadNode(), startOffset, length);
             case 93:
@@ -520,7 +520,7 @@ public class Loader {
             case 114:
                 return new Nodes.RedoNode(startOffset, length);
             case 115:
-                return new Nodes.RegularExpressionNode(loadLocation(), loadString(), loadFlags(), startOffset, length);
+                return new Nodes.RegularExpressionNode(loadString(), loadFlags(), startOffset, length);
             case 116:
                 return new Nodes.RequiredDestructuredParameterNode(loadNodes(), startOffset, length);
             case 117:
@@ -552,7 +552,7 @@ public class Loader {
             case 130:
                 return new Nodes.StringConcatNode(loadNode(), loadNode(), startOffset, length);
             case 131:
-                return new Nodes.StringNode(loadFlags(), loadOptionalLocation(), loadLocation(), loadString(), startOffset, length);
+                return new Nodes.StringNode(loadFlags(), loadString(), startOffset, length);
             case 132:
                 return new Nodes.SuperNode((Nodes.ArgumentsNode) loadOptionalNode(), loadOptionalNode(), startOffset, length);
             case 133:

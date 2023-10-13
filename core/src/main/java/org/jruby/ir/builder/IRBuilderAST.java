@@ -2250,7 +2250,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return buildRange(node.getBeginNode(), node.getEndNode(), node.isExclusive());
     }
 
-    int dynamicPiece(Operand[] pieces, int i, Node pieceNode, boolean _interpolated) {
+    int dynamicPiece(Operand[] pieces, int i, Node pieceNode) {
         Operand piece;
 
         // somewhat arbitrary minimum size for interpolated values
