@@ -1854,44 +1854,83 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return new MutableString(bytelist(node.unescaped), CR_UNKNOWN, scope.getFile(), getLine(node));
     }
 
-    // FIXME: This is a big tar ball.  I need to figure out when nested stringconcats exist and how they can lead
-    // to chains of interpolation.  This is pushing a lot of work into builder which did not exist.
+    /*
+     * Cases:
+     *    left        right
+     * 1.  string     string    "a" "b"
+     * 2.  interp     string    "#{1}" "a"
+     * 3.  string     interp    "a" "#{1}"
+     * 4.  interp     interp    "#{1}" "#{2}"
+     * 4.  string     concat    "a" "b" "#{1}"
+     * 5.  concat     string    "#{1}" "a" "b"
+     *
+     * 1 is totally static (assemble bytelists and make single string Operand)
+     * 2,3 can be a single DStr operand (tack strings on left or right of DStr pieces)
+     * 4 can be a single DStr (just concatenate the parts together)
+     * 5,6 is combined combinations of 1-4.  String operand or DStr.
+     */
     private Operand buildStringConcat(StringConcatNode node) {
         // FIXME: maybe frozen maybe not?
-        boolean isInterpolated = node.left instanceof InterpolatedStringNode ||
-                node.right instanceof InterpolatedStringNode;
+        boolean leftInterpolates = itInterpolates(node.left);
+        boolean rightInterpolates = itInterpolates(node.left);
 
-        if (isInterpolated) {
-            Node[] pieces;
+        if (!leftInterpolates) {
+            if (!rightInterpolates) {
+                ByteList str = buildStaticStringConcat(new ByteList(), node);
 
-            if (node.left instanceof InterpolatedStringNode) {
-                pieces = ((InterpolatedStringNode) node.left).parts;
-            } else {
-                pieces = new Node[] { node.left };
+                return new FrozenString(str, CR_UNKNOWN, getFileName(), getLine(node));
             }
-
-            if (node.right instanceof InterpolatedStringNode) {
-                Node[] otherPieces = ((InterpolatedStringNode) node.right).parts;
-                Node[] temp = pieces;
-
-                pieces = new Node[pieces.length + otherPieces.length];
-                System.arraycopy(temp, 0, pieces, 0, temp.length);
-                System.arraycopy(otherPieces, 0, pieces, temp.length, otherPieces.length);
-            } else {
-                Node[] temp = pieces;
-
-                pieces = new Node[pieces.length + 1];
-                System.arraycopy(temp, 0, pieces, 0, temp.length);
-                pieces[temp.length] = node.right;
-            }
-
-            return buildDStr(temp(), pieces, UTF8Encoding.INSTANCE, false, getLine(node));
         }
 
-        ByteList str = byteListFrom(node.left);
-        str.append(byteListFrom(node.right));
+        // FIXME: This works differently than method description in that it effectively just nests left and right as
+        // a node piece to the DStr so it nests up a series of instrs versus combining them as described.  It could
+        // be left this way forever but if these are in a hot path they will be doing some more work.
+        Node[] pieces;
 
-        return new FrozenString(str, 0, getFileName(), getLine(node));
+        if (node.left instanceof InterpolatedStringNode) {
+            pieces = ((InterpolatedStringNode) node.left).parts;
+        } else {
+            pieces = new Node[] { node.left };
+        }
+
+        if (node.right instanceof InterpolatedStringNode) {
+            Node[] otherPieces = ((InterpolatedStringNode) node.right).parts;
+            Node[] temp = pieces;
+
+            pieces = new Node[pieces.length + otherPieces.length];
+            System.arraycopy(temp, 0, pieces, 0, temp.length);
+            System.arraycopy(otherPieces, 0, pieces, temp.length, otherPieces.length);
+        } else {
+            Node[] temp = pieces;
+
+            pieces = new Node[pieces.length + 1];
+            System.arraycopy(temp, 0, pieces, 0, temp.length);
+            pieces[temp.length] = node.right;
+        }
+
+        return buildDStr(temp(), pieces, UTF8Encoding.INSTANCE, false, getLine(node));
+    }
+
+    // Is assumed to only have concats and strings
+    private ByteList buildStaticStringConcat(ByteList buf, Node node) {
+        if (node instanceof StringNode) {
+            buf.append(((StringNode) node).unescaped);
+        } else if (node instanceof StringConcatNode) {
+            buildStaticStringConcat(buf, ((StringConcatNode) node).left);
+            buildStaticStringConcat(buf, ((StringConcatNode) node).right);
+        } else {
+            throw notCompilable("found non-static node in string concat node", node);
+        }
+
+        return buf;
+    }
+
+    private boolean itInterpolates(Node node) {
+        return node instanceof InterpolatedStringNode ||
+                !(node instanceof StringNode) ||
+                !(node instanceof StringConcatNode &&
+                        (itInterpolates(((StringConcatNode) node).left) ||
+                        itInterpolates(((StringConcatNode) node).right)));
     }
 
     @Override
