@@ -2279,7 +2279,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private CallType determineCallType(Node node) {
-        return node == null ?
+        return node == null || node instanceof SelfNode ?
                 CallType.FUNCTIONAL :
                 CallType.NORMAL;
     }
