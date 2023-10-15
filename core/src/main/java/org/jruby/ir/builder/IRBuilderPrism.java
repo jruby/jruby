@@ -178,7 +178,9 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             return buildDefined((DefinedNode) node);
         } else if (node instanceof ElseNode) {
             return buildElse((ElseNode) node);
-        // EmbeddedStatementsNode, EmbeddedVariable handle in interpolated processing
+        } else if (node instanceof EmbeddedVariableNode) {
+            return build(((EmbeddedVariableNode) node).variable);
+        // EmbeddedStatementsNode handle in interpolated processing
         // MISSING: EnsureNode ???? begin will process stuff (and possibly ensure but it is unclear)
         } else if (node instanceof FalseNode) {
             return fals();
