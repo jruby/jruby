@@ -759,10 +759,21 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     //     foo.bar += baz
     private Operand buildCallOperatorWrite(CallOperatorWriteNode node) {
         Operand receiver = build(node.receiver);
-        Variable lhs = call(temp(), receiver, node.read_name);
-        Operand rhs = build(node.value);
-        Operand value = call(temp(), lhs, node.operator, rhs);
-        return call(temp(), receiver, node.write_name, value);
+        if (node.arguments != null) {
+            // FIXME: seems like we are not properly handling kwargs
+            int[] flags = new int[]{0};
+            Operand callArgs[] = buildCallArgs(node.arguments, flags);
+            Variable lhs = call(temp(), receiver, node.read_name, callArgs);
+            Operand rhs = build(node.value);
+            Operand value = call(temp(), lhs, node.operator, rhs);
+            callArgs = addArg(callArgs, value);
+            return call(temp(), receiver, node.write_name, callArgs);
+        } else {
+            Variable lhs = call(temp(), receiver, node.read_name);
+            Operand rhs = build(node.value);
+            Operand value = call(temp(), lhs, node.operator, rhs);
+            return call(temp(), receiver, node.write_name, value);
+        }
     }
 
     private Operand buildCallOrWrite(CallOrWriteNode node) {
