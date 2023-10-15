@@ -8,6 +8,7 @@ import org.jruby.RubyBignum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.RubySymbol;
+import org.jruby.ast.StrNode;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRManager;
@@ -49,6 +50,7 @@ import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
+import org.jruby.util.cli.Options;
 import org.prism.Nodes;
 import org.prism.Nodes.*;
 import org.jruby.parser.ParseResultPrism;
@@ -585,22 +587,75 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return build(node.expression);
     }
 
-    // We do name processing outside of this rather than from the node to support stripping '=' off of opelasgns
     private Operand buildCall(Variable resultArg, CallNode node, RubySymbol name) {
-        if (name == null) {
-            System.out.println("NODE: " + node);
-        }
+        return buildCall(resultArg, node, name, null, null);
+
+    }
+
+    protected Operand buildLazyWithOrder(CallNode node, Label lazyLabel, Label endLabel, boolean preserveOrder) {
+        Operand value = buildCall(null, node, node.name, lazyLabel, endLabel);
+
+        // FIXME: missing !(value instanceof ImmutableLiteral) which will force more copy instr
+        // We need to preserve order in cases (like in presence of assignments) except that immutable
+        // literals can never change value so we can still emit these out of order.
+        return preserveOrder ? copy(value) : value;
+    }
+
+    // We do name processing outside of this rather than from the node to support stripping '=' off of opelasgns
+    private Operand buildCall(Variable resultArg, CallNode node, RubySymbol name, Label lazyLabel, Label endLabel) {
         Variable result = resultArg == null ? temp() : resultArg;
 
         // FIXME: this should just be typed by parser.
         CallType callType = determineCallType(node.receiver);
-        Operand receiver = callType == CallType.FUNCTIONAL ?
-                buildSelf() :
-                build(node.receiver);
-        // FIXME: pretend always . and not &. for now.
-        // FIXME: at least type arguments to ArgumentsNode
+        String id = name.idString();
+
+        if (callType != CallType.FUNCTIONAL && Options.IR_STRING_FREEZE.load()) {
+            // Frozen string optimization: check for "string".freeze
+            if (node.receiver instanceof StringNode && (id.equals("freeze") || id.equals("-@"))) {
+                return new FrozenString(bytelist(((StringNode) node.receiver).unescaped), CR_UNKNOWN, scope.getFile(), getLine(node.receiver));
+            }
+        }
+
+        boolean compileLazyLabel = false;
+        if (node.isSafeNavigation()) {
+            if (lazyLabel == null) {
+                compileLazyLabel = true;
+                lazyLabel = getNewLabel();
+                endLabel = getNewLabel();
+            }
+        }
+
+        // The receiver has to be built *before* call arguments are built
+        // to preserve expected code execution order
+        // FIXME: this always builds with order (lacking containsVariableAssignment() in prism).
+        Operand receiver;
+        if (callType == CallType.FUNCTIONAL) {
+            receiver = buildSelf();
+        } else if (node.receiver instanceof CallNode && ((CallNode) node.receiver).isSafeNavigation()) {
+            receiver = buildLazyWithOrder((CallNode) node.receiver, lazyLabel, endLabel, true);
+        } else {
+            receiver = buildWithOrder(node.receiver, true);
+        }
+
+        if (node.isSafeNavigation()) addInstr(new BNilInstr(lazyLabel, receiver));
+
+        // FIXME: Missing arrayderef opti logic
+
+        createCall(node, name, result, callType, receiver);
+
+        if (compileLazyLabel) {
+            addInstr(new JumpInstr(endLabel));
+            addInstr(new LabelInstr(lazyLabel));
+            addInstr(new CopyInstr(result, nil()));
+            addInstr(new LabelInstr(endLabel));
+        }
+
+        return result;
+    }
+
+    private void createCall(CallNode node, RubySymbol name, Variable result, CallType callType, Operand receiver) {
         // FIXME: block would be a lot easier if both were in .block and not maybe in arguments
-        // FIXME: Lots and lots of special logic in AST not here
+        // FIXME: at least type arguments to ArgumentsNode
         int[] flags = new int[] { 0 };
         Operand[] args = setupCallArgs(node.arguments, flags);
         int argsLength = args.length;
@@ -626,8 +681,6 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             receiveBreakException(block,
                     CallInstr.create(scope, callType, result, name, receiver, args, block, flags[0]));
         }
-
-        return result;
     }
 
     private Operand buildCallAndWrite(CallAndWriteNode node) {
