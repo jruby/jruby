@@ -749,13 +749,13 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildClassAndVariableWrite(ClassVariableAndWriteNode node) {
-        return buildOpAsgnAnd(() -> addResultInstr(new GetClassVariableInstr(temp(), buildSelf(), node.name)),
+        return buildOpAsgnAnd(() -> addResultInstr(new GetClassVariableInstr(temp(), classVarDefinitionContainer(), node.name)),
                 () -> (buildClassVarAsgn(node.name, node.value)));
     }
 
     private Operand buildClassOrVariableWrite(ClassVariableOrWriteNode node) {
         return buildOpAsgnOrWithDefined(node,
-                (result) -> addInstr(new GetClassVariableInstr((Variable) result, buildSelf(), node.name)),
+                (result) -> addInstr(new GetClassVariableInstr((Variable) result, classVarDefinitionContainer(), node.name)),
                 () -> (buildClassVarAsgn(node.name, node.value)));
     }
 
