@@ -1303,10 +1303,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildInterpolatedRegularExpression(Variable result, InterpolatedRegularExpressionNode node) {
-        //String opts = new String(byteListFrom(node.closing).getUnsafeBytes()).substring(1);
-        //RegexpOptions options = RegexpOptions.newRegexpOptions(opts);
-        // FIXME: missing options token
-        return buildDRegex(result, node.parts, RegexpOptions.newRegexpOptions(""));
+        return buildDRegex(result, node.parts, RegexpOptions.fromJoniOptions(node.flags));
     }
 
     private Operand buildInterpolatedString(Variable result, InterpolatedStringNode node) {
