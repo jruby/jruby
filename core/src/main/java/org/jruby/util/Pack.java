@@ -1063,7 +1063,12 @@ public class Pack {
                 case 'w':
                     value = unpack_w(context, block, runtime, result, encode, occurrences, mode);
                     break;
-                case ' ':
+                case ' ':       // various "ok" whitespace
+                case '\011':
+                case '\n':
+                case '\013':
+                case '\014':
+                case '\015':
                     break;
                 default:
                     unknownDirective(context.runtime, "unpack", type, formatString);
@@ -2042,7 +2047,12 @@ public class Pack {
                 case 'w':
                     pack_w(context, list, result, packInts, occurrences);
                     break;
-                case ' ':
+                case ' ':       // various "ok" whitespace
+                case '\011':
+                case '\n':
+                case '\013':
+                case '\014':
+                case '\015':
                     break;
                 default:
                     unknownDirective(context.runtime, "pack", type, formatString);

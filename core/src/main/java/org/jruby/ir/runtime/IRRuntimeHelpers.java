@@ -789,7 +789,7 @@ public class IRRuntimeHelpers {
 
             args[args.length - 1] = hash;
             return UNDEFINED;
-        } else if (ruby2_keywords_hash && hash.isEmpty()) {
+        } else if ((callInfo & CALL_SPLATS) != 0 && ruby2_keywords_hash && hash.isEmpty()) {
             // case where we somehow (hash.clear) a marked ruby2_keyword.  We pass it as keyword even in non-keyword
             // accepting methods so it is subtracted from the arity count.  Normally empty keyword arguments are not
             // passed along but ruby2_keyword is a strange case since it is mutable by users.

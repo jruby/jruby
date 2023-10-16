@@ -1090,9 +1090,11 @@ public class RubyKernel {
             throw runtime.newLoadError("cannot infer basepath");
         }
 
+        file = runtime.getLoadService().getPathForLocation(file);
+
         RubyClass fileClass = runtime.getFile();
         IRubyObject realpath = RubyFile.realpath(context, fileClass, runtime.newString(file));
-        IRubyObject dirname = RubyFile.dirname(context, fileClass, new IRubyObject[] { realpath });
+        IRubyObject dirname = RubyFile.dirname(context, fileClass, new IRubyObject[]{realpath});
         IRubyObject absoluteFeature = RubyFile.expand_path(context, fileClass, relativePath, dirname);
 
         return RubyKernel.require(context, runtime.getKernel(), absoluteFeature, Block.NULL_BLOCK);
@@ -2082,10 +2084,15 @@ public class RubyKernel {
 
     @JRubyMethod(name = "__dir__", module = true, visibility = PRIVATE, reads = FILENAME)
     public static IRubyObject __dir__(ThreadContext context, IRubyObject recv) {
+        Ruby runtime = context.runtime;
+
         // NOTE: not using __FILE__ = context.getFile() since it won't work with JIT
-        final String __FILE__ = context.getSingleBacktrace().getFileName();
-        RubyString path = RubyFile.expandPathInternal(context, RubyString.newString(context.runtime, __FILE__), null, false, true);
-        return RubyString.newString(context.runtime, RubyFile.dirname(context, path.asJavaString()));
+        String __FILE__ = context.getSingleBacktrace().getFileName();
+
+        __FILE__ = runtime.getLoadService().getPathForLocation(__FILE__);
+
+        RubyString path = RubyFile.expandPathInternal(context, RubyString.newString(runtime, __FILE__), null, false, true);
+        return RubyString.newString(runtime, RubyFile.dirname(context, path.asJavaString()));
     }
 
     @JRubyMethod(module = true)

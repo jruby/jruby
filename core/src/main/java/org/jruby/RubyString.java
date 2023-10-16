@@ -1051,6 +1051,19 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
             this.file = file;
             this.line = line;
+
+            // set flag for code that does not use isFrozen
+            setFrozen(true);
+        }
+
+        @Override
+        public boolean isFrozen() {
+            return true;
+        }
+
+        @Override
+        public void setFrozen(boolean frozen) {
+            // ignore, cannot be unfrozen
         }
 
         @Override
@@ -1335,7 +1348,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @SuppressWarnings("NonOverridingEquals")
     final boolean equals(RubyString other) {
-        return ((RubyString) other).value.equal(value);
+        return other.value.equal(value);
     }
 
     /** rb_obj_as_string
@@ -2635,7 +2648,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      *
      */
     public RubyString append(IRubyObject other) {
-        // fast path for fixnum straight into ascii-compatible bytelist (modify check happens inside here as well)
+        // fast path for fixnum straight into ascii-compatible bytelist (modify check performed in here)
         if (other instanceof RubyFixnum && value.getEncoding().isAsciiCompatible()) {
             ConvertBytes.longIntoString(this, ((RubyFixnum) other).value);
             return this;

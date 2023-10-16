@@ -21,6 +21,7 @@ default_gems = [
     ['abbrev', '0.1.0'],
     ['base64', '0.1.1'],
     ['benchmark', '0.2.0'],
+    # Extension still lives in JRuby. See https://github.com/ruby/bigdecimal/issues/268
     ['bigdecimal', '3.1.4'],
     ['bundler', '2.3.26'],
     ['cgi', '0.3.6'],
@@ -42,7 +43,7 @@ default_gems = [
     # ['etc', '1.3.0'],
     # https://github.com/ruby/fcntl/issues/9
     # ['fcntl', '1.0.1'],
-    ['ffi', '1.15.5'],
+    ['ffi', '1.16.2'],
     # ['fiddle', '1.1.0'],
     ['fileutils', '1.6.0'],
     ['find', '0.1.1'],

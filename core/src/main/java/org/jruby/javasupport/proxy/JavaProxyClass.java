@@ -281,8 +281,8 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             if (returnType == Short.TYPE) return Short.valueOf((short) 0);
             if (returnType == Integer.TYPE) return Integer.valueOf(0);
             if (returnType == Long.TYPE) return Long.valueOf(0L);
-            if (returnType == Float.TYPE) return new Float(0.0f);
-            if (returnType == Double.TYPE) return new Double(0.0);
+            if (returnType == Float.TYPE) return Float.valueOf(0.0f);
+            if (returnType == Double.TYPE) return Double.valueOf(0.0);
 
             return null;
         }

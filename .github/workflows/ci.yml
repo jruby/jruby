@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         target: ['test:jruby:int', 'spec:ruby:fast', 'spec:ji', 'spec:ffi']
-        java-version: ['8', '17']
+        java-version: ['8', '11', '17', '21']
       fail-fast: false
 
     name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }})
@@ -70,7 +70,7 @@ jobs:
       - name: set up java 8
         uses: actions/setup-java@v3
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: 8
           cache: 'maven'
       - name: rake test:jruby
@@ -82,7 +82,7 @@ jobs:
     strategy:
       matrix:
         target: ['test:mri:core:jit', 'test:jruby:jit', 'spec:compiler', 'spec:ruby:fast:jit', 'spec:ji']
-        java-version: ['21-ea']
+        java-version: ['17', '21']
       fail-fast: false
 
     name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }} +indy)
@@ -108,8 +108,7 @@ jobs:
     strategy:
       matrix:
         package-flags: ['-Pmain', '-Pdist', '-Pcomplete', '-Posgi', '-Ptest', '-Pmain,test -Dinvoker.test=extended']
-        # dist, complete, and osgi do not pass on 17 yet
-        java-version: ['11']
+        java-version: [8, 11, 21]
       fail-fast: false
 
     name: mvn ${{ matrix.package-flags }} (Java ${{ matrix.java-version }})
@@ -128,25 +127,26 @@ jobs:
         env:
           PHASE: 'package ${{ matrix.package-flags }}'
 
-  mvn-test-8:
+  mvn-test-extended:
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        # jruby-jars phase only passes on 8
         package-flags: ['-Pjruby-jars', '-Pjruby-jars,test -Dinvoker.test=extended', '-Pjruby_complete_jar_extended -Dinvoker.skip=true']
+        java-version: [11, 17]
       fail-fast: false
 
-    name: mvn ${{ matrix.package-flags }} (Java 8)
+
+    name: mvn ${{ matrix.package-flags }} (Java ${{ matrix.java-version }})
 
     steps:
       - name: Bootstrap build
         uses: jruby/jruby-ci-build@v1
-      - name: set up java 8
+      - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v3
         with:
-          distribution: 'zulu'
-          java-version: '8'
+          distribution: temurin
+          java-version: ${{ matrix.java-version }}
           cache: 'maven'
       - name: mvn package ${{ matrix.package-flags }}
         run: tool/maven-ci-script.sh
@@ -266,10 +266,10 @@ jobs:
     steps:
       - name: Bootstrap build
         uses: jruby/jruby-ci-build@v1
-      - name: set up java 8
+      - name: set up java
         uses: actions/setup-java@v3
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: 11
           cache: 'maven'
       - name: sequel
@@ -287,7 +287,7 @@ jobs:
       - name: set up java 8
         uses: actions/setup-java@v3
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: 8
           cache: 'maven'
       - name: concurrent-ruby
@@ -349,7 +349,7 @@ jobs:
   maven-test-openj9-8:
     runs-on: ubuntu-latest
 
-    name: mvn -Ptest (OpenJ9 Java 8; disabled)
+    name: mvn -Ptest (OpenJ9 Java 17)
 
     steps:
       - name: Bootstrap build
@@ -358,11 +358,10 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: 'adopt-openj9'
-          java-version: '8'
+          java-version: '17'
           cache: 'maven'
       - name: test profile
-#        run: "tool/maven-ci-script.sh"
-        run: "true"
+        run: "tool/maven-ci-script.sh"
         env:
           PHASE: 'package -Ptest'
 
@@ -394,7 +393,7 @@ jobs:
     permissions:
       contents: none
     if: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/heads/jruby-9.3' }}
-    needs: [mvn-test, mvn-test-8, mvn-test-windows, dependency-check, rake-test, rake-test-17-indy, rake-test-8, test-versions, sequel, concurrent-ruby, jruby-tests-dev, regression-specs-jit, mvn-test-m1]
+    needs: [mvn-test, mvn-test-extended, mvn-test-windows, dependency-check, rake-test, rake-test-17-indy, rake-test-8, test-versions, sequel, concurrent-ruby, jruby-tests-dev, regression-specs-jit, mvn-test-m1]
     uses: jruby/jruby/.github/workflows/snapshot-publish.yml@6cd0d4d96d9406635183d81cf91acc82cd78245f
     secrets:
       SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}

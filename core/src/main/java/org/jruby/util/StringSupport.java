@@ -2505,8 +2505,8 @@ public final class StringSupport {
 
             final int cl, ocl;
             if (Encoding.isAscii(c) && Encoding.isAscii(oc)) {
-                int dc = AsciiTables.ToUpperCaseTable[c];
-                int odc = AsciiTables.ToUpperCaseTable[oc];
+                int dc = AsciiTables.ToLowerCaseTable[c];
+                int odc = AsciiTables.ToLowerCaseTable[oc];
                 if (dc != odc) return dc < odc ? -1 : 1;
 
                 if (enc.isAsciiCompatible()) {

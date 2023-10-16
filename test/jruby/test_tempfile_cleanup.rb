@@ -4,7 +4,7 @@ class TestTempfileCleanup < Test::Unit::TestCase
 
   def setup
     require 'jruby' if defined?(JRUBY_VERSION)
-    require 'tempfile'; require 'fileutils'
+    %w{ tmpdir tempfile fileutils}.each { |feat| require(feat) }
 
     @tmpdir = Dir.mktmpdir(File.basename(__FILE__) + $$.to_s)
     FileUtils.rm_f @tmpdir rescue nil
@@ -33,7 +33,8 @@ class TestTempfileCleanup < Test::Unit::TestCase
       sleep(0.1)
     end
 
+    tmp_files = Dir["#{@tmpdir}/*"]
     # test that the files are gone
-    assert_equal 0, Dir["#{@tmpdir}/*"].size, 'Files were not cleaned up'
+    assert_equal 0, tmp_files.size, "Files were not cleaned up: (#{tmp_files.size}) #{tmp_files}"
   end
 end

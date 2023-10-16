@@ -226,9 +226,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         if (!context.runtime.getInstanceConfig().isInterruptibleRegexps()) return matcher.search(start, range, option);
 
         try {
-            RubyThread thread = context.getThread();
-            SearchMatchTask task = new SearchMatchTask(thread, start, range, option, false);
-            return thread.executeTask(context, matcher, task);
+            return context.getThread().executeRegexp(context, matcher, start, range, option, Matcher::searchInterruptible);
         } catch (InterruptedException e) {
             throw context.runtime.newInterruptedRegexpError("Regexp Interrupted");
         }
@@ -238,14 +236,11 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         if (!context.runtime.getInstanceConfig().isInterruptibleRegexps()) return matcher.match(start, range, option);
 
         try {
-            RubyThread thread = context.getThread();
-            SearchMatchTask task = new SearchMatchTask(thread, start, range, option, true);
-            return thread.executeTask(context, matcher, task);
+            return context.getThread().executeRegexp(context, matcher, start, range, option, Matcher::matchInterruptible);
         } catch (InterruptedException e) {
             throw context.runtime.newInterruptedRegexpError("Regexp Interrupted");
         }
     }
-
 
     @Deprecated // not-used
     public static int matcherSearch(Ruby runtime, Matcher matcher, int start, int range, int option) {
@@ -254,42 +249,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     @Deprecated // not-used
     public static int matcherMatch(Ruby runtime, Matcher matcher, int start, int range, int option) {
-        try {
-            ThreadContext context = runtime.getCurrentContext();
-            RubyThread thread = context.getThread();
-            SearchMatchTask task = new SearchMatchTask(thread, start, range, option, true);
-            return thread.executeTask(context, matcher, task);
-        } catch (InterruptedException e) {
-            throw runtime.newInterruptedRegexpError("Regexp Interrupted");
-        }
-    }
-
-    private static class SearchMatchTask implements RubyThread.Task<Matcher, Integer> {
-        final RubyThread thread;
-        final int start;
-        final int range;
-        final int option;
-        final boolean match;
-
-        SearchMatchTask(RubyThread thread, int start, int range, int option, boolean match) {
-            this.thread = thread;
-            this.start = start;
-            this.range = range;
-            this.option = option;
-            this.match = match;
-        }
-
-        @Override
-        public Integer run(ThreadContext context, Matcher matcher) throws InterruptedException {
-            return match ?
-                    matcher.matchInterruptible(start, range, option) :
-                    matcher.searchInterruptible(start, range, option);
-        }
-
-        @Override
-        public void wakeup(RubyThread thread, Matcher matcher) {
-            thread.getNativeThread().interrupt();
-        }
+        return matcherMatch(runtime.getCurrentContext(), matcher, start, range, option);
     }
 
     @Override
