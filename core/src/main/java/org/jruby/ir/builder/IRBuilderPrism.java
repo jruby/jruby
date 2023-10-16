@@ -459,8 +459,8 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             copy(getLocalVariable(variable.name, 0), rhsVal);
         } else if (node instanceof  RequiredDestructuredParameterNode) {
             buildMultiAssignment(((RequiredDestructuredParameterNode) node).parameters, addResultInstr(new ToAryInstr(temp(), rhsVal)));
-        } else if (node instanceof SplatNode) {
-            buildSplat((SplatNode) node, rhsVal);
+        } else if (node instanceof SplatNode) { // FIXME: Audit this...is there really a splat here and it has phatom expression field?
+            buildSplat(rhsVal);
         } else {
             throw notCompilable("Can't build assignment node", node);
         }
@@ -591,7 +591,6 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
     private Operand buildCall(Variable resultArg, CallNode node, RubySymbol name) {
         return buildCall(resultArg, node, name, null, null);
-
     }
 
     protected Operand buildLazyWithOrder(CallNode node, Label lazyLabel, Label endLabel, boolean preserveOrder) {
@@ -664,8 +663,9 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         Operand block;
         if (node.block != null) {
             block = setupCallClosure(node.block);
-        } else if (node.arguments != null && argsLength != node.arguments.arguments.length) {
-            block = build(node.arguments.arguments[argsLength]);
+        } else if (node.arguments != null && argsLength != node.arguments.arguments.length) { // FIXME: It seems unclear from this conditional why this means last arg is block
+            block = args[argsLength - 1];
+            args = removeArg(args);
         } else {
             block = NullBlock.INSTANCE;
         }
@@ -714,7 +714,13 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             } else if (child instanceof KeywordHashNode && i == numberOfArgs - 1) {
                 builtArgs[i] = buildCallKeywordArguments((KeywordHashNode) children[i], flags); // FIXME: here and possibly AST make isKeywordsHash() method.
             } else if (child instanceof ForwardingArgumentsNode) {
-                notCompilable("need to impl *,**,& logic for ... at callsite (which means calcing depth to original hard scope", child);
+                Operand rest = buildSplat(getLocalVariable(symbol(FWD_REST), scope.getStaticScope().isDefined("*")));
+                Operand kwRest = getLocalVariable(symbol(FWD_KWREST), scope.getStaticScope().isDefined("**"));
+                Variable check = addResultInstr(new RuntimeHelperCall(temp(), HASH_CHECK, new Operand[] { kwRest }));
+                Variable ary = addResultInstr(new BuildCompoundArrayInstr(temp(), rest, check, true, true));
+                builtArgs[i] = new Splat(buildSplat(ary));
+                builtArgs = addArg(builtArgs, getLocalVariable(symbol(FWD_BLOCK), scope.getStaticScope().isDefined("&")));
+                flags[0] |= CALL_KEYWORD | CALL_KEYWORD_REST | CALL_SPLATS;
             } else {
                 builtArgs[i] = buildWithOrder(children[i], hasAssignments);
             }
@@ -1467,6 +1473,24 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
     private void buildParameters(ParametersNode parameters) {
         if (parameters == null) return;
+
+        if (parameters.keyword_rest instanceof ForwardingParameterNode) {
+            Variable keywords = addResultInstr(new ReceiveKeywordsInstr(temp(), true, true));
+            addInstr(new ReceiveRestArgInstr(argumentResult(symbol(FWD_REST)), keywords, 0, 0));
+            Variable av = getNewLocalVariable(symbol(FWD_KWREST), 0);
+            // FIXME: Missing arg descriptor for ... to methods???
+            ArgumentType type = ArgumentType.anonkeyrest;
+            addInstr(new ReceiveKeywordRestArgInstr(av, keywords));
+            // FIXME: Consolidate this with other fwd uses like ordinary '&'
+            RubySymbol name = symbol(FWD_BLOCK);
+            Variable blockVar = argumentResult(name);
+            if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.block, name);
+            Variable tmp = temp();
+            addInstr(new LoadImplicitClosureInstr(tmp));
+            addInstr(new ReifyClosureInstr(blockVar, tmp));
+
+            return;
+        }
         boolean hasRest = parameters.rest != null;
         boolean hasKeywords = parameters.keywords.length != 0 || parameters.keyword_rest != null;
         Variable keywords = addResultInstr(new ReceiveKeywordsInstr(temp(), hasRest, hasKeywords));
@@ -1500,12 +1524,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             }
         }
 
-        if (parameters.keyword_rest instanceof ForwardingParameterNode) {
-            Variable av = getNewLocalVariable(symbol(FWD_REST), 0);
-            // FIXME: Missing arg descriptor for ... to methods???
-            ArgumentType type = ArgumentType.anonkeyrest;
-            addInstr(new ReceiveKeywordRestArgInstr(av, keywords));
-        } else if (parameters.keyword_rest instanceof NoKeywordsParameterNode) {
+        if (parameters.keyword_rest instanceof NoKeywordsParameterNode) {
             // FIXME: need to add :nokey and also fix in legacy for argument description.
             if_not(keywords, UndefinedValue.UNDEFINED, () -> addRaiseError("ArgumentError", "no keywords accepted"));
         } else {
@@ -1599,10 +1618,10 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildSplat(SplatNode node) {
-        return buildSplat(node, build(node.expression));
+        return buildSplat(build(node.expression));
     }
 
-    private Operand buildSplat(SplatNode node, Operand value) {
+    private Operand buildSplat(Operand value) {
         return addResultInstr(new BuildSplatInstr(temp(), value, true));
     }
 
