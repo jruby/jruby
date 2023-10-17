@@ -98,7 +98,7 @@ public class Loader {
         expect((byte) 'M', "incorrect prism header");
 
         expect((byte) 0, "prism version does not match");
-        expect((byte) 13, "prism version does not match");
+        expect((byte) 14, "prism version does not match");
         expect((byte) 0, "prism version does not match");
 
         expect((byte) 1, "Loader.java requires no location fields in the serialized output");
@@ -111,6 +111,7 @@ public class Loader {
         this.encodingCharset = getEncodingCharset(this.encodingName);
 
         ParseResult.Comment[] comments = loadComments();
+        ParseResult.MagicComment[] magicComments = loadMagicComments();
         ParseResult.Error[] errors = loadSyntaxErrors();
         ParseResult.Warning[] warnings = loadWarnings();
 
@@ -129,7 +130,7 @@ public class Loader {
         MarkNewlinesVisitor visitor = new MarkNewlinesVisitor(source, newlineMarked);
         node.accept(visitor);
 
-        return new ParseResult(node, comments, errors, warnings);
+        return new ParseResult(node, comments, magicComments, errors, warnings);
     }
 
     private byte[] loadEmbeddedString() {
@@ -167,6 +168,21 @@ public class Loader {
         }
 
         return comments;
+    }
+
+    private ParseResult.MagicComment[] loadMagicComments() {
+        int count = loadVarInt();
+        ParseResult.MagicComment[] magicComments = new ParseResult.MagicComment[count];
+
+        for (int i = 0; i < count; i++) {
+            Nodes.Location keyLocation = loadLocation();
+            Nodes.Location valueLocation = loadLocation();
+
+            ParseResult.MagicComment magicComment = new ParseResult.MagicComment(keyLocation, valueLocation);
+            magicComments[i] = magicComment;
+        }
+
+        return magicComments;
     }
 
     private ParseResult.Error[] loadSyntaxErrors() {
@@ -310,7 +326,7 @@ public class Loader {
             case 9:
                 return new Nodes.AssocSplatNode(loadOptionalNode(), startOffset, length);
             case 10:
-                return new Nodes.BackReferenceReadNode(startOffset, length);
+                return new Nodes.BackReferenceReadNode(loadConstant(), startOffset, length);
             case 11:
                 return new Nodes.BeginNode((Nodes.StatementsNode) loadOptionalNode(), (Nodes.RescueNode) loadOptionalNode(), (Nodes.ElseNode) loadOptionalNode(), (Nodes.EnsureNode) loadOptionalNode(), startOffset, length);
             case 12:

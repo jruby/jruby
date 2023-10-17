@@ -484,7 +484,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
     // FIXME(feature): optimization simplifying this from other globals
     private Operand buildBackReferenceRead(Variable result, BackReferenceReadNode node) {
-        return buildGlobalVar(result, symbol(DOLLAR_BACKTICK));
+        return buildGlobalVar(result, node.name);
     }
 
     private Operand buildBreak(BreakNode node) {
@@ -2353,7 +2353,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     // FIXME: We need abstraction for getting names from nodes.
     private RubySymbol globalVariableName(Node node) {
         if (node instanceof GlobalVariableReadNode) return ((GlobalVariableReadNode) node).name;
-        if (node instanceof BackReferenceReadNode) return symbol(DOLLAR_SINGLEQUOTE);
+        if (node instanceof BackReferenceReadNode) return ((BackReferenceReadNode) node).name;
         if (node instanceof NumberedReferenceReadNode) return symbol("$" + ((NumberedReferenceReadNode) node).number);
 
         throw notCompilable("Unknown global variable type", node);

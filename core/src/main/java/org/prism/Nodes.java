@@ -344,20 +344,20 @@ public abstract class Nodes {
         // m - allows $ to match the end of lines within strings
         public static final short MULTI_LINE = 1 << 2;
 
+        // o - only interpolates values into the regular expression once
+        public static final short ONCE = 1 << 3;
+
         // e - forces the EUC-JP encoding
-        public static final short EUC_JP = 1 << 3;
+        public static final short EUC_JP = 1 << 4;
 
         // n - forces the ASCII-8BIT encoding
-        public static final short ASCII_8BIT = 1 << 4;
+        public static final short ASCII_8BIT = 1 << 5;
 
         // s - forces the Windows-31J encoding
-        public static final short WINDOWS_31J = 1 << 5;
+        public static final short WINDOWS_31J = 1 << 6;
 
         // u - forces the UTF-8 encoding
-        public static final short UTF_8 = 1 << 6;
-
-        // o - only interpolates values into the regular expression once
-        public static final short ONCE = 1 << 7;
+        public static final short UTF_8 = 1 << 7;
 
         public static boolean isIgnoreCase(short flags) {
             return (flags & IGNORE_CASE) != 0;
@@ -369,6 +369,10 @@ public abstract class Nodes {
 
         public static boolean isMultiLine(short flags) {
             return (flags & MULTI_LINE) != 0;
+        }
+
+        public static boolean isOnce(short flags) {
+            return (flags & ONCE) != 0;
         }
 
         public static boolean isEucJp(short flags) {
@@ -385,10 +389,6 @@ public abstract class Nodes {
 
         public static boolean isUtf8(short flags) {
             return (flags & UTF_8) != 0;
-        }
-
-        public static boolean isOnce(short flags) {
-            return (flags & ONCE) != 0;
         }
 
         private final short flags;
@@ -428,6 +428,10 @@ public abstract class Nodes {
             return (flags & MULTI_LINE) != 0;
         }
 
+        public boolean isOnce() {
+            return (flags & ONCE) != 0;
+        }
+
         public boolean isEucJp() {
             return (flags & EUC_JP) != 0;
         }
@@ -442,10 +446,6 @@ public abstract class Nodes {
 
         public boolean isUtf8() {
             return (flags & UTF_8) != 0;
-        }
-
-        public boolean isOnce() {
-            return (flags & ONCE) != 0;
         }
 
     }
@@ -956,9 +956,11 @@ public abstract class Nodes {
     //     $'
     //     ^^
     public static final class BackReferenceReadNode extends Node {
+        public final org.jruby.RubySymbol name;
 
-        public BackReferenceReadNode(int startOffset, int length) {
+        public BackReferenceReadNode(org.jruby.RubySymbol name, int startOffset, int length) {
             super(startOffset, length);
+            this.name = name;
         }
                 
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
@@ -981,6 +983,10 @@ public abstract class Nodes {
             }
             builder.append('\n');
             String nextIndent = indent + "  ";
+            builder.append(nextIndent);
+            builder.append("name: ");
+            builder.append('"').append(this.name).append('"');
+            builder.append('\n');
             return builder.toString();
         }
     }
@@ -4339,6 +4345,10 @@ public abstract class Nodes {
             return RegularExpressionFlags.isMultiLine(this.flags);
         }
 
+        public boolean isOnce() {
+            return RegularExpressionFlags.isOnce(this.flags);
+        }
+
         public boolean isEucJp() {
             return RegularExpressionFlags.isEucJp(this.flags);
         }
@@ -4353,10 +4363,6 @@ public abstract class Nodes {
 
         public boolean isUtf8() {
             return RegularExpressionFlags.isUtf8(this.flags);
-        }
-
-        public boolean isOnce() {
-            return RegularExpressionFlags.isOnce(this.flags);
         }
         
         @Override
@@ -4431,6 +4437,10 @@ public abstract class Nodes {
             return RegularExpressionFlags.isMultiLine(this.flags);
         }
 
+        public boolean isOnce() {
+            return RegularExpressionFlags.isOnce(this.flags);
+        }
+
         public boolean isEucJp() {
             return RegularExpressionFlags.isEucJp(this.flags);
         }
@@ -4445,10 +4455,6 @@ public abstract class Nodes {
 
         public boolean isUtf8() {
             return RegularExpressionFlags.isUtf8(this.flags);
-        }
-
-        public boolean isOnce() {
-            return RegularExpressionFlags.isOnce(this.flags);
         }
         
         @Override
@@ -5198,6 +5204,10 @@ public abstract class Nodes {
             return RegularExpressionFlags.isMultiLine(this.flags);
         }
 
+        public boolean isOnce() {
+            return RegularExpressionFlags.isOnce(this.flags);
+        }
+
         public boolean isEucJp() {
             return RegularExpressionFlags.isEucJp(this.flags);
         }
@@ -5212,10 +5222,6 @@ public abstract class Nodes {
 
         public boolean isUtf8() {
             return RegularExpressionFlags.isUtf8(this.flags);
-        }
-
-        public boolean isOnce() {
-            return RegularExpressionFlags.isOnce(this.flags);
         }
         
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
@@ -6376,6 +6382,10 @@ public abstract class Nodes {
             return RegularExpressionFlags.isMultiLine(this.flags);
         }
 
+        public boolean isOnce() {
+            return RegularExpressionFlags.isOnce(this.flags);
+        }
+
         public boolean isEucJp() {
             return RegularExpressionFlags.isEucJp(this.flags);
         }
@@ -6390,10 +6400,6 @@ public abstract class Nodes {
 
         public boolean isUtf8() {
             return RegularExpressionFlags.isUtf8(this.flags);
-        }
-
-        public boolean isOnce() {
-            return RegularExpressionFlags.isOnce(this.flags);
         }
         
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
