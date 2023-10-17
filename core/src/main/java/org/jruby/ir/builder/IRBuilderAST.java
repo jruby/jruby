@@ -2236,6 +2236,10 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         receiveArgs(argsNode);
     }
 
+    void receiveForArgs(Node node) {
+        receiveBlockArgs(node);
+    }
+
     void receiveBlockArgs(Node args) {
         if (args instanceof ArgsNode) { // regular blocks
             ((IRClosure) scope).setArgumentDescriptors(Helpers.argsNodeToArgumentDescriptors(((ArgsNode) args)));
@@ -3011,5 +3015,9 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     @Override
     boolean alwaysTrue(Node node) {
         return node.getNodeType().alwaysTrue();
+    }
+
+    public LocalVariable getLocalVariable(RubySymbol name, int scopeDepth) {
+        return scope.getLocalVariable(name, scopeDepth);
     }
 }

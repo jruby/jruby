@@ -20,6 +20,7 @@ import org.jruby.ir.Tuple;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
+import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.Bignum;
 import org.jruby.ir.operands.CurrentScope;
@@ -27,6 +28,7 @@ import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.FrozenString;
 import org.jruby.ir.operands.Hash;
 import org.jruby.ir.operands.Label;
+import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.MutableString;
 import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
@@ -526,29 +528,26 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return v;
     }
 
-    // FIXME: This is used for both for and blocks in AST but we do different path for for in YARP!!!
-    public void receiveBlockArgs(Node node) {
+    void receiveForArgs(Node node) {
+        Variable keywords = copy(temp(), UndefinedValue.UNDEFINED);
+
         if (node instanceof MultiTargetNode) { // for loops
             buildBlockArgsAssignment(node, null, 0, false);
         } else if (node instanceof LocalVariableTargetNode) {
-            // FIXME: madness on `for` processing and how we share with ordinary block processing.
-            // This is for `for` loops.  This is rather strange and I believe it may need arity checks and other
-            // branches for multiple assignment.
-            Variable keywords = copy(temp(), UndefinedValue.UNDEFINED);
             receivePreArg(node, keywords, 0);
         } else if (node instanceof InstanceVariableTargetNode) {
-            // FIXME: madness on `for` processing and how we share with ordinary block processing.
-            // This is for `for` loops.  This is rather strange and I believe it may need arity checks and other
-            // branches for multiple assignment.
-            Variable keywords = copy(temp(), UndefinedValue.UNDEFINED);
             receivePreArg(node, keywords, 0);
         } else {
-            BlockParametersNode parameters = (BlockParametersNode) node;
-            // FIXME: Impl
-            //((IRClosure) scope).setArgumentDescriptors(Helpers.argsNodeToArgumentDescriptors(((ArgsNode) args)));
-            // FIXME: Missing locals?  Not sure how we handle those but I would have thought with a scope?
-            if (parameters != null) buildParameters(parameters.parameters);
+            throw notCompilable("missing arg processing for `for`", node);
         }
+    }
+
+    public void receiveBlockArgs(Node node) {
+        BlockParametersNode parameters = (BlockParametersNode) node;
+        // FIXME: Impl
+        //((IRClosure) scope).setArgumentDescriptors(Helpers.argsNodeToArgumentDescriptors(((ArgsNode) args)));
+        // FIXME: Missing locals?  Not sure how we handle those but I would have thought with a scope?
+        if (parameters != null) buildParameters(parameters.parameters);
     }
 
     private void buildBlockArgsAssignment(Node node, Operand argsArray, int argIndex, boolean isSplat) {
@@ -1886,7 +1885,8 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
             buildMultiAssignment(((RequiredDestructuredParameterNode) node).parameters, tmp);
         } else if (node instanceof LocalVariableTargetNode) {  // blocks/for
-            getLocalVariable(((LocalVariableTargetNode) node).name, scope.correctVariableDepthForForLoopsForEncoding(((LocalVariableTargetNode) node).depth));
+            Variable v = getLocalVariable(((LocalVariableTargetNode) node).name, ((LocalVariableTargetNode) node).depth);
+            addInstr(new ReceivePreReqdArgInstr(v, keywords, argIndex));
         } else {
             throw notCompilable("Can't build required parameter node", node);
         }
@@ -2175,6 +2175,14 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     @Override
+    public LocalVariable getLocalVariable(RubySymbol name, int scopeDepth) {
+        // FIXME: Huge heap of weirdness...scope adds for loop depth per for loop found.  call another method to
+        // remove that depth so it can be added back.
+        int depth = scope.correctVariableDepthForForLoopsForEncoding(scopeDepth);
+        return scope.getLocalVariable(name, depth);
+    }
+
+    @Override
     IRubyObject getWhenLiteral(Node node) {
         Ruby runtime = scope.getManager().getRuntime();
 
@@ -2282,7 +2290,6 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return Signature.ONE_REQUIRED;
     }
 
-    // FIXME: we allocate extra byte[] just to make it a String[].  Extra work to consider?
     public StaticScope createStaticScopeFrom(RubySymbol[] tokens, StaticScope.Type type) {
         return createStaticScopeFrom(fileName, tokens, type, staticScope);
     }

@@ -1178,6 +1178,9 @@ public abstract class IRBuilder<U, V, W, X> {
     private Operand buildCaseTestValue(U test) {
         if (isLiteralString(test)) return frozen_string(test);
 
+        // FIXME: AST will return null from build(test) but prism returns nil.  Added to workaround.
+        if (test == null) return UndefinedValue.UNDEFINED;
+
         Operand testValue = build(test);
 
         // null is returned for valueless case statements:
@@ -1355,8 +1358,8 @@ public abstract class IRBuilder<U, V, W, X> {
         Variable result = temp();
         Operand  receiver = build(receiverNode);
         Operand  forBlock = buildForIter(var, body, staticScope, signature, line, endLine);
-        CallInstr callInstr = new CallInstr(scope, CallType.NORMAL, result, getManager().runtime.newSymbol(CommonByteLists.EACH), receiver, EMPTY_OPERANDS,
-                forBlock, 0, scope.maybeUsingRefinements());
+        CallInstr callInstr = new CallInstr(scope, CallType.NORMAL, result, symbol(CommonByteLists.EACH), receiver,
+                EMPTY_OPERANDS, forBlock, 0, scope.maybeUsingRefinements());
         receiveBreakException(forBlock, callInstr);
 
         return result;
@@ -1476,11 +1479,14 @@ public abstract class IRBuilder<U, V, W, X> {
             addInstr(new TraceInstr(RubyEvent.B_CALL, getCurrentModuleVariable(), getName(), getFileName(), scope.getLine() + 1));
         }
 
-        if (!forNode) addCurrentModule();                                // %current_module
-        receiveBlockArgs(var);
-        // for adds these after processing binding block args because and operations at that point happen relative
-        // to the previous scope.
-        if (forNode) addCurrentModule();                                 // %current_module
+        // 'for' adds %current_module after arg processing because those args all are relative to the previous scope.
+        if (forNode) {
+            receiveForArgs(var);
+            addCurrentModule();
+        } else {
+            addCurrentModule();
+            receiveBlockArgs(var);
+        }
 
         // conceptually abstract prologue scope instr creation so we can put this at the end of it instead of replicate it.
         afterPrologueIndex = instructions.size() - 1;
@@ -2185,6 +2191,7 @@ public abstract class IRBuilder<U, V, W, X> {
     abstract boolean isLiteralString(U node);
     abstract boolean needsDefinitionCheck(U node);
 
+    abstract void receiveForArgs(U node);
     abstract void receiveBlockArgs(U node);
     abstract Operand setupCallClosure(U node);
 
@@ -2493,9 +2500,7 @@ public abstract class IRBuilder<U, V, W, X> {
         return (nearestModuleBodyDepth == -1) ? getCurrentModuleVariable() : ScopeModule.ModuleFor(nearestModuleBodyDepth);
     }
 
-    public LocalVariable getLocalVariable(RubySymbol name, int scopeDepth) {
-        return scope.getLocalVariable(name, scopeDepth);
-    }
+    public abstract LocalVariable getLocalVariable(RubySymbol name, int scopeDepth);
 
     public LocalVariable getNewLocalVariable(RubySymbol name, int scopeDepth) {
         return scope.getNewLocalVariable(name, scopeDepth);
