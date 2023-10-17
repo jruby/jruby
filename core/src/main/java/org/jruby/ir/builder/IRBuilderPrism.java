@@ -8,6 +8,7 @@ import org.jruby.RubyBignum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.RubySymbol;
+import org.jruby.ast.Match2CaptureNode;
 import org.jruby.ast.StrNode;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.IRClosure;
@@ -252,6 +253,8 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         // LocalVariableTargetNode processed by multiple assignment
         } else if (node instanceof LocalVariableWriteNode) {
             return buildLocalVariableWrite((LocalVariableWriteNode) node);
+        } else if (node instanceof MatchWriteNode) {
+            return buildMatchWrite(result, (MatchWriteNode) node);
         } else if (node instanceof MissingNode) {                // MISSING: MatchPredicateNode, MatchRequiredNode
             return buildMissing((MissingNode) node);
         } else if (node instanceof ModuleNode) {
@@ -1390,6 +1393,26 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
     private Operand buildLocalVariableWrite(LocalVariableWriteNode node) {
         return buildLocalVariableAssign(node.name, node.depth, node.value);
+    }
+
+    private Operand buildMatchWrite(Variable result, MatchWriteNode node) {
+        Operand receiver = build(node.call.receiver);
+        // FIXME: Can this ever be something more?
+        Operand value = build(node.call.arguments.arguments[0]);
+
+        if (result == null) result = temp();
+
+        addInstr(new MatchInstr(scope, result, receiver, value));
+
+        for (int i = 0; i < node.locals.length; i++) {
+            RubySymbol var = node.locals[i];
+            int slot = staticScope.exists(var.idString());
+            int depth = slot >> 16;
+
+            addInstr(new SetCapturedVarInstr(getLocalVariable(var, depth), result, var));
+        }
+
+        return result;
     }
 
     private Operand buildMissing(MissingNode node) {
