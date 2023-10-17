@@ -1699,7 +1699,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildWhile(WhileNode node) {
-        return buildConditionalLoop(node.predicate, node.statements, true, true);
+        return buildConditionalLoop(node.predicate, node.statements, true, !node.isBeginModifier());
     }
 
     // FIXME: implement
