@@ -28,11 +28,13 @@ import org.jruby.ir.operands.CurrentScope;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.FrozenString;
 import org.jruby.ir.operands.Hash;
+import org.jruby.ir.operands.ImmutableLiteral;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.MutableString;
 import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.Rational;
 import org.jruby.ir.operands.Regexp;
 import org.jruby.ir.operands.Self;
 import org.jruby.ir.operands.Splat;
@@ -338,11 +340,6 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         } else {
             throw new RuntimeException("Unhandled Node type: " + node);
         }
-    }
-
-    private Operand buildRational(RationalNode node) {
-        // FIXME: need to look at lexer on how to properly calc denominator
-        throw new RuntimeException("Unhandled Node type: " + node);
     }
 
     private Operand buildIn(InNode node) {
@@ -1581,6 +1578,11 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
     private Operand buildRange(RangeNode node) {
         return buildRange(node.left, node.right, node.isExcludeEnd());
+    }
+
+    private Operand buildRational(RationalNode node) {
+        // FIXME: Meh. will this always work.
+        return new Rational((ImmutableLiteral) build(node.numeric), (ImmutableLiteral) fix(1));
     }
 
     private Operand buildRedo(RedoNode node) {
