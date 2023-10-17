@@ -1301,7 +1301,8 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     private Operand buildInteger(IntegerNode node) {
         // FIXME: HAHAHAH horrible hack around integer being too much postprocessing.
         ByteList value = byteListFrom(node);
-        RubyInteger number = RubyNumeric.str2inum(getManager().runtime, getManager().getRuntime().newString(value), 10);
+        int base = node.isDecimal() ? 10 : node.isOctal() ? 8 : node.isHexadecimal() ? 16 : 2;
+        RubyInteger number = RubyNumeric.str2inum(getManager().runtime, getManager().getRuntime().newString(value), base);
 
         return number instanceof RubyBignum ?
                 new Bignum(number.getBigIntegerValue()) :
@@ -1868,21 +1869,24 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         }
     }
 
+    // FIXME: I dislike both methods and procs use the same method.
     public void receivePreArg(Node node, Variable keywords, int argIndex) {
-        if (node instanceof RequiredParameterNode) {
+        if (node instanceof RequiredParameterNode) { // methods
             RubySymbol name = ((RequiredParameterNode) node).name;
 
             if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.req, name);
 
             addInstr(new ReceivePreReqdArgInstr(argumentResult(name), keywords, argIndex));
-        } else if (node instanceof RequiredDestructuredParameterNode) {
-                Variable v = temp();
-                addInstr(new ReceivePreReqdArgInstr(v, keywords, argIndex));
-                if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.anonreq, null);
-                Variable tmp = temp();
-                addInstr(new ToAryInstr(tmp, v));
+        } else if (node instanceof RequiredDestructuredParameterNode) { // methods
+            Variable v = temp();
+            addInstr(new ReceivePreReqdArgInstr(v, keywords, argIndex));
+            if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.anonreq, null);
+            Variable tmp = temp();
+            addInstr(new ToAryInstr(tmp, v));
 
-                buildMultiAssignment(((RequiredDestructuredParameterNode) node).parameters, tmp);
+            buildMultiAssignment(((RequiredDestructuredParameterNode) node).parameters, tmp);
+        } else if (node instanceof LocalVariableTargetNode) {  // blocks/for
+            getLocalVariable(((LocalVariableTargetNode) node).name, scope.correctVariableDepthForForLoopsForEncoding(((LocalVariableTargetNode) node).depth));
         } else {
             throw notCompilable("Can't build required parameter node", node);
         }
