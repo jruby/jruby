@@ -41,7 +41,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * The implementation of {@link EmbedRubyInterfaceAdapter} and implements the
  * method that gets a instance of requested interface, which is implemented in Ruby.
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class EmbedRubyInterfaceAdapterImpl implements EmbedRubyInterfaceAdapter {
 

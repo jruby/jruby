@@ -132,6 +132,7 @@ public class Options {
     public static final Option<Integer> THREADPOOL_MAX = integer(THREADPOOL, "thread.pool.max", Integer.MAX_VALUE, "The maximum number of threads to allow in the pool.");
     public static final Option<Integer> THREADPOOL_TTL = integer(THREADPOOL, "thread.pool.ttl", 60, "The maximum number of seconds to keep alive an idle thread.");
     public static final Option<Integer> FIBER_THREADPOOL_TTL = integer(THREADPOOL, "fiber.thread.pool.ttl", 60, "The maximum number of seconds to keep alive a pooled fiber thread.");
+    public static final Option<Boolean> FIBER_VTHREADS = bool(THREADPOOL, "fiber.vthread", true, "Use JDK virtual threads for Ruby Fibers.");
 
     public static final Option<Boolean> CLASSLOADER_DELEGATE = bool(MISCELLANEOUS, "classloader.delegate", true, "In some cases of classloader conflicts it might help not to delegate first to the parent classloader but to load first from the jruby-classloader.");
     public static final Option<Boolean> OBJECTSPACE_ENABLED = bool(MISCELLANEOUS, "objectspace.enabled", false, "Enable or disable ObjectSpace.each_object.");

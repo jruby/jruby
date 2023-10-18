@@ -68,6 +68,7 @@ final class FastIntMethodGenerator extends AbstractNumericMethodGenerator {
     }
 
 
+    @SuppressWarnings("ReturnValueIgnored")
     final static int getMaximumFastIntParameters() {
         try {
             com.kenai.jffi.Invoker.class.getDeclaredMethod("invokeI6", CallContext.class, long.class,

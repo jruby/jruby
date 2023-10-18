@@ -175,9 +175,8 @@ public class DynamicLibrary extends RubyObject {
                     getMetaClass().getName(), library.name, name, getAddress()));
         }
 
-        @Override
-        @JRubyMethod(name = "to_s", optional = 1)
-        public IRubyObject to_s(ThreadContext context, IRubyObject[] args) {
+        @JRubyMethod(name = "to_s")
+        public IRubyObject to_s(ThreadContext context) {
             return RubyString.newString(context.runtime, name);
         }
 

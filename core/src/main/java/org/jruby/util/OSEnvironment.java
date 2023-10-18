@@ -72,9 +72,9 @@ public class OSEnvironment {
     }
 
     /**
-    * Returns java system properties as a Map<RubyString,RubyString>.
+     * Returns java system properties as a Map&lt;RubyString,RubyString&gt;.
      * @param runtime
-     * @return the java system properties as a Map<RubyString,RubyString>.
+     * @return the java system properties as a Map&lt;RubyString,RubyString&gt;.
      */
     public static Map<RubyString, RubyString> systemPropertiesMap(Ruby runtime) {
         if ( Ruby.isSecurityRestricted() ) return Collections.emptyMap();

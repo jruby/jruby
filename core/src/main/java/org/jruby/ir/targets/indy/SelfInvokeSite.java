@@ -21,27 +21,27 @@ import static org.jruby.util.CodegenUtils.sig;
 * Created by headius on 10/23/14.
 */
 public class SelfInvokeSite extends InvokeSite {
-    public SelfInvokeSite(MethodType type, String name, CallType callType, boolean literalClosure, String file, int line) {
-        super(type, name, callType, literalClosure, file, line);
+    public SelfInvokeSite(MethodType type, String name, CallType callType, boolean literalClosure, int flags, String file, int line) {
+        super(type, name, callType, literalClosure, flags, file, line);
     }
 
-    public SelfInvokeSite(MethodType type, String name, CallType callType, String file, int line) {
-        this(type, name, callType, false, file, line);
+    public SelfInvokeSite(MethodType type, String name, CallType callType, int flags, String file, int line) {
+        this(type, name, callType, false, flags, file, line);
     }
 
     public static final Handle BOOTSTRAP = new Handle(
             Opcodes.H_INVOKESTATIC,
             p(SelfInvokeSite.class),
             "bootstrap",
-            sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, int.class, String.class, int.class),
+            sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, int.class, int.class, String.class, int.class),
             false);
 
-    public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, int closureInt, String file, int line) {
+    public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, int closureInt, int flags, String file, int line) {
         boolean literalClosure = closureInt != 0;
         List<String> nameComponents = StringSupport.split(name, ':');
         String methodName = JavaNameMangler.demangleMethodName(nameComponents.get(1));
         CallType callType = nameComponents.get(0).equals("callFunctional") ? CallType.FUNCTIONAL : CallType.VARIABLE;
-        InvokeSite site = new SelfInvokeSite(type, methodName, callType, literalClosure, file, line);
+        InvokeSite site = new SelfInvokeSite(type, methodName, callType, literalClosure, flags, file, line);
 
         return InvokeSite.bootstrap(site, lookup);
     }

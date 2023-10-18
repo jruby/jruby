@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class BasicBlock implements ExplicitVertexID, Comparable {
+public class BasicBlock implements ExplicitVertexID, Comparable<BasicBlock> {
     private final int         id;             // Basic Block id
     private final CFG         cfg;            // CFG that this basic block belongs to
     private Label       label;          // All basic blocks have a starting label
@@ -247,9 +247,7 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
     }
 
     @Override
-    public int compareTo(Object o) {
-        BasicBlock other = (BasicBlock) o;
-
+    public int compareTo(final BasicBlock other) {
         if (id == other.id) return 0;
         if (id < other.id) return -1;
 

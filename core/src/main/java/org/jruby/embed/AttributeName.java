@@ -37,7 +37,7 @@ package org.jruby.embed;
  *     ScriptingContainer container = new ScriptingContainer();
  *     container.setAttribute(AttributeName.BASE_DIR, System.getProperty("user.dir");</pre>
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public enum AttributeName {
     /**
@@ -139,7 +139,7 @@ public enum AttributeName {
      * Returns a fully qualified attribute name that corresponds to a given
      * enumerated type identifier.
      *
-     * @param fqan fully qualified attribute name
+     * @param fqpn fully qualified attribute name
      * @return a matched enumerated type identifier
      */
     public static AttributeName getType(String fqpn) {

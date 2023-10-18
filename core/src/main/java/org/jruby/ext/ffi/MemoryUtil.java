@@ -304,7 +304,7 @@ public final class MemoryUtil {
      * @param runtime The ruby runtime
      * @param io The memory object to read the string from
      * @param offset The offset within the memory object to start reading
-     * @param maxlen The maximum number of bytes to read
+     * @param length The maximum number of bytes to read
      * @return A ruby string
      */
     public static final IRubyObject getTaintedString(Ruby runtime, MemoryIO io, long offset, int length) {

@@ -63,7 +63,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'github.global.server' => 'github',
               'polyglot.dump.pom' => 'pom.xml',
               'polyglot.dump.readonly' => 'true',
-              'jruby.plugins.version' => '1.0.10',
+              'jruby.plugins.version' => '3.0.1',
 
               # versions for default gems with bin executables
               # used in ./lib/pom.rb and ./maven/jruby-stdlib/pom.rb
@@ -72,8 +72,8 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'ant.version' => '1.9.8',
               'asm.version' => '9.2',
               'jar-dependencies.version' => '0.4.1',
-              'jffi.version' => '1.3.10',
-              'joda.time.version' => '2.10.10' )
+              'jffi.version' => '1.3.12',
+              'joda.time.version' => '2.12.5' )
 
   plugin_management do
     jar( 'junit:junit:4.13.1',
@@ -121,7 +121,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
     plugin :compiler, '3.8.1'
     plugin :shade, '3.2.4'
-    plugin :surefire, '3.0.0-M5'
+    plugin :surefire, '3.0.0'
     plugin :plugin, '3.6.0'
     plugin( :invoker, '3.2.1',
             'properties' => { 'jruby.version' => '${project.version}',

@@ -199,8 +199,8 @@ public class RubyClass extends RubyModule {
      *
      * @param clazz The class from which to grab a standard Ruby __allocate__ method.
      *
-     * @note Used with `jrubyc --java` generated (interoperability) class files.
-     * @note Used with new concrete extension.
+     * <p>Note: Used with `jrubyc --java` generated (interoperability) class files.</p>
+     * <p>Note: Used with new concrete extension.</p>
      */
     public void setRubyStaticAllocator(final Class<?> clazz) {
         try {
@@ -1269,7 +1269,7 @@ public class RubyClass extends RubyModule {
             IRubyObject object = (IRubyObject) obj;
 
             marshalStream.registerLinkTarget(object);
-            marshalStream.dumpVariables(object.getVariableList());
+            marshalStream.dumpVariables(object.getMarshalVariableList());
         }
 
         @Override
@@ -1420,7 +1420,7 @@ public class RubyClass extends RubyModule {
 
             if (concreteExt) {
                 // setAllocator(ConcreteJavaProxy.ALLOCATOR); // this should be already set
-                // Allocator "set" via clinit {@see JavaProxyClass#setProxyClassReified()}
+                // Allocator "set" via clinit {@link JavaProxyClass#setProxyClassReified()}
 
                 this.setInstanceVariable("@java_class", Java.wrapJavaObject(runtime, result));
                 JavaProxy.setJavaClass(this, result);
@@ -2429,7 +2429,6 @@ public class RubyClass extends RubyModule {
         if (target == Class.class) {
             if (reifiedClass == null) reifyWithAncestors(); // possibly auto-reify
             // Class requested; try java_class or else return nearest reified class
-            final ThreadContext context = runtime.getCurrentContext();
             Class<?> javaClass = JavaUtil.getJavaClass(this, null);
             if (javaClass != null) return (T) javaClass;
 

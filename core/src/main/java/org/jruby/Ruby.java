@@ -187,6 +187,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.ref.WeakReference;
 import java.net.BindException;
 import java.nio.charset.Charset;
+import java.nio.charset.UnsupportedCharsetException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -803,7 +804,7 @@ public final class Ruby implements Constantizable {
 
     /**
      * Convenience method for java integrators who may need to switch the notion
-     * of "global" runtime. Use <tt>JRuby.runtime.use_as_global_runtime</tt>
+     * of "global" runtime. Use <code>JRuby.runtime.use_as_global_runtime</code>
      * from Ruby code to activate the current runtime as the global one.
      */
     public void useAsGlobalRuntime() {
@@ -848,7 +849,7 @@ public final class Ruby implements Constantizable {
      * and runtime preparation typical to normal script runs.
      *
      * @param script The scriptlet to run
-     * @returns The result of the eval
+     * @return The result of the eval
      */
     public IRubyObject evalScriptlet(String script) {
         ThreadContext context = getCurrentContext();
@@ -870,7 +871,7 @@ public final class Ruby implements Constantizable {
      * @param script The scriptlet to run
      * @param scope The scope to execute against (ManyVarsDynamicScope is
      * recommended, so it can grow as needed)
-     * @returns The result of the eval
+     * @return The result of the eval
      */
     public IRubyObject evalScriptlet(String script, DynamicScope scope) {
         ThreadContext context = getCurrentContext();
@@ -879,7 +880,7 @@ public final class Ruby implements Constantizable {
         context.preEvalScriptlet(scope);
 
         try {
-            return interpreter.execute(this, rootNode, context.getFrameSelf());
+            return interpreter.execute(this, rootNode, getTopSelf());
         } finally {
             context.postEvalScriptlet();
         }
@@ -934,6 +935,9 @@ public final class Ruby implements Constantizable {
         IAccessor d = new ValueAccessor(newString(filename));
         getGlobalVariables().define("$PROGRAM_NAME", d, GLOBAL);
         getGlobalVariables().define("$0", d, GLOBAL);
+
+        // set main script and canonical path for require_relative use
+        loadService.setMainScript(filename, getCurrentDirectory());
 
         for (Map.Entry<String, String> entry : config.getOptionGlobals().entrySet()) {
             final IRubyObject varvalue;
@@ -1033,7 +1037,7 @@ public final class Ruby implements Constantizable {
      *
      * @param inputStream The input stream from which to read the script
      * @param filename The filename to use for parsing
-     * @returns The root node of the parsed script
+     * @return The root node of the parsed script
      */
     public Node parseFromMain(InputStream inputStream, String filename) {
         if (config.isInlineScript()) {
@@ -1522,7 +1526,7 @@ public final class Ruby implements Constantizable {
      * rb_define_module in MRI.
      *
      * @param name The name of the new module
-     * @returns The new module
+     * @return The new module
      */
     @Extension
     public RubyModule defineModule(String name) {
@@ -1536,7 +1540,7 @@ public final class Ruby implements Constantizable {
      * @param name The name of the new module
      * @param parent The class or module namespace under which to define the
      * module
-     * @returns The new module
+     * @return The new module
      */
     @Extension
     public RubyModule defineModuleUnder(String name, RubyModule parent) {
@@ -1561,7 +1565,7 @@ public final class Ruby implements Constantizable {
      * new module is created.
      *
      * @param id The name of the module
-     * @returns The existing or new module
+     * @return The existing or new module
      */
     public RubyModule getOrCreateModule(String id) {
         IRubyObject module = objectClass.getConstantAt(id);
@@ -1616,6 +1620,7 @@ public final class Ruby implements Constantizable {
         loadService.loadFromClassLoader(getClassLoader(), "jruby/bundler/startup.rb", false);
     }
 
+    @SuppressWarnings("ReturnValueIgnored")
     private boolean doesReflectionWork() {
         try {
             ClassLoader.class.getDeclaredMethod("getResourceAsStream", String.class);
@@ -2515,19 +2520,29 @@ public final class Ruby implements Constantizable {
         return charsetMap;
     }
 
-    /** Getter for property isVerbose.
-     * @return Value of property isVerbose.
+    /**
+     * @return $VERBOSE value
      */
     public IRubyObject getVerbose() {
         return verboseValue;
     }
 
+    /**
+     * @return $VERBOSE value as a Java primitive
+     */
     public boolean isVerbose() {
         return verbose;
     }
 
+    /**
+     * If the user explicitly disabled warnings using: {@link #setWarningsEnabled(boolean)} return false.
+     *
+     * Otherwise fallback to a $VERBOSE value check (which is the default behavior).
+     *
+     * @return whether warnings are enabled
+     */
     public boolean warningsEnabled() {
-        return warningsEnabled;
+        return warningsEnabled && verboseWarnings;
     }
 
     /**
@@ -2541,13 +2556,13 @@ public final class Ruby implements Constantizable {
 
     /**
      * Sets the runtime verbosity ($VERBOSE global which usually gets set to nil/false or true).
-     * @note warnings get enabled whenever the verbose level is set to a value that is not nil.
+     * <p>Note: warnings get enabled whenever the verbose level is set to a value that is not nil.</p>
      * @param verbose the verbose ruby value
      */
     public void setVerbose(final IRubyObject verbose) {
         this.verbose = verbose.isTrue();
         this.verboseValue = verbose;
-        warningsEnabled = !verbose.isNil();
+        verboseWarnings = !verbose.isNil();
     }
 
     /**
@@ -2559,22 +2574,34 @@ public final class Ruby implements Constantizable {
         setVerbose(verbose == null ? nilObject : (verbose ? trueObject : falseObject));
     }
 
-    /** Getter for property isDebug.
-     * @return Value of property isDebug.
+    /**
+     * @return $DEBUG value
      */
     public IRubyObject getDebug() {
         return debug ? trueObject : falseObject;
     }
 
+    /**
+     * @return $DEBUG value as a boolean
+     */
     public boolean isDebug() {
         return debug;
     }
 
-    /** Setter for property isDebug.
-     * @param debug New value of property isDebug.
+    /**
+     * Setter for property isDebug.
+     * @param debug the $DEBUG value
      */
     public void setDebug(IRubyObject debug) {
-        this.debug = debug.isTrue();
+        setDebug(debug.isTrue());
+    }
+
+    /**
+     * Sets the $DEBUG flag
+     * @param debug
+     */
+    public void setDebug(final boolean debug) {
+        this.debug = debug;
     }
 
     /**
@@ -2723,9 +2750,7 @@ public final class Ruby implements Constantizable {
     private byte[] encodeToBytes(String string) {
         Charset charset = getDefaultCharset();
 
-        byte[] bytes = charset == null ? string.getBytes() : string.getBytes(charset);
-
-        return bytes;
+        return charset == null ? string.getBytes() : string.getBytes(charset);
     }
 
     @Deprecated
@@ -2799,11 +2824,11 @@ public final class Ruby implements Constantizable {
      * Get the default java.nio.charset.Charset for the current default internal encoding.
      */
     public Charset getDefaultCharset() {
-        Encoding enc = getDefaultEncoding();
-
-        Charset charset = EncodingUtils.charsetForEncoding(enc);
-
-        return charset;
+        try {
+            return EncodingUtils.charsetForEncoding(getDefaultEncoding());
+        } catch (UnsupportedCharsetException e) {
+            return null;
+        }
     }
 
     /**
@@ -2867,7 +2892,6 @@ public final class Ruby implements Constantizable {
             throw newRaiseException(getTypeError(), str(this, "can't retrieve anonymous class ", ids(this, path)));
         }
 
-        ThreadContext context = getCurrentContext();
         RubyModule c = getObject();
         int pbeg = 0, p = 0;
         for (int l = path.length(); p < l; ) {
@@ -2883,8 +2907,7 @@ public final class Ruby implements Constantizable {
             }
 
             // FIXME: JI depends on const_missing getting called from Marshal.load (ruby objests do not).  We should marshal JI objects differently so we do not differentiate here.
-            boolean isJava = c instanceof JavaPackage || ClassUtils.isJavaClassProxyType(context, c);
-            IRubyObject cc = flexibleSearch || isJava ? c.getConstant(str) : c.getConstantAt(str);
+            IRubyObject cc = flexibleSearch || isJavaPackageOrJavaClassProxyType(c) ? c.getConstant(str) : c.getConstantAt(str);
 
             if (!flexibleSearch && cc == null) return null;
 
@@ -2895,6 +2918,10 @@ public final class Ruby implements Constantizable {
         }
 
         return c;
+    }
+
+    private static boolean isJavaPackageOrJavaClassProxyType(final RubyModule type) {
+        return type instanceof JavaPackage || ClassUtils.isJavaClassProxyType(type);
     }
 
     /** Prints an error with backtrace to the error stream.
@@ -3053,12 +3080,12 @@ public final class Ruby implements Constantizable {
     }
 
     public void addBoundMethod(String className, String methodName, String rubyName) {
-        Map<String, String> javaToRuby = boundMethods.computeIfAbsent(className, s -> new HashMap<>());
+        Map<String, String> javaToRuby = boundMethods.computeIfAbsent(className, s -> new ConcurrentHashMap<>(2, 0.9f, 2));
         javaToRuby.putIfAbsent(methodName, rubyName);
     }
 
     public void addBoundMethods(String className, String... tuples) {
-        Map<String, String> javaToRuby = boundMethods.computeIfAbsent(className, s -> new HashMap<>());
+        Map<String, String> javaToRuby = boundMethods.computeIfAbsent(className, s -> new ConcurrentHashMap<>(2, 0.9f, 2));
         for (int i = 0; i < tuples.length; i += 2) {
             javaToRuby.putIfAbsent(tuples[i], tuples[i+1]);
         }
@@ -3073,10 +3100,9 @@ public final class Ruby implements Constantizable {
 
         for (int i = 0; i < tuplesIndex; i++) {
             String className = classNamesAndTuples[i];
-            if (boundMethods.containsKey(className)) {
-                boundMethods.get(className).putAll(javaToRuby);
-            } else {
-                boundMethods.put(className, new HashMap<>(javaToRuby));
+            Map<String, String> javaToRubyForClass = boundMethods.computeIfAbsent(className, s -> new ConcurrentHashMap<>((int)(javaToRuby.size() / 0.9f) + 1, 0.9f, 2));
+            for (Map.Entry<String, String> entry : javaToRuby.entrySet()) {
+                javaToRubyForClass.putIfAbsent(entry.getKey(), entry.getValue());
             }
         }
     }
@@ -3244,11 +3270,12 @@ public final class Ruby implements Constantizable {
         }
     }
 
-    private void systemTeardown(ThreadContext context) {
+    @SuppressWarnings("ReturnValueIgnored")
+    private void systemTeardown(final ThreadContext context) {
         // Run post-user exit hooks, such as for shutting down internal JRuby services
         while (!postExitBlocks.isEmpty()) {
             ExitFunction fun = postExitBlocks.remove(0);
-            fun.applyAsInt(context);
+            fun.applyAsInt(context); // return value ignored
         }
 
         synchronized (internalFinalizersMutex) {
@@ -4913,6 +4940,17 @@ public final class Ruby implements Constantizable {
         return this.nullToNil = nullToNil;
     }
 
+    public MethodHandle getNullToUndefinedHandle() {
+        MethodHandle filter = this.nullToUndefined;
+
+        if (filter != null) return filter;
+
+        filter = InvokeDynamicSupport.findStatic(Helpers.class, "nullToUndefined", methodType(IRubyObject.class, IRubyObject.class));
+        filter = explicitCastArguments(filter, methodType(IRubyObject.class, Object.class));
+
+        return this.nullToUndefined = filter;
+    }
+
     // Parser stats methods
     private void addLoadParseToStats() {
         if (parserStats != null) parserStats.addLoadParse();
@@ -4927,8 +4965,8 @@ public final class Ruby implements Constantizable {
     }
 
     /**
-     * @return Class -> extension initializer map
-     * @note Internal API, subject to change!
+     * @return Class$ -&gt; extension initializer map
+     * <p>Note: Internal API, subject to change!</p>
      */
     public Map<Class, Consumer<RubyModule>> getJavaExtensionDefinitions() { return javaExtensionDefinitions; }
 
@@ -5266,7 +5304,9 @@ public final class Ruby implements Constantizable {
     @Deprecated
     private IRubyObject rootFiber;
 
-    private boolean verbose, warningsEnabled, debug;
+    private boolean warningsEnabled = true; // global flag to be able to disable warnings regardless of $VERBOSE
+    private boolean verboseWarnings; // whether warnings are enabled based on $VERBOSE
+    private boolean verbose, debug;
     private IRubyObject verboseValue;
 
     // Set of categories we care about (set defined when creating warnings).
@@ -5540,7 +5580,7 @@ public final class Ruby implements Constantizable {
     private final AtomicInteger moduleGeneration = new AtomicInteger(1);
 
     // A list of Java class+method names to include in backtraces
-    private final Map<String, Map<String, String>> boundMethods = new HashMap();
+    private final Map<String, Map<String, String>> boundMethods = new ConcurrentHashMap<>();
 
     // A soft pool of selectors for blocking IO operations
     private final SelectorPool selectorPool = new SelectorPool();
@@ -5717,6 +5757,7 @@ public final class Ruby implements Constantizable {
      * The nullToNil filter for this runtime.
      */
     private MethodHandle nullToNil;
+    private MethodHandle nullToUndefined;
 
     public final ClassValue<TypePopulator> POPULATORS = new ClassValue<TypePopulator>() {
         @Override

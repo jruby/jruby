@@ -43,7 +43,6 @@ import org.jruby.util.collections.WeakHashSet;
 /**
  * Implementation of Ruby's <code>ThreadGroup</code> class. This is currently
  * just a stub.
- * <p>
  *
  * @author Charles O Nutter (headius@headius.com)
  */

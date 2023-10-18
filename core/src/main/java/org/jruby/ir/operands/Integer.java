@@ -28,7 +28,7 @@ public class Integer extends ImmutableLiteral {
 
     @Override
     public int hashCode() {
-        return 47 * 7 + (int) (this.value ^ (this.value >>> 32));
+        return 47 * this.value;
     }
 
     @Override

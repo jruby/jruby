@@ -44,7 +44,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
 import org.jruby.Ruby;
 import org.jruby.anno.JavaMethodDescriptor;
@@ -116,7 +116,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
             notImplemented = notImplemented || desc.anno.notImplemented();
         }
 
-        Callable<MethodHandle>[] generators = buildAnnotatedMethodHandles(implementationClass.getRuntime(), descs, implementationClass);
+        Supplier<MethodHandle>[] generators = buildAnnotatedMethodHandles(implementationClass.getRuntime(), descs, implementationClass);
 
         return new HandleMethod(
                 implementationClass,
@@ -137,14 +137,14 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
                 generators[4]);
     }
 
-    private Callable<MethodHandle>[] buildAnnotatedMethodHandles(Ruby runtime, List<JavaMethodDescriptor> descs, RubyModule implementationClass) {
+    private Supplier<MethodHandle>[] buildAnnotatedMethodHandles(Ruby runtime, List<JavaMethodDescriptor> descs, RubyModule implementationClass) {
         int min = Integer.MAX_VALUE;
         int max = 0;
 
         // FIXME: Using desc.anno.name()[0] for super may super up the wrong name
         final String rubyName = descs.get(0).rubyName;
 
-        Callable<MethodHandle>[] targets = new Callable[5];
+        Supplier<MethodHandle>[] targets = new Supplier[5];
 
         for (JavaMethodDescriptor desc: descs) {
             MethodHandle method;
@@ -155,7 +155,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
                 method = Binder.from(desc.returnClass, desc.declaringClass, desc.parameters).invokeVirtualQuiet(LOOKUP, desc.name);
             }
 
-            Callable<MethodHandle> target = adaptHandle(method, runtime, desc.actualRequired, desc.required, desc.optional, desc.rest, rubyName, desc.declaringClass, desc.isStatic, desc.hasContext, desc.hasBlock, desc.anno.frame(), implementationClass);
+            Supplier<MethodHandle> target = adaptHandle(method, runtime, desc.actualRequired, desc.required, desc.optional, desc.rest, rubyName, desc.declaringClass, desc.isStatic, desc.hasContext, desc.hasBlock, desc.anno.frame(), implementationClass);
             int specificArity = -1;
             if (desc.required < 4 && desc.optional == 0 && !desc.rest) {
                 if (desc.required == 0) {
@@ -284,27 +284,22 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
         return target;
     }
 
-    public static Callable<MethodHandle> adaptHandle(final MethodHandle method, final Ruby runtime, final int actualRequired, final int required, final int optional, final boolean rest, final String rubyName, final Class declaringClass, final boolean isStatic, final boolean hasContext, final boolean hasBlock, final boolean frame, final RubyModule implementationClass) {
-        return new Callable<MethodHandle>() {
-            @Override
-            public MethodHandle call() throws Exception {
-                //Class returnClass = method.type().returnType();
-
-                int specificArity = -1;
-                if (optional == 0 && !rest) {
-                    if (required == 0) {
-                        if (actualRequired <= 3) {
-                            specificArity = actualRequired;
-                        }
-                    } else if (required >= 0 && required <= 3) {
-                        specificArity = required;
+    public static Supplier<MethodHandle> adaptHandle(final MethodHandle method, final Ruby runtime, final int actualRequired, final int required, final int optional, final boolean rest, final String rubyName, final Class declaringClass, final boolean isStatic, final boolean hasContext, final boolean hasBlock, final boolean frame, final RubyModule implementationClass) {
+        return () -> {
+            int specificArity = -1;
+            if (optional == 0 && !rest) {
+                if (required == 0) {
+                    if (actualRequired <= 3) {
+                        specificArity = actualRequired;
                     }
+                } else if (required >= 0 && required <= 3) {
+                    specificArity = required;
                 }
-
-                SmartBinder targetBinder = getBinder(specificArity, isStatic, hasContext, hasBlock);
-
-                return finishAdapting(targetBinder, implementationClass, rubyName, method, declaringClass, runtime, isStatic, frame);
             }
+
+            SmartBinder targetBinder = getBinder(specificArity, isStatic, hasContext, hasBlock);
+
+            return finishAdapting(targetBinder, implementationClass, rubyName, method, declaringClass, runtime, isStatic, frame);
         };
     }
 

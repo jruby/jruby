@@ -1178,11 +1178,15 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return insert(arg1, arg2);
     }
 
-    @JRubyMethod(name = "insert", required = 1, rest = true)
+    @JRubyMethod(name = "insert", required = 1, rest = true, checkArity = false)
     public IRubyObject insert(IRubyObject[] args) {
+        final Ruby runtime = metaClass.runtime;
+
+        int argc = Arity.checkArgumentCount(runtime, args, 1, -1);
+
         modifyCheck();
 
-        if (args.length == 1) return this;
+        if (argc == 1) return this;
 
         unpack();
 
@@ -1191,12 +1195,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (pos == -1) pos = realLength;
         if (pos < 0) pos++;
 
-        final Ruby runtime = metaClass.runtime;
-
         RubyArray inserted = new RubyArray(runtime, false);
         inserted.values = args;
         inserted.begin = 1;
-        inserted.realLength = args.length - 1;
+        inserted.realLength = argc - 1;
 
         splice(runtime, checkInt(runtime, pos), 0, inserted, inserted.realLength); // rb_ary_new4
 
@@ -2093,7 +2095,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                 IRubyObject val = eltInternal(i);
                 if (!(val instanceof RubyString)) break;
                 if (i > 0 && sep != null) result.cat19(sep);
-                result.append19(val);
+                result.append(val);
             }
         } catch (ArrayIndexOutOfBoundsException e) {
             throw concurrentModification(getRuntime(), e);
@@ -2548,7 +2550,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     @JRubyMethod(name = {"index", "find_index"})
     public IRubyObject index(ThreadContext context, IRubyObject obj, Block unused) {
-        if (unused.isGiven()) context.runtime.getWarnings().warn(ID.BLOCK_UNUSED, "given block not used");
+        if (unused.isGiven()) context.runtime.getWarnings().warning(ID.BLOCK_UNUSED, "given block not used");
         return index(context, obj);
     }
 
@@ -2655,7 +2657,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     @JRubyMethod
     public IRubyObject rindex(ThreadContext context, IRubyObject obj, Block unused) {
-        if (unused.isGiven()) context.runtime.getWarnings().warn(ID.BLOCK_UNUSED, "given block not used");
+        if (unused.isGiven()) context.runtime.getWarnings().warning(ID.BLOCK_UNUSED, "given block not used");
         return rindex(context, obj);
     }
 
@@ -2685,19 +2687,21 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /** rb_ary_indexes
      *
      */
-    @JRubyMethod(name = {"indexes", "indices"}, required = 1, rest = true)
+    @JRubyMethod(name = {"indexes", "indices"}, required = 1, rest = true, checkArity = false)
     public IRubyObject indexes(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 1, -1);
+
         Ruby runtime = context.runtime;
         runtime.getWarnings().warn(ID.DEPRECATED_METHOD, "Array#indexes is deprecated; use Array#values_at");
 
-        if (args.length == 1) return newArray(runtime, args[0]);
+        if (argc == 1) return newArray(runtime, args[0]);
 
-        RubyArray ary = newBlankArrayInternal(runtime, args.length);
+        RubyArray ary = newBlankArrayInternal(runtime, argc);
 
-        for (int i = 0; i < args.length; i++) {
+        for (int i = 0; i < argc; i++) {
             ary.storeInternal(i, aref(context, args[i]));
         }
-        ary.realLength = args.length;
+        ary.realLength = argc;
 
         return ary;
     }
@@ -3122,7 +3126,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /** rb_ary_zip
      *
      */
-    @JRubyMethod(optional = 1, rest = true)
+    @JRubyMethod(optional = 1, rest = true, checkArity = false)
     public IRubyObject zip(ThreadContext context, IRubyObject[] args, Block block) {
         final Ruby runtime = context.runtime;
         RubyClass array = runtime.getArray();
@@ -3519,7 +3523,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     @JRubyMethod(name = "count")
     public IRubyObject count(ThreadContext context, IRubyObject obj, Block block) {
-        if (block.isGiven()) context.runtime.getWarnings().warn(ID.BLOCK_UNUSED, "given block not used");
+        if (block.isGiven()) context.runtime.getWarnings().warning(ID.BLOCK_UNUSED, "given block not used");
 
         int n = 0;
         for (int i = 0; i < realLength; i++) {
@@ -3824,7 +3828,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
         if (len <= SMALL_ARRAY_LEN && ary2.realLength <= SMALL_ARRAY_LEN) {
             for (int i = 0; i < len; i++) {
-                if (ary2.include_p(context, elt(i)).isTrue()) return context.tru;
+                if (ary2.includesByEql(context, elt(i))) return context.tru;
             }
             return context.fals;
         }
@@ -4927,7 +4931,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         boolean patternGiven = arg != null;
 
         if (block.isGiven() && patternGiven) {
-            context.runtime.getWarnings().warn("given block not used");
+            context.runtime.getWarnings().warning(ID.BLOCK_UNUSED, "given block not used");
         }
 
         if (!block.isGiven() || patternGiven) return all_pBlockless(context, arg);
@@ -4970,7 +4974,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         boolean patternGiven = arg != null;
 
         if (block.isGiven() && patternGiven) {
-            context.runtime.getWarnings().warn("given block not used");
+            context.runtime.getWarnings().warning(ID.BLOCK_UNUSED, "given block not used");
         }
 
         if (!block.isGiven() || patternGiven) return any_pBlockless(context, arg);
@@ -5012,7 +5016,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         boolean patternGiven = arg != null;
 
         if (block.isGiven() && patternGiven) {
-            context.runtime.getWarnings().warn("given block not used");
+            context.runtime.getWarnings().warning(ID.BLOCK_UNUSED, "given block not used");
         }
 
         if (!block.isGiven() || patternGiven) return none_pBlockless(context, arg);
@@ -5054,7 +5058,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         boolean patternGiven = arg != null;
 
         if (block.isGiven() && patternGiven) {
-            context.runtime.getWarnings().warn("given block not used");
+            context.runtime.getWarnings().warning(ID.BLOCK_UNUSED, "given block not used");
         }
 
         if (!block.isGiven() || patternGiven) return one_pBlockless(context, arg);
@@ -5121,10 +5125,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
          *
          * The order of states is:
          *
-         * - is_fixnum => { is_bignum | is_rational | is_float | other }
-         * - is_bignum => { is_rational | is_float | other }
-         * - is_rational => { is_float | other }
-         * - is_float => { other }
+         * - is_fixnum =&gt; { is_bignum | is_rational | is_float | other }
+         * - is_bignum =&gt; { is_rational | is_float | other }
+         * - is_rational =&gt; { is_float | other }
+         * - is_float =&gt; { other }
          * - other [terminal]
          */
         boolean is_fixnum=false, is_bignum=false, is_rational=false, is_float=false;
@@ -5483,10 +5487,12 @@ float_loop:
         return RubyObject.dig2(context, val, arg1, arg2);
     }
 
-    @JRubyMethod(name = "dig", required = 1, rest = true)
+    @JRubyMethod(name = "dig", required = 1, rest = true, checkArity = false)
     public IRubyObject dig(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 1, -1);
+
         final IRubyObject val = at( args[0] );
-        return args.length == 1 ? val : RubyObject.dig(context, val, args, 1);
+        return argc == 1 ? val : RubyObject.dig(context, val, args, 1);
     }
 
     private IRubyObject maxWithBlock(ThreadContext context, Block block) {
@@ -6027,7 +6033,7 @@ float_loop:
     }
 
     /**
-     * Increases the capacity of this <tt>Array</tt>, if necessary.
+     * Increases the capacity of this <code>Array</code>, if necessary.
      * @param minCapacity the desired minimum capacity of the internal array
      */
     @Deprecated

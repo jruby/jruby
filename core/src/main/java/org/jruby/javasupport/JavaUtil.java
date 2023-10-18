@@ -339,7 +339,7 @@ public class JavaUtil {
 
     /**
      * @param object
-     * @note Returns null if not a wrapped Java value.
+     * <p>Note: Returns null if not a wrapped Java value.</p>
      * @return unwrapped Java (object's) value
      */
     @SuppressWarnings("deprecation")
@@ -361,7 +361,7 @@ public class JavaUtil {
      * For methods that match /(get|set|is)([A-Z0-9])(.*)/, return the "name"
      * part of the property with leading lower-case.
      *
-     * @note Does not use regular expression for performance reasons.
+     * <p>Note: Does not use regular expression for performance reasons.</p>
      *
      * @param beanMethodName the bean method from which to extract a name
      * @return the bean property name (or null)
@@ -1538,7 +1538,7 @@ public class JavaUtil {
             }
             break;
         case FLOAT:
-            javaObject = new Double(((RubyFloat) object).getValue());
+            javaObject = Double.valueOf(((RubyFloat) object).getValue());
             break;
         case STRING:
             ByteList bytes = ((RubyString) object).getByteList();
@@ -1704,7 +1704,7 @@ public class JavaUtil {
     /**
      * Get the associated JavaClass for a Java proxy module/class or wrapper.
      *
-     * @note Works best when passed module/class is assumed to be a Java proxy wrapper.
+     * <p>Note: Works best when passed module/class is assumed to be a Java proxy wrapper.</p>
      *
      * @param type
      * @return class

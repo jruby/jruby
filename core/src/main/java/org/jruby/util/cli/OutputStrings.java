@@ -7,6 +7,7 @@ import org.jruby.runtime.Constants;
 import org.jruby.util.SafePropertyAccessor;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 
 /**
  * Utility methods to generate the command-line output strings for help,
@@ -14,6 +15,10 @@ import java.time.LocalDate;
  */
 public class OutputStrings {
     public static String getBasicUsageHelp() {
+        return getBasicUsageHelp(false);
+    }
+
+    public static String getBasicUsageHelp(boolean tty) {
         String[][] basicUsageOptions = {
                 {"-0[octal]", "specify record separator (\\0, if no argument)"},
                 {"-a", "autosplit mode with -n or -p (splits $_ into $F)"},
@@ -26,14 +31,13 @@ public class OutputStrings {
                 {"-G", "load a Bundler Gemspec before executing any user code"},
                 {"-i[extension]", "edit ARGV files in place (make backup if extension supplied)"},
                 {"-Idirectory", "specify $LOAD_PATH directory (may be used more than once)"},
-                {"-J[java option]", "pass an option on to the JVM (e.g. -J-Xmx512m)/nuse --properties to list JRuby properties run 'java -help' for a list of other Java options"},
+                {"-J[java option]", "pass an option on to the JVM (e.g. -J-Xmx512m); use --properties to list JRuby properties; run 'java -help' for a list of other Java options"},
                 {"-l", "enable line ending processing"},
                 {"-n", "assume 'while gets(); ... end' loop around your script"},
                 {"-p", "assume loop like -n but print line also like sed"},
                 {"-rlibrary", "require the library, before executing your script"},
                 {"-s", "enable some switch parsing for switches after script name"},
                 {"-S", "look for the script in bin or using PATH environment variable"},
-                {"-T[level]", "turn on tainting checks"},
                 {"-U", "use UTF-8 as default internal encoding"},
                 {"-v", "print version number, then turn on verbose mode"},
                 {"-w", "turn warnings on for your script"},
@@ -45,8 +49,7 @@ public class OutputStrings {
                 {"--copyright", "print the copyright"},
                 {"--debug", "sets the execution mode most suitable for debugger functionality"},
                 {"--jdb", "runs JRuby process under JDB"},
-                {"--properties", "List all configuration Java properties (prepend \"jruby.\" when passing directly to Java)"},
-                {"--environment", "Log environment and command line flags but do not run JRuby"},
+                {"--properties", "List all JRuby configuration properties"},
                 {"--sample", "run with profiling using the JVM's sampling profiler"},
                 {"--profile", "run with instrumented (timed) profiling, flat format"},
                 {"--profile.api", "activate Ruby profiler API"},
@@ -67,13 +70,13 @@ public class OutputStrings {
                 {"--enable=feature[,...], --disable=feature[,...]", "enable or disable features"}
         };
 
-        String header = strBold("Usage:") + " jruby [switches] [--] [programfile] [arguments]";
-        return buildOutputOptions(basicUsageOptions, header);
+        String header = strBold("Usage:", tty) + " jruby [switches] [--] [programfile] [arguments]";
+        return buildOutputOptions(basicUsageOptions, header, tty);
     }
 
-    private static String buildOutputOptions(String[][] options, String header) {
+    private static String buildOutputOptions(String[][] options, String header, boolean tty) {
         StringBuilder sb = new StringBuilder();
-        sb.append(strBold(header)).append("\n");
+        sb.append(strBold(header, tty)).append("\n");
 
         int max = Integer.MIN_VALUE;
         for (String[] strings : options) {
@@ -88,12 +91,16 @@ public class OutputStrings {
             String value = option[1];
 
             String text = breakLine(value, 60, max + 8);
-            sb.append("   ").append(strBold(key)).append(generateSpaces(max + 5 - key.length())).append(text).append("\n");
+            sb.append("   ").append(strBold(key, tty)).append(generateSpaces(max + 5 - key.length())).append(text).append("\n");
         }
         return sb.toString();
     }
 
     public static String getFeaturesHelp() {
+        return getFeaturesHelp(false);
+    }
+
+    public static String getFeaturesHelp(boolean tty) {
         String header = "Features:";
 
         String[][] options = {
@@ -102,7 +109,7 @@ public class OutputStrings {
                 {"rubyopt", "RUBYOPT environment variable (default: " + (Options.CLI_RUBYOPT_ENABLE.defaultValue() ? "enabled" : "disabled") + ")"},
                 {"frozen-string-literal", "freeze all string literals (default: disabled)"}};
 
-        return buildOutputOptions(options, header);
+        return buildOutputOptions(options, header, tty);
     }
 
     public static String getExtendedHelp() { return
@@ -121,13 +128,14 @@ public class OutputStrings {
     public static String getPropertyHelp() {
         StringBuilder sb = new StringBuilder();
         sb
-                .append("# These properties can be used to alter runtime behavior for perf or compatibility.\n")
-                .append("# Specify them by passing -X<property>=<value>\n")
-                .append("#   or if passing directly to Java, -Djruby.<property>=<value>\n")
-                .append("#   or put <property>=<value> in .jrubyrc\n")
+                .append("# These properties can be used to alter runtime behavior for performance\n")
+                .append("# or compatibility.\n")
                 .append("#\n")
-                .append("# This dump is a valid .jrubyrc file of current settings. Uncomment and modify\n")
-                .append("# settings to customize.\n");
+                .append("# Specify them by passing `-X<property>=<value>` to the jruby command,\n")
+                .append("# or put `<property>=<value>` in .jrubyrc. If passing to the java command,\n")
+                .append("# use the flag `-Djruby.<property>=<value>`\n")
+                .append("#\n")
+                .append("# This output is the current settings as a valid .jrubyrc file.\n");
 
         return sb.append(Option.formatOptions(Options.PROPERTIES)).toString();
     }
@@ -153,20 +161,30 @@ public class OutputStrings {
         return String.format("JRuby - Copyright (C) 2001-%s The JRuby Community (and contribs)", LocalDate.now().getYear());
     }
 
-    private static String strBold(String str) {
-        if(Platform.IS_WINDOWS)
+    private static String strBold(String str, boolean tty) {
+        if (!tty || Platform.IS_WINDOWS)
             return str;
 
         return "\033[1m" + str + "\033[0m";
     }
 
+    private static final int SPACES_MAX = 256;
+    private static final char[] SPACES = new char[SPACES_MAX];
+    static {
+        Arrays.fill(SPACES, ' ');
+    }
+
     private static String generateSpaces(int total) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < total; i++) {
-            sb.append(" ");
+        char[] spaces;
+
+        if (total > SPACES_MAX) {
+            spaces = new char[total];
+            Arrays.fill(spaces, ' ');
+        } else {
+            spaces = SPACES;
         }
 
-        return sb.toString();
+        return new String(spaces, 0, total);
     }
 
     private static String breakLine(String str, int index, int spaces) {

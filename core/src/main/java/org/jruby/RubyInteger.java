@@ -42,6 +42,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
@@ -382,11 +383,20 @@ public abstract class RubyInteger extends RubyNumeric {
         }
     }
 
+    static final byte[][] SINGLE_CHAR_BYTES;
+    static {
+        SINGLE_CHAR_BYTES = new byte[256][];
+        for (int i = 0; i < 256; i++) {
+            byte[] bytes = new byte[] { (byte) i };
+            SINGLE_CHAR_BYTES[i] = bytes;
+        }
+    }
+
     static final ByteList[] SINGLE_CHAR_BYTELISTS;
     static {
         SINGLE_CHAR_BYTELISTS = new ByteList[256];
         for (int i = 0; i < 256; i++) {
-            ByteList bytes = new ByteList(new byte[] { (byte) i }, false);
+            ByteList bytes = new ByteList(SINGLE_CHAR_BYTES[i], false);
             SINGLE_CHAR_BYTELISTS[i] = bytes;
             bytes.setEncoding(i < 0x80 ? USASCIIEncoding.INSTANCE : ASCIIEncoding.INSTANCE);
         }
@@ -402,7 +412,7 @@ public abstract class RubyInteger extends RubyNumeric {
     static {
         SINGLE_CHAR_UTF8_BYTELISTS = new ByteList[128];
         for (int i = 0; i < 128; i++) {
-            ByteList bytes = new ByteList(new byte[] { (byte) i }, false);
+            ByteList bytes = new ByteList(SINGLE_CHAR_BYTES[i], false);
             SINGLE_CHAR_UTF8_BYTELISTS[i] = bytes;
             bytes.setEncoding(UTF8Encoding.INSTANCE);
         }
@@ -433,10 +443,10 @@ public abstract class RubyInteger extends RubyNumeric {
         ByteList bytes;
         if (enc == USASCIIEncoding.INSTANCE) {
             bytes = singleCharByteList(b);
-        } else if ((b & 0xFF) < 0x80 && enc == RubyString.UTF8) {
+        } else if (Byte.toUnsignedInt(b) < 0x80 && enc == RubyString.UTF8) {
             bytes = singleCharUTF8ByteList(b);
         } else {
-            return new RubyString(runtime, meta, new ByteList(new byte[]{b}, enc));
+            return RubyString.newStringShared(runtime, SINGLE_CHAR_BYTES[Byte.toUnsignedInt(b)], enc);
         }
 
         // use shared for cached bytelists
@@ -714,8 +724,10 @@ public abstract class RubyInteger extends RubyNumeric {
     /** integer_rationalize
      *
      */
-    @JRubyMethod(name = "rationalize", optional = 1)
+    @JRubyMethod(name = "rationalize", optional = 1, checkArity = false)
     public IRubyObject rationalize(ThreadContext context, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 0, 1);
+
         return to_r(context);
     }
 

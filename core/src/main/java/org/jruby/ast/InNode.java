@@ -29,8 +29,9 @@ public class InNode extends Node {
         return nextCase;
     }
 
+    // {a: 1} => {a: b} has no body other cases will (arg in will have false and p_case_body is non-null).
     public boolean isSinglePattern() {
-        return getNextCase() == null;
+        return getBody() == null;
     }
 
     @Override

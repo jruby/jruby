@@ -25,7 +25,7 @@ import static org.jruby.ir.IRFlags.REQUIRES_CLASS;
 public class RuntimeHelperCall extends NOperandResultBaseInstr {
     public enum Methods {
         HANDLE_PROPAGATED_BREAK, HANDLE_NONLOCAL_RETURN, HANDLE_BREAK_AND_RETURNS_IN_LAMBDA,
-        IS_DEFINED_BACKREF, IS_DEFINED_NTH_REF, IS_DEFINED_GLOBAL, IS_DEFINED_INSTANCE_VAR,
+        IS_DEFINED_BACKREF, IS_DEFINED_NTH_REF, IS_DEFINED_GLOBAL,
         IS_DEFINED_CLASS_VAR, IS_DEFINED_SUPER, IS_DEFINED_METHOD, IS_DEFINED_CALL,
         IS_DEFINED_CONSTANT_OR_METHOD, MERGE_KWARGS, IS_HASH_EMPTY, HASH_CHECK, ARRAY_LENGTH;
 
@@ -138,12 +138,6 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
                         ((FrozenString) operands[1]).retrieve(context, self, currScope, currDynScope, temp),
                         (IRubyObject) operands[2].retrieve(context, self, currScope, currDynScope, temp),
                         (IRubyObject) operands[3].retrieve(context, self, currScope, currDynScope, temp));
-            case IS_DEFINED_INSTANCE_VAR:
-                return IRRuntimeHelpers.isDefinedInstanceVar(
-                        context,
-                        (IRubyObject) arg1,
-                        ((Stringable) operands[1]).getString(),
-                        (IRubyObject) operands[2].retrieve(context, self, currScope, currDynScope, temp));
             case IS_DEFINED_CLASS_VAR:
                 return IRRuntimeHelpers.isDefinedClassVar(
                         context,

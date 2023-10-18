@@ -1,5 +1,6 @@
 package org.jruby.ir;
 
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.EvalType;
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
@@ -42,6 +43,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static org.jruby.ir.IRFlags.*;
 import static org.jruby.ir.instructions.Instr.EMPTY_OPERANDS;
@@ -302,11 +304,15 @@ public class IRBuilder {
 
     private int lastProcessedLineNum = -1;
 
+    enum LineInfo {
+        Coverage,
+        Backtrace
+    }
     // We do not need n consecutive line num instrs but only the last one in the sequence.
     // We set this flag to indicate that we need to emit a line number but have not yet.
     // addInstr will then appropriately add line info when it is called (which will never be
     // called by a linenum instr).
-    private boolean needsLineNumInfo = false;
+    private LineInfo needsLineNumInfo = null;
 
     public boolean underscoreVariableSeen = false;
 
@@ -373,10 +379,11 @@ public class IRBuilder {
     }
 
     public void addInstr(Instr instr) {
-        if (needsLineNumInfo) {
-            needsLineNumInfo = false;
+        if (needsLineNumInfo != null) {
+            LineInfo type = needsLineNumInfo;
+            needsLineNumInfo = null;
 
-            if (needsCodeCoverage()) {
+            if (type == LineInfo.Coverage) {
                 addInstr(new LineNumberInstr(lastProcessedLineNum, coverageMode));
             } else {
                 addInstr(manager.newLineNumber(lastProcessedLineNum));
@@ -432,12 +439,10 @@ public class IRBuilder {
     }
 
     private void determineIfWeNeedLineNumber(Node node) {
-        if (node.isNewline()) {
-            int currLineNum = node.getLine();
-            if (currLineNum != lastProcessedLineNum && !(node instanceof NilImplicitNode)) { // Do not emit multiple line number instrs for the same line
-                needsLineNumInfo = true;
-                lastProcessedLineNum = currLineNum;
-            }
+        int currLineNum = node.getLine();
+        if (currLineNum != lastProcessedLineNum && !(node instanceof NilImplicitNode)) { // Do not emit multiple line number instrs for the same line
+            needsLineNumInfo = node.isNewline() ? LineInfo.Coverage : LineInfo.Backtrace;
+            lastProcessedLineNum = currLineNum;
         }
     }
 
@@ -449,7 +454,7 @@ public class IRBuilder {
     }
 
     private Operand buildOperand(Variable result, Node node) throws NotCompilableException {
-        determineIfWeNeedLineNumber(node);
+        if (node.isNewline()) determineIfWeNeedLineNumber(node);
 
         switch (node.getNodeType()) {
             case ALIASNODE: return buildAlias((AliasNode) node);
@@ -1331,20 +1336,17 @@ public class IRBuilder {
         Operand[] args = setupCallArgs(callNode.getArgsNode(), flags);
         Operand block = setupCallClosure(callNode.getIterNode());
 
+        determineIfWeNeedLineNumber(callNode); // backtrace needs line of call in case of exception.
         if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
             Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
             if_else(test, manager.getTrue(),
                     () -> receiveBreakException(block,
-                            determineIfProcNew(receiverNode,
-                                    CallInstr.create(scope, NORMAL, result, name, receiver, removeArg(args), block, flags[0]))),
+                            CallInstr.create(scope, NORMAL, result, name, receiver, removeArg(args), block, flags[0])),
                     () -> receiveBreakException(block,
-                            determineIfProcNew(receiverNode,
-                                    CallInstr.create(scope, NORMAL, result, name, receiver, args, block, flags[0]))));
-        } else {
-            determineIfWeNeedLineNumber(callNode); // buildOperand for call was papered over by args operand building so we check once more.
-            receiveBreakException(block,
-                    determineIfProcNew(receiverNode,
                             CallInstr.create(scope, NORMAL, result, name, receiver, args, block, flags[0])));
+        } else {
+            receiveBreakException(block,
+                    CallInstr.create(scope, NORMAL, result, name, receiver, args, block, flags[0]));
         }
 
         if (compileLazyLabel) {
@@ -1363,16 +1365,6 @@ public class IRBuilder {
             kwargs.add(new KeyValuePair<>(build(pair.getKey()), build(pair.getValue())));
         }
         return kwargs;
-    }
-
-    private CallInstr determineIfProcNew(Node receiverNode, CallInstr callInstr) {
-        // This is to support the ugly Proc.new with no block, which must see caller's frame
-        if (CommonByteLists.NEW_METHOD.equals(callInstr.getName().getBytes()) &&
-                receiverNode instanceof ConstNode && ((ConstNode)receiverNode).getName().idString().equals("Proc")) {
-            callInstr.setProcNew(true);
-        }
-
-        return callInstr;
     }
 
     private void buildFindPattern(Label testEnd, Variable result, Variable deconstructed, FindPatternNode pattern,
@@ -1573,18 +1565,27 @@ public class IRBuilder {
             }
         } else {
             call(result, d, "empty?");
+            if (isSinglePattern) maybeGenerateIsNotEmptyErrorString(errorString, result, d);
             cond_ne(testEnd, result, tru());
         }
 
         if (pattern.hasRestArg()) {
             if (pattern.getRestArg() instanceof NilRestArgNode) {
                 call(result, d, "empty?");
+                if (isSinglePattern) maybeGenerateIsNotEmptyErrorString(errorString, result, d);
                 cond_ne(testEnd, result, tru());
             } else if (pattern.isNamedRestArg()) {
                 buildPatternEach(testEnd, result, copy(buildNil()), d, pattern.getRestArg(), inAlteration, isSinglePattern, errorString);
                 cond_ne(testEnd, result, tru());
             }
         }
+    }
+
+    private void maybeGenerateIsNotEmptyErrorString(Variable errorString, Operand result, Operand value) {
+        label("empty", (empty) ->
+                cond(empty, result, tru(), ()->
+                        addInstr(new BuildCompoundStringInstr(errorString, new Operand[] {value, new FrozenString(" is not empty")},
+                                UTF8Encoding.INSTANCE, 13, true, getFileName(), lastProcessedLineNum))));
     }
 
     public interface RunIt {
@@ -1856,9 +1857,9 @@ public class IRBuilder {
             if (seenType != null) {
                 switch (seenType) {
                     case FIXNUMNODE:
-                        return buildFixnumCase(caseNode);
+                        return buildOptimizedCaseWhen(caseNode, RubyFixnum.class, (n) -> ((FixnumNode) n).getValue());
                     case SYMBOLNODE:
-                        return buildSymbolCase(caseNode);
+                        return buildOptimizedCaseWhen(caseNode, RubySymbol.class, (n) -> (long) ((SymbolNode) n).getName().getId());
                 }
             }
         }
@@ -1990,11 +1991,18 @@ public class IRBuilder {
         }
     }
 
+    // AST could be more expressive here (e.g. WhenValuesNode < ListNode)
+    private boolean isListOfWhenValues(Node expr) {
+        return expr instanceof ListNode &&
+                !(expr instanceof BlockNode || expr instanceof DNode ||
+                        expr instanceof ArrayNode || expr instanceof ZArrayNode);
+    }
+
     private void buildWhenArgs(WhenNode whenNode, Operand testValue, Label bodyLabel, Set<IRubyObject> seenLiterals) {
         Variable eqqResult = createTemporaryVariable();
         Node exprNodes = whenNode.getExpressionNodes();
 
-        if (exprNodes instanceof ListNode && !(exprNodes instanceof DNode) && !(exprNodes instanceof ArrayNode) && !(exprNodes instanceof ZArrayNode)) {
+        if (isListOfWhenValues(exprNodes)) {
             buildWhenValues(eqqResult, (ListNode) exprNodes, testValue, bodyLabel, seenLiterals);
         } else if (exprNodes instanceof ArgsPushNode || exprNodes instanceof SplatNode || exprNodes instanceof ArgsCatNode) {
             buildWhenSplatValues(eqqResult, exprNodes, testValue, bodyLabel, seenLiterals);
@@ -2035,137 +2043,38 @@ public class IRBuilder {
         return null;
     }
 
-    private Operand buildFixnumCase(CaseNode caseNode) {
-        Map<java.lang.Integer, Label> jumpTable = new HashMap<>();
-        Map<Node, Label> nodeBodies = new HashMap<>();
-
-        // gather fixnum-when bodies or bail
-        for (Node aCase : caseNode.getCases().children()) {
-            WhenNode whenNode = (WhenNode) aCase;
-            Label bodyLabel = getNewLabel();
-
-            FixnumNode expr = (FixnumNode) whenNode.getExpressionNodes();
-            long exprLong = expr.getValue();
-            if (exprLong > java.lang.Integer.MAX_VALUE) throw notCompilable("optimized fixnum case has long-ranged", caseNode);
-
-            if (jumpTable.get((int) exprLong) == null) {
-                jumpTable.put((int) exprLong, bodyLabel);
-                nodeBodies.put(whenNode, bodyLabel);
-            } else {
-                scope.getManager().getRuntime().getWarnings().warning(IRubyWarnings.ID.MISCELLANEOUS, getFileName(), expr.getLine(), "duplicated when clause is ignored");
-            }
-        }
-
-        // sort the jump table
-        Map.Entry<java.lang.Integer, Label>[] jumpEntries = jumpTable.entrySet().toArray(new Map.Entry[jumpTable.size()]);
-        Arrays.sort(jumpEntries, new Comparator<Map.Entry<java.lang.Integer, Label>>() {
-            @Override
-            public int compare(Map.Entry<java.lang.Integer, Label> o1, Map.Entry<java.lang.Integer, Label> o2) {
-                return java.lang.Integer.compare(o1.getKey(), o2.getKey());
-            }
-        });
-
-        // build a switch
-        int[] jumps = new int[jumpTable.size()];
-        Label[] targets = new Label[jumps.length];
-        int i = 0;
-        for (Map.Entry<java.lang.Integer, Label> jumpEntry : jumpEntries) {
-            jumps[i] = jumpEntry.getKey();
-            targets[i] = jumpEntry.getValue();
-            i++;
-        }
-
+    private <T extends Node & ILiteralNode> Variable buildOptimizedCaseWhen(
+            CaseNode caseNode, Class caseClass, Function<T, Long> caseFunction) {
         // get the incoming case value
         Operand value = build(caseNode.getCaseNode());
+
+        Map<Node, Label> nodeBodies = new HashMap<>();
+
+        Map<java.lang.Integer, Label> jumpTable = gatherLiteralWhenBodies(caseNode, nodeBodies, caseFunction);
+        Map.Entry<java.lang.Integer, Label>[] jumpEntries = sortJumpEntries(jumpTable);
 
         Label     endLabel  = getNewLabel();
         boolean   hasElse   = (caseNode.getElseNode() != null);
         Label     elseLabel = getNewLabel();
         Variable  result    = createTemporaryVariable();
 
-        // insert fast switch with fallback to eqq
-        if (!scope.maybeUsingRefinements()) {
-            Label eqqPath = getNewLabel();
-            addInstr(new BSwitchInstr(jumps, value, eqqPath, targets, elseLabel, RubyFixnum.class));
-            addInstr(new LabelInstr(eqqPath));
-        }
+        buildOptimizedSwitch(jumpTable, jumpEntries, elseLabel, value, caseClass);
 
-        List<Label> labels = new ArrayList<>();
-        Map<Label, Node> bodies = new HashMap<>();
-
-        // build each "when"
-        for (Node aCase : caseNode.getCases().children()) {
-            WhenNode whenNode = (WhenNode)aCase;
-            Label bodyLabel = nodeBodies.get(whenNode);
-            if (bodyLabel == null) bodyLabel = getNewLabel();
-
-            Variable eqqResult = createTemporaryVariable();
-            labels.add(bodyLabel);
-            Operand expression = build(whenNode.getExpressionNodes());
-
-            // use frozen string for direct literal strings in `when`
-            if (expression instanceof MutableString) {
-                expression = ((MutableString) expression).frozenString;
-            }
-
-            addInstr(new EQQInstr(scope, eqqResult, expression, value, false, scope.maybeUsingRefinements()));
-            addInstr(createBranch(eqqResult, manager.getTrue(), bodyLabel));
-
-            // SSS FIXME: This doesn't preserve original order of when clauses.  We could consider
-            // preserving the order (or maybe not, since we would have to sort the constants first
-            // in any case) for outputting jump tables in certain situations.
-            //
-            // add body to map for emitting later
-            bodies.put(bodyLabel, whenNode.getBodyNode());
-        }
-
-        // Jump to else in case nothing matches!
-        addInstr(new JumpInstr(elseLabel));
-
-        // Build "else" if it exists
-        if (hasElse) {
-            labels.add(elseLabel);
-            bodies.put(elseLabel, caseNode.getElseNode());
-        }
-
-        // Now, emit bodies while preserving when clauses order
-        for (Label whenLabel: labels) {
-            addInstr(new LabelInstr(whenLabel));
-            Operand bodyValue = build(bodies.get(whenLabel));
-            // bodyValue can be null if the body ends with a return!
-            if (bodyValue != null) {
-                // SSS FIXME: Do local optimization of break results (followed by a copy & jump) to short-circuit the jump right away
-                // rather than wait to do it during an optimization pass when a dead jump needs to be removed.  For this, you have
-                // to look at what the last generated instruction was.
-                addInstr(new CopyInstr(result, bodyValue));
-                addInstr(new JumpInstr(endLabel));
-            }
-        }
-
-        if (!hasElse) {
-            addInstr(new LabelInstr(elseLabel));
-            addInstr(new CopyInstr(result, manager.getNil()));
-            addInstr(new JumpInstr(endLabel));
-        }
-
-        // Close it out
-        addInstr(new LabelInstr(endLabel));
-
-        return result;
+        return buildStandardCaseWhen(caseNode, nodeBodies, endLabel, hasElse, elseLabel, value, result);
     }
 
-    private Operand buildSymbolCase(CaseNode caseNode) {
+    private <T extends Node & ILiteralNode> Map<java.lang.Integer, Label> gatherLiteralWhenBodies(
+            CaseNode caseNode, Map<Node, Label> nodeBodies, Function<T, Long> caseFunction) {
         Map<java.lang.Integer, Label> jumpTable = new HashMap<>();
-        Map<Node, Label> nodeBodies = new HashMap<>();
 
-        // gather fixnum-when bodies or bail
+        // gather literal when bodies or bail
         for (Node aCase : caseNode.getCases().children()) {
             WhenNode whenNode = (WhenNode) aCase;
             Label bodyLabel = getNewLabel();
 
-            SymbolNode expr = (SymbolNode) whenNode.getExpressionNodes();
-            long exprLong = expr.getName().getId();
-            if (exprLong > java.lang.Integer.MAX_VALUE) throw notCompilable("optimized symbol case has long-ranged id", caseNode);
+            T expr = (T) whenNode.getExpressionNodes();
+            long exprLong = caseFunction.apply(expr);
+            if (exprLong > java.lang.Integer.MAX_VALUE) throw notCompilable("optimized case has long-ranged value", caseNode);
 
             if (jumpTable.get((int) exprLong) == null) {
                 jumpTable.put((int) exprLong, bodyLabel);
@@ -2175,14 +2084,25 @@ public class IRBuilder {
             }
         }
 
+        return jumpTable;
+    }
+
+    private static Map.Entry<java.lang.Integer, Label>[] sortJumpEntries(Map<java.lang.Integer, Label> jumpTable) {
         // sort the jump table
         Map.Entry<java.lang.Integer, Label>[] jumpEntries = jumpTable.entrySet().toArray(new Map.Entry[jumpTable.size()]);
-        Arrays.sort(jumpEntries, new Comparator<Map.Entry<java.lang.Integer, Label>>() {
-            @Override
-            public int compare(Map.Entry<java.lang.Integer, Label> o1, Map.Entry<java.lang.Integer, Label> o2) {
-                return java.lang.Integer.compare(o1.getKey(), o2.getKey());
-            }
-        });
+        Arrays.sort(jumpEntries, Comparator.comparingInt(Map.Entry::getKey));
+        return jumpEntries;
+    }
+
+    private void buildOptimizedSwitch(
+            Map<java.lang.Integer, Label> jumpTable,
+            Map.Entry<java.lang.Integer,
+                    Label>[] jumpEntries,
+            Label elseLabel,
+            Operand value,
+            Class valueClass) {
+
+        Label     eqqPath   = getNewLabel();
 
         // build a switch
         int[] jumps = new int[jumpTable.size()];
@@ -2194,21 +2114,12 @@ public class IRBuilder {
             i++;
         }
 
-        // get the incoming case value
-        Operand value = build(caseNode.getCaseNode());
-
-        Label     endLabel  = getNewLabel();
-        boolean   hasElse   = (caseNode.getElseNode() != null);
-        Label     elseLabel = getNewLabel();
-        Variable  result    = createTemporaryVariable();
-
         // insert fast switch with fallback to eqq
-        if (scope.maybeUsingRefinements()) {
-            Label eqqPath = getNewLabel();
-            addInstr(new BSwitchInstr(jumps, value, eqqPath, targets, elseLabel, RubySymbol.class));
-            addInstr(new LabelInstr(eqqPath));
-        }
+        addInstr(new BSwitchInstr(jumps, value, eqqPath, targets, elseLabel, valueClass));
+        addInstr(new LabelInstr(eqqPath));
+    }
 
+    private Variable buildStandardCaseWhen(CaseNode caseNode, Map<Node, Label> nodeBodies, Label endLabel, boolean hasElse, Label elseLabel, Operand value, Variable result) {
         List<Label> labels = new ArrayList<>();
         Map<Label, Node> bodies = new HashMap<>();
 
@@ -2603,17 +2514,7 @@ public class IRBuilder {
             );
         }
         case INSTVARNODE:
-            return addResultInstr(
-                    new RuntimeHelperCall(
-                            createTemporaryVariable(),
-                            IS_DEFINED_INSTANCE_VAR,
-                            new Operand[] {
-                                    buildSelf(),
-                                    new FrozenString(((InstVarNode) node).getName()),
-                                    new FrozenString(DefinedMessage.INSTANCE_VARIABLE.getText())
-                            }
-                    )
-            );
+            return buildInstVarGetDefinition((InstVarNode) node);
         case CLASSVARNODE:
             return addResultInstr(
                     new RuntimeHelperCall(
@@ -2827,8 +2728,8 @@ public class IRBuilder {
                      *    1. r  = receiver
                      *    2. mc = r.metaClass
                      *    3. v  = mc.getVisibility(methodName)
-                     *    4. f  = !v || v.isPrivate? || (v.isProtected? && receiver/self?.kindof(mc.getRealClass))
-                     *    5. return !f && mc.methodBound(attrmethod) ? buildGetArgumentDefn(..) : false
+                     *    4. f  = !v || v.isPrivate? || (v.isProtected? &amp;&amp; receiver/self?.kindof(mc.getRealClass))
+                     *    5. return !f &amp;&amp; mc.methodBound(attrmethod) ? buildGetArgumentDefn(..) : false
                      *
                      * Hide the complexity of instrs 2-4 into a verifyMethodIsPublicAccessible call
                      * which can executely entirely in Java-land.  No reason to expose the guts in IR.
@@ -3504,8 +3405,7 @@ public class IRBuilder {
 
         if (result == null) result = createTemporaryVariable();
 
-        boolean debuggingFrozenStringLiteral = manager.getInstanceConfig().isDebuggingFrozenStringLiteral();
-        addInstr(new BuildCompoundStringInstr(result, pieces, node.getEncoding(), estimatedSize, node.isFrozen(), debuggingFrozenStringLiteral, getFileName(), node.getLine()));
+        addInstr(new BuildCompoundStringInstr(result, pieces, node.getEncoding(), estimatedSize, node.isFrozen(), getFileName(), node.getLine()));
 
         return result;
     }
@@ -3522,7 +3422,7 @@ public class IRBuilder {
         if (result == null) result = createTemporaryVariable();
 
         boolean debuggingFrozenStringLiteral = manager.getInstanceConfig().isDebuggingFrozenStringLiteral();
-        addInstr(new BuildCompoundStringInstr(result, pieces, node.getEncoding(), estimatedSize, false, debuggingFrozenStringLiteral, getFileName(), node.getLine()));
+        addInstr(new BuildCompoundStringInstr(result, pieces, node.getEncoding(), estimatedSize, false, getFileName(), node.getLine()));
 
         return copy(new DynamicSymbol(result));
     }
@@ -3544,7 +3444,7 @@ public class IRBuilder {
         if (result == null) result = createTemporaryVariable();
 
         boolean debuggingFrozenStringLiteral = manager.getInstanceConfig().isDebuggingFrozenStringLiteral();
-        addInstr(new BuildCompoundStringInstr(stringResult, pieces, node.getEncoding(), estimatedSize, false, debuggingFrozenStringLiteral, getFileName(), node.getLine()));
+        addInstr(new BuildCompoundStringInstr(stringResult, pieces, node.getEncoding(), estimatedSize, false, getFileName(), node.getLine()));
 
         return fcall(result, Self.SELF, "`", stringResult);
     }
@@ -3717,6 +3617,7 @@ public class IRBuilder {
         determineIfMaybeRefined(fcallNode.getName(), args);
 
         Operand block = setupCallClosure(fcallNode.getIterNode());
+        determineIfWeNeedLineNumber(fcallNode); // backtrace needs line of call in case of exception.
 
         if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
             Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
@@ -3735,7 +3636,6 @@ public class IRBuilder {
                 }
             }
 
-            determineIfWeNeedLineNumber(fcallNode); // buildOperand for fcall was papered over by args operand building so we check once more.
             receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), args, block, flags[0]));
         }
 
@@ -3853,7 +3753,7 @@ public class IRBuilder {
                 Node value = pair.getValue();
                  duplicateCheck = value instanceof HashNode && ((HashNode) value).isLiteral() ? tru() : fals();
                 if (hash == null) {                     // No hash yet. Define so order is preserved.
-                    hash = copy(new Hash(args, hashNode.isLiteral()));
+                    hash = copy(new Hash(args));
                     args = new ArrayList<>();           // Used args but we may find more after the splat so we reset
                 } else if (!args.isEmpty()) {
                     addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args), duplicateCheck}));
@@ -3870,7 +3770,7 @@ public class IRBuilder {
         }
 
         if (hash == null) {           // non-**arg ordinary hash
-            hash = copy(new Hash(args, hashNode.isLiteral()));
+            hash = copy(new Hash(args));
         } else if (!args.isEmpty()) { // ordinary hash values encountered after a **arg
             addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args), duplicateCheck}));
         }
@@ -3955,7 +3855,7 @@ public class IRBuilder {
     }
 
     public Operand buildInstVar(InstVarNode node) {
-        return addResultInstr(new GetFieldInstr(createTemporaryVariable(), buildSelf(), node.getName()));
+        return addResultInstr(new GetFieldInstr(createTemporaryVariable(), buildSelf(), node.getName(), false));
     }
 
     private InterpreterContext buildIterInner(RubySymbol methodName, IterNode iterNode) {
@@ -4305,6 +4205,32 @@ public class IRBuilder {
         return result;
     }
 
+    private Operand buildInstVarOpAsgnOrNode(OpAsgnOrNode node) {
+        Label done = getNewLabel();
+        Variable result = addResultInstr(new GetFieldInstr(temp(), buildSelf(), ((InstVarNode) node.getFirstNode()).getName(), false));
+        addInstr(createBranch(result, manager.getTrue(), done));
+        Operand value = build(node.getSecondNode()); // This is an AST node that sets x = y, so nothing special to do here.
+        copy(result, value);
+        addInstr(new LabelInstr(done));
+
+        return result;
+    }
+
+    private Operand buildInstVarGetDefinition(InstVarNode node) {
+        Variable result = temp();
+        Label done = getNewLabel();
+        Label undefined = getNewLabel();
+        Variable value = addResultInstr(new GetFieldInstr(temp(), buildSelf(), node.getName(), true));
+        addInstr(createBranch(value, UndefinedValue.UNDEFINED, undefined));
+        copy(result, new FrozenString(DefinedMessage.INSTANCE_VARIABLE.getText()));
+        jump(done);
+        addInstr(new LabelInstr(undefined));
+        copy(result, buildNil());
+        addInstr(new LabelInstr(done));
+
+        return result;
+    }
+
     // "x ||= y"
     // --> "x = (is_defined(x) && is_true(x) ? x : y)"
     // --> v = -- build(x) should return a variable! --
@@ -4314,6 +4240,8 @@ public class IRBuilder {
     //   L:
     //
     public Operand buildOpAsgnOr(final OpAsgnOrNode orNode) {
+        if (orNode.getFirstNode() instanceof InstVarNode) return buildInstVarOpAsgnOrNode(orNode);
+
         Label    l1 = getNewLabel();
         Label    l2 = null;
         Variable flag = createTemporaryVariable();
@@ -4894,6 +4822,7 @@ public class IRBuilder {
         Variable result = createTemporaryVariable();
         int[] flags = new int[] { 0 };
         Operand[] args = setupCallArgs(callNode.getArgsNode(), flags);
+        determineIfWeNeedLineNumber(callNode); // backtrace needs line of call in case of exception.
 
         if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
             Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
@@ -4903,7 +4832,6 @@ public class IRBuilder {
                     () -> receiveBreakException(block,
                             determineSuperInstr(result, args, block, flags[0], inClassBody, isInstanceMethod)));
         } else {
-            determineIfWeNeedLineNumber(callNode); // buildOperand for fcall was papered over by args operand building so we check once more.
             receiveBreakException(block,
                     determineSuperInstr(result, args, block, flags[0], inClassBody, isInstanceMethod));
         }
@@ -5258,7 +5186,7 @@ public class IRBuilder {
             for (Operand arg: callArgs) {
                 args[i++] = arg;
             }
-            args[i] = new Hash(keywordArgs, false);
+            args[i] = new Hash(keywordArgs);
             return args;
         }
 

@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck disable=1007
 # -----------------------------------------------------------------------------
 # jruby.bash - Start Script for the JRuby interpreter
 # -----------------------------------------------------------------------------
@@ -7,10 +8,16 @@
 if command -v local >/dev/null; then
     :
 elif command -v typeset >/dev/null; then
-    # ksh93 has typeset but not local
+    # ksh93 and older have typeset but not local, and expand aliases at parse
+    # time so require re-sourcing the script
     alias local=typeset
+    if [ -z "$KSH_VERSION" ] || (eval : '"${.sh.version}"' >/dev/null 2>&1); then
+        # shellcheck source=/dev/null
+        . "$0"
+        exit
+    fi
 else
-    echo "Error: Your shell does not support local variables. Re-run with one that does (e.g. bash, ksh)"
+    echo >&2 "Error: Your shell does not support local variables. Re-run this script with one that does (e.g. bash, ksh)"
     exit 1
 fi
 
@@ -19,12 +26,13 @@ fi
 # esceval [ARGUMENT...]
 #
 # Escape ARGUMENT for safe use with eval
-# Returns escaped arguments via $result
+# Returns escaped arguments via $REPLY
 # Thanks to @mentalisttraceur for original implementation:
 # https://github.com/mentalisttraceur/esceval
 esceval()
 {
     local escaped= unescaped= output=
+    REPLY=
 
     [ $# -gt 0 ] || return 0
     while true; do
@@ -44,7 +52,7 @@ esceval()
         [ $# -gt 0 ] || break
         output="$output $escaped"
     done
-    result="$output $escaped"
+    REPLY="$output $escaped"
 }
 
 # assign LISTNAME ELEMENT [ELEMENT...]
@@ -52,11 +60,11 @@ esceval()
 # Assign ELEMENT to the list named by LISTNAME.
 assign() {
     local listname="$1"
-    local result=
+    local REPLY=
     shift
 
     esceval "$@"
-    eval "$listname=\"\${result}\""
+    eval "$listname=\"\${REPLY}\""
 }
 
 # append LISTNAME ELEMENT [ELEMENT...]
@@ -64,11 +72,11 @@ assign() {
 # Append ELEMENT to the list named by LISTNAME.
 append() {
     local listname="$1"
-    local result=
+    local REPLY=
     shift
 
     esceval "$@"
-    eval "$listname=\"\${$listname} \${result}\""
+    eval "$listname=\"\${$listname} \${REPLY}\""
 }
 
 # prepend LISTNAME ELEMENT [ELEMENT...]
@@ -76,22 +84,11 @@ append() {
 # Prepend ELEMENT to the list named by LISTNAME, preserving order.
 prepend() {
     local listname="$1"
-    local result=
+    local REPLY=
     shift
 
     esceval "$@"
-    eval "$listname=\"\${result} \${$listname}\""
-}
-
-# map FUNCNAME LISTNAME1 LISTNAME2
-#
-# Run FUNCNAME on LISTNAME1 and the list named by LISTNAME2
-map() {
-    local funcname="$1"
-    local listname="$2"
-    # Load contents of array named by $3
-    eval eval set -- "\"\${$3}\""
-    "$funcname" "$listname" "$@"
+    eval "$listname=\"\${REPLY} \${$listname}\""
 }
 
 # extend LISTNAME1 LISTNAME2
@@ -99,7 +96,7 @@ map() {
 # Append the elements stored in the list named by LISTNAME2
 # to the list named by LISTNAME1.
 extend() {
-    map append "$@"
+    eval "$1=\"\${$1} \${$2}\""
 }
 
 # preextend LISTNAME1 LISTNAME2
@@ -107,7 +104,14 @@ extend() {
 # Prepend the elements stored in the list named by LISTNAME2
 # to the named by LISTNAME1, preserving order.
 preextend() {
-    map prepend "$@"
+    eval "$1=\"\${$2} \${$1}\""
+}
+
+# echo [STRING...]
+#
+# Dumb echo, i.e. print arguments joined by spaces with no further processing
+echo() {
+    printf "%s\n" "$*"
 }
 
 # ----- Set variable defaults -------------------------------------------------
@@ -161,22 +165,23 @@ if [ -r "/dev/urandom" ]; then
 fi
 
 # Gather environment information as we go
-cr='
+readonly cr='
 '
 environment_log="JRuby Environment$cr================="
 add_log() {
-    environment_log="${environment_log}${cr}${1}"
+    environment_log="${environment_log}${cr}${*}"
 }
 
 # Logic to process "arguments files" on both Java 8 and Java 9+
 process_java_opts() {
-    local java_opts_file="$1"
+    local java_opts_file="$1" java_opts=
     if [ -r "$java_opts_file" ]; then
         add_log
         add_log "Adding Java options from: $java_opts_file"
 
         while read -r line; do
             if [ "$line" ]; then
+                java_opts="${java_opts} ${line}"
                 add_log "  $line"
             fi
         done < "$java_opts_file"
@@ -186,7 +191,7 @@ process_java_opts() {
         if $use_modules; then
             java_opts_from_files="$java_opts_from_files @$java_opts_file"
         else
-            java_opts_from_files="$java_opts_from_files $(cat "$java_opts_file")"
+            java_opts_from_files="$java_opts_from_files $java_opts"
         fi
     fi
 }
@@ -198,14 +203,14 @@ dir_name() {
         */*[!/]*)
             trail=${filename##*[!/]}
             filename=${filename%%"$trail"}
-            result=${filename%/*}
+            REPLY=${filename%/*}
             ;;
         *[!/]*)
             trail=${filename##*[!/]}
-            result="."
+            REPLY="."
             ;;
         *)
-            result="/"
+            REPLY="/"
             ;;
     esac
 }
@@ -216,43 +221,95 @@ base_name() {
         */*[!/]*)
             trail=${filename##*[!/]}
             filename=${filename%%"$trail"}
-            result=${filename##*/}
+            REPLY=${filename##*/}
             ;;
         *[!/]*)
             trail=${filename##*[!/]}
-            result=${filename%%"$trail"}
+            REPLY=${filename%%"$trail"}
             ;;
         *)
-            result="/"
+            REPLY="/"
             ;;
     esac
 }
 
-# Resolve all symlinks in a chain
-resolve_symlinks() {
-    local cur_path= sym= sym_base= dirname= basename=
-    cur_path="$1"
-    while [ -h "$cur_path" ]; do
-        # 1) cd to directory of the symlink
-        # 2) cd to the directory of where the symlink points
-        # 3) get the physical pwd
-        # 4) append the basename
-        sym="$(readlink "$cur_path")"
-
-        dir_name "$cur_path"
-        dirname="$result"
-
-        sym_base="$(cd -P -- "$dirname" >/dev/null && pwd -P)"
-
-        dir_name "$sym"
-        dirname="$result"
-
-        base_name "$sym"
-        basename="$result"
-
-        cur_path="$(cd "$sym_base" && cd "$dirname" && pwd -P)/$basename"
+# Determine whether path is absolute and contains no relative segments or symlinks
+path_is_canonical() {
+    local path=
+    for path; do
+        case $path in
+            ([!/]*) return 1 ;;
+            (./*|../*) return 1 ;;
+            (*/.|*/..) return 1 ;;
+            (*/./*|*/../*) return 1 ;;
+        esac
+        while [ "$path" ]; do
+            [ -h "$path" ] && return 1
+            path="${path%/*}"
+        done
     done
-    result="$cur_path"
+    return 0
+}
+
+# Resolve directory to its canonical value
+resolve_dir() {
+    # Some shells (dash, ksh) resolve relative paths by default before cd'ing, i.e.
+    # cd /foo/bar/../baz = cd /foo/baz
+    # This is fine unless bar is a symlink, in which case the second form is
+    # invalid. Passing -P to cd fixes this behaviour.
+    REPLY="$(cd -P -- "$1" && pwd)"
+}
+
+# Resolve symlink until it's not a symlink
+resolve_file() {
+    local current="$1" target=
+
+    while [ -h "$current" ]; do
+        target="$(readlink "$current")" || return
+        case $target in
+            (/*) current="$target" ;;
+            # handle relative symlinks
+            (*) dir_name "$current"; current="$REPLY/$target" ;;
+        esac
+    done
+    REPLY="$current"
+}
+
+# Resolve path to its canonical value
+resolve() {
+    local target="$1" base=
+    REPLY=
+
+    # Verify target actually exists (and isn't too deep in symlinks)
+    if ! [ -e "$target" ]; then
+        echo >&2 "Error: No such file or directory: $target"
+        return 1
+    fi
+
+    # Realpath is way faster than repeatedly calling readlink, so use it if possible
+    if command -v realpath >/dev/null; then
+        REPLY="$(realpath "$target")" && return
+    fi
+
+    # Take shortcut for directories
+    if [ -d "$target" ]; then
+        resolve_dir "$target" && return
+    fi
+
+    # Ensure $target is not a symlink
+    resolve_file "$target" || return
+    target="$REPLY"
+
+    # Resolve parent directory if it's not absolute
+    if ! path_is_canonical "$target"; then
+        dir_name "$target"
+        resolve_dir "$REPLY" || return
+        base="$REPLY"
+
+        base_name "$target"
+        target="$base/$REPLY"
+    fi
+    REPLY="$target"
 }
 
 # ----- Determine JRUBY_HOME based on this executable's path ------------------
@@ -265,10 +322,10 @@ else
     script_src="$0"
 fi
 dir_name "$script_src"
-BASE_DIR="$(cd -P -- "$result" >/dev/null && pwd -P)"
+BASE_DIR="$(cd -P -- "$REPLY" >/dev/null && pwd -P)"
 base_name "$script_src"
-resolve_symlinks "$BASE_DIR/$result"
-SELF_PATH="$result"
+resolve "$BASE_DIR/$REPLY"
+SELF_PATH="$REPLY"
 
 JRUBY_HOME="${SELF_PATH%/*/*}"
 
@@ -319,13 +376,13 @@ if [ -z "$JAVACMD" ]; then
             JAVACMD="$JAVA_HOME"/bin/java
         else
             # Linux and others have a chain of symlinks
-            resolve_symlinks "$(command -v java)"
-            JAVACMD="$result"
+            resolve "$(command -v java)"
+            JAVACMD="$REPLY"
 
             # export separately from command execution
             dir_name "$JAVACMD"
-            dir_name "$result"
-            JAVA_HOME="$result"
+            dir_name "$REPLY"
+            JAVA_HOME="$REPLY"
         fi
     elif $cygwin; then
         JAVACMD="$(cygpath -u "$JAVA_HOME")/bin/java"
@@ -333,22 +390,31 @@ if [ -z "$JAVACMD" ]; then
         JAVACMD="$JAVA_HOME/bin/java"
     fi
 else
-    resolve_symlinks "$(command -v "$JAVACMD")"
-    expanded_javacmd="$result"
+    resolve "$(command -v "$JAVACMD")"
+    expanded_javacmd="$REPLY"
     if [ -z "$JAVA_HOME" ] && [ -x "$expanded_javacmd" ]; then
         dir_name "$expanded_javacmd"
-        dir_name "$result"
-        JAVA_HOME="$result"
+        dir_name "$REPLY"
+        JAVA_HOME="$REPLY"
     fi
 fi
 
-# Detect modularized Java if modules file is present or a MODULES line appears in release
-if [ -f "$JAVA_HOME"/lib/modules ] \
-    || {
-        [ -f "$JAVA_HOME"/release ] \
-        && grep -q ^MODULES "$JAVA_HOME"/release
-    }
-then
+# Detect modularized Java
+java_is_modular() {
+    # check that modules file is present
+    if [ -f "$JAVA_HOME"/lib/modules ]; then
+        return 0
+    fi
+
+    # check if a MODULES line appears in release
+    if [ -f "$JAVA_HOME"/release ] && grep -q ^MODULES "$JAVA_HOME"/release; then
+        return 0
+    fi
+
+    return 1
+}
+
+if java_is_modular; then
     use_modules=true
 else
     use_modules=false
@@ -453,8 +519,6 @@ readonly CP_DELIMITER
 # Scanning for args is aborted by '--'.
 # shellcheck disable=2086
 set -- $JRUBY_OPTS "$@"
-# shellcheck disable=354
-[ "$BASH" ] && shopt -s expand_aliases
 # increment pointer, permute arguments
 while [ $# -gt 0 ]
 do
@@ -489,7 +553,7 @@ do
         # Match -Xa.b.c=d to translate to -Da.b.c=d as a java option
         -X*.*) append java_args -Djruby."${1#-X}" ;;
         # Match switches that take an argument
-        -C|-e|-I|-S)
+        -[CeIS])
             append ruby_args "$1" "$2"
             shift
             ;;
@@ -617,6 +681,7 @@ fi
 JAVA_OPTS="$java_opts_from_files $JAVA_OPTS"
 
 # Don't quote JAVA_OPTS; we want it to expand
+# shellcheck disable=2086
 prepend java_args "$JAVACMD" $JAVA_OPTS "$JFFI_OPTS"
 
 if $NO_BOOTCLASSPATH || $VERIFY_JRUBY; then
@@ -639,7 +704,6 @@ append java_args -Djruby.home="$JRUBY_HOME" \
     "$java_class"
 extend java_args ruby_args
 
-# shellcheck disable=2086
 eval set -- "$java_args"
 
 add_log

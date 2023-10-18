@@ -596,229 +596,229 @@ public class Pack {
     /**
      *    Decodes <i>str</i> (which may contain binary data) according to the format
      *       string, returning an array of each value extracted.
-     *       The format string consists of a sequence of single-character directives.<br/>
+     *       The format string consists of a sequence of single-character directives.<br>
      *       Each directive may be followed by a number, indicating the number of times to repeat with this directive.  An asterisk (``<code>*</code>'') will use up all
-     *       remaining elements.  <br/>
+     *       remaining elements.  <br>
      *       Note that if passed a block, this method will return null and instead yield results to the block.
-     *       The directives <code>sSiIlL</code> may each be followed by an underscore (``<code>_</code>'') to use the underlying platform's native size for the specified type; otherwise, it uses a platform-independent consistent size.  <br/>
+     *       The directives <code>sSiIlL</code> may each be followed by an underscore (``<code>_</code>'') to use the underlying platform's native size for the specified type; otherwise, it uses a platform-independent consistent size.  <br>
      *       Spaces are ignored in the format string.
      * 
-     *       <table border="2" width="500" bgcolor="#ffe0e0">
+     *       <table border="1"><caption style="display:none">layout table</caption>
      *           <tr>
      *             <td>
      * <P></P>
      *         <b>Directives for <a href="ref_c_string.html#String.unpack">
      *                   <code>String#unpack</code>
      *                 </a>
-     *               </b>        <table class="codebox" cellspacing="0" border="0" cellpadding="3">
-     * <tr bgcolor="#ff9999">
-     *   <td valign="top">
+     *               </b>        <table class="codebox"><caption style="display:none">layout table</caption>
+     * <tr>
+     *   <td>
      *                     <b>Format</b>
      *                   </td>
-     *   <td valign="top">
+     *   <td>
      *                     <b>Function</b>
      *                   </td>
-     *   <td valign="top">
+     *   <td>
      *                     <b>Returns</b>
      *                   </td>
      * </tr>
      * <tr>
-     *   <td valign="top">A</td>
-     *   <td valign="top">String with trailing nulls and spaces removed.</td>
-     *   <td valign="top">String</td>
+     *   <td>A</td>
+     *   <td>String with trailing nulls and spaces removed.</td>
+     *   <td>String</td>
      * </tr>
      * <tr>
-     *   <td valign="top">a</td>
-     *   <td valign="top">String.</td>
-     *   <td valign="top">String</td>
+     *   <td>a</td>
+     *   <td>String.</td>
+     *   <td>String</td>
      * </tr>
      * <tr>
-     *   <td valign="top">B</td>
-     *   <td valign="top">Extract bits from each character (msb first).</td>
-     *   <td valign="top">String</td>
+     *   <td>B</td>
+     *   <td>Extract bits from each character (msb first).</td>
+     *   <td>String</td>
      * </tr>
      * <tr>
-     *   <td valign="top">b</td>
-     *   <td valign="top">Extract bits from each character (lsb first).</td>
-     *   <td valign="top">String</td>
+     *   <td>b</td>
+     *   <td>Extract bits from each character (lsb first).</td>
+     *   <td>String</td>
      * </tr>
      * <tr>
-     *   <td valign="top">C</td>
-     *   <td valign="top">Extract a character as an unsigned integer.</td>
-     *   <td valign="top">Fixnum</td>
+     *   <td>C</td>
+     *   <td>Extract a character as an unsigned integer.</td>
+     *   <td>Fixnum</td>
      * </tr>
      * <tr>
-     *   <td valign="top">c</td>
-     *   <td valign="top">Extract a character as an integer.</td>
-     *   <td valign="top">Fixnum</td>
+     *   <td>c</td>
+     *   <td>Extract a character as an integer.</td>
+     *   <td>Fixnum</td>
      * </tr>
      * <tr>
-     *   <td valign="top">d</td>
-     *   <td valign="top">Treat <em>sizeof(double)</em> characters as a native
+     *   <td>d</td>
+     *   <td>Treat <em>sizeof(double)</em> characters as a native
      *           double.</td>
-     *   <td valign="top">Float</td>
+     *   <td>Float</td>
      * </tr>
      * <tr>
-     *   <td valign="top">E</td>
-     *   <td valign="top">Treat <em>sizeof(double)</em> characters as a double in
+     *   <td>E</td>
+     *   <td>Treat <em>sizeof(double)</em> characters as a double in
      *           little-endian byte order.</td>
-     *   <td valign="top">Float</td>
+     *   <td>Float</td>
      * </tr>
      * <tr>
-     *   <td valign="top">e</td>
-     *   <td valign="top">Treat <em>sizeof(float)</em> characters as a float in
+     *   <td>e</td>
+     *   <td>Treat <em>sizeof(float)</em> characters as a float in
      *           little-endian byte order.</td>
-     *   <td valign="top">Float</td>
+     *   <td>Float</td>
      * </tr>
      * <tr>
-     *   <td valign="top">f</td>
-     *   <td valign="top">Treat <em>sizeof(float)</em> characters as a native float.</td>
-     *   <td valign="top">Float</td>
+     *   <td>f</td>
+     *   <td>Treat <em>sizeof(float)</em> characters as a native float.</td>
+     *   <td>Float</td>
      * </tr>
      * <tr>
-     *   <td valign="top">G</td>
-     *   <td valign="top">Treat <em>sizeof(double)</em> characters as a double in
+     *   <td>G</td>
+     *   <td>Treat <em>sizeof(double)</em> characters as a double in
      *           network byte order.</td>
-     *   <td valign="top">Float</td>
+     *   <td>Float</td>
      * </tr>
      * <tr>
-     *   <td valign="top">g</td>
-     *   <td valign="top">Treat <em>sizeof(float)</em> characters as a float in
+     *   <td>g</td>
+     *   <td>Treat <em>sizeof(float)</em> characters as a float in
      *           network byte order.</td>
-     *   <td valign="top">Float</td>
+     *   <td>Float</td>
      * </tr>
      * <tr>
-     *   <td valign="top">H</td>
-     *   <td valign="top">Extract hex nibbles from each character (most
+     *   <td>H</td>
+     *   <td>Extract hex nibbles from each character (most
      *           significant first).</td>
-     *   <td valign="top">String</td>
+     *   <td>String</td>
      * </tr>
      * <tr>
-     *   <td valign="top">h</td>
-     *   <td valign="top">Extract hex nibbles from each character (least
+     *   <td>h</td>
+     *   <td>Extract hex nibbles from each character (least
      *           significant first).</td>
-     *   <td valign="top">String</td>
+     *   <td>String</td>
      * </tr>
      * <tr>
-     *   <td valign="top">I</td>
-     *   <td valign="top">Treat <em>sizeof(int)</em>
+     *   <td>I</td>
+     *   <td>Treat <em>sizeof(int)</em>
      *                     <sup>1</sup> successive
      *           characters as an unsigned native integer.</td>
-     *   <td valign="top">Integer</td>
+     *   <td>Integer</td>
      * </tr>
      * <tr>
-     *   <td valign="top">i</td>
-     *   <td valign="top">Treat <em>sizeof(int)</em>
+     *   <td>i</td>
+     *   <td>Treat <em>sizeof(int)</em>
      *                     <sup>1</sup> successive
      *           characters as a signed native integer.</td>
-     *   <td valign="top">Integer</td>
+     *   <td>Integer</td>
      * </tr>
      * <tr>
-     *   <td valign="top">L</td>
-     *   <td valign="top">Treat four<sup>1</sup> successive
+     *   <td>L</td>
+     *   <td>Treat four<sup>1</sup> successive
      *           characters as an unsigned native
      *           long integer.</td>
-     *   <td valign="top">Integer</td>
+     *   <td>Integer</td>
      * </tr>
      * <tr>
-     *   <td valign="top">l</td>
-     *   <td valign="top">Treat four<sup>1</sup> successive
+     *   <td>l</td>
+     *   <td>Treat four<sup>1</sup> successive
      *           characters as a signed native
      *           long integer.</td>
-     *   <td valign="top">Integer</td>
+     *   <td>Integer</td>
      * </tr>
      * <tr>
-     *   <td valign="top">M</td>
-     *   <td valign="top">Extract a quoted-printable string.</td>
-     *   <td valign="top">String</td>
+     *   <td>M</td>
+     *   <td>Extract a quoted-printable string.</td>
+     *   <td>String</td>
      * </tr>
      * <tr>
-     *   <td valign="top">m</td>
-     *   <td valign="top">Extract a base64 encoded string.</td>
-     *   <td valign="top">String</td>
+     *   <td>m</td>
+     *   <td>Extract a base64 encoded string.</td>
+     *   <td>String</td>
      * </tr>
      * <tr>
-     *   <td valign="top">N</td>
-     *   <td valign="top">Treat four characters as an unsigned long in network
+     *   <td>N</td>
+     *   <td>Treat four characters as an unsigned long in network
      *           byte order.</td>
-     *   <td valign="top">Fixnum</td>
+     *   <td>Fixnum</td>
      * </tr>
      * <tr>
-     *   <td valign="top">n</td>
-     *   <td valign="top">Treat two characters as an unsigned short in network
+     *   <td>n</td>
+     *   <td>Treat two characters as an unsigned short in network
      *           byte order.</td>
-     *   <td valign="top">Fixnum</td>
+     *   <td>Fixnum</td>
      * </tr>
      * <tr>
-     *   <td valign="top">P</td>
-     *   <td valign="top">Treat <em>sizeof(char *)</em> characters as a pointer, and
+     *   <td>P</td>
+     *   <td>Treat <em>sizeof(char *)</em> characters as a pointer, and
      *           return <em>len</em> characters from the referenced location.</td>
-     *   <td valign="top">String</td>
+     *   <td>String</td>
      * </tr>
      * <tr>
-     *   <td valign="top">p</td>
-     *   <td valign="top">Treat <em>sizeof(char *)</em> characters as a pointer to a
+     *   <td>p</td>
+     *   <td>Treat <em>sizeof(char *)</em> characters as a pointer to a
      *           null-terminated string.</td>
-     *   <td valign="top">String</td>
+     *   <td>String</td>
      * </tr>
      * <tr>
-     *   <td valign="top">S</td>
-     *   <td valign="top">Treat two<sup>1</sup> successive characters as an unsigned
+     *   <td>S</td>
+     *   <td>Treat two<sup>1</sup> successive characters as an unsigned
      *           short in
      *           native byte order.</td>
-     *   <td valign="top">Fixnum</td>
+     *   <td>Fixnum</td>
      * </tr>
      * <tr>
-     *   <td valign="top">s</td>
-     *   <td valign="top">Treat two<sup>1</sup> successive
+     *   <td>s</td>
+     *   <td>Treat two<sup>1</sup> successive
      *           characters as a signed short in
      *           native byte order.</td>
-     *   <td valign="top">Fixnum</td>
+     *   <td>Fixnum</td>
      * </tr>
      * <tr>
-     *   <td valign="top">U</td>
-     *   <td valign="top">Extract UTF-8 characters as unsigned integers.</td>
-     *   <td valign="top">Integer</td>
+     *   <td>U</td>
+     *   <td>Extract UTF-8 characters as unsigned integers.</td>
+     *   <td>Integer</td>
      * </tr>
      * <tr>
-     *   <td valign="top">u</td>
-     *   <td valign="top">Extract a UU-encoded string.</td>
-     *   <td valign="top">String</td>
+     *   <td>u</td>
+     *   <td>Extract a UU-encoded string.</td>
+     *   <td>String</td>
      * </tr>
      * <tr>
-     *   <td valign="top">V</td>
-     *   <td valign="top">Treat four characters as an unsigned long in little-endian
+     *   <td>V</td>
+     *   <td>Treat four characters as an unsigned long in little-endian
      *           byte order.</td>
-     *   <td valign="top">Fixnum</td>
+     *   <td>Fixnum</td>
      * </tr>
      * <tr>
-     *   <td valign="top">v</td>
-     *   <td valign="top">Treat two characters as an unsigned short in little-endian
+     *   <td>v</td>
+     *   <td>Treat two characters as an unsigned short in little-endian
      *           byte order.</td>
-     *   <td valign="top">Fixnum</td>
+     *   <td>Fixnum</td>
      * </tr>
      * <tr>
-     *   <td valign="top">X</td>
-     *   <td valign="top">Skip backward one character.</td>
-     *   <td valign="top">---</td>
+     *   <td>X</td>
+     *   <td>Skip backward one character.</td>
+     *   <td>---</td>
      * </tr>
      * <tr>
-     *   <td valign="top">x</td>
-     *   <td valign="top">Skip forward one character.</td>
-     *   <td valign="top">---</td>
+     *   <td>x</td>
+     *   <td>Skip forward one character.</td>
+     *   <td>---</td>
      * </tr>
      * <tr>
-     *   <td valign="top">Z</td>
-     *   <td valign="top">String with trailing nulls removed.</td>
-     *   <td valign="top">String</td>
+     *   <td>Z</td>
+     *   <td>String with trailing nulls removed.</td>
+     *   <td>String</td>
      * </tr>
      * <tr>
-     *   <td valign="top">@</td>
-     *   <td valign="top">Skip to the offset given by the length argument.</td>
-     *   <td valign="top">---</td>
+     *   <td>@</td>
+     *   <td>Skip to the offset given by the length argument.</td>
+     *   <td>---</td>
      * </tr>
      * <tr>
-     *                   <td colspan="9" bgcolor="#ff9999" height="2"><img src="dot.gif" width="1" height="1"></td>
+     *                   <td colspan="9"><img alt="bullet" src="dot.gif" width="1" height="1"></td>
      *                 </tr>
      *               </table>
      * <P></P>
@@ -1063,7 +1063,12 @@ public class Pack {
                 case 'w':
                     value = unpack_w(context, block, runtime, result, encode, occurrences, mode);
                     break;
-                case ' ':
+                case ' ':       // various "ok" whitespace
+                case '\011':
+                case '\n':
+                case '\013':
+                case '\014':
+                case '\015':
                     break;
                 default:
                     unknownDirective(context.runtime, "unpack", type, formatString);
@@ -2042,7 +2047,12 @@ public class Pack {
                 case 'w':
                     pack_w(context, list, result, packInts, occurrences);
                     break;
-                case ' ':
+                case ' ':       // various "ok" whitespace
+                case '\011':
+                case '\n':
+                case '\013':
+                case '\014':
+                case '\015':
                     break;
                 default:
                     unknownDirective(context.runtime, "pack", type, formatString);

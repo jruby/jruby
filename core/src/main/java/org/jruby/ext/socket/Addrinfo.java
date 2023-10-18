@@ -16,6 +16,7 @@ import org.jruby.RubyInteger;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -145,7 +146,7 @@ public class Addrinfo extends RubyObject {
         return context.nil;
     }
 
-    @JRubyMethod(required = 1, optional = 4, visibility = Visibility.PRIVATE)
+    @JRubyMethod(required = 1, optional = 3, checkArity = false, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         switch (args.length) {
             case 1:
@@ -154,6 +155,11 @@ public class Addrinfo extends RubyObject {
                 return initialize(context, args[0], args[1]);
             case 3:
                 return initialize(context, args[0], args[1], args[2]);
+            case 4:
+                // use logic below
+                break;
+            default:
+                Arity.raiseArgumentError(context, args.length, 1, 4);
         }
 
         IRubyObject _sockaddr = args[0];
@@ -558,6 +564,19 @@ public class Addrinfo extends RubyObject {
         return RubyBoolean.newBoolean(context, ((InetSocketAddress) socketAddress).getAddress().isSiteLocalAddress());
     }
 
+    @JRubyMethod(name = "ipv6_unique_local?")
+    public IRubyObject ipv6_unique_local_p(ThreadContext context) {
+        if (getAddressFamily() != AF_INET6) {
+            return context.fals;
+        }
+        Inet6Address address = getInet6Address();
+        if (address == null) {
+            return context.fals;
+        }
+        int firstAddrByte = address.getAddress()[0] & 0xff;
+        return RubyBoolean.newBoolean(context, firstAddrByte == 0xfc || firstAddrByte == 0xfd);
+    }
+
     @JRubyMethod(name = "ipv6_v4mapped?")
     public IRubyObject ipv6_v4mapped_p(ThreadContext context) {
         Inet6Address in6 = getInet6Address();
@@ -772,9 +791,14 @@ public class Addrinfo extends RubyObject {
         }
     }
 
-    @JRubyMethod(optional = 1)
-    public IRubyObject getnameinfo(ThreadContext context, IRubyObject[] args) {
-        return getnameinfo(context, args.length == 0 ? 0 : args[0].convertToInteger().getIntValue());
+    @JRubyMethod
+    public IRubyObject getnameinfo(ThreadContext context) {
+        return getnameinfo(context, 0);
+    }
+
+    @JRubyMethod
+    public IRubyObject getnameinfo(ThreadContext context, IRubyObject flags) {
+        return getnameinfo(context, flags.convertToInteger().getIntValue());
     }
 
     public IRubyObject getnameinfo(ThreadContext context, int flags) {

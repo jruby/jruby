@@ -41,10 +41,10 @@ import org.jruby.runtime.load.LoadServiceResource;
 import org.osgi.framework.Bundle;
 
 /**
- * @author hmalphettes
- *
  * Load scripts and java classes directly from the OSGi bundles.
  * bundle:/symbolic.name/
+ *
+ * @author hmalphettes
  */
 public class OSGiLoadService extends LoadService {
 
@@ -95,7 +95,7 @@ public class OSGiLoadService extends LoadService {
      * Support for 'bundle:/' to look for libraries in osgi bundles
      * or classes or ruby files.
      *
-     * @mri rb_find_file
+     * <p>MRI: rb_find_file</p>
      * @param name the file to find, this is a path name
      * @return the correct file
      */

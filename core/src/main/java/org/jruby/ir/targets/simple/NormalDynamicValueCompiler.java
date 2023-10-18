@@ -106,7 +106,7 @@ public class NormalDynamicValueCompiler implements DynamicValueCompiler {
         if (length > IRBytecodeAdapter.MAX_ARGUMENTS / 2) throw new NotCompilableException("literal hash has more than " + (IRBytecodeAdapter.MAX_ARGUMENTS / 2) + " pairs");
 
         SkinnyMethodAdapter adapter2;
-        String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, boolean.class, JVM.OBJECT, length * 2));
+        String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, length * 2));
 
         final String methodName = "hash:" + length;
         final ClassData classData = compiler.getClassData();
@@ -122,10 +122,9 @@ public class NormalDynamicValueCompiler implements DynamicValueCompiler {
 
             adapter2.aload(0);
             adapter2.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
-            adapter2.iload(1);
-            IRBytecodeAdapter.buildArrayFromLocals(adapter2, 2, length * 2);
+            IRBytecodeAdapter.buildArrayFromLocals(adapter2, 1, length * 2);
 
-            adapter2.invokestatic(p(IRRuntimeHelpers.class), "constructHashFromArray", sig(RubyHash.class, Ruby.class, boolean.class, IRubyObject[].class));
+            adapter2.invokestatic(p(IRRuntimeHelpers.class), "constructHashFromArray", sig(RubyHash.class, Ruby.class, IRubyObject[].class));
             adapter2.areturn();
             adapter2.end();
 

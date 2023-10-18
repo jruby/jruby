@@ -35,6 +35,7 @@ import org.jcodings.EncodingDB;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
+import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyEncoding;
@@ -122,6 +123,7 @@ public class Bootstrap {
     public final static String BOOTSTRAP_LONG_STRING_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, long.class, int.class, String.class, int.class);
     public final static String BOOTSTRAP_DOUBLE_STRING_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, double.class, int.class, String.class, int.class);
     public final static String BOOTSTRAP_INT_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class, int.class);
+    public final static String BOOTSTRAP_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class);
     private static final Logger LOG = LoggerFactory.getLogger(Bootstrap.class);
     static final Lookup LOOKUP = MethodHandles.lookup();
     public static final Handle EMPTY_STRING_BOOTSTRAP = new Handle(
@@ -409,17 +411,35 @@ public class Bootstrap {
                     .invokeStaticQuiet(LOOKUP, Bootstrap.class, "array");
 
     public static CallSite hash(Lookup lookup, String name, MethodType type) {
-        MethodHandle handle = Binder
-                .from(lookup, type)
-                .collect(2, IRubyObject[].class)
-                .invoke(HASH_HANDLE);
+        MethodHandle handle;
+
+        int parameterCount = type.parameterCount();
+        if (parameterCount == 1) {
+            handle = Binder
+                    .from(lookup, type)
+                    .cast(type.changeReturnType(RubyHash.class))
+                    .filter(0, RUNTIME_FROM_CONTEXT_HANDLE)
+                    .invokeStaticQuiet(lookup, RubyHash.class, "newHash");
+        } else if (!type.parameterType(parameterCount - 1).isArray()
+                && (parameterCount - 1) / 2 <= Helpers.MAX_SPECIFIC_ARITY_HASH) {
+            handle = Binder
+                    .from(lookup, type)
+                    .cast(type.changeReturnType(RubyHash.class))
+                    .filter(0, RUNTIME_FROM_CONTEXT_HANDLE)
+                    .invokeStaticQuiet(lookup, Helpers.class, "constructSmallHash");
+        } else {
+            handle = Binder
+                    .from(lookup, type)
+                    .collect(1, IRubyObject[].class)
+                    .invoke(HASH_HANDLE);
+        }
 
         return new ConstantCallSite(handle);
     }
 
     private static final MethodHandle HASH_HANDLE =
             Binder
-                    .from(RubyHash.class, ThreadContext.class, boolean.class, IRubyObject[].class)
+                    .from(RubyHash.class, ThreadContext.class, IRubyObject[].class)
                     .invokeStaticQuiet(LOOKUP, Bootstrap.class, "hash");
 
     public static CallSite kwargsHash(Lookup lookup, String name, MethodType type) {
@@ -600,6 +620,12 @@ public class Bootstrap {
                     .from(Ruby.class, ThreadContext.class, MutableCallSite.class)
                     .invokeStaticQuiet(LOOKUP, Bootstrap.class, "runtime");
 
+    // We use LOOKUP here to have a full-featured MethodHandles.Lookup, avoiding jruby/jruby#7911
+    private static final MethodHandle RUNTIME_FROM_CONTEXT_HANDLE =
+            Binder
+                    .from(LOOKUP, Ruby.class, ThreadContext.class)
+                    .getFieldQuiet("runtime");
+
     private static final MethodHandle NIL_HANDLE =
             Binder
                     .from(IRubyObject.class, ThreadContext.class, MutableCallSite.class)
@@ -685,7 +711,7 @@ public class Bootstrap {
         return encoding;
     }
 
-    public static RubyHash hash(ThreadContext context, boolean literal, IRubyObject[] pairs) {
+    public static RubyHash hash(ThreadContext context, IRubyObject[] pairs) {
         Ruby runtime = context.runtime;
         RubyHash hash = new RubyHash(runtime, pairs.length / 2 + 1);
         for (int i = 0; i < pairs.length;) {
@@ -1095,11 +1121,11 @@ public class Bootstrap {
                     if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
                         LOG.info(site.name() + "\tbound directly to JVM method " + Bootstrap.logMethod(method));
                     }
-                }
 
-                JRubyMethod anno = nativeCall.getMethod().getAnnotation(JRubyMethod.class);
-                if (anno != null && anno.frame()) {
-                    mh = InvocationLinker.wrapWithFrameOnly(site.signature, entry.sourceModule, site.name(), mh);
+                    JRubyMethod anno = nativeCall.getMethod().getAnnotation(JRubyMethod.class);
+                    if (anno != null && anno.frame()) {
+                        mh = InvocationLinker.wrapWithFrameOnly(site.signature, entry.sourceModule, site.name(), mh);
+                    }
                 }
             }
         }
@@ -1170,14 +1196,6 @@ public class Bootstrap {
     ////////////////////////////////////////////////////////////////////////////
 
     private static MethodHandle createJavaHandle(InvokeSite site, DynamicMethod method) {
-        MethodHandle nativeTarget = (MethodHandle)method.getHandle();
-
-        if (nativeTarget != null) return nativeTarget;
-
-        MethodHandle returnFilter = null;
-
-        Ruby runtime = method.getImplementationClass().getRuntime();
-
         if (!(method instanceof NativeCallMethod)) return null;
 
         DynamicMethod.NativeCall nativeCall = ((NativeCallMethod) method).getNativeCall();
@@ -1187,7 +1205,7 @@ public class Bootstrap {
         boolean isStatic = nativeCall.isStatic();
 
         // This logic does not handle closure conversion yet
-        if (site.fullSignature.lastArgType() == Block.class) {
+        if (site.signature.lastArgType() == Block.class) {
             if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
                 LOG.info(site.name() + "\tpassed a closure to Java method " + nativeCall + ": " + Bootstrap.logMethod(method));
             }
@@ -1195,11 +1213,7 @@ public class Bootstrap {
         }
 
         // mismatched arity not supported
-        if (isStatic) {
-            if (site.arity != nativeCall.getNativeSignature().length - 1) {
-                return null;
-            }
-        } else if (site.arity != nativeCall.getNativeSignature().length) {
+        if (site.arity != nativeCall.getNativeSignature().length) {
             return null;
         }
 
@@ -1212,144 +1226,161 @@ public class Bootstrap {
         // Scala singletons have slightly different JI logic, so skip for now
         if (method instanceof SingletonMethodInvoker) return null;
 
-        // the "apparent" type from the NativeCall, excluding receiver
-        MethodType apparentType = methodType(nativeCall.getNativeReturn(), nativeCall.getNativeSignature());
+        // get prepared handle if previously cached
+        MethodHandle nativeTarget = (MethodHandle)method.getHandle();
 
-        if (isStatic) {
-            nativeTarget = findStatic(nativeCall.getNativeTarget(), nativeCall.getNativeName(), apparentType);
-        } else {
-            nativeTarget = findVirtual(nativeCall.getNativeTarget(), nativeCall.getNativeName(), apparentType);
-        }
+        if (nativeTarget == null) {
+            // no cache, proceed to construct the adapted handle
 
-        // the actual native type with receiver
-        MethodType nativeType = nativeTarget.type();
-        Class[] nativeParams = nativeType.parameterArray();
-        Class nativeReturn = nativeType.returnType();
+            // the "apparent" type from the NativeCall, excluding receiver
+            MethodType apparentType = methodType(nativeCall.getNativeReturn(), nativeCall.getNativeSignature());
 
-        // convert arguments
-        MethodHandle[] argConverters = new MethodHandle[nativeType.parameterCount()];
-        for (int i = 0; i < argConverters.length; i++) {
-            MethodHandle converter;
-            if (!isStatic && i == 0) {
-                // handle non-static receiver specially
-                converter = Binder
-                        .from(nativeParams[0], IRubyObject.class)
-                        .cast(Object.class, IRubyObject.class)
-                        .invokeStaticQuiet(lookup(), JavaUtil.class, "objectFromJavaProxy");
+            if (isStatic) {
+                nativeTarget = findStatic(nativeCall.getNativeTarget(), nativeCall.getNativeName(), apparentType);
             } else {
-                // all other arguments use toJava
-                converter = Binder
-                        .from(nativeParams[i], IRubyObject.class)
-                        .insert(1, nativeParams[i])
-                        .cast(Object.class, IRubyObject.class, Class.class)
-                        .invokeVirtualQuiet(lookup(), "toJava");
-            }
-            argConverters[i] = converter;
-        }
-        nativeTarget = filterArguments(nativeTarget, 0, argConverters);
-
-        Class[] convertedParams = CodegenUtils.params(IRubyObject.class, nativeTarget.type().parameterCount());
-
-        // handle return value
-        if (nativeReturn == byte.class
-                || nativeReturn == short.class
-                || nativeReturn == char.class
-                || nativeReturn == int.class
-                || nativeReturn == long.class) {
-            // native integral type, produce a Fixnum
-            nativeTarget = explicitCastArguments(nativeTarget, methodType(long.class, convertedParams));
-            returnFilter = insertArguments(
-                    findStatic(RubyFixnum.class, "newFixnum", methodType(RubyFixnum.class, Ruby.class, long.class)),
-                    0,
-                    runtime);
-        } else if (nativeReturn == Byte.class
-                || nativeReturn == Short.class
-                || nativeReturn == Character.class
-                || nativeReturn == Integer.class
-                || nativeReturn == Long.class) {
-            // boxed integral type, produce a Fixnum or nil
-            returnFilter = insertArguments(
-                    findStatic(Bootstrap.class, "fixnumOrNil", methodType(IRubyObject.class, Ruby.class, nativeReturn)),
-                    0,
-                    runtime);
-        } else if (nativeReturn == float.class
-                || nativeReturn == double.class) {
-            // native decimal type, produce a Float
-            nativeTarget = explicitCastArguments(nativeTarget, methodType(double.class, convertedParams));
-            returnFilter = insertArguments(
-                    findStatic(RubyFloat.class, "newFloat", methodType(RubyFloat.class, Ruby.class, double.class)),
-                    0,
-                    runtime);
-        } else if (nativeReturn == Float.class
-                || nativeReturn == Double.class) {
-            // boxed decimal type, produce a Float or nil
-            returnFilter = insertArguments(
-                    findStatic(Bootstrap.class, "floatOrNil", methodType(IRubyObject.class, Ruby.class, nativeReturn)),
-                    0,
-                    runtime);
-        } else if (nativeReturn == boolean.class) {
-            // native boolean type, produce a Boolean
-            nativeTarget = explicitCastArguments(nativeTarget, methodType(boolean.class, convertedParams));
-            returnFilter = insertArguments(
-                    findStatic(RubyBoolean.class, "newBoolean", methodType(RubyBoolean.class, Ruby.class, boolean.class)),
-                    0,
-                    runtime);
-        } else if (nativeReturn == Boolean.class) {
-            // boxed boolean type, produce a Boolean or nil
-            returnFilter = insertArguments(
-                    findStatic(Bootstrap.class, "booleanOrNil", methodType(IRubyObject.class, Ruby.class, Boolean.class)),
-                    0,
-                    runtime);
-        } else if (CharSequence.class.isAssignableFrom(nativeReturn)) {
-            // character sequence, produce a String or nil
-            nativeTarget = explicitCastArguments(nativeTarget, methodType(CharSequence.class, convertedParams));
-            returnFilter = insertArguments(
-                    findStatic(Bootstrap.class, "stringOrNil", methodType(IRubyObject.class, Ruby.class, CharSequence.class)),
-                    0,
-                    runtime);
-        } else if (nativeReturn == void.class) {
-            // void return, produce nil
-            returnFilter = constant(IRubyObject.class, runtime.getNil());
-        } else if (nativeReturn == ByteList.class) {
-            // not handled yet
-        } else if (nativeReturn == BigInteger.class) {
-            // not handled yet
-        } else {
-            // all other object types
-            nativeTarget = explicitCastArguments(nativeTarget, methodType(Object.class, convertedParams));
-            returnFilter = insertArguments(
-                    findStatic(JavaUtil.class, "convertJavaToUsableRubyObject", methodType(IRubyObject.class, Ruby.class, Object.class)),
-                    0,
-                    runtime);
-        }
-
-        // we can handle this; do remaining transforms and return
-        if (returnFilter != null) {
-            Class[] newNativeParams = nativeTarget.type().parameterArray();
-            Class newNativeReturn = nativeTarget.type().returnType();
-
-            Binder exBinder = Binder
-                    .from(newNativeReturn, Throwable.class, newNativeParams)
-                    .drop(1, newNativeParams.length)
-                    .insert(0, runtime);
-            if (nativeReturn != void.class) {
-                exBinder = exBinder
-                        .filterReturn(Binder
-                                .from(newNativeReturn)
-                                .constant(nullValue(newNativeReturn)));
+                nativeTarget = findVirtual(nativeCall.getNativeTarget(), nativeCall.getNativeName(), apparentType);
             }
 
-            nativeTarget = Binder
-                    .from(site.type())
-                    .drop(0, isStatic ? 3 : 2)
-                    .filterReturn(returnFilter)
-                    .invoke(nativeTarget);
+            // the actual native type with receiver
+            MethodType nativeType = nativeTarget.type();
+            Class[] nativeParams = nativeType.parameterArray();
+            Class nativeReturn = nativeType.returnType();
 
+            // convert arguments
+            MethodHandle[] argConverters = new MethodHandle[nativeType.parameterCount()];
+            for (int i = 0; i < argConverters.length; i++) {
+                MethodHandle converter;
+                if (!isStatic && i == 0) {
+                    // handle non-static receiver specially
+                    converter = Binder
+                            .from(nativeParams[0], IRubyObject.class)
+                            .cast(Object.class, IRubyObject.class)
+                            .invokeStaticQuiet(lookup(), JavaUtil.class, "objectFromJavaProxy");
+                } else {
+                    // all other arguments use toJava
+                    converter = Binder
+                            .from(nativeParams[i], IRubyObject.class)
+                            .insert(1, nativeParams[i])
+                            .cast(Object.class, IRubyObject.class, Class.class)
+                            .invokeVirtualQuiet(lookup(), "toJava");
+                }
+                argConverters[i] = converter;
+            }
+            nativeTarget = filterArguments(nativeTarget, 0, argConverters);
+
+            Ruby runtime = method.getImplementationClass().getRuntime();
+            Class[] convertedParams = CodegenUtils.params(IRubyObject.class, nativeTarget.type().parameterCount());
+
+            // handle return value
+            MethodHandle returnFilter;
+            if (nativeReturn == byte.class
+                    || nativeReturn == short.class
+                    || nativeReturn == char.class
+                    || nativeReturn == int.class
+                    || nativeReturn == long.class) {
+                // native integral type, produce a Fixnum
+                nativeTarget = explicitCastArguments(nativeTarget, methodType(long.class, convertedParams));
+                returnFilter = insertArguments(
+                        findStatic(RubyFixnum.class, "newFixnum", methodType(RubyFixnum.class, Ruby.class, long.class)),
+                        0,
+                        runtime);
+            } else if (nativeReturn == Byte.class
+                    || nativeReturn == Short.class
+                    || nativeReturn == Character.class
+                    || nativeReturn == Integer.class
+                    || nativeReturn == Long.class) {
+                // boxed integral type, produce a Fixnum or nil
+                returnFilter = insertArguments(
+                        findStatic(Bootstrap.class, "fixnumOrNil", methodType(IRubyObject.class, Ruby.class, nativeReturn)),
+                        0,
+                        runtime);
+            } else if (nativeReturn == float.class
+                    || nativeReturn == double.class) {
+                // native decimal type, produce a Float
+                nativeTarget = explicitCastArguments(nativeTarget, methodType(double.class, convertedParams));
+                returnFilter = insertArguments(
+                        findStatic(RubyFloat.class, "newFloat", methodType(RubyFloat.class, Ruby.class, double.class)),
+                        0,
+                        runtime);
+            } else if (nativeReturn == Float.class
+                    || nativeReturn == Double.class) {
+                // boxed decimal type, produce a Float or nil
+                returnFilter = insertArguments(
+                        findStatic(Bootstrap.class, "floatOrNil", methodType(IRubyObject.class, Ruby.class, nativeReturn)),
+                        0,
+                        runtime);
+            } else if (nativeReturn == boolean.class) {
+                // native boolean type, produce a Boolean
+                nativeTarget = explicitCastArguments(nativeTarget, methodType(boolean.class, convertedParams));
+                returnFilter = insertArguments(
+                        findStatic(RubyBoolean.class, "newBoolean", methodType(RubyBoolean.class, Ruby.class, boolean.class)),
+                        0,
+                        runtime);
+            } else if (nativeReturn == Boolean.class) {
+                // boxed boolean type, produce a Boolean or nil
+                returnFilter = insertArguments(
+                        findStatic(Bootstrap.class, "booleanOrNil", methodType(IRubyObject.class, Ruby.class, Boolean.class)),
+                        0,
+                        runtime);
+            } else if (CharSequence.class.isAssignableFrom(nativeReturn)) {
+                // character sequence, produce a String or nil
+                nativeTarget = explicitCastArguments(nativeTarget, methodType(CharSequence.class, convertedParams));
+                returnFilter = insertArguments(
+                        findStatic(Bootstrap.class, "stringOrNil", methodType(IRubyObject.class, Ruby.class, CharSequence.class)),
+                        0,
+                        runtime);
+            } else if (nativeReturn == void.class) {
+                // void return, produce nil
+                returnFilter = constant(IRubyObject.class, runtime.getNil());
+            } else if (nativeReturn == ByteList.class) {
+                // bytelist, produce a String or nil
+                nativeTarget = explicitCastArguments(nativeTarget, methodType(ByteList.class, convertedParams));
+                returnFilter = insertArguments(
+                        findStatic(Bootstrap.class, "stringOrNil", methodType(IRubyObject.class, Ruby.class, ByteList.class)),
+                        0,
+                        runtime);
+            } else if (nativeReturn == BigInteger.class) {
+                // bytelist, produce a String or nil
+                nativeTarget = explicitCastArguments(nativeTarget, methodType(BigInteger.class, convertedParams));
+                returnFilter = insertArguments(
+                        findStatic(Bootstrap.class, "bignumOrNil", methodType(IRubyObject.class, Ruby.class, BigInteger.class)),
+                        0,
+                        runtime);
+            } else {
+                // all other object types
+                nativeTarget = explicitCastArguments(nativeTarget, methodType(Object.class, convertedParams));
+                returnFilter = insertArguments(
+                        findStatic(JavaUtil.class, "convertJavaToUsableRubyObject", methodType(IRubyObject.class, Ruby.class, Object.class)),
+                        0,
+                        runtime);
+            }
+
+            nativeTarget = MethodHandles.filterReturnValue(nativeTarget, returnFilter);
+
+            // cache adapted handle
             method.setHandle(nativeTarget);
-            return nativeTarget;
         }
 
-        return null;
+        // perform final adaptation by dropping JRuby-specific arguments
+        int dropCount;
+        if (isStatic) {
+            if (site.functional) {
+                dropCount = 2; // context, self
+            } else {
+                dropCount = 3; // context, caller, self
+            }
+        } else {
+            if (site.functional) {
+                dropCount = 1; // context
+            } else {
+                dropCount = 2; // context, caller
+            }
+        }
+
+        return Binder
+                .from(site.type())
+                .drop(0, dropCount)
+                .invoke(nativeTarget);
     }
 
     public static boolean subclassProxyTest(Object target) {
@@ -1405,6 +1436,14 @@ public class Bootstrap {
         return cs == null ? runtime.getNil() : RubyString.newUnicodeString(runtime, cs);
     }
 
+    public static IRubyObject stringOrNil(Ruby runtime, ByteList bl) {
+        return bl == null ? runtime.getNil() : RubyString.newString(runtime, bl);
+    }
+
+    public static IRubyObject bignumOrNil(Ruby runtime, BigInteger bi) {
+        return bi == null ? runtime.getNil() : RubyBignum.newBignum(runtime, bi);
+    }
+
     ///////////////////////////////////////////////////////////////////////////
     // Fixnum binding
 
@@ -1422,6 +1461,10 @@ public class Bootstrap {
 
     public static Handle checkpointHandle() {
         return getBootstrapHandle("checkpointBootstrap", BOOTSTRAP_BARE_SIG);
+    }
+
+    public static Handle callInfoHandle() {
+        return getBootstrapHandle("callInfoBootstrap", BOOTSTRAP_INT_SIG);
     }
 
     public static Handle coverLineHandle() {
@@ -1472,6 +1515,21 @@ public class Bootstrap {
         target = ((SwitchPoint)invalidator.getData()).guardWithTest(target, fallback);
 
         site.setTarget(target);
+
+        // poll for events once since we've ended up back in fallback
+        context.pollThreadEvents();
+    }
+
+    public static CallSite callInfoBootstrap(Lookup lookup, String name, MethodType type, int callInfo) throws Throwable {
+        MethodHandle handle;
+        if (callInfo == 0) {
+            handle = lookup.findVirtual(ThreadContext.class, "clearCallInfo", methodType(void.class));
+        } else {
+            handle = lookup.findStatic(IRRuntimeHelpers.class, "setCallInfo", methodType(void.class, ThreadContext.class, int.class));
+            handle = insertArguments(handle, 1, callInfo);
+        }
+
+        return new ConstantCallSite(handle);
     }
 
     public static CallSite coverLineBootstrap(Lookup lookup, String name, MethodType type, String filename, int line, int oneshot) throws Throwable {

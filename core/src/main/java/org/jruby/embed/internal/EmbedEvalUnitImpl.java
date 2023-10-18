@@ -53,7 +53,7 @@ import org.jruby.runtime.scope.ManyVarsDynamicScope;
  * <p>Users do not instantiate explicitly. Instead, they can get the instance by parsing
  * Ruby script by parse method of {@link ScriptingContainer}.
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class EmbedEvalUnitImpl implements EmbedEvalUnit {
 

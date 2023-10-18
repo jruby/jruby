@@ -49,6 +49,7 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 
 import java.nio.charset.Charset;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -1397,8 +1398,6 @@ public class EncodingUtils {
     /**
      * Perform the inner transcoding loop.
      *
-     * @see #transcodeLoop(EConv, TranscodeFallback, Object, Object, byte[], Ptr, byte[], Ptr, int, int, ByteList, ResizeFunction)
-     *
      * This version will determine fallback function and encoding options from the given options object.
      *
      * MRI: transcode_loop Ruby-related bits
@@ -2312,7 +2311,7 @@ public class EncodingUtils {
      * @param enc the encoding for which to get a matching charset
      * @return the matching charset
      */
-    public static Charset charsetForEncoding(Encoding enc) {
+    public static Charset charsetForEncoding(Encoding enc) throws UnsupportedCharsetException {
         Charset charset = enc.getCharset();
 
         if (charset == null) {

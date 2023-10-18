@@ -56,6 +56,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ThreadContext;
@@ -318,8 +319,10 @@ public class RubyDir extends RubyObject implements Closeable {
      * with each filename is passed to the block in turn. In this case, Nil is
      * returned.
      */
-    @JRubyMethod(required = 1, optional = 2, meta = true)
+    @JRubyMethod(required = 1, optional = 2, checkArity = false, meta = true)
     public static IRubyObject glob(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        Arity.checkArgumentCount(context, args, 1, 3);
+
         Ruby runtime = context.runtime;
         GlobOptions options = new GlobOptions();
         globOptions(context, args, BASE_FLAGS_KEYWORDS, options);
@@ -431,10 +434,11 @@ public class RubyDir extends RubyObject implements Closeable {
     }
 
     /** Changes the current directory to <code>path</code> */
-    @JRubyMethod(optional = 1, meta = true)
+    @JRubyMethod(optional = 1, checkArity = false, meta = true)
     public static IRubyObject chdir(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        int argc = Arity.checkArgumentCount(context, args, 0, 1);
         Ruby runtime = context.runtime;
-        RubyString path = args.length == 1 ?
+        RubyString path = argc == 1 ?
             StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, args[0])) :
             getHomeDirectoryPath(context);
 
@@ -632,6 +636,10 @@ public class RubyDir extends RubyObject implements Closeable {
 
     @JRubyMethod(name = "home", meta = true)
     public static IRubyObject home(ThreadContext context, IRubyObject recv, IRubyObject user) {
+        if (user == null || user.isNil()) {
+            return getHomeDirectoryPath(context);
+        }
+
         RubyString userString = user.convertToString();
 
         userString.verifyAsciiCompatible();
@@ -644,8 +652,9 @@ public class RubyDir extends RubyObject implements Closeable {
      * <code>mode</code> parameter is provided only to support existing Ruby
      * code, and is ignored.
      */
-    @JRubyMethod(name = "mkdir", required = 1, optional = 1, meta = true)
+    @JRubyMethod(name = "mkdir", required = 1, optional = 1, checkArity = false, meta = true)
     public static IRubyObject mkdir(ThreadContext context, IRubyObject recv, IRubyObject... args) {
+        Arity.checkArgumentCount(context, args, 1, 2);
         Ruby runtime = context.runtime;
         RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, args[0]));
         return mkdirCommon(runtime, path.asJavaString(), args);

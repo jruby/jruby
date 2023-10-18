@@ -23,15 +23,13 @@ describe "IO.read" do
     IO.read(p)
   end
 
-  ruby_version_is "3.0" do
-    # https://bugs.ruby-lang.org/issues/19354
-    it "accepts options as keyword arguments" do
-      IO.read(@fname, 3, 0, mode: "r+").should == @contents[0, 3]
+  # https://bugs.ruby-lang.org/issues/19354
+  it "accepts options as keyword arguments" do
+    IO.read(@fname, 3, 0, mode: "r+").should == @contents[0, 3]
 
-      -> {
-        IO.read(@fname, 3, 0, {mode: "r+"})
-      }.should raise_error(ArgumentError, /wrong number of arguments/)
-    end
+    -> {
+      IO.read(@fname, 3, 0, {mode: "r+"})
+    }.should raise_error(ArgumentError, /wrong number of arguments/)
   end
 
   it "accepts an empty options Hash" do
@@ -67,12 +65,14 @@ describe "IO.read" do
   end
 
   platform_is_not :windows do
-    it "uses an :open_args option" do
-      string = IO.read(@fname, nil, 0, open_args: ["r", nil, {encoding: Encoding::US_ASCII}])
-      string.encoding.should == Encoding::US_ASCII
+    ruby_version_is ""..."3.3" do
+      it "uses an :open_args option" do
+        string = IO.read(@fname, nil, 0, open_args: ["r", nil, {encoding: Encoding::US_ASCII}])
+        string.encoding.should == Encoding::US_ASCII
 
-      string = IO.read(@fname, nil, 0, open_args: ["r", nil, {}])
-      string.encoding.should == Encoding::UTF_8
+        string = IO.read(@fname, nil, 0, open_args: ["r", nil, {}])
+        string.encoding.should == Encoding::UTF_8
+      end
     end
   end
 
@@ -126,9 +126,18 @@ describe "IO.read" do
     -> { IO.read @fname, -1 }.should raise_error(ArgumentError)
   end
 
-  it "raises an Errno::EINVAL when not passed a valid offset" do
-    -> { IO.read @fname, 0, -1  }.should raise_error(Errno::EINVAL)
-    -> { IO.read @fname, -1, -1 }.should raise_error(Errno::EINVAL)
+  ruby_version_is ''...'3.3' do
+    it "raises an Errno::EINVAL when not passed a valid offset" do
+      -> { IO.read @fname, 0, -1  }.should raise_error(Errno::EINVAL)
+      -> { IO.read @fname, -1, -1 }.should raise_error(Errno::EINVAL)
+    end
+  end
+
+  ruby_version_is '3.3' do
+    it "raises an ArgumentError when not passed a valid offset" do
+      -> { IO.read @fname, 0, -1  }.should raise_error(ArgumentError)
+      -> { IO.read @fname, -1, -1 }.should raise_error(ArgumentError)
+    end
   end
 
   it "uses the external encoding specified via the :external_encoding option" do
@@ -156,12 +165,19 @@ describe "IO.read from a pipe" do
     platform_is :windows do
       cmd = "|cmd.exe /C echo hello"
     end
-    IO.read(cmd).should == "hello\n"
+
+    suppress_warning do # https://bugs.ruby-lang.org/issues/19630
+      IO.read(cmd).should == "hello\n"
+    end
   end
 
   platform_is_not :windows do
     it "opens a pipe to a fork if the rest is -" do
-      str = IO.read("|-")
+      str = nil
+      suppress_warning do # https://bugs.ruby-lang.org/issues/19630
+        str = IO.read("|-")
+      end
+
       if str # parent
         str.should == "hello from child\n"
       else #child
@@ -176,13 +192,18 @@ describe "IO.read from a pipe" do
     platform_is :windows do
       cmd = "|cmd.exe /C echo hello"
     end
-    IO.read(cmd, 1).should == "h"
+
+    suppress_warning do # https://bugs.ruby-lang.org/issues/19630
+      IO.read(cmd, 1).should == "h"
+    end
   end
 
   platform_is_not :windows do
     it "raises Errno::ESPIPE if passed an offset" do
       -> {
-        IO.read("|sh -c 'echo hello'", 1, 1)
+        suppress_warning do # https://bugs.ruby-lang.org/issues/19630
+          IO.read("|sh -c 'echo hello'", 1, 1)
+        end
       }.should raise_error(Errno::ESPIPE)
     end
   end
@@ -193,11 +214,23 @@ quarantine! do # The process tried to write to a nonexistent pipe.
     # once https://bugs.ruby-lang.org/issues/12230 is fixed.
     it "raises Errno::EINVAL if passed an offset" do
       -> {
-        IO.read("|cmd.exe /C echo hello", 1, 1)
+        suppress_warning do # https://bugs.ruby-lang.org/issues/19630
+          IO.read("|cmd.exe /C echo hello", 1, 1)
+        end
       }.should raise_error(Errno::EINVAL)
     end
   end
 end
+
+  ruby_version_is "3.3" do
+    # https://bugs.ruby-lang.org/issues/19630
+    it "warns about deprecation given a path with a pipe" do
+      cmd = "|echo ok"
+      -> {
+        IO.read(cmd)
+      }.should complain(/IO process creation with a leading '\|'/)
+    end
+  end
 end
 
 describe "IO.read on an empty file" do

@@ -1,0 +1,2 @@
+fails:String#start_with? checks that we are not matching part of a character
+fails:String#start_with? checks we are matching only part of a character

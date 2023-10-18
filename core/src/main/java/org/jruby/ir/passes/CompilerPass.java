@@ -68,7 +68,7 @@ public abstract class CompilerPass {
      * If this pass has been previous run, then return the data from that last run.
      * Specific scopes can override this behavior.
      *
-     * @returns data or null if it needs to be run
+     * @return data or null if it needs to be run
      */
     public Object previouslyRun(FullInterpreterContext fic) {
         return fic.getExecutedPasses().contains(this) ? new Object() : null;
@@ -83,7 +83,7 @@ public abstract class CompilerPass {
      * all compiler passes list their dependencies.
      *
      * @param fic is where the pass stores its data.
-     * @returns true if invalidation succeeded, false otherwise.
+     * @return true if invalidation succeeded, false otherwise.
      */
     public boolean invalidate(FullInterpreterContext fic) {
         // System.out.println("--- INVALIDATING " + this.getLabel() + " on scope: " + scope);

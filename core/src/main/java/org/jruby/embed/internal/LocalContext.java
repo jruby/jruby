@@ -41,7 +41,7 @@ import org.jruby.embed.LocalVariableBehavior;
 
 /**
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class LocalContext {
 

@@ -203,16 +203,31 @@ describe "IO.write" do
         rm_r @fifo
       end
 
-      it "writes correctly" do
-        thr = Thread.new do
-          IO.read(@fifo)
+      # rb_cloexec_open() is currently missing a retry on EINTR.
+      # @ioquatix is looking into fixing it. Quarantined until it's done.
+      quarantine! do
+        it "writes correctly" do
+          thr = Thread.new do
+            IO.read(@fifo)
+          end
+          begin
+            string = "hi"
+            IO.write(@fifo, string).should == string.length
+          ensure
+            thr.join
+          end
         end
-        begin
-          string = "hi"
-          IO.write(@fifo, string).should == string.length
-        ensure
-          thr.join
-        end
+      end
+    end
+
+    ruby_version_is "3.3" do
+      # https://bugs.ruby-lang.org/issues/19630
+      it "warns about deprecation given a path with a pipe" do
+        -> {
+          -> {
+            IO.write("|cat", "xxx")
+          }.should output_to_fd("xxx")
+        }.should complain(/IO process creation with a leading '\|'/)
       end
     end
   end
@@ -220,6 +235,7 @@ end
 
 describe "IO#write" do
   it_behaves_like :io_write, :write
+  it_behaves_like :io_write_transcode, :write
 
   it "accepts multiple arguments" do
     IO.pipe do |r, w|
@@ -258,25 +274,23 @@ platform_is :windows do
   end
 end
 
-ruby_version_is "3.0" do
-  describe "IO#write on STDOUT" do
-    # https://bugs.ruby-lang.org/issues/14413
-    platform_is_not :windows do
-      it "raises SignalException SIGPIPE if the stream is closed instead of Errno::EPIPE like other IOs" do
-        stderr_file = tmp("stderr")
-        begin
-          IO.popen([*ruby_exe, "-e", "loop { puts :ok }"], "r", err: stderr_file) do |io|
-            io.gets.should == "ok\n"
-            io.close
-          end
-          status = $?
-          status.should_not.success?
-          status.should.signaled?
-          Signal.signame(status.termsig).should == 'PIPE'
-          File.read(stderr_file).should.empty?
-        ensure
-          rm_r stderr_file
+describe "IO#write on STDOUT" do
+  # https://bugs.ruby-lang.org/issues/14413
+  platform_is_not :windows do
+    it "raises SignalException SIGPIPE if the stream is closed instead of Errno::EPIPE like other IOs" do
+      stderr_file = tmp("stderr")
+      begin
+        IO.popen([*ruby_exe, "-e", "loop { puts :ok }"], "r", err: stderr_file) do |io|
+          io.gets.should == "ok\n"
+          io.close
         end
+        status = $?
+        status.should_not.success?
+        status.should.signaled?
+        Signal.signame(status.termsig).should == 'PIPE'
+        File.read(stderr_file).should.empty?
+      ensure
+        rm_r stderr_file
       end
     end
   end

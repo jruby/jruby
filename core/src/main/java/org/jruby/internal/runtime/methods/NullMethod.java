@@ -56,7 +56,7 @@ public class NullMethod extends DynamicMethod {
      * The one implementation of call, which throws an exception because
      * NullMethod can't be invoked.
      *
-     * @see DynamicMethod.call
+     * @see org.jruby.internal.runtime.methods.DynamicMethod#call(ThreadContext, IRubyObject, RubyModule, String, IRubyObject[])
      */
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
         throw new UnsupportedOperationException("BUG: invoking NullMethod.call; report at http://bugs.jruby.org");

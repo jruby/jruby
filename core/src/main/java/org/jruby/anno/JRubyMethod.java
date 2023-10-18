@@ -109,6 +109,12 @@ public @interface JRubyMethod {
     boolean notImplemented() default false;
 
     /**
+     * Whether automatic arity-checking should be added to the Ruby binding for this
+     * method. Users can opt-out and do their own arity-checking in the method body.
+     */
+    boolean checkArity() default true;
+
+    /**
      * A list of classes that implement an abstract JRubyMethod, for backtrace purposes.
      */
     Class[] implementers() default {};

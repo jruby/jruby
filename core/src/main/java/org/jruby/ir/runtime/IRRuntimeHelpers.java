@@ -790,7 +790,7 @@ public class IRRuntimeHelpers {
 
             args[args.length - 1] = hash;
             return UNDEFINED;
-        } else if (ruby2_keywords_hash && hash.isEmpty()) {
+        } else if ((callInfo & CALL_SPLATS) != 0 && ruby2_keywords_hash && hash.isEmpty()) {
             // case where we somehow (hash.clear) a marked ruby2_keyword.  We pass it as keyword even in non-keyword
             // accepting methods so it is subtracted from the arity count.  Normally empty keyword arguments are not
             // passed along but ruby2_keyword is a strange case since it is mutable by users.
@@ -837,6 +837,11 @@ public class IRRuntimeHelpers {
         context.resetCallInfo();
     }
 
+    @JIT
+    public static void clearCallInfo(ThreadContext context) {
+        context.clearCallInfo();
+    }
+
     public static void checkForExtraUnwantedKeywordArgs(ThreadContext context, final StaticScope scope, RubyHash keywordArgs) {
         // we do an inexpensive non-gathering scan first to see if there's a bad keyword
         try {
@@ -857,7 +862,6 @@ public class IRRuntimeHelpers {
             DynamicScope tlbScope = ((IRScriptBody) irScope).getScriptDynamicScope();
             if (tlbScope != null) {
                 context.preScopedBody(tlbScope);
-                tlbScope.growIfNeeded();
                 return tlbScope;
             }
         }
@@ -955,12 +959,6 @@ public class IRRuntimeHelpers {
     }
 
     @JIT @Interp
-    public static IRubyObject isDefinedInstanceVar(ThreadContext context, IRubyObject receiver, String name, IRubyObject definedMessage) {
-        return receiver.getInstanceVariables().hasInstanceVariable(name) ?
-                definedMessage : context.nil;
-    }
-
-    @JIT @Interp
     public static IRubyObject isDefinedCall(ThreadContext context, IRubyObject self, IRubyObject receiver, String name, IRubyObject definedMessage) {
         IRubyObject boundValue = Helpers.getDefinedCall(context, self, receiver, name, definedMessage);
 
@@ -999,6 +997,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static IRubyObject isDefinedSuper(ThreadContext context, IRubyObject receiver, String frameName, RubyModule frameClass, IRubyObject definedMessage) {
         boolean defined = frameName != null && frameClass != null &&
+                frameClass.getSuperClass() != null &&
                 frameClass.getSuperClass().isMethodBound(frameName, false);
 
         return defined ? definedMessage : context.nil;
@@ -1566,7 +1565,7 @@ public class IRRuntimeHelpers {
 
     // FIXME: Pass context instead of runtime.
     @JIT
-    public static RubyHash constructHashFromArray(Ruby runtime, boolean literal, IRubyObject[] pairs) {
+    public static RubyHash constructHashFromArray(Ruby runtime, IRubyObject[] pairs) {
         int length = pairs.length / 2;
         boolean useSmallHash = length <= 10;
 
@@ -2371,18 +2370,11 @@ public class IRRuntimeHelpers {
     public static RubyString newFrozenString(ThreadContext context, ByteList bytelist, int coderange, String file, int line) {
         Ruby runtime = context.runtime;
 
-        RubyString string = RubyString.newString(runtime, bytelist, coderange);
-
         if (runtime.getInstanceConfig().isDebuggingFrozenStringLiteral()) {
-            // stuff location info into the string and then freeze it
-            RubyArray info = (RubyArray) runtime.newArray(runtime.newString(file).freeze(context), runtime.newFixnum(line + 1)).freeze(context);
-            string.setInstanceVariable(RubyString.DEBUG_INFO_FIELD, info);
-            string.setFrozen(true);
-        } else {
-            string = runtime.freezeAndDedupString(string);
+            return RubyString.newDebugFrozenString(runtime, runtime.getString(), bytelist, coderange, file, line + 1);
         }
 
-        return string;
+        return runtime.freezeAndDedupString(RubyString.newString(runtime, bytelist, coderange));
     }
 
     @JIT @Interp
@@ -2390,19 +2382,6 @@ public class IRRuntimeHelpers {
         string.setFrozen(true);
 
         return string;
-    }
-
-    @JIT @Interp
-    public static RubyString freezeLiteralString(RubyString string, ThreadContext context, String file, int line) {
-        Ruby runtime = context.runtime;
-
-        if (runtime.getInstanceConfig().isDebuggingFrozenStringLiteral()) {
-            // stuff location info into the string and then freeze it
-            RubyArray info = (RubyArray) runtime.newArray(runtime.newString(file).freeze(context), runtime.newFixnum(line + 1)).freeze(context);
-            string.setInstanceVariable(RubyString.DEBUG_INFO_FIELD, info);
-        }
-
-        return freezeLiteralString(string);
     }
 
     @JIT
@@ -2504,11 +2483,22 @@ public class IRRuntimeHelpers {
         }
     }
 
-    @JIT
+    @Interp
     public static void putConst(ThreadContext context, IRubyObject self, RubyModule module, String id, IRubyObject value) {
+        putConst(context, self, module, id, value, context.getFile(), context.getLine() + 1);
+    }
+
+    @JIT
+    public static void putConst(ThreadContext context, IRubyObject self, RubyModule module, String id, IRubyObject value, StaticScope scope, int line) {
         warnSetConstInRefinement(context, self);
 
-        module.setConstant(id, value, context.getFile(), context.getLine() + 1);
+        module.setConstant(id, value, scope.getFile(), line);
+    }
+
+    private static void putConst(ThreadContext context, IRubyObject self, RubyModule module, String id, IRubyObject value, String filename, int line) {
+        warnSetConstInRefinement(context, self);
+
+        module.setConstant(id, value, filename, line);
     }
 
     @Interp @JIT

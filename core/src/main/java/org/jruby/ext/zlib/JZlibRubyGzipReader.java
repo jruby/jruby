@@ -38,10 +38,12 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
+import org.jruby.RubyTime;
 import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
@@ -88,9 +90,12 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         return result;
     }
 
-    @JRubyMethod(name = "open", required = 1, optional = 1, meta = true)
+    @JRubyMethod(name = "open", required = 1, optional = 1, checkArity = false, meta = true)
     public static IRubyObject open19(final ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        Arity.checkArgumentCount(context, args, 1, 2);
+
         Ruby runtime = recv.getRuntime();
+
         args[0] = Helpers.invoke(context, runtime.getFile(), "open", args[0], runtime.newString("rb"));
 
         JZlibRubyGzipReader gzio = newInstance(recv, args);
@@ -132,17 +137,20 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         position = 0;
         line = 0;
         bufferedStream = new PushbackInputStream(new BufferedInputStream(io), 512);
+        mtime = org.jruby.RubyTime.newTime(runtime, io.getModifiedTime() * 1000);
 
         return this;
     }
 
-    @JRubyMethod(name = "initialize", required = 1, optional = 1, visibility = PRIVATE)
+    @JRubyMethod(name = "initialize", required = 1, optional = 1, checkArity = false, visibility = PRIVATE)
     public IRubyObject initialize19(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 1, 2);
+
         Ruby runtime = context.runtime;
         IRubyObject obj = initialize(context, args[0]);
         IRubyObject opt = context.nil;
         
-        if (args.length == 2) {
+        if (argc == 2) {
             opt = args[1];
             if (TypeConverter.checkHashType(runtime, opt).isNil()) {
                 throw runtime.newArgumentError(2, 1);
@@ -299,7 +307,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         return gets(context, args);
     }
 
-    @JRubyMethod(name = "gets", optional = 2, writes = FrameField.LASTLINE)
+    @JRubyMethod(name = "gets", optional = 2, checkArity = false, writes = FrameField.LASTLINE)
     public IRubyObject gets(ThreadContext context, IRubyObject[] args) {
         try {
             IRubyObject result = internalGets(args);
@@ -313,12 +321,14 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
     }
     private final static int BUFF_SIZE = 4096;
 
-    @JRubyMethod(name = "read", optional = 1)
+    @JRubyMethod(name = "read", optional = 1, checkArity = false)
     public IRubyObject read(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 0, 1);
+
         Ruby runtime = context.runtime;
 
         try {
-            if (args.length == 0 || args[0].isNil()) return readAll();
+            if (argc == 0 || args[0].isNil()) return readAll();
 
             int len = RubyNumeric.fix2int(args[0]);
             
@@ -351,18 +361,22 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         }
     }
 
-    @JRubyMethod(name = "readpartial", required = 1, optional = 1)
+    @JRubyMethod(name = "readpartial", required = 1, optional = 1, checkArity = false)
     public IRubyObject readpartial(IRubyObject[] args) {
+        Ruby runtime = getRuntime();
+
+        int argc = Arity.checkArgumentCount(runtime, args, 1, 2);
+
         try {
             int len = RubyNumeric.fix2int(args[0]);
 
             if (len < 0) {
-                throw getRuntime().newArgumentError("negative length " + len + " given");
+                throw runtime.newArgumentError("negative length " + len + " given");
             }
 
-            if (args.length > 1 && !args[1].isNil()) {
+            if (argc > 1 && !args[1].isNil()) {
                 if (!(args[1] instanceof RubyString)) {
-                    throw getRuntime().newTypeError(
+                    throw runtime.newTypeError(
                             "wrong argument type " + args[1].getMetaClass().getName()
                             + " (expected String)");
                 }
@@ -372,7 +386,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
             return readPartial(len, null);
         } catch (IOException ioe) {
-            throw getRuntime().newIOErrorFromException(ioe);
+            throw runtime.newIOErrorFromException(ioe);
         }
     }
 
@@ -628,13 +642,15 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         return super.comment();
     }
 
-    @JRubyMethod(optional = 1)
+    @JRubyMethod(optional = 1, checkArity = false)
     public IRubyObject each(ThreadContext context, IRubyObject[] args, Block block) {
+        int argc = Arity.checkArgumentCount(context, args, 0, 1);
+
         if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, this, "each", args);
 
         ByteList sep = ((RubyString) context.runtime.getGlobalVariables().get("$/")).getByteList();
 
-        if (args.length > 0 && !args[0].isNil()) {
+        if (argc > 0 && !args[0].isNil()) {
             sep = args[0].convertToString().getByteList();
         }
 
@@ -649,7 +665,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         return context.nil;
     }
 
-    @JRubyMethod(optional = 1)
+    @JRubyMethod(optional = 1, checkArity = false)
     public IRubyObject each_line(ThreadContext context, IRubyObject[] args, Block block) {
         if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, this, "each_line", args);
 
@@ -690,17 +706,19 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         return getRuntime().getNil();
     }
 
-    @JRubyMethod(optional = 1)
+    @JRubyMethod(optional = 1, checkArity = false)
     public IRubyObject readlines(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 0, 1);
+
         List<IRubyObject> array = new ArrayList<>();
 
-        if (args.length != 0 && args[0].isNil()) {
+        if (argc != 0 && args[0].isNil()) {
             array.add(read(context, IRubyObject.NULL_ARRAY));
 
         } else {
             ByteList sep = ((RubyString) context.runtime.getGlobalVariables().get("$/")).getByteList();
 
-            if (args.length > 0) sep = args[0].convertToString().getByteList();
+            if (argc > 0) sep = args[0].convertToString().getByteList();
 
             try {
                 for (IRubyObject result = internalSepGets(sep); !result.isNil(); result = internalSepGets(sep)) {
@@ -738,8 +756,8 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
      * Document-method: Zlib::GzipReader.zcat
      *
      * call-seq:
-     *   Zlib::GzipReader.zcat(io, options = {}, &block) => nil
-     *   Zlib::GzipReader.zcat(io, options = {}) => string
+     *   Zlib::GzipReader.zcat(io, options = {}, &amp;block) =&gt; nil
+     *   Zlib::GzipReader.zcat(io, options = {}) =&gt; string
      *
      * Decompresses all gzip data in the +io+, handling multiple gzip
      * streams until the end of the +io+.  There should not be any non-gzip
@@ -750,8 +768,10 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
      * If a block is not given, the method returns the concatenation of
      * all uncompressed data in all gzip streams.
      */
-    @JRubyMethod(required = 1, optional = 1, meta = true)
+    @JRubyMethod(required = 1, optional = 1, checkArity = false, meta = true)
     public static IRubyObject zcat(ThreadContext context, IRubyObject klass, IRubyObject[] args, Block block) {
+        int argc = Arity.checkArgumentCount(context, args, 1, 2);
+
         Ruby runtime = context.runtime;
 
         IRubyObject io, unused;

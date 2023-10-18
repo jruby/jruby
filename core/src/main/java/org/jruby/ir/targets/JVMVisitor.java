@@ -1258,8 +1258,6 @@ public class JVMVisitor extends IRVisitor {
             }
         }
 
-        setupCallInfo(call.getFlags());
-
         switch (call.getCallType()) {
             case FUNCTIONAL:
             case VARIABLE:
@@ -1616,7 +1614,7 @@ public class JVMVisitor extends IRVisitor {
             throw new NotCompilableException("non-propagatable target for PutField: " + source);
         }
 
-        jvmMethod().getInstanceVariableCompiler().getField(() -> visit(source), getfieldinstr.getId());
+        jvmMethod().getInstanceVariableCompiler().getField(() -> visit(source), getfieldinstr.getId(), getfieldinstr.rawValue);
         jvmStoreLocal(getfieldinstr.getResult());
     }
 
@@ -1690,20 +1688,18 @@ public class JVMVisitor extends IRVisitor {
             }
         }
 
-        setupCallInfo(instr.getFlags());
-
         switch (operation) {
             case INSTANCE_SUPER:
-                m.getInvocationCompiler().invokeInstanceSuper(file, name, args.length, hasClosure, literalClosure, splatMap);
+                m.getInvocationCompiler().invokeInstanceSuper(file, name, args.length, hasClosure, literalClosure, splatMap, instr.getFlags());
                 break;
             case CLASS_SUPER:
-                m.getInvocationCompiler().invokeClassSuper(file, name, args.length, hasClosure, literalClosure, splatMap);
+                m.getInvocationCompiler().invokeClassSuper(file, name, args.length, hasClosure, literalClosure, splatMap, instr.getFlags());
                 break;
             case UNRESOLVED_SUPER:
-                m.getInvocationCompiler().invokeUnresolvedSuper(file, name, args.length, hasClosure, literalClosure, splatMap);
+                m.getInvocationCompiler().invokeUnresolvedSuper(file, name, args.length, hasClosure, literalClosure, splatMap, instr.getFlags());
                 break;
             case ZSUPER:
-                m.getInvocationCompiler().invokeZSuper(file, name, args.length, hasClosure, splatMap);
+                m.getInvocationCompiler().invokeZSuper(file, name, args.length, hasClosure, splatMap, instr.getFlags());
                 break;
             default:
                 throw new NotCompilableException("unknown super type " + operation + " in " + instr);
@@ -2041,7 +2037,9 @@ public class JVMVisitor extends IRVisitor {
         m.adapter.checkcast(p(RubyModule.class));
         m.adapter.ldc(putconstinstr.getId());
         visit(putconstinstr.getValue());
-        m.invokeIRHelper("putConst", sig(void.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class));
+        jvmMethod().loadStaticScope();
+        m.adapter.pushInt(m.getLastLine());
+        m.invokeIRHelper("putConst", sig(void.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, StaticScope.class, int.class));
     }
 
     @Override
@@ -2299,14 +2297,6 @@ public class JVMVisitor extends IRVisitor {
                 jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedGlobal", sig(IRubyObject.class, ThreadContext.class, String.class, IRubyObject.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
-            case IS_DEFINED_INSTANCE_VAR:
-                jvmMethod().loadContext();
-                visit(runtimehelpercall.getArgs()[0]);
-                jvmAdapter().ldc(((Stringable)runtimehelpercall.getArgs()[1]).getString());
-                visit(runtimehelpercall.getArgs()[2]);
-                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedInstanceVar", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject.class));
-                jvmStoreLocal(runtimehelpercall.getResult());
-                break;
             case IS_DEFINED_CLASS_VAR:
                 jvmMethod().loadContext();
                 visit(runtimehelpercall.getArgs()[0]);
@@ -2553,9 +2543,7 @@ public class JVMVisitor extends IRVisitor {
     }
 
     private void setupCallInfo(int flags) {
-        jvmMethod().loadContext();
-        jvmMethod().adapter.ldc(flags);
-        jvmMethod().invokeIRHelper("setCallInfo", sig(void.class, ThreadContext.class, int.class));
+        jvmMethod().getInvocationCompiler().setCallInfo(flags);
     }
 
     @Override
@@ -2727,8 +2715,6 @@ public class JVMVisitor extends IRVisitor {
             jvmAdapter().checkcast(p(RubyHash.class));
 
             iter.next();
-        } else {
-            jvmMethod().adapter.ldc(hash.literal);
         }
 
         for (; iter.hasNext() ;) {

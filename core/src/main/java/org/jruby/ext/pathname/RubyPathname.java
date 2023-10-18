@@ -256,7 +256,7 @@ public class RubyPathname extends RubyObject {
         return context.runtime.newString("#<Pathname:" + getPath() + ">");
     }
 
-    @JRubyMethod(required = 1, optional = 1, writes = BACKREF)
+    @JRubyMethod(required = 1, optional = 1, checkArity = false, writes = BACKREF)
     public IRubyObject sub(ThreadContext context, IRubyObject[] args, Block block) {
         IRubyObject result = sites(context).sub.call(context, this, getPath(), args, block);
         return newInstance(context, result);
@@ -271,8 +271,10 @@ public class RubyPathname extends RubyObject {
 
     /* Facade for File */
 
-    @JRubyMethod(alias = "fnmatch?", required = 1, optional = 1)
+    @JRubyMethod(alias = "fnmatch?", required = 1, optional = 1, checkArity = false)
     public IRubyObject fnmatch(ThreadContext context, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 1, 2);
+
         args = insertPath(args, 1);
         return context.runtime.getFile().callMethod(context, "fnmatch?", args);
     }
@@ -291,7 +293,7 @@ public class RubyPathname extends RubyObject {
 
     /* Facade for IO */
 
-    @JRubyMethod(optional = 3)
+    @JRubyMethod(optional = 3, checkArity = false)
     public IRubyObject each_line(ThreadContext context, IRubyObject[] args, Block block) {
         return context.runtime.getIO().callMethod(context, "foreach", unshiftPath(args), block);
     }
@@ -303,7 +305,7 @@ public class RubyPathname extends RubyObject {
         return newInstance(context, context.runtime.getDir().callMethod("getwd"));
     }
 
-    @JRubyMethod(required = 1, optional = 2, meta = true)
+    @JRubyMethod(required = 1, optional = 2, checkArity = false, meta = true)
     public static IRubyObject glob(ThreadContext context, IRubyObject recv, IRubyObject[] args,
             Block block) {
         // TODO: yield block while iterating
@@ -317,15 +319,17 @@ public class RubyPathname extends RubyObject {
         }
     }
 
-    @JRubyMethod(required = 1, optional = 1)
+    @JRubyMethod(required = 1, optional = 1, checkArity = false)
     public IRubyObject glob(ThreadContext context, IRubyObject[] _args, Block block) {
+        int argc = Arity.checkArgumentCount(context, _args, 1, 2);
+
         Ruby runtime = context.runtime;
 
         IRubyObject[] args = new IRubyObject[3];
         boolean blockGiven = block.isGiven();
 
         args[0] = _args[0];
-        if (_args.length == 1) {
+        if (argc == 1) {
             args[1] = RubyFixnum.zero(runtime);
         } else {
             args[1] = _args[1];

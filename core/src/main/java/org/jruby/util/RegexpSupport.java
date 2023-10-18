@@ -68,7 +68,7 @@ public class RegexpSupport {
 
     /**
      * Unescape non-ascii elements in the given string, appending the results
-     * to the given bytelist if provided.
+     * to the given bytelist if provided. (mri: unescape_nonascii).
      *
      * @param runtime current runtime
      * @param to output bytelist; if null, no appending will be done
@@ -89,19 +89,20 @@ public class RegexpSupport {
             int cl = StringSupport.preciseLength(enc, bytes, p, end);
             if (cl <= 0) raisePreprocessError(runtime, str, "invalid multibyte character", mode);
             if (cl > 1 || (bytes[p] & 0x80) != 0) {
-                if (to != null) to.append(bytes, p, cl);
-                p += cl;
-                if (encp[0] == null) {
-                    encp[0] = enc;
-                } else if (encp[0] != enc) {
-                    raisePreprocessError(runtime, str, "non ASCII character in UTF-8 regexp", mode);
-                }
+                p = appendMBC(runtime, to, bytes, p, enc, encp, str, mode, cl);
                 continue;
             }
             int c;
             switch (c = bytes[p++] & 0xff) {
                 case '\\':
                     if (p == end) raisePreprocessError(runtime, str, "too short escape sequence", mode);
+
+                    cl = StringSupport.preciseLength(enc, bytes, p, end);
+                    if (cl <= 0) raisePreprocessError(runtime, str, "invalid multibyte character", mode);
+                    if (cl > 1) {
+                        p = appendMBC(runtime, to, bytes, p, enc, encp, str, mode, cl);
+                        break;
+                    }
 
                     switch (c = bytes[p++] & 0xff) {
                         case '1': case '2': case '3':
@@ -158,6 +159,17 @@ public class RegexpSupport {
             } // switch
         } // while
         return hasProperty;
+    }
+
+    private static int appendMBC(Ruby runtime, ByteList to, byte[] bytes, int p, Encoding enc, Encoding[] encp, ByteList str, ErrorMode mode, int cl) {
+        if (to != null) to.append(bytes, p, cl);
+        p += cl;
+        if (encp[0] == null) {
+            encp[0] = enc;
+        } else if (encp[0] != enc) {
+            raisePreprocessError(runtime, str, "non ASCII character in UTF-8 regexp", mode);
+        }
+        return p;
     }
 
     public static int raisePreprocessError(Ruby runtime, ByteList str, String err, ErrorMode mode) {
@@ -372,7 +384,7 @@ public class RegexpSupport {
      * @param mode error mode
      * @return new position after performing unescaping
      */
-    // MRI: unescape_escapted_nonascii
+    // MRI: unescape_escaped_nonascii
     private static int unescapeEscapedNonAscii(Ruby runtime, ByteList to, byte[]bytes, int p, int end, Encoding enc, Encoding[]encp, ByteList str, ErrorMode mode) {
         byte[]chBuf = new byte[enc.maxLength()];
         int chLen = 0;

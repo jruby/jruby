@@ -43,6 +43,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -261,8 +262,10 @@ public class RubyUDPSocket extends RubyIPSocket {
         return (DatagramChannel) getChannel();
     }
 
-    @JRubyMethod(required = 1, optional = 3)
+    @JRubyMethod(required = 1, optional = 3, checkArity = false)
     public IRubyObject recvfrom_nonblock(ThreadContext context, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 1, 4);
+
         return recvfrom_nonblock(this, context, args);
     }
 
@@ -358,8 +361,10 @@ public class RubyUDPSocket extends RubyIPSocket {
         }
     }
 
-    @JRubyMethod(required = 2, optional = 2)
+    @JRubyMethod(required = 2, optional = 2, checkArity = false)
     public IRubyObject send(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 2, 4);
+
         // TODO: implement flags
         Ruby runtime = context.runtime;
         IRubyObject _mesg = args[0];
@@ -368,13 +373,13 @@ public class RubyUDPSocket extends RubyIPSocket {
         try {
             int written;
 
-            if (args.length == 2) {
+            if (argc == 2) {
                 return send(context, _mesg, _flags);
             }
 
             InetAddress[] addrs;
             int port;
-            if (args.length == 3) {
+            if (argc == 3) {
                 InetSocketAddress sockAddress;
                 IRubyObject sockaddr = args[2];
                 if (sockaddr instanceof Addrinfo) {

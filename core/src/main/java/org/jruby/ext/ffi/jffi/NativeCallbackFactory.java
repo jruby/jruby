@@ -102,7 +102,7 @@ public class NativeCallbackFactory {
      * Checks if a type is a valid callback return type
      *
      * @param type The type to examine
-     * @return <tt>true</tt> if <tt>type</tt> is a valid return type for a callback.
+     * @return <code>true</code> if <code>type</code> is a valid return type for a callback.
      */
     private static final boolean isReturnTypeValid(Type type) {
         if (type instanceof Type.Builtin) {
@@ -139,7 +139,7 @@ public class NativeCallbackFactory {
      * Checks if a type is a valid parameter type for a callback
      *
      * @param type The type to examine
-     * @return <tt>true</tt> if <tt>type</tt> is a valid parameter type for a callback.
+     * @return <code>true</code> if <code>type</code> is a valid parameter type for a callback.
      */
     private static final boolean isParameterTypeValid(Type type) {
         if (type instanceof Type.Builtin) {

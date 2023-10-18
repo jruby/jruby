@@ -42,6 +42,7 @@ public class CommonByteLists {
     public static final ByteList FWD_REST = STAR;
     public static final ByteList FWD_KWREST = STAR_STAR;
     public static final ByteList FWD_BLOCK = AMPERSAND;
+    public static final ByteList FWD_ALL = new ByteList(new byte[] {'.', '.', '.'});
     // Needs to be different than FWD_BLOCK for object identity comparisons.
     public static final ByteList ANON_BLOCK = new ByteList(new byte[] {'&'}, USASCIIEncoding.INSTANCE);
 

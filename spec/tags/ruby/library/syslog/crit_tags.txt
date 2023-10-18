@@ -1,3 +1,0 @@
-fails:Syslog.crit logs a message
-fails:Syslog.crit accepts sprintf arguments
-fails:Syslog.crit works as an alias for Syslog.log

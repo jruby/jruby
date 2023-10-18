@@ -341,18 +341,20 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     // rb_file_initialize
-    @JRubyMethod(name = "initialize", required = 1, optional = 3, visibility = PRIVATE)
+    @JRubyMethod(name = "initialize", required = 1, optional = 3, checkArity = false, visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
+        int argc = Arity.checkArgumentCount(context, args, 1, 4);
+
         if (openFile != null) {
             throw context.runtime.newRuntimeError("reinitializing File");
         }
 
-        if (args.length > 0 && args.length <= 3) {
+        if (argc > 0 && argc <= 3) {
             IRubyObject fd = TypeConverter.convertToTypeWithCheck(context, args[0], context.runtime.getFixnum(), sites(context).to_int_checked);
             if (!fd.isNil()) {
-                if (args.length == 1) {
+                if (argc == 1) {
                     return super.initialize(context, fd, block);
-                } else if (args.length == 2) {
+                } else if (argc == 2) {
                     return super.initialize(context, fd, args[1], block);
                 }
                 return super.initialize(context, fd, args[1], args[2], block);
@@ -623,13 +625,15 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return NULL_CHAR;
     }
 
-    @JRubyMethod(required = 2, rest = true, meta = true)
+    @JRubyMethod(required = 2, rest = true, checkArity = false, meta = true)
     public static IRubyObject chmod(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 2, -1);
+
         Ruby runtime = context.runtime;
 
         int count = 0;
         RubyInteger mode = args[0].convertToInteger();
-        for (int i = 1; i < args.length; i++) {
+        for (int i = 1; i < argc; i++) {
             JRubyFile filename = file(args[i]);
 
             if (!filename.exists()) {
@@ -646,8 +650,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return runtime.newFixnum(count);
     }
 
-    @JRubyMethod(required = 2, rest = true, meta = true)
+    @JRubyMethod(required = 2, rest = true, checkArity = false, meta = true)
     public static IRubyObject chown(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 2, -1);
         Ruby runtime = context.runtime;
 
         int count = 0;
@@ -660,7 +665,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         if (!args[1].isNil()) {
             group = RubyNumeric.num2int(args[1]);
         }
-        for (int i = 2; i < args.length; i++) {
+        for (int i = 2; i < argc; i++) {
             JRubyFile filename = file(args[i]);
 
             if (!filename.exists()) {
@@ -677,12 +682,14 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return runtime.newFixnum(count);
     }
 
-    @JRubyMethod(required = 1, optional = 1, meta = true)
+    @JRubyMethod(required = 1, optional = 1, checkArity = false, meta = true)
     public static IRubyObject dirname(ThreadContext context, IRubyObject recv, IRubyObject [] args) {
+        int argc = Arity.checkArgumentCount(context, args, 1, 2);
+
         Ruby runtime = context.runtime;
         RubyString filename = StringSupport.checkEmbeddedNulls(runtime, get_path(context, args[0]));
         int level = 1;
-        if (args.length == 2) {
+        if (argc == 2) {
             level = RubyNumeric.num2int(args[1]);
         }
 
@@ -890,8 +897,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      * @param args
      * @return Resulting absolute path as a String
      */
-    @JRubyMethod(name = "expand_path", required = 1, optional = 1, meta = true)
+    @JRubyMethod(name = "expand_path", required = 1, optional = 1, checkArity = false, meta = true)
     public static IRubyObject expand_path(ThreadContext context, IRubyObject recv, IRubyObject... args) {
+        Arity.checkArgumentCount(context, args, 1, 2);
+
         return expandPathInternal(context, args, true, false);
     }
 
@@ -903,7 +912,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     /**
      * ---------------------------------------------------- File::absolute_path
-     *      File.absolute_path(file_name [, dir_string] ) -> abs_file_name
+     *      File.absolute_path(file_name [, dir_string] )$ -&gt; abs_file_name
      *
      *      From Ruby 1.9.1
      * ------------------------------------------------------------------------
@@ -913,15 +922,17 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      *      starting point. If the given pathname starts with a ``+~+'' it is
      *      NOT expanded, it is treated as a normal directory name.
      *
-     *         File.absolute_path("~oracle/bin")       #=> "<relative_path>/~oracle/bin"
+     *         File.absolute_path("~oracle/bin")       #=&gt; "&lt;relative_path&gt;/~oracle/bin"
      *
      * @param context
      * @param recv
      * @param args
      * @return
      */
-    @JRubyMethod(required = 1, optional = 1, meta = true)
+    @JRubyMethod(required = 1, optional = 1, checkArity = false, meta = true)
     public static IRubyObject absolute_path(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 1, 2);
+
         return expandPathInternal(context, args, false, false);
     }
 
@@ -930,11 +941,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         RubyString file = get_path(context, arg);
 
         // asJavaString should be ok here since windows drive shares will be charset representable and otherwise we look for "/" at front.
-        return context.runtime.newBoolean(isAbsolutePath(file.asJavaString()));
+        return context.runtime.newBoolean(isJRubyAbsolutePath(file.asJavaString()));
     }
 
-    @JRubyMethod(required = 1, optional = 1, meta = true)
+    @JRubyMethod(required = 1, optional = 1, checkArity = false, meta = true)
     public static IRubyObject realdirpath(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 1, 2);
+
         return expandPathInternal(context, args, false, true);
     }
 
@@ -980,10 +993,12 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      *   [set]:  Matches a single char in a set (re: [...]).
      *
      */
-    @JRubyMethod(name = {"fnmatch", "fnmatch?"}, required = 2, optional = 1, meta = true)
+    @JRubyMethod(name = {"fnmatch", "fnmatch?"}, required = 2, optional = 1, checkArity = false, meta = true)
     public static IRubyObject fnmatch(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 2, 3);
+
         Ruby runtime = context.runtime;
-        int flags = args.length == 3 ? RubyNumeric.num2int(args[2]) : 0;
+        int flags = argc == 3 ? RubyNumeric.num2int(args[2]) : 0;
         boolean braces_match = false;
         boolean extglob = (flags & FNM_EXTGLOB) != 0;
 
@@ -1067,13 +1082,15 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return runtime.newFileStat(f, false).birthtime();
     }
 
-    @JRubyMethod(required = 1, rest = true, meta = true)
+    @JRubyMethod(required = 1, rest = true, checkArity = false, meta = true)
     public static IRubyObject lchmod(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 1, -1);
+
         Ruby runtime = context.runtime;
 
         int count = 0;
         RubyInteger mode = args[0].convertToInteger();
-        for (int i = 1; i < args.length; i++) {
+        for (int i = 1; i < argc; i++) {
             JRubyFile file = file(args[i]);
             if (0 != runtime.getPosix().lchmod(file.toString(), (int) mode.getLongValue())) {
                 throw runtime.newErrnoFromLastPOSIXErrno();
@@ -1085,14 +1102,16 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return runtime.newFixnum(count);
     }
 
-    @JRubyMethod(required = 2, rest = true, meta = true)
+    @JRubyMethod(required = 2, rest = true, checkArity = false, meta = true)
     public static IRubyObject lchown(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 2, -1);
+
         Ruby runtime = context.runtime;
         int owner = !args[0].isNil() ? RubyNumeric.num2int(args[0]) : -1;
         int group = !args[1].isNil() ? RubyNumeric.num2int(args[1]) : -1;
         int count = 0;
 
-        for (int i = 2; i < args.length; i++) {
+        for (int i = 2; i < argc; i++) {
             JRubyFile file = file(args[i]);
 
             if (0 != runtime.getPosix().lchown(file.toString(), owner, group)) {
@@ -1242,13 +1261,15 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return truncateCommon(context, recv, path, arg2);
     }
 
-    @JRubyMethod(meta = true, optional = 1)
+    @JRubyMethod(meta = true, optional = 1, checkArity = false)
     public static IRubyObject umask(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 0, 1);
+
         Ruby runtime = context.runtime;
         int oldMask;
-        if (args.length == 0) {
+        if (argc == 0) {
             oldMask = PosixShim.umask(runtime.getPosix());
-        } else if (args.length == 1) {
+        } else if (argc == 1) {
             int newMask = (int) args[0].convertToInteger().getLongValue();
             oldMask = PosixShim.umask(runtime.getPosix(), newMask);
         } else {
@@ -1258,8 +1279,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return runtime.newFixnum(oldMask);
     }
 
-    @JRubyMethod(required = 2, rest = true, meta = true)
+    @JRubyMethod(required = 2, rest = true, checkArity = false, meta = true)
     public static IRubyObject lutime(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 2, -1);
+
         Ruby runtime = context.runtime;
         long[] atimeval = null;
         long[] mtimeval = null;
@@ -1269,7 +1292,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             mtimeval = extractTimespec(context, args[1]);
         }
 
-        for (int i = 2, j = args.length; i < j; i++) {
+        for (int i = 2, j = argc; i < j; i++) {
             RubyString filename = StringSupport.checkEmbeddedNulls(runtime, get_path(context, args[i]));
 
             JRubyFile fileToTouch = JRubyFile.create(runtime.getCurrentDirectory(), filename.toString());
@@ -1284,11 +1307,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             }
         }
 
-        return runtime.newFixnum(args.length - 2);
+        return runtime.newFixnum(argc - 2);
     }
 
-    @JRubyMethod(required = 2, rest = true, meta = true)
+    @JRubyMethod(required = 2, rest = true, checkArity = false, meta = true)
     public static IRubyObject utime(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 2, -1);
+
         Ruby runtime = context.runtime;
         long[] atimespec = null;
         long[] mtimespec = null;
@@ -1298,7 +1323,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             mtimespec = extractTimespec(context, args[1]);
         }
 
-        for (int i = 2, j = args.length; i < j; i++) {
+        for (int i = 2, j = argc; i < j; i++) {
             RubyString filename = StringSupport.checkEmbeddedNulls(runtime, get_path(context, args[i]));
 
             JRubyFile fileToTouch = JRubyFile.create(runtime.getCurrentDirectory(),filename.toString());
@@ -1324,7 +1349,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             }
         }
 
-        return runtime.newFixnum(args.length - 2);
+        return runtime.newFixnum(argc - 2);
     }
 
     @JRubyMethod(rest = true, meta = true)
@@ -1672,6 +1697,17 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     private static boolean isAbsolutePath(String path) {
         return (path != null && path.length() > 1 && path.charAt(0) == '/') ||
                 startsWithDriveLetterOnWindows(path);
+    }
+
+    private static boolean isJRubyAbsolutePath(String path) {
+        return isAbsolutePath(path) ||
+                path.startsWith("classpath:/") ||
+                path.startsWith("classpath:uri:/") ||
+                path.startsWith("uri:/") ||
+                path.startsWith("uri:classloader:/") ||
+                path.startsWith("uri:file:/") ||
+                path.startsWith("file:/") ||
+                path.contains(".jar!/");
     }
 
     private static boolean isWindowsDriveLetter(char c) {

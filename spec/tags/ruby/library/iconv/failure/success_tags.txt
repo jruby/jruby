@@ -1,2 +1,0 @@
-fails:Iconv::Failure#success for Iconv#iconv and Iconv.conv returns the substring of the original string passed which was translated successfully until the exception ocurred
-fails:Iconv::Failure#success for Iconv.iconv returns an array containing all the strings that were translated successfully until the exception ocurred, in order

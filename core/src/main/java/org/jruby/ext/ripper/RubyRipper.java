@@ -43,7 +43,6 @@ import org.jruby.lexer.ByteListLexerSource;
 import org.jruby.lexer.GetsLexerSource;
 import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.LexingCommon;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -54,8 +53,8 @@ public class RubyRipper extends RubyObject {
     public static void initRipper(Ruby runtime) {
         RubyClass ripper = runtime.defineClass("Ripper", runtime.getObject(), RubyRipper::new);
         
-        ripper.defineConstant("SCANNER_EVENT_TABLE", createScannerEventTable(runtime, ripper));
-        ripper.defineConstant("PARSER_EVENT_TABLE", createParserEventTable(runtime, ripper));
+        ripper.defineConstant("SCANNER_EVENT_TABLE", createScannerEventTable(runtime));
+        ripper.defineConstant("PARSER_EVENT_TABLE", createParserEventTable(runtime));
         defineLexStateConstants(runtime, ripper);
 
         ripper.defineAnnotatedMethods(RubyRipper.class);
@@ -68,7 +67,7 @@ public class RubyRipper extends RubyObject {
     }
     
     // Creates mapping table of token to arity for on_* method calls for the scanner support
-    private static IRubyObject createScannerEventTable(Ruby runtime, RubyClass ripper) {
+    private static RubyHash createScannerEventTable(Ruby runtime) {
         RubyHash hash = new RubyHash(runtime);
 
         hash.fastASet(runtime.newSymbol("CHAR"), runtime.newFixnum(1));
@@ -127,7 +126,7 @@ public class RubyRipper extends RubyObject {
     }
     
     // Creates mapping table of token to arity for on_* method calls for the parser support    
-    private static IRubyObject createParserEventTable(Ruby runtime, RubyClass ripper) {
+    private static RubyHash createParserEventTable(Ruby runtime) {
         RubyHash hash = new RubyHash(runtime);
 
         hash.fastASet(runtime.newSymbol("BEGIN"), runtime.newFixnum(1));

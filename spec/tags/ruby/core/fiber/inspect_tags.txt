@@ -1,0 +1,6 @@
+fails:Fiber#inspect status is resumed for the root Fiber of a Thread
+fails:Fiber#inspect status is created for a Fiber which did not run yet
+fails:Fiber#inspect status is resumed for a Fiber which was resumed
+fails:Fiber#inspect status is resumed for a Fiber which was transferred
+fails:Fiber#inspect status is suspended for a Fiber which was resumed and yielded
+fails:Fiber#inspect status is terminated for a Fiber which has terminated

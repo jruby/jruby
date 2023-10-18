@@ -626,11 +626,11 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
 
     /** fix_div
      * here is terrible MRI gotcha:
-     * 1.div 3.0 -> 0
-     * 1 / 3.0   -> 0.3333333333333333
+     * 1.div 3.0$ -&gt; 0
+     * 1 / 3.0  $ -&gt; 0.3333333333333333
      *
      * MRI is also able to do it in one place by looking at current frame in rb_num_coerce_bin:
-     * rb_funcall(x, ruby_frame->orig_func, 1, y);
+     * rb_funcall(x, ruby_frame-&gt;orig_func, 1, y);
      *
      * also note that RubyFloat doesn't override Numeric.div
      */

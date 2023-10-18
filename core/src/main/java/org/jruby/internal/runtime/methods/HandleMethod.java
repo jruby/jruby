@@ -29,8 +29,10 @@
 package org.jruby.internal.runtime.methods;
 
 import java.lang.invoke.MethodHandle;
-import java.util.concurrent.Callable;
+import java.lang.invoke.MethodHandles;
+import java.util.function.Supplier;
 
+import com.headius.invokebinder.SmartBinder;
 import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -40,6 +42,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 import static org.jruby.util.StringSupport.split;
 
@@ -56,11 +59,11 @@ import static org.jruby.util.StringSupport.split;
  * @author headius
  */
 public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneable {
-    private Callable<MethodHandle> maker0;
-    private Callable<MethodHandle> maker1;
-    private Callable<MethodHandle> maker2;
-    private Callable<MethodHandle> maker3;
-    private Callable<MethodHandle> maker4;
+    private Supplier<MethodHandle> maker0;
+    private Supplier<MethodHandle> maker1;
+    private Supplier<MethodHandle> maker2;
+    private Supplier<MethodHandle> maker3;
+    private Supplier<MethodHandle> maker4;
     private MethodHandle target0;
     private MethodHandle target1;
     private MethodHandle target2;
@@ -74,6 +77,16 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneabl
     private final boolean builtin;
     private final boolean notImplemented;
 
+    private static final com.headius.invokebinder.Signature ARITY_0 =
+            com.headius.invokebinder.Signature.from(
+                    IRubyObject.class,
+                    arrayOf(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, Block.class),
+                    "context", "self", "selfType", "name", "block");
+    private static final com.headius.invokebinder.Signature ARITY_1 = ARITY_0.insertArg(4, "arg0", IRubyObject.class);
+    private static final com.headius.invokebinder.Signature ARITY_2 = ARITY_1.insertArg(5, "arg1", IRubyObject.class);
+    private static final com.headius.invokebinder.Signature ARITY_3 = ARITY_2.insertArg(6, "arg2", IRubyObject.class);
+    private static final com.headius.invokebinder.Signature[] ARITIES = {ARITY_0, ARITY_1, ARITY_2, ARITY_3};
+
     public HandleMethod(
             RubyModule implementationClass,
             Visibility visibility,
@@ -84,11 +97,11 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneabl
             String parameterDesc,
             final int min,
             final int max,
-            final Callable<MethodHandle> maker0,
-            final Callable<MethodHandle> maker1,
-            final Callable<MethodHandle> maker2,
-            final Callable<MethodHandle> maker3,
-            final Callable<MethodHandle> maker4) {
+            final Supplier<MethodHandle> maker0,
+            final Supplier<MethodHandle> maker1,
+            final Supplier<MethodHandle> maker2,
+            final Supplier<MethodHandle> maker3,
+            final Supplier<MethodHandle> maker4) {
 
         super(implementationClass, visibility, name);
         this.signature = Signature.decode(encodedSignature);
@@ -130,58 +143,103 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneabl
     }
 
     private MethodHandle ensureTarget0() {
+        MethodHandle target0;
         if (!initialized0) {
-            this.target0 = safeCall(maker0);
+            Supplier<MethodHandle> maker0 = this.maker0;
+            if (maker0 == null) {
+                target0 = adaptSpecificToVarargs(ensureTarget4(), 0);
+            } else {
+                target0 = maker0.get();
+            }
+            this.target0 = target0;
+            this.maker0 = null;
             initialized0 = true;
-            maker0 = null;
+        } else {
+            target0 = this.target0;
         }
-        return this.target0;
+        return target0;
     }
 
     private MethodHandle ensureTarget1() {
+        MethodHandle target1;
         if (!initialized1) {
-            this.target1 = safeCall(maker1);
+            Supplier<MethodHandle> maker1 = this.maker1;
+            if (maker1 == null) {
+                target1 = adaptSpecificToVarargs(ensureTarget4(), 1);
+            } else {
+                target1 = maker1.get();
+            }
+            this.target1 = target1;
+            this.maker1 = null;
             initialized1 = true;
-            maker1 = null;
+        } else {
+            target1 = this.target1;
         }
-        return this.target1;
+        return target1;
     }
 
     private MethodHandle ensureTarget2() {
+        MethodHandle target2;
         if (!initialized2) {
-            this.target2 = safeCall(maker2);
+            Supplier<MethodHandle> maker2 = this.maker2;
+            if (maker2 == null) {
+                target2 = adaptSpecificToVarargs(ensureTarget4(), 2);
+            } else {
+                target2 = maker2.get();
+            }
+            this.target2 = target2;
+            this.maker2 = null;
             initialized2 = true;
-            maker2 = null;
+        } else {
+            target2 = this.target2;
         }
-        return this.target2;
+        return target2;
     }
 
     private MethodHandle ensureTarget3() {
+        MethodHandle target3;
         if (!initialized3) {
-            this.target3 = safeCall(maker3);
+            Supplier<MethodHandle> maker3 = this.maker3;
+            if (maker3 == null) {
+                target3 = adaptSpecificToVarargs(ensureTarget4(), 3);
+            } else {
+                target3 = maker3.get();
+            }
+            this.target3 = target3;
+            this.maker3 = null;
             initialized3 = true;
-            maker3 = null;
+        } else {
+            target3 = this.target3;
         }
-        return this.target3;
+        return target3;
     }
 
     private MethodHandle ensureTarget4() {
+        MethodHandle target4;
         if (!initialized4) {
-            this.target4 = safeCall(maker4);
+            Supplier<MethodHandle> maker4 = this.maker4;
+            if (maker4 == null) {
+                target4 = null;
+            } else {
+                target4 = maker4.get();
+            }
+            this.target4 = target4;
             initialized4 = true;
-            maker4 = null;
+            this.maker4 = null;
         }
         return this.target4;
     }
 
-    private static MethodHandle safeCall(Callable<MethodHandle> maker) {
-        try {
-            if (maker == null) return null;
-            return maker.call();
-        } catch (Exception e) {
-            Helpers.throwException(e);
-            return null;
+    private MethodHandle adaptSpecificToVarargs(MethodHandle varargs, int arity) {
+        if (arity == 0) {
+            return MethodHandles.insertArguments(varargs, 4, new Object[] {IRubyObject.NULL_ARRAY});
         }
+
+        return SmartBinder.from(ARITIES[arity])
+                .permute("context", "self", "type", "name", "block", "arg.*")
+                .collect("args", "arg.*")
+                .permute("context", "self", "type", "name", "args", "block")
+                .invoke(varargs).handle();
     }
 
     @Override
@@ -189,15 +247,14 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneabl
         try {
             MethodHandle target4 = ensureTarget4();
             if (target4 != null) {
-                Arity.checkArgumentCount(context, args.length, min, max);
                 return (IRubyObject) target4.invokeExact(context, self, clazz, name, args, block);
             } else {
                 int arity = Arity.checkArgumentCount(context, args.length, min, max);
                 switch (args.length) {
-                    case 0: return (IRubyObject) ensureTarget0().invokeExact(context, self, clazz, name, block);
-                    case 1: return (IRubyObject) ensureTarget1().invokeExact(context, self, clazz, name, args[0], block);
-                    case 2: return (IRubyObject) ensureTarget2().invokeExact(context, self, clazz, name, args[0], args[1], block);
-                    case 3: return (IRubyObject) ensureTarget3().invokeExact(context, self, clazz, name, args[0], args[1], args[2], block);
+                    case 0: return call(context, self, clazz, name, block);
+                    case 1: return call(context, self, clazz, name, args[0], block);
+                    case 2: return call(context, self, clazz, name, args[0], args[1], block);
+                    case 3: return call(context, self, clazz, name, args[0], args[1], args[2], block);
                     default:
                         throw new RuntimeException("invalid arity for call: " + arity);
                 }

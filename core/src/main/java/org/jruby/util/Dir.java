@@ -124,7 +124,18 @@ public class Dir {
                 while (true) {
                     // in place of expected C null char check that falls into default in switch below
                     if (p >= pend) {
-                        return isEnd(sbytes, s, send) ? 0 : FNM_NOMATCH;
+                        if (isEnd(sbytes, s, send)) {
+                          return 0;
+                        }
+
+                        // failed: duplicated below due to inability to goto
+                        if (ptmp != -1 && stmp != -1) {
+                          p = ptmp;
+                          stmp++; /* !ISEND(*stmp) */
+                          s = stmp;
+                          continue;
+                        }
+                        return FNM_NOMATCH;
                     }
 
                     switch (pbytes[p]) {
@@ -197,14 +208,17 @@ public class Dir {
                             continue;
                     }
 
-                    failed: // reached by breaking from above switch rather than continuing
-                    if (ptmp != -1 && stmp != -1) {
-                        p = ptmp;
-                        stmp++; /* !ISEND(*stmp) */
-                        s = stmp;
-                        continue;
+                    // failed: duplicated above due to inability to goto
+                    // reached by breaking from above switch rather than continuing
+                    {
+                        if (ptmp != -1 && stmp != -1) {
+                            p = ptmp;
+                            stmp++; /* !ISEND(*stmp) */
+                            s = stmp;
+                            continue;
+                        }
+                        return FNM_NOMATCH;
                     }
-                    return FNM_NOMATCH;
                 }
             } finally {
                 // RETURN macro in MRI

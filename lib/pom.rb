@@ -17,17 +17,20 @@ end
 default_gems = [
     # treat RGs update special:
     # - we do not want bin/update_rubygems or bin/gem overrides
-    ['rubygems-update', '3.3.25', { bin: false, require_paths: ['lib'] }],
+    ['rubygems-update', '3.3.26', { bin: false, require_paths: ['lib'] }],
     ['abbrev', '0.1.0'],
     ['base64', '0.1.1'],
     ['benchmark', '0.2.0'],
-    # https://github.com/ruby/bigdecimal/issues/169
-    # ['bigdecimal', '3.1.1'],
-    ['bundler', '2.3.25'],
-    ['cgi', '0.3.5'],
+    # Extension still lives in JRuby. See https://github.com/ruby/bigdecimal/issues/268
+    ['bigdecimal', '3.1.4'],
+    ['bundler', '2.3.26'],
+    ['cgi', '0.3.6'],
     ['csv', '3.2.5'],
+    # Currently using a stub gem for JRuby until we can incorporate our code.
     # https://github.com/ruby/date/issues/48
-    # ['date', '3.2.2'],
+    ['date', '3.3.3'],
+    # Newer versions require deep control over CRuby, needs work to support JRuby.
+    # See bundled gems below.
     ['debug', '0.2.1'],
     ['delegate', '0.2.0'],
     ['did_you_mean', '1.6.1'],
@@ -40,7 +43,7 @@ default_gems = [
     # ['etc', '1.3.0'],
     # https://github.com/ruby/fcntl/issues/9
     # ['fcntl', '1.0.1'],
-    ['ffi', '1.15.4'],
+    ['ffi', '1.16.3'],
     # ['fiddle', '1.1.0'],
     ['fileutils', '1.6.0'],
     ['find', '0.1.1'],
@@ -55,12 +58,12 @@ default_gems = [
     ['irb', '1.4.2'],
     ['jar-dependencies', '0.4.1'],
     ['jruby-readline', '1.3.7'],
-    ['jruby-openssl', '0.14.0'],
+    ['jruby-openssl', '0.14.2'],
     ['json', '2.6.1'],
     ['logger', '1.5.1'],
     ['mutex_m', '0.1.1'],
-    ['net-http', '0.2.2'],
-    ['net-protocol', '0.1.1'],
+    ['net-http', '0.3.0'],
+    ['net-protocol', '0.1.2'],
     # Partial implementation in JRuby, unsure whether this is important
     # ['nkf', '0.1.1'],
     ['observer', '0.1.1'],
@@ -75,7 +78,7 @@ default_gems = [
     ['pp', '0.3.0'],
     ['prettyprint', '0.1.1'],
     ['pstore', '0.1.1'],
-    ['psych', '5.1.0'],
+    ['psych', '5.1.1.1'],
     ['racc', '1.6.0'],
     ['rake-ant', '1.0.6'],
     ['rdoc', '6.4.0'],
@@ -83,7 +86,7 @@ default_gems = [
     # ['readline', '0.0.3'],
     # Will be solved with readline
     # ['readline-ext', '0.1.4'],
-    ['reline', '0.3.0'],
+    ['reline', '0.3.5'],
     # https://github.com/ruby/resolv/issues/19
     # ['resolv', '0.2.1'],
     ['resolv-replace', '0.1.0'],
@@ -94,25 +97,23 @@ default_gems = [
     # ['set', '1.0.2'],
     ['shellwords', '0.1.0'],
     ['singleton', '0.1.1'],
-    ['stringio', '3.0.5'],
+    ['stringio', '3.0.8'],
     ['strscan', '3.0.6'],
     ['subspawn', '0.1.1'], # has 3 transitive deps:
       ['subspawn-posix', '0.1.1'],
-      ['ffi-binary-libfixposix', '0.5.1.0'],
+      ['ffi-binary-libfixposix', '0.5.1.1'],
       ['ffi-bindings-libfixposix', '0.5.1.0'],
     # https://github.com/ruby/syslog/issues/1
     # ['syslog', '0.1.0'],
     # https://github.com/ruby/tempfile/issues/7
     # ['tempfile', '0.1.2'],
-    # Depends on date gem
-    # ['time', '0.2.0'],
-    ['time', '0.1.0'],
-    ['timeout', '0.3.0'],
+    ['time', '0.2.2'],
+    ['timeout', '0.3.2'],
     # https://github.com/ruby/tmpdir/issues/13
     # ['tmpdir', '0.1.2'],
     ['tsort', '0.1.0'],
     ['un', '0.2.0'],
-    ['uri', '0.11.0'],
+    ['uri', '0.12.1'],
     ['weakref', '0.1.1'],
     # https://github.com/ruby/win32ole/issues/12
     # ['win32ole', '1.8.8'],
@@ -127,7 +128,7 @@ bundled_gems = [
     ['matrix', '0.4.2'],
     ['minitest', '5.15.0'],
     ['net-ftp', '0.1.3'],
-    ['net-imap', '0.2.2'],
+    ['net-imap', '0.2.3'],
     ['net-pop', '0.1.1'],
     ['net-smtp', '0.3.1'],
     ['prime', '0.1.2'],
@@ -153,7 +154,7 @@ project 'JRuby Lib Setup' do
 
   properties( 'polyglot.dump.pom' => 'pom.xml',
               'polyglot.dump.readonly' => true,
-              'jruby.plugins.version' => '1.1.2',
+              'jruby.plugins.version' => '3.0.1',
               'gem.home' => '${basedir}/ruby/gems/shared',
               # we copy everything into the target/classes/META-INF
               # so the jar plugin just packs it - see build/resources below
@@ -163,7 +164,7 @@ project 'JRuby Lib Setup' do
   # just depends on jruby-core so we are sure the jruby.jar is in place
   jar "org.jruby:jruby-core:#{version}", :scope => 'test'
 
-  extension 'org.torquebox.mojo:mavengem-wagon:1.0.3'
+  extension 'org.jruby.maven:mavengem-wagon:2.0.1'
 
   repository :id => :mavengems, :url => 'mavengem:https://rubygems.org'
 
@@ -258,7 +259,7 @@ project 'JRuby Lib Setup' do
       ghome = default_gemnames.member?( a.artifact_id ) ? gem_home : jruby_gems
       if Dir[ File.join( ghome, 'cache', File.basename( a.file.to_pathname ).sub( /.gem/, '*.gem' ) ) ].empty?
         log a.file.to_pathname
-        installer = Gem::Installer.new( a.file.to_pathname,
+        installer = Gem::Installer.new( Gem::Package.new(a.file.to_pathname),
                                         wrappers: true,
                                         ignore_dependencies: true,
                                         install_dir: ghome,
@@ -375,7 +376,6 @@ project 'JRuby Lib Setup' do
     # maintainers like OpenBSD (see #1989).
     hack = File.join jruby_gems, 'gems', 'axiom-types-*'
     (Dir[File.join(hack, '**/*')] + Dir[File.join(hack, '**/.*' )]).each do |f|
-      puts "F: #{f}"
       FileUtils.chmod 'u+rw,go+r' rescue nil if File.file?(f)
     end
   end

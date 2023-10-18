@@ -116,7 +116,7 @@ public class MathLinker {
 
         // fall back on a normal call site
         MethodType fallbackType = site.type().appendParameterTypes(IRubyObject.class);
-        CallSite normalSite = NormalInvokeSite.newSite(LOOKUP, site.name, fallbackType, false, site.file(), site.line());
+        CallSite normalSite = NormalInvokeSite.newSite(LOOKUP, site.name, fallbackType, false, 0, site.file(), site.line());
 
         MethodHandle fallback = Binder.from(site.type())
                 .append(IRubyObject.class, runtime.newFixnum(value))
@@ -258,7 +258,7 @@ public class MathLinker {
 
         // fall back on a normal call site
         MethodType fallbackType = site.type().appendParameterTypes(IRubyObject.class);
-        CallSite normalSite = NormalInvokeSite.newSite(LOOKUP, site.name, fallbackType, false, site.file(), site.line());
+        CallSite normalSite = NormalInvokeSite.newSite(LOOKUP, site.name, fallbackType, false, 0, site.file(), site.line());
 
         MethodHandle fallback = Binder.from(site.type())
                 .append(IRubyObject.class, runtime.newFloat(value))

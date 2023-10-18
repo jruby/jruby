@@ -26,8 +26,8 @@ public abstract class SuperInvokeSite extends SelfInvokeSite {
     protected final String superName;
     protected final boolean[] splatMap;
 
-    public SuperInvokeSite(MethodType type, String superName, String splatmapString, String file, int line) {
-        super(type, superName, CallType.SUPER, file, line);
+    public SuperInvokeSite(MethodType type, String superName, String splatmapString, int flags, String file, int line) {
+        super(type, superName, CallType.SUPER, flags, file, line);
 
         this.superName = superName;
         this.splatMap = IRRuntimeHelpers.decodeSplatmap(splatmapString);
@@ -37,10 +37,10 @@ public abstract class SuperInvokeSite extends SelfInvokeSite {
             Opcodes.H_INVOKESTATIC,
             p(SuperInvokeSite.class),
             "bootstrap",
-            sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, String.class, int.class),
+            sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, int.class, String.class, int.class),
             false);
 
-    public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, String splatmapString, String file, int line) {
+    public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, String splatmapString, int flags, String file, int line) {
         List<String> targetAndMethod = StringSupport.split(name, ':');
         String superName = JavaNameMangler.demangleMethodName(targetAndMethod.get(1));
 
@@ -48,25 +48,25 @@ public abstract class SuperInvokeSite extends SelfInvokeSite {
 
         switch (targetAndMethod.get(0)) {
             case "invokeInstanceSuper":
-                site = new InstanceSuperInvokeSite(type, superName, splatmapString, file, line);
+                site = new InstanceSuperInvokeSite(type, superName, splatmapString, flags, file, line);
                 break;
             case "invokeInstanceSuperIter":
-                site = new InstanceSuperIterInvokeSite(type, superName, splatmapString, file, line);
+                site = new InstanceSuperIterInvokeSite(type, superName, splatmapString, flags, file, line);
                 break;
             case "invokeClassSuper":
-                site = new ClassSuperInvokeSite(type, superName, splatmapString, file, line);
+                site = new ClassSuperInvokeSite(type, superName, splatmapString, flags, file, line);
                 break;
             case "invokeClassSuperIter":
-                site = new ClassSuperIterInvokeSite(type, superName, splatmapString, file, line);
+                site = new ClassSuperIterInvokeSite(type, superName, splatmapString, flags, file, line);
                 break;
             case "invokeUnresolvedSuper":
-                site = new UnresolvedSuperInvokeSite(type, superName, splatmapString, file, line);
+                site = new UnresolvedSuperInvokeSite(type, superName, splatmapString, flags, file, line);
                 break;
             case "invokeUnresolvedSuperIter":
-                site = new UnresolvedSuperIterInvokeSite(type, superName, splatmapString, file, line);
+                site = new UnresolvedSuperIterInvokeSite(type, superName, splatmapString, flags, file, line);
                 break;
             case "invokeZSuper":
-                site = new ZSuperInvokeSite(type, superName, splatmapString, file, line);
+                site = new ZSuperInvokeSite(type, superName, splatmapString, flags, file, line);
                 break;
             default:
                 throw new RuntimeException("invalid super call: " + name);

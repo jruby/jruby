@@ -51,9 +51,9 @@ import org.jruby.embed.internal.LocalContext;
  * but the variables shouldn't be confused with the global variables in Ruby's semantics, which belongs
  * to the runtime.
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  * @author Kohsuke Kawaguchi
- * @see https://github.com/jruby/jruby/wiki/RedBridge
+ * @see <a href="https://github.com/jruby/jruby/wiki/RedBridge">RedBridge</a>
  */
 public enum LocalContextScope {
     /**

@@ -29,9 +29,9 @@
     </pluginExecution>
     <pluginExecution>
       <pluginExecutionFilter>
-        <groupId>de.saumya.mojo</groupId>
+        <groupId>org.jruby.maven</groupId>
         <artifactId>gem-maven-plugin</artifactId>
-        <versionRange>1.0.0-rc</versionRange>
+        <versionRange>3.0.1</versionRange>
         <goals>
           <goal>initialize</goal>
         </goals>
@@ -42,9 +42,9 @@
     </pluginExecution>
     <pluginExecution>
       <pluginExecutionFilter>
-        <groupId>de.saumya.mojo</groupId>
+        <groupId>org.jruby.maven</groupId>
         <artifactId>gem-maven-plugin</artifactId>
-        <versionRange>1.0.0-rc2</versionRange>
+        <versionRange>3.0.1</versionRange>
         <goals>
           <goal>initialize</goal>
         </goals>

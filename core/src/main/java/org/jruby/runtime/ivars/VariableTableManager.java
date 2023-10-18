@@ -58,11 +58,12 @@ import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
  * The logic originally lived in both RubyBasicObject and RubyClass, tightly
  * coupled to each and difficult to follow as it bounced back and forth. We
  * moved the logic here for a couple reasons:
- *
+ * <ul>
  * <li>To have a single place from which we could follow ivar logic.</li>
  * <li>To make it easier to swap in new implementations of instance variable
  * logic as we work toward reifying ivars into fields.</li>
  * <li>To remove rather noisy logic from RubyBasicObject and RubyClass.</li>
+ * </ul>
  */
 public class VariableTableManager {
     /** the "real" class associated with this table */

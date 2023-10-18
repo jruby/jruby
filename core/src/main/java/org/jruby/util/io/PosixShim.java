@@ -462,7 +462,7 @@ public class PosixShim {
 
     // no longer used
     public Channel open(String cwd, String path, ModeFlags flags, int perm) {
-        return open(cwd, path, flags, perm);
+        return open(cwd, path, flags.getFlags(), perm);
     }
 
     @Deprecated // special case is already handled with JRubyFile.createResource
