@@ -1298,10 +1298,12 @@ public class OpenFile implements Finalizable {
                     r = readInternal(context, this, fd, rbuf.ptr, 0, rbuf.capa);
 
                     if (r < 0) {
-                        if (waitReadable(context, fd)) {
+                        Errno errno = posix.getErrno();
+                        if (errno == Errno.EAGAIN || errno == Errno.EWOULDBLOCK
+                                && waitReadable(context, fd)) {
                             continue retry;
                         }
-                        throw context.runtime.newErrnoFromErrno(posix.getErrno(), "channel: " + fd + (pathv != null ? " " + pathv : ""));
+                        throw context.runtime.newErrnoFromErrno(errno, "channel: " + fd + (pathv != null ? " " + pathv : ""));
                     }
                     break;
                 }
