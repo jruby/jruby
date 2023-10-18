@@ -349,8 +349,13 @@ public class RbConfigLibrary implements Library {
 
         if (Platform.IS_WINDOWS) {
             setConfig(context, CONFIG, "EXEEXT", ".exe");
+            setConfig(context, CONFIG, "SOEXT", "dll");
+        } else if (Platform.IS_MAC) {
+            setConfig(context, CONFIG, "EXEEXT", "");
+            setConfig(context, CONFIG, "SOEXT", "dylib");
         } else {
             setConfig(context, CONFIG, "EXEEXT", "");
+            setConfig(context, CONFIG, "SOEXT", "so");
         }
 
         setConfig(context, CONFIG, "ridir", newFile(shareDir, "ri").getPath());
