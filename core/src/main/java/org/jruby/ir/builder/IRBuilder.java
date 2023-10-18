@@ -1315,34 +1315,11 @@ public abstract class IRBuilder<U, V, W, X> {
     }
 
     Operand buildDSymbol(Variable result, U[] nodePieces, Encoding encoding, int line) {
-        Operand[] pieces = new Operand[nodePieces.length];
-        int estimatedSize = 0;
-
-        for (int i = 0; i < pieces.length; i++) {
-            estimatedSize += dynamicPiece(pieces, i, nodePieces[i]);
-        }
-
-        if (result == null) result = temp();
-
-        addInstr(new BuildCompoundStringInstr(result, pieces, encoding, estimatedSize, false, getFileName(), line));
-
-        return copy(new DynamicSymbol(result));
+        return copy(new DynamicSymbol(buildDStr(result, nodePieces, encoding, false, line)));
     }
 
     public Operand buildDXStr(Variable result, U[] nodePieces, Encoding encoding, int line) {
-        Operand[] pieces = new Operand[nodePieces.length];
-        int estimatedSize = 0;
-
-        for (int i = 0; i < pieces.length; i++) {
-            estimatedSize += dynamicPiece(pieces, i, nodePieces[i]);
-        }
-
-        Variable stringResult = temp();
-        if (result == null) result = temp();
-
-        addInstr(new BuildCompoundStringInstr(stringResult, pieces, encoding, estimatedSize, false, getFileName(), line));
-
-        return fcall(result, Self.SELF, "`", stringResult);
+        return fcall(result, Self.SELF, "`", buildDStr(result, nodePieces, encoding, false, line));
     }
 
     Operand buildEncoding(Encoding encoding) {
