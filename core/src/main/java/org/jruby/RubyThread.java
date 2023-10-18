@@ -2222,7 +2222,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                         if (result == 1) {
                             Set<SelectionKey> keySet = currentSelector.selectedKeys();
 
-                            if (keySet.iterator().next() == key) {
+                            if (keySet.contains(key) && key.isValid()) {
                                 return true;
                             }
                         }
