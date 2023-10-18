@@ -31,7 +31,6 @@ import com.headius.invokebinder.Signature;
 import com.headius.invokebinder.SmartBinder;
 import com.headius.invokebinder.SmartHandle;
 import org.jcodings.Encoding;
-import org.jcodings.EncodingDB;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
@@ -87,7 +86,6 @@ import org.jruby.specialized.RubyArraySpecialized;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JavaNameMangler;
-import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -126,55 +124,8 @@ public class Bootstrap {
     public final static String BOOTSTRAP_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class);
     private static final Logger LOG = LoggerFactory.getLogger(Bootstrap.class);
     static final Lookup LOOKUP = MethodHandles.lookup();
-    public static final Handle EMPTY_STRING_BOOTSTRAP = new Handle(
-            Opcodes.H_INVOKESTATIC,
-            p(Bootstrap.class),
-            "emptyString",
-            sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class),
-            false);
-    public static final Handle BUFFER_STRING_BOOTSTRAP = new Handle(
-            Opcodes.H_INVOKESTATIC,
-            p(Bootstrap.class),
-            "bufferString",
-            sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, int.class),
-            false);
     private static final String[] GENERIC_CALL_PERMUTE = {"context", "self", "arg.*"};
 
-    public static CallSite string(Lookup lookup, String name, MethodType type, String value, String encodingName, int cr) {
-        return new ConstantCallSite(insertArguments(STRING_HANDLE, 1, bytelist(value, encodingName), cr));
-    }
-
-    private static final MethodHandle STRING_HANDLE =
-            Binder
-                    .from(RubyString.class, ThreadContext.class, ByteList.class, int.class)
-                    .invokeStaticQuiet(LOOKUP, Bootstrap.class, "string");
-
-    public static CallSite fstring(Lookup lookup, String name, MethodType type, String value, String encodingName, int cr, String file, int line) {
-        MutableCallSite site = new MutableCallSite(type);
-
-        site.setTarget(insertArguments(FSTRING_HANDLE, 1, site, bytelist(value, encodingName), cr, file, line));
-
-        return site;
-    }
-
-    private static final MethodHandle FSTRING_HANDLE =
-            Binder
-                    .from(RubyString.class, ThreadContext.class, MutableCallSite.class, ByteList.class, int.class, String.class, int.class)
-                    .invokeStaticQuiet(LOOKUP, Bootstrap.class, "frozenString");
-
-    public static CallSite emptyString(Lookup lookup, String name, MethodType type, String encodingName) {
-        RubyString.EmptyByteListHolder holder = RubyString.getEmptyByteList(encodingFromName(encodingName));
-        return new ConstantCallSite(insertArguments(STRING_HANDLE, 1, holder.bytes, holder.cr));
-    }
-
-    public static CallSite bufferString(Lookup lookup, String name, MethodType type, String encodingName, int size) {
-        return new ConstantCallSite(insertArguments(BUFFERSTRING_HANDLE, 1, encodingFromName(encodingName), size, StringSupport.CR_7BIT));
-    }
-
-    private static final MethodHandle BUFFERSTRING_HANDLE =
-            Binder
-                    .from(RubyString.class, ThreadContext.class, Encoding.class, int.class, int.class)
-                    .invokeStaticQuiet(LOOKUP, Bootstrap.class, "bufferString");
 
     public static Handle isNilBoot() {
         return new Handle(
@@ -264,36 +215,6 @@ public class Bootstrap {
         public static boolean isTruthy(IRubyObject obj, RubyNil nil, RubyBoolean.False fals) {
             return nil != obj && fals != obj;
         }
-    }
-
-    public static CallSite bytelist(Lookup lookup, String name, MethodType type, String value, String encodingName) {
-        return new ConstantCallSite(constant(ByteList.class, bytelist(value, encodingName)));
-    }
-
-    public static ByteList bytelist(String value, String encodingName) {
-        Encoding encoding = encodingFromName(encodingName);
-
-        if (value.length() == 0) {
-            // special case empty string and don't create a new BL
-            return RubyString.getEmptyByteList(encoding).bytes;
-        }
-
-        return new ByteList(RubyEncoding.encodeISO(value), encoding, false);
-    }
-
-    public static ByteList bytelist(int size, String encodingName) {
-        Encoding encoding = encodingFromName(encodingName);
-
-        return new ByteList(size, encoding);
-    }
-
-    private static Encoding encodingFromName(String encodingName) {
-        Encoding encoding;
-        EncodingDB.Entry entry = EncodingDB.getEncodings().get(encodingName.getBytes());
-        if (entry == null) entry = EncodingDB.getAliases().get(encodingName.getBytes());
-        if (entry == null) throw new RuntimeException("could not find encoding: " + encodingName);
-        encoding = entry.getEncoding();
-        return encoding;
     }
 
     public static final Handle CALLSITE = new Handle(
@@ -456,33 +377,6 @@ public class Bootstrap {
                     .from(RubyHash.class, ThreadContext.class, RubyHash.class, IRubyObject[].class)
                     .invokeStaticQuiet(LOOKUP, Bootstrap.class, "kwargsHash");
 
-    public static Handle string() {
-        return new Handle(
-                Opcodes.H_INVOKESTATIC,
-                p(Bootstrap.class),
-                "string",
-                sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, String.class, int.class),
-                false);
-    }
-
-    public static Handle fstring() {
-        return new Handle(
-                Opcodes.H_INVOKESTATIC,
-                p(Bootstrap.class),
-                "fstring",
-                sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, String.class, int.class, String.class, int.class),
-                false);
-    }
-
-    public static Handle bytelist() {
-        return new Handle(
-                Opcodes.H_INVOKESTATIC,
-                p(Bootstrap.class),
-                "bytelist",
-                sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, String.class),
-                false);
-    }
-
     public static Handle array() {
         return new Handle(
                 Opcodes.H_INVOKESTATIC,
@@ -521,23 +415,6 @@ public class Bootstrap {
                 "globalBootstrap",
                 sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, int.class),
                 false);
-    }
-
-    public static RubyString string(ThreadContext context, ByteList value, int cr) {
-        return RubyString.newStringShared(context.runtime, value, cr);
-    }
-
-    public static RubyString bufferString(ThreadContext context, Encoding encoding, int size, int cr) {
-        return RubyString.newString(context.runtime, new ByteList(size, encoding), cr);
-    }
-
-    public static RubyString frozenString(ThreadContext context, MutableCallSite site, ByteList value, int cr, String file, int line) {
-        RubyString frozen = IRRuntimeHelpers.newFrozenString(context, value, cr, file, line);
-
-        // Permanently bind to the new frozen string
-        site.setTarget(dropArguments(constant(RubyString.class, frozen), 0, ThreadContext.class));
-
-        return frozen;
     }
 
     public static RubyArray array(ThreadContext context, IRubyObject[] ary) {

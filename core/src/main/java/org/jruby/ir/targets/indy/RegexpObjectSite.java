@@ -38,7 +38,7 @@ public class RegexpObjectSite extends LazyObjectSite {
             false);
 
     public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, String value, String encodingName, int options) {
-        return new RegexpObjectSite(type, Bootstrap.bytelist(value, encodingName), options).bootstrap(lookup);
+        return new RegexpObjectSite(type, StringBootstrap.bytelist(value, encodingName), options).bootstrap(lookup);
     }
 
     // normal regexp

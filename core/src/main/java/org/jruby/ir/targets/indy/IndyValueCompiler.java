@@ -24,7 +24,6 @@ import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
 
 import java.math.BigInteger;
-import java.util.function.Consumer;
 
 import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.p;
@@ -74,26 +73,26 @@ public class IndyValueCompiler implements ValueCompiler {
 
     public void pushString(ByteList bl, int cr) {
         compiler.loadContext();
-        compiler.adapter.invokedynamic("string", sig(RubyString.class, ThreadContext.class), Bootstrap.string(), RubyEncoding.decodeRaw(bl), bl.getEncoding().toString(), cr);
+        compiler.adapter.invokedynamic("string", sig(RubyString.class, ThreadContext.class), StringBootstrap.STRING_BOOTSTRAP, RubyEncoding.decodeRaw(bl), bl.getEncoding().toString(), cr);
     }
 
     public void pushFrozenString(ByteList bl, int cr, String file, int line) {
         compiler.loadContext();
-        compiler.adapter.invokedynamic("frozen", sig(RubyString.class, ThreadContext.class), Bootstrap.fstring(), RubyEncoding.decodeRaw(bl), bl.getEncoding().toString(), cr, file, line);
+        compiler.adapter.invokedynamic("frozen", sig(RubyString.class, ThreadContext.class), StringBootstrap.FSTRING_BOOTSTRAP, RubyEncoding.decodeRaw(bl), bl.getEncoding().toString(), cr, file, line);
     }
 
     public void pushEmptyString(Encoding encoding) {
         compiler.loadContext();
-        compiler.adapter.invokedynamic("emptyString", sig(RubyString.class, ThreadContext.class), Bootstrap.EMPTY_STRING_BOOTSTRAP, encoding.toString());
+        compiler.adapter.invokedynamic("emptyString", sig(RubyString.class, ThreadContext.class), StringBootstrap.EMPTY_STRING_BOOTSTRAP, encoding.toString());
     }
 
     public void pushBufferString(Encoding encoding, int size) {
         compiler.loadContext();
-        compiler.adapter.invokedynamic("bufferString", sig(RubyString.class, ThreadContext.class), Bootstrap.BUFFER_STRING_BOOTSTRAP, encoding.toString(), size);
+        compiler.adapter.invokedynamic("bufferString", sig(RubyString.class, ThreadContext.class), StringBootstrap.BUFFER_STRING_BOOTSTRAP, encoding.toString(), size);
     }
 
     public void pushByteList(ByteList bl) {
-        compiler.adapter.invokedynamic("bytelist", sig(ByteList.class), Bootstrap.bytelist(), RubyEncoding.decodeRaw(bl), bl.getEncoding().toString());
+        compiler.adapter.invokedynamic("bytelist", sig(ByteList.class), StringBootstrap.BYTELIST_BOOTSTRAP, RubyEncoding.decodeRaw(bl), bl.getEncoding().toString());
     }
 
     public void pushRange(Runnable begin, Runnable end, boolean exclusive) {
