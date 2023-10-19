@@ -164,6 +164,15 @@ public abstract class IRBuilder<U, V, W, X> {
         }
     }
 
+    // For BEGIN processing
+    public static IRBuilder newIRBuilder(IRManager manager, IRScope newScope, IRBuilder parent, IRBuilder variableBuilder, Encoding encoding, boolean yarp) {
+        if (yarp) {
+            return new IRBuilderPrism(manager, newScope, parent, variableBuilder, encoding);
+        } else {
+            return new IRBuilderAST(manager, newScope, parent, variableBuilder, encoding);
+        }
+    }
+
     public static IRBuilder topIRBuilder(IRManager manager, IRScope newScope, ParseResult rootNode) {
         if (rootNode instanceof RootNode) {
             return new IRBuilderAST(manager, newScope, null, null, null);
@@ -1831,7 +1840,7 @@ public abstract class IRBuilder<U, V, W, X> {
     }
 
     Operand buildPreExe(U body) {
-        List<Instr> beginInstrs = newIRBuilder(getManager(), scope, this, encoding, this instanceof IRBuilderPrism).buildPreExeInner(body);
+        List<Instr> beginInstrs = newIRBuilder(getManager(), scope, this, this, encoding, this instanceof IRBuilderPrism).buildPreExeInner(body);
 
         instructions.addAll(afterPrologueIndex, beginInstrs);
         afterPrologueIndex += beginInstrs.size();

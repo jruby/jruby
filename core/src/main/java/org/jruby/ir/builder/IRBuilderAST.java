@@ -2808,15 +2808,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     public Operand buildPreExe(PreExeNode preExeNode) {
-        IRBuilderAST builder = new IRBuilderAST(getManager(), scope, this, this, null);
-
-        List<Instr> beginInstrs = builder.buildPreExeInner(preExeNode.getBodyNode());
-
-        instructions.addAll(afterPrologueIndex, beginInstrs);
-
-        afterPrologueIndex += beginInstrs.size();
-
-        return nil();
+        return super.buildPreExe(preExeNode.getBodyNode());
     }
 
     public Operand buildRational(RationalNode node) {
