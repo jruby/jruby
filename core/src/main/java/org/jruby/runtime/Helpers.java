@@ -236,7 +236,7 @@ public class Helpers {
      * @return the resulting {@link Errno} value, or null if none could be determined.
      */
     public static Errno errnoFromException(Throwable t) {
-        // FIXME: Error-message scrapingis gross and turns out to be fragile if the host system is localized jruby/jruby#5415
+        // FIXME: Error-message scraping is gross and turns out to be fragile if the host system is localized jruby/jruby#5415
 
         // Try specific exception types by rethrowing and catching.
         try {
