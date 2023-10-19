@@ -1629,6 +1629,14 @@ public abstract class IRBuilder<U, V, W, X> {
         return tmpVar;
     }
 
+    public Operand buildMatch(Variable result, Operand regexp) {
+        Variable tempLastLine = temp();
+        addResultInstr(new GetGlobalVariableInstr(tempLastLine, symbol("$_")));
+
+        if (result == null) result = temp();
+        return addResultInstr(new MatchInstr(scope, result, regexp, tempLastLine));
+    }
+
     Operand buildModule(ByteList name, U cpath, U bodyNode, StaticScope scope, int line, int endLine) {
         boolean executesOnce = this.executesOnce;
         Operand container = getContainerFromCPath(cpath);

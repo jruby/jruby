@@ -2503,13 +2503,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     public Operand buildMatch(Variable result, MatchNode matchNode) {
-        Operand regexp = build(matchNode.getRegexpNode());
-
-        Variable tempLastLine = temp();
-        addResultInstr(new GetGlobalVariableInstr(tempLastLine, symbol("$_")));
-
-        if (result == null) result = temp();
-        return addResultInstr(new MatchInstr(scope, result, regexp, tempLastLine));
+        return buildMatch(result, build(matchNode.getRegexpNode()));
     }
 
     public Operand buildMatch2(Variable result, Match2Node matchNode) {
