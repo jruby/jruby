@@ -56,6 +56,12 @@ public class ParserPrism extends Parser {
             stats.addParsedBytes(source.length);
         }
 
+        if (res.warnings != null) {
+            for (org.prism.ParseResult.Warning warning: res.warnings) {
+                runtime.getWarnings().warn(fileName, nodeSource.line(warning.location.startOffset), warning.message);
+            }
+        }
+
         if (res.errors != null && res.errors.length > 0) {
             throw runtime.newSyntaxError(fileName + ":" + nodeSource.line(res.errors[0].location.startOffset) + ": " + res.errors[0].message);
         }
