@@ -9,6 +9,7 @@ import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.RubySymbol;
 import org.jruby.ast.Match2CaptureNode;
+import org.jruby.ast.StarNode;
 import org.jruby.ast.StrNode;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.IRClosure;
@@ -574,6 +575,8 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             for (int i = 0; i < targets.length; i++) {
                 buildBlockArgsAssignment(targets[i], null, i, false);
             }
+        } else if (node instanceof SplatNode) {
+            // FIXME: we don't work in legacy either?
         } else {
             throw notCompilable("Can't build assignment node", node);
         }
@@ -1669,7 +1672,11 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildUndef(UndefNode node) {
-        return buildUndef(operandListToOperand(buildNodeList(node.names)));
+        Operand last = nil();
+        for (Operand name: buildNodeList(node.names)) {
+            last = buildUndef(name);
+        }
+        return last;
     }
 
     private Operand operandListToOperand(Operand[] args) {
