@@ -30,14 +30,12 @@ import com.headius.invokebinder.Binder;
 import com.headius.invokebinder.Signature;
 import com.headius.invokebinder.SmartBinder;
 import com.headius.invokebinder.SmartHandle;
-import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
-import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyGlobal;
@@ -80,7 +78,6 @@ import org.jruby.runtime.invokedynamic.MathLinker;
 import org.jruby.runtime.ivars.FieldVariableAccessor;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.opto.Invalidator;
-import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.runtime.scope.DynamicScopeGenerator;
 import org.jruby.specialized.RubyArraySpecialized;
 import org.jruby.util.ByteList;
@@ -423,170 +420,11 @@ public class Bootstrap {
         return RubyArray.newArrayNoCopy(context.runtime, ary);
     }
 
-    public static Handle contextValue() {
-        return new Handle(
-                Opcodes.H_INVOKESTATIC,
-                p(Bootstrap.class),
-                "contextValue",
-                sig(CallSite.class, Lookup.class, String.class, MethodType.class),
-                false);
-    }
-
-    public static Handle contextValueString() {
-        return new Handle(
-                Opcodes.H_INVOKESTATIC,
-                p(Bootstrap.class),
-                "contextValueString",
-                sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class),
-                false);
-    }
-
-    public static CallSite contextValue(Lookup lookup, String name, MethodType type) {
-        MutableCallSite site = new MutableCallSite(type);
-
-        MethodHandle dmh;
-        switch (name) {
-            case "runtime":
-                dmh = RUNTIME_HANDLE;
-                break;
-            case "nil":
-                dmh = NIL_HANDLE;
-                break;
-            case "True":
-                dmh = TRUE_HANDLE;
-                break;
-            case "False":
-                dmh = FALSE_HANDLE;
-                break;
-            case "rubyEncoding":
-                dmh = RUBY_ENCODING_HANDLE;
-                break;
-            case "encoding":
-                dmh = ENCODING_HANDLE;
-                break;
-            default:
-                throw new RuntimeException("BUG: invalid context value " + name);
-        }
-
-        site.setTarget(Binder.from(type).append(site).invoke(dmh));
-
-        return site;
-    }
-
-    public static CallSite contextValueString(Lookup lookup, String name, MethodType type, String str) {
-        MutableCallSite site = new MutableCallSite(type);
-
-        MethodHandle dmh;
-        switch (name) {
-            case "rubyEncoding":
-                dmh = RUBY_ENCODING_HANDLE;
-                break;
-            case "encoding":
-                dmh = ENCODING_HANDLE;
-                break;
-            default:
-                throw new RuntimeException("BUG: invalid context value " + name);
-        }
-
-        site.setTarget(Binder.from(type).append(site, str).invoke(dmh));
-        return site;
-    }
-
-    private static final MethodHandle RUNTIME_HANDLE =
-            Binder
-                    .from(Ruby.class, ThreadContext.class, MutableCallSite.class)
-                    .invokeStaticQuiet(LOOKUP, Bootstrap.class, "runtime");
-
     // We use LOOKUP here to have a full-featured MethodHandles.Lookup, avoiding jruby/jruby#7911
     private static final MethodHandle RUNTIME_FROM_CONTEXT_HANDLE =
             Binder
                     .from(LOOKUP, Ruby.class, ThreadContext.class)
                     .getFieldQuiet("runtime");
-
-    private static final MethodHandle NIL_HANDLE =
-            Binder
-                    .from(IRubyObject.class, ThreadContext.class, MutableCallSite.class)
-                    .invokeStaticQuiet(LOOKUP, Bootstrap.class, "nil");
-
-    private static final MethodHandle TRUE_HANDLE =
-            Binder
-                    .from(IRubyObject.class, ThreadContext.class, MutableCallSite.class)
-                    .invokeStaticQuiet(LOOKUP, Bootstrap.class, "True");
-
-    private static final MethodHandle FALSE_HANDLE =
-            Binder
-                    .from(IRubyObject.class, ThreadContext.class, MutableCallSite.class)
-                    .invokeStaticQuiet(LOOKUP, Bootstrap.class, "False");
-
-    private static final MethodHandle RUBY_ENCODING_HANDLE =
-            Binder
-                    .from(RubyEncoding.class, ThreadContext.class, MutableCallSite.class, String.class)
-                    .invokeStaticQuiet(LOOKUP, Bootstrap.class, "rubyEncoding");
-
-    private static final MethodHandle ENCODING_HANDLE =
-            Binder
-                    .from(Encoding.class, ThreadContext.class, MutableCallSite.class, String.class)
-                    .invokeStaticQuiet(LOOKUP, Bootstrap.class, "encoding");
-
-    public static IRubyObject nil(ThreadContext context, MutableCallSite site) {
-        RubyNil nil = (RubyNil) context.nil;
-
-        MethodHandle constant = (MethodHandle) nil.constant();
-        if (constant == null) constant = (MethodHandle)OptoFactory.newConstantWrapper(IRubyObject.class, context.nil);
-
-        site.setTarget(constant);
-
-        return nil;
-    }
-
-    public static IRubyObject True(ThreadContext context, MutableCallSite site) {
-        MethodHandle constant = (MethodHandle)context.tru.constant();
-        if (constant == null) constant = (MethodHandle)OptoFactory.newConstantWrapper(IRubyObject.class, context.tru);
-
-        site.setTarget(constant);
-
-        return context.tru;
-    }
-
-    public static IRubyObject False(ThreadContext context, MutableCallSite site) {
-        MethodHandle constant = (MethodHandle)context.fals.constant();
-        if (constant == null) constant = (MethodHandle)OptoFactory.newConstantWrapper(IRubyObject.class, context.fals);
-
-        site.setTarget(constant);
-
-        return context.fals;
-    }
-
-    public static Ruby runtime(ThreadContext context, MutableCallSite site) {
-        MethodHandle constant = (MethodHandle)context.runtime.constant();
-        if (constant == null) constant = (MethodHandle)OptoFactory.newConstantWrapper(Ruby.class, context.runtime);
-
-        site.setTarget(constant);
-
-        return context.runtime;
-    }
-
-    public static RubyEncoding rubyEncoding(ThreadContext context, MutableCallSite site, String name) {
-        RubyEncoding rubyEncoding = IRRuntimeHelpers.retrieveEncoding(context, name);
-
-        MethodHandle constant = (MethodHandle)rubyEncoding.constant();
-        if (constant == null) constant = (MethodHandle)OptoFactory.newConstantWrapper(RubyEncoding.class, rubyEncoding);
-
-        site.setTarget(constant);
-
-        return rubyEncoding;
-    }
-
-    public static Encoding encoding(ThreadContext context, MutableCallSite site, String name) {
-        Encoding encoding = IRRuntimeHelpers.retrieveJCodingsEncoding(context, name);
-
-        MethodHandle constant = MethodHandles.constant(Encoding.class, encoding);
-        if (constant == null) constant = (MethodHandle)OptoFactory.newConstantWrapper(Encoding.class, encoding);
-
-        site.setTarget(constant);
-
-        return encoding;
-    }
 
     public static RubyHash hash(ThreadContext context, IRubyObject[] pairs) {
         Ruby runtime = context.runtime;
@@ -1455,7 +1293,7 @@ public class Bootstrap {
         MethodHandle getter;
         Binder binder = Binder
                 .from(type)
-                .filter(1, contextValue(lookup, "nil", methodType(IRubyObject.class, ThreadContext.class)).dynamicInvoker());
+                .filter(1, LiteralValueBootstrap.contextValue(lookup, "nil", methodType(IRubyObject.class, ThreadContext.class)).dynamicInvoker());
 
         if (depth == 0) {
             if (location < DynamicScopeGenerator.SPECIALIZED_GETS_OR_NIL.size()) {

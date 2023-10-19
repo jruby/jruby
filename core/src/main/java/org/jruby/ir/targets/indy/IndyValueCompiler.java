@@ -40,7 +40,7 @@ public class IndyValueCompiler implements ValueCompiler {
 
     public void pushRuntime() {
         compiler.loadContext();
-        compiler.adapter.invokedynamic("runtime", sig(Ruby.class, ThreadContext.class), Bootstrap.contextValue());
+        compiler.adapter.invokedynamic("runtime", sig(Ruby.class, ThreadContext.class), LiteralValueBootstrap.CONTEXT_VALUE_HANDLE);
     }
     public void pushArrayClass() {
         compiler.loadContext();
@@ -119,22 +119,22 @@ public class IndyValueCompiler implements ValueCompiler {
 
     public void pushRubyEncoding(Encoding encoding) {
         compiler.loadContext();
-        compiler.adapter.invokedynamic("rubyEncoding", sig(RubyEncoding.class, ThreadContext.class), Bootstrap.contextValueString(), new String(encoding.getName()));
+        compiler.adapter.invokedynamic("rubyEncoding", sig(RubyEncoding.class, ThreadContext.class), LiteralValueBootstrap.CONTEXT_VALUE_STRING_HANDLE, new String(encoding.getName()));
     }
 
     public void pushEncoding(Encoding encoding) {
         compiler.loadContext();
-        compiler.adapter.invokedynamic("encoding", sig(RubyEncoding.class, ThreadContext.class), Bootstrap.contextValueString(), new String(encoding.getName()));
+        compiler.adapter.invokedynamic("encoding", sig(RubyEncoding.class, ThreadContext.class), LiteralValueBootstrap.CONTEXT_VALUE_STRING_HANDLE, new String(encoding.getName()));
     }
 
     public void pushNil() {
         compiler.loadContext();
-        compiler.adapter.invokedynamic("nil", sig(IRubyObject.class, ThreadContext.class), Bootstrap.contextValue());
+        compiler.adapter.invokedynamic("nil", sig(IRubyObject.class, ThreadContext.class), LiteralValueBootstrap.CONTEXT_VALUE_HANDLE);
     }
 
     public void pushBoolean(boolean b) {
         compiler.loadContext();
-        compiler.adapter.invokedynamic(b ? "True" : "False", sig(IRubyObject.class, ThreadContext.class), Bootstrap.contextValue());
+        compiler.adapter.invokedynamic(b ? "True" : "False", sig(IRubyObject.class, ThreadContext.class), LiteralValueBootstrap.CONTEXT_VALUE_HANDLE);
     }
 
     public void pushBignum(BigInteger bigint) {
