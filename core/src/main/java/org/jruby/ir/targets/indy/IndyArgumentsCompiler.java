@@ -23,6 +23,6 @@ public class IndyArgumentsCompiler implements ArgumentsCompiler {
         if (length > IRBytecodeAdapter.MAX_ARGUMENTS / 2)
             throw new NotCompilableException("kwargs hash has more than " + (IRBytecodeAdapter.MAX_ARGUMENTS / 2) + " pairs");
 
-        compiler.adapter.invokedynamic("kwargsHash", CodegenUtils.sig(JVM.OBJECT, params(ThreadContext.class, RubyHash.class, JVM.OBJECT, length * 2)), Bootstrap.kwargsHash());
+        compiler.adapter.invokedynamic("kwargsHash", CodegenUtils.sig(JVM.OBJECT, params(ThreadContext.class, RubyHash.class, JVM.OBJECT, length * 2)), HashBootstrap.KWARGS_HASH_H);
     }
 }
