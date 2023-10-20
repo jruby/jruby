@@ -127,6 +127,7 @@ lib/ruby/stdlib/singleton*
 lib/ruby/stdlib/stringio*
 lib/ruby/stdlib/strscan*
 lib/ruby/stdlib/subspawn*
+lib/ruby/stdlib/tempfile.rb
 lib/ruby/stdlib/time.rb
 lib/ruby/stdlib/timeout*
 lib/ruby/stdlib/tracer*
