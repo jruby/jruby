@@ -155,10 +155,10 @@ public class FiberScheduler {
         IRubyObject result;
 
         result = Helpers.invokeChecked(context, scheduler, "scheduler_close");
-        if (result != RubyBasicObject.UNDEF) return result;
+        if (result != null) return result;
 
         result = Helpers.invokeChecked(context, scheduler, "close");
-        if (result != RubyBasicObject.UNDEF) return result;
+        if (result != null) return result;
 
         return context.nil;
     }

@@ -1479,7 +1479,7 @@ public class OpenFile implements Finalizable {
         if (!scheduler.isNil()) {
             IRubyObject result = FiberScheduler.ioReadMemory(context, scheduler, fptr.tiedIOForWriting, bufBytes, buf, count);
 
-            if (result != RubyBasicObject.UNDEF) {
+            if (result != null) {
                 FiberScheduler.resultApply(context, result);
             }
         }
@@ -2455,7 +2455,7 @@ public class OpenFile implements Finalizable {
         if (!scheduler.isNil()) {
             IRubyObject result = FiberScheduler.ioWriteMemory(context, scheduler, fptr.tiedIOForWriting, bufBytes, buf, count);
 
-            if (result != RubyBasicObject.UNDEF) {
+            if (result != null) {
                 FiberScheduler.resultApply(context, result);
             }
         }

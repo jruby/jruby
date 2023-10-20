@@ -218,7 +218,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private volatile RubyThread fiberCurrentThread;
 
     private IRubyObject scheduler;
-    private boolean blocking = false;
+    private volatile int blockingCount = 1;
 
     private static final AtomicIntegerFieldUpdater<RubyThread> INTERRUPT_FLAG_UPDATER =
             AtomicIntegerFieldUpdater.newUpdater(RubyThread.class, "interruptFlag");
@@ -435,6 +435,11 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
             // unlock all locked locks
             unlockAll();
+
+            // close scheduler, if any
+            if (scheduler != null && !scheduler.isNil()) {
+                FiberScheduler.close(getContext(), scheduler);
+            }
 
             // mark thread as DEAD
             beDead();
@@ -2620,18 +2625,22 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     // MRI: rb_fiber_scheduler_current_for_threadptr, rb_fiber_scheduler_current
     public IRubyObject getSchedulerCurrent() {
-        if (!blocking) {
+        if (!isBlocking()) {
             return scheduler;
         }
 
         return getRuntime().getNil();
     }
 
-    public boolean isBlocking() {
-        return blocking;
+    public void incrementBlocking() {
+        blockingCount++;
     }
 
-    public void setBlocking(boolean blocking) {
-        this.blocking = blocking;
+    public void decrementBlocking() {
+        blockingCount--;
+    }
+
+    public boolean isBlocking() {
+        return blockingCount > 0;
     }
 }
