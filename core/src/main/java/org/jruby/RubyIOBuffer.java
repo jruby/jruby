@@ -1916,7 +1916,7 @@ public class RubyIOBuffer extends RubyObject {
         try {
             base.position(offset);
             base.limit(offset + size);
-            int result = OpenFile.preadInternal(context, fptr.fd(), base, from, size);
+            int result = OpenFile.preadInternal(context, fptr, fptr.fd(), base, from, size);
             return FiberScheduler.result(context.runtime, result, fptr.errno());
         } finally {
             base.clear();
@@ -2114,7 +2114,7 @@ public class RubyIOBuffer extends RubyObject {
         try {
             base.position(offset);
             base.limit(offset + size);
-            int result = OpenFile.pwriteInternal(context, fptr.fd(), base, from, size);
+            int result = OpenFile.pwriteInternal(context, fptr, fptr.fd(), base, from, size);
             return FiberScheduler.result(context.runtime, result, fptr.errno());
         } finally {
             base.clear();

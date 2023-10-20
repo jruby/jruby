@@ -54,7 +54,8 @@ import static org.jruby.util.StringSupport.*;
 public class OpenFile implements Finalizable {
 
     // RB_IO_FPTR_NEW, minus fields that Java already initializes the same way
-    public OpenFile(IRubyObject nil) {
+    public OpenFile(RubyIO io, IRubyObject nil) {
+        this.io = io;
         runtime = nil.getRuntime();
         writeconvAsciicompat = null;
         writeconvPreEcopts = nil;
@@ -147,6 +148,7 @@ public class OpenFile implements Finalizable {
 
     public final Buffer wbuf = new Buffer(), rbuf = new Buffer(), cbuf = new Buffer();
 
+    public final RubyIO io;
     public RubyIO tiedIOForWriting;
 
     private boolean nonblock = false;
@@ -1474,15 +1476,19 @@ public class OpenFile implements Finalizable {
     }
 
     // rb_io_buffer_read_internal
-    public static int readInternal(ThreadContext context, OpenFile fptr, ChannelFD fd, ByteBuffer bufBytes, int buf, int count) {
+    public static int readInternal(ThreadContext context, OpenFile fptr, ChannelFD fd, ByteBuffer buffer, int buf, int count) {
+        // try scheduler first
         IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
         if (!scheduler.isNil()) {
-            IRubyObject result = FiberScheduler.ioReadMemory(context, scheduler, fptr.tiedIOForWriting, bufBytes, buf, count);
+            IRubyObject result = FiberScheduler.ioReadMemory(context, scheduler, fptr.io, buffer, buf, count);
 
             if (result != null) {
-                FiberScheduler.resultApply(context, result);
+                return FiberScheduler.resultApply(context, result);
             }
         }
+
+        // proceed to builtin read logic
+
         // if we can do selection and this is not a non-blocking call, do selection
 
         /*
@@ -1499,13 +1505,24 @@ public class OpenFile implements Finalizable {
         preRead(context, fptr, fd);
 
         try {
-            return context.getThread().executeReadWrite(context, fptr, bufBytes, buf, count, READ_TASK);
+            return context.getThread().executeReadWrite(context, fptr, buffer, buf, count, READ_TASK);
         } catch (InterruptedException ie) {
             throw context.runtime.newConcurrencyError("IO operation interrupted");
         }
     }
 
-    public static int preadInternal(ThreadContext context, ChannelFD fd, ByteBuffer buffer, int from, int length) {
+    public static int preadInternal(ThreadContext context, OpenFile fptr, ChannelFD fd, ByteBuffer buffer, int from, int length) {
+        // try scheduler first
+        IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
+        if (!scheduler.isNil()) {
+            IRubyObject result = FiberScheduler.ioPReadMemory(context, scheduler, fptr.io, buffer, from, length, 0);
+
+            if (result != null) {
+                return FiberScheduler.resultApply(context, result);
+            }
+        }
+
+        // proceed to builtin pread logic
         try {
             return context.getThread().executeReadWrite(context, fd, buffer, from, length, PREAD_TASK);
         } catch (InterruptedException ie) {
@@ -1513,10 +1530,21 @@ public class OpenFile implements Finalizable {
         }
     }
 
-    public static int pwriteInternal(ThreadContext context, ChannelFD fd, ByteBuffer bytes, int from, int length) {
+    public static int pwriteInternal(ThreadContext context, OpenFile fptr, ChannelFD fd, ByteBuffer buffer, int from, int length) {
+        // try scheduler first
+        IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
+        if (!scheduler.isNil()) {
+            IRubyObject result = FiberScheduler.ioPWriteMemory(context, scheduler, fptr.io, buffer, from, length, 0);
+
+            if (result != null) {
+                return FiberScheduler.resultApply(context, result);
+            }
+        }
+
+        // proceed to builtin pread logic
         int written;
         try {
-            written = context.getThread().executeReadWrite(context, fd, bytes, from, length, PWRITE_TASK);
+            written = context.getThread().executeReadWrite(context, fd, buffer, from, length, PWRITE_TASK);
         } catch (InterruptedException ie) {
             throw context.runtime.newConcurrencyError("IO operation interrupted");
         }
@@ -2453,10 +2481,10 @@ public class OpenFile implements Finalizable {
     public static int writeInternal(ThreadContext context, OpenFile fptr, ByteBuffer bufBytes, int buf, int count) {
         IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
         if (!scheduler.isNil()) {
-            IRubyObject result = FiberScheduler.ioWriteMemory(context, scheduler, fptr.tiedIOForWriting, bufBytes, buf, count);
+            IRubyObject result = FiberScheduler.ioWriteMemory(context, scheduler, fptr.io, bufBytes, buf, count);
 
             if (result != null) {
-                FiberScheduler.resultApply(context, result);
+                return FiberScheduler.resultApply(context, result);
             }
         }
 

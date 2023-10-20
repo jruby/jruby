@@ -4816,7 +4816,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         int read;
 
         ByteBuffer wrap = ByteBuffer.wrap(strByteList.unsafeBytes(), strByteList.begin(), length);
-        read = OpenFile.preadInternal(context, fd, wrap, from, length);
+        read = OpenFile.preadInternal(context, fptr, fd, wrap, from, length);
 
         string.setReadLength(read);
 
@@ -4851,7 +4851,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         int written;
 
-        written = OpenFile.pwriteInternal(context, fd, wrap, off, length);
+        written = OpenFile.pwriteInternal(context, fptr, fd, wrap, off, length);
 
         return context.runtime.newFixnum(written);
     }
@@ -5202,7 +5202,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             rb_io_fptr_finalize(runtime, openFile);
             openFile = null;
         }
-        openFile = new OpenFile(runtime.getNil());
+        openFile = new OpenFile(this, runtime.getNil());
         runtime.addInternalFinalizer(openFile);
         return openFile;
     }
