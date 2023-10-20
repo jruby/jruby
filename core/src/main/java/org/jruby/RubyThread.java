@@ -218,7 +218,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private volatile RubyThread fiberCurrentThread;
 
     private IRubyObject scheduler;
-    private boolean blocking = true;
+    private boolean blocking = false;
 
     private static final AtomicIntegerFieldUpdater<RubyThread> INTERRUPT_FLAG_UPDATER =
             AtomicIntegerFieldUpdater.newUpdater(RubyThread.class, "interruptFlag");
@@ -2625,5 +2625,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
 
         return getRuntime().getNil();
+    }
+
+    public boolean isBlocking() {
+        return blocking;
+    }
+
+    public void setBlocking(boolean blocking) {
+        this.blocking = blocking;
     }
 }

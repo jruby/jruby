@@ -70,6 +70,10 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         runtime.getFiberExecutor().submit(runnable);
     }
 
+    public boolean isBlocking() {
+        return thread.isBlocking();
+    }
+
     private static class VirtualThreadLauncher implements BiConsumer<Ruby, Runnable> {
         @Override
         public void accept(Ruby ruby, Runnable runnable) {
@@ -96,7 +100,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
         ThreadFiber rootFiber = new ThreadFiber(runtime, runtime.getFiber(), true);
 
-        rootFiber.data = new FiberData(new FiberQueue(runtime), currentThread, rootFiber, false);
+        rootFiber.data = new FiberData(new FiberQueue(runtime), currentThread, rootFiber);
         rootFiber.thread = currentThread;
         context.setRootFiber(rootFiber);
     }
@@ -107,11 +111,11 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
         if (!block.isGiven()) throw runtime.newArgumentError("tried to create Proc object without block");
 
-        data = new FiberData(new FiberQueue(runtime), context.getFiberCurrentThread(), this, false);
+        data = new FiberData(new FiberQueue(runtime), context.getFiberCurrentThread(), this);
 
         FiberData currentFiberData = context.getFiber().data;
 
-        thread = createThread(runtime, data, currentFiberData.queue, block);
+        thread = createThread(runtime, data, currentFiberData.queue, block, false);
 
         return context.nil;
     }
@@ -134,11 +138,11 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
             }
         }
 
-        data = new FiberData(new FiberQueue(runtime), context.getFiberCurrentThread(), this, blocking);
+        data = new FiberData(new FiberQueue(runtime), context.getFiberCurrentThread(), this);
 
         FiberData currentFiberData = context.getFiber().data;
 
-        thread = createThread(runtime, data, currentFiberData.queue, block);
+        thread = createThread(runtime, data, currentFiberData.queue, block, blocking);
 
         return context.nil;
     }
@@ -450,7 +454,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         return true;
     }
     
-    static RubyThread createThread(final Ruby runtime, final FiberData data, final FiberQueue queue, final Block block) {
+    static RubyThread createThread(final Ruby runtime, final FiberData data, final FiberQueue queue, final Block block, boolean blocking) {
         final AtomicReference<RubyThread> fiberThread = new AtomicReference();
 
         // retry with GC once
@@ -462,8 +466,10 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                     ThreadContext context = runtime.getCurrentContext();
                     context.setFiber(data.fiber.get());
                     context.useRecursionGuardsFrom(data.parent.getContext());
-                    fiberThread.set(context.getThread());
-                    context.getThread().setFiberCurrentThread(data.parent);
+                    RubyThread rubyThread = context.getThread();
+                    fiberThread.set(rubyThread);
+                    rubyThread.setFiberCurrentThread(data.parent);
+                    rubyThread.setBlocking(blocking);
 
                     Thread thread = Thread.currentThread();
                     String oldName = thread.getName();
@@ -586,12 +592,12 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "blocking?")
     public IRubyObject blocking_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, data.blocking);
+        return RubyBoolean.newBoolean(context, context.getThread().isBlocking());
     }
 
     @JRubyMethod(name = "blocking?", meta = true)
     public static IRubyObject blocking_p_s(ThreadContext context, IRubyObject self) {
-        boolean blocking = context.getFiber().data.blocking;
+        boolean blocking = context.getThread().isBlocking();
         if (!blocking) return context.fals;
 
         return RubyFixnum.one(context.runtime);
@@ -678,10 +684,9 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     }
     
     public static class FiberData {
-        FiberData(FiberQueue queue, RubyThread parent, ThreadFiber fiber, boolean blocking) {
+        FiberData(FiberQueue queue, RubyThread parent, ThreadFiber fiber) {
             this.queue = queue;
             this.parent = parent;
-            this.blocking = blocking;
             this.fiber = new WeakReference<ThreadFiber>(fiber);
         }
 
@@ -694,7 +699,6 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         final RubyThread parent;
         final WeakReference<ThreadFiber> fiber;
         volatile boolean transferred;
-        final boolean blocking;
     }
     
     volatile FiberData data;
