@@ -936,22 +936,14 @@ public class RubyClass extends RubyModule {
      *
      */
     @Override
-    public IRubyObject initialize(ThreadContext context, Block block) {
-        return initialize19(context, block);
-    }
-
-    public IRubyObject initialize(ThreadContext context, IRubyObject superObject, Block block) {
-        return initialize19(context, superObject, block);
-    }
-
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
-    public IRubyObject initialize19(ThreadContext context, Block block) {
+    public IRubyObject initialize(ThreadContext context, Block block) {
         checkNotInitialized();
         return initializeCommon(context, runtime.getObject(), block);
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
-    public IRubyObject initialize19(ThreadContext context, IRubyObject superObject, Block block) {
+    public IRubyObject initialize(ThreadContext context, IRubyObject superObject, Block block) {
         checkNotInitialized();
         checkInheritable(superObject);
         return initializeCommon(context, (RubyClass) superObject, block);
@@ -2897,6 +2889,16 @@ public class RubyClass extends RubyModule {
     @Deprecated
     public VariableAccessorField getObjectGroupAccessorField() {
         return variableTableManager.getObjectGroupAccessorField();
+    }
+
+    @Deprecated
+    public IRubyObject initialize19(ThreadContext context, Block block) {
+        return initialize(context, block);
+    }
+
+    @Deprecated
+    public IRubyObject initialize19(ThreadContext context, IRubyObject superObject, Block block) {
+        return initialize(context, superObject, block);
     }
 
     @Deprecated
