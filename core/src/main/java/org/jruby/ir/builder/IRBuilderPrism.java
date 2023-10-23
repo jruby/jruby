@@ -8,9 +8,6 @@ import org.jruby.RubyBignum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.RubySymbol;
-import org.jruby.ast.Match2CaptureNode;
-import org.jruby.ast.StarNode;
-import org.jruby.ast.StrNode;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRManager;
@@ -22,7 +19,6 @@ import org.jruby.ir.Tuple;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
-import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.Bignum;
 import org.jruby.ir.operands.CurrentScope;
@@ -431,15 +427,13 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return result;
     }
 
-    // FIXME: Attrassign should be its own node.
     // This method is called to build assignments for a multiple-assignment instruction
     public void buildAssignment(Node node, Variable rhsVal) {
         if (node == null) return; // case of 'a, = something'
 
         if (node instanceof CallNode) {
-            RubySymbol name = symbol(((CallNode) node).name.getBytes());
-            // FIXME: Confused why GC.force= in masgn works with this?
-            buildAttrAssignAssignment((CallNode) node, name, rhsVal);
+            Node[] arguments = ((CallNode) node).arguments == null ? Node.EMPTY_ARRAY : ((CallNode) node).arguments.arguments;
+            buildAttrAssignAssignment(((CallNode) node).receiver, ((CallNode) node).name, arguments, rhsVal);
         } else if (node instanceof ClassVariableTargetNode) {
             addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), ((ClassVariableTargetNode) node).name, rhsVal));
         } else if (node instanceof ConstantPathTargetNode) {
@@ -475,15 +469,23 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return parent == null ? getCurrentModuleVariable() : build(parent);
     }
 
-    // FIXME: no kwargs logic (can there be with attrassign?)
-    public Operand buildAttrAssignAssignment(CallNode node, RubySymbol name, Operand value) {
-        Operand obj = build(node.receiver);
+    public Operand buildAttrAssignAssignment(Node receiver, RubySymbol name, Node[] arguments, Operand value) {
+        Operand obj = build(receiver);
         int[] flags = new int[] { 0 };
-        Operand[] args = buildArguments(node.arguments);
+        Operand[] args = buildCallArgsArray(arguments, flags);
         args = addArg(args, value);
         addInstr(AttrAssignInstr.create(scope, obj, name, args, flags[0], scope.maybeUsingRefinements()));
         return value;
     }
+
+    public Operand buildAttrAssignAssignment(Node receiver, RubySymbol name, Node[] arguments) {
+        Operand obj = build(receiver);
+        int[] flags = new int[] { 0 };
+        Operand[] args = buildCallArgsArray(arguments, flags);
+        addInstr(AttrAssignInstr.create(scope, obj, name, args, flags[0], scope.maybeUsingRefinements()));
+        return args[args.length - 1];
+    }
+
 
     // FIXME(feature): optimization simplifying this from other globals
     private Operand buildBackReferenceRead(Variable result, BackReferenceReadNode node) {
@@ -555,7 +557,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
     private void buildBlockArgsAssignment(Node node, Operand argsArray, int argIndex, boolean isSplat) {
         if (node instanceof CallNode) { // attribute assignment: a[0], b = 1, 2
-            buildAttrAssignAssignment((CallNode) node, ((CallNode) node).name,
+            buildAttrAssignAssignment(((CallNode) node).receiver, ((CallNode) node).name, ((CallNode) node).arguments.arguments,
                     receiveBlockArg(temp(), argsArray, argIndex, isSplat));
         } else if (node instanceof LocalVariableTargetNode) {
             LocalVariableTargetNode lvar = (LocalVariableTargetNode) node;
@@ -609,10 +611,11 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     // We do name processing outside of this rather than from the node to support stripping '=' off of opelasgns
     private Operand buildCall(Variable resultArg, CallNode node, RubySymbol name, Label lazyLabel, Label endLabel) {
         Variable result = resultArg == null ? temp() : resultArg;
-
-        // FIXME: this should just be typed by parser.
         CallType callType = determineCallType(node.receiver);
         String id = name.idString();
+        boolean attrAssign = isAttrAssign(id);
+
+        if (attrAssign) return buildAttrAssignAssignment(node.receiver, name, node.arguments.arguments);
 
         if (callType != CallType.FUNCTIONAL && Options.IR_STRING_FREEZE.load()) {
             // Frozen string optimization: check for "string".freeze
@@ -1750,6 +1753,13 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return false;
     }
 
+    private boolean isAttrAssign(String id) {
+        if (id.charAt(id.length() - 1) != '=') return false;
+        char second = id.charAt(id.length() - 2);
+
+        return second != '=' && second != '!' && second != '<' && second != '>';
+    }
+
     // FIXME: Implement
     @Override
     boolean isErrorInfoGlobal(Node body) {
@@ -2079,66 +2089,38 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return fcall(result, Self.SELF, "`", new FrozenString(value, codeRange, scope.getFile(), getLine(node)));
     }
 
-    Operand buildYield(Variable result, YieldNode node) {
-        if (result == null) result = temp();
+    Operand buildYield(Variable aResult, YieldNode node) {
+        if (aResult == null) aResult = temp();
         if (scope instanceof IRScriptBody || scope instanceof IRModuleBody) throwSyntaxError(getLine(node), "Invalid yield");
 
-        boolean unwrap = false;
+        Variable result = aResult;
         int[] flags = new int[]{0};
-        Node[] args = node.arguments != null ? node.arguments.arguments : null;
-        Operand value = buildYieldArgs(args, flags);
+        Operand[] args = buildYieldArgs(node.arguments != null ? node.arguments.arguments : null, flags);
+        boolean unwrap = (args.length != 1 || (flags[0] & CALL_KEYWORD) == 0);
 
-        if ((flags[0] & CALL_SPLATS) != 0) unwrap = true;
-
-        if (args != null && args[args.length - 1] instanceof KeywordHashNode) unwrap = false;
-
-        addInstr(new YieldInstr(result, getYieldClosureVariable(), value, flags[0], unwrap));
+        if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
+            Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
+            if_else(test, tru(),
+                    () -> addInstr(new YieldInstr(result, getYieldClosureVariable(), removeEmptyRestKwarg(args), flags[0], true)),
+                    () -> addInstr(new YieldInstr(result, getYieldClosureVariable(), new Array(args), flags[0], unwrap)));
+        } else {
+            addInstr(new YieldInstr(result, getYieldClosureVariable(), new Array(args), flags[0], unwrap));
+        }
 
         return result;
     }
 
-    Operand buildYieldArgs(Node[] args, int[] flags) {
-        if (args == null) return UndefinedValue.UNDEFINED;
-
-        if (args.length == 1) {
-            if (args[0] instanceof SplatNode) {
-                flags[0] |= CALL_SPLATS;
-                return new Splat(addResultInstr(new BuildSplatInstr(temp(), build(args[0]), false)));
-            }
-
-            return build(args[0]);
+    private Operand removeEmptyRestKwarg(Operand[] args) {
+        switch (args.length) {
+            case 1: return null;
+            case 2: return args[0];
         }
 
-        Operand lastSplat = null;
-        List<Operand> singles = new ArrayList<>();
+        return new Array(removeArg(args));
+    }
 
-        for(Node arg: args) {
-            if (arg instanceof SplatNode) {
-                flags[0] |= CALL_SPLATS;
-                if (lastSplat == null) {
-                    lastSplat = catArgs(singles, (SplatNode) arg, flags);
-                } else {
-                    lastSplat = catArgs(singles, lastSplat, flags);
-                    lastSplat = catArgs(lastSplat, (SplatNode) arg, flags);
-                }
-            } else if (arg instanceof KeywordHashNode) {
-                singles.add(buildKeywordHash((KeywordHashNode) arg));
-                flags[0] |= CALL_KEYWORD;
-            } else {
-                singles.add(build(arg));
-            }
-        }
-
-        if (lastSplat != null) {
-            if (singles.isEmpty()) {
-                return new Splat(lastSplat);
-            } else {
-                Operand rhs = buildArray(singles);
-                return addResultInstr(new BuildCompoundArrayInstr(temp(), lastSplat, rhs, false, (flags[0] & CALL_KEYWORD_REST) != 0));
-            }
-        } else {
-            return buildArray(singles);
-        }
+    Operand[] buildYieldArgs(Node[] args, int[] flags) {
+        return args == null ? Operand.EMPTY_ARRAY : buildCallArgsArray(args, flags);
     }
 
     private Operand catArgs(List<Operand> args, Operand splat, int[] flags) {
@@ -2277,6 +2259,14 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
                 //node instanceof OperatorAssignmentNode ||
                 node instanceof SelfNode ||
                 node instanceof TrueNode);
+    }
+
+
+    // No bounds checks.  Only call this when you know you have an arg to remove.
+    public static Node[] removeArg(Node[] args) {
+        Node[] newArgs = new Node[args.length - 1];
+        System.arraycopy(args, 0, newArgs, 0, args.length - 1);
+        return newArgs;
     }
 
     @Override
