@@ -536,6 +536,8 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     void receiveForArgs(Node node) {
         Variable keywords = copy(temp(), UndefinedValue.UNDEFINED);
 
+        // FIXME: I think this should rip out receivePre and stop sharingh with method defs
+        // FIXME: pattern of use seems to be recv pre then assign value so this may be done with less if (or at least through separate methods between value and receiving the value from args).
         if (node instanceof MultiTargetNode) { // for loops
             buildBlockArgsAssignment(node, null, 0, false);
         } else if (node instanceof ClassVariableTargetNode || node instanceof LocalVariableTargetNode ||
