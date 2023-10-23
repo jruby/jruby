@@ -1016,11 +1016,24 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         // FIXME: all opassignments needs to return assignment
         if (node instanceof ClassVariableWriteNode ||
                 node instanceof ConstantPathWriteNode || node instanceof LocalVariableWriteNode ||
+                node instanceof LocalVariableAndWriteNode || node instanceof LocalVariableOrWriteNode ||
+                node instanceof LocalVariableOperatorWriteNode || node instanceof ConstantOperatorWriteNode ||
+                node instanceof ClassVariableOperatorWriteNode ||
                 node instanceof GlobalVariableWriteNode || node instanceof MultiWriteNode ||
                 node instanceof InstanceVariableWriteNode) {
             return new FrozenString(DefinedMessage.ASSIGNMENT.getText());
         } else if (node instanceof OrNode || node instanceof AndNode ||
                 node instanceof InterpolatedRegularExpressionNode || node instanceof InterpolatedStringNode) {
+            return new FrozenString(DefinedMessage.EXPRESSION.getText());
+        } else if (node instanceof ParenthesesNode) {
+            if (((ParenthesesNode) node).body instanceof StatementsNode) {
+                StatementsNode statements = (StatementsNode) ((ParenthesesNode) node).body;
+                switch (statements.body.length) {
+                    case 0: return nil();
+                    case 1: return buildGetDefinition(statements.body[0]);
+                }
+            }
+
             return new FrozenString(DefinedMessage.EXPRESSION.getText());
         } else if (node instanceof FalseNode) {
             return new FrozenString(DefinedMessage.FALSE.getText());
@@ -1057,6 +1070,23 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             return buildGlobalVarGetDefinition(((GlobalVariableReadNode) node).name);
         } else if (node instanceof GlobalVariableOrWriteNode) {
             return buildGlobalVarGetDefinition(((GlobalVariableOrWriteNode) node).name);
+        } else if (node instanceof BackReferenceReadNode) {
+            return addResultInstr(
+                    new RuntimeHelperCall(
+                            temp(),
+                            IS_DEFINED_BACKREF,
+                            new Operand[] {new FrozenString(DefinedMessage.GLOBAL_VARIABLE.getText())}
+                    )
+            );
+        } else if (node instanceof NumberedReferenceReadNode) {
+            return addResultInstr(new RuntimeHelperCall(
+                    temp(),
+                    IS_DEFINED_NTH_REF,
+                    new Operand[] {
+                            fix(((NumberedReferenceReadNode) node).number),
+                            new FrozenString(DefinedMessage.GLOBAL_VARIABLE.getText())
+                    }
+            ));
         } else if (node instanceof InstanceVariableReadNode) {
             return buildInstVarGetDefinition(((InstanceVariableReadNode) node).name);
         } else if (node instanceof InstanceVariableOrWriteNode) {
@@ -1212,6 +1242,25 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
                 addInstr(new RestoreErrorInfoInstr(errInfo)); // ignore and restore (we don't care about error)
                 return nil();
             });
+        } else if (node instanceof ArrayNode) {
+            ArrayNode array = (ArrayNode) node;
+            Label undefLabel = getNewLabel();
+            Label doneLabel = getNewLabel();
+
+            Variable tmpVar = temp();
+            for (Node elt : array.elements) {
+                Operand result = buildGetDefinition(elt);
+
+                addInstr(createBranch(result, nil(), undefLabel));
+            }
+
+            addInstr(new CopyInstr(tmpVar, new FrozenString(DefinedMessage.EXPRESSION.getText())));
+            addInstr(new JumpInstr(doneLabel));
+            addInstr(new LabelInstr(undefLabel));
+            addInstr(new CopyInstr(tmpVar, nil()));
+            addInstr(new LabelInstr(doneLabel));
+
+            return tmpVar;
         }
 
         return new FrozenString("expression");
