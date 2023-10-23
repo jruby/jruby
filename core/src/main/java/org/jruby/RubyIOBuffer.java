@@ -38,6 +38,11 @@ public class RubyIOBuffer extends RubyObject {
         IOBuffer.defineAnnotatedMethods(RubyIOBuffer.class);
         IOBuffer.defineAnnotatedConstants(RubyIOBuffer.class);
 
+        RubyClass IO = runtime.getIO();
+
+        IO.setConstant("READABLE", runtime.newFixnum(OpenFile.READABLE));
+        IO.setConstant("WRITABLE", runtime.newFixnum(OpenFile.WRITABLE));
+
         return IOBuffer;
     }
 
@@ -2067,7 +2072,7 @@ public class RubyIOBuffer extends RubyObject {
     public IRubyObject write(ThreadContext context, IRubyObject io, int length, int offset) {
         validateRange(context, offset, length);
 
-        ByteBuffer buffer = getBufferForWriting(context);
+        ByteBuffer buffer = getBufferForReading(context);
 
         return writeInternal(context, RubyIO.convertToIO(context, io), buffer, offset, length);
     }

@@ -81,11 +81,11 @@ public class FiberScheduler {
     // MRI: rb_fiber_scheduler_io_write
     public static IRubyObject ioWrite(ThreadContext context, IRubyObject scheduler, IRubyObject io, IRubyObject buffer, int length, int offset) {
         Ruby runtime = context.runtime;
-        return Helpers.invokeChecked(context, scheduler, "io_read", io, buffer, runtime.newFixnum(length), runtime.newFixnum(offset));
+        return Helpers.invokeChecked(context, scheduler, "io_write", io, buffer, runtime.newFixnum(length), runtime.newFixnum(offset));
     }
 
     public static IRubyObject ioWrite(ThreadContext context, IRubyObject scheduler, IRubyObject io, IRubyObject buffer, RubyInteger length, RubyInteger offset) {
-        return Helpers.invokeChecked(context, scheduler, "io_read", io, buffer, length, offset);
+        return Helpers.invokeChecked(context, scheduler, "io_write", io, buffer, length, offset);
     }
 
     // MRI: rb_fiber_scheduler_io_pwrite
