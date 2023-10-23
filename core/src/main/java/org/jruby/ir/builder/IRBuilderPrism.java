@@ -1981,6 +1981,10 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             addInstr(new ToAryInstr(tmp, v));
 
             buildMultiAssignment(((RequiredDestructuredParameterNode) node).parameters, tmp);
+        } else if (node instanceof InstanceVariableTargetNode) {  // blocks/for
+            Variable v = temp();
+            addInstr(new ReceivePreReqdArgInstr(v, keywords, argIndex));
+            addInstr(new PutFieldInstr(buildSelf(), ((InstanceVariableTargetNode) node).name, v));
         } else if (node instanceof LocalVariableTargetNode) {  // blocks/for
             Variable v = getLocalVariable(((LocalVariableTargetNode) node).name, ((LocalVariableTargetNode) node).depth);
             addInstr(new ReceivePreReqdArgInstr(v, keywords, argIndex));
