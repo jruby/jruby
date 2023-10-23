@@ -305,7 +305,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     }
 
     @JRubyMethod(rest = true)
-    public IRubyObject __transfer__(ThreadContext context, IRubyObject[] values) {
+    public IRubyObject transfer(ThreadContext context, IRubyObject[] values) {
         Ruby runtime = context.runtime;
 
         final FiberData data = this.data;
@@ -455,13 +455,13 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         return currentFiberData;
     }
 
-    @JRubyMethod
-    public IRubyObject __alive__(ThreadContext context) {
+    @JRubyMethod(name = "alive?")
+    public IRubyObject alive_p(ThreadContext context) {
         return RubyBoolean.newBoolean(context, alive());
     }
     
     @JRubyMethod(meta = true)
-    public static IRubyObject __current__(ThreadContext context, IRubyObject recv) {
+    public static IRubyObject current(ThreadContext context, IRubyObject recv) {
         return context.getFiber();
     }
 

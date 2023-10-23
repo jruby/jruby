@@ -591,6 +591,7 @@ public final class Ruby implements Constantizable {
         loadService.provide("rational.rb");
         loadService.provide("complex.rb");
         loadService.provide("thread.rb");
+        loadService.provide("fiber.rb");
         loadService.provide("ruby2_keywords.rb");
 
         // Load preludes
