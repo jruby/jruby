@@ -2245,6 +2245,11 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         throw notCompilable("Unsupported node in module path", node);
     }
 
+    @Override
+    Variable buildPatternEach(Label testEnd, Variable result, Variable deconstructed, Operand value, Node exprNodes, boolean inAlternation, boolean isSinglePattern, Variable errorString) {
+        return null;
+    }
+
     private int getEndLine(Node node) {
         return 0;
         // FIXME: assert during test:jruby

@@ -1,6 +1,7 @@
 package org.jruby.ir.builder;
 
 import org.jcodings.Encoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.EvalType;
 import org.jruby.ParseResult;
 import org.jruby.RubyInstanceConfig;
@@ -60,6 +61,7 @@ import static org.jruby.runtime.CallType.FUNCTIONAL;
 import static org.jruby.runtime.CallType.NORMAL;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_REST;
+import static org.jruby.util.RubyStringBuilder.str;
 
 public abstract class IRBuilder<U, V, W, X> {
     static final boolean PARSER_TIMING = Options.PARSER_SUMMARY.load();
@@ -342,6 +344,12 @@ public abstract class IRBuilder<U, V, W, X> {
         return manager.getIRScopeListener() != null;
     }
 
+    void maybeGenerateIsNotEmptyErrorString(Variable errorString, Operand result, Operand value) {
+        label("empty", (empty) ->
+                cond(empty, result, tru(), ()->
+                        addInstr(new BuildCompoundStringInstr(errorString, new Operand[] {value, new FrozenString(" is not empty")},
+                                UTF8Encoding.INSTANCE, 13, true, getFileName(), lastProcessedLineNum))));
+    }
     RubySymbol methodNameFor() {
         IRScope method = scope.getNearestMethod();
 
@@ -1330,7 +1338,6 @@ public abstract class IRBuilder<U, V, W, X> {
     public Operand buildDXStr(Variable result, U[] nodePieces, Encoding encoding, int line) {
         return fcall(result, Self.SELF, "`", buildDStr(result, nodePieces, encoding, false, line));
     }
-
     Operand buildEncoding(Encoding encoding) {
         return addResultInstr(new GetEncodingInstr(temp(), encoding));
     }
@@ -1796,6 +1803,52 @@ public abstract class IRBuilder<U, V, W, X> {
 
         return result;
     }
+
+    abstract Variable buildPatternEach(Label testEnd, Variable result, Variable deconstructed, Operand value,
+                              U exprNodes, boolean inAlternation, boolean isSinglePattern, Variable errorString);
+
+    void buildPatternEachIf(Variable result, Variable deconstructed, Operand value, U condition, U thenBody, U elseBody,
+                            boolean inAlternation, boolean isSinglePattern, Variable errorString) {
+        boolean unless; // position of body is how we detect between if/unless
+
+        if (thenBody != null) { // if
+            unless = false;
+            buildPatternMatch(result, deconstructed, thenBody, value, inAlternation, isSinglePattern, errorString);
+        } else {
+            unless = true;
+            buildPatternMatch(result, deconstructed, elseBody, value, inAlternation, isSinglePattern, errorString);
+        }
+        label("if_else_end", conditionalEnd -> {
+            cond_ne(conditionalEnd, result, tru());
+            Operand ifResult = build(condition);
+            if (unless) {
+                call(result, ifResult, "!"); // FIXME: need non-dynamic dispatch to reverse result
+            } else {
+                addInstr(new CopyInstr(result, ifResult));
+            }
+        });
+    }
+
+    void buildPatternLocal(Operand value, RubySymbol name, int line, int depth, boolean inAlternation) {
+        if (inAlternation && name.idString().charAt(0) != '_') {
+            throwSyntaxError(line, str(getManager().getRuntime(), "illegal variable in alternative pattern (", name, ")"));
+        }
+
+        addInstr(new CopyInstr(getLocalVariable(name, depth), value));
+    }
+
+    void buildPatternOr(Label testEnd, Variable result, Variable deconstructed, Operand value, U left,
+                        U right, boolean isSinglePattern, Variable errorString) {
+        label("or_lhs_end", firstCase ->
+                buildPatternEach(firstCase, result, deconstructed, value, left, true, isSinglePattern, errorString));
+        label("or_rhs_end", secondCase ->
+                cond(secondCase, result, tru(), () -> buildPatternEach(testEnd, result, deconstructed, value, right, true, isSinglePattern, errorString)));
+    }
+    void buildPatternMatch(Variable result, Variable deconstructed, U arg, Operand obj,
+                           boolean inAlternation, boolean isSinglePattern, Variable errorString) {
+        label("pattern_end", testEnd -> buildPatternEach(testEnd, result, deconstructed, obj, arg, inAlternation, isSinglePattern, errorString));
+    }
+
 
     Operand buildPostExe(U body, int line) {
         IRScope topLevel = scope.getRootLexicalScope();

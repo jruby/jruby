@@ -1,7 +1,6 @@
 package org.jruby.ir.builder;
 
 import org.jcodings.Encoding;
-import org.jcodings.specific.UTF8Encoding;
 import org.jruby.ParseResult;
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
@@ -1050,19 +1049,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         }
     }
 
-    private void maybeGenerateIsNotEmptyErrorString(Variable errorString, Operand result, Operand value) {
-        label("empty", (empty) ->
-                cond(empty, result, tru(), ()->
-                        addInstr(new BuildCompoundStringInstr(errorString, new Operand[] {value, new FrozenString(" is not empty")},
-                                UTF8Encoding.INSTANCE, 13, true, getFileName(), lastProcessedLineNum))));
-    }
-
-    private void buildPatternMatch(Variable result, Variable deconstructed, Node arg, Operand obj,
-                                   boolean inAlternation, boolean isSinglePattern, Variable errorString) {
-        label("pattern_end", testEnd -> buildPatternEach(testEnd, result, deconstructed, obj, arg, inAlternation, isSinglePattern, errorString));
-    }
-
-    private Variable buildPatternEach(Label testEnd, Variable result, Variable deconstructed, Operand value,
+    Variable buildPatternEach(Label testEnd, Variable result, Variable deconstructed, Operand value,
                                       Node exprNodes, boolean inAlternation, boolean isSinglePattern, Variable errorString) {
         if (exprNodes instanceof ArrayPatternNode) {
             buildArrayPattern(testEnd, result, deconstructed, (ArrayPatternNode) exprNodes, value, inAlternation, isSinglePattern, errorString);
@@ -1073,15 +1060,19 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         } else if (exprNodes instanceof HashNode) {
             buildPatternEachHash(testEnd, result, deconstructed, value, (HashNode) exprNodes, inAlternation, isSinglePattern, errorString);
         } else if (exprNodes instanceof IfNode) {
-            buildPatternEachIf(result, deconstructed, value, (IfNode) exprNodes, inAlternation, isSinglePattern, errorString);
+            IfNode node = (IfNode) exprNodes;
+            buildPatternEachIf(result, deconstructed, value, node.getCondition(), node.getThenBody(), node.getElseBody(), inAlternation, isSinglePattern, errorString);
         } else if (exprNodes instanceof LocalAsgnNode) {
-            buildPatternLocal(value, (LocalAsgnNode) exprNodes, inAlternation);
+            LocalAsgnNode node = (LocalAsgnNode) exprNodes;
+            buildPatternLocal(value, node.getName(), node.getLine(), node.getDepth(), inAlternation);
         } else if (exprNodes instanceof StarNode) {
             // Do nothing.
         } else if (exprNodes instanceof DAsgnNode) {
-            buildPatternBlock(value, (DAsgnNode) exprNodes, inAlternation);
+            DAsgnNode node = (DAsgnNode) exprNodes;
+            buildPatternLocal(value, node.getName(), node.getLine(), node.getDepth(), inAlternation);
         } else if (exprNodes instanceof OrNode) {
-            buildPatternOr(testEnd, result, deconstructed, value, (OrNode) exprNodes, isSinglePattern, errorString);
+            buildPatternOr(testEnd, result, deconstructed, value, ((OrNode) exprNodes).getFirstNode(),
+                    ((OrNode) exprNodes).getSecondNode(), isSinglePattern, errorString);
         } else {
             Operand expression = build(exprNodes);
             boolean needsSplat = exprNodes instanceof ArgsPushNode || exprNodes instanceof SplatNode || exprNodes instanceof ArgsCatNode;
@@ -1092,62 +1083,12 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return result;
     }
 
-    private void buildPatternOr(Label testEnd, Variable result, Variable deconstructed, Operand value, OrNode node, boolean isSinglePattern, Variable errorString) {
-        label("or_lhs_end", firstCase ->
-            buildPatternEach(firstCase, result, deconstructed, value, node.getFirstNode(), true, isSinglePattern, errorString));
-        label("or_rhs_end", secondCase ->
-            cond(secondCase, result, tru(), () -> buildPatternEach(testEnd, result, deconstructed, value, node.getSecondNode(), true, isSinglePattern, errorString)));
-    }
-
-    private void buildPatternBlock(Operand value, DAsgnNode node, boolean inAlternation) {
-        RubySymbol name = node.getName();
-
-        if (inAlternation && name.idString().charAt(0) != '_') {
-            throwSyntaxError(getLine(node), str(getManager().getRuntime(), "illegal variable in alternative pattern (", name, ")"));
-        }
-
-        Variable variable = getLocalVariable(name, node.getDepth());
-        addInstr(new CopyInstr(variable, value));
-    }
-
-    private void buildPatternLocal(Operand value, LocalAsgnNode node, boolean inAlternation) {
-        RubySymbol name = node.getName();
-
-        if (inAlternation && name.idString().charAt(0) != '_') {
-            throwSyntaxError(getLine(node), str(getManager().getRuntime(), "illegal variable in alternative pattern (", name, ")"));
-        }
-
-        Variable variable  = getLocalVariable(name, node.getDepth());
-        addInstr(new CopyInstr(variable, value));
-    }
-
     private void buildPatternEachHash(Label testEnd, Variable result, Variable deconstructed, Operand value, HashNode hash, boolean inAlternation, boolean isSinglePattern, Variable errorString) {
         if (hash.getPairs().size() != 1) throwSyntaxError(getLine(hash), "unexpected node");
 
         KeyValuePair<Node, Node> pair = hash.getPairs().get(0);
         buildPatternMatch(result, deconstructed, pair.getKey(), value, inAlternation, isSinglePattern, errorString);
         buildPatternEach(testEnd, result, deconstructed, value, pair.getValue(), inAlternation, isSinglePattern, errorString);
-    }
-
-    private void buildPatternEachIf(Variable result, Variable deconstructed, Operand value, IfNode node, boolean inAlternation, boolean isSinglePattern, Variable errorString) {
-        boolean unless; // position of body is how we detect between if/unless
-
-        if (node.getThenBody() != null) { // if
-            unless = false;
-            buildPatternMatch(result, deconstructed, node.getThenBody(), value, inAlternation, isSinglePattern, errorString);
-        } else {
-            unless = true;
-            buildPatternMatch(result, deconstructed, node.getElseBody(), value, inAlternation, isSinglePattern, errorString);
-        }
-        label("if_else_end", conditionalEnd -> {
-            cond_ne(conditionalEnd, result, tru());
-            Operand ifResult = build(node.getCondition());
-            if (unless) {
-                call(result, ifResult, "!"); // FIXME: need non-dynamic dispatch to reverse result
-            } else {
-                addInstr(new CopyInstr(result, ifResult));
-            }
-        });
     }
 
     public Operand buildPatternCase(PatternCaseNode patternCase) {
