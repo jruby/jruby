@@ -235,6 +235,15 @@ public abstract class InvokeSite extends MutableCallSite {
         RubyModule sourceModule = entry.sourceModule;
         DynamicMethod method = entry.method;
 
+        if (methodName.equals("block_given?") && arity == 0) {
+            if (method.isBuiltin()) {
+                return RubyBoolean.newBoolean(context, block != null && block.isGiven());
+            }
+
+            // omit block if it's not builtin, dispatch normally
+            return method.call(context, self, sourceModule, methodName, args);
+        }
+
         IRRuntimeHelpers.setCallInfo(context, flags);
 
         if (literalClosure) {
@@ -522,6 +531,7 @@ public abstract class InvokeSite extends MutableCallSite {
         boolean blockGiven = signature.lastArgType() == Block.class;
 
         MethodHandle mh = buildNewInstanceHandle(entry, self);
+        if (mh == null) mh = buildBlockGivenHandle(entry, self);
         if (mh == null) mh = buildNotEqualHandle(entry, self);
         if (mh == null) mh = Bootstrap.buildNativeHandle(this, entry, blockGiven);
         if (mh == null) mh = buildJavaFieldHandle(this, entry, self);
@@ -641,6 +651,25 @@ public abstract class InvokeSite extends MutableCallSite {
 
             if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
                 LOG.info(name() + "\tbound as new instance creation " + Bootstrap.logMethod(method));
+            }
+        }
+
+        return mh;
+    }
+
+    MethodHandle buildBlockGivenHandle(CacheEntry entry, IRubyObject self) {
+        MethodHandle mh = null;
+        DynamicMethod method = entry.method;
+
+        if ("block_given?".equals(method.getName()) && method.isBuiltin()) {
+            mh = Binder.from(type())
+                    .drop(1, 1)
+                    .printType()
+                    .cast(RubyBoolean.class, ThreadContext.class, Block.class)
+                    .invokeStaticQuiet(LOOKUP, IRRuntimeHelpers.class, "isBlockGiven");
+
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                LOG.info(name() + "\tbound as fast block given check " + Bootstrap.logMethod(method));
             }
         }
 

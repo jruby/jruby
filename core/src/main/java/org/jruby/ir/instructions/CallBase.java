@@ -242,6 +242,11 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         modifiedScope |= setIRFlagsFromFrameFields(flags, frameReads);
         modifiedScope |= setIRFlagsFromFrameFields(flags, frameWrites);
 
+        if (getId().equals("block_given?") && argsCount == 0) {
+            // remove frame read from flags for optimizable methods
+            flags.remove(REQUIRES_BLOCK);
+        }
+
         // literal closures can be used to capture surrounding binding
         if (hasLiteralClosure()) {
             modifiedScope = true;

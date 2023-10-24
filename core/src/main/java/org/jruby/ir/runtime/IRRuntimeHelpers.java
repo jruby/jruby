@@ -1191,7 +1191,11 @@ public class IRRuntimeHelpers {
     public static RubyBoolean isBlockGiven(ThreadContext context, Object blk) {
         if (blk instanceof RubyProc) blk = ((RubyProc) blk).getBlock();
         if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
-        return RubyBoolean.newBoolean(context,  ((Block) blk).isGiven() );
+        return isBlockGiven(context, (Block) blk);
+    }
+
+    public static RubyBoolean isBlockGiven(ThreadContext context, Block blk) {
+        return RubyBoolean.newBoolean(context,  blk != null && blk.isGiven() );
     }
 
     @JIT @Interp

@@ -126,6 +126,13 @@ public class IndyInvocationCompiler implements InvocationCompiler {
 
         int flags = call.getFlags();
 
+        if (id.equals("block_given?") && arity == 0) {
+            // specialized call site for block_given? that passes given block through
+            compiler.loadBlock();
+            compiler.adapter.invokedynamic("callFunctional:" + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, Block.class)), SelfInvokeSite.BOOTSTRAP, false, flags, file, compiler.getLastLine());
+            return;
+        }
+
         String action = call.getCallType() == CallType.FUNCTIONAL ? "callFunctional" : "callVariable";
         IRBytecodeAdapter.BlockPassType blockPassType = IRBytecodeAdapter.BlockPassType.fromIR(call);
         if (blockPassType != IRBytecodeAdapter.BlockPassType.NONE) {
