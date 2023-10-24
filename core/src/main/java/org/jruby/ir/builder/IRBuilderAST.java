@@ -1124,12 +1124,10 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             addInstr(new CopyInstr(variable, value));
         } else if (exprNodes instanceof OrNode) {
             OrNode orNode = (OrNode) exprNodes;
-            label("or_lhs_end", firstCase -> {
-                buildPatternEach(firstCase, result, deconstructed, value, orNode.getFirstNode(), true, isSinglePattern, errorString);
-            });
-            label("or_rhs_end", secondCase -> {
-                cond(secondCase, result, tru(), () -> buildPatternEach(testEnd, result, deconstructed, value, orNode.getSecondNode(), true, isSinglePattern, errorString));
-            });
+            label("or_lhs_end", firstCase ->
+                buildPatternEach(firstCase, result, deconstructed, value, orNode.getFirstNode(), true, isSinglePattern, errorString));
+            label("or_rhs_end", secondCase ->
+                cond(secondCase, result, tru(), () -> buildPatternEach(testEnd, result, deconstructed, value, orNode.getSecondNode(), true, isSinglePattern, errorString)));
         } else {
             Operand expression = build(exprNodes);
             boolean needsSplat = exprNodes instanceof ArgsPushNode || exprNodes instanceof SplatNode || exprNodes instanceof ArgsCatNode;
@@ -1186,11 +1184,9 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             if (!hasElse) {
                 addInstr(new LabelInstr(elseLabel));
                 Variable inspect = temp();
-                if_else(errorString, buildNil(), () -> {
-                    call(inspect, value, "inspect");
-                }, () -> {
-                    copy(inspect, errorString);
-                });
+                if_else(errorString, buildNil(),
+                        () -> call(inspect, value, "inspect"),
+                        () -> copy(inspect, errorString));
 
                 addRaiseError("NoMatchingPatternError", inspect);
                 jump(end);
