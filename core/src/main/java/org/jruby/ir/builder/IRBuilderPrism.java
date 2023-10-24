@@ -745,6 +745,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return buildHash(node.elements, containsVariableAssignment(node.elements));
     }
 
+    // FIXME: This is broken with some combinations of things like doo[1] &&= 2 where it should return 2 and not the call return value.
     private Operand buildCallOperatorLogicalWrite(RubySymbol readName, RubySymbol writeName, Node receiverNode,
                                                   ArgumentsNode arguments, Node value, Operand comparator) {
         Operand receiver = build(receiverNode);
