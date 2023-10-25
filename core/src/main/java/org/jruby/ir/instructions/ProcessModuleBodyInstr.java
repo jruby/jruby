@@ -31,12 +31,6 @@ public class ProcessModuleBodyInstr extends OneOperandResultBaseInstr implements
         return new ProcessModuleBodyInstr(ii.getRenamedVariable(result), getModuleBody().cloneForInlining(ii));
     }
 
-    @Override
-    public void encode(IRWriterEncoder e) {
-        super.encode(e);
-        e.encode(getModuleBody());
-    }
-
     public static ProcessModuleBodyInstr decode(IRReaderDecoder d) {
         return new ProcessModuleBodyInstr(d.decodeVariable(), d.decodeOperand());
     }
