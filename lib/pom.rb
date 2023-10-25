@@ -43,7 +43,7 @@ default_gems = [
     # ['etc', '1.3.0'],
     # https://github.com/ruby/fcntl/issues/9
     # ['fcntl', '1.0.1'],
-    ['ffi', '1.16.2'],
+    ['ffi', '1.16.3'],
     # ['fiddle', '1.1.0'],
     ['fileutils', '1.6.0'],
     ['find', '0.1.1'],
@@ -78,7 +78,7 @@ default_gems = [
     ['pp', '0.3.0'],
     ['prettyprint', '0.1.1'],
     ['pstore', '0.1.1'],
-    ['psych', '5.1.0'],
+    ['psych', '5.1.1.1'],
     ['racc', '1.6.0'],
     ['rake-ant', '1.0.6'],
     ['rdoc', '6.4.0'],
@@ -98,7 +98,7 @@ default_gems = [
     ['shellwords', '0.1.0'],
     ['singleton', '0.1.1'],
     ['stringio', '3.0.8'],
-    ['strscan', '3.0.6'],
+    ['strscan', '3.0.7'],
     ['subspawn', '0.1.1'], # has 3 transitive deps:
       ['subspawn-posix', '0.1.1'],
       ['ffi-binary-libfixposix', '0.5.1.1'],

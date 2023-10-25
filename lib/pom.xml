@@ -12,7 +12,7 @@ DO NOT MODIFY - GENERATED CODE
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>9.4.4.0-SNAPSHOT</version>
+    <version>9.4.5.0-SNAPSHOT</version>
   </parent>
   <artifactId>jruby-stdlib</artifactId>
   <name>JRuby Lib Setup</name>
@@ -28,7 +28,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>jruby-core</artifactId>
-      <version>9.4.4.0-SNAPSHOT</version>
+      <version>9.4.5.0-SNAPSHOT</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -255,7 +255,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>ffi</artifactId>
-      <version>1.16.2</version>
+      <version>1.16.3</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -580,7 +580,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>psych</artifactId>
-      <version>5.1.0</version>
+      <version>5.1.1.1</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -736,7 +736,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>strscan</artifactId>
-      <version>3.0.6</version>
+      <version>3.0.7</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1083,7 +1083,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/english-0.7.1*</include>
           <include>specifications/erb-2.2.3*</include>
           <include>specifications/error_highlight-0.3.0*</include>
-          <include>specifications/ffi-1.16.2*</include>
+          <include>specifications/ffi-1.16.3*</include>
           <include>specifications/fileutils-1.6.0*</include>
           <include>specifications/find-0.1.1*</include>
           <include>specifications/forwardable-1.3.2*</include>
@@ -1108,7 +1108,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/pp-0.3.0*</include>
           <include>specifications/prettyprint-0.1.1*</include>
           <include>specifications/pstore-0.1.1*</include>
-          <include>specifications/psych-5.1.0*</include>
+          <include>specifications/psych-5.1.1.1*</include>
           <include>specifications/racc-1.6.0*</include>
           <include>specifications/rake-ant-1.0.6*</include>
           <include>specifications/rdoc-6.4.0*</include>
@@ -1120,7 +1120,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/shellwords-0.1.0*</include>
           <include>specifications/singleton-0.1.1*</include>
           <include>specifications/stringio-3.0.8*</include>
-          <include>specifications/strscan-3.0.6*</include>
+          <include>specifications/strscan-3.0.7*</include>
           <include>specifications/subspawn-0.1.1*</include>
           <include>specifications/subspawn-posix-0.1.1*</include>
           <include>specifications/ffi-binary-libfixposix-0.5.1.1*</include>
@@ -1161,7 +1161,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/english-0.7.1*/**/*</include>
           <include>gems/erb-2.2.3*/**/*</include>
           <include>gems/error_highlight-0.3.0*/**/*</include>
-          <include>gems/ffi-1.16.2*/**/*</include>
+          <include>gems/ffi-1.16.3*/**/*</include>
           <include>gems/fileutils-1.6.0*/**/*</include>
           <include>gems/find-0.1.1*/**/*</include>
           <include>gems/forwardable-1.3.2*/**/*</include>
@@ -1186,7 +1186,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/pp-0.3.0*/**/*</include>
           <include>gems/prettyprint-0.1.1*/**/*</include>
           <include>gems/pstore-0.1.1*/**/*</include>
-          <include>gems/psych-5.1.0*/**/*</include>
+          <include>gems/psych-5.1.1.1*/**/*</include>
           <include>gems/racc-1.6.0*/**/*</include>
           <include>gems/rake-ant-1.0.6*/**/*</include>
           <include>gems/rdoc-6.4.0*/**/*</include>
@@ -1198,7 +1198,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/shellwords-0.1.0*/**/*</include>
           <include>gems/singleton-0.1.1*/**/*</include>
           <include>gems/stringio-3.0.8*/**/*</include>
-          <include>gems/strscan-3.0.6*/**/*</include>
+          <include>gems/strscan-3.0.7*/**/*</include>
           <include>gems/subspawn-0.1.1*/**/*</include>
           <include>gems/subspawn-posix-0.1.1*/**/*</include>
           <include>gems/ffi-binary-libfixposix-0.5.1.1*/**/*</include>
@@ -1239,7 +1239,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/english-0.7.1*</include>
           <include>cache/erb-2.2.3*</include>
           <include>cache/error_highlight-0.3.0*</include>
-          <include>cache/ffi-1.16.2*</include>
+          <include>cache/ffi-1.16.3*</include>
           <include>cache/fileutils-1.6.0*</include>
           <include>cache/find-0.1.1*</include>
           <include>cache/forwardable-1.3.2*</include>
@@ -1264,7 +1264,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/pp-0.3.0*</include>
           <include>cache/prettyprint-0.1.1*</include>
           <include>cache/pstore-0.1.1*</include>
-          <include>cache/psych-5.1.0*</include>
+          <include>cache/psych-5.1.1.1*</include>
           <include>cache/racc-1.6.0*</include>
           <include>cache/rake-ant-1.0.6*</include>
           <include>cache/rdoc-6.4.0*</include>
@@ -1276,7 +1276,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/shellwords-0.1.0*</include>
           <include>cache/singleton-0.1.1*</include>
           <include>cache/stringio-3.0.8*</include>
-          <include>cache/strscan-3.0.6*</include>
+          <include>cache/strscan-3.0.7*</include>
           <include>cache/subspawn-0.1.1*</include>
           <include>cache/subspawn-posix-0.1.1*</include>
           <include>cache/ffi-binary-libfixposix-0.5.1.1*</include>

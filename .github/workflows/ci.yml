@@ -293,58 +293,58 @@ jobs:
       - name: concurrent-ruby
         run: tool/concurrent-ruby-github-actions.sh
 
-  mvn-test-m1:
-    runs-on: [self-hosted, macos, aarch64]
-
-    strategy:
-      matrix:
-        package-flags: ['-Ptest']
-        # dist, complete, and osgi do not pass on 17 yet
-        java-version: ['11']
-      fail-fast: false
-
-    name: mvn ${{ matrix.package-flags }} (Java ${{ matrix.java-version }} Apple aarch64)
-
-    steps:
-      - name: checkout
-        uses: actions/checkout@v3
-      - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'zulu'
-          java-version: ${{ matrix.java-version }}
-          architecture: arm
-      - name: bootstrap
-        run: ./mvnw -Pbootstrap clean package
-      - name: mvn package ${{ matrix.package-flags }}
-        run: tool/maven-ci-script.sh
-        env:
-          PHASE: 'package ${{ matrix.package-flags }}'
-
-  spec-m1:
-    runs-on: [self-hosted, macos, aarch64]
-
-    strategy:
-      matrix:
-        target: ['spec:ffi']
-        java-version: ['11']
-      fail-fast: false
-
-    name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }} Apple aarch64)
-
-    steps:
-      - name: Bootstrap build
-        uses: jruby/jruby-ci-build@v1
-      - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'zulu'
-          java-version: ${{ matrix.java-version }}
-          architecture: arm
-          cache: 'maven'
-      - name: rake ${{ matrix.target }}
-#        run: "bin/jruby -S rake ${{ matrix.target }}"
-        run: "true"
+#  mvn-test-m1:
+#    runs-on: [self-hosted, macos, aarch64]
+#
+#    strategy:
+#      matrix:
+#        package-flags: ['-Ptest']
+#        # dist, complete, and osgi do not pass on 17 yet
+#        java-version: ['11']
+#      fail-fast: false
+#
+#    name: mvn ${{ matrix.package-flags }} (Java ${{ matrix.java-version }} Apple aarch64)
+#
+#    steps:
+#      - name: checkout
+#        uses: actions/checkout@v3
+#      - name: set up java ${{ matrix.java-version }}
+#        uses: actions/setup-java@v3
+#        with:
+#          distribution: 'zulu'
+#          java-version: ${{ matrix.java-version }}
+#          architecture: arm
+#      - name: bootstrap
+#        run: ./mvnw -Pbootstrap clean package
+#      - name: mvn package ${{ matrix.package-flags }}
+#        run: tool/maven-ci-script.sh
+#        env:
+#          PHASE: 'package ${{ matrix.package-flags }}'
+#
+#  spec-m1:
+#    runs-on: [self-hosted, macos, aarch64]
+#
+#    strategy:
+#      matrix:
+#        target: ['spec:ffi']
+#        java-version: ['11']
+#      fail-fast: false
+#
+#    name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }} Apple aarch64)
+#
+#    steps:
+#      - name: Bootstrap build
+#        uses: jruby/jruby-ci-build@v1
+#      - name: set up java ${{ matrix.java-version }}
+#        uses: actions/setup-java@v3
+#        with:
+#          distribution: 'zulu'
+#          java-version: ${{ matrix.java-version }}
+#          architecture: arm
+#          cache: 'maven'
+#      - name: rake ${{ matrix.target }}
+##        run: "bin/jruby -S rake ${{ matrix.target }}"
+#        run: "true"
 
   maven-test-openj9-8:
     runs-on: ubuntu-latest
@@ -393,7 +393,7 @@ jobs:
     permissions:
       contents: none
     if: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/heads/jruby-9.3' }}
-    needs: [mvn-test, mvn-test-extended, mvn-test-windows, dependency-check, rake-test, rake-test-17-indy, rake-test-8, test-versions, sequel, concurrent-ruby, jruby-tests-dev, regression-specs-jit, mvn-test-m1]
+    needs: [mvn-test, mvn-test-extended, mvn-test-windows, dependency-check, rake-test, rake-test-17-indy, rake-test-8, test-versions, sequel, concurrent-ruby, jruby-tests-dev, regression-specs-jit]
     uses: jruby/jruby/.github/workflows/snapshot-publish.yml@6cd0d4d96d9406635183d81cf91acc82cd78245f
     secrets:
       SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}

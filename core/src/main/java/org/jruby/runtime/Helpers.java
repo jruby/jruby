@@ -10,6 +10,7 @@ import java.lang.reflect.Array;
 
 import java.net.BindException;
 import java.net.PortUnreachableException;
+import java.net.SocketException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.NonReadableChannelException;
 import java.nio.channels.NonWritableChannelException;
@@ -235,12 +236,12 @@ public class Helpers {
      * @return the resulting {@link Errno} value, or null if none could be determined.
      */
     public static Errno errnoFromException(Throwable t) {
-        // FIXME: Error-message scrapingis gross and turns out to be fragile if the host system is localized jruby/jruby#5415
+        // FIXME: Error-message scraping is gross and turns out to be fragile if the host system is localized jruby/jruby#5415
 
         // Try specific exception types by rethrowing and catching.
         try {
             throw t;
-        } catch (FileNotFoundException fnfe) {
+        } catch (FileNotFoundException | NoSuchFileException fnfe) {
             return Errno.ENOENT;
         } catch (EOFException eofe) {
             return Errno.EPIPE;
@@ -254,15 +255,11 @@ public class Helpers {
             return Errno.EEXIST;
         } catch (FileSystemLoopException fsle) {
             return Errno.ELOOP;
-        } catch (NoSuchFileException nsfe) {
-            return Errno.ENOENT;
         } catch (NotDirectoryException nde) {
             return Errno.ENOTDIR;
         } catch (AccessDeniedException ade) {
             return Errno.EACCES;
-        } catch (DirectoryNotEmptyException dnee) {
-            return errnoFromMessage(dnee);
-        } catch (BindException be) {
+        } catch (IOException be) {
             return errnoFromMessage(be);
         } catch (NotYetConnectedException nyce) {
             return Errno.ENOTCONN;
@@ -271,12 +268,6 @@ public class Helpers {
             return Errno.EINVAL;
         } catch (IllegalArgumentException nrce) {
             return Errno.EINVAL;
-        } catch (IOException ioe) {
-            String message = ioe.getMessage();
-            // Raised on Windows for process launch with missing file
-            if (message.endsWith("The system cannot find the file specified")) {
-                return Errno.ENOENT;
-            }
         } catch (Throwable t2) {
             // fall through
         }
@@ -302,6 +293,7 @@ public class Helpers {
                     return Errno.ECONNABORTED;
                 case "Broken pipe":
                     return Errno.EPIPE;
+                case "Connection reset":
                 case "Connection reset by peer":
                 case "An existing connection was forcibly closed by the remote host":
                     return Errno.ECONNRESET;
@@ -335,7 +327,13 @@ public class Helpers {
                 case "Protocol family not supported":
                     return Errno.EPFNOSUPPORT;
             }
+
+            // Raised on Windows for process launch with missing file
+            if (errorMessage.endsWith("The system cannot find the file specified")) {
+                return Errno.ENOENT;
+            }
         }
+
         return null;
     }
 
