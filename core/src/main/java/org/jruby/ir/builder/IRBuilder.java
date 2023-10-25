@@ -2158,7 +2158,7 @@ public abstract class IRBuilder<U, V, W, X> {
         Variable sClassVar = addResultInstr(new DefineMetaClassInstr(temp(), receiver, body));
 
         // sclass bodies inherit the block of their containing method
-        Variable bodyResult = addResultInstr(new ProcessModuleBodyInstr(temp(), sClassVar, getYieldClosureVariable()));
+        Variable bodyResult = addResultInstr(new ProcessModuleBodyInstr(temp(), sClassVar));
         newIRBuilder(getManager(), body, this, encoding, this instanceof IRBuilderPrism).buildModuleOrClassBody(bodyNode, line, endLine);
         return bodyResult;
     }

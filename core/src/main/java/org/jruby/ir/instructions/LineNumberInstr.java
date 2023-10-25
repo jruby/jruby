@@ -55,7 +55,7 @@ public class LineNumberInstr extends NoOperandInstr implements FixedArityInstr {
 
     @Override
     public String[] toStringNonOperandArgs() {
-        return new String[] {"n: " + lineNumber};
+        return new String[] {"n: " + lineNumber, "coverage: " + coverage, "oneshot: " + oneshot};
     }
 
     @Override
