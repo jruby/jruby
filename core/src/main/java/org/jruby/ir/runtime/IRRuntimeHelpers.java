@@ -1864,15 +1864,7 @@ public class IRRuntimeHelpers {
         // FIXME: needs checkID and proper encoding to force hard symbol
         Helpers.addInstanceMethod(clazz, methodName, newMethod, currVisibility, context, runtime);
     }
-
-    @JIT
-    public static IRubyObject invokeModuleBody(ThreadContext context, DynamicMethod method, Block block) {
-        RubyModule implClass = method.getImplementationClass();
-
-        return method.call(context, implClass, implClass, "", block);
-    }
-
-    // FIXME: Temporary until CompiledIRMethod part of this is removed.
+    
     @JIT
     public static IRubyObject invokeModuleBody(ThreadContext context, DynamicMethod method) {
         RubyModule implClass = method.getImplementationClass();

@@ -2212,7 +2212,7 @@ public class IRBuilder {
         Variable sClassVar = addResultInstr(new DefineMetaClassInstr(createTemporaryVariable(), receiver, body));
 
         // sclass bodies inherit the block of their containing method
-        Variable processBodyResult = addResultInstr(new ProcessModuleBodyInstr(createTemporaryVariable(), sClassVar, getYieldClosureVariable()));
+        Variable processBodyResult = addResultInstr(new ProcessModuleBodyInstr(createTemporaryVariable(), sClassVar));
         newIRBuilder(manager, body).buildModuleOrClassBody(sclassNode.getBodyNode(), sclassNode.getLine(), sclassNode.getEndLine());
         return processBodyResult;
     }
@@ -3103,10 +3103,9 @@ public class IRBuilder {
         // Receive self
         addInstr(manager.getReceiveSelfInstr());
 
-        // used for yields; metaclass body (sclass) inherits yield var from surrounding, and accesses it as implicit
-        if (scope instanceof IRMethod || scope instanceof IRMetaClassBody) {
+        if (scope instanceof IRMethod) {
             addInstr(new LoadImplicitClosureInstr(getYieldClosureVariable()));
-        } else {
+        } else if (!(scope instanceof IRModuleBody) && !(scope instanceof IRClassBody) && !(scope instanceof IRMetaClassBody)) {
             addInstr(new LoadFrameClosureInstr(getYieldClosureVariable()));
         }
     }
