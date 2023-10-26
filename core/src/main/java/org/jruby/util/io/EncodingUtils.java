@@ -262,11 +262,13 @@ public class EncodingUtils {
                 
                 v = hashARef(runtime, options, "perm");
                 if (!v.isNil()) {
-                    if (vperm(vmodeAndVperm_p) != null) {
-                        if (!vperm(vmodeAndVperm_p).isNil()) throw runtime.newArgumentError("perm specified twice");
-
-                        vperm(vmodeAndVperm_p, v);
+                    if (vperm(vmodeAndVperm_p) != null && !vperm(vmodeAndVperm_p).isNil()) {
+                        throw runtime.newArgumentError("perm specified twice");
                     }
+
+                    vperm(vmodeAndVperm_p, v);
+                } else {
+                    /* perm no use, just ignore */
                 }
 
                 IRubyObject extraFlags = hashARef(runtime, options, "flags");
