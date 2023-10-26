@@ -339,7 +339,7 @@ project 'JRuby Lib Setup' do
         spec.executables.each do |f|
           bin = Dir.glob(File.join( gems, "#{gem_name}*", spec.bindir ))[0]
           source = File.join( bin, f )
-          target = File.join( bin_stubs, source.sub( /#{gems}/, '' ) )
+          target = File.join( bin_stubs, source.sub( gems, '' ) )
           log "copy #{f} to #{target}"
           FileUtils.mkdir_p( File.dirname( target ) )
           FileUtils.cp_r( source, target )
