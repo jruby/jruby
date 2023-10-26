@@ -5,7 +5,7 @@ describe "Ruby File" do
   before(:all) { require 'tempfile' }
 
   it "is coercible to java.io.File" do
-    file = Tempfile.new("io_spec").to_java 'java.io.File'
+    file = Tempfile.create("io_spec").to_java 'java.io.File'
     expect(java.io.File).to be === file
     file = File.open(__FILE__).to_java java.io.File
     expect(java.io.File).to be === file
