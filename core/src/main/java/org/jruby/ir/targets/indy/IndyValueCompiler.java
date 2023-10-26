@@ -155,7 +155,7 @@ public class IndyValueCompiler implements ValueCompiler {
 
         if (!specialSite) {
             // use indy to cache the site object
-            method.invokedynamic("callSite", sig(CachingCallSite.class), Bootstrap.CALLSITE, call.getId(), callType.ordinal());
+            method.invokedynamic("callSite", sig(CachingCallSite.class), CallSiteCacheBootstrap.CALLSITE, call.getId(), callType.ordinal());
             return;
         }
 

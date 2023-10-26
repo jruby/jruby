@@ -49,6 +49,6 @@ public class IndyBlockCompiler implements BlockCompiler {
 
         long encodedSignature = signature.encode();
         compiler.adapter.invokedynamic(handle.getName(), sig(Block.class, ThreadContext.class, IRubyObject.class, DynamicScope.class),
-                Bootstrap.prepareBlock(), handle, scopeHandle, setScopeHandle, parentScopeHandle, scopeDescriptor, encodedSignature, file, line, encodedArgumentDescriptors);
+                ConstructBlockBootstrap.PREPARE_BLOCK_BOOTSTRAP, handle, scopeHandle, setScopeHandle, parentScopeHandle, scopeDescriptor, encodedSignature, file, line, encodedArgumentDescriptors);
     }
 }

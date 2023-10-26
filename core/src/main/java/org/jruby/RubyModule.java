@@ -5108,6 +5108,10 @@ public class RubyModule extends RubyObject {
         return getRuntime().newNameError(str(runtime, "cannot remove ", ids(runtime, id), " for ", types(runtime, this)), id);
     }
 
+    public static boolean testModuleMatch(ThreadContext context, IRubyObject arg0, int id) {
+        return arg0 instanceof RubyModule && ((RubyModule) arg0).id == id;
+    }
+
 
     //
     ////////////////// INTERNAL MODULE VARIABLE API METHODS ////////////////
@@ -6159,5 +6163,5 @@ public class RubyModule extends RubyObject {
      */
     private static final MethodHandle testModuleMatch = Binder
             .from(boolean.class, ThreadContext.class, IRubyObject.class, int.class)
-            .invokeStaticQuiet(LOOKUP, Bootstrap.class, "testModuleMatch");
+            .invokeStaticQuiet(LOOKUP, RubyModule.class, "testModuleMatch");
 }
