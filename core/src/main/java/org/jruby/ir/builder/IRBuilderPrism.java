@@ -1482,12 +1482,12 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildMultiWriteNode(MultiWriteNode node) {
-        Variable rhs = getValueInTemporaryVariable(build(node.value));
-        if (!(node.value instanceof ArrayNode)) rhs = addResultInstr(new ToAryInstr(temp(), rhs));
+        Variable value = getValueInTemporaryVariable(build(node.value));
+        Variable rhs = node.value instanceof ArrayNode ? value : addResultInstr(new ToAryInstr(temp(), value));
 
         buildMultiAssignment(node.lefts, node.rest, node.rights, rhs);
 
-        return rhs;
+        return value;
     }
 
     // SplatNode, MultiWriteNode, LocalVariableWrite and lots of other normal writes
