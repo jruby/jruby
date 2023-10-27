@@ -6,7 +6,8 @@ import org.jruby.EvalType;
 import org.jruby.ParseResult;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
-import org.jruby.ast.*;
+import org.jruby.ast.IterNode;
+import org.jruby.ast.RootNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.ext.coverage.CoverageData;
 import org.jruby.ir.IRClassBody;
@@ -1719,10 +1720,10 @@ public abstract class IRBuilder<U, V, W, X> {
     Operand buildOpAsgn(U receiver, U value, RubySymbol reader, RubySymbol writer, RubySymbol operator, boolean isLazy) {
         Label l;
         Variable writerValue = temp();
-        CallType callType = receiver instanceof SelfNode ? FUNCTIONAL : NORMAL;
 
         // get attr
         Operand  v1 = build(receiver);
+        CallType callType = v1 == Self.SELF ? FUNCTIONAL : NORMAL;
 
         Label lazyLabel = null;
         Label endLabel = null;
@@ -1808,8 +1809,8 @@ public abstract class IRBuilder<U, V, W, X> {
     }
 
     Operand buildOpElementAsgnWith(U receiver, U args, U block, U value, Boolean truthy) {
-        CallType callType = receiver instanceof SelfNode ? FUNCTIONAL : CallType.NORMAL;
         Operand array = buildWithOrder(receiver, containsVariableAssignment(args) || containsVariableAssignment(value));
+        CallType callType = array == Self.SELF ? FUNCTIONAL : CallType.NORMAL;
         Label endLabel = getNewLabel();
         Variable elt = temp();
         int[] flags = new int[] { 0 };
@@ -1829,8 +1830,8 @@ public abstract class IRBuilder<U, V, W, X> {
 
     // a[i] *= n, etc.  anything that is not "a[i] &&= .. or a[i] ||= .."
     Operand buildOpElementAsgnWithMethod(U receiver, U args, U block, U value, RubySymbol operator) {
-        CallType callType = receiver instanceof SelfNode ? FUNCTIONAL : CallType.NORMAL;
         Operand array = buildWithOrder(receiver, containsVariableAssignment(args) || containsVariableAssignment(value));
+        CallType callType = array == Self.SELF ? FUNCTIONAL : CallType.NORMAL;
         int[] flags = new int[] { 0 };
         Operand[] argList = setupCallArgs(args, flags);
         Operand blockArg = setupCallClosure(block);
