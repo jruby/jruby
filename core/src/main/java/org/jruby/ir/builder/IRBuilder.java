@@ -8,6 +8,7 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
 import org.jruby.ast.Colon3Node;
 import org.jruby.ast.IterNode;
+import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.ext.coverage.CoverageData;
@@ -1798,6 +1799,38 @@ public abstract class IRBuilder<U, V, W, X, Y> {
         addInstr(new LabelInstr(done));
         return result;
     }
+
+    Operand buildOpAsgnConstDeclOr(U left, U right, RubySymbol leftName) {
+        Variable result = temp();
+        Label falseCheck = getNewLabel();
+        Label done = getNewLabel();
+        Label assign = getNewLabel();
+        Operand module = buildColon2ForConstAsgnDeclNode(left, result, false);
+        addInstr(BNEInstr.create(falseCheck, result, UndefinedValue.UNDEFINED));
+        addInstr(new JumpInstr(assign));
+        addInstr(new LabelInstr(falseCheck));
+        addInstr(BNEInstr.create(done, result, fals()));
+        addInstr(new LabelInstr(assign));
+        Operand rhsValue = build(right);
+        copy(result, rhsValue);
+        addInstr(new PutConstInstr(module, leftName, rhsValue));
+        addInstr(new LabelInstr(done));
+        return result;
+    }
+
+    Operand buildOpAsgnConstDeclAnd(U left, U right, RubySymbol leftName) {
+        Variable result = temp();
+        Label done = getNewLabel();
+        Operand module = buildColon2ForConstAsgnDeclNode(left, result, true);
+        addInstr(new BFalseInstr(done, result));
+        Operand rhsValue = build(right);
+        copy(result, rhsValue);
+        addInstr(new PutConstInstr(module, leftName, rhsValue));
+        addInstr(new LabelInstr(done));
+        return result;
+    }
+
+    abstract Operand buildColon2ForConstAsgnDeclNode(U lhs, Variable valueResult, boolean constMissing);
 
     Operand buildOpAsgnConstDecl(Y left, U right, RubySymbol operator) {
         Operand lhs = build((U) left);

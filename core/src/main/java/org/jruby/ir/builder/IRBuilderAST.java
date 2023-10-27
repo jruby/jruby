@@ -2527,20 +2527,10 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
                 node.getVariableSymbolNameAsgn(), node.getOperatorSymbolName(), node.isLazy());
     }
 
-    private Operand buildColon2ForConstAsgnDeclNode(Node lhs, Variable valueResult, boolean constMissing) {
-        Variable leftModule = temp();
-        RubySymbol name;
-
-        if (lhs instanceof Colon2Node) {
-            Colon2Node colon2Node = (Colon2Node) lhs;
-            name = colon2Node.getName();
-            Operand leftValue = build(colon2Node.getLeftNode());
-            copy(leftModule, leftValue);
-        } else { // colon3
-            copy(leftModule, getManager().getObjectClass());
-            name = ((Colon3Node) lhs).getName();
-        }
-
+    Operand buildColon2ForConstAsgnDeclNode(Node lhs, Variable valueResult, boolean constMissing) {
+        RubySymbol name = ((INameNode) lhs).getName();
+        Variable leftModule = copy(lhs instanceof Colon2Node ?
+                build(((Colon2Node) lhs).getLeftNode()) : getManager().getObjectClass());
         addInstr(new SearchModuleForConstInstr(valueResult, leftModule, name, false, constMissing));
 
         return leftModule;
@@ -2548,31 +2538,9 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
 
     public Operand buildOpAsgnConstDeclNode(OpAsgnConstDeclNode node) {
         if (node.isOr()) {
-            Variable result = temp();
-            Label falseCheck = getNewLabel();
-            Label done = getNewLabel();
-            Label assign = getNewLabel();
-            Operand module = buildColon2ForConstAsgnDeclNode(node.getFirstNode(), result, false);
-            addInstr(BNEInstr.create(falseCheck, result, UndefinedValue.UNDEFINED));
-            addInstr(new JumpInstr(assign));
-            addInstr(new LabelInstr(falseCheck));
-            addInstr(BNEInstr.create(done, result, fals()));
-            addInstr(new LabelInstr(assign));
-            Operand rhsValue = build(node.getSecondNode());
-            copy(result, rhsValue);
-            addInstr(new PutConstInstr(module, ((Colon3Node) node.getFirstNode()).getName(), rhsValue));
-            addInstr(new LabelInstr(done));
-            return result;
+            return buildOpAsgnConstDeclOr(node.getFirstNode(), node.getSecondNode(), ((Colon3Node) node.getFirstNode()).getName());
         } else if (node.isAnd()) {
-            Variable result = temp();
-            Label done = getNewLabel();
-            Operand module = buildColon2ForConstAsgnDeclNode(node.getFirstNode(), result, true);
-            addInstr(new BFalseInstr(done, result));
-            Operand rhsValue = build(node.getSecondNode());
-            copy(result, rhsValue);
-            addInstr(new PutConstInstr(module, ((Colon3Node) node.getFirstNode()).getName(), rhsValue));
-            addInstr(new LabelInstr(done));
-            return result;
+            return buildOpAsgnConstDeclAnd(node.getFirstNode(), node.getSecondNode(), ((Colon3Node) node.getFirstNode()).getName());
         }
 
         return buildOpAsgnConstDecl((Colon3Node) node.getFirstNode(), node.getSecondNode(), node.getSymbolOperator());

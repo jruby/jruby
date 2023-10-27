@@ -159,12 +159,14 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             return buildConstantOperatorWrite((ConstantOperatorWriteNode) node);
         } else if (node instanceof ConstantOrWriteNode) {
             return buildConstantOrWrite((ConstantOrWriteNode) node);
-        } else if (node instanceof ConstantPathAndWriteNode) {
-            return buildConstantAndWritePath((ConstantPathAndWriteNode) node);
         } else if (node instanceof ConstantPathNode) {
             return buildConstantPath(result, (ConstantPathNode) node);
+        } else if (node instanceof ConstantPathAndWriteNode) {
+            return buildConstantPathAndWrite((ConstantPathAndWriteNode) node);
         } else if (node instanceof ConstantPathOperatorWriteNode) {
             return buildConstantPathOperatorWrite((ConstantPathOperatorWriteNode) node);
+        } else if (node instanceof ConstantPathOrWriteNode) {
+            return buildConstantPathOrWrite((ConstantPathOrWriteNode) node);
         } else if (node instanceof ConstantPathOrWriteNode) {
             return buildConstantOrWritePath((ConstantPathOrWriteNode) node);
         } else if (node instanceof ConstantPathWriteNode) {
@@ -819,15 +821,22 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return buildClassVarAsgn(node.name, node.value);
     }
 
+    @Override
+    Operand buildColon2ForConstAsgnDeclNode(Node lhs, Variable valueResult, boolean constMissing) {
+        Variable leftModule = temp();
+        ConstantPathNode colon2Node = (ConstantPathNode) lhs;
+        RubySymbol name = symbol(determineBaseName(colon2Node));
+        Operand leftValue = build(colon2Node.parent);
+        copy(leftModule, leftValue);
+
+        addInstr(new SearchModuleForConstInstr(valueResult, leftModule, name, false, constMissing));
+
+        return leftModule;
+    }
+
     private Operand buildConstantAndWrite(ConstantAndWriteNode node) {
         return buildOpAsgnAnd(() -> addResultInstr(new SearchConstInstr(temp(), CurrentScope.INSTANCE, node.name, false)),
                 () -> (putConstant(node.name, build(node.value))));
-    }
-
-    private Operand buildConstantAndWritePath(ConstantPathAndWriteNode node) {
-        RubySymbol name = ((ConstantReadNode) node.target.child).name;
-        return buildOpAsgnAnd(() -> buildConstantPath(temp(), name, node.target.parent),
-                () -> buildConstantWritePath(node.target, build(node.value)));
     }
 
     private Operand buildConstantOperatorWrite(ConstantOperatorWriteNode node) {
@@ -875,8 +884,16 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return searchModuleForConst(result, where, name);
     }
 
+    private Operand buildConstantPathAndWrite(ConstantPathAndWriteNode node) {
+        return buildOpAsgnConstDeclAnd(node.target, node.value, symbol(determineBaseName(node.target)));
+    }
+
     private Operand buildConstantPathOperatorWrite(ConstantPathOperatorWriteNode node) {
         return buildOpAsgnConstDecl(node.target, node.value, node.operator);
+    }
+
+    private Operand buildConstantPathOrWrite(ConstantPathOrWriteNode node) {
+        return buildOpAsgnConstDeclOr(node.target, node.value, symbol(determineBaseName(node.target)));
     }
 
     private Operand buildConstantRead(ConstantReadNode node) {
