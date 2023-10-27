@@ -284,6 +284,18 @@ public abstract class AbstractNodeVisitor<T> {
         return defaultVisit(node);
     }
 
+    public T visitIndexAndWriteNode(Nodes.IndexAndWriteNode node) {
+        return defaultVisit(node);
+    }
+
+    public T visitIndexOperatorWriteNode(Nodes.IndexOperatorWriteNode node) {
+        return defaultVisit(node);
+    }
+
+    public T visitIndexOrWriteNode(Nodes.IndexOrWriteNode node) {
+        return defaultVisit(node);
+    }
+
     public T visitInstanceVariableAndWriteNode(Nodes.InstanceVariableAndWriteNode node) {
         return defaultVisit(node);
     }
@@ -469,10 +481,6 @@ public abstract class AbstractNodeVisitor<T> {
     }
 
     public T visitRegularExpressionNode(Nodes.RegularExpressionNode node) {
-        return defaultVisit(node);
-    }
-
-    public T visitRequiredDestructuredParameterNode(Nodes.RequiredDestructuredParameterNode node) {
         return defaultVisit(node);
     }
 

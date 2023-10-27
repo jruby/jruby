@@ -129,6 +129,46 @@ public abstract class Nodes {
         protected abstract String toString(String indent);
     }
 
+    public static final class ArgumentsNodeFlags implements Comparable<ArgumentsNodeFlags> {
+
+        // if arguments contain keyword splat
+        public static final short KEYWORD_SPLAT = 1 << 0;
+
+        public static boolean isKeywordSplat(short flags) {
+            return (flags & KEYWORD_SPLAT) != 0;
+        }
+
+        private final short flags;
+
+        public ArgumentsNodeFlags(short flags) {
+            this.flags = flags;
+        }
+
+        @Override
+        public int hashCode() {
+            return flags;
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if (!(other instanceof ArgumentsNodeFlags)) {
+                return false;
+            }
+
+            return flags == ((ArgumentsNodeFlags) other).flags;
+        }
+
+        @Override
+        public int compareTo(ArgumentsNodeFlags other) {
+            return flags - other.flags;
+        }
+
+        public boolean isKeywordSplat() {
+            return (flags & KEYWORD_SPLAT) != 0;
+        }
+
+    }
+
     public static final class CallNodeFlags implements Comparable<CallNodeFlags> {
 
         // &. operator
@@ -680,12 +720,18 @@ public abstract class Nodes {
     //            ^^^^^^^^^^^^^
     public static final class ArgumentsNode extends Node {
         public final Node[] arguments;
+        public final short flags;
 
-        public ArgumentsNode(Node[] arguments, int startOffset, int length) {
+        public ArgumentsNode(Node[] arguments, short flags, int startOffset, int length) {
             super(startOffset, length);
             this.arguments = arguments;
+            this.flags = flags;
         }
-                
+        
+        public boolean isKeywordSplat() {
+            return ArgumentsNodeFlags.isKeywordSplat(this.flags);
+        }
+        
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
             for (Nodes.Node child : this.arguments) {
                 child.accept(visitor);
@@ -716,6 +762,10 @@ public abstract class Nodes {
             for (Node child : this.arguments) {
                 builder.append(nextNextIndent).append(child.toString(nextNextIndent));
             }
+            builder.append(nextIndent);
+            builder.append("flags: ");
+            builder.append(this.flags);
+            builder.append('\n');
             return builder.toString();
         }
     }
@@ -1366,17 +1416,14 @@ public abstract class Nodes {
     public static final class CallAndWriteNode extends Node {
         /** optional (can be null) */
         public final Node receiver;
-        /** optional (can be null) */
-        public final ArgumentsNode arguments;
         public final short flags;
         public final org.jruby.RubySymbol read_name;
         public final org.jruby.RubySymbol write_name;
         public final Node value;
 
-        public CallAndWriteNode(Node receiver, ArgumentsNode arguments, short flags, org.jruby.RubySymbol read_name, org.jruby.RubySymbol write_name, Node value, int startOffset, int length) {
+        public CallAndWriteNode(Node receiver, short flags, org.jruby.RubySymbol read_name, org.jruby.RubySymbol write_name, Node value, int startOffset, int length) {
             super(startOffset, length);
             this.receiver = receiver;
-            this.arguments = arguments;
             this.flags = flags;
             this.read_name = read_name;
             this.write_name = write_name;
@@ -1395,14 +1442,11 @@ public abstract class Nodes {
             if (this.receiver != null) {
                 this.receiver.accept(visitor);
             }
-            if (this.arguments != null) {
-                this.arguments.accept(visitor);
-            }
             this.value.accept(visitor);
         }
 
         public Node[] childNodes() {
-            return new Node[] { this.receiver, this.arguments, this.value };
+            return new Node[] { this.receiver, this.value };
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -1421,9 +1465,6 @@ public abstract class Nodes {
             builder.append(nextIndent);
             builder.append("receiver: ");
             builder.append(this.receiver == null ? "null\n" : this.receiver.toString(nextIndent));
-            builder.append(nextIndent);
-            builder.append("arguments: ");
-            builder.append(this.arguments == null ? "null\n" : this.arguments.toString(nextIndent));
             builder.append(nextIndent);
             builder.append("flags: ");
             builder.append(this.flags);
@@ -1546,18 +1587,15 @@ public abstract class Nodes {
     public static final class CallOperatorWriteNode extends Node {
         /** optional (can be null) */
         public final Node receiver;
-        /** optional (can be null) */
-        public final ArgumentsNode arguments;
         public final short flags;
         public final org.jruby.RubySymbol read_name;
         public final org.jruby.RubySymbol write_name;
         public final org.jruby.RubySymbol operator;
         public final Node value;
 
-        public CallOperatorWriteNode(Node receiver, ArgumentsNode arguments, short flags, org.jruby.RubySymbol read_name, org.jruby.RubySymbol write_name, org.jruby.RubySymbol operator, Node value, int startOffset, int length) {
+        public CallOperatorWriteNode(Node receiver, short flags, org.jruby.RubySymbol read_name, org.jruby.RubySymbol write_name, org.jruby.RubySymbol operator, Node value, int startOffset, int length) {
             super(startOffset, length);
             this.receiver = receiver;
-            this.arguments = arguments;
             this.flags = flags;
             this.read_name = read_name;
             this.write_name = write_name;
@@ -1577,14 +1615,11 @@ public abstract class Nodes {
             if (this.receiver != null) {
                 this.receiver.accept(visitor);
             }
-            if (this.arguments != null) {
-                this.arguments.accept(visitor);
-            }
             this.value.accept(visitor);
         }
 
         public Node[] childNodes() {
-            return new Node[] { this.receiver, this.arguments, this.value };
+            return new Node[] { this.receiver, this.value };
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -1603,9 +1638,6 @@ public abstract class Nodes {
             builder.append(nextIndent);
             builder.append("receiver: ");
             builder.append(this.receiver == null ? "null\n" : this.receiver.toString(nextIndent));
-            builder.append(nextIndent);
-            builder.append("arguments: ");
-            builder.append(this.arguments == null ? "null\n" : this.arguments.toString(nextIndent));
             builder.append(nextIndent);
             builder.append("flags: ");
             builder.append(this.flags);
@@ -1636,17 +1668,14 @@ public abstract class Nodes {
     public static final class CallOrWriteNode extends Node {
         /** optional (can be null) */
         public final Node receiver;
-        /** optional (can be null) */
-        public final ArgumentsNode arguments;
         public final short flags;
         public final org.jruby.RubySymbol read_name;
         public final org.jruby.RubySymbol write_name;
         public final Node value;
 
-        public CallOrWriteNode(Node receiver, ArgumentsNode arguments, short flags, org.jruby.RubySymbol read_name, org.jruby.RubySymbol write_name, Node value, int startOffset, int length) {
+        public CallOrWriteNode(Node receiver, short flags, org.jruby.RubySymbol read_name, org.jruby.RubySymbol write_name, Node value, int startOffset, int length) {
             super(startOffset, length);
             this.receiver = receiver;
-            this.arguments = arguments;
             this.flags = flags;
             this.read_name = read_name;
             this.write_name = write_name;
@@ -1665,14 +1694,11 @@ public abstract class Nodes {
             if (this.receiver != null) {
                 this.receiver.accept(visitor);
             }
-            if (this.arguments != null) {
-                this.arguments.accept(visitor);
-            }
             this.value.accept(visitor);
         }
 
         public Node[] childNodes() {
-            return new Node[] { this.receiver, this.arguments, this.value };
+            return new Node[] { this.receiver, this.value };
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -1691,9 +1717,6 @@ public abstract class Nodes {
             builder.append(nextIndent);
             builder.append("receiver: ");
             builder.append(this.receiver == null ? "null\n" : this.receiver.toString(nextIndent));
-            builder.append(nextIndent);
-            builder.append("arguments: ");
-            builder.append(this.arguments == null ? "null\n" : this.arguments.toString(nextIndent));
             builder.append(nextIndent);
             builder.append("flags: ");
             builder.append(this.flags);
@@ -3991,6 +4014,255 @@ public abstract class Nodes {
         }
     }
 
+    // Represents the use of the `&&=` operator on a call to the `[]` method.
+    // 
+    //     foo.bar[baz] &&= value
+    //     ^^^^^^^^^^^^^^^^^^^^^^
+    public static final class IndexAndWriteNode extends Node {
+        /** optional (can be null) */
+        public final Node receiver;
+        /** optional (can be null) */
+        public final ArgumentsNode arguments;
+        /** optional (can be null) */
+        public final Node block;
+        public final short flags;
+        public final Node value;
+
+        public IndexAndWriteNode(Node receiver, ArgumentsNode arguments, Node block, short flags, Node value, int startOffset, int length) {
+            super(startOffset, length);
+            this.receiver = receiver;
+            this.arguments = arguments;
+            this.block = block;
+            this.flags = flags;
+            this.value = value;
+        }
+        
+        public boolean isSafeNavigation() {
+            return CallNodeFlags.isSafeNavigation(this.flags);
+        }
+
+        public boolean isVariableCall() {
+            return CallNodeFlags.isVariableCall(this.flags);
+        }
+        
+        public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
+            if (this.receiver != null) {
+                this.receiver.accept(visitor);
+            }
+            if (this.arguments != null) {
+                this.arguments.accept(visitor);
+            }
+            if (this.block != null) {
+                this.block.accept(visitor);
+            }
+            this.value.accept(visitor);
+        }
+
+        public Node[] childNodes() {
+            return new Node[] { this.receiver, this.arguments, this.block, this.value };
+        }
+
+        public <T> T accept(AbstractNodeVisitor<T> visitor) {
+            return visitor.visitIndexAndWriteNode(this);
+        }
+
+        @Override
+        protected String toString(String indent) {
+            StringBuilder builder = new StringBuilder();
+            builder.append(this.getClass().getSimpleName());
+            if (hasNewLineFlag()) {
+                builder.append("[Li]");
+            }
+            builder.append('\n');
+            String nextIndent = indent + "  ";
+            builder.append(nextIndent);
+            builder.append("receiver: ");
+            builder.append(this.receiver == null ? "null\n" : this.receiver.toString(nextIndent));
+            builder.append(nextIndent);
+            builder.append("arguments: ");
+            builder.append(this.arguments == null ? "null\n" : this.arguments.toString(nextIndent));
+            builder.append(nextIndent);
+            builder.append("block: ");
+            builder.append(this.block == null ? "null\n" : this.block.toString(nextIndent));
+            builder.append(nextIndent);
+            builder.append("flags: ");
+            builder.append(this.flags);
+            builder.append('\n');
+            builder.append(nextIndent);
+            builder.append("value: ");
+            builder.append(this.value.toString(nextIndent));
+            return builder.toString();
+        }
+    }
+
+    // Represents the use of an assignment operator on a call to `[]`.
+    // 
+    //     foo.bar[baz] += value
+    //     ^^^^^^^^^^^^^^^^^^^^^
+    public static final class IndexOperatorWriteNode extends Node {
+        /** optional (can be null) */
+        public final Node receiver;
+        /** optional (can be null) */
+        public final ArgumentsNode arguments;
+        /** optional (can be null) */
+        public final Node block;
+        public final short flags;
+        public final org.jruby.RubySymbol operator;
+        public final Node value;
+
+        public IndexOperatorWriteNode(Node receiver, ArgumentsNode arguments, Node block, short flags, org.jruby.RubySymbol operator, Node value, int startOffset, int length) {
+            super(startOffset, length);
+            this.receiver = receiver;
+            this.arguments = arguments;
+            this.block = block;
+            this.flags = flags;
+            this.operator = operator;
+            this.value = value;
+        }
+        
+        public boolean isSafeNavigation() {
+            return CallNodeFlags.isSafeNavigation(this.flags);
+        }
+
+        public boolean isVariableCall() {
+            return CallNodeFlags.isVariableCall(this.flags);
+        }
+        
+        public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
+            if (this.receiver != null) {
+                this.receiver.accept(visitor);
+            }
+            if (this.arguments != null) {
+                this.arguments.accept(visitor);
+            }
+            if (this.block != null) {
+                this.block.accept(visitor);
+            }
+            this.value.accept(visitor);
+        }
+
+        public Node[] childNodes() {
+            return new Node[] { this.receiver, this.arguments, this.block, this.value };
+        }
+
+        public <T> T accept(AbstractNodeVisitor<T> visitor) {
+            return visitor.visitIndexOperatorWriteNode(this);
+        }
+
+        @Override
+        protected String toString(String indent) {
+            StringBuilder builder = new StringBuilder();
+            builder.append(this.getClass().getSimpleName());
+            if (hasNewLineFlag()) {
+                builder.append("[Li]");
+            }
+            builder.append('\n');
+            String nextIndent = indent + "  ";
+            builder.append(nextIndent);
+            builder.append("receiver: ");
+            builder.append(this.receiver == null ? "null\n" : this.receiver.toString(nextIndent));
+            builder.append(nextIndent);
+            builder.append("arguments: ");
+            builder.append(this.arguments == null ? "null\n" : this.arguments.toString(nextIndent));
+            builder.append(nextIndent);
+            builder.append("block: ");
+            builder.append(this.block == null ? "null\n" : this.block.toString(nextIndent));
+            builder.append(nextIndent);
+            builder.append("flags: ");
+            builder.append(this.flags);
+            builder.append('\n');
+            builder.append(nextIndent);
+            builder.append("operator: ");
+            builder.append('"').append(this.operator).append('"');
+            builder.append('\n');
+            builder.append(nextIndent);
+            builder.append("value: ");
+            builder.append(this.value.toString(nextIndent));
+            return builder.toString();
+        }
+    }
+
+    // Represents the use of the `||=` operator on a call to `[]`.
+    // 
+    //     foo.bar[baz] ||= value
+    //     ^^^^^^^^^^^^^^^^^^^^^^
+    public static final class IndexOrWriteNode extends Node {
+        /** optional (can be null) */
+        public final Node receiver;
+        /** optional (can be null) */
+        public final ArgumentsNode arguments;
+        /** optional (can be null) */
+        public final Node block;
+        public final short flags;
+        public final Node value;
+
+        public IndexOrWriteNode(Node receiver, ArgumentsNode arguments, Node block, short flags, Node value, int startOffset, int length) {
+            super(startOffset, length);
+            this.receiver = receiver;
+            this.arguments = arguments;
+            this.block = block;
+            this.flags = flags;
+            this.value = value;
+        }
+        
+        public boolean isSafeNavigation() {
+            return CallNodeFlags.isSafeNavigation(this.flags);
+        }
+
+        public boolean isVariableCall() {
+            return CallNodeFlags.isVariableCall(this.flags);
+        }
+        
+        public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
+            if (this.receiver != null) {
+                this.receiver.accept(visitor);
+            }
+            if (this.arguments != null) {
+                this.arguments.accept(visitor);
+            }
+            if (this.block != null) {
+                this.block.accept(visitor);
+            }
+            this.value.accept(visitor);
+        }
+
+        public Node[] childNodes() {
+            return new Node[] { this.receiver, this.arguments, this.block, this.value };
+        }
+
+        public <T> T accept(AbstractNodeVisitor<T> visitor) {
+            return visitor.visitIndexOrWriteNode(this);
+        }
+
+        @Override
+        protected String toString(String indent) {
+            StringBuilder builder = new StringBuilder();
+            builder.append(this.getClass().getSimpleName());
+            if (hasNewLineFlag()) {
+                builder.append("[Li]");
+            }
+            builder.append('\n');
+            String nextIndent = indent + "  ";
+            builder.append(nextIndent);
+            builder.append("receiver: ");
+            builder.append(this.receiver == null ? "null\n" : this.receiver.toString(nextIndent));
+            builder.append(nextIndent);
+            builder.append("arguments: ");
+            builder.append(this.arguments == null ? "null\n" : this.arguments.toString(nextIndent));
+            builder.append(nextIndent);
+            builder.append("block: ");
+            builder.append(this.block == null ? "null\n" : this.block.toString(nextIndent));
+            builder.append(nextIndent);
+            builder.append("flags: ");
+            builder.append(this.flags);
+            builder.append('\n');
+            builder.append(nextIndent);
+            builder.append("value: ");
+            builder.append(this.value.toString(nextIndent));
+            return builder.toString();
+        }
+    }
+
     // Represents the use of the `&&=` operator for assignment to an instance variable.
     // 
     //     @target &&= value
@@ -5496,24 +5768,39 @@ public abstract class Nodes {
 
     // Represents a multi-target expression.
     // 
-    //     a, b, c = 1, 2, 3
-    //     ^^^^^^^
+    //     a, (b, c) = 1, 2, 3
+    //        ^^^^^^
     public static final class MultiTargetNode extends Node {
-        public final Node[] targets;
+        public final Node[] lefts;
+        /** optional (can be null) */
+        public final Node rest;
+        public final Node[] rights;
 
-        public MultiTargetNode(Node[] targets, int startOffset, int length) {
+        public MultiTargetNode(Node[] lefts, Node rest, Node[] rights, int startOffset, int length) {
             super(startOffset, length);
-            this.targets = targets;
+            this.lefts = lefts;
+            this.rest = rest;
+            this.rights = rights;
         }
                 
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
-            for (Nodes.Node child : this.targets) {
+            for (Nodes.Node child : this.lefts) {
+                child.accept(visitor);
+            }
+            if (this.rest != null) {
+                this.rest.accept(visitor);
+            }
+            for (Nodes.Node child : this.rights) {
                 child.accept(visitor);
             }
         }
 
         public Node[] childNodes() {
-            return this.targets;
+            ArrayList<Node> childNodes = new ArrayList<>();
+            childNodes.addAll(Arrays.asList(this.lefts));
+            childNodes.add(this.rest);
+            childNodes.addAll(Arrays.asList(this.rights));
+            return childNodes.toArray(EMPTY_ARRAY);
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -5531,9 +5818,18 @@ public abstract class Nodes {
             String nextIndent = indent + "  ";
             String nextNextIndent = nextIndent + "  ";
             builder.append(nextIndent);
-            builder.append("targets: ");
+            builder.append("lefts: ");
             builder.append('\n');
-            for (Node child : this.targets) {
+            for (Node child : this.lefts) {
+                builder.append(nextNextIndent).append(child.toString(nextNextIndent));
+            }
+            builder.append(nextIndent);
+            builder.append("rest: ");
+            builder.append(this.rest == null ? "null\n" : this.rest.toString(nextIndent));
+            builder.append(nextIndent);
+            builder.append("rights: ");
+            builder.append('\n');
+            for (Node child : this.rights) {
                 builder.append(nextNextIndent).append(child.toString(nextNextIndent));
             }
             return builder.toString();
@@ -5545,17 +5841,28 @@ public abstract class Nodes {
     //     a, b, c = 1, 2, 3
     //     ^^^^^^^^^^^^^^^^^
     public static final class MultiWriteNode extends Node {
-        public final Node[] targets;
+        public final Node[] lefts;
+        /** optional (can be null) */
+        public final Node rest;
+        public final Node[] rights;
         public final Node value;
 
-        public MultiWriteNode(Node[] targets, Node value, int startOffset, int length) {
+        public MultiWriteNode(Node[] lefts, Node rest, Node[] rights, Node value, int startOffset, int length) {
             super(startOffset, length);
-            this.targets = targets;
+            this.lefts = lefts;
+            this.rest = rest;
+            this.rights = rights;
             this.value = value;
         }
                 
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
-            for (Nodes.Node child : this.targets) {
+            for (Nodes.Node child : this.lefts) {
+                child.accept(visitor);
+            }
+            if (this.rest != null) {
+                this.rest.accept(visitor);
+            }
+            for (Nodes.Node child : this.rights) {
                 child.accept(visitor);
             }
             this.value.accept(visitor);
@@ -5563,7 +5870,9 @@ public abstract class Nodes {
 
         public Node[] childNodes() {
             ArrayList<Node> childNodes = new ArrayList<>();
-            childNodes.addAll(Arrays.asList(this.targets));
+            childNodes.addAll(Arrays.asList(this.lefts));
+            childNodes.add(this.rest);
+            childNodes.addAll(Arrays.asList(this.rights));
             childNodes.add(this.value);
             return childNodes.toArray(EMPTY_ARRAY);
         }
@@ -5583,9 +5892,18 @@ public abstract class Nodes {
             String nextIndent = indent + "  ";
             String nextNextIndent = nextIndent + "  ";
             builder.append(nextIndent);
-            builder.append("targets: ");
+            builder.append("lefts: ");
             builder.append('\n');
-            for (Node child : this.targets) {
+            for (Node child : this.lefts) {
+                builder.append(nextNextIndent).append(child.toString(nextNextIndent));
+            }
+            builder.append(nextIndent);
+            builder.append("rest: ");
+            builder.append(this.rest == null ? "null\n" : this.rest.toString(nextIndent));
+            builder.append(nextIndent);
+            builder.append("rights: ");
+            builder.append('\n');
+            for (Node child : this.rights) {
                 builder.append(nextNextIndent).append(child.toString(nextNextIndent));
             }
             builder.append(nextIndent);
@@ -6430,53 +6748,6 @@ public abstract class Nodes {
             builder.append("flags: ");
             builder.append(this.flags);
             builder.append('\n');
-            return builder.toString();
-        }
-    }
-
-    // Represents a destructured required parameter node.
-    // 
-    //     def foo((bar, baz))
-    //             ^^^^^^^^^^
-    //     end
-    public static final class RequiredDestructuredParameterNode extends Node {
-        public final Node[] parameters;
-
-        public RequiredDestructuredParameterNode(Node[] parameters, int startOffset, int length) {
-            super(startOffset, length);
-            this.parameters = parameters;
-        }
-                
-        public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
-            for (Nodes.Node child : this.parameters) {
-                child.accept(visitor);
-            }
-        }
-
-        public Node[] childNodes() {
-            return this.parameters;
-        }
-
-        public <T> T accept(AbstractNodeVisitor<T> visitor) {
-            return visitor.visitRequiredDestructuredParameterNode(this);
-        }
-
-        @Override
-        protected String toString(String indent) {
-            StringBuilder builder = new StringBuilder();
-            builder.append(this.getClass().getSimpleName());
-            if (hasNewLineFlag()) {
-                builder.append("[Li]");
-            }
-            builder.append('\n');
-            String nextIndent = indent + "  ";
-            String nextNextIndent = nextIndent + "  ";
-            builder.append(nextIndent);
-            builder.append("parameters: ");
-            builder.append('\n');
-            for (Node child : this.parameters) {
-                builder.append(nextNextIndent).append(child.toString(nextNextIndent));
-            }
             return builder.toString();
         }
     }

@@ -1715,6 +1715,69 @@ public abstract class IRBuilder<U, V, W, X> {
         return copy(new NthRef(scope, matchNumber));
     }
 
+    // FIXME: The logic for lazy and non-lazy building is pretty icky...clean up
+    Operand buildOpAsgn(U receiver, U value, RubySymbol reader, RubySymbol writer, RubySymbol operator, boolean isLazy) {
+        Label l;
+        Variable writerValue = temp();
+        CallType callType = receiver instanceof SelfNode ? FUNCTIONAL : NORMAL;
+
+        // get attr
+        Operand  v1 = build(receiver);
+
+        Label lazyLabel = null;
+        Label endLabel = null;
+        Variable result = temp();
+        if (isLazy) {
+            lazyLabel = getNewLabel();
+            endLabel = getNewLabel();
+            addInstr(new BNilInstr(lazyLabel, v1));
+        }
+
+        Variable readerValue = _call(temp(), callType, v1, reader);
+
+        // FIXME: consider separating this out since prism does already.
+        // logical operations: e.val ||= n OR e.val &&= n
+        boolean isOr = operator.idString().equals("||");
+        boolean isLogical =  isOr || operator.idString().equals("&&");
+        if (isLogical) {
+            l = getNewLabel();
+            addInstr(createBranch(readerValue, isOr ? tru() : fals(), l));
+
+            // compute value and set it
+            Operand  v2 = build(value);
+            _call(writerValue, callType, v1, writer, v2);
+            // It is readerValue = v2.
+            // readerValue = writerValue is incorrect because the assignment method
+            // might return something else other than the value being set!
+            addInstr(new CopyInstr(readerValue, v2));
+            addInstr(new LabelInstr(l));
+
+            if (!isLazy) return readerValue;
+
+            addInstr(new CopyInstr(result, readerValue));
+        } else {  // Ex: e.val = e.val.f(n)
+            // call operator
+            Operand  v2 = build(value);
+            Variable setValue = call(temp(), readerValue, operator, v2);
+
+            // set attr
+            _call(writerValue, callType, v1, writer, setValue);
+
+            // Returning writerValue is incorrect because the assignment method
+            // might return something else other than the value being set!
+            if (!isLazy) return setValue;
+
+            addInstr(new CopyInstr(result, setValue));
+        }
+
+        addInstr(new JumpInstr(endLabel));
+        addInstr(new LabelInstr(lazyLabel));
+        addInstr(new CopyInstr(result, nil()));
+        addInstr(new LabelInstr(endLabel));
+
+        return result;
+    }
+
     // Translate "x &&= y" --> "x = y if is_true(x)" -->
     //
     //    x = -- build(x) should return a variable! --
@@ -1742,6 +1805,45 @@ public abstract class IRBuilder<U, V, W, X> {
         copy(result, value);
         addInstr(new LabelInstr(done));
         return result;
+    }
+
+    Operand buildOpElementAsgnWith(U receiver, U args, U block, U value, Boolean truthy) {
+        CallType callType = receiver instanceof SelfNode ? FUNCTIONAL : CallType.NORMAL;
+        Operand array = buildWithOrder(receiver, containsVariableAssignment(args) || containsVariableAssignment(value));
+        Label endLabel = getNewLabel();
+        Variable elt = temp();
+        int[] flags = new int[] { 0 };
+        Operand[] argList = setupCallArgs(args, flags);
+        Operand blockArg = setupCallClosure(block);
+        addInstr(CallInstr.create(scope, callType, elt, symbol(ArrayDerefInstr.AREF), array, argList, blockArg, flags[0]));
+        addInstr(createBranch(elt, truthy, endLabel));
+        Operand valueArg = build(value);
+
+        argList = addArg(argList, valueArg);
+        addInstr(CallInstr.create(scope, callType, elt, symbol(ArrayDerefInstr.ASET), array, argList, blockArg, flags[0]));
+        addInstr(new CopyInstr(elt, valueArg));
+
+        addInstr(new LabelInstr(endLabel));
+        return elt;
+    }
+
+    // a[i] *= n, etc.  anything that is not "a[i] &&= .. or a[i] ||= .."
+    Operand buildOpElementAsgnWithMethod(U receiver, U args, U block, U value, RubySymbol operator) {
+        CallType callType = receiver instanceof SelfNode ? FUNCTIONAL : CallType.NORMAL;
+        Operand array = buildWithOrder(receiver, containsVariableAssignment(args) || containsVariableAssignment(value));
+        int[] flags = new int[] { 0 };
+        Operand[] argList = setupCallArgs(args, flags);
+        Operand blockArg = setupCallClosure(block);
+        Variable elt = temp();
+        addInstr(CallInstr.create(scope, callType, elt, symbol(ArrayDerefInstr.AREF), array, argList, blockArg, flags[0])); // elt = a[args]
+
+        Operand valueArg = build(value);                                       // Load 'value'
+        _call(elt, callType, elt, operator, valueArg); // elt = elt.OPERATION(value)
+        // SSS: do not load the call result into 'elt' to eliminate the RAW dependency on the call
+        // We already know what the result is going be .. we are just storing it back into the array
+        argList = addArg(argList, elt);
+        addInstr(CallInstr.create(scope, callType, temp(), symbol(ArrayDerefInstr.ASET), array, argList, blockArg, flags[0]));   // a[args] = elt
+        return elt;
     }
 
     // "x ||= y"

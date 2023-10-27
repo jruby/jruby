@@ -2529,67 +2529,9 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return nil();
     }
 
-    // FIXME: The logic for lazy and non-lazy building is pretty icky...clean up
-    public Operand buildOpAsgn(OpAsgnNode opAsgnNode) {
-        Label l;
-        Variable writerValue = temp();
-        Node receiver = opAsgnNode.getReceiverNode();
-        CallType callType = receiver instanceof SelfNode ? FUNCTIONAL : NORMAL;
-
-        // get attr
-        Operand  v1 = build(opAsgnNode.getReceiverNode());
-
-        Label lazyLabel = null;
-        Label endLabel = null;
-        Variable result = temp();
-        if (opAsgnNode.isLazy()) {
-            lazyLabel = getNewLabel();
-            endLabel = getNewLabel();
-            addInstr(new BNilInstr(lazyLabel, v1));
-        }
-
-        Variable readerValue = _call(temp(), callType, v1, opAsgnNode.getVariableSymbolName());
-
-        // Ex: e.val ||= n
-        //     e.val &&= n
-        boolean isOrOr = opAsgnNode.isOr();
-        if (isOrOr || opAsgnNode.isAnd()) {
-            l = getNewLabel();
-            addInstr(createBranch(readerValue, isOrOr ? tru() : fals(), l));
-
-            // compute value and set it
-            Operand  v2 = build(opAsgnNode.getValueNode());
-            _call(writerValue, callType, v1, opAsgnNode.getVariableSymbolNameAsgn(), v2);
-            // It is readerValue = v2.
-            // readerValue = writerValue is incorrect because the assignment method
-            // might return something else other than the value being set!
-            addInstr(new CopyInstr(readerValue, v2));
-            addInstr(new LabelInstr(l));
-
-            if (!opAsgnNode.isLazy()) return readerValue;
-
-            addInstr(new CopyInstr(result, readerValue));
-        } else {  // Ex: e.val = e.val.f(n)
-            // call operator
-            Operand  v2 = build(opAsgnNode.getValueNode());
-            Variable setValue = call(temp(), readerValue, opAsgnNode.getOperatorSymbolName(), v2);
-
-            // set attr
-            _call(writerValue, callType, v1, opAsgnNode.getVariableSymbolNameAsgn(), setValue);
-
-            // Returning writerValue is incorrect because the assignment method
-            // might return something else other than the value being set!
-            if (!opAsgnNode.isLazy()) return setValue;
-
-            addInstr(new CopyInstr(result, setValue));
-        }
-
-        addInstr(new JumpInstr(endLabel));
-        addInstr(new LabelInstr(lazyLabel));
-        addInstr(new CopyInstr(result, nil()));
-        addInstr(new LabelInstr(endLabel));
-
-        return result;
+    public Operand buildOpAsgn(OpAsgnNode node) {
+        return buildOpAsgn(node.getReceiverNode(), node.getValueNode(), node.getVariableSymbolName(),
+                node.getVariableSymbolNameAsgn(), node.getOperatorSymbolName(), node.isLazy());
     }
 
     private Operand buildColon2ForConstAsgnDeclNode(Node lhs, Variable valueResult, boolean constMissing) {
@@ -2660,56 +2602,13 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
 
     public Operand buildOpElementAsgn(OpElementAsgnNode node) {
         // Translate "a[x] ||= n" --> "a[x] = n if !is_true(a[x])"
-        if (node.isOr()) return buildOpElementAsgnWith(node, tru());
+        if (node.isOr()) return buildOpElementAsgnWith(node.getReceiverNode(), node.getArgsNode(), node.getBlockNode(), node.getValueNode(), tru());
 
         // Translate "a[x] &&= n" --> "a[x] = n if is_true(a[x])"
-        if (node.isAnd()) return buildOpElementAsgnWith(node, fals());
+        if (node.isAnd()) return buildOpElementAsgnWith(node.getReceiverNode(), node.getArgsNode(), node.getBlockNode(), node.getValueNode(), fals());
 
         // a[i] *= n, etc.  anything that is not "a[i] &&= .. or a[i] ||= .."
-        return buildOpElementAsgnWithMethod(node);
-    }
-
-    private Operand buildOpElementAsgnWith(OpElementAsgnNode opElementAsgnNode, Boolean truthy) {
-        Node receiver = opElementAsgnNode.getReceiverNode();
-        CallType callType = receiver instanceof SelfNode ? FUNCTIONAL : CallType.NORMAL;
-        Operand array = buildWithOrder(receiver, opElementAsgnNode.containsVariableAssignment());
-        Label endLabel = getNewLabel();
-        Variable elt = temp();
-        int[] flags = new int[] { 0 };
-        Operand[] argList = setupCallArgs(opElementAsgnNode.getArgsNode(), flags);
-        Operand block = setupCallClosure(opElementAsgnNode.getBlockNode());
-        addInstr(CallInstr.create(scope, callType, elt, symbol(ArrayDerefInstr.AREF), array, argList, block, flags[0]));
-        addInstr(createBranch(elt, truthy, endLabel));
-        Operand value = build(opElementAsgnNode.getValueNode());
-
-        // FIXME: I think this will put value into kwargs spot but MRI does not support this at all.
-        argList = addArg(argList, value);
-        addInstr(CallInstr.create(scope, callType, elt, symbol(ArrayDerefInstr.ASET), array, argList, block, flags[0]));
-        addInstr(new CopyInstr(elt, value));
-
-        addInstr(new LabelInstr(endLabel));
-        return elt;
-    }
-
-    // a[i] *= n, etc.  anything that is not "a[i] &&= .. or a[i] ||= .."
-    public Operand buildOpElementAsgnWithMethod(OpElementAsgnNode opElementAsgnNode) {
-        Node receiver = opElementAsgnNode.getReceiverNode();
-        CallType callType = receiver instanceof SelfNode ? FUNCTIONAL : CallType.NORMAL;
-        Operand array = buildWithOrder(receiver, opElementAsgnNode.containsVariableAssignment());
-        int[] flags = new int[] { 0 };
-        Operand[] argList = setupCallArgs(opElementAsgnNode.getArgsNode(), flags);
-        Operand block = setupCallClosure(opElementAsgnNode.getBlockNode());
-        Variable elt = temp();
-        addInstr(CallInstr.create(scope, callType, elt, symbol(ArrayDerefInstr.AREF), array, argList, block, flags[0])); // elt = a[args]
-
-        Operand value = build(opElementAsgnNode.getValueNode());                                       // Load 'value'
-        _call(elt, callType, elt, opElementAsgnNode.getOperatorSymbolName(), value); // elt = elt.OPERATION(value)
-        // FIXME: I think this will put value into kwargs spot but MRI does not support this at all.
-        // SSS: do not load the call result into 'elt' to eliminate the RAW dependency on the call
-        // We already know what the result is going be .. we are just storing it back into the array
-        argList = addArg(argList, elt);
-        addInstr(CallInstr.create(scope, callType, temp(), symbol(ArrayDerefInstr.ASET), array, argList, block, flags[0]));   // a[args] = elt
-        return elt;
+        return buildOpElementAsgnWithMethod(node.getReceiverNode(), node.getArgsNode(), node.getBlockNode(), node.getValueNode(), node.getOperatorSymbolName());
     }
 
     public Operand buildOr(OrNode node) {

@@ -9,9 +9,9 @@ import jnr.ffi.annotations.In;
 public interface ParserBindingPrism {
 
     class Buffer extends Struct {
-        public Struct.Pointer value = new Struct.Pointer();
         public Struct.size_t length = new Struct.size_t();
         public Struct.size_t capacity = new Struct.size_t();
+        public Struct.Pointer value = new Struct.Pointer();
 
         public Buffer(jnr.ffi.Runtime runtime) {
             super(runtime);

@@ -213,6 +213,12 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         } else if (node instanceof ImplicitNode) {
             // Making a huge assumption the implicit node is what we always want for execution?
             return build(((ImplicitNode) node).value);
+        } else if (node instanceof IndexAndWriteNode) {
+            return buildIndexAndWrite((IndexAndWriteNode) node);
+        } else if (node instanceof IndexOrWriteNode) {
+            return buildIndexOrWrite((IndexOrWriteNode) node);
+        } else if (node instanceof IndexOperatorWriteNode) {
+            return buildIndexOperatorWrite((IndexOperatorWriteNode) node);
         } else if (node instanceof InNode) {
             return buildIn((InNode) node);
         } else if (node instanceof InstanceVariableAndWriteNode) {
@@ -341,6 +347,10 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         }
     }
 
+    private Operand buildCallOperatorWrite(CallOperatorWriteNode node) {
+        return buildOpAsgn(node.receiver, node.value, node.read_name, node.write_name, node.operator, node.isSafeNavigation());
+    }
+
     private Operand buildIn(InNode node) {
         throw new RuntimeException("Unhandled Node type: " + node);
     }
@@ -450,14 +460,14 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         } else if (node instanceof InstanceVariableTargetNode) {
             addInstr(new PutFieldInstr(buildSelf(), ((InstanceVariableTargetNode) node).name, rhsVal));
         } else if (node instanceof MultiTargetNode) {
-            buildMultiAssignment(((MultiTargetNode) node).targets, addResultInstr(new ToAryInstr(temp(), rhsVal)));
+            Variable rhs = addResultInstr(new ToAryInstr(temp(), rhsVal));
+            buildMultiAssignment(((MultiTargetNode) node).lefts, ((MultiTargetNode) node).rest, ((MultiTargetNode) node).rights, rhs);
         } else if (node instanceof MultiWriteNode) { // FIXME: Is this possible with Multitarget now existing?
-            buildMultiAssignment(((MultiWriteNode) node).targets, addResultInstr(new ToAryInstr(temp(), rhsVal)));
+            Variable rhs = addResultInstr(new ToAryInstr(temp(), rhsVal));
+            buildMultiAssignment(((MultiWriteNode) node).lefts, ((MultiWriteNode) node).rest, ((MultiWriteNode) node).rights, rhs);
         } else if (node instanceof RequiredParameterNode) {
             RequiredParameterNode variable = (RequiredParameterNode) node;
             copy(getLocalVariable(variable.name, 0), rhsVal);
-        } else if (node instanceof  RequiredDestructuredParameterNode) {
-            buildMultiAssignment(((RequiredDestructuredParameterNode) node).parameters, addResultInstr(new ToAryInstr(temp(), rhsVal)));
         } else if (node instanceof SplatNode) { // FIXME: Audit this...is there really a splat here and it has phatom expression field?
             buildSplat(rhsVal);
         } else {
@@ -575,10 +585,18 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             addInstr(new PutFieldInstr(buildSelf(), ((InstanceVariableTargetNode) node).name,
                     receiveBlockArg(temp(), argsArray, argIndex, isSplat)));
         } else if (node instanceof MultiTargetNode) {
-            Node[] targets = ((MultiTargetNode) node).targets;
+            MultiTargetNode multi = (MultiTargetNode) node;
+            for (int i = 0; i < multi.lefts.length; i++) {
+                buildBlockArgsAssignment(multi.lefts[i], null, i, false);
+            }
 
-            for (int i = 0; i < targets.length; i++) {
-                buildBlockArgsAssignment(targets[i], null, i, false);
+            int postIndex = multi.lefts.length;
+            if (multi.rest != null) {
+                buildBlockArgsAssignment(multi.rest, null, postIndex, true);
+                postIndex++;
+            }
+            for (int i = 0; i < multi.rights.length; i++) {
+                buildBlockArgsAssignment(multi.rights[i], null, postIndex + i, false);
             }
         } else if (node instanceof SplatNode) {
             // FIXME: we don't work in legacy either?
@@ -694,7 +712,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildCallAndWrite(CallAndWriteNode node) {
-        return buildCallOperatorLogicalWrite(node.read_name, node.write_name, node.receiver, node.arguments, node.value, fals());
+        return buildOpAsgn(node.receiver, node.value, node.read_name, node.write_name, symbol(AMPERSAND_AMPERSAND), node.isSafeNavigation());
     }
 
     @Override
@@ -745,55 +763,8 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return buildHash(node.elements, containsVariableAssignment(node.elements));
     }
 
-    // FIXME: This is broken with some combinations of things like doo[1] &&= 2 where it should return 2 and not the call return value.
-    private Operand buildCallOperatorLogicalWrite(RubySymbol readName, RubySymbol writeName, Node receiverNode,
-                                                  ArgumentsNode arguments, Node value, Operand comparator) {
-        Operand receiver = build(receiverNode);
-        Variable result;
-        Operand[] args = null;
-        if (arguments != null) {
-            // FIXME: can [] accept kwargs?
-            int[] flags = new int[]{0};
-            args = buildCallArgs(arguments, flags);
-            result = call(temp(), receiver, readName, args);
-        } else {
-            result = call(temp(), receiver, readName);
-        }
-        Label end = getNewLabel("end_or");
-        addInstr(createBranch(result, comparator, end));  // if v1 is defined and true, we are done!
-        Operand rhs = build(value); // This is an AST node that sets x = y, so nothing special to do here.
-        if (args != null) {
-            call(result, receiver, writeName, addArg(args, rhs));
-        } else {
-            call(result, receiver, writeName, rhs);
-        }
-        addInstr(new LabelInstr(end));
-        return result;
-    }
-
-    //     foo.bar += baz
-    private Operand buildCallOperatorWrite(CallOperatorWriteNode node) {
-        Operand receiver = build(node.receiver);
-        if (node.arguments != null) {
-            // FIXME: seems like we are not properly handling kwargs
-            int[] flags = new int[]{0};
-            Operand callArgs[] = buildCallArgs(node.arguments, flags);
-            Variable lhs = call(temp(), receiver, node.read_name, callArgs);
-            Operand rhs = build(node.value);
-            Operand value = call(temp(), lhs, node.operator, rhs);
-            callArgs = addArg(callArgs, value);
-            return call(temp(), receiver, node.write_name, callArgs);
-        } else {
-            Variable lhs = call(temp(), receiver, node.read_name);
-            Operand rhs = build(node.value);
-            Operand value = call(temp(), lhs, node.operator, rhs);
-            return call(temp(), receiver, node.write_name, value);
-        }
-    }
-
     private Operand buildCallOrWrite(CallOrWriteNode node) {
-        return buildCallOperatorLogicalWrite(node.read_name, node.write_name,
-                node.receiver, node.arguments, node.value, tru());
+        return buildOpAsgn(node.receiver, node.value, node.read_name, node.write_name, symbol(OR_OR), node.isSafeNavigation());
     }
 
     private Operand buildCase(CaseNode node) {
@@ -1338,6 +1309,18 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return buildConditional(result, node.predicate, node.statements, node.consequent);
     }
 
+    private Operand buildIndexAndWrite(IndexAndWriteNode node) {
+        return buildOpElementAsgnWith(node.receiver, node.arguments, node.block, node.value, fals());
+    }
+
+    private Operand buildIndexOperatorWrite(IndexOperatorWriteNode node) {
+        return buildOpElementAsgnWithMethod(node.receiver, node.arguments, node.block, node.value, node.operator);
+    }
+
+    private Operand buildIndexOrWrite(IndexOrWriteNode node) {
+        return buildOpElementAsgnWith(node.receiver, node.arguments, node.block, node.value, tru());
+    }
+
     private Operand buildInstanceVariableRead(InstanceVariableReadNode node) {
         return buildInstVar(node.name);
     }
@@ -1487,54 +1470,29 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildMultiWriteNode(MultiWriteNode node) {
-        Variable ret = getValueInTemporaryVariable(build(node.value));
-        if (node.value instanceof ArrayNode) {
-            buildMultiAssignment(node.targets, ret);
-        } else {
-            buildMultiAssignment(node.targets, addResultInstr(new ToAryInstr(temp(), ret)));
-        }
-        return ret;
+        Variable rhs = getValueInTemporaryVariable(build(node.value));
+        if (!(node.value instanceof ArrayNode)) rhs = addResultInstr(new ToAryInstr(temp(), rhs));
+
+        buildMultiAssignment(node.lefts, node.rest, node.rights, rhs);
+
+        return rhs;
     }
 
     // SplatNode, MultiWriteNode, LocalVariableWrite and lots of other normal writes
-    private void buildMultiAssignment(Node[] targets, Operand values) {
+    private void buildMultiAssignment(Node[] pre, Node rest, Node[] post, Operand values) {
         final List<Tuple<Node, Variable>> assigns = new ArrayList<>();
-        int length = targets.length;
-        int restIndex = -1;
-        SplatNode splat = null;
 
-        // FIXME: May be nice to have more info in MultiWriteNode rather than walking it twice
-        for (int i = 0; i < length; i++) { // Figure out indices
-            Node child = targets[i];
-
-            // FIXME: remove once https://github.com/ruby/prism/issues/1642 is fixed.
-            if (child instanceof MultiTargetNode) {
-                MultiTargetNode target = (MultiTargetNode) child;
-
-                if (target.targets.length == 1 && target.targets[0] instanceof SplatNode) {
-                    restIndex = i;
-                    splat = (SplatNode) target.targets[0];
-                }
-            } else if (child instanceof SplatNode) {
-                restIndex = i;
-                splat = (SplatNode) child;
-            }
+        for (int i = 0; i < pre.length; i++) {
+            assigns.add(new Tuple<>(pre[i], addResultInstr(new ReqdArgMultipleAsgnInstr(temp(), values, i))));
         }
 
-        int preCount = restIndex == -1 ? length : restIndex;
-        int postCount = restIndex == -1 ? -1 : length - restIndex - 1;
-
-        for (int i = 0; i < preCount; i++) {
-            assigns.add(new Tuple<>(targets[i], addResultInstr(new ReqdArgMultipleAsgnInstr(temp(), values, i))));
+        if (rest != null) {
+            Node realTarget = ((SplatNode) rest).expression;
+            assigns.add(new Tuple<>(realTarget, addResultInstr(new RestArgMultipleAsgnInstr(temp(), values, 0, pre.length, post.length))));
         }
 
-        if (restIndex >= 0) {
-            Node realTarget = splat.expression;
-            assigns.add(new Tuple<>(realTarget, addResultInstr(new RestArgMultipleAsgnInstr(temp(), values, 0, restIndex, postCount))));
-        }
-
-        for (int i = 0; i < postCount; i++) {  // we increment by 1 to skip past rest.
-            assigns.add(new Tuple<>(targets[restIndex + i + 1], addResultInstr(new ReqdArgMultipleAsgnInstr(temp(), values, i, restIndex + i, postCount))));
+        for (int j = 0; j < post.length; j++) {
+            assigns.add(new Tuple<>(post[j], addResultInstr(new ReqdArgMultipleAsgnInstr(temp(), values, j, pre.length, post.length))));
         }
 
         for (Tuple<Node, Variable> assign: assigns) {
@@ -1975,14 +1933,12 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.req, name);
 
             addInstr(new ReceivePreReqdArgInstr(argumentResult(name), keywords, argIndex));
-        } else if (node instanceof RequiredDestructuredParameterNode) { // methods
+        } else if (node instanceof MultiTargetNode) { // methods
             Variable v = temp();
             addInstr(new ReceivePreReqdArgInstr(v, keywords, argIndex));
             if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.anonreq, null);
-            Variable tmp = temp();
-            addInstr(new ToAryInstr(tmp, v));
-
-            buildMultiAssignment(((RequiredDestructuredParameterNode) node).parameters, tmp);
+            Variable rhs = addResultInstr(new ToAryInstr(temp(), v));
+            buildMultiAssignment(((MultiTargetNode) node).lefts, ((MultiTargetNode) node).rest, ((MultiTargetNode) node).rights, rhs);
         } else if (node instanceof ClassVariableTargetNode) {  // blocks/for
             Variable v = temp();
             addInstr(new ReceivePreReqdArgInstr(v, keywords, argIndex));
@@ -2010,7 +1966,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.req, argName);
 
             addInstr(new ReceivePostReqdArgInstr(argumentResult(argName), keywords, argIndex, preCount, optCount, hasRest, postCount));
-        } else if (node instanceof RequiredDestructuredParameterNode) {
+        } else if (node instanceof MultiTargetNode) {
             Variable v = temp();
             addInstr(new ReceivePostReqdArgInstr(v, keywords, argIndex, preCount, optCount, hasRest, postCount));
 
@@ -2019,7 +1975,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             Variable tmp = temp();
             addInstr(new ToAryInstr(tmp, v));
 
-            buildMultiAssignment(((RequiredDestructuredParameterNode) node).parameters, tmp);
+            buildMultiAssignment(((MultiTargetNode) node).lefts, ((MultiTargetNode) node).rest, ((MultiTargetNode) node).rights, tmp);
         } else {
             throw notCompilable("Can't build required parameter node", node);
         }
