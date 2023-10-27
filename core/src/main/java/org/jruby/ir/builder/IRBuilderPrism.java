@@ -66,7 +66,7 @@ import static org.jruby.runtime.ThreadContext.*;
 import static org.jruby.util.CommonByteLists.*;
 import static org.jruby.util.StringSupport.CR_UNKNOWN;
 
-public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNode> {
+public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNode, ConstantPathNode> {
     String fileName = null;
     byte[] source;
 
@@ -876,12 +876,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildConstantPathOperatorWrite(ConstantPathOperatorWriteNode node) {
-        RubySymbol name = ((ConstantReadNode) node.target.child).name;
-        Operand lhs = buildConstantPath(temp(), name, node.target);
-        Operand rhs = build(node.value);
-        Variable value = call(temp(), lhs, node.operator, rhs);
-        buildConstantWritePath(node.target, value);
-        return value;
+        return buildOpAsgnConstDecl(node.target, node.value, node.operator);
     }
 
     private Operand buildConstantRead(ConstantReadNode node) {
@@ -2400,6 +2395,10 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         }
 
         return true;
+    }
+    @Override
+    Operand putConstant(ConstantPathNode path, Operand value) {
+        return putConstant(buildModuleParent(path.parent), ((ConstantReadNode) path.child).name, value);
     }
 
     Node referenceFor(RescueNode node) {

@@ -6,6 +6,7 @@ import org.jruby.EvalType;
 import org.jruby.ParseResult;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
+import org.jruby.ast.Colon3Node;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.RootNode;
 import org.jruby.common.IRubyWarnings;
@@ -64,7 +65,7 @@ import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_REST;
 import static org.jruby.util.RubyStringBuilder.str;
 
-public abstract class IRBuilder<U, V, W, X> {
+public abstract class IRBuilder<U, V, W, X, Y> {
     static final boolean PARSER_TIMING = Options.PARSER_SUMMARY.load();
     static final UnexecutableNil U_NIL = UnexecutableNil.U_NIL;
 
@@ -603,7 +604,7 @@ public abstract class IRBuilder<U, V, W, X> {
         throw new RuntimeException("BUG: no BEQ");
     }
 
-    public void determineZSuperCallArgs(IRScope scope, IRBuilder<U, V, W, X> builder, List<Operand> callArgs, List<KeyValuePair<Operand, Operand>> keywordArgs) {
+    public void determineZSuperCallArgs(IRScope scope, IRBuilder<U, V, W, X, Y> builder, List<Operand> callArgs, List<KeyValuePair<Operand, Operand>> keywordArgs) {
         if (builder != null) {  // Still in currently building scopes
             for (Instr instr : builder.instructions) {
                 extractCallOperands(callArgs, keywordArgs, instr);
@@ -1798,6 +1799,15 @@ public abstract class IRBuilder<U, V, W, X> {
         return result;
     }
 
+    Operand buildOpAsgnConstDecl(Y left, U right, RubySymbol operator) {
+        Operand lhs = build((U) left);
+        Operand rhs = build(right);
+        Variable result = call(temp(), lhs, operator, rhs);
+        return copy(temp(), putConstant(left, result));
+    }
+
+    abstract Operand putConstant(Y constant, Operand value);
+
     Operand buildOpAsgnOr(CodeBlock lhs, CodeBlock rhs) {
         Label done = getNewLabel();
         Variable result = (Variable) lhs.run();
@@ -2462,7 +2472,7 @@ public abstract class IRBuilder<U, V, W, X> {
     abstract int dynamicPiece(Operand[] pieces, int index, U piece);
     abstract void receiveMethodArgs(V defNode);
 
-    IRMethod defineNewMethod(LazyMethodDefinition<U, V, W, X> defn, ByteList name, int line, StaticScope scope, boolean isInstanceMethod) {
+    IRMethod defineNewMethod(LazyMethodDefinition<U, V, W, X, Y> defn, ByteList name, int line, StaticScope scope, boolean isInstanceMethod) {
         IRMethod method = new IRMethod(getManager(), this.scope, defn, name, isInstanceMethod, line, scope, coverageMode);
 
         // poorly placed next/break expects a syntax error so we eagerly build methods which contain them.
@@ -2472,7 +2482,7 @@ public abstract class IRBuilder<U, V, W, X> {
     }
 
 
-    public InterpreterContext defineMethodInner(LazyMethodDefinition<U, V, W, X> defNode, IRScope parent, int coverageMode) {
+    public InterpreterContext defineMethodInner(LazyMethodDefinition<U, V, W, X, Y> defNode, IRScope parent, int coverageMode) {
         long time = 0;
         if (PARSER_TIMING) time = System.nanoTime();
         this.coverageMode = coverageMode;

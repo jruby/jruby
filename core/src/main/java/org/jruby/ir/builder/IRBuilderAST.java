@@ -27,7 +27,6 @@ import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.Bignum;
-import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Complex;
 import org.jruby.ir.operands.Filename;
 import org.jruby.ir.operands.Float;
@@ -52,7 +51,6 @@ import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentType;
-import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -75,7 +73,6 @@ import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 import static org.jruby.ir.operands.ScopeModule.*;
 import static org.jruby.runtime.CallType.*;
 import static org.jruby.runtime.ThreadContext.*;
-import static org.jruby.util.RubyStringBuilder.str;
 
 // This class converts an AST into a bunch of IR instructions
 
@@ -125,7 +122,7 @@ import static org.jruby.util.RubyStringBuilder.str;
 // This introduces artificial data dependencies, but fewer variables.  But, if we are going to implement SSA pass
 // this is not a big deal.  Think this through!
 
-public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyNode> {
+public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyNode, Colon3Node> {
     public static Node buildAST(boolean isCommandLineScript, String arg) {
         Ruby ruby = Ruby.getGlobalRuntime();
 
@@ -1444,17 +1441,13 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return putConstant((Colon3Node) constNode, value);
     }
 
-    private Operand putConstant(Colon3Node colonNode, Operand value) {
+    Operand putConstant(Colon3Node colonNode, Operand value) {
         if (colonNode.getNodeType() == NodeType.COLON2NODE) {
             Colon2Node colon2Node = (Colon2Node) colonNode;
             return putConstant(build(colon2Node.getLeftNode()), colon2Node.getName(), value);
         } else { // colon3, assign in Object
             return putConstant(getManager().getObjectClass(), colonNode.getName(), value);
         }
-    }
-
-    private Operand putConstantAssignment(OpAsgnConstDeclNode node, Operand value) {
-        return putConstant((Colon3Node) node.getFirstNode(), value);
     }
 
     public Operand buildColon2(Variable result, final Colon2Node colon2) {
@@ -2582,10 +2575,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             return result;
         }
 
-        Operand lhs = build(node.getFirstNode());
-        Operand rhs = build(node.getSecondNode());
-        Variable result = call(temp(), lhs, node.getSymbolOperator(), rhs);
-        return addResultInstr(new CopyInstr(temp(), putConstantAssignment(node, result)));
+        return buildOpAsgnConstDecl((Colon3Node) node.getFirstNode(), node.getSecondNode(), node.getSymbolOperator());
     }
 
     public Operand buildOpAsgnAnd(OpAsgnAndNode node) {

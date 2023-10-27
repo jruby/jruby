@@ -1,5 +1,6 @@
 package org.jruby.ir.builder;
 
+import org.jruby.ast.Colon3Node;
 import org.jruby.ast.DefNode;
 import org.jruby.ast.InstAsgnNode;
 import org.jruby.ast.InstVarNode;
@@ -13,7 +14,7 @@ import org.jruby.ir.IRMethod;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LazyMethodDefinitionAST implements LazyMethodDefinition<Node, DefNode, WhenNode, RescueBodyNode> {
+public class LazyMethodDefinitionAST implements LazyMethodDefinition<Node, DefNode, WhenNode, RescueBodyNode, Colon3Node> {
     private final DefNode node;
 
     public LazyMethodDefinitionAST(DefNode node) {
@@ -65,7 +66,7 @@ public class LazyMethodDefinitionAST implements LazyMethodDefinition<Node, DefNo
     }
 
     @Override
-    public IRBuilder<Node, DefNode, WhenNode, RescueBodyNode> getBuilder(IRManager manager, IRMethod methodScope) {
+    public IRBuilder<Node, DefNode, WhenNode, RescueBodyNode, Colon3Node> getBuilder(IRManager manager, IRMethod methodScope) {
         return IRBuilder.newIRBuilder(manager, methodScope, null, null, false);
     }
 }
