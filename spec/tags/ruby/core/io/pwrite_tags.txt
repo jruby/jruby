@@ -1,0 +1,2 @@
+fails:IO#pwrite calls #to_s on the object to be written
+fails:IO#pwrite raises a NoMethodError if object does not respond to #to_s
