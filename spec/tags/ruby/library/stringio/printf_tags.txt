@@ -1,10 +1,4 @@
 fails:StringIO#printf formatting integer formats u converts argument as a decimal number
-fails:StringIO#printf formatting float formats a converts floating point argument as [-]0xh.hhhhp[+-]dd
-fails:StringIO#printf formatting float formats a displays Float::INFINITY as Inf
-fails:StringIO#printf formatting float formats a displays Float::NAN as NaN
-fails:StringIO#printf formatting float formats A converts floating point argument as [-]0xh.hhhhp[+-]dd and use uppercase X and P
-fails:StringIO#printf formatting float formats A displays Float::INFINITY as Inf
-fails:StringIO#printf formatting float formats A displays Float::NAN as NaN
 fails:StringIO#printf formatting flags space applies to numeric formats bBdiouxXeEfgGaA leaves a space at the start of non-negative numbers
 fails:StringIO#printf formatting flags space applies to numeric formats bBdiouxXeEfgGaA does not leave a space at the start of negative numbers
 fails:StringIO#printf formatting flags space applies to numeric formats bBdiouxXeEfgGaA treats several white spaces as one

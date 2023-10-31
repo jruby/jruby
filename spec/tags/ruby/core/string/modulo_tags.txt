@@ -1,10 +1,4 @@
 fails:String#% integer formats u converts argument as a decimal number
-fails:String#% float formats a converts floating point argument as [-]0xh.hhhhp[+-]dd
-fails:String#% float formats a displays Float::INFINITY as Inf
-fails:String#% float formats a displays Float::NAN as NaN
-fails:String#% float formats A converts floating point argument as [-]0xh.hhhhp[+-]dd and use uppercase X and P
-fails:String#% float formats A displays Float::INFINITY as Inf
-fails:String#% float formats A displays Float::NAN as NaN
 fails:String#% flags space applies to numeric formats bBdiouxXeEfgGaA leaves a space at the start of non-negative numbers
 fails:String#% flags space applies to numeric formats bBdiouxXeEfgGaA does not leave a space at the start of negative numbers
 fails:String#% flags space applies to numeric formats bBdiouxXeEfgGaA treats several white spaces as one

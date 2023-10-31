@@ -40,7 +40,6 @@ import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.*;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.EncodingUtils;
@@ -606,6 +605,81 @@ public class Sprintf {
                     incomplete = false;
                     break;
                 }
+
+
+                    case 'a':
+                    case 'A': {
+                        arg = args.getArg();
+
+                        final boolean positive = isPositive(arg);
+                        double fval = RubyKernel.new_float(runtime, arg).getDoubleValue();
+                        boolean negative = fval < 0.0d || (fval == 0.0d && Double.doubleToLongBits(fval) == Double.doubleToLongBits(-0.0));
+                        boolean isnan = Double.isNaN(fval);
+                        boolean isinf = fval == Double.POSITIVE_INFINITY || fval == Double.NEGATIVE_INFINITY;
+
+                        if (isnan || isinf) {
+                            printSpecialValue(buf, flags, width, isnan, negative);
+
+                            offset++;
+                            incomplete = false;
+                            break;
+                        }
+
+                        long exponent = getExponent(arg);
+                        final byte[] mantissaBytes = getMantissaBytes(arg);
+
+                        if (!positive) {
+                            buf.append('-');
+                        } else if ((flags & FLAG_PLUS) != 0) {
+                            buf.append('+');
+                        } else if ((flags & FLAG_SPACE) != 0) {
+                            buf.append(' ');
+                        }
+                        buf.append('0');
+                        buf.append(fchar == 'a' ? 'x' : 'X');
+                        if (mantissaBytes[0] == 0) {
+                            exponent = 0;
+                            buf.append('0');
+                            if (precision > 0 || (flags & FLAG_SPACE) != 0) {
+                                buf.append('.');
+                                while (precision > 0) {
+                                    buf.append('0');
+                                    precision--;
+                                }
+                            }
+                        } else {
+                            int i = 0;
+                            int digit = getDigit(i++, mantissaBytes);
+                            if (digit == 0) {
+                                digit = getDigit(i++, mantissaBytes);
+                            }
+                            assert digit == 1;
+                            buf.append('1');
+                            int digits = getNumberOfDigits(mantissaBytes);
+                            if (i < digits || (flags & FLAG_SPACE) != 0 || precision > 0) {
+                                buf.append('.');
+                            }
+
+                            if ((flags & FLAG_PRECISION) == 0) {
+                                precision = -1;
+                            }
+
+                            while ((precision < 0 && i < digits) || precision > 0) {
+                                digit = getDigit(i++, mantissaBytes);
+                                buf.append((fchar == 'a' ? HEX_DIGITS : HEX_DIGITS_UPPER_CASE)[digit]);
+                                precision--;
+                            }
+                        }
+
+                        buf.append(fchar == 'a' ? 'p' : 'P');
+                        if (exponent >= 0) {
+                            buf.append('+');
+                        }
+                        buf.append(Long.toString(exponent).getBytes());
+                        offset++;
+                        incomplete = false;
+                        break;
+                    }
                 case 'p':
                 case 's': { // format_s:
                     arg = args.getArg();
@@ -933,8 +1007,6 @@ public class Sprintf {
                 case 'e':
                 case 'G':
                 case 'g':
-                //case 'a':
-                //case 'A':
                 float_value: {
                     arg = args.getArg();
 
@@ -951,35 +1023,7 @@ public class Sprintf {
                     byte sign;
 
                     if (isnan || isinf) {
-                        if (isnan) {
-                            digits = NAN_VALUE;
-                            len = NAN_VALUE.length;
-                        } else {
-                            digits = INFINITY_VALUE;
-                            len = INFINITY_VALUE.length;
-                        }
-                        if (negative) {
-                            sign = '-';
-                            width--;
-                        } else if ((flags & FLAG_PLUS) != 0) {
-                            sign = '+';
-                            width--;
-                        } else if ((flags & FLAG_SPACE) != 0) {
-                            sign = ' ';
-                            width--;
-                        } else {
-                            sign = 0;
-                        }
-                        width -= len;
-
-                        if (width > 0 && (flags & FLAG_MINUS) == 0) {
-                            buf.fill(' ', width);
-                            width = 0;
-                        }
-                        if (sign != 0) buf.append(sign);
-
-                        buf.append(digits);
-                        if (width > 0) buf.fill(' ', width);
+                        printSpecialValue(buf, flags, width, isnan, negative);
 
                         offset++;
                         incomplete = false;
@@ -1480,6 +1524,42 @@ public class Sprintf {
         }
     }
 
+    // prints nan or inf
+    private static void printSpecialValue(ByteList buf, int flags, int width, boolean isnan, boolean negative) {
+        byte sign;
+        byte[] digits;
+        int len;
+        if (isnan) {
+            digits = NAN_VALUE;
+            len = NAN_VALUE.length;
+        } else {
+            digits = INFINITY_VALUE;
+            len = INFINITY_VALUE.length;
+        }
+        if (negative) {
+            sign = '-';
+            width--;
+        } else if ((flags & FLAG_PLUS) != 0) {
+            sign = '+';
+            width--;
+        } else if ((flags & FLAG_SPACE) != 0) {
+            sign = ' ';
+            width--;
+        } else {
+            sign = 0;
+        }
+        width -= len;
+
+        if (width > 0 && (flags & FLAG_MINUS) == 0) {
+            buf.fill(' ', width);
+            width = 0;
+        }
+        if (sign != 0) buf.append(sign);
+
+        buf.append(digits);
+        if (width > 0) buf.fill(' ', width);
+    }
+
     public static NumberFormat getNumberFormat(Locale locale) {
         Map<Locale, NumberFormat> numberFormats = LOCALE_NUMBER_FORMATS.get();
         if (numberFormats == null) {
@@ -1757,6 +1837,101 @@ public class Sprintf {
 
     private static byte[] stringToBytes(CharSequence s) {
         return ByteList.plain(s);
+    }
+
+    private static int getNumberOfDigits(byte[] bytes) {
+        int digits = bytes.length * 2;
+        if (getDigit(digits - 1, bytes) == 0) {
+            digits--;
+        }
+        return digits;
+    }
+
+    private static byte getDigit(int position, byte[] bytes) {
+        int index = position / 2;
+        if (index < bytes.length) {
+            byte twoDigits = bytes[index];
+            if (position % 2 == 0) {
+                return (byte) ((twoDigits >> 4) & 0xf);
+            } else {
+                return (byte) (twoDigits & 0xf);
+            }
+        } else {
+            return 0;
+        }
+    }
+
+    private static boolean isPositive(Object value) {
+        if (value instanceof RubyFloat) {
+            final long bits = Double.doubleToRawLongBits(((RubyFloat) value).getDoubleValue());
+            return (bits & SIGN_MASK) == 0;
+        } else if (value instanceof RubyFixnum) {
+            return ((RubyFixnum) value).getLongValue() >= 0;
+        } else if (value instanceof RubyBignum) {
+            return ((RubyBignum) value).signum() >= 0;
+        }
+        return true;
+    }
+
+    private static final long SIGN_MASK = 1L << 63;
+    private static final long BIASED_EXP_MASK = 0x7ffL << 52;
+    private static final long MANTISSA_MASK = ~(SIGN_MASK | BIASED_EXP_MASK);
+    private static final byte[] HEX_DIGITS = new byte[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
+    private static final byte[] HEX_DIGITS_UPPER_CASE = new byte[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+
+    private static byte[] getMantissaBytes(IRubyObject value) {
+        BigInteger bi;
+        if (value instanceof RubyFloat) {
+            final long bits = Double.doubleToRawLongBits(((RubyFloat) value).getDoubleValue());
+            long biasedExp = ((bits & BIASED_EXP_MASK) >> 52);
+            long mantissaBits = bits & MANTISSA_MASK;
+            if (biasedExp > 0) {
+                mantissaBits = mantissaBits | 0x10000000000000L;
+            }
+            bi = BigInteger.valueOf(mantissaBits);
+        } else if (value instanceof RubyFixnum) {
+            bi = BigInteger.valueOf(((RubyFixnum) value).getLongValue());
+        } else if (value instanceof RubyBignum) {
+            bi = ((RubyBignum) value).getValue();
+        } else {
+            bi = BigInteger.ZERO;
+        }
+        bi = bi.abs();
+        if (BigInteger.ZERO.equals(bi)) {
+            return new byte[1];
+        }
+
+        // Shift things to get rid of all the trailing zeros.
+        bi = bi.shiftRight(bi.getLowestSetBit() - 1);
+
+        // We want the bit length to be 4n + 1 so that things line up nicely for the printing routine.
+        int bitLength = bi.bitLength() % 4;
+        if (bitLength != 1) {
+            bi = bi.shiftLeft(5 - bitLength);
+        }
+        return bi.toByteArray();
+    }
+
+    private static long getExponent(IRubyObject value) {
+        if (value instanceof RubyBignum) {
+            return ((RubyBignum) value).getValue().abs().bitLength() - 1;
+        } else if (value instanceof RubyFixnum) {
+            long lval = ((RubyFixnum) value).getLongValue();
+            return lval == Long.MIN_VALUE ? 63 : 63 - Long.numberOfLeadingZeros(Math.abs(lval));
+        } else if (value instanceof RubyFloat) {
+            final long bits = Double.doubleToRawLongBits(((RubyFloat) value).getDoubleValue());
+            long biasedExp = ((bits & BIASED_EXP_MASK) >> 52);
+            long mantissaBits = bits & MANTISSA_MASK;
+            if (biasedExp == 0) {
+                // Sub normal cases are a little special.
+                // Find the most significant bit in the mantissa
+                final int lz = Long.numberOfLeadingZeros(mantissaBits);
+                // Adjust the exponent to reflect this.
+                biasedExp = biasedExp - (lz - 12);
+            }
+            return biasedExp - 1023;
+        }
+        return 0;
     }
 
 }

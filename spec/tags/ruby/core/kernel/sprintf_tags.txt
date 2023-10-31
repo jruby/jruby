@@ -1,11 +1,5 @@
 fails(compiler):Kernel#sprintf passes some tests for negative %u
 fails:Kernel#sprintf integer formats u converts argument as a decimal number
-fails:Kernel#sprintf float formats a converts floating point argument as [-]0xh.hhhhp[+-]dd
-fails:Kernel#sprintf float formats a displays Float::INFINITY as Inf
-fails:Kernel#sprintf float formats a displays Float::NAN as NaN
-fails:Kernel#sprintf float formats A converts floating point argument as [-]0xh.hhhhp[+-]dd and use uppercase X and P
-fails:Kernel#sprintf float formats A displays Float::INFINITY as Inf
-fails:Kernel#sprintf float formats A displays Float::NAN as NaN
 fails:Kernel#sprintf flags space applies to numeric formats bBdiouxXeEfgGaA leaves a space at the start of non-negative numbers
 fails:Kernel#sprintf flags space applies to numeric formats bBdiouxXeEfgGaA does not leave a space at the start of negative numbers
 fails:Kernel#sprintf flags space applies to numeric formats bBdiouxXeEfgGaA treats several white spaces as one
@@ -25,12 +19,6 @@ fails:Kernel#sprintf width specifies the minimum number of characters that will 
 fails:Kernel#sprintf precision float types controls the number of decimal places displayed in fraction part
 fails:Kernel#sprintf reference by name %{name} style supports flags, width and precision
 fails:Kernel.sprintf integer formats u converts argument as a decimal number
-fails:Kernel.sprintf float formats a converts floating point argument as [-]0xh.hhhhp[+-]dd
-fails:Kernel.sprintf float formats a displays Float::INFINITY as Inf
-fails:Kernel.sprintf float formats a displays Float::NAN as NaN
-fails:Kernel.sprintf float formats A converts floating point argument as [-]0xh.hhhhp[+-]dd and use uppercase X and P
-fails:Kernel.sprintf float formats A displays Float::INFINITY as Inf
-fails:Kernel.sprintf float formats A displays Float::NAN as NaN
 fails:Kernel.sprintf flags space applies to numeric formats bBdiouxXeEfgGaA leaves a space at the start of non-negative numbers
 fails:Kernel.sprintf flags space applies to numeric formats bBdiouxXeEfgGaA does not leave a space at the start of negative numbers
 fails:Kernel.sprintf flags space applies to numeric formats bBdiouxXeEfgGaA treats several white spaces as one

@@ -1,10 +1,4 @@
 fails:Kernel.printf formatting io is specified integer formats u converts argument as a decimal number
-fails:Kernel.printf formatting io is specified float formats a converts floating point argument as [-]0xh.hhhhp[+-]dd
-fails:Kernel.printf formatting io is specified float formats a displays Float::INFINITY as Inf
-fails:Kernel.printf formatting io is specified float formats a displays Float::NAN as NaN
-fails:Kernel.printf formatting io is specified float formats A converts floating point argument as [-]0xh.hhhhp[+-]dd and use uppercase X and P
-fails:Kernel.printf formatting io is specified float formats A displays Float::INFINITY as Inf
-fails:Kernel.printf formatting io is specified float formats A displays Float::NAN as NaN
 fails:Kernel.printf formatting io is specified flags space applies to numeric formats bBdiouxXeEfgGaA leaves a space at the start of non-negative numbers
 fails:Kernel.printf formatting io is specified flags space applies to numeric formats bBdiouxXeEfgGaA does not leave a space at the start of negative numbers
 fails:Kernel.printf formatting io is specified flags space applies to numeric formats bBdiouxXeEfgGaA treats several white spaces as one
@@ -24,12 +18,6 @@ fails:Kernel.printf formatting io is specified width specifies the minimum numbe
 fails:Kernel.printf formatting io is specified precision float types controls the number of decimal places displayed in fraction part
 fails:Kernel.printf formatting io is specified reference by name %{name} style supports flags, width and precision
 fails:Kernel.printf formatting io is not specified integer formats u converts argument as a decimal number
-fails:Kernel.printf formatting io is not specified float formats a converts floating point argument as [-]0xh.hhhhp[+-]dd
-fails:Kernel.printf formatting io is not specified float formats a displays Float::INFINITY as Inf
-fails:Kernel.printf formatting io is not specified float formats a displays Float::NAN as NaN
-fails:Kernel.printf formatting io is not specified float formats A converts floating point argument as [-]0xh.hhhhp[+-]dd and use uppercase X and P
-fails:Kernel.printf formatting io is not specified float formats A displays Float::INFINITY as Inf
-fails:Kernel.printf formatting io is not specified float formats A displays Float::NAN as NaN
 fails:Kernel.printf formatting io is not specified flags space applies to numeric formats bBdiouxXeEfgGaA leaves a space at the start of non-negative numbers
 fails:Kernel.printf formatting io is not specified flags space applies to numeric formats bBdiouxXeEfgGaA does not leave a space at the start of negative numbers
 fails:Kernel.printf formatting io is not specified flags space applies to numeric formats bBdiouxXeEfgGaA treats several white spaces as one

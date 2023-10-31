@@ -1,10 +1,4 @@
 fails:File#printf integer formats u converts argument as a decimal number
-fails:File#printf float formats a converts floating point argument as [-]0xh.hhhhp[+-]dd
-fails:File#printf float formats a displays Float::INFINITY as Inf
-fails:File#printf float formats a displays Float::NAN as NaN
-fails:File#printf float formats A converts floating point argument as [-]0xh.hhhhp[+-]dd and use uppercase X and P
-fails:File#printf float formats A displays Float::INFINITY as Inf
-fails:File#printf float formats A displays Float::NAN as NaN
 fails:File#printf flags space applies to numeric formats bBdiouxXeEfgGaA leaves a space at the start of non-negative numbers
 fails:File#printf flags space applies to numeric formats bBdiouxXeEfgGaA does not leave a space at the start of negative numbers
 fails:File#printf flags space applies to numeric formats bBdiouxXeEfgGaA treats several white spaces as one
