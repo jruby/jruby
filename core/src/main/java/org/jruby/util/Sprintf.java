@@ -629,15 +629,18 @@ public class Sprintf {
                     long exponent = getExponent(arg);
                     final byte[] mantissaBytes = getMantissaBytes(arg);
 
-                    if (!positive) {
-                        bytes.append('-');
-                    } else if ((flags & FLAG_PLUS) != 0) {
-                        bytes.append('+');
-                    } else if ((flags & FLAG_SPACE) != 0) {
-                        bytes.append(' ');
+                    if ((flags & FLAG_MINUS) != 0) {
+                        if (!positive) {
+                            bytes.append('-');
+                        } else if ((flags & FLAG_PLUS) != 0) {
+                            bytes.append('+');
+                        } else if ((flags & FLAG_SPACE) != 0) {
+                            bytes.append(' ');
+                        }
+
+                        bytes.append('0');
+                        bytes.append(fchar == 'a' ? 'x' : 'X');
                     }
-                    bytes.append('0');
-                    bytes.append(fchar == 'a' ? 'x' : 'X');
                     if (mantissaBytes[0] == 0) {
                         exponent = 0;
                         bytes.append('0');
@@ -679,14 +682,29 @@ public class Sprintf {
                     bytes.append(Long.toString(exponent).getBytes());
 
                     int bytesLength = bytes.length(); // We know numbers will be 7 bit ascii.
-                    if (width > bytesLength) {
-                        if ((flags & FLAG_MINUS) == 0) {
-                            if ((flags & FLAG_PRECISION) != 0 || ((flags & FLAG_ZERO) != 0)) {
-                                buf.fill('0', width - bytesLength);
-                            } else {
-                                buf.fill(' ', width - bytesLength);
-                            }
+                    if ((flags & FLAG_MINUS) == 0) {
+                        if (!positive) {
+                            buf.append('-');
+                        } else if ((flags & FLAG_PLUS) != 0) {
+                            buf.append('+');
+                        } else if ((flags & FLAG_SPACE) != 0) {
+                            buf.append(' ');
                         }
+                    }
+
+                    if (width > bytesLength) {
+                        if ((flags & FLAG_ZERO) != 0) {
+                            buf.append('0');
+                            buf.append(fchar == 'a' ? 'x' : 'X');
+                            buf.fill('0', width - bytesLength - 2);
+                        } else {
+                            buf.fill(' ', width - bytesLength - 2);
+                            buf.append('0');
+                            buf.append(fchar == 'a' ? 'x' : 'X');
+                        }
+                    } else if ((flags & FLAG_MINUS) == 0) {
+                        buf.append('0');
+                        buf.append(fchar == 'a' ? 'x' : 'X');
                     }
 
                     buf.append(bytes);
