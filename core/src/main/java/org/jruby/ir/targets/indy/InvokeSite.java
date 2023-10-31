@@ -15,8 +15,15 @@ import org.jruby.RubyModule;
 import org.jruby.RubyNil;
 import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.AliasMethod;
+import org.jruby.internal.runtime.methods.AttrReaderMethod;
+import org.jruby.internal.runtime.methods.AttrWriterMethod;
+import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.HandleMethod;
+import org.jruby.internal.runtime.methods.MixedModeIRMethod;
+import org.jruby.internal.runtime.methods.NativeCallMethod;
 import org.jruby.internal.runtime.methods.PartialDelegatingMethod;
 import org.jruby.ir.JIT;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -24,6 +31,7 @@ import org.jruby.ir.targets.SiteTracker;
 import org.jruby.java.invokers.InstanceFieldGetter;
 import org.jruby.java.invokers.InstanceFieldSetter;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
@@ -32,7 +40,10 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
+import org.jruby.runtime.invokedynamic.InvocationLinker;
 import org.jruby.runtime.invokedynamic.JRubyCallSite;
+import org.jruby.runtime.ivars.FieldVariableAccessor;
+import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -49,9 +60,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static java.lang.invoke.MethodHandles.constant;
+import static java.lang.invoke.MethodHandles.dropArguments;
 import static java.lang.invoke.MethodHandles.foldArguments;
 import static java.lang.invoke.MethodHandles.insertArguments;
 import static java.lang.invoke.MethodHandles.lookup;
+import static java.lang.invoke.MethodType.methodType;
+import static org.jruby.runtime.Helpers.arrayOf;
+import static org.jruby.runtime.Helpers.constructObjectArrayHandle;
 import static org.jruby.runtime.invokedynamic.JRubyCallSite.SITE_ID;
 
 /**
@@ -60,6 +75,8 @@ import static org.jruby.runtime.invokedynamic.JRubyCallSite.SITE_ID;
 public abstract class InvokeSite extends MutableCallSite {
 
     private static final Logger LOG = LoggerFactory.getLogger(InvokeSite.class);
+    private static final String[] GENERIC_CALL_PERMUTE = {"context", "self", "arg.*"};
+
     static { // enable DEBUG output
         if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.setDebugEnable(true);
     }
@@ -81,6 +98,469 @@ public abstract class InvokeSite extends MutableCallSite {
     private boolean boundOnce;
     private boolean literalClosure;
     protected CacheEntry cache = CacheEntry.NULL_CACHE;
+
+    public static boolean testType(RubyClass original, IRubyObject self) {
+        // naive test
+        return original == RubyBasicObject.getMetaClass(self);
+    }
+
+    MethodHandle buildIndyHandle(CacheEntry entry) {
+        MethodHandle mh = null;
+        Signature siteToDyncall = signature.insertArgs(argOffset, arrayOf("class", "name"), arrayOf(RubyModule.class, String.class));
+        DynamicMethod method = entry.method;
+
+        if (method instanceof HandleMethod) {
+            HandleMethod handleMethod = (HandleMethod)method;
+            boolean blockGiven = signature.lastArgType() == Block.class;
+
+            if (arity >= 0) {
+                mh = handleMethod.getHandle(arity);
+                if (mh != null) {
+                    if (!blockGiven) mh = insertArguments(mh, mh.type().parameterCount() - 1, Block.NULL_BLOCK);
+                    if (!functional) mh = dropArguments(mh, 1, IRubyObject.class);
+                } else {
+                    mh = handleMethod.getHandle(-1);
+                    if (!functional) mh = dropArguments(mh, 1, IRubyObject.class);
+                    if (arity == 0) {
+                        if (!blockGiven) {
+                            mh = insertArguments(mh, mh.type().parameterCount() - 2, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+                        } else {
+                            mh = insertArguments(mh, mh.type().parameterCount() - 2, (Object)IRubyObject.NULL_ARRAY);
+                        }
+                    } else {
+                        // bundle up varargs
+                        if (!blockGiven) mh = insertArguments(mh, mh.type().parameterCount() - 1, Block.NULL_BLOCK);
+
+                        mh = SmartBinder.from(lookup(), siteToDyncall)
+                                .collect("args", "arg.*", Helpers.constructObjectArrayHandle(arity))
+                                .invoke(mh)
+                                .handle();
+                    }
+                }
+            } else {
+                mh = handleMethod.getHandle(-1);
+                if (mh != null) {
+                    if (!functional) mh = dropArguments(mh, 1, IRubyObject.class);
+                    if (!blockGiven) mh = insertArguments(mh, mh.type().parameterCount() - 1, Block.NULL_BLOCK);
+
+                    mh = SmartBinder.from(lookup(), siteToDyncall)
+                            .invoke(mh)
+                            .handle();
+                }
+            }
+
+            if (mh != null) {
+                mh = insertArguments(mh, argOffset, entry.sourceModule, name());
+
+                if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                    LOG.info(name() + "\tbound directly to handle " + Bootstrap.logMethod(method));
+                }
+            }
+        }
+
+        return mh;
+    }
+
+    MethodHandle buildGenericHandle(CacheEntry entry) {
+        SmartBinder binder;
+        DynamicMethod method = entry.method;
+
+        binder = SmartBinder.from(signature);
+
+        binder = permuteForGenericCall(binder, method, GENERIC_CALL_PERMUTE);
+
+
+        binder = binder
+                .insert(2, new String[]{"rubyClass", "name"}, new Class[]{RubyModule.class, String.class}, entry.sourceModule, name())
+                .insert(0, "method", DynamicMethod.class, method);
+
+        if (arity > 3) {
+            binder = binder.collect("args", "arg.*", constructObjectArrayHandle(arity));
+        }
+
+        if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+            LOG.info(name() + "\tbound indirectly " + method + ", " + Bootstrap.logMethod(method));
+        }
+
+        return binder.invokeVirtualQuiet(LOOKUP, "call").handle();
+    }
+
+    private static SmartBinder permuteForGenericCall(SmartBinder binder, DynamicMethod method, String... basePermutes) {
+        if (methodWantsBlock(method)) {
+            binder = binder.permute(arrayOf(basePermutes, "block", String[]::new));
+        } else {
+            binder = binder.permute(basePermutes);
+        }
+        return binder;
+    }
+
+    private static boolean methodWantsBlock(DynamicMethod method) {
+        // only include block if native signature receives block, whatever its arity
+        boolean wantsBlock = true;
+        if (method instanceof NativeCallMethod) {
+            DynamicMethod.NativeCall nativeCall = ((NativeCallMethod) method).getNativeCall();
+            // if it is a non-JI native call and does not want block, drop it
+            // JI calls may lazily convert blocks to an interface type (jruby/jruby#7246)
+            if (nativeCall != null && !nativeCall.isJava()) {
+                Class[] nativeSignature = nativeCall.getNativeSignature();
+
+                // no args or last arg not a block, do no pass block
+                if (nativeSignature.length == 0 || nativeSignature[nativeSignature.length - 1] != Block.class) {
+                    wantsBlock = false;
+                }
+            }
+        }
+        return wantsBlock;
+    }
+
+    static MethodHandle buildMethodMissingHandle(InvokeSite site, CacheEntry entry, IRubyObject self) {
+        SmartBinder binder;
+        DynamicMethod method = entry.method;
+
+        if (site.arity >= 0) {
+            binder = SmartBinder.from(site.signature);
+
+            binder = permuteForGenericCall(binder, method, GENERIC_CALL_PERMUTE)
+                    .insert(2,
+                            new String[]{"rubyClass", "name", "argName"}
+                            , new Class[]{RubyModule.class, String.class, IRubyObject.class},
+                            entry.sourceModule,
+                            site.name(),
+                            self.getRuntime().newSymbol(site.methodName))
+                    .insert(0, "method", DynamicMethod.class, method)
+                    .collect("args", "arg.*", Helpers.constructObjectArrayHandle(site.arity + 1));
+        } else {
+            SmartHandle fold = SmartBinder.from(
+                    site.signature
+                            .permute("context", "self", "args", "block")
+                            .changeReturn(IRubyObject[].class))
+                    .permute("args")
+                    .insert(0, "argName", IRubyObject.class, self.getRuntime().newSymbol(site.methodName))
+                    .invokeStaticQuiet(LOOKUP, Helpers.class, "arrayOf");
+
+            binder = SmartBinder.from(site.signature);
+
+            binder = permuteForGenericCall(binder, method, "context", "self", "args")
+                    .fold("args2", fold);
+            binder = permuteForGenericCall(binder, method, "context", "self", "args2")
+                    .insert(2,
+                            new String[]{"rubyClass", "name"}
+                            , new Class[]{RubyModule.class, String.class},
+                            entry.sourceModule,
+                            site.name())
+                    .insert(0, "method", DynamicMethod.class, method);
+        }
+
+        if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+            LOG.info(site.name() + "\tbound to method_missing for " + method + ", " + Bootstrap.logMethod(method));
+        }
+
+        return binder.invokeVirtualQuiet(LOOKUP, "call").handle();
+    }
+
+    MethodHandle buildAttrHandle(CacheEntry entry, IRubyObject self) {
+        DynamicMethod method = entry.method;
+
+        if (method instanceof AttrReaderMethod && arity == 0) {
+            AttrReaderMethod attrReader = (AttrReaderMethod) method;
+            String varName = attrReader.getVariableName();
+
+            // we getVariableAccessorForWrite here so it is eagerly created and we don't cache the DUMMY
+            VariableAccessor accessor = self.getType().getVariableAccessorForWrite(varName);
+
+            // Ruby to attr reader
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                if (accessor instanceof FieldVariableAccessor) {
+                    LOG.info(name() + "\tbound as field attr reader " + Bootstrap.logMethod(method) + ":" + ((AttrReaderMethod)method).getVariableName());
+                } else {
+                    LOG.info(name() + "\tbound as attr reader " + Bootstrap.logMethod(method) + ":" + ((AttrReaderMethod)method).getVariableName());
+                }
+            }
+
+            return createAttrReaderHandle(self, self.getType(), accessor);
+        } else if (method instanceof AttrWriterMethod && arity == 1) {
+            AttrWriterMethod attrReader = (AttrWriterMethod)method;
+            String varName = attrReader.getVariableName();
+
+            // we getVariableAccessorForWrite here so it is eagerly created and we don't cache the DUMMY
+            VariableAccessor accessor = self.getType().getVariableAccessorForWrite(varName);
+
+            // Ruby to attr reader
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                if (accessor instanceof FieldVariableAccessor) {
+                    LOG.info(name() + "\tbound as field attr writer " + Bootstrap.logMethod(method) + ":" + ((AttrWriterMethod) method).getVariableName());
+                } else {
+                    LOG.info(name() + "\tbound as attr writer " + Bootstrap.logMethod(method) + ":" + ((AttrWriterMethod) method).getVariableName());
+                }
+            }
+
+            return createAttrWriterHandle(self, self.getType(), accessor);
+        }
+
+        return null;
+    }
+
+    private MethodHandle createAttrReaderHandle(IRubyObject self, RubyClass cls, VariableAccessor accessor) {
+        MethodHandle nativeTarget;
+
+        MethodHandle filter = cls.getClassRuntime().getNullToNilHandle();
+
+        MethodHandle getValue;
+
+        if (accessor instanceof FieldVariableAccessor) {
+            MethodHandle getter = ((FieldVariableAccessor)accessor).getGetter();
+            getValue = Binder.from(type())
+                    .drop(0, argOffset - 1)
+                    .filterReturn(filter)
+                    .cast(methodType(Object.class, self.getClass()))
+                    .invoke(getter);
+        } else {
+            getValue = Binder.from(type())
+                    .drop(0, argOffset - 1)
+                    .filterReturn(filter)
+                    .cast(methodType(Object.class, Object.class))
+                    .prepend(accessor)
+                    .invokeVirtualQuiet(LOOKUP, "get");
+        }
+
+        // NOTE: Must not cache the fully-bound handle in the method, since it's specific to this class
+
+        return getValue;
+    }
+
+    private MethodHandle createAttrWriterHandle(IRubyObject self, RubyClass cls, VariableAccessor accessor) {
+        MethodHandle nativeTarget;
+
+        MethodHandle filter = Binder
+                .from(IRubyObject.class, Object.class)
+                .drop(0)
+                .constant(cls.getRuntime().getNil());
+
+        MethodHandle setValue;
+
+        if (accessor instanceof FieldVariableAccessor) {
+            MethodHandle setter = ((FieldVariableAccessor)accessor).getSetter();
+            setValue = Binder.from(type())
+                    .drop(0, argOffset - 1)
+                    .filterReturn(filter)
+                    .cast(methodType(void.class, self.getClass(), Object.class))
+                    .invoke(setter);
+        } else {
+            setValue = Binder.from(type())
+                    .drop(0, argOffset - 1)
+                    .filterReturn(filter)
+                    .cast(methodType(void.class, Object.class, Object.class))
+                    .prepend(accessor)
+                    .invokeVirtualQuiet(LOOKUP, "set");
+        }
+
+        return setValue;
+    }
+
+    MethodHandle buildJittedHandle(CacheEntry entry, boolean blockGiven) {
+        MethodHandle mh = null;
+        SmartBinder binder;
+        CompiledIRMethod compiledIRMethod = null;
+        DynamicMethod method = entry.method;
+        RubyModule sourceModule = entry.sourceModule;
+
+        if (method instanceof CompiledIRMethod) {
+            compiledIRMethod = (CompiledIRMethod)method;
+        } else if (method instanceof MixedModeIRMethod) {
+            DynamicMethod actualMethod = ((MixedModeIRMethod)method).getActualMethod();
+            if (actualMethod instanceof CompiledIRMethod) {
+                compiledIRMethod = (CompiledIRMethod) actualMethod;
+            } else {
+                if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                    LOG.info(name() + "\tfailed direct binding due to unjitted method " + Bootstrap.logMethod(method));
+                }
+            }
+        }
+
+        if (compiledIRMethod != null) {
+
+            // attempt IR direct binding
+            // TODO: this will have to expand when we start specializing arities
+
+            binder = SmartBinder.from(signature)
+                    .permute("context", "self", "arg.*", "block");
+
+            if (arity == -1) {
+                // already [], nothing to do
+                mh = (MethodHandle)compiledIRMethod.getHandle();
+            } else if (arity == 0) {
+                MethodHandle specific;
+                if ((specific = compiledIRMethod.getHandleFor(arity)) != null) {
+                    mh = specific;
+                } else {
+                    mh = (MethodHandle)compiledIRMethod.getHandle();
+                    binder = binder.insert(2, "args", IRubyObject.NULL_ARRAY);
+                }
+            } else {
+                MethodHandle specific;
+                if ((specific = compiledIRMethod.getHandleFor(arity)) != null) {
+                    mh = specific;
+                } else {
+                    mh = (MethodHandle) compiledIRMethod.getHandle();
+                    binder = binder.collect("args", "arg.*", Helpers.constructObjectArrayHandle(arity));
+                }
+            }
+
+            if (!blockGiven) {
+                binder = binder.append("block", Block.class, Block.NULL_BLOCK);
+            }
+
+            binder = binder
+                    .insert(1, "scope", StaticScope.class, compiledIRMethod.getStaticScope())
+                    .append("class", RubyModule.class, sourceModule)
+                    .append("frameName", String.class, name());
+
+            mh = binder.invoke(mh).handle();
+
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                LOG.info(name() + "\tbound directly to jitted method " + Bootstrap.logMethod(method));
+            }
+        }
+
+        return mh;
+    }
+
+    MethodHandle buildNativeHandle(CacheEntry entry, boolean blockGiven) {
+        MethodHandle mh = null;
+        SmartBinder binder = null;
+        DynamicMethod method = entry.method;
+
+        if (method instanceof NativeCallMethod && ((NativeCallMethod) method).getNativeCall() != null) {
+            NativeCallMethod nativeMethod = (NativeCallMethod)method;
+            DynamicMethod.NativeCall nativeCall = nativeMethod.getNativeCall();
+
+            DynamicMethod.NativeCall nc = nativeCall;
+
+            if (nc.isJava()) {
+                return JavaBootstrap.createJavaHandle(this, method);
+            } else {
+                int nativeArgCount = getNativeArgCount(method, nativeCall);
+
+                if (nativeArgCount >= 0) { // native methods only support arity 3
+                    if (nativeArgCount == arity) {
+                        // nothing to do
+                        binder = SmartBinder.from(lookup(), signature);
+                    } else {
+                        // arity mismatch...leave null and use DynamicMethod.call below
+                        if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                            LOG.info(name() + "\tdid not match the primary arity for a native method " + Bootstrap.logMethod(method));
+                        }
+                    }
+                } else {
+                    // varargs
+                    if (arity == -1) {
+                        // ok, already passing []
+                        binder = SmartBinder.from(lookup(), signature);
+                    } else if (arity == 0) {
+                        // no args, insert dummy
+                        binder = SmartBinder.from(lookup(), signature)
+                                .insert(argOffset, "args", IRubyObject.NULL_ARRAY);
+                    } else {
+                        // 1 or more args, collect into []
+                        binder = SmartBinder.from(lookup(), signature)
+                                .collect("args", "arg.*", Helpers.constructObjectArrayHandle(arity));
+                    }
+                }
+
+                if (binder != null) {
+
+                    // clean up non-arguments, ordering, types
+                    if (!nc.hasContext()) {
+                        binder = binder.drop("context");
+                    }
+
+                    if (nc.hasBlock() && !blockGiven) {
+                        binder = binder.append("block", Block.NULL_BLOCK);
+                    } else if (!nc.hasBlock() && blockGiven) {
+                        binder = binder.drop("block");
+                    }
+
+                    if (nc.isStatic()) {
+                        mh = binder
+                                .permute("context", "self", "arg.*", "block") // filter caller
+                                .cast(nc.getNativeReturn(), nc.getNativeSignature())
+                                .invokeStaticQuiet(LOOKUP, nc.getNativeTarget(), nc.getNativeName())
+                                .handle();
+                    } else {
+                        mh = binder
+                                .permute("self", "context", "arg.*", "block") // filter caller, move self
+                                .castArg("self", nc.getNativeTarget())
+                                .castVirtual(nc.getNativeReturn(), nc.getNativeTarget(), nc.getNativeSignature())
+                                .invokeVirtualQuiet(LOOKUP, nc.getNativeName())
+                                .handle();
+                    }
+
+                    if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                        LOG.info(name() + "\tbound directly to JVM method " + Bootstrap.logMethod(method));
+                    }
+
+                    JRubyMethod anno = nativeCall.getMethod().getAnnotation(JRubyMethod.class);
+                    if (anno != null && anno.frame()) {
+                        mh = InvocationLinker.wrapWithFrameOnly(signature, entry.sourceModule, name(), mh);
+                    }
+                }
+            }
+        }
+
+        return mh;
+    }
+
+    public static int getNativeArgCount(DynamicMethod method, DynamicMethod.NativeCall nativeCall) {
+        // if non-Java, must:
+        // * exactly match arities or both are [] boxed
+        // * 3 or fewer arguments
+        return getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic());
+    }
+
+    private static int getArgCount(Class[] args, boolean isStatic) {
+        int length = args.length;
+        boolean hasContext = false;
+        if (isStatic) {
+            if (args.length > 1 && args[0] == ThreadContext.class) {
+                length--;
+                hasContext = true;
+            }
+
+            // remove self object
+            assert args.length >= 1;
+            length--;
+
+            if (args.length > 1 && args[args.length - 1] == Block.class) {
+                length--;
+            }
+
+            if (length == 1) {
+                if (hasContext && args[2] == IRubyObject[].class) {
+                    length = -1;
+                } else if (args[1] == IRubyObject[].class) {
+                    length = -1;
+                }
+            }
+        } else {
+            if (args.length > 0 && args[0] == ThreadContext.class) {
+                length--;
+                hasContext = true;
+            }
+
+            if (args.length > 0 && args[args.length - 1] == Block.class) {
+                length--;
+            }
+
+            if (length == 1) {
+                if (hasContext && args[1] == IRubyObject[].class) {
+                    length = -1;
+                } else if (args[0] == IRubyObject[].class) {
+                    length = -1;
+                }
+            }
+        }
+        return length;
+    }
 
     public String name() {
         return methodName;
@@ -145,7 +625,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
         this.arity = arity;
 
-        this.fallback = prepareBinder(true).invokeVirtualQuiet(Bootstrap.LOOKUP, "invoke");
+        this.fallback = prepareBinder(true).invokeVirtualQuiet(LOOKUP, "invoke");
     }
 
     public static CallSite bootstrap(InvokeSite site, MethodHandles.Lookup lookup) {
@@ -167,7 +647,7 @@ public abstract class InvokeSite extends MutableCallSite {
             // only pass symbol below if we be calling a user-defined method_missing (default ones do it for us)
             passSymbol = !(entry.method instanceof RubyKernel.MethodMissingMethod ||
                     entry.method instanceof Helpers.MethodMissingWrapper);
-            mh = Bootstrap.buildGenericHandle(this, entry);
+            mh = buildGenericHandle(entry);
         } else {
             mh = getHandle(self, entry);
         }
@@ -190,7 +670,7 @@ public abstract class InvokeSite extends MutableCallSite {
             // only pass symbol below if we be calling a user-defined method_missing (default ones do it for us)
             passSymbol = !(entry.method instanceof RubyKernel.MethodMissingMethod ||
                     entry.method instanceof Helpers.MethodMissingWrapper);
-            mh = Bootstrap.buildGenericHandle(this, entry);
+            mh = buildGenericHandle(entry);
         } else {
             mh = getHandle(self, entry);
         }
@@ -523,26 +1003,26 @@ public abstract class InvokeSite extends MutableCallSite {
 
         MethodHandle mh = buildNewInstanceHandle(entry, self);
         if (mh == null) mh = buildNotEqualHandle(entry, self);
-        if (mh == null) mh = Bootstrap.buildNativeHandle(this, entry, blockGiven);
-        if (mh == null) mh = buildJavaFieldHandle(this, entry, self);
-        if (mh == null) mh = Bootstrap.buildIndyHandle(this, entry);
-        if (mh == null) mh = Bootstrap.buildJittedHandle(this, entry, blockGiven);
-        if (mh == null) mh = Bootstrap.buildAttrHandle(this, entry, self);
+        if (mh == null) mh = buildNativeHandle(entry, blockGiven);
+        if (mh == null) mh = buildJavaFieldHandle(entry, self);
+        if (mh == null) mh = buildIndyHandle(entry);
+        if (mh == null) mh = buildJittedHandle(entry, blockGiven);
+        if (mh == null) mh = buildAttrHandle(entry, self);
         if (mh == null) mh = buildAliasHandle(entry, self);
         if (mh == null) mh = buildStructHandle(entry);
-        if (mh == null) mh = Bootstrap.buildGenericHandle(this, entry);
+        if (mh == null) mh = buildGenericHandle(entry);
 
         assert mh != null : "we should have a method handle of some sort by now";
 
         return mh;
     }
 
-    MethodHandle buildJavaFieldHandle(InvokeSite site, CacheEntry entry, IRubyObject self) throws Throwable {
+    MethodHandle buildJavaFieldHandle(CacheEntry entry, IRubyObject self) throws Throwable {
         DynamicMethod method = entry.method;
 
         if (method instanceof InstanceFieldGetter) {
             // only matching arity
-            if (site.arity != 0 || site.signature.lastArgType() == Block.class) return null;
+            if (arity != 0 || signature.lastArgType() == Block.class) return null;
 
             Field field = ((InstanceFieldGetter) method).getField();
 
@@ -565,7 +1045,7 @@ public abstract class InvokeSite extends MutableCallSite {
                     .invokeStaticQuiet(lookup(), JavaUtil.class, "objectFromJavaProxy");
 
             fieldHandle = Binder
-                    .from(site.type())
+                    .from(type())
                     .permute(2)
                     .filter(0, receiverConverter)
                     .filterReturn(filter)
@@ -577,7 +1057,7 @@ public abstract class InvokeSite extends MutableCallSite {
             return fieldHandle;
         } else if (method instanceof InstanceFieldSetter) {
             // only matching arity
-            if (site.arity != 1 || site.signature.lastArgType() == Block.class) return null;
+            if (arity != 1 || signature.lastArgType() == Block.class) return null;
 
             Field field = ((InstanceFieldSetter) method).getField();
 
@@ -598,7 +1078,7 @@ public abstract class InvokeSite extends MutableCallSite {
                     .invokeStaticQuiet(lookup(), JavaUtil.class, "objectFromJavaProxy");
 
             fieldHandle = Binder
-                    .from(site.type())
+                    .from(type())
                     .permute(2, 3)
                     .filter(0, receiverConverter)
                     .filterReturn(constant(IRubyObject.class, self.getRuntime().getNil()))
@@ -842,7 +1322,7 @@ public abstract class InvokeSite extends MutableCallSite {
                     .from(signature.changeReturn(boolean.class))
                     .permute("self")
                     .insert(0, "selfClass", RubyClass.class, testClass)
-                    .invokeStaticQuiet(LOOKUP, Bootstrap.class, "testType");
+                    .invokeStaticQuiet(LOOKUP, InvokeSite.class, "testType");
         }
     }
 

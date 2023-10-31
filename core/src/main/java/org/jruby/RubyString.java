@@ -744,7 +744,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (enc == null) enc = ASCIIEncoding.INSTANCE;
         int index = enc.getIndex();
         EmptyByteListHolder bytes;
-        if (index < EMPTY_BYTELISTS.length && (bytes = EMPTY_BYTELISTS[index]) != null) {
+        EmptyByteListHolder[] emptyBytelists = EMPTY_BYTELISTS;
+        if (index < emptyBytelists.length && (bytes = emptyBytelists[index]) != null) {
             return bytes;
         }
         return prepareEmptyByteList(enc);
@@ -753,12 +754,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     private static EmptyByteListHolder prepareEmptyByteList(Encoding enc) {
         if (enc == null) enc = ASCIIEncoding.INSTANCE;
         int index = enc.getIndex();
-        if (index >= EMPTY_BYTELISTS.length) {
-            EmptyByteListHolder tmp[] = new EmptyByteListHolder[index + 4];
-            System.arraycopy(EMPTY_BYTELISTS,0, tmp, 0, EMPTY_BYTELISTS.length);
-            EMPTY_BYTELISTS = tmp;
+        EmptyByteListHolder[] emptyBytelists = EMPTY_BYTELISTS;
+        if (index >= emptyBytelists.length) {
+            EMPTY_BYTELISTS = emptyBytelists = Arrays.copyOfRange(emptyBytelists, 0, index + 4);
         }
-        return EMPTY_BYTELISTS[index] = new EmptyByteListHolder(enc);
+        return emptyBytelists[index] = new EmptyByteListHolder(enc);
     }
 
     public static RubyString newEmptyString(Ruby runtime, RubyClass metaClass, Encoding enc) {
