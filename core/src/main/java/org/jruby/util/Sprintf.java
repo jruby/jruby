@@ -607,78 +607,97 @@ public class Sprintf {
                 }
 
 
-                    case 'a':
-                    case 'A': {
-                        arg = args.getArg();
+                case 'a':
+                case 'A': {
+                    arg = args.getArg();
 
-                        final boolean positive = isPositive(arg);
-                        double fval = RubyKernel.new_float(runtime, arg).getDoubleValue();
-                        boolean negative = fval < 0.0d || (fval == 0.0d && Double.doubleToLongBits(fval) == Double.doubleToLongBits(-0.0));
-                        boolean isnan = Double.isNaN(fval);
-                        boolean isinf = fval == Double.POSITIVE_INFINITY || fval == Double.NEGATIVE_INFINITY;
+                    ByteList bytes = new ByteList();
+                    final boolean positive = isPositive(arg);
+                    double fval = RubyKernel.new_float(runtime, arg).getDoubleValue();
+                    boolean negative = fval < 0.0d || (fval == 0.0d && Double.doubleToLongBits(fval) == Double.doubleToLongBits(-0.0));
+                    boolean isnan = Double.isNaN(fval);
+                    boolean isinf = fval == Double.POSITIVE_INFINITY || fval == Double.NEGATIVE_INFINITY;
 
-                        if (isnan || isinf) {
-                            printSpecialValue(buf, flags, width, isnan, negative);
+                    if (isnan || isinf) {
+                        printSpecialValue(buf, flags, width, isnan, negative);
 
-                            offset++;
-                            incomplete = false;
-                            break;
-                        }
-
-                        long exponent = getExponent(arg);
-                        final byte[] mantissaBytes = getMantissaBytes(arg);
-
-                        if (!positive) {
-                            buf.append('-');
-                        } else if ((flags & FLAG_PLUS) != 0) {
-                            buf.append('+');
-                        } else if ((flags & FLAG_SPACE) != 0) {
-                            buf.append(' ');
-                        }
-                        buf.append('0');
-                        buf.append(fchar == 'a' ? 'x' : 'X');
-                        if (mantissaBytes[0] == 0) {
-                            exponent = 0;
-                            buf.append('0');
-                            if (precision > 0 || (flags & FLAG_SPACE) != 0) {
-                                buf.append('.');
-                                while (precision > 0) {
-                                    buf.append('0');
-                                    precision--;
-                                }
-                            }
-                        } else {
-                            int i = 0;
-                            int digit = getDigit(i++, mantissaBytes);
-                            if (digit == 0) {
-                                digit = getDigit(i++, mantissaBytes);
-                            }
-                            assert digit == 1;
-                            buf.append('1');
-                            int digits = getNumberOfDigits(mantissaBytes);
-                            if (i < digits || (flags & FLAG_SPACE) != 0 || precision > 0) {
-                                buf.append('.');
-                            }
-
-                            if ((flags & FLAG_PRECISION) == 0) {
-                                precision = -1;
-                            }
-
-                            while ((precision < 0 && i < digits) || precision > 0) {
-                                digit = getDigit(i++, mantissaBytes);
-                                buf.append((fchar == 'a' ? HEX_DIGITS : HEX_DIGITS_UPPER_CASE)[digit]);
-                                precision--;
-                            }
-                        }
-
-                        buf.append(fchar == 'a' ? 'p' : 'P');
-                        if (exponent >= 0) {
-                            buf.append('+');
-                        }
-                        buf.append(Long.toString(exponent).getBytes());
                         offset++;
                         incomplete = false;
                         break;
+                    }
+
+                    long exponent = getExponent(arg);
+                    final byte[] mantissaBytes = getMantissaBytes(arg);
+
+                    if (!positive) {
+                        bytes.append('-');
+                    } else if ((flags & FLAG_PLUS) != 0) {
+                        bytes.append('+');
+                    } else if ((flags & FLAG_SPACE) != 0) {
+                        bytes.append(' ');
+                    }
+                    bytes.append('0');
+                    bytes.append(fchar == 'a' ? 'x' : 'X');
+                    if (mantissaBytes[0] == 0) {
+                        exponent = 0;
+                        bytes.append('0');
+                        if (precision > 0 || (flags & FLAG_SPACE) != 0) {
+                            bytes.append('.');
+                            while (precision > 0) {
+                                bytes.append('0');
+                                precision--;
+                            }
+                        }
+                    } else {
+                        int i = 0;
+                        int digit = getDigit(i++, mantissaBytes);
+                        if (digit == 0) {
+                            digit = getDigit(i++, mantissaBytes);
+                        }
+                        assert digit == 1;
+                        bytes.append('1');
+                        int digits = getNumberOfDigits(mantissaBytes);
+                        if (i < digits || (flags & FLAG_SPACE) != 0 || precision > 0) {
+                            bytes.append('.');
+                        }
+
+                        if ((flags & FLAG_PRECISION) == 0) {
+                            precision = -1;
+                        }
+
+                        while ((precision < 0 && i < digits) || precision > 0) {
+                            digit = getDigit(i++, mantissaBytes);
+                            bytes.append((fchar == 'a' ? HEX_DIGITS : HEX_DIGITS_UPPER_CASE)[digit]);
+                            precision--;
+                        }
+                    }
+
+                    bytes.append(fchar == 'a' ? 'p' : 'P');
+                    if (exponent >= 0) {
+                        bytes.append('+');
+                    }
+                    bytes.append(Long.toString(exponent).getBytes());
+
+                    int bytesLength = bytes.length(); // We know numbers will be 7 bit ascii.
+                    if (width > bytesLength) {
+                        if ((flags & FLAG_MINUS) == 0) {
+                            if ((flags & FLAG_PRECISION) != 0 || ((flags & FLAG_ZERO) != 0)) {
+                                buf.fill('0', width - bytesLength);
+                            } else {
+                                buf.fill(' ', width - bytesLength);
+                            }
+                        }
+                    }
+
+                    buf.append(bytes);
+
+                    if (width > bytesLength && ((flags & FLAG_MINUS) != 0)) {
+                        buf.fill(' ', width - bytesLength);
+                    }
+
+                    offset++;
+                    incomplete = false;
+                    break;
                     }
                 case 'p':
                 case 's': { // format_s:
