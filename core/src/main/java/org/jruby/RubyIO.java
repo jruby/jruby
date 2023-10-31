@@ -86,6 +86,7 @@ import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.ShellLauncher.POpenProcess;
 import org.jruby.util.*;
+import org.jruby.util.cli.Options;
 import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.FilenoUtil;
@@ -3137,7 +3138,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         fptr = getOpenFileChecked();
 
-        final boolean locked = fptr.lock(); int n;
+        final boolean locked = fptr.lock();
+        int n;
         try {
             fptr.checkByteReadable(context);
 
@@ -3794,6 +3796,14 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @JRubyMethod(name = "select", required = 1, optional = 3, checkArity = false, meta = true)
     public static IRubyObject select(ThreadContext context, IRubyObject recv, IRubyObject[] argv) {
+        if (Options.FIBER_SCHEDULER.load()) {
+            IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
+            if (!scheduler.isNil()) {
+                IRubyObject result = FiberScheduler.ioSelectv(context, scheduler, argv);
+                if (result != UNDEF) return result;
+            }
+        }
+
         int argc = Arity.checkArgumentCount(context, argv, 1, 4);
 
         IRubyObject read, write, except, _timeout;
@@ -4790,14 +4800,14 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     @JRubyMethod(name = "pread")
-    public IRubyObject pread(ThreadContext context, IRubyObject len, IRubyObject offset, IRubyObject str) {
+    public IRubyObject pread(ThreadContext context, IRubyObject _length, IRubyObject _from, IRubyObject str) {
         Ruby runtime = context.runtime;
 
-        int count = len.convertToInteger().getIntValue();
-        long off = offset.convertToInteger().getIntValue();
+        int length = _length.convertToInteger().getIntValue();
+        int from = _from.convertToInteger().getIntValue();
 
-        RubyString string = EncodingUtils.setStrBuf(runtime, str, count);
-        if (count == 0) return string;
+        RubyString string = EncodingUtils.setStrBuf(runtime, str, length);
+        if (length == 0) return string;
 
         OpenFile fptr = getOpenFile();
         fptr.checkByteReadable(context);
@@ -4806,54 +4816,14 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         fptr.checkClosed();
 
         ByteList strByteList = string.getByteList();
+        int read;
 
-        try {
-            return context.getThread().executeTaskBlocking(context, fd, new RubyThread.Task<ChannelFD, IRubyObject>() {
-                @Override
-                public IRubyObject run(ThreadContext context, ChannelFD channelFD) throws InterruptedException {
-                    Ruby runtime = context.runtime;
+        ByteBuffer wrap = ByteBuffer.wrap(strByteList.unsafeBytes(), strByteList.begin(), length);
+        read = OpenFile.preadInternal(context, fptr, fd, wrap, from, length);
 
-                    ByteBuffer wrap = ByteBuffer.wrap(strByteList.unsafeBytes(), strByteList.begin(), count);
-                    int read = 0;
+        string.setReadLength(read);
 
-                    try {
-                        if (fd.chFile != null) {
-                            read = fd.chFile.read(wrap, off);
-
-                            if (read == -1) {
-                                throw runtime.newEOFError();
-                            }
-                        } else if (fd.chNative != null) {
-                            read = (int) runtime.getPosix().pread(fd.chNative.getFD(), wrap, count, off);
-
-                            if (read == 0) {
-                                throw runtime.newEOFError();
-                            } else if (read == -1) {
-                                throw runtime.newErrnoFromInt(runtime.getPosix().errno());
-                            }
-                        } else if (fd.chRead != null) {
-                            read = fd.chRead.read(wrap);
-                        } else {
-                            throw runtime.newIOError("not opened for reading");
-                        }
-                    } catch (IOException ioe) {
-                        throw Helpers.newIOErrorFromException(runtime, ioe);
-                    }
-
-                    string.setReadLength(read);
-
-                    return string;
-                }
-
-                @Override
-                public void wakeup(RubyThread thread, ChannelFD channelFD) {
-                    // FIXME: NO! This will kill many native channels. Must be nonblocking to interrupt.
-                    thread.getNativeThread().interrupt();
-                }
-            });
-        } catch (InterruptedException ie) {
-            throw context.runtime.newConcurrencyError("IO operation interrupted");
-        }
+        return string;
     }
 
     @JRubyMethod(name = "pwrite")
@@ -4868,7 +4838,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             string = str.convertToString();
         }
 
-        long off = offset.convertToInteger().getLongValue();
+        int off = offset.convertToInteger().getIntValue();
 
         RubyIO io = GetWriteIO();
         fptr = io.getOpenFile();
@@ -4879,41 +4849,14 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         ByteList strByteList = buf.getByteList();
 
-        try {
-            return context.getThread().executeTaskBlocking(context, fd, new RubyThread.Task<ChannelFD, IRubyObject>() {
-                @Override
-                public IRubyObject run(ThreadContext context, ChannelFD channelFD) throws InterruptedException {
-                    Ruby runtime = context.runtime;
+        int length = strByteList.realSize();
+        ByteBuffer wrap = ByteBuffer.wrap(strByteList.unsafeBytes(), strByteList.begin(), length);
 
-                    int length = strByteList.realSize();
-                    ByteBuffer wrap = ByteBuffer.wrap(strByteList.unsafeBytes(), strByteList.begin(), length);
-                    int written = 0;
+        int written;
 
-                    try {
-                        if (fd.chFile != null) {
-                            written = fd.chFile.write(wrap, off);
-                        } else if (fd.chNative != null) {
-                            written = (int) runtime.getPosix().pwrite(fd.chNative.getFD(), wrap, length, off);
-                        } else if (fd.chWrite != null) {
-                            written = fd.chWrite.write(wrap);
-                        } else {
-                            throw runtime.newIOError("not opened for writing");
-                        }
-                    } catch (IOException ioe) {
-                        throw Helpers.newIOErrorFromException(runtime, ioe);
-                    }
-                    return runtime.newFixnum(written);
-                }
+        written = OpenFile.pwriteInternal(context, fptr, fd, wrap, off, length);
 
-                @Override
-                public void wakeup(RubyThread thread, ChannelFD channelFD) {
-                    // FIXME: NO! This will kill many native channels. Must be nonblocking to interrupt.
-                    thread.getNativeThread().interrupt();
-                }
-            });
-        } catch (InterruptedException ie) {
-            throw context.runtime.newConcurrencyError("IO operation interrupted");
-        }
+        return context.runtime.newFixnum(written);
     }
 
     /**
@@ -5262,7 +5205,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             rb_io_fptr_finalize(runtime, openFile);
             openFile = null;
         }
-        openFile = new OpenFile(runtime.getNil());
+        openFile = new OpenFile(this, runtime.getNil());
         runtime.addInternalFinalizer(openFile);
         return openFile;
     }

@@ -33,6 +33,7 @@ import org.jruby.RubyClass;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.load.Library;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.cli.Options;
 
 /**
  * A thread-based implementation of Ruby 1.9 Fiber library.
@@ -42,6 +43,11 @@ public class ThreadFiberLibrary {
         RubyClass cFiber = runtime.defineClass("Fiber", runtime.getObject(), ThreadFiber::new);
 
         cFiber.defineAnnotatedMethods(ThreadFiber.class);
+
+        if (Options.FIBER_SCHEDULER.load()) {
+            // define additional methods for Fiber::Scheduler support
+            cFiber.defineAnnotatedMethods(ThreadFiber.FiberSchedulerSupport.class);
+        }
 
         return cFiber;
     }
