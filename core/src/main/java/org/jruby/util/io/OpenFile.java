@@ -28,7 +28,6 @@ import org.jcodings.transcode.EConvResult;
 import org.jruby.Finalizable;
 import org.jruby.Ruby;
 import org.jruby.RubyArgsFile;
-import org.jruby.RubyBasicObject;
 import org.jruby.RubyBignum;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyException;
@@ -48,6 +47,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.ShellLauncher;
 import org.jruby.util.StringSupport;
+import org.jruby.util.cli.Options;
 
 import static org.jruby.util.StringSupport.*;
 
@@ -61,6 +61,7 @@ public class OpenFile implements Finalizable {
         writeconvPreEcopts = nil;
         encs.ecopts = nil;
         posix = new PosixShim(runtime);
+        fiberScheduler = Options.FIBER_SCHEDULER.load();
     }
 
     // IO Mode flags
@@ -161,6 +162,8 @@ public class OpenFile implements Finalizable {
 
     private final Ptr spPtr = new Ptr();
     private final Ptr dpPtr = new Ptr();
+
+    private final boolean fiberScheduler;
 
     public void clearStdio() {
         stdio_file = null;
@@ -462,7 +465,7 @@ public class OpenFile implements Finalizable {
 
     // rb_io_wait_writable
     public boolean waitWritable(ThreadContext context, long timeout) {
-        IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
+        IRubyObject scheduler = fiberScheduler ? context.getFiberCurrentThread().getSchedulerCurrent() : null;
 
         boolean locked = lock();
         try {
@@ -477,7 +480,7 @@ public class OpenFile implements Finalizable {
                     return true;
                 case EAGAIN:
                 case EWOULDBLOCK:
-                    if (!scheduler.isNil()) {
+                    if (fiberScheduler && !scheduler.isNil()) {
                         return FiberScheduler.ioWaitWritable(context, scheduler, RubyIO.newIO(context.runtime, channel())).isTrue();
                     }
 
@@ -498,7 +501,7 @@ public class OpenFile implements Finalizable {
 
     // rb_io_wait_readable
     public boolean waitReadable(ThreadContext context, long timeout) {
-        IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
+        IRubyObject scheduler = fiberScheduler ? context.getFiberCurrentThread().getSchedulerCurrent() : null;
 
         boolean locked = lock();
         try {
@@ -513,7 +516,7 @@ public class OpenFile implements Finalizable {
                     return true;
                 case EAGAIN:
                 case EWOULDBLOCK:
-                    if (!scheduler.isNil()) {
+                    if (fiberScheduler && !scheduler.isNil()) {
                         return FiberScheduler.ioWaitReadable(context, scheduler, RubyIO.newIO(context.runtime, channel())).isTrue();
                     }
 
@@ -1478,12 +1481,14 @@ public class OpenFile implements Finalizable {
     // rb_io_buffer_read_internal
     public static int readInternal(ThreadContext context, OpenFile fptr, ChannelFD fd, ByteBuffer buffer, int buf, int count) {
         // try scheduler first
-        IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
-        if (!scheduler.isNil()) {
-            IRubyObject result = FiberScheduler.ioReadMemory(context, scheduler, fptr.io, buffer, buf, count);
+        if (fptr.fiberScheduler) {
+            IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
+            if (!scheduler.isNil()) {
+                IRubyObject result = FiberScheduler.ioReadMemory(context, scheduler, fptr.io, buffer, buf, count);
 
-            if (result != null) {
-                return FiberScheduler.resultApply(context, result);
+                if (result != null) {
+                    return FiberScheduler.resultApply(context, result);
+                }
             }
         }
 
@@ -1513,12 +1518,14 @@ public class OpenFile implements Finalizable {
 
     public static int preadInternal(ThreadContext context, OpenFile fptr, ChannelFD fd, ByteBuffer buffer, int from, int length) {
         // try scheduler first
-        IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
-        if (!scheduler.isNil()) {
-            IRubyObject result = FiberScheduler.ioPReadMemory(context, scheduler, fptr.io, buffer, from, length, 0);
+        if (fptr.fiberScheduler) {
+            IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
+            if (!scheduler.isNil()) {
+                IRubyObject result = FiberScheduler.ioPReadMemory(context, scheduler, fptr.io, buffer, from, length, 0);
 
-            if (result != null) {
-                return FiberScheduler.resultApply(context, result);
+                if (result != null) {
+                    return FiberScheduler.resultApply(context, result);
+                }
             }
         }
 
@@ -1532,12 +1539,14 @@ public class OpenFile implements Finalizable {
 
     public static int pwriteInternal(ThreadContext context, OpenFile fptr, ChannelFD fd, ByteBuffer buffer, int from, int length) {
         // try scheduler first
-        IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
-        if (!scheduler.isNil()) {
-            IRubyObject result = FiberScheduler.ioPWriteMemory(context, scheduler, fptr.io, buffer, from, length, 0);
+        if (fptr.fiberScheduler) {
+            IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
+            if (!scheduler.isNil()) {
+                IRubyObject result = FiberScheduler.ioPWriteMemory(context, scheduler, fptr.io, buffer, from, length, 0);
 
-            if (result != null) {
-                return FiberScheduler.resultApply(context, result);
+                if (result != null) {
+                    return FiberScheduler.resultApply(context, result);
+                }
             }
         }
 
@@ -2479,12 +2488,14 @@ public class OpenFile implements Finalizable {
 
     // rb_io_buffer_write_internal
     public static int writeInternal(ThreadContext context, OpenFile fptr, ByteBuffer bufBytes, int buf, int count) {
-        IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
-        if (!scheduler.isNil()) {
-            IRubyObject result = FiberScheduler.ioWriteMemory(context, scheduler, fptr.io, bufBytes, buf, count);
+        if (fptr.fiberScheduler) {
+            IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
+            if (!scheduler.isNil()) {
+                IRubyObject result = FiberScheduler.ioWriteMemory(context, scheduler, fptr.io, bufBytes, buf, count);
 
-            if (result != null) {
-                return FiberScheduler.resultApply(context, result);
+                if (result != null) {
+                    return FiberScheduler.resultApply(context, result);
+                }
             }
         }
 

@@ -691,38 +691,40 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         return threadFiber.thread.backtrace_locations(context, level, length);
     }
 
-    // MRI: rb_fiber_s_schedule_kw and rb_fiber_s_schedule, kw passes on context
-    @JRubyMethod(name = "schedule", meta = true, rest = true, keywords = true)
-    public static IRubyObject schedule(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-        RubyThread thread = context.getThread();
-        IRubyObject scheduler = thread.getScheduler();
-        IRubyObject fiber = context.nil;
+    public static class FiberSchedulerSupport {
+        // MRI: rb_fiber_s_schedule_kw and rb_fiber_s_schedule, kw passes on context
+        @JRubyMethod(name = "schedule", meta = true, rest = true, keywords = true)
+        public static IRubyObject schedule(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+            RubyThread thread = context.getThread();
+            IRubyObject scheduler = thread.getScheduler();
+            IRubyObject fiber = context.nil;
 
-        if (!scheduler.isNil()) {
-            fiber = scheduler.callMethod(context, "fiber", args, block);
-        } else {
-            throw context.runtime.newRuntimeError("No scheduler is available!");
+            if (!scheduler.isNil()) {
+                fiber = scheduler.callMethod(context, "fiber", args, block);
+            } else {
+                throw context.runtime.newRuntimeError("No scheduler is available!");
+            }
+
+            return fiber;
         }
 
-        return fiber;
-    }
+        // MRI: rb_fiber_s_scheduler
+        @JRubyMethod(name = "scheduler", meta = true)
+        public static IRubyObject get_scheduler(ThreadContext context, IRubyObject self) {
+            return context.getFiberCurrentThread().getScheduler();
+        }
 
-    // MRI: rb_fiber_s_scheduler
-    @JRubyMethod(name = "scheduler", meta = true)
-    public static IRubyObject get_scheduler(ThreadContext context, IRubyObject self) {
-        return context.getFiberCurrentThread().getScheduler();
-    }
+        // MRI: rb_fiber_current_scheduler
+        @JRubyMethod(name = "current_scheduler", meta = true)
+        public static IRubyObject current_scheduler(ThreadContext context, IRubyObject self) {
+            return context.getFiberCurrentThread().getSchedulerCurrent();
+        }
 
-    // MRI: rb_fiber_current_scheduler
-    @JRubyMethod(name = "current_scheduler", meta = true)
-    public static IRubyObject current_scheduler(ThreadContext context, IRubyObject self) {
-        return context.getFiberCurrentThread().getSchedulerCurrent();
-    }
-
-    // MRI: rb_fiber_set_scheduler
-    @JRubyMethod(name = "set_scheduler", meta = true)
-    public static IRubyObject set_scheduler(ThreadContext context, IRubyObject self, IRubyObject scheduler) {
-        return context.getFiberCurrentThread().setFiberScheduler(scheduler);
+        // MRI: rb_fiber_set_scheduler
+        @JRubyMethod(name = "set_scheduler", meta = true)
+        public static IRubyObject set_scheduler(ThreadContext context, IRubyObject self, IRubyObject scheduler) {
+            return context.getFiberCurrentThread().setFiberScheduler(scheduler);
+        }
     }
 
     public FiberData getData() {

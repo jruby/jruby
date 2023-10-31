@@ -443,7 +443,11 @@ public final class Ruby implements Constantizable {
             randomClass = null;
         }
         ioClass = RubyIO.createIOClass(this);
-        ioBufferClass = RubyIOBuffer.createIOBufferClass(this);
+        if (Options.FIBER_SCHEDULER.load()) {
+            ioBufferClass = RubyIOBuffer.createIOBufferClass(this);
+        } else {
+            ioBufferClass = null;
+        }
 
         structClass = profile.allowClass("Struct") ? RubyStruct.createStructClass(this) : null;
         bindingClass = profile.allowClass("Binding") ? RubyBinding.createBindingClass(this) : null;
@@ -1718,11 +1722,14 @@ public final class Ruby implements Constantizable {
 
         RubyClass runtimeError = this.runtimeError;
         ObjectAllocator runtimeErrorAllocator = runtimeError.getAllocator();
-        bufferLockedError = ioBufferClass.defineClassUnder("LockedError", runtimeError, runtimeErrorAllocator);
-        bufferAllocationError = ioBufferClass.defineClassUnder("AllocationError", runtimeError, runtimeErrorAllocator);
-        bufferAccessError = ioBufferClass.defineClassUnder("AccessError", runtimeError, runtimeErrorAllocator);
-        bufferInvalidatedError = ioBufferClass.defineClassUnder("InvalidatedError", runtimeError, runtimeErrorAllocator);
-        bufferMaskError = ioBufferClass.defineClassUnder("MaskError", runtimeError, runtimeErrorAllocator);
+
+        if (Options.FIBER_SCHEDULER.load()) {
+            bufferLockedError = ioBufferClass.defineClassUnder("LockedError", runtimeError, runtimeErrorAllocator);
+            bufferAllocationError = ioBufferClass.defineClassUnder("AllocationError", runtimeError, runtimeErrorAllocator);
+            bufferAccessError = ioBufferClass.defineClassUnder("AccessError", runtimeError, runtimeErrorAllocator);
+            bufferInvalidatedError = ioBufferClass.defineClassUnder("InvalidatedError", runtimeError, runtimeErrorAllocator);
+            bufferMaskError = ioBufferClass.defineClassUnder("MaskError", runtimeError, runtimeErrorAllocator);
+        }
 
         initErrno();
 

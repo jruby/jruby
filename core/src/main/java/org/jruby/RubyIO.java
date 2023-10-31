@@ -86,6 +86,7 @@ import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.ShellLauncher.POpenProcess;
 import org.jruby.util.*;
+import org.jruby.util.cli.Options;
 import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.FilenoUtil;
@@ -3795,10 +3796,12 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @JRubyMethod(name = "select", required = 1, optional = 3, checkArity = false, meta = true)
     public static IRubyObject select(ThreadContext context, IRubyObject recv, IRubyObject[] argv) {
-        IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
-        if (!scheduler.isNil()) {
-            IRubyObject result = FiberScheduler.ioSelectv(context, scheduler, argv);
-            if (result != UNDEF) return result;
+        if (Options.FIBER_SCHEDULER.load()) {
+            IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
+            if (!scheduler.isNil()) {
+                IRubyObject result = FiberScheduler.ioSelectv(context, scheduler, argv);
+                if (result != UNDEF) return result;
+            }
         }
 
         int argc = Arity.checkArgumentCount(context, argv, 1, 4);

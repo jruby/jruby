@@ -46,7 +46,8 @@ public enum Category {
     JAVA_INTEGRATION("java integration"),
     PROFILING("profiling"),
     CLI("command line options"),
-    COMPLIANCE("compliance options");
+    COMPLIANCE("compliance options"),
+    EXPERIMENTAL("experimental features");
 
     Category(String desc) {
         this.desc = desc;
