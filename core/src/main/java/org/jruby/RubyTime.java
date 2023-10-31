@@ -410,7 +410,9 @@ public class RubyTime extends RubyObject {
         // validate_zone_name
         zoneName = zoneName.trim();
 
-        String zone = zoneName + offset;
+        String zone = zoneName;
+
+        if (offset != 0) zone = zone + offset;
 
         DateTimeZone cachedZone = runtime.getTimezoneCache().get(zone);
         if (cachedZone != null) {
@@ -431,9 +433,13 @@ public class RubyTime extends RubyObject {
     private static DateTimeZone timeZoneWithOffset(String zoneName, int offset) {
         if (zoneName.isEmpty()) {
             return DateTimeZone.forOffsetMillis(offset);
-        } else {
-            return new FixedDateTimeZone(zoneName, null, offset, offset);
+        } else if (offset == 0) {
+            DateTimeZone zone = DateTimeZone.forID(zoneName);
+
+            if (zone != null) return zone;
         }
+
+        return new FixedDateTimeZone(zoneName, null, offset, offset);
     }
 
     public RubyTime(Ruby runtime, RubyClass rubyClass) {
@@ -1305,29 +1311,29 @@ public class RubyTime extends RubyObject {
         if (nanosec != 0) {
             string.setInternalVariable("nano_num", runtime.newFixnum(nanosec));
             string.setInternalVariable("nano_den", runtime.newFixnum(1));
-        }
 
-        // submicro for 1.9.1 compat
-        byte[] submicro = new byte[2];
-        int len = 2;
-        submicro[1] = (byte)((nanosec % 10) << 4);
-        nanosec /= 10;
-        submicro[0] = (byte)(nanosec % 10);
-        nanosec /= 10;
-        submicro[0] |= (byte)((nanosec % 10) << 4);
-        if (submicro[1] == 0) len = 1;
-        string.setInternalVariable("submicro", RubyString.newString(runtime, submicro, 0, len));
+            // submicro for 1.9.1 compat
+            byte[] submicro = new byte[2];
+            int len = 2;
+            submicro[1] = (byte) ((nanosec % 10) << 4);
+            nanosec /= 10;
+            submicro[0] = (byte) (nanosec % 10);
+            nanosec /= 10;
+            submicro[0] |= (byte) ((nanosec % 10) << 4);
+            if (submicro[1] == 0) len = 1;
+            string.setInternalVariable("submicro", RubyString.newString(runtime, submicro, 0, len));
+        }
 
         // time zone
         final DateTimeZone zone = dt.getZone();
         if (zone != DateTimeZone.UTC) {
             long offset = zone.getOffset(dt.getMillis());
             string.setInternalVariable("offset", runtime.newFixnum(offset / 1000));
+        }
 
-            String zoneName = zone.getShortName(dt.getMillis());
-            if (!TIME_OFFSET_PATTERN.matcher(zoneName).matches()) {
-                string.setInternalVariable("zone", runtime.newString(zoneName));
-            }
+        String zoneName = zone.getShortName(dt.getMillis());
+        if (!TIME_OFFSET_PATTERN.matcher(zoneName).matches()) {
+            string.setInternalVariable("zone", RubyString.newUSASCIIString(runtime, zoneName));
         }
 
         return string;
