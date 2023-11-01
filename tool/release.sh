@@ -5,15 +5,16 @@
 #  2. Assumes jruby you are using in your PATH works
 
 set -x
-export JRUBY_VERSION=9.4.4.0
-export WINDOWS_VERSION=9_4_4_0
+export REPO=${REPO:=jruby}
+export JRUBY_VERSION=${JRUBY_VERSION:=9.4.5.0}
+export WINDOWS_VERSION=`echo $JRUBY_VERSION|sed -e 's/\./_/g'`
 echo $JRUBY_VERSION > VERSION
 mvn
 git add VERSION core/pom.xml lib/pom.xml  pom.xml shaded/pom.xml
 git commit -m "Version $JRUBY_VERSION updated for release"
 cd ..
 rm -rf release
-git clone jruby release
+git clone $REPO release
 cd release
 pwd
 mvn clean deploy -Psonatype-oss-release -Prelease
