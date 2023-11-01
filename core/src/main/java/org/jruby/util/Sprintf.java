@@ -460,7 +460,7 @@ public class Sprintf {
                         offset++;
                         break;
                     }
-                    // CHECK_FOR_WIDTH(flags);
+                    if ((flags & FLAG_WIDTH) != 0) raiseArgumentError(args,"width given twice");
                     width = number;
                     flags |= FLAG_WIDTH;
                     break;
@@ -509,9 +509,7 @@ public class Sprintf {
                 }
 
                 case '*':
-                    if ((flags & FLAG_WIDTH) != 0) {
-                        raiseArgumentError(args,"width given twice");
-                    }
+                    if ((flags & FLAG_WIDTH) != 0) raiseArgumentError(args,"width given twice");
                     flags |= FLAG_WIDTH;
                     int[] p_width = GETASTER(args, format, offset, length, true);
                     offset = p_width[0]; width = p_width[1];
@@ -626,9 +624,6 @@ public class Sprintf {
                         break;
                     }
 
-                    long exponent = getExponent(arg);
-                    final byte[] mantissaBytes = getMantissaBytes(arg);
-
                     if ((flags & FLAG_MINUS) != 0) {
                         if (!positive) {
                             bytes.append('-');
@@ -641,47 +636,9 @@ public class Sprintf {
                         bytes.append('0');
                         bytes.append(fchar == 'a' ? 'x' : 'X');
                     }
-                    if (mantissaBytes[0] == 0) {
-                        exponent = 0;
-                        bytes.append('0');
-                        if (precision > 0 || (flags & FLAG_SPACE) != 0) {
-                            bytes.append('.');
-                            while (precision > 0) {
-                                bytes.append('0');
-                                precision--;
-                            }
-                        }
-                    } else {
-                        int i = 0;
-                        int digit = getDigit(i++, mantissaBytes);
-                        if (digit == 0) {
-                            digit = getDigit(i++, mantissaBytes);
-                        }
-                        assert digit == 1;
-                        bytes.append('1');
-                        int digits = getNumberOfDigits(mantissaBytes);
-                        if (i < digits || (flags & FLAG_SPACE) != 0 || precision > 0) {
-                            bytes.append('.');
-                        }
-
-                        if ((flags & FLAG_PRECISION) == 0) {
-                            precision = -1;
-                        }
-
-                        while ((precision < 0 && i < digits) || precision > 0) {
-                            digit = getDigit(i++, mantissaBytes);
-                            bytes.append((fchar == 'a' ? HEX_DIGITS : HEX_DIGITS_UPPER_CASE)[digit]);
-                            precision--;
-                        }
-                    }
-
-                    bytes.append(fchar == 'a' ? 'p' : 'P');
-                    if (exponent >= 0) {
-                        bytes.append('+');
-                    }
-                    bytes.append(Long.toString(exponent).getBytes());
-
+                    precision = generateBinaryFloat(flags, precision, fchar, bytes, arg);
                     int bytesLength = bytes.length(); // We know numbers will be 7 bit ascii.
+
                     if ((flags & FLAG_MINUS) == 0) {
                         if (!positive) {
                             buf.append('-');
@@ -692,19 +649,19 @@ public class Sprintf {
                         }
                     }
 
-                    if (width > bytesLength) {
+                    if ((flags & FLAG_MINUS) == 0 && width <= bytesLength) {
+                        buf.append('0');
+                        buf.append(fchar == 'a' ? 'x' : 'X');
+                    } else if (width > bytesLength) {
                         if ((flags & FLAG_ZERO) != 0) {
                             buf.append('0');
                             buf.append(fchar == 'a' ? 'x' : 'X');
                             buf.fill('0', width - bytesLength - 2);
-                        } else {
+                        } else if ((flags & FLAG_MINUS) == 0) {
                             buf.fill(' ', width - bytesLength - 2);
                             buf.append('0');
                             buf.append(fchar == 'a' ? 'x' : 'X');
                         }
-                    } else if ((flags & FLAG_MINUS) == 0) {
-                        buf.append('0');
-                        buf.append(fchar == 'a' ? 'x' : 'X');
                     }
 
                     buf.append(bytes);
@@ -1559,6 +1516,52 @@ public class Sprintf {
                 args.warn(ID.TOO_MANY_ARGUMENTS, "too many arguments for format string");
             }
         }
+    }
+
+    private static int generateBinaryFloat(int flags, int precision, byte fchar, ByteList bytes, IRubyObject arg) {
+        long exponent = getExponent(arg);
+        final byte[] mantissaBytes = getMantissaBytes(arg);
+
+        if (mantissaBytes[0] == 0) {
+            exponent = 0;
+            bytes.append('0');
+            if (precision > 0 || (flags & FLAG_SPACE) != 0) {
+                bytes.append('.');
+                while (precision > 0) {
+                    bytes.append('0');
+                    precision--;
+                }
+            }
+        } else {
+            int i = 0;
+            int digit = getDigit(i++, mantissaBytes);
+            if (digit == 0) {
+                digit = getDigit(i++, mantissaBytes);
+            }
+            assert digit == 1;
+            bytes.append('1');
+            int digits = getNumberOfDigits(mantissaBytes);
+            if (i < digits || (flags & FLAG_SPACE) != 0 || precision > 0) {
+                bytes.append('.');
+            }
+
+            if ((flags & FLAG_PRECISION) == 0) {
+                precision = -1;
+            }
+
+            while ((precision < 0 && i < digits) || precision > 0) {
+                digit = getDigit(i++, mantissaBytes);
+                bytes.append((fchar == 'a' ? HEX_DIGITS : HEX_DIGITS_UPPER_CASE)[digit]);
+                precision--;
+            }
+        }
+
+        bytes.append(fchar == 'a' ? 'p' : 'P');
+        if (exponent >= 0) {
+            bytes.append('+');
+        }
+        bytes.append(Long.toString(exponent).getBytes());
+        return precision;
     }
 
     // prints nan or inf

@@ -1,7 +1,6 @@
 fails:File#printf integer formats u converts argument as a decimal number
 fails:File#printf flags # applies to format o does nothing for negative argument
 fails:File#printf flags # applies to gG does not remove trailing zeros
-fails:File#printf flags * raises ArgumentError when is mixed with width
 fails:File#printf reference by name %{name} style supports flags, width and precision
 fails:File#printf other formats c raises TypeError if argument is nil
 fails:File#printf other formats c raises TypeError if converting to Integer with to_int returns non-Integer

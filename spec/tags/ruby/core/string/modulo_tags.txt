@@ -1,8 +1,6 @@
 fails:String#% integer formats u converts argument as a decimal number
 fails:String#% flags # applies to format o does nothing for negative argument
 fails:String#% flags # applies to gG does not remove trailing zeros
-fails:String#% flags 0 (zero) applies to numeric formats bBdiouxXaAeEfgG and width is specified pads with zeros, not spaces
-fails:String#% flags * raises ArgumentError when is mixed with width
 fails:String#% reference by name %{name} style supports flags, width and precision
 fails:String#% other formats c raises TypeError if argument is nil
 fails:String#% other formats c raises TypeError if converting to Integer with to_int returns non-Integer
