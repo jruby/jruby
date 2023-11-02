@@ -4,11 +4,22 @@
 #  1. on failed run you must undo the version commit and probably should drop in nexus staging repo
 #  2. Assumes jruby you are using in your PATH works
 
-set -x
 export REPO=${REPO:=jruby}
-export JRUBY_VERSION=${JRUBY_VERSION:=9.4.5.0}
+
+java_version=$(java -version 2>&1 | head -1 | awk -F\" -e '{ print $2 }' | awk -F. '{print $1 "." $2 }')
+
+if [ "$java_version" != "1.8" ]; then
+   echo "You must use Java 1.8 to release JRuby"
+   exit 1
+fi
+
+[[ -z "$JRUBY_VERSION" ]] && { echo "set JRUBY_VERSION to something" ; exit 1; }
+
 export WINDOWS_VERSION=`echo $JRUBY_VERSION|sed -e 's/\./_/g'`
 echo $JRUBY_VERSION > VERSION
+
+set -x
+
 mvn
 git add VERSION core/pom.xml lib/pom.xml  pom.xml shaded/pom.xml
 git commit -m "Version $JRUBY_VERSION updated for release"
