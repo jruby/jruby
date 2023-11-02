@@ -804,7 +804,7 @@ public class Sprintf {
                     if ((flags & FLAG_SHARP) != 0) {
                         if (!zero || usePrefixForZero) {
                             switch (fchar) {
-                            case 'o': prefix = PREFIX_OCTAL; break;
+                            case 'o': if (!negative) prefix = PREFIX_OCTAL; break;
                             case 'x': prefix = PREFIX_HEX_LC; break;
                             case 'X': prefix = PREFIX_HEX_UC; break;
                             case 'b': prefix = PREFIX_BINARY_LC; break;

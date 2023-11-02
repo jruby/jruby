@@ -1,5 +1,4 @@
 fails:String#% integer formats u converts argument as a decimal number
-fails:String#% flags # applies to format o does nothing for negative argument
 fails:String#% flags # applies to gG does not remove trailing zeros
 fails:String#% reference by name %{name} style supports flags, width and precision
 fails:String#% other formats c raises TypeError if argument is nil
