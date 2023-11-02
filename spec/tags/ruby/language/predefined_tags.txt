@@ -4,5 +4,3 @@ windows:The predefined global constant ARGV contains Strings encoded in locale E
 fails:Predefined global $! in bodies without ensure should be cleared when an exception is rescued even when a non-local return is present
 fails(etc not .so/.jar):$LOAD_PATH.resolve_feature_path returns what will be loaded without actual loading, .so file
 fails:Execution variable $: default $LOAD_PATH entries until sitelibdir included have @gem_prelude_index set
-fails:Predefined global $, warns if assigned non-nil
-fails:Predefined global $; warns if assigned non-nil

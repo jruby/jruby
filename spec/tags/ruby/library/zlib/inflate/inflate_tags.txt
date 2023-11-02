@@ -1,2 +1,1 @@
 fails:Zlib::Inflate#inflate without break inflates chunked data
-fails:Zlib::Inflate#inflate has a binary encoding
