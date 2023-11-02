@@ -1,2 +1,2 @@
 unstable:Thread#terminate killing dying running does nothing
-fails(we disagree that ensures should not be run):Thread#terminate kills other fibers of that thread without running their ensure clauses
+unstable(and we disagree with ruby-core about whether ensures should run):Thread#terminate kills other fibers of that thread without running their ensure clauses

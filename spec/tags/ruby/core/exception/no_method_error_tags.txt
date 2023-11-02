@@ -1,2 +1,1 @@
 fails:NoMethodError#dup copies the name, arguments and receiver
-fails:NoMethodError#message uses #name to display the receiver if it is a class or a module

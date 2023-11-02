@@ -1,2 +1,0 @@
-fails:Warning.warn is called by Kernel.warn with nil category keyword
-fails:Warning.warn is called by Kernel.warn with given category keyword converted to a symbol
