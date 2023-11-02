@@ -1836,13 +1836,7 @@ public class Sprintf {
     }
 
     private static byte[] getUnsignedNegativeBytes(final long val) {
-        // calculation for negatives when %u specified
-        // for values >= Integer.MIN_VALUE * 2, MRI uses (the equivalent of)
-        //   long neg_u = (((long)Integer.MAX_VALUE + 1) << 1) + val
-        // for smaller values, BigInteger math is required to conform to MRI's
-        // result.
-        // relatively cheap test for 32-bit values
-        if (val >= Long.MIN_VALUE << 1) {
+        if (val < 0) {
             return ConvertBytes.longToCharBytes(((Long.MAX_VALUE + 1L) << 1) + val);
         }
         return getUnsignedNegativeBytes(BigInteger.valueOf(val));

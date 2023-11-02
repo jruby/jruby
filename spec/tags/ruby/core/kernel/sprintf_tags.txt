@@ -1,13 +1,7 @@
 fails(compiler):Kernel#sprintf passes some tests for negative %u
-fails:Kernel#sprintf integer formats u converts argument as a decimal number
-fails:Kernel#sprintf flags # applies to format o does nothing for negative argument
 fails:Kernel#sprintf flags # applies to gG does not remove trailing zeros
-fails:Kernel#sprintf flags * raises ArgumentError when is mixed with width
 fails:Kernel#sprintf reference by name %{name} style supports flags, width and precision
-fails:Kernel.sprintf integer formats u converts argument as a decimal number
-fails:Kernel.sprintf flags # applies to format o does nothing for negative argument
 fails:Kernel.sprintf flags # applies to gG does not remove trailing zeros
-fails:Kernel.sprintf flags * raises ArgumentError when is mixed with width
 fails:Kernel.sprintf reference by name %{name} style supports flags, width and precision
 fails:Kernel#sprintf other formats c raises TypeError if argument is nil
 fails:Kernel#sprintf other formats c raises TypeError if converting to Integer with to_int returns non-Integer

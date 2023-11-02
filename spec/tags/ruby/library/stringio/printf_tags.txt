@@ -1,4 +1,3 @@
-fails:StringIO#printf formatting integer formats u converts argument as a decimal number
 fails:StringIO#printf formatting flags # applies to gG does not remove trailing zeros
 fails:StringIO#printf formatting reference by name %{name} style supports flags, width and precision
 fails:StringIO#printf formatting other formats c raises TypeError if argument is nil
