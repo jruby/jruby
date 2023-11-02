@@ -4,7 +4,7 @@ id 'dummy:tomcat:1.0-SNAPSHOT'
 packaging 'war'
 
 # default versions will be overwritten by pom.rb from root directory
-properties( 'jruby.plugins.version' => '3.0.1',
+properties( 'jruby.plugins.version' => '3.0.2',
             'project.build.sourceEncoding' => 'utf-8' )
 
 pom( 'org.jruby:jruby', '${jruby.version}' )
@@ -12,7 +12,7 @@ pom( 'org.jruby:jruby', '${jruby.version}' )
 # a gem to be used
 gem 'flickraw', '0.9.7'
 
-extension 'org.jruby.maven:mavengem-wagon:2.0.1'
+extension 'org.jruby.maven:mavengem-wagon:2.0.2'
 repository :id => :mavengems, :url => 'mavengem:https://rubygems.org'
 
 jruby_plugin :gem, :includeRubygemsInTestResources => false, :includeRubygemsInResources => true, :jrubyVersion => '9.0.0.0' do
