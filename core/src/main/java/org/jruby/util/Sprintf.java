@@ -502,8 +502,48 @@ public class Sprintf {
                     if (nameEnd == nameStart) raiseArgumentError(args, ERR_MALFORMED_NAME);
 
                     ByteList localName = new ByteList(format, nameStart, nameEnd - nameStart, encoding, false);
-                    buf.append(args.getHashValue(localName, '{', '}').asString().getByteList());
-                    incomplete = false;
+                    IRubyObject value = args.getHashValue(localName, '{', '}');
+                    RubyString str = (RubyString) TypeConverter.convertToType(value, runtime.getString(), "to_s");
+                    ByteList bytes = str.getByteList();
+
+                    // peek to see if it has a format specifier.  If not we need to handle it now.
+                    if (offset < length && !isFormatSpecifier(format[offset]) || offset == length) {
+                        int len = bytes.length();
+                        Encoding enc = RubyString.checkEncoding(runtime, buf, bytes);
+                        if ((flags & (FLAG_PRECISION|FLAG_WIDTH)) != 0) {
+                            int strLen = str.strLength();
+                            if ((flags & FLAG_PRECISION) != 0 && precision < strLen) {
+                                strLen = precision;
+                                len = StringSupport.nth(enc, bytes.getUnsafeBytes(), bytes.begin(), bytes.begin() + bytes.getRealSize(), precision);
+                                if (len == -1) len = 0; // we might return -1 but MRI's rb_enc_nth does 0 for not-found
+                                len = len - bytes.begin();
+                            }
+                            /* need to adjust multi-byte string pos */
+                            if ((flags & FLAG_WIDTH) != 0 && width > strLen) {
+                                width -= strLen;
+                                if ((flags & FLAG_MINUS) == 0) {
+                                    buf.fill(' ', width);
+                                    width = 0;
+                                }
+                                buf.append(bytes.getUnsafeBytes(), bytes.begin(), len);
+                                if ((flags & FLAG_MINUS) != 0) {
+                                    buf.fill(' ', width);
+                                }
+                                buf.setEncoding(enc);
+
+                                offset++;
+                                incomplete = false;
+                                break;
+                            }
+                        } else {
+                            buf.append(bytes);
+                            incomplete = false;
+                        }
+                    } else {
+                        buf.append(bytes);
+                        incomplete = false;
+
+                    }
 
                     break;
                 }
@@ -1517,6 +1557,10 @@ public class Sprintf {
                 args.warn(ID.TOO_MANY_ARGUMENTS, "too many arguments for format string");
             }
         }
+    }
+
+    private static boolean isFormatSpecifier(byte b) {
+        return "aAbBcdeEfgGiopsuxX".contains(""+b);
     }
 
     private static int generateBinaryFloat(int flags, int precision, byte fchar, ByteList bytes, IRubyObject arg) {

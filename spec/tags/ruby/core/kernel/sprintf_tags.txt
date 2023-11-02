@@ -1,6 +1,4 @@
 fails(compiler):Kernel#sprintf passes some tests for negative %u
-fails:Kernel#sprintf reference by name %{name} style supports flags, width and precision
-fails:Kernel.sprintf reference by name %{name} style supports flags, width and precision
 fails:Kernel#sprintf other formats c raises TypeError if argument is nil
 fails:Kernel#sprintf other formats c raises TypeError if converting to Integer with to_int returns non-Integer
 fails:Kernel.sprintf other formats c raises TypeError if argument is nil

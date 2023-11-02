@@ -1,4 +1,3 @@
-fails:String#% reference by name %{name} style supports flags, width and precision
 fails:String#% other formats c raises TypeError if argument is nil
 fails:String#% other formats c raises TypeError if converting to Integer with to_int returns non-Integer
 fails:String#% %c raises error when a codepoint isn't representable in an encoding of a format string
