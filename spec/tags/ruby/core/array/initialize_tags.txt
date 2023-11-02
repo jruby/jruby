@@ -1,2 +1,1 @@
 fails:Array#initialize with (size, object=nil) raises an ArgumentError if size is too large
-fails:Array#initialize with no arguments does not use the given block

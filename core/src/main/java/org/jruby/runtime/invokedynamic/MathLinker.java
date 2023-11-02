@@ -29,13 +29,12 @@ package org.jruby.runtime.invokedynamic;
 
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.SwitchPoint;
-import java.util.List;
 
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
+import static org.jruby.util.CodegenUtils.p;
 
 import com.headius.invokebinder.Binder;
 import org.jruby.Ruby;
@@ -43,6 +42,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyNumeric;
+import org.jruby.ir.targets.indy.Bootstrap;
 import org.jruby.ir.targets.simple.NormalInvokeSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.MethodIndex;
@@ -54,11 +54,25 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+import org.objectweb.asm.Handle;
+import org.objectweb.asm.Opcodes;
 
 public class MathLinker {
 
     private static final Logger LOG = LoggerFactory.getLogger(MathLinker.class);
     public static final Lookup LOOKUP = lookup();
+    public static final Handle FIXNUM_OPERATOR_BOOTSTRAP = new Handle(
+            Opcodes.H_INVOKESTATIC,
+            p(MathLinker.class),
+            "fixnumOperatorBootstrap",
+            Bootstrap.BOOTSTRAP_LONG_STRING_INT_SIG,
+            false);
+    public static final Handle FLOAT_OPERATOR_BOOTSTRAP = new Handle(
+            Opcodes.H_INVOKESTATIC,
+            p(MathLinker.class),
+            "floatOperatorBootstrap",
+            Bootstrap.BOOTSTRAP_DOUBLE_STRING_INT_SIG,
+            false);
 
     static { // enable DEBUG output
         if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.setDebugEnable(true);
@@ -372,5 +386,4 @@ public class MathLinker {
         }
         return entry;
     }
-
 }

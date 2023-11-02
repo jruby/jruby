@@ -1,8 +1,5 @@
 fails:Marshal.dump with a Time dumps the zone and the offset
-fails(travis):Marshal.dump with an Exception dumps the message for the exception
 fails:Marshal.dump with a Symbol dumps a binary encoded Symbol
-fails:Marshal.dump with an Exception dumps an empty Exception
-fails:Marshal.dump with an Exception contains the filename in the backtrace
 fails:Marshal.dump with an Object dumps an Object with a non-US-ASCII instance variable
 fails:Marshal.dump with an Exception dumps the cause for the exception
 fails:Marshal.dump with a Time dumps the zone, but not the offset if zone is UTC

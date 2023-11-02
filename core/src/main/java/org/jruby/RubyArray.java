@@ -2924,7 +2924,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         }
         finally {
             if (modified) checkFrozen();
-            selectBangEnsure(runtime, len, beg, len0, len1);
+            selectBangEnsure(runtime, len0, len1);
         }
     }
 
@@ -3082,17 +3082,20 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         }
         finally {
             if (modified) checkFrozen();
-            selectBangEnsure(runtime, realLength, beg, len0, len1);
+            selectBangEnsure(runtime, len0, len1);
         }
     }
 
     // MRI: select_bang_ensure
-    private void selectBangEnsure(final Ruby runtime, final int len, final int beg,
-        int i1, int i2) {
-        if (i2 < i1) {
-            realLength = len - i1 + i2;
+    private void selectBangEnsure(final Ruby runtime, int i1, int i2) {
+        int len = realLength;
+
+        if (i2 < len && i2 < i1) {
+            int tail = 0;
+            int beg = begin;
             if (i1 < len) {
-                safeArrayCopy(runtime, values, beg + i1, values, beg + i2, len - i1);
+                tail = len - i1;
+                safeArrayCopy(runtime, values, beg + i1, values, beg + i2, tail);
             }
             else if (realLength > 0) {
                 // nil out left-overs to avoid leaks (MRI doesn't)
@@ -3102,6 +3105,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                     throw concurrentModification(runtime, ex);
                 }
             }
+            realLength = i2 + tail;
         }
     }
 

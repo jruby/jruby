@@ -397,6 +397,7 @@ public class ConcreteJavaProxy extends JavaProxy {
         RubyClass candidate = klass.getSuperClass();
         while (candidate != null && (candidate.isIncluded() || candidate.isPrepended())) { // up till 'real' superclass
             if (candidate == klass) return true;
+            candidate = candidate.getSuperClass();
         }
 
         return false;

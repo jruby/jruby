@@ -1,3 +1,2 @@
-fails(compiler):Kernel#sprintf passes some tests for negative %u
 fails:Kernel#sprintf %c raises error when a codepoint isn't representable in an encoding of a format string
 fails:Kernel.sprintf %c raises error when a codepoint isn't representable in an encoding of a format string

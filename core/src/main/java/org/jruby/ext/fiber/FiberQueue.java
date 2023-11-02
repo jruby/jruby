@@ -50,7 +50,7 @@ public class FiberQueue {
         this.queue = new ArrayBlockingQueue<>(1, false);
     }
 
-    final RubyThread.Task<FiberQueue, FiberRequest> takeTask = new RubyThread.Task<FiberQueue, FiberRequest>() {
+    private static final RubyThread.Task<FiberQueue, FiberRequest> TAKE_TASK = new RubyThread.Task<FiberQueue, FiberRequest>() {
         @Override
         public FiberRequest run(ThreadContext context, FiberQueue queue) throws InterruptedException {
             return queue.getQueueSafe().take();
@@ -89,7 +89,7 @@ public class FiberQueue {
 
     public FiberRequest pop(ThreadContext context) {
         try {
-            return context.getThread().executeTaskBlocking(context, this, takeTask);
+            return context.getThread().executeTaskBlocking(context, this, TAKE_TASK);
         } catch (InterruptedException ie) {
             throw context.runtime.newThreadError("interrupted in FiberQueue.pop");
         }

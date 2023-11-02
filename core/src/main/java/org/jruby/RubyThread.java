@@ -36,6 +36,7 @@ package org.jruby;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.ref.WeakReference;
+import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
@@ -64,7 +65,6 @@ import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.exceptions.Unrescuable;
-import org.jruby.ext.thread.Mutex;
 import org.jruby.internal.runtime.RubyNativeThread;
 import org.jruby.internal.runtime.RubyRunnable;
 import org.jruby.internal.runtime.ThreadLike;
@@ -84,7 +84,6 @@ import org.jruby.runtime.ExecutionContext;
 import org.jruby.runtime.backtrace.FrameType;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.load.LoadService;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.BlockingIO;
@@ -212,9 +211,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     /** Short circuit to avoid-re-scanning for interrupts */
     private volatile boolean pendingInterruptQueueChecked = false;
 
+    private volatile BlockingTask currentBlockingTask;
+
     private volatile Selector currentSelector;
 
     private volatile RubyThread fiberCurrentThread;
+
+    private IRubyObject scheduler;
+    private volatile int blockingCount = 1;
 
     private static final AtomicIntegerFieldUpdater<RubyThread> INTERRUPT_FLAG_UPDATER =
             AtomicIntegerFieldUpdater.newUpdater(RubyThread.class, "interruptFlag");
@@ -234,6 +238,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         finalResult = errorInfo = runtime.getNil();
         reportOnException = runtime.isReportOnException();
+        scheduler = runtime.getNil();
 
         this.adopted = adopted;
     }
@@ -430,6 +435,11 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
             // unlock all locked locks
             unlockAll();
+
+            // close scheduler, if any
+            if (scheduler != null && !scheduler.isNil()) {
+                FiberScheduler.close(getContext(), scheduler);
+            }
 
             // mark thread as DEAD
             beDead();
@@ -1785,25 +1795,53 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             ReadWrite<Data> task) throws InterruptedException {
         Status oldStatus = STATUS.get(this);
         try {
-            this.unblockArg = data;
-            this.unblockFunc = task;
-
-            // check for interrupt before going into blocking call
-            blockingThreadPoll(context);
-
-            STATUS.set(this, Status.SLEEP);
+            preReadWrite(context, data, task);
 
             return task.run(context, data, bytes, start, length);
         } finally {
-            STATUS.set(this, oldStatus);
-            this.unblockFunc = null;
-            this.unblockArg = null;
-            pollThreadEvents(context);
+            postReadWrite(context, oldStatus);
         }
     }
 
+    public <Data> int executeReadWrite(
+            ThreadContext context,
+            Data data, ByteBuffer bytes, int start, int length,
+            ReadWrite<Data> task) throws InterruptedException {
+        Status oldStatus = STATUS.get(this);
+        try {
+            preReadWrite(context, data, task);
+
+            return task.run(context, data, bytes, start, length);
+        } finally {
+            postReadWrite(context, oldStatus);
+        }
+    }
+
+    private void postReadWrite(ThreadContext context, Status oldStatus) {
+        STATUS.set(this, oldStatus);
+        this.unblockFunc = null;
+        this.unblockArg = null;
+        pollThreadEvents(context);
+    }
+
+    private <Data> void preReadWrite(ThreadContext context, Data data, ReadWrite<Data> task) {
+        this.unblockArg = data;
+        this.unblockFunc = task;
+
+        // check for interrupt before going into blocking call
+        blockingThreadPoll(context);
+
+        STATUS.set(this, Status.SLEEP);
+    }
+
     public interface ReadWrite<Data> extends Unblocker<Data> {
-        public int run(ThreadContext context, Data data, byte[] bytes, int start, int length) throws InterruptedException;
+        /**
+         * @deprecated Prefer version that receives ByteBuffer rather than recreating every time.
+         */
+        public default int run(ThreadContext context, Data data, byte[] bytes, int start, int length) throws InterruptedException {
+            return run(context, data, ByteBuffer.wrap(bytes), start, length);
+        }
+        public int run(ThreadContext context, Data data, ByteBuffer bytes, int start, int length) throws InterruptedException;
         public void wakeup(RubyThread thread, Data data);
     }
 
@@ -2558,100 +2596,51 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 f);
     }
 
-    private static final String MUTEX_FOR_THREAD_EXCLUSIVE = "MUTEX_FOR_THREAD_EXCLUSIVE";
-
-    @Deprecated // Thread.exclusive(&block)
-    @JRubyMethod(meta = true)
-    public static IRubyObject exclusive(ThreadContext context, IRubyObject recv, Block block) {
-        recv.callMethod(context, "warn", context.runtime.newString("Thread.exclusive is deprecated, use Thread::Mutex"));
-        return getMutexForThreadExclusive(context, (RubyClass) recv).synchronize(context, block);
-    }
-
-    private static Mutex getMutexForThreadExclusive(ThreadContext context, RubyClass recv) {
-        Mutex mutex = (Mutex) recv.getConstantNoConstMissing(MUTEX_FOR_THREAD_EXCLUSIVE, false, false);
-        if (mutex != null) return mutex;
-        synchronized (recv) {
-            mutex = (Mutex) recv.getConstantNoConstMissing(MUTEX_FOR_THREAD_EXCLUSIVE, false, false);
-            if (mutex == null) {
-                mutex = Mutex.newInstance(context, context.runtime.getMutex(), NULL_ARRAY, Block.NULL_BLOCK);
-                recv.setConstant(MUTEX_FOR_THREAD_EXCLUSIVE, mutex, true);
-            }
-            return mutex;
-        }
-    }
-
     /**
-     * This is intended to be used to raise exceptions in Ruby threads from non-
-     * Ruby threads like Timeout's thread.
+     * Set the scheduler for the current thread.
      *
-     * @param args Same args as for Thread#raise
+     * MRI: rb_fiber_scheduler_set
      */
-    @Deprecated
-    public void internalRaise(IRubyObject[] args) {
-        ThreadContext context = getRuntime().getCurrentContext();
-        genericRaise(context, context.getThread(), args);
-    }
+    public IRubyObject setFiberScheduler(IRubyObject scheduler) {
+//        VM_ASSERT(ruby_thread_has_gvl_p());
 
-    @Deprecated
-    public void receiveMail(ThreadService.Event event) {
-    }
+        scheduler.getClass(); // !null
 
-    @Deprecated
-    public void checkMail(ThreadContext context) {
-    }
-
-    @Deprecated
-    private volatile BlockingTask currentBlockingTask;
-
-    @Deprecated
-    public boolean selectForAccept(RubyIO io) {
-        return select(io, SelectionKey.OP_ACCEPT);
-    }
-
-    @Deprecated
-    public IRubyObject backtrace20(ThreadContext context, IRubyObject[] args) {
-        return backtrace(context);
-    }
-
-    @Deprecated
-    public IRubyObject backtrace(ThreadContext context, IRubyObject[] args) {
-        switch (args.length) {
-            case 0:
-                return backtrace(context);
-            case 1:
-                return backtrace(context, args[0]);
-            case 2:
-                return backtrace(context, args[0], args[1]);
-            default:
-                Arity.checkArgumentCount(context.runtime, args, 0, 2);
-                return null; // not reached
+        if (scheduler != null && !scheduler.isNil()) {
+            FiberScheduler.verifyInterface(scheduler);
         }
-    }
 
-    @Deprecated
-    public IRubyObject backtrace_locations(ThreadContext context, IRubyObject[] args) {
-        switch (args.length) {
-            case 0:
-                return backtrace_locations(context);
-            case 1:
-                return backtrace_locations(context, args[0]);
-            case 2:
-                return backtrace_locations(context, args[0], args[1]);
-            default:
-                Arity.checkArgumentCount(context.runtime, args, 0, 2);
-                return null; // not reached
+        if (!this.scheduler.isNil()) {
+            FiberScheduler.close(getContext(), this.scheduler);
         }
+
+        this.scheduler = scheduler;
+
+        return scheduler;
     }
 
-    @Deprecated
-    public static IRubyObject pass(IRubyObject recv) {
-        Ruby runtime = recv.getRuntime();
-
-        return pass(runtime.getCurrentContext(), recv);
+    public IRubyObject getScheduler() {
+        return scheduler;
     }
 
-    @Deprecated
-    public IRubyObject safe_level() {
-        throw getRuntime().newNotImplementedError("Thread-specific SAFE levels are not supported");
+    // MRI: rb_fiber_scheduler_current_for_threadptr, rb_fiber_scheduler_current
+    public IRubyObject getSchedulerCurrent() {
+        if (!isBlocking()) {
+            return scheduler;
+        }
+
+        return getRuntime().getNil();
+    }
+
+    public void incrementBlocking() {
+        blockingCount++;
+    }
+
+    public void decrementBlocking() {
+        blockingCount--;
+    }
+
+    public boolean isBlocking() {
+        return blockingCount > 0;
     }
 }
