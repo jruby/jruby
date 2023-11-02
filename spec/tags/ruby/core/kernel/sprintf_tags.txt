@@ -1,7 +1,5 @@
 fails(compiler):Kernel#sprintf passes some tests for negative %u
 fails:Kernel#sprintf other formats c raises TypeError if argument is nil
-fails:Kernel#sprintf other formats c raises TypeError if converting to Integer with to_int returns non-Integer
 fails:Kernel.sprintf other formats c raises TypeError if argument is nil
-fails:Kernel.sprintf other formats c raises TypeError if converting to Integer with to_int returns non-Integer
 fails:Kernel#sprintf %c raises error when a codepoint isn't representable in an encoding of a format string
 fails:Kernel.sprintf %c raises error when a codepoint isn't representable in an encoding of a format string

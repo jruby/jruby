@@ -1,2 +1,1 @@
 fails:StringIO#printf formatting other formats c raises TypeError if argument is nil
-fails:StringIO#printf formatting other formats c raises TypeError if converting to Integer with to_int returns non-Integer

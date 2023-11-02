@@ -612,7 +612,8 @@ public class Sprintf {
                     }
                     else {
                         // unsigned bits
-                        c = (int) arg.convertToInteger().getLongValue() & 0xFFFFFFFF;
+                        RubyInteger intValue = (RubyInteger) TypeConverter.convertToType(arg, runtime.getInteger(), "to_int");
+                        c = (int) intValue.getLongValue() & 0xFFFFFFFF;
                         try {
                             n = StringSupport.codeLength(encoding, c);
                         } catch (EncodingException e) {
