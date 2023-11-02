@@ -478,6 +478,44 @@ public class Pack {
         };
         converters['q' + BE] = tmp;
         if (Platform.BIT_WIDTH == 64) converters['j' + BE] = tmp;
+
+        // pointer; we can't provide a real pointer, so we just use identity hashcode
+        tmp = new QuadConverter(8) {
+            @Override
+            public IRubyObject decode(Ruby runtime, ByteBuffer format) {
+                return runtime.getNil();
+            }
+
+            @Override
+            public void encode(Ruby runtime, IRubyObject from, ByteList result) {
+                if (from.isNil()) {
+                    encodeLongBigEndian(result, 0);
+                } else {
+                    encodeLongBigEndian(result, System.identityHashCode(from));
+                }
+            }
+        };
+
+        converters['p'] = tmp;
+
+        // pointer; we can't provide a real pointer, so we just use identity hashcode
+        tmp = new QuadConverter(8) {
+            @Override
+            public IRubyObject decode(Ruby runtime, ByteBuffer format) {
+                return runtime.getNil();
+            }
+
+            @Override
+            public void encode(Ruby runtime, IRubyObject from, ByteList result) {
+                if (from.isNil()) {
+                    encodeLongBigEndian(result, 0);
+                } else {
+                    encodeLongBigEndian(result, System.identityHashCode(from.convertToString()));
+                }
+            }
+        };
+
+        converters['P'] = tmp;
     }
 
     public static int unpackInt_i(ByteBuffer enc) {
