@@ -1,6 +1,4 @@
-fails:Kernel.printf formatting io is specified flags # applies to gG does not remove trailing zeros
 fails:Kernel.printf formatting io is specified reference by name %{name} style supports flags, width and precision
-fails:Kernel.printf formatting io is not specified flags # applies to gG does not remove trailing zeros
 fails:Kernel.printf formatting io is not specified reference by name %{name} style supports flags, width and precision
 fails:Kernel.printf formatting io is specified other formats c raises TypeError if argument is nil
 fails:Kernel.printf formatting io is specified other formats c raises TypeError if converting to Integer with to_int returns non-Integer

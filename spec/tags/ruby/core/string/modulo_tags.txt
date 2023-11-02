@@ -1,4 +1,3 @@
-fails:String#% flags # applies to gG does not remove trailing zeros
 fails:String#% reference by name %{name} style supports flags, width and precision
 fails:String#% other formats c raises TypeError if argument is nil
 fails:String#% other formats c raises TypeError if converting to Integer with to_int returns non-Integer

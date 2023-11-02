@@ -1,7 +1,5 @@
 fails(compiler):Kernel#sprintf passes some tests for negative %u
-fails:Kernel#sprintf flags # applies to gG does not remove trailing zeros
 fails:Kernel#sprintf reference by name %{name} style supports flags, width and precision
-fails:Kernel.sprintf flags # applies to gG does not remove trailing zeros
 fails:Kernel.sprintf reference by name %{name} style supports flags, width and precision
 fails:Kernel#sprintf other formats c raises TypeError if argument is nil
 fails:Kernel#sprintf other formats c raises TypeError if converting to Integer with to_int returns non-Integer

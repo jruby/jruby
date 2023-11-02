@@ -1327,6 +1327,7 @@ public class Sprintf {
                                 }
                                 if ((flags & FLAG_SHARP) != 0 && precision > 0) {
                                     buf.fill('0', precision);
+                                    precision = 0;
                                 }
                             }
                             if ((flags & FLAG_SHARP) != 0 && precision > 0) buf.fill('0', precision);
