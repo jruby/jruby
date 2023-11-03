@@ -280,7 +280,7 @@ public class TimeArgs {
         }
 
         if ((second < 0 || second > 60) || (hour == 24 && second > 0)) {
-            throw context.runtime.newArgumentError("argument out of range for second");
+            throw context.runtime.newArgumentError("argument out of range");
         }
     }
 
