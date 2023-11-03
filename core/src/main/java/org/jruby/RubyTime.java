@@ -299,14 +299,16 @@ public class RubyTime extends RubyObject {
                 n += (tmpBytes.get(min) * 10 + tmpBytes.get(min+1) - '0' * 11) * 60;
             }
 
-            if (tmpBytes.get(0) != '+' && tmpBytes.get(0) != '-') return null;
-            if (!Character.isDigit(tmpBytes.get(1)) || !Character.isDigit(tmpBytes.get(2))) return null;
+            byte first = (byte) tmpBytes.get(0);
+            if (first == '+' || first == '-') { // [+-]HHMMSS
+                if (!Character.isDigit(tmpBytes.get(1)) || !Character.isDigit(tmpBytes.get(2))) return null;
 
-            n += (tmpBytes.get(1) * 10 + tmpBytes.get(2) - '0' * 11) * 3600;
+                n += (tmpBytes.get(1) * 10 + tmpBytes.get(2) - '0' * 11) * 3600;
 
-            if (tmpBytes.get(0) == '-') {
-                if (n == 0) return DateTimeZone.UTC;
-                n = -n;
+                if (first == '-') {
+                    if (n == 0) return DateTimeZone.UTC;
+                    n = -n;
+                }
             }
 
             dtz = getTimeZoneWithOffset(runtime, "", n * 1000);
