@@ -117,9 +117,6 @@ public class GlobalVariables {
         assert name != null;
         assert name.startsWith("$");
 
-        GlobalVariable variable = globalVariables.get(name);
-        if (variable != null) return variable;
-
         return createIfNotDefined(name);
     }
 
@@ -139,11 +136,7 @@ public class GlobalVariables {
     }
 
     public void setTraceVar(String name, RubyProc proc) {
-        assert name != null;
-        assert name.startsWith("$");
-
-        GlobalVariable variable = createIfNotDefined(name);
-        variable.addTrace(proc);
+        getVariable(name).addTrace(proc);
     }
 
     public boolean untraceVar(String name, IRubyObject command) {
@@ -172,12 +165,7 @@ public class GlobalVariables {
     }
 
     private GlobalVariable createIfNotDefined(String name) {
-        GlobalVariable variable = globalVariables.get(name);
-        if (variable == null) {
-            variable = GlobalVariable.newUndefined(runtime, name);
-            globalVariables.put(name, variable);
-        }
-        return variable;
+        return globalVariables.computeIfAbsent(name, (n) -> GlobalVariable.newUndefined(runtime, n));
     }
 
     private IRubyObject defaultSeparator;
