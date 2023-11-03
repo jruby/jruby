@@ -325,6 +325,10 @@ public class RubyTime extends RubyObject {
         return runtime.newArgumentError("\"+HH:MM\" or \"-HH:MM\" expected for utc_offset");
     }
 
+    public static RaiseException invalidUTCOffset(Ruby runtime, IRubyObject value) {
+        return runtime.newArgumentError(str(runtime, "\"+HH:MM\", \"-HH:MM\", \"UTC\" or \"A\"..\"I\",\"K\"..\"Z\" expected for utc_offset: ", value));
+    }
+
     // mri: time.c num_exact
     private static RubyNumeric numExact(ThreadContext context, IRubyObject v) {
         boolean typeError = false;
@@ -655,9 +659,9 @@ public class RubyTime extends RubyObject {
         }
 
         if ((dtz = getTimeZoneFromUtcOffset(context, off)) == null) {
-            if ((zone = findTimezone(context, zone)) == null) throw invalidUTCOffset(runtime);
+            zone = findTimezone(context, zone);
             RubyTime t = (RubyTime) dup();
-            if (!zoneLocalTime(context, zone, t)) throw invalidUTCOffset(runtime);
+            if (!zoneLocalTime(context, zone, t)) throw invalidUTCOffset(runtime, zone);
             return t;
         }
         else if (dtz == DateTimeZone.UTC) {
@@ -1658,14 +1662,9 @@ public class RubyTime extends RubyObject {
             if (dtz != null) {
                 this.setIsTzRelative(true);
             } else {
-                if ((zone = findTimezone(context, zone)) != null) {
-                    maybeZoneObj = true;
-                    this.zone = zone;
-
-                    dtz = DateTimeZone.UTC;
-                } else {
-                    throw invalidUTCOffset(runtime);
-                }
+                this.zone = findTimezone(context, zone);
+                maybeZoneObj = true;
+                dtz = DateTimeZone.UTC;
             }
         }
 
@@ -1702,8 +1701,9 @@ public class RubyTime extends RubyObject {
                 dtz = getTimeZoneFromUtcOffset(context, zone);
                 if (dtz != null) {
                     this.dt = dt.withZoneRetainFields(dtz);
-                } else if ((zone = findTimezone(context, zone)) == null || !zoneTimeLocal(context, zone, this)) {
-                    throw invalidUTCOffset(runtime);
+                } else {
+                    zone = findTimezone(context, zone);
+                    if (!zoneTimeLocal(context, zone, this)) throw invalidUTCOffset(runtime, zone);
                 }
             }
         }
@@ -1805,14 +1805,9 @@ public class RubyTime extends RubyObject {
             if (dtz != null) {
                 this.setIsTzRelative(true);
             } else {
-                if ((zone = findTimezone(context, zone)) != null) {
-                    maybeZoneObj = true;
-                    this.zone = zone;
-
-                    dtz = DateTimeZone.UTC;
-                } else {
-                    throw invalidUTCOffset(runtime);
-                }
+                this.zone = findTimezone(context, zone);
+                maybeZoneObj = true;
+                dtz = DateTimeZone.UTC;
             }
         }
 
@@ -1827,8 +1822,12 @@ public class RubyTime extends RubyObject {
                 dtz = getTimeZoneFromUtcOffset(context, zone);
                 if (dtz != null) {
                     dt = dt.withZoneRetainFields(dtz);
-                } else if ((zone = findTimezone(context, zone)) == null || !zoneTimeLocal(context, zone, this)) {
-                    throw invalidUTCOffset(runtime);
+                } else {
+                    if ((zone = findTimezone(context, zone)) == null) {
+                        throw invalidUTCOffset(runtime);
+                    } else if(!zoneTimeLocal(context, zone, this)) {
+                        throw invalidUTCOffset(runtime, zone);
+                    }
                 }
             }
         }
@@ -1841,8 +1840,9 @@ public class RubyTime extends RubyObject {
     }
 
     private IRubyObject findTimezone(ThreadContext context, IRubyObject zone) {
-        RubyClass metaClass = getMetaClass();
-        return Helpers.invokeChecked(context, metaClass, "find_timezone", zone);
+        IRubyObject foundZone = Helpers.invokeChecked(context, getMetaClass(), "find_timezone", zone);
+        if (foundZone == null || foundZone.isNil()) throw invalidUTCOffset(context.runtime, zone);
+        return foundZone;
     }
 
     @JRubyMethod(name = {"utc", "gm"}, required = 1, optional = 9, checkArity = false, meta = true)
@@ -2173,8 +2173,7 @@ public class RubyTime extends RubyObject {
 
         if ((dtz = getTimeZoneFromUtcOffset(context, off)) == null) {
             zone = time.findTimezone(context, zone);
-            if (zone == null || zone.isNil()) throw invalidUTCOffset(context.runtime);
-            if (!zoneLocalTime(context, zone, time)) throw invalidUTCOffset(context.runtime);
+            if (!zoneLocalTime(context, zone, time)) throw invalidUTCOffset(context.runtime, zone);
             return time;
         } else if (dtz == DateTimeZone.UTC) {
             return time.gmtime();
