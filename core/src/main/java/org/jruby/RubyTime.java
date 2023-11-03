@@ -299,8 +299,10 @@ public class RubyTime extends RubyObject {
                 n += (tmpBytes.get(min) * 10 + tmpBytes.get(min+1) - '0' * 11) * 60;
             }
 
-            byte first = (byte) tmpBytes.get(0);
-            if (first == '+' || first == '-') { // [+-]HHMMSS
+            if (tmpBytes.realSize() >= 3) { // [+-]HH((MM)?SS)?
+                byte first = (byte) tmpBytes.get(0);
+                if (first != '+' && first != '-') return null;
+
                 if (!Character.isDigit(tmpBytes.get(1)) || !Character.isDigit(tmpBytes.get(2))) return null;
 
                 n += (tmpBytes.get(1) * 10 + tmpBytes.get(2) - '0' * 11) * 3600;
