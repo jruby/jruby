@@ -1,2 +1,0 @@
-fails:ENV.key? coerces the key with #to_str
-fails:ENV.key coerces the key element with #to_str

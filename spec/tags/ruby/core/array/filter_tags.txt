@@ -1,1 +1,0 @@
-fails:Array#filter! tolerates increasing an array size during iteration

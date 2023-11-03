@@ -1,2 +1,0 @@
-fails:Array#map tolerates increasing an array size during iteration
-fails:Array#map! tolerates increasing an array size during iteration

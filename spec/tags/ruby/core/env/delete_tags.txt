@@ -1,1 +1,0 @@
-fails:ENV.delete removes the variable coerced with #to_str
