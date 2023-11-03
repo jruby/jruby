@@ -2243,30 +2243,29 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     @JRubyMethod(name = "to_h")
     public IRubyObject to_h(ThreadContext context, Block block) {
         Ruby runtime = context.runtime;
-        int realLength = this.realLength;
 
         boolean useSmallHash = realLength <= 10;
 
         RubyHash hash = useSmallHash ? RubyHash.newSmallHash(runtime) : RubyHash.newHash(runtime);
 
         for (int i = 0; i < realLength; i++) {
-            IRubyObject e = eltInternal(i);
+            IRubyObject e = eltOk(i);
             IRubyObject elt = block.isGiven() ? block.yield(context, e) : e;
             IRubyObject key_value_pair = elt.checkArrayType();
 
             if (key_value_pair == context.nil) {
-                throw context.runtime.newTypeError("wrong element type " + elt.getMetaClass().getRealClass() + " at " + i + " (expected array)");
+                throw runtime.newTypeError("wrong element type " + elt.getMetaClass().getRealClass() + " at " + i + " (expected array)");
             }
 
             RubyArray ary = (RubyArray)key_value_pair;
             if (ary.getLength() != 2) {
-                throw context.runtime.newArgumentError("wrong array length at " + i + " (expected 2, was " + ary.getLength() + ")");
+                throw runtime.newArgumentError("wrong array length at " + i + " (expected 2, was " + ary.getLength() + ")");
             }
 
             if (useSmallHash) {
-                hash.fastASetSmall(runtime, ary.eltInternal(0), ary.eltInternal(1), true);
+                hash.fastASetSmall(runtime, ary.eltOk(0), ary.eltOk(1), true);
             } else {
-                hash.fastASet(runtime, ary.eltInternal(0), ary.eltInternal(1), true);
+                hash.fastASet(runtime, ary.eltOk(0), ary.eltOk(1), true);
             }
         }
         return hash;
@@ -2770,17 +2769,16 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
         final Ruby runtime = context.runtime;
 
-        IRubyObject[] arr = IRubyObject.array(realLength);
+        RubyArray ary = RubyArray.newArray(runtime, realLength);
 
         int i = 0;
         for (; i < realLength; i++) {
             // Do not coarsen the "safe" check, since it will misinterpret AIOOBE from the yield
             // See JRUBY-5434
-            safeArraySet(runtime, arr, i, block.yieldNonArray(context, eltOk(i), null)); // arr[i] = ...
+            ary.store(i, block.yieldNonArray(context, eltOk(i), null)); // arr[i] = ...
         }
 
-        // use iteration count as new size in case something was deleted along the way
-        return newArrayMayCopy(context.runtime, arr, 0, i);
+        return ary;
     }
 
     /**
@@ -2820,7 +2818,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (!block.isGiven()) throw context.runtime.newLocalJumpErrorNoBlock();
         modify();
 
-        for (int i = 0, len = realLength; i < len; i++) {
+        for (int i = 0; i < realLength; i++) {
             // Do not coarsen the "safe" check, since it will misinterpret AIOOBE from the yield
             // See JRUBY-5434
             storeInternal(i, block.yield(context, eltOk(i)));
@@ -2901,23 +2899,21 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
         boolean modified = false;
         final Ruby runtime = context.runtime;
-        final int len = realLength; final int beg = begin;
 
         int len0 = 0, len1 = 0;
         try {
             int i1, i2;
-            for (i1 = i2 = 0; i1 < len; len0 = ++i1) {
-                final IRubyObject[] values = this.values;
+            for (i1 = i2 = 0; i1 < realLength; len0 = ++i1) {
                 // Do not coarsen the "safe" check, since it will misinterpret
                 // AIOOBE from the yield (see JRUBY-5434)
-                IRubyObject value = safeArrayRef(runtime, values, begin + i1);
+                IRubyObject value = eltOk(i1);
 
                 if (!block.yield(context, value).isTrue()) {
                     modified = true;
                     continue;
                 }
 
-                if (i1 != i2) safeArraySet(runtime, values, beg + i2, value);
+                if (i1 != i2) eltSetOk(i2, (T) value);
                 len1 = ++i2;
             }
             return (i1 == i2) ? context.nil : this;
@@ -3038,8 +3034,14 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      *
      */
     public final IRubyObject rejectCommon(ThreadContext context, Block block) {
-        RubyArray ary = aryDup();
-        ary.rejectBang(context, block);
+        RubyArray ary = RubyArray.newArray(context.runtime);
+
+        for (int i = 0; i < realLength; i++) {
+            IRubyObject v = eltOk(i);
+            if (!block.yieldSpecific(context, v).isTrue()) {
+                ary.push(v);
+            }
+        }
         return ary;
     }
 

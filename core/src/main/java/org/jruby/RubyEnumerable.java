@@ -61,6 +61,7 @@ import org.jruby.util.func.ObjectObjectIntFunction;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
@@ -496,55 +497,37 @@ public class RubyEnumerable {
     @JRubyMethod
     public static IRubyObject sort_by(final ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = context.runtime;
-        DoubleObject<IRubyObject, IRubyObject>[] valuesAndCriteria;
+        List<DoubleObject<IRubyObject, IRubyObject>> valuesAndCriteria;
 
         if (!block.isGiven()) {
             return enumeratorizeWithSize(context, self, "sort_by", (SizeFn) RubyEnumerable::size);
         }
 
         final CachingCallSite each = eachSite(context);
-        if (self instanceof RubyArray) {
-            RubyArray selfArray = (RubyArray) self;
-            final DoubleObject<IRubyObject, IRubyObject>[] valuesAndCriteriaArray = new DoubleObject[selfArray.size()];
+        final ArrayList<DoubleObject<IRubyObject, IRubyObject>> valuesAndCriteriaList = new ArrayList<>();
 
-            each(context, each, self, new JavaInternalBlockBody(runtime, Signature.OPTIONAL) {
-                final AtomicInteger i = new AtomicInteger(0);
-                @Override
-                public IRubyObject yield(ThreadContext context1, IRubyObject[] args) {
-                    return doYield(context1, null, packEnumValues(context1, args));
+        callEach(context, each, self, Signature.OPTIONAL, new BlockCallback() {
+            public IRubyObject call(ThreadContext context1, IRubyObject[] args, Block unused) {
+                return call(context1, packEnumValues(context1, args), unused);
+            }
+            @Override
+            public IRubyObject call(ThreadContext context1, IRubyObject arg, Block unused) {
+                IRubyObject value = block.yield(context1, arg);
+                synchronized (valuesAndCriteriaList) {
+                    valuesAndCriteriaList.add(new DoubleObject<>(arg, value));
                 }
-                @Override
-                protected IRubyObject doYield(ThreadContext context1, Block unused, IRubyObject value) {
-                    valuesAndCriteriaArray[i.getAndIncrement()] = new DoubleObject<>(value, block.yield(context1, value));
-                    return context1.nil;
-                }
-            });
+                return context1.nil;
+            }
+        });
 
-            valuesAndCriteria = valuesAndCriteriaArray;
-        } else {
-            final ArrayList<DoubleObject<IRubyObject, IRubyObject>> valuesAndCriteriaList = new ArrayList<>();
+        valuesAndCriteria = valuesAndCriteriaList;
 
-            callEach(context, each, self, Signature.OPTIONAL, new BlockCallback() {
-                public IRubyObject call(ThreadContext context1, IRubyObject[] args, Block unused) {
-                    return call(context1, packEnumValues(context1, args), unused);
-                }
-                @Override
-                public IRubyObject call(ThreadContext context1, IRubyObject arg, Block unused) {
-                    valuesAndCriteriaList.add(new DoubleObject<>(arg, block.yield(context1, arg)));
-                    return context1.nil;
-                }
-            });
-
-            valuesAndCriteria = valuesAndCriteriaList.toArray(new DoubleObject[valuesAndCriteriaList.size()]);
-        }
-
-        Arrays.sort(valuesAndCriteria,
+        Collections.sort(valuesAndCriteria,
                 (o1, o2) -> RubyComparable.cmpint(context, invokedynamic(context, o1.object2, OP_CMP, o2.object2), o1.object2, o2.object2));
 
-
-        IRubyObject dstArray[] = new IRubyObject[valuesAndCriteria.length];
+        IRubyObject dstArray[] = new IRubyObject[valuesAndCriteria.size()];
         for (int i = 0; i < dstArray.length; i++) {
-            dstArray[i] = valuesAndCriteria[i].object1;
+            dstArray[i] = valuesAndCriteria.get(i).object1;
         }
 
         return RubyArray.newArrayMayCopy(runtime, dstArray);

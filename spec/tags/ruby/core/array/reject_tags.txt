@@ -1,1 +1,0 @@
-fails:Array#reject tolerates increasing an array size during iteration
