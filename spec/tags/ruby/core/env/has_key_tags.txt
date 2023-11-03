@@ -1,1 +1,0 @@
-fails:ENV.has_key? coerces the key with #to_str
