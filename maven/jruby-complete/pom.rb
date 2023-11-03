@@ -11,7 +11,7 @@ project 'JRuby Complete' do
   packaging 'bundle'
 
 
-  extension 'org.jruby.maven:mavengem-wagon:2.0.1'
+  extension 'org.jruby.maven:mavengem-wagon:2.0.2'
 
   plugin_repository :id => :mavengems, :url => 'mavengem:https://rubygems.org'
 

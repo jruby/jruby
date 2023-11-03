@@ -33,7 +33,7 @@
   </repositories>
 
   <properties>
-    <jruby.plugins.version>3.0.1</jruby.plugins.version>
+    <jruby.plugins.version>3.0.2</jruby.plugins.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
@@ -42,7 +42,7 @@
       <extension>
         <groupId>org.jruby.maven</groupId>
         <artifactId>mavengem-wagon</artifactId>
-        <version>2.0.1</version>
+        <version>2.0.2</version>
       </extension>
     </extensions>
     <plugins>
