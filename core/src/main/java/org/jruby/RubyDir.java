@@ -469,7 +469,7 @@ public class RubyDir extends RubyObject implements Closeable {
     /**
      * Changes the root directory (only allowed by super user).  Not available on all platforms.
      */
-    @JRubyMethod(name = "chroot", required = 1, meta = true)
+    @JRubyMethod(name = "chroot", required = 1, meta = true, notImplemented = true)
     public static IRubyObject chroot(IRubyObject recv, IRubyObject path) {
         throw recv.getRuntime().newNotImplementedError("chroot not implemented: chroot is non-portable and is not supported.");
     }
