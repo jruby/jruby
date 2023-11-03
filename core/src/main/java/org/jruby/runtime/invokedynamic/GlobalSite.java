@@ -105,7 +105,7 @@ public class GlobalSite extends MutableCallSite {
             return (IRubyObject)uncached.invokeWithArguments(context);
         }
 
-        Invalidator invalidator = variable.getInvalidator();
+        SwitchPoint invalidator = (SwitchPoint) variable.getInvalidator().getData();
         IRubyObject value = variable.getAccessor().getValue();
 
         MethodHandle target = constant(IRubyObject.class, value);
@@ -113,7 +113,7 @@ public class GlobalSite extends MutableCallSite {
         MethodHandle fallback = lookup().findVirtual(GlobalSite.class, "getGlobalFallback", methodType(IRubyObject.class, ThreadContext.class));
         fallback = fallback.bindTo(this);
 
-        target = ((SwitchPoint)invalidator.getData()).guardWithTest(target, fallback);
+        target = invalidator.guardWithTest(target, fallback);
 
         setTarget(target);
 
