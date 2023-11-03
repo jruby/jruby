@@ -123,10 +123,7 @@ public class GlobalVariables {
     }
 
     public IRubyObject set(String name, IRubyObject value) {
-        assert name != null;
-        assert name.startsWith("$");
-
-        GlobalVariable variable = createIfNotDefined(name);
+        GlobalVariable variable = getVariable(name);
         IRubyObject result = variable.getAccessor().setValue(value);
         variable.trace(value);
         variable.invalidate();
