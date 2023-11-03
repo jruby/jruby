@@ -243,14 +243,14 @@ public class TimeArgs {
             try {
                 month = Integer.parseInt(monthStr);
             } catch (NumberFormatException ex) {
-                throw context.runtime.newArgumentError("Argument out of range.");
+                throw context.runtime.newArgumentError("argument out of range.");
             }
         } else {
             month = RubyNumeric.num2int(_month);
         }
 
         if (month < 1 || month > 12) {
-            throw context.runtime.newArgumentError("Argument out of range: for month: " + month);
+            throw context.runtime.newArgumentError("argument out of range: for month: " + month);
         }
 
         return month;
