@@ -132,6 +132,9 @@ public class MathLinker {
         MethodType fallbackType = site.type().appendParameterTypes(IRubyObject.class);
         CallSite normalSite = NormalInvokeSite.newSite(LOOKUP, site.name, fallbackType, false, 0, site.file(), site.line());
 
+        RubyClass classFixnum = runtime.getFixnum();
+        SwitchPoint switchPoint = (SwitchPoint) classFixnum.getInvalidator().getData();
+
         MethodHandle fallback = Binder.from(site.type())
                 .append(IRubyObject.class, runtime.newFixnum(value))
                 .invoke(normalSite.dynamicInvoker());
@@ -159,11 +162,9 @@ public class MathLinker {
 
             if (target == null) target = findTargetImpl(name, IRubyObject.class, value);
 
-            RubyClass classFixnum = runtime.getFixnum();
-
             // confirm it's still a Fixnum
             target = guardWithTest(FIXNUM_TEST_ARG_2_TO_0, target, fallback);
-            target = ((SwitchPoint) classFixnum.getInvalidator().getData()).guardWithTest(target, fallback);
+            target = switchPoint.guardWithTest(target, fallback);
             site.setTarget(target);
 
             if (LOG_BINDING) LOG.debug(name + "\tFixnum operation at site #" + site.siteID + " (" + site.file() + ":" + site.line() + ") bound directly");
@@ -278,6 +279,9 @@ public class MathLinker {
                 .append(IRubyObject.class, runtime.newFloat(value))
                 .invoke(normalSite.dynamicInvoker());
 
+        RubyClass classFloat = runtime.getFloat();
+        SwitchPoint switchPoint = (SwitchPoint) classFloat.getInvalidator().getData();
+
         CacheEntry entry = searchWithCache(operator, caller, self.getMetaClass(), site);
 
         if (!(self instanceof RubyFloat) || entry == null || !entry.method.isBuiltin()) {
@@ -290,11 +294,9 @@ public class MathLinker {
 
             target = findTargetImpl(name, IRubyObject.class, value);
 
-            RubyClass classFloat = runtime.getFloat();
-
             // confirm it's still a Float
             target = guardWithTest(FLOAT_TEST_ARG_2_TO_0, target, fallback);
-            target = ((SwitchPoint) classFloat.getInvalidator().getData()).guardWithTest(target, fallback);
+            target = switchPoint.guardWithTest(target, fallback);
             site.setTarget(target);
 
             if (LOG_BINDING) LOG.debug(name + "\tFloat operation at site #" + site.siteID + " (" + site.file() + ":" + site.line() + ") bound directly");
