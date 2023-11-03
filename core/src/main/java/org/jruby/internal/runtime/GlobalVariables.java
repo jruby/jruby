@@ -101,23 +101,23 @@ public class GlobalVariables {
     }
 
     public IRubyObject get(String name) {
-	    assert name != null;
-	    assert name.startsWith("$");
+        assert name != null;
+        assert name.startsWith("$");
 
-	    GlobalVariable variable = globalVariables.get(name);
-	    if (variable != null) return variable.getAccessor().getValue();
+        GlobalVariable variable = globalVariables.get(name);
+        if (variable != null) return variable.getAccessor().getValue();
 
-	    if (runtime.isVerbose()) {
-	        runtime.getWarnings().warning(ID.GLOBAL_NOT_INITIALIZED, "global variable `" + name + "' not initialized");
-	    }
-		return runtime.getNil();
-	}
+        if (runtime.isVerbose()) {
+            runtime.getWarnings().warning(ID.GLOBAL_NOT_INITIALIZED, "global variable `" + name + "' not initialized");
+        }
+        return runtime.getNil();
+    }
 
     public GlobalVariable getVariable(String name) {
-	    assert name != null;
-	    assert name.startsWith("$");
+        assert name != null;
+        assert name.startsWith("$");
 
-	    GlobalVariable variable = globalVariables.get(name);
+        GlobalVariable variable = globalVariables.get(name);
         if (variable != null) return variable;
 
         return createIfNotDefined(name);
