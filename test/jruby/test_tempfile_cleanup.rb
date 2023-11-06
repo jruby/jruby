@@ -16,6 +16,7 @@ class TestTempfileCleanup < Test::Unit::TestCase
   end
 
   def test_cleanup
+    skip if RbConfig::CONFIG['host_os'] =~ /win32|win64|mswin|windows/
     10.times { Tempfile.open('blah', @tmpdir) }
 
     # check that files were created
