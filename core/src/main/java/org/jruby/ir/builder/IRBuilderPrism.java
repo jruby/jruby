@@ -2019,9 +2019,13 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildString(StringNode node) {
-        // FIXME: how can we tell if frozen or not
         // FIXME: No code range
-        return new MutableString(bytelist(node.unescaped), CR_UNKNOWN, scope.getFile(), getLine(node));
+
+        if (node.isFrozen()) {
+            return new FrozenString(bytelist(node.unescaped), CR_UNKNOWN, scope.getFile(), getLine(node));
+        } else {
+            return new MutableString(bytelist(node.unescaped), CR_UNKNOWN, scope.getFile(), getLine(node));
+        }
     }
 
     /*
