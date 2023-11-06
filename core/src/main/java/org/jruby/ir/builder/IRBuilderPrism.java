@@ -1548,32 +1548,18 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         boolean hasKeywords = parameters.keywords.length != 0 || parameters.keyword_rest != null;
         Variable keywords = addResultInstr(new ReceiveKeywordsInstr(temp(), hasRest, hasKeywords));
 
-        // 1.9 pre, opt, rest, post args
         receiveNonBlockArgs(parameters, keywords, hasKeywords);
 
-        // 2.0 keyword args
         if (hasKeywords) {
             int keywordsCount = parameters.keywords.length;
             Node[] kwArgs = parameters.keywords;
             for (int i = 0; i < keywordsCount; i++) {
-                KeywordParameterNode kwarg = (KeywordParameterNode) kwArgs[i];
-
-                RubySymbol key = kwarg.name;
-                Variable av = getNewLocalVariable(key, 0);
-                Label l = getNewLabel();
-                if (scope instanceof IRMethod) addKeyArgDesc(kwarg, key);
-                addInstr(new ReceiveKeywordArgInstr(av, keywords, key));
-                addInstr(BNEInstr.create(l, av, UndefinedValue.UNDEFINED)); // if 'av' is not undefined, we are done
-
-                // Required kwargs have no value and check_arity will throw if they are not provided.
-                if (kwarg.value != null) {
-                    addInstr(new CopyInstr(av, nil())); // wipe out undefined value with nil
-                    // FIXME: this is performing extra copy but something is generating a temp and not using local if we pass it to build
-                    copy(av, build(kwarg.value));
-                } else {
-                    addInstr(new RaiseRequiredKeywordArgumentError(key));
+                if (kwArgs[i] instanceof  OptionalKeywordParameterNode) {
+                    buildKeywordParameter(keywords, ((OptionalKeywordParameterNode) kwArgs[i]).name,
+                            ((OptionalKeywordParameterNode) kwArgs[i]).value);
+                } else { // RequiredKeywordParameterNode
+                    buildKeywordParameter(keywords, ((RequiredKeywordParameterNode) kwArgs[i]).name, null);
                 }
-                addInstr(new LabelInstr(l));
             }
         }
 
@@ -1601,6 +1587,25 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
     }
 
+    private void buildKeywordParameter(Variable keywords, RubySymbol key, Node value) {
+        boolean isOptional = value != null;
+        Variable av = getNewLocalVariable(key, 0);
+        Label l = getNewLabel();
+        if (scope instanceof IRMethod) addKeyArgDesc(key, isOptional);
+        addInstr(new ReceiveKeywordArgInstr(av, keywords, key));
+        addInstr(BNEInstr.create(l, av, UndefinedValue.UNDEFINED)); // if 'av' is not undefined, we are done
+
+        if (value != null) {
+            addInstr(new CopyInstr(av, nil())); // wipe out undefined value with nil
+            // FIXME: this is performing extra copy but something is generating a temp and not using local if we pass it to build
+            copy(av, build(value));
+        } else {
+            addInstr(new RaiseRequiredKeywordArgumentError(key));
+        }
+
+        addInstr(new LabelInstr(l));
+    }
+
     private Operand buildPostExecution(PostExecutionNode node) {
         return buildPostExe(node.statements, getLine(node));
     }
@@ -1615,7 +1620,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
     private Operand buildRational(RationalNode node) {
         // FIXME: Meh. will this always work.
-        return new Rational((ImmutableLiteral) build(node.numeric), (ImmutableLiteral) fix(1));
+        return new Rational((ImmutableLiteral) build(node.numeric), fix(1));
     }
 
     private Operand buildRedo(RedoNode node) {
@@ -1993,8 +1998,8 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         }
     }
 
-    private void addKeyArgDesc(KeywordParameterNode param, RubySymbol key) {
-        addArgumentDescription(param.value == null ? ArgumentType.keyreq : ArgumentType.key, key);
+    private void addKeyArgDesc(RubySymbol key, boolean isOptional) {
+        addArgumentDescription(isOptional ? ArgumentType.key : ArgumentType.keyreq, key);
     }
 
     private Operand buildProgram(ProgramNode node) {

@@ -34,7 +34,7 @@ public class ParserPrism extends Parser {
     public ParseResult parse(String fileName, int lineNumber, ByteList content, DynamicScope blockScope, int flags) {
         int sourceLength = content.realSize();
         byte[] source = content.begin() == 0 ? content.unsafeBytes() : content.bytes();
-        byte[] metadata = generateMetadata(fileName, blockScope, flags);
+        byte[] metadata = generateMetadata(fileName, lineNumber, content.getEncoding(), blockScope, flags);
         byte[] serialized = parse(source, sourceLength, metadata);
         return parseInternal(fileName, blockScope, source, serialized);
     }
@@ -78,7 +78,7 @@ public class ParserPrism extends Parser {
     ParseResult parse(String fileName, int lineNumber, InputStream in, Encoding encoding,
                              DynamicScope blockScope, int flags) {
         byte[] source = getSourceAsBytes(fileName, in);
-        byte[] metadata = generateMetadata(fileName, blockScope, flags);
+        byte[] metadata = generateMetadata(fileName, lineNumber, encoding, blockScope, flags);
         byte[] serialized = parse(source, source.length, metadata);
         return parseInternal(fileName, blockScope, source, serialized);
     }
@@ -110,7 +110,7 @@ public class ParserPrism extends Parser {
         if (ParserManager.PARSER_TIMING) time = System.nanoTime();
         ParserBindingPrism.Buffer buffer = new ParserBindingPrism.Buffer(jnr.ffi.Runtime.getRuntime(prismLibrary));
         prismLibrary.pm_buffer_init(buffer);
-        prismLibrary.pm_parse_serialize(source, sourceLength, buffer, metadata);
+        prismLibrary.pm_serialize_parse(buffer, source, sourceLength, metadata);
         if (ParserManager.PARSER_TIMING) {
             ParserStats stats = runtime.getParserManager().getParserStats();
 
@@ -124,14 +124,30 @@ public class ParserPrism extends Parser {
         return src;
     }
 
-    private byte[] generateMetadata(String fileName, DynamicScope scope, int flags) {
+    private byte[] generateMetadata(String fileName, int lineNumber, Encoding encoding, DynamicScope scope, int flags) {
         ByteList metadata = new ByteList();
 
+        // Filepath
         byte[] name = fileName.getBytes();
         appendUnsignedInt(metadata, name.length);
         metadata.append(name);
 
-        // all evals should provide some scope
+        // FIXME: I believe line number can be negative?
+        // Line Number
+        appendUnsignedInt(metadata, lineNumber);
+
+        // Encoding
+        name = encoding.getName();
+        appendUnsignedInt(metadata, name.length);
+        metadata.append(name);
+
+        // frozen string literal
+        metadata.append(0);
+
+        // supress warnings
+        metadata.append(0);
+
+        // Eval scopes (or none for normal parses)
         if (isEval(flags)) {
             encodeEvalScopes(metadata, scope.getStaticScope());
         } else {

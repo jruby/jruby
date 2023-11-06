@@ -21,5 +21,5 @@ public interface ParserBindingPrism {
     // FIXME: buffer could be @Out with mechanism to free it but perhaps it is ByteBuffer?
     // FIXME: consider source to add begin so that we can not be forced to arraycopy to right-sized byte[]
     void pm_buffer_init(Buffer buffer);
-    void pm_parse_serialize(@In byte[] source, int size, Buffer buffer, @In byte[] metadata);
+    void pm_serialize_parse(Buffer buffer, @In byte[] source, int size, @In byte[] metadata);
 }

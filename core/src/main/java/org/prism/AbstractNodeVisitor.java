@@ -348,10 +348,6 @@ public abstract class AbstractNodeVisitor<T> {
         return defaultVisit(node);
     }
 
-    public T visitKeywordParameterNode(Nodes.KeywordParameterNode node) {
-        return defaultVisit(node);
-    }
-
     public T visitKeywordRestParameterNode(Nodes.KeywordRestParameterNode node) {
         return defaultVisit(node);
     }
@@ -432,6 +428,10 @@ public abstract class AbstractNodeVisitor<T> {
         return defaultVisit(node);
     }
 
+    public T visitOptionalKeywordParameterNode(Nodes.OptionalKeywordParameterNode node) {
+        return defaultVisit(node);
+    }
+
     public T visitOptionalParameterNode(Nodes.OptionalParameterNode node) {
         return defaultVisit(node);
     }
@@ -481,6 +481,10 @@ public abstract class AbstractNodeVisitor<T> {
     }
 
     public T visitRegularExpressionNode(Nodes.RegularExpressionNode node) {
+        return defaultVisit(node);
+    }
+
+    public T visitRequiredKeywordParameterNode(Nodes.RequiredKeywordParameterNode node) {
         return defaultVisit(node);
     }
 
