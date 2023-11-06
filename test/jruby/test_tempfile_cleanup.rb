@@ -19,7 +19,7 @@ class TestTempfileCleanup < Test::Unit::TestCase
     10.times { Tempfile.open('blah', @tmpdir) }
 
     # check that files were created
-    assert Dir["#{@tmpdir}/*"].size > 0
+    assert Dir["#{@tmpdir}/*blah*"].size > 0
 
     # spin for up to 10 seconds, attempting to get finalization to trigger
     t = Time.now
@@ -29,11 +29,11 @@ class TestTempfileCleanup < Test::Unit::TestCase
       else
         GC.start
       end
-      break if Time.now - t > 20 || Dir["#{@tmpdir}/*"].size == 0
+      break if Time.now - t > 20 || Dir["#{@tmpdir}/*blah*"].size == 0
       sleep(0.1)
     end
 
-    tmp_files = Dir["#{@tmpdir}/*"]
+    tmp_files = Dir["#{@tmpdir}/*blah*"]
     # test that the files are gone
     assert_equal 0, tmp_files.size, "Files were not cleaned up: (#{tmp_files.size}) #{tmp_files}"
   end
