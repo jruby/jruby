@@ -33,6 +33,7 @@ import org.jruby.RubyEncoding;
 import org.jruby.RubyException;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyIO;
+import org.jruby.RubyIOError;
 import org.jruby.RubyNumeric;
 import org.jruby.FiberScheduler;
 import org.jruby.RubyString;
@@ -1353,7 +1354,7 @@ public class OpenFile implements Finalizable {
 
             // We should not get here without previously checking, so this must have been closed by another thread
             if (fd == null) {
-                throw newInterruptedException(context.runtime);
+                throw newInterruptedException(context.runtime).toThrowable();
             }
 
             assert fptr.lockedByMe();
@@ -2904,14 +2905,14 @@ public class OpenFile implements Finalizable {
                 if (thread == context.getThread()) continue;
 
                 // raise will also wake the thread from selection
-                RubyException exception = newInterruptedException(runtime).getException();
+                RubyException exception = newInterruptedException(runtime);
                 thread.raise(exception);
             }
         }
     }
 
-    static RaiseException newInterruptedException(Ruby runtime) {
-        return runtime.newIOError("stream closed in another thread");
+    static RubyIOError newInterruptedException(Ruby runtime) {
+        return RubyIOError.newIOError(runtime, "stream closed in another thread");
     }
 
     /**
