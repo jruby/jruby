@@ -7,3 +7,5 @@ fails:Kernel.require ($LOADED_FEATURES) with symlinks in the required feature an
 fails:Kernel#require ($LOADED_FEATURES) unicode_normalize is part of core and not $LOADED_FEATURES
 fails:Kernel.require ($LOADED_FEATURES) unicode_normalize is part of core and not $LOADED_FEATURES
 fails:Kernel#require complex, enumerator, rational, thread, ruby2_keywords, fiber are already required
+fails:Kernel#require (path resolution) loads c-extension file when passed absolute path without extension when no .rb is present
+fails:Kernel.require (path resolution) loads c-extension file when passed absolute path without extension when no .rb is present

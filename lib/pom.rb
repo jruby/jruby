@@ -154,7 +154,7 @@ project 'JRuby Lib Setup' do
 
   properties( 'polyglot.dump.pom' => 'pom.xml',
               'polyglot.dump.readonly' => true,
-              'jruby.plugins.version' => '3.0.1',
+              'jruby.plugins.version' => '3.0.2',
               'gem.home' => '${basedir}/ruby/gems/shared',
               # we copy everything into the target/classes/META-INF
               # so the jar plugin just packs it - see build/resources below
@@ -164,7 +164,7 @@ project 'JRuby Lib Setup' do
   # just depends on jruby-core so we are sure the jruby.jar is in place
   jar "org.jruby:jruby-core:#{version}", :scope => 'test'
 
-  extension 'org.jruby.maven:mavengem-wagon:2.0.1'
+  extension 'org.jruby.maven:mavengem-wagon:2.0.2'
 
   repository :id => :mavengems, :url => 'mavengem:https://rubygems.org'
 
@@ -339,7 +339,7 @@ project 'JRuby Lib Setup' do
         spec.executables.each do |f|
           bin = Dir.glob(File.join( gems, "#{gem_name}*", spec.bindir ))[0]
           source = File.join( bin, f )
-          target = File.join( bin_stubs, source.sub( /#{gems}/, '' ) )
+          target = File.join( bin_stubs, source.sub( gems, '' ) )
           log "copy #{f} to #{target}"
           FileUtils.mkdir_p( File.dirname( target ) )
           FileUtils.cp_r( source, target )

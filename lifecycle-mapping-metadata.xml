@@ -31,7 +31,7 @@
       <pluginExecutionFilter>
         <groupId>org.jruby.maven</groupId>
         <artifactId>gem-maven-plugin</artifactId>
-        <versionRange>3.0.1</versionRange>
+        <versionRange>3.0.2</versionRange>
         <goals>
           <goal>initialize</goal>
         </goals>
@@ -44,7 +44,7 @@
       <pluginExecutionFilter>
         <groupId>org.jruby.maven</groupId>
         <artifactId>gem-maven-plugin</artifactId>
-        <versionRange>3.0.1</versionRange>
+        <versionRange>3.0.2</versionRange>
         <goals>
           <goal>initialize</goal>
         </goals>

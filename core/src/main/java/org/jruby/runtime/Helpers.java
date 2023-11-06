@@ -2926,6 +2926,18 @@ public class Helpers {
         return newValues;
     }
 
+    public static IRubyObject[] arrayOf(IRubyObject first) {
+        return new IRubyObject[] {first};
+    }
+
+    public static IRubyObject[] arrayOf(IRubyObject first, IRubyObject second) {
+        return new IRubyObject[] {first, second};
+    }
+
+    public static IRubyObject[] arrayOf(IRubyObject first, IRubyObject second, IRubyObject third) {
+        return new IRubyObject[] {first, second, third};
+    }
+
     public static <T> T[] arrayOf(T[] values, T last, IntFunction<T[]> allocator) {
         T[] newValues = allocator.apply(values.length + 1);
         newValues[values.length] = last;

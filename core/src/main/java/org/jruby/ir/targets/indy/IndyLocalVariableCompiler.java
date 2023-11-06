@@ -26,12 +26,12 @@ public class IndyLocalVariableCompiler implements LocalVariableCompiler {
             normalLocalVariableCompiler.getHeapLocal(depth, location);
             return;
         }
-        compiler.adapter.invokedynamic("getHeapLocal", sig(IRubyObject.class, DynamicScope.class), Bootstrap.getHeapLocalHandle(), depth, location);
+        compiler.adapter.invokedynamic("getHeapLocal", sig(IRubyObject.class, DynamicScope.class), HeapVariableBootstrap.GET_HEAP_LOCAL_BOOTSTRAP, depth, location);
     }
 
     @Override
     public void getHeapLocalOrNil(int depth, int location) {
         compiler.loadContext();
-        compiler.adapter.invokedynamic("getHeapLocalOrNil", sig(IRubyObject.class, DynamicScope.class, ThreadContext.class), Bootstrap.getHeapLocalOrNilHandle(), depth, location);
+        compiler.adapter.invokedynamic("getHeapLocalOrNil", sig(IRubyObject.class, DynamicScope.class, ThreadContext.class), HeapVariableBootstrap.GET_HEAP_LOCAL_OR_NIL_BOOTSTRAP, depth, location);
     }
 }

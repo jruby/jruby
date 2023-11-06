@@ -4,6 +4,7 @@ import org.jruby.RubyArray;
 import org.jruby.ir.targets.BranchCompiler;
 import org.jruby.ir.targets.IRBytecodeAdapter;
 import org.jruby.ir.targets.indy.Bootstrap;
+import org.jruby.ir.targets.indy.CheckArityBootstrap;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -55,10 +56,11 @@ public class NormalBranchCompiler implements BranchCompiler {
 
     public void checkArity(int required, int opt, boolean rest, int restKey) {
         compiler.adapter.ldc(required);
+
         compiler.adapter.ldc(opt);
         compiler.adapter.ldc(rest);
         compiler.adapter.ldc(restKey);
-        compiler.adapter.invokestatic(p(Bootstrap.class), "checkArity", sig(void.class, params(ThreadContext.class, StaticScope.class, Object[].class, Object.class, Block.class, int.class, int.class, boolean.class, int.class)));
+        compiler.adapter.invokestatic(p(CheckArityBootstrap.class), "checkArity", sig(void.class, params(ThreadContext.class, StaticScope.class, Object[].class, Object.class, Block.class, int.class, int.class, boolean.class, int.class)));
     }
 
     public void checkAritySpecificArgs(int required, int opt, boolean rest, int restKey) {
@@ -66,6 +68,6 @@ public class NormalBranchCompiler implements BranchCompiler {
         compiler.adapter.ldc(opt);
         compiler.adapter.ldc(rest);
         compiler.adapter.ldc(restKey);
-        compiler.adapter.invokestatic(p(Bootstrap.class), "checkAritySpecificArgs", sig(void.class, params(ThreadContext.class, StaticScope.class, Object[].class, Block.class, int.class, int.class, boolean.class, int.class)));
+        compiler.adapter.invokestatic(p(CheckArityBootstrap.class), "checkAritySpecificArgs", sig(void.class, params(ThreadContext.class, StaticScope.class, Object[].class, Block.class, int.class, int.class, boolean.class, int.class)));
     }
 }

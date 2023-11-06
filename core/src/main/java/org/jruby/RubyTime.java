@@ -1715,16 +1715,21 @@ public class RubyTime extends RubyObject {
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         boolean keywords = hasKeywords(context.resetCallInfo());
         IRubyObject zone = null;
-        context.resetCallInfo();
         IRubyObject nil = context.nil;
 
         int argc = args.length;
         if (keywords) {
-            IRubyObject in = ArgsUtil.extractKeywordArg(context, (RubyHash) args[argc - 1], "in");
-            if (in != null && argc > 7) {
-                throw context.runtime.newArgumentError("timezone argument given as positional and keyword arguments");
+            IRubyObject in = ArgsUtil.extractKeywordArg(context, args[argc - 1], "in");
+            if (in != null) {
+                if (argc > 7) {
+                    throw context.runtime.newArgumentError("timezone argument given as positional and keyword arguments");
+                }
+                zone = in;
+            } else {
+                if (argc > 6) {
+                    zone = args[6];
+                }
             }
-            zone = in;
         } else if (argc > 6) {
             zone = args[6];
         }

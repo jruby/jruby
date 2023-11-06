@@ -23,13 +23,13 @@ public class IndyBranchCompiler implements BranchCompiler {
 
     @Override
     public void branchIfNil(Label label) {
-        compiler.adapter.invokedynamic("isNil", sig(boolean.class, IRubyObject.class), Bootstrap.isNilBoot());
+        compiler.adapter.invokedynamic("isNil", sig(boolean.class, IRubyObject.class), IsNilSite.IS_NIL_BOOTSTRAP_HANDLE);
         compiler.adapter.iftrue(label);
     }
 
     @Override
     public void branchIfTruthy(Label label) {
-        compiler.adapter.invokedynamic("isTrue", sig(boolean.class, IRubyObject.class), Bootstrap.isTrueBoot());
+        compiler.adapter.invokedynamic("isTrue", sig(boolean.class, IRubyObject.class), IsTrueSite.IS_TRUE_BOOTSTRAP_HANDLE);
         compiler.adapter.iftrue(label);
     }
 
@@ -46,14 +46,14 @@ public class IndyBranchCompiler implements BranchCompiler {
     public void checkArgsArity(Runnable args, int required, int opt, boolean rest) {
         compiler.loadContext();
         args.run();
-        compiler.adapter.invokedynamic("checkArrayArity", sig(void.class, ThreadContext.class, RubyArray.class), Bootstrap.CHECK_ARRAY_ARITY_BOOTSTRAP, required, opt, rest ? 1 : 0);
+        compiler.adapter.invokedynamic("checkArrayArity", sig(void.class, ThreadContext.class, RubyArray.class), CheckArityBootstrap.CHECK_ARRAY_ARITY_BOOTSTRAP, required, opt, rest ? 1 : 0);
     }
 
     public void checkArity(int required, int opt, boolean rest, int restKey) {
         compiler.adapter.invokedynamic(
                 "checkArity",
                 sig(void.class, ThreadContext.class, StaticScope.class, Object[].class, Object.class, Block.class),
-                Bootstrap.CHECK_ARITY,
+                CheckArityBootstrap.CHECK_ARITY,
                 required, opt, rest ? 1 : 0, restKey);
     }
 
@@ -61,7 +61,7 @@ public class IndyBranchCompiler implements BranchCompiler {
         compiler.adapter.invokedynamic(
                 "checkArity",
                 sig(void.class, ThreadContext.class, StaticScope.class, Object[].class, Block.class),
-                Bootstrap.CHECK_ARITY_SPECIFIC_ARGS,
+                CheckArityBootstrap.CHECK_ARITY_SPECIFIC_ARGS,
                 required, opt, rest ? 1 : 0, restKey);
     }
 }

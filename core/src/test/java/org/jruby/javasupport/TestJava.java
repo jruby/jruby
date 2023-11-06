@@ -1,6 +1,7 @@
 package org.jruby.javasupport;
 
 import java.lang.reflect.Method;
+import java.text.SimpleDateFormat;
 
 import org.jruby.*;
 import org.jruby.exceptions.RaiseException;
@@ -117,4 +118,23 @@ public class TestJava extends junit.framework.TestCase {
         }
     }
 
+    @Test
+    public void testOverrideNewOnConcreteJavaProxySubClassRegression() {
+        String script =
+            "class FormatImpl < java.text.SimpleDateFormat\n" +
+            "  include Enumerable\n" +
+            "  public_class_method :new\n" +
+            "  class << self\n" +
+            "    def new(thread_provider: true)\n" +
+            "      super()\n" +
+            "    end\n" +
+            "  end\n" +
+            "end\n";
+
+        final Ruby runtime = Ruby.newInstance();
+        runtime.evalScriptlet(script);
+
+        assertNotNull(runtime.evalScriptlet("FormatImpl.new")); // used to cause an infinite loop
+        assertTrue(runtime.evalScriptlet("FormatImpl.new").toJava(Object.class) instanceof SimpleDateFormat);
+    }
 }
