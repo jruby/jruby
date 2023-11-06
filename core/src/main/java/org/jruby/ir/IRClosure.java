@@ -205,6 +205,10 @@ public class IRClosure extends IRScope {
         return new IRMethod(getManager(), getLexicalParent(), defn, name, true,  getLine(), getStaticScope().duplicate(), getCoverageMode());
     }
 
+    public void setSignature(Signature signature) {
+        this.signature = signature;
+    }
+
     public void setSource(IterNode iter) {
         source = iter;
     }

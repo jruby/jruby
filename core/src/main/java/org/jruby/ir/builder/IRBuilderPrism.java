@@ -562,10 +562,28 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
     public void receiveBlockArgs(Node node) {
         BlockParametersNode parameters = (BlockParametersNode) node;
-        // FIXME: Impl
-        //((IRClosure) scope).setArgumentDescriptors(Helpers.argsNodeToArgumentDescriptors(((ArgsNode) args)));
-        // FIXME: Missing locals?  Not sure how we handle those but I would have thought with a scope?
-        if (parameters != null) buildParameters(parameters.parameters);
+
+        // FIXME: This is working around prism not providing numeric params as part of parameters.  highestNumberedParameter() and IRClosure.setSignature can be removed after fixed
+        if (parameters == null) {
+            int numberedParamsCount = scope.getStaticScope().highestNumberedParameter();
+
+            if (numberedParamsCount > 0) {
+                ((IRClosure) scope).setSignature(new Signature(numberedParamsCount, 0, 0, Signature.Rest.NONE, -1, -1, -1));
+                Variable keywords = addResultInstr(new ReceiveKeywordsInstr(temp(), true, true));
+
+                for (int i = 0; i < numberedParamsCount; i++) {
+                    RubySymbol name = symbol("_" + (i + 1));
+                    addInstr(new ReceivePreReqdArgInstr(argumentResult(name), keywords, i));
+                }
+                addInstr(new CheckArityInstr(numberedParamsCount, 0, false, numberedParamsCount, keywords));
+            }
+
+        } else {
+            // FIXME: Impl
+            //((IRClosure) scope).setArgumentDescriptors(Helpers.argsNodeToArgumentDescriptors(((ArgsNode) args)));
+            // FIXME: Missing locals?  Not sure how we handle those but I would have thought with a scope?
+            buildParameters(parameters.parameters);
+        }
     }
 
     private void buildBlockArgsAssignment(Node node, Operand argsArray, int argIndex, boolean isSplat) {
@@ -1525,7 +1543,12 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private void buildParameters(ParametersNode parameters) {
-        if (parameters == null) return;
+        if (parameters == null) {
+            // FIXME: can we allow keywords to be an operand by the time it makes it to checkarity (when we do change it?)
+            Variable undefined = copy(temp(), UndefinedValue.UNDEFINED);
+            addInstr(new CheckArityInstr(0, 0, false, -1, undefined));
+            return;
+        }
 
         if (parameters.keyword_rest instanceof ForwardingParameterNode) {
             Variable keywords = addResultInstr(new ReceiveKeywordsInstr(temp(), true, true));

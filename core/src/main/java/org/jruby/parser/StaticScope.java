@@ -56,6 +56,7 @@ import org.jruby.ast.VCallNode;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Signature;
@@ -122,6 +123,21 @@ public class StaticScope implements Serializable {
     private volatile MethodHandle constructor;
 
     private volatile Collection<String> ivarNames;
+
+    public int highestNumberedParameter() {
+        if (type != Type.BLOCK) return 0;
+
+        int biggest = 0;
+
+        for (String name: variableNames) {
+            if (name.matches("^_\\d$")) {
+                int tmp = Integer.parseInt(name.substring(1, name.length()));
+                if (tmp > biggest) biggest = tmp;
+            }
+        }
+
+        return biggest;
+    }
 
     public enum Type {
         LOCAL, BLOCK, EVAL;
