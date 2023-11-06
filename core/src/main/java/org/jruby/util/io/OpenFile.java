@@ -40,7 +40,6 @@ import org.jruby.RubyThread;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.platform.Platform;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -1352,9 +1351,9 @@ public class OpenFile implements Finalizable {
         private ChannelFD preRead(ThreadContext context, OpenFile fptr) {
             ChannelFD fd = fptr.fd;
 
+            // We should not get here without previously checking, so this must have been closed by another thread
             if (fd == null) {
-                // stream was closed on its way in, raise appropriate error
-                throw context.runtime.newErrnoEBADFError();
+                throw newInterruptedException(context.runtime);
             }
 
             assert fptr.lockedByMe();
@@ -1507,7 +1506,7 @@ public class OpenFile implements Finalizable {
             working with any native descriptor.
          */
 
-        preRead(context, fptr, fd);
+        selectForRead(context, fptr, fd);
 
         try {
             return context.getThread().executeReadWrite(context, fptr, buffer, buf, count, READ_TASK);
@@ -1560,7 +1559,7 @@ public class OpenFile implements Finalizable {
         return written;
     }
 
-    private static void preRead(ThreadContext context, OpenFile fptr, ChannelFD fd) {
+    private static void selectForRead(ThreadContext context, OpenFile fptr, ChannelFD fd) {
         if (fd == null) {
             // stream was closed on its way in, raise appropriate error
             throw context.runtime.newErrnoEBADFError();
@@ -2905,10 +2904,14 @@ public class OpenFile implements Finalizable {
                 if (thread == context.getThread()) continue;
 
                 // raise will also wake the thread from selection
-                RubyException exception = (RubyException) runtime.getIOError().newInstance(context, runtime.newString("stream closed in another thread"), Block.NULL_BLOCK);
+                RubyException exception = newInterruptedException(runtime).getException();
                 thread.raise(exception);
             }
         }
+    }
+
+    static RaiseException newInterruptedException(Ruby runtime) {
+        return runtime.newIOError("stream closed in another thread");
     }
 
     /**
