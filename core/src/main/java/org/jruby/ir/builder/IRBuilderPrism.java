@@ -1677,7 +1677,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildSourceLine(Node node) {
-        return fix(getLine(node) + 1);
+        return fix(getLine(node));
     }
 
     private Operand buildSplat(SplatNode node) {
