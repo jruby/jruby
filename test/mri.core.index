@@ -48,6 +48,7 @@ ruby/test_inlinecache.rb
 ruby/test_integer.rb
 ruby/test_integer_comb.rb
 ruby/test_io.rb
+ruby/test_io_buffer.rb
 ruby/test_io_m17n.rb
 ruby/test_iterator.rb
 ruby/test_key_error.rb
