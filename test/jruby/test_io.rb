@@ -3,6 +3,7 @@ require 'test/unit'
 require 'test/jruby/test_helper'
 require 'rbconfig'
 require 'stringio'
+require 'tempfile'
 
 class TestIO < Test::Unit::TestCase
   include TestHelper
