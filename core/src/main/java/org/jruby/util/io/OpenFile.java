@@ -1571,7 +1571,11 @@ public class OpenFile implements Finalizable {
             if (fd.chSelect != null
                     && fd.chNative == null // MRI does not select for rb_read_internal on native descriptors
                     && !fptr.nonblock) {
-                context.getThread().select(fd.chSelect, fptr, SelectionKey.OP_READ);
+
+                // keep selecting for read until ready, polling each time we wake up
+                while (!context.getThread().select(fd.chSelect, fptr, SelectionKey.OP_READ)) {
+                    context.pollThreadEvents();
+                }
             }
         } finally {
             fptr.lock();
