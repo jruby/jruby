@@ -705,6 +705,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return result;
     }
 
+    // FIXME: This should use IRBuilder version but dual block location and tweaking args length is why this is pasted here.
     private void createCall(CallNode node, RubySymbol name, Variable result, CallType callType, Operand receiver) {
         // FIXME: block would be a lot easier if both were in .block and not maybe in arguments
         // FIXME: at least type arguments to ArgumentsNode
