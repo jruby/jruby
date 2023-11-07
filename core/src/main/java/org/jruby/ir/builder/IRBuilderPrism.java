@@ -649,6 +649,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return preserveOrder ? copy(value) : value;
     }
 
+    // FIXME: This would be nice to combine in some form with AST side but it requires some pre-processing since prism merged all call types into a single node.
     // We do name processing outside of this rather than from the node to support stripping '=' off of opelasgns
     private Operand buildCall(Variable resultArg, CallNode node, RubySymbol name, Label lazyLabel, Label endLabel) {
         Variable result = resultArg == null ? temp() : resultArg;
