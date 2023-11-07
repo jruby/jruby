@@ -482,6 +482,11 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return parent == null ? getCurrentModuleVariable() : build(parent);
     }
 
+    @Override
+    Operand[] buildAttrAssignCallArgs(Node argsNode, boolean containsAssignment) {
+        return buildCallArgs(argsNode, new int[] { 0 });
+    }
+
     public Operand buildAttrAssignAssignment(Node receiver, RubySymbol name, Node[] arguments, Operand value) {
         Operand obj = build(receiver);
         int[] flags = new int[] { 0 };
@@ -656,11 +661,9 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         if (node.isVariableCall()) return _call(result, VARIABLE, buildSelf(), name);
 
         CallType callType = determineCallType(node.receiver);
-
         String id = name.idString();
-        boolean attrAssign = isAttrAssign(id);
 
-        if (attrAssign) return buildAttrAssignAssignment(node.receiver, name, node.arguments.arguments);
+        if (isAttrAssign(id)) return buildAttrAssign(result, node.receiver, node.arguments, node.block, node.name, node.isSafeNavigation(), containsVariableAssignment(node));
 
         if (callType != CallType.FUNCTIONAL && Options.IR_STRING_FREEZE.load()) {
             // Frozen string optimization: check for "string".freeze
@@ -669,10 +672,8 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             }
         }
 
-        boolean compileLazyLabel = false;
         if (node.isSafeNavigation()) {
             if (lazyLabel == null) {
-                compileLazyLabel = true;
                 lazyLabel = getNewLabel();
                 endLabel = getNewLabel();
             }
@@ -696,7 +697,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
         createCall(result, receiver, callType, name, node.arguments, node.block, getLine(node), node.hasNewLineFlag());
 
-        if (compileLazyLabel) {
+        if (node.isSafeNavigation()) {
             addInstr(new JumpInstr(endLabel));
             addInstr(new LabelInstr(lazyLabel));
             addInstr(new CopyInstr(result, nil()));

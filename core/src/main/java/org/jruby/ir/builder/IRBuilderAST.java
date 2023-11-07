@@ -333,17 +333,20 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
 
     // Return the last argument in the list as this represents rhs of the overall attrassign expression
     // e.g. 'a[1] = 2 #=> 2' or 'a[1] = 1,2,3 #=> [1,2,3]'
-    protected Operand buildAttrAssignCallArgs(List<Operand> argsList, Node args, boolean containsAssignment) {
-        if (args == null) return nil();
+    // _value only used in prism...in AST we need to calculate the last arg.
+    @Override
+    protected Operand[] buildAttrAssignCallArgs(Node args, boolean containsAssignment) {
+        if (args == null) return EMPTY_ARRAY;
 
         switch (args.getNodeType()) {
             case ARRAYNODE: {     // a[1] = 2; a[1,2,3] = 4,5,6
                 Operand last = nil();
-                for (Node n: ((ListNode) args).children()) {
-                    last = buildWithOrder(n, containsAssignment);
-                    argsList.add(last);
+                Node[] children = ((ListNode) args).children();
+                Operand[] operands = new Operand[children.length];
+                for (int i = 0; i < children.length; i++) {
+                    operands[i] = buildWithOrder(children[i], containsAssignment);
                 }
-                return last;
+                return operands;
             }
             case ARGSCATNODE: {
                 ArgsCatNode argsCatNode = (ArgsCatNode)args;
@@ -351,8 +354,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
                 Operand rhs = build(argsCatNode.getSecondNode());
                 Variable res = temp();
                 addInstr(new BuildCompoundArrayInstr(res, lhs, rhs, false, false));
-                argsList.add(new Splat(res));
-                return rhs;
+                return new Operand[] { new Splat(res), rhs };
             }
             case ARGSPUSHNODE:  { // a[1, *b] = 2
                 ArgsPushNode argsPushNode = (ArgsPushNode)args;
@@ -360,13 +362,10 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
                 Operand rhs = build(argsPushNode.getSecondNode());
                 Variable res = temp();
                 addInstr(new BuildCompoundArrayInstr(res, lhs, rhs, true, false));
-                argsList.add(new Splat(res));
-                return rhs;
+                return new Operand[] { new Splat(res), rhs };
             }
             case SPLATNODE: {     // a[1] = *b
-                Splat rhs = new Splat(buildSplat(temp(), (SplatNode)args));
-                argsList.add(rhs);
-                return rhs;
+                return new Operand[] { new Splat(buildSplat(temp(), (SplatNode)args)) };
             }
         }
 
@@ -675,36 +674,9 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return addResultInstr(new BuildCompoundArrayInstr(result, lhs, rhs, true, false));
     }
 
-    private Operand buildAttrAssign(Variable result, AttrAssignNode attrAssignNode) {
-        boolean containsAssignment = attrAssignNode.containsVariableAssignment();
-        Operand obj = buildWithOrder(attrAssignNode.getReceiverNode(), containsAssignment);
-
-        Label lazyLabel = null;
-        Label endLabel = null;
-        if (result == null) result = temp();
-        if (attrAssignNode.isLazy()) {
-            lazyLabel = getNewLabel();
-            endLabel = getNewLabel();
-            addInstr(new BNilInstr(lazyLabel, obj));
-        }
-
-        List<Operand> args = new ArrayList<>();
-        Node argsNode = attrAssignNode.getArgsNode();
-        int[] flags = new int[] { 0 };
-        Operand lastArg = buildAttrAssignCallArgs(args, argsNode, containsAssignment);
-        Operand block = setupCallClosure(attrAssignNode.getBlockNode());
-        addInstr(AttrAssignInstr.create(scope, obj, attrAssignNode.getName(), args.toArray(new Operand[args.size()]),
-                block, flags[0], scope.maybeUsingRefinements()));
-        addInstr(new CopyInstr(result, lastArg));
-
-        if (attrAssignNode.isLazy()) {
-            addInstr(new JumpInstr(endLabel));
-            addInstr(new LabelInstr(lazyLabel));
-            addInstr(new CopyInstr(result, nil()));
-            addInstr(new LabelInstr(endLabel));
-        }
-
-        return result;
+    private Operand buildAttrAssign(Variable result, AttrAssignNode node) {
+        return buildAttrAssign(result, node.getReceiverNode(), node.getArgsNode(), node.getBlockNode(),
+                node.getName(), node.isLazy(), node.containsVariableAssignment());
     }
 
     public Operand buildAttrAssignAssignment(Node node, Operand value) {

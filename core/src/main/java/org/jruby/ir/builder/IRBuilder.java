@@ -7,6 +7,7 @@ import org.jruby.ParseResult;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
 import org.jruby.ast.IterNode;
+import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.ext.coverage.CoverageData;
@@ -2136,6 +2137,37 @@ public abstract class IRBuilder<U, V, W, X, Y> {
     }
 
     protected abstract void buildAssignment(U reference, Variable rhs);
+
+    Operand buildAttrAssign(Variable result, U receiver, U argsNode, U blockNode, RubySymbol name,
+                            boolean isLazy, boolean containsAssignment) {
+        Operand obj = buildWithOrder(receiver, containsAssignment);
+
+        Label lazyLabel = null;
+        Label endLabel = null;
+        if (result == null) result = temp();
+        if (isLazy) {
+            lazyLabel = getNewLabel();
+            endLabel = getNewLabel();
+            addInstr(new BNilInstr(lazyLabel, obj));
+        }
+
+        int[] flags = new int[] { 0 };
+        Operand[] args = buildAttrAssignCallArgs(argsNode, containsAssignment);
+        Operand block = setupCallClosure(blockNode);
+        addInstr(AttrAssignInstr.create(scope, obj, name, args, block, flags[0], scope.maybeUsingRefinements()));
+        addInstr(new CopyInstr(result, args[args.length - 1]));
+
+        if (isLazy) {
+            addInstr(new JumpInstr(endLabel));
+            addInstr(new LabelInstr(lazyLabel));
+            addInstr(new CopyInstr(result, nil()));
+            addInstr(new LabelInstr(endLabel));
+        }
+
+        return result;
+    }
+
+    abstract Operand[] buildAttrAssignCallArgs(U args, boolean containsAssignment);
 
     Operand buildRescueInternal(U bodyNode, U elseNode, U[] exceptions, U rescueBody,
                                         X optRescue, boolean isModifier, EnsureBlockInfo ensure, U reference) {
