@@ -1354,7 +1354,7 @@ public class OpenFile implements Finalizable {
 
             // We should not get here without previously checking, so this must have been closed by another thread
             if (fd == null) {
-                throw newInterruptedException(context.runtime).toThrowable();
+                throw streamClosedInParallelError(context.runtime).toThrowable();
             }
 
             assert fptr.lockedByMe();
@@ -1563,7 +1563,7 @@ public class OpenFile implements Finalizable {
     private static void selectForRead(ThreadContext context, OpenFile fptr, ChannelFD fd) {
         // We should not get here without previously checking, so this must have been closed by another thread
         if (fd == null) {
-            throw newInterruptedException(context.runtime).toThrowable();
+            throw streamClosedInParallelError(context.runtime).toThrowable();
         }
 
         fptr.unlock();
@@ -2905,13 +2905,13 @@ public class OpenFile implements Finalizable {
                 if (thread == context.getThread()) continue;
 
                 // raise will also wake the thread from selection
-                RubyException exception = newInterruptedException(runtime);
+                RubyException exception = streamClosedInParallelError(runtime);
                 thread.raise(exception);
             }
         }
     }
 
-    static RubyIOError newInterruptedException(Ruby runtime) {
+    static RubyIOError streamClosedInParallelError(Ruby runtime) {
         return RubyIOError.newIOError(runtime, "stream closed in another thread");
     }
 
