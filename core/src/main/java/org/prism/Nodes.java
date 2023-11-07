@@ -75,20 +75,22 @@ public abstract class Nodes {
             return Arrays.copyOf(lineOffsets, lineOffsetsSize);
         }
 
+        // 1-based
         public int line(int byteOffset) {
             return startLine + findLine(byteOffset);
         }
 
+        // 0-based
         public int findLine(int byteOffset) {
             assert byteOffset >= 0 && byteOffset < bytes.length : byteOffset;
             int index = Arrays.binarySearch(lineOffsets, byteOffset);
             int line;
             if (index < 0) {
-                line = -index - 1;
+                line = -index - 2;
             } else {
-                line = index + 1;
+                line = index;
             }
-            assert line >= 1 && line <= getLineCount() : line;
+            assert line >= 0 && line <= getLineCount() : line;
             return line;
         }
 

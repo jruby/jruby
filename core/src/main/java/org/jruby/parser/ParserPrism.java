@@ -125,6 +125,7 @@ public class ParserPrism extends Parser {
         return src;
     }
 
+    // lineNumber (0-indexed)
     private byte[] generateMetadata(String fileName, int lineNumber, Encoding encoding, DynamicScope scope, int flags) {
         ByteList metadata = new ByteList();
 
@@ -134,7 +135,7 @@ public class ParserPrism extends Parser {
         metadata.append(name);
 
         // FIXME: I believe line number can be negative?
-        // Line Number
+        // Line Number (1-indexed)
         appendUnsignedInt(metadata, lineNumber + 1);
 
         // Encoding

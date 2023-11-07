@@ -62,7 +62,6 @@ import java.util.List;
 import java.util.Set;
 
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
-import static org.jruby.runtime.CallType.FUNCTIONAL;
 import static org.jruby.runtime.CallType.VARIABLE;
 import static org.jruby.runtime.ThreadContext.*;
 import static org.jruby.util.CommonByteLists.*;
@@ -1675,7 +1674,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildSourceLine(Node node) {
-        return fix(getLine(node));
+        return fix(getLine(node) + 1);
     }
 
     private Operand buildSplat(SplatNode node) {
@@ -1687,13 +1686,12 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     public Operand buildStrRaw(StringNode node) {
-        int line = getLine(node);
-
-        // FIXME: Need to know if it is frozen
-        //if (strNode.isFrozen()) return new FrozenString(strNode.getValue(), strNode.getCodeRange(), scope.getFile(), line);
-
         // FIXME: need coderange.
-        return new MutableString(bytelist(node.unescaped), 0, scope.getFile(), line);
+        if (node.isFrozen()) {
+            return new FrozenString(bytelist(node.unescaped), CR_UNKNOWN, scope.getFile(), getLine(node));
+        } else {
+            return new MutableString(bytelist(node.unescaped), CR_UNKNOWN, scope.getFile(), getLine(node));
+        }
     }
 
     private Operand buildSuper(Variable result, SuperNode node) {
@@ -2234,8 +2232,10 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
     @Override
     int getLine(Node node) {
+        int line = nodeSource.line(node.startOffset);
+        //System.out.println("LINE(0): " + line);
         // internals expect 0-based value.
-        return nodeSource.line(node.startOffset) - 1;
+        return line - 1;
     }
 
     @Override
