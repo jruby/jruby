@@ -693,7 +693,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
         // FIXME: Missing arrayderef opti logic
 
-        createCall(node, name, result, callType, receiver);
+        createCall(result, receiver, callType, name, node.arguments, node.block, getLine(node), node.hasNewLineFlag());
 
         if (compileLazyLabel) {
             addInstr(new JumpInstr(endLabel));
@@ -703,39 +703,6 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         }
 
         return result;
-    }
-
-    // FIXME: This should use IRBuilder version but dual block location and tweaking args length is why this is pasted here.
-    private void createCall(CallNode node, RubySymbol name, Variable result, CallType callType, Operand receiver) {
-        // FIXME: block would be a lot easier if both were in .block and not maybe in arguments
-        // FIXME: at least type arguments to ArgumentsNode
-        int[] flags = new int[] { 0 };
-        Operand[] args = setupCallArgs(node.arguments, flags);
-        if (callType == FUNCTIONAL) determineIfMaybeRefined(name, args);
-        int argsLength = args.length;
-        Operand block;
-        if (node.block != null) {
-            block = setupCallClosure(node.block);
-        } else if (node.arguments != null && argsLength != node.arguments.arguments.length) { // FIXME: It seems unclear from this conditional why this means last arg is block
-            block = args[argsLength - 1];
-            args = removeArg(args);
-        } else {
-            block = NullBlock.INSTANCE;
-        }
-        Operand[] finalArgs = args; // for lambda to see
-
-        if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
-            Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
-            if_else(test, tru(),
-                    () -> receiveBreakException(block,
-                            CallInstr.create(scope, callType, result, name, receiver, removeArg(finalArgs), block, flags[0])),
-                    () -> receiveBreakException(block,
-                            CallInstr.create(scope, callType, result, name, receiver, finalArgs, block, flags[0])));
-        } else {
-            determineIfWeNeedLineNumber(getLine(node), node.hasNewLineFlag()); // buildOperand for call was papered over by args operand building so we check once more.
-            receiveBreakException(block,
-                    CallInstr.create(scope, callType, result, name, receiver, args, block, flags[0]));
-        }
     }
 
     private Operand buildCallAndWrite(CallAndWriteNode node) {
