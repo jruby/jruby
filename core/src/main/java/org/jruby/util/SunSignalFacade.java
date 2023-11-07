@@ -89,6 +89,9 @@ public class SunSignalFacade implements SignalFacade {
         }
 
         public void handle(Signal signal) {
+            // reinstall handler for platforms that clear it (HP-UX)
+            Signal.handle(new Signal(this.signal), this);
+
             ThreadContext context = runtime.getCurrentContext();
             IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
             try {
@@ -106,8 +109,6 @@ public class SunSignalFacade implements SignalFacade {
                 runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
             } catch (MainExitException mee) {
                 runtime.getThreadService().getMainThread().kill();
-            } finally {
-                Signal.handle(new Signal(this.signal), this);
             }
         }
     }
