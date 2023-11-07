@@ -32,8 +32,7 @@ public class LazyMethodDefinitionPrism implements LazyMethodDefinition<Node, Def
     }
     @Override
     public int getEndLine() {
-        // FIXME: need valid end line
-        return 0;
+        return nodeSource.line(node.endOffset()) - 1;
     }
 
     @Override
@@ -91,13 +90,4 @@ public class LazyMethodDefinitionPrism implements LazyMethodDefinition<Node, Def
 
         return builder;
     }
-
-    private ByteList byteListFrom(Nodes.Location location) {
-        return new ByteList(source, location.startOffset, location.length);
-    }
-
-    private ByteList byteListFrom(Node node) {
-        return new ByteList(source, node.startOffset, node.length);
-    }
-
 }
