@@ -135,7 +135,7 @@ public class ParserPrism extends Parser {
 
         // FIXME: I believe line number can be negative?
         // Line Number
-        appendUnsignedInt(metadata, lineNumber);
+        appendUnsignedInt(metadata, lineNumber + 1);
 
         // Encoding
         name = encoding.getName();
