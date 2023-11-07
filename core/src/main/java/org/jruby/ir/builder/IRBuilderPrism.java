@@ -652,9 +652,10 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     // We do name processing outside of this rather than from the node to support stripping '=' off of opelasgns
     private Operand buildCall(Variable resultArg, CallNode node, RubySymbol name, Label lazyLabel, Label endLabel) {
         Variable result = resultArg == null ? temp() : resultArg;
-        CallType callType = determineCallType(node.receiver, node.arguments, node.block);
 
-        if (callType == CallType.VARIABLE) return _call(result, VARIABLE, buildSelf(), name);
+        if (node.isVariableCall()) return _call(result, VARIABLE, buildSelf(), name);
+
+        CallType callType = determineCallType(node.receiver);
 
         String id = name.idString();
         boolean attrAssign = isAttrAssign(id);
@@ -2377,12 +2378,8 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return StaticScopeFactory.newStaticScope(parent, type, fileName, strings, -1);
     }
 
-    private CallType determineCallType(Node node, ArgumentsNode args, Node block) {
-        return node == null || node instanceof SelfNode ?
-                (args == null && block == null ?
-                        CallType.VARIABLE :
-                        CallType.FUNCTIONAL) :
-                CallType.NORMAL;
+    private CallType determineCallType(Node node) {
+        return node == null || node instanceof SelfNode ? CallType.FUNCTIONAL : CallType.NORMAL;
     }
 
     private ByteList determineBaseName(Node node) {
