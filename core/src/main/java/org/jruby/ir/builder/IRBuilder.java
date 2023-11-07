@@ -2650,7 +2650,7 @@ public abstract class IRBuilder<U, V, W, X, Y> {
     }
 
     // FIXME: This needs to be called on super/zsuper too
-    private void determineIfMaybeRefined(RubySymbol methodName, Operand[] args) {
+    void determineIfMaybeRefined(RubySymbol methodName, Operand[] args) {
         IRScope outerScope = scope.getNearestTopLocalVariableScope();
 
         // 'using single_mod_arg' possible nearly everywhere but method scopes.

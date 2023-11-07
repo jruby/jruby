@@ -62,6 +62,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
+import static org.jruby.runtime.CallType.FUNCTIONAL;
 import static org.jruby.runtime.CallType.VARIABLE;
 import static org.jruby.runtime.ThreadContext.*;
 import static org.jruby.util.CommonByteLists.*;
@@ -709,6 +710,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         // FIXME: at least type arguments to ArgumentsNode
         int[] flags = new int[] { 0 };
         Operand[] args = setupCallArgs(node.arguments, flags);
+        if (callType == FUNCTIONAL) determineIfMaybeRefined(name, args);
         int argsLength = args.length;
         Operand block;
         if (node.block != null) {
