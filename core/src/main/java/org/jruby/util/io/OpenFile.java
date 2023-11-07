@@ -1561,9 +1561,9 @@ public class OpenFile implements Finalizable {
     }
 
     private static void selectForRead(ThreadContext context, OpenFile fptr, ChannelFD fd) {
+        // We should not get here without previously checking, so this must have been closed by another thread
         if (fd == null) {
-            // stream was closed on its way in, raise appropriate error
-            throw context.runtime.newErrnoEBADFError();
+            throw newInterruptedException(context.runtime).toThrowable();
         }
 
         fptr.unlock();
