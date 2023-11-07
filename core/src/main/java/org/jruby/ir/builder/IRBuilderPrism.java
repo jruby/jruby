@@ -2255,9 +2255,10 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private int getEndLine(Node node) {
-        return 0;
-        // FIXME: assert during test:jruby
-        //return nodeSource.line(node.endOffset());
+        int endOffset = node.endOffset();
+        // FIXME: Seems like either newline visitor or prism is sometimes reporting the offset one past last indexable source location (fairly rarely).
+        if (endOffset >= nodeSource.bytes.length) endOffset = nodeSource.bytes.length - 1;
+        return nodeSource.line(endOffset) - 1;
     }
 
     @Override
