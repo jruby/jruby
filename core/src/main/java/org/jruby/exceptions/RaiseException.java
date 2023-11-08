@@ -75,6 +75,16 @@ public class RaiseException extends JumpException {
     /**
      * Construct a new throwable RaiseException appropriate for the target Ruby exception class.
      *
+     * Note that this will produce a RaiseException that has fully prepared for being thrown, including:
+     *
+     * <ul>
+     *     <li>Populating the stack trace based on the current thread</li>
+     *     <li>Setting the cause to any currently in-flight exception</li>
+     *     <li>Setting the thread-local $! "error info" to this exception</li>
+     * </ul>
+     *
+     * This constructor should not be used to create a RubyException object to be raised on a different thread.
+     *
      * @param runtime the current JRuby runtime
      * @param exceptionClass the class of the exception to construct and raise
      * @param msg a simple message for the exception

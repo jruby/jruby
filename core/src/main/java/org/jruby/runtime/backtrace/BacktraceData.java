@@ -2,7 +2,6 @@ package org.jruby.runtime.backtrace;
 
 import com.headius.backport9.stack.StackWalker;
 import org.jruby.Ruby;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JavaNameMangler;
 
 import java.io.Serializable;
@@ -24,19 +23,22 @@ public class BacktraceData implements Serializable {
     private final boolean rawTrace;
     private final boolean maskNative;
     private final boolean includeNonFiltered;
+    private final boolean excludeInternal;
 
-    public BacktraceData(Stream<StackWalker.StackFrame> stackStream, Stream<BacktraceElement> rubyTrace, boolean fullTrace, boolean rawTrace, boolean maskNative, boolean includeNonFiltered) {
+    public BacktraceData(Stream<StackWalker.StackFrame> stackStream, Stream<BacktraceElement> rubyTrace, boolean fullTrace, boolean rawTrace, boolean maskNative, boolean includeNonFiltered, boolean excludeInternal) {
         this.stackStream = stackStream;
         this.rubyTrace = rubyTrace;
         this.fullTrace = fullTrace;
         this.rawTrace = rawTrace;
         this.maskNative = maskNative;
         this.includeNonFiltered = includeNonFiltered;
+        this.excludeInternal = excludeInternal;
     }
 
     public static final BacktraceData EMPTY = new BacktraceData(
             Stream.empty(),
             Stream.empty(),
+            false,
             false,
             false,
             false,
@@ -89,6 +91,9 @@ public class BacktraceData implements Serializable {
 
             // Only rewrite non-Java files when not in "raw" mode
             if (!(rawTrace || filename == null || filename.endsWith(".java"))) {
+                // skip internal sources if requested
+                if (excludeInternal && TraceType.isExcludedInternal(filename)) continue;
+
                 List<String> mangledTuple = JavaNameMangler.decodeMethodTuple(methodName);
                 if (mangledTuple != null) {
                     FrameType type = JavaNameMangler.decodeFrameTypeFromMangledName(mangledTuple.get(1));
@@ -102,6 +107,9 @@ public class BacktraceData implements Serializable {
                             previousElement = null;
                             continue;
                         }
+
+                        // mask internal file paths
+                        filename = TraceType.maskInternalFiles(filename);
 
                         // construct Ruby trace element
                         RubyStackTraceElement rubyElement = new RubyStackTraceElement(className, decodedName, filename, line, false, type);
@@ -161,7 +169,15 @@ public class BacktraceData implements Serializable {
                         break;
                     default: newName = rubyFrame.method;
                 }
-                RubyStackTraceElement rubyElement = new RubyStackTraceElement("RUBY", newName, rubyFrame.filename, rubyFrame.line + 1, false, frameType);
+
+                // skip internal sources if requested
+                filename = rubyFrame.filename;
+                if (excludeInternal && TraceType.isExcludedInternal(filename)) continue;
+
+                // mask internal file paths
+                filename = TraceType.maskInternalFiles(filename);
+
+                RubyStackTraceElement rubyElement = new RubyStackTraceElement("RUBY", newName, filename, rubyFrame.line + 1, false, frameType);
 
                 // dup if masking native and previous frame was native
                 if (maskNative && dupFrame) {

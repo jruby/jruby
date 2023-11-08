@@ -4185,6 +4185,16 @@ public final class Ruby implements Constantizable {
         return RubySystemExit.newInstance(this, status, message).toThrowable();
     }
 
+    /**
+     * Prepare a throwable IOError with the given message.
+     *
+     * This constructor should not be used to create a RubyException object to be raised on a different thread.
+     *
+     * @see RaiseException#from(Ruby, RubyClass, String)
+     *
+     * @param message the message for the new IOError
+     * @return a fully-prepared IOError throwable
+     */
     public RaiseException newIOError(String message) {
         return newRaiseException(getIOError(), message);
     }
@@ -4288,10 +4298,13 @@ public final class Ruby implements Constantizable {
      *
      * There are additional forms of this construction logic in {@link RaiseException#from}.
      *
+     * This constructor should not be used to create a RubyException object to be raised on a different thread.
+     *
+     * @see RaiseException#from(Ruby, RubyClass, String)
+     *
      * @param exceptionClass the exception class from which to construct the exception object
      * @param message a simple message for the exception
      * @return a new RaiseException wrapping a new Ruby exception
-     * @see RaiseException#from(Ruby, RubyClass, String)
      */
     public RaiseException newRaiseException(RubyClass exceptionClass, String message) {
         IRubyObject cause = getCurrentContext().getErrorInfo();

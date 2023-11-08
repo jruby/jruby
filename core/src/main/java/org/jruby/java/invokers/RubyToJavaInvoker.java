@@ -161,7 +161,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
                 }
 
                 if (varArgs != null /* && varargsMethods.size() > 0 */) {
-                    varargsCallables = (T[]) varArgs.toArray(createCallableArray(varArgs.size()));
+                    varargsCallables = varArgs.toArray(createCallableArray(varArgs.size()));
                 }
                 // NOTE: tested (4, false); with opt_for_space: false but does not
                 // seem to give  the promised ~10% improvement in map's speed ...
@@ -341,7 +341,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
     }
 
     static JavaProxy castJavaProxy(final IRubyObject self) {
-        assert self instanceof JavaProxy : "Java methods can only be invoked on Java objects";
+        assert self instanceof JavaProxy : "Java methods can only be invoked on Java objects; got: " + self;
         return (JavaProxy) self;
     }
 

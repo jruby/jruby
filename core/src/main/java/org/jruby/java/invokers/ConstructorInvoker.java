@@ -213,7 +213,7 @@ public final class ConstructorInvoker extends RubyToJavaInvoker {
         return call(context, self, clazz, name, arg0, arg1, arg2);
     }
 
-    private void setAndCacheProxyObject(ThreadContext context, RubyModule clazz, JavaProxy proxy, Object object) {
+    private static void setAndCacheProxyObject(ThreadContext context, RubyModule clazz, JavaProxy proxy, Object object) {
         proxy.setObject(object);
 
         if (Java.OBJECT_PROXY_CACHE || clazz.getCacheProxy()) {
