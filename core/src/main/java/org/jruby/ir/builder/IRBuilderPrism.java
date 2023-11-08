@@ -120,7 +120,8 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             return buildAnd((AndNode) node);
         } else if (node instanceof ArrayNode) {
             return buildArray((ArrayNode) node);                   // MISSING: ArrayPatternNode
-        // AssocNode, AssocSplatNode are processed by HashNode
+        } else if (node instanceof AssocSplatNode) {
+            return build(result, ((AssocSplatNode) node).value);
         } else if (node instanceof BackReferenceReadNode) {
             return buildBackReferenceRead(result, (BackReferenceReadNode) node);
         } else if (node instanceof BeginNode) {
@@ -1570,17 +1571,19 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         } else {
             KeywordRestParameterNode keyRest = (KeywordRestParameterNode) parameters.keyword_rest;
             if (keyRest != null) {
-                RubySymbol key = keyRest.name;
-                ArgumentType type = ArgumentType.keyrest;
+                RubySymbol key;
+                ArgumentType type;
+                if (keyRest.name == null) {
+                    key = symbol(STAR_STAR);
+                    type = ArgumentType.anonkeyrest;
+                } else {
+                    key = keyRest.name;
+                    type = ArgumentType.keyrest;
+                }
 
-                // FIXME: anon may not happen here anymore.  run through anon types
-                // anonymous keyrest
-                if (key == null || key.getBytes().realSize() == 0) type = ArgumentType.anonkeyrest;
-
-                Variable av = getNewLocalVariable(key, 0);
                 if (scope instanceof IRMethod) addArgumentDescription(type, key);
 
-                addInstr(new ReceiveKeywordRestArgInstr(av, keywords));
+                addInstr(new ReceiveKeywordRestArgInstr(getNewLocalVariable(key, 0), keywords));
             }
         }
 
