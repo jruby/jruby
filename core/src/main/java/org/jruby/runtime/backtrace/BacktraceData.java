@@ -2,7 +2,6 @@ package org.jruby.runtime.backtrace;
 
 import com.headius.backport9.stack.StackWalker;
 import org.jruby.Ruby;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JavaNameMangler;
 
 import java.io.Serializable;
@@ -93,7 +92,7 @@ public class BacktraceData implements Serializable {
             // Only rewrite non-Java files when not in "raw" mode
             if (!(rawTrace || filename == null || filename.endsWith(".java"))) {
                 // skip internal sources if requested
-                if (excludeInternal && TraceType.isInternal(filename)) continue;
+                if (excludeInternal && TraceType.isExcludedInternal(filename)) continue;
 
                 List<String> mangledTuple = JavaNameMangler.decodeMethodTuple(methodName);
                 if (mangledTuple != null) {
@@ -173,7 +172,7 @@ public class BacktraceData implements Serializable {
 
                 // skip internal sources if requested
                 filename = rubyFrame.filename;
-                if (excludeInternal && TraceType.isInternal(filename)) continue;
+                if (excludeInternal && TraceType.isExcludedInternal(filename)) continue;
 
                 // mask internal file paths
                 filename = TraceType.maskInternalFiles(filename);

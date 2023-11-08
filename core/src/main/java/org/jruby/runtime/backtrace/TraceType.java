@@ -603,16 +603,23 @@ public class TraceType {
     }
 
     public static String maskInternalFiles(String filename) {
-        if (isInternal(filename)) {
+        if (isInternalFile(filename)) {
             return "<internal:" + filename + ">";
         }
 
         return filename;
     }
 
-    public static boolean isInternal(String filename) {
-        return filename.startsWith("uri:classloader:/jruby/kernel/") ||
-                filename.startsWith("<internal:");
+    public static boolean isInternalFile(String filename) {
+        return filename.startsWith("uri:classloader:/jruby/kernel/");
+    }
+
+    public static boolean hasInternalMarker(String filename) {
+        return filename.startsWith("<internal:");
+    }
+
+    public static boolean isExcludedInternal(String filename) {
+        return TraceType.isInternalFile(filename) || TraceType.hasInternalMarker(filename);
     }
 
     @Deprecated
