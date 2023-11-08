@@ -3,6 +3,7 @@ require 'test/unit'
 require 'test/jruby/test_helper'
 require 'rbconfig'
 require 'stringio'
+require 'tempfile'
 
 class TestIO < Test::Unit::TestCase
   include TestHelper
@@ -518,16 +519,30 @@ class TestIO < Test::Unit::TestCase
   # JRUBY-6137
   def test_rubyio_fileno_mapping_leak
     fileno_util = JRuby.runtime.fileno_util
-    starting_count = fileno_util.number_of_wrappers
 
-    # use a non-channel stream to ensure we use our mapping
-    io = org.jruby.RubyIO.new(JRuby.runtime, java.io.ByteArrayOutputStream.new)
+    # other test threads may still be cleaning up filenos, so we give a few rounds for this to settle
+    count = 0
+    while count < 10
+      starting_count = fileno_util.number_of_wrappers
 
-    open_io_count = fileno_util.number_of_wrappers
+      # use a non-channel stream to ensure we use our mapping
+      io = org.jruby.RubyIO.new(JRuby.runtime, java.io.ByteArrayOutputStream.new)
+
+      open_io_count = fileno_util.number_of_wrappers
+
+      io.close
+      closed_io_count = fileno_util.number_of_wrappers
+
+      if starting_count == closed_io_count
+        break
+      end
+
+      # either leaking or other threads are opening and closing; pause and try again
+      Thread.pass
+    end
+
+    # proceed to assertions
     assert_equal(starting_count + 1, open_io_count)
-
-    io.close
-    closed_io_count = fileno_util.number_of_wrappers
     assert_equal(starting_count, closed_io_count)
   end if RUBY_ENGINE == 'jruby'
 

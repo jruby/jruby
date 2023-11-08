@@ -33,6 +33,7 @@ import org.jruby.RubyEncoding;
 import org.jruby.RubyException;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyIO;
+import org.jruby.RubyIOError;
 import org.jruby.RubyNumeric;
 import org.jruby.FiberScheduler;
 import org.jruby.RubyString;
@@ -40,7 +41,6 @@ import org.jruby.RubyThread;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.platform.Platform;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -1352,9 +1352,9 @@ public class OpenFile implements Finalizable {
         private ChannelFD preRead(ThreadContext context, OpenFile fptr) {
             ChannelFD fd = fptr.fd;
 
+            // We should not get here without previously checking, so this must have been closed by another thread
             if (fd == null) {
-                // stream was closed on its way in, raise appropriate error
-                throw context.runtime.newErrnoEBADFError();
+                throw streamClosedInParallelError(context.runtime).toThrowable();
             }
 
             assert fptr.lockedByMe();
@@ -1507,7 +1507,7 @@ public class OpenFile implements Finalizable {
             working with any native descriptor.
          */
 
-        preRead(context, fptr, fd);
+        selectForRead(context, fptr, fd);
 
         try {
             return context.getThread().executeReadWrite(context, fptr, buffer, buf, count, READ_TASK);
@@ -1560,10 +1560,10 @@ public class OpenFile implements Finalizable {
         return written;
     }
 
-    private static void preRead(ThreadContext context, OpenFile fptr, ChannelFD fd) {
+    private static void selectForRead(ThreadContext context, OpenFile fptr, ChannelFD fd) {
+        // We should not get here without previously checking, so this must have been closed by another thread
         if (fd == null) {
-            // stream was closed on its way in, raise appropriate error
-            throw context.runtime.newErrnoEBADFError();
+            throw streamClosedInParallelError(context.runtime).toThrowable();
         }
 
         fptr.unlock();
@@ -1571,7 +1571,11 @@ public class OpenFile implements Finalizable {
             if (fd.chSelect != null
                     && fd.chNative == null // MRI does not select for rb_read_internal on native descriptors
                     && !fptr.nonblock) {
-                context.getThread().select(fd.chSelect, fptr, SelectionKey.OP_READ);
+
+                // keep selecting for read until ready, polling each time we wake up
+                while (!context.getThread().select(fd.chSelect, fptr, SelectionKey.OP_READ)) {
+                    context.pollThreadEvents();
+                }
             }
         } finally {
             fptr.lock();
@@ -2905,10 +2909,14 @@ public class OpenFile implements Finalizable {
                 if (thread == context.getThread()) continue;
 
                 // raise will also wake the thread from selection
-                RubyException exception = (RubyException) runtime.getIOError().newInstance(context, runtime.newString("stream closed in another thread"), Block.NULL_BLOCK);
+                RubyException exception = streamClosedInParallelError(runtime);
                 thread.raise(exception);
             }
         }
+    }
+
+    static RubyIOError streamClosedInParallelError(Ruby runtime) {
+        return RubyIOError.newIOError(runtime, "stream closed in another thread");
     }
 
     /**
