@@ -97,6 +97,7 @@ public final class GlobalVariable {
 
     public void setAccessor(IAccessor accessor) {
         this.accessor = accessor;
+        this.invalidator.invalidate();
     }
     public boolean isTracing() {
         return tracing;

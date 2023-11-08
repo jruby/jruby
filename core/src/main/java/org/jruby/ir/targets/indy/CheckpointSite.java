@@ -26,15 +26,16 @@ public class CheckpointSite extends MutableCallSite {
             Bootstrap.BOOTSTRAP_BARE_SIG,
             false);
 
+    private static final MethodHandles.Lookup LOOKUP = lookup();
+    private static final MethodHandle FALLBACK = Binder.from(void.class, CheckpointSite.class, ThreadContext.class).invokeVirtualQuiet(LOOKUP, "checkpointFallback");
+
     public CheckpointSite(MethodType type) {
         super(type);
     }
 
     public static CallSite checkpointBootstrap(MethodHandles.Lookup lookup, String name, MethodType type) throws Throwable {
         CheckpointSite site = new CheckpointSite(type);
-        MethodHandle handle = lookup.findVirtual(CheckpointSite.class, "checkpointFallback", methodType(void.class, ThreadContext.class));
-
-        handle = handle.bindTo(site);
+        MethodHandle handle = FALLBACK.bindTo(site);
         site.setTarget(handle);
 
         return site;
@@ -42,15 +43,16 @@ public class CheckpointSite extends MutableCallSite {
 
     public void checkpointFallback(ThreadContext context) throws Throwable {
         Ruby runtime = context.runtime;
-        Invalidator invalidator = runtime.getCheckpointInvalidator();
+
+        // get switchpoint immediately to avoid missing invalidations
+        SwitchPoint invalidator = (SwitchPoint) runtime.getCheckpointInvalidator().getData();
 
         MethodHandle target = Binder
                 .from(void.class, ThreadContext.class)
                 .nop();
-        MethodHandle fallback = lookup().findVirtual(CheckpointSite.class, "checkpointFallback", methodType(void.class, ThreadContext.class));
-        fallback = fallback.bindTo(this);
+        MethodHandle fallback = FALLBACK.bindTo(this);
 
-        target = ((SwitchPoint)invalidator.getData()).guardWithTest(target, fallback);
+        target = invalidator.guardWithTest(target, fallback);
 
         this.setTarget(target);
 
