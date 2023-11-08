@@ -172,6 +172,7 @@ public class TraceType {
                         true,
                         true,
                         false,
+                        false,
                         false);
             }
         },
@@ -185,6 +186,7 @@ public class TraceType {
                         stackStream,
                         context.getBacktrace(),
                         true,
+                        false,
                         false,
                         false,
                         false);
@@ -202,7 +204,8 @@ public class TraceType {
                         false,
                         false,
                         false,
-                        true);
+                        true,
+                        false);
             }
         },
 
@@ -217,6 +220,7 @@ public class TraceType {
                         false,
                         false,
                         context.runtime.getInstanceConfig().getBacktraceMask(),
+                        false,
                         false);
             }
         },
@@ -232,7 +236,24 @@ public class TraceType {
                         false,
                         false,
                         true,
+                        false,
                         false);
+            }
+        },
+
+        /**
+         * Warning traces, showing only Ruby and core class methods, excluding internal files.
+         */
+        WARN {
+            public BacktraceData getBacktraceData(ThreadContext context, Stream<StackWalker.StackFrame> stackStream) {
+                return new BacktraceData(
+                        stackStream,
+                        context.getBacktrace(),
+                        false,
+                        false,
+                        true,
+                        false,
+                        true);
             }
         };
 
@@ -579,6 +600,26 @@ public class TraceType {
         }
 
         return RubyArray.newArrayMayCopy(runtime, traceArray);
+    }
+
+    public static String maskInternalFiles(String filename) {
+        if (isInternalFile(filename)) {
+            return "<internal:" + filename + ">";
+        }
+
+        return filename;
+    }
+
+    public static boolean isInternalFile(String filename) {
+        return filename.startsWith("uri:classloader:/jruby/kernel/");
+    }
+
+    public static boolean hasInternalMarker(String filename) {
+        return filename.startsWith("<internal:");
+    }
+
+    public static boolean isExcludedInternal(String filename) {
+        return TraceType.isInternalFile(filename) || TraceType.hasInternalMarker(filename);
     }
 
     @Deprecated

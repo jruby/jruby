@@ -2028,16 +2028,6 @@ public class RubyKernel {
         return fork(context, recv, block);
     }
 
-    @JRubyMethod(module = true)
-    public static IRubyObject tap(ThreadContext context, IRubyObject recv, Block block) {
-        if (block.getProcObject() != null) {
-            block.getProcObject().call(context, recv);
-        } else {
-            block.yield(context, recv);
-        }
-        return recv;
-    }
-
     @JRubyMethod(name = {"to_enum", "enum_for"}, rest = true, keywords = true)
     public static IRubyObject obj_to_enum(final ThreadContext context, IRubyObject self, IRubyObject[] args, final Block block) {
         // to_enum is a bit strange in that it will propagate the arguments it passes to each element it calls.  We are determining
@@ -2643,5 +2633,16 @@ public class RubyKernel {
     @Deprecated
     public static IRubyObject method19(IRubyObject self, IRubyObject symbol) {
         return method(self, symbol);
+    }
+
+    // defined in Ruby now but left here for backward compat
+    @Deprecated
+    public static IRubyObject tap(ThreadContext context, IRubyObject recv, Block block) {
+        if (block.getProcObject() != null) {
+            block.getProcObject().call(context, recv);
+        } else {
+            block.yield(context, recv);
+        }
+        return recv;
     }
 }
