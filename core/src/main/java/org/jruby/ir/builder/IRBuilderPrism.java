@@ -483,8 +483,10 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     @Override
-    Operand[] buildAttrAssignCallArgs(Node argsNode, boolean containsAssignment) {
-        return buildCallArgs(argsNode, new int[] { 0 });
+    Operand[] buildAttrAssignCallArgs(Node argsNode, Operand[] rhs, boolean containsAssignment) {
+        Operand[] args = buildCallArgs(argsNode, new int[] { 0 });
+        rhs[0] = args[args.length - 1];
+        return args;
     }
 
     public Operand buildAttrAssignAssignment(Node receiver, RubySymbol name, Node[] arguments, Operand value) {

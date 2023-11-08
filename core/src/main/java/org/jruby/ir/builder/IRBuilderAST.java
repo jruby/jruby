@@ -335,16 +335,16 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     // e.g. 'a[1] = 2 #=> 2' or 'a[1] = 1,2,3 #=> [1,2,3]'
     // _value only used in prism...in AST we need to calculate the last arg.
     @Override
-    protected Operand[] buildAttrAssignCallArgs(Node args, boolean containsAssignment) {
+    protected Operand[] buildAttrAssignCallArgs(Node args, Operand[] outValue, boolean containsAssignment) {
         if (args == null) return EMPTY_ARRAY;
 
         switch (args.getNodeType()) {
             case ARRAYNODE: {     // a[1] = 2; a[1,2,3] = 4,5,6
-                Operand last = nil();
                 Node[] children = ((ListNode) args).children();
                 Operand[] operands = new Operand[children.length];
                 for (int i = 0; i < children.length; i++) {
                     operands[i] = buildWithOrder(children[i], containsAssignment);
+                    outValue[0] = operands[i];
                 }
                 return operands;
             }
@@ -352,25 +352,27 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
                 ArgsCatNode argsCatNode = (ArgsCatNode)args;
                 Operand lhs = build(argsCatNode.getFirstNode());
                 Operand rhs = build(argsCatNode.getSecondNode());
-                Variable res = temp();
-                addInstr(new BuildCompoundArrayInstr(res, lhs, rhs, false, false));
-                return new Operand[] { new Splat(res), rhs };
+                outValue[0] = rhs;
+                Variable res = addResultInstr(new BuildCompoundArrayInstr(temp(), lhs, rhs, false, false));
+                return new Operand[] { new Splat(res) };
             }
             case ARGSPUSHNODE:  { // a[1, *b] = 2
                 ArgsPushNode argsPushNode = (ArgsPushNode)args;
                 Operand lhs = build(argsPushNode.getFirstNode());
                 Operand rhs = build(argsPushNode.getSecondNode());
-                Variable res = temp();
-                addInstr(new BuildCompoundArrayInstr(res, lhs, rhs, true, false));
-                return new Operand[] { new Splat(res), rhs };
+                outValue[0] = rhs;
+                Variable res = addResultInstr(new BuildCompoundArrayInstr(temp(), lhs, rhs, true, false));
+                return new Operand[] { new Splat(res) };
             }
             case SPLATNODE: {     // a[1] = *b
-                return new Operand[] { new Splat(buildSplat(temp(), (SplatNode)args)) };
+                outValue[0] = new Splat(buildSplat(temp(), (SplatNode)args));
+                return new Operand[] { outValue[0] };
             }
         }
 
         throw notCompilable("Invalid node for attrassign call args", args);
     }
+
 
     private Operand buildRestKeywordArgs(HashNode keywordArgs, int[] flags) {
         flags[0] |= CALL_KEYWORD_REST;

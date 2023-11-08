@@ -2151,11 +2151,12 @@ public abstract class IRBuilder<U, V, W, X, Y> {
             addInstr(new BNilInstr(lazyLabel, obj));
         }
 
-        int[] flags = new int[] { 0 };
-        Operand[] args = buildAttrAssignCallArgs(argsNode, containsAssignment);
+        int[] flags = new int[1];
+        Operand[] rhs = new Operand[1];
+        Operand[] args = buildAttrAssignCallArgs(argsNode, rhs, containsAssignment);
         Operand block = setupCallClosure(blockNode);
         addInstr(AttrAssignInstr.create(scope, obj, name, args, block, flags[0], scope.maybeUsingRefinements()));
-        addInstr(new CopyInstr(result, args[args.length - 1]));
+        addInstr(new CopyInstr(result, rhs[0]));
 
         if (isLazy) {
             addInstr(new JumpInstr(endLabel));
@@ -2167,7 +2168,7 @@ public abstract class IRBuilder<U, V, W, X, Y> {
         return result;
     }
 
-    abstract Operand[] buildAttrAssignCallArgs(U args, boolean containsAssignment);
+    abstract Operand[] buildAttrAssignCallArgs(U args, Operand[] rhs, boolean containsAssignment);
 
     Operand buildRescueInternal(U bodyNode, U elseNode, U[] exceptions, U rescueBody,
                                         X optRescue, boolean isModifier, EnsureBlockInfo ensure, U reference) {
