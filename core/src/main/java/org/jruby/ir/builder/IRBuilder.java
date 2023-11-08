@@ -1857,7 +1857,7 @@ public abstract class IRBuilder<U, V, W, X, Y> {
         Variable elt = temp();
         int[] flags = new int[] { 0 };
         Operand[] argList = setupCallArgs(args, flags);
-        Operand blockArg = setupCallClosure(block);
+        Operand blockArg = setupCallClosure(args, block);
         addInstr(CallInstr.create(scope, callType, elt, symbol(ArrayDerefInstr.AREF), array, argList, blockArg, flags[0]));
         addInstr(createBranch(elt, truthy, endLabel));
         Operand valueArg = build(value);
@@ -1876,7 +1876,7 @@ public abstract class IRBuilder<U, V, W, X, Y> {
         CallType callType = array == Self.SELF ? FUNCTIONAL : CallType.NORMAL;
         int[] flags = new int[] { 0 };
         Operand[] argList = setupCallArgs(args, flags);
-        Operand blockArg = setupCallClosure(block);
+        Operand blockArg = setupCallClosure(args, block);
         Variable elt = temp();
         addInstr(CallInstr.create(scope, callType, elt, symbol(ArrayDerefInstr.AREF), array, argList, blockArg, flags[0])); // elt = a[args]
 
@@ -2154,7 +2154,7 @@ public abstract class IRBuilder<U, V, W, X, Y> {
         int[] flags = new int[1];
         Operand[] rhs = new Operand[1];
         Operand[] args = buildAttrAssignCallArgs(argsNode, rhs, containsAssignment);
-        Operand block = setupCallClosure(blockNode);
+        Operand block = setupCallClosure(argsNode, blockNode);
         addInstr(AttrAssignInstr.create(scope, obj, name, args, block, flags[0], scope.maybeUsingRefinements()));
         addInstr(new CopyInstr(result, rhs[0]));
 
@@ -2346,7 +2346,7 @@ public abstract class IRBuilder<U, V, W, X, Y> {
 
     Operand buildSuper(Variable aResult, U iterNode, U argsNode, int line, boolean isNewline) {
         Variable result = aResult == null ? temp() : aResult;
-        Operand tempBlock = setupCallClosure(iterNode);
+        Operand tempBlock = setupCallClosure(argsNode, iterNode);
         if (tempBlock == NullBlock.INSTANCE) tempBlock = getYieldClosureVariable();
         Operand block = tempBlock;
 
@@ -2417,7 +2417,7 @@ public abstract class IRBuilder<U, V, W, X, Y> {
 
     abstract void receiveForArgs(U node);
     abstract void receiveBlockArgs(U node);
-    abstract Operand setupCallClosure(U node);
+    abstract Operand setupCallClosure(U args, U iter);
 
     // returns true if we should emit an eqq for this value (e.g. it has not already been seen yet).
     boolean literalWhenCheck(U value, Set<IRubyObject> seenLiterals) {
@@ -2438,7 +2438,7 @@ public abstract class IRBuilder<U, V, W, X, Y> {
     }
 
     Operand buildZSuper(Variable result, U iter) {
-        Operand block = setupCallClosure(iter);
+        Operand block = setupCallClosure(null, iter);
         if (block == NullBlock.INSTANCE) block = getYieldClosureVariable();
 
         return scope instanceof IRMethod ? buildZSuper(result, block) : buildZSuperIfNest(result, block);
@@ -2565,10 +2565,8 @@ public abstract class IRBuilder<U, V, W, X, Y> {
         int nearestScopeDepth = parent.getNearestModuleReferencingScopeDepth();
         addInstr(new CopyInstr(getCurrentModuleVariable(), ScopeModule.ModuleFor(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
 
-        // Build IR for arguments (including the block arg)
         receiveMethodArgs(defNode.getMethod());
 
-        // Build IR for body
         Operand rv = build(defNode.getMethodBody());
 
         // FIXME: Need commonality for line numbers between YARP and AST
@@ -2656,7 +2654,7 @@ public abstract class IRBuilder<U, V, W, X, Y> {
         Operand[] args = setupCallArgs(argsNode, flags);
         // check for refinement calls before building any closure
         if (callType == FUNCTIONAL) determineIfMaybeRefined(name, args);
-        Operand block = setupCallClosure(iter);
+        Operand block = setupCallClosure(argsNode, iter);
         determineIfWeNeedLineNumber(line, isNewline); // backtrace needs line of call in case of exception.
         if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
             Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));

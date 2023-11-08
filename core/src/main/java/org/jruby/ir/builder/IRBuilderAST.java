@@ -2278,7 +2278,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
                 node.getLine(), node.isNewline());
     }
 
-    Operand setupCallClosure(Node node) {
+    Operand setupCallClosure(Node _unused, Node node) {
         if (node == null) return NullBlock.INSTANCE;
 
         switch (node.getNodeType()) {
@@ -2758,11 +2758,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
        return copy(result, new Array());
     }
 
-    public Operand buildZSuper(Variable result, ZSuperNode zsuperNode) {
-        Operand block = setupCallClosure(zsuperNode.getIterNode());
-        if (block == NullBlock.INSTANCE) block = getYieldClosureVariable();
-
-        return scope instanceof IRMethod ? buildZSuper(result, block) : buildZSuperIfNest(result, block);
+    public Operand buildZSuper(Variable result, ZSuperNode node) {
+        return buildZSuper(result, node.getIterNode());
     }
 
     /*

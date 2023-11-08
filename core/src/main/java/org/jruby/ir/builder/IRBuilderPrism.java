@@ -744,7 +744,6 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
                 Variable check = addResultInstr(new RuntimeHelperCall(temp(), HASH_CHECK, new Operand[] { kwRest }));
                 Variable ary = addResultInstr(new BuildCompoundArrayInstr(temp(), rest, check, true, true));
                 builtArgs[i] = new Splat(buildSplat(ary));
-                builtArgs = addArg(builtArgs, getLocalVariable(symbol(FWD_BLOCK), scope.getStaticScope().isDefined("&")));
                 flags[0] |= CALL_KEYWORD | CALL_KEYWORD_REST | CALL_SPLATS;
             } else {
                 builtArgs[i] = buildWithOrder(children[i], hasAssignments);
@@ -1529,19 +1528,14 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             return;
         }
 
+        // FIXME: I think we are missing argument descriptor for both builders and ...
         if (parameters.keyword_rest instanceof ForwardingParameterNode) {
             Variable keywords = addResultInstr(new ReceiveKeywordsInstr(temp(), true, true));
             addInstr(new ReceiveRestArgInstr(argumentResult(symbol(FWD_REST)), keywords, 0, 0));
-            Variable av = getNewLocalVariable(symbol(FWD_KWREST), 0);
-            // FIXME: Missing arg descriptor for ... to methods???
-            ArgumentType type = ArgumentType.anonkeyrest;
-            addInstr(new ReceiveKeywordRestArgInstr(av, keywords));
-            // FIXME: Consolidate this with other fwd uses like ordinary '&'
-            RubySymbol name = symbol(FWD_BLOCK);
-            Variable blockVar = argumentResult(name);
-            if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.block, name);
-            Variable tmp = temp();
-            addInstr(new LoadImplicitClosureInstr(tmp));
+            ArgumentType type = ArgumentType.anonkeyrest;         // FIXME: Missing arg descriptor for ... to methods???
+            addInstr(new ReceiveKeywordRestArgInstr(argumentResult(symbol(FWD_KWREST)), keywords));
+            Variable blockVar = argumentResult(symbol(FWD_BLOCK));
+            Variable tmp = addResultInstr(new LoadImplicitClosureInstr(temp()));
             addInstr(new ReifyClosureInstr(blockVar, tmp));
 
             return;
@@ -2325,16 +2319,28 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         buildParameters(defNode.parameters);
     }
 
-    Operand setupCallClosure(Node node) {
-        if (node == null) return NullBlock.INSTANCE;
-
-        if (node instanceof BlockNode) {
-            return build(node);
-        } else if (node instanceof BlockArgumentNode) {
-            return buildBlockArgument((BlockArgumentNode) node);
+    Operand setupCallClosure(Node args, Node block) {
+        if (block == null) {
+            if (args != null && isForwardingArguments(args)) {
+                return getLocalVariable(symbol(FWD_BLOCK), scope.getStaticScope().isDefined("&"));
+            }
+            return NullBlock.INSTANCE;
         }
 
-        throw notCompilable("Encountered unexpected block node", node);
+        if (block instanceof BlockNode) {
+            return build(block);
+        } else if (block instanceof BlockArgumentNode) {
+            return buildBlockArgument((BlockArgumentNode) block);
+        }
+
+        throw notCompilable("Encountered unexpected block node", block);
+    }
+
+    private boolean isForwardingArguments(Node args) {
+        for (Node child: ((ArgumentsNode) args).arguments) {
+            if (child instanceof ForwardingArgumentsNode) return true;
+        }
+        return false;
     }
 
     private ByteList byteListFrom(Node node) {
