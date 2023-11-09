@@ -8,6 +8,8 @@ import org.jruby.RubyBignum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.RubySymbol;
+import org.jruby.ast.BignumNode;
+import org.jruby.ast.FixnumNode;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRManager;
@@ -57,11 +59,14 @@ import org.prism.Nodes;
 import org.prism.Nodes.*;
 import org.jruby.parser.ParseResultPrism;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
+import static org.jruby.parser.RubyParser.tRATIONAL;
 import static org.jruby.runtime.CallType.VARIABLE;
 import static org.jruby.runtime.ThreadContext.*;
 import static org.jruby.util.CommonByteLists.*;
@@ -1617,6 +1622,17 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildRational(RationalNode node) {
+        if (node.numeric instanceof FloatNode) {
+            BigDecimal bd = new BigDecimal(byteListFrom(node.numeric).toString());
+            BigDecimal denominator = BigDecimal.ONE.scaleByPowerOfTen(bd.scale());
+            BigDecimal numerator = bd.multiply(denominator);
+
+            try {
+                return new Rational(fix(numerator.longValueExact()), fix(denominator.longValueExact()));
+            } catch (ArithmeticException ae) {
+                return new Rational(new Bignum(numerator.toBigIntegerExact()), new Bignum(denominator.toBigIntegerExact()));
+            }
+        }
         // FIXME: Meh. will this always work.
         return new Rational((ImmutableLiteral) build(node.numeric), fix(1));
     }
