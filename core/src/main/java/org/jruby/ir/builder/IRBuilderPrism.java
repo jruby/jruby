@@ -2179,7 +2179,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         Variable result = aResult;
         int[] flags = new int[]{0};
         Operand[] args = buildYieldArgs(node.arguments != null ? node.arguments.arguments : null, flags);
-        boolean unwrap = (args.length != 1 || (flags[0] & CALL_KEYWORD) == 0);
+        boolean unwrap = (args != null && args.length != 1 || (flags[0] & CALL_KEYWORD) == 0);
 
         if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
             Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
@@ -2187,7 +2187,8 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
                     () -> addInstr(new YieldInstr(result, getYieldClosureVariable(), removeEmptyRestKwarg(args), flags[0], true)),
                     () -> addInstr(new YieldInstr(result, getYieldClosureVariable(), new Array(args), flags[0], unwrap)));
         } else {
-            addInstr(new YieldInstr(result, getYieldClosureVariable(), new Array(args), flags[0], unwrap));
+            Operand value = args == null ? UndefinedValue.UNDEFINED : new Array(args);
+            addInstr(new YieldInstr(result, getYieldClosureVariable(), value, flags[0], unwrap));
         }
 
         return result;
@@ -2203,7 +2204,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     Operand[] buildYieldArgs(Node[] args, int[] flags) {
-        return args == null ? Operand.EMPTY_ARRAY : buildCallArgsArray(args, flags);
+        return args == null ? null : buildCallArgsArray(args, flags);
     }
 
     private Operand catArgs(List<Operand> args, Operand splat, int[] flags) {
