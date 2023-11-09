@@ -2264,7 +2264,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         if (length == 0) return operands[lastSplat];
 
         Array rhs = subArray(operands, lastSplat + 1, length);
-        return addResultInstr(new BuildCompoundArrayInstr(temp(), operands[lastSplat], rhs, true, (flags[0] & CALL_KEYWORD_REST) != 0));
+        return addResultInstr(new BuildCompoundArrayInstr(temp(), operands[lastSplat], rhs, false, (flags[0] & CALL_KEYWORD_REST) != 0));
     }
 
     private Operand catArgs(Operand[] args, int start, int length, Operand splat, int[] flags) {
