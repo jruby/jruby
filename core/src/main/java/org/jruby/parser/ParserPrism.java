@@ -64,7 +64,14 @@ public class ParserPrism extends Parser {
         }
 
         if (res.errors != null && res.errors.length > 0) {
-            throw runtime.newSyntaxError(fileName + ":" + nodeSource.line(res.errors[0].location.startOffset) + ": " + res.errors[0].message);
+            // FIXME: syntax error /\c/ as index 4 but it should be 0 (prism issue #1793)
+            int line;
+            try {
+                line = nodeSource.line(res.errors[0].location.startOffset);
+            } catch (AssertionError e) {
+                line = nodeSource.line(res.errors[0].location.startOffset - 1);
+            }
+            throw runtime.newSyntaxError(fileName + ":" + line + ": " + res.errors[0].message);
         }
 
         ParseResult result = new ParseResultPrism(fileName, source, (Nodes.ProgramNode) res.value, nodeSource, encoding);
