@@ -23,6 +23,7 @@ import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.Bignum;
+import org.jruby.ir.operands.Complex;
 import org.jruby.ir.operands.CurrentScope;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.FrozenString;
@@ -219,6 +220,8 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             return buildHash(((HashNode) node).elements, containsVariableAssignment(node));
         } else if (node instanceof IfNode) {
             return buildIf(result, (IfNode) node);
+        } else if (node instanceof ImaginaryNode) {
+            return buildImaginary((ImaginaryNode) node);
         } else if (node instanceof ImplicitNode) {
             // Making a huge assumption the implicit node is what we always want for execution?
             return build(((ImplicitNode) node).value);
@@ -358,6 +361,10 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
     private Operand buildCallOperatorWrite(CallOperatorWriteNode node) {
         return buildOpAsgn(node.receiver, node.value, node.read_name, node.write_name, node.operator, node.isSafeNavigation());
+    }
+
+    private Operand buildImaginary(ImaginaryNode node) {
+        return new Complex((ImmutableLiteral) build(node.numeric));
     }
 
     private Operand buildIn(InNode node) {
