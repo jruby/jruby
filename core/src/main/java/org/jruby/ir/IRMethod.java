@@ -224,7 +224,6 @@ public class IRMethod extends IRScope {
 
     @Override
     protected LocalVariable findExistingLocalVariable(RubySymbol name, int scopeDepth) {
-        assert scopeDepth == 0: "Local variable depth in IRMethod should always be zero (" + name + " had depth of " + scopeDepth + ")";
         return localVars.get(name);
     }
 
