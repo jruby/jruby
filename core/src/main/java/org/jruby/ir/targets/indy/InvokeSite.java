@@ -184,6 +184,8 @@ public abstract class InvokeSite extends MutableCallSite {
             if (signature.argOffset("block") != -1) {
                 binder = binder.permute("method", "context", "self", "rubyClass", "name", "callInfo", "block", "args");
             }
+        } else {
+            binder = setThreadLocalCallInfo(binder);
         }
 
         if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
@@ -191,6 +193,18 @@ public abstract class InvokeSite extends MutableCallSite {
         }
 
         return binder.invokeVirtualQuiet(LOOKUP, "call").handle();
+    }
+
+    private SmartBinder setThreadLocalCallInfo(SmartBinder binder) {
+        SmartHandle callInfoWrapper;
+        SmartBinder baseBinder = SmartBinder.from(binder.signature().changeReturn(void.class)).permute("context");
+        if (flags == 0) {
+            callInfoWrapper = baseBinder.invokeVirtualQuiet(LOOKUP, "clearCallInfo");
+        } else {
+            callInfoWrapper = baseBinder.append("flags", flags).invokeStaticQuiet(LOOKUP, IRRuntimeHelpers.class, "setCallInfo");
+        }
+        binder = binder.foldVoid(callInfoWrapper);
+        return binder;
     }
 
     private static SmartBinder permuteForGenericCall(SmartBinder binder, DynamicMethod method, String... basePermutes) {
@@ -393,6 +407,9 @@ public abstract class InvokeSite extends MutableCallSite {
             binder = SmartBinder.from(signature)
                     .permute("context", "self", "arg.*", "block");
 
+            // no jitted forms accept callInfo yet so we always set in thread local
+            binder = setThreadLocalCallInfo(binder);
+
             if (arity == -1) {
                 // already [], nothing to do
                 mh = (MethodHandle)compiledIRMethod.getHandle();
@@ -476,6 +493,9 @@ public abstract class InvokeSite extends MutableCallSite {
                 }
 
                 if (binder != null) {
+
+                    // no native methods accept callInfo directly, so we always set thread local
+                    binder = setThreadLocalCallInfo(binder);
 
                     // clean up non-arguments, ordering, types
                     if (!nc.hasContext()) {
@@ -660,8 +680,7 @@ public abstract class InvokeSite extends MutableCallSite {
             mh = getHandle(self, entry);
         }
 
-        boolean needsCallInfo = arity > -1 && arity < 4;
-        finishBinding(entry, mh, self, selfClass, switchPoint, needsCallInfo);
+        finishBinding(entry, mh, self, selfClass, switchPoint);
 
         return performIndirectCall(context, self, args, block, methodName, passSymbol, entry);
     }
@@ -684,8 +703,7 @@ public abstract class InvokeSite extends MutableCallSite {
             mh = getHandle(self, entry);
         }
 
-        boolean needsCallInfo = arity > -1 && arity < 4;
-        finishBinding(entry, mh, self, selfClass, switchPoint, needsCallInfo);
+        finishBinding(entry, mh, self, selfClass, switchPoint);
 
         return performIndirectCall(context, self, args, block, methodName, passSymbol, entry);
     }
@@ -702,22 +720,11 @@ public abstract class InvokeSite extends MutableCallSite {
         return Helpers.createMethodMissingEntry(context, selfClass, callType, visibility, entry.token, methodName);
     }
 
-    private void finishBinding(CacheEntry entry, MethodHandle mh, IRubyObject self, RubyClass selfClass, SwitchPoint switchPoint, boolean needsCallInfo) {
+    private void finishBinding(CacheEntry entry, MethodHandle mh, IRubyObject self, RubyClass selfClass, SwitchPoint switchPoint) {
         if (literalClosure) {
             mh = Binder.from(mh.type())
                     .tryFinally(getBlockEscape(signature))
                     .invoke(mh);
-        }
-
-        if (needsCallInfo) {
-            SmartHandle callInfoWrapper;
-            SmartBinder baseBinder = SmartBinder.from(signature.changeReturn(void.class)).permute("context");
-            if (flags == 0) {
-                callInfoWrapper = baseBinder.invokeVirtualQuiet(LOOKUP, "clearCallInfo");
-            } else {
-                callInfoWrapper = baseBinder.append("flags", flags).invokeStaticQuiet(LOOKUP, IRRuntimeHelpers.class, "setCallInfo");
-            }
-            mh = foldArguments(mh, callInfoWrapper.handle());
         }
 
         updateInvocationTarget(mh, self, selfClass, entry.method, switchPoint);
