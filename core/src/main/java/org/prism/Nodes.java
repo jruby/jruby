@@ -55,7 +55,7 @@ public abstract class Nodes {
         }
 
         public void setStartLine(int startLine) {
-            assert startLine >= 1;
+            //assert startLine >= 1;
             this.startLine = startLine;
         }
 

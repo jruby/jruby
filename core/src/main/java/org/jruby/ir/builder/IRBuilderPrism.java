@@ -8,10 +8,7 @@ import org.jruby.RubyBignum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.RubySymbol;
-import org.jruby.ast.BignumNode;
-import org.jruby.ast.FixnumNode;
 import org.jruby.compiler.NotCompilableException;
-import org.jruby.exceptions.SyntaxError;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRMethod;
@@ -62,13 +59,11 @@ import org.prism.Nodes.*;
 import org.jruby.parser.ParseResultPrism;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
-import static org.jruby.parser.RubyParser.tRATIONAL;
 import static org.jruby.runtime.CallType.VARIABLE;
 import static org.jruby.runtime.ThreadContext.*;
 import static org.jruby.util.CommonByteLists.*;
@@ -256,7 +251,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         } else if (node instanceof InterpolatedXStringNode) {
             return buildInterpolatedXString(result, (InterpolatedXStringNode) node);
         } else if (node instanceof KeywordHashNode) {
-            return buildKeywordHash((KeywordHashNode) node);
+            return buildKeywordHash((KeywordHashNode) node, new int[1]); // FIXME: we don't care about flags but this is odd (seems to only be for array syntax with kwrest?).
         // KeywordParameterNode, KeywordRestParameterNode processed by call
         } else if (node instanceof LambdaNode) {
             return buildLambda((LambdaNode) node);
@@ -1406,8 +1401,8 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return buildDXStr(result, node.parts, getEncoding(), getLine(node));
     }
 
-    // FIXME: This and buildHash probably have different logic now.
-    private Operand buildKeywordHash(KeywordHashNode node) {
+    private Operand buildKeywordHash(KeywordHashNode node, int[] flags) {
+        flags[0] |= CALL_KEYWORD;
         List<KeyValuePair<Operand, Operand>> args = new ArrayList<>();
         boolean hasAssignments = containsVariableAssignment(node);
         Variable hash = null;
@@ -1422,6 +1417,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
                 keyOperand = build(((AssocNode) pair).key);
                 args.add(new KeyValuePair<>(keyOperand, buildWithOrder(((AssocNode) pair).value, hasAssignments)));
             } else {  // AssocHashNode
+                flags[0] |= CALL_KEYWORD_REST;
                 AssocSplatNode assoc = (AssocSplatNode) pair;
                 boolean isLiteral = assoc.value instanceof HashNode;
                 duplicateCheck = isLiteral ? tru() : fals();
@@ -2178,8 +2174,10 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
         Variable result = aResult;
         int[] flags = new int[]{0};
-        Operand[] args = buildYieldArgs(node.arguments != null ? node.arguments.arguments : null, flags);
+        /*
+                Operand[] args = buildYieldArgs(node.arguments != null ? node.arguments.arguments : null, flags);
         boolean unwrap = (args != null && args.length != 1 || (flags[0] & CALL_KEYWORD) == 0);
+
 
         if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
             Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
@@ -2189,8 +2187,20 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         } else {
             Operand value = args == null ? UndefinedValue.UNDEFINED : new Array(args);
             addInstr(new YieldInstr(result, getYieldClosureVariable(), value, flags[0], unwrap));
-        }
+        }*/
 
+        boolean unwrap = true;
+
+        if (node.arguments != null) {
+            if (node.arguments.arguments != null &&
+                    node.arguments.arguments.length == 1 &&
+                    !(node.arguments.arguments[0] instanceof KeywordHashNode) &&
+            !(node.arguments.arguments[0] instanceof SplatNode)) {
+                unwrap = false;
+            }
+        }
+        Operand value = buildYieldArgs(node.arguments != null ? node.arguments.arguments : null, flags);
+        addInstr(new YieldInstr(result, getYieldClosureVariable(), value, flags[0], unwrap));
         return result;
     }
 
@@ -2203,25 +2213,70 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return new Array(removeArg(args));
     }
 
-    Operand[] buildYieldArgs(Node[] args, int[] flags) {
-        return args == null ? null : buildCallArgsArray(args, flags);
+    Operand buildYieldArgs(Node[] args, int[] flags) {
+        if (args == null) {
+            return UndefinedValue.UNDEFINED;
+        } else if (args.length == 1) {
+            if (args[0] instanceof SplatNode) { // yield *c
+                flags[0] |= CALL_SPLATS;
+                return new Splat(buildSplat((SplatNode) args[0]));
+            } else if (args[0] instanceof KeywordHashNode) {
+                return buildKeywordHash((KeywordHashNode) args[0], flags);
+            } else { // ???
+                return build(args[0]);
+            }
+        } else {
+            int lastSplat = -1;
+            Operand[] operands = new Operand[args.length];
+            for (int i = 0; i < args.length; i++) {
+                if (args[i] instanceof SplatNode) { // yield with a splat in it in any position
+                    if (lastSplat != -1) { // already one splat encountered
+                        operands[i] = twoArgs(operands, lastSplat, i, flags);
+                    } else { // first and possibly only splat
+                        flags[0] |= CALL_SPLATS; // FIXME: not sure all splats count?
+                        operands[i] = catArgs(operands, 0, i, buildSplat((SplatNode) args[i]), flags);
+                    }
+                    lastSplat = i;
+                } else if (args[i] instanceof KeywordHashNode) {
+                    operands[i] = buildKeywordHash((KeywordHashNode) args[i], flags);
+                } else {
+                    operands[i] = build(args[i]);
+                }
+            }
+
+            if (lastSplat != -1) {
+                if (lastSplat == args.length - 1) return operands[lastSplat];
+
+                return pushArgs(operands, lastSplat, args.length, flags); // Some trailing elements after a splat
+            } else {
+                return new Array(operands);
+            }
+        }
     }
 
-    private Operand catArgs(List<Operand> args, Operand splat, int[] flags) {
-        Operand lhs = buildArray(args);
-        args.clear();
-        return addResultInstr(new BuildCompoundArrayInstr(temp(), splat, lhs, false, (flags[0] & CALL_KEYWORD_REST) != 0));
+    private Operand twoArgs(Operand[] operands, int lastSplat, int newSplat, int[] flags) {
+        Operand lhs = pushArgs(operands, lastSplat, newSplat, flags);
+        return addResultInstr(new BuildCompoundArrayInstr(temp(), lhs, operands[newSplat], false, (flags[0] & CALL_KEYWORD_REST) != 0));
     }
 
-    private Operand catArgs(Operand lhs, SplatNode splat, int[] flags) {
-        Operand rhs = build(splat.expression);
-        return addResultInstr(new BuildCompoundArrayInstr(temp(), lhs, rhs, false, (flags[0] & CALL_KEYWORD_REST) != 0));
+    private Operand pushArgs(Operand[] operands, int lastSplat, int newSplat, int[] flags) {
+        int length = newSplat - lastSplat - 1;
+        if (length == 0) return operands[lastSplat];
+
+        Array rhs = subArray(operands, lastSplat + 1, length);
+        return addResultInstr(new BuildCompoundArrayInstr(temp(), operands[lastSplat], rhs, true, (flags[0] & CALL_KEYWORD_REST) != 0));
     }
-    private Operand catArgs(List<Operand> args, SplatNode splat, int[] flags) {
-        Operand lhs = buildArray(args);
-        args.clear();
-        Operand rhs = build(splat.expression);
-        return addResultInstr(new BuildCompoundArrayInstr(temp(), lhs, rhs, false, (flags[0] & CALL_KEYWORD_REST) != 0));
+
+    private Operand catArgs(Operand[] args, int start, int length, Operand splat, int[] flags) {
+        Array lhs = subArray(args, start, length);
+        return addResultInstr(new BuildCompoundArrayInstr(temp(), lhs, splat, false, (flags[0] & CALL_KEYWORD_REST) != 0));
+    }
+
+    private static Array subArray(Operand[] args, int start, int length) {
+        Operand[] elts = new Operand[length];
+        System.arraycopy(args, start, elts, 0, length);
+        Array lhs = new Array(elts);
+        return lhs;
     }
 
     private Operand buildArray(List<Operand> elts) {
