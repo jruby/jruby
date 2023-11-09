@@ -11,6 +11,7 @@ import org.jruby.RubySymbol;
 import org.jruby.ast.BignumNode;
 import org.jruby.ast.FixnumNode;
 import org.jruby.compiler.NotCompilableException;
+import org.jruby.exceptions.SyntaxError;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRMethod;
@@ -272,6 +273,8 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             return buildLocalVariableWrite((LocalVariableWriteNode) node);
         } else if (node instanceof MatchLastLineNode) {
             return buildMatchLastLine(result, (MatchLastLineNode) node);
+        } else if (node instanceof MatchRequiredNode) {
+            return buildMatchRequired((MatchRequiredNode) node);
         } else if (node instanceof MatchWriteNode) {
             return buildMatchWrite(result, (MatchWriteNode) node);
         } else if (node instanceof MissingNode) {                // MISSING: MatchPredicateNode, MatchRequiredNode
@@ -778,7 +781,22 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildCase(CaseNode node) {
-        return buildCase(node.predicate, node.conditions, node.consequent);
+        if (isPatternMatch(node)) throwSyntaxError(getLine(node), "Pattern match not supported yet");
+
+        try {
+            return buildCase(node.predicate, node.conditions, node.consequent);
+        } catch (Exception e) {
+            System.out.println("Problem with case : " + getFileName() + ":" + (getLine(node) + 1));
+            throw e;
+        }
+    }
+
+    private boolean isPatternMatch(CaseNode node) {
+        for (Node condition: node.conditions) {
+            if (condition instanceof InNode) return true;
+        }
+
+        return false;
     }
 
     private Operand buildClass(ClassNode node) {
@@ -1456,6 +1474,11 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
     private Operand buildMatchLastLine(Variable result, MatchLastLineNode node) {
         return buildMatch(result, new Regexp(bytelist(node.unescaped), RegexpOptions.fromJoniOptions(node.flags)));
+    }
+
+    private Operand buildMatchRequired(MatchRequiredNode node) {
+        throwSyntaxError(getLine(node), "Match required not supported yet");
+        return null;
     }
 
     private Operand buildMatchWrite(Variable result, MatchWriteNode node) {
