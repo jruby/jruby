@@ -2326,7 +2326,6 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return null;
     }
 
-
     @Override
     Node getInExpression(Node node) {
         return ((InNode) node).pattern;

@@ -798,14 +798,6 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return result;
     }
 
-    private List<KeyValuePair<Operand, Operand>> buildKeywordArguments(HashNode keywordArgs) {
-        List<KeyValuePair<Operand, Operand>> kwargs = new ArrayList<>();
-        for (KeyValuePair<Node, Node> pair: keywordArgs.getPairs()) {
-            kwargs.add(new KeyValuePair<>(build(pair.getKey()), build(pair.getValue())));
-        }
-        return kwargs;
-    }
-
     private void buildFindPattern(Label testEnd, Variable result, Variable deconstructed, FindPatternNode pattern,
                                   Operand obj, boolean inAlteration, boolean isSinglePattern, Variable errorString) {
         if (pattern.hasConstant()) {
@@ -948,37 +940,11 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         }
     }
 
-    private Variable deconstructHashPatternKeys(Label testEnd, HashPatternNode pattern, Variable result, Operand obj) {
-        Operand keys;
-
-        if (pattern.hasKeywordArgs() && !pattern.hashNamedKeywordRestArg()) {
-            List<Node> keyNodes = pattern.getKeys();
-            int length = keyNodes.size();
-            Operand[] builtKeys = new Operand[length];
-
-            for (int i = 0; i < length; i++) {
-                builtKeys[i] = build(keyNodes.get(i));
-            }
-            keys = new Array(builtKeys);
-        } else {
-            keys = nil();
-        }
-
-        if (pattern.getConstant() != null) {
-            Operand constant = build(pattern.getConstant());
-            addInstr(new EQQInstr(scope, result, constant, obj, false, true));
-            cond_ne(testEnd, result, tru());
-        }
-
-        call(result, obj, "respond_to?", new Symbol(symbol("deconstruct_keys")));
-        cond_ne(testEnd, result, tru());
-
-        return call(temp(), obj, "deconstruct_keys", keys);
-    }
-
     private void buildHashPattern(Label testEnd, Variable result, Variable deconstructed, HashPatternNode pattern,
                                   Operand obj, boolean inAlteration, boolean isSinglePattern, Variable errorString) {
-        Variable d = deconstructHashPatternKeys(testEnd, pattern, result, obj);
+        Node rest = pattern.getRestArg();
+        boolean hasRest = rest != null;
+        Variable d = deconstructHashPatternKeys(testEnd, pattern.getConstant(), pattern.getKeys(), rest, result, obj);
 
         label("hash_check_end", endHashCheck -> {
             addInstr(new EQQInstr(scope, result, getManager().getHashClass(), d, false, true));
@@ -986,7 +952,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         });
 
         // rest args destructively deletes elements from deconstruct_keys and the default impl is 'self'.
-        if (pattern.hasRestArg()) call(d, d, "dup");
+        if (hasRest) call(d, d, "dup");
 
         if (pattern.hasKeywordArgs()) {
             List<KeyValuePair<Node,Node>> kwargs = pattern.getKeywordArgs().getPairs();
@@ -997,7 +963,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
                 call(result, d, "key?", key);
                 cond_ne(testEnd, result, tru());
 
-                String method = pattern.hasRestArg() ? "delete" : "[]";
+                String method = hasRest ? "delete" : "[]";
                 Operand value = call(temp(), d, method, key);
                 buildPatternEach(testEnd, result, copy(buildNil()), value, pair.getValue(), inAlteration, isSinglePattern, errorString);
                 cond_ne(testEnd, result, tru());
@@ -1008,13 +974,13 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             cond_ne(testEnd, result, tru());
         }
 
-        if (pattern.hasRestArg()) {
-            if (pattern.getRestArg() instanceof NilRestArgNode) {
+        if (hasRest) {
+            if (rest instanceof NilRestArgNode) {
                 call(result, d, "empty?");
                 if (isSinglePattern) maybeGenerateIsNotEmptyErrorString(errorString, result, d);
                 cond_ne(testEnd, result, tru());
             } else if (pattern.isNamedRestArg()) {
-                buildPatternEach(testEnd, result, copy(buildNil()), d, pattern.getRestArg(), inAlteration, isSinglePattern, errorString);
+                buildPatternEach(testEnd, result, copy(buildNil()), d, rest, inAlteration, isSinglePattern, errorString);
                 cond_ne(testEnd, result, tru());
             }
         }

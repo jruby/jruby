@@ -1951,6 +1951,33 @@ public abstract class IRBuilder<U, V, W, X, Y> {
         return result;
     }
 
+    Variable deconstructHashPatternKeys(Label testEnd, U constantNode, U[] keyNodes, U rest, Variable result, Operand obj) {
+        Operand keys;
+
+        if (keyNodes != null && keyNodes.length > 0 && rest != null) {
+            int length = keyNodes.length;
+            Operand[] builtKeys = new Operand[length];
+
+            for (int i = 0; i < length; i++) {
+                builtKeys[i] = build(keyNodes[i]);
+            }
+            keys = new Array(builtKeys);
+        } else {
+            keys = nil();
+        }
+
+        if (constantNode != null) {
+            Operand constant = build(constantNode);
+            addInstr(new EQQInstr(scope, result, constant, obj, false, true));
+            cond_ne(testEnd, result, tru());
+        }
+
+        call(result, obj, "respond_to?", new Symbol(symbol("deconstruct_keys")));
+        cond_ne(testEnd, result, tru());
+
+        return call(temp(), obj, "deconstruct_keys", keys);
+    }
+
     abstract U getInExpression(U node);
     abstract U getInBody(U node);
 

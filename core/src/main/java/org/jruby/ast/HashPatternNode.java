@@ -67,12 +67,14 @@ public class HashPatternNode extends Node {
         return keywordArgs;
     }
 
-    public List getKeys() {
+    public Node[] getKeys() {
         List<KeyValuePair<Node,Node>> pairs = keywordArgs.getPairs();
-        List<Node> keys = new ArrayList<>(pairs.size());
 
-        for (KeyValuePair<Node, Node> pair: pairs) {
-            keys.add(pair.getKey());
+        int length = pairs.size();
+        Node[] keys = new Node[pairs.size()];
+
+        for (int i = 0; i < length; i++) {
+            keys[i] = pairs.get(i).getKey();
         }
 
         return keys;
