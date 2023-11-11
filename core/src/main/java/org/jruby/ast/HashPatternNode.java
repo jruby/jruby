@@ -68,16 +68,7 @@ public class HashPatternNode extends Node {
     }
 
     public Node[] getKeys() {
-        List<KeyValuePair<Node,Node>> pairs = keywordArgs.getPairs();
-
-        int length = pairs.size();
-        Node[] keys = new Node[length];
-
-        for (int i = 0; i < length; i++) {
-            keys[i] = pairs.get(i).getKey();
-        }
-
-        return keys;
+        return keywordArgs.getKeys();
     }
 
     public boolean hashNamedKeywordRestArg() {

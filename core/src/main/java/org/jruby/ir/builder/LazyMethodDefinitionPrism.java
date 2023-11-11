@@ -3,7 +3,6 @@ package org.jruby.ir.builder;
 import org.jcodings.Encoding;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRMethod;
-import org.jruby.util.ByteList;
 import org.prism.AbstractNodeVisitor;
 import org.prism.Nodes;
 import org.prism.Nodes.ConstantPathNode;
@@ -17,7 +16,7 @@ import org.prism.Nodes.WhenNode;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LazyMethodDefinitionPrism implements LazyMethodDefinition<Node, DefNode, WhenNode, RescueNode, ConstantPathNode> {
+public class LazyMethodDefinitionPrism implements LazyMethodDefinition<Node, DefNode, WhenNode, RescueNode, ConstantPathNode, Nodes.HashPatternNode> {
     private final Nodes.Source nodeSource;
     private DefNode node;
     private byte[] source;
@@ -82,8 +81,8 @@ public class LazyMethodDefinitionPrism implements LazyMethodDefinition<Node, Def
     }
 
     @Override
-    public IRBuilder<Node, DefNode, WhenNode, RescueNode, ConstantPathNode> getBuilder(IRManager manager, IRMethod methodScope) {
-        IRBuilder<Node, DefNode, WhenNode, RescueNode, ConstantPathNode> builder = IRBuilder.newIRBuilder(manager, methodScope, null, encoding, true);
+    public IRBuilder<Node, DefNode, WhenNode, RescueNode, ConstantPathNode, Nodes.HashPatternNode> getBuilder(IRManager manager, IRMethod methodScope) {
+        IRBuilder<Node, DefNode, WhenNode, RescueNode, ConstantPathNode, Nodes.HashPatternNode> builder = IRBuilder.newIRBuilder(manager, methodScope, null, encoding, true);
 
         ((IRBuilderPrism) builder).source = source;
         ((IRBuilderPrism) builder).nodeSource = nodeSource;

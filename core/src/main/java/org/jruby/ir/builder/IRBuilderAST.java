@@ -32,8 +32,7 @@ import org.jruby.ir.operands.Filename;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.FrozenString;
 import org.jruby.ir.operands.Hash;
-import org.jruby.ir.operands.ImmutableLiteral;
-import org.jruby.ir.operands.Integer;
+import org.jruby.ir.operands.ImmutableLiteral;;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.MutableString;
@@ -66,8 +65,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.function.Function;
 
-import static org.jruby.ir.instructions.IntegerMathInstr.Op.ADD;
-import static org.jruby.ir.instructions.IntegerMathInstr.Op.SUBTRACT;
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 
 import static org.jruby.ir.operands.ScopeModule.*;
@@ -122,7 +119,7 @@ import static org.jruby.runtime.ThreadContext.*;
 // This introduces artificial data dependencies, but fewer variables.  But, if we are going to implement SSA pass
 // this is not a big deal.  Think this through!
 
-public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyNode, Colon3Node> {
+public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyNode, Colon3Node, HashNode> {
     public static Node buildAST(boolean isCommandLineScript, String arg) {
         Ruby ruby = Ruby.getGlobalRuntime();
 
@@ -798,49 +795,24 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return result;
     }
 
-    private void buildHashPattern(Label testEnd, Variable result, Variable deconstructed, HashPatternNode pattern,
-                                  Operand obj, boolean inAlteration, boolean isSinglePattern, Variable errorString) {
-        Node rest = pattern.getRestArg();
-        boolean hasRest = rest != null;
-        Variable d = deconstructHashPatternKeys(testEnd, pattern.getConstant(), pattern.getKeys(), rest, result, obj);
+    boolean isNilRest(Node rest) {
+        return rest instanceof NilRestArgNode;
+    }
 
-        label("hash_check_end", endHashCheck -> {
-            addInstr(new EQQInstr(scope, result, getManager().getHashClass(), d, false, true));
-            cond(endHashCheck, result, tru(), () -> type_error("deconstruct_keys must return Hash"));
-        });
+    void buildAssocs(Label testEnd, Variable result, HashNode assocs, boolean inAlteration, boolean isSinglePattern,
+                     Variable errorString, boolean hasRest, Variable d) {
+        List<KeyValuePair<Node,Node>> kwargs = assocs.getPairs();
 
-        // rest args destructively deletes elements from deconstruct_keys and the default impl is 'self'.
-        if (hasRest) call(d, d, "dup");
-
-        if (pattern.hasKeywordArgs()) {
-            List<KeyValuePair<Node,Node>> kwargs = pattern.getKeywordArgs().getPairs();
-
-            for (KeyValuePair<Node,Node> pair: kwargs) {
-                // FIXME: only build literals (which are guaranteed to build without raising).
-                Operand key = build(pair.getKey());
-                call(result, d, "key?", key);
-                cond_ne(testEnd, result, tru());
-
-                String method = hasRest ? "delete" : "[]";
-                Operand value = call(temp(), d, method, key);
-                buildPatternEach(testEnd, result, copy(buildNil()), value, pair.getValue(), inAlteration, isSinglePattern, errorString);
-                cond_ne(testEnd, result, tru());
-            }
-        } else {
-            call(result, d, "empty?");
-            if (isSinglePattern) maybeGenerateIsNotEmptyErrorString(errorString, result, d);
+        for (KeyValuePair<Node,Node> pair: kwargs) {
+            // FIXME: only build literals (which are guaranteed to build without raising).
+            Operand key = build(pair.getKey());
+            call(result, d, "key?", key);
             cond_ne(testEnd, result, tru());
-        }
 
-        if (hasRest) {
-            if (rest instanceof NilRestArgNode) {
-                call(result, d, "empty?");
-                if (isSinglePattern) maybeGenerateIsNotEmptyErrorString(errorString, result, d);
-                cond_ne(testEnd, result, tru());
-            } else if (pattern.isNamedRestArg()) {
-                buildPatternEach(testEnd, result, copy(buildNil()), d, rest, inAlteration, isSinglePattern, errorString);
-                cond_ne(testEnd, result, tru());
-            }
+            String method = hasRest ? "delete" : "[]";
+            Operand value = call(temp(), d, method, key);
+            buildPatternEach(testEnd, result, copy(nil()), value, pair.getValue(), inAlteration, isSinglePattern, errorString);
+            cond_ne(testEnd, result, tru());
         }
     }
 
@@ -850,7 +822,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             ArrayPatternNode node = (ArrayPatternNode) exprNodes;
             buildArrayPattern(testEnd, result, deconstructed, node.getConstant(), node.getPre(), node.getRestArg(), node.getPost(), value, inAlternation, isSinglePattern, errorString);
         } else if (exprNodes instanceof HashPatternNode) {
-            buildHashPattern(testEnd, result, deconstructed, (HashPatternNode) exprNodes, value, inAlternation, isSinglePattern, errorString);
+            HashPatternNode node = (HashPatternNode) exprNodes;
+            buildHashPattern(testEnd, result, deconstructed, node.getConstant(), node.getKeywordArgs(), node.getKeys(), node.getRestArg(), value, inAlternation, isSinglePattern, errorString);
         } else if (exprNodes instanceof FindPatternNode) {
             FindPatternNode node = (FindPatternNode) exprNodes;
             buildFindPattern(testEnd, result, deconstructed, node.getConstant(), node.getPreRestArg(), node.getArgs(), node.getPostRestArg(), value, inAlternation, isSinglePattern, errorString);

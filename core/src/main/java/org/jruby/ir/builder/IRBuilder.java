@@ -6,10 +6,7 @@ import org.jruby.EvalType;
 import org.jruby.ParseResult;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
-import org.jruby.ast.InNode;
 import org.jruby.ast.IterNode;
-import org.jruby.ast.Node;
-import org.jruby.ast.PatternCaseNode;
 import org.jruby.ast.RootNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.ext.coverage.CoverageData;
@@ -69,7 +66,7 @@ import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_REST;
 import static org.jruby.util.RubyStringBuilder.str;
 
-public abstract class IRBuilder<U, V, W, X, Y> {
+public abstract class IRBuilder<U, V, W, X, Y, Z> {
     static final boolean PARSER_TIMING = Options.PARSER_SUMMARY.load();
     static final UnexecutableNil U_NIL = UnexecutableNil.U_NIL;
 
@@ -608,7 +605,7 @@ public abstract class IRBuilder<U, V, W, X, Y> {
         throw new RuntimeException("BUG: no BEQ");
     }
 
-    public void determineZSuperCallArgs(IRScope scope, IRBuilder<U, V, W, X, Y> builder, List<Operand> callArgs, List<KeyValuePair<Operand, Operand>> keywordArgs) {
+    public void determineZSuperCallArgs(IRScope scope, IRBuilder<U, V, W, X, Y, Z> builder, List<Operand> callArgs, List<KeyValuePair<Operand, Operand>> keywordArgs) {
         if (builder != null) {  // Still in currently building scopes
             for (Instr instr : builder.instructions) {
                 extractCallOperands(callArgs, keywordArgs, instr);
@@ -2208,6 +2205,45 @@ public abstract class IRBuilder<U, V, W, X, Y> {
         });
     }
 
+    abstract void buildAssocs(Label testEnd, Variable result, Z assocs, boolean inAlteration,
+                              boolean isSinglePattern, Variable errorString, boolean hasRest, Variable d);
+
+    void buildHashPattern(Label testEnd, Variable result, Variable deconstructed, U constant,
+                                  Z assocs, U[] assocsKeys, U rest, Operand obj, boolean inAlteration,
+                                  boolean isSinglePattern, Variable errorString) {
+        boolean hasRest = rest != null;
+        Variable d = deconstructHashPatternKeys(testEnd, constant, assocsKeys, rest, result, obj);
+
+        label("hash_check_end", endHashCheck -> {
+            addInstr(new EQQInstr(scope, result, getManager().getHashClass(), d, false, true));
+            cond(endHashCheck, result, tru(), () -> type_error("deconstruct_keys must return Hash"));
+        });
+
+        // rest args destructively deletes elements from deconstruct_keys and the default impl is 'self'.
+        if (hasRest) call(d, d, "dup");
+
+        if (rest != null || assocsKeys.length > 0) {
+            buildAssocs(testEnd, result, assocs, inAlteration, isSinglePattern, errorString, hasRest, d);
+        } else {
+            call(result, d, "empty?");
+            if (isSinglePattern) maybeGenerateIsNotEmptyErrorString(errorString, result, d);
+            cond_ne(testEnd, result, tru());
+        }
+
+        if (hasRest) {
+            if (isNilRest(rest)) {
+                call(result, d, "empty?");
+                if (isSinglePattern) maybeGenerateIsNotEmptyErrorString(errorString, result, d);
+                cond_ne(testEnd, result, tru());
+            } else if (!isBareStar(rest)) {
+                buildPatternEach(testEnd, result, copy(nil()), d, rest, inAlteration, isSinglePattern, errorString);
+                cond_ne(testEnd, result, tru());
+            }
+        }
+    }
+
+    abstract boolean isNilRest(U rest);
+
     void buildPatternLocal(Operand value, RubySymbol name, int line, int depth, boolean inAlternation) {
         if (inAlternation && name.idString().charAt(0) != '_') {
             throwSyntaxError(line, str(getManager().getRuntime(), "illegal variable in alternative pattern (", name, ")"));
@@ -2770,7 +2806,7 @@ public abstract class IRBuilder<U, V, W, X, Y> {
     abstract int dynamicPiece(Operand[] pieces, int index, U piece);
     abstract void receiveMethodArgs(V defNode);
 
-    IRMethod defineNewMethod(LazyMethodDefinition<U, V, W, X, Y> defn, ByteList name, int line, StaticScope scope, boolean isInstanceMethod) {
+    IRMethod defineNewMethod(LazyMethodDefinition<U, V, W, X, Y, Z> defn, ByteList name, int line, StaticScope scope, boolean isInstanceMethod) {
         IRMethod method = new IRMethod(getManager(), this.scope, defn, name, isInstanceMethod, line, scope, coverageMode);
 
         // poorly placed next/break expects a syntax error so we eagerly build methods which contain them.
@@ -2780,7 +2816,7 @@ public abstract class IRBuilder<U, V, W, X, Y> {
     }
 
 
-    public InterpreterContext defineMethodInner(LazyMethodDefinition<U, V, W, X, Y> defNode, IRScope parent, int coverageMode) {
+    public InterpreterContext defineMethodInner(LazyMethodDefinition<U, V, W, X, Y, Z> defNode, IRScope parent, int coverageMode) {
         long time = 0;
         if (PARSER_TIMING) time = System.nanoTime();
         this.coverageMode = coverageMode;

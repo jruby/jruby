@@ -69,7 +69,7 @@ import static org.jruby.runtime.ThreadContext.*;
 import static org.jruby.util.CommonByteLists.*;
 import static org.jruby.util.StringSupport.CR_UNKNOWN;
 
-public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNode, ConstantPathNode> {
+public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNode, ConstantPathNode, HashPatternNode> {
     String fileName = null;
     byte[] source;
 
@@ -2325,6 +2325,32 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     Variable buildPatternEach(Label testEnd, Variable result, Variable deconstructed, Operand value, Node exprNodes, boolean inAlternation, boolean isSinglePattern, Variable errorString) {
         // FIXME: Unimplemented
         return null;
+    }
+
+    @Override
+    void buildAssocs(Label testEnd, Variable result, HashPatternNode assocs, boolean inAlteration, boolean isSinglePattern, Variable errorString, boolean hasRest, Variable d) {
+
+        for (Node node: assocs.elements) {
+            // FIXME: There can be more than  AssocNode in here.
+            if (node instanceof AssocNode) {
+                // FIXME: only build literals (which are guaranteed to build without raising).
+                Operand key = build(((AssocNode) node).key);
+                call(result, d, "key?", key);
+                cond_ne(testEnd, result, tru());
+
+                String method = hasRest ? "delete" : "[]";
+                Operand value = call(temp(), d, method, key);
+                buildPatternEach(testEnd, result, copy(nil()), value, ((AssocNode) node).value, inAlteration, isSinglePattern, errorString);
+                cond_ne(testEnd, result, tru());
+                buildPatternEach(testEnd, result, copy(nil()), value, ((AssocNode) node).value, inAlteration, isSinglePattern, errorString);
+                cond_ne(testEnd, result, tru());
+            }
+        }
+    }
+
+    @Override
+    boolean isNilRest(Node rest) {
+        return rest instanceof NoKeywordsParameterNode;
     }
 
     @Override
