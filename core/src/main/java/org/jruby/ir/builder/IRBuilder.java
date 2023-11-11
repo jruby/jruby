@@ -1988,6 +1988,77 @@ public abstract class IRBuilder<U, V, W, X, Y> {
     abstract U getInBody(U node);
     abstract boolean isBareStar(U node);
 
+    void buildArrayPattern(Label testEnd, Variable result, Variable deconstructed, U constant, U[] pre,
+                                   U rest, U[] post, Operand obj, boolean inAlteration, boolean isSinglePattern,
+                                   Variable errorString) {
+        Variable restNum = addResultInstr(new CopyInstr(temp(), new Integer(0)));
+
+        if (constant != null) {
+            addInstr(new EQQInstr(scope, result, build(constant), obj, false, true));
+            cond_ne(testEnd, result, tru());
+        }
+
+        call(result, obj, "respond_to?", new Symbol(symbol("deconstruct")));
+        cond_ne(testEnd, result, tru());
+
+        label("deconstruct_cache_end", (deconstruct_cache_end) ->
+                cond_ne(deconstruct_cache_end, deconstructed, nil(), () -> {
+                    call(deconstructed, obj, "deconstruct");
+                    label("array_check_end", arrayCheck -> {
+                        addInstr(new EQQInstr(scope, result, getManager().getArrayClass(), deconstructed, false, false));
+                        cond(arrayCheck, result, tru(), () -> type_error("deconstruct must return Array"));
+                    });
+                })
+        );
+
+        int preArgsSize = pre == null ? 0 : pre.length;
+        int postArgsSize = post == null ? 0 : post.length;
+        Operand minArgsCount = new Integer(preArgsSize + postArgsSize);
+        Variable length = addResultInstr(new RuntimeHelperCall(temp(), ARRAY_LENGTH, new Operand[]{deconstructed}));
+        label("min_args_check_end", minArgsCheck -> {
+            BIntInstr.Op compareOp = rest != null ? BIntInstr.Op.GTE : BIntInstr.Op.EQ;
+            addInstr(new BIntInstr(minArgsCheck, compareOp, length, minArgsCount));
+            fcall(errorString, buildSelf(), "sprintf",
+                    new FrozenString("%s: %s length mismatch (given %d, expected %d)"), deconstructed, deconstructed, as_fixnum(length), as_fixnum(minArgsCount));
+            addInstr(new CopyInstr(result, fals()));
+            jump(testEnd);
+        });
+
+        if (preArgsSize > 0) {
+            for (int i = 0; i < preArgsSize; i++) {
+                Variable elt = call(temp(), deconstructed, "[]", fix(i));
+                buildPatternEach(testEnd, result, copy(nil()), elt, pre[i], inAlteration, isSinglePattern, errorString);
+                cond_ne(testEnd, result, tru());
+            }
+        }
+
+        if (rest != null) {
+            addInstr(new IntegerMathInstr(SUBTRACT, restNum, length, minArgsCount));
+
+            if (!isBareStar(rest)) {
+                Variable min = copy(fix(preArgsSize));
+                Variable max = as_fixnum(restNum);
+                Variable elt = call(temp(), deconstructed, "[]", min, max);
+
+                buildPatternMatch(result, copy(nil()), rest, elt, inAlteration, isSinglePattern, errorString);
+                cond_ne(testEnd, result, tru());
+            }
+        }
+
+        if (postArgsSize > 0) {
+            for (int i = 0; i < postArgsSize; i++) {
+                Label matchElementCheck = getNewLabel("match_post_args_element(i)_end");
+                Variable j = addResultInstr(new IntegerMathInstr(ADD, temp(), new Integer(i + preArgsSize), restNum));
+                Variable k = as_fixnum(j);
+                Variable elt = call(temp(), deconstructed, "[]", k);
+
+                buildPatternEach(testEnd, result, copy(nil()), elt, post[i], inAlteration, isSinglePattern, errorString);
+                addInstr(BNEInstr.create(matchElementCheck, result, fals()));
+                addInstr(new JumpInstr(testEnd));
+                addInstr(new LabelInstr(matchElementCheck));
+            }
+        }
+    }
 
     void buildFindPattern(Label testEnd, Variable result, Variable deconstructed, U constant, U pre,
                           U[] args, U post, Operand obj, boolean inAlteration, boolean isSinglePattern,

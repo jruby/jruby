@@ -798,81 +798,6 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return result;
     }
 
-    private void buildArrayPattern(Label testEnd, Variable result, Variable deconstructed, ArrayPatternNode pattern,
-                                   Operand obj, boolean inAlteration, boolean isSinglePattern, Variable errorString) {
-        Variable restNum = addResultInstr(new CopyInstr(temp(), new Integer(0)));
-
-        if (pattern.hasConstant()) {
-            Operand constant = build(pattern.getConstant());
-            addInstr(new EQQInstr(scope, result, constant, obj, false, true));
-            cond_ne(testEnd, result, tru());
-        }
-
-        call(result, obj, "respond_to?", new Symbol(symbol("deconstruct")));
-        cond_ne(testEnd, result, tru());
-
-        label("deconstruct_cache_end", (deconstruct_cache_end) ->
-            cond_ne(deconstruct_cache_end, deconstructed, buildNil(), () -> {
-                call(deconstructed, obj, "deconstruct");
-                label("array_check_end", arrayCheck -> {
-                    addInstr(new EQQInstr(scope, result, getManager().getArrayClass(), deconstructed, false, false));
-                    cond(arrayCheck, result, tru(), () -> type_error("deconstruct must return Array"));
-                });
-            })
-        );
-
-        Operand minArgsCount = new Integer(pattern.minimumArgsNum());
-        Variable length = addResultInstr(new RuntimeHelperCall(temp(), ARRAY_LENGTH, new Operand[]{deconstructed}));
-        label("min_args_check_end", minArgsCheck -> {
-            BIntInstr.Op compareOp = pattern.hasRestArg() ? BIntInstr.Op.GTE : BIntInstr.Op.EQ;
-            addInstr(new BIntInstr(minArgsCheck, compareOp, length, minArgsCount));
-            fcall(errorString, buildSelf(), "sprintf",
-                    new FrozenString("%s: %s length mismatch (given %d, expected %d)"), deconstructed, deconstructed, as_fixnum(length), as_fixnum(minArgsCount));
-            addInstr(new CopyInstr(result, fals()));
-            jump(testEnd);
-        });
-
-        ListNode preArgs = pattern.getPreArgs();
-        int preArgsSize = preArgs == null ? 0 : preArgs.size();
-        if (preArgsSize > 0) {
-            for (int i = 0; i < preArgsSize; i++) {
-                Variable elt = call(temp(), deconstructed, "[]", fix(i));
-                Node arg = preArgs.get(i);
-
-                buildPatternEach(testEnd, result, copy(buildNil()), elt, arg, inAlteration, isSinglePattern, errorString);
-                cond_ne(testEnd, result, tru());
-            }
-        }
-
-        if (pattern.hasRestArg()) {
-            addInstr(new IntegerMathInstr(SUBTRACT, restNum, length, minArgsCount));
-
-            if (pattern.isNamedRestArg()) {
-                Variable min = copy(fix(preArgsSize));
-                Variable max = as_fixnum(restNum);
-                Variable elt = call(temp(), deconstructed, "[]", min, max);
-
-                buildPatternMatch(result, copy(buildNil()), pattern.getRestArg(), elt, inAlteration, isSinglePattern, errorString);
-                cond_ne(testEnd, result, tru());
-            }
-        }
-
-        ListNode postArgs = pattern.getPostArgs();
-        if (postArgs != null) {
-            for (int i = 0; i < postArgs.size(); i++) {
-                Label matchElementCheck = getNewLabel("match_post_args_element(i)_end");
-                Variable j = addResultInstr(new IntegerMathInstr(ADD, temp(), new Integer(i + preArgsSize), restNum));
-                Variable k = as_fixnum(j);
-                Variable elt = call(temp(), deconstructed, "[]", k);
-
-                buildPatternEach(testEnd, result, copy(buildNil()), elt, postArgs.get(i), inAlteration, isSinglePattern, errorString);
-                addInstr(BNEInstr.create(matchElementCheck, result, fals()));
-                addInstr(new JumpInstr(testEnd));
-                addInstr(new LabelInstr(matchElementCheck));
-            }
-        }
-    }
-
     private void buildHashPattern(Label testEnd, Variable result, Variable deconstructed, HashPatternNode pattern,
                                   Operand obj, boolean inAlteration, boolean isSinglePattern, Variable errorString) {
         Node rest = pattern.getRestArg();
@@ -922,7 +847,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     Variable buildPatternEach(Label testEnd, Variable result, Variable deconstructed, Operand value,
                                       Node exprNodes, boolean inAlternation, boolean isSinglePattern, Variable errorString) {
         if (exprNodes instanceof ArrayPatternNode) {
-            buildArrayPattern(testEnd, result, deconstructed, (ArrayPatternNode) exprNodes, value, inAlternation, isSinglePattern, errorString);
+            ArrayPatternNode node = (ArrayPatternNode) exprNodes;
+            buildArrayPattern(testEnd, result, deconstructed, node.getConstant(), node.getPre(), node.getRestArg(), node.getPost(), value, inAlternation, isSinglePattern, errorString);
         } else if (exprNodes instanceof HashPatternNode) {
             buildHashPattern(testEnd, result, deconstructed, (HashPatternNode) exprNodes, value, inAlternation, isSinglePattern, errorString);
         } else if (exprNodes instanceof FindPatternNode) {
