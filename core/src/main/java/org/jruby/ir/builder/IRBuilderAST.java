@@ -1039,6 +1039,11 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return ((InNode) node).getBody();
     }
 
+    @Override
+    boolean isBareStar(Node node) {
+        return node instanceof StarNode;
+    }
+
     public Operand buildPatternCase(PatternCaseNode node) {
         return buildPatternCase(node.getCaseNode(), node.getCases(), node.getElseNode());
     }

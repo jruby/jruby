@@ -71,7 +71,7 @@ public class HashPatternNode extends Node {
         List<KeyValuePair<Node,Node>> pairs = keywordArgs.getPairs();
 
         int length = pairs.size();
-        Node[] keys = new Node[pairs.size()];
+        Node[] keys = new Node[length];
 
         for (int i = 0; i < length; i++) {
             keys[i] = pairs.get(i).getKey();

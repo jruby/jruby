@@ -2336,6 +2336,12 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return ((InNode) node).statements;
     }
 
+    @Override
+    boolean isBareStar(Node node) {
+        // FIXME: Unimplemented
+        return false;
+    }
+
     private int getEndLine(Node node) {
         int endOffset = node.endOffset();
         // FIXME: Seems like either newline visitor or prism is sometimes reporting the offset one past last indexable source location (fairly rarely).
