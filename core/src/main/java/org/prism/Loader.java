@@ -82,7 +82,6 @@ public class Loader {
     private final ByteBuffer buffer;
     private final Nodes.Source source;
     protected String encodingName;
-    private Charset encodingCharset;
     private ConstantPool constantPool;
 
     protected Loader(byte[] serialized, Nodes.Source source) {
@@ -108,7 +107,6 @@ public class Loader {
         byte[] encodingNameBytes = new byte[encodingLength];
         buffer.get(encodingNameBytes);
         this.encodingName = new String(encodingNameBytes, StandardCharsets.US_ASCII);
-        this.encodingCharset = getEncodingCharset(this.encodingName);
 
         source.setStartLine(loadVarInt());
 

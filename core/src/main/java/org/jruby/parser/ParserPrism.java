@@ -64,13 +64,8 @@ public class ParserPrism extends Parser {
         }
 
         if (res.errors != null && res.errors.length > 0) {
-            // FIXME: syntax error /\c/ as index 4 but it should be 0 (prism issue #1793)
-            int line;
-            try {
-                line = nodeSource.line(res.errors[0].location.startOffset);
-            } catch (AssertionError e) {
-                line = nodeSource.line(res.errors[0].location.startOffset - 1);
-            }
+            int line = nodeSource.line(res.errors[0].location.startOffset);
+
             throw runtime.newSyntaxError(fileName + ":" + line + ": " + res.errors[0].message);
         }
 

@@ -55,7 +55,6 @@ public abstract class Nodes {
         }
 
         public void setStartLine(int startLine) {
-            //assert startLine >= 1;
             this.startLine = startLine;
         }
 
@@ -82,7 +81,8 @@ public abstract class Nodes {
 
         // 0-based
         public int findLine(int byteOffset) {
-            assert byteOffset >= 0 && byteOffset < bytes.length : byteOffset;
+            if (byteOffset >= bytes.length) byteOffset = bytes.length - 1;
+            assert byteOffset >= 0 : byteOffset;
             int index = Arrays.binarySearch(lineOffsets, byteOffset);
             int line;
             if (index < 0) {
