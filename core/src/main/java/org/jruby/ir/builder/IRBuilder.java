@@ -6,8 +6,10 @@ import org.jruby.EvalType;
 import org.jruby.ParseResult;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
+import org.jruby.ast.InNode;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.Node;
+import org.jruby.ast.PatternCaseNode;
 import org.jruby.ast.RootNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.ext.coverage.CoverageData;
@@ -1945,6 +1947,67 @@ public abstract class IRBuilder<U, V, W, X, Y> {
         addInstr(createBranch(left, tru(), endOfExprLabel));
         addInstr(new CopyInstr(result, right.run()));
         addInstr(new LabelInstr(endOfExprLabel));
+
+        return result;
+    }
+
+    abstract U getInExpression(U node);
+    abstract U getInBody(U node);
+
+    public Operand buildPatternCase(U test, U[] cases, U consequent) {
+        Variable result = temp();
+        Operand value = build(test);
+        Variable errorString = copy(nil());
+
+        label("pattern_case_end", end -> {
+            List<Label> labels = new ArrayList<>();
+            Map<Label, U> bodies = new HashMap<>();
+
+            // build each "when"
+            Variable deconstructed = copy(nil());
+            for (U in : cases) {
+                Label bodyLabel = getNewLabel();
+
+                U body = getInBody(in);
+                boolean isSinglePattern = body != null;
+
+                Variable eqqResult = copy(tru());
+                labels.add(bodyLabel);
+                buildPatternMatch(eqqResult, deconstructed, getInExpression(in), value, false, isSinglePattern, errorString);
+                addInstr(createBranch(eqqResult, tru(), bodyLabel));
+                bodies.put(bodyLabel, body);
+            }
+
+            Label elseLabel = getNewLabel();
+            addInstr(new JumpInstr(elseLabel));      // Jump to else in case nothing matches!
+
+            boolean hasElse = consequent != null;
+
+            // Build "else" if it exists
+            if (hasElse) {
+                labels.add(elseLabel);
+                bodies.put(elseLabel, consequent);
+            }
+
+            // Now, emit bodies while preserving when clauses order
+            for (Label label : labels) {
+                addInstr(new LabelInstr(label));
+                Operand bodyValue = build(bodies.get(label));
+                if (bodyValue != null) copy(result, bodyValue);
+                jump(end);
+            }
+
+            if (!hasElse) {
+                addInstr(new LabelInstr(elseLabel));
+                Variable inspect = temp();
+                if_else(errorString, nil(),
+                        () -> call(inspect, value, "inspect"),
+                        () -> copy(inspect, errorString));
+
+                addRaiseError("NoMatchingPatternError", inspect);
+                jump(end);
+            }
+        });
 
         return result;
     }

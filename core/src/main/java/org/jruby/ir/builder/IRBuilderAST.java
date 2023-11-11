@@ -1062,62 +1062,19 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         buildPatternEach(testEnd, result, deconstructed, value, pair.getValue(), inAlternation, isSinglePattern, errorString);
     }
 
-    public Operand buildPatternCase(PatternCaseNode patternCase) {
-        Variable result = temp();
-        Operand value = build(patternCase.getCaseNode());
-        Variable errorString = copy(buildNil());
 
-        label("pattern_case_end", end -> {
-            List<Label> labels = new ArrayList<>();
-            Map<Label, Node> bodies = new HashMap<>();
+    @Override
+    Node getInExpression(Node node) {
+        return ((InNode) node).getExpression();
+    }
 
-            // build each "when"
-            Variable deconstructed = copy(buildNil());
-            for (Node aCase : patternCase.getCases().children()) {
-                InNode inNode = (InNode) aCase;
-                Label bodyLabel = getNewLabel();
+    @Override
+    Node getInBody(Node node) {
+        return ((InNode) node).getBody();
+    }
 
-                boolean isSinglePattern = inNode.isSinglePattern();
-
-                Variable eqqResult = copy(tru());
-                labels.add(bodyLabel);
-                buildPatternMatch(eqqResult, deconstructed, inNode.getExpression(), value, false, isSinglePattern, errorString);
-                addInstr(createBranch(eqqResult, tru(), bodyLabel));
-                bodies.put(bodyLabel, inNode.getBody());
-            }
-
-            Label elseLabel = getNewLabel();
-            addInstr(new JumpInstr(elseLabel));      // Jump to else in case nothing matches!
-
-            boolean hasElse = patternCase.getElseNode() != null;
-
-            // Build "else" if it exists
-            if (hasElse) {
-                labels.add(elseLabel);
-                bodies.put(elseLabel, patternCase.getElseNode());
-            }
-
-            // Now, emit bodies while preserving when clauses order
-            for (Label label : labels) {
-                addInstr(new LabelInstr(label));
-                Operand bodyValue = build(bodies.get(label));
-                if (bodyValue != null) copy(result, bodyValue);
-                jump(end);
-            }
-
-            if (!hasElse) {
-                addInstr(new LabelInstr(elseLabel));
-                Variable inspect = temp();
-                if_else(errorString, buildNil(),
-                        () -> call(inspect, value, "inspect"),
-                        () -> copy(inspect, errorString));
-
-                addRaiseError("NoMatchingPatternError", inspect);
-                jump(end);
-            }
-        });
-
-        return result;
+    public Operand buildPatternCase(PatternCaseNode node) {
+        return buildPatternCase(node.getCaseNode(), node.getCases(), node.getElseNode());
     }
 
     public Operand buildCase(CaseNode caseNode) {

@@ -32,6 +32,7 @@
 
 package org.jruby.ast;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
@@ -85,8 +86,8 @@ public class PatternCaseNode extends Node {
         return caseNode;
     }
 
-    public ListNode getCases() {
-        return cases;
+    public Node[] getCases() {
+        return cases.children();
     }
 
     public Node getElseNode() {
