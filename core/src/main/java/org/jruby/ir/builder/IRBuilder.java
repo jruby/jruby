@@ -2242,6 +2242,11 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         }
     }
 
+    void buildPatternEachHash(Label testEnd, Variable result, Variable deconstructed, Operand value, U key, U assocValue, boolean inAlternation, boolean isSinglePattern, Variable errorString) {
+        buildPatternMatch(result, deconstructed, key, value, inAlternation, isSinglePattern, errorString);
+        buildPatternEach(testEnd, result, deconstructed, value, assocValue, inAlternation, isSinglePattern, errorString);
+    }
+
     abstract boolean isNilRest(U rest);
 
     void buildPatternLocal(Operand value, RubySymbol name, int line, int depth, boolean inAlternation) {

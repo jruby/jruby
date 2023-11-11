@@ -828,7 +828,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             FindPatternNode node = (FindPatternNode) exprNodes;
             buildFindPattern(testEnd, result, deconstructed, node.getConstant(), node.getPreRestArg(), node.getArgs(), node.getPostRestArg(), value, inAlternation, isSinglePattern, errorString);
         } else if (exprNodes instanceof HashNode) {
-            buildPatternEachHash(testEnd, result, deconstructed, value, (HashNode) exprNodes, inAlternation, isSinglePattern, errorString);
+            KeyValuePair<Node,Node> pair = ((HashNode) exprNodes).getPairs().get(0);
+            buildPatternEachHash(testEnd, result, deconstructed, value, pair.getKey(), pair.getValue(), inAlternation, isSinglePattern, errorString);
         } else if (exprNodes instanceof IfNode) {
             IfNode node = (IfNode) exprNodes;
             buildPatternEachIf(result, deconstructed, value, node.getCondition(), node.getThenBody(), node.getElseBody(), inAlternation, isSinglePattern, errorString);
@@ -852,15 +853,6 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
 
         return result;
     }
-
-    private void buildPatternEachHash(Label testEnd, Variable result, Variable deconstructed, Operand value, HashNode hash, boolean inAlternation, boolean isSinglePattern, Variable errorString) {
-        if (hash.getPairs().size() != 1) throwSyntaxError(getLine(hash), "unexpected node");
-
-        KeyValuePair<Node, Node> pair = hash.getPairs().get(0);
-        buildPatternMatch(result, deconstructed, pair.getKey(), value, inAlternation, isSinglePattern, errorString);
-        buildPatternEach(testEnd, result, deconstructed, value, pair.getValue(), inAlternation, isSinglePattern, errorString);
-    }
-
 
     @Override
     Node getInExpression(Node node) {
