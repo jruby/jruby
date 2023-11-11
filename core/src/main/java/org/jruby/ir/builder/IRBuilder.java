@@ -59,6 +59,8 @@ import java.util.function.Consumer;
 
 import static org.jruby.ir.IRFlags.*;
 import static org.jruby.ir.instructions.Instr.EMPTY_OPERANDS;
+import static org.jruby.ir.instructions.IntegerMathInstr.Op.ADD;
+import static org.jruby.ir.instructions.IntegerMathInstr.Op.SUBTRACT;
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 import static org.jruby.ir.operands.ScopeModule.SCOPE_MODULE;
 import static org.jruby.runtime.CallType.FUNCTIONAL;
@@ -1986,6 +1988,72 @@ public abstract class IRBuilder<U, V, W, X, Y> {
     abstract U getInBody(U node);
     abstract boolean isBareStar(U node);
 
+
+    void buildFindPattern(Label testEnd, Variable result, Variable deconstructed, U constant, U pre,
+                          U[] args, U post, Operand obj, boolean inAlteration, boolean isSinglePattern,
+                          Variable errorString) {
+        if (constant != null) {
+            addInstr(new EQQInstr(scope, result, build(constant), obj, false, true));
+            cond_ne(testEnd, result, tru());
+        }
+
+        label("deconstruct_end", deconstructCheck -> {
+            cond_ne(deconstructCheck, deconstructed, nil(), () -> {
+                call(result, obj, "respond_to?", new Symbol(symbol("deconstruct")));
+                cond_ne(testEnd, result, tru());
+
+                call(deconstructed, obj, "deconstruct");
+                label("array_check_end", arrayCheck -> {
+                    addInstr(new EQQInstr(scope, result, getManager().getArrayClass(), deconstructed, false, false));
+                    cond(arrayCheck, result, tru(), () -> type_error("deconstruct must return Array"));
+                });
+            });
+        });
+
+        Variable length = addResultInstr(new RuntimeHelperCall(temp(), ARRAY_LENGTH, new Operand[]{deconstructed}));
+        int fixedArgsLength = args.length;
+        Operand argsNum = new Integer(fixedArgsLength);
+
+        label("size_check_end", sizeCheckEnd -> {
+            addInstr(new BIntInstr(sizeCheckEnd, BIntInstr.Op.LTE, argsNum, length));
+            copy(result, fals());
+            jump(testEnd);
+        });
+
+        Variable limit = addResultInstr(new IntegerMathInstr(SUBTRACT, temp(), length, argsNum));
+        Variable i = copy(new Integer(0));
+
+        for_loop(after -> addInstr(new BIntInstr(after, BIntInstr.Op.GT, i, limit)),
+                after -> addInstr(new IntegerMathInstr(ADD, i, i, new Integer(1))),
+                (after, bottom) -> {
+                    times(fixedArgsLength, (end_times, j) -> {
+                        U pat = args[j.value];
+                        Operand deconstructIndex = addResultInstr(new IntegerMathInstr(ADD, temp(), i, new Integer(j.value)));
+                        Operand deconstructFixnum = as_fixnum(deconstructIndex);
+                        Operand test = call(temp(), deconstructed, "[]", deconstructFixnum);
+                        buildPatternMatch(result, copy(nil()), pat, test, false, isSinglePattern, errorString);
+                        cond_ne(bottom, result, tru());
+                    });
+
+                    if (pre != null && !isBareStar(pre)) {
+                        Operand iFixnum = as_fixnum(i);
+                        Operand test = call(temp(), deconstructed, "[]", getManager().newFixnum(0), iFixnum);
+                        buildPatternMatch(result, copy(nil()), pre, test, false, isSinglePattern, errorString);
+                        cond_ne(bottom, result, tru());
+                    }
+
+                    if (post != null && !isBareStar(post)) {
+                        Operand deconstructIndex = addResultInstr(new IntegerMathInstr(ADD, temp(), i, argsNum));
+                        Operand deconstructFixnum = as_fixnum(deconstructIndex);
+                        Operand lengthFixnum = as_fixnum(length);
+                        Operand test = call(temp(), deconstructed, "[]", deconstructFixnum, lengthFixnum);
+                        buildPatternMatch(result, copy(nil()), post, test, false, isSinglePattern, errorString);
+                        cond_ne(bottom, result, tru());
+                    }
+                    jump(after);
+                });
+    }
+
     public Operand buildPatternCase(U test, U[] cases, U consequent) {
         Variable result = temp();
         Operand value = build(test);
@@ -2816,6 +2884,11 @@ public abstract class IRBuilder<U, V, W, X, Y> {
         int nearestModuleBodyDepth = scope.getNearestModuleReferencingScopeDepth();
         return (nearestModuleBodyDepth == -1) ? getCurrentModuleVariable() : ScopeModule.ModuleFor(nearestModuleBodyDepth);
     }
+
+    Variable as_fixnum(Operand value) {
+        return addResultInstr(new AsFixnumInstr(temp(), value));
+    }
+
 
     public abstract LocalVariable getLocalVariable(RubySymbol name, int scopeDepth);
 

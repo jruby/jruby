@@ -2323,6 +2323,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
     @Override
     Variable buildPatternEach(Label testEnd, Variable result, Variable deconstructed, Operand value, Node exprNodes, boolean inAlternation, boolean isSinglePattern, Variable errorString) {
+        // FIXME: Unimplemented
         return null;
     }
 
