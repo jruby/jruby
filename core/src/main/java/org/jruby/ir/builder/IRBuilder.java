@@ -1956,7 +1956,7 @@ public abstract class IRBuilder<U, V, W, X, Y> {
     Variable deconstructHashPatternKeys(Label testEnd, U constantNode, U[] keyNodes, U rest, Variable result, Operand obj) {
         Operand keys;
 
-        if (keyNodes != null && keyNodes.length > 0 && !hasNamedRest(rest)) {
+        if ((keyNodes != null && keyNodes.length > 0 || rest != null) && !hasNamedRest(rest)) {
             int length = keyNodes.length;
             Operand[] builtKeys = new Operand[length];
 
