@@ -123,7 +123,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         } else if (node instanceof ArrayNode) {
             return buildArray((ArrayNode) node);                   // MISSING: ArrayPatternNode
         } else if (node instanceof AssocSplatNode) {
-            return build(result, ((AssocSplatNode) node).value);
+            return buildAssocSplat(result, (AssocSplatNode) node);
         } else if (node instanceof BackReferenceReadNode) {
             return buildBackReferenceRead(result, (BackReferenceReadNode) node);
         } else if (node instanceof BeginNode) {
@@ -227,8 +227,6 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             return buildIndexOrWrite((IndexOrWriteNode) node);
         } else if (node instanceof IndexOperatorWriteNode) {
             return buildIndexOperatorWrite((IndexOperatorWriteNode) node);
-        } else if (node instanceof InNode) {
-            return buildIn((InNode) node);
         } else if (node instanceof InstanceVariableAndWriteNode) {
             return buildInstanceVariableAndWrite((InstanceVariableAndWriteNode) node);
         } else if (node instanceof InstanceVariableOperatorWriteNode) {
@@ -291,7 +289,10 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         // ParametersNode processed by def
         } else if (node instanceof ParenthesesNode) {
             return build(((ParenthesesNode) node).body);
-        // PinnedVariableNode processed by pattern matching
+        } else if (node instanceof PinnedExpressionNode) {
+            return build(((PinnedExpressionNode) node).expression);
+        } else if (node instanceof PinnedVariableNode) {
+            return build(((PinnedVariableNode) node).variable);
         } else if (node instanceof PostExecutionNode) {
             return buildPostExecution((PostExecutionNode) node);
         } else if (node instanceof PreExecutionNode) {
@@ -365,10 +366,6 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return new Complex((ImmutableLiteral) build(node.numeric));
     }
 
-    private Operand buildIn(InNode node) {
-        throw new RuntimeException("Unhandled Node type: " + node);
-    }
-
     private Operand buildAliasGlobalVariable(AliasGlobalVariableNode node) {
         return buildVAlias(globalVariableName(node.new_name), globalVariableName(node.old_name));
     }
@@ -383,6 +380,10 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
     private Operand[] buildArguments(ArgumentsNode node) {
         return node == null ? Operand.EMPTY_ARRAY : buildNodeList(node.arguments);
+    }
+
+    private Operand buildAssocSplat(Variable result, AssocSplatNode node) {
+        return build(result, node.value);
     }
 
     private Operand[] buildNodeList(Node[] list) {
@@ -776,7 +777,10 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildCase(CaseNode node) {
-        if (isPatternMatch(node)) throwSyntaxError(getLine(node), "Pattern match not supported yet");
+        // FIXME: new node coming to allow this to be a first citizen build method from main build() method.
+        if (isPatternMatch(node)) {
+            return buildPatternCase(node.predicate, node.conditions, node.consequent);
+        }
 
         try {
             return buildCase(node.predicate, node.conditions, node.consequent);
@@ -2323,8 +2327,85 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
     @Override
     Variable buildPatternEach(Label testEnd, Variable result, Variable deconstructed, Operand value, Node exprNodes, boolean inAlternation, boolean isSinglePattern, Variable errorString) {
-        // FIXME: Unimplemented
+        if (exprNodes instanceof ArrayPatternNode) {
+            ArrayPatternNode node = (ArrayPatternNode) exprNodes;
+            buildArrayPattern(testEnd, result, deconstructed, node.constant, node.requireds, node.rest, node.posts, value, inAlternation, isSinglePattern, errorString);
+        } else if (exprNodes instanceof HashPatternNode) {
+            HashPatternNode node = (HashPatternNode) exprNodes;
+            Node[] keys = getKeys(node);
+            Node rest = node.rest != null ? node.rest : getRestFromKeys(node);
+            buildHashPattern(testEnd, result, deconstructed, node.constant, node, keys, rest, value, inAlternation, isSinglePattern, errorString);
+        } else if (exprNodes instanceof FindPatternNode) {
+            FindPatternNode node = (FindPatternNode) exprNodes;
+            buildFindPattern(testEnd, result, deconstructed, node.constant, node.left, node.requireds, node.right, value, inAlternation, isSinglePattern, errorString);
+        } else if (exprNodes instanceof HashNode) {
+            // FIXME: do not know what this will be yet
+            throwSyntaxError(getLine(exprNodes), "what is this: ");
+            /*
+            KeyValuePair<org.jruby.ast.Node, org.jruby.ast.Node> pair = ((org.jruby.ast.HashNode) exprNodes).getPairs().get(0);
+            buildPatternEachHash(testEnd, result, deconstructed, value, pair.getKey(), pair.getValue(), inAlternation, isSinglePattern, errorString);
+             */
+        } else if (exprNodes instanceof IfNode) {
+            IfNode node = (IfNode) exprNodes;
+            buildPatternEachIf(result, deconstructed, value, node.predicate, node.statements, node.consequent, inAlternation, isSinglePattern, errorString);
+        } else if (exprNodes instanceof LocalVariableTargetNode) {
+            buildPatternLocal((LocalVariableTargetNode) exprNodes, value, inAlternation);
+        } else if (exprNodes instanceof AssocSplatNode) {
+            AssocSplatNode node = (AssocSplatNode) exprNodes;
+
+            buildPatternLocal((LocalVariableTargetNode) node.value, value, inAlternation);
+        } else if (exprNodes instanceof SplatNode) {
+            // do nothing
+        } else if (exprNodes instanceof OrNode) {
+            buildPatternOr(testEnd, result, deconstructed, value, ((OrNode) exprNodes).left,
+                    ((OrNode) exprNodes).right, isSinglePattern, errorString);
+        } else {
+            Operand expression = build(exprNodes);
+            boolean needsSplat = exprNodes instanceof AssocSplatNode; // FIXME: just a guess this is all we need for splat?
+
+            addInstr(new EQQInstr(scope, result, expression, value, needsSplat, scope.maybeUsingRefinements()));
+        }
+
+        return result;
+    }
+
+    private Node getRestFromKeys(HashPatternNode node) {
+        int length = node.elements.length;
+
+        // FIXME: can there be multiple assocsplat and why isn't this rest in HashPatternNode
+        for (int i = 0; i < length; i++) {
+            if (node.elements[i] instanceof AssocSplatNode) return node.elements[i];
+        }
+
         return null;
+    }
+
+    private Node[] getKeys(HashPatternNode node) {
+        int length = node.elements.length;
+        Node[] keys = new Node[length];
+        int i = 0;
+
+        for (; i < length; i++) {
+            if (node.elements[i] instanceof AssocNode) {
+                AssocNode assoc = (AssocNode) node.elements[i];
+
+                keys[i] = assoc.key;
+            } else {
+                break; // rest kwarg at end we should ignore.
+            }
+        }
+
+        if (i != length) {
+            Node[] newKeys = new Node[i];
+            System.arraycopy(keys, 0, newKeys, 0, i);
+            return newKeys;
+        }
+
+        return keys;
+    }
+
+    Operand buildPatternLocal(LocalVariableTargetNode node, Operand value, boolean inAlternation) {
+        return buildPatternLocal(value, node.name, getLine(node), node.depth, inAlternation);
     }
 
     @Override
@@ -2340,9 +2421,21 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
                 String method = hasRest ? "delete" : "[]";
                 Operand value = call(temp(), d, method, key);
-                buildPatternEach(testEnd, result, copy(nil()), value, ((AssocNode) node).value, inAlteration, isSinglePattern, errorString);
-                cond_ne(testEnd, result, tru());
-                buildPatternEach(testEnd, result, copy(nil()), value, ((AssocNode) node).value, inAlteration, isSinglePattern, errorString);
+                Node valueNode =  ((AssocNode) node).value;
+                if (valueNode == null) {
+                    Node keyHack = ((AssocNode) node).key;
+                    RubySymbol name = null;
+                    if (keyHack instanceof SymbolNode) {
+                        name = symbol(((SymbolNode) keyHack).unescaped);
+                    } else {
+                        throwSyntaxError(getLine(node), "what else is in this");
+                    }
+                    // FIXME: This needs depth.
+                    buildPatternLocal(value, name, getLine(node), 0, inAlteration);
+                } else {
+                    buildPatternEach(testEnd, result, copy(nil()), value, ((AssocNode) node).value, inAlteration, isSinglePattern, errorString);
+                }
+
                 cond_ne(testEnd, result, tru());
             }
         }
@@ -2365,8 +2458,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
     @Override
     boolean isBareStar(Node node) {
-        // FIXME: Unimplemented
-        return false;
+        return node instanceof AssocSplatNode && ((AssocSplatNode) node).value == null;
     }
 
     private int getEndLine(Node node) {
@@ -2449,14 +2541,6 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
                 //node instanceof OperatorAssignmentNode ||
                 node instanceof SelfNode ||
                 node instanceof TrueNode);
-    }
-
-
-    // No bounds checks.  Only call this when you know you have an arg to remove.
-    public static Node[] removeArg(Node[] args) {
-        Node[] newArgs = new Node[args.length - 1];
-        System.arraycopy(args, 0, newArgs, 0, args.length - 1);
-        return newArgs;
     }
 
     @Override

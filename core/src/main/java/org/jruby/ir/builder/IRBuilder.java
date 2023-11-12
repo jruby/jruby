@@ -41,6 +41,7 @@ import org.jruby.util.DefinedMessage;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.cli.Options;
+import org.prism.Nodes;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -2222,7 +2223,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         // rest args destructively deletes elements from deconstruct_keys and the default impl is 'self'.
         if (hasRest) call(d, d, "dup");
 
-        if (rest != null || assocsKeys.length > 0) {
+        if (hasRest || assocsKeys.length > 0) {
             buildAssocs(testEnd, result, assocs, inAlteration, isSinglePattern, errorString, hasRest, d);
         } else {
             call(result, d, "empty?");
@@ -2249,12 +2250,12 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     abstract boolean isNilRest(U rest);
 
-    void buildPatternLocal(Operand value, RubySymbol name, int line, int depth, boolean inAlternation) {
+    Operand buildPatternLocal(Operand value, RubySymbol name, int line, int depth, boolean inAlternation) {
         if (inAlternation && name.idString().charAt(0) != '_') {
             throwSyntaxError(line, str(getManager().getRuntime(), "illegal variable in alternative pattern (", name, ")"));
         }
 
-        addInstr(new CopyInstr(getLocalVariable(name, depth), value));
+        return copy(getLocalVariable(name, depth), value);
     }
 
     void buildPatternOr(Label testEnd, Variable result, Variable deconstructed, Operand value, U left,
