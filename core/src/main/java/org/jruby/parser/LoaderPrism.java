@@ -12,10 +12,6 @@ public class LoaderPrism extends Loader {
 
     private Encoding encoding = null;
 
-    // FIXME: could not override impl (made constructor protected)
-    // FIXME: could not access encodingName so made protected
-    // FIXME: extra work done for encodingCharset which we do not use (but TR probably does)
-    // FIXME: consider abstract methods for Loader
     LoaderPrism(Ruby runtime, byte[] serialized, Nodes.Source source) {
         super(serialized, source);
 
