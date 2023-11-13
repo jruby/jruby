@@ -2327,7 +2327,9 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
     @Override
     Variable buildPatternEach(Label testEnd, Variable result, Variable deconstructed, Operand value, Node exprNodes, boolean inAlternation, boolean isSinglePattern, Variable errorString) {
-        if (exprNodes instanceof ArrayPatternNode) {
+        if (exprNodes instanceof StatementsNode && ((StatementsNode) exprNodes).body.length == 1) {
+            buildPatternEach(testEnd, result, deconstructed, value, ((StatementsNode) exprNodes).body[0], inAlternation, isSinglePattern, errorString);
+        } else if (exprNodes instanceof ArrayPatternNode) {
             ArrayPatternNode node = (ArrayPatternNode) exprNodes;
             buildArrayPattern(testEnd, result, deconstructed, node.constant, node.requireds, node.rest, node.posts, value, inAlternation, isSinglePattern, errorString);
         } else if (exprNodes instanceof HashPatternNode) {
@@ -2356,9 +2358,9 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             buildPatternLocal((LocalVariableTargetNode) node.value, value, inAlternation);
         } else if (exprNodes instanceof SplatNode) {
             // do nothing
-        } else if (exprNodes instanceof OrNode) {
-            buildPatternOr(testEnd, result, deconstructed, value, ((OrNode) exprNodes).left,
-                    ((OrNode) exprNodes).right, isSinglePattern, errorString);
+        } else if (exprNodes instanceof AlternationPatternNode) {
+            buildPatternOr(testEnd, result, deconstructed, value, ((AlternationPatternNode) exprNodes).left,
+                    ((AlternationPatternNode) exprNodes).right, isSinglePattern, errorString);
         } else {
             Operand expression = build(exprNodes);
             boolean needsSplat = exprNodes instanceof AssocSplatNode; // FIXME: just a guess this is all we need for splat?
