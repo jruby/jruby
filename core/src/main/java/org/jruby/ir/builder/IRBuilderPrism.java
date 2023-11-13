@@ -2361,6 +2361,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
             buildPatternLocal((LocalVariableTargetNode) node.value, value, inAlternation);
         } else if (exprNodes instanceof SplatNode) {
+            buildAssignment(((SplatNode) exprNodes).expression, value);
             // do nothing
         } else if (exprNodes instanceof AlternationPatternNode) {
             buildPatternOr(testEnd, result, deconstructed, value, ((AlternationPatternNode) exprNodes).left,
