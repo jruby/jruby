@@ -453,7 +453,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     // This method is called to build assignments for a multiple-assignment instruction
-    public void buildAssignment(Node node, Variable rhsVal) {
+    public void buildAssignment(Node node, Operand rhsVal) {
         if (node == null) return; // case of 'a, = something'
 
         if (node instanceof CallNode) {
@@ -2332,6 +2332,10 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         } else if (exprNodes instanceof ArrayPatternNode) {
             ArrayPatternNode node = (ArrayPatternNode) exprNodes;
             buildArrayPattern(testEnd, result, deconstructed, node.constant, node.requireds, node.rest, node.posts, value, inAlternation, isSinglePattern, errorString);
+        } else if (exprNodes instanceof CapturePatternNode) {
+            Operand v = build(((CapturePatternNode) exprNodes).value);
+            addInstr(new EQQInstr(scope, result, v, value, false, scope.maybeUsingRefinements()));
+            buildAssignment(((CapturePatternNode) exprNodes).target, value);
         } else if (exprNodes instanceof HashPatternNode) {
             HashPatternNode node = (HashPatternNode) exprNodes;
             Node[] keys = getKeys(node);

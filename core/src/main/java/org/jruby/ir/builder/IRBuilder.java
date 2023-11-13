@@ -2412,7 +2412,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         }
     }
 
-    protected abstract void buildAssignment(U reference, Variable rhs);
+    abstract void buildAssignment(U reference, Operand rhs);
 
     Operand buildAttrAssign(Variable result, U receiver, U argsNode, U blockNode, RubySymbol name,
                             boolean isLazy, boolean containsAssignment) {

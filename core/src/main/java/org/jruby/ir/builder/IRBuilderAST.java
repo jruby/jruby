@@ -515,7 +515,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     // This method is called to build assignments for a multiple-assignment instruction
-    public void buildAssignment(Node node, Variable rhsVal) {
+    void buildAssignment(Node node, Operand rhsVal) {
         switch (node.getNodeType()) {
             case ATTRASSIGNNODE:
                 buildAttrAssignAssignment(node, rhsVal);
