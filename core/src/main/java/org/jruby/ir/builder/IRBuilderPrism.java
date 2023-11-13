@@ -1477,8 +1477,14 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildMatchRequired(MatchRequiredNode node) {
-        throwSyntaxError(getLine(node), "Match required not supported yet");
-        return null;
+        Variable result = temp();
+        Variable deconstructed = copy(nil());
+        Variable errorString = copy(nil());
+        Operand value = build(node.value);
+
+        buildPatternMatch(result, deconstructed, node.pattern, value, false, false, errorString);
+
+        return result;
     }
 
     private Operand buildMatchWrite(Variable result, MatchWriteNode node) {
@@ -2344,13 +2350,6 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         } else if (exprNodes instanceof FindPatternNode) {
             FindPatternNode node = (FindPatternNode) exprNodes;
             buildFindPattern(testEnd, result, deconstructed, node.constant, node.left, node.requireds, node.right, value, inAlternation, isSinglePattern, errorString);
-        } else if (exprNodes instanceof HashNode) {
-            // FIXME: do not know what this will be yet
-            throwSyntaxError(getLine(exprNodes), "what is this: ");
-            /*
-            KeyValuePair<org.jruby.ast.Node, org.jruby.ast.Node> pair = ((org.jruby.ast.HashNode) exprNodes).getPairs().get(0);
-            buildPatternEachHash(testEnd, result, deconstructed, value, pair.getKey(), pair.getValue(), inAlternation, isSinglePattern, errorString);
-             */
         } else if (exprNodes instanceof IfNode) {
             IfNode node = (IfNode) exprNodes;
             buildPatternEachIf(result, deconstructed, value, node.predicate, node.statements, node.consequent, inAlternation, isSinglePattern, errorString);
