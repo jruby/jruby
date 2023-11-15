@@ -321,10 +321,8 @@ public class EncodingUtils {
         }
 
         if ((extenc != null || intenc != null) && !encoding.isNil()) {
-            if (runtime.isVerbose()) {
-                    runtime.getWarnings().warn("Ignoring encoding parameter '" + encoding + "': " +
-                            (extenc == null ? "internal" : "external") + "_encoding is used");
-            }
+            runtime.getWarnings().warn("Ignoring encoding parameter '" + encoding + "': " +
+                    (extenc == null ? "internal" : "external") + "_encoding is used");
             encoding = context.nil;
         }
 
