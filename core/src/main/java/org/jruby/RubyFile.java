@@ -414,6 +414,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     public IRubyObject birthtime(ThreadContext context) {
         checkClosed(context);
 
+        if (Platform.IS_LINUX || Platform.IS_BSD) {
+            throw context.runtime.newNotImplementedError("birthtime() function is unimplemented on this machine");
+        }
+
         FileTime btime = getBirthtimeWithNIO(getPath());
         if (btime != null) return context.runtime.newTime(btime.toMillis()); // btime comes in nanos
         return ctime(context);
