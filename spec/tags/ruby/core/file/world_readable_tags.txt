@@ -1,3 +1,0 @@
-windows:File.world_readable? returns nil if the file is chmod 600
-windows:File.world_readable? returns nil if the file is chmod 000
-windows:File.world_readable? returns nil if the file is chmod 700
