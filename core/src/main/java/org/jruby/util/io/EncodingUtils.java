@@ -106,14 +106,23 @@ public class EncodingUtils {
     public static void extractBinmode(Ruby runtime, IRubyObject optionsArg, int[] fmode_p) {
         int fmodeMask = 0;
 
-        IRubyObject v = hashARef(runtime, optionsArg, "textmode");
-        if (!v.isNil() && v.isTrue()) fmodeMask |= OpenFile.TEXTMODE;
+        IRubyObject textMode = hashARef(runtime, optionsArg, "textmode");
+        IRubyObject binMode = hashARef(runtime, optionsArg, "binmode");
 
-        v = hashARef(runtime, optionsArg, "binmode");
-        if (!v.isNil() && v.isTrue()) fmodeMask |= OpenFile.BINMODE;
+        boolean textKwarg = !textMode.isNil();
+        boolean textOption = (fmode_p[0] & OpenFile.TEXTMODE) != 0;
+        boolean binKwarg = !binMode.isNil();
+        boolean binOption = (fmode_p[0] & OpenFile.BINMODE) != 0;
 
-        if ((fmodeMask & OpenFile.BINMODE) != 0 && (fmodeMask & OpenFile.TEXTMODE) != 0) {
-            throw runtime.newArgumentError("both textmode and binmode specified");
+        if ((textKwarg || textOption) && (binKwarg || binOption)) throw runtime.newArgumentError("both textmode and binmode specified");
+
+        if (textKwarg) {
+            if (textOption) throw runtime.newArgumentError("textmode specified twice");
+            if (textMode.isTrue()) fmodeMask |= OpenFile.TEXTMODE;
+        }
+        if (binKwarg) {
+            if (binOption) throw runtime.newArgumentError("binmode specified twice");
+            if (binMode.isTrue()) fmodeMask |= OpenFile.BINMODE;
         }
 
         fmode_p[0] |= fmodeMask;
