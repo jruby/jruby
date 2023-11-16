@@ -1913,7 +1913,7 @@ public class Helpers {
         if (value instanceof RubyArray) return value;
 
         return respondsTo_to_ary(value) ?
-                TypeConverter.convertToType(context, value, context.runtime.getArray(), "to_ary", false) :
+                TypeConverter.convertToTypeUnchecked(context, value, context.runtime.getArray(), "to_ary", false) :
                 context.runtime.newArray(value);
     }
 
@@ -1931,7 +1931,7 @@ public class Helpers {
         if (value instanceof RubyArray) return value;
 
         return respondsTo_to_ary(value) ?
-                TypeConverter.convertToType(context, value, context.runtime.getArray(), "to_ary", false) :
+                TypeConverter.convertToTypeUnchecked(context, value, context.runtime.getArray(), "to_ary", false) :
                 context.nil;
     }
 
