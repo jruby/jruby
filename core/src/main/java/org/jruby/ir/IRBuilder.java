@@ -2223,7 +2223,7 @@ public class IRBuilder {
     private boolean isTopScope() {
         IRScope topScope = scope.getNearestNonClosurelikeScope();
 
-        boolean isTopScope = topScope instanceof IRScriptBody ||
+        boolean isTopScope = topScope instanceof IRScriptBody && evalType == null ||
                 (evalType != null && evalType != EvalType.MODULE_EVAL && evalType != EvalType.BINDING_EVAL);
 
         // we think it could be a top scope but it could still be called from within a module/class which
@@ -4936,7 +4936,8 @@ public class IRBuilder {
     }
 
     public Operand buildYield(YieldNode node, Variable result) {
-        if (scope instanceof IRScriptBody || scope instanceof IRModuleBody) throwSyntaxError(node, "Invalid yield");
+        IRScope hardScope = scope.getNearestNonClosurelikeScope();
+        if (hardScope instanceof IRScriptBody || hardScope instanceof IRModuleBody) throwSyntaxError(node, "Invalid yield");
 
         boolean unwrap = true;
         Node argNode = node.getArgsNode();

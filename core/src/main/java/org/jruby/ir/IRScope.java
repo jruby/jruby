@@ -280,7 +280,7 @@ public abstract class IRScope implements ParseResult {
     public IRScope getNearestNonClosurelikeScope() {
         IRScope current = this;
 
-        while (current != null && !(current instanceof IRClosure)) {
+        while (current != null && current instanceof IRClosure) {
             current = current.getLexicalParent();
         }
 

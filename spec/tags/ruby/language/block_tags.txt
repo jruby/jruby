@@ -1,3 +1,0 @@
-fails:A block yielded a single Array assigns elements to optional arguments
-fails:A block yielded a single Object calls #respond_to? to check if object has method #to_ary
-fails:A block yielded a single Object receives the object if it does not respond to #respond_to?
