@@ -1,2 +1,0 @@
-fails:A block yielded a single Array assigns elements to optional arguments
-
