@@ -2148,9 +2148,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     	from prog.rb:3
      */
     public IRubyObject freeze(ThreadContext context) {
-        if ((flags & FROZEN_F) == 0) {
-            flags |= FROZEN_F;
-        }
+        setFrozen(true);
+        RubyClass metaClass = getMetaClass();
+        if (metaClass.isSingleton()) metaClass.setFrozen(true);
         return this;
     }
 
