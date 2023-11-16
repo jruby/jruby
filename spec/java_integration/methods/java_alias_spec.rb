@@ -57,7 +57,6 @@ describe "A Java object's java_alias method" do
           @@last_instance = self
         end
 
-        @@last_instance = nil
         def self.last_instance; @@last_instance end
       end
     end
