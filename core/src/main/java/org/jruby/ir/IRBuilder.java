@@ -4656,6 +4656,11 @@ public class IRBuilder {
     }
 
     public Operand buildReturn(ReturnNode returnNode) {
+        boolean topLevel = scope.isTopLocalVariableScope() && scope instanceof IRScriptBody;
+        Node valueNode = returnNode.getValueNode();
+        if (topLevel && valueNode != null && !(valueNode instanceof NilImplicitNode)) {
+            scope.getManager().getRuntime().getWarnings().warn(getFileName(), valueNode.getLine() + 1, "argument of top-level return is ignored");
+        }
         Operand retVal = build(returnNode.getValueNode());
 
         if (scope instanceof IRClosure) {
