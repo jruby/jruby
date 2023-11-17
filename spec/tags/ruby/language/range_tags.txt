@@ -1,1 +1,1 @@
-fails(JIT mode only):Literal Ranges creates a simple range as an object literal
+fails(jit - creates n new ranges vs 1):Literal Ranges creates a simple range as an object literal

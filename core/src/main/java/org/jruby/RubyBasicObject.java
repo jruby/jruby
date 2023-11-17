@@ -940,7 +940,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             RubyHash opts = RubyHash.newHash(context.runtime, getRuntime().newSymbol("freeze"), freeze);
             context.callInfo = CALL_KEYWORD;
             sites(context).initialize_clone.call(context, clone, clone, this, opts);
-            if (freeze == context.tru) clone.setFrozen(true);
+            if (freeze == context.tru) clone.freeze(context);
+            if (clone.getMetaClass().isSingleton()) clone.getMetaClass().setFrozen(clone.isFrozen());
         }
 
         return clone;
@@ -2148,9 +2149,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     	from prog.rb:3
      */
     public IRubyObject freeze(ThreadContext context) {
-        if ((flags & FROZEN_F) == 0) {
-            flags |= FROZEN_F;
-        }
+        setFrozen(true);
+        RubyClass metaClass = getMetaClass();
+        if (metaClass.isSingleton()) metaClass.setFrozen(true);
         return this;
     }
 
