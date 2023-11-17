@@ -278,7 +278,8 @@ public class Addrinfo extends RubyObject {
                         this.socketType = SocketType.SOCKET;
                     } else {
                         this.socketType = SocketType.values()[socketType];
-                        this.sock = Sock.valueOf(socketType);
+                        Sock sock = Sock.valueOf(socketType);
+                        if (sock != __UNKNOWN_CONSTANT__) this.sock = sock;
                     }
 
                     this.pfamily = pf;
@@ -435,15 +436,15 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod
     public IRubyObject socktype(ThreadContext context) {
-      if (sock == null) {
-        return context.runtime.newFixnum(0);
-      }
-      return context.runtime.newFixnum(sock.intValue());
+      return context.runtime.newFixnum(sock == null ? 0 : sock.intValue());
     }
 
     @JRubyMethod
     public IRubyObject protocol(ThreadContext context) {
-        return context.runtime.newFixnum(protocol.getProto());
+        // Any unknown protocol will end up null but the one case we see is IPPROTO_RAW is not listed in /etc/protocols
+        int proto = protocol == null ? 255 : protocol.getProto();
+
+        return context.runtime.newFixnum(proto);
     }
 
     @JRubyMethod
