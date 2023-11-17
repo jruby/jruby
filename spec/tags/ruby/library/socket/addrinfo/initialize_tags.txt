@@ -1,3 +1,1 @@
-fails:Addrinfo#initialize with a sockaddr array without a family returns the 0 socket type
-fails:Addrinfo#initialize with a sockaddr array with a family given returns the 0 socket type
-fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RAW overwrites the protocol when using IPPROTO_RAW
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RAW overwrites the protocol when using IPPROTO_MTP
