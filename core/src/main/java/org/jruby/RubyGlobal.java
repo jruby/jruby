@@ -730,11 +730,12 @@ public class RubyGlobal {
         }
 
         protected static IRubyObject verifyStringLike(ThreadContext context, IRubyObject test) {
-            if (!isStringLike(test)) {
+            IRubyObject string = test.checkStringType();
+            if (string.isNil()) {
                 throw context.runtime.newTypeError("no implicit conversion of " + test.getMetaClass() + " into String");
             }
 
-            return test;
+            return string;
         }
 
         private static RubyString verifyValidKey(ThreadContext context, RubyString key, IRubyObject value) {

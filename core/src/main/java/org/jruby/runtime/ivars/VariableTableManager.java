@@ -33,7 +33,7 @@ import java.io.ObjectOutputStream;
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -258,7 +258,7 @@ public class VariableTableManager {
                 if (ivarAccessor == null) {
                     // allocate a new accessor and populate a new table
                     ivarAccessor = allocateVariableAccessors(name, defaultAccessorBuilder);
-                    Map<String, VariableAccessor> newVariableAccessors = new HashMap<String, VariableAccessor>(myVariableAccessors.size() + 1);
+                    Map<String, VariableAccessor> newVariableAccessors = new LinkedHashMap<>(myVariableAccessors.size() + 1);
 
                     newVariableAccessors.putAll(myVariableAccessors);
                     newVariableAccessors.put(name, ivarAccessor);
@@ -390,7 +390,7 @@ public class VariableTableManager {
      * @return a map of names to accessors for all variables
      */
     public Map<String, VariableAccessor> getVariableTableCopy() {
-        return new HashMap<String, VariableAccessor>(getVariableAccessorsForRead());
+        return new LinkedHashMap<String, VariableAccessor>(getVariableAccessorsForRead());
     }
 
     /**

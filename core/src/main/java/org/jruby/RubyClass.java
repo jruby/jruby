@@ -144,23 +144,32 @@ public class RubyClass extends RubyModule {
      * Set a reflective allocator that calls a no-arg constructor on the given
      * class.
      *
-     * @param cls The class on which to call the default constructor to allocate
+     * @param clazz The class on which to call the default constructor to allocate
      */
     @SuppressWarnings("unchecked")
-    public void setClassAllocator(final Class<?> cls) {
+    public void setClassAllocator(final Class<?> clazz) {
+        final Constructor<?> constructor;
+        try {
+            constructor = clazz.getConstructor();
+        } catch (NoSuchMethodException nsme) {
+            throw new RuntimeException(nsme);
+        }
+
         this.allocator = (runtime, klazz) -> {
             try {
-                RubyBasicObject object = (RubyBasicObject)cls.getConstructor().newInstance();
+                RubyBasicObject object = (RubyBasicObject) constructor.newInstance();
                 object.setMetaClass(klazz);
                 return object;
-            } catch (InstantiationException | InvocationTargetException ie) {
-                throw runtime.newTypeError("could not allocate " + cls + " with default constructor:\n" + ie);
-            } catch (IllegalAccessException | NoSuchMethodException iae) {
-                throw runtime.newSecurityError("could not allocate " + cls + " due to inaccessible default constructor:\n" + iae);
+            } catch (InvocationTargetException e) {
+                throw newTypeError(runtime, "could not allocate " + clazz + " with default constructor:\n" + e.getTargetException(), e);
+            } catch (InstantiationException e) {
+                throw newTypeError(runtime, "could not allocate " + clazz + " with default constructor:\n" + e, e);
+            } catch (IllegalAccessException e) {
+                throw runtime.newSecurityError("could not allocate " + clazz + " due to inaccessible default constructor:\n" + e);
             }
         };
 
-        this.reifiedClass = (Class<? extends Reified>) cls;
+        this.reifiedClass = (Class<? extends Reified>) clazz;
     }
 
     /**
@@ -171,25 +180,26 @@ public class RubyClass extends RubyModule {
      */
     @SuppressWarnings("unchecked")
     public void setRubyClassAllocator(final Class<? extends IRubyObject> clazz) {
+        final Constructor<? extends IRubyObject> constructor;
         try {
-            final Constructor<? extends IRubyObject> constructor = clazz.getConstructor(Ruby.class, RubyClass.class);
-
-            this.allocator = (runtime, klazz) -> {
-                try {
-                    return constructor.newInstance(runtime, klazz);
-                } catch (InvocationTargetException ite) {
-                    throw runtime.newTypeError("could not allocate " + clazz + " with (Ruby, RubyClass) constructor:\n" + ite);
-                } catch (InstantiationException ie) {
-                    throw runtime.newTypeError("could not allocate " + clazz + " with (Ruby, RubyClass) constructor:\n" + ie);
-                } catch (IllegalAccessException iae) {
-                    throw runtime.newSecurityError("could not allocate " + clazz + " due to inaccessible (Ruby, RubyClass) constructor:\n" + iae);
-                }
-            };
-
-            this.reifiedClass = (Class<? extends Reified>) clazz;
+            constructor = clazz.getConstructor(Ruby.class, RubyClass.class);
         } catch (NoSuchMethodException nsme) {
             throw new RuntimeException(nsme);
         }
+
+        this.allocator = (runtime, klazz) -> {
+            try {
+                return constructor.newInstance(runtime, klazz);
+            } catch (InvocationTargetException e) {
+                throw newTypeError(runtime, "could not allocate " + clazz + " with (Ruby, RubyClass) constructor:\n" + e.getTargetException(), e);
+            } catch (InstantiationException e) {
+                throw newTypeError(runtime, "could not allocate " + clazz + " with (Ruby, RubyClass) constructor:\n" + e, e);
+            } catch (IllegalAccessException e) {
+                throw runtime.newSecurityError("could not allocate " + clazz + " due to inaccessible (Ruby, RubyClass) constructor:\n" + e);
+            }
+        };
+
+        this.reifiedClass = (Class<? extends Reified>) clazz;
     }
 
     /**
@@ -203,23 +213,30 @@ public class RubyClass extends RubyModule {
      * <p>Note: Used with new concrete extension.</p>
      */
     public void setRubyStaticAllocator(final Class<?> clazz) {
+        final Method method;
         try {
-            final Method method = clazz.getDeclaredMethod("__allocate__", Ruby.class, RubyClass.class);
-
-            this.allocator = (runtime, klazz) -> {
-                try {
-                    return (IRubyObject) method.invoke(null, runtime, klazz);
-                } catch (InvocationTargetException ite) {
-                    throw runtime.newTypeError("could not allocate " + clazz + " with (Ruby, RubyClass) constructor:\n" + ite);
-                } catch (IllegalAccessException iae) {
-                    throw runtime.newSecurityError("could not allocate " + clazz + " due to inaccessible (Ruby, RubyClass) constructor:\n" + iae);
-                }
-            };
-
-            this.reifiedClass = (Class<? extends Reified>) clazz;
+            method = clazz.getDeclaredMethod("__allocate__", Ruby.class, RubyClass.class);
         } catch (NoSuchMethodException nsme) {
             throw new RuntimeException(nsme);
         }
+
+        this.allocator = (runtime, klazz) -> {
+            try {
+                return (IRubyObject) method.invoke(null, runtime, klazz);
+            } catch (InvocationTargetException e) {
+                throw newTypeError(runtime, "could not allocate " + clazz + " with (Ruby, RubyClass) method:\n" + e.getTargetException(), e);
+            } catch (IllegalAccessException e) {
+                throw runtime.newSecurityError("could not allocate " + clazz + " due to inaccessible (Ruby, RubyClass) method:\n" + e);
+            }
+        };
+
+        this.reifiedClass = (Class<? extends Reified>) clazz;
+    }
+
+    private static RaiseException newTypeError(final Ruby runtime, final String msg, final Exception e) {
+        RaiseException error = runtime.newTypeError(msg);
+        error.initCause(e);
+        return error;
     }
 
     @JRubyMethod(name = "allocate")
@@ -936,22 +953,14 @@ public class RubyClass extends RubyModule {
      *
      */
     @Override
-    public IRubyObject initialize(ThreadContext context, Block block) {
-        return initialize19(context, block);
-    }
-
-    public IRubyObject initialize(ThreadContext context, IRubyObject superObject, Block block) {
-        return initialize19(context, superObject, block);
-    }
-
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
-    public IRubyObject initialize19(ThreadContext context, Block block) {
+    public IRubyObject initialize(ThreadContext context, Block block) {
         checkNotInitialized();
         return initializeCommon(context, runtime.getObject(), block);
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
-    public IRubyObject initialize19(ThreadContext context, IRubyObject superObject, Block block) {
+    public IRubyObject initialize(ThreadContext context, IRubyObject superObject, Block block) {
         checkNotInitialized();
         checkInheritable(superObject);
         return initializeCommon(context, (RubyClass) superObject, block);
@@ -2897,6 +2906,16 @@ public class RubyClass extends RubyModule {
     @Deprecated
     public VariableAccessorField getObjectGroupAccessorField() {
         return variableTableManager.getObjectGroupAccessorField();
+    }
+
+    @Deprecated
+    public IRubyObject initialize19(ThreadContext context, Block block) {
+        return initialize(context, block);
+    }
+
+    @Deprecated
+    public IRubyObject initialize19(ThreadContext context, IRubyObject superObject, Block block) {
+        return initialize(context, superObject, block);
     }
 
     @Deprecated

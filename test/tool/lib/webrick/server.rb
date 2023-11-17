@@ -350,7 +350,7 @@ module WEBrick
         if !pipe.closed?
           begin
             yield pipe
-          rescue IOError # closed by another thread.
+          rescue IOError, Errno::EBADF, Errno::EPIPE # closed by another thread.
           end
         end
       end

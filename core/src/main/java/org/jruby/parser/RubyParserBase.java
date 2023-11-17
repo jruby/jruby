@@ -643,16 +643,21 @@ public abstract class RubyParserBase {
         }
     }
 
-    public boolean value_expr(Node node) {
-        boolean conditional = false;
+    boolean value_expr_check(Node node) {
+        boolean void_node = false;
+
+        if (node == null) warn(lexer.getRubySourceline(), "empty expression");
 
         while (node != null) {
             switch (node.getNodeType()) {
-                case RETURNNODE: case BREAKNODE: case NEXTNODE: case REDONODE:
-                case RETRYNODE:
-                    if (!conditional) lexer.compile_error("void value expression");
-
-                    return false;
+                case RETURNNODE: case BREAKNODE: case NEXTNODE: case REDONODE: case RETRYNODE:
+                    return void_node ? void_node : true;
+                case PATTERNCASENODE:
+                    if (((PatternCaseNode) node).getCases().size() >= 0 && ((PatternCaseNode) node).getCases().get(0) != null) {
+                        return false;
+                    }
+                    /* single line pattern matching */
+                    return void_node ? void_node : true;
                 case BLOCKNODE:
                     node = ((BlockNode) node).getLast();
                     break;
@@ -660,24 +665,37 @@ public abstract class RubyParserBase {
                     node = ((BeginNode) node).getBodyNode();
                     break;
                 case IFNODE:
-                    if (!value_expr(((IfNode) node).getThenBody())) return false;
+                    if (((IfNode) node).getThenBody() == null) return false;
+                    if (((IfNode) node).getElseBody() == null) return false;
+
+                    boolean vn = value_expr_check(((IfNode) node).getThenBody());
+                    if (!vn) return false;
+                    if (!void_node) void_node = vn;
                     node = ((IfNode) node).getElseBody();
                     break;
                 case ANDNODE: case ORNODE:
-                    conditional = true;
-                    node = ((BinaryOperatorNode) node).getSecondNode();
+                    node = ((BinaryOperatorNode) node).getFirstNode();
                     break;
-                case LOCALASGNNODE: case DASGNNODE:
+                case LOCALASGNNODE: case DASGNNODE: // FIXME: MASGN should also mark unknown variables.
                     if (warnOnUnusedVariables) {
                         scopedParserState.markUsedVariable((((INameNode) node).getName()), (((IScopedNode) node).getDepth()));
                     }
-                    return true;
-                default: // Node
-                    return true;
+                    return false;
+                default:
+                    return false;
             }
         }
 
-        return true;
+        return false;
+    }
+
+
+    public boolean value_expr(Node node) {
+        boolean void_expr = value_expr_check(node);
+
+        if (void_expr) lexer.compile_error("void value expression");
+
+        return void_expr;
     }
 
     private void handleUselessWarn(Node node, String useless) {

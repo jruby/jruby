@@ -2212,7 +2212,7 @@ public class IRBuilder {
         Variable sClassVar = addResultInstr(new DefineMetaClassInstr(createTemporaryVariable(), receiver, body));
 
         // sclass bodies inherit the block of their containing method
-        Variable processBodyResult = addResultInstr(new ProcessModuleBodyInstr(createTemporaryVariable(), sClassVar, getYieldClosureVariable()));
+        Variable processBodyResult = addResultInstr(new ProcessModuleBodyInstr(createTemporaryVariable(), sClassVar));
         newIRBuilder(manager, body).buildModuleOrClassBody(sclassNode.getBodyNode(), sclassNode.getLine(), sclassNode.getEndLine());
         return processBodyResult;
     }
@@ -2223,7 +2223,7 @@ public class IRBuilder {
     private boolean isTopScope() {
         IRScope topScope = scope.getNearestNonClosurelikeScope();
 
-        boolean isTopScope = topScope instanceof IRScriptBody ||
+        boolean isTopScope = topScope instanceof IRScriptBody && evalType == null ||
                 (evalType != null && evalType != EvalType.MODULE_EVAL && evalType != EvalType.BINDING_EVAL);
 
         // we think it could be a top scope but it could still be called from within a module/class which
@@ -3103,10 +3103,9 @@ public class IRBuilder {
         // Receive self
         addInstr(manager.getReceiveSelfInstr());
 
-        // used for yields; metaclass body (sclass) inherits yield var from surrounding, and accesses it as implicit
-        if (scope instanceof IRMethod || scope instanceof IRMetaClassBody) {
+        if (scope instanceof IRMethod) {
             addInstr(new LoadImplicitClosureInstr(getYieldClosureVariable()));
-        } else {
+        } else if (!(scope instanceof IRModuleBody) && !(scope instanceof IRClassBody) && !(scope instanceof IRMetaClassBody)) {
             addInstr(new LoadFrameClosureInstr(getYieldClosureVariable()));
         }
     }
@@ -3131,6 +3130,13 @@ public class IRBuilder {
     public void receiveArgs(final ArgsNode argsNode) {
         Signature signature = scope.getStaticScope().getSignature();
         Variable keywords = addResultInstr(new ReceiveKeywordsInstr(temp(), signature.hasRest(), argsNode.hasKwargs()));
+
+        KeywordRestArgNode keyRest = argsNode.getKeyRest();
+        RubySymbol restName = keyRest == null ? null : keyRest.getName();
+        // We want this to come in before arity check since arity will think no kwargs should exist.
+        if (restName != null && "nil".equals(restName.idString())) {
+            if_not(keywords, UndefinedValue.UNDEFINED, () -> addRaiseError("ArgumentError", "no keywords accepted"));
+        }
 
         // 1.9 pre, opt, rest, post args
         receiveNonBlockArgs(argsNode, keywords);
@@ -3163,22 +3169,16 @@ public class IRBuilder {
         }
 
         // 2.0 keyword rest arg
-        KeywordRestArgNode keyRest = argsNode.getKeyRest();
         if (keyRest != null) {
-            RubySymbol key = keyRest.getName();
             ArgumentType type = ArgumentType.keyrest;
 
             // anonymous keyrest
-            if (key == null || key.getBytes().realSize() == 0) type = ArgumentType.anonkeyrest;
+            if (restName == null || restName.getBytes().realSize() == 0) type = ArgumentType.anonkeyrest;
 
-            Variable av = getNewLocalVariable(key, 0);
-            if (scope instanceof IRMethod) addArgumentDescription(type, key);
+            Variable av = getNewLocalVariable(restName, 0);
+            if (scope instanceof IRMethod) addArgumentDescription(type, restName);
 
-            if (key != null && "nil".equals(key.idString())) {
-                if_not(keywords, UndefinedValue.UNDEFINED, () -> addRaiseError("ArgumentError", "no keywords accepted"));
-            } else {
-                addInstr(new ReceiveKeywordRestArgInstr(av, keywords));
-            }
+            addInstr(new ReceiveKeywordRestArgInstr(av, keywords));
         }
 
         // Block arg
@@ -4657,6 +4657,11 @@ public class IRBuilder {
     }
 
     public Operand buildReturn(ReturnNode returnNode) {
+        boolean topLevel = scope.isTopLocalVariableScope() && scope instanceof IRScriptBody;
+        Node valueNode = returnNode.getValueNode();
+        if (topLevel && valueNode != null && !(valueNode instanceof NilImplicitNode)) {
+            scope.getManager().getRuntime().getWarnings().warn(getFileName(), valueNode.getLine() + 1, "argument of top-level return is ignored");
+        }
         Operand retVal = build(returnNode.getValueNode());
 
         if (scope instanceof IRClosure) {
@@ -4937,7 +4942,8 @@ public class IRBuilder {
     }
 
     public Operand buildYield(YieldNode node, Variable result) {
-        if (scope instanceof IRScriptBody || scope instanceof IRModuleBody) throwSyntaxError(node, "Invalid yield");
+        IRScope hardScope = scope.getNearestNonClosurelikeScope();
+        if (hardScope instanceof IRScriptBody || hardScope instanceof IRModuleBody) throwSyntaxError(node, "Invalid yield");
 
         boolean unwrap = true;
         Node argNode = node.getArgsNode();

@@ -41,6 +41,7 @@ import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.marshal.DataType;
@@ -138,7 +139,7 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
         DynamicMethod realMethod = method.getRealMethod(); // Follow Aliases
         if (realMethod instanceof PositionAware) {
             PositionAware poser = (PositionAware) realMethod;
-            return poser.getFile();
+            return TraceType.maskInternalFiles(poser.getFile());
         }
         return null;
     }

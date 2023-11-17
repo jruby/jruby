@@ -12,7 +12,7 @@ DO NOT MODIFY - GENERATED CODE
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>9.4.5.0-SNAPSHOT</version>
+    <version>9.4.6.0-SNAPSHOT</version>
   </parent>
   <artifactId>jruby-stdlib</artifactId>
   <name>JRuby Lib Setup</name>
@@ -20,7 +20,7 @@ DO NOT MODIFY - GENERATED CODE
     <gem.home>${basedir}/ruby/gems/shared</gem.home>
     <jruby.complete.gems>${jruby.complete.home}/lib/ruby/gems/shared</jruby.complete.gems>
     <jruby.complete.home>${project.build.outputDirectory}/META-INF/jruby.home</jruby.complete.home>
-    <jruby.plugins.version>3.0.1</jruby.plugins.version>
+    <jruby.plugins.version>3.0.2</jruby.plugins.version>
     <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
     <polyglot.dump.readonly>true</polyglot.dump.readonly>
   </properties>
@@ -28,7 +28,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>jruby-core</artifactId>
-      <version>9.4.5.0-SNAPSHOT</version>
+      <version>9.4.6.0-SNAPSHOT</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -736,7 +736,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>strscan</artifactId>
-      <version>3.0.6</version>
+      <version>3.0.7</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1057,7 +1057,7 @@ DO NOT MODIFY - GENERATED CODE
       <extension>
         <groupId>org.jruby.maven</groupId>
         <artifactId>mavengem-wagon</artifactId>
-        <version>2.0.1</version>
+        <version>2.0.2</version>
       </extension>
     </extensions>
     <resources>
@@ -1120,7 +1120,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/shellwords-0.1.0*</include>
           <include>specifications/singleton-0.1.1*</include>
           <include>specifications/stringio-3.0.8*</include>
-          <include>specifications/strscan-3.0.6*</include>
+          <include>specifications/strscan-3.0.7*</include>
           <include>specifications/subspawn-0.1.1*</include>
           <include>specifications/subspawn-posix-0.1.1*</include>
           <include>specifications/ffi-binary-libfixposix-0.5.1.1*</include>
@@ -1198,7 +1198,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/shellwords-0.1.0*/**/*</include>
           <include>gems/singleton-0.1.1*/**/*</include>
           <include>gems/stringio-3.0.8*/**/*</include>
-          <include>gems/strscan-3.0.6*/**/*</include>
+          <include>gems/strscan-3.0.7*/**/*</include>
           <include>gems/subspawn-0.1.1*/**/*</include>
           <include>gems/subspawn-posix-0.1.1*/**/*</include>
           <include>gems/ffi-binary-libfixposix-0.5.1.1*/**/*</include>
@@ -1276,7 +1276,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/shellwords-0.1.0*</include>
           <include>cache/singleton-0.1.1*</include>
           <include>cache/stringio-3.0.8*</include>
-          <include>cache/strscan-3.0.6*</include>
+          <include>cache/strscan-3.0.7*</include>
           <include>cache/subspawn-0.1.1*</include>
           <include>cache/subspawn-posix-0.1.1*</include>
           <include>cache/ffi-binary-libfixposix-0.5.1.1*</include>
@@ -1381,7 +1381,7 @@ DO NOT MODIFY - GENERATED CODE
       <plugin>
         <groupId>io.takari.polyglot</groupId>
         <artifactId>polyglot-maven-plugin</artifactId>
-        <version>0.4.11</version>
+        <version>0.5.0</version>
         <executions>
           <execution>
             <id>install_gems</id>
@@ -1432,7 +1432,7 @@ DO NOT MODIFY - GENERATED CODE
           <dependency>
             <groupId>io.takari.polyglot</groupId>
             <artifactId>polyglot-ruby</artifactId>
-            <version>0.4.11</version>
+            <version>0.5.0</version>
           </dependency>
         </dependencies>
         <inherited>false</inherited>

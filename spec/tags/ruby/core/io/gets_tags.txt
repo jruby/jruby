@@ -1,3 +1,4 @@
 windows:IO#gets ignores the internal encoding if the default external encoding is ASCII-8BIT
 windows:IO#gets transcodes to internal encoding if the IO object's external encoding is ASCII-8BIT
 fails:IO#gets when passed chomp raises exception when options passed as Hash
+fails:IO#gets sets $_ to nil after the last line has been read

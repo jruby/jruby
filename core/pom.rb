@@ -240,7 +240,7 @@ project 'JRuby Base' do
           },
           'argLine' =>  '-Xmx${jruby.test.memory} -Dfile.encoding=UTF-8 -Djava.awt.headless=true',
           'environmentVariables' => {
-              'JDK_JAVA_OPTIONS' => '--add-modules java.scripting'
+              'JDK_JAVA_OPTIONS' => '--add-modules java.scripting --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED'
           },
           includes: [
             'org/jruby/test/**/*Test*.java',

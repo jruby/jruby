@@ -18,7 +18,7 @@
       <plugin>
 	<groupId>org.jruby.maven</groupId>
 	<artifactId>gem-maven-plugin</artifactId>
-	<version>3.0.1</version>
+	<version>3.0.2</version>
 	<executions>
 	  <execution>
 	    <goals><goal>initialize</goal></goals>

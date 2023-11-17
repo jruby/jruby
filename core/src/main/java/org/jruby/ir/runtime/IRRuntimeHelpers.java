@@ -1165,6 +1165,13 @@ public class IRRuntimeHelpers {
                             case MODULE_BODY:
                             case CLASS_BODY:
                             case METACLASS_BODY:
+                                // FIXME: JIT has different module set here M vs MetaM.  Figure out discrepency.
+                                // Instance methods when defined within a method which is a singleton should
+                                // use the singletons container scope.
+                                if (!(self instanceof MetaClass) && self.getMetaClass().isSingleton()) {
+                                    return ds.getStaticScope().getModule();
+                                }
+
                                 // This is a similar scenario as the FIXME above that was added
                                 // in b65a5842ecf56ca32edc2a17800968f021b6a064. At that time,
                                 // I was wondering if it would affect this site here and looks
@@ -1864,15 +1871,7 @@ public class IRRuntimeHelpers {
         // FIXME: needs checkID and proper encoding to force hard symbol
         Helpers.addInstanceMethod(clazz, methodName, newMethod, currVisibility, context, runtime);
     }
-
-    @JIT
-    public static IRubyObject invokeModuleBody(ThreadContext context, DynamicMethod method, Block block) {
-        RubyModule implClass = method.getImplementationClass();
-
-        return method.call(context, implClass, implClass, "", block);
-    }
-
-    // FIXME: Temporary until CompiledIRMethod part of this is removed.
+    
     @JIT
     public static IRubyObject invokeModuleBody(ThreadContext context, DynamicMethod method) {
         RubyModule implClass = method.getImplementationClass();
@@ -2163,10 +2162,7 @@ public class IRRuntimeHelpers {
 
         // FIXME: For NORMAL/THREAD but it is unclear if we really need any keyword logic in here anymore.
         org.jruby.runtime.Signature sig = block.getBody().getSignature();
-        int arityValue = sig.arityValue();
-        if (!sig.hasKwargs() && arityValue >= -1 && arityValue <= 1) {
-            return args;
-        }
+        if (!sig.isSpreadable()) return args;
 
         // We get here only when we need both required and optional/rest args
         // (keyword or non-keyword in either case).

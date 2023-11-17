@@ -8,7 +8,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Array;
 
-import java.net.BindException;
 import java.net.PortUnreachableException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.NonReadableChannelException;
@@ -17,7 +16,6 @@ import java.nio.channels.NotYetConnectedException;
 import java.nio.charset.Charset;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.AtomicMoveNotSupportedException;
-import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileSystemLoopException;
 import java.nio.file.NoSuchFileException;
@@ -49,6 +47,7 @@ import org.jruby.ast.RequiredKeywordArgumentValueNode;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.NoMethodError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.internal.runtime.methods.*;
@@ -235,12 +234,12 @@ public class Helpers {
      * @return the resulting {@link Errno} value, or null if none could be determined.
      */
     public static Errno errnoFromException(Throwable t) {
-        // FIXME: Error-message scrapingis gross and turns out to be fragile if the host system is localized jruby/jruby#5415
+        // FIXME: Error-message scraping is gross and turns out to be fragile if the host system is localized jruby/jruby#5415
 
         // Try specific exception types by rethrowing and catching.
         try {
             throw t;
-        } catch (FileNotFoundException fnfe) {
+        } catch (FileNotFoundException | NoSuchFileException fnfe) {
             return Errno.ENOENT;
         } catch (EOFException eofe) {
             return Errno.EPIPE;
@@ -254,15 +253,11 @@ public class Helpers {
             return Errno.EEXIST;
         } catch (FileSystemLoopException fsle) {
             return Errno.ELOOP;
-        } catch (NoSuchFileException nsfe) {
-            return Errno.ENOENT;
         } catch (NotDirectoryException nde) {
             return Errno.ENOTDIR;
         } catch (AccessDeniedException ade) {
             return Errno.EACCES;
-        } catch (DirectoryNotEmptyException dnee) {
-            return errnoFromMessage(dnee);
-        } catch (BindException be) {
+        } catch (IOException be) {
             return errnoFromMessage(be);
         } catch (NotYetConnectedException nyce) {
             return Errno.ENOTCONN;
@@ -271,12 +266,6 @@ public class Helpers {
             return Errno.EINVAL;
         } catch (IllegalArgumentException nrce) {
             return Errno.EINVAL;
-        } catch (IOException ioe) {
-            String message = ioe.getMessage();
-            // Raised on Windows for process launch with missing file
-            if (message.endsWith("The system cannot find the file specified")) {
-                return Errno.ENOENT;
-            }
         } catch (Throwable t2) {
             // fall through
         }
@@ -302,6 +291,7 @@ public class Helpers {
                     return Errno.ECONNABORTED;
                 case "Broken pipe":
                     return Errno.EPIPE;
+                case "Connection reset":
                 case "Connection reset by peer":
                 case "An existing connection was forcibly closed by the remote host":
                     return Errno.ECONNRESET;
@@ -335,7 +325,13 @@ public class Helpers {
                 case "Protocol family not supported":
                     return Errno.EPFNOSUPPORT;
             }
+
+            // Raised on Windows for process launch with missing file
+            if (errorMessage.endsWith("The system cannot find the file specified")) {
+                return Errno.ENOENT;
+            }
         }
+
         return null;
     }
 
@@ -1916,21 +1912,27 @@ public class Helpers {
     public static IRubyObject aryToAry(ThreadContext context, IRubyObject value) {
         if (value instanceof RubyArray) return value;
 
-        if (value.respondsTo("to_ary")) {
-            return TypeConverter.convertToType(context, value, context.runtime.getArray(), "to_ary", false);
-        }
+        return respondsTo_to_ary(value) ?
+                TypeConverter.convertToTypeUnchecked(context, value, context.runtime.getArray(), "to_ary", false) :
+                context.runtime.newArray(value);
+    }
 
-        return context.runtime.newArray(value);
+    private static boolean respondsTo_to_ary(IRubyObject value) {
+        try {
+            return value.respondsTo("to_ary");
+        } catch (NoMethodError e) {
+            // A non-existent respond_to? should still end up calling method_missing but if m_m does not
+            // handle it then we should not raise.
+            return false;
+        }
     }
 
     public static IRubyObject aryOrToAry(ThreadContext context, IRubyObject value) {
         if (value instanceof RubyArray) return value;
 
-        if (value.respondsTo("to_ary")) {
-            return TypeConverter.convertToType(context, value, context.runtime.getArray(), "to_ary", false);
-        }
-
-        return context.nil;
+        return respondsTo_to_ary(value) ?
+                TypeConverter.convertToTypeUnchecked(context, value, context.runtime.getArray(), "to_ary", false) :
+                context.nil;
     }
 
     @Deprecated // not used
@@ -2926,6 +2928,18 @@ public class Helpers {
         newValues[0] = first;
         System.arraycopy(values, 0, newValues, 1, values.length);
         return newValues;
+    }
+
+    public static IRubyObject[] arrayOf(IRubyObject first) {
+        return new IRubyObject[] {first};
+    }
+
+    public static IRubyObject[] arrayOf(IRubyObject first, IRubyObject second) {
+        return new IRubyObject[] {first, second};
+    }
+
+    public static IRubyObject[] arrayOf(IRubyObject first, IRubyObject second, IRubyObject third) {
+        return new IRubyObject[] {first, second, third};
     }
 
     public static <T> T[] arrayOf(T[] values, T last, IntFunction<T[]> allocator) {

@@ -14,7 +14,8 @@ namespace :spec do
   task :'ruby:aot' => :ci_precompiled
 
   if ENV['CI']
-    MSPEC_FORMAT = "f"
+    # can't easily see file output on CI so we use specdoc
+    MSPEC_FORMAT = "s"
   else
     MSPEC_FORMAT = "d"
   end

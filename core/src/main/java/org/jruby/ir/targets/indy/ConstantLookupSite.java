@@ -40,6 +40,8 @@ public class ConstantLookupSite extends MutableCallSite {
 
     private final SiteTracker tracker = new SiteTracker();
 
+    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+
     public static final Handle BOOTSTRAP = new Handle(
             Opcodes.H_INVOKESTATIC,
             p(ConstantLookupSite.class),
@@ -78,6 +80,9 @@ public class ConstantLookupSite extends MutableCallSite {
         // Lexical lookup
         Ruby runtime = context.getRuntime();
         RubyModule object = runtime.getObject();
+
+        // get switchpoint before value
+        SwitchPoint switchPoint = getSwitchPointForConstant(runtime);
         IRubyObject constant = (staticScope == null) ? object.getConstant(name) : staticScope.getConstantInner(name);
 
         // Inheritance lookup
@@ -97,15 +102,13 @@ public class ConstantLookupSite extends MutableCallSite {
             }
         }
 
-        SwitchPoint switchPoint = (SwitchPoint) runtime.getConstantInvalidator(name).getData();
-
         // bind constant until invalidated
         MethodHandle target = Binder.from(type())
                 .drop(0, 2)
                 .constant(constant);
         MethodHandle fallback = Binder.from(type())
                 .insert(0, this)
-                .invokeVirtualQuiet(Bootstrap.LOOKUP, "searchConst");
+                .invokeVirtualQuiet(LOOKUP, "searchConst");
 
         setTarget(switchPoint.guardWithTest(target, fallback));
 
@@ -127,6 +130,9 @@ public class ConstantLookupSite extends MutableCallSite {
 
         // Inheritance lookup
         Ruby runtime = context.getRuntime();
+
+        // get switchpoint before value
+        SwitchPoint switchPoint = getSwitchPointForConstant(runtime);
         IRubyObject constant = publicOnly ? module.getConstantFromNoConstMissing(name, false) : module.getConstantNoConstMissing(name);
 
         // Call const_missing or cache
@@ -139,13 +145,17 @@ public class ConstantLookupSite extends MutableCallSite {
         }
 
         // bind constant until invalidated
-        bind(runtime, module, constant, SMFC());
+        bind(runtime, module, switchPoint, constant, SMFC());
 
         if (Options.INVOKEDYNAMIC_LOG_CONSTANTS.load()) {
             LOG.info(name + "\tretrieved and cached from module (searchModuleForConst) " + cmVal.getMetaClass());// + " added to PIC" + extractSourceInfo(site));
         }
 
         return constant;
+    }
+
+    private SwitchPoint getSwitchPointForConstant(Ruby runtime) {
+        return (SwitchPoint) runtime.getConstantInvalidator(name).getData();
     }
 
     public IRubyObject noCacheSearchModuleForConst(ThreadContext context, IRubyObject cmVal) {
@@ -178,6 +188,9 @@ public class ConstantLookupSite extends MutableCallSite {
             return bail(context, cmVal, noCacheISC());
         }
 
+        // get switchpoint before value
+        SwitchPoint switchPoint = getSwitchPointForConstant(runtime);
+
         // Inheritance lookup
         IRubyObject constant = module.getConstantNoConstMissingSkipAutoload(name);
 
@@ -186,7 +199,7 @@ public class ConstantLookupSite extends MutableCallSite {
         }
 
         // bind constant until invalidated
-        bind(runtime, module, constant, ISC());
+        bind(runtime, module, switchPoint, constant, ISC());
 
         tracker.addType(module.id);
 
@@ -259,7 +272,7 @@ public class ConstantLookupSite extends MutableCallSite {
         return (IRubyObject) noncachingFallback.invokeExact(context, cmVal);
     }
 
-    private void bind(Ruby runtime, RubyModule module, IRubyObject constant, MethodHandle cachingFallback) {
+    private void bind(Ruby runtime, RubyModule module, SwitchPoint switchPoint, IRubyObject constant, MethodHandle cachingFallback) {
         MethodHandle target = Binder.from(type())
                 .drop(0, 2)
                 .constant(constant);
@@ -270,9 +283,6 @@ public class ConstantLookupSite extends MutableCallSite {
         // Test that module is same as before
         target = guardWithTest(module.getIdTest(), target, fallback);
 
-        // Global invalidation
-        SwitchPoint switchPoint = (SwitchPoint) runtime.getConstantInvalidator(name).getData();
-
         target = switchPoint.guardWithTest(target, fallback);
 
         setTarget(target);
@@ -281,13 +291,13 @@ public class ConstantLookupSite extends MutableCallSite {
     public IRubyObject lexicalSearchConst(ThreadContext context, StaticScope scope) {
         Ruby runtime = context.runtime;
 
+        // get switchpoint before value
+        SwitchPoint switchPoint = getSwitchPointForConstant(runtime);
         IRubyObject constant = scope.getConstantDefined(name);
 
         if (constant == null) {
             constant = UndefinedValue.UNDEFINED;
         }
-
-        SwitchPoint switchPoint = (SwitchPoint) runtime.getConstantInvalidator(name).getData();
 
         // bind constant until invalidated
         MethodHandle target = Binder.from(type())
@@ -296,7 +306,7 @@ public class ConstantLookupSite extends MutableCallSite {
 
         MethodHandle fallback = Binder.from(type())
                 .insert(0, this)
-                .invokeVirtualQuiet(Bootstrap.LOOKUP, "lexicalSearchConst");
+                .invokeVirtualQuiet(LOOKUP, "lexicalSearchConst");
 
         setTarget(switchPoint.guardWithTest(target, fallback));
 
@@ -312,7 +322,7 @@ public class ConstantLookupSite extends MutableCallSite {
         if (_SMFC != null) return _SMFC;
         return _SMFC = Binder.from(type())
                 .insert(0, this)
-                .invokeVirtualQuiet(Bootstrap.LOOKUP, "searchModuleForConst");
+                .invokeVirtualQuiet(LOOKUP, "searchModuleForConst");
     }
 
     private MethodHandle _noCacheSMFC;
@@ -320,7 +330,7 @@ public class ConstantLookupSite extends MutableCallSite {
         if (_noCacheSMFC != null) return _noCacheSMFC;
         return _noCacheSMFC = Binder.from(type())
                 .insert(0, this)
-                .invokeVirtualQuiet(Bootstrap.LOOKUP, "noCacheSearchModuleForConst");
+                .invokeVirtualQuiet(LOOKUP, "noCacheSearchModuleForConst");
     }
 
     private MethodHandle _ISC;
@@ -328,7 +338,7 @@ public class ConstantLookupSite extends MutableCallSite {
         if (_ISC != null) return _ISC;
         return _ISC = Binder.from(type())
                 .insert(0, this)
-                .invokeVirtualQuiet(Bootstrap.LOOKUP, "inheritanceSearchConst");
+                .invokeVirtualQuiet(LOOKUP, "inheritanceSearchConst");
     }
 
     private MethodHandle _noCacheISC;
@@ -336,6 +346,6 @@ public class ConstantLookupSite extends MutableCallSite {
         if (_noCacheISC != null) return _noCacheISC;
         return _noCacheISC = Binder.from(type())
                 .insert(0, this)
-                .invokeVirtualQuiet(Bootstrap.LOOKUP, "noCacheInheritanceSearchConst");
+                .invokeVirtualQuiet(LOOKUP, "noCacheInheritanceSearchConst");
     }
 }
