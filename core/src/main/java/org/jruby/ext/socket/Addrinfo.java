@@ -805,9 +805,9 @@ public class Addrinfo extends RubyObject {
     public IRubyObject getnameinfo(ThreadContext context, int flags) {
         Ruby runtime = context.runtime;
         boolean unix = socketType == SocketType.UNIX;
-        // FIXME: I believe there is normative way of asking for local host when return unix domain sockets.
-        String host = unix ? "localhost.localdomain" : getInetSocketAddress().getHostName();
-        RubyString hostname = runtime.newString(host);
+        RubyString hostname = unix ?
+                (RubyString) SocketUtils.gethostname(context) :
+                runtime.newString(getInetSocketAddress().getHostName());
 
         String serviceName;
         if ((flags & NameInfo.NI_NUMERICSERV.intValue()) != 0) {
