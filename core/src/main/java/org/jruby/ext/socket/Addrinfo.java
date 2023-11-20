@@ -375,10 +375,16 @@ public class Addrinfo extends RubyObject {
     public static IRubyObject ip(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         String host = StringSupport.checkEmbeddedNulls(context.runtime, arg.convertToString()).toString();
         try {
+            boolean specifiedV6 = host.indexOf(':') != -1;
             InetAddress addy = SocketUtils.getRubyInetAddress(host);
             Addrinfo addrinfo = new Addrinfo(context.runtime, (RubyClass) recv, addy);
             addrinfo.protocol = Protocol.getProtocolByName("ip");
-            addrinfo.pfamily = (addy instanceof Inet4Address) ? PF_INET : PF_INET6;
+            if (specifiedV6 && addy instanceof Inet4Address) {
+                addrinfo.looksLikeV4ButIsV6 = true;
+                addrinfo.pfamily = PF_INET6;
+            } else {
+                addrinfo.pfamily = PF_INET;
+            }
 
             return addrinfo;
         } catch (UnknownHostException uhe) {
@@ -624,7 +630,47 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod(notImplemented = true)
     public IRubyObject ipv6_to_ipv4(ThreadContext context) {
-        // unimplemented
+        InetAddress in = getInetAddress();
+
+        if (in instanceof Inet6Address) {
+            Inet6Address addr = (Inet6Address) in;
+
+            if (addr.isIPv4CompatibleAddress()) {
+                byte[] raw = addr.getAddress();
+                if (raw[12] == 0 && raw[13] == 0 && raw[14] == 0 && raw[15] == 1) return context.nil;
+                byte[] ip4Raw = new byte[4];
+                System.arraycopy(raw, 12, ip4Raw, 0, 4);
+
+                try {
+                    InetAddress newAddr = InetAddress.getByAddress(ip4Raw);
+                    Addrinfo newAddrInfo = new Addrinfo(getRuntime(), getMetaClass());
+                    newAddrInfo.pfamily = PF_INET;
+                    newAddrInfo.socketAddress = new InetSocketAddress(newAddr, getPort());
+                    newAddrInfo.sock = sock;
+                    newAddrInfo.socketType = socketType;
+
+                    return newAddrInfo;
+                } catch (UnknownHostException e) {
+                    // should not happen since we would already have a valid ipv6 address.
+                }
+            }
+        } else if (in instanceof Inet4Address) {
+            // This will be specified originally as ipv6 but Java converts it to ipv4.
+            if (looksLikeV4ButIsV6) {
+                Inet4Address addr = (Inet4Address) in;
+                byte[] raw = addr.getAddress();
+                if (raw[0] == 0 && raw[1] == 0 && raw[2] == 0 && raw[3] == 1) return context.nil;
+                if (getAddressFamily() != AF_INET) {
+                    Addrinfo newAddrInfo = new Addrinfo(getRuntime(), getMetaClass());
+                    newAddrInfo.pfamily = PF_INET;
+                    newAddrInfo.socketAddress = socketAddress;
+                    newAddrInfo.sock = sock;
+                    newAddrInfo.socketType = socketType;
+                    return newAddrInfo;
+                }
+            }
+        }
+
         return context.nil;
     }
 
@@ -886,7 +932,7 @@ public class Addrinfo extends RubyObject {
 
     AddressFamily getAddressFamily() {
         if (socketAddress instanceof InetSocketAddress) {
-            if (getInetAddress() instanceof Inet4Address) return AF_INET;
+            if (!looksLikeV4ButIsV6 && getInetAddress() instanceof Inet4Address) return AF_INET;
             return AF_INET6;
         } else if (socketAddress instanceof UnixSocketAddress) {
             return AF_UNIX;
@@ -904,4 +950,8 @@ public class Addrinfo extends RubyObject {
     private boolean isBroadcast;
     private boolean displaysCanonical;
     private Protocol protocol = Protocol.getProtocolByNumber(0);
+
+    // InetAddress can choose Inet4Address for ipv6 addrs which happen to be compatible with ipv4.
+    // We make sure we don't lose what we specified via Ruby with this field.
+    private boolean looksLikeV4ButIsV6;
 }

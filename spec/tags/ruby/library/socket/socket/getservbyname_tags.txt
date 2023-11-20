@@ -1,1 +1,0 @@
-fails:Socket#getservbyname raises a SocketError when the service or port is invalid
