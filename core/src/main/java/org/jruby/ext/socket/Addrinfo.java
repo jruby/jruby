@@ -586,16 +586,12 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod(name = "ipv6_v4mapped?")
     public IRubyObject ipv6_v4mapped_p(ThreadContext context) {
-        Inet6Address in6 = getInet6Address();
-        return RubyBoolean.newBoolean(context, in6 != null &&
-                // Java always converts mapped ipv6 addresses to ipv4 form
-                in6.getHostAddress().indexOf(":") == -1);
+        return RubyBoolean.newBoolean(context, looksLikeV4ButIsV6);
     }
 
     @JRubyMethod(name = "ipv6_v4compat?")
     public IRubyObject ipv6_v4compat_p(ThreadContext context) {
-        Inet6Address in6 = getInet6Address();
-        return RubyBoolean.newBoolean(context, in6 != null && in6.isIPv4CompatibleAddress());
+        return RubyBoolean.newBoolean(context, isIPV6() && !looksLikeV4ButIsV6);
     }
 
     @JRubyMethod(name = "ipv6_mc_nodelocal?")
@@ -628,6 +624,17 @@ public class Addrinfo extends RubyObject {
         return RubyBoolean.newBoolean(context, in6 != null && in6.isMCGlobal());
     }
 
+    // FIXME: What is the actual name for ::0.0.0.1
+    private boolean is_0001(byte[] raw) {
+        int length = raw.length;
+
+        return raw[length - 4] == 0 && raw[length - 3] == 0 && raw[length - 2] == 0 && raw[length - 1] == 1;
+    }
+
+    private boolean isIPV6() {
+        return (getInetAddress() instanceof Inet6Address || looksLikeV4ButIsV6) && !is_0001(getInetAddress().getAddress());
+    }
+
     @JRubyMethod(notImplemented = true)
     public IRubyObject ipv6_to_ipv4(ThreadContext context) {
         InetAddress in = getInetAddress();
@@ -637,7 +644,7 @@ public class Addrinfo extends RubyObject {
 
             if (addr.isIPv4CompatibleAddress()) {
                 byte[] raw = addr.getAddress();
-                if (raw[12] == 0 && raw[13] == 0 && raw[14] == 0 && raw[15] == 1) return context.nil;
+                if (is_0001(raw)) return context.nil;
                 byte[] ip4Raw = new byte[4];
                 System.arraycopy(raw, 12, ip4Raw, 0, 4);
 
@@ -657,9 +664,7 @@ public class Addrinfo extends RubyObject {
         } else if (in instanceof Inet4Address) {
             // This will be specified originally as ipv6 but Java converts it to ipv4.
             if (looksLikeV4ButIsV6) {
-                Inet4Address addr = (Inet4Address) in;
-                byte[] raw = addr.getAddress();
-                if (raw[0] == 0 && raw[1] == 0 && raw[2] == 0 && raw[3] == 1) return context.nil;
+                if (is_0001(((Inet4Address) in).getAddress())) return context.nil;
                 if (getAddressFamily() != AF_INET) {
                     Addrinfo newAddrInfo = new Addrinfo(getRuntime(), getMetaClass());
                     newAddrInfo.pfamily = PF_INET;
