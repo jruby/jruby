@@ -1861,6 +1861,78 @@ public abstract class Nodes {
     }
 
     /**
+     * Represents the use of a case statement for pattern matching.
+     *
+     *     case true
+     *     in false
+     *     end
+     *     ^^^^^^^^^
+     */
+    public static final class CaseMatchNode extends Node {
+        /** optional (can be null) */
+        public final Node predicate;
+        public final Node[] conditions;
+        /** optional (can be null) */
+        public final ElseNode consequent;
+
+        public CaseMatchNode(Node predicate, Node[] conditions, ElseNode consequent, int startOffset, int length) {
+            super(startOffset, length);
+            this.predicate = predicate;
+            this.conditions = conditions;
+            this.consequent = consequent;
+        }
+                
+        public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
+            if (this.predicate != null) {
+                this.predicate.accept(visitor);
+            }
+            for (Nodes.Node child : this.conditions) {
+                child.accept(visitor);
+            }
+            if (this.consequent != null) {
+                this.consequent.accept(visitor);
+            }
+        }
+
+        public Node[] childNodes() {
+            ArrayList<Node> childNodes = new ArrayList<>();
+            childNodes.add(this.predicate);
+            childNodes.addAll(Arrays.asList(this.conditions));
+            childNodes.add(this.consequent);
+            return childNodes.toArray(EMPTY_ARRAY);
+        }
+
+        public <T> T accept(AbstractNodeVisitor<T> visitor) {
+            return visitor.visitCaseMatchNode(this);
+        }
+
+        @Override
+        protected String toString(String indent) {
+            StringBuilder builder = new StringBuilder();
+            builder.append(this.getClass().getSimpleName());
+            if (hasNewLineFlag()) {
+                builder.append("[Li]");
+            }
+            builder.append('\n');
+            String nextIndent = indent + "  ";
+            String nextNextIndent = nextIndent + "  ";
+            builder.append(nextIndent);
+            builder.append("predicate: ");
+            builder.append(this.predicate == null ? "null\n" : this.predicate.toString(nextIndent));
+            builder.append(nextIndent);
+            builder.append("conditions: ");
+            builder.append('\n');
+            for (Node child : this.conditions) {
+                builder.append(nextNextIndent).append(child.toString(nextNextIndent));
+            }
+            builder.append(nextIndent);
+            builder.append("consequent: ");
+            builder.append(this.consequent == null ? "null\n" : this.consequent.toString(nextIndent));
+            return builder.toString();
+        }
+    }
+
+    /**
      * Represents the use of a case statement.
      *
      *     case true
@@ -5799,20 +5871,26 @@ public abstract class Nodes {
      */
     public static final class MatchWriteNode extends Node {
         public final CallNode call;
-        public final org.jruby.RubySymbol[] locals;
+        public final Node[] targets;
 
-        public MatchWriteNode(CallNode call, org.jruby.RubySymbol[] locals, int startOffset, int length) {
+        public MatchWriteNode(CallNode call, Node[] targets, int startOffset, int length) {
             super(startOffset, length);
             this.call = call;
-            this.locals = locals;
+            this.targets = targets;
         }
                 
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
             this.call.accept(visitor);
+            for (Nodes.Node child : this.targets) {
+                child.accept(visitor);
+            }
         }
 
         public Node[] childNodes() {
-            return new Node[] { this.call };
+            ArrayList<Node> childNodes = new ArrayList<>();
+            childNodes.add(this.call);
+            childNodes.addAll(Arrays.asList(this.targets));
+            return childNodes.toArray(EMPTY_ARRAY);
         }
 
         public <T> T accept(AbstractNodeVisitor<T> visitor) {
@@ -5833,10 +5911,10 @@ public abstract class Nodes {
             builder.append("call: ");
             builder.append(this.call.toString(nextIndent));
             builder.append(nextIndent);
-            builder.append("locals: ");
+            builder.append("targets: ");
             builder.append('\n');
-            for (org.jruby.RubySymbol constant : this.locals) {
-                builder.append(nextNextIndent).append('"').append(constant).append('"').append('\n');
+            for (Node child : this.targets) {
+                builder.append(nextNextIndent).append(child.toString(nextNextIndent));
             }
             return builder.toString();
         }
@@ -7664,54 +7742,6 @@ public abstract class Nodes {
             for (Node child : this.body) {
                 builder.append(nextNextIndent).append(child.toString(nextNextIndent));
             }
-            return builder.toString();
-        }
-    }
-
-    /**
-     * Represents the use of compile-time string concatenation.
-     *
-     *     "foo" "bar"
-     *     ^^^^^^^^^^^
-     */
-    public static final class StringConcatNode extends Node {
-        public final Node left;
-        public final Node right;
-
-        public StringConcatNode(Node left, Node right, int startOffset, int length) {
-            super(startOffset, length);
-            this.left = left;
-            this.right = right;
-        }
-                
-        public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
-            this.left.accept(visitor);
-            this.right.accept(visitor);
-        }
-
-        public Node[] childNodes() {
-            return new Node[] { this.left, this.right };
-        }
-
-        public <T> T accept(AbstractNodeVisitor<T> visitor) {
-            return visitor.visitStringConcatNode(this);
-        }
-
-        @Override
-        protected String toString(String indent) {
-            StringBuilder builder = new StringBuilder();
-            builder.append(this.getClass().getSimpleName());
-            if (hasNewLineFlag()) {
-                builder.append("[Li]");
-            }
-            builder.append('\n');
-            String nextIndent = indent + "  ";
-            builder.append(nextIndent);
-            builder.append("left: ");
-            builder.append(this.left.toString(nextIndent));
-            builder.append(nextIndent);
-            builder.append("right: ");
-            builder.append(this.right.toString(nextIndent));
             return builder.toString();
         }
     }

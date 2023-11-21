@@ -143,8 +143,10 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             return buildCallOrWrite((CallOrWriteNode) node);
         } else if (node instanceof CallOperatorWriteNode) { // foo.bar += baz
             return buildCallOperatorWrite((CallOperatorWriteNode) node);
-        } else if (node instanceof CaseNode) {                    // MISSING: CapturePatternNode
+        } else if (node instanceof CaseNode) {
             return buildCase((CaseNode) node);
+        } else if (node instanceof CaseMatchNode) {
+            return buildCaseMatch((CaseMatchNode) node);
         } else if (node instanceof ClassNode) {
             return buildClass((ClassNode) node);
         } else if (node instanceof ClassVariableAndWriteNode) {
@@ -330,8 +332,6 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             return buildSplat((SplatNode) node);
         } else if (node instanceof StatementsNode) {
             return buildStatements((StatementsNode) node);
-        } else if (node instanceof StringConcatNode) {
-            return buildStringConcat((StringConcatNode) node);
         } else if (node instanceof StringNode) {
             return buildString((StringNode) node);
         } else if (node instanceof SuperNode) {
@@ -777,25 +777,11 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildCase(CaseNode node) {
-        // FIXME: new node coming to allow this to be a first citizen build method from main build() method.
-        if (isPatternMatch(node)) {
-            return buildPatternCase(node.predicate, node.conditions, node.consequent);
-        }
-
-        try {
-            return buildCase(node.predicate, node.conditions, node.consequent);
-        } catch (Exception e) {
-            System.out.println("Problem with case : " + getFileName() + ":" + (getLine(node) + 1));
-            throw e;
-        }
+        return buildCase(node.predicate, node.conditions, node.consequent);
     }
 
-    private boolean isPatternMatch(CaseNode node) {
-        for (Node condition: node.conditions) {
-            if (condition instanceof InNode) return true;
-        }
-
-        return false;
+    private Operand buildCaseMatch(CaseMatchNode node) {
+        return buildPatternCase(node.predicate, node.conditions, node.consequent);
     }
 
     private Operand buildClass(ClassNode node) {
@@ -1496,12 +1482,10 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
         addInstr(new MatchInstr(scope, result, receiver, value));
 
-        for (int i = 0; i < node.locals.length; i++) {
-            RubySymbol var = node.locals[i];
-            int slot = staticScope.exists(var.idString());
-            int depth = slot >> 16;
+        for (int i = 0; i < node.targets.length; i++) {
+            LocalVariableTargetNode target = (LocalVariableTargetNode) node.targets[i];
 
-            addInstr(new SetCapturedVarInstr(getLocalVariable(var, depth), result, var));
+            addInstr(new SetCapturedVarInstr(getLocalVariable(target.name, target.depth), result, target.name));
         }
 
         return result;
@@ -1606,8 +1590,9 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             }
         }
 
-        KeywordRestParameterNode keyRest = (KeywordRestParameterNode) parameters.keyword_rest;
-        if (keyRest != null) {
+
+        if (parameters.keyword_rest != null && parameters.keyword_rest instanceof KeywordRestParameterNode) {
+            KeywordRestParameterNode keyRest = (KeywordRestParameterNode) parameters.keyword_rest;
             RubySymbol key;
             ArgumentType type;
             if (keyRest.name == null) {
@@ -2080,85 +2065,6 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         } else {
             return new MutableString(bytelist(node.unescaped), CR_UNKNOWN, scope.getFile(), getLine(node));
         }
-    }
-
-    /*
-     * Cases:
-     *    left        right
-     * 1.  string     string    "a" "b"
-     * 2.  interp     string    "#{1}" "a"
-     * 3.  string     interp    "a" "#{1}"
-     * 4.  interp     interp    "#{1}" "#{2}"
-     * 4.  string     concat    "a" "b" "#{1}"
-     * 5.  concat     string    "#{1}" "a" "b"
-     *
-     * 1 is totally static (assemble bytelists and make single string Operand)
-     * 2,3 can be a single DStr operand (tack strings on left or right of DStr pieces)
-     * 4 can be a single DStr (just concatenate the parts together)
-     * 5,6 is combined combinations of 1-4.  String operand or DStr.
-     */
-    private Operand buildStringConcat(StringConcatNode node) {
-        // FIXME: maybe frozen maybe not?
-        boolean leftInterpolates = itInterpolates(node.left);
-        boolean rightInterpolates = itInterpolates(node.left);
-
-        if (!leftInterpolates) {
-            if (!rightInterpolates) {
-                ByteList str = buildStaticStringConcat(new ByteList(), node);
-
-                return new FrozenString(str, CR_UNKNOWN, getFileName(), getLine(node));
-            }
-        }
-
-        // FIXME: This works differently than method description in that it effectively just nests left and right as
-        // a node piece to the DStr so it nests up a series of instrs versus combining them as described.  It could
-        // be left this way forever but if these are in a hot path they will be doing some more work.
-        Node[] pieces;
-
-        if (node.left instanceof InterpolatedStringNode) {
-            pieces = ((InterpolatedStringNode) node.left).parts;
-        } else {
-            pieces = new Node[] { node.left };
-        }
-
-        if (node.right instanceof InterpolatedStringNode) {
-            Node[] otherPieces = ((InterpolatedStringNode) node.right).parts;
-            Node[] temp = pieces;
-
-            pieces = new Node[pieces.length + otherPieces.length];
-            System.arraycopy(temp, 0, pieces, 0, temp.length);
-            System.arraycopy(otherPieces, 0, pieces, temp.length, otherPieces.length);
-        } else {
-            Node[] temp = pieces;
-
-            pieces = new Node[pieces.length + 1];
-            System.arraycopy(temp, 0, pieces, 0, temp.length);
-            pieces[temp.length] = node.right;
-        }
-
-        return buildDStr(temp(), pieces, UTF8Encoding.INSTANCE, false, getLine(node));
-    }
-
-    // Is assumed to only have concats and strings
-    private ByteList buildStaticStringConcat(ByteList buf, Node node) {
-        if (node instanceof StringNode) {
-            buf.append(((StringNode) node).unescaped);
-        } else if (node instanceof StringConcatNode) {
-            buildStaticStringConcat(buf, ((StringConcatNode) node).left);
-            buildStaticStringConcat(buf, ((StringConcatNode) node).right);
-        } else {
-            throw notCompilable("found non-static node in string concat node", node);
-        }
-
-        return buf;
-    }
-
-    private boolean itInterpolates(Node node) {
-        return node instanceof InterpolatedStringNode ||
-                !(node instanceof StringNode) ||
-                !(node instanceof StringConcatNode &&
-                        (itInterpolates(((StringConcatNode) node).left) ||
-                        itInterpolates(((StringConcatNode) node).right)));
     }
 
     @Override

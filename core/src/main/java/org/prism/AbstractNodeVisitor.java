@@ -100,6 +100,10 @@ public abstract class AbstractNodeVisitor<T> {
         return defaultVisit(node);
     }
 
+    public T visitCaseMatchNode(Nodes.CaseMatchNode node) {
+        return defaultVisit(node);
+    }
+
     public T visitCaseNode(Nodes.CaseNode node) {
         return defaultVisit(node);
     }
@@ -537,10 +541,6 @@ public abstract class AbstractNodeVisitor<T> {
     }
 
     public T visitStatementsNode(Nodes.StatementsNode node) {
-        return defaultVisit(node);
-    }
-
-    public T visitStringConcatNode(Nodes.StringConcatNode node) {
         return defaultVisit(node);
     }
 
