@@ -8,7 +8,6 @@ import org.jruby.RubyBignum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.RubySymbol;
-import org.jruby.ast.NilImplicitNode;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRManager;
@@ -1582,9 +1581,15 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
             return;
         }
+
         boolean hasRest = parameters.rest != null;
         boolean hasKeywords = parameters.keywords.length != 0 || parameters.keyword_rest != null;
         Variable keywords = addResultInstr(new ReceiveKeywordsInstr(temp(), hasRest, hasKeywords));
+
+        // We want this to come in before arity check since arity will think no kwargs should exist.
+        if (parameters.keyword_rest instanceof NoKeywordsParameterNode) {
+            if_not(keywords, UndefinedValue.UNDEFINED, () -> addRaiseError("ArgumentError", "no keywords accepted"));
+        }
 
         receiveNonBlockArgs(parameters, keywords, hasKeywords);
 
@@ -1601,26 +1606,21 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             }
         }
 
-        if (parameters.keyword_rest instanceof NoKeywordsParameterNode) {
-            // FIXME: need to add :nokey and also fix in legacy for argument description.
-            if_not(keywords, UndefinedValue.UNDEFINED, () -> addRaiseError("ArgumentError", "no keywords accepted"));
-        } else {
-            KeywordRestParameterNode keyRest = (KeywordRestParameterNode) parameters.keyword_rest;
-            if (keyRest != null) {
-                RubySymbol key;
-                ArgumentType type;
-                if (keyRest.name == null) {
-                    key = symbol(STAR_STAR);
-                    type = ArgumentType.anonkeyrest;
-                } else {
-                    key = keyRest.name;
-                    type = ArgumentType.keyrest;
-                }
-
-                if (scope instanceof IRMethod) addArgumentDescription(type, key);
-
-                addInstr(new ReceiveKeywordRestArgInstr(getNewLocalVariable(key, 0), keywords));
+        KeywordRestParameterNode keyRest = (KeywordRestParameterNode) parameters.keyword_rest;
+        if (keyRest != null) {
+            RubySymbol key;
+            ArgumentType type;
+            if (keyRest.name == null) {
+                key = symbol(STAR_STAR);
+                type = ArgumentType.anonkeyrest;
+            } else {
+                key = keyRest.name;
+                type = ArgumentType.keyrest;
             }
+
+            if (scope instanceof IRMethod) addArgumentDescription(type, key);
+
+            addInstr(new ReceiveKeywordRestArgInstr(getNewLocalVariable(key, 0), keywords));
         }
 
         receiveBlockArg(parameters.block);

@@ -1737,6 +1737,13 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         Signature signature = scope.getStaticScope().getSignature();
         Variable keywords = addResultInstr(new ReceiveKeywordsInstr(temp(), signature.hasRest(), argsNode.hasKwargs()));
 
+        KeywordRestArgNode keyRest = argsNode.getKeyRest();
+        RubySymbol restName = keyRest == null ? null : keyRest.getName();
+        // We want this to come in before arity check since arity will think no kwargs should exist.
+        if (restName != null && "nil".equals(restName.idString())) {
+            if_not(keywords, UndefinedValue.UNDEFINED, () -> addRaiseError("ArgumentError", "no keywords accepted"));
+        }
+
         // 1.9 pre, opt, rest, post args
         receiveNonBlockArgs(argsNode, keywords);
 
@@ -1767,22 +1774,16 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         }
 
         // 2.0 keyword rest arg
-        KeywordRestArgNode keyRest = argsNode.getKeyRest();
         if (keyRest != null) {
-            RubySymbol key = keyRest.getName();
             ArgumentType type = ArgumentType.keyrest;
 
             // anonymous keyrest
-            if (key == null || key.getBytes().realSize() == 0) type = ArgumentType.anonkeyrest;
+            if (restName == null || restName.getBytes().realSize() == 0) type = ArgumentType.anonkeyrest;
 
-            Variable av = getNewLocalVariable(key, 0);
-            if (scope instanceof IRMethod) addArgumentDescription(type, key);
+            Variable av = getNewLocalVariable(restName, 0);
+            if (scope instanceof IRMethod) addArgumentDescription(type, restName);
 
-            if (key != null && "nil".equals(key.idString())) {
-                if_not(keywords, UndefinedValue.UNDEFINED, () -> addRaiseError("ArgumentError", "no keywords accepted"));
-            } else {
-                addInstr(new ReceiveKeywordRestArgInstr(av, keywords));
-            }
+            addInstr(new ReceiveKeywordRestArgInstr(av, keywords));
         }
 
         // Block arg
