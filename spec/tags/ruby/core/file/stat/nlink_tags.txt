@@ -1,1 +1,0 @@
-windows:File::Stat#nlink returns the number of links to a file

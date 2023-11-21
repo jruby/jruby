@@ -446,6 +446,10 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         return false;
     }
 
+    boolean isTopLevel() {
+        return scope.isTopLocalVariableScope() && scope instanceof IRScriptBody;
+    }
+
     // FIXME: Technically a binding in top-level could get passed which would should still cause an error but this
     //   scenario is very uncommon combined with setting @@cvar in a place you shouldn't it is an acceptable incompat
     //   for what I consider to be a very low-value error.

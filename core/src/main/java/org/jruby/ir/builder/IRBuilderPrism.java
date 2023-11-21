@@ -8,6 +8,7 @@ import org.jruby.RubyBignum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.RubySymbol;
+import org.jruby.ast.NilImplicitNode;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRManager;
@@ -1690,6 +1691,10 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildReturn(ReturnNode node) {
+        if (isTopLevel() && node.arguments != null) {
+            scope.getManager().getRuntime().getWarnings().warn(getFileName(), getLine(node) + 1, "argument of top-level return is ignored");
+        }
+
         return buildReturn(operandListToOperand(buildArguments(node.arguments)), getLine(node));
     }
 

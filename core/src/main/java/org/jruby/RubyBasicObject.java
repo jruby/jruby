@@ -940,7 +940,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             RubyHash opts = RubyHash.newHash(context.runtime, getRuntime().newSymbol("freeze"), freeze);
             context.callInfo = CALL_KEYWORD;
             sites(context).initialize_clone.call(context, clone, clone, this, opts);
-            if (freeze == context.tru) clone.setFrozen(true);
+            if (freeze == context.tru) clone.freeze(context);
+            if (clone.getMetaClass().isSingleton()) clone.getMetaClass().setFrozen(clone.isFrozen());
         }
 
         return clone;
@@ -1690,9 +1691,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             if ((callInfo & CALL_SPLATS) != 0) {
                 IRubyObject last = args[argc - 1];
                 if (last instanceof RubyHash && ((RubyHash) last).isRuby2KeywordHash()) {
-                    args[argc - 1] = ((RubyHash) last).dupFast(context);
-                    ((RubyHash) args[argc - 1]).setRuby2KeywordHash(false);
-                    context.callInfo |= (CALL_KEYWORD | CALL_KEYWORD_REST);
+                    if (((RubyHash) last).isEmpty()) { // empty kwargs hashes should never get passed on.
+                        argc--;
+                        args = ArraySupport.newCopy(args, argc);
+                    } else {
+                        args[argc - 1] = ((RubyHash) last).dupFast(context);
+                        ((RubyHash) args[argc - 1]).setRuby2KeywordHash(false);
+                        context.callInfo |= (CALL_KEYWORD | CALL_KEYWORD_REST);
+                    }
                 }
             } else if (argc > 1) {
               args[argc - 1] = dupIfKeywordRestAtCallsite(context, args[argc - 1]);
@@ -2143,9 +2149,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     	from prog.rb:3
      */
     public IRubyObject freeze(ThreadContext context) {
-        if ((flags & FROZEN_F) == 0) {
-            flags |= FROZEN_F;
-        }
+        setFrozen(true);
+        RubyClass metaClass = getMetaClass();
+        if (metaClass.isSingleton()) metaClass.setFrozen(true);
         return this;
     }
 

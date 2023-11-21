@@ -226,7 +226,11 @@ public class RubyFileStat extends RubyObject {
     @JRubyMethod(name = "birthtime")
     public IRubyObject birthtime() {
         checkInitialized();
-        FileTime btime = null;
+        FileTime btime;
+
+        if (Platform.IS_LINUX || Platform.IS_BSD) {
+            throw getRuntime().newNotImplementedError("birthtime() function is unimplemented on this machine");
+        }
 
         if (file == null || (btime = RubyFile.getBirthtimeWithNIO(file.absolutePath())) == null) {
             return ctime();

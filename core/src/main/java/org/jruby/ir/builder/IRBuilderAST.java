@@ -2417,7 +2417,12 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     public Operand buildReturn(ReturnNode returnNode) {
-        return buildReturn(build(returnNode.getValueNode()), returnNode.getLine());
+        Node valueNode = returnNode.getValueNode();
+        if (isTopLevel() && valueNode != null && !(valueNode instanceof NilImplicitNode)) {
+            scope.getManager().getRuntime().getWarnings().warn(getFileName(), valueNode.getLine() + 1, "argument of top-level return is ignored");
+        }
+
+        return buildReturn(build(valueNode), returnNode.getLine());
     }
 
     public Operand buildSplat(Variable result, SplatNode splatNode) {
