@@ -1,6 +1,7 @@
 package org.jruby.util.io;
 
 import jnr.constants.platform.AddressFamily;
+import jnr.netdb.Service;
 import jnr.unixsocket.UnixSocketAddress;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -16,6 +17,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
@@ -119,14 +121,20 @@ public class Sockaddr {
     }
 
     public static IRubyObject pack_sockaddr_in(ThreadContext context, IRubyObject port, IRubyObject host) {
-        final int portNum;
-        if ( ! port.isNil() ) {
-            portNum = port instanceof RubyString ?
-                    Integer.parseInt(port.convertToString().toString()) :
-                        RubyNumeric.fix2int(port);
-        }
-        else {
+        int portNum;
+        if (port.isNil()) {
             portNum = 0;
+        } else if (port instanceof RubyString) {
+            String portString = port.asJavaString();
+            try {
+                portNum = Integer.parseInt(portString);
+            } catch (NumberFormatException e) {
+                Service service = Service.getServiceByName(portString, "tcp"); // FIXME: is tcp safe here?
+                if (service == null) throw sockerr(context.runtime, "getaddrinfo: Servname not supported for ai_socktype");
+                portNum = service.getPort();
+            }
+        } else {
+            portNum = RubyNumeric.fix2int(port);
         }
 
         final String hostStr = host.isNil() ? null : host.convertToString().toString();
