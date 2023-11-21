@@ -382,6 +382,8 @@ public class Addrinfo extends RubyObject {
             if (specifiedV6 && addy instanceof Inet4Address) {
                 addrinfo.looksLikeV4ButIsV6 = true;
                 addrinfo.pfamily = PF_INET6;
+            } else if (addy instanceof Inet6Address) {
+                addrinfo.pfamily = PF_INET6;
             } else {
                 addrinfo.pfamily = PF_INET;
             }
@@ -540,7 +542,7 @@ public class Addrinfo extends RubyObject {
     @JRubyMethod(name = "ipv6_unspecified?")
     public IRubyObject ipv6_unspecified_p(ThreadContext context) {
         if (getAddressFamily() == AF_INET6) {
-            return RubyBoolean.newBoolean(context, getInet6Address().getHostAddress().equals("::"));
+            return RubyBoolean.newBoolean(context, ipv6_ip().equals("::"));
         }
         return context.fals;
     }
