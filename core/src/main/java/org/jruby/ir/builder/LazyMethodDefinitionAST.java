@@ -57,11 +57,6 @@ public class LazyMethodDefinitionAST implements LazyMethodDefinition<Node, DefNo
     }
 
     @Override
-    public Node getMethodArgs() {
-        return node.getArgsNode();
-    }
-
-    @Override
     public Node getMethodBody() {
         return node.getBodyNode();
     }

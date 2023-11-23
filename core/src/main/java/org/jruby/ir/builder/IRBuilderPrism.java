@@ -1592,24 +1592,21 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
 
         if (parameters.keyword_rest != null && parameters.keyword_rest instanceof KeywordRestParameterNode) {
-            KeywordRestParameterNode keyRest = (KeywordRestParameterNode) parameters.keyword_rest;
-            RubySymbol key;
+            RubySymbol key = ((KeywordRestParameterNode) parameters.keyword_rest).name;
             ArgumentType type;
-            if (keyRest.name == null) {
+            if (key == null) {
                 key = symbol(STAR_STAR);
                 type = ArgumentType.anonkeyrest;
             } else {
-                key = keyRest.name;
                 type = ArgumentType.keyrest;
             }
 
-            if (scope instanceof IRMethod) addArgumentDescription(type, key);
+            if (scope instanceof IRMethod) addArgumentDescription(type , key);
 
             addInstr(new ReceiveKeywordRestArgInstr(getNewLocalVariable(key, 0), keywords));
         }
 
         receiveBlockArg(parameters.block);
-
     }
 
     private void buildKeywordParameter(Variable keywords, RubySymbol key, Node value) {
@@ -1620,7 +1617,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         addInstr(new ReceiveKeywordArgInstr(av, keywords, key));
         addInstr(BNEInstr.create(l, av, UndefinedValue.UNDEFINED)); // if 'av' is not undefined, we are done
 
-        if (value != null) {
+        if (isOptional) {
             addInstr(new CopyInstr(av, nil())); // wipe out undefined value with nil
             // FIXME: this is performing extra copy but something is generating a temp and not using local if we pass it to build
             copy(av, build(value));

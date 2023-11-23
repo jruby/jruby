@@ -9,7 +9,6 @@ public interface LazyMethodDefinition<U, V, W, X, Y, Z> {
     int getEndLine();
     List<String> getMethodData();
     V getMethod();
-    U getMethodArgs();
     U getMethodBody();
     IRBuilder<U, V, W, X, Y, Z> getBuilder(IRManager manager, IRMethod methodScope);
 }

@@ -71,11 +71,6 @@ public class LazyMethodDefinitionPrism implements LazyMethodDefinition<Node, Def
     }
 
     @Override
-    public Node getMethodArgs() {
-        return node.parameters;
-    }
-
-    @Override
     public Node getMethodBody() {
         return node.body;
     }
