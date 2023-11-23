@@ -2,6 +2,7 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
@@ -21,7 +22,7 @@ public class CheckArityInstr extends OneOperandInstr implements FixedArityInstr 
     public final boolean rest;
     public final int restKey;
 
-    public CheckArityInstr(int required, int opt, boolean rest, int restKey, Variable keywords) {
+    public CheckArityInstr(int required, int opt, boolean rest, int restKey, Operand keywords) {
         super(Operation.CHECK_ARITY, keywords);
 
         this.required = required;
@@ -30,8 +31,8 @@ public class CheckArityInstr extends OneOperandInstr implements FixedArityInstr 
         this.restKey = restKey;
     }
 
-    public Variable getKeywords() {
-        return (Variable) getOperand1();
+    public Operand getKeywords() {
+        return getOperand1();
     }
 
     @Override

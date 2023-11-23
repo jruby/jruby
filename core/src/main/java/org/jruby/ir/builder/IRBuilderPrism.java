@@ -1547,9 +1547,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
     private void buildParameters(ParametersNode parameters) {
         if (parameters == null) {
-            // FIXME: can we allow keywords to be an operand by the time it makes it to checkarity (when we do change it?)
-            Variable undefined = copy(temp(), UndefinedValue.UNDEFINED);
-            addInstr(new CheckArityInstr(0, 0, false, -1, undefined));
+            addInstr(new CheckArityInstr(0, 0, false, -1, UndefinedValue.UNDEFINED));
             return;
         }
 
