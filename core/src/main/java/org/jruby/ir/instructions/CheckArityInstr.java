@@ -42,7 +42,7 @@ public class CheckArityInstr extends OneOperandInstr implements FixedArityInstr 
 
     @Override
     public Instr clone(CloneInfo info) {
-        if (info instanceof SimpleCloneInfo) return new CheckArityInstr(required, opt, rest, restKey, (Variable) getOperand1());
+        if (info instanceof SimpleCloneInfo) return new CheckArityInstr(required, opt, rest, restKey, getOperand1());
 
         InlineCloneInfo ii = (InlineCloneInfo) info;
         if (ii.canMapArgsStatically()) { // we can error on bad arity or remove check_arity
