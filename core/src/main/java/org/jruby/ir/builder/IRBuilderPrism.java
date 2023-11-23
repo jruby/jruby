@@ -2092,21 +2092,6 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
         Variable result = aResult;
         int[] flags = new int[]{0};
-        /*
-                Operand[] args = buildYieldArgs(node.arguments != null ? node.arguments.arguments : null, flags);
-        boolean unwrap = (args != null && args.length != 1 || (flags[0] & CALL_KEYWORD) == 0);
-
-
-        if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
-            Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
-            if_else(test, tru(),
-                    () -> addInstr(new YieldInstr(result, getYieldClosureVariable(), removeEmptyRestKwarg(args), flags[0], true)),
-                    () -> addInstr(new YieldInstr(result, getYieldClosureVariable(), new Array(args), flags[0], unwrap)));
-        } else {
-            Operand value = args == null ? UndefinedValue.UNDEFINED : new Array(args);
-            addInstr(new YieldInstr(result, getYieldClosureVariable(), value, flags[0], unwrap));
-        }*/
-
         boolean unwrap = true;
 
         if (node.arguments != null) {
@@ -2149,7 +2134,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             for (int i = 0; i < args.length; i++) {
                 if (args[i] instanceof SplatNode) { // yield with a splat in it in any position
                     if (lastSplat != -1) { // already one splat encountered
-                        operands[i] = twoArgs(operands, lastSplat, i, flags);
+                        operands[i] = twoArgs(operands, lastSplat, i, buildSplat((SplatNode) args[i]), flags);
                     } else { // first and possibly only splat
                         flags[0] |= CALL_SPLATS; // FIXME: not sure all splats count?
                         operands[i] = catArgs(operands, 0, i, buildSplat((SplatNode) args[i]), flags);
@@ -2172,9 +2157,9 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         }
     }
 
-    private Operand twoArgs(Operand[] operands, int lastSplat, int newSplat, int[] flags) {
+    private Operand twoArgs(Operand[] operands, int lastSplat, int newSplat, Operand newSplatValue, int[] flags) {
         Operand lhs = pushArgs(operands, lastSplat, newSplat, flags);
-        return addResultInstr(new BuildCompoundArrayInstr(temp(), lhs, operands[newSplat], false, (flags[0] & CALL_KEYWORD_REST) != 0));
+        return addResultInstr(new BuildCompoundArrayInstr(temp(), lhs, newSplatValue, false, (flags[0] & CALL_KEYWORD_REST) != 0));
     }
 
     private Operand pushArgs(Operand[] operands, int lastSplat, int newSplat, int[] flags) {
