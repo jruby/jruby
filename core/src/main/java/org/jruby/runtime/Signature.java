@@ -153,7 +153,7 @@ public class Signature {
      * @return true if the signature expects multiple args
      */
     public boolean isSpreadable() {
-        return arityValue < -1 || arityValue > 1;
+        return arityValue < -1 || arityValue > 1 || (opt > 0 && !restKwargs());
     }
 
 

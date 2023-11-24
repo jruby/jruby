@@ -1,1 +1,0 @@
-fails:Array#to_h tolerates increasing an array size during iteration

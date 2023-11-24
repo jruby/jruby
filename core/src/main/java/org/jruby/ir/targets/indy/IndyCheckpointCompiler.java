@@ -18,6 +18,6 @@ public class IndyCheckpointCompiler implements CheckpointCompiler {
         compiler.adapter.invokedynamic(
                 "checkpoint",
                 sig(void.class, ThreadContext.class),
-                Bootstrap.checkpointHandle());
+                CheckpointSite.CHECKPOINT_BOOTSTRAP);
     }
 }

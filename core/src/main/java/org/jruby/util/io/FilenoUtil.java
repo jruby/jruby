@@ -16,6 +16,7 @@ import jnr.unixsocket.UnixSocketChannel;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Helpers;
+import org.jruby.util.cli.Options;
 import org.jruby.util.collections.NonBlockingHashMapLong;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -269,14 +270,16 @@ public class FilenoUtil {
             FILE_DESCRIPTOR_SET_FILENO_HANDLE = fdSetFileno;
 
             if (selChImplGetFD == null || fileChannelGetFD == null || fdGetFileno == null) {
-                // Warn users since we don't currently handle half-native process control.
-                Module module = Modules.getModule(ReflectiveAccess.class);
-                String moduleName = module.getName();
-                if (moduleName == null) {
-                    moduleName = "ALL-UNNAMED";
+                if (Options.NATIVE_VERBOSE.load()) {
+                    // Warn users since we don't currently handle half-native process control.
+                    Module module = Modules.getModule(ReflectiveAccess.class);
+                    String moduleName = module.getName();
+                    if (moduleName == null) {
+                        moduleName = "ALL-UNNAMED";
+                    }
+                    LOG.warn("Native IO integration requires open access to the JDK IO subsystem\n" +
+                            "Pass '--add-opens java.base/sun.nio.ch=" + moduleName + " --add-opens java.base/java.io=" + moduleName + "' to enable.");
                 }
-                LOG.warn("Native subprocess control requires open access to the JDK IO subsystem\n" +
-                        "Pass '--add-opens java.base/sun.nio.ch=" + moduleName + " --add-opens java.base/java.io=" + moduleName + "' to enable.");
             }
         }
 

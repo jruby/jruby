@@ -1,1 +1,0 @@
-fails:File::TMPFILE is defined

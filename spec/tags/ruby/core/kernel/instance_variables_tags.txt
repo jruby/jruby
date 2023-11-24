@@ -1,1 +1,0 @@
-fails:Kernel#instance_variables regular objects returns the instances variables in the order declared

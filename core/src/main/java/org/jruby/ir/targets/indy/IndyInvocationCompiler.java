@@ -16,6 +16,7 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.invokedynamic.MathLinker;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JavaNameMangler;
 
@@ -78,7 +79,7 @@ public class IndyInvocationCompiler implements InvocationCompiler {
         compiler.adapter.invokedynamic(
                 "fixnumOperator:" + JavaNameMangler.mangleMethodName(id),
                 signature,
-                Bootstrap.getFixnumOperatorHandle(),
+                MathLinker.FIXNUM_OPERATOR_BOOTSTRAP,
                 fixnum,
                 call.getCallType().ordinal(),
                 file,
@@ -99,7 +100,7 @@ public class IndyInvocationCompiler implements InvocationCompiler {
         compiler.adapter.invokedynamic(
                 "floatOperator:" + JavaNameMangler.mangleMethodName(id),
                 signature,
-                Bootstrap.getFloatOperatorHandle(),
+                MathLinker.FLOAT_OPERATOR_BOOTSTRAP,
                 flote,
                 call.getCallType().ordinal(),
                 file,
@@ -150,9 +151,9 @@ public class IndyInvocationCompiler implements InvocationCompiler {
         String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);
         if (hasClosure) {
             String operation = literalClosure ? "invokeInstanceSuperIter" : "invokeInstanceSuper";
-            compiler.adapter.invokedynamic(operation + ":" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), Bootstrap.invokeSuper(), splatmapString, flags, file, compiler.getLastLine());
+            compiler.adapter.invokedynamic(operation + ":" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), SuperInvokeSite.BOOTSTRAP, splatmapString, flags, file, compiler.getLastLine());
         } else {
-            compiler.adapter.invokedynamic("invokeInstanceSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), splatmapString, flags, file, compiler.getLastLine());
+            compiler.adapter.invokedynamic("invokeInstanceSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), SuperInvokeSite.BOOTSTRAP, splatmapString, flags, file, compiler.getLastLine());
         }
     }
 
@@ -163,9 +164,9 @@ public class IndyInvocationCompiler implements InvocationCompiler {
         String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);
         if (hasClosure) {
             String operation = literalClosure ? "invokeClassSuperIter" : "invokeClassSuper";
-            compiler.adapter.invokedynamic(operation + ":" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), Bootstrap.invokeSuper(), splatmapString, flags, file, compiler.getLastLine());
+            compiler.adapter.invokedynamic(operation + ":" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), SuperInvokeSite.BOOTSTRAP, splatmapString, flags, file, compiler.getLastLine());
         } else {
-            compiler.adapter.invokedynamic("invokeClassSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), splatmapString, flags, file, compiler.getLastLine());
+            compiler.adapter.invokedynamic("invokeClassSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), SuperInvokeSite.BOOTSTRAP, splatmapString, flags, file, compiler.getLastLine());
         }
     }
 
@@ -176,9 +177,9 @@ public class IndyInvocationCompiler implements InvocationCompiler {
         String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);
         if (hasClosure) {
             String operation = literalClosure ? "invokeUnresolvedSuperIter" : "invokeUnresolvedSuper";
-            compiler.adapter.invokedynamic(operation + ":" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), Bootstrap.invokeSuper(), splatmapString, flags, file, compiler.getLastLine());
+            compiler.adapter.invokedynamic(operation + ":" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), SuperInvokeSite.BOOTSTRAP, splatmapString, flags, file, compiler.getLastLine());
         } else {
-            compiler.adapter.invokedynamic("invokeUnresolvedSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), splatmapString, flags, file, compiler.getLastLine());
+            compiler.adapter.invokedynamic("invokeUnresolvedSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), SuperInvokeSite.BOOTSTRAP, splatmapString, flags, file, compiler.getLastLine());
         }
     }
 
@@ -188,9 +189,9 @@ public class IndyInvocationCompiler implements InvocationCompiler {
 
         String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);
         if (hasClosure) {
-            compiler.adapter.invokedynamic("invokeZSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), Bootstrap.invokeSuper(), splatmapString, flags, file, compiler.getLastLine());
+            compiler.adapter.invokedynamic("invokeZSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), SuperInvokeSite.BOOTSTRAP, splatmapString, flags, file, compiler.getLastLine());
         } else {
-            compiler.adapter.invokedynamic("invokeZSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), splatmapString, flags, file, compiler.getLastLine());
+            compiler.adapter.invokedynamic("invokeZSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), SuperInvokeSite.BOOTSTRAP, splatmapString, flags, file, compiler.getLastLine());
         }
     }
 
@@ -212,6 +213,6 @@ public class IndyInvocationCompiler implements InvocationCompiler {
     @Override
     public void setCallInfo(int flags) {
         compiler.loadContext();
-        compiler.adapter.invokedynamic("callInfo", sig(void.class, ThreadContext.class), Bootstrap.callInfoHandle(), flags);
+        compiler.adapter.invokedynamic("callInfo", sig(void.class, ThreadContext.class), CallInfoBootstrap.CALL_INFO_BOOTSTRAP, flags);
     }
 }

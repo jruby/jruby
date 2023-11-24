@@ -443,6 +443,11 @@ public final class Ruby implements Constantizable {
             randomClass = null;
         }
         ioClass = RubyIO.createIOClass(this);
+        if (Options.FIBER_SCHEDULER.load()) {
+            ioBufferClass = RubyIOBuffer.createIOBufferClass(this);
+        } else {
+            ioBufferClass = null;
+        }
 
         structClass = profile.allowClass("Struct") ? RubyStruct.createStructClass(this) : null;
         bindingClass = profile.allowClass("Binding") ? RubyBinding.createBindingClass(this) : null;
@@ -590,6 +595,7 @@ public final class Ruby implements Constantizable {
         loadService.provide("rational.rb");
         loadService.provide("complex.rb");
         loadService.provide("thread.rb");
+        loadService.provide("fiber.rb");
         loadService.provide("ruby2_keywords.rb");
 
         // Load preludes
@@ -1714,6 +1720,17 @@ public final class Ruby implements Constantizable {
         ifAllowed("KeyError",               (ruby) -> keyError = RubyKeyError.define(ruby, indexError));
         ifAllowed("DomainError",            (ruby) -> mathDomainError = RubyDomainError.define(ruby, argumentError, mathModule));
 
+        RubyClass runtimeError = this.runtimeError;
+        ObjectAllocator runtimeErrorAllocator = runtimeError.getAllocator();
+
+        if (Options.FIBER_SCHEDULER.load()) {
+            bufferLockedError = ioBufferClass.defineClassUnder("LockedError", runtimeError, runtimeErrorAllocator);
+            bufferAllocationError = ioBufferClass.defineClassUnder("AllocationError", runtimeError, runtimeErrorAllocator);
+            bufferAccessError = ioBufferClass.defineClassUnder("AccessError", runtimeError, runtimeErrorAllocator);
+            bufferInvalidatedError = ioBufferClass.defineClassUnder("InvalidatedError", runtimeError, runtimeErrorAllocator);
+            bufferMaskError = ioBufferClass.defineClassUnder("MaskError", runtimeError, runtimeErrorAllocator);
+        }
+
         initErrno();
 
         initNativeException();
@@ -2174,6 +2191,10 @@ public final class Ruby implements Constantizable {
         return ioClass;
     }
 
+    public RubyClass getIOBuffer() {
+        return ioBufferClass;
+    }
+
     public RubyClass getThread() {
         return threadClass;
     }
@@ -2483,6 +2504,26 @@ public final class Ruby implements Constantizable {
 
     public RubyClass getInvalidByteSequenceError() {
         return invalidByteSequenceError;
+    }
+
+    public RubyClass getBufferLockedError() {
+        return bufferLockedError;
+    }
+
+    public RubyClass getBufferAllocationError() {
+        return bufferAllocationError;
+    }
+
+    public RubyClass getBufferAccessError() {
+        return bufferAccessError;
+    }
+
+    public RubyClass getBufferInvalidatedError() {
+        return bufferInvalidatedError;
+    }
+
+    public RubyClass getBufferMaskError() {
+        return bufferMaskError;
     }
 
     @Deprecated
@@ -4168,6 +4209,16 @@ public final class Ruby implements Constantizable {
         return RubySystemExit.newInstance(this, status, message).toThrowable();
     }
 
+    /**
+     * Prepare a throwable IOError with the given message.
+     *
+     * This constructor should not be used to create a RubyException object to be raised on a different thread.
+     *
+     * @see RaiseException#from(Ruby, RubyClass, String)
+     *
+     * @param message the message for the new IOError
+     * @return a fully-prepared IOError throwable
+     */
     public RaiseException newIOError(String message) {
         return newRaiseException(getIOError(), message);
     }
@@ -4246,15 +4297,38 @@ public final class Ruby implements Constantizable {
         return newRaiseException(getInvalidByteSequenceError(), message);
     }
 
+    public RaiseException newBufferLockedError(String message) {
+        return newRaiseException(getBufferLockedError(), message);
+    }
+
+    public RaiseException newBufferAllocationError(String message) {
+        return newRaiseException(getBufferAllocationError(), message);
+    }
+
+    public RaiseException newBufferAccessError(String message) {
+        return newRaiseException(getBufferAccessError(), message);
+    }
+
+    public RaiseException newBufferInvalidatedError(String message) {
+        return newRaiseException(getBufferInvalidatedError(), message);
+    }
+
+    public RaiseException newBufferMaskError(String message) {
+        return newRaiseException(getBufferMaskError(), message);
+    }
+
     /**
      * Construct a new RaiseException wrapping a new Ruby exception object appropriate to the given exception class.
      *
      * There are additional forms of this construction logic in {@link RaiseException#from}.
      *
+     * This constructor should not be used to create a RubyException object to be raised on a different thread.
+     *
+     * @see RaiseException#from(Ruby, RubyClass, String)
+     *
      * @param exceptionClass the exception class from which to construct the exception object
      * @param message a simple message for the exception
      * @return a new RaiseException wrapping a new Ruby exception
-     * @see RaiseException#from(Ruby, RubyClass, String)
      */
     public RaiseException newRaiseException(RubyClass exceptionClass, String message) {
         IRubyObject cause = getCurrentContext().getErrorInfo();
@@ -5361,6 +5435,7 @@ public final class Ruby implements Constantizable {
     private final RubyClass fileClass;
     private final RubyClass fileStatClass;
     private final RubyClass ioClass;
+    private final RubyClass ioBufferClass;
     private final RubyClass threadClass;
     private final RubyClass threadGroupClass;
     private final RubyClass continuationClass;
@@ -5422,6 +5497,11 @@ public final class Ruby implements Constantizable {
     private RubyClass keyError;
     private RubyClass locationClass;
     private RubyClass interruptedRegexpError;
+    private RubyClass bufferLockedError;
+    private RubyClass bufferAllocationError;
+    private RubyClass bufferAccessError;
+    private RubyClass bufferInvalidatedError;
+    private RubyClass bufferMaskError;
 
     /**
      * All the core modules we keep direct references to, for quick access and

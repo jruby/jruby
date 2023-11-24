@@ -98,7 +98,7 @@ class Enumerator
     end
 
     def next
-      reset unless @fiber&.__alive__
+      reset unless @fiber&.alive?
 
       val = @fiber.resume
 
@@ -109,7 +109,7 @@ class Enumerator
 
     def rewind
       fiber, @fiber = @fiber, nil
-      fiber.send(:__finalize__) if fiber&.__alive__
+      fiber.send(:__finalize__) if fiber&.alive?
       @state.done = false
     end
 

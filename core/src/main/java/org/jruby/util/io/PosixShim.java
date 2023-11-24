@@ -89,10 +89,15 @@ public class PosixShim {
     }
 
     public int write(ChannelFD fd, byte[] bytes, int offset, int length, boolean nonblock) {
-        clear();
-
         // FIXME: don't allocate every time
         ByteBuffer tmp = ByteBuffer.wrap(bytes, offset, length);
+
+        return write(fd, tmp, offset, length, nonblock);
+    }
+
+    public int write(ChannelFD fd, ByteBuffer buffer, int offset, int length, boolean nonblock) {
+        clear();
+
         try {
             if (nonblock) {
                 // TODO: figure out what nonblocking writes against atypical streams (files?) actually do
@@ -104,7 +109,7 @@ public class PosixShim {
                 setErrno(Errno.EACCES);
                 return -1;
             }
-            int written = fd.chWrite.write(tmp);
+            int written = fd.chWrite.write(buffer);
 
             if (written == 0 && length > 0) {
                 // if it's a nonblocking write against a file and we've hit EOF, do EAGAIN
@@ -129,53 +134,77 @@ public class PosixShim {
         clear();
 
         try {
-            if (nonblock) {
-                // need to ensure channels that don't support nonblocking IO at least
-                // appear to be nonblocking
-                if (fd.chSelect != null) {
-                    // ok...we should have set it nonblocking already in setNonblock
-                } else {
-                    if (fd.chFile != null) {
-                        long position = fd.chFile.position();
-                        long size = fd.chFile.size();
-                        if (position != -1 && size != -1 && position < size) {
-                            // there should be bytes available...proceed
-                        } else {
-                            setErrno(Errno.EAGAIN);
-                            return -1;
-                        }
-                    } else if (fd.chNative != null && fd.isNativeFile) {
-                        // it's a native file, so we don't do selection or nonblock
-                    } else {
-                        setErrno(Errno.EAGAIN);
-                        return -1;
-                    }
-                }
-            }
+            if (checkForBlocking(fd, nonblock)) return -1;
 
             // FIXME: inefficient to recreate ByteBuffer every time
             ByteBuffer buffer = ByteBuffer.wrap(target, offset, length);
-            int read = fd.chRead.read(buffer);
-
-            if (nonblock) {
-                if (read == JAVA_EOF) {
-                    read = NATIVE_EOF; // still treat EOF as EOF
-                } else if (read == 0) {
-                    setErrno(Errno.EAGAIN);
-                    return -1;
-                } else {
-                    return read;
-                }
-            } else {
-                // NIO channels will always raise for errors, so -1 only means EOF.
-                if (read == JAVA_EOF) read = NATIVE_EOF;
-            }
-
-            return read;
+            return performRead(fd, buffer, nonblock);
         } catch (IOException ioe) {
             setErrno(Helpers.errnoFromException(ioe));
             return -1;
         }
+    }
+
+    public int read(ChannelFD fd, ByteBuffer buffer, int offset, int length, boolean nonblock) {
+        clear();
+
+        try {
+            if (checkForBlocking(fd, nonblock)) return -1;
+
+            buffer.position(offset);
+            buffer.limit(offset + length);
+            return performRead(fd, buffer, nonblock);
+        } catch (IOException ioe) {
+            setErrno(Helpers.errnoFromException(ioe));
+            return -1;
+        }
+    }
+
+    private int performRead(ChannelFD fd, ByteBuffer buffer, boolean nonblock) throws IOException {
+        int read = fd.chRead.read(buffer);
+
+        if (nonblock) {
+            if (read == JAVA_EOF) {
+                read = NATIVE_EOF; // still treat EOF as EOF
+            } else if (read == 0) {
+                setErrno(Errno.EAGAIN);
+                return -1;
+            } else {
+                return read;
+            }
+        } else {
+            // NIO channels will always raise for errors, so -1 only means EOF.
+            if (read == JAVA_EOF) read = NATIVE_EOF;
+        }
+
+        return read;
+    }
+
+    private boolean checkForBlocking(ChannelFD fd, boolean nonblock) throws IOException {
+        if (nonblock) {
+            // need to ensure channels that don't support nonblocking IO at least
+            // appear to be nonblocking
+            if (fd.chSelect != null) {
+                // ok...we should have set it nonblocking already in setNonblock
+            } else {
+                if (fd.chFile != null) {
+                    long position = fd.chFile.position();
+                    long size = fd.chFile.size();
+                    if (position != -1 && size != -1 && position < size) {
+                        // there should be bytes available...proceed
+                    } else {
+                        setErrno(Errno.EAGAIN);
+                        return true;
+                    }
+                } else if (fd.chNative != null && fd.isNativeFile) {
+                    // it's a native file, so we don't do selection or nonblock
+                } else {
+                    setErrno(Errno.EAGAIN);
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     // rb_thread_flock

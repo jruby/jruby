@@ -48,8 +48,9 @@ import org.jruby.ir.persistence.IRDumper;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.targets.IRBytecodeAdapter.BlockPassType;
-import org.jruby.ir.targets.indy.Bootstrap;
 import org.jruby.ir.targets.indy.CallTraceSite;
+import org.jruby.ir.targets.indy.CoverageSite;
+import org.jruby.ir.targets.indy.MetaClassBootstrap;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
@@ -57,7 +58,6 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -1517,7 +1517,7 @@ public class JVMVisitor extends IRVisitor {
         jvmAdapter().invokedynamic(
                 "openMetaClass",
                 sig(DynamicMethod.class, ThreadContext.class, IRubyObject.class, String.class, StaticScope.class),
-                Bootstrap.OPEN_META_CLASS,
+                MetaClassBootstrap.OPEN_META_CLASS,
                 bodyHandle,
                 scopeHandle,
                 setScopeHandle,
@@ -1740,7 +1740,7 @@ public class JVMVisitor extends IRVisitor {
             jvmAdapter().invokedynamic(
                     "coverLine",
                     sig(void.class, ThreadContext.class),
-                    Bootstrap.coverLineHandle(),
+                    CoverageSite.COVER_LINE_BOOTSTRAP,
                     jvm.methodData().scope.getFile(),
                     linenumberinstr.getLineNumber(),
                     linenumberinstr.oneshot ? 1 : 0);

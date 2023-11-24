@@ -8,9 +8,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Array;
 
-import java.net.BindException;
 import java.net.PortUnreachableException;
-import java.net.SocketException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.NonReadableChannelException;
 import java.nio.channels.NonWritableChannelException;
@@ -18,7 +16,6 @@ import java.nio.channels.NotYetConnectedException;
 import java.nio.charset.Charset;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.AtomicMoveNotSupportedException;
-import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileSystemLoopException;
 import java.nio.file.NoSuchFileException;
@@ -50,6 +47,7 @@ import org.jruby.ast.RequiredKeywordArgumentValueNode;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.NoMethodError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.internal.runtime.methods.*;
@@ -1914,21 +1912,27 @@ public class Helpers {
     public static IRubyObject aryToAry(ThreadContext context, IRubyObject value) {
         if (value instanceof RubyArray) return value;
 
-        if (value.respondsTo("to_ary")) {
-            return TypeConverter.convertToType(context, value, context.runtime.getArray(), "to_ary", false);
-        }
+        return respondsTo_to_ary(value) ?
+                TypeConverter.convertToTypeUnchecked(context, value, context.runtime.getArray(), "to_ary", false) :
+                context.runtime.newArray(value);
+    }
 
-        return context.runtime.newArray(value);
+    private static boolean respondsTo_to_ary(IRubyObject value) {
+        try {
+            return value.respondsTo("to_ary");
+        } catch (NoMethodError e) {
+            // A non-existent respond_to? should still end up calling method_missing but if m_m does not
+            // handle it then we should not raise.
+            return false;
+        }
     }
 
     public static IRubyObject aryOrToAry(ThreadContext context, IRubyObject value) {
         if (value instanceof RubyArray) return value;
 
-        if (value.respondsTo("to_ary")) {
-            return TypeConverter.convertToType(context, value, context.runtime.getArray(), "to_ary", false);
-        }
-
-        return context.nil;
+        return respondsTo_to_ary(value) ?
+                TypeConverter.convertToTypeUnchecked(context, value, context.runtime.getArray(), "to_ary", false) :
+                context.nil;
     }
 
     @Deprecated // not used
@@ -2924,6 +2928,18 @@ public class Helpers {
         newValues[0] = first;
         System.arraycopy(values, 0, newValues, 1, values.length);
         return newValues;
+    }
+
+    public static IRubyObject[] arrayOf(IRubyObject first) {
+        return new IRubyObject[] {first};
+    }
+
+    public static IRubyObject[] arrayOf(IRubyObject first, IRubyObject second) {
+        return new IRubyObject[] {first, second};
+    }
+
+    public static IRubyObject[] arrayOf(IRubyObject first, IRubyObject second, IRubyObject third) {
+        return new IRubyObject[] {first, second, third};
     }
 
     public static <T> T[] arrayOf(T[] values, T last, IntFunction<T[]> allocator) {

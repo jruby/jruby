@@ -85,8 +85,6 @@ public class RubyDir extends RubyObject implements Closeable {
     private boolean isOpen = true;
     private Encoding encoding;
 
-    private static final Pattern PROTOCOL_PATTERN = Pattern.compile("^(uri|jar|file|classpath):([^:]*:)?//?.*");
-
     public RubyDir(Ruby runtime, RubyClass type) {
         super(runtime, type);
     }
@@ -103,13 +101,13 @@ public class RubyDir extends RubyObject implements Closeable {
         return dirClass;
     }
 
-    private final void checkDir() {
+    private void checkDir() {
         checkDirIgnoreClosed();
 
         if (!isOpen) throw getRuntime().newIOError("closed directory");
     }
 
-    private final void checkDirIgnoreClosed() {
+    private void checkDirIgnoreClosed() {
         testFrozen("Dir");
         // update snapshot (if changed) :
         if (snapshot == null || dir.exists() && dir.lastModified() > lastModified) {
@@ -469,7 +467,7 @@ public class RubyDir extends RubyObject implements Closeable {
     /**
      * Changes the root directory (only allowed by super user).  Not available on all platforms.
      */
-    @JRubyMethod(name = "chroot", required = 1, meta = true)
+    @JRubyMethod(name = "chroot", required = 1, meta = true, notImplemented = true)
     public static IRubyObject chroot(IRubyObject recv, IRubyObject path) {
         throw recv.getRuntime().newNotImplementedError("chroot not implemented: chroot is non-portable and is not supported.");
     }

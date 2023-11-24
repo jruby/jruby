@@ -49,6 +49,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 
@@ -356,24 +357,6 @@ public class RubyMethod extends AbstractRubyMethod {
         }
 
         return context.nil;
-    }
-
-    public String getFilename() {
-        DynamicMethod realMethod = method.getRealMethod(); // Follow Aliases
-        if (realMethod instanceof PositionAware) {
-            PositionAware poser = (PositionAware) realMethod;
-            return poser.getFile();
-        }
-        return null;
-    }
-
-    public int getLine() {
-        DynamicMethod realMethod = method.getRealMethod(); // Follow Aliases
-        if (realMethod instanceof PositionAware) {
-            PositionAware poser = (PositionAware) realMethod;
-            return poser.getLine() + 1;
-        }
-        return -1;
     }
 
     @JRubyMethod

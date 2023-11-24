@@ -8,7 +8,7 @@ project 'JRuby Integration Tests' do
   inherit 'org.jruby:jruby-parent', version
   id 'org.jruby:jruby-tests'
 
-  extension 'org.jruby.maven:mavengem-wagon:2.0.1'
+  extension 'org.jruby.maven:mavengem-wagon:2.0.2'
 
   repository :id => :mavengems, :url => 'mavengem:http://rubygems.org'
   plugin_repository :id => :mavengems, :url => 'mavengem:http://rubygems.org'

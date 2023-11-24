@@ -100,9 +100,9 @@ namespace :test do
 
     mri_suites = [:core, :extra, :stdlib]
     mri_suites = {
-      core: "-Xbacktrace.style=mri -Xdebug.fullTrace",
-      extra: "--disable-gems -Xbacktrace.style=mri -Xdebug.fullTrace",
-      stdlib: "-Xbacktrace.style=mri -Xdebug.fullTrace",
+      core: "-Xbacktrace.style=mri -Xdebug.fullTrace -Xexperimental.fiber.scheduler",
+      extra: "--disable-gems -Xbacktrace.style=mri -Xdebug.fullTrace -Xexperimental.fiber.scheduler",
+      stdlib: "-Xbacktrace.style=mri -Xdebug.fullTrace -Xexperimental.fiber.scheduler",
     }
 
     mri_suites.each do |suite, extra_jruby_opts|

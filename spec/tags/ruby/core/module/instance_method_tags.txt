@@ -1,1 +1,0 @@
-fails:Module#instance_method raises TypeError when passed non-String name and #to_str returns non-String value

@@ -224,7 +224,8 @@ public class RubyNumeric extends RubyObject {
         if (arg.isNil()) {
             throw arg.getRuntime().newTypeError("no implicit conversion from nil to integer");
         }
-        return arg.convertToInteger().getLongValue();
+
+        return ((RubyInteger) TypeConverter.convertToType(arg, arg.getRuntime().getInteger(), "to_int")).getLongValue();
     }
 
     public static long float2long(RubyFloat flt) {

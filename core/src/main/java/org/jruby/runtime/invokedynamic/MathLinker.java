@@ -29,13 +29,12 @@ package org.jruby.runtime.invokedynamic;
 
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.SwitchPoint;
-import java.util.List;
 
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
+import static org.jruby.util.CodegenUtils.p;
 
 import com.headius.invokebinder.Binder;
 import org.jruby.Ruby;
@@ -43,6 +42,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyNumeric;
+import org.jruby.ir.targets.indy.Bootstrap;
 import org.jruby.ir.targets.simple.NormalInvokeSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.MethodIndex;
@@ -54,11 +54,25 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+import org.objectweb.asm.Handle;
+import org.objectweb.asm.Opcodes;
 
 public class MathLinker {
 
     private static final Logger LOG = LoggerFactory.getLogger(MathLinker.class);
     public static final Lookup LOOKUP = lookup();
+    public static final Handle FIXNUM_OPERATOR_BOOTSTRAP = new Handle(
+            Opcodes.H_INVOKESTATIC,
+            p(MathLinker.class),
+            "fixnumOperatorBootstrap",
+            Bootstrap.BOOTSTRAP_LONG_STRING_INT_SIG,
+            false);
+    public static final Handle FLOAT_OPERATOR_BOOTSTRAP = new Handle(
+            Opcodes.H_INVOKESTATIC,
+            p(MathLinker.class),
+            "floatOperatorBootstrap",
+            Bootstrap.BOOTSTRAP_DOUBLE_STRING_INT_SIG,
+            false);
 
     static { // enable DEBUG output
         if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.setDebugEnable(true);
@@ -118,6 +132,9 @@ public class MathLinker {
         MethodType fallbackType = site.type().appendParameterTypes(IRubyObject.class);
         CallSite normalSite = NormalInvokeSite.newSite(LOOKUP, site.name, fallbackType, false, 0, site.file(), site.line());
 
+        RubyClass classFixnum = runtime.getFixnum();
+        SwitchPoint switchPoint = (SwitchPoint) classFixnum.getInvalidator().getData();
+
         MethodHandle fallback = Binder.from(site.type())
                 .append(IRubyObject.class, runtime.newFixnum(value))
                 .invoke(normalSite.dynamicInvoker());
@@ -145,11 +162,9 @@ public class MathLinker {
 
             if (target == null) target = findTargetImpl(name, IRubyObject.class, value);
 
-            RubyClass classFixnum = runtime.getFixnum();
-
             // confirm it's still a Fixnum
             target = guardWithTest(FIXNUM_TEST_ARG_2_TO_0, target, fallback);
-            target = ((SwitchPoint) classFixnum.getInvalidator().getData()).guardWithTest(target, fallback);
+            target = switchPoint.guardWithTest(target, fallback);
             site.setTarget(target);
 
             if (LOG_BINDING) LOG.debug(name + "\tFixnum operation at site #" + site.siteID + " (" + site.file() + ":" + site.line() + ") bound directly");
@@ -264,6 +279,9 @@ public class MathLinker {
                 .append(IRubyObject.class, runtime.newFloat(value))
                 .invoke(normalSite.dynamicInvoker());
 
+        RubyClass classFloat = runtime.getFloat();
+        SwitchPoint switchPoint = (SwitchPoint) classFloat.getInvalidator().getData();
+
         CacheEntry entry = searchWithCache(operator, caller, self.getMetaClass(), site);
 
         if (!(self instanceof RubyFloat) || entry == null || !entry.method.isBuiltin()) {
@@ -276,11 +294,9 @@ public class MathLinker {
 
             target = findTargetImpl(name, IRubyObject.class, value);
 
-            RubyClass classFloat = runtime.getFloat();
-
             // confirm it's still a Float
             target = guardWithTest(FLOAT_TEST_ARG_2_TO_0, target, fallback);
-            target = ((SwitchPoint) classFloat.getInvalidator().getData()).guardWithTest(target, fallback);
+            target = switchPoint.guardWithTest(target, fallback);
             site.setTarget(target);
 
             if (LOG_BINDING) LOG.debug(name + "\tFloat operation at site #" + site.siteID + " (" + site.file() + ":" + site.line() + ") bound directly");
@@ -372,5 +388,4 @@ public class MathLinker {
         }
         return entry;
     }
-
 }

@@ -1,2 +1,1 @@
 fails:Fiber.current returns the current Fiber when called from a Fiber that transferred to another
-fails:Fiber.current is available without an extra require

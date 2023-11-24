@@ -349,6 +349,9 @@ public class IRBuilder {
 
     private EnumSet<IRFlags> flags;
 
+    private boolean selfUsed = false;
+    private boolean currentModuleUsed = false;
+
     public IRBuilder(IRManager manager, IRScope scope, IRBuilder parent, IRBuilder variableBuilder) {
         this.manager = manager;
         this.scope = scope;
@@ -598,10 +601,6 @@ public class IRBuilder {
     }
 
     private InterpreterContext buildLambdaInner(LambdaNode node) {
-        prepareClosureImplicitState();
-
-        addCurrentModule();                                        // %current_module
-
         receiveBlockArgs(node);
 
         Operand closureRetVal = node.getBody() == null ? manager.getNil() : build(node.getBody());
@@ -609,18 +608,12 @@ public class IRBuilder {
         // can be U_NIL if the node is an if node with returns in both branches.
         if (closureRetVal != U_NIL) addInstr(new ReturnInstr(closureRetVal));
 
-        preloadBlockImplicitClosure();
+        prependUsedClosureImplicitState(false);
 
         handleBreakAndReturnsInLambdas();
 
         computeScopeFlagsFrom(instructions);
         return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
-    }
-
-    private void preloadBlockImplicitClosure() {
-        if (needsYieldBlock) {
-            addInstrAtBeginning(new LoadBlockImplicitClosureInstr(getYieldClosureVariable()));
-        }
     }
 
     public Operand buildLambda(LambdaNode node) {
@@ -2229,7 +2222,7 @@ public class IRBuilder {
     private boolean isTopScope() {
         IRScope topScope = scope.getNearestNonClosurelikeScope();
 
-        boolean isTopScope = topScope instanceof IRScriptBody ||
+        boolean isTopScope = topScope instanceof IRScriptBody && evalType == null ||
                 (evalType != null && evalType != EvalType.MODULE_EVAL && evalType != EvalType.BINDING_EVAL);
 
         // we think it could be a top scope but it could still be called from within a module/class which
@@ -2873,15 +2866,6 @@ public class IRBuilder {
             addInstr(new TraceInstr(RubyEvent.CALL, getCurrentModuleVariable(), getName(), getFileName(), scope.getLine() + 1));
         }
 
-
-        prepareImplicitState();                                    // recv_self, add frame block, etc)
-
-        // These instructions need to be toward the top of the method because they may both be needed for processing
-        // optional arguments as in def foo(a = Object).
-        // Set %current_module = isInstanceMethod ? %self.metaclass : %self
-        int nearestScopeDepth = parent.getNearestModuleReferencingScopeDepth();
-        addInstr(new CopyInstr(getCurrentModuleVariable(), ScopeModule.ModuleFor(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
-
         // Build IR for arguments (including the block arg)
         receiveMethodArgs(defNode.getArgsNode());
 
@@ -2916,9 +2900,61 @@ public class IRBuilder {
 
         ((IRMethod) scope).setArgumentDescriptors(argDesc);
 
+        prependUsedImplicitState(parent);
+
         computeScopeFlagsFrom(instructions);
 
         return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
+    }
+
+    private void prependUsedImplicitState(IRScope parent) {
+        int numberOfInstrs = 0;
+        if (needsYieldBlock) {
+            if (scope instanceof IRMethod) {
+                numberOfInstrs++;
+                addInstrAtBeginning(new LoadImplicitClosureInstr(getYieldClosureVariable()));
+            } else if (!(scope instanceof IRModuleBody) && !(scope instanceof IRClassBody) && !(scope instanceof IRMetaClassBody)) {
+                numberOfInstrs++;
+                addInstrAtBeginning(new LoadFrameClosureInstr(getYieldClosureVariable()));
+            }
+        }
+        if (currentModuleUsed) {
+            // These instructions need to be toward the top of the method because they may both be needed for processing
+            // optional arguments as in def foo(a = Object).
+            // Set %current_module = isInstanceMethod ? %self.metaclass : %self
+            if (scope instanceof IRMethod && parent != null) {
+                numberOfInstrs++;
+                int nearestScopeDepth = parent.getNearestModuleReferencingScopeDepth();
+                addInstrAtBeginning(new CopyInstr(getCurrentModuleVariable(), ScopeModule.ModuleFor(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
+            } else {
+                numberOfInstrs++;
+                addInstrAtBeginning(new CopyInstr(getCurrentModuleVariable(), SCOPE_MODULE[0])); // %current_module
+            }
+        }
+        if (selfUsed) {
+            numberOfInstrs++;
+            addInstrAtBeginning(manager.getReceiveSelfInstr());
+        }
+
+        if (numberOfInstrs > 0) afterPrologueIndex += numberOfInstrs;
+    }
+
+    private void prependUsedClosureImplicitState(boolean forLoop) {
+        int numberOfInstrs = 0;
+        if (needsYieldBlock) {
+            numberOfInstrs++;
+            addInstrAtBeginning(new LoadBlockImplicitClosureInstr(getYieldClosureVariable()));
+        }
+        if (!forLoop && currentModuleUsed) {
+            numberOfInstrs++;
+            addInstrAtBeginning(new CopyInstr(getCurrentModuleVariable(), SCOPE_MODULE[0]));
+        }
+        if (selfUsed) {
+            numberOfInstrs++;
+            addInstrAtBeginning(manager.getReceiveSelfInstr());
+        }
+
+        if (numberOfInstrs > 0) afterPrologueIndex += numberOfInstrs;
     }
 
     private IRMethod defineNewMethod(MethodDefNode defNode, boolean isInstanceMethod) {
@@ -3102,30 +3138,6 @@ public class IRBuilder {
     }
 
     /**
-     * Prepare implicit runtime state needed for typical methods to execute. This includes such things
-     * as the implicit self variable and any yieldable block available to this scope.
-     */
-    private void prepareImplicitState() {
-        // Receive self
-        addInstr(manager.getReceiveSelfInstr());
-
-        if (scope instanceof IRMethod) {
-            addInstr(new LoadImplicitClosureInstr(getYieldClosureVariable()));
-        } else if (!(scope instanceof IRModuleBody) && !(scope instanceof IRClassBody) && !(scope instanceof IRMetaClassBody)) {
-            addInstr(new LoadFrameClosureInstr(getYieldClosureVariable()));
-        }
-    }
-
-    /**
-     * Prepare closure runtime state. This includes the implicit self variable and setting up a variable to hold any
-     * frame closure if it is needed later.
-     */
-    private void prepareClosureImplicitState() {
-        // Receive self
-        addInstr(manager.getReceiveSelfInstr());
-    }
-
-    /**
      * Process all arguments specified for this scope. This includes pre args (required args
      * at the beginning of the argument list), opt args (arguments with a default value),
      * a rest arg (catch-all for argument list overflow), post args (required arguments after
@@ -3135,7 +3147,21 @@ public class IRBuilder {
      */
     public void receiveArgs(final ArgsNode argsNode) {
         Signature signature = scope.getStaticScope().getSignature();
+
+        if (signature.equals(Signature.NO_ARGUMENTS)) {
+            addInstr(new CheckArityInstr(0, 0, false, -1, UndefinedValue.UNDEFINED));
+            receiveBlockArg(argsNode);
+            return;
+        }
+
         Variable keywords = addResultInstr(new ReceiveKeywordsInstr(temp(), signature.hasRest(), argsNode.hasKwargs()));
+
+        KeywordRestArgNode keyRest = argsNode.getKeyRest();
+        RubySymbol restName = keyRest == null ? null : keyRest.getName();
+        // We want this to come in before arity check since arity will think no kwargs should exist.
+        if (restName != null && "nil".equals(restName.idString())) {
+            if_not(keywords, UndefinedValue.UNDEFINED, () -> addRaiseError("ArgumentError", "no keywords accepted"));
+        }
 
         // 1.9 pre, opt, rest, post args
         receiveNonBlockArgs(argsNode, keywords);
@@ -3168,22 +3194,16 @@ public class IRBuilder {
         }
 
         // 2.0 keyword rest arg
-        KeywordRestArgNode keyRest = argsNode.getKeyRest();
         if (keyRest != null) {
-            RubySymbol key = keyRest.getName();
             ArgumentType type = ArgumentType.keyrest;
 
             // anonymous keyrest
-            if (key == null || key.getBytes().realSize() == 0) type = ArgumentType.anonkeyrest;
+            if (restName == null || restName.getBytes().realSize() == 0) type = ArgumentType.anonkeyrest;
 
-            Variable av = getNewLocalVariable(key, 0);
-            if (scope instanceof IRMethod) addArgumentDescription(type, key);
+            Variable av = getNewLocalVariable(restName, 0);
+            if (scope instanceof IRMethod) addArgumentDescription(type, restName);
 
-            if (key != null && "nil".equals(key.idString())) {
-                if_not(keywords, UndefinedValue.UNDEFINED, () -> addRaiseError("ArgumentError", "no keywords accepted"));
-            } else {
-                addInstr(new ReceiveKeywordRestArgInstr(av, keywords));
-            }
+            addInstr(new ReceiveKeywordRestArgInstr(av, keywords));
         }
 
         // Block arg
@@ -3451,7 +3471,7 @@ public class IRBuilder {
         boolean debuggingFrozenStringLiteral = manager.getInstanceConfig().isDebuggingFrozenStringLiteral();
         addInstr(new BuildCompoundStringInstr(stringResult, pieces, node.getEncoding(), estimatedSize, false, getFileName(), node.getLine()));
 
-        return fcall(result, Self.SELF, "`", stringResult);
+        return fcall(result, buildSelf(), "`", stringResult);
     }
 
     /* ****************************************************************
@@ -3867,13 +3887,11 @@ public class IRBuilder {
         this.methodName = methodName;
 
         boolean forNode = iterNode instanceof ForNode;
-        prepareClosureImplicitState();                                    // recv_self, add frame block, etc)
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             addInstr(new TraceInstr(RubyEvent.B_CALL, getCurrentModuleVariable(), getName(), getFileName(), scope.getLine() + 1));
         }
 
-        if (!forNode) addCurrentModule();                                // %current_module
         receiveBlockArgs(iterNode);
         // for adds these after processing binding block args because and operations at that point happen relative
         // to the previous scope.
@@ -3892,7 +3910,7 @@ public class IRBuilder {
         // can be U_NIL if the node is an if node with returns in both branches.
         if (closureRetVal != U_NIL) addInstr(new ReturnInstr(closureRetVal));
 
-        preloadBlockImplicitClosure();
+        prependUsedClosureImplicitState(forNode);
 
         // Add break/return handling in case it is a lambda (we cannot know at parse time what it is).
         // SSS FIXME: At a later time, see if we can optimize this and do this on demand.
@@ -4360,12 +4378,12 @@ public class IRBuilder {
     }
 
     private InterpreterContext buildPrePostExeInner(Node body) {
-        // Set up %current_module
-        addInstr(new CopyInstr(getCurrentModuleVariable(), SCOPE_MODULE[0]));
         build(body);
 
         // END does not have either explicit or implicit return, so we add one
         addInstr(new ReturnInstr(new Nil()));
+
+        prependUsedImplicitState(null);
 
         computeScopeFlagsFrom(instructions);
         return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
@@ -4662,6 +4680,11 @@ public class IRBuilder {
     }
 
     public Operand buildReturn(ReturnNode returnNode) {
+        boolean topLevel = scope.isTopLocalVariableScope() && scope instanceof IRScriptBody;
+        Node valueNode = returnNode.getValueNode();
+        if (topLevel && valueNode != null && !(valueNode instanceof NilImplicitNode)) {
+            scope.getManager().getRuntime().getWarnings().warn(getFileName(), valueNode.getLine() + 1, "argument of top-level return is ignored");
+        }
         Operand retVal = build(returnNode.getValueNode());
 
         if (scope instanceof IRClosure) {
@@ -4712,13 +4735,12 @@ public class IRBuilder {
         coverageMode = CoverageData.NONE;  // Assuming there is no path into build eval root without actually being an eval.
         addInstr(manager.newLineNumber(scope.getLine()));
 
-        prepareImplicitState();                                    // recv_self, add frame block, etc)
-        addCurrentModule();                                        // %current_module
-
         afterPrologueIndex = instructions.size() - 1;                      // added BEGINs start after scope prologue stuff
 
         Operand returnValue = rootNode.getBodyNode() == null ? manager.getNil() : build(rootNode.getBodyNode());
         addInstr(new ReturnInstr(returnValue));
+
+        prependUsedImplicitState(null);
 
         computeScopeFlagsFrom(instructions);
         return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 2, flags);
@@ -4737,10 +4759,6 @@ public class IRBuilder {
 
     private InterpreterContext buildRootInner(RootNode rootNode) {
         coverageMode = rootNode.coverageMode();
-        prepareImplicitState();                                    // recv_self, add frame block, etc)
-        addCurrentModule();                                        // %current_module
-
-        afterPrologueIndex = instructions.size() - 1;                      // added BEGINs start after scope prologue stuff
 
         // Build IR for the tree and return the result of the expression tree
         addInstr(new ReturnInstr(build(rootNode.getBodyNode())));
@@ -4749,10 +4767,13 @@ public class IRBuilder {
         // Root scope can receive returns now, so we add non-local return logic if necessary (2.5+)
         if (scope.canReceiveNonlocalReturns()) handleNonlocalReturnInMethod();
 
+        prependUsedImplicitState(null);
+
         return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
     }
 
     public Variable buildSelf() {
+        selfUsed = true;
         return scope.getSelf();
     }
 
@@ -4938,11 +4959,12 @@ public class IRBuilder {
     }
 
     public Operand buildXStr(XStrNode node) {
-        return fcall(temp(), Self.SELF, "`", new FrozenString(node.getValue(), node.getCodeRange(), scope.getFile(), node.getLine()));
+        return fcall(temp(), buildSelf(), "`", new FrozenString(node.getValue(), node.getCodeRange(), scope.getFile(), node.getLine()));
     }
 
     public Operand buildYield(YieldNode node, Variable result) {
-        if (scope instanceof IRScriptBody || scope instanceof IRModuleBody) throwSyntaxError(node, "Invalid yield");
+        IRScope hardScope = scope.getNearestNonClosurelikeScope();
+        if (hardScope instanceof IRScriptBody || hardScope instanceof IRModuleBody) throwSyntaxError(node, "Invalid yield");
 
         boolean unwrap = true;
         Node argNode = node.getArgsNode();
@@ -5090,9 +5112,6 @@ public class IRBuilder {
     private InterpreterContext buildModuleOrClassBody(Node bodyNode, int startLine, int endLine) {
         addInstr(new TraceInstr(RubyEvent.CLASS, getCurrentModuleVariable(), null, getFileName(), startLine + 1));
 
-        prepareImplicitState();                                    // recv_self, add frame block, etc)
-        addCurrentModule();                                        // %current_module
-
         Operand bodyReturnValue = build(bodyNode);
 
         // This is only added when tracing is enabled because an 'end' will normally have no other instrs which can
@@ -5101,6 +5120,8 @@ public class IRBuilder {
         addInstr(new TraceInstr(RubyEvent.END, getCurrentModuleVariable(), null, getFileName(), endLine + 1));
 
         addInstr(new ReturnInstr(bodyReturnValue));
+
+        prependUsedImplicitState(null);
 
         computeScopeFlagsFrom(instructions);
         return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
@@ -5244,6 +5265,8 @@ public class IRBuilder {
     }
 
     public Variable getCurrentModuleVariable() {
+        currentModuleUsed = true;
+
         if (currentModuleVariable == null) currentModuleVariable = createCurrentModuleVariable();
 
         return currentModuleVariable;

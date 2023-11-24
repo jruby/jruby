@@ -1,2 +1,1 @@
 windows:Logger#new creates a new logger object
-
