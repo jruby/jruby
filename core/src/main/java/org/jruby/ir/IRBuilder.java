@@ -349,6 +349,8 @@ public class IRBuilder {
 
     private EnumSet<IRFlags> flags;
 
+    private boolean selfUsed = false;
+
     public IRBuilder(IRManager manager, IRScope scope, IRBuilder parent, IRBuilder variableBuilder) {
         this.manager = manager;
         this.scope = scope;
@@ -606,6 +608,8 @@ public class IRBuilder {
         preloadBlockImplicitClosure();
 
         handleBreakAndReturnsInLambdas();
+
+        if (selfUsed) addInstrAtBeginning(manager.getReceiveSelfInstr());
 
         computeScopeFlagsFrom(instructions);
         return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
@@ -2910,6 +2914,8 @@ public class IRBuilder {
 
         ((IRMethod) scope).setArgumentDescriptors(argDesc);
 
+        if (selfUsed) addInstrAtBeginning(manager.getReceiveSelfInstr());
+
         computeScopeFlagsFrom(instructions);
 
         return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
@@ -3101,7 +3107,7 @@ public class IRBuilder {
      */
     private void prepareImplicitState() {
         // Receive self
-        addInstr(manager.getReceiveSelfInstr());
+        //addInstr(manager.getReceiveSelfInstr());
 
         if (scope instanceof IRMethod) {
             addInstr(new LoadImplicitClosureInstr(getYieldClosureVariable()));
@@ -3453,7 +3459,7 @@ public class IRBuilder {
         boolean debuggingFrozenStringLiteral = manager.getInstanceConfig().isDebuggingFrozenStringLiteral();
         addInstr(new BuildCompoundStringInstr(stringResult, pieces, node.getEncoding(), estimatedSize, false, getFileName(), node.getLine()));
 
-        return fcall(result, Self.SELF, "`", stringResult);
+        return fcall(result, buildSelf(), "`", stringResult);
     }
 
     /* ****************************************************************
@@ -3899,6 +3905,8 @@ public class IRBuilder {
         // Add break/return handling in case it is a lambda (we cannot know at parse time what it is).
         // SSS FIXME: At a later time, see if we can optimize this and do this on demand.
         if (!forNode) handleBreakAndReturnsInLambdas();
+
+        if (selfUsed) addInstrAtBeginning(manager.getReceiveSelfInstr());
 
         computeScopeFlagsFrom(instructions);
         return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
@@ -4727,6 +4735,8 @@ public class IRBuilder {
         Operand returnValue = rootNode.getBodyNode() == null ? manager.getNil() : build(rootNode.getBodyNode());
         addInstr(new ReturnInstr(returnValue));
 
+        if (selfUsed) addInstrAtBeginning(manager.getReceiveSelfInstr());
+
         computeScopeFlagsFrom(instructions);
         return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 2, flags);
     }
@@ -4756,10 +4766,13 @@ public class IRBuilder {
         // Root scope can receive returns now, so we add non-local return logic if necessary (2.5+)
         if (scope.canReceiveNonlocalReturns()) handleNonlocalReturnInMethod();
 
+        if (selfUsed) addInstrAtBeginning(manager.getReceiveSelfInstr());
+
         return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
     }
 
     public Variable buildSelf() {
+        selfUsed = true;
         return scope.getSelf();
     }
 
@@ -4945,7 +4958,7 @@ public class IRBuilder {
     }
 
     public Operand buildXStr(XStrNode node) {
-        return fcall(temp(), Self.SELF, "`", new FrozenString(node.getValue(), node.getCodeRange(), scope.getFile(), node.getLine()));
+        return fcall(temp(), buildSelf(), "`", new FrozenString(node.getValue(), node.getCodeRange(), scope.getFile(), node.getLine()));
     }
 
     public Operand buildYield(YieldNode node, Variable result) {
@@ -5109,6 +5122,8 @@ public class IRBuilder {
         addInstr(new TraceInstr(RubyEvent.END, getCurrentModuleVariable(), null, getFileName(), endLine + 1));
 
         addInstr(new ReturnInstr(bodyReturnValue));
+
+        if (selfUsed) addInstrAtBeginning(manager.getReceiveSelfInstr());
 
         computeScopeFlagsFrom(instructions);
         return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
