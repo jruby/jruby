@@ -69,7 +69,7 @@ public class CheckArityInstr extends OneOperandInstr implements FixedArityInstr 
     }
 
     public static CheckArityInstr decode(IRReaderDecoder d) {
-        return new CheckArityInstr(d.decodeInt(), d.decodeInt(), d.decodeBoolean(), d.decodeInt(), d.decodeVariable());
+        return new CheckArityInstr(d.decodeInt(), d.decodeInt(), d.decodeBoolean(), d.decodeInt(), d.decodeOperand());
     }
 
     public void checkArity(ThreadContext context, IRubyObject self, StaticScope scope, DynamicScope dynamicScope, IRubyObject[] args, Block block, Object[] temp) {
