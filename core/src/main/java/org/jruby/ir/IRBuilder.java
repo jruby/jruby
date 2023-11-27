@@ -445,15 +445,13 @@ public class IRBuilder {
         int currLineNum = node.getLine();
         if (currLineNum != lastProcessedLineNum && !(node instanceof NilImplicitNode)) {
             LineInfo needsCoverage = node.isNewline() ? LineInfo.Coverage : null;
-            boolean sideEffect = !(node instanceof SideEffectFree);
             // DefNode will set it's own line number as part of impl but if it is for coverage we emit as instr also.
-            if (needsCoverage != null && (!(node instanceof DefNode) && sideEffect || coverageMode != 0)) { // Do not emit multiple line number instrs for the same line
+            if (needsCoverage != null && (!(node instanceof DefNode) || coverageMode != 0)) { // Do not emit multiple line number instrs for the same line
                 needsLineNumInfo = node.isNewline() ? needsCoverage : LineInfo.Backtrace;
             }
 
             // This line is already process either by linenum or by instr which emits its own.
-
-            if (sideEffect) lastProcessedLineNum = currLineNum;
+            lastProcessedLineNum = currLineNum;
         }
     }
 
