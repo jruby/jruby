@@ -3,6 +3,8 @@
 # Adds tags based on error and failures output (e.g., from a CI log),
 # without running any spec code.
 
+tag = ENV["TAG"] || "fails"
+
 tags_dir = %w[
   spec/tags
   spec/tags/ruby
@@ -54,7 +56,7 @@ output.slice_before(NUMBER).select { |number, *rest|
   dir = File.dirname(tags_file)
   Dir.mkdir(dir) unless Dir.exist?(dir)
 
-  tag_line = "fails:#{description}"
+  tag_line = "#{tag}:#{description}"
   lines = File.exist?(tags_file) ? File.readlines(tags_file, chomp: true) : []
   unless lines.include?(tag_line)
     puts tags_file
