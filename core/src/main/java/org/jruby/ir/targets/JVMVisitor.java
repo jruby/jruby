@@ -1750,6 +1750,29 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void IntegerMathInstr(IntegerMathInstr instr) {
+        visit(instr.getOperand1());
+        visit(instr.getOperand2());
+        switch (instr.getOp()) {
+            case ADD:
+                jvmAdapter().iadd();
+                break;
+            case SUBTRACT:
+                jvmAdapter().isub();
+                break;
+            case MULTIPLY:
+                jvmAdapter().imul();
+                break;
+            case DIVIDE:
+                jvmAdapter().idiv();
+                break;
+            default:
+                throw new NotCompilableException("IntegerMathInstr has unknown op: " + instr);
+        }
+        jvmStoreLocal(instr.getResult());
+    }
+
+    @Override
     public void JumpInstr(JumpInstr jumpinstr) {
         jvmMethod().goTo(getJVMLabel(jumpinstr.getJumpTarget()));
     }
