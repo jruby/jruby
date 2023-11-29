@@ -1461,8 +1461,10 @@ public class IRBuilder {
         label("min_args_check_end", minArgsCheck -> {
             BIntInstr.Op compareOp = pattern.hasRestArg() ? BIntInstr.Op.GTE : BIntInstr.Op.EQ;
             addInstr(new BIntInstr(minArgsCheck, compareOp, length, minArgsCount));
-            fcall(errorString, buildSelf(), "sprintf",
-                    new FrozenString("%s: %s length mismatch (given %d, expected %d)"), deconstructed, deconstructed, as_fixnum(length), as_fixnum(minArgsCount));
+            if (isSinglePattern) {
+                fcall(errorString, buildSelf(), "sprintf",
+                        new FrozenString("%s: %s length mismatch (given %d, expected %d)"), deconstructed, deconstructed, as_fixnum(length), as_fixnum(minArgsCount));
+            }
             addInstr(new CopyInstr(result, fals()));
             jump(testEnd);
         });
@@ -1788,14 +1790,15 @@ public class IRBuilder {
 
             // build each "when"
             Variable deconstructed = copy(buildNil());
-            for (Node aCase : patternCase.getCases().children()) {
+            Node[] cases = patternCase.getCases().children();
+            boolean isSinglePattern = cases.length == 1;
+            for (Node aCase : cases) {
                 InNode inNode = (InNode) aCase;
                 Label bodyLabel = getNewLabel();
 
-                boolean isSinglePattern = inNode.isSinglePattern();
-
                 Variable eqqResult = copy(tru());
                 labels.add(bodyLabel);
+
                 buildPatternMatch(eqqResult, deconstructed, inNode.getExpression(), value, false, isSinglePattern, errorString);
                 addInstr(createBranch(eqqResult, tru(), bodyLabel));
                 bodies.put(bodyLabel, inNode.getBody());
