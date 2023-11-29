@@ -1981,8 +1981,10 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         label("min_args_check_end", minArgsCheck -> {
             BIntInstr.Op compareOp = rest != null ? BIntInstr.Op.GTE : BIntInstr.Op.EQ;
             addInstr(new BIntInstr(minArgsCheck, compareOp, length, minArgsCount));
-            fcall(errorString, buildSelf(), "sprintf",
-                    new FrozenString("%s: %s length mismatch (given %d, expected %d)"), deconstructed, deconstructed, as_fixnum(length), as_fixnum(minArgsCount));
+            if (isSinglePattern) {
+                fcall(errorString, buildSelf(), "sprintf",
+                        new FrozenString("%s: %s length mismatch (given %d, expected %d)"), deconstructed, deconstructed, as_fixnum(length), as_fixnum(minArgsCount));
+            }
             addInstr(new CopyInstr(result, fals()));
             jump(testEnd);
         });
@@ -2099,11 +2101,11 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
             // build each "when"
             Variable deconstructed = copy(nil());
+            boolean isSinglePattern = cases.length == 1;
             for (U in : cases) {
                 Label bodyLabel = getNewLabel();
 
                 U body = getInBody(in);
-                boolean isSinglePattern = body != null;
 
                 Variable eqqResult = copy(tru());
                 labels.add(bodyLabel);
