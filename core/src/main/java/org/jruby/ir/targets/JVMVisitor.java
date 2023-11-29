@@ -1432,6 +1432,7 @@ public class JVMVisitor extends IRVisitor {
     public void DefineClassMethodInstr(DefineClassMethodInstr defineclassmethodinstr) {
         IRMethod method = defineclassmethodinstr.getMethod();
 
+        jvmMethod().updateLineNumber(method.getLine());
         jvmMethod().loadContext();
 
         JVMVisitorMethodContext context = new JVMVisitorMethodContext();
@@ -1467,6 +1468,7 @@ public class JVMVisitor extends IRVisitor {
         IRBytecodeAdapter   m = jvmMethod();
         SkinnyMethodAdapter a = m.adapter;
 
+        jvmMethod().updateLineNumber(method.getLine());
         m.loadContext();
 
         emitMethod(method, context);
