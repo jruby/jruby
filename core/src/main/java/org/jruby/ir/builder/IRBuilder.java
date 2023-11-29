@@ -139,6 +139,9 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     EnumSet<IRFlags> flags;
 
+    private boolean selfUsed = false;
+    private boolean currentModuleUsed = false;
+
     public IRBuilder(IRManager manager, IRScope scope, IRBuilder parent, IRBuilder variableBuilder, Encoding encoding) {
         this.manager = manager;
         this.scope = scope;
@@ -276,13 +279,12 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         coverageMode = CoverageData.NONE;  // Assuming there is no path into build eval root without actually being an eval.
         addInstr(getManager().newLineNumber(scope.getLine()));
 
-        prepareImplicitState();                                    // recv_self, add frame block, etc)
-        addCurrentModule();                                        // %current_module
-
         afterPrologueIndex = instructions.size() - 1;                      // added BEGINs start after scope prologue stuff
 
         Operand returnValue = build(rootNode);
         addInstr(new ReturnInstr(returnValue));
+
+        prependUsedImplicitState(null);
 
         computeScopeFlagsFrom(instructions);
         return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 2, flags);
@@ -292,10 +294,6 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         long time = 0;
         if (PARSER_TIMING) time = System.nanoTime();
         coverageMode = parseResult.getCoverageMode();
-        prepareImplicitState();                                    // recv_self, add frame block, etc)
-        addCurrentModule();                                        // %current_module
-
-        afterPrologueIndex = instructions.size() - 1;                      // added BEGINs start after scope prologue stuff
 
         // Build IR for the tree and return the result of the expression tree
         addInstr(new ReturnInstr(build(parseResult)));
@@ -303,6 +301,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         computeScopeFlagsFrom(instructions);
         // Root scope can receive returns now, so we add non-local return logic if necessary (2.5+)
         if (scope.canReceiveNonlocalReturns()) handleNonlocalReturnInMethod();
+
+        prependUsedImplicitState(null);
 
         InterpreterContext ic = scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
 
@@ -456,7 +456,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     boolean isTopScope() {
         IRScope topScope = scope.getNearestNonClosurelikeScope();
 
-        boolean isTopScope = topScope instanceof IRScriptBody ||
+        boolean isTopScope = topScope instanceof IRScriptBody && evalType == null ||
                 (evalType != null && evalType != EvalType.MODULE_EVAL && evalType != EvalType.BINDING_EVAL);
 
         // we think it could be a top scope but it could still be called from within a module/class which
@@ -476,39 +476,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         addInstr(createBranch(eqqResult, tru(), caughtLabel));
     }
 
-    void preloadBlockImplicitClosure() {
-        if (needsYieldBlock) {
-            addInstrAtBeginning(new LoadBlockImplicitClosureInstr(getYieldClosureVariable()));
-        }
-    }
-
-    /**
-     * Prepare implicit runtime state needed for typical methods to execute. This includes such things
-     * as the implicit self variable and any yieldable block available to this scope.
-     */
-    void prepareImplicitState() {
-        // Receive self
-        addInstr(getManager().getReceiveSelfInstr());
-
-        // used for yields; metaclass body (sclass) inherits yield var from surrounding, and accesses it as implicit
-        if (scope instanceof IRMethod || scope instanceof IRMetaClassBody) {
-            addInstr(new LoadImplicitClosureInstr(getYieldClosureVariable()));
-        } else {
-            addInstr(new LoadFrameClosureInstr(getYieldClosureVariable()));
-        }
-    }
-
     void addCurrentModule() {
         addInstr(new CopyInstr(getCurrentModuleVariable(), SCOPE_MODULE[0])); // %current_module
-    }
-
-    /**
-     * Prepare closure runtime state. This includes the implicit self variable and setting up a variable to hold any
-     * frame closure if it is needed later.
-     */
-    void prepareClosureImplicitState() {
-        // Receive self
-        addInstr(getManager().getReceiveSelfInstr());
     }
 
     Operand protectCodeWithRescue(CodeBlock protectedCode, CodeBlock rescueBlock) {
@@ -998,6 +967,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     public Variable getCurrentModuleVariable() {
+        // FIXME: this can just look at the variable field and not have extra boolean
+        currentModuleUsed = true;
         if (currentModuleVariable == null) currentModuleVariable = createCurrentModuleVariable();
 
         return currentModuleVariable;
@@ -1344,7 +1315,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     public Operand buildDXStr(Variable result, U[] nodePieces, Encoding encoding, int line) {
-        return fcall(result, Self.SELF, "`", buildDStr(result, nodePieces, encoding, false, line));
+        return fcall(result, buildSelf(), "`", buildDStr(result, nodePieces, encoding, false, line));
     }
     Operand buildEncoding(Encoding encoding) {
         return addResultInstr(new GetEncodingInstr(temp(), encoding));
@@ -1474,18 +1445,14 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         this.methodName = methodName;
 
         boolean forNode = scope instanceof IRFor;
-        prepareClosureImplicitState();                                    // recv_self, add frame block, etc)
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             addInstr(new TraceInstr(RubyEvent.B_CALL, getCurrentModuleVariable(), getName(), getFileName(), scope.getLine() + 1));
         }
 
-        // 'for' adds %current_module after arg processing because those args all are relative to the previous scope.
         if (forNode) {
             receiveForArgs(var);
-            addCurrentModule();
         } else {
-            addCurrentModule();
             receiveBlockArgs(var);
         }
 
@@ -1502,7 +1469,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         // can be U_NIL if the node is an if node with returns in both branches.
         if (closureRetVal != U_NIL) addInstr(new ReturnInstr(closureRetVal));
 
-        preloadBlockImplicitClosure();
+        prependUsedClosureImplicitState(forNode);
 
         // Add break/return handling in case it is a lambda (we cannot know at parse time what it is).
         // SSS FIXME: At a later time, see if we can optimize this and do this on demand.
@@ -1531,9 +1498,6 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     InterpreterContext buildLambdaInner(U blockArgs, U body) {
         long time = 0;
         if (PARSER_TIMING) time = System.nanoTime();
-        prepareClosureImplicitState();
-
-        addCurrentModule();                                        // %current_module
 
         receiveBlockArgs(blockArgs);
 
@@ -1542,7 +1506,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         // can be U_NIL if the node is an if node with returns in both branches.
         if (closureRetVal != U_NIL) addInstr(new ReturnInstr(closureRetVal));
 
-        preloadBlockImplicitClosure();
+        prependUsedClosureImplicitState(false);
 
         handleBreakAndReturnsInLambdas();
 
@@ -1675,9 +1639,6 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     InterpreterContext buildModuleOrClassBody(U body, int startLine, int endLine) {
         addInstr(new TraceInstr(RubyEvent.CLASS, getCurrentModuleVariable(), null, getFileName(), startLine + 1));
-
-        prepareImplicitState();                                    // recv_self, add frame block, etc)
-        addCurrentModule();                                        // %current_module
 
         Operand bodyReturnValue = build(body);
 
@@ -2307,11 +2268,12 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     private InterpreterContext buildPrePostExeInner(U body) {
-        addInstr(new CopyInstr(getCurrentModuleVariable(), SCOPE_MODULE[0]));
         build(body);
 
         // END does not have either explicit or implicit return, so we add one
         addInstr(new ReturnInstr(nil()));
+
+        prependUsedImplicitState(null);
 
         computeScopeFlagsFrom(instructions);
         return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
@@ -2621,6 +2583,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     Variable buildSelf() {
+        selfUsed = true;
         return scope.getSelf();
     }
 
@@ -2635,7 +2598,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         int[] flags = new int[] { 0 };
         Operand[] args = setupCallArgs(argsNode, flags);
 
-        determineIfWeNeedLineNumber(line, isNewline); // backtrace needs line of call in case of exception.
+        determineIfWeNeedLineNumber(line, isNewline, false, false); // backtrace needs line of call in case of exception.
         if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
             Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
             if_else(test, tru(),
@@ -2837,14 +2800,6 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             addInstr(new TraceInstr(RubyEvent.CALL, getCurrentModuleVariable(), getName(), getFileName(), scope.getLine() + 1));
         }
 
-        prepareImplicitState();                                    // recv_self, add frame block, etc)
-
-        // These instructions need to be toward the top of the method because they may both be needed for processing
-        // optional arguments as in def foo(a = Object).
-        // Set %current_module = isInstanceMethod ? %self.metaclass : %self
-        int nearestScopeDepth = parent.getNearestModuleReferencingScopeDepth();
-        addInstr(new CopyInstr(getCurrentModuleVariable(), ScopeModule.ModuleFor(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
-
         receiveMethodArgs(defNode.getMethod());
 
         Operand rv = build(defNode.getMethodBody());
@@ -2866,6 +2821,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
         ((IRMethod) scope).setArgumentDescriptors(createArgumentDescriptor());
 
+        prependUsedImplicitState(parent);
+
         computeScopeFlagsFrom(instructions);
 
         InterpreterContext ic = scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
@@ -2873,6 +2830,57 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         if (PARSER_TIMING) manager.getRuntime().getParserManager().getParserStats().addIRBuildTime(System.nanoTime() - time);
 
         return ic;
+    }
+
+    private void prependUsedImplicitState(IRScope parent) {
+        int numberOfInstrs = 0;
+        if (needsYieldBlock) {
+            if (scope instanceof IRMethod) {
+                numberOfInstrs++;
+                addInstrAtBeginning(new LoadImplicitClosureInstr(getYieldClosureVariable()));
+            } else if (!(scope instanceof IRModuleBody) && !(scope instanceof IRClassBody) && !(scope instanceof IRMetaClassBody)) {
+                numberOfInstrs++;
+                addInstrAtBeginning(new LoadFrameClosureInstr(getYieldClosureVariable()));
+            }
+        }
+        if (currentModuleUsed) {
+            // These instructions need to be toward the top of the method because they may both be needed for processing
+            // optional arguments as in def foo(a = Object).
+            // Set %current_module = isInstanceMethod ? %self.metaclass : %self
+            if (scope instanceof IRMethod && parent != null) {
+                numberOfInstrs++;
+                int nearestScopeDepth = parent.getNearestModuleReferencingScopeDepth();
+                addInstrAtBeginning(new CopyInstr(getCurrentModuleVariable(), ScopeModule.ModuleFor(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
+            } else {
+                numberOfInstrs++;
+                addInstrAtBeginning(new CopyInstr(getCurrentModuleVariable(), SCOPE_MODULE[0])); // %current_module
+            }
+        }
+        if (selfUsed) {
+            numberOfInstrs++;
+            addInstrAtBeginning(manager.getReceiveSelfInstr());
+        }
+
+        if (numberOfInstrs > 0) afterPrologueIndex += numberOfInstrs;
+    }
+
+    private void prependUsedClosureImplicitState(boolean forLoop) {
+        int numberOfInstrs = 0;
+        if (needsYieldBlock) {
+            numberOfInstrs++;
+            addInstrAtBeginning(new LoadBlockImplicitClosureInstr(getYieldClosureVariable()));
+        }
+        // for loops refer to previous module scope and not its own so we do not make one.
+        if (!forLoop && currentModuleUsed) {
+            numberOfInstrs++;
+            addInstrAtBeginning(new CopyInstr(getCurrentModuleVariable(), SCOPE_MODULE[0]));
+        }
+        if (selfUsed) {
+            numberOfInstrs++;
+            addInstrAtBeginning(manager.getReceiveSelfInstr());
+        }
+
+        if (numberOfInstrs > 0) afterPrologueIndex += numberOfInstrs;
     }
 
     ArgumentDescriptor[] createArgumentDescriptor() {
@@ -2935,7 +2943,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         // check for refinement calls before building any closure
         if (callType == FUNCTIONAL) determineIfMaybeRefined(name, args);
         Operand block = setupCallClosure(argsNode, iter);
-        determineIfWeNeedLineNumber(line, isNewline); // backtrace needs line of call in case of exception.
+        determineIfWeNeedLineNumber(line, isNewline, false, false); // backtrace needs line of call in case of exception.
         if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
             Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
             if_else(test, tru(),
@@ -2953,9 +2961,15 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         return result;
     }
 
-    void determineIfWeNeedLineNumber(int line, boolean isNewline) {
-        if (line != lastProcessedLineNum) { // Do not emit multiple line number instrs for the same line
-            needsLineNumInfo = isNewline ? LineInfo.Coverage : LineInfo.Backtrace;
+    void determineIfWeNeedLineNumber(int line, boolean isNewline, boolean implicitNil, boolean def) {
+        if (line != lastProcessedLineNum && !implicitNil) {
+            LineInfo needsCoverage = isNewline ? LineInfo.Coverage : null;
+            // DefNode will set it's own line number as part of impl but if it is for coverage we emit as instr also.
+            if (needsCoverage != null && (!def || coverageMode != 0)) { // Do not emit multiple line number instrs for the same line
+                needsLineNumInfo = isNewline ? needsCoverage : LineInfo.Backtrace;
+            }
+
+            // This line is already process either by linenum or by instr which emits its own.
             lastProcessedLineNum = line;
         }
     }

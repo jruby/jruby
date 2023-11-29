@@ -1744,6 +1744,7 @@ public class IRRuntimeHelpers {
 
     @Interp
     public static void defInterpretedClassMethod(ThreadContext context, IRScope method, IRubyObject obj) {
+        context.setLine(method.getLine());
         String id = method.getId();
         RubyClass rubyClass = checkClassForDef(context, id, obj);
 
@@ -1765,6 +1766,7 @@ public class IRRuntimeHelpers {
                                               StaticScope scope, String encodedArgumentDescriptors,
                                               IRubyObject obj, boolean maybeRefined, boolean receivesKeywordArgs,
                                               boolean needsToFindImplementer) {
+        context.setLine(line);
         RubyClass rubyClass = checkClassForDef(context, id, obj);
 
         if (maybeRefined) scope.captureParentRefinements(context);
@@ -1786,6 +1788,7 @@ public class IRRuntimeHelpers {
                                               String encodedArgumentDescriptors,
                                               IRubyObject obj, boolean maybeRefined, boolean receivesKeywordArgs,
                                               boolean needsToFindImplementer) {
+        context.setLine(line);
         RubyClass rubyClass = checkClassForDef(context, id, obj);
 
         if (maybeRefined) scope.captureParentRefinements(context);
@@ -1809,6 +1812,7 @@ public class IRRuntimeHelpers {
 
     @Interp
     public static void defInterpretedInstanceMethod(ThreadContext context, IRScope method, DynamicScope currDynScope, IRubyObject self) {
+        context.setLine(method.getLine());
         Ruby runtime = context.runtime;
         RubySymbol methodName = method.getName();
         RubyModule rubyClass = findInstanceMethodContainer(context, currDynScope, self);
@@ -1833,6 +1837,7 @@ public class IRRuntimeHelpers {
                                                  StaticScope scope, String encodedArgumentDescriptors,
                                                  DynamicScope currDynScope, IRubyObject self, boolean maybeRefined,
                                                  boolean receivesKeywordArgs, boolean needsToFindImplementer) {
+        context.setLine(line);
         Ruby runtime = context.runtime;
         RubySymbol methodName = runtime.newSymbol(id);
         RubyModule clazz = findInstanceMethodContainer(context, currDynScope, self);
@@ -1855,6 +1860,7 @@ public class IRRuntimeHelpers {
                                                  String encodedArgumentDescriptors,
                                                  DynamicScope currDynScope, IRubyObject self, boolean maybeRefined,
                                                  boolean receivesKeywordArgs, boolean needsToFindImplementer) {
+        context.setLine(line);
         Ruby runtime = context.runtime;
         RubySymbol methodName = runtime.newSymbol(id);
         RubyModule clazz = findInstanceMethodContainer(context, currDynScope, self);

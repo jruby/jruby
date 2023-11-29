@@ -164,7 +164,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     private Operand buildOperand(Variable result, Node node) throws NotCompilableException {
-        if (node.isNewline()) determineIfWeNeedLineNumber(node.getLine(), true);
+        if (node.isNewline()) determineIfWeNeedLineNumber(node.getLine(), true, node instanceof NilImplicitNode, node instanceof DefNode);
 
         switch (node.getNodeType()) {
             case ALIASNODE: return buildAlias((AliasNode) node);
@@ -1735,6 +1735,13 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
      */
     public void receiveArgs(final ArgsNode argsNode) {
         Signature signature = scope.getStaticScope().getSignature();
+
+        if (signature.equals(Signature.NO_ARGUMENTS)) {
+            addInstr(new CheckArityInstr(0, 0, false, -1, UndefinedValue.UNDEFINED));
+            receiveBlockArg(argsNode);
+            return;
+        }
+
         Variable keywords = addResultInstr(new ReceiveKeywordsInstr(temp(), signature.hasRest(), argsNode.hasKwargs()));
 
         KeywordRestArgNode keyRest = argsNode.getKeyRest();
@@ -2481,12 +2488,14 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     public Operand buildXStr(Variable result, XStrNode node) {
-        return fcall(result, Self.SELF, "`", new FrozenString(node.getValue(), node.getCodeRange(), scope.getFile(), node.getLine()));
+        return fcall(result, buildSelf(), "`", new FrozenString(node.getValue(), node.getCodeRange(), scope.getFile(), node.getLine()));
     }
 
     public Operand buildYield(Variable result, YieldNode node) {
+        IRScope hardScope = scope.getNearestNonClosurelikeScope();
+        if (hardScope instanceof IRScriptBody || hardScope instanceof IRModuleBody) throwSyntaxError(node.getLine(), "Invalid yield");
+
         if (result == null) result = temp();
-        if (scope instanceof IRScriptBody || scope instanceof IRModuleBody) throwSyntaxError(node.getLine(), "Invalid yield");
 
         boolean unwrap = true;
         Node argNode = node.getArgsNode();

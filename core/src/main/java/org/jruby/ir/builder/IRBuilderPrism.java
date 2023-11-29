@@ -112,7 +112,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     Operand build(Variable result, Node node) {
         if (node == null) return nil();
 
-        if (node.hasNewLineFlag()) determineIfWeNeedLineNumber(getLine(node), true);
+        if (node.hasNewLineFlag()) determineIfWeNeedLineNumber(getLine(node), true, false, node instanceof DefNode);
 
         if (node instanceof AliasGlobalVariableNode) {
             return buildAliasGlobalVariable((AliasGlobalVariableNode) node);
@@ -2081,7 +2081,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     private Operand buildXString(Variable result, XStringNode node) {
         ByteList value = new ByteList(node.unescaped, getEncoding());
         int codeRange = StringSupport.codeRangeScan(value.getEncoding(), value);
-        return fcall(result, Self.SELF, "`", new FrozenString(value, codeRange, scope.getFile(), getLine(node)));
+        return fcall(result, buildSelf(), "`", new FrozenString(value, codeRange, scope.getFile(), getLine(node)));
     }
 
     Operand buildYield(Variable aResult, YieldNode node) {

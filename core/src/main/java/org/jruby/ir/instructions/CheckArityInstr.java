@@ -42,7 +42,7 @@ public class CheckArityInstr extends OneOperandInstr implements FixedArityInstr 
 
     @Override
     public Instr clone(CloneInfo info) {
-        if (info instanceof SimpleCloneInfo) return new CheckArityInstr(required, opt, rest, restKey, (Variable) getOperand1());
+        if (info instanceof SimpleCloneInfo) return new CheckArityInstr(required, opt, rest, restKey, getOperand1());
 
         InlineCloneInfo ii = (InlineCloneInfo) info;
         if (ii.canMapArgsStatically()) { // we can error on bad arity or remove check_arity
@@ -69,7 +69,7 @@ public class CheckArityInstr extends OneOperandInstr implements FixedArityInstr 
     }
 
     public static CheckArityInstr decode(IRReaderDecoder d) {
-        return new CheckArityInstr(d.decodeInt(), d.decodeInt(), d.decodeBoolean(), d.decodeInt(), d.decodeVariable());
+        return new CheckArityInstr(d.decodeInt(), d.decodeInt(), d.decodeBoolean(), d.decodeInt(), d.decodeOperand());
     }
 
     public void checkArity(ThreadContext context, IRubyObject self, StaticScope scope, DynamicScope dynamicScope, IRubyObject[] args, Block block, Object[] temp) {
