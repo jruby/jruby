@@ -87,11 +87,15 @@ public class BIntInstr extends TwoOperandBranchInstr implements FixedArityInstr 
 
     @Override
     public void visit(IRVisitor visitor) {
-        visitor.BGTEInstr(this);
+        visitor.BIntInstr(this);
     }
 
     @Override
     public String[] toStringNonOperandArgs() {
         return new String[] { op.toString() };
+    }
+
+    public Op getOp() {
+        return op;
     }
 }

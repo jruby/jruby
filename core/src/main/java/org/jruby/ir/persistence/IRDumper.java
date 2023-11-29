@@ -47,6 +47,7 @@ import org.jruby.ir.operands.SymbolProc;
 import org.jruby.ir.operands.TemporaryBooleanVariable;
 import org.jruby.ir.operands.TemporaryFixnumVariable;
 import org.jruby.ir.operands.TemporaryFloatVariable;
+import org.jruby.ir.operands.TemporaryIntVariable;
 import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.UnboxedBoolean;
@@ -334,6 +335,7 @@ public class IRDumper extends IRVisitor {
     public void TemporaryVariable(TemporaryVariable temporaryvariable) { print(temporaryvariable.getId()); }
     public void TemporaryLocalVariable(TemporaryLocalVariable temporarylocalvariable) { TemporaryVariable(temporarylocalvariable); }
     public void TemporaryFloatVariable(TemporaryFloatVariable temporaryfloatvariable) { TemporaryVariable(temporaryfloatvariable); }
+    public void TemporaryIntVariable(TemporaryIntVariable temporaryintvariable) { TemporaryVariable(temporaryintvariable); }
     public void TemporaryFixnumVariable(TemporaryFixnumVariable temporaryfixnumvariable) { TemporaryVariable(temporaryfixnumvariable); }
     public void TemporaryBooleanVariable(TemporaryBooleanVariable temporarybooleanvariable) { TemporaryVariable(temporarybooleanvariable); }
     public void UndefinedValue(UndefinedValue undefinedvalue) {  }
