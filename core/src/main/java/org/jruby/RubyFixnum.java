@@ -222,6 +222,10 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return new RubyFixnum(runtime, value);
     }
 
+    public static RubyFixnum newFixnum(Ruby runtime, int value) {
+        return newFixnum(runtime, (long) value);
+    }
+
     private static boolean isInCacheRange(long value) {
         return value <= CACHE_OFFSET - 1 && value >= -CACHE_OFFSET;
     }

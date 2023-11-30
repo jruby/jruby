@@ -108,6 +108,7 @@ public class JVM {
     public static final Type BOOLEAN_TYPE = Type.BOOLEAN_TYPE;
     public static final Type DOUBLE_TYPE = Type.DOUBLE_TYPE;
     public static final Type LONG_TYPE = Type.LONG_TYPE;
+    public static final Type INT_TYPE = Type.INT_TYPE;
     public static final Type BLOCK_TYPE = Type.getType(BLOCK);
     public static final Type THREADCONTEXT_TYPE = Type.getType(THREADCONTEXT);
     public static final Type STATICSCOPE_TYPE = Type.getType(STATICSCOPE);

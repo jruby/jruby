@@ -206,6 +206,14 @@ public final class SkinnyMethodAdapter extends MethodVisitor {
             ldc(value);
         }
     }
+
+    public void pushLong(long value) {
+        if (value == 0) {
+            lconst_0();
+        } else {
+            ldc(value);
+        }
+    }
         
     public void pushBoolean(boolean bool) {
         if (bool) iconst_1(); else iconst_0();
@@ -563,6 +571,10 @@ public final class SkinnyMethodAdapter extends MethodVisitor {
     
     public void if_icmpgt(Label arg0) {
         getMethodVisitor().visitJumpInsn(IF_ICMPGT, arg0);
+    }
+
+    public void if_icmpge(Label arg0) {
+        getMethodVisitor().visitJumpInsn(IF_ICMPGE, arg0);
     }
     
     public void if_icmplt(Label arg0) {

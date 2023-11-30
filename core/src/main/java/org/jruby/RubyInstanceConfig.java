@@ -1800,23 +1800,40 @@ public class RubyInstanceConfig {
 
     private static int initJavaBytecodeVersion() {
         final String specVersion = Options.BYTECODE_VERSION.load();
-        switch ( specVersion ) {
-            case "1.6" :
-                return Opcodes.V1_6;
-            case "1.7" :
-                return Opcodes.V1_7;
-            case "1.8" : case "8" : default :
+        if (specVersion.indexOf('.') != -1) {
+            switch (specVersion) {
+                default:
+                    System.err.println("unsupported Java version, using 1.8: " + specVersion);
+                case "1.8":
+                    return Opcodes.V1_8;
+            }
+        }
+
+        int version = Integer.parseInt(specVersion);
+        switch (version) {
+            case 8 :
                 return Opcodes.V1_8; // 52
-            case "9" :
+            case 9 :
                 return Opcodes.V9;
-            case "10" :
+            case 10 :
                 return Opcodes.V10;
-            case "11" :
+            case 11 :
                 return Opcodes.V11;
-            case "12" :
+            case 12 :
                 return Opcodes.V12;
-            case "13" :
+            case 13 :
                 return Opcodes.V13;
+            case 14 :
+                return Opcodes.V14;
+            case 15 :
+                return Opcodes.V15;
+            case 16 :
+                return Opcodes.V16;
+            case 17 :
+                return Opcodes.V17;
+            case 18 :
+            default :
+                return Opcodes.V18;
         }
     }
 

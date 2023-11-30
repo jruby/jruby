@@ -1387,7 +1387,7 @@ public class IRBuilder {
             });
         });
 
-        Variable length = addResultInstr(new RuntimeHelperCall(temp(), ARRAY_LENGTH, new Operand[]{deconstructed}));
+        Variable length = addResultInstr(new RuntimeHelperCall(intTemp(), ARRAY_LENGTH, new Operand[]{deconstructed}));
         int fixedArgsLength = pattern.getArgs().size();
         Operand argsNum = new Integer(fixedArgsLength);
 
@@ -1397,7 +1397,7 @@ public class IRBuilder {
             jump(testEnd);
         });
 
-        Variable limit = addResultInstr(new IntegerMathInstr(SUBTRACT, temp(), length, argsNum));
+        Variable limit = addResultInstr(new IntegerMathInstr(SUBTRACT, intTemp(), length, argsNum));
         Variable i = copy(new Integer(0));
 
         for_loop(after -> addInstr(new BIntInstr(after, BIntInstr.Op.GT, i, limit)),
@@ -1405,7 +1405,7 @@ public class IRBuilder {
                 (after, bottom) -> {
                     times(fixedArgsLength, (end_times, j) -> {
                         Node pat = pattern.getArgs().get(j.value);
-                        Operand deconstructIndex = addResultInstr(new IntegerMathInstr(ADD, temp(), i, new Integer(j.value)));
+                        Operand deconstructIndex = addResultInstr(new IntegerMathInstr(ADD, intTemp(), i, new Integer(j.value)));
                         Operand deconstructFixnum = as_fixnum(deconstructIndex);
                         Operand test = call(temp(), deconstructed, "[]", deconstructFixnum);
                         buildPatternMatch(result, copy(buildNil()), pat, test, false, isSinglePattern, errorString);
@@ -1422,7 +1422,7 @@ public class IRBuilder {
 
                     Node post = pattern.getPostRestArg();
                     if (post != null && !(post instanceof StarNode)) {
-                        Operand deconstructIndex = addResultInstr(new IntegerMathInstr(ADD, createTemporaryVariable(), i, argsNum));
+                        Operand deconstructIndex = addResultInstr(new IntegerMathInstr(ADD, intTemp(), i, argsNum));
                         Operand deconstructFixnum = as_fixnum(deconstructIndex);
                         Operand lengthFixnum = as_fixnum(length);
                         Operand test = call(temp(), deconstructed, "[]", deconstructFixnum, lengthFixnum);
@@ -1435,7 +1435,7 @@ public class IRBuilder {
 
     private void buildArrayPattern(Label testEnd, Variable result, Variable deconstructed, ArrayPatternNode pattern,
                                    Operand obj, boolean inAlteration, boolean isSinglePattern, Variable errorString) {
-        Variable restNum = addResultInstr(new CopyInstr(temp(), new Integer(0)));
+        Variable restNum = addResultInstr(new CopyInstr(intTemp(), new Integer(0)));
 
         if (pattern.hasConstant()) {
             Operand constant = build(pattern.getConstant());
@@ -1456,14 +1456,13 @@ public class IRBuilder {
             })
         );
 
-        Operand minArgsCount = new Integer(pattern.minimumArgsNum());
-        Variable length = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), ARRAY_LENGTH, new Operand[]{deconstructed}));
+        Variable length = addResultInstr(new RuntimeHelperCall(intTemp(), ARRAY_LENGTH, new Operand[]{deconstructed}));
         label("min_args_check_end", minArgsCheck -> {
             BIntInstr.Op compareOp = pattern.hasRestArg() ? BIntInstr.Op.GTE : BIntInstr.Op.EQ;
-            addInstr(new BIntInstr(minArgsCheck, compareOp, length, minArgsCount));
+            addInstr(new BIntInstr(minArgsCheck, compareOp, length, new Integer(pattern.minimumArgsNum())));
             if (isSinglePattern) {
                 fcall(errorString, buildSelf(), "sprintf",
-                        new FrozenString("%s: %s length mismatch (given %d, expected %d)"), deconstructed, deconstructed, as_fixnum(length), as_fixnum(minArgsCount));
+                        new FrozenString("%s: %s length mismatch (given %d, expected %d)"), deconstructed, deconstructed, as_fixnum(length), new Fixnum(pattern.minimumArgsNum()));
             }
             addInstr(new CopyInstr(result, fals()));
             jump(testEnd);
@@ -1482,7 +1481,7 @@ public class IRBuilder {
         }
 
         if (pattern.hasRestArg()) {
-            addInstr(new IntegerMathInstr(SUBTRACT, restNum, length, minArgsCount));
+            addInstr(new IntegerMathInstr(SUBTRACT, restNum, length, new Integer(pattern.minimumArgsNum())));
 
             if (pattern.isNamedRestArg()) {
                 Variable min = copy(fix(preArgsSize));
@@ -1497,15 +1496,12 @@ public class IRBuilder {
         ListNode postArgs = pattern.getPostArgs();
         if (postArgs != null) {
             for (int i = 0; i < postArgs.size(); i++) {
-                Label matchElementCheck = getNewLabel("match_post_args_element(i)_end");
-                Variable j = addResultInstr(new IntegerMathInstr(ADD, temp(), new Integer(i + preArgsSize), restNum));
+                Variable j = addResultInstr(new IntegerMathInstr(ADD, intTemp(), new Integer(i + preArgsSize), restNum));
                 Variable k = as_fixnum(j);
                 Variable elt = call(temp(), deconstructed, "[]", k);
 
                 buildPatternEach(testEnd, result, copy(buildNil()), elt, postArgs.get(i), inAlteration, isSinglePattern, errorString);
-                addInstr(BNEInstr.create(matchElementCheck, result, buildFalse()));
-                addInstr(new JumpInstr(testEnd));
-                addInstr(new LabelInstr(matchElementCheck));
+                cond_ne(testEnd, result, tru());
             }
         }
     }
@@ -1602,6 +1598,10 @@ public class IRBuilder {
 
     private Variable temp() {
         return createTemporaryVariable();
+    }
+
+    private Variable intTemp() {
+        return createIntVariable();
     }
 
     private Operand fals() {
@@ -5000,7 +5000,14 @@ public class IRBuilder {
     }
 
     public Variable copy(Variable result, Operand value) {
-        return addResultInstr(new CopyInstr(result == null ? createTemporaryVariable() : result, value));
+        if (result == null) {
+            if (value instanceof Integer || value instanceof TemporaryIntVariable) {
+                result = createIntVariable();
+            } else {
+                result = createTemporaryVariable();
+            }
+        }
+        return addResultInstr(new CopyInstr(result, value));
     }
 
     public Operand buildZArray(Variable result) {
@@ -5147,6 +5154,15 @@ public class IRBuilder {
         } else {
             return manager.newTemporaryLocalVariable(temporaryVariableIndex);
         }
+    }
+
+    private TemporaryVariable createIntVariable() {
+        // BEGIN uses its parent builder to store any variables
+        if (variableBuilder != null) return variableBuilder.createIntVariable();
+
+        temporaryVariableIndex++;
+
+        return new TemporaryIntVariable(temporaryVariableIndex);
     }
 
     public LocalVariable getLocalVariable(RubySymbol name, int scopeDepth) {

@@ -350,6 +350,24 @@ public class IRManager {
     }
 
     /**
+     * Temporarily provided for loading/storing a normal local as int on JVM; interpreter will still box as Integer.
+     * @param index
+     * @return
+     */
+    public TemporaryLocalVariable newTemporaryIntVariable(int index) {
+        if (index >= temporaryLocalVariables.length-1) growTemporaryVariablePool(index);
+
+        TemporaryLocalVariable tempVar = temporaryLocalVariables[index];
+
+        if (tempVar == null || !(tempVar instanceof TemporaryIntVariable)) {
+            tempVar = new TemporaryIntVariable(index);
+            temporaryLocalVariables[index] = tempVar;
+        }
+
+        return tempVar;
+    }
+
+    /**
      * For scopes that don't require a dynamic scope we can run DCE and some other passes which cannot
      * be stymied by escaped bindings.
      */
