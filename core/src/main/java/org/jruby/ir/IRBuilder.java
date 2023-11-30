@@ -5165,11 +5165,7 @@ public class IRBuilder {
 
         temporaryVariableIndex++;
 
-        if (scope.getScopeType() == IRScopeType.CLOSURE) {
-            throw new RuntimeException("primitive int variables not supported in closure");
-        } else {
-            return new TemporaryIntVariable(temporaryVariableIndex);
-        }
+        return new TemporaryIntVariable(temporaryVariableIndex);
     }
 
     public LocalVariable getLocalVariable(RubySymbol name, int scopeDepth) {
