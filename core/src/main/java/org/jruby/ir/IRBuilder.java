@@ -1496,15 +1496,12 @@ public class IRBuilder {
         ListNode postArgs = pattern.getPostArgs();
         if (postArgs != null) {
             for (int i = 0; i < postArgs.size(); i++) {
-                Label matchElementCheck = getNewLabel("match_post_args_element(i)_end");
                 Variable j = addResultInstr(new IntegerMathInstr(ADD, intTemp(), new Integer(i + preArgsSize), restNum));
                 Variable k = as_fixnum(j);
                 Variable elt = call(temp(), deconstructed, "[]", k);
 
                 buildPatternEach(testEnd, result, copy(buildNil()), elt, postArgs.get(i), inAlteration, isSinglePattern, errorString);
-                addInstr(BNEInstr.create(matchElementCheck, result, buildFalse()));
-                addInstr(new JumpInstr(testEnd));
-                addInstr(new LabelInstr(matchElementCheck));
+                addInstr(new BNEInstr(testEnd, result, buildTrue()));
             }
         }
     }
