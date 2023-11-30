@@ -1501,7 +1501,7 @@ public class IRBuilder {
                 Variable elt = call(temp(), deconstructed, "[]", k);
 
                 buildPatternEach(testEnd, result, copy(buildNil()), elt, postArgs.get(i), inAlteration, isSinglePattern, errorString);
-                addInstr(new BNEInstr(testEnd, result, buildTrue()));
+                cond_ne(testEnd, result, tru());
             }
         }
     }
