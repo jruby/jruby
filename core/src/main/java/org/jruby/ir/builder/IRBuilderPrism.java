@@ -1528,8 +1528,12 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         }
 
         if (rest != null) {
-            Node realTarget = ((SplatNode) rest).expression;
-            assigns.add(new Tuple<>(realTarget, addResultInstr(new RestArgMultipleAsgnInstr(temp(), values, 0, pre.length, post.length))));
+            if (rest instanceof SplatNode) {
+                Node realTarget = ((SplatNode) rest).expression;
+                assigns.add(new Tuple<>(realTarget, addResultInstr(new RestArgMultipleAsgnInstr(temp(), values, 0, pre.length, post.length))));
+            } else {
+                assigns.add(new Tuple<>(null, addResultInstr(new RestArgMultipleAsgnInstr(temp(), values, 0, pre.length, post.length))));
+            }
         }
 
         for (int j = 0; j < post.length; j++) {
@@ -1959,17 +1963,21 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             // Consider: def foo(*); .. ; end
             // For this code, there is no argument name available from the ruby code.
             // So, we generate an implicit arg name
-            RestParameterNode restArgNode = args.rest;
-            if (scope instanceof IRMethod) {
-                // FIXME: how do we annotate generated AST types to have isAnonymous etc...
-                if (restArgNode.name == null) {
-                    addArgumentDescription(ArgumentType.anonrest, symbol("*"));
-                } else {
-                    addArgumentDescription(ArgumentType.rest, restArgNode.name);
-                }
-            }
+            RubySymbol argName;
 
-            RubySymbol argName =  restArgNode.name == null ? symbol(CommonByteLists.STAR) : restArgNode.name;
+            if (args.rest instanceof RestParameterNode) {
+                RestParameterNode restArg = (RestParameterNode) args.rest;
+                    // FIXME: how do we annotate generated AST types to have isAnonymous etc...
+                if (restArg.name == null) {
+                    argName = symbol("*");
+                    if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.anonrest, argName);
+                } else {
+                    argName = restArg.name;
+                    if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.rest, argName);
+                }
+            } else { // ImplicitRestNode  (*,)
+                argName = null;
+            }
 
             // You need at least required+opt+1 incoming args for the rest arg to get any args at all
             // If it is going to get something, then it should ignore required+opt args from the beginning
@@ -2262,6 +2270,8 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             AssocSplatNode node = (AssocSplatNode) exprNodes;
 
             buildPatternLocal((LocalVariableTargetNode) node.value, value, inAlternation);
+        } else if (exprNodes instanceof ImplicitRestNode) {
+            // do nothing
         } else if (exprNodes instanceof SplatNode) {
             buildAssignment(((SplatNode) exprNodes).expression, value);
             // do nothing
@@ -2504,8 +2514,16 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return new Signature(pre, opt, post, rest, kws, kws, keywordRestIndex);
     }
 
-    private Signature calculateSignature(BlockParametersNode parameters) {
-        return parameters == null ? Signature.NO_ARGUMENTS : calculateSignature(parameters.parameters);
+    private Signature calculateSignature(Node parameters) {
+        if (parameters == null) return Signature.NO_ARGUMENTS;
+
+        if (parameters instanceof BlockParametersNode) {
+            return calculateSignature(((BlockParametersNode) parameters).parameters);
+        } else if (parameters instanceof NumberedParametersNode) {
+            return Signature.fromArityValue(((NumberedParametersNode) parameters).maximum);
+        }
+
+        throw notCompilable("Unknown signature for block parameters", parameters);
     }
 
     private Signature calculateSignatureFor(Node node) {

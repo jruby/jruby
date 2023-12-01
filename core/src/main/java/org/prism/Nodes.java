@@ -128,6 +128,10 @@ public abstract class Nodes {
             }
         }
 
+        public void setNewLineFlag(boolean newLineFlag) {
+            this.newLineFlag = newLineFlag;
+        }
+
         public abstract <T> T accept(AbstractNodeVisitor<T> visitor);
 
         public abstract <T> void visitChildNodes(AbstractNodeVisitor<T> visitor);
@@ -148,10 +152,10 @@ public abstract class Nodes {
     public static final class ArgumentsNodeFlags implements Comparable<ArgumentsNodeFlags> {
 
         // if arguments contain keyword splat
-        public static final short KEYWORD_SPLAT = 1 << 0;
+        public static final short CONTAINS_KEYWORD_SPLAT = 1 << 0;
 
-        public static boolean isKeywordSplat(short flags) {
-            return (flags & KEYWORD_SPLAT) != 0;
+        public static boolean isContainsKeywordSplat(short flags) {
+            return (flags & CONTAINS_KEYWORD_SPLAT) != 0;
         }
 
         private final short flags;
@@ -179,8 +183,51 @@ public abstract class Nodes {
             return flags - other.flags;
         }
 
-        public boolean isKeywordSplat() {
-            return (flags & KEYWORD_SPLAT) != 0;
+        public boolean isContainsKeywordSplat() {
+            return (flags & CONTAINS_KEYWORD_SPLAT) != 0;
+        }
+
+    }
+
+    /**
+     * Flags for array nodes.
+     */
+    public static final class ArrayNodeFlags implements Comparable<ArrayNodeFlags> {
+
+        // if array contains splat nodes
+        public static final short CONTAINS_SPLAT = 1 << 0;
+
+        public static boolean isContainsSplat(short flags) {
+            return (flags & CONTAINS_SPLAT) != 0;
+        }
+
+        private final short flags;
+
+        public ArrayNodeFlags(short flags) {
+            this.flags = flags;
+        }
+
+        @Override
+        public int hashCode() {
+            return flags;
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if (!(other instanceof ArrayNodeFlags)) {
+                return false;
+            }
+
+            return flags == ((ArrayNodeFlags) other).flags;
+        }
+
+        @Override
+        public int compareTo(ArrayNodeFlags other) {
+            return flags - other.flags;
+        }
+
+        public boolean isContainsSplat() {
+            return (flags & CONTAINS_SPLAT) != 0;
         }
 
     }
@@ -772,8 +819,8 @@ public abstract class Nodes {
             this.flags = flags;
         }
         
-        public boolean isKeywordSplat() {
-            return ArgumentsNodeFlags.isKeywordSplat(this.flags);
+        public boolean isContainsKeywordSplat() {
+            return ArgumentsNodeFlags.isContainsKeywordSplat(this.flags);
         }
         
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
@@ -823,12 +870,18 @@ public abstract class Nodes {
      */
     public static final class ArrayNode extends Node {
         public final Node[] elements;
+        public final short flags;
 
-        public ArrayNode(Node[] elements, int startOffset, int length) {
+        public ArrayNode(Node[] elements, short flags, int startOffset, int length) {
             super(startOffset, length);
             this.elements = elements;
+            this.flags = flags;
         }
-                
+        
+        public boolean isContainsSplat() {
+            return ArrayNodeFlags.isContainsSplat(this.flags);
+        }
+        
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
             for (Nodes.Node child : this.elements) {
                 child.accept(visitor);
@@ -859,6 +912,10 @@ public abstract class Nodes {
             for (Node child : this.elements) {
                 builder.append(nextNextIndent).append(child.toString(nextNextIndent));
             }
+            builder.append(nextIndent);
+            builder.append("flags: ");
+            builder.append(this.flags);
+            builder.append('\n');
             return builder.toString();
         }
     }
@@ -1270,11 +1327,11 @@ public abstract class Nodes {
     public static final class BlockNode extends Node {
         public final org.jruby.RubySymbol[] locals;
         /** optional (can be null) */
-        public final BlockParametersNode parameters;
+        public final Node parameters;
         /** optional (can be null) */
         public final Node body;
 
-        public BlockNode(org.jruby.RubySymbol[] locals, BlockParametersNode parameters, Node body, int startOffset, int length) {
+        public BlockNode(org.jruby.RubySymbol[] locals, Node parameters, Node body, int startOffset, int length) {
             super(startOffset, length);
             this.locals = locals;
             this.parameters = parameters;
@@ -1578,20 +1635,20 @@ public abstract class Nodes {
     public static final class CallNode extends Node {
         /** optional (can be null) */
         public final Node receiver;
+        public final org.jruby.RubySymbol name;
         /** optional (can be null) */
         public final ArgumentsNode arguments;
         /** optional (can be null) */
         public final Node block;
         public final short flags;
-        public final org.jruby.RubySymbol name;
 
-        public CallNode(Node receiver, ArgumentsNode arguments, Node block, short flags, org.jruby.RubySymbol name, int startOffset, int length) {
+        public CallNode(Node receiver, org.jruby.RubySymbol name, ArgumentsNode arguments, Node block, short flags, int startOffset, int length) {
             super(startOffset, length);
             this.receiver = receiver;
+            this.name = name;
             this.arguments = arguments;
             this.block = block;
             this.flags = flags;
-            this.name = name;
         }
         
         public boolean isSafeNavigation() {
@@ -1635,6 +1692,10 @@ public abstract class Nodes {
             builder.append("receiver: ");
             builder.append(this.receiver == null ? "null\n" : this.receiver.toString(nextIndent));
             builder.append(nextIndent);
+            builder.append("name: ");
+            builder.append('"').append(this.name).append('"');
+            builder.append('\n');
+            builder.append(nextIndent);
             builder.append("arguments: ");
             builder.append(this.arguments == null ? "null\n" : this.arguments.toString(nextIndent));
             builder.append(nextIndent);
@@ -1643,10 +1704,6 @@ public abstract class Nodes {
             builder.append(nextIndent);
             builder.append("flags: ");
             builder.append(this.flags);
-            builder.append('\n');
-            builder.append(nextIndent);
-            builder.append("name: ");
-            builder.append('"').append(this.name).append('"');
             builder.append('\n');
             return builder.toString();
         }
@@ -4206,6 +4263,51 @@ public abstract class Nodes {
     }
 
     /**
+     * Represents using a trailing comma to indicate an implicit rest parameter.
+     *
+     *     foo { |bar,| }
+     *               ^
+     *
+     *     foo in [bar,]
+     *                ^
+     *
+     *     for foo, in bar do end
+     *            ^
+     *
+     *     foo, = bar
+     *        ^
+     */
+    public static final class ImplicitRestNode extends Node {
+
+        public ImplicitRestNode(int startOffset, int length) {
+            super(startOffset, length);
+        }
+                
+        public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
+        }
+
+        public Node[] childNodes() {
+            return EMPTY_ARRAY;
+        }
+
+        public <T> T accept(AbstractNodeVisitor<T> visitor) {
+            return visitor.visitImplicitRestNode(this);
+        }
+
+        @Override
+        protected String toString(String indent) {
+            StringBuilder builder = new StringBuilder();
+            builder.append(this.getClass().getSimpleName());
+            if (hasNewLineFlag()) {
+                builder.append("[Li]");
+            }
+            builder.append('\n');
+            String nextIndent = indent + "  ";
+            return builder.toString();
+        }
+    }
+
+    /**
      * Represents the use of the `in` keyword in a case statement.
      *
      *     case a; in b then c end
@@ -5310,11 +5412,11 @@ public abstract class Nodes {
     public static final class LambdaNode extends Node {
         public final org.jruby.RubySymbol[] locals;
         /** optional (can be null) */
-        public final BlockParametersNode parameters;
+        public final Node parameters;
         /** optional (can be null) */
         public final Node body;
 
-        public LambdaNode(org.jruby.RubySymbol[] locals, BlockParametersNode parameters, Node body, int startOffset, int length) {
+        public LambdaNode(org.jruby.RubySymbol[] locals, Node parameters, Node body, int startOffset, int length) {
             super(startOffset, length);
             this.locals = locals;
             this.parameters = parameters;
@@ -6290,6 +6392,49 @@ public abstract class Nodes {
     }
 
     /**
+     * Represents an implicit set of parameters through the use of numbered
+     * parameters within a block or lambda.
+     *
+     *     -> { _1 + _2 }
+     *     ^^^^^^^^^^^^^^
+     */
+    public static final class NumberedParametersNode extends Node {
+        public final int maximum;
+
+        public NumberedParametersNode(int maximum, int startOffset, int length) {
+            super(startOffset, length);
+            this.maximum = maximum;
+        }
+                
+        public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
+        }
+
+        public Node[] childNodes() {
+            return EMPTY_ARRAY;
+        }
+
+        public <T> T accept(AbstractNodeVisitor<T> visitor) {
+            return visitor.visitNumberedParametersNode(this);
+        }
+
+        @Override
+        protected String toString(String indent) {
+            StringBuilder builder = new StringBuilder();
+            builder.append(this.getClass().getSimpleName());
+            if (hasNewLineFlag()) {
+                builder.append("[Li]");
+            }
+            builder.append('\n');
+            String nextIndent = indent + "  ";
+            builder.append(nextIndent);
+            builder.append("maximum: ");
+            builder.append(this.maximum);
+            builder.append('\n');
+            return builder.toString();
+        }
+    }
+
+    /**
      * Represents reading a numbered reference to a capture in the previous match.
      *
      *     $1
@@ -6488,7 +6633,7 @@ public abstract class Nodes {
         public final Node[] requireds;
         public final Node[] optionals;
         /** optional (can be null) */
-        public final RestParameterNode rest;
+        public final Node rest;
         public final Node[] posts;
         public final Node[] keywords;
         /** optional (can be null) */
@@ -6496,7 +6641,7 @@ public abstract class Nodes {
         /** optional (can be null) */
         public final BlockParameterNode block;
 
-        public ParametersNode(Node[] requireds, Node[] optionals, RestParameterNode rest, Node[] posts, Node[] keywords, Node keyword_rest, BlockParameterNode block, int startOffset, int length) {
+        public ParametersNode(Node[] requireds, Node[] optionals, Node rest, Node[] posts, Node[] keywords, Node keyword_rest, BlockParameterNode block, int startOffset, int length) {
             super(startOffset, length);
             this.requireds = requireds;
             this.optionals = optionals;

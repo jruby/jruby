@@ -2927,6 +2927,9 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
      * call will slurp those temps up as it's parameters so it can properly set up the call.
      */
     Variable argumentResult(RubySymbol name) {
+        // |a,| case
+        if (name == null) return temp();
+
         boolean isUnderscore = name.getBytes().realSize() == 1 && name.getBytes().charAt(0) == '_';
 
         if (isUnderscore && underscoreVariableSeen) {
