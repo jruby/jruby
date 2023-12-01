@@ -2105,7 +2105,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                 });
     }
 
-    public Operand buildPatternCase(U test, U[] cases, U consequent) {
+    Operand buildPatternCase(U test, U[] cases, U consequent) {
         Variable result = temp();
         Operand value = build(test);
         Variable errorString = copy(nil());

@@ -34,7 +34,6 @@ import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Rational;
 import org.jruby.ir.operands.Regexp;
-import org.jruby.ir.operands.Self;
 import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.Symbol;
 import org.jruby.ir.operands.SymbolProc;
@@ -47,7 +46,6 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.CommonByteLists;
 import org.jruby.util.DefinedMessage;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
@@ -1471,14 +1469,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildMatchRequired(MatchRequiredNode node) {
-        Variable result = temp();
-        Variable deconstructed = copy(nil());
-        Variable errorString = copy(nil());
-        Operand value = build(node.value);
-
-        buildPatternMatch(result, deconstructed, node.pattern, value, false, false, errorString);
-
-        return result;
+        return buildPatternCase(node.value, new Node[] { new InNode(node.pattern, null, 0, 0) }, null);
     }
 
     private Operand buildMatchWrite(Variable result, MatchWriteNode node) {
