@@ -268,6 +268,8 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             return buildLocalVariableWrite((LocalVariableWriteNode) node);
         } else if (node instanceof MatchLastLineNode) {
             return buildMatchLastLine(result, (MatchLastLineNode) node);
+        } else if (node instanceof MatchPredicateNode) {
+            return buildMatchPredicate((MatchPredicateNode) node);
         } else if (node instanceof MatchRequiredNode) {
             return buildMatchRequired((MatchRequiredNode) node);
         } else if (node instanceof MatchWriteNode) {
@@ -1460,6 +1462,12 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
     private Operand buildMatchLastLine(Variable result, MatchLastLineNode node) {
         return buildMatch(result, new Regexp(bytelist(node.unescaped), RegexpOptions.fromJoniOptions(node.flags)));
+    }
+
+    private Operand buildMatchPredicate(MatchPredicateNode node) {
+        Variable result = copy(tru());
+        buildPatternMatch(result, copy(nil()), node.value, build(node.pattern), false, true, copy(nil()));
+        return result;
     }
 
     private Operand buildMatchRequired(MatchRequiredNode node) {
