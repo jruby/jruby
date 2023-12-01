@@ -2230,9 +2230,8 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             ArrayPatternNode node = (ArrayPatternNode) exprNodes;
             buildArrayPattern(testEnd, result, deconstructed, node.constant, node.requireds, node.rest, node.posts, value, inAlternation, isSinglePattern, errorString);
         } else if (exprNodes instanceof CapturePatternNode) {
-            Operand v = build(((CapturePatternNode) exprNodes).value);
-            addInstr(new EQQInstr(scope, result, v, value, false, scope.maybeUsingRefinements()));
-            buildAssignment(((CapturePatternNode) exprNodes).target, value);
+            buildPatternEach(testEnd, result, deconstructed, value, ((CapturePatternNode) exprNodes).value, inAlternation, isSinglePattern, errorString);
+            buildAssignment(((CapturePatternNode) exprNodes).target, deconstructed);
         } else if (exprNodes instanceof HashPatternNode) {
             HashPatternNode node = (HashPatternNode) exprNodes;
             Node[] keys = getKeys(node);
@@ -2244,6 +2243,9 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         } else if (exprNodes instanceof IfNode) {
             IfNode node = (IfNode) exprNodes;
             buildPatternEachIf(result, deconstructed, value, node.predicate, node.statements, node.consequent, inAlternation, isSinglePattern, errorString);
+        } else if (exprNodes instanceof UnlessNode) {
+            UnlessNode node = (UnlessNode) exprNodes;
+            buildPatternEachIf(result, deconstructed, value, node.predicate, node.consequent, node.statements, inAlternation, isSinglePattern, errorString);
         } else if (exprNodes instanceof LocalVariableTargetNode) {
             buildPatternLocal((LocalVariableTargetNode) exprNodes, value, inAlternation);
         } else if (exprNodes instanceof AssocSplatNode) {
