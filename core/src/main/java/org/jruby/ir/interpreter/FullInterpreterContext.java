@@ -323,6 +323,8 @@ public class FullInterpreterContext extends InterpreterContext {
             varType = TemporaryVariableType.FIXNUM;
         } else if (type == java.lang.Boolean.class) {
             varType = TemporaryVariableType.BOOLEAN;
+        } else if (type == java.lang.Integer.class) {
+            varType = TemporaryVariableType.INT;
         } else {
             varType = TemporaryVariableType.LOCAL;
         }
@@ -346,6 +348,10 @@ public class FullInterpreterContext extends InterpreterContext {
             }
             case LOCAL: {
                 return getScope().getManager().newTemporaryLocalVariable(temporaryVariableCount - 1);
+            }
+            // FIXME: TemporaryIntegerVariable is being stored boxed since the primitive temp arrays are not wired up
+            case INT: {
+                return getScope().getManager().newTemporaryIntVariable(temporaryVariableCount - 1);
             }
         }
 

@@ -548,6 +548,14 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         }
     }
 
+    private TemporaryVariable createIntVariable() {
+        // BEGIN uses its parent builder to store any variables
+        if (variableBuilder != null) return variableBuilder.createIntVariable();
+        temporaryVariableIndex++;
+
+        return new TemporaryIntVariable(temporaryVariableIndex);
+    }
+
     // FIXME: Add this to clone on branch instrs so if something changes (like an inline) it will replace with opted branch/jump/nop.
     public static Instr createBranch(Operand v1, Operand v2, Label jmpTarget) {
         if (v2 instanceof Boolean) {
@@ -840,7 +848,12 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     public Variable copy(Variable result, Operand value) {
-        return addResultInstr(new CopyInstr(result == null ? temp() : result, value));
+        if (result == null) {
+            result = value instanceof Integer || value instanceof TemporaryIntVariable ?
+                    createIntVariable() :
+                    createTemporaryVariable();
+        }
+        return addResultInstr(new CopyInstr(result, value));
     }
 
     Boolean fals() {
@@ -934,6 +947,11 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         block.accept(value);
 
         return value;
+    }
+
+
+    private Variable intTemp() {
+        return createIntVariable();
     }
 
     Variable temp() {
@@ -1954,7 +1972,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     void buildArrayPattern(Label testEnd, Variable result, Variable deconstructed, U constant, U[] pre,
                                    U rest, U[] post, Operand obj, boolean inAlteration, boolean isSinglePattern,
                                    Variable errorString) {
-        Variable restNum = addResultInstr(new CopyInstr(temp(), new Integer(0)));
+        Variable restNum = addResultInstr(new CopyInstr(intTemp(), new Integer(0)));
 
         if (constant != null) {
             addInstr(new EQQInstr(scope, result, build(constant), obj, false, true));
@@ -1977,7 +1995,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         int preArgsSize = pre == null ? 0 : pre.length;
         int postArgsSize = post == null ? 0 : post.length;
         Operand minArgsCount = new Integer(preArgsSize + postArgsSize);
-        Variable length = addResultInstr(new RuntimeHelperCall(temp(), ARRAY_LENGTH, new Operand[]{deconstructed}));
+        Variable length = addResultInstr(new RuntimeHelperCall(intTemp(), ARRAY_LENGTH, new Operand[]{deconstructed}));
         label("min_args_check_end", minArgsCheck -> {
             BIntInstr.Op compareOp = rest != null ? BIntInstr.Op.GTE : BIntInstr.Op.EQ;
             addInstr(new BIntInstr(minArgsCheck, compareOp, length, minArgsCount));
@@ -2012,15 +2030,12 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
         if (postArgsSize > 0) {
             for (int i = 0; i < postArgsSize; i++) {
-                Label matchElementCheck = getNewLabel("match_post_args_element(i)_end");
-                Variable j = addResultInstr(new IntegerMathInstr(ADD, temp(), new Integer(i + preArgsSize), restNum));
+                Variable j = addResultInstr(new IntegerMathInstr(ADD, intTemp(), new Integer(i + preArgsSize), restNum));
                 Variable k = as_fixnum(j);
                 Variable elt = call(temp(), deconstructed, "[]", k);
 
                 buildPatternEach(testEnd, result, copy(nil()), elt, post[i], inAlteration, isSinglePattern, errorString);
-                addInstr(BNEInstr.create(matchElementCheck, result, fals()));
-                addInstr(new JumpInstr(testEnd));
-                addInstr(new LabelInstr(matchElementCheck));
+                cond_ne(testEnd, result, tru());
             }
         }
     }
@@ -2046,7 +2061,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             });
         });
 
-        Variable length = addResultInstr(new RuntimeHelperCall(temp(), ARRAY_LENGTH, new Operand[]{deconstructed}));
+        Variable length = addResultInstr(new RuntimeHelperCall(intTemp(), ARRAY_LENGTH, new Operand[]{deconstructed}));
         int fixedArgsLength = args.length;
         Operand argsNum = new Integer(fixedArgsLength);
 
@@ -2056,7 +2071,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             jump(testEnd);
         });
 
-        Variable limit = addResultInstr(new IntegerMathInstr(SUBTRACT, temp(), length, argsNum));
+        Variable limit = addResultInstr(new IntegerMathInstr(SUBTRACT, intTemp(), length, argsNum));
         Variable i = copy(new Integer(0));
 
         for_loop(after -> addInstr(new BIntInstr(after, BIntInstr.Op.GT, i, limit)),
@@ -2064,7 +2079,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                 (after, bottom) -> {
                     times(fixedArgsLength, (end_times, j) -> {
                         U pat = args[j.value];
-                        Operand deconstructIndex = addResultInstr(new IntegerMathInstr(ADD, temp(), i, new Integer(j.value)));
+                        Operand deconstructIndex = addResultInstr(new IntegerMathInstr(ADD, intTemp(), i, new Integer(j.value)));
                         Operand deconstructFixnum = as_fixnum(deconstructIndex);
                         Operand test = call(temp(), deconstructed, "[]", deconstructFixnum);
                         buildPatternMatch(result, copy(nil()), pat, test, false, isSinglePattern, errorString);
@@ -2079,7 +2094,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                     }
 
                     if (post != null && !isBareStar(post)) {
-                        Operand deconstructIndex = addResultInstr(new IntegerMathInstr(ADD, temp(), i, argsNum));
+                        Operand deconstructIndex = addResultInstr(new IntegerMathInstr(ADD, intTemp(), i, argsNum));
                         Operand deconstructFixnum = as_fixnum(deconstructIndex);
                         Operand lengthFixnum = as_fixnum(length);
                         Operand test = call(temp(), deconstructed, "[]", deconstructFixnum, lengthFixnum);

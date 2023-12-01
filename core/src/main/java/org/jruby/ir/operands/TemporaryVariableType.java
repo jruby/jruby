@@ -5,7 +5,7 @@ package org.jruby.ir.operands;
  * and we want to be able to quickly switch on type.
  */
 public enum TemporaryVariableType {
-    LOCAL, BOOLEAN, FLOAT, FIXNUM, CLOSURE, CURRENT_MODULE;
+    LOCAL, BOOLEAN, FLOAT, INT, FIXNUM, CLOSURE, CURRENT_MODULE;
 
     private static final TemporaryVariableType[] VALUES = values();
 

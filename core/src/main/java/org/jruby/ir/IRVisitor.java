@@ -37,7 +37,7 @@ public abstract class IRVisitor {
     public void AttrAssignInstr(AttrAssignInstr attrassigninstr) { error(attrassigninstr); }
     public void BFalseInstr(BFalseInstr bfalseinstr) { error(bfalseinstr); }
     public void BlockGivenInstr(BlockGivenInstr blockgiveninstr) { error(blockgiveninstr); }
-    public void BGTEInstr(BIntInstr bneinstr) { error(bneinstr); }
+    public void BIntInstr(BIntInstr bIntInstr) { error(bIntInstr); }
     public void BNEInstr(BNEInstr bneinstr) { error(bneinstr); }
     public void BNilInstr(BNilInstr bnilinstr) { error(bnilinstr); }
     public void BreakInstr(BreakInstr breakinstr) { error(breakinstr); }
@@ -204,6 +204,7 @@ public abstract class IRVisitor {
     public void TemporaryLocalVariable(TemporaryLocalVariable temporarylocalvariable) { error(temporarylocalvariable); }
     public void TemporaryFloatVariable(TemporaryFloatVariable temporaryfloatvariable) { error(temporaryfloatvariable); }
     public void TemporaryFixnumVariable(TemporaryFixnumVariable temporaryfixnumvariable) { error(temporaryfixnumvariable); }
+    public void TemporaryIntVariable(TemporaryIntVariable temporaryintvariable) { error(temporaryintvariable); }
     public void TemporaryBooleanVariable(TemporaryBooleanVariable temporarybooleanvariable) { error(temporarybooleanvariable); }
     public void UndefinedValue(UndefinedValue undefinedvalue) { error(undefinedvalue); }
     public void UnexecutableNil(UnexecutableNil unexecutablenil) { error(unexecutablenil); }
