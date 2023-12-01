@@ -274,7 +274,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             return buildMatchRequired((MatchRequiredNode) node);
         } else if (node instanceof MatchWriteNode) {
             return buildMatchWrite(result, (MatchWriteNode) node);
-        } else if (node instanceof MissingNode) {                // MISSING: MatchPredicateNode, MatchRequiredNode
+        } else if (node instanceof MissingNode) {
             return buildMissing((MissingNode) node);
         } else if (node instanceof ModuleNode) {
             return buildModule((ModuleNode) node);
