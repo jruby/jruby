@@ -2851,6 +2851,9 @@ public class JVMVisitor extends IRVisitor {
             case OBJECT:
                 jvmMethod().getValueCompiler().pushObjectClass();
                 return;
+            case SYMBOL:
+                jvmMethod().getValueCompiler().pushSymbolClass();
+                return;
             default:
                 throw new RuntimeException("BuiltinClass has unknown type");
         }

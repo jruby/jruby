@@ -2157,11 +2157,25 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                 if (bodyValue != null) copy(result, bodyValue);
             } else {
                 Variable inspect = temp();
-                if_else(errorString, nil(),
-                        () -> call(inspect, value, "inspect"),
-                        () -> copy(inspect, errorString));
+                label("key_check_error", (key_check_end)-> {
+                    // if errorString is a literal symbol then this is for key pattern error.  Normally it is a string or nil
+                    Variable whichError = addResultInstr(new EQQInstr(scope, temp(), getManager().getSymbolClass(), errorString, false, false));
+                    addInstr(createBranch(whichError, tru(), key_check_end));
+                    if_else(errorString, nil(),
+                            () -> call(inspect, value, "inspect"),
+                            () -> copy(inspect, errorString));
+                    addRaiseError("NoMatchingPatternError", inspect);
+                    jump(end);
+                });
 
-                addRaiseError("NoMatchingPatternError", inspect);
+                fcall(inspect, manager.getObjectClass(), "sprintf", new FrozenString("%s: key not found: :%s"), value, errorString);
+                Operand exceptionClass = searchModuleForConst(temp(), getManager().getObjectClass(), symbol("NoMatchingPatternKeyError"));
+                List<KeyValuePair<Operand, Operand>> kwargs = new ArrayList<>();
+                kwargs.add(new KeyValuePair<>(new Symbol(symbol("key")), errorString));
+                kwargs.add(new KeyValuePair<>(new Symbol(symbol("matchee")), value));
+                Variable exception = addResultInstr(CallInstr.create(scope, NORMAL, temp(), symbol("new"), exceptionClass, new Operand[] { inspect, new Hash(kwargs) }, NullBlock.INSTANCE, CALL_KEYWORD));
+                Operand kernel = searchModuleForConst(temp(), getManager().getObjectClass(), symbol("Kernel"));
+                call(temp(), kernel, "raise", exception);
             }
             jump(end);
 

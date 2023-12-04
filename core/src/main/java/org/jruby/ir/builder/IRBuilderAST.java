@@ -803,9 +803,9 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         List<KeyValuePair<Node,Node>> kwargs = assocs.getPairs();
 
         for (KeyValuePair<Node,Node> pair: kwargs) {
-            // FIXME: only build literals (which are guaranteed to build without raising).
             Operand key = build(pair.getKey());
             call(result, d, "key?", key);
+            copy(errorString, key); // Sets to symbol which will not be nil or a regular string.
             cond_ne(testEnd, result, tru());
 
             String method = hasRest ? "delete" : "[]";

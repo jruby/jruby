@@ -70,6 +70,8 @@ public class IRManager {
     private final BuiltinClass arrayClass = new BuiltinClass(BuiltinClass.Type.ARRAY);
     private final BuiltinClass hashClass = new BuiltinClass(BuiltinClass.Type.HASH);
     private final BuiltinClass objectClass = new BuiltinClass(BuiltinClass.Type.OBJECT);
+
+    private final BuiltinClass symbolClass = new BuiltinClass(BuiltinClass.Type.SYMBOL);
     private final StandardError standardError = new StandardError();
     public final ToggleBacktraceInstr needsBacktrace = new ToggleBacktraceInstr(true);
     public final ToggleBacktraceInstr needsNoBacktrace = new ToggleBacktraceInstr(false);
@@ -425,5 +427,9 @@ public class IRManager {
         try (InputStream stream = file.openInputStream()) {
             return (Node) context.runtime.getParserManager().parseFile(fileName, 0, stream, UTF8Encoding.INSTANCE, null, 0).getAST();
         }
+    }
+
+    public BuiltinClass getSymbolClass() {
+        return symbolClass;
     }
 }

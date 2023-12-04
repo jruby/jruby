@@ -2549,6 +2549,11 @@ public class IRRuntimeHelpers {
         return context.runtime.getObject();
     }
 
+    @JIT
+    public static RubyClass getSymbol(ThreadContext context) {
+        return context.runtime.getSymbol();
+    }
+
     @JIT @Interp
     public static IRubyObject svalue(ThreadContext context, Object val) {
         return (val instanceof RubyArray) ? (RubyArray) val : context.nil;
