@@ -41,7 +41,6 @@ import org.jruby.util.DefinedMessage;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.cli.Options;
-import org.prism.Nodes;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -1475,7 +1474,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         }
 
         // conceptually abstract prologue scope instr creation so we can put this at the end of it instead of replicate it.
-        afterPrologueIndex = instructions.size() - 1;
+        afterPrologueIndex = instructions.size();
 
         // Build closure body and return the result of the closure
         Operand closureRetVal = body == null ? nil() : build(body);
@@ -1934,7 +1933,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         return result;
     }
 
-    Variable deconstructHashPatternKeys(Label testEnd, U constantNode, U[] keyNodes, U rest, Variable result, Operand obj) {
+    Variable deconstructHashPatternKeys(Label testEnd, Variable errorString, U constantNode, U[] keyNodes, U rest, Variable result,
+                                        Operand obj, boolean isSinglePattern) {
         Operand keys;
 
         if ((keyNodes != null && keyNodes.length > 0 || rest != null) && !hasNamedRest(rest)) {
@@ -1949,14 +1949,9 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             keys = nil();
         }
 
-        if (constantNode != null) {
-            Operand constant = build(constantNode);
-            addInstr(new EQQInstr(scope, result, constant, obj, false, true));
-            cond_ne(testEnd, result, tru());
-        }
+        if (constantNode != null) buildPatternConstant(testEnd, result, constantNode, obj, isSinglePattern, errorString);
 
-        call(result, obj, "respond_to?", new Symbol(symbol("deconstruct_keys")));
-        cond_ne(testEnd, result, tru());
+        buildPatternDeconstructRespondTo(testEnd, result, obj, isSinglePattern, errorString, "deconstruct_keys");
 
         return call(temp(), obj, "deconstruct_keys", keys);
     }
@@ -1974,13 +1969,9 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                                    Variable errorString) {
         Variable restNum = addResultInstr(new CopyInstr(intTemp(), new Integer(0)));
 
-        if (constant != null) {
-            addInstr(new EQQInstr(scope, result, build(constant), obj, false, true));
-            cond_ne(testEnd, result, tru());
-        }
+        if (constant != null) buildPatternConstant(testEnd, result, constant, obj, isSinglePattern, errorString);
 
-        call(result, obj, "respond_to?", new Symbol(symbol("deconstruct")));
-        cond_ne(testEnd, result, tru());
+        buildPatternDeconstructRespondTo(testEnd, result, obj, isSinglePattern, errorString, "deconstruct");
 
         label("deconstruct_cache_end", (deconstruct_cache_end) ->
                 cond_ne(deconstruct_cache_end, deconstructed, nil(), () -> {
@@ -2010,7 +2001,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         if (preArgsSize > 0) {
             for (int i = 0; i < preArgsSize; i++) {
                 Variable elt = call(temp(), deconstructed, "[]", fix(i));
-                buildPatternEach(testEnd, result, copy(nil()), elt, pre[i], inAlteration, isSinglePattern, errorString);
+                buildPatternEach(testEnd, result, obj, copy(nil()), elt, pre[i], inAlteration, isSinglePattern, errorString);
                 cond_ne(testEnd, result, tru());
             }
         }
@@ -2023,7 +2014,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                 Variable max = as_fixnum(restNum);
                 Variable elt = call(temp(), deconstructed, "[]", min, max);
 
-                buildPatternMatch(result, copy(nil()), rest, elt, inAlteration, isSinglePattern, errorString);
+                buildPatternMatch(result, obj, copy(nil()), rest, elt, inAlteration, isSinglePattern, errorString);
                 cond_ne(testEnd, result, tru());
             }
         }
@@ -2034,24 +2025,47 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                 Variable k = as_fixnum(j);
                 Variable elt = call(temp(), deconstructed, "[]", k);
 
-                buildPatternEach(testEnd, result, copy(nil()), elt, post[i], inAlteration, isSinglePattern, errorString);
+                buildPatternEach(testEnd, result, obj, copy(nil()), elt, post[i], inAlteration, isSinglePattern, errorString);
                 cond_ne(testEnd, result, tru());
             }
         }
+    }
+
+    private void buildPatternConstant(Label testEnd, Variable result, U constant, Operand obj, boolean isSinglePattern, Variable errorString) {
+        Operand expression = build(constant);
+        addInstr(new EQQInstr(scope, result, expression, obj, false, true));
+        if (isSinglePattern) {
+            buildPatternSetEQQError(errorString, result, obj, expression, obj);
+        }
+        cond_ne(testEnd, result, tru());
+    }
+
+    void buildPatternSetEQQError(Variable errorString, Variable result, Operand obj, Operand expression, Operand value) {
+        buildPatternSetGeneralError(errorString, result, new FrozenString("%s: %s === %s does not return true"), obj, expression, value);
+    }
+
+    void buildPatternSetGeneralError(Variable errorString, Variable result, Operand... args) {
+        label("match_succeeded", (matchSucceeded) -> {
+            cond_ne(matchSucceeded, result, fals());
+            fcall(errorString, buildSelf(), "sprintf", args);
+        });
     }
 
     void buildFindPattern(Label testEnd, Variable result, Variable deconstructed, U constant, U pre,
                           U[] args, U post, Operand obj, boolean inAlteration, boolean isSinglePattern,
                           Variable errorString) {
         if (constant != null) {
+            Operand expression = build(constant);
             addInstr(new EQQInstr(scope, result, build(constant), obj, false, true));
+            if (isSinglePattern) {
+                buildPatternSetEQQError(errorString, result, obj, expression, obj);
+            }
             cond_ne(testEnd, result, tru());
         }
 
         label("deconstruct_end", deconstructCheck -> {
             cond_ne(deconstructCheck, deconstructed, nil(), () -> {
-                call(result, obj, "respond_to?", new Symbol(symbol("deconstruct")));
-                cond_ne(testEnd, result, tru());
+                buildPatternDeconstructRespondTo(testEnd, result, obj, isSinglePattern, errorString, "deconstruct");
 
                 call(deconstructed, obj, "deconstruct");
                 label("array_check_end", arrayCheck -> {
@@ -2082,14 +2096,14 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                         Operand deconstructIndex = addResultInstr(new IntegerMathInstr(ADD, intTemp(), i, new Integer(j.value)));
                         Operand deconstructFixnum = as_fixnum(deconstructIndex);
                         Operand test = call(temp(), deconstructed, "[]", deconstructFixnum);
-                        buildPatternMatch(result, copy(nil()), pat, test, false, isSinglePattern, errorString);
+                        buildPatternMatch(result, obj, copy(nil()), pat, test, false, isSinglePattern, errorString);
                         cond_ne(bottom, result, tru());
                     });
 
                     if (pre != null && !isBareStar(pre)) {
                         Operand iFixnum = as_fixnum(i);
                         Operand test = call(temp(), deconstructed, "[]", getManager().newFixnum(0), iFixnum);
-                        buildPatternMatch(result, copy(nil()), pre, test, false, isSinglePattern, errorString);
+                        buildPatternMatch(result, obj, copy(nil()), pre, test, false, isSinglePattern, errorString);
                         cond_ne(bottom, result, tru());
                     }
 
@@ -2098,11 +2112,20 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                         Operand deconstructFixnum = as_fixnum(deconstructIndex);
                         Operand lengthFixnum = as_fixnum(length);
                         Operand test = call(temp(), deconstructed, "[]", deconstructFixnum, lengthFixnum);
-                        buildPatternMatch(result, copy(nil()), post, test, false, isSinglePattern, errorString);
+                        buildPatternMatch(result, obj, copy(nil()), post, test, false, isSinglePattern, errorString);
                         cond_ne(bottom, result, tru());
                     }
                     jump(after);
                 });
+    }
+
+    private void buildPatternDeconstructRespondTo(Label testEnd, Variable result, Operand obj, boolean isSinglePattern,
+                                                  Variable errorString, String methodName) {
+        call(result, obj, "respond_to?", new Symbol(symbol(methodName)));
+        if (isSinglePattern) {
+            buildPatternSetGeneralError(errorString, result, new FrozenString("%s: %s does not respond to #" + methodName), obj, obj);
+        }
+        cond_ne(testEnd, result, tru());
     }
 
     Operand buildPatternCase(U test, U[] cases, U consequent) {
@@ -2124,7 +2147,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
                 Variable eqqResult = copy(tru());
                 labels.add(bodyLabel);
-                buildPatternMatch(eqqResult, deconstructed, getInExpression(in), value, false, isSinglePattern, errorString);
+                buildPatternMatch(eqqResult, value, deconstructed, getInExpression(in), value, false, isSinglePattern, errorString);
                 addInstr(createBranch(eqqResult, tru(), bodyLabel));
                 bodies.put(bodyLabel, body);
             }
@@ -2163,19 +2186,20 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         return result;
     }
 
-    abstract Variable buildPatternEach(Label testEnd, Variable result, Variable deconstructed, Operand value,
-                              U exprNodes, boolean inAlternation, boolean isSinglePattern, Variable errorString);
+    abstract Variable buildPatternEach(Label testEnd, Variable result, Operand original, Variable deconstructed,
+                                       Operand value, U exprNodes, boolean inAlternation, boolean isSinglePattern,
+                                       Variable errorString);
 
-    void buildPatternEachIf(Variable result, Variable deconstructed, Operand value, U condition, U thenBody, U elseBody,
+    void buildPatternEachIf(Variable result, Operand original, Variable deconstructed, Operand value, U condition, U thenBody, U elseBody,
                             boolean inAlternation, boolean isSinglePattern, Variable errorString) {
         boolean unless; // position of body is how we detect between if/unless
 
         if (thenBody != null) { // if
             unless = false;
-            buildPatternMatch(result, deconstructed, thenBody, value, inAlternation, isSinglePattern, errorString);
+            buildPatternMatch(result, original, deconstructed, thenBody, value, inAlternation, isSinglePattern, errorString);
         } else {
             unless = true;
-            buildPatternMatch(result, deconstructed, elseBody, value, inAlternation, isSinglePattern, errorString);
+            buildPatternMatch(result, original, deconstructed, elseBody, value, inAlternation, isSinglePattern, errorString);
         }
         label("if_else_end", conditionalEnd -> {
             cond_ne(conditionalEnd, result, tru());
@@ -2188,14 +2212,14 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         });
     }
 
-    abstract void buildAssocs(Label testEnd, Variable result, Z assocs, boolean inAlteration,
+    abstract void buildAssocs(Label testEnd, Operand original, Variable result, Z assocs, boolean inAlteration,
                               boolean isSinglePattern, Variable errorString, boolean hasRest, Variable d);
 
     void buildHashPattern(Label testEnd, Variable result, Variable deconstructed, U constant,
                                   Z assocs, U[] assocsKeys, U rest, Operand obj, boolean inAlteration,
                                   boolean isSinglePattern, Variable errorString) {
         boolean hasRest = rest != null;
-        Variable d = deconstructHashPatternKeys(testEnd, constant, assocsKeys, rest, result, obj);
+        Variable d = deconstructHashPatternKeys(testEnd, errorString, constant, assocsKeys, rest, result, obj, isSinglePattern);
 
         label("hash_check_end", endHashCheck -> {
             addInstr(new EQQInstr(scope, result, getManager().getHashClass(), d, false, true));
@@ -2206,7 +2230,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         if (hasRest) call(d, d, "dup");
 
         if (hasRest || assocsKeys.length > 0) {
-            buildAssocs(testEnd, result, assocs, inAlteration, isSinglePattern, errorString, hasRest, d);
+            buildAssocs(testEnd, obj, result, assocs, inAlteration, isSinglePattern, errorString, hasRest, d);
         } else {
             call(result, d, "empty?");
             if (isSinglePattern) maybeGenerateIsNotEmptyErrorString(errorString, result, d);
@@ -2219,15 +2243,15 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                 if (isSinglePattern) maybeGenerateIsNotEmptyErrorString(errorString, result, d);
                 cond_ne(testEnd, result, tru());
             } else if (!isBareStar(rest)) {
-                buildPatternEach(testEnd, result, copy(nil()), d, rest, inAlteration, isSinglePattern, errorString);
+                buildPatternEach(testEnd, result, obj, copy(nil()), d, rest, inAlteration, isSinglePattern, errorString);
                 cond_ne(testEnd, result, tru());
             }
         }
     }
 
-    void buildPatternEachHash(Label testEnd, Variable result, Variable deconstructed, Operand value, U key, U assocValue, boolean inAlternation, boolean isSinglePattern, Variable errorString) {
-        buildPatternMatch(result, deconstructed, key, value, inAlternation, isSinglePattern, errorString);
-        buildPatternEach(testEnd, result, deconstructed, value, assocValue, inAlternation, isSinglePattern, errorString);
+    void buildPatternEachHash(Label testEnd, Variable result, Operand original, Variable deconstructed, Operand value, U key, U assocValue, boolean inAlternation, boolean isSinglePattern, Variable errorString) {
+        buildPatternMatch(result, original, deconstructed, key, value, inAlternation, isSinglePattern, errorString);
+        buildPatternEach(testEnd, result, original, deconstructed, value, assocValue, inAlternation, isSinglePattern, errorString);
     }
 
     abstract boolean isNilRest(U rest);
@@ -2240,16 +2264,16 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         return copy(getLocalVariable(name, depth), value);
     }
 
-    void buildPatternOr(Label testEnd, Variable result, Variable deconstructed, Operand value, U left,
+    void buildPatternOr(Label testEnd, Operand original, Variable result, Variable deconstructed, Operand value, U left,
                         U right, boolean isSinglePattern, Variable errorString) {
         label("or_lhs_end", firstCase ->
-                buildPatternEach(firstCase, result, deconstructed, value, left, true, isSinglePattern, errorString));
+                buildPatternEach(firstCase, result, original, deconstructed, value, left, true, isSinglePattern, errorString));
         label("or_rhs_end", secondCase ->
-                cond(secondCase, result, tru(), () -> buildPatternEach(testEnd, result, deconstructed, value, right, true, isSinglePattern, errorString)));
+                cond(secondCase, result, tru(), () -> buildPatternEach(testEnd, result, original, deconstructed, value, right, true, isSinglePattern, errorString)));
     }
-    void buildPatternMatch(Variable result, Variable deconstructed, U arg, Operand obj,
+    void buildPatternMatch(Variable result, Operand original, Variable deconstructed, U arg, Operand obj,
                            boolean inAlternation, boolean isSinglePattern, Variable errorString) {
-        label("pattern_end", testEnd -> buildPatternEach(testEnd, result, deconstructed, obj, arg, inAlternation, isSinglePattern, errorString));
+        label("pattern_end", testEnd -> buildPatternEach(testEnd, result, original, deconstructed, obj, arg, inAlternation, isSinglePattern, errorString));
     }
 
 

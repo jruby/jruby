@@ -41,7 +41,6 @@ import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Regexp;
 import org.jruby.ir.operands.SValue;
-import org.jruby.ir.operands.Self;
 import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.Symbol;
 import org.jruby.ir.operands.SymbolProc;
@@ -799,8 +798,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return rest instanceof NilRestArgNode;
     }
 
-    void buildAssocs(Label testEnd, Variable result, HashNode assocs, boolean inAlteration, boolean isSinglePattern,
-                     Variable errorString, boolean hasRest, Variable d) {
+    void buildAssocs(Label testEnd, Operand original, Variable result, HashNode assocs, boolean inAlteration,
+                     boolean isSinglePattern, Variable errorString, boolean hasRest, Variable d) {
         List<KeyValuePair<Node,Node>> kwargs = assocs.getPairs();
 
         for (KeyValuePair<Node,Node> pair: kwargs) {
@@ -811,13 +810,13 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
 
             String method = hasRest ? "delete" : "[]";
             Operand value = call(temp(), d, method, key);
-            buildPatternEach(testEnd, result, copy(nil()), value, pair.getValue(), inAlteration, isSinglePattern, errorString);
+            buildPatternEach(testEnd, result, original, copy(nil()), value, pair.getValue(), inAlteration, isSinglePattern, errorString);
             cond_ne(testEnd, result, tru());
         }
     }
 
-    Variable buildPatternEach(Label testEnd, Variable result, Variable deconstructed, Operand value,
-                                      Node exprNodes, boolean inAlternation, boolean isSinglePattern, Variable errorString) {
+    Variable buildPatternEach(Label testEnd, Variable result, Operand original, Variable deconstructed, Operand value,
+                              Node exprNodes, boolean inAlternation, boolean isSinglePattern, Variable errorString) {
         if (exprNodes instanceof ArrayPatternNode) {
             ArrayPatternNode node = (ArrayPatternNode) exprNodes;
             buildArrayPattern(testEnd, result, deconstructed, node.getConstant(), node.getPre(), node.getRestArg(), node.getPost(), value, inAlternation, isSinglePattern, errorString);
@@ -829,10 +828,10 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             buildFindPattern(testEnd, result, deconstructed, node.getConstant(), node.getPreRestArg(), node.getArgs(), node.getPostRestArg(), value, inAlternation, isSinglePattern, errorString);
         } else if (exprNodes instanceof HashNode) {
             KeyValuePair<Node,Node> pair = ((HashNode) exprNodes).getPairs().get(0);
-            buildPatternEachHash(testEnd, result, deconstructed, value, pair.getKey(), pair.getValue(), inAlternation, isSinglePattern, errorString);
+            buildPatternEachHash(testEnd, result, original, deconstructed, value, pair.getKey(), pair.getValue(), inAlternation, isSinglePattern, errorString);
         } else if (exprNodes instanceof IfNode) {
             IfNode node = (IfNode) exprNodes;
-            buildPatternEachIf(result, deconstructed, value, node.getCondition(), node.getThenBody(), node.getElseBody(), inAlternation, isSinglePattern, errorString);
+            buildPatternEachIf(result, original, deconstructed, value, node.getCondition(), node.getThenBody(), node.getElseBody(), inAlternation, isSinglePattern, errorString);
         } else if (exprNodes instanceof LocalAsgnNode) {
             LocalAsgnNode node = (LocalAsgnNode) exprNodes;
             buildPatternLocal(value, node.getName(), node.getLine(), node.getDepth(), inAlternation);
@@ -842,13 +841,16 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             DAsgnNode node = (DAsgnNode) exprNodes;
             buildPatternLocal(value, node.getName(), node.getLine(), node.getDepth(), inAlternation);
         } else if (exprNodes instanceof OrNode) {
-            buildPatternOr(testEnd, result, deconstructed, value, ((OrNode) exprNodes).getFirstNode(),
+            buildPatternOr(testEnd, original, result, deconstructed, value, ((OrNode) exprNodes).getFirstNode(),
                     ((OrNode) exprNodes).getSecondNode(), isSinglePattern, errorString);
         } else {
             Operand expression = build(exprNodes);
             boolean needsSplat = exprNodes instanceof ArgsPushNode || exprNodes instanceof SplatNode || exprNodes instanceof ArgsCatNode;
 
             addInstr(new EQQInstr(scope, result, expression, value, needsSplat, scope.maybeUsingRefinements()));
+            if (isSinglePattern) {
+                buildPatternSetEQQError(errorString, result, original, expression, value);
+            }
         }
 
         return result;

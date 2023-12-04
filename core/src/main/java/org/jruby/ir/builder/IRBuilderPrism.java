@@ -1464,7 +1464,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
     private Operand buildMatchPredicate(MatchPredicateNode node) {
         Variable result = copy(tru());
-        buildPatternMatch(result, copy(nil()), node.value, build(node.pattern), false, true, copy(nil()));
+        buildPatternMatch(result, copy(nil()), copy(nil()), node.value, build(node.pattern), false, true, copy(nil()));
         return result;
     }
 
@@ -2230,14 +2230,14 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     @Override
-    Variable buildPatternEach(Label testEnd, Variable result, Variable deconstructed, Operand value, Node exprNodes, boolean inAlternation, boolean isSinglePattern, Variable errorString) {
+    Variable buildPatternEach(Label testEnd, Variable result, Operand original, Variable deconstructed, Operand value, Node exprNodes, boolean inAlternation, boolean isSinglePattern, Variable errorString) {
         if (exprNodes instanceof StatementsNode && ((StatementsNode) exprNodes).body.length == 1) {
-            buildPatternEach(testEnd, result, deconstructed, value, ((StatementsNode) exprNodes).body[0], inAlternation, isSinglePattern, errorString);
+            buildPatternEach(testEnd, result, original, deconstructed, value, ((StatementsNode) exprNodes).body[0], inAlternation, isSinglePattern, errorString);
         } else if (exprNodes instanceof ArrayPatternNode) {
             ArrayPatternNode node = (ArrayPatternNode) exprNodes;
             buildArrayPattern(testEnd, result, deconstructed, node.constant, node.requireds, node.rest, node.posts, value, inAlternation, isSinglePattern, errorString);
         } else if (exprNodes instanceof CapturePatternNode) {
-            buildPatternEach(testEnd, result, deconstructed, value, ((CapturePatternNode) exprNodes).value, inAlternation, isSinglePattern, errorString);
+            buildPatternEach(testEnd, result, original, deconstructed, value, ((CapturePatternNode) exprNodes).value, inAlternation, isSinglePattern, errorString);
             buildAssignment(((CapturePatternNode) exprNodes).target, deconstructed);
         } else if (exprNodes instanceof HashPatternNode) {
             HashPatternNode node = (HashPatternNode) exprNodes;
@@ -2251,10 +2251,10 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             buildFindPattern(testEnd, result, deconstructed, node.constant, node.left, node.requireds, node.right, value, inAlternation, isSinglePattern, errorString);
         } else if (exprNodes instanceof IfNode) {
             IfNode node = (IfNode) exprNodes;
-            buildPatternEachIf(result, deconstructed, value, node.predicate, node.statements, node.consequent, inAlternation, isSinglePattern, errorString);
+            buildPatternEachIf(result, original, deconstructed, value, node.predicate, node.statements, node.consequent, inAlternation, isSinglePattern, errorString);
         } else if (exprNodes instanceof UnlessNode) {
             UnlessNode node = (UnlessNode) exprNodes;
-            buildPatternEachIf(result, deconstructed, value, node.predicate, node.consequent, node.statements, inAlternation, isSinglePattern, errorString);
+            buildPatternEachIf(result, original, deconstructed, value, node.predicate, node.consequent, node.statements, inAlternation, isSinglePattern, errorString);
         } else if (exprNodes instanceof LocalVariableTargetNode) {
             buildPatternLocal((LocalVariableTargetNode) exprNodes, value, inAlternation);
         } else if (exprNodes instanceof AssocSplatNode) {
@@ -2267,7 +2267,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             buildAssignment(((SplatNode) exprNodes).expression, value);
             // do nothing
         } else if (exprNodes instanceof AlternationPatternNode) {
-            buildPatternOr(testEnd, result, deconstructed, value, ((AlternationPatternNode) exprNodes).left,
+            buildPatternOr(testEnd, original, result, deconstructed, value, ((AlternationPatternNode) exprNodes).left,
                     ((AlternationPatternNode) exprNodes).right, isSinglePattern, errorString);
         } else {
             Operand expression = build(exprNodes);
@@ -2319,7 +2319,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     @Override
-    void buildAssocs(Label testEnd, Variable result, HashPatternNode assocs, boolean inAlteration, boolean isSinglePattern, Variable errorString, boolean hasRest, Variable d) {
+    void buildAssocs(Label testEnd, Operand original, Variable result, HashPatternNode assocs, boolean inAlteration, boolean isSinglePattern, Variable errorString, boolean hasRest, Variable d) {
 
         for (Node node: assocs.elements) {
             // FIXME: There can be more than  AssocNode in here.
@@ -2343,7 +2343,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
                     // FIXME: This needs depth.
                     buildPatternLocal(value, name, getLine(node), 0, inAlteration);
                 } else {
-                    buildPatternEach(testEnd, result, copy(nil()), value, ((AssocNode) node).value, inAlteration, isSinglePattern, errorString);
+                    buildPatternEach(testEnd, result, original, copy(nil()), value, ((AssocNode) node).value, inAlteration, isSinglePattern, errorString);
                 }
 
                 cond_ne(testEnd, result, tru());
