@@ -2152,33 +2152,24 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                 bodies.put(bodyLabel, body);
             }
 
-            Label elseLabel = getNewLabel();
-            addInstr(new JumpInstr(elseLabel));      // Jump to else in case nothing matches!
-
-            boolean hasElse = consequent != null;
-
-            // Build "else" if it exists
-            if (hasElse) {
-                labels.add(elseLabel);
-                bodies.put(elseLabel, consequent);
-            }
-
-            // Now, emit bodies while preserving when clauses order
-            for (Label label : labels) {
-                addInstr(new LabelInstr(label));
-                Operand bodyValue = build(bodies.get(label));
+            if (consequent != null) {
+                Operand bodyValue = build(consequent);
                 if (bodyValue != null) copy(result, bodyValue);
-                jump(end);
-            }
-
-            if (!hasElse) {
-                addInstr(new LabelInstr(elseLabel));
+            } else {
                 Variable inspect = temp();
                 if_else(errorString, nil(),
                         () -> call(inspect, value, "inspect"),
                         () -> copy(inspect, errorString));
 
                 addRaiseError("NoMatchingPatternError", inspect);
+            }
+            jump(end);
+
+            // Now, emit bodies while preserving when clauses order
+            for (Label label : labels) {
+                addInstr(new LabelInstr(label));
+                Operand bodyValue = build(bodies.get(label));
+                if (bodyValue != null) copy(result, bodyValue);
                 jump(end);
             }
         });
