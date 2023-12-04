@@ -95,9 +95,9 @@ DO NOT MODIFY - GENERATED CODE
           <showWarnings>true</showWarnings>
           <showDeprecation>true</showDeprecation>
           <source>${base.java.version}</source>
-          <source>1.8</source>
+          <source>17</source>
           <target>${base.javac.version}</target>
-          <target>1.8</target>
+          <target>17</target>
           <useIncrementalCompilation>false</useIncrementalCompilation>
         </configuration>
       </plugin>

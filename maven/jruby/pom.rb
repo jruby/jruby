@@ -107,7 +107,7 @@ project 'JRuby Main Maven Artifact' do
 
   profile :id => :jdk8 do
     activation do
-      jdk '1.8'
+      jdk '17'
     end
     plugin :invoker, :pomExcludes => ['extended/pom.xml', 'osgi_all_inclusive_felix-3.2/pom.xml', '${its.j2ee}', '${its.osgi}']
   end

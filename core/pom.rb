@@ -184,8 +184,8 @@ project 'JRuby Base' do
           'verbose' => 'false',
           'showWarnings' => 'true',
           'showDeprecation' => 'true',
-          'source' => [ '${base.java.version}', '1.8' ],
-          'target' => [ '${base.javac.version}', '1.8' ],
+          'source' => [ '${base.java.version}', '17' ],
+          'target' => [ '${base.javac.version}', '17' ],
           'useIncrementalCompilation' =>  'false' ) do
     execute_goals( 'compile',
                    :id => 'anno',

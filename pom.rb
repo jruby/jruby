@@ -56,8 +56,8 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'jruby.basedir' => '${project.basedir}',
               'main.basedir' => '${project.basedir}',
               'project.build.sourceEncoding' => 'utf-8',
-              'base.java.version' => '1.8',
-              'base.javac.version' => '1.8',
+              'base.java.version' => '17',
+              'base.javac.version' => '17',
               'invoker.skip' => 'true',
               'version.jruby' => '${project.version}',
               'github.global.server' => 'github',
@@ -120,7 +120,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
 
     plugin :compiler, '3.8.1'
-    plugin :shade, '3.2.4'
+    plugin :shade, '3.5.1'
     plugin :surefire, '3.0.0'
     plugin :plugin, '3.6.0'
     plugin( :invoker, '3.2.1',
@@ -299,7 +299,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
   profile 'jdk8' do
     activation do
-      jdk '1.8'
+      jdk '17'
     end
     plugin :javadoc, :additionalparam => '-Xdoclint:none'
   end

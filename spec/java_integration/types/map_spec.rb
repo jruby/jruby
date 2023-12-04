@@ -328,19 +328,6 @@ describe "a java.util.Map instance" do
 
     x.put(:a, 1); x.put(:b, 2)
 
-    # Java 8 adds a replace method to Map that takes a key and value
-    if ENV_JAVA['java.specification.version'] < '1.8'
-      x.replace(ToHashImposter.new({:a => 10, :b => 20}))
-      test_equal(10, x[:a])
-      test_equal(20, x[:b])
-      test_exception(TypeError) { x.replace(ToHashImposter.new(4)) }
-
-      x.put(:a, 1); x.put(:b, 2)
-      x.replace(ToHashImposter.new(sub2))
-      test_equal(10, x[:a])
-      test_equal(20, x[:b])
-    end
-
     class H1 < java.util.HashMap
     end
 
