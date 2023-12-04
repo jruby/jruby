@@ -1991,7 +1991,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             BIntInstr.Op compareOp = rest != null ? BIntInstr.Op.GTE : BIntInstr.Op.EQ;
             addInstr(new BIntInstr(minArgsCheck, compareOp, length, minArgsCount));
             if (isSinglePattern) {
-                fcall(errorString, buildSelf(), "sprintf",
+                fcall(errorString, getManager().getObjectClass(), "sprintf",
                         new FrozenString("%s: %s length mismatch (given %d, expected %d)"), deconstructed, deconstructed, as_fixnum(length), as_fixnum(minArgsCount));
             }
             addInstr(new CopyInstr(result, fals()));
@@ -2047,7 +2047,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     void buildPatternSetGeneralError(Variable errorString, Variable result, Operand... args) {
         label("match_succeeded", (matchSucceeded) -> {
             cond_ne(matchSucceeded, result, fals());
-            fcall(errorString, buildSelf(), "sprintf", args);
+            fcall(errorString, getManager().getObjectClass(), "sprintf", args);
         });
     }
 
