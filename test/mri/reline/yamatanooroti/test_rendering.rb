@@ -121,6 +121,7 @@ begin
     end
 
     def test_finish_autowrapped_line_in_the_middle_of_multilines
+      omit if RUBY_VERSION < '2.7'
       start_terminal(30, 16, %W{ruby -I#{@pwd}/lib #{@pwd}/test/reline/yamatanooroti/multiline_repl}, startup_message: 'Multiline REPL.')
       write("<<~EOM\n  ABCDEFG\nEOM\n")
       close
@@ -766,6 +767,7 @@ begin
       omit if Reline::IOGate.win?
       cmd = %Q{ruby -e 'print(%Q{abc def \\e\\r})' | ruby -I#{@pwd}/lib -rreline -e 'p Reline.readline(%{> })'}
       start_terminal(40, 50, ['bash', '-c', cmd])
+      sleep 1
       close
       assert_screen(<<~'EOC')
         > abc def
@@ -947,7 +949,7 @@ begin
 
     def test_dialog_with_fullwidth_chars
       ENV['RELINE_TEST_PROMPT'] = '> '
-      start_terminal(30, 5, %W{ruby -I#{@pwd}/lib #{@pwd}/test/reline/yamatanooroti/multiline_repl --dialog fullwidth,scrollkey,scrollbar}, startup_message: 'Multiline REPL.')
+      start_terminal(20, 5, %W{ruby -I#{@pwd}/lib #{@pwd}/test/reline/yamatanooroti/multiline_repl --dialog fullwidth,scrollkey,scrollbar}, startup_message: 'Multiline REPL.')
       6.times{ write('j') }
       close
       assert_screen(<<~'EOC')
@@ -964,7 +966,7 @@ begin
 
     def test_dialog_with_fullwidth_chars_split
       ENV['RELINE_TEST_PROMPT'] = '> '
-      start_terminal(30, 6, %W{ruby -I#{@pwd}/lib #{@pwd}/test/reline/yamatanooroti/multiline_repl --dialog fullwidth,scrollkey,scrollbar}, startup_message: 'Multiline REPL.')
+      start_terminal(20, 6, %W{ruby -I#{@pwd}/lib #{@pwd}/test/reline/yamatanooroti/multiline_repl --dialog fullwidth,scrollkey,scrollbar}, startup_message: 'Multiline REPL.')
       6.times{ write('j') }
       close
       assert_screen(<<~'EOC')
@@ -1250,6 +1252,84 @@ begin
         [0000\n]> def hoge
         [0001\n]>   3
         [0001\n]> end
+      EOC
+    end
+
+    def test_clear_dialog_when_just_move_cursor_at_last_line
+      start_terminal(10, 30, %W{ruby -I#{@pwd}/lib #{@pwd}/test/reline/yamatanooroti/multiline_repl --autocomplete}, startup_message: 'Multiline REPL.')
+      write("class A\n  3\nend\n")
+      write("\C-p\C-p\C-p\C-e\C-hS")
+      write("\C-n")
+      write("1")
+      close
+      assert_screen(<<~'EOC')
+        prompt>   3
+        prompt> end
+        => 3
+        prompt> class S
+        prompt>   31
+        prompt> end
+      EOC
+    end
+
+    def test_clear_dialog_when_adding_new_line_to_end_of_buffer
+      start_terminal(10, 30, %W{ruby -I#{@pwd}/lib #{@pwd}/test/reline/yamatanooroti/multiline_repl --autocomplete}, startup_message: 'Multiline REPL.')
+      write("class A\n  def a\n    3\n  end\nend")
+      write("\n")
+      write("class S")
+      write("\n")
+      write("  3")
+      close
+      assert_screen(<<~'EOC')
+        prompt>   end
+        prompt> end
+        => :a
+        prompt> class S
+        prompt>   3
+      EOC
+    end
+
+    def test_insert_newline_in_the_middle_of_buffer_just_after_dialog
+      start_terminal(10, 30, %W{ruby -I#{@pwd}/lib #{@pwd}/test/reline/yamatanooroti/multiline_repl --autocomplete}, startup_message: 'Multiline REPL.')
+      write("class A\n  def a\n    3\n  end\nend")
+      write("\n")
+      write("\C-p\C-p\C-p\C-p\C-p\C-e\C-hS")
+      write("\M-\x0D")
+      write("  3")
+      close
+      assert_screen(<<~'EOC')
+        prompt>   end
+        prompt> end
+        => :a
+        prompt> class S
+        prompt>   3
+        prompt>   def a
+        prompt>     3
+        prompt>   end
+        prompt> end
+      EOC
+    end
+
+    def test_incremental_search_on_not_last_line
+      start_terminal(10, 40, %W{ruby -I#{@pwd}/lib #{@pwd}/test/reline/yamatanooroti/multiline_repl --autocomplete}, startup_message: 'Multiline REPL.')
+      write("def abc\nend\n")
+      write("def def\nend\n")
+      write("\C-p\C-p\C-e")
+      write("\C-r")
+      write("a")
+      write("\n\n")
+      close
+      assert_screen(<<~'EOC')
+        prompt> def abc
+        prompt> end
+        => :abc
+        prompt> def def
+        prompt> end
+        => :def
+        prompt> def abc
+        prompt> end
+        => :abc
+        prompt>
       EOC
     end
 

@@ -19,11 +19,21 @@ class TestDir < Test::Unit::TestCase
         @dirs << File.join(i, "")
       end
     end
+    @envs = nil
   end
 
   def teardown
     $VERBOSE = @verbose
     FileUtils.remove_entry_secure @root if File.directory?(@root)
+    ENV.update(@envs) if @envs
+  end
+
+  def setup_envs(envs = %w"HOME LOGDIR")
+    @envs ||= {}
+    envs.each do |e, v|
+      @envs[e] = ENV.delete(e)
+      ENV[e] = v if v
+    end
   end
 
   def test_seek
@@ -88,10 +98,7 @@ class TestDir < Test::Unit::TestCase
 
   def test_chdir
     pwd = Dir.pwd
-    env_home = ENV["HOME"]
-    env_logdir = ENV["LOGDIR"]
-    ENV.delete("HOME")
-    ENV.delete("LOGDIR")
+    setup_envs
 
     assert_raise(Errno::ENOENT) { Dir.chdir(@nodir) }
     assert_raise(ArgumentError) { Dir.chdir }
@@ -125,8 +132,6 @@ class TestDir < Test::Unit::TestCase
     rescue
       abort("cannot return the original directory: #{ pwd }")
     end
-    ENV["HOME"] = env_home
-    ENV["LOGDIR"] = env_logdir
   end
 
   def test_chdir_conflict
@@ -152,7 +157,7 @@ class TestDir < Test::Unit::TestCase
   end
 
   def test_chroot_nodir
-    skip if RUBY_PLATFORM =~ /android/
+    omit if RUBY_PLATFORM =~ /android/
     assert_raise(NotImplementedError, Errno::ENOENT, Errno::EPERM
 		) { Dir.chroot(File.join(@nodir, "")) }
   end
@@ -256,6 +261,20 @@ class TestDir < Test::Unit::TestCase
       bug15649 = '[ruby-core:91728] [Bug #15649]'
       assert_equal(["#{@root}/a", "#{@root}/b"],
                    Dir.glob("{#{@root}/a,#{@root}/b}"), bug15649)
+    end
+  end
+
+  def test_glob_recursive_with_brace
+    Dir.chdir(@root) do
+      bug19042 = '[ruby-core:110220] [Bug #19042]'
+      %w"c/dir_a c/dir_b c/dir_b/dir".each do |d|
+        Dir.mkdir(d)
+      end
+      expected = %w"c/dir_a/file c/dir_b/dir/file"
+      expected.each do |f|
+        File.write(f, "")
+      end
+      assert_equal(expected, Dir.glob("**/{dir_a,dir_b/dir}/file"), bug19042)
     end
   end
 
@@ -490,9 +509,9 @@ class TestDir < Test::Unit::TestCase
     def test_glob_legacy_short_name
       bug10819 = '[ruby-core:67954] [Bug #10819]'
       bug11206 = '[ruby-core:69435] [Bug #11206]'
-      skip unless /\A\w:/ =~ ENV["ProgramFiles"]
+      omit unless /\A\w:/ =~ ENV["ProgramFiles"]
       short = "#$&/PROGRA~1"
-      skip unless File.directory?(short)
+      omit unless File.directory?(short)
       entries = Dir.glob("#{short}/Common*")
       assert_not_empty(entries, bug10819)
       long = File.expand_path(short)
@@ -502,13 +521,28 @@ class TestDir < Test::Unit::TestCase
       assert_include(Dir.glob(wild, File::FNM_SHORTNAME), long, bug10819)
       assert_empty(entries - Dir.glob("#{wild}/Common*", File::FNM_SHORTNAME), bug10819)
     end
+
+    def test_home_windows
+      setup_envs(%w[HOME USERPROFILE HOMEDRIVE HOMEPATH])
+
+      ENV['HOME'] = "C:\\ruby\\home"
+      assert_equal("C:/ruby/home", Dir.home)
+
+      ENV['USERPROFILE'] = "C:\\ruby\\userprofile"
+      assert_equal("C:/ruby/home", Dir.home)
+      ENV.delete('HOME')
+      assert_equal("C:/ruby/userprofile", Dir.home)
+
+      ENV['HOMEDRIVE'] = "C:"
+      ENV['HOMEPATH'] = "\\ruby\\homepath"
+      assert_equal("C:/ruby/userprofile", Dir.home)
+      ENV.delete('USERPROFILE')
+      assert_equal("C:/ruby/homepath", Dir.home)
+    end
   end
 
   def test_home
-    env_home = ENV["HOME"]
-    env_logdir = ENV["LOGDIR"]
-    ENV.delete("HOME")
-    ENV.delete("LOGDIR")
+    setup_envs
 
     ENV["HOME"] = @nodir
     assert_nothing_raised(ArgumentError) do
@@ -526,9 +560,16 @@ class TestDir < Test::Unit::TestCase
     %W[no:such:user \u{7559 5b88}:\u{756a}].each do |user|
       assert_raise_with_message(ArgumentError, /#{user}/) {Dir.home(user)}
     end
-  ensure
-    ENV["HOME"] = env_home
-    ENV["LOGDIR"] = env_logdir
+  end
+
+  if Encoding.find("filesystem") == Encoding::UTF_8
+    # On Windows and macOS, file system encoding is always UTF-8.
+    def test_home_utf8
+      setup_envs
+
+      ENV["HOME"] = "/\u{e4}~\u{1f3e0}"
+      assert_equal("/\u{e4}~\u{1f3e0}", Dir.home)
+    end
   end
 
   def test_symlinks_not_resolved

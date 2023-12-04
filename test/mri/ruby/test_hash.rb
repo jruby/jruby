@@ -304,6 +304,20 @@ class TestHash < Test::Unit::TestCase
     assert_equal before, ObjectSpace.count_objects[:T_STRING]
   end
 
+  def test_AREF_fstring_key_default_proc
+    assert_separately([], "#{<<~"begin;"}\n#{<<~'end;'}")
+    begin;
+      h = Hash.new do |h, k|
+        k.frozen?
+      end
+
+      str = "foo"
+      refute str.frozen? # assumes this file is frozen_string_literal: false
+      refute h[str]
+      refute h["foo"]
+    end;
+  end
+
   def test_ASET_fstring_key
     a, b = {}, {}
     assert_equal 1, a["abc"] = 1
@@ -1048,14 +1062,14 @@ class TestHash < Test::Unit::TestCase
     h = @cls.new {|hh, k| :foo }
     h[1] = 2
     assert_equal([1, 2], h.shift)
-    assert_equal(:foo, h.shift)
-    assert_equal(:foo, h.shift)
+    assert_nil(h.shift)
+    assert_nil(h.shift)
 
     h = @cls.new(:foo)
     h[1] = 2
     assert_equal([1, 2], h.shift)
-    assert_equal(:foo, h.shift)
-    assert_equal(:foo, h.shift)
+    assert_nil(h.shift)
+    assert_nil(h.shift)
 
     h =@cls[1=>2]
     h.each { assert_equal([1, 2], h.shift) }
@@ -1066,7 +1080,20 @@ class TestHash < Test::Unit::TestCase
     def h.default(k = nil)
       super.upcase
     end
-    assert_equal("FOO", h.shift)
+    assert_nil(h.shift)
+  end
+
+  def test_shift_for_empty_hash
+    # [ruby-dev:51159]
+    h = @cls[]
+    100.times{|n|
+      while h.size < n
+        k = Random.rand 0..1<<30
+        h[k] = 1
+      end
+      0 while h.shift
+      assert_equal({}, h)
+    }
   end
 
   def test_reject_bang2
@@ -2151,6 +2178,27 @@ class TestHash < Test::Unit::TestCase
     assert_raise(ArgumentError) do
       {a: 1}.each(&->(k, v) {})
     end
+  end
+
+  # Previously this test would fail because rb_hash inside opt_aref would look
+  # at the current method name
+  def test_hash_recursion_independent_of_mid
+    o = Class.new do
+      def hash(h, k)
+        h[k]
+      end
+
+      def any_other_name(h, k)
+        h[k]
+      end
+    end.new
+
+    rec = []; rec << rec
+
+    h = @cls[]
+    h[rec] = 1
+    assert o.hash(h, rec)
+    assert o.any_other_name(h, rec)
   end
 
   def test_any_hash_fixable

@@ -1,11 +1,1 @@
-exclude :test_collect, "breaks in full interp and JIT due to differences in lambda args processing (#6165)"
-exclude :test_combination_with_callcc, "no callcc"
-exclude :test_flatten_with_callcc, "no callcc"
-exclude :test_permutation_with_callcc, "no callcc"
-exclude :test_product_with_callcc, "no callcc"
-exclude :test_reject_with_callcc, "no callcc"
-exclude :test_repeated_combination_with_callcc, "no callcc"
-exclude :test_repeated_permutation_with_callcc, "no callcc"
-exclude :test_sample_random, "gen2 conc modifies ary"
-exclude :test_sort_with_callcc, "no callcc"
-exclude :test_short_heap_array_sort_bang_memory_leak, "no working assert_no_memory_leak method"
+exclude(:test_shared_marking, "The target code has already been changed")

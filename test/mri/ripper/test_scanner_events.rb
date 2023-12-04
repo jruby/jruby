@@ -24,12 +24,11 @@ class TestRipper::ScannerEvents < Test::Unit::TestCase
     lexer = Ripper::Lexer.new(str)
     if error
       lexer.singleton_class.class_eval do
-        define_method(:on_parse_error) { |ev|
+        define_method(:on_error) {|ev|
           yield __callee__, ev, token()
         }
-        define_method(:compile_error) { |ev|
-          yield __callee__, ev, token()
-        }
+        alias on_parse_error on_error
+        alias compile_error on_error
       end
     end
     lexer.lex.select {|_,type,_| type == sym }.map {|_,_,tok| tok }

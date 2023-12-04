@@ -14,7 +14,7 @@ exclude :test_priority, "unreliably depends on thread scheduling"
 exclude :test_report_on_exception, "very sensitive to thread timing and parallelism"
 exclude :test_safe_level, "SAFE levels are unsupported"
 exclude :test_signal_at_join, "very timing-sensitive and very edge casey"
-exclude :test_stack_size, "slow and unreliable"
+exclude(/_stack_size$/, 'often too expensive')
 exclude :test_thread_interrupt_for_killed_thread, "uses RubyVM but otherwise passes"
 exclude :test_thread_join_main_thread, "hangs"
 exclude :test_thread_setname_in_initialize, "needs investigation #4308"
