@@ -193,7 +193,7 @@ public class IRRuntimeHelpers {
             // If we are in the method scope we are supposed to return from, stop p<ropagating.
             if (rj.isReturnToScope(currentScope)) {
                 if (isDebug()) System.out.println("---> Non-local Return reached target in scope: " + currentScope);
-                return (IRubyObject) rj.returnValue;
+                return (IRubyObject) rj.returnAndReset();
             }
 
             // If not, Just pass it along!
@@ -243,7 +243,7 @@ public class IRRuntimeHelpers {
             return ((IRWrappedLambdaReturnValue) exc).returnValue;
         } else if (exc instanceof IRReturnJump && dynScope != null && inReturnToScope(block.type, (IRReturnJump) exc, dynScope)) {
             if (isDebug()) System.out.println("---> Non-local Return reached target in scope: " + dynScope);
-            return (IRubyObject) ((IRReturnJump) exc).returnValue;
+            return (IRubyObject) ((IRReturnJump) exc).returnAndReset();
         } else {
             // Propagate the exception
             context.setSavedExceptionInLambda((Throwable) exc);

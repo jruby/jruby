@@ -1302,8 +1302,8 @@ public final class Ruby implements Constantizable {
              * This will capture any return which says it should return to a script scope as the reasonable
              * exit point.  We still raise when jump off point is anything else since that is a bug.
              */
-            if (!ex.methodToReturnFrom.getStaticScope().getIRScope().isScriptScope()) {
-                System.err.println("Unexpected 'return' escaped the runtime from " + ex.returnScope.getIRScope() + " to " + ex.methodToReturnFrom.getStaticScope().getIRScope());
+            if (!ex.isReturningToScriptScope()) {
+                System.err.println("Unexpected 'return' escaped the runtime: " + ex.toString());
                 System.err.println(ThreadContext.createRawBacktraceStringFromThrowable(ex, false));
                 Throwable t = ex;
                 while ((t = t.getCause()) != null) {
