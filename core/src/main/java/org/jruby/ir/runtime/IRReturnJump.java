@@ -6,18 +6,31 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 
 public class IRReturnJump extends IRJump implements Unrescuable {
-    public final StaticScope returnScope;
-    public final DynamicScope methodToReturnFrom;
-    public final Object returnValue;
+    public StaticScope returnScope;
+    public DynamicScope methodToReturnFrom;
+    public Object returnValue;
+
+    private static final ThreadLocal<IRReturnJump> RETURN_JUMP = new ThreadLocal<>();
 
     private IRReturnJump(StaticScope returnScope, DynamicScope scopeToReturnFrom, Object rv) {
-        this.methodToReturnFrom = scopeToReturnFrom;
-        this.returnScope = returnScope;
-        this.returnValue = rv;
+        reset(returnScope, scopeToReturnFrom, rv);
     }
 
     public static IRReturnJump create(StaticScope returnScope, DynamicScope scopeToReturnFrom, Object rv) {
-        return new IRReturnJump(returnScope, scopeToReturnFrom, rv);
+        IRReturnJump jump = RETURN_JUMP.get();
+        if (jump == null) {
+            RETURN_JUMP.set(jump = new IRReturnJump(returnScope, scopeToReturnFrom, rv));
+        } else {
+            jump.reset(returnScope, scopeToReturnFrom, rv);
+        }
+
+        return jump;
+    }
+
+    private void reset(StaticScope returnScope, DynamicScope scopeToReturnFrom, Object rv) {
+        this.methodToReturnFrom = scopeToReturnFrom;
+        this.returnScope = returnScope;
+        this.returnValue = rv;
     }
 
     public boolean isReturnToScope(DynamicScope scope) {
