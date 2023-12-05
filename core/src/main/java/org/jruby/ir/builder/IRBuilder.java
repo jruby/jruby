@@ -1992,7 +1992,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             addInstr(new BIntInstr(minArgsCheck, compareOp, length, minArgsCount));
             if (isSinglePattern) {
                 fcall(errorString, getManager().getObjectClass(), "sprintf",
-                        new FrozenString("%s: %s length mismatch (given %d, expected %d)"), deconstructed, deconstructed, as_fixnum(length), as_fixnum(minArgsCount));
+                        new FrozenString("%s: %s length mismatch (given %d, expected %d" + (rest != null ? "+" : "") + ")"), deconstructed, deconstructed, as_fixnum(length), as_fixnum(minArgsCount));
             }
             addInstr(new CopyInstr(result, fals()));
             jump(testEnd);
