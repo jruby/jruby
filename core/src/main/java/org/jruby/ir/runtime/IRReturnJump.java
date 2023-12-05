@@ -1,7 +1,6 @@
 package org.jruby.ir.runtime;
 
 import org.jruby.exceptions.Unrescuable;
-import org.jruby.ir.IRScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 
@@ -11,19 +10,16 @@ public class IRReturnJump extends IRJump implements Unrescuable {
     private Object returnValue;
     private boolean inUse = false;
 
-    private static final ThreadLocal<IRReturnJump> RETURN_JUMP = new ThreadLocal<>();
-
-    private IRReturnJump(StaticScope returnScope, DynamicScope scopeToReturnFrom, Object rv) {
-        update(returnScope, scopeToReturnFrom, rv);
+    private IRReturnJump() {
     }
 
     public static IRReturnJump create(StaticScope returnScope, DynamicScope scopeToReturnFrom, Object rv) {
-        IRReturnJump jump = RETURN_JUMP.get();
+        IRReturnJump jump = returnScope.getReturnJump();
         if (jump == null || jump.inUse) {
-            RETURN_JUMP.set(jump = new IRReturnJump(returnScope, scopeToReturnFrom, rv));
-        } else {
-            jump.update(returnScope, scopeToReturnFrom, rv);
+            returnScope.setReturnJump(jump = new IRReturnJump());
         }
+
+        jump.update(returnScope, scopeToReturnFrom, rv);
 
         return jump;
     }

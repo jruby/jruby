@@ -56,6 +56,7 @@ import org.jruby.ast.VCallNode;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
+import org.jruby.ir.runtime.IRReturnJump;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Signature;
@@ -122,6 +123,8 @@ public class StaticScope implements Serializable {
     private volatile MethodHandle constructor;
 
     private volatile Collection<String> ivarNames;
+
+    private ThreadLocal<IRReturnJump> returnJump;
 
     public enum Type {
         LOCAL, BLOCK, EVAL;
@@ -740,5 +743,21 @@ public class StaticScope implements Serializable {
         }
 
         return scope != null && scope.enclosingScope == null;
+    }
+
+    public IRReturnJump getReturnJump() {
+        return getReturnJumpThreadLocal().get();
+    }
+
+    public void setReturnJump(IRReturnJump rj) {
+        getReturnJumpThreadLocal().set(rj);
+    }
+
+    private ThreadLocal<IRReturnJump> getReturnJumpThreadLocal() {
+        ThreadLocal<IRReturnJump> returnJump = this.returnJump;
+        if (returnJump == null) {
+            returnJump = this.returnJump = new ThreadLocal<>();
+        }
+        return returnJump;
     }
 }
