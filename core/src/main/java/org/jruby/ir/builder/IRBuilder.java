@@ -2047,14 +2047,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     void buildFindPattern(Label testEnd, Variable result, Variable deconstructed, U constant, U pre,
                           U[] args, U post, Operand obj, boolean inAlteration, boolean isSinglePattern,
                           Variable errorString) {
-        if (constant != null) {
-            Operand expression = build(constant);
-            addInstr(new EQQInstr(scope, result, build(constant), obj, false, true));
-            if (isSinglePattern) {
-                buildPatternSetEQQError(errorString, result, obj, expression, obj);
-            }
-            cond_ne(testEnd, result, tru());
-        }
+        if (constant != null) buildPatternConstant(testEnd, result, constant, obj, isSinglePattern, errorString);
 
         label("deconstruct_end", deconstructCheck -> {
             cond_ne(deconstructCheck, deconstructed, nil(), () -> {
