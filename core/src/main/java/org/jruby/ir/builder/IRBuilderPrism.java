@@ -69,7 +69,6 @@ import static org.jruby.util.CommonByteLists.*;
 import static org.jruby.util.StringSupport.CR_UNKNOWN;
 
 public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNode, ConstantPathNode, HashPatternNode> {
-    String fileName = null;
     byte[] source;
 
     Nodes.Source nodeSource;
@@ -939,7 +938,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         StaticScope staticScope = createStaticScopeFrom(node.locals, StaticScope.Type.LOCAL);
         staticScope.setSignature(calculateSignature(node.parameters));
         LazyMethodDefinition def = new LazyMethodDefinitionPrism(source, nodeSource, encoding, node);
-        return buildDefn(defineNewMethod(def, node.name.getBytes(), 0, staticScope, true));
+        return buildDefn(defineNewMethod(def, node.name.getBytes(), getLine(node), staticScope, true));
     }
 
     private Operand buildDefs(DefNode node) {
@@ -947,7 +946,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         StaticScope staticScope = createStaticScopeFrom(node.locals, StaticScope.Type.LOCAL);
         staticScope.setSignature(calculateSignature(node.parameters));
         LazyMethodDefinition def = new LazyMethodDefinitionPrism(source, nodeSource, encoding, node);
-        return buildDefs(node.receiver, defineNewMethod(def, node.name.getBytes(), 0, staticScope, false));
+        return buildDefs(node.receiver, defineNewMethod(def, node.name.getBytes(), getLine(node), staticScope, false));
     }
 
     private Operand buildElse(ElseNode node) {
@@ -2530,7 +2529,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     public StaticScope createStaticScopeFrom(RubySymbol[] tokens, StaticScope.Type type) {
-        return createStaticScopeFrom(fileName, tokens, type, staticScope);
+        return createStaticScopeFrom(staticScope.getFile(), tokens, type, staticScope);
     }
 
     public static StaticScope createStaticScopeFrom(String fileName, RubySymbol[] tokens, StaticScope.Type type, StaticScope parent) {
