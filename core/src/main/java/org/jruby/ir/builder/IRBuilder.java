@@ -1668,7 +1668,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         addInstr(new ReturnInstr(bodyReturnValue));
 
         prependUsedImplicitState(null);
-        
+
         computeScopeFlagsFrom(instructions);
         return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
     }
