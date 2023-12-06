@@ -1,5 +1,6 @@
 package org.jruby.ir.builder;
 
+import jnr.ffi.annotations.In;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.EvalType;
@@ -1987,16 +1988,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         int postArgsSize = post == null ? 0 : post.length;
         Operand minArgsCount = new Integer(preArgsSize + postArgsSize);
         Variable length = addResultInstr(new RuntimeHelperCall(intTemp(), ARRAY_LENGTH, new Operand[]{deconstructed}));
-        label("min_args_check_end", minArgsCheck -> {
-            BIntInstr.Op compareOp = rest != null ? BIntInstr.Op.GTE : BIntInstr.Op.EQ;
-            addInstr(new BIntInstr(minArgsCheck, compareOp, length, minArgsCount));
-            if (isSinglePattern) {
-                fcall(errorString, getManager().getObjectClass(), "sprintf",
-                        new FrozenString("%s: %s length mismatch (given %d, expected %d" + (rest != null ? "+" : "") + ")"), deconstructed, deconstructed, as_fixnum(length), as_fixnum(minArgsCount));
-            }
-            addInstr(new CopyInstr(result, fals()));
-            jump(testEnd);
-        });
+
+        buildPatternArrayLengthCheck(testEnd, result, deconstructed, isSinglePattern, errorString, length, minArgsCount, rest != null);
 
         if (preArgsSize > 0) {
             for (int i = 0; i < preArgsSize; i++) {
@@ -2077,15 +2070,12 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
         Variable length = addResultInstr(new RuntimeHelperCall(intTemp(), ARRAY_LENGTH, new Operand[]{deconstructed}));
         int fixedArgsLength = args.length;
-        Operand argsNum = new Integer(fixedArgsLength);
+        Operand minArgsCount = new Integer(fixedArgsLength);
+        boolean hasRest = pre != null || post != null;
 
-        label("size_check_end", sizeCheckEnd -> {
-            addInstr(new BIntInstr(sizeCheckEnd, BIntInstr.Op.LTE, argsNum, length));
-            copy(result, fals());
-            jump(testEnd);
-        });
+        buildPatternArrayLengthCheck(testEnd, result, deconstructed, isSinglePattern, errorString, length, minArgsCount, hasRest);
 
-        Variable limit = addResultInstr(new IntegerMathInstr(SUBTRACT, intTemp(), length, argsNum));
+        Variable limit = addResultInstr(new IntegerMathInstr(SUBTRACT, intTemp(), length, minArgsCount));
         Variable i = copy(new Integer(0));
 
         for_loop(after -> addInstr(new BIntInstr(after, BIntInstr.Op.GT, i, limit)),
@@ -2108,7 +2098,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                     }
 
                     if (post != null && !isBareStar(post)) {
-                        Operand deconstructIndex = addResultInstr(new IntegerMathInstr(ADD, intTemp(), i, argsNum));
+                        Operand deconstructIndex = addResultInstr(new IntegerMathInstr(ADD, intTemp(), i, minArgsCount));
                         Operand deconstructFixnum = as_fixnum(deconstructIndex);
                         Operand lengthFixnum = as_fixnum(length);
                         Operand test = call(temp(), deconstructed, "[]", deconstructFixnum, lengthFixnum);
@@ -2117,6 +2107,19 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                     }
                     jump(after);
                 });
+    }
+
+    private void buildPatternArrayLengthCheck(Label testEnd, Variable result, Variable deconstructed, boolean isSinglePattern, Variable errorString, Variable length, Operand minArgsCount, boolean hasRest) {
+        label("size_check_end", minArgsCheck -> {
+            BIntInstr.Op compareOp = hasRest ? BIntInstr.Op.GTE : BIntInstr.Op.EQ;
+            addInstr(new BIntInstr(minArgsCheck, compareOp, length, minArgsCount));
+            if (isSinglePattern) {
+                fcall(errorString, getManager().getObjectClass(), "sprintf",
+                        new FrozenString("%s: %s length mismatch (given %d, expected %d" + (hasRest ? "+" : "") + ")"), deconstructed, deconstructed, as_fixnum(length), as_fixnum(minArgsCount));
+            }
+            addInstr(new CopyInstr(result, fals()));
+            jump(testEnd);
+        });
     }
 
     private void buildPatternDeconstructRespondTo(Label testEnd, Variable result, Operand obj, boolean isSinglePattern,
