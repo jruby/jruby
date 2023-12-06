@@ -325,7 +325,7 @@ public class Loader {
             case 13:
                 return new Nodes.BlockLocalVariableNode(loadConstant(), startOffset, length);
             case 14:
-                return new Nodes.BlockNode(loadConstants(), loadOptionalNode(), loadOptionalNode(), startOffset, length);
+                return new Nodes.BlockNode(loadConstants(), loadVarUInt(), loadOptionalNode(), loadOptionalNode(), startOffset, length);
             case 15:
                 return new Nodes.BlockParameterNode(loadOptionalConstant(), startOffset, length);
             case 16:
@@ -385,7 +385,7 @@ public class Loader {
             case 43:
                 return new Nodes.ConstantWriteNode(loadConstant(), loadNode(), startOffset, length);
             case 44:
-                return new Nodes.DefNode(buffer.getInt(), loadConstant(), loadOptionalNode(), (Nodes.ParametersNode) loadOptionalNode(), loadOptionalNode(), loadConstants(), startOffset, length);
+                return new Nodes.DefNode(buffer.getInt(), loadConstant(), loadOptionalNode(), (Nodes.ParametersNode) loadOptionalNode(), loadOptionalNode(), loadConstants(), loadVarUInt(), startOffset, length);
             case 45:
                 return new Nodes.DefinedNode(loadNode(), startOffset, length);
             case 46:
@@ -473,7 +473,7 @@ public class Loader {
             case 87:
                 return new Nodes.KeywordRestParameterNode(loadOptionalConstant(), startOffset, length);
             case 88:
-                return new Nodes.LambdaNode(loadConstants(), loadOptionalNode(), loadOptionalNode(), startOffset, length);
+                return new Nodes.LambdaNode(loadConstants(), loadVarUInt(), loadOptionalNode(), loadOptionalNode(), startOffset, length);
             case 89:
                 return new Nodes.LocalVariableAndWriteNode(loadNode(), loadConstant(), loadVarUInt(), startOffset, length);
             case 90:
@@ -587,7 +587,7 @@ public class Loader {
             case 144:
                 return new Nodes.WhileNode(loadNode(), (Nodes.StatementsNode) loadOptionalNode(), loadFlags(), startOffset, length);
             case 145:
-                return new Nodes.XStringNode(loadString(), startOffset, length);
+                return new Nodes.XStringNode(loadFlags(), loadString(), startOffset, length);
             case 146:
                 return new Nodes.YieldNode((Nodes.ArgumentsNode) loadOptionalNode(), startOffset, length);
             default:

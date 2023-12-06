@@ -287,6 +287,60 @@ public abstract class Nodes {
     }
 
     /**
+     * Flags for nodes that have unescaped content.
+     */
+    public static final class EncodingFlags implements Comparable<EncodingFlags> {
+
+        // internal bytes forced the encoding to UTF-8
+        public static final short FORCED_UTF8_ENCODING = 1 << 0;
+
+        // internal bytes forced the encoding to binary
+        public static final short FORCED_BINARY_ENCODING = 1 << 1;
+
+        public static boolean isForcedUtf8Encoding(short flags) {
+            return (flags & FORCED_UTF8_ENCODING) != 0;
+        }
+
+        public static boolean isForcedBinaryEncoding(short flags) {
+            return (flags & FORCED_BINARY_ENCODING) != 0;
+        }
+
+        private final short flags;
+
+        public EncodingFlags(short flags) {
+            this.flags = flags;
+        }
+
+        @Override
+        public int hashCode() {
+            return flags;
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if (!(other instanceof EncodingFlags)) {
+                return false;
+            }
+
+            return flags == ((EncodingFlags) other).flags;
+        }
+
+        @Override
+        public int compareTo(EncodingFlags other) {
+            return flags - other.flags;
+        }
+
+        public boolean isForcedUtf8Encoding() {
+            return (flags & FORCED_UTF8_ENCODING) != 0;
+        }
+
+        public boolean isForcedBinaryEncoding() {
+            return (flags & FORCED_BINARY_ENCODING) != 0;
+        }
+
+    }
+
+    /**
      * Flags for integer nodes that correspond to the base of the integer.
      */
     public static final class IntegerBaseFlags implements Comparable<IntegerBaseFlags> {
@@ -573,8 +627,22 @@ public abstract class Nodes {
      */
     public static final class StringFlags implements Comparable<StringFlags> {
 
+        // internal bytes forced the encoding to UTF-8
+        public static final short FORCED_UTF8_ENCODING = 1 << 0;
+
+        // internal bytes forced the encoding to binary
+        public static final short FORCED_BINARY_ENCODING = 1 << 1;
+
         // frozen by virtue of a `frozen_string_literal` comment
-        public static final short FROZEN = 1 << 0;
+        public static final short FROZEN = 1 << 2;
+
+        public static boolean isForcedUtf8Encoding(short flags) {
+            return (flags & FORCED_UTF8_ENCODING) != 0;
+        }
+
+        public static boolean isForcedBinaryEncoding(short flags) {
+            return (flags & FORCED_BINARY_ENCODING) != 0;
+        }
 
         public static boolean isFrozen(short flags) {
             return (flags & FROZEN) != 0;
@@ -603,6 +671,14 @@ public abstract class Nodes {
         @Override
         public int compareTo(StringFlags other) {
             return flags - other.flags;
+        }
+
+        public boolean isForcedUtf8Encoding() {
+            return (flags & FORCED_UTF8_ENCODING) != 0;
+        }
+
+        public boolean isForcedBinaryEncoding() {
+            return (flags & FORCED_BINARY_ENCODING) != 0;
         }
 
         public boolean isFrozen() {
@@ -1326,14 +1402,16 @@ public abstract class Nodes {
      */
     public static final class BlockNode extends Node {
         public final org.jruby.RubySymbol[] locals;
+        public final int locals_body_index;
         /** optional (can be null) */
         public final Node parameters;
         /** optional (can be null) */
         public final Node body;
 
-        public BlockNode(org.jruby.RubySymbol[] locals, Node parameters, Node body, int startOffset, int length) {
+        public BlockNode(org.jruby.RubySymbol[] locals, int locals_body_index, Node parameters, Node body, int startOffset, int length) {
             super(startOffset, length);
             this.locals = locals;
+            this.locals_body_index = locals_body_index;
             this.parameters = parameters;
             this.body = body;
         }
@@ -1371,6 +1449,10 @@ public abstract class Nodes {
             for (org.jruby.RubySymbol constant : this.locals) {
                 builder.append(nextNextIndent).append('"').append(constant).append('"').append('\n');
             }
+            builder.append(nextIndent);
+            builder.append("locals_body_index: ");
+            builder.append(this.locals_body_index);
+            builder.append('\n');
             builder.append(nextIndent);
             builder.append("parameters: ");
             builder.append(this.parameters == null ? "null\n" : this.parameters.toString(nextIndent));
@@ -3023,8 +3105,9 @@ public abstract class Nodes {
         /** optional (can be null) */
         public final Node body;
         public final org.jruby.RubySymbol[] locals;
+        public final int locals_body_index;
 
-        public DefNode(int serializedLength, org.jruby.RubySymbol name, Node receiver, ParametersNode parameters, Node body, org.jruby.RubySymbol[] locals, int startOffset, int length) {
+        public DefNode(int serializedLength, org.jruby.RubySymbol name, Node receiver, ParametersNode parameters, Node body, org.jruby.RubySymbol[] locals, int locals_body_index, int startOffset, int length) {
             super(startOffset, length);
             this.serializedLength = serializedLength;
             this.name = name;
@@ -3032,6 +3115,7 @@ public abstract class Nodes {
             this.parameters = parameters;
             this.body = body;
             this.locals = locals;
+            this.locals_body_index = locals_body_index;
         }
                 
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
@@ -3083,6 +3167,10 @@ public abstract class Nodes {
             for (org.jruby.RubySymbol constant : this.locals) {
                 builder.append(nextNextIndent).append('"').append(constant).append('"').append('\n');
             }
+            builder.append(nextIndent);
+            builder.append("locals_body_index: ");
+            builder.append(this.locals_body_index);
+            builder.append('\n');
             return builder.toString();
         }
     }
@@ -5411,14 +5499,16 @@ public abstract class Nodes {
      */
     public static final class LambdaNode extends Node {
         public final org.jruby.RubySymbol[] locals;
+        public final int locals_body_index;
         /** optional (can be null) */
         public final Node parameters;
         /** optional (can be null) */
         public final Node body;
 
-        public LambdaNode(org.jruby.RubySymbol[] locals, Node parameters, Node body, int startOffset, int length) {
+        public LambdaNode(org.jruby.RubySymbol[] locals, int locals_body_index, Node parameters, Node body, int startOffset, int length) {
             super(startOffset, length);
             this.locals = locals;
+            this.locals_body_index = locals_body_index;
             this.parameters = parameters;
             this.body = body;
         }
@@ -5456,6 +5546,10 @@ public abstract class Nodes {
             for (org.jruby.RubySymbol constant : this.locals) {
                 builder.append(nextNextIndent).append('"').append(constant).append('"').append('\n');
             }
+            builder.append(nextIndent);
+            builder.append("locals_body_index: ");
+            builder.append(this.locals_body_index);
+            builder.append('\n');
             builder.append(nextIndent);
             builder.append("parameters: ");
             builder.append(this.parameters == null ? "null\n" : this.parameters.toString(nextIndent));
@@ -7914,6 +8008,14 @@ public abstract class Nodes {
             this.unescaped = unescaped;
         }
         
+        public boolean isForcedUtf8Encoding() {
+            return StringFlags.isForcedUtf8Encoding(this.flags);
+        }
+
+        public boolean isForcedBinaryEncoding() {
+            return StringFlags.isForcedBinaryEncoding(this.flags);
+        }
+
         public boolean isFrozen() {
             return StringFlags.isFrozen(this.flags);
         }
@@ -8411,13 +8513,23 @@ public abstract class Nodes {
      *     ^^^^^
      */
     public static final class XStringNode extends Node {
+        public final short flags;
         public final byte[] unescaped;
 
-        public XStringNode(byte[] unescaped, int startOffset, int length) {
+        public XStringNode(short flags, byte[] unescaped, int startOffset, int length) {
             super(startOffset, length);
+            this.flags = flags;
             this.unescaped = unescaped;
         }
-                
+        
+        public boolean isForcedUtf8Encoding() {
+            return EncodingFlags.isForcedUtf8Encoding(this.flags);
+        }
+
+        public boolean isForcedBinaryEncoding() {
+            return EncodingFlags.isForcedBinaryEncoding(this.flags);
+        }
+        
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
         }
 
@@ -8438,6 +8550,10 @@ public abstract class Nodes {
             }
             builder.append('\n');
             String nextIndent = indent + "  ";
+            builder.append(nextIndent);
+            builder.append("flags: ");
+            builder.append(this.flags);
+            builder.append('\n');
             builder.append(nextIndent);
             builder.append("unescaped: ");
             builder.append('"' + new String(this.unescaped, StandardCharsets.UTF_8) + '"');

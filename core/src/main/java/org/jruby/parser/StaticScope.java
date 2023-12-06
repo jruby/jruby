@@ -124,21 +124,6 @@ public class StaticScope implements Serializable {
 
     private volatile Collection<String> ivarNames;
 
-    public int highestNumberedParameter() {
-        if (type != Type.BLOCK) return 0;
-
-        int biggest = 0;
-
-        for (String name: variableNames) {
-            if (name.matches("^_\\d$")) {
-                int tmp = Integer.parseInt(name.substring(1, name.length()));
-                if (tmp > biggest) biggest = tmp;
-            }
-        }
-
-        return biggest;
-    }
-
     public enum Type {
         LOCAL, BLOCK, EVAL;
 

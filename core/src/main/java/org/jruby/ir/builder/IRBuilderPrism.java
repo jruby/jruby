@@ -1,6 +1,7 @@
 package org.jruby.ir.builder;
 
 import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.ParseResult;
 import org.jruby.Ruby;
@@ -581,28 +582,24 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     public void receiveBlockArgs(Node node) {
-        BlockParametersNode parameters = (BlockParametersNode) node;
+        if (node == null) return;
 
-        // FIXME: This is working around prism not providing numeric params as part of parameters.  highestNumberedParameter() and IRClosure.setSignature can be removed after fixed
-        if (parameters == null) {
-            int numberedParamsCount = scope.getStaticScope().highestNumberedParameter();
+        if (node instanceof NumberedParametersNode) {
+            int numberedParamsCount = ((NumberedParametersNode) node).maximum;
 
-            if (numberedParamsCount > 0) {
-                ((IRClosure) scope).setSignature(new Signature(numberedParamsCount, 0, 0, Signature.Rest.NONE, -1, -1, -1));
-                Variable keywords = addResultInstr(new ReceiveKeywordsInstr(temp(), true, true));
+            ((IRClosure) scope).setSignature(new Signature(numberedParamsCount, 0, 0, Signature.Rest.NONE, -1, -1, -1));
+            Variable keywords = addResultInstr(new ReceiveKeywordsInstr(temp(), true, true));
 
-                for (int i = 0; i < numberedParamsCount; i++) {
-                    RubySymbol name = symbol("_" + (i + 1));
-                    addInstr(new ReceivePreReqdArgInstr(argumentResult(name), keywords, i));
-                }
-                addInstr(new CheckArityInstr(numberedParamsCount, 0, false, numberedParamsCount, keywords));
+            for (int i = 0; i < numberedParamsCount; i++) {
+                RubySymbol name = symbol("_" + (i + 1));
+                addInstr(new ReceivePreReqdArgInstr(argumentResult(name), keywords, i));
             }
-
+            addInstr(new CheckArityInstr(numberedParamsCount, 0, false, numberedParamsCount, keywords));
         } else {
             // FIXME: Impl
             //((IRClosure) scope).setArgumentDescriptors(Helpers.argsNodeToArgumentDescriptors(((ArgsNode) args)));
             // FIXME: Missing locals?  Not sure how we handle those but I would have thought with a scope?
-            buildParameters(parameters.parameters);
+            buildParameters(((BlockParametersNode) node).parameters);
         }
     }
 
@@ -640,6 +637,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             }
         } else if (node instanceof SplatNode) {
             // FIXME: we don't work in legacy either?
+        } else if (node instanceof ImplicitRestNode) {
         } else {
             throw notCompilable("Can't build assignment node", node);
         }
@@ -2061,11 +2059,16 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
     private Operand buildString(StringNode node) {
         // FIXME: No code range
+        Encoding encoding = node.isForcedBinaryEncoding() ?
+                ASCIIEncoding.INSTANCE :
+                node.isForcedUtf8Encoding() ?
+                        UTF8Encoding.INSTANCE :
+                        getEncoding();
 
         if (node.isFrozen()) {
-            return new FrozenString(bytelist(node.unescaped), CR_UNKNOWN, scope.getFile(), getLine(node));
+            return new FrozenString(bytelist(node.unescaped, encoding), CR_UNKNOWN, scope.getFile(), getLine(node));
         } else {
-            return new MutableString(bytelist(node.unescaped), CR_UNKNOWN, scope.getFile(), getLine(node));
+            return new MutableString(bytelist(node.unescaped, encoding), CR_UNKNOWN, scope.getFile(), getLine(node));
         }
     }
 
@@ -2490,6 +2493,10 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return new ByteList(bytes);
     }
 
+    private ByteList bytelist(byte[] bytes, Encoding encoding) {
+        return new ByteList(bytes, encoding);
+    }
+
     public static Signature calculateSignature(ParametersNode parameters) {
         if (parameters == null) return Signature.NO_ARGUMENTS;
 
@@ -2511,7 +2518,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         if (parameters instanceof BlockParametersNode) {
             return calculateSignature(((BlockParametersNode) parameters).parameters);
         } else if (parameters instanceof NumberedParametersNode) {
-            return Signature.fromArityValue(((NumberedParametersNode) parameters).maximum);
+            return Signature.from(((NumberedParametersNode) parameters).maximum, 0, 0, 0, 0, Signature.Rest.NONE, -1);
         }
 
         throw notCompilable("Unknown signature for block parameters", parameters);
