@@ -822,7 +822,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             buildArrayPattern(testEnd, result, deconstructed, node.getConstant(), node.getPre(), node.getRestArg(), node.getPost(), value, inAlternation, isSinglePattern, errorString);
         } else if (exprNodes instanceof HashPatternNode) {
             HashPatternNode node = (HashPatternNode) exprNodes;
-            buildHashPattern(testEnd, result, original, deconstructed, node.getConstant(), node.getKeywordArgs(), node.getKeys(), node.getRestArg(), value, inAlternation, isSinglePattern, errorString);
+            buildHashPattern(testEnd, result, deconstructed, node.getConstant(), node.getKeywordArgs(), node.getKeys(), node.getRestArg(), value, inAlternation, isSinglePattern, errorString);
         } else if (exprNodes instanceof FindPatternNode) {
             FindPatternNode node = (FindPatternNode) exprNodes;
             buildFindPattern(testEnd, result, deconstructed, node.getConstant(), node.getPreRestArg(), node.getArgs(), node.getPostRestArg(), value, inAlternation, isSinglePattern, errorString);

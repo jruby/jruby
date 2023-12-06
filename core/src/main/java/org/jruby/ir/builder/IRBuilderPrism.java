@@ -2243,7 +2243,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             HashPatternNode node = (HashPatternNode) exprNodes;
             Node[] keys = getKeys(node);
             Node rest = node.rest != null ? node.rest : getRestFromKeys(node);
-            buildHashPattern(testEnd, result, original, deconstructed, node.constant, node, keys, rest, value, inAlternation, isSinglePattern, errorString);
+            buildHashPattern(testEnd, result, deconstructed, node.constant, node, keys, rest, value, inAlternation, isSinglePattern, errorString);
         } else if (exprNodes instanceof FindPatternNode) {
             getManager().getRuntime().getWarnings().warnExperimental(getFileName(), getLine(exprNodes) + 1,
                     "Find pattern is experimental, and the behavior may change in future versions of Ruby!");

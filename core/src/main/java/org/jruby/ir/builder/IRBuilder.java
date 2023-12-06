@@ -1934,7 +1934,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         return result;
     }
 
-    Variable deconstructHashPatternKeys(Label testEnd, Variable errorString, Operand original, U constantNode, U[] keyNodes, U rest, Variable result,
+    Variable deconstructHashPatternKeys(Label testEnd, Variable errorString, U constantNode, U[] keyNodes, U rest, Variable result,
                                         Operand obj, boolean isSinglePattern) {
         Operand keys;
 
@@ -1952,7 +1952,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
         if (constantNode != null) buildPatternConstant(testEnd, result, constantNode, obj, isSinglePattern, errorString);
 
-        buildPatternDeconstructRespondTo(testEnd, result, original, isSinglePattern, errorString, "deconstruct_keys");
+        buildPatternDeconstructRespondTo(testEnd, result, obj, isSinglePattern, errorString, "deconstruct_keys");
 
         return call(temp(), obj, "deconstruct_keys", keys);
     }
@@ -2028,19 +2028,12 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         Operand expression = build(constant);
         addInstr(new EQQInstr(scope, result, expression, obj, false, true));
         if (isSinglePattern) {
-            buildPatternSetEQQConstantError(errorString, result, obj, expression, obj);
+            buildPatternSetEQQError(errorString, result, obj, expression, obj);
         }
         cond_ne(testEnd, result, tru());
     }
 
     void buildPatternSetEQQError(Variable errorString, Variable result, Operand obj, Operand expression, Operand value) {
-        if (inFindPattern) {
-            buildPatternSetGeneralError(errorString, result, new FrozenString("%s: %s does not match to find pattern"), obj, obj);
-        } else {
-            buildPatternSetEQQConstantError(errorString, result, obj, expression, value);
-        }
-    }
-    void buildPatternSetEQQConstantError(Variable errorString, Variable result, Operand obj, Operand expression, Operand value) {
         buildPatternSetGeneralError(errorString, result, new FrozenString("%s: %s === %s does not return true"), obj, expression, value);
     }
 
@@ -2051,12 +2044,9 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         });
     }
 
-    private boolean inFindPattern = false;
-
     void buildFindPattern(Label testEnd, Variable result, Variable deconstructed, U constant, U pre,
                           U[] args, U post, Operand obj, boolean inAlteration, boolean isSinglePattern,
                           Variable errorString) {
-        inFindPattern = true;
         if (constant != null) buildPatternConstant(testEnd, result, constant, obj, isSinglePattern, errorString);
 
         label("deconstruct_end", deconstructCheck -> {
@@ -2110,7 +2100,6 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                     }
                     jump(after);
                 });
-        inFindPattern = false;
     }
 
     private void buildPatternArrayLengthCheck(Label testEnd, Variable result, Variable deconstructed, boolean isSinglePattern, Variable errorString, Variable length, Operand minArgsCount, boolean hasRest) {
@@ -2130,11 +2119,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                                                   Variable errorString, String methodName) {
         call(result, obj, "respond_to?", new Symbol(symbol(methodName)));
         if (isSinglePattern) {
-            if (inFindPattern && methodName.equals("deconstruct_keys")) {
-                buildPatternSetEQQError(errorString, result, obj, obj, obj);
-            } else {
-                buildPatternSetGeneralError(errorString, result, new FrozenString("%s: %s does not respond to #" + methodName), obj, obj);
-            }
+            buildPatternSetGeneralError(errorString, result, new FrozenString("%s: %s does not respond to #" + methodName), obj, obj);
         }
         cond_ne(testEnd, result, tru());
     }
@@ -2231,11 +2216,11 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     abstract void buildAssocs(Label testEnd, Operand original, Variable result, Z assocs, boolean inAlteration,
                               boolean isSinglePattern, Variable errorString, boolean hasRest, Variable d);
 
-    void buildHashPattern(Label testEnd, Variable result, Operand original, Variable deconstructed, U constant,
+    void buildHashPattern(Label testEnd, Variable result, Variable deconstructed, U constant,
                                   Z assocs, U[] assocsKeys, U rest, Operand obj, boolean inAlteration,
                                   boolean isSinglePattern, Variable errorString) {
         boolean hasRest = rest != null;
-        Variable d = deconstructHashPatternKeys(testEnd, errorString, original, constant, assocsKeys, rest, result, original, isSinglePattern);
+        Variable d = deconstructHashPatternKeys(testEnd, errorString, constant, assocsKeys, rest, result, obj, isSinglePattern);
 
         label("hash_check_end", endHashCheck -> {
             addInstr(new EQQInstr(scope, result, getManager().getHashClass(), d, false, true));
