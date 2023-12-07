@@ -42,8 +42,10 @@ import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.StaticScopeFactory;
+import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.ArgumentType;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -580,20 +582,34 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         }
     }
 
+    private ArgumentDescriptor[] parametersToArgumentDescriptors(NumberedParametersNode node) {
+        ArgumentDescriptor[] descriptors = new ArgumentDescriptor[node.maximum];
+
+        for (int i = 0; i < node.maximum; i++) {
+            descriptors[i] = new ArgumentDescriptor(ArgumentType.req, symbol("_" + i));
+        }
+
+        return descriptors;
+    }
+
+    private Signature parametersToSignature(NumberedParametersNode node) {
+        return new Signature(node.maximum, 0, 0, Signature.Rest.NONE, -1, -1, -1);
+    }
+
     public void receiveBlockArgs(Node node) {
         if (node == null) return;
 
         if (node instanceof NumberedParametersNode) {
-            int numberedParamsCount = ((NumberedParametersNode) node).maximum;
-
-            ((IRClosure) scope).setSignature(new Signature(numberedParamsCount, 0, 0, Signature.Rest.NONE, -1, -1, -1));
+            NumberedParametersNode params = (NumberedParametersNode) node;
+            ((IRClosure) scope).setArgumentDescriptors(parametersToArgumentDescriptors((NumberedParametersNode) node));
+            ((IRClosure) scope).setSignature(parametersToSignature(params));
             Variable keywords = addResultInstr(new ReceiveKeywordsInstr(temp(), true, true));
 
-            for (int i = 0; i < numberedParamsCount; i++) {
+            for (int i = 0; i < params.maximum; i++) {
                 RubySymbol name = symbol("_" + (i + 1));
                 addInstr(new ReceivePreReqdArgInstr(argumentResult(name), keywords, i));
             }
-            addInstr(new CheckArityInstr(numberedParamsCount, 0, false, numberedParamsCount, keywords));
+            addInstr(new CheckArityInstr(params.maximum, 0, false, params.maximum, keywords));
         } else {
             // FIXME: Impl
             //((IRClosure) scope).setArgumentDescriptors(Helpers.argsNodeToArgumentDescriptors(((ArgsNode) args)));
