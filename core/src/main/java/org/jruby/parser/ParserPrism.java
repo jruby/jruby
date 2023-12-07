@@ -4,18 +4,22 @@ import jnr.ffi.LibraryLoader;
 import org.jcodings.Encoding;
 import org.jruby.ParseResult;
 import org.jruby.Ruby;
+import org.jruby.RubyIO;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.management.ParserStats;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.load.LoadServiceResourceInputStream;
 import org.jruby.util.ByteList;
+import org.jruby.util.io.ChannelHelper;
 import org.prism.Nodes;
 
+import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 import static org.jruby.parser.ParserManager.isEval;
+import static org.jruby.parser.ParserManager.isSaveData;
 
 public class ParserPrism extends Parser {
     ParserBindingPrism prismLibrary;
@@ -37,10 +41,10 @@ public class ParserPrism extends Parser {
         byte[] source = content.begin() == 0 ? content.unsafeBytes() : content.bytes();
         byte[] metadata = generateMetadata(fileName, lineNumber, content.getEncoding(), blockScope, flags);
         byte[] serialized = parse(source, sourceLength, metadata);
-        return parseInternal(fileName, blockScope, source, serialized);
+        return parseInternal(fileName, blockScope, source, serialized, flags);
     }
 
-    private ParseResult parseInternal(String fileName, DynamicScope blockScope, byte[] source, byte[] serialized) {
+    private ParseResult parseInternal(String fileName, DynamicScope blockScope, byte[] source, byte[] serialized, int flags) {
         long time = 0;
 
         if (ParserManager.PARSER_TIMING) time = System.nanoTime();
@@ -69,6 +73,13 @@ public class ParserPrism extends Parser {
             throw runtime.newSyntaxError(fileName + ":" + line + ": " + res.errors[0].message);
         }
 
+        if (isSaveData(flags) && res.dataLocation != null) {
+            // Intentionally leaving as original source for offset?
+            ByteArrayInputStream bais = new ByteArrayInputStream(source, 0, source.length);
+            bais.skip(res.dataLocation.startOffset + 8); // FIXME: 8 is for including __END__\n
+            runtime.defineDATA(RubyIO.newIO(runtime, ChannelHelper.readableChannel(bais)));
+        }
+
         ParseResult result = new ParseResultPrism(fileName, source, (Nodes.ProgramNode) res.value, nodeSource, encoding);
         if (blockScope != null) {
             result.getStaticScope().setEnclosingScope(blockScope.getStaticScope());
@@ -83,7 +94,7 @@ public class ParserPrism extends Parser {
         byte[] source = getSourceAsBytes(fileName, in);
         byte[] metadata = generateMetadata(fileName, lineNumber, encoding, blockScope, flags);
         byte[] serialized = parse(source, source.length, metadata);
-        return parseInternal(fileName, blockScope, source, serialized);
+        return parseInternal(fileName, blockScope, source, serialized, flags);
     }
 
 
