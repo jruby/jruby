@@ -45,7 +45,6 @@ import org.jruby.parser.StaticScopeFactory;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.ArgumentType;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -695,7 +694,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         if (callType != CallType.FUNCTIONAL && Options.IR_STRING_FREEZE.load()) {
             // Frozen string optimization: check for "string".freeze
             if (node.receiver instanceof StringNode && (id.equals("freeze") || id.equals("-@"))) {
-                return new FrozenString(bytelist(((StringNode) node.receiver).unescaped), CR_UNKNOWN, scope.getFile(), getLine(node.receiver));
+                return new FrozenString(bytelistFrom((StringNode) node.receiver), CR_UNKNOWN, scope.getFile(), getLine(node.receiver));
             }
         }
 
@@ -975,7 +974,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
     // FIXME: Do we need warn or will YARP provide it.
     private Operand buildFloat(FloatNode node) {
-        String number = byteListFrom(node).toString();
+        String number = bytelistFrom(node).toString();
         double d;
         try {
             d = SafeDoubleParser.parseDouble(number);
@@ -1377,7 +1376,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
     private Operand buildInteger(IntegerNode node) {
         // FIXME: HAHAHAH horrible hack around integer being too much postprocessing.
-        ByteList value = byteListFrom(node);
+        ByteList value = bytelistFrom(node);
         int base = node.isDecimal() ? 10 : node.isOctal() ? 8 : node.isHexadecimal() ? 16 : 2;
         RubyInteger number = RubyNumeric.str2inum(getManager().runtime, getManager().getRuntime().newString(value), base);
 
@@ -1663,7 +1662,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
     private Operand buildRational(RationalNode node) {
         if (node.numeric instanceof FloatNode) {
-            BigDecimal bd = new BigDecimal(byteListFrom(node.numeric).toString());
+            BigDecimal bd = new BigDecimal(bytelistFrom(node.numeric).toString());
             BigDecimal denominator = BigDecimal.ONE.scaleByPowerOfTen(bd.scale());
             BigDecimal numerator = bd.multiply(denominator);
 
@@ -1746,12 +1745,12 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return addResultInstr(new BuildSplatInstr(temp(), value, true));
     }
 
-    public Operand buildStrRaw(StringNode node) {
-        // FIXME: need coderange.
+    private Operand buildString(StringNode node) {
+        // FIXME: No code range
         if (node.isFrozen()) {
-            return new FrozenString(bytelist(node.unescaped), CR_UNKNOWN, scope.getFile(), getLine(node));
+            return new FrozenString(bytelistFrom(node), CR_UNKNOWN, scope.getFile(), getLine(node));
         } else {
-            return new MutableString(bytelist(node.unescaped), CR_UNKNOWN, scope.getFile(), getLine(node));
+            return new MutableString(bytelistFrom(node), CR_UNKNOWN, scope.getFile(), getLine(node));
         }
     }
 
@@ -1860,7 +1859,8 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             // FIXME: missing EmbddedVariableNode.
             if (pieceNode instanceof StringNode) {
                 piece = buildString((StringNode) pieceNode);
-                estimatedSize = bytelist(((StringNode) pieceNode).unescaped).realSize();
+                // FIXME: we have this in piece but is it always frozen or non-frozen?
+                estimatedSize = bytelistFrom((StringNode) pieceNode).realSize();
             } else if (pieceNode instanceof EmbeddedStatementsNode) {
                 if (scope.maybeUsingRefinements()) {
                     // refined asString must still go through dispatch
@@ -2079,21 +2079,6 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return result == null ? nil() : result;
     }
 
-    private Operand buildString(StringNode node) {
-        // FIXME: No code range
-        Encoding encoding = node.isForcedBinaryEncoding() ?
-                ASCIIEncoding.INSTANCE :
-                node.isForcedUtf8Encoding() ?
-                        UTF8Encoding.INSTANCE :
-                        getEncoding();
-
-        if (node.isFrozen()) {
-            return new FrozenString(bytelist(node.unescaped, encoding), CR_UNKNOWN, scope.getFile(), getLine(node));
-        } else {
-            return new MutableString(bytelist(node.unescaped, encoding), CR_UNKNOWN, scope.getFile(), getLine(node));
-        }
-    }
-
     @Override
     void buildWhenArgs(WhenNode whenNode, Operand testValue, Label bodyLabel, Set<IRubyObject> seenLiterals) {
         Variable eqqResult = temp();
@@ -2233,7 +2218,8 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
     @Override
     Operand frozen_string(Node node) {
-        return buildStrRaw((StringNode) node);
+        // FIXME: this + isStringLiteral might need to change.
+        return buildString((StringNode) node);
     }
 
     @Override
@@ -2450,7 +2436,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         } else if (node instanceof SymbolNode) {
             return symbol(((SymbolNode) node).unescaped);
         } else if (node instanceof StringNode) {
-            return runtime.newString((bytelist(((StringNode) node).unescaped)));
+            return runtime.newString((bytelistFrom((StringNode) node)));
         }
 
         return null;
@@ -2507,16 +2493,22 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return false;
     }
 
-    private ByteList byteListFrom(Node node) {
+    private ByteList bytelistFrom(StringNode node) {
+        Encoding encoding = node.isForcedBinaryEncoding() ?
+                ASCIIEncoding.INSTANCE :
+                node.isForcedUtf8Encoding() ?
+                        UTF8Encoding.INSTANCE :
+                        getEncoding();
+
+        return new ByteList(node.unescaped, encoding);
+    }
+
+    private ByteList bytelistFrom(Node node) {
         return new ByteList(source, node.startOffset, node.length);
     }
 
     private ByteList bytelist(byte[] bytes) {
         return new ByteList(bytes);
-    }
-
-    private ByteList bytelist(byte[] bytes, Encoding encoding) {
-        return new ByteList(bytes, encoding);
     }
 
     public static Signature calculateSignature(ParametersNode parameters) {
