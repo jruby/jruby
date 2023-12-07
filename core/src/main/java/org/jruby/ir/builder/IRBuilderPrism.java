@@ -6,7 +6,9 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.ParseResult;
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
+import org.jruby.RubyFloat;
 import org.jruby.RubyInteger;
+import org.jruby.RubyKernel;
 import org.jruby.RubyNumeric;
 import org.jruby.RubySymbol;
 import org.jruby.compiler.NotCompilableException;
@@ -48,6 +50,7 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.ConvertBytes;
 import org.jruby.util.DefinedMessage;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
@@ -63,6 +66,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import static jnr.a64asm.InstructionGroup.exception;
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 import static org.jruby.runtime.CallType.VARIABLE;
 import static org.jruby.runtime.ThreadContext.*;
@@ -975,16 +979,12 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     // FIXME: Do we need warn or will YARP provide it.
     private Operand buildFloat(FloatNode node) {
         String number = bytelistFrom(node).toString();
-        double d;
-        try {
-            d = SafeDoubleParser.parseDouble(number);
-        } catch (NumberFormatException e) {
-            //warnings.warn(IRubyWarnings.ID.FLOAT_OUT_OF_RANGE, getFile(), ruby_sourceline, "Float " + number + " out of range.");
 
-            d = number.startsWith("-") ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
-        }
+        // FIXME: This is very expensive but numeric values is still be decided in Prism.
+        IRubyObject fl = RubyKernel.new_float(getManager().getRuntime().getCurrentContext(),
+                getManager().getRuntime().newString(number), false);
 
-        return new Float(d);
+        return new Float(((RubyFloat) fl).getDoubleValue());
     }
 
     private Operand buildFor(ForNode node) {
@@ -1378,10 +1378,20 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         // FIXME: HAHAHAH horrible hack around integer being too much postprocessing.
         ByteList value = bytelistFrom(node);
         int base = node.isDecimal() ? 10 : node.isOctal() ? 8 : node.isHexadecimal() ? 16 : 2;
-        RubyInteger number = RubyNumeric.str2inum(getManager().runtime, getManager().getRuntime().newString(value), base);
+        int length = value.length();
+        ByteList sanitizedValue = new ByteList(length);
+
+        // Something wrong with str2inum not working due to '_'.  Work around for now.
+        for (int i = 0; i < length; i++) {
+            int c = value.get(i);
+            if (c == '_') continue;
+            sanitizedValue.append(c);
+        }
+
+        IRubyObject number = RubyNumeric.str2inum(getManager().runtime, getManager().getRuntime().newString(sanitizedValue), base, false, false);
 
         return number instanceof RubyBignum ?
-                new Bignum(number.getBigIntegerValue()) :
+                new Bignum(((RubyBignum) number).getBigIntegerValue()) :
                 fix(RubyNumeric.fix2long(number));
     }
 
