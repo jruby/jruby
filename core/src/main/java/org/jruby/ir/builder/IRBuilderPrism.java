@@ -2205,6 +2205,9 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     // FIXME: needs to derive this walking down tree.
     @Override
     boolean containsVariableAssignment(Node node) {
+        if (node instanceof LocalVariableWriteNode) {
+            return true;
+        }
         return false;
     }
 

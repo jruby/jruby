@@ -1542,7 +1542,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
         if (variable != value) copy(variable, value);  // no use copying a variable to itself
 
-        return value;
+        return variable;
 
         // IMPORTANT: The return value of this method is value, not var!
         //
