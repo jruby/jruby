@@ -611,10 +611,10 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             }
             addInstr(new CheckArityInstr(params.maximum, 0, false, params.maximum, keywords));
         } else {
-            // FIXME: Impl
-            //((IRClosure) scope).setArgumentDescriptors(Helpers.argsNodeToArgumentDescriptors(((ArgsNode) args)));
             // FIXME: Missing locals?  Not sure how we handle those but I would have thought with a scope?
             buildParameters(((BlockParametersNode) node).parameters);
+
+            ((IRClosure) scope).setArgumentDescriptors(createArgumentDescriptor());
         }
     }
 
@@ -1620,7 +1620,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
                 type = ArgumentType.keyrest;
             }
 
-            if (scope instanceof IRMethod) addArgumentDescription(type , key);
+            addArgumentDescription(type, key);
 
             addInstr(new ReceiveKeywordRestArgInstr(getNewLocalVariable(key, 0), keywords));
         }
@@ -1630,21 +1630,23 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
     private void buildKeywordParameter(Variable keywords, RubySymbol key, Node value) {
         boolean isOptional = value != null;
-        Variable av = getNewLocalVariable(key, 0);
-        Label l = getNewLabel();
-        if (scope instanceof IRMethod) addKeyArgDesc(key, isOptional);
-        addInstr(new ReceiveKeywordArgInstr(av, keywords, key));
-        addInstr(BNEInstr.create(l, av, UndefinedValue.UNDEFINED)); // if 'av' is not undefined, we are done
+        addKeyArgDesc(key, isOptional);
 
-        if (isOptional) {
-            addInstr(new CopyInstr(av, nil())); // wipe out undefined value with nil
-            // FIXME: this is performing extra copy but something is generating a temp and not using local if we pass it to build
-            copy(av, build(value));
-        } else {
-            addInstr(new RaiseRequiredKeywordArgumentError(key));
-        }
+        label("kw_param_end", (end) -> {
+            Variable av = getNewLocalVariable(key, 0);
 
-        addInstr(new LabelInstr(l));
+            addInstr(new ReceiveKeywordArgInstr(av, keywords, key));
+            addInstr(BNEInstr.create(end, av, UndefinedValue.UNDEFINED)); // if 'av' is not undefined, we are done
+
+            if (isOptional) {
+                // FIXME: I think this first nil out is not needed based on second copy
+                addInstr(new CopyInstr(av, nil())); // wipe out undefined value with nil
+                // FIXME: this is performing extra copy but something is generating a temp and not using local if we pass it to build
+                copy(av, build(value));
+            } else {
+                addInstr(new RaiseRequiredKeywordArgumentError(key));
+            }
+        });
     }
 
     private Operand buildPostExecution(PostExecutionNode node) {
@@ -1900,7 +1902,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             // FIXME: Handle bare '&' case?
             RubySymbol name = blockArg.name == null ? symbol(FWD_BLOCK) : blockArg.name;
             Variable blockVar = argumentResult(name);
-            if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.block, name);
+            addArgumentDescription(ArgumentType.block, name);
             Variable tmp = temp();
             addInstr(new LoadImplicitClosureInstr(tmp));
             addInstr(new ReifyClosureInstr(blockVar, tmp));
@@ -1954,7 +1956,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
                 OptionalParameterNode optArg = (OptionalParameterNode) opts[j];
                 RubySymbol argName = optArg.name;
                 Variable argVar = argumentResult(argName);
-                if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.opt, argName);
+                addArgumentDescription(ArgumentType.opt, argName);
                 // You need at least required+j+1 incoming args for this opt arg to get an arg at all
                 addInstr(new ReceiveOptArgInstr(argVar, keywords, j, requiredCount, preCount));
                 addInstr(BNEInstr.create(variableAssigned, argVar, UndefinedValue.UNDEFINED));
@@ -1979,10 +1981,10 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
                     // FIXME: how do we annotate generated AST types to have isAnonymous etc...
                 if (restArg.name == null) {
                     argName = symbol("*");
-                    if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.anonrest, argName);
+                    addArgumentDescription(ArgumentType.anonrest, argName);
                 } else {
                     argName = restArg.name;
-                    if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.rest, argName);
+                    addArgumentDescription(ArgumentType.rest, argName);
                 }
             } else { // ImplicitRestNode  (*,)
                 argName = null;
@@ -2006,13 +2008,13 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         if (node instanceof RequiredParameterNode) { // methods
             RubySymbol name = ((RequiredParameterNode) node).name;
 
-            if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.req, name);
+            addArgumentDescription(ArgumentType.req, name);
 
             addInstr(new ReceivePreReqdArgInstr(argumentResult(name), keywords, argIndex));
         } else if (node instanceof MultiTargetNode) { // methods
             Variable v = temp();
             addInstr(new ReceivePreReqdArgInstr(v, keywords, argIndex));
-            if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.anonreq, null);
+            addArgumentDescription(ArgumentType.anonreq, null);
             Variable rhs = addResultInstr(new ToAryInstr(temp(), v));
             buildMultiAssignment(((MultiTargetNode) node).lefts, ((MultiTargetNode) node).rest, ((MultiTargetNode) node).rights, rhs);
         } else if (node instanceof ClassVariableTargetNode) {  // blocks/for
@@ -2039,14 +2041,14 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         if (node instanceof RequiredParameterNode) {
             RubySymbol argName = ((RequiredParameterNode) node).name;
 
-            if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.req, argName);
+            addArgumentDescription(ArgumentType.req, argName);
 
             addInstr(new ReceivePostReqdArgInstr(argumentResult(argName), keywords, argIndex, preCount, optCount, hasRest, postCount));
         } else if (node instanceof MultiTargetNode) {
             Variable v = temp();
             addInstr(new ReceivePostReqdArgInstr(v, keywords, argIndex, preCount, optCount, hasRest, postCount));
 
-            if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.anonreq, null);
+            addArgumentDescription(ArgumentType.anonreq, null);
 
             Variable tmp = temp();
             addInstr(new ToAryInstr(tmp, v));
