@@ -589,7 +589,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         ArgumentDescriptor[] descriptors = new ArgumentDescriptor[node.maximum];
 
         for (int i = 0; i < node.maximum; i++) {
-            descriptors[i] = new ArgumentDescriptor(ArgumentType.req, symbol("_" + i));
+            descriptors[i] = new ArgumentDescriptor(ArgumentType.req, symbol("_" + (i + 1)));
         }
 
         return descriptors;
