@@ -1567,15 +1567,20 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             return;
         }
 
-        // FIXME: I think we are missing argument descriptor for both builders and ...
         if (parameters.keyword_rest instanceof ForwardingParameterNode) {
             Variable keywords = addResultInstr(new ReceiveKeywordsInstr(temp(), true, true));
-            addInstr(new ReceiveRestArgInstr(argumentResult(symbol(FWD_REST)), keywords, 0, 0));
-            ArgumentType type = ArgumentType.anonkeyrest;         // FIXME: Missing arg descriptor for ... to methods???
-            addInstr(new ReceiveKeywordRestArgInstr(argumentResult(symbol(FWD_KWREST)), keywords));
-            Variable blockVar = argumentResult(symbol(FWD_BLOCK));
+            RubySymbol restName = symbol(FWD_REST);
+            RubySymbol kwrestName = symbol(FWD_KWREST);
+            RubySymbol blockName = symbol(FWD_BLOCK);
+            addInstr(new ReceiveRestArgInstr(argumentResult(restName), keywords, 0, 0));
+            addInstr(new ReceiveKeywordRestArgInstr(argumentResult(kwrestName), keywords));
+            Variable blockVar = argumentResult(blockName);
             Variable tmp = addResultInstr(new LoadImplicitClosureInstr(temp()));
             addInstr(new ReifyClosureInstr(blockVar, tmp));
+
+            addArgumentDescription(ArgumentType.rest, restName);
+            addArgumentDescription(ArgumentType.keyrest, kwrestName);
+            addArgumentDescription(ArgumentType.block, blockName);
 
             return;
         }
