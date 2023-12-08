@@ -30,6 +30,15 @@ namespace :spec do
   end
 
   desc "Run fast specs that do not spawn many subprocesses"
+  task :'ruby:fast:prism' do
+    mspec :compile_mode => "OFF",
+          :format => MSPEC_FORMAT,
+          :spec_target => ":fast",
+          :jruby_opts => "--dev -Xparser.prism",
+          :spec_config => "spec/jruby.mspec"
+  end
+  
+  desc "Run fast specs that do not spawn many subprocesses"
   task :'ruby:fast:jit' do
     mspec :compile_mode => "JIT",
           :jit_threshold => 0,
