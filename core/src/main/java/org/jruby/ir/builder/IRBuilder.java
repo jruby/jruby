@@ -2,6 +2,8 @@ package org.jruby.ir.builder;
 
 import jnr.ffi.annotations.In;
 import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.EvalType;
 import org.jruby.ParseResult;
@@ -42,6 +44,7 @@ import org.jruby.util.DefinedMessage;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.cli.Options;
+import org.jruby.util.io.EncodingUtils;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -931,8 +934,22 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     RubySymbol symbol(byte[] bytes) {
-        // FIXME: should be iso8859_1 and not charset java string.
-        return symbol(new String(bytes));
+        boolean isUSASCII = hackCheckUSASCII(bytes);
+        Encoding encoding = isUSASCII ? USASCIIEncoding.INSTANCE :                    // always prefer US-ASCII
+                getEncoding() == USASCIIEncoding.INSTANCE ? ASCIIEncoding.INSTANCE :  // whoops binary in US-ASCII file
+                        getEncoding();                                                // use general encoding
+
+        ByteList byteList = new ByteList(bytes, encoding);
+
+        return symbol(byteList);
+    }
+
+    private boolean hackCheckUSASCII(byte[] bytes) {
+        for (int i = 0; i < bytes.length; i++) {
+            if (bytes[i] < 0) return false;
+        }
+
+        return true;
     }
 
     RubySymbol symbol(String id) {

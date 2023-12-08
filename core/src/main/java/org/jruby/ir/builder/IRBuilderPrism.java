@@ -1395,12 +1395,11 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildInterpolatedString(Variable result, InterpolatedStringNode node) {
-        // FIXME: Missing encoding, frozen
+        // FIXME: frozen?
         return buildDStr(result, node.parts, getEncoding(), false, getLine(node));
     }
 
     private Operand buildInterpolatedSymbol(Variable result, InterpolatedSymbolNode node) {
-        // FIXME: Missing encoding
         return buildDSymbol(result, node.parts, getEncoding(), getLine(node));
     }
 
