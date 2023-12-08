@@ -595,17 +595,12 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return descriptors;
     }
 
-    private Signature parametersToSignature(NumberedParametersNode node) {
-        return new Signature(node.maximum, 0, 0, Signature.Rest.NONE, -1, -1, -1);
-    }
-
     public void receiveBlockArgs(Node node) {
         if (node == null) return;
 
         if (node instanceof NumberedParametersNode) {
             NumberedParametersNode params = (NumberedParametersNode) node;
             ((IRClosure) scope).setArgumentDescriptors(parametersToArgumentDescriptors((NumberedParametersNode) node));
-            ((IRClosure) scope).setSignature(parametersToSignature(params));
             Variable keywords = addResultInstr(new ReceiveKeywordsInstr(temp(), true, true));
 
             for (int i = 0; i < params.maximum; i++) {
@@ -2530,13 +2525,18 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         int pre = parameters.requireds.length;
         int opt = parameters.optionals.length;
         int post = parameters.posts.length;
-        int kws = parameters.keywords.length;
+        int keywords = parameters.keywords.length;
         // FIXME: this needs more than norm
         Signature.Rest rest = parameters.rest == null ? Signature.Rest.NONE : Signature.Rest.NORM;
 
-        int keywordRestIndex = parameters.keyword_rest == null ? -1 : pre + opt + post + kws;
-        // FIXME: need to diff opt kws vs req kws
-        return new Signature(pre, opt, post, rest, kws, kws, keywordRestIndex);
+        int requiredKeywords = 0;
+        if (keywords > 0) {
+            for (int i = 0; i < parameters.keywords.length; i++) {
+                if (parameters.keywords[i] instanceof RequiredKeywordParameterNode) requiredKeywords++;
+            }
+        }
+        int keywordRestIndex = parameters.keyword_rest == null ? -1 : pre + opt + post + keywords;
+        return Signature.from(pre, opt, post, keywords, requiredKeywords, rest, keywordRestIndex);
     }
 
     private Signature calculateSignature(Node parameters) {
