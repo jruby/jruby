@@ -129,6 +129,17 @@ public class RubyException extends RubyObject {
         return ((RubyClass) recv).newInstance(context, args, block);
     }
 
+    @JRubyMethod(name = "to_tty?", meta = true)
+    public static IRubyObject to_tty_p(ThreadContext context, IRubyObject recv) {
+        Ruby runtime = context.runtime;
+        IRubyObject stderr = runtime.getGlobalVariables().get("$stderr");
+        IRubyObject STDERR = runtime.getObject().getConstant("STDERR");
+        if (equalInternal(context, stderr, STDERR)) {
+            return ((RubyIO) STDERR).tty_p(context);
+        }
+        return context.fals;
+    }
+
     @JRubyMethod(name = "===", meta = true)
     public static IRubyObject op_eqq(ThreadContext context, IRubyObject recv, IRubyObject other) {
         Ruby runtime = context.runtime;
