@@ -68,6 +68,7 @@ import static org.jruby.runtime.CallType.VARIABLE;
 import static org.jruby.runtime.ThreadContext.*;
 import static org.jruby.util.CommonByteLists.*;
 import static org.jruby.util.StringSupport.CR_UNKNOWN;
+import static org.jruby.util.StringSupport.positionEndForScan;
 
 public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNode, ConstantPathNode, HashPatternNode> {
     byte[] source;
@@ -1633,6 +1634,29 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         }
 
         receiveBlockArg(parameters.block);
+
+        // FIXME: we calc signature earlier why do we do this again?  (for Prism and AST)
+        int preCount = parameters.requireds.length;
+        int optCount = parameters.optionals.length;
+        int keywordsCount = parameters.keywords.length;
+        int postCount = parameters.posts.length;
+        int keyRest = parameters.keyword_rest == null ? -1 : preCount + optCount + postCount + keywordsCount;
+        int requiredCount = preCount + postCount;
+
+        // For closures, we don't need the check arity call
+        if (scope instanceof IRMethod) {
+            // Expensive to do this explicitly?  But, two advantages:
+            // (a) on inlining, we'll be able to get rid of these checks in almost every case.
+            // (b) compiler to bytecode will anyway generate this and this is explicit.
+            // For now, we are going explicit instruction route.
+            // But later, perhaps can make this implicit in the method setup preamble?
+
+            addInstr(new CheckArityInstr(requiredCount, optCount, hasRest, keyRest, keywords));
+        } else if (scope instanceof IRClosure && hasKeywords) {
+            // FIXME: This is added to check for kwargs correctness but bypass regular correctness.
+            // Any other arity checking currently happens within Java code somewhere (RubyProc.call?)
+            addInstr(new CheckArityInstr(requiredCount, optCount, hasRest, keyRest, keywords));
+        }
     }
 
     private void buildKeywordParameter(Variable keywords, RubySymbol key, Node value) {
@@ -1949,28 +1973,8 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         int preCount = args.requireds.length;
         int optCount = args.optionals.length;
         boolean hasRest = args.rest != null;
-        int keywordsCount = args.keywords.length;
-        int keyRest = preCount + optCount; // FIXME: I think this is ok?
         int postCount = args.posts.length;
         int requiredCount = preCount + postCount;
-
-        // FIXME: setSignature here since YARP is not doing this during parse
-        //Signature signature = scope.getStaticScope().getSignature();
-
-        // For closures, we don't need the check arity call
-        if (scope instanceof IRMethod) {
-            // Expensive to do this explicitly?  But, two advantages:
-            // (a) on inlining, we'll be able to get rid of these checks in almost every case.
-            // (b) compiler to bytecode will anyway generate this and this is explicit.
-            // For now, we are going explicit instruction route.
-            // But later, perhaps can make this implicit in the method setup preamble?
-
-            addInstr(new CheckArityInstr(requiredCount, optCount, hasRest, keyRest, keywords));
-        } else if (scope instanceof IRClosure && hasKeywords) {
-            // FIXME: This is added to check for kwargs correctness but bypass regular correctness.
-            // Any other arity checking currently happens within Java code somewhere (RubyProc.call?)
-            addInstr(new CheckArityInstr(requiredCount, optCount, hasRest, keyRest, keywords));
-        }
 
         // Other args begin at index 0
         int argIndex = 0;
