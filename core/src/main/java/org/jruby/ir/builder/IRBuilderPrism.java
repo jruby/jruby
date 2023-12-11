@@ -2,13 +2,11 @@ package org.jruby.ir.builder;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
-import org.jcodings.specific.EUCJPEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.ParseResult;
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyFloat;
-import org.jruby.RubyInteger;
 import org.jruby.RubyKernel;
 import org.jruby.RubyNumeric;
 import org.jruby.RubySymbol;
@@ -51,14 +49,11 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.ConvertBytes;
 import org.jruby.util.DefinedMessage;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
-import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
-import org.jruby.util.io.EncodingUtils;
 import org.prism.Nodes;
 import org.prism.Nodes.*;
 import org.jruby.parser.ParseResultPrism;
@@ -68,7 +63,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import static jnr.a64asm.InstructionGroup.exception;
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 import static org.jruby.runtime.CallType.VARIABLE;
 import static org.jruby.runtime.ThreadContext.*;
@@ -463,9 +457,11 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     public void buildAssignment(Node node, Operand rhsVal) {
         if (node == null) return; // case of 'a, = something'
 
-        if (node instanceof CallNode) {
-            Node[] arguments = ((CallNode) node).arguments == null ? Node.EMPTY_ARRAY : ((CallNode) node).arguments.arguments;
-            buildAttrAssignAssignment(((CallNode) node).receiver, ((CallNode) node).name, arguments, rhsVal);
+        if (node instanceof CallTargetNode) {
+            buildAttrAssignAssignment(((CallTargetNode) node).receiver, ((CallTargetNode) node).name, Node.EMPTY_ARRAY, rhsVal);
+        } else if (node instanceof IndexTargetNode) {
+            Node[] arguments = ((IndexTargetNode) node).arguments == null ? Node.EMPTY_ARRAY : ((IndexTargetNode) node).arguments.arguments;
+            buildAttrAssignAssignment(((IndexTargetNode) node).receiver, symbol("[]="), arguments, rhsVal);
         } else if (node instanceof ClassVariableTargetNode) {
             addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), ((ClassVariableTargetNode) node).name, rhsVal));
         } else if (node instanceof ConstantPathTargetNode) {

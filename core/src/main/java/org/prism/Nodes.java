@@ -348,11 +348,11 @@ public abstract class Nodes {
         // 0b prefix
         public static final short BINARY = 1 << 0;
 
-        // 0o or 0 prefix
-        public static final short OCTAL = 1 << 1;
-
         // 0d or no prefix
-        public static final short DECIMAL = 1 << 2;
+        public static final short DECIMAL = 1 << 1;
+
+        // 0o or 0 prefix
+        public static final short OCTAL = 1 << 2;
 
         // 0x prefix
         public static final short HEXADECIMAL = 1 << 3;
@@ -361,12 +361,12 @@ public abstract class Nodes {
             return (flags & BINARY) != 0;
         }
 
-        public static boolean isOctal(short flags) {
-            return (flags & OCTAL) != 0;
-        }
-
         public static boolean isDecimal(short flags) {
             return (flags & DECIMAL) != 0;
+        }
+
+        public static boolean isOctal(short flags) {
+            return (flags & OCTAL) != 0;
         }
 
         public static boolean isHexadecimal(short flags) {
@@ -402,12 +402,12 @@ public abstract class Nodes {
             return (flags & BINARY) != 0;
         }
 
-        public boolean isOctal() {
-            return (flags & OCTAL) != 0;
-        }
-
         public boolean isDecimal() {
             return (flags & DECIMAL) != 0;
+        }
+
+        public boolean isOctal() {
+            return (flags & OCTAL) != 0;
         }
 
         public boolean isHexadecimal() {
@@ -531,6 +531,15 @@ public abstract class Nodes {
         // u - forces the UTF-8 encoding
         public static final short UTF_8 = 1 << 7;
 
+        // internal bytes forced the encoding to UTF-8
+        public static final short FORCED_UTF8_ENCODING = 1 << 8;
+
+        // internal bytes forced the encoding to binary
+        public static final short FORCED_BINARY_ENCODING = 1 << 9;
+
+        // internal bytes forced the encoding to US-ASCII
+        public static final short FORCED_US_ASCII_ENCODING = 1 << 10;
+
         public static boolean isIgnoreCase(short flags) {
             return (flags & IGNORE_CASE) != 0;
         }
@@ -561,6 +570,18 @@ public abstract class Nodes {
 
         public static boolean isUtf8(short flags) {
             return (flags & UTF_8) != 0;
+        }
+
+        public static boolean isForcedUtf8Encoding(short flags) {
+            return (flags & FORCED_UTF8_ENCODING) != 0;
+        }
+
+        public static boolean isForcedBinaryEncoding(short flags) {
+            return (flags & FORCED_BINARY_ENCODING) != 0;
+        }
+
+        public static boolean isForcedUsAsciiEncoding(short flags) {
+            return (flags & FORCED_US_ASCII_ENCODING) != 0;
         }
 
         private final short flags;
@@ -618,6 +639,18 @@ public abstract class Nodes {
 
         public boolean isUtf8() {
             return (flags & UTF_8) != 0;
+        }
+
+        public boolean isForcedUtf8Encoding() {
+            return (flags & FORCED_UTF8_ENCODING) != 0;
+        }
+
+        public boolean isForcedBinaryEncoding() {
+            return (flags & FORCED_BINARY_ENCODING) != 0;
+        }
+
+        public boolean isForcedUsAsciiEncoding() {
+            return (flags & FORCED_US_ASCII_ENCODING) != 0;
         }
 
     }
@@ -683,6 +716,71 @@ public abstract class Nodes {
 
         public boolean isFrozen() {
             return (flags & FROZEN) != 0;
+        }
+
+    }
+
+    /**
+     * Flags for symbol nodes.
+     */
+    public static final class SymbolFlags implements Comparable<SymbolFlags> {
+
+        // internal bytes forced the encoding to UTF-8
+        public static final short FORCED_UTF8_ENCODING = 1 << 0;
+
+        // internal bytes forced the encoding to binary
+        public static final short FORCED_BINARY_ENCODING = 1 << 1;
+
+        // internal bytes forced the encoding to US-ASCII
+        public static final short FORCED_US_ASCII_ENCODING = 1 << 2;
+
+        public static boolean isForcedUtf8Encoding(short flags) {
+            return (flags & FORCED_UTF8_ENCODING) != 0;
+        }
+
+        public static boolean isForcedBinaryEncoding(short flags) {
+            return (flags & FORCED_BINARY_ENCODING) != 0;
+        }
+
+        public static boolean isForcedUsAsciiEncoding(short flags) {
+            return (flags & FORCED_US_ASCII_ENCODING) != 0;
+        }
+
+        private final short flags;
+
+        public SymbolFlags(short flags) {
+            this.flags = flags;
+        }
+
+        @Override
+        public int hashCode() {
+            return flags;
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if (!(other instanceof SymbolFlags)) {
+                return false;
+            }
+
+            return flags == ((SymbolFlags) other).flags;
+        }
+
+        @Override
+        public int compareTo(SymbolFlags other) {
+            return flags - other.flags;
+        }
+
+        public boolean isForcedUtf8Encoding() {
+            return (flags & FORCED_UTF8_ENCODING) != 0;
+        }
+
+        public boolean isForcedBinaryEncoding() {
+            return (flags & FORCED_BINARY_ENCODING) != 0;
+        }
+
+        public boolean isForcedUsAsciiEncoding() {
+            return (flags & FORCED_US_ASCII_ENCODING) != 0;
         }
 
     }
@@ -886,13 +984,13 @@ public abstract class Nodes {
      *            ^^^^^^^^^^^^^
      */
     public static final class ArgumentsNode extends Node {
-        public final Node[] arguments;
         public final short flags;
+        public final Node[] arguments;
 
-        public ArgumentsNode(Node[] arguments, short flags, int startOffset, int length) {
+        public ArgumentsNode(short flags, Node[] arguments, int startOffset, int length) {
             super(startOffset, length);
-            this.arguments = arguments;
             this.flags = flags;
+            this.arguments = arguments;
         }
         
         public boolean isContainsKeywordSplat() {
@@ -924,15 +1022,15 @@ public abstract class Nodes {
             String nextIndent = indent + "  ";
             String nextNextIndent = nextIndent + "  ";
             builder.append(nextIndent);
+            builder.append("flags: ");
+            builder.append(this.flags);
+            builder.append('\n');
+            builder.append(nextIndent);
             builder.append("arguments: ");
             builder.append('\n');
             for (Node child : this.arguments) {
                 builder.append(nextNextIndent).append(child.toString(nextNextIndent));
             }
-            builder.append(nextIndent);
-            builder.append("flags: ");
-            builder.append(this.flags);
-            builder.append('\n');
             return builder.toString();
         }
     }
@@ -945,13 +1043,13 @@ public abstract class Nodes {
      *     ^^^^^^^^^
      */
     public static final class ArrayNode extends Node {
-        public final Node[] elements;
         public final short flags;
+        public final Node[] elements;
 
-        public ArrayNode(Node[] elements, short flags, int startOffset, int length) {
+        public ArrayNode(short flags, Node[] elements, int startOffset, int length) {
             super(startOffset, length);
-            this.elements = elements;
             this.flags = flags;
+            this.elements = elements;
         }
         
         public boolean isContainsSplat() {
@@ -983,15 +1081,15 @@ public abstract class Nodes {
             String nextIndent = indent + "  ";
             String nextNextIndent = nextIndent + "  ";
             builder.append(nextIndent);
+            builder.append("flags: ");
+            builder.append(this.flags);
+            builder.append('\n');
+            builder.append(nextIndent);
             builder.append("elements: ");
             builder.append('\n');
             for (Node child : this.elements) {
                 builder.append(nextNextIndent).append(child.toString(nextNextIndent));
             }
-            builder.append(nextIndent);
-            builder.append("flags: ");
-            builder.append(this.flags);
-            builder.append('\n');
             return builder.toString();
         }
     }
@@ -1623,17 +1721,17 @@ public abstract class Nodes {
      *     ^^^^^^^^^^^^^^^^^
      */
     public static final class CallAndWriteNode extends Node {
+        public final short flags;
         /** optional (can be null) */
         public final Node receiver;
-        public final short flags;
         public final org.jruby.RubySymbol read_name;
         public final org.jruby.RubySymbol write_name;
         public final Node value;
 
-        public CallAndWriteNode(Node receiver, short flags, org.jruby.RubySymbol read_name, org.jruby.RubySymbol write_name, Node value, int startOffset, int length) {
+        public CallAndWriteNode(short flags, Node receiver, org.jruby.RubySymbol read_name, org.jruby.RubySymbol write_name, Node value, int startOffset, int length) {
             super(startOffset, length);
-            this.receiver = receiver;
             this.flags = flags;
+            this.receiver = receiver;
             this.read_name = read_name;
             this.write_name = write_name;
             this.value = value;
@@ -1672,12 +1770,12 @@ public abstract class Nodes {
             builder.append('\n');
             String nextIndent = indent + "  ";
             builder.append(nextIndent);
-            builder.append("receiver: ");
-            builder.append(this.receiver == null ? "null\n" : this.receiver.toString(nextIndent));
-            builder.append(nextIndent);
             builder.append("flags: ");
             builder.append(this.flags);
             builder.append('\n');
+            builder.append(nextIndent);
+            builder.append("receiver: ");
+            builder.append(this.receiver == null ? "null\n" : this.receiver.toString(nextIndent));
             builder.append(nextIndent);
             builder.append("read_name: ");
             builder.append('"').append(this.read_name).append('"');
@@ -1715,6 +1813,7 @@ public abstract class Nodes {
      *     ^^^^^^^^
      */
     public static final class CallNode extends Node {
+        public final short flags;
         /** optional (can be null) */
         public final Node receiver;
         public final org.jruby.RubySymbol name;
@@ -1722,15 +1821,14 @@ public abstract class Nodes {
         public final ArgumentsNode arguments;
         /** optional (can be null) */
         public final Node block;
-        public final short flags;
 
-        public CallNode(Node receiver, org.jruby.RubySymbol name, ArgumentsNode arguments, Node block, short flags, int startOffset, int length) {
+        public CallNode(short flags, Node receiver, org.jruby.RubySymbol name, ArgumentsNode arguments, Node block, int startOffset, int length) {
             super(startOffset, length);
+            this.flags = flags;
             this.receiver = receiver;
             this.name = name;
             this.arguments = arguments;
             this.block = block;
-            this.flags = flags;
         }
         
         public boolean isSafeNavigation() {
@@ -1771,6 +1869,10 @@ public abstract class Nodes {
             builder.append('\n');
             String nextIndent = indent + "  ";
             builder.append(nextIndent);
+            builder.append("flags: ");
+            builder.append(this.flags);
+            builder.append('\n');
+            builder.append(nextIndent);
             builder.append("receiver: ");
             builder.append(this.receiver == null ? "null\n" : this.receiver.toString(nextIndent));
             builder.append(nextIndent);
@@ -1783,10 +1885,6 @@ public abstract class Nodes {
             builder.append(nextIndent);
             builder.append("block: ");
             builder.append(this.block == null ? "null\n" : this.block.toString(nextIndent));
-            builder.append(nextIndent);
-            builder.append("flags: ");
-            builder.append(this.flags);
-            builder.append('\n');
             return builder.toString();
         }
     }
@@ -1798,18 +1896,18 @@ public abstract class Nodes {
      *     ^^^^^^^^^^^^^^
      */
     public static final class CallOperatorWriteNode extends Node {
+        public final short flags;
         /** optional (can be null) */
         public final Node receiver;
-        public final short flags;
         public final org.jruby.RubySymbol read_name;
         public final org.jruby.RubySymbol write_name;
         public final org.jruby.RubySymbol operator;
         public final Node value;
 
-        public CallOperatorWriteNode(Node receiver, short flags, org.jruby.RubySymbol read_name, org.jruby.RubySymbol write_name, org.jruby.RubySymbol operator, Node value, int startOffset, int length) {
+        public CallOperatorWriteNode(short flags, Node receiver, org.jruby.RubySymbol read_name, org.jruby.RubySymbol write_name, org.jruby.RubySymbol operator, Node value, int startOffset, int length) {
             super(startOffset, length);
-            this.receiver = receiver;
             this.flags = flags;
+            this.receiver = receiver;
             this.read_name = read_name;
             this.write_name = write_name;
             this.operator = operator;
@@ -1849,12 +1947,12 @@ public abstract class Nodes {
             builder.append('\n');
             String nextIndent = indent + "  ";
             builder.append(nextIndent);
-            builder.append("receiver: ");
-            builder.append(this.receiver == null ? "null\n" : this.receiver.toString(nextIndent));
-            builder.append(nextIndent);
             builder.append("flags: ");
             builder.append(this.flags);
             builder.append('\n');
+            builder.append(nextIndent);
+            builder.append("receiver: ");
+            builder.append(this.receiver == null ? "null\n" : this.receiver.toString(nextIndent));
             builder.append(nextIndent);
             builder.append("read_name: ");
             builder.append('"').append(this.read_name).append('"');
@@ -1881,17 +1979,17 @@ public abstract class Nodes {
      *     ^^^^^^^^^^^^^^^^^
      */
     public static final class CallOrWriteNode extends Node {
+        public final short flags;
         /** optional (can be null) */
         public final Node receiver;
-        public final short flags;
         public final org.jruby.RubySymbol read_name;
         public final org.jruby.RubySymbol write_name;
         public final Node value;
 
-        public CallOrWriteNode(Node receiver, short flags, org.jruby.RubySymbol read_name, org.jruby.RubySymbol write_name, Node value, int startOffset, int length) {
+        public CallOrWriteNode(short flags, Node receiver, org.jruby.RubySymbol read_name, org.jruby.RubySymbol write_name, Node value, int startOffset, int length) {
             super(startOffset, length);
-            this.receiver = receiver;
             this.flags = flags;
+            this.receiver = receiver;
             this.read_name = read_name;
             this.write_name = write_name;
             this.value = value;
@@ -1930,12 +2028,12 @@ public abstract class Nodes {
             builder.append('\n');
             String nextIndent = indent + "  ";
             builder.append(nextIndent);
-            builder.append("receiver: ");
-            builder.append(this.receiver == null ? "null\n" : this.receiver.toString(nextIndent));
-            builder.append(nextIndent);
             builder.append("flags: ");
             builder.append(this.flags);
             builder.append('\n');
+            builder.append(nextIndent);
+            builder.append("receiver: ");
+            builder.append(this.receiver == null ? "null\n" : this.receiver.toString(nextIndent));
             builder.append(nextIndent);
             builder.append("read_name: ");
             builder.append('"').append(this.read_name).append('"');
@@ -1947,6 +2045,76 @@ public abstract class Nodes {
             builder.append(nextIndent);
             builder.append("value: ");
             builder.append(this.value.toString(nextIndent));
+            return builder.toString();
+        }
+    }
+
+    /**
+     * Represents assigning to a method call.
+     *
+     *     foo.bar, = 1
+     *     ^^^^^^^
+     *
+     *     begin
+     *     rescue => foo.bar
+     *               ^^^^^^^
+     *     end
+     *
+     *     for foo.bar in baz do end
+     *         ^^^^^^^
+     */
+    public static final class CallTargetNode extends Node {
+        public final short flags;
+        public final Node receiver;
+        public final org.jruby.RubySymbol name;
+
+        public CallTargetNode(short flags, Node receiver, org.jruby.RubySymbol name, int startOffset, int length) {
+            super(startOffset, length);
+            this.flags = flags;
+            this.receiver = receiver;
+            this.name = name;
+        }
+        
+        public boolean isSafeNavigation() {
+            return CallNodeFlags.isSafeNavigation(this.flags);
+        }
+
+        public boolean isVariableCall() {
+            return CallNodeFlags.isVariableCall(this.flags);
+        }
+        
+        public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
+            this.receiver.accept(visitor);
+        }
+
+        public Node[] childNodes() {
+            return new Node[] { this.receiver };
+        }
+
+        public <T> T accept(AbstractNodeVisitor<T> visitor) {
+            return visitor.visitCallTargetNode(this);
+        }
+
+        @Override
+        protected String toString(String indent) {
+            StringBuilder builder = new StringBuilder();
+            builder.append(this.getClass().getSimpleName());
+            if (hasNewLineFlag()) {
+                builder.append("[Li]");
+            }
+            builder.append('\n');
+            String nextIndent = indent + "  ";
+            builder.append(nextIndent);
+            builder.append("flags: ");
+            builder.append(this.flags);
+            builder.append('\n');
+            builder.append(nextIndent);
+            builder.append("receiver: ");
+            builder.append(this.receiver.toString(nextIndent));
+            builder.append(nextIndent);
+            builder.append("name: ");
+            builder.append('"').append(this.name).append('"');
+            builder.append('\n');
             return builder.toString();
         }
     }
@@ -3521,17 +3689,17 @@ public abstract class Nodes {
      *            ^^^^^^^^^^
      */
     public static final class FlipFlopNode extends Node {
+        public final short flags;
         /** optional (can be null) */
         public final Node left;
         /** optional (can be null) */
         public final Node right;
-        public final short flags;
 
-        public FlipFlopNode(Node left, Node right, short flags, int startOffset, int length) {
+        public FlipFlopNode(short flags, Node left, Node right, int startOffset, int length) {
             super(startOffset, length);
+            this.flags = flags;
             this.left = left;
             this.right = right;
-            this.flags = flags;
         }
         
         public boolean isExcludeEnd() {
@@ -3565,15 +3733,15 @@ public abstract class Nodes {
             builder.append('\n');
             String nextIndent = indent + "  ";
             builder.append(nextIndent);
+            builder.append("flags: ");
+            builder.append(this.flags);
+            builder.append('\n');
+            builder.append(nextIndent);
             builder.append("left: ");
             builder.append(this.left == null ? "null\n" : this.left.toString(nextIndent));
             builder.append(nextIndent);
             builder.append("right: ");
             builder.append(this.right == null ? "null\n" : this.right.toString(nextIndent));
-            builder.append(nextIndent);
-            builder.append("flags: ");
-            builder.append(this.flags);
-            builder.append('\n');
             return builder.toString();
         }
     }
@@ -4453,21 +4621,21 @@ public abstract class Nodes {
      *     ^^^^^^^^^^^^^^^^^^^^^^
      */
     public static final class IndexAndWriteNode extends Node {
+        public final short flags;
         /** optional (can be null) */
         public final Node receiver;
         /** optional (can be null) */
         public final ArgumentsNode arguments;
         /** optional (can be null) */
         public final Node block;
-        public final short flags;
         public final Node value;
 
-        public IndexAndWriteNode(Node receiver, ArgumentsNode arguments, Node block, short flags, Node value, int startOffset, int length) {
+        public IndexAndWriteNode(short flags, Node receiver, ArgumentsNode arguments, Node block, Node value, int startOffset, int length) {
             super(startOffset, length);
+            this.flags = flags;
             this.receiver = receiver;
             this.arguments = arguments;
             this.block = block;
-            this.flags = flags;
             this.value = value;
         }
         
@@ -4510,6 +4678,10 @@ public abstract class Nodes {
             builder.append('\n');
             String nextIndent = indent + "  ";
             builder.append(nextIndent);
+            builder.append("flags: ");
+            builder.append(this.flags);
+            builder.append('\n');
+            builder.append(nextIndent);
             builder.append("receiver: ");
             builder.append(this.receiver == null ? "null\n" : this.receiver.toString(nextIndent));
             builder.append(nextIndent);
@@ -4518,10 +4690,6 @@ public abstract class Nodes {
             builder.append(nextIndent);
             builder.append("block: ");
             builder.append(this.block == null ? "null\n" : this.block.toString(nextIndent));
-            builder.append(nextIndent);
-            builder.append("flags: ");
-            builder.append(this.flags);
-            builder.append('\n');
             builder.append(nextIndent);
             builder.append("value: ");
             builder.append(this.value.toString(nextIndent));
@@ -4536,22 +4704,22 @@ public abstract class Nodes {
      *     ^^^^^^^^^^^^^^^^^^^^^
      */
     public static final class IndexOperatorWriteNode extends Node {
+        public final short flags;
         /** optional (can be null) */
         public final Node receiver;
         /** optional (can be null) */
         public final ArgumentsNode arguments;
         /** optional (can be null) */
         public final Node block;
-        public final short flags;
         public final org.jruby.RubySymbol operator;
         public final Node value;
 
-        public IndexOperatorWriteNode(Node receiver, ArgumentsNode arguments, Node block, short flags, org.jruby.RubySymbol operator, Node value, int startOffset, int length) {
+        public IndexOperatorWriteNode(short flags, Node receiver, ArgumentsNode arguments, Node block, org.jruby.RubySymbol operator, Node value, int startOffset, int length) {
             super(startOffset, length);
+            this.flags = flags;
             this.receiver = receiver;
             this.arguments = arguments;
             this.block = block;
-            this.flags = flags;
             this.operator = operator;
             this.value = value;
         }
@@ -4595,6 +4763,10 @@ public abstract class Nodes {
             builder.append('\n');
             String nextIndent = indent + "  ";
             builder.append(nextIndent);
+            builder.append("flags: ");
+            builder.append(this.flags);
+            builder.append('\n');
+            builder.append(nextIndent);
             builder.append("receiver: ");
             builder.append(this.receiver == null ? "null\n" : this.receiver.toString(nextIndent));
             builder.append(nextIndent);
@@ -4603,10 +4775,6 @@ public abstract class Nodes {
             builder.append(nextIndent);
             builder.append("block: ");
             builder.append(this.block == null ? "null\n" : this.block.toString(nextIndent));
-            builder.append(nextIndent);
-            builder.append("flags: ");
-            builder.append(this.flags);
-            builder.append('\n');
             builder.append(nextIndent);
             builder.append("operator: ");
             builder.append('"').append(this.operator).append('"');
@@ -4625,21 +4793,21 @@ public abstract class Nodes {
      *     ^^^^^^^^^^^^^^^^^^^^^^
      */
     public static final class IndexOrWriteNode extends Node {
+        public final short flags;
         /** optional (can be null) */
         public final Node receiver;
         /** optional (can be null) */
         public final ArgumentsNode arguments;
         /** optional (can be null) */
         public final Node block;
-        public final short flags;
         public final Node value;
 
-        public IndexOrWriteNode(Node receiver, ArgumentsNode arguments, Node block, short flags, Node value, int startOffset, int length) {
+        public IndexOrWriteNode(short flags, Node receiver, ArgumentsNode arguments, Node block, Node value, int startOffset, int length) {
             super(startOffset, length);
+            this.flags = flags;
             this.receiver = receiver;
             this.arguments = arguments;
             this.block = block;
-            this.flags = flags;
             this.value = value;
         }
         
@@ -4682,6 +4850,10 @@ public abstract class Nodes {
             builder.append('\n');
             String nextIndent = indent + "  ";
             builder.append(nextIndent);
+            builder.append("flags: ");
+            builder.append(this.flags);
+            builder.append('\n');
+            builder.append(nextIndent);
             builder.append("receiver: ");
             builder.append(this.receiver == null ? "null\n" : this.receiver.toString(nextIndent));
             builder.append(nextIndent);
@@ -4691,12 +4863,90 @@ public abstract class Nodes {
             builder.append("block: ");
             builder.append(this.block == null ? "null\n" : this.block.toString(nextIndent));
             builder.append(nextIndent);
+            builder.append("value: ");
+            builder.append(this.value.toString(nextIndent));
+            return builder.toString();
+        }
+    }
+
+    /**
+     * Represents assigning to an index.
+     *
+     *     foo[bar], = 1
+     *     ^^^^^^^^
+     *
+     *     begin
+     *     rescue => foo[bar]
+     *               ^^^^^^^^
+     *     end
+     *
+     *     for foo[bar] in baz do end
+     *         ^^^^^^^^
+     */
+    public static final class IndexTargetNode extends Node {
+        public final short flags;
+        public final Node receiver;
+        /** optional (can be null) */
+        public final ArgumentsNode arguments;
+        /** optional (can be null) */
+        public final Node block;
+
+        public IndexTargetNode(short flags, Node receiver, ArgumentsNode arguments, Node block, int startOffset, int length) {
+            super(startOffset, length);
+            this.flags = flags;
+            this.receiver = receiver;
+            this.arguments = arguments;
+            this.block = block;
+        }
+        
+        public boolean isSafeNavigation() {
+            return CallNodeFlags.isSafeNavigation(this.flags);
+        }
+
+        public boolean isVariableCall() {
+            return CallNodeFlags.isVariableCall(this.flags);
+        }
+        
+        public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
+            this.receiver.accept(visitor);
+            if (this.arguments != null) {
+                this.arguments.accept(visitor);
+            }
+            if (this.block != null) {
+                this.block.accept(visitor);
+            }
+        }
+
+        public Node[] childNodes() {
+            return new Node[] { this.receiver, this.arguments, this.block };
+        }
+
+        public <T> T accept(AbstractNodeVisitor<T> visitor) {
+            return visitor.visitIndexTargetNode(this);
+        }
+
+        @Override
+        protected String toString(String indent) {
+            StringBuilder builder = new StringBuilder();
+            builder.append(this.getClass().getSimpleName());
+            if (hasNewLineFlag()) {
+                builder.append("[Li]");
+            }
+            builder.append('\n');
+            String nextIndent = indent + "  ";
+            builder.append(nextIndent);
             builder.append("flags: ");
             builder.append(this.flags);
             builder.append('\n');
             builder.append(nextIndent);
-            builder.append("value: ");
-            builder.append(this.value.toString(nextIndent));
+            builder.append("receiver: ");
+            builder.append(this.receiver.toString(nextIndent));
+            builder.append(nextIndent);
+            builder.append("arguments: ");
+            builder.append(this.arguments == null ? "null\n" : this.arguments.toString(nextIndent));
+            builder.append(nextIndent);
+            builder.append("block: ");
+            builder.append(this.block == null ? "null\n" : this.block.toString(nextIndent));
             return builder.toString();
         }
     }
@@ -5001,12 +5251,12 @@ public abstract class Nodes {
             return IntegerBaseFlags.isBinary(this.flags);
         }
 
-        public boolean isOctal() {
-            return IntegerBaseFlags.isOctal(this.flags);
-        }
-
         public boolean isDecimal() {
             return IntegerBaseFlags.isDecimal(this.flags);
+        }
+
+        public boolean isOctal() {
+            return IntegerBaseFlags.isOctal(this.flags);
         }
 
         public boolean isHexadecimal() {
@@ -5050,13 +5300,13 @@ public abstract class Nodes {
      *        ^^^^^^^^^^^^^^^^
      */
     public static final class InterpolatedMatchLastLineNode extends Node {
-        public final Node[] parts;
         public final short flags;
+        public final Node[] parts;
 
-        public InterpolatedMatchLastLineNode(Node[] parts, short flags, int startOffset, int length) {
+        public InterpolatedMatchLastLineNode(short flags, Node[] parts, int startOffset, int length) {
             super(startOffset, length);
-            this.parts = parts;
             this.flags = flags;
+            this.parts = parts;
         }
         
         public boolean isIgnoreCase() {
@@ -5089,6 +5339,18 @@ public abstract class Nodes {
 
         public boolean isUtf8() {
             return RegularExpressionFlags.isUtf8(this.flags);
+        }
+
+        public boolean isForcedUtf8Encoding() {
+            return RegularExpressionFlags.isForcedUtf8Encoding(this.flags);
+        }
+
+        public boolean isForcedBinaryEncoding() {
+            return RegularExpressionFlags.isForcedBinaryEncoding(this.flags);
+        }
+
+        public boolean isForcedUsAsciiEncoding() {
+            return RegularExpressionFlags.isForcedUsAsciiEncoding(this.flags);
         }
         
         @Override
@@ -5124,15 +5386,15 @@ public abstract class Nodes {
             String nextIndent = indent + "  ";
             String nextNextIndent = nextIndent + "  ";
             builder.append(nextIndent);
+            builder.append("flags: ");
+            builder.append(this.flags);
+            builder.append('\n');
+            builder.append(nextIndent);
             builder.append("parts: ");
             builder.append('\n');
             for (Node child : this.parts) {
                 builder.append(nextNextIndent).append(child.toString(nextNextIndent));
             }
-            builder.append(nextIndent);
-            builder.append("flags: ");
-            builder.append(this.flags);
-            builder.append('\n');
             return builder.toString();
         }
     }
@@ -5144,13 +5406,13 @@ public abstract class Nodes {
      *     ^^^^^^^^^^^^^^^^
      */
     public static final class InterpolatedRegularExpressionNode extends Node {
-        public final Node[] parts;
         public final short flags;
+        public final Node[] parts;
 
-        public InterpolatedRegularExpressionNode(Node[] parts, short flags, int startOffset, int length) {
+        public InterpolatedRegularExpressionNode(short flags, Node[] parts, int startOffset, int length) {
             super(startOffset, length);
-            this.parts = parts;
             this.flags = flags;
+            this.parts = parts;
         }
         
         public boolean isIgnoreCase() {
@@ -5183,6 +5445,18 @@ public abstract class Nodes {
 
         public boolean isUtf8() {
             return RegularExpressionFlags.isUtf8(this.flags);
+        }
+
+        public boolean isForcedUtf8Encoding() {
+            return RegularExpressionFlags.isForcedUtf8Encoding(this.flags);
+        }
+
+        public boolean isForcedBinaryEncoding() {
+            return RegularExpressionFlags.isForcedBinaryEncoding(this.flags);
+        }
+
+        public boolean isForcedUsAsciiEncoding() {
+            return RegularExpressionFlags.isForcedUsAsciiEncoding(this.flags);
         }
         
         @Override
@@ -5218,15 +5492,15 @@ public abstract class Nodes {
             String nextIndent = indent + "  ";
             String nextNextIndent = nextIndent + "  ";
             builder.append(nextIndent);
+            builder.append("flags: ");
+            builder.append(this.flags);
+            builder.append('\n');
+            builder.append(nextIndent);
             builder.append("parts: ");
             builder.append('\n');
             for (Node child : this.parts) {
                 builder.append(nextNextIndent).append(child.toString(nextNextIndent));
             }
-            builder.append(nextIndent);
-            builder.append("flags: ");
-            builder.append(this.flags);
-            builder.append('\n');
             return builder.toString();
         }
     }
@@ -5889,13 +6163,13 @@ public abstract class Nodes {
      *        ^^^^^^
      */
     public static final class MatchLastLineNode extends Node {
-        public final byte[] unescaped;
         public final short flags;
+        public final byte[] unescaped;
 
-        public MatchLastLineNode(byte[] unescaped, short flags, int startOffset, int length) {
+        public MatchLastLineNode(short flags, byte[] unescaped, int startOffset, int length) {
             super(startOffset, length);
-            this.unescaped = unescaped;
             this.flags = flags;
+            this.unescaped = unescaped;
         }
         
         public boolean isIgnoreCase() {
@@ -5929,6 +6203,18 @@ public abstract class Nodes {
         public boolean isUtf8() {
             return RegularExpressionFlags.isUtf8(this.flags);
         }
+
+        public boolean isForcedUtf8Encoding() {
+            return RegularExpressionFlags.isForcedUtf8Encoding(this.flags);
+        }
+
+        public boolean isForcedBinaryEncoding() {
+            return RegularExpressionFlags.isForcedBinaryEncoding(this.flags);
+        }
+
+        public boolean isForcedUsAsciiEncoding() {
+            return RegularExpressionFlags.isForcedUsAsciiEncoding(this.flags);
+        }
         
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
         }
@@ -5951,12 +6237,12 @@ public abstract class Nodes {
             builder.append('\n');
             String nextIndent = indent + "  ";
             builder.append(nextIndent);
-            builder.append("unescaped: ");
-            builder.append('"' + new String(this.unescaped, StandardCharsets.UTF_8) + '"');
-            builder.append('\n');
-            builder.append(nextIndent);
             builder.append("flags: ");
             builder.append(this.flags);
+            builder.append('\n');
+            builder.append(nextIndent);
+            builder.append("unescaped: ");
+            builder.append('"' + new String(this.unescaped, StandardCharsets.UTF_8) + '"');
             builder.append('\n');
             return builder.toString();
         }
@@ -7117,17 +7403,17 @@ public abstract class Nodes {
      *          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
      */
     public static final class RangeNode extends Node {
+        public final short flags;
         /** optional (can be null) */
         public final Node left;
         /** optional (can be null) */
         public final Node right;
-        public final short flags;
 
-        public RangeNode(Node left, Node right, short flags, int startOffset, int length) {
+        public RangeNode(short flags, Node left, Node right, int startOffset, int length) {
             super(startOffset, length);
+            this.flags = flags;
             this.left = left;
             this.right = right;
-            this.flags = flags;
         }
         
         public boolean isExcludeEnd() {
@@ -7161,15 +7447,15 @@ public abstract class Nodes {
             builder.append('\n');
             String nextIndent = indent + "  ";
             builder.append(nextIndent);
+            builder.append("flags: ");
+            builder.append(this.flags);
+            builder.append('\n');
+            builder.append(nextIndent);
             builder.append("left: ");
             builder.append(this.left == null ? "null\n" : this.left.toString(nextIndent));
             builder.append(nextIndent);
             builder.append("right: ");
             builder.append(this.right == null ? "null\n" : this.right.toString(nextIndent));
-            builder.append(nextIndent);
-            builder.append("flags: ");
-            builder.append(this.flags);
-            builder.append('\n');
             return builder.toString();
         }
     }
@@ -7259,13 +7545,13 @@ public abstract class Nodes {
      *     ^^^^^^
      */
     public static final class RegularExpressionNode extends Node {
-        public final byte[] unescaped;
         public final short flags;
+        public final byte[] unescaped;
 
-        public RegularExpressionNode(byte[] unescaped, short flags, int startOffset, int length) {
+        public RegularExpressionNode(short flags, byte[] unescaped, int startOffset, int length) {
             super(startOffset, length);
-            this.unescaped = unescaped;
             this.flags = flags;
+            this.unescaped = unescaped;
         }
         
         public boolean isIgnoreCase() {
@@ -7299,6 +7585,18 @@ public abstract class Nodes {
         public boolean isUtf8() {
             return RegularExpressionFlags.isUtf8(this.flags);
         }
+
+        public boolean isForcedUtf8Encoding() {
+            return RegularExpressionFlags.isForcedUtf8Encoding(this.flags);
+        }
+
+        public boolean isForcedBinaryEncoding() {
+            return RegularExpressionFlags.isForcedBinaryEncoding(this.flags);
+        }
+
+        public boolean isForcedUsAsciiEncoding() {
+            return RegularExpressionFlags.isForcedUsAsciiEncoding(this.flags);
+        }
         
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
         }
@@ -7321,12 +7619,12 @@ public abstract class Nodes {
             builder.append('\n');
             String nextIndent = indent + "  ";
             builder.append(nextIndent);
-            builder.append("unescaped: ");
-            builder.append('"' + new String(this.unescaped, StandardCharsets.UTF_8) + '"');
-            builder.append('\n');
-            builder.append(nextIndent);
             builder.append("flags: ");
             builder.append(this.flags);
+            builder.append('\n');
+            builder.append(nextIndent);
+            builder.append("unescaped: ");
+            builder.append('"' + new String(this.unescaped, StandardCharsets.UTF_8) + '"');
             builder.append('\n');
             return builder.toString();
         }
@@ -8119,13 +8417,27 @@ public abstract class Nodes {
      *        ^^^
      */
     public static final class SymbolNode extends Node {
+        public final short flags;
         public final byte[] unescaped;
 
-        public SymbolNode(byte[] unescaped, int startOffset, int length) {
+        public SymbolNode(short flags, byte[] unescaped, int startOffset, int length) {
             super(startOffset, length);
+            this.flags = flags;
             this.unescaped = unescaped;
         }
-                
+        
+        public boolean isForcedUtf8Encoding() {
+            return SymbolFlags.isForcedUtf8Encoding(this.flags);
+        }
+
+        public boolean isForcedBinaryEncoding() {
+            return SymbolFlags.isForcedBinaryEncoding(this.flags);
+        }
+
+        public boolean isForcedUsAsciiEncoding() {
+            return SymbolFlags.isForcedUsAsciiEncoding(this.flags);
+        }
+        
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
         }
 
@@ -8146,6 +8458,10 @@ public abstract class Nodes {
             }
             builder.append('\n');
             String nextIndent = indent + "  ";
+            builder.append(nextIndent);
+            builder.append("flags: ");
+            builder.append(this.flags);
+            builder.append('\n');
             builder.append(nextIndent);
             builder.append("unescaped: ");
             builder.append('"' + new String(this.unescaped, StandardCharsets.UTF_8) + '"');
@@ -8316,16 +8632,16 @@ public abstract class Nodes {
      *     ^^^^^^^^^^^^^^^^^^^^
      */
     public static final class UntilNode extends Node {
+        public final short flags;
         public final Node predicate;
         /** optional (can be null) */
         public final StatementsNode statements;
-        public final short flags;
 
-        public UntilNode(Node predicate, StatementsNode statements, short flags, int startOffset, int length) {
+        public UntilNode(short flags, Node predicate, StatementsNode statements, int startOffset, int length) {
             super(startOffset, length);
+            this.flags = flags;
             this.predicate = predicate;
             this.statements = statements;
-            this.flags = flags;
         }
         
         public boolean isBeginModifier() {
@@ -8362,15 +8678,15 @@ public abstract class Nodes {
             builder.append('\n');
             String nextIndent = indent + "  ";
             builder.append(nextIndent);
+            builder.append("flags: ");
+            builder.append(this.flags);
+            builder.append('\n');
+            builder.append(nextIndent);
             builder.append("predicate: ");
             builder.append(this.predicate.toString(nextIndent));
             builder.append(nextIndent);
             builder.append("statements: ");
             builder.append(this.statements == null ? "null\n" : this.statements.toString(nextIndent));
-            builder.append(nextIndent);
-            builder.append("flags: ");
-            builder.append(this.flags);
-            builder.append('\n');
             return builder.toString();
         }
     }
@@ -8447,16 +8763,16 @@ public abstract class Nodes {
      *     ^^^^^^^^^^^^^^^^^^^^
      */
     public static final class WhileNode extends Node {
+        public final short flags;
         public final Node predicate;
         /** optional (can be null) */
         public final StatementsNode statements;
-        public final short flags;
 
-        public WhileNode(Node predicate, StatementsNode statements, short flags, int startOffset, int length) {
+        public WhileNode(short flags, Node predicate, StatementsNode statements, int startOffset, int length) {
             super(startOffset, length);
+            this.flags = flags;
             this.predicate = predicate;
             this.statements = statements;
-            this.flags = flags;
         }
         
         public boolean isBeginModifier() {
@@ -8493,15 +8809,15 @@ public abstract class Nodes {
             builder.append('\n');
             String nextIndent = indent + "  ";
             builder.append(nextIndent);
+            builder.append("flags: ");
+            builder.append(this.flags);
+            builder.append('\n');
+            builder.append(nextIndent);
             builder.append("predicate: ");
             builder.append(this.predicate.toString(nextIndent));
             builder.append(nextIndent);
             builder.append("statements: ");
             builder.append(this.statements == null ? "null\n" : this.statements.toString(nextIndent));
-            builder.append(nextIndent);
-            builder.append("flags: ");
-            builder.append(this.flags);
-            builder.append('\n');
             return builder.toString();
         }
     }

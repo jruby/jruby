@@ -307,9 +307,9 @@ public class Loader {
             case 4:
                 return new Nodes.AndNode(loadNode(), loadNode(), startOffset, length);
             case 5:
-                return new Nodes.ArgumentsNode(loadNodes(), loadFlags(), startOffset, length);
+                return new Nodes.ArgumentsNode(loadFlags(), loadNodes(), startOffset, length);
             case 6:
-                return new Nodes.ArrayNode(loadNodes(), loadFlags(), startOffset, length);
+                return new Nodes.ArrayNode(loadFlags(), loadNodes(), startOffset, length);
             case 7:
                 return new Nodes.ArrayPatternNode(loadOptionalNode(), loadNodes(), loadOptionalNode(), loadNodes(), startOffset, length);
             case 8:
@@ -333,262 +333,266 @@ public class Loader {
             case 17:
                 return new Nodes.BreakNode((Nodes.ArgumentsNode) loadOptionalNode(), startOffset, length);
             case 18:
-                return new Nodes.CallAndWriteNode(loadOptionalNode(), loadFlags(), loadConstant(), loadConstant(), loadNode(), startOffset, length);
+                return new Nodes.CallAndWriteNode(loadFlags(), loadOptionalNode(), loadConstant(), loadConstant(), loadNode(), startOffset, length);
             case 19:
-                return new Nodes.CallNode(loadOptionalNode(), loadConstant(), (Nodes.ArgumentsNode) loadOptionalNode(), loadOptionalNode(), loadFlags(), startOffset, length);
+                return new Nodes.CallNode(loadFlags(), loadOptionalNode(), loadConstant(), (Nodes.ArgumentsNode) loadOptionalNode(), loadOptionalNode(), startOffset, length);
             case 20:
-                return new Nodes.CallOperatorWriteNode(loadOptionalNode(), loadFlags(), loadConstant(), loadConstant(), loadConstant(), loadNode(), startOffset, length);
+                return new Nodes.CallOperatorWriteNode(loadFlags(), loadOptionalNode(), loadConstant(), loadConstant(), loadConstant(), loadNode(), startOffset, length);
             case 21:
-                return new Nodes.CallOrWriteNode(loadOptionalNode(), loadFlags(), loadConstant(), loadConstant(), loadNode(), startOffset, length);
+                return new Nodes.CallOrWriteNode(loadFlags(), loadOptionalNode(), loadConstant(), loadConstant(), loadNode(), startOffset, length);
             case 22:
-                return new Nodes.CapturePatternNode(loadNode(), loadNode(), startOffset, length);
+                return new Nodes.CallTargetNode(loadFlags(), loadNode(), loadConstant(), startOffset, length);
             case 23:
-                return new Nodes.CaseMatchNode(loadOptionalNode(), loadNodes(), (Nodes.ElseNode) loadOptionalNode(), startOffset, length);
+                return new Nodes.CapturePatternNode(loadNode(), loadNode(), startOffset, length);
             case 24:
-                return new Nodes.CaseNode(loadOptionalNode(), loadNodes(), (Nodes.ElseNode) loadOptionalNode(), startOffset, length);
+                return new Nodes.CaseMatchNode(loadOptionalNode(), loadNodes(), (Nodes.ElseNode) loadOptionalNode(), startOffset, length);
             case 25:
-                return new Nodes.ClassNode(loadConstants(), loadNode(), loadOptionalNode(), loadOptionalNode(), loadConstant(), startOffset, length);
+                return new Nodes.CaseNode(loadOptionalNode(), loadNodes(), (Nodes.ElseNode) loadOptionalNode(), startOffset, length);
             case 26:
-                return new Nodes.ClassVariableAndWriteNode(loadConstant(), loadNode(), startOffset, length);
+                return new Nodes.ClassNode(loadConstants(), loadNode(), loadOptionalNode(), loadOptionalNode(), loadConstant(), startOffset, length);
             case 27:
-                return new Nodes.ClassVariableOperatorWriteNode(loadConstant(), loadNode(), loadConstant(), startOffset, length);
+                return new Nodes.ClassVariableAndWriteNode(loadConstant(), loadNode(), startOffset, length);
             case 28:
-                return new Nodes.ClassVariableOrWriteNode(loadConstant(), loadNode(), startOffset, length);
+                return new Nodes.ClassVariableOperatorWriteNode(loadConstant(), loadNode(), loadConstant(), startOffset, length);
             case 29:
-                return new Nodes.ClassVariableReadNode(loadConstant(), startOffset, length);
+                return new Nodes.ClassVariableOrWriteNode(loadConstant(), loadNode(), startOffset, length);
             case 30:
-                return new Nodes.ClassVariableTargetNode(loadConstant(), startOffset, length);
+                return new Nodes.ClassVariableReadNode(loadConstant(), startOffset, length);
             case 31:
-                return new Nodes.ClassVariableWriteNode(loadConstant(), loadNode(), startOffset, length);
+                return new Nodes.ClassVariableTargetNode(loadConstant(), startOffset, length);
             case 32:
-                return new Nodes.ConstantAndWriteNode(loadConstant(), loadNode(), startOffset, length);
+                return new Nodes.ClassVariableWriteNode(loadConstant(), loadNode(), startOffset, length);
             case 33:
-                return new Nodes.ConstantOperatorWriteNode(loadConstant(), loadNode(), loadConstant(), startOffset, length);
+                return new Nodes.ConstantAndWriteNode(loadConstant(), loadNode(), startOffset, length);
             case 34:
-                return new Nodes.ConstantOrWriteNode(loadConstant(), loadNode(), startOffset, length);
+                return new Nodes.ConstantOperatorWriteNode(loadConstant(), loadNode(), loadConstant(), startOffset, length);
             case 35:
-                return new Nodes.ConstantPathAndWriteNode((Nodes.ConstantPathNode) loadNode(), loadNode(), startOffset, length);
+                return new Nodes.ConstantOrWriteNode(loadConstant(), loadNode(), startOffset, length);
             case 36:
-                return new Nodes.ConstantPathNode(loadOptionalNode(), loadNode(), startOffset, length);
+                return new Nodes.ConstantPathAndWriteNode((Nodes.ConstantPathNode) loadNode(), loadNode(), startOffset, length);
             case 37:
-                return new Nodes.ConstantPathOperatorWriteNode((Nodes.ConstantPathNode) loadNode(), loadNode(), loadConstant(), startOffset, length);
+                return new Nodes.ConstantPathNode(loadOptionalNode(), loadNode(), startOffset, length);
             case 38:
-                return new Nodes.ConstantPathOrWriteNode((Nodes.ConstantPathNode) loadNode(), loadNode(), startOffset, length);
+                return new Nodes.ConstantPathOperatorWriteNode((Nodes.ConstantPathNode) loadNode(), loadNode(), loadConstant(), startOffset, length);
             case 39:
-                return new Nodes.ConstantPathTargetNode(loadOptionalNode(), loadNode(), startOffset, length);
+                return new Nodes.ConstantPathOrWriteNode((Nodes.ConstantPathNode) loadNode(), loadNode(), startOffset, length);
             case 40:
-                return new Nodes.ConstantPathWriteNode((Nodes.ConstantPathNode) loadNode(), loadNode(), startOffset, length);
+                return new Nodes.ConstantPathTargetNode(loadOptionalNode(), loadNode(), startOffset, length);
             case 41:
-                return new Nodes.ConstantReadNode(loadConstant(), startOffset, length);
+                return new Nodes.ConstantPathWriteNode((Nodes.ConstantPathNode) loadNode(), loadNode(), startOffset, length);
             case 42:
-                return new Nodes.ConstantTargetNode(loadConstant(), startOffset, length);
+                return new Nodes.ConstantReadNode(loadConstant(), startOffset, length);
             case 43:
-                return new Nodes.ConstantWriteNode(loadConstant(), loadNode(), startOffset, length);
+                return new Nodes.ConstantTargetNode(loadConstant(), startOffset, length);
             case 44:
-                return new Nodes.DefNode(buffer.getInt(), loadConstant(), loadOptionalNode(), (Nodes.ParametersNode) loadOptionalNode(), loadOptionalNode(), loadConstants(), loadVarUInt(), startOffset, length);
+                return new Nodes.ConstantWriteNode(loadConstant(), loadNode(), startOffset, length);
             case 45:
-                return new Nodes.DefinedNode(loadNode(), startOffset, length);
+                return new Nodes.DefNode(buffer.getInt(), loadConstant(), loadOptionalNode(), (Nodes.ParametersNode) loadOptionalNode(), loadOptionalNode(), loadConstants(), loadVarUInt(), startOffset, length);
             case 46:
-                return new Nodes.ElseNode((Nodes.StatementsNode) loadOptionalNode(), startOffset, length);
+                return new Nodes.DefinedNode(loadNode(), startOffset, length);
             case 47:
-                return new Nodes.EmbeddedStatementsNode((Nodes.StatementsNode) loadOptionalNode(), startOffset, length);
+                return new Nodes.ElseNode((Nodes.StatementsNode) loadOptionalNode(), startOffset, length);
             case 48:
-                return new Nodes.EmbeddedVariableNode(loadNode(), startOffset, length);
+                return new Nodes.EmbeddedStatementsNode((Nodes.StatementsNode) loadOptionalNode(), startOffset, length);
             case 49:
-                return new Nodes.EnsureNode((Nodes.StatementsNode) loadOptionalNode(), startOffset, length);
+                return new Nodes.EmbeddedVariableNode(loadNode(), startOffset, length);
             case 50:
-                return new Nodes.FalseNode(startOffset, length);
+                return new Nodes.EnsureNode((Nodes.StatementsNode) loadOptionalNode(), startOffset, length);
             case 51:
-                return new Nodes.FindPatternNode(loadOptionalNode(), loadNode(), loadNodes(), loadNode(), startOffset, length);
+                return new Nodes.FalseNode(startOffset, length);
             case 52:
-                return new Nodes.FlipFlopNode(loadOptionalNode(), loadOptionalNode(), loadFlags(), startOffset, length);
+                return new Nodes.FindPatternNode(loadOptionalNode(), loadNode(), loadNodes(), loadNode(), startOffset, length);
             case 53:
-                return new Nodes.FloatNode(startOffset, length);
+                return new Nodes.FlipFlopNode(loadFlags(), loadOptionalNode(), loadOptionalNode(), startOffset, length);
             case 54:
-                return new Nodes.ForNode(loadNode(), loadNode(), (Nodes.StatementsNode) loadOptionalNode(), startOffset, length);
+                return new Nodes.FloatNode(startOffset, length);
             case 55:
-                return new Nodes.ForwardingArgumentsNode(startOffset, length);
+                return new Nodes.ForNode(loadNode(), loadNode(), (Nodes.StatementsNode) loadOptionalNode(), startOffset, length);
             case 56:
-                return new Nodes.ForwardingParameterNode(startOffset, length);
+                return new Nodes.ForwardingArgumentsNode(startOffset, length);
             case 57:
-                return new Nodes.ForwardingSuperNode((Nodes.BlockNode) loadOptionalNode(), startOffset, length);
+                return new Nodes.ForwardingParameterNode(startOffset, length);
             case 58:
-                return new Nodes.GlobalVariableAndWriteNode(loadConstant(), loadNode(), startOffset, length);
+                return new Nodes.ForwardingSuperNode((Nodes.BlockNode) loadOptionalNode(), startOffset, length);
             case 59:
-                return new Nodes.GlobalVariableOperatorWriteNode(loadConstant(), loadNode(), loadConstant(), startOffset, length);
+                return new Nodes.GlobalVariableAndWriteNode(loadConstant(), loadNode(), startOffset, length);
             case 60:
-                return new Nodes.GlobalVariableOrWriteNode(loadConstant(), loadNode(), startOffset, length);
+                return new Nodes.GlobalVariableOperatorWriteNode(loadConstant(), loadNode(), loadConstant(), startOffset, length);
             case 61:
-                return new Nodes.GlobalVariableReadNode(loadConstant(), startOffset, length);
+                return new Nodes.GlobalVariableOrWriteNode(loadConstant(), loadNode(), startOffset, length);
             case 62:
-                return new Nodes.GlobalVariableTargetNode(loadConstant(), startOffset, length);
+                return new Nodes.GlobalVariableReadNode(loadConstant(), startOffset, length);
             case 63:
-                return new Nodes.GlobalVariableWriteNode(loadConstant(), loadNode(), startOffset, length);
+                return new Nodes.GlobalVariableTargetNode(loadConstant(), startOffset, length);
             case 64:
-                return new Nodes.HashNode(loadNodes(), startOffset, length);
+                return new Nodes.GlobalVariableWriteNode(loadConstant(), loadNode(), startOffset, length);
             case 65:
-                return new Nodes.HashPatternNode(loadOptionalNode(), loadNodes(), loadOptionalNode(), startOffset, length);
+                return new Nodes.HashNode(loadNodes(), startOffset, length);
             case 66:
-                return new Nodes.IfNode(loadNode(), (Nodes.StatementsNode) loadOptionalNode(), loadOptionalNode(), startOffset, length);
+                return new Nodes.HashPatternNode(loadOptionalNode(), loadNodes(), loadOptionalNode(), startOffset, length);
             case 67:
-                return new Nodes.ImaginaryNode(loadNode(), startOffset, length);
+                return new Nodes.IfNode(loadNode(), (Nodes.StatementsNode) loadOptionalNode(), loadOptionalNode(), startOffset, length);
             case 68:
-                return new Nodes.ImplicitNode(loadNode(), startOffset, length);
+                return new Nodes.ImaginaryNode(loadNode(), startOffset, length);
             case 69:
-                return new Nodes.ImplicitRestNode(startOffset, length);
+                return new Nodes.ImplicitNode(loadNode(), startOffset, length);
             case 70:
-                return new Nodes.InNode(loadNode(), (Nodes.StatementsNode) loadOptionalNode(), startOffset, length);
+                return new Nodes.ImplicitRestNode(startOffset, length);
             case 71:
-                return new Nodes.IndexAndWriteNode(loadOptionalNode(), (Nodes.ArgumentsNode) loadOptionalNode(), loadOptionalNode(), loadFlags(), loadNode(), startOffset, length);
+                return new Nodes.InNode(loadNode(), (Nodes.StatementsNode) loadOptionalNode(), startOffset, length);
             case 72:
-                return new Nodes.IndexOperatorWriteNode(loadOptionalNode(), (Nodes.ArgumentsNode) loadOptionalNode(), loadOptionalNode(), loadFlags(), loadConstant(), loadNode(), startOffset, length);
+                return new Nodes.IndexAndWriteNode(loadFlags(), loadOptionalNode(), (Nodes.ArgumentsNode) loadOptionalNode(), loadOptionalNode(), loadNode(), startOffset, length);
             case 73:
-                return new Nodes.IndexOrWriteNode(loadOptionalNode(), (Nodes.ArgumentsNode) loadOptionalNode(), loadOptionalNode(), loadFlags(), loadNode(), startOffset, length);
+                return new Nodes.IndexOperatorWriteNode(loadFlags(), loadOptionalNode(), (Nodes.ArgumentsNode) loadOptionalNode(), loadOptionalNode(), loadConstant(), loadNode(), startOffset, length);
             case 74:
-                return new Nodes.InstanceVariableAndWriteNode(loadConstant(), loadNode(), startOffset, length);
+                return new Nodes.IndexOrWriteNode(loadFlags(), loadOptionalNode(), (Nodes.ArgumentsNode) loadOptionalNode(), loadOptionalNode(), loadNode(), startOffset, length);
             case 75:
-                return new Nodes.InstanceVariableOperatorWriteNode(loadConstant(), loadNode(), loadConstant(), startOffset, length);
+                return new Nodes.IndexTargetNode(loadFlags(), loadNode(), (Nodes.ArgumentsNode) loadOptionalNode(), loadOptionalNode(), startOffset, length);
             case 76:
-                return new Nodes.InstanceVariableOrWriteNode(loadConstant(), loadNode(), startOffset, length);
+                return new Nodes.InstanceVariableAndWriteNode(loadConstant(), loadNode(), startOffset, length);
             case 77:
-                return new Nodes.InstanceVariableReadNode(loadConstant(), startOffset, length);
+                return new Nodes.InstanceVariableOperatorWriteNode(loadConstant(), loadNode(), loadConstant(), startOffset, length);
             case 78:
-                return new Nodes.InstanceVariableTargetNode(loadConstant(), startOffset, length);
+                return new Nodes.InstanceVariableOrWriteNode(loadConstant(), loadNode(), startOffset, length);
             case 79:
-                return new Nodes.InstanceVariableWriteNode(loadConstant(), loadNode(), startOffset, length);
+                return new Nodes.InstanceVariableReadNode(loadConstant(), startOffset, length);
             case 80:
-                return new Nodes.IntegerNode(loadFlags(), startOffset, length);
+                return new Nodes.InstanceVariableTargetNode(loadConstant(), startOffset, length);
             case 81:
-                return new Nodes.InterpolatedMatchLastLineNode(loadNodes(), loadFlags(), startOffset, length);
+                return new Nodes.InstanceVariableWriteNode(loadConstant(), loadNode(), startOffset, length);
             case 82:
-                return new Nodes.InterpolatedRegularExpressionNode(loadNodes(), loadFlags(), startOffset, length);
+                return new Nodes.IntegerNode(loadFlags(), startOffset, length);
             case 83:
-                return new Nodes.InterpolatedStringNode(loadNodes(), startOffset, length);
+                return new Nodes.InterpolatedMatchLastLineNode(loadFlags(), loadNodes(), startOffset, length);
             case 84:
-                return new Nodes.InterpolatedSymbolNode(loadNodes(), startOffset, length);
+                return new Nodes.InterpolatedRegularExpressionNode(loadFlags(), loadNodes(), startOffset, length);
             case 85:
-                return new Nodes.InterpolatedXStringNode(loadNodes(), startOffset, length);
+                return new Nodes.InterpolatedStringNode(loadNodes(), startOffset, length);
             case 86:
-                return new Nodes.KeywordHashNode(loadNodes(), startOffset, length);
+                return new Nodes.InterpolatedSymbolNode(loadNodes(), startOffset, length);
             case 87:
-                return new Nodes.KeywordRestParameterNode(loadOptionalConstant(), startOffset, length);
+                return new Nodes.InterpolatedXStringNode(loadNodes(), startOffset, length);
             case 88:
-                return new Nodes.LambdaNode(loadConstants(), loadVarUInt(), loadOptionalNode(), loadOptionalNode(), startOffset, length);
+                return new Nodes.KeywordHashNode(loadNodes(), startOffset, length);
             case 89:
-                return new Nodes.LocalVariableAndWriteNode(loadNode(), loadConstant(), loadVarUInt(), startOffset, length);
+                return new Nodes.KeywordRestParameterNode(loadOptionalConstant(), startOffset, length);
             case 90:
-                return new Nodes.LocalVariableOperatorWriteNode(loadNode(), loadConstant(), loadConstant(), loadVarUInt(), startOffset, length);
+                return new Nodes.LambdaNode(loadConstants(), loadVarUInt(), loadOptionalNode(), loadOptionalNode(), startOffset, length);
             case 91:
-                return new Nodes.LocalVariableOrWriteNode(loadNode(), loadConstant(), loadVarUInt(), startOffset, length);
+                return new Nodes.LocalVariableAndWriteNode(loadNode(), loadConstant(), loadVarUInt(), startOffset, length);
             case 92:
-                return new Nodes.LocalVariableReadNode(loadConstant(), loadVarUInt(), startOffset, length);
+                return new Nodes.LocalVariableOperatorWriteNode(loadNode(), loadConstant(), loadConstant(), loadVarUInt(), startOffset, length);
             case 93:
-                return new Nodes.LocalVariableTargetNode(loadConstant(), loadVarUInt(), startOffset, length);
+                return new Nodes.LocalVariableOrWriteNode(loadNode(), loadConstant(), loadVarUInt(), startOffset, length);
             case 94:
-                return new Nodes.LocalVariableWriteNode(loadConstant(), loadVarUInt(), loadNode(), startOffset, length);
+                return new Nodes.LocalVariableReadNode(loadConstant(), loadVarUInt(), startOffset, length);
             case 95:
-                return new Nodes.MatchLastLineNode(loadString(), loadFlags(), startOffset, length);
+                return new Nodes.LocalVariableTargetNode(loadConstant(), loadVarUInt(), startOffset, length);
             case 96:
-                return new Nodes.MatchPredicateNode(loadNode(), loadNode(), startOffset, length);
+                return new Nodes.LocalVariableWriteNode(loadConstant(), loadVarUInt(), loadNode(), startOffset, length);
             case 97:
-                return new Nodes.MatchRequiredNode(loadNode(), loadNode(), startOffset, length);
+                return new Nodes.MatchLastLineNode(loadFlags(), loadString(), startOffset, length);
             case 98:
-                return new Nodes.MatchWriteNode((Nodes.CallNode) loadNode(), loadNodes(), startOffset, length);
+                return new Nodes.MatchPredicateNode(loadNode(), loadNode(), startOffset, length);
             case 99:
-                return new Nodes.MissingNode(startOffset, length);
+                return new Nodes.MatchRequiredNode(loadNode(), loadNode(), startOffset, length);
             case 100:
-                return new Nodes.ModuleNode(loadConstants(), loadNode(), loadOptionalNode(), loadConstant(), startOffset, length);
+                return new Nodes.MatchWriteNode((Nodes.CallNode) loadNode(), loadNodes(), startOffset, length);
             case 101:
-                return new Nodes.MultiTargetNode(loadNodes(), loadOptionalNode(), loadNodes(), startOffset, length);
+                return new Nodes.MissingNode(startOffset, length);
             case 102:
-                return new Nodes.MultiWriteNode(loadNodes(), loadOptionalNode(), loadNodes(), loadNode(), startOffset, length);
+                return new Nodes.ModuleNode(loadConstants(), loadNode(), loadOptionalNode(), loadConstant(), startOffset, length);
             case 103:
-                return new Nodes.NextNode((Nodes.ArgumentsNode) loadOptionalNode(), startOffset, length);
+                return new Nodes.MultiTargetNode(loadNodes(), loadOptionalNode(), loadNodes(), startOffset, length);
             case 104:
-                return new Nodes.NilNode(startOffset, length);
+                return new Nodes.MultiWriteNode(loadNodes(), loadOptionalNode(), loadNodes(), loadNode(), startOffset, length);
             case 105:
-                return new Nodes.NoKeywordsParameterNode(startOffset, length);
+                return new Nodes.NextNode((Nodes.ArgumentsNode) loadOptionalNode(), startOffset, length);
             case 106:
-                return new Nodes.NumberedParametersNode(buffer.get(), startOffset, length);
+                return new Nodes.NilNode(startOffset, length);
             case 107:
-                return new Nodes.NumberedReferenceReadNode(loadVarUInt(), startOffset, length);
+                return new Nodes.NoKeywordsParameterNode(startOffset, length);
             case 108:
-                return new Nodes.OptionalKeywordParameterNode(loadConstant(), loadNode(), startOffset, length);
+                return new Nodes.NumberedParametersNode(buffer.get(), startOffset, length);
             case 109:
-                return new Nodes.OptionalParameterNode(loadConstant(), loadNode(), startOffset, length);
+                return new Nodes.NumberedReferenceReadNode(loadVarUInt(), startOffset, length);
             case 110:
-                return new Nodes.OrNode(loadNode(), loadNode(), startOffset, length);
+                return new Nodes.OptionalKeywordParameterNode(loadConstant(), loadNode(), startOffset, length);
             case 111:
-                return new Nodes.ParametersNode(loadNodes(), loadNodes(), loadOptionalNode(), loadNodes(), loadNodes(), loadOptionalNode(), (Nodes.BlockParameterNode) loadOptionalNode(), startOffset, length);
+                return new Nodes.OptionalParameterNode(loadConstant(), loadNode(), startOffset, length);
             case 112:
-                return new Nodes.ParenthesesNode(loadOptionalNode(), startOffset, length);
+                return new Nodes.OrNode(loadNode(), loadNode(), startOffset, length);
             case 113:
-                return new Nodes.PinnedExpressionNode(loadNode(), startOffset, length);
+                return new Nodes.ParametersNode(loadNodes(), loadNodes(), loadOptionalNode(), loadNodes(), loadNodes(), loadOptionalNode(), (Nodes.BlockParameterNode) loadOptionalNode(), startOffset, length);
             case 114:
-                return new Nodes.PinnedVariableNode(loadNode(), startOffset, length);
+                return new Nodes.ParenthesesNode(loadOptionalNode(), startOffset, length);
             case 115:
-                return new Nodes.PostExecutionNode((Nodes.StatementsNode) loadOptionalNode(), startOffset, length);
+                return new Nodes.PinnedExpressionNode(loadNode(), startOffset, length);
             case 116:
-                return new Nodes.PreExecutionNode((Nodes.StatementsNode) loadOptionalNode(), startOffset, length);
+                return new Nodes.PinnedVariableNode(loadNode(), startOffset, length);
             case 117:
-                return new Nodes.ProgramNode(loadConstants(), (Nodes.StatementsNode) loadNode(), startOffset, length);
+                return new Nodes.PostExecutionNode((Nodes.StatementsNode) loadOptionalNode(), startOffset, length);
             case 118:
-                return new Nodes.RangeNode(loadOptionalNode(), loadOptionalNode(), loadFlags(), startOffset, length);
+                return new Nodes.PreExecutionNode((Nodes.StatementsNode) loadOptionalNode(), startOffset, length);
             case 119:
-                return new Nodes.RationalNode(loadNode(), startOffset, length);
+                return new Nodes.ProgramNode(loadConstants(), (Nodes.StatementsNode) loadNode(), startOffset, length);
             case 120:
-                return new Nodes.RedoNode(startOffset, length);
+                return new Nodes.RangeNode(loadFlags(), loadOptionalNode(), loadOptionalNode(), startOffset, length);
             case 121:
-                return new Nodes.RegularExpressionNode(loadString(), loadFlags(), startOffset, length);
+                return new Nodes.RationalNode(loadNode(), startOffset, length);
             case 122:
-                return new Nodes.RequiredKeywordParameterNode(loadConstant(), startOffset, length);
+                return new Nodes.RedoNode(startOffset, length);
             case 123:
-                return new Nodes.RequiredParameterNode(loadConstant(), startOffset, length);
+                return new Nodes.RegularExpressionNode(loadFlags(), loadString(), startOffset, length);
             case 124:
-                return new Nodes.RescueModifierNode(loadNode(), loadNode(), startOffset, length);
+                return new Nodes.RequiredKeywordParameterNode(loadConstant(), startOffset, length);
             case 125:
-                return new Nodes.RescueNode(loadNodes(), loadOptionalNode(), (Nodes.StatementsNode) loadOptionalNode(), (Nodes.RescueNode) loadOptionalNode(), startOffset, length);
+                return new Nodes.RequiredParameterNode(loadConstant(), startOffset, length);
             case 126:
-                return new Nodes.RestParameterNode(loadOptionalConstant(), startOffset, length);
+                return new Nodes.RescueModifierNode(loadNode(), loadNode(), startOffset, length);
             case 127:
-                return new Nodes.RetryNode(startOffset, length);
+                return new Nodes.RescueNode(loadNodes(), loadOptionalNode(), (Nodes.StatementsNode) loadOptionalNode(), (Nodes.RescueNode) loadOptionalNode(), startOffset, length);
             case 128:
-                return new Nodes.ReturnNode((Nodes.ArgumentsNode) loadOptionalNode(), startOffset, length);
+                return new Nodes.RestParameterNode(loadOptionalConstant(), startOffset, length);
             case 129:
-                return new Nodes.SelfNode(startOffset, length);
+                return new Nodes.RetryNode(startOffset, length);
             case 130:
-                return new Nodes.SingletonClassNode(loadConstants(), loadNode(), loadOptionalNode(), startOffset, length);
+                return new Nodes.ReturnNode((Nodes.ArgumentsNode) loadOptionalNode(), startOffset, length);
             case 131:
-                return new Nodes.SourceEncodingNode(startOffset, length);
+                return new Nodes.SelfNode(startOffset, length);
             case 132:
-                return new Nodes.SourceFileNode(loadString(), startOffset, length);
+                return new Nodes.SingletonClassNode(loadConstants(), loadNode(), loadOptionalNode(), startOffset, length);
             case 133:
-                return new Nodes.SourceLineNode(startOffset, length);
+                return new Nodes.SourceEncodingNode(startOffset, length);
             case 134:
-                return new Nodes.SplatNode(loadOptionalNode(), startOffset, length);
+                return new Nodes.SourceFileNode(loadString(), startOffset, length);
             case 135:
-                return new Nodes.StatementsNode(loadNodes(), startOffset, length);
+                return new Nodes.SourceLineNode(startOffset, length);
             case 136:
-                return new Nodes.StringNode(loadFlags(), loadString(), startOffset, length);
+                return new Nodes.SplatNode(loadOptionalNode(), startOffset, length);
             case 137:
-                return new Nodes.SuperNode((Nodes.ArgumentsNode) loadOptionalNode(), loadOptionalNode(), startOffset, length);
+                return new Nodes.StatementsNode(loadNodes(), startOffset, length);
             case 138:
-                return new Nodes.SymbolNode(loadString(), startOffset, length);
+                return new Nodes.StringNode(loadFlags(), loadString(), startOffset, length);
             case 139:
-                return new Nodes.TrueNode(startOffset, length);
+                return new Nodes.SuperNode((Nodes.ArgumentsNode) loadOptionalNode(), loadOptionalNode(), startOffset, length);
             case 140:
-                return new Nodes.UndefNode(loadNodes(), startOffset, length);
+                return new Nodes.SymbolNode(loadFlags(), loadString(), startOffset, length);
             case 141:
-                return new Nodes.UnlessNode(loadNode(), (Nodes.StatementsNode) loadOptionalNode(), (Nodes.ElseNode) loadOptionalNode(), startOffset, length);
+                return new Nodes.TrueNode(startOffset, length);
             case 142:
-                return new Nodes.UntilNode(loadNode(), (Nodes.StatementsNode) loadOptionalNode(), loadFlags(), startOffset, length);
+                return new Nodes.UndefNode(loadNodes(), startOffset, length);
             case 143:
-                return new Nodes.WhenNode(loadNodes(), (Nodes.StatementsNode) loadOptionalNode(), startOffset, length);
+                return new Nodes.UnlessNode(loadNode(), (Nodes.StatementsNode) loadOptionalNode(), (Nodes.ElseNode) loadOptionalNode(), startOffset, length);
             case 144:
-                return new Nodes.WhileNode(loadNode(), (Nodes.StatementsNode) loadOptionalNode(), loadFlags(), startOffset, length);
+                return new Nodes.UntilNode(loadFlags(), loadNode(), (Nodes.StatementsNode) loadOptionalNode(), startOffset, length);
             case 145:
-                return new Nodes.XStringNode(loadFlags(), loadString(), startOffset, length);
+                return new Nodes.WhenNode(loadNodes(), (Nodes.StatementsNode) loadOptionalNode(), startOffset, length);
             case 146:
+                return new Nodes.WhileNode(loadFlags(), loadNode(), (Nodes.StatementsNode) loadOptionalNode(), startOffset, length);
+            case 147:
+                return new Nodes.XStringNode(loadFlags(), loadString(), startOffset, length);
+            case 148:
                 return new Nodes.YieldNode((Nodes.ArgumentsNode) loadOptionalNode(), startOffset, length);
             default:
                 throw new Error("Unknown node type: " + type);
