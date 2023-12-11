@@ -1305,7 +1305,13 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             Operand keyOperand;
 
             if (pair instanceof AssocNode) {
-                keyOperand = build(((AssocNode) pair).key);
+                Node key = ((AssocNode) pair).key;
+
+                if (key instanceof StringNode) {  // FIXME: #2045 in prism about whether it should be marked frozen by parser.
+                    keyOperand = buildFrozenString((StringNode) key);
+                } else {
+                    keyOperand = build(key);
+                }
                 args.add(new KeyValuePair<>(keyOperand, buildWithOrder(((AssocNode) pair).value, hasAssignments)));
             } else {  // AssocHashNode
                 AssocSplatNode assoc = (AssocSplatNode) pair;
@@ -1778,6 +1784,10 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         } else {
             return new MutableString(bytelistFrom(node), CR_UNKNOWN, scope.getFile(), getLine(node));
         }
+    }
+
+    private Operand buildFrozenString(StringNode node) {
+        return new FrozenString(bytelistFrom(node), CR_UNKNOWN, scope.getFile(), getLine(node));
     }
 
     private Operand buildSuper(Variable result, SuperNode node) {
