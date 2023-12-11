@@ -2,6 +2,7 @@ package org.jruby.ir.builder;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.EUCJPEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.ParseResult;
 import org.jruby.Ruby;
@@ -57,6 +58,7 @@ import org.jruby.util.RegexpOptions;
 import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
+import org.jruby.util.io.EncodingUtils;
 import org.prism.Nodes;
 import org.prism.Nodes.*;
 import org.jruby.parser.ParseResultPrism;
@@ -1685,7 +1687,31 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildRegularExpression(RegularExpressionNode node) {
-        return new Regexp(bytelist(node.unescaped), RegexpOptions.fromJoniOptions(node.flags));
+        // FIXME: This only partially helps but it does allow more regexps to match source encoding
+        // if they happen to be valid in that encoding.
+        Encoding encoding = node.isAscii8bit() ? ASCIIEncoding.INSTANCE :
+                node.isUtf8() ? UTF8Encoding.INSTANCE :
+                        hackRegexpEncoding(node.unescaped);
+
+        return new Regexp(new ByteList(node.unescaped, encoding), RegexpOptions.fromJoniOptions(node.flags));
+    }
+
+    private Encoding hackRegexpEncoding(byte[] data) {
+        Encoding encoding = getEncoding();
+        int length = data.length;
+        int i = 0;
+
+        while(i < length) {
+            int len = encoding.length(data, i, length);
+            if (len == -1) break;
+            i += len;
+        }
+
+        if (i == length) {
+            return encoding;
+        }
+
+        return ASCIIEncoding.INSTANCE;
     }
 
     private Operand buildRescueModifier(RescueModifierNode node) {
