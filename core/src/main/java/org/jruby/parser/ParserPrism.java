@@ -33,8 +33,6 @@ public class ParserPrism extends Parser {
     }
     // FIXME: error/warn when cannot bind to yarp (probably silent fail-over option too)
 
-    // FIXME: Need to connect DATA
-    // FIXME: main source file should be IO in case of __END__/DATA.
     @Override
     public ParseResult parse(String fileName, int lineNumber, ByteList content, DynamicScope blockScope, int flags) {
         int sourceLength = content.realSize();
@@ -74,7 +72,8 @@ public class ParserPrism extends Parser {
         }
 
         if (isSaveData(flags) && res.dataLocation != null) {
-            // Intentionally leaving as original source for offset?
+            // FIXME: Intentionally leaving as original source for offset.  This can just be an IO where pos is set to right value.
+            // FIXME: Somehow spec will say this should File and not IO but I cannot figure out why legacy parser isn't IO also.
             ByteArrayInputStream bais = new ByteArrayInputStream(source, 0, source.length);
             bais.skip(res.dataLocation.startOffset + 8); // FIXME: 8 is for including __END__\n
             runtime.defineDATA(RubyIO.newIO(runtime, ChannelHelper.readableChannel(bais)));
@@ -118,7 +117,6 @@ public class ParserPrism extends Parser {
         }
     }
 
-    // FIXME: metadata is formed via some other method and how this is packaged as API needs to be figured out.
     private byte[] parse(byte[] source, int sourceLength, byte[] metadata) {
         long time = 0;
         if (ParserManager.PARSER_TIMING) time = System.nanoTime();
