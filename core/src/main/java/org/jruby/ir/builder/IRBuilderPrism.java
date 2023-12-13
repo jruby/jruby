@@ -2131,7 +2131,9 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
                 buildWhenValue(eqqResult, testValue, bodyLabel, exprNodes[0], seenLiterals, false);
             }
         } else {
-            buildWhenValues(eqqResult, exprNodes, testValue, bodyLabel, seenLiterals);
+            for (Node value: exprNodes) {
+                buildWhenValue(eqqResult, testValue, bodyLabel, value, seenLiterals, value instanceof SplatNode);
+            }
         }
     }
 
@@ -2607,10 +2609,6 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return StaticScopeFactory.newStaticScope(parent, type, fileName, strings, -1);
     }
 
-    private CallType determineCallType(Node node) {
-        return node == null || node instanceof SelfNode ? CallType.FUNCTIONAL : CallType.NORMAL;
-    }
-
     private ByteList determineBaseName(Node node) {
         if (node instanceof ConstantReadNode) {
             return ((ConstantReadNode) node).name.getBytes();
@@ -2618,6 +2616,10 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             return determineBaseName(((ConstantPathNode) node).child);
         }
         throw notCompilable("Unsupported node in module path", node);
+    }
+
+    private CallType determineCallType(Node node) {
+        return node == null || node instanceof SelfNode ? CallType.FUNCTIONAL : CallType.NORMAL;
     }
 
     // FIXME: need to know about breaks
