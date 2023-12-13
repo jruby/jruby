@@ -2562,7 +2562,8 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         int post = parameters.posts.length;
         int keywords = parameters.keywords.length;
         // FIXME: this needs more than norm
-        Signature.Rest rest = parameters.rest == null ? Signature.Rest.NONE : Signature.Rest.NORM;
+        Signature.Rest rest = parameters.rest == null ? Signature.Rest.NONE :
+                parameters.rest instanceof ImplicitRestNode ? Signature.Rest.ANON : Signature.Rest.NORM;
 
         int requiredKeywords = 0;
         if (keywords > 0) {
