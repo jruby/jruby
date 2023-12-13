@@ -9,6 +9,7 @@ import org.jruby.RubyBignum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyKernel;
 import org.jruby.RubyNumeric;
+import org.jruby.RubyRegexp;
 import org.jruby.RubySymbol;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.IRClosure;
@@ -1396,7 +1397,33 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildInterpolatedRegularExpression(Variable result, InterpolatedRegularExpressionNode node) {
-        return buildDRegex(result, node.parts, RegexpOptions.fromJoniOptions(node.flags));
+        return buildDRegex(result, node.parts, calculateRegexpOptions(node));
+    }
+
+    private RegexpOptions calculateRegexpOptions(InterpolatedRegularExpressionNode node) {
+        RegexpOptions options = new RegexpOptions();
+        options.setMultiline(node.isMultiLine());
+        options.setIgnorecase(node.isIgnoreCase());
+        options.setExtended(node.isExtended());
+        // FIXME: Does this still exist in Ruby?
+        //options.setFixed((joniOptions & RubyRegexp.RE_FIXED) != 0);
+        options.setOnce(node.isOnce());
+        options.setEncodingNone(node.isForcedBinaryEncoding());
+
+        return options;
+    }
+
+    private RegexpOptions calculateRegexpOptions(RegularExpressionNode node) {
+        RegexpOptions options = new RegexpOptions();
+        options.setMultiline(node.isMultiLine());
+        options.setIgnorecase(node.isIgnoreCase());
+        options.setExtended(node.isExtended());
+        // FIXME: Does this still exist in Ruby?
+        //options.setFixed((joniOptions & RubyRegexp.RE_FIXED) != 0);
+        options.setOnce(node.isOnce());
+        options.setEncodingNone(node.isForcedBinaryEncoding());
+
+        return options;
     }
 
     private Operand buildInterpolatedString(Variable result, InterpolatedStringNode node) {
@@ -1719,7 +1746,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
                 node.isUtf8() ? UTF8Encoding.INSTANCE :
                         hackRegexpEncoding(node.unescaped);
 
-        return new Regexp(new ByteList(node.unescaped, encoding), RegexpOptions.fromJoniOptions(node.flags));
+        return new Regexp(new ByteList(node.unescaped, encoding), calculateRegexpOptions(node));
     }
 
     private Encoding hackRegexpEncoding(byte[] data) {
