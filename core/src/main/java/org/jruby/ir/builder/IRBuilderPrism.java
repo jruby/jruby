@@ -690,7 +690,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         CallType callType = determineCallType(node.receiver);
         String id = name.idString();
 
-        if (isAttrAssign(id)) return buildAttrAssign(result, node.receiver, node.arguments, node.block, node.name, node.isSafeNavigation(), containsVariableAssignment(node));
+        if (node.isAttributeWrite()) return buildAttrAssign(result, node.receiver, node.arguments, node.block, node.name, node.isSafeNavigation(), containsVariableAssignment(node));
 
         if (callType != CallType.FUNCTIONAL && Options.IR_STRING_FREEZE.load()) {
             // Frozen string optimization: check for "string".freeze
@@ -1924,13 +1924,6 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     @Override
     boolean isSideEffectFree(Node node) {
         return false;
-    }
-
-    private boolean isAttrAssign(String id) {
-        if (id.charAt(id.length() - 1) != '=') return false;
-        char second = id.charAt(id.length() - 2);
-
-        return second != '=' && second != '!' && second != '<' && second != '>';
     }
 
     // FIXME: Implement
