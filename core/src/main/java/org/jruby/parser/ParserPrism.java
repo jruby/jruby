@@ -158,7 +158,7 @@ public class ParserPrism extends Parser {
         metadata.append(runtime.getInstanceConfig().isFrozenStringLiteral() ? 1 : 0);
 
         // supress warnings
-        metadata.append(runtime.getInstanceConfig().getVerbosity() == RubyInstanceConfig.Verbosity.NIL ? 0 : 1);
+        metadata.append(runtime.getInstanceConfig().getVerbosity() == RubyInstanceConfig.Verbosity.NIL ? 1 : 0);
 
         // Eval scopes (or none for normal parses)
         if (isEval(flags)) {
