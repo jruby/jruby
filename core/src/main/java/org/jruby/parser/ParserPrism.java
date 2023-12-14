@@ -187,7 +187,7 @@ public class ParserPrism extends Parser {
     private byte[] encodeEvalScopes(ByteList buf, StaticScope scope) {
         int startIndex = buf.realSize();
         appendUnsignedInt(buf, 0);
-        int count = encodeEvalScopesInner(buf, scope, 0);
+        int count = encodeEvalScopesInner(buf, scope, 1);
         writeUnsignedInt(buf, startIndex, count);
         return buf.bytes();
     }
