@@ -2,6 +2,7 @@ package org.jruby.parser;
 
 import jnr.ffi.LibraryLoader;
 import org.jcodings.Encoding;
+import org.jcodings.specific.ISO8859_1Encoding;
 import org.jruby.ParseResult;
 import org.jruby.Ruby;
 import org.jruby.RubyIO;
@@ -187,7 +188,8 @@ public class ParserPrism extends Parser {
     private byte[] encodeEvalScopes(ByteList buf, StaticScope scope) {
         int startIndex = buf.realSize();
         appendUnsignedInt(buf, 0);
-        int count = encodeEvalScopesInner(buf, scope, 1);
+        // FIXME: This should be 1.  I think prism creating extra scope is making this catastrophically fail during eval+bindings
+        int count = encodeEvalScopesInner(buf, scope, 0);
         writeUnsignedInt(buf, startIndex, count);
         return buf.bytes();
     }
@@ -201,7 +203,8 @@ public class ParserPrism extends Parser {
         String names[] = scope.getVariables();
         appendUnsignedInt(buf, names.length);
         for (String name : names) {
-            byte[] bytes = name.getBytes(); // FIXME: needs to be raw bytes
+            // Get the bytes "raw" (which we use ISO8859_1 for) as this is how we record these in StaticScope.
+            byte[] bytes = name.getBytes(ISO8859_1Encoding.INSTANCE.getCharset());
             appendUnsignedInt(buf, bytes.length);
             buf.append(bytes);
         }
