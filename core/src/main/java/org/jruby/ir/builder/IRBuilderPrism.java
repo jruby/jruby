@@ -2,7 +2,9 @@ package org.jruby.ir.builder;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.EUCJPEncoding;
 import org.jcodings.specific.UTF8Encoding;
+import org.jcodings.specific.Windows_31JEncoding;
 import org.jruby.ParseResult;
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
@@ -1408,7 +1410,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         // FIXME: Does this still exist in Ruby?
         //options.setFixed((joniOptions & RubyRegexp.RE_FIXED) != 0);
         options.setOnce(node.isOnce());
-        options.setEncodingNone(node.isForcedBinaryEncoding());
+        options.setEncodingNone(node.isAscii8bit());
 
         return options;
     }
@@ -1421,7 +1423,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         // FIXME: Does this still exist in Ruby?
         //options.setFixed((joniOptions & RubyRegexp.RE_FIXED) != 0);
         options.setOnce(node.isOnce());
-        options.setEncodingNone(node.isForcedBinaryEncoding());
+        options.setEncodingNone(node.isAscii8bit());
 
         return options;
     }
@@ -1744,7 +1746,9 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         // if they happen to be valid in that encoding.
         Encoding encoding = node.isAscii8bit() ? ASCIIEncoding.INSTANCE :
                 node.isUtf8() ? UTF8Encoding.INSTANCE :
-                        hackRegexpEncoding(node.unescaped);
+                        node.isEucJp() ? EUCJPEncoding.INSTANCE :
+                                node.isWindows31j() ? Windows_31JEncoding.INSTANCE :
+                                        hackRegexpEncoding(node.unescaped);
 
         return new Regexp(new ByteList(node.unescaped, encoding), calculateRegexpOptions(node));
     }

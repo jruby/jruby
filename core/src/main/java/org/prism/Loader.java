@@ -473,7 +473,7 @@ public class Loader {
             case 87:
                 return new Nodes.InterpolatedXStringNode(loadNodes(), startOffset, length);
             case 88:
-                return new Nodes.KeywordHashNode(loadNodes(), startOffset, length);
+                return new Nodes.KeywordHashNode(loadFlags(), loadNodes(), startOffset, length);
             case 89:
                 return new Nodes.KeywordRestParameterNode(loadOptionalConstant(), startOffset, length);
             case 90:

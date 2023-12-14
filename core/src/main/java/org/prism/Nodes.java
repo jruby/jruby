@@ -243,12 +243,19 @@ public abstract class Nodes {
         // a call that could have been a local variable
         public static final short VARIABLE_CALL = 1 << 1;
 
+        // a call that is an attribute write, so the value being written should be returned
+        public static final short ATTRIBUTE_WRITE = 1 << 2;
+
         public static boolean isSafeNavigation(short flags) {
             return (flags & SAFE_NAVIGATION) != 0;
         }
 
         public static boolean isVariableCall(short flags) {
             return (flags & VARIABLE_CALL) != 0;
+        }
+
+        public static boolean isAttributeWrite(short flags) {
+            return (flags & ATTRIBUTE_WRITE) != 0;
         }
 
         private final short flags;
@@ -282,6 +289,10 @@ public abstract class Nodes {
 
         public boolean isVariableCall() {
             return (flags & VARIABLE_CALL) != 0;
+        }
+
+        public boolean isAttributeWrite() {
+            return (flags & ATTRIBUTE_WRITE) != 0;
         }
 
     }
@@ -412,6 +423,49 @@ public abstract class Nodes {
 
         public boolean isHexadecimal() {
             return (flags & HEXADECIMAL) != 0;
+        }
+
+    }
+
+    /**
+     * Flags for keyword hash nodes.
+     */
+    public static final class KeywordHashNodeFlags implements Comparable<KeywordHashNodeFlags> {
+
+        // a keyword hash which only has `AssocNode` elements all with static literal keys, which means the elements can be treated as keyword arguments
+        public static final short STATIC_KEYS = 1 << 0;
+
+        public static boolean isStaticKeys(short flags) {
+            return (flags & STATIC_KEYS) != 0;
+        }
+
+        private final short flags;
+
+        public KeywordHashNodeFlags(short flags) {
+            this.flags = flags;
+        }
+
+        @Override
+        public int hashCode() {
+            return flags;
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if (!(other instanceof KeywordHashNodeFlags)) {
+                return false;
+            }
+
+            return flags == ((KeywordHashNodeFlags) other).flags;
+        }
+
+        @Override
+        public int compareTo(KeywordHashNodeFlags other) {
+            return flags - other.flags;
+        }
+
+        public boolean isStaticKeys() {
+            return (flags & STATIC_KEYS) != 0;
         }
 
     }
@@ -1744,6 +1798,10 @@ public abstract class Nodes {
         public boolean isVariableCall() {
             return CallNodeFlags.isVariableCall(this.flags);
         }
+
+        public boolean isAttributeWrite() {
+            return CallNodeFlags.isAttributeWrite(this.flags);
+        }
         
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
             if (this.receiver != null) {
@@ -1838,6 +1896,10 @@ public abstract class Nodes {
         public boolean isVariableCall() {
             return CallNodeFlags.isVariableCall(this.flags);
         }
+
+        public boolean isAttributeWrite() {
+            return CallNodeFlags.isAttributeWrite(this.flags);
+        }
         
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
             if (this.receiver != null) {
@@ -1921,6 +1983,10 @@ public abstract class Nodes {
         public boolean isVariableCall() {
             return CallNodeFlags.isVariableCall(this.flags);
         }
+
+        public boolean isAttributeWrite() {
+            return CallNodeFlags.isAttributeWrite(this.flags);
+        }
         
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
             if (this.receiver != null) {
@@ -2002,6 +2068,10 @@ public abstract class Nodes {
         public boolean isVariableCall() {
             return CallNodeFlags.isVariableCall(this.flags);
         }
+
+        public boolean isAttributeWrite() {
+            return CallNodeFlags.isAttributeWrite(this.flags);
+        }
         
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
             if (this.receiver != null) {
@@ -2081,6 +2151,10 @@ public abstract class Nodes {
 
         public boolean isVariableCall() {
             return CallNodeFlags.isVariableCall(this.flags);
+        }
+
+        public boolean isAttributeWrite() {
+            return CallNodeFlags.isAttributeWrite(this.flags);
         }
         
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
@@ -4646,6 +4720,10 @@ public abstract class Nodes {
         public boolean isVariableCall() {
             return CallNodeFlags.isVariableCall(this.flags);
         }
+
+        public boolean isAttributeWrite() {
+            return CallNodeFlags.isAttributeWrite(this.flags);
+        }
         
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
             if (this.receiver != null) {
@@ -4730,6 +4808,10 @@ public abstract class Nodes {
 
         public boolean isVariableCall() {
             return CallNodeFlags.isVariableCall(this.flags);
+        }
+
+        public boolean isAttributeWrite() {
+            return CallNodeFlags.isAttributeWrite(this.flags);
         }
         
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
@@ -4818,6 +4900,10 @@ public abstract class Nodes {
         public boolean isVariableCall() {
             return CallNodeFlags.isVariableCall(this.flags);
         }
+
+        public boolean isAttributeWrite() {
+            return CallNodeFlags.isAttributeWrite(this.flags);
+        }
         
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
             if (this.receiver != null) {
@@ -4905,6 +4991,10 @@ public abstract class Nodes {
 
         public boolean isVariableCall() {
             return CallNodeFlags.isVariableCall(this.flags);
+        }
+
+        public boolean isAttributeWrite() {
+            return CallNodeFlags.isAttributeWrite(this.flags);
         }
         
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
@@ -5680,13 +5770,19 @@ public abstract class Nodes {
      *         ^^^^
      */
     public static final class KeywordHashNode extends Node {
+        public final short flags;
         public final Node[] elements;
 
-        public KeywordHashNode(Node[] elements, int startOffset, int length) {
+        public KeywordHashNode(short flags, Node[] elements, int startOffset, int length) {
             super(startOffset, length);
+            this.flags = flags;
             this.elements = elements;
         }
-                
+        
+        public boolean isStaticKeys() {
+            return KeywordHashNodeFlags.isStaticKeys(this.flags);
+        }
+        
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
             for (Nodes.Node child : this.elements) {
                 child.accept(visitor);
@@ -5711,6 +5807,10 @@ public abstract class Nodes {
             builder.append('\n');
             String nextIndent = indent + "  ";
             String nextNextIndent = nextIndent + "  ";
+            builder.append(nextIndent);
+            builder.append("flags: ");
+            builder.append(this.flags);
+            builder.append('\n');
             builder.append(nextIndent);
             builder.append("elements: ");
             builder.append('\n');
