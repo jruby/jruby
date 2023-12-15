@@ -425,7 +425,7 @@ public class IRManager {
 
     private Node parse(ThreadContext context, FileResource file, String fileName) throws IOException {
         try (InputStream stream = file.openInputStream()) {
-            return (Node) context.runtime.getParserManager().parseFile(fileName, 0, stream, UTF8Encoding.INSTANCE, null, 0).getAST();
+            return (Node) context.runtime.getParserManager().parseFile(fileName, 0, stream, UTF8Encoding.INSTANCE).getAST();
         }
     }
 

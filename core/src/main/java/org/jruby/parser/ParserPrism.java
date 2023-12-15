@@ -19,8 +19,8 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import static org.jruby.parser.ParserManager.isEval;
-import static org.jruby.parser.ParserManager.isSaveData;
+import static org.jruby.parser.ParserType.EVAL;
+import static org.jruby.parser.ParserType.MAIN;
 
 public class ParserPrism extends Parser {
     ParserBindingPrism prismLibrary;
@@ -35,15 +35,15 @@ public class ParserPrism extends Parser {
     // FIXME: error/warn when cannot bind to yarp (probably silent fail-over option too)
 
     @Override
-    public ParseResult parse(String fileName, int lineNumber, ByteList content, DynamicScope blockScope, int flags) {
+    public ParseResult parse(String fileName, int lineNumber, ByteList content, DynamicScope existingScope, ParserType type) {
         int sourceLength = content.realSize();
         byte[] source = content.begin() == 0 ? content.unsafeBytes() : content.bytes();
-        byte[] metadata = generateMetadata(fileName, lineNumber, content.getEncoding(), blockScope, flags);
+        byte[] metadata = generateMetadata(fileName, lineNumber, content.getEncoding(), existingScope, type);
         byte[] serialized = parse(source, sourceLength, metadata);
-        return parseInternal(fileName, blockScope, source, serialized, flags);
+        return parseInternal(fileName, existingScope, source, serialized, type);
     }
 
-    private ParseResult parseInternal(String fileName, DynamicScope blockScope, byte[] source, byte[] serialized, int flags) {
+    private ParseResult parseInternal(String fileName, DynamicScope blockScope, byte[] source, byte[] serialized, ParserType type) {
         long time = 0;
 
         if (ParserManager.PARSER_TIMING) time = System.nanoTime();
@@ -72,7 +72,7 @@ public class ParserPrism extends Parser {
             throw runtime.newSyntaxError(fileName + ":" + line + ": " + res.errors[0].message);
         }
 
-        if (isSaveData(flags) && res.dataLocation != null) {
+        if (type == MAIN && res.dataLocation != null) {
             // FIXME: Intentionally leaving as original source for offset.  This can just be an IO where pos is set to right value.
             // FIXME: Somehow spec will say this should File and not IO but I cannot figure out why legacy parser isn't IO also.
             ByteArrayInputStream bais = new ByteArrayInputStream(source, 0, source.length);
@@ -90,11 +90,11 @@ public class ParserPrism extends Parser {
 
     @Override
     ParseResult parse(String fileName, int lineNumber, InputStream in, Encoding encoding,
-                             DynamicScope blockScope, int flags) {
+                      DynamicScope existingScope, ParserType type) {
         byte[] source = getSourceAsBytes(fileName, in);
-        byte[] metadata = generateMetadata(fileName, lineNumber, encoding, blockScope, flags);
+        byte[] metadata = generateMetadata(fileName, lineNumber, encoding, existingScope, type);
         byte[] serialized = parse(source, source.length, metadata);
-        return parseInternal(fileName, blockScope, source, serialized, flags);
+        return parseInternal(fileName, existingScope, source, serialized, type);
     }
 
 
@@ -138,7 +138,7 @@ public class ParserPrism extends Parser {
     }
 
     // lineNumber (0-indexed)
-    private byte[] generateMetadata(String fileName, int lineNumber, Encoding encoding, DynamicScope scope, int flags) {
+    private byte[] generateMetadata(String fileName, int lineNumber, Encoding encoding, DynamicScope scope, ParserType type) {
         ByteList metadata = new ByteList();
 
         // Filepath
@@ -162,7 +162,7 @@ public class ParserPrism extends Parser {
         metadata.append(runtime.getInstanceConfig().getVerbosity() == RubyInstanceConfig.Verbosity.NIL ? 1 : 0);
 
         // Eval scopes (or none for normal parses)
-        if (isEval(flags)) {
+        if (type == EVAL) {
             encodeEvalScopes(metadata, scope.getStaticScope());
         } else {
             appendUnsignedInt(metadata, 0);
@@ -188,8 +188,7 @@ public class ParserPrism extends Parser {
     private byte[] encodeEvalScopes(ByteList buf, StaticScope scope) {
         int startIndex = buf.realSize();
         appendUnsignedInt(buf, 0);
-        // FIXME: This should be 1.  I think prism creating extra scope is making this catastrophically fail during eval+bindings
-        int count = encodeEvalScopesInner(buf, scope, 0);
+        int count = encodeEvalScopesInner(buf, scope, 1);
         writeUnsignedInt(buf, startIndex, count);
         return buf.bytes();
     }

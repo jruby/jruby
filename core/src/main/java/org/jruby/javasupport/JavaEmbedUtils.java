@@ -175,7 +175,7 @@ public class JavaEmbedUtils {
              * @return an object which can be run
              */
             public EvalUnit parse(Ruby runtime, InputStream in, String filename, int lineNumber) {
-                return new InterpretedEvalUnit(runtime, (Node) runtime.getParserManager().parseFile(filename, lineNumber, in, runtime.setupSourceEncoding(UTF8Encoding.INSTANCE), null, 0).getAST());
+                return new InterpretedEvalUnit(runtime, (Node) runtime.getParserManager().parseFile(filename, lineNumber, in, runtime.setupSourceEncoding(UTF8Encoding.INSTANCE)).getAST());
             }
         };
     }

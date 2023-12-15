@@ -119,6 +119,7 @@ import static org.jruby.runtime.ThreadContext.*;
 // this is not a big deal.  Think this through!
 
 public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyNode, Colon3Node, HashNode> {
+    @Deprecated
     public static Node buildAST(boolean isCommandLineScript, String arg) {
         Ruby ruby = Ruby.getGlobalRuntime();
 

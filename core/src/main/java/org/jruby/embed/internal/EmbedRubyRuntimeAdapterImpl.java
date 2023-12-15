@@ -59,6 +59,7 @@ import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.javasupport.JavaEmbedUtils.EvalUnit;
+import org.jruby.parser.ParserType;
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.StaticScopeFactory;
 import org.jruby.runtime.DynamicScope;
@@ -187,7 +188,8 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
             if (input instanceof String) {
                 node = (Node) runtime.getParserManager().parseEval(filename, line, (String) input, scope).getAST();
             } else {
-                node = (Node) runtime.getParserManager().parseFile(filename, line, (InputStream) input, runtime.setupSourceEncoding(UTF8Encoding.INSTANCE), scope, 0).getAST();
+                node = (Node) runtime.getParserManager().parseMainFile(filename, line, (InputStream) input,
+                        runtime.setupSourceEncoding(UTF8Encoding.INSTANCE), scope, ParserType.NORMAL).getAST();
             }
             CompileMode compileMode = runtime.getInstanceConfig().getCompileMode();
             if (compileMode == CompileMode.FORCE) {

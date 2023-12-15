@@ -54,7 +54,7 @@ import org.jruby.util.ByteList;
 
 import java.io.ByteArrayInputStream;
 
-import static org.jruby.parser.ParserManager.INLINE;
+import static org.jruby.parser.ParserType.INLINE;
 
 /**
  * Native part of require 'jruby', e.g. provides methods for swapping between the normal Ruby reference to an
@@ -237,7 +237,11 @@ public class JRubyLibrary implements Library {
         ByteArrayInputStream stream = new ByteArrayInputStream(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getRealSize());
         Encoding encoding = content.getEncoding() == ASCIIEncoding.INSTANCE ? context.runtime.setupSourceEncoding(UTF8Encoding.INSTANCE) : bytes.getEncoding();
 
-        return (Node) context.runtime.getParserManager().parseFile(filename, lineno, stream, encoding, null, inlineSource ? INLINE : 0).getAST();
+        if (inlineSource) {
+            return (Node) context.runtime.getParserManager().parseMainFile(filename, lineno, stream, encoding, context.getCurrentScope(), INLINE).getAST();
+        } else {
+            return (Node) context.runtime.getParserManager().parseFile(filename, lineno, stream, encoding).getAST();
+        }
     }
 
     @JRubyMethod(module = true, name = "compile_ir", required = 1, optional = 3, checkArity = false)

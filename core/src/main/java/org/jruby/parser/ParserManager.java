@@ -13,10 +13,11 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.util.ByteList;
 import org.jruby.util.cli.Options;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+
+import static org.jruby.parser.ParserType.*;
 
 /**
  * Front-end API to parsing Ruby source.
@@ -26,9 +27,6 @@ import java.nio.charset.Charset;
  */
 public class ParserManager {
     static final boolean PARSER_TIMING = Options.PARSER_SUMMARY.load();
-    public static final int INLINE = 1;      // is it -e source
-    public static final int DATA = 2;        // should we provide DATA for data after __END__
-    public static final int EVAL = 4;
 
     private final Ruby runtime;
 
@@ -47,10 +45,24 @@ public class ParserManager {
         return parser;
     }
 
+    /**
+     * @param fileName the potentially relative path file
+     * @param lineNumber the zero-indexed line
+     * @param source the source
+     * @param scope scope of the eval which for embedding can potentially be none
+     * @return the parsed Ruby
+     */
     public ParseResult parseEval(String fileName, int lineNumber, String source, DynamicScope scope) {
         return parseEval(fileName, lineNumber, new ByteList(encodeToBytes(source), runtime.getDefaultEncoding()), scope);
     }
 
+    /**
+     * @param fileName the potentially relative path file
+     * @param lineNumber the zero-indexed line
+     * @param source the source
+     * @param scope scope of the eval
+     * @return the parsed Ruby
+     */
     public ParseResult parseEval(String fileName, int lineNumber, ByteList source, DynamicScope scope) {
         long nanos = 0;
         parserStats.addEvalParse();
@@ -62,57 +74,60 @@ public class ParserManager {
         return result;
     }
 
-    public ParseResult parseFile(String fileName, int lineNumber, InputStream in, Encoding encoding, DynamicScope scope, int flags) {
+    /**
+     * Parse main file (-e or main script file).  Other file parses should use parseFile.  Evals should use
+     * parseEval.
+     *
+     * @param fileName   the potentially relative path file
+     * @param lineNumber the zero-indexed line
+     * @param in         the source
+     * @param encoding   the encoding to treat the source unless magic comments intervene
+     * @param scope      top-level binding in case of MAIN file (eval uses should call parseEval instead).
+     * @param type       whether this is eval, is -e, or should worry about DATA
+     * @return the parsed Ruby
+     */
+    public ParseResult parseMainFile(String fileName, int lineNumber, InputStream in, Encoding encoding, DynamicScope scope, ParserType type) {
         long nanos = 0;
         parserStats.addLoadParse();
 
         if (PARSER_TIMING) nanos = System.nanoTime();
         ParseResult result;
         if (RubyInstanceConfig.IR_READING) {
-            result = loadFileFromIRPersistence(fileName, lineNumber, in, encoding, scope, flags);
+            result = loadFileFromIRPersistence(fileName, lineNumber, in, encoding, scope, type);
         } else {
-            result = parser.parse(fileName, lineNumber, in, encoding, scope, flags);
+            result = parser.parse(fileName, lineNumber, in, encoding, scope, type);
         }
         if (PARSER_TIMING) parserStats.addParseTime(System.nanoTime() - nanos);
 
         return result;
     }
 
-    public ParseResult parseFile(String fileName, int lineNumber, ByteList source, DynamicScope scope, int flags) {
-        parserStats.addLoadParse();
-
-        if (RubyInstanceConfig.IR_READING) {
-            InputStream in = new ByteArrayInputStream(source.getUnsafeBytes(), source.begin(), source.length());
-            return loadFileFromIRPersistence(fileName, lineNumber, in, source.getEncoding(), scope, flags);
-        } else {
-            return parser.parse(fileName, lineNumber, source, scope, flags);
-        }
+    /**
+     * Parse a (non-main) file.  Other file parses should use parseFile.  Evals should use parseEval.
+     *
+     * @param fileName the potentially relative path file
+     * @param lineNumber the zero-indexed line
+     * @param in the source
+     * @param encoding the encoding to treat the source unless magic comments intervene
+     * @return
+     */
+    public ParseResult parseFile(String fileName, int lineNumber, InputStream in, Encoding encoding) {
+        return parseMainFile(fileName, lineNumber, in, encoding, null, NORMAL);
     }
 
-    public ParseResult loadFileFromIRPersistence(String fileName, int lineNumber, InputStream in, Encoding encoding, DynamicScope scope, int flags) {
+    private ParseResult loadFileFromIRPersistence(String fileName, int lineNumber, InputStream in, Encoding encoding,
+                                                  DynamicScope scope, ParserType type) {
         try {
             // Get IR from .ir file
             return IRReader.load(runtime.getIRManager(), new IRReaderStream(runtime.getIRManager(),
                     IRFileExpert.getIRPersistedFile(fileName), fileName));
-        } catch (IOException e) {
-            // FIXME: What if something actually throws IOException
-            return parseFile(fileName, lineNumber, in, encoding, scope, flags);
+        } catch (IOException e) {  // FIXME: What if something actually throws IOException
+            if (type == MAIN || type == INLINE) {
+                return parseMainFile(fileName, lineNumber, in, encoding, scope, type);
+            } else {
+                return parseFile(fileName, lineNumber, in, encoding);
+            }
         }
-    }
-
-    // flag methods
-
-    // FIXME: This is in ripper but I don't think it needs to be.
-    public static boolean isEval(int flags) {
-        return (flags & ParserManager.EVAL) != 0;
-    }
-
-    static boolean isInline(int flags) {
-        return (flags & ParserManager.INLINE) != 0;
-    }
-
-    static boolean isSaveData(int flags) {
-        return (flags & ParserManager.DATA) != 0;
     }
 
     // Parser stats methods

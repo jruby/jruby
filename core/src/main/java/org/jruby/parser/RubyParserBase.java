@@ -81,8 +81,6 @@ import static org.jruby.lexer.LexingCommon.DOT;
 import static org.jruby.lexer.LexingCommon.OR_OR;
 import static org.jruby.lexer.LexingCommon.STAR_STAR;
 import static org.jruby.lexer.yacc.RubyLexer.Keyword.*;
-import static org.jruby.parser.ParserManager.isEval;
-import static org.jruby.parser.ParserManager.isInline;
 import static org.jruby.parser.RubyParserBase.IDType.*;
 import static org.jruby.util.CommonByteLists.*;
 import static org.jruby.util.RubyStringBuilder.*;
@@ -118,7 +116,7 @@ public abstract class RubyParserBase {
 
     private DynamicScope existingScope;
 
-    protected int flags;
+    protected ParserType type;
 
     private int[] coverage = EMPTY_COVERAGE;
 
@@ -126,11 +124,11 @@ public abstract class RubyParserBase {
 
     private boolean frozenStringLiterals;
 
-    public RubyParserBase(Ruby runtime, LexerSource source, DynamicScope scope, int flags) {
+    public RubyParserBase(Ruby runtime, LexerSource source, DynamicScope scope, ParserType type) {
         this.runtime = runtime;
         this.lexer = new RubyLexer(this, source, getWarnings());
         this.existingScope = scope;
-        this.flags = flags;
+        this.type = type;
         this.result = new RubyParserResult();
         frozenStringLiterals = runtime.getInstanceConfig().isFrozenStringLiteral();
     }
@@ -652,7 +650,11 @@ public abstract class RubyParserBase {
     }
     
     public void warnUnlessEOption(ID id, Node node, String message) {
-        if (!isInline(flags)) warning(id, lexer.getFile(), node.getLine(), message);
+        if (isInline()) warning(id, lexer.getFile(), node.getLine(), message);
+    }
+
+    private boolean isInline() {
+        return type != ParserType.INLINE;
     }
 
     boolean value_expr_check(Node node) {
@@ -957,7 +959,7 @@ public abstract class RubyParserBase {
                 label.append(Long.toString(node.hashCode()).getBytes());
                 RubySymbol symbolID = symbolID(label);
 
-                if (!method && !isInline(flags)) {
+                if (!method && !isInline()) {
                     if ((dotNode.getBeginNode() instanceof TrueNode && dotNode.getEndNode() instanceof FalseNode) ||
                             (dotNode.getBeginNode() instanceof FalseNode && dotNode.getEndNode() instanceof TrueNode)) {
                         warn(node.getLine(), "range literal in condition");
@@ -1005,7 +1007,7 @@ public abstract class RubyParserBase {
 
     /* MRI: range_op */
     private Node getFlipConditionNode(Node node) {
-        if (!isInline(flags)) return node;
+        if (!isInline()) return node;
         
         node = cond0(node, false);
 
@@ -1311,7 +1313,11 @@ public abstract class RubyParserBase {
     public void initTopLocalVariables() {
         currentScope = getTopStaticScope(lexer.getFile());
         scopedParserState = new ScopedParserState(null);
-        warnOnUnusedVariables = getWarnings().isVerbose() && !isEval(flags) && !isInline(flags);
+        warnOnUnusedVariables = getWarnings().isVerbose() && !isEval() && !isInline();
+    }
+
+    boolean isEval() {
+        return type == ParserType.EVAL;
     }
 
     public void finalizeDynamicScope() {
@@ -2243,7 +2249,7 @@ public abstract class RubyParserBase {
     }
 
     public boolean isCoverageEnabled() {
-        return !isEval(flags) && getRuntime().getCoverageData().isCoverageEnabled();
+        return !isEval() && getRuntime().getCoverageData().isCoverageEnabled();
     }
 
     /**

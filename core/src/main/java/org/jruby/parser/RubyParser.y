@@ -11,11 +11,11 @@
          '%type <IRubyObject> program'
     ],
     'ParserConstructorParams' => [
-        'Ruby runtime, LexerSource source, DynamicScope scope, int flags',
+        'Ruby runtime, LexerSource source, DynamicScope scope, org.jruby.parser.ParserManager.ParserType type',
         'ThreadContext context, IRubyObject ripper, LexerSource source'
     ],
     'ParserConstructorBody' => [
-        'super(runtime, source, scope, flags);',
+        'super(runtime, source, scope, type);',
         'super(context, ripper, source);'
     ],
     'lexer' => [
@@ -173,7 +173,6 @@ import static org.jruby.lexer.LexingCommon.EXPR_LABEL;
 import static org.jruby.util.CommonByteLists.ANON_BLOCK;
 import static org.jruby.util.CommonByteLists.FWD_BLOCK;
 import static org.jruby.util.CommonByteLists.FWD_KWREST;
-import static org.jruby.parser.ParserManager.isEval;
  
  public class @@Parser@@Parser extends @@Parser@@ParserBase {
     public @@Parser@@Parser(@@ParserConstructorParams@@) {
@@ -451,7 +450,7 @@ program       : {
               } top_compstmt {
                   /*%%%*/
                   Node expr = $2;
-                  if (expr != null && !isEval(p.flags)) {
+                  if (expr != null && !p.isEval()) {
                       /* last expression should not be void */
                       if ($2 instanceof BlockNode) {
                         expr = $<BlockNode>2.getLast();

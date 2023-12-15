@@ -15,6 +15,8 @@ public class ParseResultPrism implements ParseResult {
     final String fileName;
     final byte[] source;
 
+    DynamicScope toplevelScope;
+
     public ParseResultPrism(String fileName, byte[] source, Nodes.ProgramNode root, Nodes.Source nodeSource, Encoding encoding) {
         this.root = root;
         this.fileName = fileName;
@@ -24,7 +26,8 @@ public class ParseResultPrism implements ParseResult {
     }
 
     public DynamicScope getDynamicScope() {
-        return null;
+        getStaticScope();
+        return toplevelScope;
     }
 
     // This is only used for non-eval uses.  Eval sets its own and builds through a different code path.
@@ -32,6 +35,7 @@ public class ParseResultPrism implements ParseResult {
     public StaticScope getStaticScope() {
         if (rootScope == null) {
             rootScope = IRBuilderPrism.createStaticScopeFrom(fileName, root.locals, StaticScope.Type.LOCAL, null);
+            toplevelScope = DynamicScope.newDynamicScope(rootScope);
         }
 
         return rootScope;

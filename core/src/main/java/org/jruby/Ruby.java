@@ -198,8 +198,7 @@ import static java.lang.invoke.MethodType.methodType;
 import static org.jruby.RubyBoolean.FALSE_BYTES;
 import static org.jruby.RubyBoolean.TRUE_BYTES;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.GLOBAL;
-import static org.jruby.parser.ParserManager.DATA;
-import static org.jruby.parser.ParserManager.INLINE;
+import static org.jruby.parser.ParserType.*;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
 import static org.jruby.util.RubyStringBuilder.types;
@@ -884,7 +883,7 @@ public final class Ruby implements Constantizable {
      */
     public IRubyObject executeScript(String script, String filename) {
         InputStream in = new ByteArrayInputStream(encodeToBytes(script));
-        ParseResult root = getParserManager().parseFile(filename, 0, in, setupSourceEncoding(getEncodingService().getLocaleEncoding()), null, INLINE);
+        ParseResult root = getParserManager().parseMainFile(filename, 0, in, setupSourceEncoding(getEncodingService().getLocaleEncoding()), getCurrentContext().getCurrentScope(), INLINE);
         ThreadContext context = getCurrentContext();
 
         String oldFile = context.getFile();
@@ -1026,14 +1025,12 @@ public final class Ruby implements Constantizable {
      */
     @Deprecated
     public Node parseFromMain(InputStream inputStream, String filename) {
-        int flags = config.isInlineScript() ? INLINE : 0;
-        return (Node) getParserManager().parseFile(filename, 0, inputStream, setupSourceEncoding(UTF8Encoding.INSTANCE), getCurrentContext().getCurrentScope(), flags).getAST();
+        return (Node) parseFromMain(filename, inputStream).getAST();
     }
 
     public ParseResult parseFromMain(String fileName, InputStream in) {
-        int flags = config.isInlineScript() ? INLINE : 0;
-        return getParserManager().parseFile(fileName, 0, in, setupSourceEncoding(UTF8Encoding.INSTANCE),
-                getCurrentContext().getCurrentScope(), flags | DATA);
+        return getParserManager().parseMainFile(fileName, 0, in, setupSourceEncoding(UTF8Encoding.INSTANCE),
+                getCurrentContext().getCurrentScope(), config.isInlineScript() ? INLINE : MAIN);
     }
 
     /**
@@ -2677,56 +2674,56 @@ public final class Ruby implements Constantizable {
     // Obsolete parseFile function
     @Deprecated
     public Node parseFile(InputStream in, String file, DynamicScope scope) {
-        return (Node) getParserManager().parseFile(file, 0, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, 0).getAST();
+        // Note: We don't know what the caller so we have to assume it may be a toplevel binding use so it uses main parse.
+        return (Node) getParserManager().parseMainFile(file, 0, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, MAIN).getAST();
     }
 
     @Deprecated
     public ParseResult parseFile(String file, InputStream in, DynamicScope scope) {
-       return getParserManager().parseFile(file, 0, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, 0);
+        // Note: We don't know what the caller so we have to assume it may be a toplevel binding use so it uses main parse.
+       return getParserManager().parseMainFile(file, 0, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, MAIN);
     }
 
     @Deprecated
     public Node parseFile(InputStream in, String file, DynamicScope scope, int lineNumber) {
-        return (Node) getParserManager().parseFile(file, lineNumber, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, 0).getAST();
+        // Note: We don't know what the caller so we have to assume it may be a toplevel binding use so it uses main parse.
+        return (Node) getParserManager().parseMainFile(file, lineNumber, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, MAIN).getAST();
     }
 
     @Deprecated
     public ParseResult parseFile(String file, InputStream in, DynamicScope scope, int lineNumber) {
-        if (!RubyInstanceConfig.IR_READING) {
-            return getParserManager().parseFile(file, lineNumber, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, 0);
-        } else {
-            return getParserManager().loadFileFromIRPersistence(file, lineNumber, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, 0);
-        }
+        // Note: We don't know what the caller so we have to assume it may be a toplevel binding use so it uses main parse.
+        return getParserManager().parseMainFile(file, lineNumber, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, MAIN);
     }
 
     @Deprecated
     public Node parseFileFromMain(InputStream in, String file, DynamicScope scope) {
-        return (Node) getParserManager().parseFile(file, 0, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, DATA).getAST();
+        return (Node) getParserManager().parseMainFile(file, 0, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, MAIN).getAST();
     }
 
     @Deprecated
     public ParseResult parseFileFromMain(String file, InputStream in, DynamicScope scope) {
-        if (!RubyInstanceConfig.IR_READING) {
-            return getParserManager().parseFile(file, 0, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, DATA);
-        } else {
-            return getParserManager().loadFileFromIRPersistence(file, 0, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, DATA);
-        }
+        return getParserManager().parseMainFile(file, 0, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, MAIN);
     }
 
     @Deprecated
     private Node parseFileFromMainAndGetAST(InputStream in, String file, DynamicScope scope) {
-        return (Node) getParserManager().parseFile(file, 0, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, DATA).getAST();
+        // Note: We don't know what the caller so we have to assume it may be a toplevel binding use so it uses main parse.
+        return (Node) getParserManager().parseMainFile(file, 0, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, MAIN).getAST();
     }
 
     @Deprecated
     private Node parseFileAndGetAST(InputStream in, String file, DynamicScope scope, int lineNumber, boolean isFromMain) {
-         int flags = isFromMain ? DATA : 0;
-         return (Node) getParserManager().parseFile(file, lineNumber, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, flags).getAST();
+         if (isFromMain) {
+             return (Node) getParserManager().parseMainFile(file, lineNumber, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, MAIN).getAST();
+         } else {
+             return (Node) getParserManager().parseFile(file, lineNumber, in, setupSourceEncoding(UTF8Encoding.INSTANCE)).getAST();
+         }
      }
 
     @Deprecated
     public Node parseInline(InputStream in, String file, DynamicScope scope) {
-        return (Node) getParserManager().parseFile(file, 0, in, setupSourceEncoding(getEncodingService().getLocaleEncoding()), scope, INLINE).getAST();
+        return (Node) getParserManager().parseMainFile(file, 0, in, setupSourceEncoding(getEncodingService().getLocaleEncoding()), scope, INLINE).getAST();
     }
 
     public Encoding setupSourceEncoding(Encoding defaultEncoding) {
@@ -2752,7 +2749,13 @@ public final class Ruby implements Constantizable {
     @Deprecated
     public Node parse(String content, String file, DynamicScope scope, int lineNumber, boolean extraPositionInformation) {
         InputStream in = new ByteArrayInputStream(encodeToBytes(content));
-        return (Node) getParserManager().parseFile(file, lineNumber, in, setupSourceEncoding(getEncodingService().getLocaleEncoding()), scope, extraPositionInformation ? INLINE : 0).getAST();
+        Encoding encoding = setupSourceEncoding(getEncodingService().getLocaleEncoding());
+        if (extraPositionInformation) {
+            return (Node) getParserManager().parseMainFile(file, lineNumber, in, encoding, scope, INLINE).getAST();
+        } else {
+            return (Node) getParserManager().parseFile(file, lineNumber, in, encoding).getAST();
+        }
+
     }
 
     @Deprecated
@@ -2762,7 +2765,12 @@ public final class Ruby implements Constantizable {
 
     @Deprecated
     public Node parse(ByteList content, String file, DynamicScope scope, int lineNumber, boolean extraPositionInformation) {
-        return (Node) getParserManager().parseFile(file, lineNumber, content, scope, extraPositionInformation ? INLINE : 0).getAST();
+        InputStream in = new ByteArrayInputStream(content.getUnsafeBytes(), content.begin(), content.length());
+        if (extraPositionInformation) {
+            return (Node) getParserManager().parseMainFile(file, lineNumber, in, content.getEncoding(), scope, INLINE).getAST();
+        } else {
+            return (Node) getParserManager().parseFile(file, lineNumber, in, content.getEncoding()).getAST();
+        }
     }
 
     public ThreadService getThreadService() {
@@ -2976,29 +2984,7 @@ public final class Ruby implements Constantizable {
         try {
             ParseResult parseResult;
             context.preNodeEval(self);
-            /*
-            if (Options.PARSER_YARP.load() && in instanceof LoadServiceResourceInputStream) {
-                if (!loaded) {
-                    org.yarp.Parser.loadLibrary("/home/enebo/work/jruby/lib/libjavaparser.so");
-                    loaded = true;
-                }
-                byte[] source = ((LoadServiceResourceInputStream) in).getBytes();
-
-                long time = System.nanoTime();
-
-                System.out.println("LOADING: " + scriptName);
-                byte[] blob = org.yarp.Parser.parseAndSerialize(source, null);
-                org.yarp.Nodes.Node node = org.yarp.Loader.load(scriptName, source, blob);
-                long parseTime = System.nanoTime() - time;
-                //yarpTime += parseTime;
-                //System.out.println("TOTAL_TIME: " + yarpTime + ", TIME: " + parseTime + ", SRC SIZE = " + source.length + ", BLOB SIZE = " + blob.length + ", RATIO: " + (((float) blob.length) / source.length));
-                parseResult = new YarpParseResult(scriptName, source, (Nodes.ProgramNode) node);
-  //              parseResult = parseFile(scriptName, in, null);
-            } else {
-
-             */
-            parseResult = getParserManager().parseFile(scriptName, 0, in, setupSourceEncoding(UTF8Encoding.INSTANCE), null, 0);
-            //}
+            parseResult = getParserManager().parseFile(scriptName, 0, in, setupSourceEncoding(UTF8Encoding.INSTANCE));
 
             // toss an anonymous module into the search path
             if (wrap) wrapWithModule((RubyBasicObject) self, parseResult);
@@ -3032,7 +3018,7 @@ public final class Ruby implements Constantizable {
             }
         }
 
-        ParseResult parseResult = getParserManager().parseFile(filename, 0, in, setupSourceEncoding(UTF8Encoding.INSTANCE), null, 0);
+        ParseResult parseResult = getParserManager().parseFile(filename, 0, in, setupSourceEncoding(UTF8Encoding.INSTANCE));
         RootNode root = (RootNode) parseResult;
 
         if (wrap) {

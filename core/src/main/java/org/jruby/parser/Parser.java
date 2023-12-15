@@ -55,7 +55,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadServiceResourceInputStream;
 import org.jruby.util.ByteList;
 
-import static org.jruby.parser.ParserManager.*;
+import static org.jruby.parser.ParserType.*;
 
 /**
  * Serves as a simple facade for all the parsing magic.
@@ -67,19 +67,19 @@ public class Parser {
         this.runtime = runtime;
     }
 
-    public ParseResult parse(String fileName, int lineNumber, ByteList content, DynamicScope blockScope, int flags) {
-        return parse(new ByteListLexerSource(fileName, lineNumber, content, getLines(isEval(flags), fileName)),
-                blockScope, flags);
+    public ParseResult parse(String fileName, int lineNumber, ByteList content, DynamicScope existingScope, ParserType type) {
+        return parse(new ByteListLexerSource(fileName, lineNumber, content, getLines(type == EVAL, fileName)),
+                existingScope, type);
     }
 
     ParseResult parse(String fileName, int lineNumber, InputStream in, Encoding encoding,
-                             DynamicScope blockScope, int flags) {
-        RubyArray list = getLines(isEval(flags), fileName);
+                             DynamicScope existingScope, ParserType type) {
+        RubyArray list = getLines(type == EVAL, fileName);
 
         if (in instanceof LoadServiceResourceInputStream) {
             ByteList source = new ByteList(((LoadServiceResourceInputStream) in).getBytes(), encoding);
             LexerSource lexerSource = new ByteListLexerSource(fileName, lineNumber, source, list);
-            return parse(lexerSource, blockScope, flags);
+            return parse(lexerSource, existingScope, type);
         } else {
             boolean requiresClosing = false;
             RubyIO io;
@@ -92,7 +92,7 @@ public class Parser {
             LexerSource lexerSource = new GetsLexerSource(fileName, lineNumber, io, list, encoding);
 
             try {
-                return parse(lexerSource, blockScope, flags);
+                return parse(lexerSource, existingScope, type);
             } finally {
                 if (requiresClosing && runtime.getObject().getConstantAt("DATA") != io) io.close();
 
@@ -103,12 +103,12 @@ public class Parser {
         }
     }
 
-    private ParseResult parse(LexerSource lexerSource, DynamicScope blockScope, int flags) {
-        RubyParser parser = new RubyParser(runtime, lexerSource, blockScope, flags);
+    private ParseResult parse(LexerSource lexerSource, DynamicScope existingScope, ParserType type) {
+        RubyParser parser = new RubyParser(runtime, lexerSource, existingScope, type);
         RubyParserResult result;
         try {
             result = parser.parse();
-            if (parser.isEndSeen() && isSaveData(flags)) runtime.defineDATA(lexerSource.getRemainingAsIO());
+            if (parser.isEndSeen() && type == ParserType.MAIN) runtime.defineDATA(lexerSource.getRemainingAsIO());
         } catch (IOException e) {
             throw runtime.newSyntaxError("Problem reading source: " + e);
         } catch (SyntaxException e) {
@@ -177,11 +177,12 @@ public class Parser {
             configuration.parseAsBlock(blockScope);
         }
 
-        int flags = (configuration.isEvalParse() ? EVAL : 0) |
-                (configuration.isInlineSource() ? INLINE : 0) |
-                (configuration.isSaveData() ? DATA : 0);
+        ParserType type = configuration.isEvalParse() ? EVAL :
+                configuration.isInlineSource() ? INLINE :
+                        configuration.isSaveData() ? MAIN :
+                                NORMAL;
 
-        RubyParser parser = new RubyParser(runtime, lexerSource, blockScope, flags);
+        RubyParser parser = new RubyParser(runtime, lexerSource, blockScope, type);
         RubyParserResult result;
         try {
             result = parser.parse();
