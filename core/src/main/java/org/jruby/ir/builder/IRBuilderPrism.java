@@ -516,16 +516,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         addInstr(AttrAssignInstr.create(scope, obj, name, args, flags[0], scope.maybeUsingRefinements()));
         return value;
     }
-
-    public Operand buildAttrAssignAssignment(Node receiver, RubySymbol name, Node[] arguments) {
-        Operand obj = build(receiver);
-        int[] flags = new int[] { 0 };
-        Operand[] args = buildCallArgsArray(arguments, flags);
-        addInstr(AttrAssignInstr.create(scope, obj, name, args, flags[0], scope.maybeUsingRefinements()));
-        return args[args.length - 1];
-    }
-
-
+    
     // FIXME(feature): optimization simplifying this from other globals
     private Operand buildBackReferenceRead(Variable result, BackReferenceReadNode node) {
         return buildGlobalVar(result, node.name);
@@ -1420,7 +1411,6 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildInterpolatedString(Variable result, InterpolatedStringNode node) {
-        // FIXME: frozen?
         return buildDStr(result, node.parts, getEncoding(), false, getLine(node));
     }
 
@@ -1824,7 +1814,6 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildString(StringNode node) {
-        // FIXME: No code range
         if (node.isFrozen()) {
             return new FrozenString(bytelistFrom(node), CR_UNKNOWN, scope.getFile(), getLine(node));
         } else {
@@ -2177,15 +2166,6 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         Operand value = buildYieldArgs(node.arguments != null ? node.arguments.arguments : null, flags);
         addInstr(new YieldInstr(result, getYieldClosureVariable(), value, flags[0], unwrap));
         return result;
-    }
-
-    private Operand removeEmptyRestKwarg(Operand[] args) {
-        switch (args.length) {
-            case 1: return null;
-            case 2: return args[0];
-        }
-
-        return new Array(removeArg(args));
     }
 
     Operand buildYieldArgs(Node[] args, int[] flags) {
