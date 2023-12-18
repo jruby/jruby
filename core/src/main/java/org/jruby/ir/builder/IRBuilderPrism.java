@@ -2289,7 +2289,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             buildArrayPattern(testEnd, result, deconstructed, node.constant, node.requireds, node.rest, node.posts, value, inAlternation, isSinglePattern, errorString);
         } else if (exprNodes instanceof CapturePatternNode) {
             buildPatternEach(testEnd, result, original, deconstructed, value, ((CapturePatternNode) exprNodes).value, inAlternation, isSinglePattern, errorString);
-            buildAssignment(((CapturePatternNode) exprNodes).target, deconstructed);
+            buildAssignment(((CapturePatternNode) exprNodes).target, value);
         } else if (exprNodes instanceof HashPatternNode) {
             HashPatternNode node = (HashPatternNode) exprNodes;
             Node[] keys = getKeys(node);
