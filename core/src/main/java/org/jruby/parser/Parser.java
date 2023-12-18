@@ -204,14 +204,13 @@ public class Parser {
     }
 
     private RubyArray getLines(boolean isEvalParse, String file) {
-        RubyArray list = null;
+        if (isEvalParse) return null;
+
         IRubyObject scriptLines = runtime.getObject().getConstantAt("SCRIPT_LINES__");
-        if (!isEvalParse && scriptLines != null) {
-            if (scriptLines instanceof RubyHash) {
-                list = runtime.newArray();
-                ((RubyHash) scriptLines).op_aset(runtime.getCurrentContext(), runtime.newString(file), list);
-            }
-        }
+        if (scriptLines == null || !(scriptLines instanceof RubyHash)) return null;
+
+        RubyArray list = runtime.newArray();
+        ((RubyHash) scriptLines).op_aset(runtime.getCurrentContext(), runtime.newString(file), list);
         return list;
     }
 }
