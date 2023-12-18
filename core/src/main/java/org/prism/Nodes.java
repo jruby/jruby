@@ -432,11 +432,11 @@ public abstract class Nodes {
      */
     public static final class KeywordHashNodeFlags implements Comparable<KeywordHashNodeFlags> {
 
-        // a keyword hash which only has `AssocNode` elements all with static literal keys, which means the elements can be treated as keyword arguments
-        public static final short STATIC_KEYS = 1 << 0;
+        // a keyword hash which only has `AssocNode` elements all with symbol keys, which means the elements can be treated as keyword arguments
+        public static final short SYMBOL_KEYS = 1 << 0;
 
-        public static boolean isStaticKeys(short flags) {
-            return (flags & STATIC_KEYS) != 0;
+        public static boolean isSymbolKeys(short flags) {
+            return (flags & SYMBOL_KEYS) != 0;
         }
 
         private final short flags;
@@ -464,8 +464,8 @@ public abstract class Nodes {
             return flags - other.flags;
         }
 
-        public boolean isStaticKeys() {
-            return (flags & STATIC_KEYS) != 0;
+        public boolean isSymbolKeys() {
+            return (flags & SYMBOL_KEYS) != 0;
         }
 
     }
@@ -5779,8 +5779,8 @@ public abstract class Nodes {
             this.elements = elements;
         }
         
-        public boolean isStaticKeys() {
-            return KeywordHashNodeFlags.isStaticKeys(this.flags);
+        public boolean isSymbolKeys() {
+            return KeywordHashNodeFlags.isSymbolKeys(this.flags);
         }
         
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {

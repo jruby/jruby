@@ -7,6 +7,7 @@ import org.jruby.ParseResult;
 import org.jruby.Ruby;
 import org.jruby.RubyIO;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubySymbol;
 import org.jruby.management.ParserStats;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.load.LoadServiceResourceInputStream;
@@ -82,7 +83,15 @@ public class ParserPrism extends Parser {
 
         ParseResult result = new ParseResultPrism(fileName, source, (Nodes.ProgramNode) res.value, nodeSource, encoding);
         if (blockScope != null) {
-            result.getStaticScope().setEnclosingScope(blockScope.getStaticScope());
+            if (type == MAIN) { // update TOPLEVEL_BINDNG
+                RubySymbol[] locals = ((Nodes.ProgramNode) result.getAST()).locals;
+                for (int i = 0; i < locals.length; i++) {
+                    blockScope.getStaticScope().addVariableThisScope(locals[i].idString());
+                }
+                blockScope.growIfNeeded();
+            } else {
+                result.getStaticScope().setEnclosingScope(blockScope.getStaticScope());
+            }
         }
 
         return result;
