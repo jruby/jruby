@@ -32,7 +32,9 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.function.Supplier;
 
+import com.headius.invokebinder.Binder;
 import com.headius.invokebinder.SmartBinder;
+import com.headius.invokebinder.SmartHandle;
 import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -74,8 +76,10 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneabl
     private final int max;
     private final String parameterDesc;
     private final Signature signature;
+    private final boolean checkArity;
     private final boolean builtin;
     private final boolean notImplemented;
+    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
     private static final com.headius.invokebinder.Signature ARITY_0 =
             com.headius.invokebinder.Signature.from(
@@ -85,6 +89,7 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneabl
     private static final com.headius.invokebinder.Signature ARITY_1 = ARITY_0.insertArg(4, "arg0", IRubyObject.class);
     private static final com.headius.invokebinder.Signature ARITY_2 = ARITY_1.insertArg(5, "arg1", IRubyObject.class);
     private static final com.headius.invokebinder.Signature ARITY_3 = ARITY_2.insertArg(6, "arg2", IRubyObject.class);
+    private static final com.headius.invokebinder.Signature ARITY_N = ARITY_0.insertArg(4, "args", IRubyObject[].class);
     private static final com.headius.invokebinder.Signature[] ARITIES = {ARITY_0, ARITY_1, ARITY_2, ARITY_3};
 
     public HandleMethod(
@@ -97,6 +102,7 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneabl
             String parameterDesc,
             final int min,
             final int max,
+            final boolean checkArity,
             final Supplier<MethodHandle> maker0,
             final Supplier<MethodHandle> maker1,
             final Supplier<MethodHandle> maker2,
@@ -110,6 +116,7 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneabl
         this.parameterDesc = parameterDesc;
         this.min = min;
         this.max = max;
+        this.checkArity = checkArity;
         this.maker0 = maker0;
         this.maker1 = maker1;
         this.maker2 = maker2;
@@ -222,7 +229,19 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneabl
                 target4 = null;
             } else {
                 target4 = maker4.get();
+
+                // wrap with arity check if requested
+                if (checkArity) {
+                    SmartHandle arityCheck = SmartBinder.from(ARITY_N.changeReturn(int.class))
+                            .permute("context", "args")
+                            .append(arrayOf("min", "max"), arrayOf(int.class, int.class), min, max)
+                            .invokeStaticQuiet(LOOKUP, Arity.class, "checkArgumentCount");
+                    target4 = Binder.from(target4.type())
+                            .foldVoid(arityCheck.handle())
+                            .invoke(target4);
+                }
             }
+
             this.target4 = target4;
             initialized4 = true;
             this.maker4 = null;
@@ -323,7 +342,7 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneabl
 
     @Override
     public DynamicMethod dup() {
-        return new HandleMethod(implementationClass, getVisibility(), name, signature.encode(), builtin, notImplemented, parameterDesc, min, max, maker0, maker1, maker2, maker3, maker4);
+        return new HandleMethod(implementationClass, getVisibility(), name, signature.encode(), builtin, notImplemented, parameterDesc, min, max, checkArity, maker0, maker1, maker2, maker3, maker4);
     }
 
     @Override
