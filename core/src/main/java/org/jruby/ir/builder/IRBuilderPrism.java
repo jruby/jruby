@@ -11,7 +11,6 @@ import org.jruby.RubyBignum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyKernel;
 import org.jruby.RubyNumeric;
-import org.jruby.RubyRegexp;
 import org.jruby.RubySymbol;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.IRClosure;
@@ -71,7 +70,6 @@ import static org.jruby.runtime.CallType.VARIABLE;
 import static org.jruby.runtime.ThreadContext.*;
 import static org.jruby.util.CommonByteLists.*;
 import static org.jruby.util.StringSupport.CR_UNKNOWN;
-import static org.jruby.util.StringSupport.positionEndForScan;
 
 public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNode, ConstantPathNode, HashPatternNode> {
     byte[] source;
@@ -245,6 +243,8 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             return buildInstanceVariableWrite((InstanceVariableWriteNode) node);
         } else if (node instanceof IntegerNode) {
             return buildInteger((IntegerNode) node);
+        } else if (node instanceof InterpolatedMatchLastLineNode) {
+            return buildInterpolatedMatchLastLine(result, (InterpolatedMatchLastLineNode) node);
         } else if (node instanceof InterpolatedRegularExpressionNode) {
             return buildInterpolatedRegularExpression(result, (InterpolatedRegularExpressionNode) node);
         } else if (node instanceof InterpolatedStringNode) {
@@ -1398,32 +1398,23 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
                 fix(RubyNumeric.fix2long(number));
     }
 
+    private Operand buildInterpolatedMatchLastLine(Variable result, InterpolatedMatchLastLineNode node) {
+        return buildDRegex(result, node.parts, calculateRegexpOptions(node.flags));
+    }
+
     private Operand buildInterpolatedRegularExpression(Variable result, InterpolatedRegularExpressionNode node) {
-        return buildDRegex(result, node.parts, calculateRegexpOptions(node));
+        return buildDRegex(result, node.parts, calculateRegexpOptions(node.flags));
     }
 
-    private RegexpOptions calculateRegexpOptions(InterpolatedRegularExpressionNode node) {
+    private RegexpOptions calculateRegexpOptions(short flags) {
         RegexpOptions options = new RegexpOptions();
-        options.setMultiline(node.isMultiLine());
-        options.setIgnorecase(node.isIgnoreCase());
-        options.setExtended(node.isExtended());
+        options.setMultiline(RegularExpressionFlags.isMultiLine(flags));
+        options.setIgnorecase(RegularExpressionFlags.isIgnoreCase(flags));
+        options.setExtended(RegularExpressionFlags.isExtended(flags));
         // FIXME: Does this still exist in Ruby?
         //options.setFixed((joniOptions & RubyRegexp.RE_FIXED) != 0);
-        options.setOnce(node.isOnce());
-        options.setEncodingNone(node.isAscii8bit());
-
-        return options;
-    }
-
-    private RegexpOptions calculateRegexpOptions(RegularExpressionNode node) {
-        RegexpOptions options = new RegexpOptions();
-        options.setMultiline(node.isMultiLine());
-        options.setIgnorecase(node.isIgnoreCase());
-        options.setExtended(node.isExtended());
-        // FIXME: Does this still exist in Ruby?
-        //options.setFixed((joniOptions & RubyRegexp.RE_FIXED) != 0);
-        options.setOnce(node.isOnce());
-        options.setEncodingNone(node.isAscii8bit());
+        options.setOnce(RegularExpressionFlags.isOnce(flags));
+        options.setEncodingNone(RegularExpressionFlags.isAscii8bit(flags));
 
         return options;
     }
@@ -1509,7 +1500,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildMatchLastLine(Variable result, MatchLastLineNode node) {
-        return buildMatch(result, new Regexp(bytelist(node.unescaped), RegexpOptions.fromJoniOptions(node.flags)));
+        return buildMatch(result, new Regexp(bytelist(node.unescaped), calculateRegexpOptions(node.flags)));
     }
 
     private Operand buildMatchPredicate(MatchPredicateNode node) {
@@ -1750,7 +1741,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
                                 node.isWindows31j() ? Windows_31JEncoding.INSTANCE :
                                         hackRegexpEncoding(node.unescaped);
 
-        return new Regexp(new ByteList(node.unescaped, encoding), calculateRegexpOptions(node));
+        return new Regexp(new ByteList(node.unescaped, encoding), calculateRegexpOptions(node.flags));
     }
 
     private Encoding hackRegexpEncoding(byte[] data) {
