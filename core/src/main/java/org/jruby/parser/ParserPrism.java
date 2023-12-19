@@ -5,6 +5,7 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.ISO8859_1Encoding;
 import org.jruby.ParseResult;
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyIO;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
@@ -81,6 +82,11 @@ public class ParserPrism extends Parser {
             runtime.defineDATA(RubyIO.newIO(runtime, ChannelHelper.readableChannel(bais)));
         }
 
+        RubyArray lines = getLines(type == EVAL, fileName, nodeSource.getLineCount());
+        if (lines != null) {  // SCRIPT_DATA__ exists we need source filled in for this parse
+            populateScriptData(source, encoding, lines);
+        }
+
         ParseResult result = new ParseResultPrism(fileName, source, (Nodes.ProgramNode) res.value, nodeSource, encoding);
         if (blockScope != null) {
             if (type == MAIN) { // update TOPLEVEL_BINDNG
@@ -95,6 +101,20 @@ public class ParserPrism extends Parser {
         }
 
         return result;
+    }
+
+    private void populateScriptData(byte[] source, Encoding encoding, RubyArray lines) {
+        int begin = 0;
+        int lineNumber = 0;
+        for (int i = 0; i < source.length; i++) {
+            if (source[i] == '\n') {
+                ByteList line = new ByteList(source, begin, i - begin + 1);
+                line.setEncoding(encoding);
+                lines.aset(runtime.newFixnum(lineNumber), runtime.newString(line));
+                begin = i + 1;
+                lineNumber++;
+            }
+        }
     }
 
     @Override

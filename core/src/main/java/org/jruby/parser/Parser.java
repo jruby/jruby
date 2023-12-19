@@ -68,13 +68,13 @@ public class Parser {
     }
 
     public ParseResult parse(String fileName, int lineNumber, ByteList content, DynamicScope existingScope, ParserType type) {
-        return parse(new ByteListLexerSource(fileName, lineNumber, content, getLines(type == EVAL, fileName)),
+        return parse(new ByteListLexerSource(fileName, lineNumber, content, getLines(type == EVAL, fileName, -1)),
                 existingScope, type);
     }
 
     ParseResult parse(String fileName, int lineNumber, InputStream in, Encoding encoding,
                              DynamicScope existingScope, ParserType type) {
-        RubyArray list = getLines(type == EVAL, fileName);
+        RubyArray list = getLines(type == EVAL, fileName, -1);
 
         if (in instanceof LoadServiceResourceInputStream) {
             ByteList source = new ByteList(((LoadServiceResourceInputStream) in).getBytes(), encoding);
@@ -124,7 +124,7 @@ public class Parser {
     public Node parse(String file, ByteList content, DynamicScope blockScope,
             ParserConfiguration configuration) {
         configuration.setDefaultEncoding(content.getEncoding());
-        RubyArray list = getLines(configuration.isEvalParse(), file);
+        RubyArray list = getLines(configuration.isEvalParse(), file, -1);
         LexerSource lexerSource = new ByteListLexerSource(file, configuration.getLineNumber(), content, list);
         return parse(file, lexerSource, blockScope, configuration);
     }
@@ -132,7 +132,7 @@ public class Parser {
     @Deprecated
     public Node parse(String file, byte[] content, DynamicScope blockScope,
             ParserConfiguration configuration) {
-        RubyArray list = getLines(configuration.isEvalParse(), file);
+        RubyArray list = getLines(configuration.isEvalParse(), file, -1);
         ByteList in = new ByteList(content, configuration.getDefaultEncoding());
         LexerSource lexerSource = new ByteListLexerSource(file, configuration.getLineNumber(), in,  list);
         return parse(file, lexerSource, blockScope, configuration);
@@ -144,7 +144,7 @@ public class Parser {
         if (content instanceof LoadServiceResourceInputStream) {
             return parse(file, ((LoadServiceResourceInputStream) content).getBytes(), blockScope, configuration);
         } else {
-            RubyArray list = getLines(configuration.isEvalParse(), file);
+            RubyArray list = getLines(configuration.isEvalParse(), file, -1);
             boolean requiresClosing = false;
             RubyIO io;
             if (content instanceof FileInputStream) {
@@ -203,13 +203,13 @@ public class Parser {
         return result.getAST();
     }
 
-    private RubyArray getLines(boolean isEvalParse, String file) {
+    RubyArray getLines(boolean isEvalParse, String file, int length) {
         if (isEvalParse) return null;
 
         IRubyObject scriptLines = runtime.getObject().getConstantAt("SCRIPT_LINES__");
         if (scriptLines == null || !(scriptLines instanceof RubyHash)) return null;
 
-        RubyArray list = runtime.newArray();
+        RubyArray list = length == -1 ? runtime.newArray() : runtime.newArray(length);
         ((RubyHash) scriptLines).op_aset(runtime.getCurrentContext(), runtime.newString(file), list);
         return list;
     }
