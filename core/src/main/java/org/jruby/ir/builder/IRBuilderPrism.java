@@ -929,31 +929,20 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildDef(DefNode node) {
+        // FIXME: due to how lazy methods work we need this set on method before we actually parse the method.
+        StaticScope staticScope = createStaticScopeFrom(node.locals, StaticScope.Type.LOCAL);
+        staticScope.setSignature(calculateSignature(node.parameters));
+        LazyMethodDefinition def = new LazyMethodDefinitionPrism(source, nodeSource, encoding, node);
+
         if (node.receiver == null) {
-            return buildDefn(node);
+            return buildDefn(defineNewMethod(def, node.name.getBytes(), getLine(node), staticScope, true));
         } else {
-            return buildDefs(node);
+            return buildDefs(node.receiver, defineNewMethod(def, node.name.getBytes(), getLine(node), staticScope, false));
         }
     }
 
     private Operand buildDefined(DefinedNode node) {
         return buildGetDefinition(node.value);
-    }
-
-    private Operand buildDefn(DefNode node) {
-        // FIXME: due to how lazy methods work we need this set on method before we actually parse the method.
-        StaticScope staticScope = createStaticScopeFrom(node.locals, StaticScope.Type.LOCAL);
-        staticScope.setSignature(calculateSignature(node.parameters));
-        LazyMethodDefinition def = new LazyMethodDefinitionPrism(source, nodeSource, encoding, node);
-        return buildDefn(defineNewMethod(def, node.name.getBytes(), getLine(node), staticScope, true));
-    }
-
-    private Operand buildDefs(DefNode node) {
-        // FIXME: due to how lazy methods work we need this set on method before we actually parse the method.
-        StaticScope staticScope = createStaticScopeFrom(node.locals, StaticScope.Type.LOCAL);
-        staticScope.setSignature(calculateSignature(node.parameters));
-        LazyMethodDefinition def = new LazyMethodDefinitionPrism(source, nodeSource, encoding, node);
-        return buildDefs(node.receiver, defineNewMethod(def, node.name.getBytes(), getLine(node), staticScope, false));
     }
 
     private Operand buildElse(ElseNode node) {
@@ -1587,10 +1576,11 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
         if (parameters.keyword_rest instanceof ForwardingParameterNode) {
             Variable keywords = addResultInstr(new ReceiveKeywordsInstr(temp(), true, true));
+            receiveNonBlockArgs(parameters, keywords, true);
             RubySymbol restName = symbol(FWD_REST);
             RubySymbol kwrestName = symbol(FWD_KWREST);
             RubySymbol blockName = symbol(FWD_BLOCK);
-            addInstr(new ReceiveRestArgInstr(argumentResult(restName), keywords, 0, 0));
+            addInstr(new ReceiveRestArgInstr(argumentResult(restName), keywords, parameters.requireds.length, parameters.requireds.length));
             addInstr(new ReceiveKeywordRestArgInstr(argumentResult(kwrestName), keywords));
             Variable blockVar = argumentResult(blockName);
             Variable tmp = addResultInstr(new LoadImplicitClosureInstr(temp()));
