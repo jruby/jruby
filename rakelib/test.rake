@@ -93,6 +93,7 @@ namespace :test do
     jruby_opts = {
         # interpreter is set to threshold=1 to encourage full builds to run for code called twice
         int: "--dev -Xjit.threshold=1 -Xjit.background=false",
+        :'int:prism' => "-X-C -Xjit.threshold=1 -Xjit.background=false -Xparser.prism",
         fullint: "-X-C -Xjit.threshold=0 -Xjit.background=false",
         jit: "-Xjit.threshold=0 -Xjit.background=false",
         aot: "-X+C -Xjit.background=false #{get_meta_size.call()}"
