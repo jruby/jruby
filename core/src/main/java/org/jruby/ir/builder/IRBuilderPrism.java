@@ -2224,7 +2224,12 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         int length = newSplat - lastSplat - 1;
         if (length == 0) return operands[lastSplat];
 
-        Array rhs = subArray(operands, lastSplat + 1, length);
+        Operand rhs;
+        if (length == 1 && (flags[0] & CALL_KEYWORD_REST) != 0) {
+            rhs = operands[lastSplat + 1];
+        } else {
+            rhs = subArray(operands, lastSplat + 1, length);
+        }
         return addResultInstr(new BuildCompoundArrayInstr(temp(), operands[lastSplat], rhs, false, (flags[0] & CALL_KEYWORD_REST) != 0));
     }
 
