@@ -841,9 +841,14 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         Variable leftModule = temp();
         ConstantPathNode colon2Node = (ConstantPathNode) lhs;
         RubySymbol name = symbol(determineBaseName(colon2Node));
-        Operand leftValue = build(colon2Node.parent);
+        Operand leftValue;
+        if (colon2Node.parent == null)  {
+            leftValue = getManager().getObjectClass();   // ::Foo
+        } else {
+            leftValue = build(colon2Node.parent);
+        }
+        // FIXME: ::Foo should be able to eliminate this variable reference
         copy(leftModule, leftValue);
-
         addInstr(new SearchModuleForConstInstr(valueResult, leftModule, name, false, constMissing));
 
         return leftModule;
