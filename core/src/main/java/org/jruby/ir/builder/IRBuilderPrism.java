@@ -1424,6 +1424,13 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         // Duplication checks happen when **{} are literals and not **h variable references.
         Operand duplicateCheck = fals();
 
+        if (node.elements.length == 1 && node.elements[0] instanceof AssocSplatNode) { // Only a single rest arg here.  Do not bother to merge.
+            flags[0] |= CALL_KEYWORD_REST;
+            Operand splat = buildWithOrder(((AssocSplatNode) node.elements[0]).value, hasAssignments);
+
+            return addResultInstr(new RuntimeHelperCall(temp(), HASH_CHECK, new Operand[] { splat }));
+        }
+
         // pair is AssocNode or AssocSplatNode
         for (Node pair: node.elements) {
             Operand keyOperand;
@@ -2184,7 +2191,11 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
                         operands[i] = twoArgs(operands, lastSplat, i, buildSplat((SplatNode) args[i]), flags);
                     } else { // first and possibly only splat
                         flags[0] |= CALL_SPLATS; // FIXME: not sure all splats count?
-                        operands[i] = catArgs(operands, 0, i, buildSplat((SplatNode) args[i]), flags);
+                        if (i == 0) {
+                            operands[i] = buildSplat((SplatNode) args[i]);
+                        } else {
+                            operands[i] = catArgs(operands, 0, i, buildSplat((SplatNode) args[i]), flags);
+                        }
                     }
                     lastSplat = i;
                 } else if (args[i] instanceof KeywordHashNode) {
