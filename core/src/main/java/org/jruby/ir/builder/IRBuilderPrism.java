@@ -2229,10 +2229,16 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return new Array(elts.toArray(args));
     }
 
-    // FIXME: needs to derive this walking down tree.
+
+    // Assumption: @, @@, $ assignments are all accessed directly through instructions
+    // so they will always be indirected through temporary variables.  LocalVariables
+    // are just operands so we only need to be aware of these being used within assignments.
     @Override
     boolean containsVariableAssignment(Node node) {
-        if (node instanceof LocalVariableWriteNode) {
+        if (node instanceof LocalVariableWriteNode ||
+                node instanceof LocalVariableOperatorWriteNode ||
+                node instanceof LocalVariableAndWriteNode ||
+                node instanceof LocalVariableOrWriteNode) {
             return true;
         }
         return false;
