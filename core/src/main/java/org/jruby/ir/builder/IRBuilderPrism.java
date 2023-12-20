@@ -52,6 +52,7 @@ import org.jruby.runtime.Signature;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
+import org.jruby.util.KCode;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.StringSupport;
@@ -1391,6 +1392,23 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return buildDRegex(result, node.parts, calculateRegexpOptions(node.flags));
     }
 
+    Operand buildDRegex(Variable result, Node[] children, RegexpOptions options) {
+        Node[] pieces;
+        if (children.length == 1) { // Case of interpolation only being an embedded element
+            // We add an empty string here because the internal RubyRegexp.processDRegexp expects there
+            // will be at least one string element which has had its encoding set properly by the options
+            // value of the regexp.  Adding an empty string will pick up the encoding from options (this
+            // empty string is how legacy parsers do this but it naturally falls out of the parser.
+            pieces = new Node[children.length + 1];
+            pieces[0] = new StringNode((short) 0, EMPTY.bytes(), 0, 0);
+            pieces[1] = children[0];
+        } else {
+            pieces = children;
+        }
+
+        return super.buildDRegex(result, pieces, options);
+    }
+
     private RegexpOptions calculateRegexpOptions(short flags) {
         RegexpOptions options = new RegexpOptions();
         options.setMultiline(RegularExpressionFlags.isMultiLine(flags));
@@ -1399,7 +1417,19 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         // FIXME: Does this still exist in Ruby?
         //options.setFixed((joniOptions & RubyRegexp.RE_FIXED) != 0);
         options.setOnce(RegularExpressionFlags.isOnce(flags));
-        options.setEncodingNone(RegularExpressionFlags.isAscii8bit(flags));
+        if (RegularExpressionFlags.isAscii8bit(flags)) {
+            options.setEncodingNone(RegularExpressionFlags.isAscii8bit(flags));
+            options.setExplicitKCode(KCode.NONE);
+        } else if (RegularExpressionFlags.isUtf8(flags)) {
+            options.setExplicitKCode(KCode.UTF8);
+            options.setFixed(true);
+        } else if (RegularExpressionFlags.isEucJp(flags)) {
+            options.setExplicitKCode(KCode.EUC);
+            options.setFixed(true);
+        } else if (RegularExpressionFlags.isWindows31j(flags)) {
+            options.setExplicitKCode(KCode.SJIS);
+            options.setFixed(true);
+        }
 
         return options;
     }
@@ -1491,7 +1521,9 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildMatchLastLine(Variable result, MatchLastLineNode node) {
-        return buildMatch(result, new Regexp(bytelist(node.unescaped), calculateRegexpOptions(node.flags)));
+        return buildMatch(result,
+                new Regexp(new ByteList(node.unescaped,
+                        getRegexpEncoding(node.unescaped, node.flags)), calculateRegexpOptions(node.flags)));
     }
 
     private Operand buildMatchPredicate(MatchPredicateNode node) {
@@ -1725,15 +1757,8 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildRegularExpression(RegularExpressionNode node) {
-        // FIXME: This only partially helps but it does allow more regexps to match source encoding
-        // if they happen to be valid in that encoding.
-        Encoding encoding = node.isAscii8bit() ? ASCIIEncoding.INSTANCE :
-                node.isUtf8() ? UTF8Encoding.INSTANCE :
-                        node.isEucJp() ? EUCJPEncoding.INSTANCE :
-                                node.isWindows31j() ? Windows_31JEncoding.INSTANCE :
-                                        hackRegexpEncoding(node.unescaped);
-
-        return new Regexp(new ByteList(node.unescaped, encoding), calculateRegexpOptions(node.flags));
+        return new Regexp(new ByteList(node.unescaped,
+                getRegexpEncoding(node.unescaped, node.flags)), calculateRegexpOptions(node.flags));
     }
 
     private Encoding hackRegexpEncoding(byte[] data) {
@@ -1914,7 +1939,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return false;
     }
 
-    int dynamicPiece(Operand[] pieces, int i, Node pieceNode) {
+    int dynamicPiece(Operand[] pieces, int i, Node pieceNode, Encoding encoding) {
         Operand piece;
 
         // somewhat arbitrary minimum size for interpolated values
@@ -1924,9 +1949,18 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
             // FIXME: missing EmbddedVariableNode.
             if (pieceNode instanceof StringNode) {
-                piece = buildString((StringNode) pieceNode);
-                // FIXME: we have this in piece but is it always frozen or non-frozen?
-                estimatedSize = bytelistFrom((StringNode) pieceNode).realSize();
+                // FIXME: This is largely a duplicate buildString.  It can be partially genericalized.
+                ByteList data = encoding == null ?
+                        bytelistFrom((StringNode) pieceNode) :
+                        new ByteList(((StringNode) pieceNode).unescaped, encoding);
+
+                if (((StringNode) pieceNode).isFrozen()) {
+                    piece = new FrozenString(data, CR_UNKNOWN, scope.getFile(), getLine(pieceNode));
+                } else {
+                    piece = new MutableString(data, CR_UNKNOWN, scope.getFile(), getLine(pieceNode));
+                }
+
+                estimatedSize += data.realSize();
             } else if (pieceNode instanceof EmbeddedStatementsNode) {
                 if (scope.maybeUsingRefinements()) {
                     // refined asString must still go through dispatch
@@ -2345,6 +2379,20 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         }
 
         return result;
+    }
+
+    private Encoding getRegexpEncoding(byte[] bytes, short flags) {
+        Encoding encoding = getRegexpEncodingFromOptions(flags);
+
+        return encoding == null ? hackRegexpEncoding(bytes) : encoding;
+    }
+
+    private Encoding getRegexpEncodingFromOptions(short flags) {
+        return RegularExpressionFlags.isAscii8bit(flags) ? ASCIIEncoding.INSTANCE :
+                RegularExpressionFlags.isUtf8(flags) ? UTF8Encoding.INSTANCE :
+                        RegularExpressionFlags.isEucJp(flags) ? EUCJPEncoding.INSTANCE :
+                                RegularExpressionFlags.isWindows31j(flags) ? Windows_31JEncoding.INSTANCE :
+                                        null;
     }
 
     private Node getRestFromKeys(HashPatternNode node) {

@@ -1,6 +1,5 @@
 package org.jruby.ir.builder;
 
-import jnr.ffi.annotations.In;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
@@ -44,7 +43,6 @@ import org.jruby.util.DefinedMessage;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.cli.Options;
-import org.jruby.util.io.EncodingUtils;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -1320,9 +1318,10 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     Operand buildDRegex(Variable result, U[] children, RegexpOptions options) {
         Operand[] pieces = new Operand[children.length];
+        Encoding encoding = options.getKCode().getEncoding();
 
         for (int i = 0; i < children.length; i++) {
-            dynamicPiece(pieces, i, children[i]); // dregexp does not use estimated size
+            dynamicPiece(pieces, i, children[i], encoding); // dregexp does not use estimated size
         }
 
         if (result == null) result = temp();
@@ -1337,7 +1336,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         int estimatedSize = 0;
 
         for (int i = 0; i < pieces.length; i++) {
-            estimatedSize += dynamicPiece(pieces, i, nodePieces[i]);
+            estimatedSize += dynamicPiece(pieces, i, nodePieces[i], null);
         }
 
         addInstr(new BuildCompoundStringInstr(result, pieces, encoding, estimatedSize, isFrozen, getFileName(), line));
@@ -2837,7 +2836,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     abstract boolean alwaysTrue(U node);
     abstract Operand build(Variable result, U node);
     abstract Operand build(U node);
-    abstract int dynamicPiece(Operand[] pieces, int index, U piece);
+    abstract int dynamicPiece(Operand[] pieces, int index, U piece, Encoding encoding);
     abstract void receiveMethodArgs(V defNode);
 
     IRMethod defineNewMethod(LazyMethodDefinition<U, V, W, X, Y, Z> defn, ByteList name, int line, StaticScope scope, boolean isInstanceMethod) {
