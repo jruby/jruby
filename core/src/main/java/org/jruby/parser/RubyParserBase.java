@@ -2226,7 +2226,7 @@ public abstract class RubyParserBase {
 
     public DynamicScope finalizeDynamicScope(StaticScope staticScope) {
         // Eval scooped up some new variables changing the size of the scope.
-        if (existingScope != null) {
+        if (existingScope != null && (type == ParserType.EVAL || type == ParserType.MAIN)) {
             existingScope.growIfNeeded();
             return existingScope;
         }
