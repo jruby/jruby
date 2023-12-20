@@ -635,9 +635,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     private Class tryClass(String name, String path, Class targetClass, Class expectedSuperclass) {
         final Class c;
         try {
-            URL resource = classLoader.findResource(path + ".class");
-            if (resource == null) {
-                if (DEBUG) LOG.debug("could not find class file for " + name);
+            if (!classLoader.hasClass(name)) {
+                if (DEBUG) System.err.println("could not find class file for " + name);
                 seenUndefinedClasses = true;
                 return null;
             }
