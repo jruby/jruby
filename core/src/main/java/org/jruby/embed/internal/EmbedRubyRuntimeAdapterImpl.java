@@ -189,7 +189,7 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
                 node = (Node) runtime.getParserManager().parseEval(filename, line, (String) input, scope).getAST();
             } else {
                 node = (Node) runtime.getParserManager().parseMainFile(filename, line, (InputStream) input,
-                        runtime.setupSourceEncoding(UTF8Encoding.INSTANCE), scope, ParserType.NORMAL).getAST();
+                        runtime.setupSourceEncoding(UTF8Encoding.INSTANCE), scope, ParserType.EVAL).getAST();
             }
             CompileMode compileMode = runtime.getInstanceConfig().getCompileMode();
             if (compileMode == CompileMode.FORCE) {
