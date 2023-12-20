@@ -883,7 +883,7 @@ public final class Ruby implements Constantizable {
      */
     public IRubyObject executeScript(String script, String filename) {
         InputStream in = new ByteArrayInputStream(encodeToBytes(script));
-        ParseResult root = getParserManager().parseMainFile(filename, 0, in, setupSourceEncoding(getEncodingService().getLocaleEncoding()), getCurrentContext().getCurrentScope(), INLINE);
+        ParseResult root = getParserManager().parseMainFile(filename, 0, in, setupSourceEncoding(getEncodingService().getLocaleEncoding()), getCurrentContext().getCurrentScope(), NORMAL);
         ThreadContext context = getCurrentContext();
 
         String oldFile = context.getFile();
