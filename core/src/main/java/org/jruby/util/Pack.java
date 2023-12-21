@@ -1598,24 +1598,11 @@ public class Pack {
     }
 
     private static void unpack_at(Ruby runtime, ByteList encodedString, ByteBuffer encode, int occurrences) {
-        try {
-            int limit;
-            if (occurrences == IS_STAR) {
-                limit = checkLimit(runtime, encode, encodedString.begin() + encode.remaining());
-            } else {
-                limit = checkLimit(runtime, encode, encodedString.begin() + occurrences);
-            }
-            positionBuffer(encode, limit);
-        } catch (IllegalArgumentException iae) {
-            throw runtime.newArgumentError("@ outside of string");
-        }
-    }
+        int limit = encodedString.begin() + (occurrences == IS_STAR ? encode.remaining() : occurrences);
 
-    private static int checkLimit(Ruby runtime, ByteBuffer encode, int limit) {
-        if (limit >= encode.capacity() || limit < 0) {
-            throw runtime.newRangeError("pack length too big");
-        }
-        return limit;
+        if (limit > encode.limit() || limit < 0) throw runtime.newArgumentError("@ outside of string");
+
+        positionBuffer(encode, limit);
     }
 
     @Deprecated
