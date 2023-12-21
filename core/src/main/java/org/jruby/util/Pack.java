@@ -44,6 +44,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.*;
+import org.jruby.exceptions.RangeError;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -1035,6 +1036,7 @@ public class Pack {
                     do {
                         occurrences = occurrences * 10 + Character.digit((char)(next & 0xFF), 10);
                         next = safeGet(format);
+                        if (occurrences < 0) throw runtime.newRangeError("pack length too big");
                     } while (next != 0 && ASCII.isDigit(next));
                 } else {
                     occurrences = type == '@' ? 0 : 1;
@@ -1598,24 +1600,11 @@ public class Pack {
     }
 
     private static void unpack_at(Ruby runtime, ByteList encodedString, ByteBuffer encode, int occurrences) {
-        try {
-            int limit;
-            if (occurrences == IS_STAR) {
-                limit = checkLimit(runtime, encode, encodedString.begin() + encode.remaining());
-            } else {
-                limit = checkLimit(runtime, encode, encodedString.begin() + occurrences);
-            }
-            positionBuffer(encode, limit);
-        } catch (IllegalArgumentException iae) {
-            throw runtime.newArgumentError("@ outside of string");
-        }
-    }
+        int limit = encodedString.begin() + (occurrences == IS_STAR ? encode.remaining() : occurrences);
 
-    private static int checkLimit(Ruby runtime, ByteBuffer encode, int limit) {
-        if (limit >= encode.capacity() || limit < 0) {
-            throw runtime.newRangeError("pack length too big");
-        }
-        return limit;
+        if (limit > encode.limit() || limit < 0) throw runtime.newArgumentError("@ outside of string");
+
+        positionBuffer(encode, limit);
     }
 
     @Deprecated
