@@ -1047,42 +1047,28 @@ public class EncodingUtils {
     private static RubyString strTranscode(ThreadContext context, IRubyObject toEncoding, IRubyObject forceEncoding, RubyString str, int ecflags, IRubyObject ecopts, TranscodeResult result, boolean explicitlyInvalidReplace) {
         Ruby runtime = context.runtime;
 
-        Encoding[] senc_p = {null}, denc_p = {null};
-        byte[][] sname_p = {null}, dname_p = {null};
-        Encoding dencindex = strTranscodeEncArgs(context, str, toEncoding, forceEncoding, sname_p, senc_p, dname_p, denc_p);
+        // simplified strTranscodeEncArgs logic to avoid the carrier arrays
+        Encoding denc = toEncodingIndex(context, toEncoding);
+        byte[] dname = (denc == null) ? toEncoding.convertToString().getBytes() : denc.getName();
+
+        Encoding senc = forceEncoding.isNil() ? encGet(context, str) : toEncodingIndex(context, forceEncoding);
+        byte[] sname = (senc == null) ? forceEncoding.convertToString().getBytes() : senc.getName();
 
         RubyString dest;
 
         if (noDecorators(ecflags)) {
-            dest = str;
-            if (senc_p[0] != null && senc_p[0] == denc_p[0]) {
-                if ((ecflags & EConvFlags.INVALID_MASK) != 0 && explicitlyInvalidReplace) {
-                    IRubyObject rep = context.nil;
-                    if (!ecopts.isNil()) {
-                        rep = ((RubyHash) ecopts).op_aref(context, runtime.newSymbol("replace"));
-                    }
-                    IRubyObject scrubbed = str.encStrScrub(context, senc_p[0], rep, Block.NULL_BLOCK);
-                    if (scrubbed.isNil()) {
-                        dest = str;
-                    } else {
-                        dest = (RubyString) scrubbed;
-                    }
-                } else if (forceEncoding.isNil()){
-                    dencindex = null;
-                }
-                return result.apply(context, str, dencindex, dest);
-            } else if (senc_p[0] != null && denc_p[0] != null
-                    && senc_p[0].isAsciiCompatible() && denc_p[0].isAsciiCompatible()
-                    && str.scanForCodeRange() == StringSupport.CR_7BIT) {
-                return result.apply(context, str, dencindex, str);
-            } else if (encodingEqual(sname_p[0], dname_p[0])) {
-                if (forceEncoding.isNil()) dencindex = null;
-                return result.apply(context, str, dencindex, str);
+            if (senc != null && senc == denc) {
+                return strTranscodeScrub(context, forceEncoding, str, ecflags, ecopts, result, explicitlyInvalidReplace, denc, senc);
+            } else if (is7BitCompat(str, denc, senc)) {
+                return result.apply(context, str, denc, str);
+            } else if (encodingEqual(sname, dname)) {
+                if (forceEncoding.isNil()) denc = null;
+                return result.apply(context, str, denc, str);
             }
         } else {
-            if (encodingEqual(sname_p[0], dname_p[0])) {
-                sname_p[0] = NULL_BYTE_ARRAY;
-                dname_p[0] = NULL_BYTE_ARRAY;
+            if (encodingEqual(sname, dname)) {
+                sname = NULL_BYTE_ARRAY;
+                dname = NULL_BYTE_ARRAY;
             }
         }
 
@@ -1097,7 +1083,7 @@ public class EncodingUtils {
         byte[] destpBytes = destp.unsafeBytes();
         Ptr frompPos = new Ptr(fromp.getBegin());
         Ptr destpPos = new Ptr(destp.getBegin());
-        transcodeLoop(context, frompBytes, frompPos, destpBytes, destpPos, frompPos.p + slen, destpPos.p + blen, destp, strTranscodingResize, sname_p[0], dname_p[0], ecflags, ecopts);
+        transcodeLoop(context, frompBytes, frompPos, destpBytes, destpPos, frompPos.p + slen, destpPos.p + blen, destp, strTranscodingResize, sname, dname, ecflags, ecopts);
 
         if (frompPos.p != sp.begin() + slen) {
             throw runtime.newArgumentError("not fully converted, " + (slen - frompPos.p) + " bytes left");
@@ -1105,11 +1091,34 @@ public class EncodingUtils {
 
         // MRI sets length of dest here, but we've already done it in the inner transcodeLoop
 
-        if (denc_p[0] == null) {
-            dencindex = defineDummyEncoding(context, dname_p[0]);
+        if (denc == null) {
+            denc = defineDummyEncoding(context, dname);
         }
 
-        return result.apply(context, str, dencindex, dest);
+        return result.apply(context, str, denc, dest);
+    }
+
+    private static boolean is7BitCompat(RubyString str, Encoding denc, Encoding senc) {
+        return senc != null && denc != null
+                && senc.isAsciiCompatible() && denc.isAsciiCompatible()
+                && str.scanForCodeRange() == StringSupport.CR_7BIT;
+    }
+
+    private static RubyString strTranscodeScrub(ThreadContext context, IRubyObject forceEncoding, RubyString str, int ecflags, IRubyObject ecopts, TranscodeResult result, boolean explicitlyInvalidReplace, Encoding denc, Encoding senc) {
+        RubyString dest = str;
+        if ((ecflags & EConvFlags.INVALID_MASK) != 0 && explicitlyInvalidReplace) {
+            IRubyObject rep = context.nil;
+            if (!ecopts.isNil()) {
+                rep = ((RubyHash) ecopts).op_aref(context, context.runtime.newSymbol("replace"));
+            }
+            IRubyObject scrubbed = str.encStrScrub(context, senc, rep, Block.NULL_BLOCK);
+            if (!scrubbed.isNil()) {
+                dest = (RubyString) scrubbed;
+            }
+        } else if (forceEncoding.isNil()){
+            denc = null;
+        }
+        return result.apply(context, str, denc, dest);
     }
 
     // rb_obj_encoding
