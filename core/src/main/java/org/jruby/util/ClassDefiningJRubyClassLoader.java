@@ -30,10 +30,15 @@ package org.jruby.util;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.ProtectionDomain;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 public class ClassDefiningJRubyClassLoader extends URLClassLoader implements ClassDefiningClassLoader {
 
     public final static ProtectionDomain DEFAULT_DOMAIN;
+
+    private final Set<String> definedClasses = new ConcurrentSkipListSet<>();
 
     static {
         ProtectionDomain defaultDomain = null;
@@ -50,10 +55,24 @@ public class ClassDefiningJRubyClassLoader extends URLClassLoader implements Cla
     }
 
     public Class<?> defineClass(String name, byte[] bytes) {
-        return super.defineClass(name, bytes, 0, bytes.length, DEFAULT_DOMAIN);
+        Class<?> aClass = super.defineClass(name, bytes, 0, bytes.length, DEFAULT_DOMAIN);
+        definedClasses.add(name);
+        return aClass;
     }
 
     public Class<?> defineClass(String name, byte[] bytes, ProtectionDomain domain) {
-        return super.defineClass(name, bytes, 0, bytes.length, domain);
+        Class<?> aClass = super.defineClass(name, bytes, 0, bytes.length, domain);
+        definedClasses.add(name);
+        return aClass;
+    }
+
+    /**
+     * Return true if the class is loadable in this classloader, false otherwise.
+     *
+     * @param name the class name
+     * @return whether it's loadable
+     */
+    public boolean hasClass(String name) {
+        return definedClasses.contains(name) || super.findResource(name.replace('.', '/') + ".class") != null;
     }
 }

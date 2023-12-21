@@ -56,6 +56,7 @@ import org.objectweb.asm.util.CheckClassAdapter;
 
 import java.io.PrintWriter;
 import java.lang.reflect.Modifier;
+import java.net.URL;
 import java.util.Collections;
 import java.util.List;
 
@@ -263,11 +264,11 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
         Class superclass = determineSuperclass(info);
 
-        Class c = tryClass(generatedClassName, desc1.declaringClass, superclass);
+        Class c = tryClass(generatedClassName, generatedClassPath, desc1.declaringClass, superclass);
         if (c == null) {
             synchronized (syncObject) {
                 // try again
-                c = tryClass(generatedClassName, desc1.declaringClass, superclass);
+                c = tryClass(generatedClassName, generatedClassPath, desc1.declaringClass, superclass);
                 if (c == null) {
                     if (DEBUG) LOG.debug("Generating " + generatedClassName + ", min: " + info.getMin() + ", max: " + info.getMax() + ", hasBlock: " + info.isBlock() + ", rest: " + info.isRest());
 
@@ -631,14 +632,15 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
-    private Class tryClass(String name, Class targetClass, Class expectedSuperclass) {
+    private Class tryClass(String name, String path, Class targetClass, Class expectedSuperclass) {
         final Class c;
         try {
-            if (classLoader == null) {
-                c = Class.forName(name, true, classLoader);
-            } else {
-                c = classLoader.loadClass(name);
+            if (!classLoader.hasClass(name)) {
+                if (DEBUG) System.err.println("could not find class file for " + name);
+                seenUndefinedClasses = true;
+                return null;
             }
+            c = classLoader.loadClass(name);
         } catch (ClassNotFoundException e) {
             if (DEBUG) LOG.debug(e);
             seenUndefinedClasses = true;
