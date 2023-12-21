@@ -6586,11 +6586,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return offset;
     }
 
-    @Deprecated // not used
-    public RubyArray unpack(IRubyObject obj) {
-        return Pack.unpack(getRuntime(), this.value, stringValue(obj).value);
-    }
-
     public void empty() {
         value = ByteList.EMPTY_BYTELIST;
         shareLevel = SHARE_LEVEL_BYTELIST;
@@ -7243,5 +7238,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @Deprecated
     public IRubyObject scan19(ThreadContext context, IRubyObject arg, Block block) { return scan(context, arg, block); }
+
+    @Deprecated // not used
+    public RubyArray unpack(IRubyObject obj) {
+        return Pack.unpack(getRuntime(), this.value, stringValue(obj).value);
+    }
 
 }
