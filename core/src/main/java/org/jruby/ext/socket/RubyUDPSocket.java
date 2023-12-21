@@ -36,7 +36,6 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
 import org.jruby.RubyInteger;
-import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
@@ -145,65 +144,29 @@ public class RubyUDPSocket extends RubyIPSocket {
     @JRubyMethod
     public IRubyObject bind(ThreadContext context, IRubyObject host, IRubyObject _port) {
         final Ruby runtime = context.runtime;
-
-        final InetSocketAddress addr;
         final int port = SocketUtils.portToInt(_port);
-        try {
-            final Channel channel = getChannel();
 
-            if ( host.isNil() ||
-                 ( (host instanceof RubyString) && ((RubyString) host).isEmpty() ) ) {
-                // host is nil or the empty string, bind to INADDR_ANY
-                addr = new InetSocketAddress(port);
-            }
-            else if (host instanceof RubyFixnum) {
-                // passing in something like INADDR_ANY
-                int intAddr;
-                if (host instanceof RubyInteger) {
-                    intAddr = RubyNumeric.fix2int(host);
-                } else if (host instanceof RubyString) {
-                    intAddr = ((RubyString)host).to_i().convertToInteger().getIntValue();
-                } else {
-                    throw runtime.newTypeError(host, runtime.getInteger());
-                }
-                RubyModule Socket = runtime.getModule("Socket");
-                if (intAddr == RubyNumeric.fix2int(Socket.getConstant("INADDR_ANY"))) {
-                    addr = new InetSocketAddress(InetAddress.getByName("0.0.0.0"), port);
-                }
-                else {
-                    if (multicastStateManager == null) {
-                        throw runtime.newNotImplementedError("bind with host: " + intAddr);
-                    }
-                    else addr = null;
-                }
-            }
-            else {
-                addr = new InetSocketAddress(InetAddress.getByName(host.convertToString().toString()), port);
-            }
+        try {
+            final InetSocketAddress addr = getInetSocketAddress(runtime, host, port);
 
             if (multicastStateManager == null) {
-                ((DatagramChannel) channel).bind(addr);
+                ((DatagramChannel) getChannel()).bind(addr);
             } else {
                 multicastStateManager.rebindToPort(port);
             }
 
             return RubyFixnum.zero(runtime);
-        }
-        catch (UnsupportedAddressTypeException e) {
+        } catch (UnsupportedAddressTypeException e) {
             // This may not be the appropriate message for all such exceptions
             ProtocolFamily family = this.family == null ? StandardProtocolFamily.INET : this.family;
             throw SocketUtils.sockerr(runtime, "bind: unsupported address " + host.inspect() + " for protocol family " + family);
-        }
-        catch (UnknownHostException e) {
+        } catch (UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "bind: name or service not known");
-        }
-        catch (BindException e) {
+        } catch (BindException e) {
             throw runtime.newErrnoFromBindException(e, bindContextMessage(host, port));
-        }
-        catch (AlreadyBoundException e) {
+        } catch (AlreadyBoundException e) {
             throw runtime.newErrnoEINVALError(bindContextMessage(host, port));
-        }
-        catch (SocketException e) {
+        } catch (SocketException e) {
             final String message = e.getMessage();
             if ( message != null ) {
                 switch ( message ) {
@@ -212,10 +175,26 @@ public class RubyUDPSocket extends RubyIPSocket {
                 }
             }
             throw sockerr(runtime, "bind: name or service not known", e);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw sockerr(runtime, "bind: name or service not known", e);
         }
+    }
+
+    private InetSocketAddress getInetSocketAddress(Ruby runtime, IRubyObject host, int port) throws UnknownHostException {
+        // Handle cases where we treat as INADDR_ANY
+        if (host.isNil() || ((host instanceof RubyString) && ((RubyString) host).isEmpty())) return new InetSocketAddress(port);
+        if (host instanceof RubyFixnum) {
+            int intAddr = RubyNumeric.fix2int(host);
+            if (intAddr == RubyNumeric.fix2int(runtime.getModule("Socket").getConstant("INADDR_ANY"))) {
+                return new InetSocketAddress(InetAddress.getByName("0.0.0.0"), port);
+            } else {
+                if (multicastStateManager == null) throw runtime.newNotImplementedError("bind with host: " + intAddr);
+                return null;
+            }
+        }
+
+        // Specific host specified.
+        return new InetSocketAddress(InetAddress.getByName(host.convertToString().toString()), port);
     }
 
     @JRubyMethod
