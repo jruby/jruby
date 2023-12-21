@@ -48,6 +48,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.Sockaddr;
 
 import java.io.IOException;
@@ -496,6 +497,60 @@ public class RubyUDPSocket extends RubyIPSocket {
         catch (Exception e) {
             throw sockerr(runtime, e.getLocalizedMessage(), e);
         }
+    }
+
+    @JRubyMethod
+    public IRubyObject inspect(ThreadContext context) {
+        final OpenFile openFile = this.openFile;
+        if (openFile == null) return super.inspect();
+
+        String className = getMetaClass().getRealClass().getName();
+        String path = openFile.getPath();
+        String status = "";
+
+        if (path == null || path == "") {
+            if (openFile.fd() == null) {
+                path = "";
+                status = "(closed)";
+            } else {
+                path = "fd " + openFile.fd().bestFileno();
+            }
+        } else if (!openFile.isOpen()) {
+            status = " (closed)";
+        }
+
+        return getRuntime().newString("#<" + className + ':' + path + status + inspectExtraInfo(openFile) + '>');
+    }
+
+    private String inspectExtraInfo(OpenFile openFile) {
+        if (openFile.fd() != null) {
+            DatagramChannel channel = (DatagramChannel) openFile.channel();
+
+            if (channel != null) {
+                StringBuilder buf = new StringBuilder();
+
+                try {
+                    InetSocketAddress addr = (InetSocketAddress) channel.getLocalAddress();
+                    if (addr != null) {
+                        InetAddress inetAddr = addr.getAddress();
+                        buf.append(", ").append(inetAddr instanceof Inet4Address ? "AF_INET" : "AF_INET6");
+                        buf.append(", ").append(addr.getHostString());
+                        buf.append(", ").append(addr.getPort());
+                    } else { // Uninitialized
+                        if (this.family != null && this.family == StandardProtocolFamily.INET6) {
+                            buf.append(", AF_INET6, ::, 0");
+                        } else {
+                            buf.append(", AF_INET, 0.0.0.0, 0");
+                        }
+                    }
+                } catch (IOException e) {
+                }
+
+                return buf.toString();
+            }
+        }
+
+        return "";
     }
 
     /**
