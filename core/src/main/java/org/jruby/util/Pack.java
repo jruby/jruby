@@ -44,6 +44,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.*;
+import org.jruby.exceptions.RangeError;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -1035,6 +1036,7 @@ public class Pack {
                     do {
                         occurrences = occurrences * 10 + Character.digit((char)(next & 0xFF), 10);
                         next = safeGet(format);
+                        if (occurrences < 0) throw runtime.newRangeError("pack length too big");
                     } while (next != 0 && ASCII.isDigit(next));
                 } else {
                     occurrences = type == '@' ? 0 : 1;
