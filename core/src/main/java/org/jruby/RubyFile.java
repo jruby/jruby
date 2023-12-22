@@ -1043,7 +1043,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 path.getEncoding()) == 0;
     }
 
-    @JRubyMethod(name = "ftype", required = 1, meta = true)
+    @JRubyMethod(name = "ftype", meta = true)
     public static IRubyObject ftype(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         Ruby runtime = context.runtime;
         RubyString path = StringSupport.checkEmbeddedNulls(runtime, get_path(context, filename));
@@ -1055,35 +1055,35 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return doJoin(context, recv, args);
     }
 
-    @JRubyMethod(name = "lstat", required = 1, meta = true)
+    @JRubyMethod(name = "lstat", meta = true)
     public static IRubyObject lstat(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         Ruby runtime = context.runtime;
         String f = StringSupport.checkEmbeddedNulls(runtime, get_path(context, filename)).toString();
         return runtime.newFileStat(f, true);
     }
 
-    @JRubyMethod(name = "stat", required = 1, meta = true)
+    @JRubyMethod(name = "stat", meta = true)
     public static IRubyObject stat(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         Ruby runtime = context.runtime;
         String f = StringSupport.checkEmbeddedNulls(runtime, get_path(context, filename)).toString();
         return runtime.newFileStat(f, false);
     }
 
-    @JRubyMethod(name = "atime", required = 1, meta = true)
+    @JRubyMethod(name = "atime", meta = true)
     public static IRubyObject atime(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         Ruby runtime = context.runtime;
         String f = StringSupport.checkEmbeddedNulls(runtime, get_path(context, filename)).toString();
         return runtime.newFileStat(f, false).atime();
     }
 
-    @JRubyMethod(name = "ctime", required = 1, meta = true)
+    @JRubyMethod(name = "ctime", meta = true)
     public static IRubyObject ctime(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         Ruby runtime = context.runtime;
         String f = StringSupport.checkEmbeddedNulls(runtime, get_path(context, filename)).toString();
         return runtime.newFileStat(f, false).ctime();
     }
 
-    @JRubyMethod(name = "birthtime", required = 1, meta = true)
+    @JRubyMethod(name = "birthtime", meta = true)
     public static IRubyObject birthtime(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         Ruby runtime = context.runtime;
         String f = StringSupport.checkEmbeddedNulls(runtime, get_path(context, filename)).toString();
@@ -1132,7 +1132,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return runtime.newFixnum(count);
     }
 
-    @JRubyMethod(required = 2, meta = true)
+    @JRubyMethod(meta = true)
     public static IRubyObject link(ThreadContext context, IRubyObject recv, IRubyObject from, IRubyObject to) {
         Ruby runtime = context.runtime;
         String fromStr = file(from).toString();
@@ -1153,14 +1153,14 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return runtime.newFixnum(ret);
     }
 
-    @JRubyMethod(required = 1, meta = true)
+    @JRubyMethod(meta = true)
     public static IRubyObject mtime(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         Ruby runtime = context.runtime;
         String f = StringSupport.checkEmbeddedNulls(runtime, get_path(context, filename)).toString();
         return runtime.newFileStat(f, false).mtime();
     }
 
-    @JRubyMethod(required = 2, meta = true)
+    @JRubyMethod(meta = true)
     public static IRubyObject rename(ThreadContext context, IRubyObject recv, IRubyObject oldName, IRubyObject newName) {
         Ruby runtime = context.runtime;
         RubyString oldNameString = StringSupport.checkEmbeddedNulls(runtime, get_path(context, oldName));
@@ -1202,7 +1202,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
     }
 
-    @JRubyMethod(required = 1, meta = true)
+    @JRubyMethod(meta = true)
     public static RubyArray split(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         Ruby runtime = context.runtime;
         RubyString filename = StringSupport.checkEmbeddedNulls(runtime, get_path(context, arg));
@@ -1210,7 +1210,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return runtime.newArray(dirname(context, recv, filename), basename(context, recv, filename));
     }
 
-    @JRubyMethod(required = 2, meta = true)
+    @JRubyMethod(meta = true)
     public static IRubyObject symlink(ThreadContext context, IRubyObject recv, IRubyObject from, IRubyObject to) {
         Ruby runtime = context.runtime;
 
@@ -1233,7 +1233,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return RubyFixnum.zero(runtime);
     }
 
-    @JRubyMethod(required = 1, meta = true)
+    @JRubyMethod(meta = true)
     public static IRubyObject readlink(ThreadContext context, IRubyObject recv, IRubyObject path) {
         Ruby runtime = context.runtime;
 
@@ -1263,7 +1263,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return truncate19(context, recv, arg1, arg2);
     }
 
-    @JRubyMethod(name = "truncate", required = 2, meta = true)
+    @JRubyMethod(name = "truncate", meta = true)
     public static IRubyObject truncate19(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
         RubyString path = StringSupport.checkEmbeddedNulls(context.runtime, get_path(context, arg1));
         return truncateCommon(context, recv, path, arg2);
