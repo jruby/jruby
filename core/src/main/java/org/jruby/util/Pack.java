@@ -44,7 +44,6 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.*;
-import org.jruby.exceptions.RangeError;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -73,9 +72,7 @@ public class Pack {
     private static final String ENDIANESS_CODES = new String(new char[] {
             's' + BE, 'S' + BE/*n*/, 'i' + BE, 'I' + BE, 'l' + BE, 'L' + BE/*N*/, 'q' + BE, 'Q' + BE, 'j' + BE, 'J' + BE,
             's' + LE, 'S' + LE/*v*/, 'i' + LE, 'I' + LE, 'l' + LE, 'L' + LE/*V*/, 'q' + LE, 'Q' + LE, 'j' + LE, 'J' + LE});
-    private static final String UNPACK_IGNORE_NULL_CODES = "cC";
-    private static final String PACK_IGNORE_NULL_CODES = "cCiIlLnNqQsSvV";
-    private static final String PACK_IGNORE_NULL_CODES_WITH_MODIFIERS = "lLsS";
+
     /** Unpack modes
     **/
     private static final int UNPACK_ARRAY = 0;
@@ -988,9 +985,6 @@ public class Pack {
         mainLoop: while (next != 0) {
             int type = next;
             next = safeGet(format);
-            if (UNPACK_IGNORE_NULL_CODES.indexOf(type) != -1 && next == 0) {
-                next = safeGetIgnoreNull(format);
-            }
             
             if (type == '#') {
                 while (type != '\n') {
@@ -1744,14 +1738,6 @@ public class Pack {
         return 0;
     }
 
-    private static int safeGetIgnoreNull(ByteBuffer encode) {
-        int next = 0;
-        while (encode.hasRemaining() && next == 0) {
-            next = safeGet(encode);
-        }
-        return next;
-    }
-
     public static IRubyObject decode(ThreadContext context, Ruby runtime, ByteBuffer encode, int occurrences,
             RubyArray result, Block block, Converter converter, int mode) {
         int lPadLength = 0;
@@ -1937,9 +1923,6 @@ public class Pack {
         mainLoop: while (next != 0) {
             type = next;
             next = safeGet(format);
-            if (PACK_IGNORE_NULL_CODES.indexOf(type) != -1 && next == 0) {
-                next = safeGetIgnoreNull(format);
-            }
 
             // Skip all whitespace in pack format string
             while (ASCII.isSpace(type)) {
@@ -1966,9 +1949,6 @@ public class Pack {
                 type = MAPPED_CODES.charAt(index);
 
                 next = safeGet(format);
-                if (PACK_IGNORE_NULL_CODES_WITH_MODIFIERS.indexOf(typeBeforeMap) != -1 && next == 0) {
-                    next = safeGetIgnoreNull(format);
-                }
             }
             
             if (next == '>' || next == '<') {
