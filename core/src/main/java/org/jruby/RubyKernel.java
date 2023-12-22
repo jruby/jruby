@@ -1094,7 +1094,7 @@ public class RubyKernel {
 
         RubyClass fileClass = runtime.getFile();
         IRubyObject realpath = RubyFile.realpath(context, fileClass, runtime.newString(file));
-        IRubyObject dirname = RubyFile.dirname(context, fileClass, new IRubyObject[]{realpath});
+        IRubyObject dirname = RubyFile.dirname(context, fileClass, realpath);
         IRubyObject absoluteFeature = RubyFile.expand_path(context, fileClass, relativePath, dirname);
 
         return RubyKernel.require(context, runtime.getKernel(), absoluteFeature, Block.NULL_BLOCK);

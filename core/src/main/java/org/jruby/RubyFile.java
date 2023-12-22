@@ -686,20 +686,24 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return runtime.newFixnum(count);
     }
 
-    @JRubyMethod(required = 1, optional = 1, checkArity = false, meta = true)
-    public static IRubyObject dirname(ThreadContext context, IRubyObject recv, IRubyObject [] args) {
-        int argc = Arity.checkArgumentCount(context, args, 1, 2);
+    @JRubyMethod(meta = true)
+    public static IRubyObject dirname(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
+        RubyString filename = StringSupport.checkEmbeddedNulls(context.runtime, get_path(context, arg0));
 
-        Ruby runtime = context.runtime;
-        RubyString filename = StringSupport.checkEmbeddedNulls(runtime, get_path(context, args[0]));
-        int level = 1;
-        if (argc == 2) {
-            level = RubyNumeric.num2int(args[1]);
-        }
+        return dirnameCommon(context, filename, 1);
+    }
 
+    @JRubyMethod(meta = true)
+    public static IRubyObject dirname(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
+        RubyString filename = StringSupport.checkEmbeddedNulls(context.runtime, get_path(context, arg0));
+
+        return dirnameCommon(context, filename, RubyNumeric.num2int(arg1));
+    }
+
+    private static RubyString dirnameCommon(ThreadContext context, RubyString filename, int level) {
         String jfilename = filename.asJavaString();
 
-        return runtime.newString(dirname(context, jfilename, level));
+        return context.runtime.newString(dirname(context, jfilename, level));
     }
 
     static final Pattern PROTOCOL_PATTERN = Pattern.compile(URI_PREFIX_STRING + ".*");
@@ -1203,7 +1207,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         Ruby runtime = context.runtime;
         RubyString filename = StringSupport.checkEmbeddedNulls(runtime, get_path(context, arg));
 
-        return runtime.newArray(dirname(context, recv, new IRubyObject[]{ filename }), basename(context, recv, filename));
+        return runtime.newArray(dirname(context, recv, filename), basename(context, recv, filename));
     }
 
     @JRubyMethod(required = 2, meta = true)
@@ -2526,4 +2530,16 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @Deprecated
     protected String path;
+
+    @Deprecated
+    public static IRubyObject dirname(ThreadContext context, IRubyObject recv, IRubyObject [] args) {
+        switch (args.length) {
+            case 1:
+                return dirname(context, recv, args[0]);
+            case 2:
+                return dirname(context, recv, args[0], args[1]);
+            default:
+                throw context.runtime.newArgumentError(args.length, 1, 2);
+        }
+    }
 }
