@@ -3161,17 +3161,9 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         }
 
         if (hasUncoercible) {
-            return zipCommon(context, newArgs, block, new ArgumentVisitor() {
-                public IRubyObject visit(ThreadContext ctx, IRubyObject arg, int i) {
-                    return RubyEnumerable.zipEnumNext(ctx, arg);
-                }
-            });
+            return zipCommon(context, newArgs, block, (ctx, arg, i) -> RubyEnumerable.zipEnumNext(ctx, arg));
         } else {
-            return zipCommon(context, newArgs, block, new ArgumentVisitor() {
-                public IRubyObject visit(ThreadContext ctx, IRubyObject arg, int i) {
-                    return ((RubyArray) arg).elt(i);
-                }
-            });
+            return zipCommon(context, newArgs, block, (ctx, arg, i) -> ((RubyArray) arg).elt(i));
         }
     }
 
