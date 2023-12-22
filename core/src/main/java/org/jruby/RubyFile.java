@@ -897,54 +897,63 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     /**
      * Converts a pathname to an absolute pathname. Relative paths are
-     * referenced from the current working directory of the process unless
-     * a second argument is given, in which case it will be used as the
-     * starting point. If the second argument is also relative, it will
-     * first be converted to an absolute pathname.
+     * referenced from the current working directory of the process.
      * @param recv
-     * @param args
+     * @param path
      * @return Resulting absolute path as a String
      */
-    @JRubyMethod(name = "expand_path", required = 1, optional = 1, checkArity = false, meta = true)
-    public static IRubyObject expand_path(ThreadContext context, IRubyObject recv, IRubyObject... args) {
-        Arity.checkArgumentCount(context, args, 1, 2);
-
-        return expandPathInternal(context, args, true, false);
+    @JRubyMethod(name = "expand_path", meta = true)
+    public static IRubyObject expand_path(ThreadContext context, IRubyObject recv, IRubyObject path) {
+        return expandPathInternal(context, path, true, false);
     }
-
-    @Deprecated
-    public static IRubyObject expand_path19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return expand_path(context, recv, args);
-    }
-
 
     /**
-     * ---------------------------------------------------- File::absolute_path
-     *      File.absolute_path(file_name [, dir_string] )$ -&gt; abs_file_name
-     *
-     *      From Ruby 1.9.1
-     * ------------------------------------------------------------------------
+     * Converts a pathname to an absolute pathname. Relative paths are
+     * referenced from the given working directory. If the second argument is also relative, it will
+     * first be converted to an absolute pathname.
+     * @param recv
+     * @param path
+     * @param wd
+     * @return Resulting absolute path as a String
+     */
+    @JRubyMethod(name = "expand_path", meta = true)
+    public static IRubyObject expand_path(ThreadContext context, IRubyObject recv, IRubyObject path, IRubyObject wd) {
+        return expandPathInternal(context, path, wd, true, false);
+    }
+
+    /**
      *      Converts a pathname to an absolute pathname. Relative paths are
-     *      referenced from the current working directory of the process unless
-     *      _dir_string_ is given, in which case it will be used as the
-     *      starting point. If the given pathname starts with a ``+~+'' it is
+     *      referenced from the current working directory of the process.
+     *      If the given pathname starts with a ``+~+'' it is
      *      NOT expanded, it is treated as a normal directory name.
-     *
-     *         File.absolute_path("~oracle/bin")       #=&gt; "&lt;relative_path&gt;/~oracle/bin"
      *
      * @param context
      * @param recv
-     * @param args
+     * @param path
      * @return
      */
-    @JRubyMethod(required = 1, optional = 1, checkArity = false, meta = true)
-    public static IRubyObject absolute_path(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        Arity.checkArgumentCount(context, args, 1, 2);
-
-        return expandPathInternal(context, args, false, false);
+    @JRubyMethod(meta = true)
+    public static IRubyObject absolute_path(ThreadContext context, IRubyObject recv, IRubyObject path) {
+        return expandPathInternal(context, path, false, false);
     }
 
-    @JRubyMethod(name = "absolute_path?", required = 1, meta = true)
+    /**
+     *      Converts a pathname to an absolute pathname. Relative paths are
+     *      referenced from _dir_. If the given pathname starts with a ``+~+'' it is
+     *      NOT expanded, it is treated as a normal directory name.
+     *
+     * @param context
+     * @param recv
+     * @param path
+     * @param dir
+     * @return
+     */
+    @JRubyMethod(meta = true)
+    public static IRubyObject absolute_path(ThreadContext context, IRubyObject recv, IRubyObject path, IRubyObject dir) {
+        return expandPathInternal(context, path, dir, false, false);
+    }
+
+    @JRubyMethod(name = "absolute_path?", meta = true)
     public static IRubyObject absolute_path_p(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         RubyString file = get_path(context, arg);
 
@@ -952,19 +961,14 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return context.runtime.newBoolean(isJRubyAbsolutePath(file.asJavaString()));
     }
 
-    @JRubyMethod(required = 1, optional = 1, checkArity = false, meta = true)
-    public static IRubyObject realdirpath(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        Arity.checkArgumentCount(context, args, 1, 2);
-
-        return expandPathInternal(context, args, false, true);
+    @JRubyMethod(meta = true)
+    public static IRubyObject realdirpath(ThreadContext context, IRubyObject recv, IRubyObject path) {
+        return expandPathInternal(context, path, false, true);
     }
 
-    public static IRubyObject realpath(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        RubyString file = expandPathInternal(context, args, false, true);
-        if (!RubyFileTest.exist(context, file)) {
-            throw context.runtime.newErrnoENOENTError(file.toString());
-        }
-        return file;
+    @JRubyMethod(meta = true)
+    public static IRubyObject realdirpath(ThreadContext context, IRubyObject recv, IRubyObject path, IRubyObject dir) {
+        return expandPathInternal(context, path, dir, false, true);
     }
 
     @JRubyMethod(meta = true)
@@ -1822,14 +1826,18 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     private static final Pattern PROTOCOL_PREFIX_PATTERN = Pattern.compile(URI_PREFIX_STRING);
 
-    private static RubyString expandPathInternal(ThreadContext context, IRubyObject[] args, boolean expandUser, boolean canonicalize) {
-        RubyString path = StringSupport.checkEmbeddedNulls(context.runtime, get_path(context, args[0]));
+    private static RubyString expandPathInternal(ThreadContext context, IRubyObject arg0, boolean expandUser, boolean canonicalize) {
+        return expandPathInternal(context, arg0, null, expandUser, canonicalize);
+    }
+
+    private static RubyString expandPathInternal(ThreadContext context, IRubyObject _path, IRubyObject _wd, boolean expandUser, boolean canonicalize) {
+        RubyString path = StringSupport.checkEmbeddedNulls(context.runtime, get_path(context, _path));
         RubyString wd = null;
-        if (args.length == 2 && args[1] != context.nil) {
-            if (args[1] instanceof RubyHash) {
-                // FIXME : do nothing when args[1] is Hash(e.g. {:mode=>0}, {:encoding=>"ascii-8bit"})
+        if (_wd != null && _wd != context.nil) {
+            if (_wd instanceof RubyHash) {
+                // FIXME : do nothing when arg1 is Hash(e.g. {:mode=>0}, {:encoding=>"ascii-8bit"})
             } else {
-                wd = StringSupport.checkEmbeddedNulls(context.runtime, get_path(context, args[1]));
+                wd = StringSupport.checkEmbeddedNulls(context.runtime, get_path(context, _wd));
             }
         }
         return expandPathInternal(context, path, wd, expandUser, canonicalize);
@@ -2541,5 +2549,67 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             default:
                 throw context.runtime.newArgumentError(args.length, 1, 2);
         }
+    }
+
+    @Deprecated
+    public static IRubyObject expand_path(ThreadContext context, IRubyObject recv, IRubyObject... args) {
+        switch (args.length) {
+            case 1:
+                return expand_path(context, recv, args[0]);
+            case 2:
+                return expand_path(context, recv, args[0], args[1]);
+            default:
+                throw context.runtime.newArgumentError(args.length, 1, 2);
+        }
+    }
+
+    @Deprecated
+    public static IRubyObject expand_path19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return expand_path(context, recv, args);
+    }
+
+    @Deprecated
+    private static RubyString expandPathInternal(ThreadContext context, IRubyObject[] args, boolean expandUser, boolean canonicalize) {
+        switch (args.length) {
+            case 1:
+                return expandPathInternal(context, args[0], null, expandUser, canonicalize);
+            case 2:
+                return expandPathInternal(context, args[0], args[1], expandUser, canonicalize);
+            default:
+                throw context.runtime.newArgumentError(args.length, 1, 2);
+        }
+    }
+
+    @Deprecated
+    public static IRubyObject absolute_path(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        switch (args.length) {
+            case 1:
+                absolute_path(context, recv, args[0]);
+            case 2:
+                absolute_path(context, recv, args[0], args[1]);
+            default:
+                throw context.runtime.newArgumentError(args.length, 1, 2);
+        }
+    }
+
+    @Deprecated
+    public static IRubyObject realdirpath(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        switch (args.length) {
+            case 1:
+                realdirpath(context, recv, args[0]);
+            case 2:
+                realdirpath(context, recv, args[0], args[1]);
+            default:
+                throw context.runtime.newArgumentError(args.length, 1, 2);
+        }
+    }
+
+    @Deprecated
+    public static IRubyObject realpath(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        RubyString file = expandPathInternal(context, args, false, true);
+        if (!RubyFileTest.exist(context, file)) {
+            throw context.runtime.newErrnoENOENTError(file.toString());
+        }
+        return file;
     }
 }
