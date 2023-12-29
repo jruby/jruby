@@ -1,1 +1,0 @@
-fails:UDPSocket#inspect returns a String with the fd, family, address and port
