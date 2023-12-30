@@ -701,11 +701,15 @@ public class CallableSelector {
                 return 1;
             }
         }
-        else if ( arg instanceof RubyString || arg instanceof RubySymbol ) {
+        else if ( arg instanceof RubyString ) {
             if ( type == String.class ) return 10;
             if ( type == byte[].class ) return 8;
             if ( CharSequence.class.isAssignableFrom(type) ) return 7;
             if ( type == Character.class ) return 1;
+        }
+        else if ( arg instanceof RubySymbol ) {
+            if ( type == String.class ) return 10;
+            if ( CharSequence.class.isAssignableFrom(type) ) return 7;
         }
         else if ( arg instanceof RubyBoolean ) {
             if ( type == Boolean.class ) return 10;
