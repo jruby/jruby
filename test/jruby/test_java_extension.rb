@@ -348,6 +348,17 @@ class TestJavaExtension < Test::Unit::TestCase
     assert ! wrapped1.equal?(wrapped2)
   end
 
+  def test_calling_overridden_method_arity1_with_symbol
+    result = org.jruby.test.TestHelper.testOverriddenMethod(:symbol)
+
+    assert result == "String"
+  end
+
+  def test_calling_overridden_method_arity2_with_symbol
+    result = org.jruby.test.TestHelper.testOverriddenMethod(:symbol, true)
+
+    assert result == "StringBoolean"
+  end
 
   import org.jruby.test.Runner
 

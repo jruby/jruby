@@ -76,6 +76,14 @@ public class TestHelper {
         return "Original";
     }
 
+    public static String testOverriddenMethod(String arg0) {
+        return "String";
+    }
+
+    public static String testOverriddenMethod(String arg0, Boolean arg1) {
+        return "StringBoolean";
+    }
+
     /**
      * used to test Java Arrays in Ruby.
      *  while we don't yet have a way to create them this can be used to test basic
