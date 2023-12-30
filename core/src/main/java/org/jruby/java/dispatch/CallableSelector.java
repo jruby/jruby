@@ -16,6 +16,7 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyInteger;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.java.invokers.RubyToJavaInvoker;
 import org.jruby.java.util.ClassUtils;
 import org.jruby.javasupport.JavaCallable;
@@ -700,7 +701,7 @@ public class CallableSelector {
                 return 1;
             }
         }
-        else if ( arg instanceof RubyString ) {
+        else if ( arg instanceof RubyString || arg instanceof RubySymbol ) {
             if ( type == String.class ) return 10;
             if ( type == byte[].class ) return 8;
             if ( CharSequence.class.isAssignableFrom(type) ) return 7;
