@@ -44,6 +44,7 @@
 package org.jruby;
 
 import java.io.ByteArrayOutputStream;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
@@ -111,6 +112,7 @@ import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PROTECTED;
 import static org.jruby.runtime.Visibility.PUBLIC;
+import static org.jruby.util.RubyStringBuilder.str;
 
 /**
  * Note: For CVS history, see KernelModule.java.
@@ -412,6 +414,103 @@ public class RubyKernel {
         return (RubyFloat) new_float(runtime.getCurrentContext(), object, true);
     }
 
+    private static BigInteger SIXTEEN = BigInteger.valueOf(16L);
+    private static BigInteger MINUS_ONE = BigInteger.valueOf(-1L);
+
+    private static RaiseException floatError(Ruby runtime, ByteList string) {
+        throw runtime.newArgumentError(str(runtime, "invalid value for Float(): ", runtime.newString(string)));
+    }
+
+    /**
+     * Parse hexidecimal exponential notation:
+     * <a href="https://en.wikipedia.org/wiki/Hexadecimal#Hexadecimal_exponential_notation">...</a>
+     * <p/>
+     * This method assumes the string is a valid-formatted string.
+     *
+     * @param str the bytelist to be parsed
+     * @return the result.
+     */
+    public static double parseHexidecimalExponentString2(Ruby runtime, ByteList str) {
+        byte[] bytes = str.unsafeBytes();
+        int length = str.length();
+        if (length <= 2) throw floatError(runtime, str);
+        int sign = 1;
+        int letter;
+        int i = str.begin();
+
+        letter = bytes[i];
+        if (letter == '+') {
+            i++;
+        } else if (letter == '-') {
+            sign = -1;
+            i++;
+        }
+
+        // Skip '0x'
+        letter = bytes[i++];
+        if (letter != '0') throw floatError(runtime, str);
+        letter = bytes[i++];
+        if (letter != 'x') throw floatError(runtime, str);
+
+        int exponent = 0;
+        int explicitExponent = 0;
+        int explicitExponentSign = 1;
+        boolean periodFound = false;
+        boolean explicitExponentFound = false;
+        BigInteger value = BigInteger.valueOf(0L);
+
+        if (i == length || bytes[i] == '_' || bytes[i] == 'p' || bytes[i] == 'P') throw floatError(runtime, str);
+
+        for(; i < length && !explicitExponentFound; i++) {
+            letter = bytes[i];
+            switch (letter) {
+                case '.':                              // Fractional part of floating point value "1(.)23"
+                    periodFound = true;
+                    continue;
+                case 'p':                              // Explicit exponent "1.23(p)1a"
+                case 'P':
+                    if (bytes[i-1] == '_' || i == length - 1) throw floatError(runtime, str);
+                    explicitExponentFound = true;
+                    continue;
+                case '_':
+                    continue;
+            }
+
+            // base 16 value representing main pieces of number
+            int digit = Character.digit(letter, 16);
+            if (Character.forDigit(digit, 16) == 0) throw floatError(runtime, str);
+            value = value.multiply(SIXTEEN).add(BigInteger.valueOf(digit));
+
+            if (periodFound) exponent++;
+        }
+
+        if (explicitExponentFound) {
+            if (bytes[i] == '-') {
+                explicitExponentSign = -1;
+                i++;
+            } else if (bytes[i] == '+') {
+                i++;
+            } else if (bytes[i] == '_') {
+                throw floatError(runtime, str);
+            }
+
+            for (; i < length; i++) { // base 10 value representing base 2 exponent
+                letter = bytes[i];
+                if (letter == '_') {
+                    if (i == length - 1) throw floatError(runtime, str);
+                    continue;
+                }
+                int digit = Character.digit(letter, 10);
+                if (Character.forDigit(digit, 10) == 0) throw floatError(runtime, str);
+                explicitExponent = explicitExponent * 10 + digit;
+            }
+        }
+
+        // each exponent in main number is 4 bits and the value after 'p' represents a power of 2.  Wacky.
+        int scaleFactor = 4 * exponent - explicitExponent * explicitExponentSign;
+        return sign * Math.scalb(value.doubleValue(), -scaleFactor);
+    }
+
     public static IRubyObject new_float(ThreadContext context, IRubyObject object, boolean exception) {
         Ruby runtime = context.runtime;
 
@@ -430,6 +529,9 @@ public class RubyKernel {
             }
 
             if (bytes.startsWith(ZEROx)) { // startsWith("0x")
+                if (bytes.indexOf('p') != -1 || bytes.indexOf('P') != -1) {
+                    return runtime.newFloat(parseHexidecimalExponentString2(runtime, bytes));
+                }
                 IRubyObject inum = ConvertBytes.byteListToInum(runtime, bytes, 16, true, exception);
                 if (!exception && inum.isNil()) return inum;
                 return ((RubyInteger) inum).toFloat();
