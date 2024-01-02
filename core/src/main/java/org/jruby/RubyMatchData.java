@@ -866,40 +866,35 @@ public class RubyMatchData extends RubyObject {
             }
         }
 
-        if (symbolizeNamesValue.isTrue()) {
-            for (Iterator<NameEntry> i = getPattern().namedBackrefIterator(); i.hasNext();) {
-                NameEntry entry = i.next();
-                RubySymbol key = runtime.newSymbol(new ByteList(entry.name, entry.nameP, entry.nameEnd - entry.nameP, regexp.getEncoding(), false));
-                boolean found = false;
+        for (Iterator<NameEntry> i = getPattern().namedBackrefIterator(); i.hasNext();) {
+            NameEntry entry = i.next();
+            IRubyObject key;
+            if (symbolizeNamesValue.isTrue()) {
+                key = runtime.newSymbol(new ByteList(entry.name, entry.nameP, entry.nameEnd - entry.nameP, regexp.getEncoding(), false));
+            } else {
+                key = RubyString.newStringShared(runtime, new ByteList(entry.name, entry.nameP, entry.nameEnd - entry.nameP, regexp.getEncoding(), false));
+            }
 
-                for (int b : entry.getBackRefs()) {
-                    IRubyObject value = RubyRegexp.nth_match(b, this);
-                    if (value.isTrue()) {
+            boolean found = false;
+
+            for (int b : entry.getBackRefs()) {
+                IRubyObject value = RubyRegexp.nth_match(b, this);
+                if (value.isTrue()) {
+
+                    if (symbolizeNamesValue.isTrue()) {
                         hash.op_aset(context, key, value);
-                        found = true;
+                    } else {
+                        hash.op_asetForString(runtime, (RubyString)key, value);
                     }
-                }
-
-                if (!found) {
-                    hash.op_aset(context, key, context.nil);
+                    found = true;
                 }
             }
-        } else {
-            for (Iterator<NameEntry> i = getPattern().namedBackrefIterator(); i.hasNext();) {
-                NameEntry entry = i.next();
-                RubyString key = RubyString.newStringShared(runtime, new ByteList(entry.name, entry.nameP, entry.nameEnd - entry.nameP, regexp.getEncoding(), false));
-                boolean found = false;
 
-                for (int b : entry.getBackRefs()) {
-                    IRubyObject value = RubyRegexp.nth_match(b, this);
-                    if (value.isTrue()) {
-                        hash.op_asetForString(runtime, key, value);
-                        found = true;
-                    }
-                }
-
-                if (!found) {
-                    hash.op_asetForString(runtime, key, context.nil);
+            if (!found) {
+                if (symbolizeNamesValue.isTrue()) {
+                    hash.op_aset(context, key, context.nil);
+                } else {
+                    hash.op_asetForString(runtime, (RubyString)key, context.nil);
                 }
             }
         }
