@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 MenTaLguY <mental@rydia.net>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -326,6 +326,13 @@ public class Queue extends RubyObject implements DataType {
         } finally {
             putLock.unlock();
         }
+    }
+
+    @JRubyMethod(name = "freeze")
+    @Override
+    public final IRubyObject freeze(ThreadContext context) {
+        throw context.runtime.newRaiseException(context.runtime.getTypeError(), "cannot freeze " + getMetaClass().getName());
+
     }
 
     @JRubyMethod(name = "empty?")
