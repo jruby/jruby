@@ -881,21 +881,13 @@ public class RubyMatchData extends RubyObject {
                 IRubyObject value = RubyRegexp.nth_match(b, this);
                 if (value.isTrue()) {
 
-                    if (symbolizeNamesValue.isTrue()) {
-                        hash.op_aset(context, key, value);
-                    } else {
-                        hash.op_asetForString(runtime, (RubyString)key, value);
-                    }
+                    hash.op_aset(context, key, value);
                     found = true;
                 }
             }
 
             if (!found) {
-                if (symbolizeNamesValue.isTrue()) {
-                    hash.op_aset(context, key, context.nil);
-                } else {
-                    hash.op_asetForString(runtime, (RubyString)key, context.nil);
-                }
+                hash.op_aset(context, key, context.nil);
             }
         }
 
