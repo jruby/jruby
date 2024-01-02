@@ -76,6 +76,34 @@ public class TestHelper {
         return "Original";
     }
 
+    public static String testOverriddenMethod(String arg0) {
+        return "String";
+    }
+
+    public static String testOverriddenMethod(String[] arg0) {
+        return "String[]";
+    }
+
+    public static String testOverriddenMethod(String arg0, Boolean arg1) {
+        return "StringBoolean";
+    }
+
+    public static String testOverriddenMethod(Object arg0, Boolean arg1) {
+        return "ObjectBoolean";
+    }
+
+    public static String testOverriddenMethod(CharSequence arg0, Boolean arg1, Integer arg2) {
+        return "CharSequenceBooleanInteger";
+    }
+
+    public static String testOverriddenMethod(CharSequence[] arg0, Boolean arg1, Integer arg2) {
+        return "CharSequence[]BooleanInteger";
+    }
+
+    public static String testOverriddenMethod(Object arg0, Boolean arg1, Integer arg2) {
+        return "ObjectBooleanInteger";
+    }
+
     /**
      * used to test Java Arrays in Ruby.
      *  while we don't yet have a way to create them this can be used to test basic
@@ -116,7 +144,7 @@ public class TestHelper {
         public String doStuff() {
             return "stuff done";
         }
-        
+
         public String dispatchObject(Object iObject) {
             return iObject == null ? null : iObject.toString();
         }
@@ -132,7 +160,7 @@ public class TestHelper {
         Method method = c.getMethod(methodName, new Class[] { Ruby.class, IRubyObject.class });
         Ruby runtime = self.getRuntime();
         ThreadContext tc = runtime.getCurrentContext();
-        
+
         try {
             return (IRubyObject) method.invoke(null, new Object[] { runtime, self });
         } catch (InvocationTargetException e) {

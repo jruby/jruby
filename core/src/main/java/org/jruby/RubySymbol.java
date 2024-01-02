@@ -1431,6 +1431,11 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     }
 
     @Override
+    public Class getJavaClass() {
+        return String.class;
+    }
+
+    @Override
     public boolean shouldMarshalEncoding() {
         Encoding enc = getMarshalEncoding();
 
