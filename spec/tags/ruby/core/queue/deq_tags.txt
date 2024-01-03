@@ -1,0 +1,9 @@
+hangs:Queue#deq with a timeout returns an item if one is available in time
+fails:Queue#deq with a timeout returns nil if no item is available in time
+fails:Queue#deq with a timeout does nothing if the timeout is nil
+fails:Queue#deq with a timeout immediately returns nil if no item is available and the timeout is 0
+fails:Queue#deq with a timeout raise TypeError if timeout is not a valid numeric
+fails:Queue#deq with a timeout raise ArgumentError if non_block = true is passed too
+fails:Queue#deq with a timeout returns nil for a closed empty queue
+fails:Queue operations with timeout fails if string is provided
+fails:Queue operations with timeout fails if boolean is provided
