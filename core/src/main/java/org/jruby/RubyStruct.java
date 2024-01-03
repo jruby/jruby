@@ -174,7 +174,9 @@ public class RubyStruct extends RubyObject {
         IRubyObject[] values = this.values;
         for (int i = 0; i < values.length; i++) {
             h = (h << 1) | (h < 0 ? 1 : 0);
-            IRubyObject hash = context.safeRecurse(HashRecursive.INSTANCE, runtime, values[i], "hash", true);
+            IRubyObject hash = context.safeRecurse(
+                    (ctx, runtime1, obj, recur) -> recur ? RubyFixnum.zero(runtime1) : invokedynamic(ctx, obj, HASH),
+                    runtime, values[i], "hash", true);
             h ^= RubyNumeric.num2long(hash);
         }
 
@@ -696,7 +698,7 @@ public class RubyStruct extends RubyObject {
     @JRubyMethod(name = {"inspect", "to_s"})
     public RubyString inspect(final ThreadContext context) {
         // recursion guard
-        return (RubyString) context.safeRecurse(InspectRecursive.INSTANCE, this, this, "inspect", false);
+        return (RubyString) context.safeRecurse((ctx, self, obj, recur) -> self.inspectStruct(ctx, recur), this, this, "inspect", false);
     }
 
     @JRubyMethod(name = {"to_a", "deconstruct", "values"})
@@ -1032,17 +1034,6 @@ public class RubyStruct extends RubyObject {
         }
     }
 
-    private static class HashRecursive implements ThreadContext.RecursiveFunctionEx<Ruby> {
-
-        static final HashRecursive INSTANCE = new HashRecursive();
-
-        @Override
-        public IRubyObject call(ThreadContext context, Ruby runtime, IRubyObject obj, boolean recur) {
-            if (recur) return RubyFixnum.zero(runtime);
-            return invokedynamic(context, obj, HASH);
-        }
-    }
-
     private static class EqualRecursive implements ThreadContext.RecursiveFunctionEx<IRubyObject> {
 
         private static final EqualRecursive INSTANCE = new EqualRecursive();
@@ -1057,15 +1048,6 @@ public class RubyStruct extends RubyObject {
                 if (!equalInternal(context, values[i], otherValues[i])) return context.fals;
             }
             return context.tru;
-        }
-    }
-
-    private static class InspectRecursive implements ThreadContext.RecursiveFunctionEx<RubyStruct> {
-
-        private static final ThreadContext.RecursiveFunctionEx INSTANCE = new InspectRecursive();
-
-        public IRubyObject call(ThreadContext context, RubyStruct self, IRubyObject obj, boolean recur) {
-            return self.inspectStruct(context, recur);
         }
     }
 

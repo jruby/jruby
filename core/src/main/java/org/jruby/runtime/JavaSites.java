@@ -159,12 +159,9 @@ public class JavaSites {
         public final CallSite op_and = new FunctionalCachingCallSite("&");
         public final CheckedSites to_hash_checked = new CheckedSites("to_hash");
 
-        public final ThreadContext.RecursiveFunctionEx recursive_cmp = new ThreadContext.RecursiveFunctionEx<IRubyObject>() {
-            @Override
-            public IRubyObject call(ThreadContext context, IRubyObject recv, IRubyObject other, boolean recur) {
-                if (recur || !respond_to_cmp.respondsTo(context, other, other)) return context.nil;
-                return cmp.call(context, other, other, recv);
-            }
+        public final ThreadContext.RecursiveFunctionEx<IRubyObject> recursive_cmp = (context, recv, other, recur) -> {
+            if (recur || !respond_to_cmp.respondsTo(context, other, other)) return context.nil;
+            return cmp.call(context, other, other, recv);
         };
     }
 
@@ -319,12 +316,9 @@ public class JavaSites {
         public final RespondToCallSite respond_to_cmp = new RespondToCallSite("<=>");
         public final CachingCallSite cmp = new FunctionalCachingCallSite("<=>");
 
-        public final ThreadContext.RecursiveFunctionEx recursive_cmp = new ThreadContext.RecursiveFunctionEx<IRubyObject>() {
-            @Override
-            public IRubyObject call(ThreadContext context, IRubyObject recv, IRubyObject other, boolean recur) {
-                if (recur || !respond_to_cmp.respondsTo(context, other, other)) return context.nil;
-                return cmp.call(context, other, other, recv);
-            }
+        public final ThreadContext.RecursiveFunctionEx<IRubyObject> recursive_cmp = (context, recv, other, recur) -> {
+            if (recur || !respond_to_cmp.respondsTo(context, other, other)) return context.nil;
+            return cmp.call(context, other, other, recv);
         };
 
         public final RespondToCallSite respond_to_to_int = new RespondToCallSite("to_int");
@@ -400,11 +394,9 @@ public class JavaSites {
         public final CallSite hash = new FunctionalCachingCallSite("hash");
         public final CallSite op_equal = new FunctionalCachingCallSite("==");
 
-        public final ThreadContext.RecursiveFunctionEx<Ruby> recursive_hash = new ThreadContext.RecursiveFunctionEx<Ruby>() {
-            public IRubyObject call(ThreadContext context, Ruby runtime, IRubyObject obj, boolean recur) {
-                if (recur) return RubyFixnum.zero(runtime);
-                return hash.call(context, obj, obj);
-            }
+        public final ThreadContext.RecursiveFunctionEx<Ruby> recursive_hash = (context, runtime, obj, recur) -> {
+            if (recur) return RubyFixnum.zero(runtime);
+            return hash.call(context, obj, obj);
         };
     }
 
