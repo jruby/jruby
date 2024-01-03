@@ -10,9 +10,11 @@ def javac_compile_contents(string, filename)
 
     compiler = javax.tools.ToolProvider.getSystemJavaCompiler
     fmanager = compiler.getStandardFileManager(nil, nil, nil)
-    diagnostics = nil
+    modules = ["-p", ENV_JAVA["jdk.module.path"],]
     units = fmanager.getJavaFileObjectsFromStrings( [ file_path ] )
-    compilation_task = compiler.getTask(nil, fmanager, diagnostics, nil, nil, units)
+    compilation_task = compiler.getTask(nil, fmanager, nil, modules, nil, units)
+    # this will need to be updated to org.jruby.base once the dist is fully modularized
+    compilation_task.addModules(["org.jruby.dist"])
     compilation_task.call # returns boolean
   end
 end
