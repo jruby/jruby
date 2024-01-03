@@ -863,7 +863,7 @@ public class RubyMatchData extends RubyObject {
             if (opts instanceof RubyHash) {
                 symbolizeNames = ArgsUtil.extractKeywordArg(runtime.getCurrentContext(), (RubyHash) opts, "symbolize_names").isTrue();
             } else {
-              throw runtime.newArgumentError(1, 0);
+                throw runtime.newArgumentError(1, 0);
             }
         }
 
