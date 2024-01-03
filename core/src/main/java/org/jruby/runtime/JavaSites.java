@@ -53,6 +53,7 @@ public class JavaSites {
     public final MonitorSites Monitor = new MonitorSites();
     public final SetSites Set = new SetSites();
     public final StructSites Struct = new StructSites();
+    public final DigestSites Digest = new DigestSites();
 
     public static class BasicObjectSites {
         public final CallSite respond_to = new FunctionalCachingCallSite("respond_to?");
@@ -536,6 +537,12 @@ public class JavaSites {
         public final CallSite each_entry = new FunctionalCachingCallSite("each_entry");
         public final RespondToCallSite respond_to_each_entry = new RespondToCallSite("each_entry");
         public final CallSite merge = new FunctionalCachingCallSite("merge");
+    }
+
+    public static class DigestSites {
+        public final CallSite digest = new FunctionalCachingCallSite("digest");
+        public final CallSite hexdigest = new FunctionalCachingCallSite("hexdigest");
+        public final CallSite digest_length = new FunctionalCachingCallSite("digest_length");
     }
 
     public static class CheckedSites {
