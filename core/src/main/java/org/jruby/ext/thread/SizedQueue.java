@@ -142,13 +142,16 @@ public class SizedQueue extends Queue {
     }
 
     @JRubyMethod(name = {"push", "<<", "enq"})
-    public IRubyObject push(ThreadContext context, final IRubyObject arg0, final IRubyObject arg1) {
+    public IRubyObject push(ThreadContext context, final IRubyObject arg0, final IRubyObject nonblock) {
         initializedCheck();
 
-        boolean should_block = arg1.isTrue();
-
         try {
-            return context.getThread().executeTaskBlocking(context, arg0, should_block ? blockingPushTask : nonblockingPushTask);
+            RubyThread thread = context.getThread();
+            if (nonblock.isTrue()) {
+                return thread.executeTask(context, arg0, nonblockingPushTask);
+            } else {
+                return thread.executeTaskBlocking(context, arg0, blockingPushTask);
+            }
         } catch (InterruptedException ie) {
             throw createInterruptedError(context, "push");
         }
