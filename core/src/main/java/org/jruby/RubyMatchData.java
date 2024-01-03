@@ -45,6 +45,8 @@ import org.joni.Region;
 import org.joni.exception.JOniException;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.ast.util.ArgsUtil;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ThreadContext;
@@ -846,27 +848,48 @@ public class RubyMatchData extends RubyObject {
         return metaClass.runtime.newFixnum( hashCode() );
     }
 
-    @JRubyMethod
-    public RubyHash named_captures(ThreadContext context) {
+    @JRubyMethod(keywords = true, checkArity = false, optional = 1)
+    public RubyHash named_captures(ThreadContext context, IRubyObject[] args) {
         check();
+
         Ruby runtime = context.runtime;
+        int argc = Arity.checkArgumentCount(runtime, args.length, 0, 0, true);
         RubyHash hash = RubyHash.newHash(runtime);
         if (regexp == context.nil) return hash;
 
+        boolean symbolizeNames = false;
+        if ( argc == 1 ) {
+            final IRubyObject opts = args[0];
+            if (opts instanceof RubyHash) {
+                symbolizeNames = ArgsUtil.extractKeywordArg(runtime.getCurrentContext(), (RubyHash) opts, "symbolize_names").isTrue();
+            } else {
+                throw runtime.newArgumentError(1, 0);
+            }
+        }
+
         for (Iterator<NameEntry> i = getPattern().namedBackrefIterator(); i.hasNext();) {
             NameEntry entry = i.next();
-            RubyString key = RubyString.newStringShared(runtime, new ByteList(entry.name, entry.nameP, entry.nameEnd - entry.nameP, regexp.getEncoding(), false));
+            IRubyObject key;
+            if (symbolizeNames) {
+                key = runtime.newSymbol(new ByteList(entry.name, entry.nameP, entry.nameEnd - entry.nameP, regexp.getEncoding(), false));
+            } else {
+                key = RubyString.newStringShared(runtime, new ByteList(entry.name, entry.nameP, entry.nameEnd - entry.nameP, regexp.getEncoding(), false));
+            }
+
             boolean found = false;
 
             for (int b : entry.getBackRefs()) {
                 IRubyObject value = RubyRegexp.nth_match(b, this);
                 if (value.isTrue()) {
-                    hash.op_asetForString(runtime, key, value);
+
+                    hash.op_aset(context, key, value);
                     found = true;
                 }
             }
 
-            if (!found) hash.op_asetForString(runtime, key, context.nil);
+            if (!found) {
+                hash.op_aset(context, key, context.nil);
+            }
         }
 
         return hash;
