@@ -857,19 +857,18 @@ public class RubyMatchData extends RubyObject {
         RubyHash hash = RubyHash.newHash(runtime);
         if (regexp == context.nil) return hash;
 
-        IRubyObject symbolizeNamesValue = runtime.getNil();
-
+        boolean symbolizeNames = false;
         if ( argc == 1 ) {
             final IRubyObject opts = args[0];
             if (opts instanceof RubyHash) {
-                symbolizeNamesValue = ArgsUtil.extractKeywordArg(runtime.getCurrentContext(), (RubyHash) opts, "symbolize_names");
+                symbolizeNames = ArgsUtil.extractKeywordArg(runtime.getCurrentContext(), (RubyHash) opts, "symbolize_names").isTrue();
             }
         }
 
         for (Iterator<NameEntry> i = getPattern().namedBackrefIterator(); i.hasNext();) {
             NameEntry entry = i.next();
             IRubyObject key;
-            if (symbolizeNamesValue.isTrue()) {
+            if (symbolizeNames) {
                 key = runtime.newSymbol(new ByteList(entry.name, entry.nameP, entry.nameEnd - entry.nameP, regexp.getEncoding(), false));
             } else {
                 key = RubyString.newStringShared(runtime, new ByteList(entry.name, entry.nameP, entry.nameEnd - entry.nameP, regexp.getEncoding(), false));
