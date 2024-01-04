@@ -90,7 +90,6 @@ import org.jruby.internal.runtime.methods.SynchronizedDynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
-import org.jruby.ir.targets.indy.Bootstrap;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.binding.MethodGatherer;
 import org.jruby.parser.StaticScope;
@@ -4146,31 +4145,21 @@ public class RubyModule extends RubyObject {
         return mod.getConstantSkipAutoload(id, inherit, inherit) != null;
     }
 
-    public IRubyObject const_get(IRubyObject symbol) {
-        return const_get(getRuntime().getCurrentContext(), new IRubyObject[]{symbol});
+    // MRI: rb_mod_const_get
+    @JRubyMethod(name = "const_get")
+    public IRubyObject const_get(ThreadContext context, IRubyObject arg0) {
+        return constGetCommon(context, arg0, true);
     }
 
-    @Deprecated
-    public IRubyObject const_get_1_9(ThreadContext context, IRubyObject[] args) {
-        return const_get(context, args);
+    // MRI: rb_mod_const_get
+    @JRubyMethod(name = "const_get")
+    public IRubyObject const_get(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        return constGetCommon(context, arg0, arg1.isTrue());
     }
 
-    @Deprecated
-    public IRubyObject const_get_2_0(ThreadContext context, IRubyObject[] args) {
-        return const_get(context, args);
-    }
-
-    /** rb_mod_const_get
-     *
-     */
-    @JRubyMethod(name = "const_get", required = 1, optional = 1, checkArity = false)
-    public IRubyObject const_get(ThreadContext context, IRubyObject... args) {
-        int argc = Arity.checkArgumentCount(context, args, 1, 2);
-
+    private IRubyObject constGetCommon(ThreadContext context, IRubyObject symbol, boolean inherit) {
         final Ruby runtime = context.runtime;
-        boolean inherit = argc == 1 || ( ! args[1].isNil() && args[1].isTrue() );
 
-        final IRubyObject symbol = args[0];
         RubySymbol fullName = TypeConverter.checkID(symbol);
         String name = fullName.idString();
 
@@ -6164,4 +6153,29 @@ public class RubyModule extends RubyObject {
     private static final MethodHandle testModuleMatch = Binder
             .from(boolean.class, ThreadContext.class, IRubyObject.class, int.class)
             .invokeStaticQuiet(LOOKUP, RubyModule.class, "testModuleMatch");
+
+    @Deprecated
+    public IRubyObject const_get(IRubyObject symbol) {
+        return const_get(getRuntime().getCurrentContext(), symbol);
+    }
+
+    @Deprecated
+    public IRubyObject const_get(ThreadContext context, IRubyObject... args) {
+        int argc = Arity.checkArgumentCount(context, args, 1, 2);
+
+        boolean inherit = argc == 1 || ( ! args[1].isNil() && args[1].isTrue() );
+
+        final IRubyObject symbol = args[0];
+        return constGetCommon(context, symbol, inherit);
+    }
+
+    @Deprecated
+    public IRubyObject const_get_1_9(ThreadContext context, IRubyObject[] args) {
+        return const_get(context, args);
+    }
+
+    @Deprecated
+    public IRubyObject const_get_2_0(ThreadContext context, IRubyObject[] args) {
+        return const_get(context, args);
+    }
 }
