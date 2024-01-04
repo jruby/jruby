@@ -659,6 +659,10 @@ public final class StringSupport {
         return nth(enc, bytes, p, end, n, enc.isSingleByte());
     }
 
+    public static int nth(Encoding enc, ByteList value, int n) {
+        return nth(enc, value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), n);
+    }
+
     /**
      * Get the position of the nth character in the given byte array, using the given encoding and range.
      *
@@ -1197,6 +1201,49 @@ public final class StringSupport {
         return strRindex(srcBytes, srcBeg, srcLen, subString.getUnsafeBytes(), subString.getBegin(), subLen, s, pos, enc);
     }
 
+    public static int byterindex(ByteList source, int pos, CodeRangeable subStringCodeRangeable, Encoding enc) {
+        if (subStringCodeRangeable.scanForCodeRange() == CR_BROKEN) return -1;
+
+        final ByteList subString = subStringCodeRangeable.getByteList();
+        final int srcLen = source.getRealSize();
+        final int subLen = subString.getRealSize();
+
+        if (srcLen < subLen || srcLen < subLen) return -1;
+        if (srcLen == 0) return pos;
+
+        byte[] srcBytes = source.getUnsafeBytes();
+        final int srcBeg = source.getBegin();
+
+        if (pos == 0) {
+            if (ByteList.memcmp(srcBytes, srcBeg, subString.getUnsafeBytes(), subString.getBegin(), subLen) == 0) {
+                return 0;
+            }
+            return -1;
+        }
+
+        return byteRindex(srcBytes, srcBeg, srcLen, subString.getUnsafeBytes(), subString.getBegin(), subLen, pos, enc);
+    }
+
+    private static int byteRindex(final byte[] strBytes, final int strBeg, final int strLen,
+                                 final byte[] subBytes, final int subBeg, final int subLen,
+                                 int pos, final Encoding enc) {
+
+        int s = pos;
+        final int e = strBeg + strLen;
+
+        while (s >= strBeg) {
+            if (s + subLen <= e && ByteList.memcmp(strBytes, s, subBytes, subBeg, subLen) == 0) {
+                return pos;
+            }
+            if (pos == 0) break;
+            int t = enc.prevCharHead(strBytes, strBeg, s, e);
+            pos -= s - t;
+            s = t;
+        }
+
+        return -1;
+    }
+
     private static int strRindex(final byte[] strBytes, final int strBeg, final int strLen,
                                  final byte[] subBytes, final int subBeg, final int subLen,
                                  int s, int pos, final Encoding enc) {
@@ -1207,7 +1254,8 @@ public final class StringSupport {
             if (s + subLen <= e && ByteList.memcmp(strBytes, s, subBytes, subBeg, subLen) == 0) {
                 return pos;
             }
-            if (pos == 0) break; pos--;
+            if (pos == 0) break;
+            pos--;
             s = enc.prevCharHead(strBytes, strBeg, s, e);
         }
 

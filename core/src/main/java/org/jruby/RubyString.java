@@ -3439,7 +3439,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      */
     @JRubyMethod(name = "index", writes = BACKREF)
     public IRubyObject index(ThreadContext context, IRubyObject arg0) {
-        return indexCommon19(context, arg0, 0);
+        return indexCommon(context, arg0, 0);
     }
 
     @JRubyMethod(name = "index", writes = BACKREF)
@@ -3454,12 +3454,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 return context.nil;
             }
         }
-        return indexCommon19(context, arg0, pos);
+        return indexCommon(context, arg0, pos);
     }
 
     @JRubyMethod(writes = BACKREF)
     public IRubyObject byteindex(ThreadContext context, IRubyObject arg0) {
-        return byteindexCommon19(context, arg0, 0);
+        return byteIndexCommon(context, arg0, 0);
     }
 
     @JRubyMethod(writes = BACKREF)
@@ -3477,7 +3477,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         ensureBytePosition(context.runtime, pos);
 
-        return byteindexCommon19(context, arg0, pos);
+        return byteIndexCommon(context, arg0, pos);
     }
 
     @Deprecated
@@ -3490,45 +3490,35 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return index(context, arg0, arg1);
     }
 
-    private IRubyObject indexCommon19(ThreadContext context, IRubyObject sub, int pos) {
+    private IRubyObject indexCommon(ThreadContext context, IRubyObject sub, int pos) {
         if (sub instanceof RubyRegexp) {
             if (pos > strLength()) return context.nil;
             RubyRegexp regSub = (RubyRegexp) sub;
-            pos = singleByteOptimizable() ? pos :
-                    StringSupport.nth(checkEncoding(regSub), value.getUnsafeBytes(), value.getBegin(),
-                            value.getBegin() + value.getRealSize(),
-                            pos) - value.getBegin();
+            pos = singleByteOptimizable() ? pos : StringSupport.nth(checkEncoding(regSub), value, pos) - value.getBegin();
             pos = regSub.adjustStartPos(this, pos, false);
             pos = regSub.search(context, this, pos, false);
-            if (pos >= 0) {
-                RubyMatchData match = context.getLocalMatch();
-                pos = subLength(match.begin(0));
-            }
+            if (pos >= 0) pos = subLength(context.getLocalMatch().begin(0));
         } else {
             RubyString str = sub.convertToString();
             pos = StringSupport.index(this, str, pos, checkEncoding(str));
             pos = subLength(pos);
         }
 
-        return pos == -1 ? context.nil : RubyFixnum.newFixnum(context.runtime, pos);
+        return pos < 0 ? context.nil : RubyFixnum.newFixnum(context.runtime, pos);
     }
 
-    private IRubyObject byteindexCommon19(ThreadContext context, IRubyObject sub, int pos) {
+    private IRubyObject byteIndexCommon(ThreadContext context, IRubyObject sub, int pos) {
         if (pos == this.value.getRealSize()) return context.runtime.newFixnum(pos);
         if (sub instanceof RubyRegexp) {
             if (pos > value.realSize()) return context.nil;
-            RubyRegexp regSub = (RubyRegexp) sub;
-            pos = regSub.search(context, this, pos, false);
-            if (pos >= 0) {
-                RubyMatchData match = context.getLocalMatch();
-                pos = match.begin(0);
-            }
+            pos = ((RubyRegexp) sub).search(context, this, pos, false);
+            if (pos >= 0) pos = context.getLocalMatch().begin(0);
         } else {
             RubyString str = sub.convertToString();
             pos = StringSupport.byteindex(this, str, pos, checkEncoding(str));
         }
 
-        return pos == -1 ? context.nil : RubyFixnum.newFixnum(context.runtime, pos);
+        return pos < 0 ? context.nil : RubyFixnum.newFixnum(context.runtime, pos);
     }
 
     // MRI: rb_strseq_index
@@ -3611,37 +3601,62 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return rindexCommon(context, arg0, pos);
     }
 
+    @JRubyMethod(writes = BACKREF)
+    public IRubyObject byterindex(ThreadContext context, IRubyObject arg0) {
+        return byterindexCommon(context, arg0, value.realSize());
+    }
+
+    @JRubyMethod(writes = BACKREF)
+    public IRubyObject byterindex(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        int pos = RubyNumeric.num2int(arg1);
+        int length = value.realSize();
+        if (pos < 0) {
+            pos += length;
+            if (pos < 0) {
+                // set backref for user
+                if (arg0 instanceof RubyRegexp) context.clearBackRef();
+
+                return context.nil;
+            }
+        }
+        if (pos > length) pos = length;
+
+        ensureBytePosition(context.runtime, pos);
+
+        return byterindexCommon(context, arg0, pos);
+    }
+
+    private IRubyObject byterindexCommon(ThreadContext context, final IRubyObject sub, int pos) {
+        if (sub instanceof RubyRegexp) {
+            if (pos > value.realSize()) return context.nil;
+            pos = ((RubyRegexp) sub).search(context, this, pos, true);
+            if (pos >= 0) pos = context.getLocalMatch().begin(0);
+        } else {
+            RubyString str = sub.convertToString();
+            Encoding enc = checkEncoding(str);
+            pos = StringSupport.byterindex(value, pos, str, enc);
+        }
+
+        return pos < 0 ? context.nil : RubyFixnum.newFixnum(context.runtime, pos);
+    }
+
     private IRubyObject rindexCommon(ThreadContext context, final IRubyObject sub, int pos) {
         if (sub instanceof RubyRegexp) {
             RubyRegexp regSub = (RubyRegexp) sub;
-            pos = StringSupport.offset(
-                    value.getEncoding(), value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(),
-                    pos, singleByteOptimizable());
+            pos = StringSupport.offset(value.getEncoding(), value.getUnsafeBytes(), value.getBegin(),
+                    value.getBegin() + value.getRealSize(), pos, singleByteOptimizable());
             pos = regSub.search(context, this, pos, true);
-            if (pos >= 0) {
-                RubyMatchData match = context.getLocalMatch();
-                pos = subLength(match.begin(0));
-            }
-            if (pos >= 0) return RubyFixnum.newFixnum(context.runtime, pos);
-        } else if (sub instanceof RubyString) {
-            Encoding enc = checkEncoding((RubyString) sub);
-            pos = StringSupport.rindex(value,
-                    StringSupport.strLengthFromRubyString(this, enc),
-                    StringSupport.strLengthFromRubyString(((RubyString) sub), enc),
-                    pos, (RubyString) sub, enc
-            );
+            if (pos >= 0) pos = subLength(context.getLocalMatch().begin(0));
         } else {
-            IRubyObject tmp = sub.checkStringType();
-            if (tmp.isNil()) throw context.runtime.newTypeError("type mismatch: " + sub.getMetaClass().getName() + " given");
-            Encoding enc = checkEncoding((RubyString) tmp);
+            RubyString str = sub.convertToString();
+            Encoding enc = checkEncoding(str);
             pos = StringSupport.rindex(value,
                     StringSupport.strLengthFromRubyString(this, enc),
-                    StringSupport.strLengthFromRubyString(((RubyString) tmp), enc),
-                    pos, (RubyString) tmp, enc
-            );
+                    StringSupport.strLengthFromRubyString(str, enc),
+                    pos, str, enc);
         }
-        if (pos >= 0) return RubyFixnum.newFixnum(context.runtime, pos);
-        return context.nil;
+
+        return pos < 0 ? context.nil : RubyFixnum.newFixnum(context.runtime, pos);
     }
 
     @Deprecated
