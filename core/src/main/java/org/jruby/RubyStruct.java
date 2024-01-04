@@ -608,7 +608,7 @@ public class RubyStruct extends RubyObject {
         System.arraycopy(values, 0, struct.values, 0, values.length);
     }
 
-    @JRubyMethod(name = "==", required = 1)
+    @JRubyMethod(name = "==")
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         if (this == other) return context.tru;
@@ -622,7 +622,7 @@ public class RubyStruct extends RubyObject {
         return RecursiveComparator.compare(context, sites(context).op_equal, this, other);
     }
 
-    @JRubyMethod(name = "eql?", required = 1)
+    @JRubyMethod(name = "eql?")
     public IRubyObject eql_p(ThreadContext context, IRubyObject other) {
         if (this == other) return context.tru;
         if (!(other instanceof RubyStruct)) return context.fals;
@@ -776,7 +776,7 @@ public class RubyStruct extends RubyObject {
         return block.isGiven() ? each_pairInternal(context, block) : enumeratorizeWithSize(context, this, "each_pair", RubyStruct::size);
     }
 
-    @JRubyMethod(name = "[]", required = 1)
+    @JRubyMethod(name = "[]")
     public IRubyObject aref(IRubyObject key) {
         return arefImpl( key, false );
     }
@@ -807,7 +807,7 @@ public class RubyStruct extends RubyObject {
         return values[newIdx];
     }
 
-    @JRubyMethod(name = "[]=", required = 2)
+    @JRubyMethod(name = "[]=")
     public IRubyObject aset(IRubyObject key, IRubyObject value) {
         if (key instanceof RubyString || key instanceof RubySymbol) {
             final String name = key.asJavaString();
@@ -942,7 +942,7 @@ public class RubyStruct extends RubyObject {
     }
 
     @Override
-    @JRubyMethod(required = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize_copy(IRubyObject arg) {
         if (this == arg) return this;
         RubyStruct original = (RubyStruct) arg;

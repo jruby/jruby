@@ -1346,7 +1346,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     // rb_io_syswrite
-    @JRubyMethod(name = "syswrite", required = 1)
+    @JRubyMethod(name = "syswrite")
     public IRubyObject syswrite(ThreadContext context, IRubyObject str) {
        Ruby runtime = context.runtime;
         OpenFile fptr;
@@ -1690,7 +1690,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     /** rb_io_addstr
      *
      */
-    @JRubyMethod(name = "<<", required = 1)
+    @JRubyMethod(name = "<<")
     public IRubyObject op_append(ThreadContext context, IRubyObject anObject) {
         // Claims conversion is done via 'to_s' in docs.
         sites(context).write.call(context, this, this, anObject);
@@ -1716,7 +1716,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
      *
      * @param newLineNumber The new line number.
      */
-    @JRubyMethod(name = "lineno=", required = 1)
+    @JRubyMethod(name = "lineno=")
     public RubyFixnum lineno_set(ThreadContext context, IRubyObject newLineNumber) {
         getOpenFileChecked().setLineNumber(RubyNumeric.fix2int(newLineNumber));
 
@@ -1782,7 +1782,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     // rb_io_set_pos
-    @JRubyMethod(name = "pos=", required = 1)
+    @JRubyMethod(name = "pos=")
     public RubyFixnum pos_set(ThreadContext context, IRubyObject offset) {
         OpenFile fptr;
         long pos;
@@ -1847,7 +1847,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return context.nil;
     }
 
-    @JRubyMethod(required = 1)
+    @JRubyMethod
     public IRubyObject putc(ThreadContext context, IRubyObject ch) {
         IRubyObject str;
         if (ch instanceof RubyString) {
@@ -2023,7 +2023,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
      *
      * @param sync The new sync mode.
      */
-    @JRubyMethod(name = "sync=", required = 1)
+    @JRubyMethod(name = "sync=")
     public IRubyObject sync_set(IRubyObject sync) {
         setSync(sync.isTrue());
 
@@ -2095,7 +2095,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     // rb_io_init_copy
-    @JRubyMethod(required = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize_copy(IRubyObject _io){
         RubyIO dest = this;

@@ -1165,7 +1165,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @param other other object
      * @return false if this == other, true otherwise
      */
-    @JRubyMethod(name = "!=", required = 1)
+    @JRubyMethod(name = "!=")
     public IRubyObject op_not_equal(ThreadContext context, IRubyObject other) {
         return RubyBoolean.newBoolean(context, !sites(context).op_equal.call(context, this, this, other).isTrue());
     }
@@ -1964,7 +1964,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      * Will use Java identity equality.
      */
-    @JRubyMethod(name = "equal?", required = 1)
+    @JRubyMethod(name = "equal?")
     public IRubyObject equal_p(ThreadContext context, IRubyObject other) {
         return this == other ? context.tru : context.fals;
     }

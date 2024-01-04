@@ -297,7 +297,7 @@ public class RubyRange extends RubyObject {
         return context.nil;
     }
 
-    @JRubyMethod(required = 1, visibility = PRIVATE)
+    @JRubyMethod(visibility = PRIVATE)
     public IRubyObject initialize_copy(ThreadContext context, IRubyObject original) {
         if (this.isInited) throw context.runtime.newFrozenError("`initialize' called twice", this);
 
@@ -386,12 +386,12 @@ public class RubyRange extends RubyObject {
         return getRuntime().newBoolean(isExclusive);
     }
     
-    @JRubyMethod(name = "eql?", required = 1)
+    @JRubyMethod(name = "eql?")
     public IRubyObject eql_p(ThreadContext context, IRubyObject other) {
         return equalityInner(context, other, MethodNames.EQL);
     }
 
-    @JRubyMethod(name = "==", required = 1)
+    @JRubyMethod(name = "==")
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         return equalityInner(context, other, MethodNames.OP_EQUAL);
     }

@@ -458,7 +458,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         return new ByteList(buffer, 0, length - toRead, false);
     }
 
-    @JRubyMethod(name = "lineno=", required = 1)
+    @JRubyMethod(name = "lineno=")
     public IRubyObject set_lineno(IRubyObject lineArg) {
         line = RubyNumeric.fix2int(lineArg);
 

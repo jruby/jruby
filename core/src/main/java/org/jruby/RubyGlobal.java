@@ -426,7 +426,7 @@ public class RubyGlobal {
 
         protected final boolean isCaseSensitive() { return false; }
 
-        @JRubyMethod(name = "[]", required = 1)
+        @JRubyMethod(name = "[]")
         public IRubyObject op_aref(ThreadContext context, IRubyObject arg) {
             IRubyObject key = arg.convertToString();
             IRubyObject value = internalGet(key);
@@ -485,12 +485,12 @@ public class RubyGlobal {
             return super.rassoc(context, obj.convertToString());
         }
 
-        @JRubyMethod(name = {"has_key?", "key?", "include?", "member?"}, required = 1)
+        @JRubyMethod(name = {"has_key?", "key?", "include?", "member?"})
         public RubyBoolean has_key_p(ThreadContext context, IRubyObject key) {
             return internalGetEntry(verifyStringLike(context, key)) == NO_ENTRY ? context.fals : context.tru;
         }
 
-        @JRubyMethod(name = {"has_value?", "value?"}, required = 1)
+        @JRubyMethod(name = {"has_value?", "value?"})
         public IRubyObject has_value_pp(ThreadContext context, IRubyObject expected) {
             if (!isStringLike(expected)) return context.nil;
 
@@ -538,7 +538,7 @@ public class RubyGlobal {
             return context.nil;
         }
 
-        @JRubyMethod(name = "replace", required = 1)
+        @JRubyMethod(name = "replace")
         public RubyHash replace(final ThreadContext context, IRubyObject other) {
             modify();
 

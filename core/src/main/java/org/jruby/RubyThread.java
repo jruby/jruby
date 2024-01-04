@@ -911,7 +911,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return false;
     }
 
-    @JRubyMethod(name = "name=", required = 1)
+    @JRubyMethod(name = "name=")
     public IRubyObject setName(IRubyObject name) {
         final Ruby runtime = getRuntime();
 
@@ -1073,7 +1073,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return value;
     }
 
-    @JRubyMethod(name = "[]", required = 1)
+    @JRubyMethod(name = "[]")
     public IRubyObject op_aref(ThreadContext context, IRubyObject key) {
         key = getSymbolKey(key);
         final Map<IRubyObject, IRubyObject> locals = getFiberLocals();
@@ -1083,7 +1083,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
-    @JRubyMethod(name = "[]=", required = 2)
+    @JRubyMethod(name = "[]=")
     public IRubyObject op_aset(IRubyObject key, IRubyObject value) {
         checkFrozen();
 
@@ -1137,7 +1137,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
-    @JRubyMethod(name = "thread_variable_set", required = 2)
+    @JRubyMethod(name = "thread_variable_set")
     public IRubyObject thread_variable_set(ThreadContext context, IRubyObject key, IRubyObject value) {
         checkFrozen();
         key = getSymbolKey(key);
@@ -1175,7 +1175,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return isAbortOnException() ? context.tru : context.fals;
     }
 
-    @JRubyMethod(name = "abort_on_exception=", required = 1)
+    @JRubyMethod(name = "abort_on_exception=")
     public IRubyObject abort_on_exception_set(IRubyObject val) {
         setAbortOnException(val.isTrue());
         return val;
@@ -1367,7 +1367,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return context.nil;
     }
 
-    @JRubyMethod(required = 1, meta = true)
+    @JRubyMethod(meta = true)
     public static IRubyObject kill(IRubyObject receiver, IRubyObject rubyThread, Block block) {
         if (!(rubyThread instanceof RubyThread)) throw receiver.getRuntime().newTypeError(rubyThread, receiver.getRuntime().getThread());
         return ((RubyThread)rubyThread).kill();
@@ -1403,7 +1403,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return RubyFixnum.newFixnum(getRuntime(), javaPriorityToRubyPriority(threadImpl.getPriority()));
     }
 
-    @JRubyMethod(name = "priority=", required = 1)
+    @JRubyMethod(name = "priority=")
     public IRubyObject priority_set(IRubyObject priority) {
         int iPriority = RubyNumeric.fix2int(priority);
 

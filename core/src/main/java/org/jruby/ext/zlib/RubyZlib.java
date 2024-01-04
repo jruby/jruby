@@ -246,7 +246,7 @@ public class RubyZlib {
         return array;
     }
 
-    @JRubyMethod(name = "crc32_combine", required = 3, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "crc32_combine", module = true, visibility = PRIVATE)
     public static IRubyObject crc32_combine(IRubyObject recv,
                                             IRubyObject arg0,
                                             IRubyObject arg1,
@@ -259,7 +259,7 @@ public class RubyZlib {
         return recv.getRuntime().newFixnum(crc3);
     }
 
-    @JRubyMethod(name = "adler32_combine", required = 3, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "adler32_combine", module = true, visibility = PRIVATE)
     public static IRubyObject adler32_combine(IRubyObject recv,
                                             IRubyObject arg0,
                                             IRubyObject arg1,

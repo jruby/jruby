@@ -841,7 +841,7 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_set_default
      *
      */
-    @JRubyMethod(name = "default=", required = 1)
+    @JRubyMethod(name = "default=")
     public IRubyObject default_value_set(ThreadContext context, final IRubyObject defaultValue) {
         modify();
 
@@ -1314,7 +1314,7 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_aref
      *
      */
-    @JRubyMethod(name = "[]", required = 1)
+    @JRubyMethod(name = "[]")
     public IRubyObject op_aref(ThreadContext context, IRubyObject key) {
         IRubyObject value;
         return ((value = internalGet(key)) == null) ? sites(context).self_default.call(context, this, this, key) : value;
@@ -1327,7 +1327,7 @@ public class RubyHash extends RubyObject implements Map {
         return other.directEntrySet().containsAll(directEntrySet());
     }
 
-    @JRubyMethod(name = "<", required = 1)
+    @JRubyMethod(name = "<")
     public IRubyObject op_lt(ThreadContext context, IRubyObject other) {
         final RubyHash otherHash = ((RubyBasicObject) other).convertToHash();
         if (size() >= otherHash.size()) return context.fals;
@@ -1335,7 +1335,7 @@ public class RubyHash extends RubyObject implements Map {
         return RubyBoolean.newBoolean(context, hash_le(otherHash));
     }
 
-    @JRubyMethod(name = "<=", required = 1)
+    @JRubyMethod(name = "<=")
     public IRubyObject op_le(ThreadContext context, IRubyObject other) {
         final RubyHash otherHash = other.convertToHash();
         if (size() > otherHash.size()) return context.fals;
@@ -1343,13 +1343,13 @@ public class RubyHash extends RubyObject implements Map {
         return RubyBoolean.newBoolean(context, hash_le(otherHash));
     }
 
-    @JRubyMethod(name = ">", required = 1)
+    @JRubyMethod(name = ">")
     public IRubyObject op_gt(ThreadContext context, IRubyObject other) {
         final RubyHash otherHash = other.convertToHash();
         return otherHash.op_lt(context, this);
     }
 
-    @JRubyMethod(name = ">=", required = 1)
+    @JRubyMethod(name = ">=")
     public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
         final RubyHash otherHash = other.convertToHash();
         return otherHash.op_le(context, this);
@@ -1464,7 +1464,7 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_has_key
      *
      */
-    @JRubyMethod(name = {"has_key?", "key?", "include?", "member?"}, required = 1)
+    @JRubyMethod(name = {"has_key?", "key?", "include?", "member?"})
     public RubyBoolean has_key_p(ThreadContext context, IRubyObject key) {
         return hasKey(key) ? context.tru : context.fals;
     }
@@ -1529,7 +1529,7 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_has_value
      *
      */
-    @JRubyMethod(name = {"has_value?", "value?"}, required = 1)
+    @JRubyMethod(name = {"has_value?", "value?"})
     public RubyBoolean has_value_p(ThreadContext context, IRubyObject expected) {
         return RubyBoolean.newBoolean(context, hasValue(context, expected));
     }
@@ -2152,7 +2152,7 @@ public class RubyHash extends RubyObject implements Map {
         return dup.merge_bang(context, others, block);
     }
 
-    @JRubyMethod(name = "initialize_copy", required = 1, visibility = PRIVATE)
+    @JRubyMethod(name = "initialize_copy", visibility = PRIVATE)
     public RubyHash initialize_copy(ThreadContext context, IRubyObject other) {
         return replace(context, other);
     }
@@ -2165,7 +2165,7 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_replace
      *
      */
-    @JRubyMethod(name = "replace", required = 1)
+    @JRubyMethod(name = "replace")
     public RubyHash replace(final ThreadContext context, IRubyObject other) {
         modify();
 

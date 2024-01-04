@@ -796,7 +796,7 @@ public class RubyMatchData extends RubyObject {
         return str; //str is frozen
     }
 
-    @JRubyMethod(required = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize_copy(IRubyObject original) {
         if (this == original) return this;
@@ -828,7 +828,7 @@ public class RubyMatchData extends RubyObject {
                this.begin == that.begin && this.end == that.end;
     }
 
-    @JRubyMethod(name = {"eql?", "=="}, required = 1)
+    @JRubyMethod(name = {"eql?", "=="})
     @Override
     public IRubyObject eql_p(IRubyObject obj) {
         return metaClass.runtime.newBoolean( equals(obj) );

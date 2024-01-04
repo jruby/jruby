@@ -290,7 +290,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return super.rbIoClose(context);
     }
 
-    @JRubyMethod(required = 1)
+    @JRubyMethod
     public IRubyObject flock(ThreadContext context, IRubyObject operation) {
 
         // Solaris uses a ruby-ffi version defined in jruby/kernel/file.rb, so re-dispatch
@@ -364,7 +364,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return openFile(context, args);
     }
 
-    @JRubyMethod(required = 1)
+    @JRubyMethod
     public IRubyObject chmod(ThreadContext context, IRubyObject arg) {
         checkClosed(context);
         int mode = (int) arg.convertToInteger().getLongValue();
@@ -377,7 +377,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return context.runtime.newFixnum(context.runtime.getPosix().chmod(path, mode));
     }
 
-    @JRubyMethod(required = 2)
+    @JRubyMethod
     public IRubyObject chown(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
         checkClosed(context);
         int owner = -1;
@@ -468,7 +468,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return context.nil;
     }
 
-    @JRubyMethod(required = 1)
+    @JRubyMethod
     public IRubyObject truncate(ThreadContext context, IRubyObject len) {
         Ruby runtime = context.runtime;
         OpenFile fptr;
@@ -851,7 +851,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      * @param arg Path to get extension name of
      * @return Extension, including the dot, or an empty string
      */
-    @JRubyMethod(required = 1, meta = true)
+    @JRubyMethod(meta = true)
     public static IRubyObject extname(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         String filename = basename(context, recv, arg).toString();
 

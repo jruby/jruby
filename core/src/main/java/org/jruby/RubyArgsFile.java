@@ -732,7 +732,7 @@ public class RubyArgsFile extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "pos=", required = 1)
+    @JRubyMethod(name = "pos=")
     public static IRubyObject set_pos(ThreadContext context, IRubyObject recv, IRubyObject offset) {
         return getCurrentDataFile(context, "no stream to set position").pos_set(context, offset);
     }

@@ -112,7 +112,7 @@ public class MemoryPointer extends Pointer {
         return String.format("MemoryPointer[address=%#x, size=%d]", getAddress(), size);
     }
 
-    @JRubyMethod(name = "==", required = 1)
+    @JRubyMethod(name = "==")
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
         return RubyBoolean.newBoolean(context, this == obj
                 || getAddress() == 0L && obj.isNil()
@@ -129,7 +129,7 @@ public class MemoryPointer extends Pointer {
         return context.nil;
     }
 
-    @JRubyMethod(name = "autorelease=", required = 1)
+    @JRubyMethod(name = "autorelease=")
     public final IRubyObject autorelease(ThreadContext context, IRubyObject release) {
         ((AllocatedDirectMemoryIO) getMemoryIO()).setAutoRelease(release.isTrue());
         return context.nil;

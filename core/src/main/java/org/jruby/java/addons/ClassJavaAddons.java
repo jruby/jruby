@@ -61,7 +61,7 @@ public abstract class ClassJavaAddons {
         return (JavaProxy) Java.getInstance(runtime, reifiedClass);
     }
 
-    @JRubyMethod(name = "become_java!", required = 0)
+    @JRubyMethod(name = "become_java!")
     public static IRubyObject become_java(ThreadContext context, final IRubyObject self) {
         return becomeJava(context, (RubyClass) self, null, true);
     }

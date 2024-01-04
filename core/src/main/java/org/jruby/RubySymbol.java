@@ -504,13 +504,13 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return to_s(metaClass.runtime);
     }
 
-    @JRubyMethod(name = "===", required = 1)
+    @JRubyMethod(name = "===")
     @Override
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
         return RubyBoolean.newBoolean(context, this == other);
     }
 
-    @JRubyMethod(name = "==", required = 1)
+    @JRubyMethod(name = "==")
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         return RubyBoolean.newBoolean(context, this == other);

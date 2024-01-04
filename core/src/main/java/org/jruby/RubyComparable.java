@@ -149,7 +149,7 @@ public class RubyComparable {
     /** cmp_equal (cmp_eq inlined here)
      *
      */
-    @JRubyMethod(name = "==", required = 1)
+    @JRubyMethod(name = "==")
     public static IRubyObject op_equal(ThreadContext context, IRubyObject recv, IRubyObject other) {
         return callCmpMethod(context, recv, other, context.fals);
     }
@@ -178,7 +178,7 @@ public class RubyComparable {
      *
      */
     // <=> may return nil in many circumstances, e.g. 3 <=> NaN
-    @JRubyMethod(name = ">", required = 1)
+    @JRubyMethod(name = ">")
     public static RubyBoolean op_gt(ThreadContext context, IRubyObject recv, IRubyObject other) {
         IRubyObject result = sites(context).op_cmp.call(context, recv, recv, other);
 
@@ -190,7 +190,7 @@ public class RubyComparable {
     /** cmp_ge
      *
      */
-    @JRubyMethod(name = ">=", required = 1)
+    @JRubyMethod(name = ">=")
     public static RubyBoolean op_ge(ThreadContext context, IRubyObject recv, IRubyObject other) {
         IRubyObject result = sites(context).op_cmp.call(context, recv, recv, other);
 
@@ -202,7 +202,7 @@ public class RubyComparable {
     /** cmp_lt
      *
      */
-    @JRubyMethod(name = "<", required = 1)
+    @JRubyMethod(name = "<")
     public static RubyBoolean op_lt(ThreadContext context, IRubyObject recv, IRubyObject other) {
         IRubyObject result = sites(context).op_cmp.call(context, recv, recv, other);
 
@@ -222,7 +222,7 @@ public class RubyComparable {
     /** cmp_le
      *
      */
-    @JRubyMethod(name = "<=", required = 1)
+    @JRubyMethod(name = "<=")
     public static RubyBoolean op_le(ThreadContext context, IRubyObject recv, IRubyObject other) {
         IRubyObject result = sites(context).op_cmp.call(context, recv, recv, other);
 
@@ -234,7 +234,7 @@ public class RubyComparable {
     /** cmp_between
      *
      */
-    @JRubyMethod(name = "between?", required = 2)
+    @JRubyMethod(name = "between?")
     public static RubyBoolean between_p(ThreadContext context, IRubyObject recv, IRubyObject first, IRubyObject second) {
         return RubyBoolean.newBoolean(context, op_lt(context, recv, first).isFalse() && op_gt(context, recv, second).isFalse());
     }

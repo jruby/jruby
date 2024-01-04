@@ -155,19 +155,19 @@ public class RubyMethod extends AbstractRubyMethod {
         return getRuntime().newFixnum(method.getSignature().arityValue());
     }
 
-    @JRubyMethod(name = "eql?", required = 1)
+    @JRubyMethod(name = "eql?")
     public IRubyObject op_eql(ThreadContext context, IRubyObject other) {
         return op_equal(context, other);
     }
 
     @Override
-    @JRubyMethod(name = "==", required = 1)
+    @JRubyMethod(name = "==")
     public RubyBoolean op_equal(ThreadContext context, IRubyObject other) {
         return RubyBoolean.newBoolean(context,  equals(other) );
     }
 
     @Override
-    @JRubyMethod(name = "===", required = 1)
+    @JRubyMethod(name = "===")
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
         return method.call(context, receiver, sourceModule, methodName, other, Block.NULL_BLOCK);
     }

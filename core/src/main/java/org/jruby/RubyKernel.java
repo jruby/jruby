@@ -572,14 +572,14 @@ public class RubyKernel {
         return ret;
     }
 
-    @JRubyMethod(required = 1, module = true)
+    @JRubyMethod(module = true)
     public static IRubyObject public_method(ThreadContext context, IRubyObject recv, IRubyObject symbol) {
         return recv.getMetaClass().newMethod(recv, symbol.asJavaString(), true, PUBLIC, true, false);
     }
 
     /** rb_f_putc
      */
-    @JRubyMethod(required = 1, module = true, visibility = PRIVATE)
+    @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject putc(ThreadContext context, IRubyObject recv, IRubyObject ch) {
         IRubyObject defout = context.runtime.getGlobalVariables().get("$>");
         if (recv == defout) {
@@ -1743,7 +1743,7 @@ public class RubyKernel {
         return cmd;
     }
 
-    @JRubyMethod(name = "`", required = 1, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "`", module = true, visibility = PRIVATE)
     public static IRubyObject backquote(ThreadContext context, IRubyObject recv, IRubyObject str) {
         Ruby runtime = context.runtime;
 
@@ -2134,17 +2134,17 @@ public class RubyKernel {
      * See JRUBY-4871 (because of RubyObject instead of RubyBasicObject cast)
      * BEGIN delegated bindings:
      */
-    @JRubyMethod(name = "eql?", required = 1)
+    @JRubyMethod(name = "eql?")
     public static IRubyObject eql_p(IRubyObject self, IRubyObject obj) {
         return ((RubyBasicObject)self).eql_p(obj);
     }
 
-    @JRubyMethod(name = "===", required = 1)
+    @JRubyMethod(name = "===")
     public static IRubyObject op_eqq(ThreadContext context, IRubyObject self, IRubyObject other) {
         return ((RubyBasicObject) self).op_eqq(context, other);
     }
 
-    @JRubyMethod(name = "<=>", required = 1)
+    @JRubyMethod(name = "<=>")
     public static IRubyObject op_cmp(ThreadContext context, IRubyObject self, IRubyObject other) {
         return ((RubyBasicObject) self).op_cmp(context, other);
     }
@@ -2243,7 +2243,7 @@ public class RubyKernel {
         return ((RubyBasicObject)self).inspect();
     }
 
-    @JRubyMethod(name = "instance_of?", required = 1)
+    @JRubyMethod(name = "instance_of?")
     public static RubyBoolean instance_of_p(ThreadContext context, IRubyObject self, IRubyObject type) {
         return ((RubyBasicObject)self).instance_of_p(context, type);
     }
@@ -2253,7 +2253,7 @@ public class RubyKernel {
         return self;
     }
 
-    @JRubyMethod(name = {"kind_of?", "is_a?"}, required = 1)
+    @JRubyMethod(name = {"kind_of?", "is_a?"})
     public static RubyBoolean kind_of_p(ThreadContext context, IRubyObject self, IRubyObject type) {
         return ((RubyBasicObject)self).kind_of_p(context, type);
     }
@@ -2323,7 +2323,7 @@ public class RubyKernel {
         return ((RubyBasicObject)self).singleton_methods(context, args);
     }
 
-    @JRubyMethod(name = "singleton_method", required = 1)
+    @JRubyMethod(name = "singleton_method")
     public static IRubyObject singleton_method(IRubyObject self, IRubyObject symbol) {
         return ((RubyBasicObject)self).singleton_method(symbol);
     }
@@ -2401,22 +2401,22 @@ public class RubyKernel {
         return ((RubyBasicObject) self).op_not_match(context, arg);
     }
 
-    @JRubyMethod(name = "instance_variable_defined?", required = 1)
+    @JRubyMethod(name = "instance_variable_defined?")
     public static IRubyObject instance_variable_defined_p(ThreadContext context, IRubyObject self, IRubyObject name) {
         return ((RubyBasicObject)self).instance_variable_defined_p(context, name);
     }
 
-    @JRubyMethod(name = "instance_variable_get", required = 1)
+    @JRubyMethod(name = "instance_variable_get")
     public static IRubyObject instance_variable_get(ThreadContext context, IRubyObject self, IRubyObject name) {
         return ((RubyBasicObject)self).instance_variable_get(context, name);
     }
 
-    @JRubyMethod(name = "instance_variable_set", required = 2)
+    @JRubyMethod(name = "instance_variable_set")
     public static IRubyObject instance_variable_set(IRubyObject self, IRubyObject name, IRubyObject value) {
         return ((RubyBasicObject)self).instance_variable_set(name, value);
     }
 
-    @JRubyMethod(name = "remove_instance_variable", required = 1)
+    @JRubyMethod(name = "remove_instance_variable")
     public static IRubyObject remove_instance_variable(ThreadContext context, IRubyObject self, IRubyObject name, Block block) {
         return ((RubyBasicObject) self).remove_instance_variable(context, name, block);
     }

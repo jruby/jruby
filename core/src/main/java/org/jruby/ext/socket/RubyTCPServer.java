@@ -263,7 +263,7 @@ public class RubyTCPServer extends RubyTCPSocket {
         }
     }
 
-    @JRubyMethod(name = "listen", required = 1)
+    @JRubyMethod(name = "listen")
     public IRubyObject listen(ThreadContext context, IRubyObject backlog) {
         return RubyFixnum.zero(context.runtime);
     }

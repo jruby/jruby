@@ -279,7 +279,7 @@ public class RubyException extends RubyObject {
         return getBacktrace();
     }
 
-    @JRubyMethod(required = 1)
+    @JRubyMethod
     public IRubyObject set_backtrace(IRubyObject obj) {
         setBacktrace(obj);
         return backtrace();

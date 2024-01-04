@@ -400,7 +400,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
     /** rb_hash_set_default
      *
      */
-    @JRubyMethod(name = "default=", required = 1)
+    @JRubyMethod(name = "default=")
     public IRubyObject default_value_set(ThreadContext context, final IRubyObject defaultValue) {
         return getOrCreateRubyHashMap(context.runtime).default_value_set(context, defaultValue);
     }
@@ -488,7 +488,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
     /** rb_hash_aset
      *
      */
-    @JRubyMethod(name = {"[]=", "store"}, required = 2)
+    @JRubyMethod(name = {"[]=", "store"})
     public IRubyObject op_aset(ThreadContext context, IRubyObject key, IRubyObject value) {
         return getOrCreateRubyHashMap(context.runtime).op_aset(context, key, value);
     }
@@ -512,27 +512,27 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
     /** rb_hash_aref
      *
      */
-    @JRubyMethod(name = "[]", required = 1)
+    @JRubyMethod(name = "[]")
     public IRubyObject op_aref(ThreadContext context, IRubyObject key) {
         return getOrCreateRubyHashMap(context.runtime).op_aref(context, key);
     }
 
-    @JRubyMethod(name = "<", required = 1)
+    @JRubyMethod(name = "<")
     public IRubyObject op_lt(ThreadContext context, IRubyObject other) {
         return getOrCreateRubyHashMap(context.runtime).op_lt(context, other);
     }
 
-    @JRubyMethod(name = "<=", required = 1)
+    @JRubyMethod(name = "<=")
     public IRubyObject op_le(ThreadContext context, IRubyObject other) {
         return getOrCreateRubyHashMap(context.runtime).op_le(context, other);
     }
 
-    @JRubyMethod(name = ">", required = 1)
+    @JRubyMethod(name = ">")
     public IRubyObject op_gt(ThreadContext context, IRubyObject other) {
         return getOrCreateRubyHashMap(context.runtime).op_gt(context, other);
     }
 
-    @JRubyMethod(name = ">=", required = 1)
+    @JRubyMethod(name = ">=")
     public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
         return getOrCreateRubyHashMap(context.runtime).op_ge(context, other);
     }
@@ -561,7 +561,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
     /** rb_hash_has_key_p
      *
      */
-    @JRubyMethod(name = {"has_key?", "key?", "include?", "member?"}, required = 1)
+    @JRubyMethod(name = {"has_key?", "key?", "include?", "member?"})
     public RubyBoolean has_key_p(ThreadContext context, IRubyObject key) {
         return getOrCreateRubyHashMap(context.runtime).has_key_p(context, key);
     }
@@ -569,7 +569,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
     /** rb_hash_has_value
      *
      */
-    @JRubyMethod(name = {"has_value?", "value?"}, required = 1)
+    @JRubyMethod(name = {"has_value?", "value?"})
     public RubyBoolean has_value_p(ThreadContext context, IRubyObject expected) {
         return getOrCreateRubyHashMap(context.runtime).has_value_p(context, expected);
     }
@@ -747,7 +747,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
     /** rb_hash_replace
      *
      */
-    @JRubyMethod(name = { "replace", "ruby_replace" }, required = 1) // collision with java.util.Map#replace on Java 8+
+    @JRubyMethod(name = { "replace", "ruby_replace" }) // collision with java.util.Map#replace on Java 8+
     public RubyHash replace(final ThreadContext context, IRubyObject other) {
         return getOrCreateRubyHashMap(context.runtime).replace(context, other);
     }
