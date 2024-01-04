@@ -37,8 +37,8 @@ default_gems = [
     ['digest', '3.1.1'],
     ['drb', '2.2.0'],
     ['english', '0.8.0'],
-    # Version 4.0.3 does not have a JRuby version yet: https://github.com/ruby/erb/issues/52
-    ['erb', '4.0.2'],
+    # Ongoing discussion about the -java gem, since it just omits the ext: https://github.com/ruby/erb/issues/52
+    ['erb', '4.0.3'],
     ['error_highlight', '0.6.0'],
     # https://github.com/ruby/etc/issues/19
     # ['etc', '1.3.0'],
