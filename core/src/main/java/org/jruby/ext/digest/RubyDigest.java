@@ -466,7 +466,7 @@ public class RubyDigest {
         }
 
         @JRubyMethod(name = "hexdigest", required = 1, optional = 1, checkArity = false, meta = true)
-        public static IRubyObject s_hexdigest(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
+        public static IRubyObject s_hexdigest(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
             Ruby runtime = recv.getRuntime();
             byte[] digest = recv.callMethod(context, "digest", args, Block.NULL_BLOCK).convertToString().getBytes();
             return RubyDigest.toHexString(runtime, digest);
@@ -495,6 +495,11 @@ public class RubyDigest {
         @Deprecated
         public static RubyString bubblebabble(IRubyObject recv, IRubyObject arg) {
             return bubblebabble(recv.getRuntime().getCurrentContext(), recv, arg);
+        }
+
+        @Deprecated
+        public static IRubyObject s_hexdigest(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
+            return s_hexdigest(context, recv, args);
         }
     }
 
