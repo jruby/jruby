@@ -1919,26 +1919,28 @@ public class Pack {
         int idx;
     }
 
-    private static RubyString packCommon(ThreadContext context, RubyArray list, ByteList formatString, ConverterExecutor executor, RubyString buffer) {
+    private static RubyString packCommon(ThreadContext context, RubyArray list, ByteList formatString,
+                                         ConverterExecutor executor, RubyString buffer) {
+        Ruby runtime = context.runtime;
         ByteBuffer format = ByteBuffer.wrap(formatString.getUnsafeBytes(), formatString.begin(), formatString.length());
 
         buffer.modify();
         ByteList result = buffer.getByteList();
         PackInts packInts = new PackInts(list.size(), 0);
         int type;
-        int next = safeGet(format);
+        int next = getDirective(runtime, "pack", formatString, format);
 
         int enc_info = 1;
 
         mainLoop: while (next != 0) {
             type = next;
-            next = safeGet(format);
+            next = getDirective(runtime, "pack", formatString, format);
 
             // Skip all whitespace in pack format string
             while (ASCII.isSpace(type)) {
                 if (next == 0) break mainLoop;
                 type = next;
-                next = safeGet(format);
+                next = getDirective(runtime, "pack", formatString, format);
             }
 
             // Skip embedded comments in pack format string
@@ -1946,7 +1948,7 @@ public class Pack {
                 while (type != '\n') {
                     if (next == 0) break mainLoop;
                     type = next;
-                    next = safeGet(format);
+                    next = getDirective(runtime, "pack", formatString, format);
                 }
             }
 
@@ -1958,7 +1960,7 @@ public class Pack {
                 int typeBeforeMap = type;
                 type = MAPPED_CODES.charAt(index);
 
-                next = safeGet(format);
+                next = getDirective(runtime, "pack", formatString, format);
             }
             
             if (next == '>' || next == '<') {
@@ -1968,7 +1970,7 @@ public class Pack {
                     throw context.runtime.newArgumentError("'" + (char) next + "' allowed only after types sSiIlLqQ");
                 }
                 type = ENDIANESS_CODES.charAt(index);
-                next = safeGet(format);
+                next = getDirective(runtime, "pack", formatString, format);
             }
 
             // Determine how many of type are needed (default: 1)
@@ -1984,12 +1986,12 @@ public class Pack {
                         occurrences = list.size() - packInts.idx;
                         isStar = true;
                     }
-                    next = safeGet(format);
+                    next = getDirective(runtime, "pack", formatString, format);
                 } else if (ASCII.isDigit(next)) {
                     occurrences = 0;
                     do {
                         occurrences = occurrences * 10 + Character.digit((char)(next & 0xFF), 10);
-                        next = safeGet(format);
+                        next = getDirective(runtime, "pack", formatString, format);
                     } while (next != 0 && ASCII.isDigit(next));
                 }
             }
