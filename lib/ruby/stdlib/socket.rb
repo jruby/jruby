@@ -3,7 +3,10 @@
 # Load built-in socket library
 JRuby::Util.load_ext("org.jruby.ext.socket.SocketLibrary")
 
-require 'io/wait'
+unless IO.method_defined?(:wait_writable, false)
+  # It's only required on older Rubies < v3.2:
+  require 'io/wait'
+end
 
 class Addrinfo
   # creates an Addrinfo object from the arguments.
@@ -199,7 +202,7 @@ class Addrinfo
     sock = ServerSocket.new(self.pfamily, self.socktype, self.protocol)
     begin
       sock.ipv6only! if self.ipv6?
-      sock.setsockopt(:SOCKET, :REUSEADDR, 1)
+      sock.setsockopt(:SOCKET, :REUSEADDR, 1) unless self.pfamily == Socket::PF_UNIX
       sock.bind(self)
       sock.listen(backlog)
     rescue Exception
@@ -331,9 +334,10 @@ class BasicSocket < IO
   # _flags_ is zero or more of the +MSG_+ options.
   # The result, _mesg_, is the data received.
   #
-  # When recvfrom(2) returns 0, Socket#recv_nonblock returns
-  # an empty string as data.
-  # The meaning depends on the socket: EOF on TCP, empty packet on UDP, etc.
+  # When recvfrom(2) returns 0, Socket#recv_nonblock returns nil.
+  # In most cases it means the connection was closed, but for UDP connections
+  # it may mean an empty packet was received, as the underlying API makes
+  # it impossible to distinguish these two cases.
   #
   # === Parameters
   # * +maxlen+ - the number of bytes to receive from the socket
@@ -468,9 +472,6 @@ class Socket < BasicSocket
     end
   end
 
-  # JRuby does not do this dance to get around keyword arguments.
-  unless RUBY_ENGINE == 'jruby'
-
   # call-seq:
   #   socket.recvfrom_nonblock(maxlen[, flags[, outbuf[, opts]]]) => [mesg, sender_addrinfo]
   #
@@ -481,9 +482,10 @@ class Socket < BasicSocket
   # The second element, _sender_addrinfo_, contains protocol-specific address
   # information of the sender.
   #
-  # When recvfrom(2) returns 0, Socket#recvfrom_nonblock returns
-  # an empty string as data.
-  # The meaning depends on the socket: EOF on TCP, empty packet on UDP, etc.
+  # When recvfrom(2) returns 0, Socket#recv_nonblock returns nil.
+  # In most cases it means the connection was closed, but for UDP connections
+  # it may mean an empty packet was received, as the underlying API makes
+  # it impossible to distinguish these two cases.
   #
   # === Parameters
   # * +maxlen+ - the maximum number of bytes to receive from the socket
@@ -598,8 +600,6 @@ class Socket < BasicSocket
   #  __accept_nonblock(exception)
   #end
 
-  end # unless RUBY_ENGINE == 'jruby'
-
   # :call-seq:
   #   Socket.tcp(host, port, local_host=nil, local_port=nil, [opts]) {|socket| ... }
   #   Socket.tcp(host, port, local_host=nil, local_port=nil, [opts])
@@ -613,7 +613,6 @@ class Socket < BasicSocket
   # _opts_ may have following options:
   #
   # [:connect_timeout] specify the timeout in seconds.
-  # [:resolv_timeout] specify the name resolution timeout in seconds.
   #
   # If a block is given, the block is called with the socket.
   # The value of the block is returned.
@@ -1233,9 +1232,10 @@ class UDPSocket < IPSocket
   # The first element of the results, _mesg_, is the data received.
   # The second element, _sender_inet_addr_, is an array to represent the sender address.
   #
-  # When recvfrom(2) returns 0,
-  # Socket#recvfrom_nonblock returns an empty string as data.
-  # It means an empty packet.
+  # When recvfrom(2) returns 0, Socket#recv_nonblock returns nil.
+  # In most cases it means the connection was closed, but it may also mean
+  # an empty packet was received, as the underlying API makes
+  # it impossible to distinguish these two cases.
   #
   # === Parameters
   # * +maxlen+ - the number of bytes to receive from the socket

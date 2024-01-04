@@ -1,6 +1,5 @@
 # frozen_string_literal: false
-require 'win32/importer'
-require 'Win32API'
+require 'fiddle/import'
 
 module Win32
 
@@ -169,7 +168,11 @@ For detail, see the MSDN[http://msdn.microsoft.com/library/en-us/sysinfo/base/pr
     # Error
     #
     class Error < ::StandardError
-      FormatMessageW = Win32API.new('kernel32.dll', 'FormatMessageW', 'LPLLPLP', 'L')
+      module Kernel32
+        extend Fiddle::Importer
+        dlload "kernel32.dll"
+      end
+      FormatMessageW = Kernel32.extern "int FormatMessageW(int, void *, int, int, void *, int, void *)", :stdcall
       def initialize(code)
         @code = code
         buff = WCHAR_NUL * 1024
@@ -213,7 +216,7 @@ For detail, see the MSDN[http://msdn.microsoft.com/library/en-us/sysinfo/base/pr
 
       # Make all
       Constants.constants.grep(/^HKEY_/) do |c|
-        Registry.const_set c, new(Constants.const_get(c), c)
+        Registry.const_set c, new(Constants.const_get(c), c.to_s)
       end
     end
 
@@ -222,26 +225,23 @@ For detail, see the MSDN[http://msdn.microsoft.com/library/en-us/sysinfo/base/pr
     #
     module API
       include Constants
+      extend Fiddle::Importer
+      dlload "advapi32.dll"
       [
-        %w/RegOpenKeyExA    LPLLP        L/,
-        %w/RegCreateKeyExA  LPLLLLPPP    L/,
-        %w/RegEnumValueA    LLPPPPPP     L/,
-        %w/RegEnumKeyExA    LLPPLLLP     L/,
-        %w/RegQueryValueExA LPLPPP       L/,
-        %w/RegSetValueExA   LPLLPL       L/,
-        %w/RegOpenKeyExW    LPLLP        L/,
-        %w/RegCreateKeyExW  LPLLLLPPP    L/,
-        %w/RegEnumValueW    LLPPPPPP     L/,
-        %w/RegEnumKeyExW    LLPPLLLP     L/,
-        %w/RegQueryValueExW LPLPPP       L/,
-        %w/RegSetValueExW   LPLLPL       L/,
-        %w/RegDeleteValueW   LP           L/,
-        %w/RegDeleteKeyW     LP           L/,
-        %w/RegFlushKey      L            L/,
-        %w/RegCloseKey      L            L/,
-        %w/RegQueryInfoKeyW  LPPPPPPPPPPP L/,
+        "long RegOpenKeyExW(void *, void *, long, long, void *)",
+        "long RegCreateKeyExW(void *, void *, long, long, long, long, void *, void *, void *)",
+        "long RegEnumValueW(void *, long, void *, void *, void *, void *, void *, void *)",
+        "long RegEnumKeyExW(void *, long, void *, void *, void *, void *, void *, void *)",
+        "long RegQueryValueExW(void *, void *, void *, void *, void *, void *)",
+        "long RegSetValueExW(void *, void *, long, long, void *, long)",
+        "long RegDeleteValueW(void *, void *)",
+        "long RegDeleteKeyW(void *, void *)",
+        "long RegFlushKey(void *)",
+        "long RegCloseKey(void *)",
+        "long RegQueryInfoKey(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *)",
       ].each do |fn|
-        const_set fn[0].intern, Win32API.new('advapi32.dll', *fn)
+        cfunc = extern fn, :stdcall
+        const_set cfunc.name.intern, cfunc
       end
 
       module_function
@@ -281,7 +281,7 @@ For detail, see the MSDN[http://msdn.microsoft.com/library/en-us/sysinfo/base/pr
       end
 
       def make_wstr(str)
-        str.encode(WCHAR) + 0.chr.encode(WCHAR)
+        str.encode(WCHAR)
       end
 
       def OpenKey(hkey, name, opt, desired)
@@ -575,9 +575,9 @@ For detail, see the MSDN[http://msdn.microsoft.com/library/en-us/sysinfo/base/pr
         begin
           type, data = read(subkey)
         rescue Error
-          next
+        else
+          yield subkey, type, data
         end
-        yield subkey, type, data
         index += 1
       end
       index
@@ -667,14 +667,14 @@ For detail, see the MSDN[http://msdn.microsoft.com/library/en-us/sysinfo/base/pr
 
     #
     # Read a registry value named name and return its value data.
-    # The class of value is same as #read method returns.
+    # The class of the value is the same as the #read method returns.
     #
     # If the value type is REG_EXPAND_SZ, returns value data whose environment
     # variables are replaced.
     # If the value type is neither REG_SZ, REG_MULTI_SZ, REG_DWORD,
     # REG_DWORD_BIG_ENDIAN, nor REG_QWORD, TypeError is raised.
     #
-    # The meaning of rtype is same as #read method.
+    # The meaning of rtype is the same as for the #read method.
     #
     def [](name, *rtype)
       type, data = read(name, *rtype)

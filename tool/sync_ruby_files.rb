@@ -1,9 +1,11 @@
+# We no longer automatically sync these files since there are so few of them.
+# Several, like socket.rb and pathname.rb, have different code for JRuby.
+# This file remains as a list of the files we do not yet source from gems.
+
 STDLIB_FILES = %w[
-  unicode_normalize
 ]
 
 EXT_FILES = {
-  'ext/bigdecimal/lib/bigdecimal' => 'bigdecimal',
   'ext/nkf/lib/kconv.rb' => 'kconv.rb',
   'ext/pathname/lib/pathname.rb' => 'pathname.rb',
   'ext/pty/lib/expect.rb' => 'expect.rb',
