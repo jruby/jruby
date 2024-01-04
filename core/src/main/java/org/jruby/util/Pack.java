@@ -2121,7 +2121,7 @@ public class Pack {
             Sprintf.sprintf(runtime, unknown, "\\x%02X", type & 0377);
         }
 
-        runtime.getWarnings().warning(str(runtime, "unknown " + mode + " directive '", runtime.newString(unknown), "' in '", runtime.newString(formatString), "'"));
+        throw runtime.newArgumentError(str(runtime, "unknown " + mode + " directive '", runtime.newString(unknown), "' in '", runtime.newString(formatString), "'"));
     }
 
     private static void pack_w(ThreadContext context, RubyArray list, ByteList result, PackInts packInts, int occurrences) {
