@@ -6586,11 +6586,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return offset;
     }
 
-    @Deprecated // not used
-    public RubyArray unpack(IRubyObject obj) {
-        return Pack.unpack(getRuntime(), this.value, stringValue(obj).value);
-    }
-
     public void empty() {
         value = ByteList.EMPTY_BYTELIST;
         shareLevel = SHARE_LEVEL_BYTELIST;
@@ -6601,39 +6596,43 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return context.runtime.getEncodingService().getEncoding(value.getEncoding());
     }
 
-    // TODO: re-split this
-    public IRubyObject encode_bang(ThreadContext context, IRubyObject arg0) {
-        return encode_bang(context, new IRubyObject[]{arg0});
-    }
-
-    public IRubyObject encode_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        return encode_bang(context, new IRubyObject[]{arg0,arg1});
-    }
-
-    public IRubyObject encode_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        return encode_bang(context, new IRubyObject[]{arg0,arg1,arg2});
-    }
-
-    @JRubyMethod(name = "encode!", optional = 3, checkArity = false)
-    public IRubyObject encode_bang(ThreadContext context, IRubyObject[] args) {
-        Arity.checkArgumentCount(context, args, 0, 3);
-
-        IRubyObject[] newstr_p;
-        Encoding encindex;
-
+    @JRubyMethod(name = "encode!")
+    public IRubyObject encode_bang(ThreadContext context) {
         modify19();
 
-        newstr_p = new IRubyObject[]{this};
-        encindex = EncodingUtils.strTranscode(context, args, newstr_p);
+        return EncodingUtils.strTranscode(context, this, RubyString::updateFromTranscode);
+    }
 
-        if (encindex == null) return this;
-        if (newstr_p[0] == this) {
-            setEncoding(encindex);
-            return this;
+    @JRubyMethod(name = "encode!")
+    public IRubyObject encode_bang(ThreadContext context, IRubyObject arg0) {
+        modify19();
+
+        return EncodingUtils.strTranscode(context, arg0, this, RubyString::updateFromTranscode);
+    }
+
+    @JRubyMethod(name = "encode!")
+    public IRubyObject encode_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        modify19();
+
+        return EncodingUtils.strTranscode(context, arg0, arg1, this, RubyString::updateFromTranscode);
+    }
+
+    @JRubyMethod(name = "encode!")
+    public IRubyObject encode_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        modify19();
+
+        return EncodingUtils.strTranscode(context, arg0, arg1, arg2, this, RubyString::updateFromTranscode);
+    }
+
+    private static RubyString updateFromTranscode(ThreadContext context, RubyString self, Encoding encindex, RubyString newstr) {
+        if (encindex == null) return self;
+        if (newstr == self) {
+            self.setEncoding(encindex);
+            return self;
         }
-        replace(newstr_p[0]);
-        setEncoding(encindex);
-        return this;
+        self.replace(newstr);
+        self.setEncoding(encindex);
+        return self;
     }
 
     @JRubyMethod
@@ -7243,5 +7242,19 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @Deprecated
     public IRubyObject scan19(ThreadContext context, IRubyObject arg, Block block) { return scan(context, arg, block); }
+
+    @Deprecated // not used
+    public RubyArray unpack(IRubyObject obj) {
+        return Pack.unpack(getRuntime(), this.value, stringValue(obj).value);
+    }
+
+    @Deprecated
+    public IRubyObject encode_bang(ThreadContext context, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 0, 2);
+
+        modify19();
+
+        return EncodingUtils.strTranscode(context, args, this, RubyString::updateFromTranscode);
+    }
 
 }

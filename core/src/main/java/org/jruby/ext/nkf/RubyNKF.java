@@ -536,9 +536,9 @@ public class RubyNKF {
 
             final RubyArray array;
             if ('B' == encode || 'b' == encode) { // BASE64
-                array = Pack.unpack(context.runtime, body, PACK_BASE64);
+                array = Pack.unpack(context, body, PACK_BASE64);
             } else { // Qencode
-                array = Pack.unpack(context.runtime, body, PACK_QENCODE);
+                array = Pack.unpack(context, body, PACK_QENCODE);
             }
             RubyString s = (RubyString) array.entry(0);
             ByteList decodeStr = s.asString().getByteList();
