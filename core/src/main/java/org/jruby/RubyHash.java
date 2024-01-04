@@ -797,18 +797,27 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_initialize
      *
      */
-    @JRubyMethod(optional = 1, checkArity = false, visibility = PRIVATE)
-    public IRubyObject initialize(IRubyObject[] args, final Block block) {
+    @JRubyMethod(visibility = PRIVATE)
+    public IRubyObject initialize(ThreadContext context, final Block block) {
         modify();
 
         if (block.isGiven()) {
-            if (args.length > 0) throw metaClass.runtime.newArgumentError("wrong number of arguments");
-            ifNone = metaClass.runtime.newProc(Block.Type.PROC, block);
+            ifNone = context.runtime.newProc(Block.Type.PROC, block);
             flags |= PROCDEFAULT_HASH_F;
         } else {
-            Arity.checkArgumentCount(metaClass.runtime, args, 0, 1);
-            if (args.length == 1) ifNone = args[0];
-            if (args.length == 0) ifNone = UNDEF;
+            ifNone = UNDEF;
+        }
+        return this;
+    }
+
+    @JRubyMethod(visibility = PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject _default, final Block block) {
+        modify();
+
+        if (block.isGiven()) {
+            throw context.runtime.newArgumentError("wrong number of arguments");
+        } else {
+            ifNone = _default;
         }
         return this;
     }
@@ -3094,6 +3103,18 @@ public class RubyHash extends RubyObject implements Map {
                 return any_p(context, args[0], block);
             default:
                 throw context.runtime.newArgumentError(args.length, 0, 1);
+        }
+    }
+
+    @Deprecated
+    public IRubyObject initialize(IRubyObject[] args, final Block block) {
+        switch (args.length) {
+            case 0:
+                return initialize(getRuntime().getCurrentContext(), block);
+            case 1:
+                return initialize(getRuntime().getCurrentContext(), args[0], block);
+            default:
+                throw getRuntime().newArgumentError(args.length, 0, 1);
         }
     }
 }
