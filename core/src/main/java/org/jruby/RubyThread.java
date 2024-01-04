@@ -886,7 +886,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "pending_interrupt?")
     public IRubyObject pending_interrupt_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, pendingInterruptQueue.isEmpty());
+        return RubyBoolean.newBoolean(context, !pendingInterruptQueue.isEmpty());
     }
 
     @JRubyMethod(name = "pending_interrupt?")
