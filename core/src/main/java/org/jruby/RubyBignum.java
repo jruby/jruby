@@ -512,7 +512,7 @@ public class RubyBignum extends RubyInteger {
     /** rb_big_mul
      *
      */
-    @JRubyMethod(name = "*", required = 1)
+    @JRubyMethod(name = "*")
     public IRubyObject op_mul(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) {
             return op_mul(context, ((RubyFixnum) other).value);
@@ -605,7 +605,7 @@ public class RubyBignum extends RubyInteger {
      *
      */
     @Override
-    @JRubyMethod(name = "divmod", required = 1)
+    @JRubyMethod(name = "divmod")
     public IRubyObject divmod(ThreadContext context, IRubyObject other) {
         final BigInteger otherValue;
         if (other instanceof RubyFixnum) {
@@ -634,7 +634,7 @@ public class RubyBignum extends RubyInteger {
     /** rb_big_modulo
      *
      */
-    @JRubyMethod(name = {"%", "modulo"}, required = 1)
+    @JRubyMethod(name = {"%", "modulo"})
     public IRubyObject op_mod(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) {
             return op_mod(context, ((RubyFixnum) other).value);
@@ -684,7 +684,7 @@ public class RubyBignum extends RubyInteger {
      *
      */
     @Override
-    @JRubyMethod(name = "remainder", required = 1)
+    @JRubyMethod(name = "remainder")
     public IRubyObject remainder(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFloat && ((RubyFloat) other).value == 0) {
             throw context.runtime.newZeroDivisionError();
@@ -714,7 +714,7 @@ public class RubyBignum extends RubyInteger {
      *
      */
     @Override
-    @JRubyMethod(name = "quo", required = 1)
+    @JRubyMethod(name = "quo")
     public IRubyObject quo(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyInteger && ((RubyInteger) other).getDoubleValue() == 0) {
             throw context.runtime.newZeroDivisionError();
@@ -739,7 +739,7 @@ public class RubyBignum extends RubyInteger {
      *
      */
     @Override
-    @JRubyMethod(name = {"**", "power"}, required = 1)
+    @JRubyMethod(name = {"**", "power"})
     public IRubyObject op_pow(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.runtime;
         if (other == RubyFixnum.zero(runtime)) return RubyFixnum.one(runtime);

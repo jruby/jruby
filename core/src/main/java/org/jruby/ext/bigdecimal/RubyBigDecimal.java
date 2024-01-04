@@ -990,7 +990,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return this;
     }
 
-    @JRubyMethod(name = {"%", "modulo"}, required = 1)
+    @JRubyMethod(name = {"%", "modulo"})
     public IRubyObject op_mod(ThreadContext context, IRubyObject other) {
         RubyBigDecimal val = getVpValueWithPrec(context, other, false);
 
@@ -1014,7 +1014,7 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     @Override
-    @JRubyMethod(name = "remainder", required = 1)
+    @JRubyMethod(name = "remainder")
     public IRubyObject remainder(ThreadContext context, IRubyObject arg) {
         return remainderInternal(context, getVpValueWithPrec(context, arg, false), arg);
     }
@@ -1034,7 +1034,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return new RubyBigDecimal(context.runtime, value.remainder(val.value)).setResult();
     }
 
-    @JRubyMethod(name = "*", required = 1)
+    @JRubyMethod(name = "*")
     public IRubyObject op_mul(ThreadContext context, IRubyObject arg) {
         RubyBigDecimal val = getVpValueWithPrec(context, arg, false);
         if (val == null) return callCoerced(context, sites(context).op_times, arg, true);
@@ -1046,7 +1046,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return op_mul(context, arg);
     }
 
-    @JRubyMethod(name = "mult", required = 2)
+    @JRubyMethod(name = "mult")
     public IRubyObject mult2(ThreadContext context, IRubyObject b, IRubyObject n) {
         final int mx = getPrecisionInt(context.runtime, n);
         if (mx == 0) return op_mul(context, b);
@@ -1405,7 +1405,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return new RubyBigDecimal(context.runtime, value.negate());
     }
 
-    @JRubyMethod(name = "-", required = 1)
+    @JRubyMethod(name = "-")
     public IRubyObject op_minus(ThreadContext context, IRubyObject b) {
         return subInternal(context, getVpValueWithPrec(context, b, false), b, 0);
     }
@@ -1415,7 +1415,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return op_minus(context, b);
     }
 
-    @JRubyMethod(name = "sub", required = 2)
+    @JRubyMethod(name = "sub")
     public IRubyObject sub2(ThreadContext context, IRubyObject b, IRubyObject n) {
         return subInternal(context, getVpValueWithPrec(context, b, false), b, getPositiveInt(context, n));
     }
@@ -1723,40 +1723,40 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     @Override
-    @JRubyMethod(name = "<=>", required = 1)
+    @JRubyMethod(name = "<=>")
     public IRubyObject op_cmp(ThreadContext context, IRubyObject arg) {
         return cmp(context, arg, '*');
     }
 
     // NOTE: do not use BigDecimal#equals since ZERO.equals(new BD('0.0')) -> false
     @Override
-    @JRubyMethod(name = {"eql?", "=="}, required = 1)
+    @JRubyMethod(name = {"eql?", "=="})
     public IRubyObject eql_p(ThreadContext context, IRubyObject arg) {
         return cmp(context, arg, '=');
     }
 
     @Override
-    @JRubyMethod(name = "===", required = 1) // same as == (eql?)
+    @JRubyMethod(name = "===") // same as == (eql?)
     public IRubyObject op_eqq(ThreadContext context, IRubyObject arg) {
         return cmp(context, arg, '=');
     }
 
-    @JRubyMethod(name = "<", required = 1)
+    @JRubyMethod(name = "<")
     public IRubyObject op_lt(ThreadContext context, IRubyObject arg) {
         return cmp(context, arg, '<');
     }
 
-    @JRubyMethod(name = "<=", required = 1)
+    @JRubyMethod(name = "<=")
     public IRubyObject op_le(ThreadContext context, IRubyObject arg) {
         return cmp(context, arg, 'L');
     }
 
-    @JRubyMethod(name = ">", required = 1)
+    @JRubyMethod(name = ">")
     public IRubyObject op_gt(ThreadContext context, IRubyObject arg) {
         return cmp(context, arg, '>');
     }
 
-    @JRubyMethod(name = ">=", required = 1)
+    @JRubyMethod(name = ">=")
     public IRubyObject op_ge(ThreadContext context, IRubyObject arg) {
         return cmp(context, arg, 'G');
     }

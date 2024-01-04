@@ -320,45 +320,72 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     @Override
-    @JRubyMethod(required = 1, optional = 2, checkArity = false)
-    public IRubyObject read_nonblock(ThreadContext context, IRubyObject[] args) {
+    @JRubyMethod
+    public IRubyObject read_nonblock(ThreadContext context, IRubyObject arg0) {
         Ruby runtime = context.runtime;
         Channel channel = getChannel();
 
         if (!(channel instanceof DatagramChannel)) {
-            return super.read_nonblock(context, args);
+            return super.read_nonblock(context, arg0);
         }
 
-        int argc = args.length;
+        if (!ArgsUtil.getOptionsArg(runtime, arg0).isNil()) throw runtime.newArgumentError(0, 1, 3);
+
+        return readNonblockCommon(context, runtime, (DatagramChannel) channel, arg0, context.nil, true);
+    }
+
+    @Override
+    @JRubyMethod
+    public IRubyObject read_nonblock(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        Ruby runtime = context.runtime;
+        Channel channel = getChannel();
+
+        if (!(channel instanceof DatagramChannel)) {
+            return super.read_nonblock(context, arg0, arg1);
+        }
+
         boolean exception = true;
         IRubyObject str = context.nil;
-        IRubyObject length;
 
-        IRubyObject maybeHash = ArgsUtil.getOptionsArg(runtime, args);
+        IRubyObject maybeHash = ArgsUtil.getOptionsArg(runtime, arg1);
+
+        if (maybeHash.isNil()) {
+            str = arg1;
+        } else {
+            exception = ArgsUtil.extractKeywordArg(context, "exception", maybeHash) != context.fals;
+        }
+
+        return readNonblockCommon(context, runtime, (DatagramChannel) channel, arg0, str, exception);
+    }
+
+    @Override
+    @JRubyMethod
+    public IRubyObject read_nonblock(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        Ruby runtime = context.runtime;
+        Channel channel = getChannel();
+
+        if (!(channel instanceof DatagramChannel)) {
+            return super.read_nonblock(context, arg0, arg1, arg2);
+        }
+
+        boolean exception = true;
+
+        IRubyObject maybeHash = ArgsUtil.getOptionsArg(runtime, arg2);
 
         if (!maybeHash.isNil()) {
             exception = ArgsUtil.extractKeywordArg(context, "exception", maybeHash) != context.fals;
-            argc--;
         }
 
-        switch (argc) {
-            case 3:
-            case 2:
-                str = args[1];
-                // fall through
-            case 1:
-                length = args[0];
-                break;
-            default:
-                throw runtime.newArgumentError(argc, 1, 3);
-        }
+        return readNonblockCommon(context, runtime, (DatagramChannel) channel, arg0, arg1, exception);
+    }
 
+    private IRubyObject readNonblockCommon(ThreadContext context, Ruby runtime, DatagramChannel channel, IRubyObject length, IRubyObject str, boolean exception) {
         final ByteBuffer buffer = ByteBuffer.allocate(RubyNumeric.fix2int(length));
 
         ByteList bytes;
 
         try {
-            DatagramChannel dgram = (DatagramChannel) channel;
+            DatagramChannel dgram = channel;
 
             getOpenFile().setBlocking(runtime, false);
 
@@ -997,6 +1024,23 @@ public class RubyBasicSocket extends RubyIO {
     @Deprecated
     public static IRubyObject set_do_not_reverse_lookup(IRubyObject recv, IRubyObject flag) {
         return set_do_not_reverse_lookup(recv.getRuntime().getCurrentContext(), recv, flag);
+    }
+
+    @Deprecated
+    @Override
+    public IRubyObject read_nonblock(ThreadContext context, IRubyObject[] args) {
+        int argc = args.length;
+
+        switch (argc) {
+            case 3:
+                return read_nonblock(context, args[0], args[1], args[2]);
+            case 2:
+                return read_nonblock(context, args[0], args[1]);
+            case 1:
+                return read_nonblock(context, args[0]);
+            default:
+                throw context.runtime.newArgumentError(argc, 1, 3);
+        }
     }
 
     private static final ByteList FORMAT_SMALL_I = new ByteList(new byte[] { 'i' }, false);

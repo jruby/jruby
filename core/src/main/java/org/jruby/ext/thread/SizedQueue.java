@@ -130,17 +130,27 @@ public class SizedQueue extends Queue {
         }
     }
 
-    @JRubyMethod(name = {"push", "<<", "enq"}, required = 1, optional = 1, checkArity = false)
-    public IRubyObject push(ThreadContext context, final IRubyObject[] argv) {
+    @JRubyMethod(name = {"push", "<<", "enq"})
+    public IRubyObject push(ThreadContext context, final IRubyObject arg0) {
         initializedCheck();
 
-        boolean should_block = shouldBlock(context, argv);
+        try {
+            return context.getThread().executeTaskBlocking(context, arg0, blockingPushTask);
+        } catch (InterruptedException ie) {
+            throw createInterruptedError(context, "push");
+        }
+    }
+
+    @JRubyMethod(name = {"push", "<<", "enq"})
+    public IRubyObject push(ThreadContext context, final IRubyObject arg0, final IRubyObject nonblock) {
+        initializedCheck();
 
         try {
-            if (should_block) {
-                return context.getThread().executeTaskBlocking(context, argv[0], blockingPushTask);
+            RubyThread thread = context.getThread();
+            if (nonblock.isTrue()) {
+                return thread.executeTask(context, arg0, nonblockingPushTask);
             } else {
-                return context.getThread().executeTask(context, argv[0], nonblockingPushTask);
+                return thread.executeTaskBlocking(context, arg0, blockingPushTask);
             }
         } catch (InterruptedException ie) {
             throw createInterruptedError(context, "push");
@@ -202,12 +212,15 @@ public class SizedQueue extends Queue {
         }
     };
 
-    private static boolean shouldBlock(ThreadContext context, IRubyObject[] argv) {
-        boolean should_block = true;
-        Arity.checkArgumentCount(context, argv, 1, 2);
-        if (argv.length > 1) {
-            should_block = !argv[1].isTrue();
+    @Deprecated
+    public IRubyObject push(ThreadContext context, final IRubyObject[] argv) {
+        switch (argv.length) {
+            case 1:
+                return push(context, argv[0]);
+            case 2:
+                return push(context, argv[0], argv[1]);
+            default:
+                throw context.runtime.newArgumentError(argv.length, 1, 2);
         }
-        return should_block;
     }
 }

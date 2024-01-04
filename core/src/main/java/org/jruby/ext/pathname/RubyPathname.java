@@ -271,12 +271,16 @@ public class RubyPathname extends RubyObject {
 
     /* Facade for File */
 
-    @JRubyMethod(alias = "fnmatch?", required = 1, optional = 1, checkArity = false)
-    public IRubyObject fnmatch(ThreadContext context, IRubyObject[] args) {
-        Arity.checkArgumentCount(context, args, 1, 2);
+    @JRubyMethod(name = {"fnmatch", "fnmatch?"})
+    public IRubyObject fnmatch_p(ThreadContext context, IRubyObject arg0) {
+        RubyClass File = context.runtime.getFile();
+        return sites(context).fnmatch_p.call(context, File, File, arg0, getPath());
+    }
 
-        args = insertPath(args, 1);
-        return context.runtime.getFile().callMethod(context, "fnmatch?", args);
+    @JRubyMethod(name = {"fnmatch", "fnmatch?"})
+    public IRubyObject fnmatch_p(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        RubyClass File = context.runtime.getFile();
+        return sites(context).fnmatch_p.call(context, File, File, arg0, getPath(), arg1);
     }
 
     @JRubyMethod
@@ -446,5 +450,17 @@ public class RubyPathname extends RubyObject {
     @JRubyMethod
     public IRubyObject untaint(ThreadContext context) {
         return this;
+    }
+
+    @Deprecated
+    public IRubyObject fnmatch(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+            case 1:
+                return fnmatch_p(context, args[0]);
+            case 2:
+                return fnmatch_p(context, args[0], args[1]);
+            default:
+                throw context.runtime.newArgumentError(args.length, 1, 2);
+        }
     }
 }

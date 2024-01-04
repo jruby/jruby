@@ -879,7 +879,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     /** rb_reg_init_copy
      */
-    @JRubyMethod(required = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize_copy(IRubyObject re) {
         if (this == re) return this;
@@ -1028,7 +1028,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return metaClass.runtime.newFixnum(hash + (hash >> 5));
     }
 
-    @JRubyMethod(name = {"==", "eql?"}, required = 1)
+    @JRubyMethod(name = {"==", "eql?"})
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         if (this == other) {
@@ -1073,7 +1073,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     /** rb_reg_eqq
      *
      */
-    @JRubyMethod(name = "===", required = 1, writes = BACKREF)
+    @JRubyMethod(name = "===", writes = BACKREF)
     public IRubyObject eqq(ThreadContext context, IRubyObject arg) {
         arg = operandNoCheck(arg);
 
@@ -1101,7 +1101,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     // MRI: rb_reg_match
 
     @Override
-    @JRubyMethod(name = "=~", required = 1, writes = BACKREF)
+    @JRubyMethod(name = "=~", writes = BACKREF)
     public IRubyObject op_match(ThreadContext context, IRubyObject str) {
         final RubyString[] strp = { null };
         int pos = matchPos(context, str, strp, true, 0);

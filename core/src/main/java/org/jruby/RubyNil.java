@@ -171,7 +171,7 @@ public class RubyNil extends RubyObject implements Constantizable {
     }
 
     @Override
-    @JRubyMethod(name = "=~", required = 1)
+    @JRubyMethod(name = "=~")
     public IRubyObject op_match(ThreadContext context, IRubyObject arg) {
         return this; // nil
     }
@@ -179,7 +179,7 @@ public class RubyNil extends RubyObject implements Constantizable {
     /** nil_and
      *
      */
-    @JRubyMethod(name = "&", required = 1)
+    @JRubyMethod(name = "&")
     public static RubyBoolean op_and(ThreadContext context, IRubyObject recv, IRubyObject obj) {
         return context.fals;
     }
@@ -187,7 +187,7 @@ public class RubyNil extends RubyObject implements Constantizable {
     /** nil_or
      *
      */
-    @JRubyMethod(name = "|", required = 1)
+    @JRubyMethod(name = "|")
     public static RubyBoolean op_or(ThreadContext context, IRubyObject recv, IRubyObject obj) {
         return RubyBoolean.newBoolean(context, obj.isTrue());
     }
@@ -195,7 +195,7 @@ public class RubyNil extends RubyObject implements Constantizable {
     /** nil_xor
      *
      */
-    @JRubyMethod(name = "^", required = 1)
+    @JRubyMethod(name = "^")
     public static RubyBoolean op_xor(ThreadContext context, IRubyObject recv, IRubyObject obj) {
         return RubyBoolean.newBoolean(context, obj.isTrue());
     }

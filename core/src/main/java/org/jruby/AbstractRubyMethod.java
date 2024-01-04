@@ -82,7 +82,7 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
         return op_eql(context, other);
     }
 
-    @JRubyMethod(name = "eql?", required = 1)
+    @JRubyMethod(name = "eql?")
     public IRubyObject op_eql(ThreadContext context, IRubyObject other) {
         return RubyBoolean.newBoolean(context,  equals(other) );
     }

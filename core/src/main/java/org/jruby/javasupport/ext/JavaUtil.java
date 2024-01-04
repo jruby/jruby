@@ -202,7 +202,7 @@ public abstract class JavaUtil {
             return JavaLang.Iterable.count(context, self, obj, Block.NULL_BLOCK);
         } */
 
-        @JRubyMethod(name = "+", required = 1)
+        @JRubyMethod(name = "+")
         public static IRubyObject op_plus(final ThreadContext context, final IRubyObject self, final IRubyObject coll) {
             final IRubyObject dup = self.callMethod(context, "dup");
             java.util.Collection javaDup = unwrapIfJavaObject(dup);
@@ -215,7 +215,7 @@ public abstract class JavaUtil {
             return dup;
         }
 
-        @JRubyMethod(name = "-", required = 1)
+        @JRubyMethod(name = "-")
         public static IRubyObject op_minus(final ThreadContext context, final IRubyObject self, final IRubyObject coll) {
             final IRubyObject dup = self.callMethod(context, "dup");
             java.util.Collection javaDup = unwrapIfJavaObject(dup);
@@ -416,7 +416,7 @@ public abstract class JavaUtil {
             return Java.getInstance(context.runtime, list.subList(start, end));
         }
 
-        @JRubyMethod(name = "index", required = 0) // list.index { |val| val > 0 }
+        @JRubyMethod(name = "index") // list.index { |val| val > 0 }
         public static IRubyObject index(final ThreadContext context, final IRubyObject self, final Block block) {
             final Ruby runtime = context.runtime;
             if ( ! block.isGiven() ) { // list.index ... Enumerator.new(self, :index)
@@ -441,7 +441,7 @@ public abstract class JavaUtil {
             return context.nil;
         }
 
-        @JRubyMethod(name = "index", required = 1) // list.index '42'
+        @JRubyMethod(name = "index") // list.index '42'
         public static IRubyObject index(final ThreadContext context, final IRubyObject self, final IRubyObject val,
             final Block ignoredBlock) {
 
@@ -469,7 +469,7 @@ public abstract class JavaUtil {
             return context.nil;
         }
 
-        @JRubyMethod(name = "rindex", required = 0) // list.rindex { |val| val > 0 }
+        @JRubyMethod(name = "rindex") // list.rindex { |val| val > 0 }
         public static IRubyObject rindex(final ThreadContext context, final IRubyObject self, final Block block) {
             final Ruby runtime = context.runtime;
             if ( ! block.isGiven() ) { // list.rindex ... Enumerator.new(self, :rindex)
@@ -495,7 +495,7 @@ public abstract class JavaUtil {
             return context.nil;
         }
 
-        @JRubyMethod(name = "rindex", required = 1) // list.rindex '42'
+        @JRubyMethod(name = "rindex") // list.rindex '42'
         public static IRubyObject rindex(final ThreadContext context, final IRubyObject self, final IRubyObject val,
             final Block ignoredBlock) {
 

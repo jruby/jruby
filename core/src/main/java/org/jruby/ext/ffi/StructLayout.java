@@ -238,7 +238,7 @@ public final class StructLayout extends Type {
      * @param name The name of the member.
      * @return A ruby value for the native value of the struct member.
      */
-    @JRubyMethod(name = "get", required = 2)
+    @JRubyMethod(name = "get")
     public IRubyObject get(ThreadContext context, IRubyObject ptr, IRubyObject name) {
         return getValue(context, name, nullStorage, ptr);
     }
@@ -250,7 +250,7 @@ public final class StructLayout extends Type {
      * @param name The name of the member.
      * @return A ruby value for the native value of the struct member.
      */
-    @JRubyMethod(name = "put", required = 3)
+    @JRubyMethod(name = "put")
     public IRubyObject put(ThreadContext context, IRubyObject ptr, IRubyObject name, IRubyObject value) {
         putValue(context, name, nullStorage, ptr, value);
 

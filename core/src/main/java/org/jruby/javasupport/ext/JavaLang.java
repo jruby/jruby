@@ -641,7 +641,7 @@ public abstract class JavaLang {
 
         // JavaClass facade (compatibility) :
 
-        @JRubyMethod(required = 1)
+        @JRubyMethod
         public static IRubyObject extend_proxy(final ThreadContext context, IRubyObject self, IRubyObject extender) {
             java.lang.Class<?> klass = Java.unwrapClassProxy(self);
             RubyModule proxy = Java.getProxyClass(context.runtime, klass);
@@ -749,7 +749,7 @@ public abstract class JavaLang {
             return Java.getInstance(context.runtime, arrayClass);
         }
 
-        @JRubyMethod(required = 1)
+        @JRubyMethod
         public static IRubyObject new_array(ThreadContext context, IRubyObject self, IRubyObject length) {
             final java.lang.Class klass = unwrapJavaObject(self);
 

@@ -58,7 +58,7 @@ public class RubyClassPathVariable extends RubyObject {
         return append(obj.getRuntime().getCurrentContext(), obj);
     }
 
-    @JRubyMethod(name = {"append", "<<"}, required = 1)
+    @JRubyMethod(name = {"append", "<<"})
     public IRubyObject append(ThreadContext context, IRubyObject obj) {
         IRubyObject[] paths;
         if (obj.respondsTo("to_a")) {
