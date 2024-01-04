@@ -363,6 +363,23 @@ public class RubyMatchData extends RubyObject {
     }
 
     @JRubyMethod
+    public IRubyObject byteoffset(ThreadContext context, IRubyObject group) {
+        Ruby runtime = context.runtime;
+        int index = backrefNumber(runtime, group);
+        Region regs = this.regs;
+
+        backrefNumberCheck(runtime, index);
+
+        int start = regs.getBeg(index);
+
+        if (start < 0) return runtime.newArray(context.nil, context.nil);
+
+        int end = regs.getEnd(index);
+
+        return runtime.newArray(runtime.newFixnum(start), runtime.newFixnum(end));
+    }
+
+    @JRubyMethod
     @Override
     public RubyString inspect() {
         if (str == null) return (RubyString) anyToString();
