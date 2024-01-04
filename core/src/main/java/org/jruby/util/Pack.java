@@ -979,18 +979,18 @@ public class Pack {
         // FIXME: potentially could just use ByteList here?
         ByteBuffer format = ByteBuffer.wrap(formatString.getUnsafeBytes(), formatString.begin(), formatString.length());
         ByteBuffer encode = ByteBuffer.wrap(encodedString.getUnsafeBytes(), beg, len);
-        int next = safeGet(format);
+        int next = getDirective(runtime, "unpack", formatString, format);
         IRubyObject value = null; // UNPACK_1
 
         mainLoop: while (next != 0) {
             int type = next;
-            next = safeGet(format);
+            next = getDirective(runtime, "unpack", formatString, format);
             
             if (type == '#') {
                 while (type != '\n') {
                     if (next == 0) break mainLoop;
                     type = next;
-                    next = safeGet(format);
+                    next = getDirective(runtime, "unpack", formatString, format);
                 }
             }
 
@@ -1002,7 +1002,7 @@ public class Pack {
                 }
                 type = MAPPED_CODES.charAt(index);
                 
-                next = safeGet(format);
+                next = getDirective(runtime, "unpack", formatString, format);
             }
             
             if (next == '>' || next == '<') {
@@ -1012,9 +1012,9 @@ public class Pack {
                     throw runtime.newArgumentError("'" + (char)next + "' allowed only after types sSiIlLqQjJ");
                 }
                 type = ENDIANESS_CODES.charAt(index);
-                next = safeGet(format);
+                next = getDirective(runtime, "unpack", formatString, format);
                 
-                if (next == '_' || next == '!') next = safeGet(format);
+                if (next == '_' || next == '!') next = getDirective(runtime, "unpack", formatString, format);
             }
 
             // How many occurrences of 'type' we want
@@ -1024,12 +1024,12 @@ public class Pack {
             } else {
                 if (next == '*') {
                     occurrences = IS_STAR;
-                    next = safeGet(format);
+                    next = getDirective(runtime, "unpack", formatString, format);
                 } else if (ASCII.isDigit(next)) {
                     occurrences = 0;
                     do {
                         occurrences = occurrences * 10 + Character.digit((char)(next & 0xFF), 10);
-                        next = safeGet(format);
+                        next = getDirective(runtime, "unpack", formatString, format);
                         if (occurrences < 0) throw runtime.newRangeError("pack length too big");
                     } while (next != 0 && ASCII.isDigit(next));
                 } else {
@@ -1736,6 +1736,16 @@ public class Pack {
         }
         
         return 0;
+    }
+
+    public static int getDirective(Ruby runtime, String mode, ByteList formatString, ByteBuffer encode) {
+        if (!encode.hasRemaining()) return 0;
+
+        int got = encode.get() & 0xff;
+
+        if (got == 0) unknownDirective(runtime, mode, 0, formatString);
+
+        return got;
     }
 
     public static IRubyObject decode(ThreadContext context, Ruby runtime, ByteBuffer encode, int occurrences,
