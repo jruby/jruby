@@ -879,7 +879,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return context.getThread().pending_interrupt_p(context);
     }
 
-    @JRubyMethod(name = "pending_interrupt?", meta = true, optional = 1, checkArity = false)
+    @JRubyMethod(name = "pending_interrupt?", meta = true)
     public static IRubyObject pending_interrupt_p_s(ThreadContext context, IRubyObject self, IRubyObject err) {
         return context.getThread().pending_interrupt_p(context, err);
     }
