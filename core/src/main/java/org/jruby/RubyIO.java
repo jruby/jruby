@@ -4859,6 +4859,109 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return context.runtime.newFixnum(written);
     }
 
+    @JRubyMethod(optional = 1)
+    public static IRubyObject wait_readable(ThreadContext context, IRubyObject _io, IRubyObject[] argv) {
+        RubyIO io = (RubyIO)_io;
+        OpenFile fptr = io.getOpenFileChecked();
+
+        fptr.checkReadable(context);
+
+        long tv = prepareTimeout(context, argv);
+
+        if (fptr.readPending() != 0) return context.tru;
+
+        return doWait(context, io, fptr, tv, SelectionKey.OP_READ | SelectionKey.OP_ACCEPT);
+    }
+
+    /**
+     * waits until input available or timed out and returns self, or nil when EOF reached.
+     */
+    @JRubyMethod(optional = 1)
+    public static IRubyObject wait_writable(ThreadContext context, IRubyObject _io, IRubyObject[] argv) {
+        RubyIO io = (RubyIO)_io;
+
+        OpenFile fptr = io.getOpenFileChecked();
+
+        fptr.checkWritable(context);
+
+        long tv = prepareTimeout(context, argv);
+
+        return doWait(context, io, fptr, tv, SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE);
+    }
+
+    @JRubyMethod(optional = 2)
+    public static IRubyObject wait(ThreadContext context, IRubyObject _io, IRubyObject[] argv) {
+        RubyIO io = (RubyIO)_io;
+
+        OpenFile fptr = io.getOpenFileChecked();
+
+        int ops = 0;
+
+        if (argv.length == 2) {
+            if (argv[1] instanceof RubySymbol) {
+                RubySymbol sym = (RubySymbol) argv[1];
+                switch (sym.asJavaString()) { // 7 bit comparison
+                    case "r":
+                    case "read":
+                    case "readable":
+                        ops |= SelectionKey.OP_ACCEPT | SelectionKey.OP_READ;
+                        break;
+                    case "w":
+                    case "write":
+                    case "writable":
+                        ops |= SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE;
+                        break;
+                    case "rw":
+                    case "read_write":
+                    case "readable_writable":
+                        ops |= SelectionKey.OP_ACCEPT | SelectionKey.OP_READ | SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE;
+                        break;
+                    default:
+                        throw context.runtime.newArgumentError("unsupported mode: " + sym);
+                }
+            } else {
+                throw context.runtime.newArgumentError("unsupported mode: " + argv[1].getType());
+            }
+        } else {
+            ops |= SelectionKey.OP_ACCEPT | SelectionKey.OP_READ;
+        }
+
+        if ((ops & SelectionKey.OP_READ) == SelectionKey.OP_READ && fptr.readPending() != 0) return context.tru;
+
+        long tv = prepareTimeout(context, argv);
+
+        return doWait(context, io, fptr, tv, ops);
+    }
+
+    private static IRubyObject doWait(ThreadContext context, RubyIO io, OpenFile fptr, long tv, int ops) {
+        boolean ready = fptr.ready(context.runtime, context.getThread(), ops, tv);
+        fptr.checkClosed();
+        if (ready) return io;
+        return context.nil;
+    }
+
+    private static long prepareTimeout(ThreadContext context, IRubyObject[] argv) {
+        IRubyObject timeout;
+        long tv;
+        switch (argv.length) {
+            case 2:
+            case 1:
+                timeout = argv[0];
+                break;
+            default:
+                timeout = context.nil;
+        }
+
+        if (timeout.isNil()) {
+            tv = -1;
+        }
+        else {
+            tv = (long)(RubyTime.convertTimeInterval(context, timeout) * 1000);
+            if (tv < 0) throw context.runtime.newArgumentError("time interval must be positive");
+        }
+        return tv;
+    }
+
     /**
      * Add a thread to the list of blocking threads for this IO.
      *
