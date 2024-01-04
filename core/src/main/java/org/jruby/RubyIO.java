@@ -5463,7 +5463,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             } finally {
                 cleanupPOpen(tuple);
 
-                IRubyObject status = waitThread[0].join(IRubyObject.NULL_ARRAY);
+                IRubyObject status = waitThread[0].join(context);
                 context.setLastExitStatus(status);
             }
         }
