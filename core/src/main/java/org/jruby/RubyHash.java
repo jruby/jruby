@@ -2330,30 +2330,32 @@ public class RubyHash extends RubyObject implements Map {
         return rbClone(context, context.nil);
     }
 
-    @JRubyMethod(name = "any?", optional = 1, checkArity = false)
-    public IRubyObject any_p(ThreadContext context, IRubyObject[] args, Block block) {
-        int argc = Arity.checkArgumentCount(context, args, 0, 1);
-
-        IRubyObject pattern = argc > 0 ? args[0] : null;
-        boolean patternGiven = pattern != null;
-
+    @JRubyMethod(name = "any?")
+    public IRubyObject any_p(ThreadContext context, Block block) {
         if (isEmpty()) return context.fals;
-
-        if (!block.isGiven() && !patternGiven) return context.tru;
-
-        if (block.isGiven() && patternGiven) {
-            context.runtime.getWarnings().warn("given block not used");
-        }
-
-        if (patternGiven) return any_p_p(context, pattern);
+        if (!block.isGiven()) return context.tru;
 
         if (block.getSignature().arityValue() > 1) {
             return any_p_i_fast(context, block);
         }
+
         return any_p_i(context, block);
     }
 
-    private IRubyObject any_p_i(ThreadContext context, Block block) {
+    @JRubyMethod(name = "any?")
+    public IRubyObject any_p(ThreadContext context, IRubyObject arg0, Block block) {
+        IRubyObject pattern = arg0;
+
+        if (isEmpty()) return context.fals;
+
+        if (block.isGiven()) {
+            context.runtime.getWarnings().warn("given block not used");
+        }
+
+        return any_p_p(context, pattern);
+    }
+
+    protected IRubyObject any_p_i(ThreadContext context, Block block) {
         iteratorEntry();
         try {
             for (RubyHashEntry entry = head.nextAdded; entry != head; entry = entry.nextAdded) {
@@ -2367,7 +2369,7 @@ public class RubyHash extends RubyObject implements Map {
         }
     }
 
-    private IRubyObject any_p_i_fast(ThreadContext context, Block block) {
+    protected IRubyObject any_p_i_fast(ThreadContext context, Block block) {
         iteratorEntry();
         try {
             for (RubyHashEntry entry = head.nextAdded; entry != head; entry = entry.nextAdded) {
@@ -2380,7 +2382,7 @@ public class RubyHash extends RubyObject implements Map {
         }
     }
 
-    private IRubyObject any_p_p(ThreadContext context, IRubyObject pattern) {
+    protected IRubyObject any_p_p(ThreadContext context, IRubyObject pattern) {
         iteratorEntry();
         try {
             for (RubyHashEntry entry = head.nextAdded; entry != head; entry = entry.nextAdded) {
@@ -3081,5 +3083,17 @@ public class RubyHash extends RubyObject implements Map {
     @Deprecated
     public IRubyObject each19(final ThreadContext context, final Block block) {
         return each(context, block);
+    }
+
+    @Deprecated
+    public IRubyObject any_p(ThreadContext context, IRubyObject[] args, Block block) {
+        switch (args.length) {
+            case 0:
+                return any_p(context, block);
+            case 1:
+                return any_p(context, args[0], block);
+            default:
+                throw context.runtime.newArgumentError(args.length, 0, 1);
+        }
     }
 }
