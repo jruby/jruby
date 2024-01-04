@@ -489,7 +489,7 @@ public class RubyDigest {
         @JRubyMethod(name = "bubblebabble", meta = true)
         public static RubyString bubblebabble(ThreadContext context, IRubyObject recv, IRubyObject arg) {
             byte[] digest = sites(context).digest.call(context, recv, recv, arg).convertToString().getBytes();
-            return RubyString.newString(recv.getRuntime(), BubbleBabble.bubblebabble(digest, 0, digest.length));
+            return RubyString.newString(context.runtime, BubbleBabble.bubblebabble(digest, 0, digest.length));
         }
 
         @Deprecated
