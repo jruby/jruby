@@ -271,13 +271,13 @@ public class RubyPathname extends RubyObject {
 
     /* Facade for File */
 
-    @JRubyMethod(alias = "fnmatch?")
+    @JRubyMethod(name = {"fnmatch", "fnmatch?"})
     public IRubyObject fnmatch_p(ThreadContext context, IRubyObject arg0) {
         RubyClass File = context.runtime.getFile();
         return sites(context).fnmatch_p.call(context, File, File, arg0, getPath());
     }
 
-    @JRubyMethod(alias = "fnmatch?")
+    @JRubyMethod(name = {"fnmatch", "fnmatch?"})
     public IRubyObject fnmatch_p(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         RubyClass File = context.runtime.getFile();
         return sites(context).fnmatch_p.call(context, File, File, arg0, getPath(), arg1);
