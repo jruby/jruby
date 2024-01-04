@@ -494,6 +494,7 @@ public class JavaSites {
         public final CallSite glob = new FunctionalCachingCallSite("glob");
         public final CallSite op_plus = new FunctionalCachingCallSite("+");
         public final CallSite sub = new FunctionalCachingCallSite("sub");
+        public final CallSite fnmatch_p = new FunctionalCachingCallSite("fnmatch?");
     }
 
     public static class DateSites {

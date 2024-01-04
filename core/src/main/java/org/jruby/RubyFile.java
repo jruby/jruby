@@ -1005,21 +1005,27 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      *   [set]:  Matches a single char in a set (re: [...]).
      *
      */
-    @JRubyMethod(name = {"fnmatch", "fnmatch?"}, required = 2, optional = 1, checkArity = false, meta = true)
-    public static IRubyObject fnmatch(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        int argc = Arity.checkArgumentCount(context, args, 2, 3);
+    @JRubyMethod(name = {"fnmatch", "fnmatch?"}, meta = true)
+    public static IRubyObject fnmatch(ThreadContext context, IRubyObject recv, IRubyObject _pattern, IRubyObject _path) {
+        return fnmatchCommon(context, _pattern, _path, 0);
+    }
 
-        Ruby runtime = context.runtime;
-        int flags = argc == 3 ? RubyNumeric.num2int(args[2]) : 0;
+    @JRubyMethod(name = {"fnmatch", "fnmatch?"}, meta = true)
+    public static IRubyObject fnmatch(ThreadContext context, IRubyObject recv, IRubyObject _pattern, IRubyObject _path, IRubyObject _flags) {
+        return fnmatchCommon(context, _pattern, _path, RubyNumeric.num2int(_flags));
+    }
+
+    private static RubyBoolean fnmatchCommon(ThreadContext context, IRubyObject _path, IRubyObject _pattern, int flags) {
         boolean braces_match = false;
         boolean extglob = (flags & FNM_EXTGLOB) != 0;
 
-        ByteList pattern = StringSupport.checkEmbeddedNulls(runtime, args[0].convertToString()).getByteList();
-        ByteList path = StringSupport.checkEmbeddedNulls(runtime, get_path(context, args[1])).getByteList();
+        Ruby runtime = context.runtime;
+        ByteList pattern = StringSupport.checkEmbeddedNulls(runtime, _path.convertToString()).getByteList();
+        ByteList path = StringSupport.checkEmbeddedNulls(runtime, get_path(context, _pattern)).getByteList();
 
         if(extglob) {
-            String spattern = args[0].asJavaString();
-            ArrayList<String> patterns = org.jruby.util.Dir.braces(spattern, flags, new ArrayList<String>());
+            String spattern = _path.asJavaString();
+            ArrayList<String> patterns = Dir.braces(spattern, flags, new ArrayList<String>());
 
             ArrayList<Boolean> matches = new ArrayList<Boolean>();
             for(int i = 0; i < patterns.size(); i++) {
@@ -2611,5 +2617,17 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             throw context.runtime.newErrnoENOENTError(file.toString());
         }
         return file;
+    }
+
+    @Deprecated
+    public static IRubyObject fnmatch(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        switch (args.length) {
+            case 2:
+                return fnmatch(context, recv, args[0], args[1]);
+            case 3:
+                return fnmatch(context, recv, args[0], args[1], args[2]);
+            default:
+                throw context.runtime.newArgumentError(args.length, 2, 3);
+        }
     }
 }
