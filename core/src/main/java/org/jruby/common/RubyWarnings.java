@@ -309,7 +309,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     }
 
     public enum Category {
-        EXPERIMENTAL("experimental"), DEPRECATED("deprecated");
+        EXPERIMENTAL("experimental"), DEPRECATED("deprecated"), PERFORMANCE("performance");
 
         private String id;
 
@@ -321,6 +321,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
             switch (id) {
                 case "experimental": return EXPERIMENTAL;
                 case "deprecated": return DEPRECATED;
+                case "performance": return PERFORMANCE;
             }
 
             return null;
