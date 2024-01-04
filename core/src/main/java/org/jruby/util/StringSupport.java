@@ -1735,6 +1735,41 @@ public final class StringSupport {
         }
     }
 
+    public static int byteindex(CodeRangeable sourceString, CodeRangeable otherString, int offset, Encoding enc) {
+        if (otherString.scanForCodeRange() == CR_BROKEN) return -1;
+
+        final ByteList source = sourceString.getByteList();
+        final ByteList other = otherString.getByteList();
+
+        int sourceLen = source.realSize();
+        int otherLen = other.realSize();
+
+        if (offset < 0) {
+            offset += sourceLen;
+            if (offset < 0) return -1;
+        }
+
+        if (sourceLen - offset < otherLen) return -1;
+        byte[] bytes = source.getUnsafeBytes();
+        int p = source.getBegin();
+        int end = p + source.getRealSize();
+        if (offset != 0) {
+            p += offset;
+        }
+        if (otherLen == 0) return offset;
+
+        while (true) {
+            int pos = source.indexOf(other, p - source.getBegin());
+            if (pos < 0) return pos;
+            pos -= (p - source.getBegin());
+            int t = enc.rightAdjustCharHead(bytes, p, p + pos, end);
+            if (t == p + pos) return pos + offset;
+            if ((sourceLen -= t - p) <= 0) return -1;
+            offset += t - p;
+            p = t;
+        }
+    }
+
     public static int index(CodeRangeable sourceString, CodeRangeable otherString, int offset, Encoding enc) {
         if (otherString.scanForCodeRange() == CR_BROKEN) return -1;
 

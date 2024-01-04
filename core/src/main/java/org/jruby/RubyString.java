@@ -3457,6 +3457,29 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return indexCommon19(context, arg0, pos);
     }
 
+    @JRubyMethod(writes = BACKREF)
+    public IRubyObject byteindex(ThreadContext context, IRubyObject arg0) {
+        return byteindexCommon19(context, arg0, 0);
+    }
+
+    @JRubyMethod(writes = BACKREF)
+    public IRubyObject byteindex(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        int pos = RubyNumeric.num2int(arg1);
+        if (pos < 0) {
+            pos += value.realSize();
+            if (pos < 0) {
+                // set backref for user
+                if (arg0 instanceof RubyRegexp) context.clearBackRef();
+
+                return context.nil;
+            }
+        }
+
+        ensureBytePosition(context.runtime, pos);
+
+        return byteindexCommon19(context, arg0, pos);
+    }
+
     @Deprecated
     public IRubyObject index19(ThreadContext context, IRubyObject arg0) {
         return index(context, arg0);
@@ -3474,21 +3497,35 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             pos = singleByteOptimizable() ? pos :
                     StringSupport.nth(checkEncoding(regSub), value.getUnsafeBytes(), value.getBegin(),
                             value.getBegin() + value.getRealSize(),
-                                      pos) - value.getBegin();
+                            pos) - value.getBegin();
             pos = regSub.adjustStartPos(this, pos, false);
             pos = regSub.search(context, this, pos, false);
             if (pos >= 0) {
                 RubyMatchData match = context.getLocalMatch();
                 pos = subLength(match.begin(0));
             }
-        } else if (sub instanceof RubyString) {
-            pos = StringSupport.index(this, (RubyString) sub, pos, this.checkEncoding((RubyString) sub));
-            pos = subLength(pos);
         } else {
-            IRubyObject tmp = sub.checkStringType();
-            if (tmp == context.nil) throw context.runtime.newTypeError("type mismatch: " + sub.getMetaClass().getName() + " given");
-            pos = StringSupport.index(this, (RubyString) tmp, pos, this.checkEncoding((RubyString) tmp));
+            RubyString str = sub.convertToString();
+            pos = StringSupport.index(this, str, pos, checkEncoding(str));
             pos = subLength(pos);
+        }
+
+        return pos == -1 ? context.nil : RubyFixnum.newFixnum(context.runtime, pos);
+    }
+
+    private IRubyObject byteindexCommon19(ThreadContext context, IRubyObject sub, int pos) {
+        if (pos == this.value.getRealSize()) return context.runtime.newFixnum(pos);
+        if (sub instanceof RubyRegexp) {
+            if (pos > value.realSize()) return context.nil;
+            RubyRegexp regSub = (RubyRegexp) sub;
+            pos = regSub.search(context, this, pos, false);
+            if (pos >= 0) {
+                RubyMatchData match = context.getLocalMatch();
+                pos = match.begin(0);
+            }
+        } else {
+            RubyString str = sub.convertToString();
+            pos = StringSupport.byteindex(this, str, pos, checkEncoding(str));
         }
 
         return pos == -1 ? context.nil : RubyFixnum.newFixnum(context.runtime, pos);
@@ -5025,25 +5062,36 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     // MRI: rb_str_end_with, loop body
     protected boolean endWith(IRubyObject tmp) {
-        int p, s, e;
-        Encoding enc;
-
         tmp = tmp.convertToString();
         ByteList tmpBL = ((RubyString)tmp).value;
         // MRI does not have this condition because starting at end of string can still dereference \0
         if (tmpBL.getRealSize() == 0) return true;
-        enc = checkEncoding((RubyString)tmp);
+        Encoding enc = checkEncoding((RubyString)tmp);
         if (value.realSize() < tmpBL.realSize()) return false;
-        p = value.begin();
-        e = p + value.realSize();
-        s = e - tmpBL.realSize();
-        if (enc.leftAdjustCharHead(value.unsafeBytes(), p, s, e) != s) {
-            return false;
-        }
+        int p = value.begin();
+        int e = p + value.realSize();
+        int s = e - tmpBL.realSize();
+        if (!atCharacterBoundary(value.unsafeBytes(), p, e, s, enc)) return false;
         if (ByteList.memcmp(value.unsafeBytes(), s, tmpBL.unsafeBytes(), tmpBL.begin(), tmpBL.realSize()) == 0) {
             return true;
         }
         return false;
+    }
+
+    // MRI: at_char_boundary
+    private static boolean atCharacterBoundary(byte[] bytes, int p, int e, int s, Encoding enc) {
+        return s == e || enc.leftAdjustCharHead(bytes, p, s, e) == s;
+    }
+
+    // MRI: str_ensure_byte_pos
+    private void ensureBytePosition(Ruby runtime, int offset) {
+        int p = value.begin();
+        int e = p + value.realSize();
+        int s = e - offset;
+
+        if (!atCharacterBoundary(value.unsafeBytes(), p, e, s, value.getEncoding())) {
+            throw runtime.newIndexError("offset " + offset + " does not land on character boundary");
+        }
     }
 
     public boolean endsWithAsciiChar(char c) {
