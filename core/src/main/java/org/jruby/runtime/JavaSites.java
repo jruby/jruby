@@ -54,6 +54,7 @@ public class JavaSites {
     public final SetSites Set = new SetSites();
     public final StructSites Struct = new StructSites();
     public final DigestSites Digest = new DigestSites();
+    public final MethodSites Method = new MethodSites();
 
     public static class BasicObjectSites {
         public final CallSite respond_to = new FunctionalCachingCallSite("respond_to?");
@@ -544,6 +545,10 @@ public class JavaSites {
         public final CallSite digest = new FunctionalCachingCallSite("digest");
         public final CallSite hexdigest = new FunctionalCachingCallSite("hexdigest");
         public final CallSite digest_length = new FunctionalCachingCallSite("digest_length");
+    }
+
+    public static class MethodSites {
+        public final CallSite curry = new FunctionalCachingCallSite("curry");
     }
 
     public static class CheckedSites {

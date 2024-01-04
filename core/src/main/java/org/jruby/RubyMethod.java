@@ -44,6 +44,7 @@ import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.MethodBlockBody;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.PositionAware;
@@ -364,9 +365,16 @@ public class RubyMethod extends AbstractRubyMethod {
         return Helpers.methodToParameters(context.runtime, this);
     }
 
-    @JRubyMethod(optional = 1, checkArity = false)
-    public IRubyObject curry(ThreadContext context, IRubyObject[] args) {
-        return to_proc(context).callMethod(context, "curry", args);
+    @JRubyMethod
+    public IRubyObject curry(ThreadContext context) {
+        IRubyObject proc = to_proc(context);
+        return sites(context).curry.call(context, proc, proc);
+    }
+
+    @JRubyMethod
+    public IRubyObject curry(ThreadContext context, IRubyObject arg0) {
+        IRubyObject proc = to_proc(context);
+        return sites(context).curry.call(context, proc, proc, arg0);
     }
 
     @JRubyMethod
@@ -395,6 +403,16 @@ public class RubyMethod extends AbstractRubyMethod {
 
     public IRubyObject getReceiver() {
         return receiver;
+    }
+
+    @Deprecated
+    public IRubyObject curry(ThreadContext context, IRubyObject[] args) {
+        IRubyObject proc = to_proc(context);
+        return sites(context).curry.call(context, proc, proc, args);
+    }
+
+    private static JavaSites.MethodSites sites(ThreadContext context) {
+        return context.sites.Method;
     }
 
 }
