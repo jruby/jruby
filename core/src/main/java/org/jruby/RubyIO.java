@@ -3988,6 +3988,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
 
         if ((recv == runtime.getIO()) && (cmd = PopenExecutor.checkPipeCommand(context, filename)) != context.nil) {
+            runtime.getWarnings().warn("IO process creation with a leading '|' is deprecated and will be removed in Ruby 4.0; use IO.popen instead");
             if (PopenExecutor.nativePopenAvailable(runtime)) {
                 return (RubyIO) PopenExecutor.pipeOpen(context, cmd, OpenFile.ioOflagsModestr(runtime, oflags), fmode, convconfig);
             } else {
