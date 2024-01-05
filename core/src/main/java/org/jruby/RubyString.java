@@ -1223,7 +1223,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return sites(context).equals.call(context, this, other, this).isTrue() ? context.tru : context.fals;
     }
 
-    @JRubyMethod(name = "-@") // -'foo' returns frozen string
+    @JRubyMethod(name = {"-@", "dedup"}) // -'foo' returns frozen string
     public final IRubyObject minus_at(ThreadContext context) {
         return context.runtime.freezeAndDedupString(this);
     }
