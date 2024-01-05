@@ -604,14 +604,15 @@ public class Sprintf {
                     int c; int n;
                     IRubyObject tmp = arg.checkStringType();
                     if (!tmp.isNil()) {
-                        if (((RubyString) tmp).strLength() != 1) {
-                            throw runtime.newArgumentError("%c requires a character");
+                        if (((RubyString) tmp).strLength() == 0) {
+                            c = 0;
+                            n = 0;
+                        } else {
+                            ByteList bl = ((RubyString) tmp).getByteList();
+                            c = StringSupport.codePoint(runtime, encoding, bl.unsafeBytes(), bl.begin(), bl.begin() + bl.realSize());
+                            n = StringSupport.codeLength(bl.getEncoding(), c);
                         }
-                        ByteList bl = ((RubyString) tmp).getByteList();
-                        c = StringSupport.codePoint(runtime, encoding, bl.unsafeBytes(), bl.begin(), bl.begin() + bl.realSize());
-                        n = StringSupport.codeLength(bl.getEncoding(), c);
-                    }
-                    else {
+                    } else {
                         c = (int) RubyNumeric.num2long(arg) & 0xFFFFFFFF;
                         try {
                             n = StringSupport.codeLength(encoding, c);
@@ -619,7 +620,7 @@ public class Sprintf {
                             n = -1;
                         }
                     }
-                    if (n <= 0) {
+                    if (n < 0) {
                         throw runtime.newArgumentError("invalid character");
                     }
                     if ((flags & FLAG_WIDTH) == 0) {
@@ -631,10 +632,10 @@ public class Sprintf {
                         buf.ensure(buf.length() + n);
                         EncodingUtils.encMbcput(context, c, buf.unsafeBytes(), buf.realSize(), encoding);
                         buf.realSize(buf.realSize() + n);
-                        buf.fill(' ', width - 1);
+                        buf.fill(' ', width - n);
                     }
                     else {
-                        buf.fill(' ', width - 1);
+                        buf.fill(' ', width - n);
                         buf.ensure(buf.length() + n);
                         EncodingUtils.encMbcput(context, c, buf.unsafeBytes(), buf.realSize(), encoding);
                         buf.realSize(buf.realSize() + n);
