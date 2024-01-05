@@ -66,6 +66,9 @@ public enum ArgumentType {
     public RubyArray toArrayForm(Ruby runtime, RubySymbol name) {
         RubySymbol typeName = runtime.newSymbol(typeId);
 
+        if (this == ArgumentType.anonrest) return runtime.newArray(typeName, runtime.newSymbol("*"));
+        if (this == ArgumentType.anonkeyrest) return runtime.newArray(typeName, runtime.newSymbol("**"));
+
         return anonymous ? runtime.newArray(typeName) : runtime.newArray(typeName, name);
     }
 
