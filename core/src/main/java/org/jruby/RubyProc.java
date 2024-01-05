@@ -37,6 +37,7 @@ package org.jruby;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -411,10 +412,24 @@ public class RubyProc extends RubyObject implements DataType {
 
     @JRubyMethod
     public IRubyObject parameters(ThreadContext context) {
+        return parametersCommon(context, isLambda());
+    }
+
+    @JRubyMethod(keywords = true)
+    public IRubyObject parameters(ThreadContext context, IRubyObject opts) {
+        int callInfo = context.resetCallInfo();
+        boolean isLambda = (callInfo & ThreadContext.CALL_KEYWORD) != 0 ?
+                ArgsUtil.extractKeywordArg(context, (RubyHash) opts, "lambda").isTrue() :
+                isLambda();
+
+        return parametersCommon(context, isLambda);
+    }
+
+    private IRubyObject parametersCommon(ThreadContext context, boolean isLambda) {
         BlockBody body = this.getBlock().getBody();
 
         return Helpers.argumentDescriptorsToParameters(context.runtime,
-                body.getArgumentDescriptors(), isLambda());
+                body.getArgumentDescriptors(), isLambda);
     }
 
     @JRubyMethod(name = "lambda?")
