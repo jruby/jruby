@@ -599,7 +599,7 @@ public class TraceType {
             if (color) {
                 if (first) {
                     buffer.append(FIRST_COLOR);
-                } else if (frame.isBinding() || frame.getFileName().equals("(eval)")) {
+                } else if (frame.isBinding() || frame.getFileName().startsWith("(eval")) {
                     buffer.append(EVAL_COLOR);
                 } else if (frame.getFileName().indexOf(".java") != -1) {
                     buffer.append(KERNEL_COLOR);

@@ -1819,7 +1819,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             evalStr = arg.convertToString();
         }
 
-        String file = "(eval)";
+        String file = "(eval at " + context.getFileAndLine() + ")";
         int line = 0;
 
         return evalUnder(context, mod, evalStr, file, line, evalType);

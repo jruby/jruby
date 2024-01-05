@@ -366,7 +366,7 @@ public class RubyObject extends RubyBasicObject {
                 line = 0;
             }
         } else {
-            file = "(eval)";
+            file = "(eval at " + context.getFileAndLine() + ")";
             line = 0;
         }
 

@@ -794,6 +794,10 @@ public final class ThreadContext {
         b.line = line;
     }
 
+    public String getFileAndLine() {
+        return "" + backtrace[backtraceIndex].filename + ":" + (backtrace[backtraceIndex].line + 1);
+    }
+
     public Visibility getCurrentVisibility() {
         return getCurrentFrame().getVisibility();
     }

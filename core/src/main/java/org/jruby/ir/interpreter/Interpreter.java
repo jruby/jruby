@@ -139,10 +139,14 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         context.pushEvalSimpleFrame(self);
 
         try {
-            return evalCommon(context, evalScope, self, src, file, lineNumber, "(eval)", Block.NULL_BLOCK, evalType, false);
+            return evalCommon(context, evalScope, self, src, file, lineNumber, evalName(file, lineNumber), Block.NULL_BLOCK, evalType, false);
         } finally {
             context.popFrame();
         }
+    }
+
+    public static String evalName(String file, int line) {
+        return "(eval at " + file + ":" + line + ")";
     }
 
     private static IRubyObject evalCommon(ThreadContext context, DynamicScope evalScope, IRubyObject self, IRubyObject src,
