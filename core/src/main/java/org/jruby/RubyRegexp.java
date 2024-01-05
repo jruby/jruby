@@ -75,6 +75,7 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.collections.WeakValuedMap;
 
+import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.StringSupport.CR_7BIT;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
@@ -896,10 +897,19 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     private static int objectAsJoniOptions(IRubyObject arg) {
+        Ruby runtime = arg.getRuntime();
         if (arg instanceof RubyFixnum) return RubyNumeric.fix2int(arg);
-        if (arg.isTrue()) return RE_OPTION_IGNORECASE;
+        if (arg instanceof RubyString) return RegexpOptions.fromByteList(runtime, ((RubyString) arg).getByteList()).toJoniOptions();
+        if (arg instanceof RubyBoolean) {
+            if (arg.isTrue()) return RE_OPTION_IGNORECASE;
 
-        return 0;
+            return 0;
+        }
+        if (arg.isNil()) return 0;
+
+        runtime.getWarnings().warning(str(runtime, "expected true or false as ignorecase: ", arg));
+
+        return RE_OPTION_IGNORECASE;
     }
 
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)

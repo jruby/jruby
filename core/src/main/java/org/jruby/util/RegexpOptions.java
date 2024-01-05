@@ -12,6 +12,8 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyRegexp;
 
+import static org.jruby.util.RubyStringBuilder.str;
+
 public class RegexpOptions implements Cloneable {
 
     private static final ByteList WINDOWS31J = new ByteList(new byte[] {'W', 'i', 'n', 'd', 'o', 'w', 's', '-', '3', '1', 'J'}, false);
@@ -228,6 +230,37 @@ public class RegexpOptions implements Cloneable {
         options.setFixed((joniOptions & RubyRegexp.RE_FIXED) != 0);
         options.setOnce((joniOptions & RubyRegexp.RE_OPTION_ONCE) != 0);
         options.setEncodingNone((joniOptions & RubyRegexp.RE_NONE) != 0);
+
+        return options;
+    }
+
+    // This is the options Regexp#new supports.  It is not all valid suffixes.
+    public static RegexpOptions fromByteList(Ruby runtime, ByteList string) {
+        RegexpOptions options = new RegexpOptions();
+        int c;
+        byte[] bytes = string.unsafeBytes();
+        int i = string.begin();
+        int length = string.realSize();
+
+        for (; i < length; i++) {
+            c = bytes[i];
+            switch (c) {
+                case 'i':
+                    options.setIgnorecase(true);
+                    break;
+                case 'x':
+                    options.setExtended(true);
+                    break;
+                case 'm':
+                    options.setMultiline(true);
+                    break;
+                case 'o':
+                    options.setOnce(true);
+                    break;
+                default:
+                    throw runtime.newArgumentError(str(runtime, "unknown regexp option: ", runtime.newString(string)));
+            }
+        }
 
         return options;
     }

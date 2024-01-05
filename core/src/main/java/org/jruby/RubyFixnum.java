@@ -68,9 +68,6 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     public static RubyClass createFixnumClass(Ruby runtime) {
         RubyClass fixnum = runtime.getInteger();
 
-        runtime.getObject().setConstant("Fixnum", fixnum);
-        runtime.getObject().deprecateConstant(runtime, "Fixnum");
-
         for (int i = 0; i < runtime.fixnumCache.length; i++) {
             runtime.fixnumCache[i] = new RubyFixnum(fixnum, i - CACHE_OFFSET);
         }
