@@ -849,6 +849,16 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return dup;
     }
 
+    @JRubyMethod
+    public IRubyObject dup(ThreadContext context) {
+        Ruby runtime = context.runtime;
+        if (isBare(runtime)) {
+            return strDup(runtime);
+        }
+
+        return super.dup();
+    }
+
     // MRI: rb_str_dup
     public final RubyString strDup(Ruby runtime) {
         return strDup(runtime, metaClass.getRealClass());
