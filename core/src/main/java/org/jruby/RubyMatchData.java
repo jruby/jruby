@@ -865,20 +865,20 @@ public class RubyMatchData extends RubyObject {
         return metaClass.runtime.newFixnum( hashCode() );
     }
 
-    @JRubyMethod(keywords = true, checkArity = false, optional = 1)
+    @JRubyMethod(keywords = true, optional = 1)
     public RubyHash named_captures(ThreadContext context, IRubyObject[] args) {
         check();
 
         Ruby runtime = context.runtime;
         int argc = Arity.checkArgumentCount(runtime, args.length, 0, 0, true);
-        RubyHash hash = RubyHash.newHash(runtime);
+        RubyHash hash = RubyHash.newSmallHash(runtime);
         if (regexp == context.nil) return hash;
 
         boolean symbolizeNames = false;
-        if ( argc == 1 ) {
+        if (argc == 1) {
             final IRubyObject opts = args[0];
             if (opts instanceof RubyHash) {
-                symbolizeNames = ArgsUtil.extractKeywordArg(runtime.getCurrentContext(), (RubyHash) opts, "symbolize_names").isTrue();
+                symbolizeNames = ArgsUtil.extractKeywordArg(context, (RubyHash) opts, "symbolize_names").isTrue();
             } else {
                 throw runtime.newArgumentError(1, 0);
             }
