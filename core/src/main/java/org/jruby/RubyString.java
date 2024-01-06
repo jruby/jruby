@@ -3893,61 +3893,107 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return byteARef(context.runtime, arg);
     }
 
-    @JRubyMethod(required = 2, optional = 3)
+    @JRubyMethod(required = 2, optional = 3, checkArity = false)
     public IRubyObject bytesplice(ThreadContext context, IRubyObject[] args) {
-        RubyString val;
-        Encoding enc;
-        int cr;
-
-        int argc = Arity.checkArgumentCount(context, args, 2, 5);
-        if (!(argc == 2 || argc == 3 || argc == 5)) {
-            throw context.runtime.newArgumentError("wrong number of arguments (given " + argc + ", expected 2, 3, or 5)");
+        switch (args.length) {
+            case 2:
+                return bytesplice(context, args[0], args[1]);
+            case 3:
+                return bytesplice(context, args[0], args[1], args[2]);
+            case 5:
+                break;
+            default:
+                throw context.runtime.newArgumentError("wrong number of arguments (given " + args.length + ", expected 2, 3, or 5)");
         }
 
-        IRubyObject arg0 = args[0];
-        IRubyObject arg1 = args[1];
-        int[] beglen = {0, 0};
-        int[] vbegvlen = {0, 0};
+        int[] beglen = {RubyNumeric.num2int(args[0]), RubyNumeric.num2int(args[1])};
 
-        if (argc == 2 || (argc == 3 && !(arg0 instanceof RubyInteger))) {
-            if (!RubyRange.rangeBeginLength(context, arg0, value.realSize(), beglen, 2).isTrue()) {
-                throw context.runtime.newTypeError(arg0, context.runtime.getRange());
-            }
-            val = arg1.convertToString();
-            if (argc == 2) {
-                /* bytesplice(range, str) */
-                vbegvlen[0] = 0;
-                vbegvlen[1] = val.getByteList().realSize();
-            } else {
-                /* bytesplice(range, str, str_range) */
-                if (!RubyRange.rangeBeginLength(context, args[2], val.getByteList().realSize(), beglen, 2).isTrue()) {
-                    throw context.runtime.newTypeError(args[2], context.runtime.getRange());
-                }
-            }
-        } else {
-            beglen[0] = RubyNumeric.num2int(arg0);
-            beglen[1] = RubyNumeric.num2int(arg1);
-            val = args[2].convertToString();
-            if (argc == 3) {
-                /* bytesplice(index, length, str) */
-                vbegvlen[0] = 0;
-                vbegvlen[1] = val.getByteList().realSize();
-            } else {
-                /* bytesplice(index, length, str, str_index, str_length) */
-                vbegvlen[0] = RubyNumeric.num2int(args[3]);
-                vbegvlen[1] = RubyNumeric.num2int(args[4]);
-            }
-        }
+        RubyString val = args[2].convertToString();
+
+        int[] vbegvlen = {RubyNumeric.num2int(args[3]), RubyNumeric.num2int(args[4])};
+
         checkBegLen(context, beglen);
         val.checkBegLen(context, vbegvlen);
-        enc = checkEncoding(val);
+
+        return bytespliceCommon(val, beglen[0], beglen[1], vbegvlen[0], vbegvlen[1]);
+    }
+
+    @JRubyMethod
+    public IRubyObject bytesplice(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        int[] beglen = new int[2];
+        if (!RubyRange.rangeBeginLength(context, arg0, value.realSize(), beglen, 2).isTrue()) {
+            throw context.runtime.newTypeError(arg0, context.runtime.getRange());
+        }
+        checkBegLen(context, beglen);
+
+        RubyString val = arg1.convertToString();
+
+        int vbeg = 0;
+        int vlen = val.getByteList().realSize();
+
+        // simpler check for vbeg, vlen since we know the indices are valid
+        val.checkBegLenPositions(context, vbeg, vlen);
+
+        return bytespliceCommon(val, beglen[0], beglen[1], vbeg, vlen);
+    }
+
+    @JRubyMethod
+    public IRubyObject bytesplice(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        if (!(arg0 instanceof RubyInteger)) {
+            return bytespliceRange(context, arg0, arg1, arg2);
+        } else {
+            return bytespliceOffsets(context, arg0, arg1, arg2);
+        }
+    }
+
+    /* bytesplice(index, length, str) */
+    private RubyString bytespliceOffsets(ThreadContext context, IRubyObject index, IRubyObject length, IRubyObject str) {
+        int[] beglen = new int[] {RubyNumeric.num2int(index), RubyNumeric.num2int(length)};
+        checkBegLen(context, beglen);
+
+        RubyString val = str.convertToString();
+
+        int vbeg = 0;
+        int vlen = val.getByteList().realSize();
+        // simpler check for vbeg, vlen since we know the indices are valid
+        val.checkBegLenPositions(context, vbeg, vlen);
+
+        return bytespliceCommon(val, beglen[0], beglen[1], vbeg, vlen);
+    }
+
+    /* bytesplice(range, str, str_range) */
+    private RubyString bytespliceRange(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        int[] beglen = new int[2];
+
+        if (!RubyRange.rangeBeginLength(context, arg0, value.realSize(), beglen, 2).isTrue()) {
+            throw context.runtime.newTypeError(arg0, context.runtime.getRange());
+        }
+        checkBegLen(context, beglen);
+
+        RubyString val = arg1.convertToString();
+
+        int[] vbegvlen = new int[2];
+        if (!RubyRange.rangeBeginLength(context, arg2, val.getByteList().realSize(), vbegvlen, 2).isTrue()) {
+            throw context.runtime.newTypeError(arg2, context.runtime.getRange());
+        }
+        val.checkBegLen(context, vbegvlen);
+
+        return bytespliceCommon(val, beglen[0], beglen[1], vbegvlen[0], vbegvlen[1]);
+    }
+
+    private RubyString bytespliceCommon(RubyString val, int beg, int len, int vbeg, int vlen) {
+        Encoding enc = checkEncoding(val);
+
         modifyAndKeepCodeRange();
-        strUpdate1(beglen[0], beglen[1], val, vbegvlen[0], vbegvlen[1]);
+
+        strUpdate1(beg, len, val, vbeg, vlen);
         setEncoding(enc);
-        cr = coderangeAnd(getCodeRange(), val.getCodeRange());
+
+        int cr = coderangeAnd(getCodeRange(), val.getCodeRange());
         if (cr != CR_BROKEN) {
             setCodeRange(cr);
         }
+
         return this;
     }
 
@@ -3966,22 +4012,36 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     // MRI: str_check_beg_len
     private void checkBegLen(ThreadContext context, int[] beglen) {
-        int end, slen = value.realSize();
+        int slen = size();
 
-        if (beglen[1] < 0) throw context.runtime.newIndexError("negative length " + beglen[1]);
-        if ((slen < beglen[0]) || ((beglen[0] < 0) && (beglen[0] + slen < 0))) {
-            throw context.runtime.newIndexError("index " + beglen[0] + " out of string");
+        int len = beglen[1];
+        if (len < 0) throw context.runtime.newIndexError("negative length " + len);
+
+        int beg = beglen[0];
+        if ((slen < beg) || ((beg < 0) && (beg + slen < 0))) {
+            throw context.runtime.newIndexError("index " + beg + " out of string");
         }
-        if (beglen[0] < 0) {
-            beglen[0] += slen;
+
+        if (beg < 0) {
+            beg += slen;
+            beglen[0] = beg;
         }
-        assert (beglen[0] >= 0);
-        assert (beglen[0] <= slen);
-        if (beglen[1] > slen - beglen[0]) {
-            beglen[1] = slen - beglen[0];
+
+        assert (beg >= 0);
+        assert (beg <= slen);
+
+        if (len > slen - beg) {
+            len = slen - beg;
+            beglen[1] = len;
         }
-        end = beglen[0] + beglen[1];
-        ensureBytePosition(context, beglen[0]);
+
+        checkBegLenPositions(context, beg, len);
+    }
+
+    // MRI: lighter version of str_check_beg_len when we know the offsets are valid already
+    private void checkBegLenPositions(ThreadContext context, int beg, int len) {
+        int end = beg + len;
+        ensureBytePosition(context, beg);
         ensureBytePosition(context, end);
     }
 
@@ -3992,6 +4052,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         int s = byteList.begin();
         int e = s + byteList.realSize();
         int p = s + pos;
+
         if (!atCharBoundary(bytes, s, p, e, getEncoding())) {
             throw context.runtime.newIndexError("offset " + pos + " does not land on character boundary");
         }
