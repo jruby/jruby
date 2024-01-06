@@ -4183,19 +4183,18 @@ public final class Ruby implements Constantizable {
     }
 
     public RaiseException newFrozenError(String objectType, IRubyObject receiver) {
-        return RubyFrozenError.newFrozenError(getCurrentContext(), newString("can't modify frozen " + objectType), receiver)
-                .toThrowable();
-    }
-
-    public RaiseException newFrozenError(IRubyObject receiver) {
         ThreadContext context = getCurrentContext();
 
         IRubyObject inspected = context.safeRecurse(Ruby::inspectFrozenObject, this, receiver, "inspect", true);
 
         return RubyFrozenError.newFrozenError(context,
-                        newString("can't modify frozen " + receiver.getType() + ": " + inspected.convertToString().toString()),
+                        newString("can't modify frozen " + objectType + ": " + inspected.convertToString().toString()),
                         receiver)
                 .toThrowable();
+    }
+
+    public RaiseException newFrozenError(IRubyObject receiver) {
+        return newFrozenError(receiver.getType().toString(), receiver);
     }
 
     private static IRubyObject inspectFrozenObject(ThreadContext ctx, Ruby runtime, IRubyObject obj, boolean recur) {

@@ -3893,6 +3893,160 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return byteARef(context.runtime, arg);
     }
 
+    @JRubyMethod(required = 2, optional = 3)
+    public IRubyObject bytesplice(ThreadContext context, IRubyObject[] args) {
+        RubyString val;
+        Encoding enc;
+        int cr;
+
+        int argc = Arity.checkArgumentCount(context, args, 2, 5);
+        if (!(argc == 2 || argc == 3 || argc == 5)) {
+            throw context.runtime.newArgumentError("wrong number of arguments (given " + argc + ", expected 2, 3, or 5)");
+        }
+
+        IRubyObject arg0 = args[0];
+        IRubyObject arg1 = args[1];
+        int[] beglen = {0, 0};
+        int[] vbegvlen = {0, 0};
+
+        if (argc == 2 || (argc == 3 && !(arg0 instanceof RubyInteger))) {
+            if (!RubyRange.rangeBeginLength(context, arg0, value.realSize(), beglen, 2).isTrue()) {
+                throw context.runtime.newTypeError(arg0, context.runtime.getRange());
+            }
+            val = arg1.convertToString();
+            if (argc == 2) {
+                /* bytesplice(range, str) */
+                vbegvlen[0] = 0;
+                vbegvlen[1] = val.getByteList().realSize();
+            } else {
+                /* bytesplice(range, str, str_range) */
+                if (!RubyRange.rangeBeginLength(context, args[2], val.getByteList().realSize(), beglen, 2).isTrue()) {
+                    throw context.runtime.newTypeError(args[2], context.runtime.getRange());
+                }
+            }
+        } else {
+            beglen[0] = RubyNumeric.num2int(arg0);
+            beglen[1] = RubyNumeric.num2int(arg1);
+            val = args[2].convertToString();
+            if (argc == 3) {
+                /* bytesplice(index, length, str) */
+                vbegvlen[0] = 0;
+                vbegvlen[1] = val.getByteList().realSize();
+            } else {
+                /* bytesplice(index, length, str, str_index, str_length) */
+                vbegvlen[0] = RubyNumeric.num2int(args[3]);
+                vbegvlen[1] = RubyNumeric.num2int(args[4]);
+            }
+        }
+        checkBegLen(context, beglen);
+        val.checkBegLen(context, vbegvlen);
+        enc = checkEncoding(val);
+        modifyAndKeepCodeRange();
+        strUpdate1(beglen[0], beglen[1], val, vbegvlen[0], vbegvlen[1]);
+        setEncoding(enc);
+        cr = coderangeAnd(getCodeRange(), val.getCodeRange());
+        if (cr != CR_BROKEN) {
+            setCodeRange(cr);
+        }
+        return this;
+    }
+
+    // MRI: ENC_CODERANGE_AND, RB_ENC_CODERANGE_AND
+    int coderangeAnd(int a, int b) {
+        if (a == CR_7BIT) {
+            return b;
+        } else if (a != CR_VALID) {
+            return CR_UNKNOWN;
+        } else if (b == CR_7BIT) {
+            return CR_VALID;
+        } else {
+            return b;
+        }
+    }
+
+    // MRI: str_check_beg_len
+    private void checkBegLen(ThreadContext context, int[] beglen) {
+        int end, slen = value.realSize();
+
+        if (beglen[1] < 0) throw context.runtime.newIndexError("negative length " + beglen[1]);
+        if ((slen < beglen[0]) || ((beglen[0] < 0) && (beglen[0] + slen < 0))) {
+            throw context.runtime.newIndexError("index " + beglen[0] + " out of string");
+        }
+        if (beglen[0] < 0) {
+            beglen[0] += slen;
+        }
+        assert (beglen[0] >= 0);
+        assert (beglen[0] <= slen);
+        if (beglen[1] > slen - beglen[0]) {
+            beglen[1] = slen - beglen[0];
+        }
+        end = beglen[0] + beglen[1];
+        ensureBytePosition(context, beglen[0]);
+        ensureBytePosition(context, end);
+    }
+
+    // MRI: str_ensure_byte_pos
+    private void ensureBytePosition(ThreadContext context, int pos) {
+        ByteList byteList = getByteList();
+        byte[] bytes = byteList.unsafeBytes();
+        int s = byteList.begin();
+        int e = s + byteList.realSize();
+        int p = s + pos;
+        if (!atCharBoundary(bytes, s, p, e, getEncoding())) {
+            throw context.runtime.newIndexError("offset " + pos + " does not land on character boundary");
+        }
+    }
+
+    // MRI: at_char_boundary
+    private static boolean atCharBoundary(byte[] bytes, int s, int p, int e, Encoding enc) {
+        // our version checks if p == bytes.length, where CRuby would have a \0 character and not reposition
+        return p == bytes.length || enc.leftAdjustCharHead(bytes, s, p, e) == p;
+    }
+
+    // MRI: rb_str_update_1
+    private void strUpdate1(int beg, int len, RubyString val, int vbeg, int vlen) {
+        byte[] sbytes;
+        int sptr;
+        int slen;
+        int cr;
+
+        if (beg == 0 && vlen == 0) {
+            dropBytes(len);
+            return;
+        }
+
+        modifyAndKeepCodeRange();
+        ByteList byteList = value;
+        sbytes = byteList.unsafeBytes();
+        sptr = value.begin();
+        slen = value.realSize();
+        if (len < vlen) {
+            /* expand string */
+            byteList.ensure(slen + vlen - len);
+            sbytes = byteList.unsafeBytes();
+        }
+
+        if (isCodeRangeAsciiOnly()) {
+            cr = val.getCodeRange();
+        } else {
+            cr = CR_UNKNOWN;
+        }
+
+        if (vlen != len) {
+            System.arraycopy(sbytes, sptr + beg + len, sbytes, sptr + beg + vlen, slen - (beg + len));
+        }
+        if (vlen < beg && len < 0) {
+            Arrays.fill(sbytes, sptr + slen, sptr + slen + (-len), (byte) 0);
+        }
+        if (vlen > 0) {
+            ByteList valByteList = val.getByteList();
+            System.arraycopy(valByteList.unsafeBytes(), valByteList.begin() + vbeg, sbytes, sptr + beg, vlen);
+        }
+        slen += vlen - len;
+        byteList.realSize(slen);
+        setCodeRange(cr);
+    }
+
     private IRubyObject op_aref(Ruby runtime, int idx) {
         IRubyObject str = substr19(runtime, idx, 1);
         return !str.isNil() && ((RubyString) str).value.getRealSize() == 0 ? runtime.getNil() : str;
@@ -5152,12 +5306,16 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         if (prefixlen <= 0) return context.nil;
 
-        // MRI: rb_str_drop_bytes, in a nutshell
+        dropBytes(prefixlen);
+
+        return this;
+    }
+
+    // MRI: rb_str_drop_bytes, in a nutshell
+    private void dropBytes(int prefixlen) {
         modify();
         value.view(prefixlen, value.realSize() - prefixlen);
         clearCodeRange();
-
-        return this;
     }
 
     @JRubyMethod(name = "delete_suffix!")
