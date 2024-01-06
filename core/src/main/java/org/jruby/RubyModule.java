@@ -90,7 +90,6 @@ import org.jruby.internal.runtime.methods.SynchronizedDynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
-import org.jruby.ir.targets.indy.Bootstrap;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.binding.MethodGatherer;
 import org.jruby.parser.StaticScope;
@@ -112,6 +111,7 @@ import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callsite.CacheEntry;
+import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -3508,6 +3508,11 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
+    @JRubyMethod(name = "const_added", required = 1, visibility = PRIVATE)
+    public IRubyObject const_added(ThreadContext context, IRubyObject _newConstant) {
+        return context.nil;
+    }
+
     @JRubyMethod(name = "method_added", required = 1, visibility = PRIVATE)
     public IRubyObject method_added(ThreadContext context, IRubyObject nothing) {
         return context.nil;
@@ -5371,7 +5376,11 @@ public class RubyModule extends RubyObject {
         assert value != null : "value is null";
 
         ensureConstantsSettable();
-        return constantTableStore(name, value, hidden, false, file, line);
+        constantTableStore(name, value, hidden, false, file, line);
+
+        if (file != null && file != BUILTIN_CONSTANT) callMethod("const_added", getRuntime().newSymbol(name));
+
+        return value;
     }
 
     public IRubyObject storeConstant(String name, IRubyObject value, boolean hidden) {
@@ -5553,8 +5562,8 @@ public class RubyModule extends RubyObject {
     protected final void defineAutoload(String symbol, RubyString path) {
         final Autoload existingAutoload = getAutoloadMap().get(symbol);
         if (existingAutoload == null || existingAutoload.getValue() == null) {
-            storeConstant(symbol, RubyObject.UNDEF);
             ThreadContext context = path.getRuntime().getCurrentContext();
+            storeConstant(symbol, RubyObject.UNDEF, false, context.getFile(), context.getLine());
             RubyStackTraceElement caller = context.getSingleBacktrace();
             getAutoloadMapForWrite().put(symbol, new Autoload(symbol, path, caller.getFileName(), caller.getLineNumber()));
         }
