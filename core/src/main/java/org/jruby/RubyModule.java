@@ -1104,9 +1104,7 @@ public class RubyModule extends RubyObject {
     public void prependModule(RubyModule module) {
         testFrozen("module");
 
-        if (module.refinedClass != null) {
-            throw getRuntime().newArgumentError("refinement module is not allowed");
-        }
+        if (module.refinedClass != null) throw getRuntime().newTypeError("Cannot include refinement");
 
         // Make sure the module we include does not already exist
         checkForCyclicPrepend(module);
