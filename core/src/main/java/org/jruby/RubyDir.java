@@ -931,15 +931,6 @@ public class RubyDir extends RubyObject implements Closeable {
         }
     }
 
-    @JRubyMethod(name = "exists?", meta = true)
-    public static IRubyObject exists_p(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        if (context.runtime.warningsEnabled()) {
-            context.runtime.getWarnings().warnDeprecatedAlternate("Dir.exists?", "Dir.exist?");
-        }
-
-        return exist(context, recv, arg);
-    }
-
     @JRubyMethod(name = "fileno", notImplemented = true)
     public IRubyObject fileno(ThreadContext context) {
         throw context.runtime.newNotImplementedError("Dir#fileno");
