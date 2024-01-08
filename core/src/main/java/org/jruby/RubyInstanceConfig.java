@@ -1600,7 +1600,7 @@ public class RubyInstanceConfig {
 
     private boolean forceStdin = false;
 
-    private final Set<RubyWarnings.Category> warningCategories = Collections.synchronizedSet(EnumSet.of(RubyWarnings.Category.EXPERIMENTAL, RubyWarnings.Category.PERFORMANCE));
+    private final Set<RubyWarnings.Category> warningCategories = Collections.synchronizedSet(EnumSet.of(RubyWarnings.Category.EXPERIMENTAL));
 
     ////////////////////////////////////////////////////////////////////////////
     // Support classes, etc.
