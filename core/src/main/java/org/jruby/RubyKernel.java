@@ -2477,15 +2477,6 @@ public class RubyKernel {
     }
 
     // Writes backref due to decendant calls ending up in Regexp#=~
-    @JRubyMethod(name = "=~", writes = FrameField.BACKREF)
-    public static IRubyObject op_match(ThreadContext context, IRubyObject self, IRubyObject arg) {
-        context.runtime.getWarnings().warn(ID.DEPRECATED_METHOD,
-            "deprecated Object#=~ is called on " + ((RubyBasicObject) self).type() +
-                "; it always returns nil");
-        return ((RubyBasicObject) self).op_match(context, arg);
-    }
-
-    // Writes backref due to decendant calls ending up in Regexp#=~
     @JRubyMethod(name = "!~", writes = FrameField.BACKREF)
     public static IRubyObject op_not_match(ThreadContext context, IRubyObject self, IRubyObject arg) {
         return ((RubyBasicObject) self).op_not_match(context, arg);
@@ -2646,6 +2637,14 @@ public class RubyKernel {
     @Deprecated
     public static IRubyObject op_match19(ThreadContext context, IRubyObject self, IRubyObject arg) {
         return op_match(context, self, arg);
+    }
+
+    @Deprecated
+    public static IRubyObject op_match(ThreadContext context, IRubyObject self, IRubyObject arg) {
+        context.runtime.getWarnings().warn(ID.DEPRECATED_METHOD,
+                "deprecated Object#=~ is called on " + ((RubyBasicObject) self).type() +
+                        "; it always returns nil");
+        return ((RubyBasicObject) self).op_match(context, arg);
     }
 
     @Deprecated
