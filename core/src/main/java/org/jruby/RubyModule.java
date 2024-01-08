@@ -126,6 +126,7 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
 import org.jruby.util.collections.WeakHashSet;
+import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -145,6 +146,8 @@ import static org.jruby.runtime.Visibility.PROTECTED;
 import static org.jruby.runtime.Visibility.PUBLIC;
 
 import static org.jruby.runtime.Visibility.UNDEFINED;
+import static org.jruby.util.CommonByteLists.COLON_COLON;
+import static org.jruby.util.IdUtil.isValidConstantName;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
 import static org.jruby.util.RubyStringBuilder.types;
@@ -635,6 +638,7 @@ public class RubyModule extends RubyObject {
     public void setBaseName(String name) {
         baseName = name;
         cachedName = null;
+        cachedRubyName = null;
     }
 
     /**
@@ -681,6 +685,11 @@ public class RubyModule extends RubyObject {
         boolean cache = true;
 
         if (getBaseName() == null) return calculateAnonymousRubyName(); // no name...anonymous!
+
+        if (!IdUtil.isValidConstantName(baseName)) { // temporary name
+            cachedRubyName = getRuntime().newSymbol(baseName).toRubyString(getRuntime().getCurrentContext());
+            return cachedRubyName;
+        }
 
         Ruby runtime = getRuntime();
         RubyClass objectClass = runtime.getObject();
@@ -806,6 +815,28 @@ public class RubyModule extends RubyObject {
         return cachedName;
     }
 
+    @JRubyMethod(required = 1)
+    public IRubyObject set_temporary_name(ThreadContext context, IRubyObject arg) {
+        if (baseName != null && IdUtil.isValidConstantName(baseName) && (parent == null || parent.baseName != null)) {
+            throw context.runtime.newRuntimeError("can't change permanent name");
+        }
+
+        if (arg.isNil()) {
+            setBaseName(null);
+        } else {
+            RubyString name = arg.convertToString();
+
+            if (name.length() == 0) throw context.runtime.newArgumentError("empty class/module name");
+            if (isValidConstantPath(name)) throw context.runtime.newArgumentError("the temporary name must not be a constant path to avoid confusion");
+
+            // We make sure we generate ISO_8859_1 String and also guarantee when we want to print this name
+            // later it does not lose track of the orignal encoding.
+            RubySymbol symbol = context.runtime.newSymbol(name.getByteList());
+            setBaseName(symbol.idString());
+        }
+
+        return this;
+    }
 
     @JRubyMethod(name = "refine", required = 1, reads = SCOPE)
     public IRubyObject refine(ThreadContext context, IRubyObject klass, Block block) {
@@ -4098,7 +4129,7 @@ public class RubyModule extends RubyObject {
         RubyString fullName = name.convertToString();
         ByteList value = fullName.getByteList();
 
-        ByteList pattern = CommonByteLists.COLON_COLON;
+        ByteList pattern = COLON_COLON;
 
         Encoding enc = pattern.getEncoding();
         byte[] bytes = value.getUnsafeBytes();
@@ -4219,6 +4250,49 @@ public class RubyModule extends RubyObject {
         }
 
         return mod.getConstant(validateConstant(name, symbol), firstConstant && inherit, firstConstant && inherit);
+    }
+
+    public static boolean isValidConstantPath(RubyString str) {
+        ByteList byteList = str.getByteList();
+
+        int index = 0;
+        int sep = 0;
+
+        while ((sep = byteList.indexOf(COLON_COLON, index)) != -1) {
+            if (sep == 0) {
+                index += 2;
+                continue;  // '^::'
+            }
+
+            if (!isValidConstantName(byteList, index, sep)) return false;
+
+            index = sep + 2;
+        }
+
+        return isValidConstantName(byteList, index, byteList.realSize());
+    }
+
+    public static boolean isValidConstantName(ByteList bytelist, int start, int end) {
+        Encoding enc = bytelist.getEncoding();
+        byte[] bytes = bytelist.unsafeBytes();
+        int beg = bytelist.begin();
+        int p = beg + start;
+        int e = beg + end; // We assume end is always a valid offset.
+        int l = StringSupport.preciseLength(enc, bytes, p, e);
+        int c = StringSupport.codePoint(enc, bytes, p, e);
+        if (!enc.isUpper(c)) return false;
+        p += l;
+
+        while (p < e) {
+            l = StringSupport.preciseLength(enc, bytes, p, e);
+            c = StringSupport.codePoint(enc, bytes, p, e);
+
+            if (!enc.isAlnum(c)) return false;
+
+            p += l;
+        }
+
+        return true;
     }
 
     @JRubyMethod(required = 1, optional = 1, checkArity = false)
