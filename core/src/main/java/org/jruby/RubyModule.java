@@ -812,7 +812,7 @@ public class RubyModule extends RubyObject {
 
         if (block.isEscaped()) throw context.runtime.newArgumentError("can't pass a Proc as a block to Module#refine");
 
-        if (!(klass instanceof RubyModule)) throw context.runtime.newTypeError("wrong argument type " + klass.getType() + "(expected Class or Module)");
+        if (!(klass instanceof RubyModule)) throw context.runtime.newTypeError("wrong argument type " + klass.getType() + " (expected Class or Module)");
 
         if (refinements == Collections.EMPTY_MAP) refinements = newRefinementsMap();
         if (activatedRefinements == Collections.EMPTY_MAP) activatedRefinements = newActivatedRefinementsMap();
