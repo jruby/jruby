@@ -37,10 +37,12 @@ import static org.jruby.RubyEnumerator.enumeratorize;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.stream.Stream;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.exceptions.StopIteration;
 import org.jruby.javasupport.JavaPackage;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -49,6 +51,7 @@ import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.Inspector.inspectPrefix;
 
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ConvertBytes;
 import org.jruby.util.Inspector;
 import org.jruby.util.Numeric;
 import org.jruby.util.collections.WeakValuedIdentityMap;
@@ -66,6 +69,7 @@ public class RubyObjectSpace {
         objectSpaceModule.defineAnnotatedMethods(RubyObjectSpace.class);
 
         WeakMap.createWeakMap(runtime, objectSpaceModule);
+        WeakKeyMap.createWeakMap(runtime, objectSpaceModule);
 
         return objectSpaceModule;
     }
@@ -220,16 +224,20 @@ public class RubyObjectSpace {
         return RubyGC.start(context, recv, args);
     }
 
-    public static class WeakMap extends RubyObject {
-        static void createWeakMap(Ruby runtime, RubyModule objectspaceModule) {
-            RubyClass weakMap = objectspaceModule.defineClassUnder("WeakMap", runtime.getObject(), WeakMap::new);
-
-            weakMap.defineAnnotatedMethods(WeakMap.class);
-        }
-
-        public WeakMap(Ruby runtime, RubyClass cls) {
+    public static abstract class AbstractWeakMap extends RubyObject {
+        public AbstractWeakMap(Ruby runtime, RubyClass cls) {
             super(runtime, cls);
         }
+
+        protected abstract Map<IRubyObject, IRubyObject> getWeakMapFor(IRubyObject key);
+
+        protected abstract Stream<Map.Entry<IRubyObject, IRubyObject>> getEntryStream();
+
+        @JRubyMethod(name = {"length", "size"})
+        public abstract IRubyObject size(ThreadContext context);
+
+        @JRubyMethod(name = "inspect")
+        public abstract IRubyObject inspect(ThreadContext context);
 
         @JRubyMethod(name = "[]")
         public IRubyObject op_aref(ThreadContext context, IRubyObject key) {
@@ -237,14 +245,6 @@ public class RubyObjectSpace {
             IRubyObject value = weakMap.get(key);
             if (value != null) return value;
             return context.nil;
-        }
-
-        private Map<IRubyObject, IRubyObject> getWeakMapFor(IRubyObject key) {
-            if (key instanceof RubyFixnum || key instanceof RubyFloat) {
-                return valueMap;
-            }
-
-            return identityMap;
         }
 
         @JRubyMethod(name = "[]=")
@@ -267,13 +267,8 @@ public class RubyObjectSpace {
         public IRubyObject keys(ThreadContext context) {
             return context.runtime.newArrayNoCopy(
                     getEntryStream()
-                            .filter(entry -> entry.getValue() != null)
                             .map(Map.Entry::getKey)
                             .toArray(IRubyObject[]::new));
-        }
-
-        private Stream<Map.Entry<IRubyObject, IRubyObject>> getEntryStream() {
-            return Stream.concat(identityMap.entrySet().stream(), valueMap.entrySet().stream());
         }
 
         @JRubyMethod(name = "values")
@@ -281,27 +276,13 @@ public class RubyObjectSpace {
             return context.runtime.newArrayNoCopy(
                     getEntryStream()
                             .map(Map.Entry::getValue)
-                            .filter(ref -> ref != null)
                             .toArray(IRubyObject[]::new));
-        }
-
-        @JRubyMethod(name = {"length", "size"})
-        public IRubyObject size(ThreadContext context) {
-            return context.runtime.newFixnum(identityMap.size() + valueMap.size());
-        }
-
-        @JRubyMethod(name = {"include?", "member?"})
-        public IRubyObject member_p(ThreadContext context, IRubyObject key) {
-            return RubyBoolean.newBoolean(context, getWeakMapFor(key).containsKey(key));
         }
 
         @JRubyMethod(name = {"each", "each_pair"})
         public IRubyObject each(ThreadContext context, Block block) {
             getEntryStream().forEach((entry) -> {
-                IRubyObject value = entry.getValue();
-                if (value != null) {
-                    block.yieldSpecific(context, entry.getKey(), value);
-                }
+                block.yieldSpecific(context, entry.getKey(), entry.getValue());
             });
 
             return this;
@@ -310,9 +291,7 @@ public class RubyObjectSpace {
         @JRubyMethod(name = "each_key")
         public IRubyObject each_key(ThreadContext context, Block block) {
             getEntryStream().forEach((entry) -> {
-                if (entry.getValue() != null) {
-                    block.yieldSpecific(context, entry.getKey());
-                }
+                block.yieldSpecific(context, entry.getKey());
             });
 
             return this;
@@ -321,16 +300,63 @@ public class RubyObjectSpace {
         @JRubyMethod(name = "each_value")
         public IRubyObject each_value(ThreadContext context, Block block) {
             getEntryStream().forEach((entry) -> {
-                IRubyObject value = entry.getValue();
-                if (value != null) {
-                    block.yieldSpecific(context, value);
-                }
+                block.yieldSpecific(context, entry.getValue());
             });
 
             return this;
         }
 
-        @JRubyMethod(name = "inspect")
+        @JRubyMethod(name = {"include?", "member?"})
+        public IRubyObject member_p(ThreadContext context, IRubyObject key) {
+            return RubyBoolean.newBoolean(context, getWeakMapFor(key).containsKey(key));
+        }
+
+        @JRubyMethod(name = "delete")
+        public IRubyObject delete(ThreadContext context, IRubyObject key, Block block) {
+            IRubyObject value = getWeakMapFor(key).remove(key);
+
+            if (value != null) {
+                return value;
+            }
+
+            if (block.isGiven()) {
+                return block.yieldSpecific(context, key);
+            }
+
+            return context.nil;
+        }
+
+        private final WeakValuedIdentityMap<IRubyObject, IRubyObject> identityMap = new WeakValuedIdentityMap<>();
+        private final WeakValuedMap<IRubyObject, IRubyObject> valueMap = new WeakValuedMap<>();
+    }
+
+    public static class WeakMap extends AbstractWeakMap {
+        static void createWeakMap(Ruby runtime, RubyModule objectspaceModule) {
+            RubyClass weakMap = objectspaceModule.defineClassUnder("WeakMap", runtime.getObject(), WeakMap::new);
+
+            weakMap.defineAnnotatedMethods(AbstractWeakMap.class);
+        }
+
+        public WeakMap(Ruby runtime, RubyClass cls) {
+            super(runtime, cls);
+        }
+
+        protected Map<IRubyObject, IRubyObject> getWeakMapFor(IRubyObject key) {
+            if (key instanceof RubyFixnum || key instanceof RubyFloat) {
+                return valueMap;
+            }
+
+            return identityMap;
+        }
+
+        protected Stream<Map.Entry<IRubyObject, IRubyObject>> getEntryStream() {
+            return Stream.concat(identityMap.entrySet().stream(), valueMap.entrySet().stream()).filter((entry) -> entry.getValue() != null);
+        }
+
+        public IRubyObject size(ThreadContext context) {
+            return context.runtime.newFixnum(identityMap.size() + valueMap.size());
+        }
+
         public IRubyObject inspect(ThreadContext context) {
             Ruby runtime = context.runtime;
 
@@ -338,17 +364,15 @@ public class RubyObjectSpace {
             int base = part.length();
 
             getEntryStream().forEach(entry -> {
-                if (entry.getValue() != null) {
-                    if (part.length() == base) {
-                        part.cat(Inspector.COLON_SPACE);
-                    } else {
-                        part.cat(Inspector.COMMA_SPACE);
-                    }
-
-                    part.cat(entry.getKey().inspect().convertToString());
-                    part.cat(Inspector.SPACE_HASHROCKET_SPACE);
-                    part.cat(entry.getValue().inspect().convertToString());
+                if (part.length() == base) {
+                    part.cat(Inspector.COLON_SPACE);
+                } else {
+                    part.cat(Inspector.COMMA_SPACE);
                 }
+
+                part.cat(entry.getKey().inspect().convertToString());
+                part.cat(Inspector.SPACE_HASHROCKET_SPACE);
+                part.cat(entry.getValue().inspect().convertToString());
             });
 
             part.cat(Inspector.GT);
@@ -358,5 +382,77 @@ public class RubyObjectSpace {
 
         private final WeakValuedIdentityMap<IRubyObject, IRubyObject> identityMap = new WeakValuedIdentityMap<>();
         private final WeakValuedMap<IRubyObject, IRubyObject> valueMap = new WeakValuedMap<>();
+    }
+
+    public static class WeakKeyMap extends AbstractWeakMap {
+        static void createWeakMap(Ruby runtime, RubyModule objectspaceModule) {
+            RubyClass weakMap = objectspaceModule.defineClassUnder("WeakKeyMap", runtime.getObject(), WeakKeyMap::new);
+
+            weakMap.defineAnnotatedMethods(AbstractWeakMap.class);
+            weakMap.defineAnnotatedMethods(WeakKeyMap.class);
+        }
+
+        public WeakKeyMap(Ruby runtime, RubyClass cls) {
+            super(runtime, cls);
+        }
+
+        protected Map<IRubyObject, IRubyObject> getWeakMapFor(IRubyObject key) {
+            // TODO: we don't have a supertype for these?
+            if (key instanceof RubyInteger || key instanceof RubyFloat || key instanceof RubySymbol || key instanceof RubyNil || key instanceof RubyBoolean) {
+                throw getRuntime().newArgumentError("WeakKeyMap must be garbage collectable");
+            }
+
+            return weakMap;
+        }
+
+        protected Stream<Map.Entry<IRubyObject, IRubyObject>> getEntryStream() {
+            return weakMap.entrySet().stream();
+        }
+
+        public IRubyObject op_aref(ThreadContext context, IRubyObject key, IRubyObject value) {
+            // defensively call #hash since #hashCode will fall back on super in RubyBasicObject if #hash is undefined.
+            key.callMethod(context, "hash");
+
+            super.op_aref(context, key, value);
+
+            return value;
+        }
+
+        public IRubyObject size(ThreadContext context) {
+            return context.runtime.newFixnum(weakMap.size());
+        }
+
+        public IRubyObject inspect(ThreadContext context) {
+            Ruby runtime = context.runtime;
+
+            RubyString part = inspectPrefix(runtime.getCurrentContext(), metaClass.getRealClass(), inspectHashCode());
+
+            part.cat(Inspector.SPACE);
+            part.cat(Inspector.SIZE_EQUALS);
+            part.cat(ConvertBytes.longToCharBytes(weakMap.size()));
+
+            part.cat(Inspector.GT);
+
+            return part;
+        }
+
+        @JRubyMethod(name = "getkey")
+        public IRubyObject getkey(ThreadContext context, IRubyObject key) {
+            // FIXME: inefficient, but JDK WeakHashMap provides no other way to access the actual keys
+            IRubyObject result = null;
+            try {
+                getWeakMapFor(key).keySet().forEach((k) -> {if (key.equals(k)) throw context.runtime.newStopIteration(k, "");});
+            } catch (StopIteration si) {
+                result = ((RubyStopIteration) si.getException()).result();
+            }
+
+            if (result == null) {
+                return context.nil;
+            }
+
+            return result;
+        }
+
+        private final WeakHashMap<IRubyObject, IRubyObject> weakMap = new WeakHashMap();
     }
 }

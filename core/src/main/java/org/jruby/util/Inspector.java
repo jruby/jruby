@@ -30,6 +30,7 @@ public class Inspector {
     public static final byte[] SPACE_HASHROCKET_SPACE = {' ', '=', '>', ' '};
     public static final byte[] SPACE_DOT_DOT_DOT_GT = " ...>".getBytes();
     public static final byte[] EQUALS = "=".getBytes();
+    public static final byte[] SIZE_EQUALS = "size=".getBytes();
 
     // e.g.: #<Object:0x5a1c0542
     public static RubyString inspectPrefix(final ThreadContext context, final RubyModule type, final int hash) {
