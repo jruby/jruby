@@ -434,14 +434,7 @@ public final class Ruby implements Constantizable {
             emptyFrozenArray = null;
         }
         floatClass = profile.allowClass("Float") ? RubyFloat.createFloatClass(this) : null;
-        if (profile.allowClass("Bignum")) {
-            bignumClass = RubyBignum.createBignumClass(this);
-            // RubyRandom depends on Bignum existence.
-            randomClass = RubyRandom.createRandomClass(this);
-        } else {
-            bignumClass = null;
-            randomClass = null;
-        }
+        randomClass = RubyRandom.createRandomClass(this);
         ioClass = RubyIO.createIOClass(this);
         if (Options.FIBER_SCHEDULER.load()) {
             ioBufferClass = RubyIOBuffer.createIOBufferClass(this);
@@ -2157,11 +2150,6 @@ public final class Ruby implements Constantizable {
     public RubyModule getMarshal() {
         return marshalModule;
     }
-
-    public RubyClass getBignum() {
-        return bignumClass;
-    }
-
 
     public RubyClass getDateError() {
         return this.dateErrorClass;
@@ -5438,7 +5426,6 @@ public final class Ruby implements Constantizable {
     private final RubyClass matchDataClass;
     private final RubyClass regexpClass;
     private final RubyClass timeClass;
-    private final RubyClass bignumClass;
     private final RubyClass dirClass;
     private RubyClass dateErrorClass;
     private final RubyClass fileClass;

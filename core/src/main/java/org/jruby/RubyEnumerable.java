@@ -2397,7 +2397,7 @@ public class RubyEnumerable {
             } else if (count instanceof RubyFixnum) {
                 result.fastASetSmall(value, ((RubyInteger)count).succ(context));
             } else {
-                TypeConverter.checkType(context, count, context.runtime.getBignum());
+                TypeConverter.checkType(context, count, context.runtime.getInteger());
                 result.fastASetSmall(value, ((RubyBignum) count).op_plus(context, 1L));
             }
             return context.nil;

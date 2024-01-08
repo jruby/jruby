@@ -56,14 +56,6 @@ import org.jruby.runtime.marshal.UnmarshalStream;
  */
 @JRubyClass(name="Bignum", parent="Integer")
 public class RubyBignum extends RubyInteger {
-    public static RubyClass createBignumClass(Ruby runtime) {
-        RubyClass bignum = runtime.getInteger();
-        runtime.getObject().setConstant("Bignum", bignum);
-        runtime.getObject().deprecateConstant(runtime, "Bignum");
-
-        return bignum;
-    }
-
     private static final int BIT_SIZE = 64;
     private static final long MAX = (1L << (BIT_SIZE - 1)) - 1;
     public static final BigInteger LONG_MAX = BigInteger.valueOf(MAX);
@@ -75,7 +67,7 @@ public class RubyBignum extends RubyInteger {
     final BigInteger value;
 
     public RubyBignum(Ruby runtime, BigInteger value) {
-        super(runtime, runtime.getBignum());
+        super(runtime, runtime.getInteger());
         this.value = value;
         setFrozen(true);
     }

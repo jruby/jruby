@@ -385,7 +385,7 @@ public class RubyRandom extends RubyRandomBase {
             throw context.runtime.newArgumentError("wrong dump data");
         }
         if (!(load.eltInternal(0) instanceof RubyBignum)) {
-            throw context.runtime.newTypeError(load.eltInternal(0), context.runtime.getBignum());
+            throw context.runtime.newTypeError(load.eltInternal(0), context.runtime.getInteger());
         }
         RubyBignum state = (RubyBignum) load.eltInternal(0);
         int left = RubyNumeric.num2int(load.eltInternal(1));
