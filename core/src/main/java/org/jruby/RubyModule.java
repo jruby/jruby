@@ -1169,7 +1169,7 @@ public class RubyModule extends RubyObject {
 
         RubyModule module = (RubyModule) arg;
 
-        if (module.refinedClass != null) throw getRuntime().newTypeError("Cannot include refinement");
+        if (module.isRefinement()) throw getRuntime().newTypeError("Cannot include refinement");
 
         // Make sure the module we include does not already exist
         checkForCyclicInclude(module);
@@ -3285,9 +3285,8 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "extend_object", required = 1, visibility = PRIVATE)
     public IRubyObject extend_object(IRubyObject obj) {
-        if (!isModule()) {
-            throw getRuntime().newTypeError(this, getRuntime().getModule());
-        }
+        if (!isModule()) throw getRuntime().newTypeError(this, getRuntime().getModule());
+
         obj.getSingletonClass().includeModule(this);
         return obj;
     }
@@ -3301,12 +3300,11 @@ public class RubyModule extends RubyObject {
 
         int argc = Arity.checkArgumentCount(runtime, modules, 1, -1);
 
-        if (this.isRefinement()) {
-            runtime.getWarnings().warnDeprecated(ID.DEPRECATED_METHOD, "deprecated method to be removed: Refinement#include");
-        }
+        if (isRefinement()) throw runtime.newTypeError("Refinement#include has been removed");
 
         for (IRubyObject module: modules) {
             if (!module.isModule()) throw runtime.newTypeError(module, runtime.getModule());
+            if (((RubyModule) module).isRefinement()) throw runtime.newTypeError("Cannot include refinement");
         }
 
         ThreadContext context = runtime.getCurrentContext();
@@ -3322,6 +3320,8 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "include", required = 1) // most common path: include Enumerable
     public RubyModule include(ThreadContext context, IRubyObject module) {
+        if (isRefinement()) throw context.runtime.newTypeError("Refinement#include has been removed");
+
         if (!module.isModule()) throw context.runtime.newTypeError(module, context.runtime.getModule());
 
         module.callMethod(context, "append_features", this);
@@ -4484,18 +4484,17 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "prepend", required = 1, rest = true, checkArity = false)
     public IRubyObject prepend(ThreadContext context, IRubyObject[] modules) {
         int argc = Arity.checkArgumentCount(context, modules, 1, -1);
+        Ruby runtime = context.runtime;
 
-        if (this.isRefinement()) {
-            context.runtime.getWarnings().warnDeprecated(ID.DEPRECATED_METHOD, "deprecated method to be removed: Refinement#prepend");
-        }
+        if (isRefinement()) throw runtime.newTypeError("Refinement#prepend has been removed");
 
         // MRI checks all types first:
         for (int i = argc; --i >= 0; ) {
-            IRubyObject obj = modules[i];
-            if (!obj.isModule()) {
-                throw context.runtime.newTypeError(obj, context.runtime.getModule());
-            }
+            if (!modules[i].isModule()) throw runtime.newTypeError(modules[i], runtime.getModule());
+            if (((RubyModule) modules[i]).isRefinement()) throw runtime.newTypeError("Cannot prepend refinement");
+
         }
+
         for (int i = argc - 1; i >= 0; i--) {
             modules[i].callMethod(context, "prepend_features", this);
             modules[i].callMethod(context, "prepended", this);
@@ -5975,6 +5974,9 @@ public class RubyModule extends RubyObject {
         refinementClass.setReifiedClass(RubyModule.class);
 
         refinementClass.defineAnnotatedMethods(RefinementMethods.class);
+        refinementClass.undefineMethod("append_features");
+        refinementClass.undefineMethod("prepend_features");
+        refinementClass.undefineMethod("extend_object");
 
         return refinementClass;
     }
