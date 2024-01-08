@@ -76,6 +76,7 @@ import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -914,9 +915,24 @@ public final class ThreadContext {
         return backTrace;
     }
 
+    /**
+     * Like {@link #createCallerLocations(int, Integer, Stream)} but accepts a lambda to yield each location and yields
+     * all stack elements until the loop ends or is broken early.
+     *
+     * @param stackStream the stream of StackFrame objects from JVM
+     * @param consumer the consumer of RubyThread.Location objects
+     */
+    public void eachCallerLocation(Stream<StackWalker.StackFrame> stackStream, Consumer<RubyThread.Location> consumer) {
+        eachPartialTrace(stackStream, (elt) -> consumer.accept(RubyThread.Location.newLocation(runtime, elt)));
+    }
+
     private RubyStackTraceElement[] getPartialTrace(int level, Integer length, Stream<StackWalker.StackFrame> stackStream) {
         if (length != null && length == 0) return RubyStackTraceElement.EMPTY_ARRAY;
         return TraceType.Gather.CALLER.getBacktraceData(this, stackStream).getPartialBacktrace(runtime, level + length);
+    }
+
+    private void eachPartialTrace(Stream<StackWalker.StackFrame> stackStream, Consumer<RubyStackTraceElement> consumer) {
+        TraceType.Gather.CALLER.getBacktraceData(this, stackStream).yieldPartialBacktrace(runtime, (elt) -> {consumer.accept(elt); return true;});
     }
 
     private RubyStackTraceElement[] getWarnTrace(int level, Stream<StackWalker.StackFrame> stackStream) {

@@ -55,6 +55,7 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 
 import com.headius.backport9.stack.StackWalker;
 import org.jcodings.Encoding;
@@ -556,14 +557,17 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         public static RubyArray newLocationArray(Ruby runtime, RubyStackTraceElement[] elements,
             final int offset, final int length) {
-            final RubyClass locationClass = runtime.getLocation();
 
             IRubyObject[] ary = new IRubyObject[length];
             for ( int i = 0; i < length; i++ ) {
-                ary[i] = new RubyThread.Location(runtime, locationClass, elements[i + offset]);
+                ary[i] = newLocation(runtime, elements[i + offset]);
             }
 
             return RubyArray.newArrayNoCopy(runtime, ary);
+        }
+
+        public static Location newLocation(Ruby runtime, RubyStackTraceElement elt) {
+            return new Location(runtime, runtime.getLocation(), elt);
         }
 
     }
@@ -1641,6 +1645,22 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
 
         return exitingException != null ? context.nil : context.fals;
+    }
+
+    @JRubyMethod(meta = true, omit = true)
+    public static IRubyObject each_caller_location(ThreadContext context, IRubyObject recv, Block block) {
+        ThreadContext.WALKER.walk(stream -> {
+            boolean[] skip = {true};
+            context.eachCallerLocation(stream, (loc) -> {
+                if (skip[0]) {
+                    skip[0] = false;
+                    return;
+                }
+                block.yieldSpecific(context, loc);
+            });
+            return null;
+        });
+        return context.nil;
     }
 
     /**
