@@ -3228,6 +3228,18 @@ public class RubyModule extends RubyObject {
         return private_instance_methods(args);
     }
 
+    @JRubyMethod(name = "undefined_instance_methods")
+    public IRubyObject undefined_instance_method(ThreadContext context) {
+        RubyArray list = context.runtime.newArray();
+
+        getMethods().forEach((id, method) -> {
+            if (method instanceof RefinedMarker) return;
+            if (method.isUndefined()) list.append(context.runtime.newSymbol(id));
+        });
+
+        return list;
+    }
+
     /** rb_mod_prepend_features
      *
      */
