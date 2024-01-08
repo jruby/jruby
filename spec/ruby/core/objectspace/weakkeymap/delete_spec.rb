@@ -33,7 +33,7 @@ ruby_version_is '3.3' do
     end
 
     it "returns nil if the key is not found when no block is given" do
-      m = ObjectSpace::WeakMap.new
+      m = ObjectSpace::WeakKeyMap.new
       m.delete(Object.new).should == nil
     end
   end
