@@ -40,8 +40,14 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Represents a method which has been aliased.
@@ -61,7 +67,7 @@ public class AliasMethod extends DynamicMethod {
      * of a ByteList.
      */ 
     public AliasMethod(RubyModule implementationClass, CacheEntry entry, String newName, String oldName) {
-        super(implementationClass, entry.method.getVisibility(), oldName);
+        super(implementationClass, determineVisibility(newName, entry.method.getVisibility()), oldName);
         entry.method.getRealMethod().adjustAliasCount(1);
 
         this.entry = entry;
@@ -81,6 +87,13 @@ public class AliasMethod extends DynamicMethod {
         // encode both old and new names in one to pass a single string
         this.newName = newName;
         this.compoundName = "\0" + newName + "\0" + oldName;
+    }
+
+    private static List<String> ALWAYS_PRIVATE_NAMES = Arrays.asList("initialize", "initialize_copy", "initialize_clone", "initialize_dup", "respond_to_missing?");
+    private static Visibility determineVisibility(String newName, Visibility visibility) {
+        return ALWAYS_PRIVATE_NAMES.contains(newName) ?
+                Visibility.PRIVATE :
+                visibility;
     }
 
     @Override
