@@ -61,7 +61,6 @@ jruby/test_parsing
 jruby/test_pathname
 jruby/test_random
 jruby/test_rbconfig
-jruby/test_refinement_include
 jruby/test_require_once
 jruby/test_respond_to
 jruby/test_set
