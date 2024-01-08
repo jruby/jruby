@@ -975,6 +975,13 @@ public class RubyProcess {
         return waitpid(context.runtime, args);
     }
 
+    @JRubyMethod(module = true)
+    public static IRubyObject warmup(ThreadContext context, IRubyObject recv) {
+        // By the time we can call this method core will be bootstrapped.  Unless we want to differentiate
+        // a better point for "optimizations" to be possible we can just assume we are good to go.
+        return context.tru;
+    }
+
     public static IRubyObject waitpid(Ruby runtime, IRubyObject[] args) {
         long pid = -1;
         int flags = 0;
