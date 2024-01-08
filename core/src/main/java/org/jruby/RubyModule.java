@@ -2564,7 +2564,7 @@ public class RubyModule extends RubyObject {
             newMethod.setImplementationClass(this);
             newMethod.setVisibility(visibility);
         } else {
-            throw runtime.newTypeError("wrong argument type " + arg1.getType().getName() + " (expected Proc/Method)");
+            throw runtime.newTypeError(str(runtime, "wrong argument type ", arg1.getType().rubyName(), " (expected Proc/Method/UnboundMethod)"));
         }
 
         Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
