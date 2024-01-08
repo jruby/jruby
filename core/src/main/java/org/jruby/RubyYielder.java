@@ -65,7 +65,7 @@ public class RubyYielder extends RubyObject {
         RubyYielder yielder = new RubyYielder(runtime, runtime.getYielder());
 
         if (!block.isGiven()) {
-            throw context.runtime.newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.nil, "yield called out of block");
+            throw context.runtime.newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.nil, "no block given");
         }
 
         yielder.initialize(context, CallBlock19.newCallClosure(
