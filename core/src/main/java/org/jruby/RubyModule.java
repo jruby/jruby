@@ -1460,15 +1460,15 @@ public class RubyModule extends RubyObject {
                 IRubyObject obj = ((MetaClass) c).getAttached();
 
                 if (obj instanceof RubyModule) {
+                    if (!(obj instanceof RubyClass)) s0 = "";
                     c = (RubyModule) obj;
-                    s0 = "";
                 }
             } else if (c.isModule()) {
                 s0 = " module";
             }
 
             // FIXME: Since we found no method we probably do not have symbol entry...do not want to pollute symbol table here.
-            throw runtime.newNameError("Undefined method " + name + " for" + s0 + " '" + c.getName() + "'", name);
+            throw runtime.newNameError("undefined method `" + name + "' for" + s0 + " `" + c.getName() + "'", name);
         }
         methodLocation.addMethod(name, UndefinedMethod.getInstance());
 
