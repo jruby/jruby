@@ -42,6 +42,7 @@ import jnr.constants.platform.SocketLevel;
 import jnr.constants.platform.SocketMessage;
 import jnr.constants.platform.SocketOption;
 import jnr.constants.platform.TCP;
+import jnr.constants.platform.InterfaceInfo;
 import jnr.netdb.Protocol;
 import jnr.unixsocket.UnixSocketAddress;
 import jnr.unixsocket.UnixSocketChannel;
@@ -109,6 +110,8 @@ public class RubySocket extends RubyBasicSocket {
         runtime.loadConstantSet(rb_mConstants, IPProto.class);
         runtime.loadConstantSet(rb_mConstants, Shutdown.class);
         runtime.loadConstantSet(rb_mConstants, TCP.class);
+        runtime.loadConstantSet(rb_mConstants, IP.class);
+        runtime.loadConstantSet(rb_mConstants, InterfaceInfo.class);
         runtime.loadConstantSet(rb_mConstants, NameInfo.class);
         runtime.loadConstantSet(rb_mConstants, SocketMessage.class);
 
@@ -132,14 +135,6 @@ public class RubySocket extends RubyBasicSocket {
 
         rb_mConstants.setConstant("AI_DEFAULT", runtime.newFixnum(AddressInfo.AI_DEFAULT));
         rb_mConstants.setConstant("AI_MASK", runtime.newFixnum(AddressInfo.AI_MASK));
-
-        // More constants needed by specs
-        rb_mConstants.setConstant("IP_MULTICAST_TTL", runtime.newFixnum(IP.IP_MULTICAST_TTL.value()));
-        rb_mConstants.setConstant("IP_MULTICAST_LOOP", runtime.newFixnum(IP.IP_MULTICAST_LOOP.value()));
-        rb_mConstants.setConstant("IP_ADD_MEMBERSHIP", runtime.newFixnum(IP.IP_ADD_MEMBERSHIP.value()));
-        rb_mConstants.setConstant("IP_MAX_MEMBERSHIPS", runtime.newFixnum(IP.IP_MAX_MEMBERSHIPS.value()));
-        rb_mConstants.setConstant("IP_DEFAULT_MULTICAST_LOOP", runtime.newFixnum(IP.IP_DEFAULT_MULTICAST_LOOP));
-        rb_mConstants.setConstant("IP_DEFAULT_MULTICAST_TTL", runtime.newFixnum(IP.IP_DEFAULT_MULTICAST_TTL));
 
         rb_cSocket.includeModule(rb_mConstants);
 

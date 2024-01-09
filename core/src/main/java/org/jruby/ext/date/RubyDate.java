@@ -785,7 +785,7 @@ public class RubyDate extends RubyObject {
     }
 
     @Override
-    @JRubyMethod(name = "eql?", required = 1)
+    @JRubyMethod(name = "eql?")
     public IRubyObject eql_p(IRubyObject other) {
         if (other instanceof RubyDate) {
             return getRuntime().newBoolean( equals((RubyDate) other) );
@@ -803,7 +803,7 @@ public class RubyDate extends RubyObject {
      * @return true/false/nil
      */
     @Override
-    @JRubyMethod(name = "===", required = 1)
+    @JRubyMethod(name = "===")
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyDate) {
             return f_equal(context, jd(context), ((RubyDate) other).jd(context));
@@ -828,7 +828,7 @@ public class RubyDate extends RubyObject {
     }
 
     @Override
-    @JRubyMethod(name = "<=>", required = 1)
+    @JRubyMethod(name = "<=>")
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyDate) {
             return context.runtime.newFixnum(cmp(context, (RubyDate) other));

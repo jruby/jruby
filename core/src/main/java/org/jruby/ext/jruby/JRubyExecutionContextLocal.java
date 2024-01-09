@@ -79,7 +79,7 @@ public abstract class JRubyExecutionContextLocal extends RubyObject {
         return (default_proc != null) ? default_proc : getRuntime().getNil();
     }
 
-    @JRubyMethod(name = "value", required = 0)
+    @JRubyMethod(name = "value")
     public IRubyObject getValue(ThreadContext context) {
         final IRubyObject value;
         final Map<Object, IRubyObject> contextVariables;
@@ -99,7 +99,7 @@ public abstract class JRubyExecutionContextLocal extends RubyObject {
         return default_value;
     }
 
-    @JRubyMethod(name = "value=", required = 1)
+    @JRubyMethod(name = "value=")
     public IRubyObject setValue(ThreadContext context, IRubyObject value) {
         getContextVariables(context).put(this, value);
         return value;

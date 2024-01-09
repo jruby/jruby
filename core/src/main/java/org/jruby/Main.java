@@ -558,19 +558,6 @@ public class Main {
         boolean isatty = runtime.getPosix().isatty(FileDescriptor.err);
 
         System.err.print(traceType.printBacktrace(raisedException, isatty));
-
-        Set<Object> shownCauses = new HashSet<Object>();
-        shownCauses.add(raisedException);
-
-        for (
-                Object cause = raisedException.getCause();
-                cause != null && cause instanceof RubyException && !shownCauses.contains(cause);
-                cause = ((RubyException) cause).getCause()) {
-
-            System.err.print(traceType.printBacktrace((RubyException) cause, isatty));
-            shownCauses.add(cause);
-        }
-
         return 1;
     }
 

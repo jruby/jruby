@@ -67,7 +67,7 @@ public class Module {
         Module.defineAnnotatedMethods(Module.class);
     }
 
-    @JRubyMethod(name = "import", required = 1, visibility = PRIVATE)
+    @JRubyMethod(name = "import", visibility = PRIVATE)
     public static IRubyObject import_(ThreadContext context, IRubyObject self, IRubyObject arg, Block block) {
         if (arg instanceof RubyString) {
             final String name = ((RubyString) arg).decodeString();
@@ -83,7 +83,7 @@ public class Module {
         return include_package(context, self, arg);
     }
 
-    @JRubyMethod(required = 1, visibility = PRIVATE)
+    @JRubyMethod(visibility = PRIVATE)
     public static IRubyObject java_import(ThreadContext context, IRubyObject self, IRubyObject arg, Block block) {
         if (arg instanceof RubyArray) {
             return java_import(context, self, ((RubyArray) arg).toJavaArrayMaybeUnsafe(), block);
@@ -151,7 +151,7 @@ public class Module {
         return proxyClass;
     }
 
-    @JRubyMethod(required = 2, visibility = PRIVATE)
+    @JRubyMethod(visibility = PRIVATE)
     public static IRubyObject java_alias(final ThreadContext context, final IRubyObject self, IRubyObject new_id, IRubyObject old_id) {
         final IncludedPackages includedPackages = getIncludedPackages(context, (RubyModule) self);
         if (!(new_id instanceof RubySymbol)) new_id = new_id.convertToString().intern();
@@ -161,7 +161,7 @@ public class Module {
         return old_id;
     }
 
-    @JRubyMethod(required = 1, visibility = PRIVATE)
+    @JRubyMethod(visibility = PRIVATE)
     public static IRubyObject include_package(final ThreadContext context, final IRubyObject self, IRubyObject pkg) {
         String packageName;
         if (pkg instanceof JavaPackage) {

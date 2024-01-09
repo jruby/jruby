@@ -181,7 +181,7 @@ public class JavaObject extends RubyObject {
         return JavaProxyMethods.to_s(runtime, dataStruct);
     }
 
-    @JRubyMethod(name = {"==", "eql?"}, required = 1)
+    @JRubyMethod(name = {"==", "eql?"})
     public IRubyObject op_equal(final IRubyObject other) {
         return JavaProxyMethods.equals(getRuntime(), getValue(), other);
     }
@@ -190,7 +190,7 @@ public class JavaObject extends RubyObject {
         return JavaProxyMethods.equals(self.getRuntime(), self.getObject(), other);
     }
 
-    @JRubyMethod(name = "equal?", required = 1)
+    @JRubyMethod(name = "equal?")
     public IRubyObject same(final IRubyObject other) {
         final Ruby runtime = getRuntime();
         final Object thisValue = getValue();

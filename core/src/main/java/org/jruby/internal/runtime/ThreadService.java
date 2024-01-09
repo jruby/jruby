@@ -156,7 +156,7 @@ public class ThreadService extends ThreadLocal<SoftReference<ThreadContext>> {
 
             try {
                 rth.kill();
-                rth.join(mainContext, IRubyObject.NULL_ARRAY);
+                rth.join(mainContext);
             } catch (RaiseException re) {
                 // ignore Ruby exceptions raised out of join
             }

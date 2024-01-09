@@ -1212,7 +1212,7 @@ public class RubyEnumerable {
         return block.isGiven() ? each_with_indexCommon(context, self, block, args) : enumeratorizeWithSize(context, self, "each_with_index", args, (SizeFn) RubyEnumerable::size);
     }
 
-    @JRubyMethod(required = 1)
+    @JRubyMethod
     public static IRubyObject each_with_object(ThreadContext context, IRubyObject self, IRubyObject arg, Block block) {
         return block.isGiven() ? each_with_objectCommon(context, self, block, arg) : enumeratorizeWithSize(context, self, "each_with_object", new IRubyObject[] { arg }, RubyEnumerable::size);
     }
@@ -1359,7 +1359,7 @@ public class RubyEnumerable {
         return self;
     }
 
-    @JRubyMethod(name = {"include?", "member?"}, required = 1)
+    @JRubyMethod(name = {"include?", "member?"})
     public static IRubyObject include_p(final ThreadContext context, IRubyObject self, final IRubyObject arg) {
         try {
             callEach(context, eachSite(context), self, Signature.OPTIONAL, new BlockCallback() {

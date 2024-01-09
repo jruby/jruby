@@ -297,7 +297,7 @@ public class RubyRange extends RubyObject {
         return context.nil;
     }
 
-    @JRubyMethod(required = 1, visibility = PRIVATE)
+    @JRubyMethod(visibility = PRIVATE)
     public IRubyObject initialize_copy(ThreadContext context, IRubyObject original) {
         if (this.isInited) throw context.runtime.newFrozenError("`initialize' called twice", this);
 
@@ -336,20 +336,16 @@ public class RubyRange extends RubyObject {
     }
 
     private static RubyString inspectValue(final ThreadContext context, IRubyObject value) {
-        return (RubyString) context.safeRecurse(INSPECT_RECURSIVE, value, value, "inspect", true);
+        return (RubyString) context.safeRecurse(RubyRange::inspectValueRecursive, value, value, "inspect", true);
     }
 
-    private static class InspectRecursive implements ThreadContext.RecursiveFunctionEx<IRubyObject> {
-        @Override
-        public IRubyObject call(ThreadContext context, IRubyObject state, IRubyObject obj, boolean recur) {
-            if (recur) {
-                return RubyString.newString(context.runtime, ((RubyRange) obj).isExclusive ? "(... ... ...)" : "(... .. ...)");
-            } else {
-                return inspect(context, obj);
-            }
+    private static IRubyObject inspectValueRecursive(ThreadContext context, IRubyObject state, IRubyObject obj, boolean recur) {
+        if (recur) {
+            return RubyString.newString(context.runtime, ((RubyRange) obj).isExclusive ? "(... ... ...)" : "(... .. ...)");
+        } else {
+            return inspect(context, obj);
         }
     }
-    private static final InspectRecursive INSPECT_RECURSIVE = new InspectRecursive();
 
     private static final byte[] DOTDOTDOT = new byte[]{'.', '.', '.'};
 
@@ -390,12 +386,12 @@ public class RubyRange extends RubyObject {
         return getRuntime().newBoolean(isExclusive);
     }
     
-    @JRubyMethod(name = "eql?", required = 1)
+    @JRubyMethod(name = "eql?")
     public IRubyObject eql_p(ThreadContext context, IRubyObject other) {
         return equalityInner(context, other, MethodNames.EQL);
     }
 
-    @JRubyMethod(name = "==", required = 1)
+    @JRubyMethod(name = "==")
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         return equalityInner(context, other, MethodNames.OP_EQUAL);
     }

@@ -161,7 +161,7 @@ public class Pointer extends AbstractMemory {
         return getMemoryIO().address();
     }
 
-    @JRubyMethod(name = "==", required = 1)
+    @JRubyMethod(name = "==")
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
         return RubyBoolean.newBoolean(context, this == obj
                 || getAddress() == 0L && obj.isNil()

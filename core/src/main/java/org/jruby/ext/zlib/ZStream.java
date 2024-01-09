@@ -115,7 +115,7 @@ public abstract class ZStream extends RubyObject {
         return RubyFixnum.zero(getRuntime());
     }
 
-    @JRubyMethod(name = "avail_out=", required = 1)
+    @JRubyMethod(name = "avail_out=")
     public IRubyObject set_avail_out(IRubyObject p1) {
         checkClosed();
         

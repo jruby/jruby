@@ -300,7 +300,7 @@ public class LoadService {
     }
 
     public static class LoadPathMethods {
-        @JRubyMethod(required = 1)
+        @JRubyMethod
         public static IRubyObject resolve_feature_path(ThreadContext context, IRubyObject self, IRubyObject pathArg) {
             Ruby runtime = context.runtime;
             RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, pathArg));

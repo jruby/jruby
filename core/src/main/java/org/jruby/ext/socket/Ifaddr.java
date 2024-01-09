@@ -15,6 +15,8 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 
+import jnr.constants.platform.InterfaceInfo;
+
 /**
  *
  * @author Lucas Allan Amorim
@@ -32,6 +34,7 @@ public class Ifaddr extends RubyObject {
     private boolean isLink;
     private String netmask;
     private int index;
+    private int flags;
     private String flagStatus;
     private Addrinfo addr;
 
@@ -56,12 +59,14 @@ public class Ifaddr extends RubyObject {
         this.index = ni.getIndex();
         this.networkInterface = ni;
         this.isLink = false;
+        this.flags = 0;
         this.address = it.getAddress();
         this.broadcast = it.getBroadcast();
         this.interfaceAddress = it;
         setAddr(runtime);
         setNetmask(it);
         setInspectString(ni);
+        setInterfaceFlags(ni);
     }
 
     public Ifaddr(Ruby runtime, RubyClass metaClass, NetworkInterface ni) throws SocketException {
@@ -71,10 +76,12 @@ public class Ifaddr extends RubyObject {
         this.isUp = ni.isUp();
         this.isPointToPoint = ni.isPointToPoint();
         this.index = ni.getIndex();
+        this.flags = 0;
         this.networkInterface = ni;
         this.isLink = true;
         setAddr(runtime);
         setInspectString(ni);
+        setInterfaceFlags(ni);
     }
 
     @JRubyMethod
@@ -111,10 +118,9 @@ public class Ifaddr extends RubyObject {
         return context.runtime.newFixnum(index);
     }
 
-    @JRubyMethod(notImplemented = true)
+    @JRubyMethod
     public IRubyObject flags(ThreadContext context) {
-        // not implemented yet
-        return context.nil;
+        return context.runtime.newFixnum(flags);
     }
 
     @JRubyMethod
@@ -210,6 +216,21 @@ public class Ifaddr extends RubyObject {
     private String getBroadcastAsString() {
         if (broadcast == null) return "";
         return broadcast.toString().substring(1);
+    }
+
+    private void setInterfaceFlags(NetworkInterface nif) throws SocketException {
+        if (isUp) {
+            flags |= InterfaceInfo.IFF_UP.value();
+        }
+        if (nif.supportsMulticast()) {
+            flags |= InterfaceInfo.IFF_MULTICAST.value();
+        }
+        if (isLoopback) {
+            flags |= InterfaceInfo.IFF_LOOPBACK.value();
+        }
+        if (isPointToPoint) {
+            flags |= InterfaceInfo.IFF_POINTOPOINT.value();
+        }
     }
 
 }

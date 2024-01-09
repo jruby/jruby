@@ -614,7 +614,7 @@ public class RubyArithmeticSequence extends RubyObject {
                 enumeratorizeWithSize(context, this, "each_slice", new IRubyObject[]{arg}, RubyArithmeticSequence::size);
     }
 
-    @JRubyMethod(required = 1)
+    @JRubyMethod
     public IRubyObject each_with_object(final ThreadContext context, IRubyObject arg, Block block) {
         return block.isGiven() ? RubyEnumerable.each_with_objectCommon(context, this, block, arg) :
                 enumeratorizeWithSize(context, this, "each_with_object", new IRubyObject[]{arg}, RubyArithmeticSequence::size);

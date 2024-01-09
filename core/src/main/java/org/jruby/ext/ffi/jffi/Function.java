@@ -153,7 +153,7 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
         return context.nil;
     }
 
-    @JRubyMethod(name = "autorelease=", required = 1)
+    @JRubyMethod(name = "autorelease=")
     public final IRubyObject autorelease(ThreadContext context, IRubyObject release) {
         if (autorelease != release.isTrue() && getMemoryIO() instanceof AllocatedDirectMemoryIO) {
             ((AllocatedDirectMemoryIO) getMemoryIO()).setAutoRelease(autorelease = release.isTrue());

@@ -251,7 +251,7 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return getRuntime().newFixnum(level);
     }
 
-    @JRubyMethod(name = "sync=", required = 1)
+    @JRubyMethod(name = "sync=")
     public IRubyObject set_sync(IRubyObject arg) {
         sync = ((RubyBoolean) arg).isTrue();
         return sync ? getRuntime().getTrue() : getRuntime().getFalse();

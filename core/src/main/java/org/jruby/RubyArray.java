@@ -719,7 +719,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /** rb_ary_initialize_copy
      *
      */
-    @JRubyMethod(name = {"initialize_copy"}, required = 1, visibility=PRIVATE)
+    @JRubyMethod(name = {"initialize_copy"}, visibility=PRIVATE)
     @Override
     public IRubyObject initialize_copy(IRubyObject orig) {
         return this.replace(orig);
@@ -758,7 +758,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /** rb_ary_replace
      *
      */
-    @JRubyMethod(name = {"replace"}, required = 1)
+    @JRubyMethod(name = {"replace"})
     public IRubyObject replace(IRubyObject orig) {
         unpack();
         modifyCheck();
@@ -1428,7 +1428,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /** rb_ary_push - specialized rb_ary_store
      *
      */
-    @JRubyMethod(name = "<<", required = 1)
+    @JRubyMethod(name = "<<")
     public RubyArray append(IRubyObject item) {
         unpack();
         modify();
@@ -1459,7 +1459,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return push(items);
     }
 
-    @JRubyMethod(name = "push", alias = "append", required = 1)
+    @JRubyMethod(name = "push", alias = "append")
     public RubyArray push(IRubyObject item) {
         append(item);
 
@@ -1610,7 +1610,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /** rb_ary_includes
      *
      */
-    @JRubyMethod(name = "include?", required = 1)
+    @JRubyMethod(name = "include?")
     public RubyBoolean include_p(ThreadContext context, IRubyObject item) {
         return RubyBoolean.newBoolean(context, includes(context, item));
     }
@@ -1777,7 +1777,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /** rb_ary_at
      *
      */
-    @JRubyMethod(name = "at", required = 1)
+    @JRubyMethod(name = "at")
     public IRubyObject at(IRubyObject pos) {
         return entry(RubyNumeric.num2long(pos));
     }
@@ -2278,7 +2278,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /** rb_ary_equal
      *
      */
-    @JRubyMethod(name = "==", required = 1)
+    @JRubyMethod(name = "==")
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
         if (this == obj) return context.tru;
@@ -2320,7 +2320,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /** rb_ary_eql
      *
      */
-    @JRubyMethod(name = "eql?", required = 1)
+    @JRubyMethod(name = "eql?")
     public IRubyObject eql(ThreadContext context, IRubyObject obj) {
         if(!(obj instanceof RubyArray)) {
             return context.fals;
@@ -2935,7 +2935,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /** rb_ary_delete
      *
      */
-    @JRubyMethod(required = 1)
+    @JRubyMethod
     public IRubyObject delete(ThreadContext context, IRubyObject item, Block block) {
         unpack();
         int i2 = 0;
@@ -3019,7 +3019,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /** rb_ary_delete_at_m
      *
      */
-    @JRubyMethod(name = "delete_at", required = 1)
+    @JRubyMethod(name = "delete_at")
     public IRubyObject delete_at(IRubyObject obj) {
         return delete_at((int) RubyNumeric.num2long(obj));
     }
@@ -3155,17 +3155,9 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         }
 
         if (hasUncoercible) {
-            return zipCommon(context, newArgs, block, new ArgumentVisitor() {
-                public IRubyObject visit(ThreadContext ctx, IRubyObject arg, int i) {
-                    return RubyEnumerable.zipEnumNext(ctx, arg);
-                }
-            });
+            return zipCommon(context, newArgs, block, (ctx, arg, i) -> RubyEnumerable.zipEnumNext(ctx, arg));
         } else {
-            return zipCommon(context, newArgs, block, new ArgumentVisitor() {
-                public IRubyObject visit(ThreadContext ctx, IRubyObject arg, int i) {
-                    return ((RubyArray) arg).elt(i);
-                }
-            });
+            return zipCommon(context, newArgs, block, (ctx, arg, i) -> ((RubyArray) arg).elt(i));
         }
     }
 
@@ -3210,7 +3202,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /** rb_ary_cmp
      *
      */
-    @JRubyMethod(name = "<=>", required = 1)
+    @JRubyMethod(name = "<=>")
     public IRubyObject op_cmp(ThreadContext context, IRubyObject obj) {
         final Ruby runtime = context.runtime;
 
@@ -3331,7 +3323,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /** rb_ary_assoc
      *
      */
-    @JRubyMethod(name = "assoc", required = 1)
+    @JRubyMethod(name = "assoc")
     public IRubyObject assoc(ThreadContext context, IRubyObject key) {
         Ruby runtime = context.runtime;
 
@@ -3349,7 +3341,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /** rb_ary_rassoc
      *
      */
-    @JRubyMethod(name = "rassoc", required = 1)
+    @JRubyMethod(name = "rassoc")
     public IRubyObject rassoc(ThreadContext context, IRubyObject value) {
         Ruby runtime = context.runtime;
 
@@ -3549,7 +3541,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /** rb_ary_plus
      *
      */
-    @JRubyMethod(name = "+", required = 1)
+    @JRubyMethod(name = "+")
     public IRubyObject op_plus(IRubyObject obj) {
         Ruby runtime = metaClass.runtime;
         RubyArray y = obj.convertToArray();
@@ -3583,7 +3575,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /** rb_ary_times
      *
      */
-    @JRubyMethod(name = "*", required = 1)
+    @JRubyMethod(name = "*")
     public IRubyObject op_times(ThreadContext context, IRubyObject times) {
         IRubyObject tmp = times.checkStringType();
 
@@ -3745,7 +3737,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /** rb_ary_diff
      *
      */
-    @JRubyMethod(name = "-", required = 1)
+    @JRubyMethod(name = "-")
     public IRubyObject op_diff(IRubyObject other) {
         final Ruby runtime = metaClass.runtime;
 
@@ -3853,7 +3845,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /** MRI: rb_ary_and
      *
      */
-    @JRubyMethod(name = "&", required = 1)
+    @JRubyMethod(name = "&")
     public IRubyObject op_and(IRubyObject other) {
         final Ruby runtime = metaClass.runtime;
 
@@ -3894,7 +3886,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /** rb_ary_or
      *
      */
-    @JRubyMethod(name = "|", required = 1)
+    @JRubyMethod(name = "|")
     public IRubyObject op_or(IRubyObject other) {
         final Ruby runtime = metaClass.runtime;
         RubyArray ary2 = other.convertToArray();
@@ -5438,7 +5430,7 @@ float_loop:
         return arg.checkArrayType();
     }
 
-    @JRubyMethod(name = "pack", required = 1)
+    @JRubyMethod(name = "pack")
     public RubyString pack(ThreadContext context, IRubyObject obj) {
         RubyString format = obj.convertToString();
         try {

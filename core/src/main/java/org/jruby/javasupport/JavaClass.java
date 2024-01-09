@@ -196,7 +196,7 @@ public class JavaClass extends JavaObject {
     }
 
     @Deprecated
-    @JRubyMethod(name = "for_name", required = 1, meta = true)
+    @JRubyMethod(name = "for_name", meta = true)
     public static JavaClass for_name(IRubyObject recv, IRubyObject name) {
         return for_name(recv, name.asJavaString());
     }

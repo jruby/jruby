@@ -984,7 +984,7 @@ public class RubyClass extends RubyModule {
     /** rb_class_init_copy
      *
      */
-    @JRubyMethod(name = "initialize_copy", required = 1, visibility = PRIVATE)
+    @JRubyMethod(name = "initialize_copy", visibility = PRIVATE)
     @Override
     public IRubyObject initialize_copy(IRubyObject original) {
         checkNotInitialized();
@@ -1189,7 +1189,7 @@ public class RubyClass extends RubyModule {
         return getRealClass();
     }
 
-    @JRubyMethod(name = "inherited", required = 1, visibility = PRIVATE)
+    @JRubyMethod(name = "inherited", visibility = PRIVATE)
     public IRubyObject inherited(ThreadContext context, IRubyObject arg) {
         return context.nil;
     }

@@ -37,6 +37,7 @@ import org.jruby.anno.JRubyClass;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.WeakHashSet;
 
@@ -66,8 +67,8 @@ public class RubyThreadGroup extends RubyObject {
         return threadGroupClass;
     }
 
-    @JRubyMethod(name = "add", required = 1)
-    public IRubyObject add(IRubyObject rubyThread, Block block) {
+    @JRubyMethod(name = "add")
+    public IRubyObject add(ThreadContext context, IRubyObject rubyThread, Block block) {
         if (!(rubyThread instanceof RubyThread)) throw getRuntime().newTypeError(rubyThread, getRuntime().getThread());
         
         // synchronize on the RubyThread for threadgroup updates
@@ -95,7 +96,7 @@ public class RubyThreadGroup extends RubyObject {
         }
 
         // we only add live threads
-        if (thread.alive_p().isTrue()) {
+        if (thread.alive_p(context).isTrue()) {
             addDirectly(thread);
         }
         
@@ -159,6 +160,13 @@ public class RubyThreadGroup extends RubyObject {
 
     private RubyThreadGroup(Ruby runtime, RubyClass type) {
         super(runtime, type);
+    }
+
+    @Deprecated
+    public IRubyObject add(IRubyObject rubyThread, Block block) {
+        if (!(rubyThread instanceof RubyThread)) throw getRuntime().newTypeError(rubyThread, getRuntime().getThread());
+
+        return add(((RubyThread) rubyThread).getContext(), rubyThread, block);
     }
 
 }

@@ -159,7 +159,7 @@ public class JZlibDeflate extends ZStream {
         return (IRubyObject) this;
     }
 
-    @JRubyMethod(name = "<<", required = 1)
+    @JRubyMethod(name = "<<")
     public IRubyObject append(IRubyObject arg) {
         checkClosed();
         try {
@@ -170,28 +170,28 @@ public class JZlibDeflate extends ZStream {
         return this;
     }
 
-    @JRubyMethod(name = "params", required = 2)
+    @JRubyMethod(name = "params")
     public IRubyObject params(ThreadContext context, IRubyObject level, IRubyObject strategy) {
         int l = RubyNumeric.fix2int(level);
         checkLevel(getRuntime(), l);
-        
+
         int s = RubyNumeric.fix2int(strategy);
         checkStrategy(getRuntime(), s);
-        
+
         if (flater.next_out == null) flater.setOutput(ByteList.NULL_ARRAY);
 
         int err = flater.params(l, s);
         if (err == com.jcraft.jzlib.JZlib.Z_STREAM_ERROR) {
             throw RubyZlib.newStreamError(getRuntime(), "stream error");
         }
-        
+
         if (collectedIdx != flater.next_out_index) collectedIdx = flater.next_out_index;
 
         run();
         return getRuntime().getNil();
     }
 
-    @JRubyMethod(name = "set_dictionary", required = 1)
+    @JRubyMethod(name = "set_dictionary")
     public IRubyObject set_dictionary(ThreadContext context, IRubyObject arg) {
         try {
             byte[] tmp = arg.convertToString().getBytes();

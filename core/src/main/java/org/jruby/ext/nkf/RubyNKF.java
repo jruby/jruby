@@ -126,7 +126,7 @@ public class RubyNKF {
         NKF.defineAnnotatedMethods(RubyNKF.class);
     }
 
-    @JRubyMethod(name = "guess", required = 1, module = true)
+    @JRubyMethod(name = "guess", module = true)
     public static IRubyObject guess(ThreadContext context, IRubyObject recv, IRubyObject s) {
         return charsetMappedValue(context.runtime, guess(context, s));
     }
@@ -195,17 +195,17 @@ public class RubyNKF {
         return runtime.getEncodingService().convertEncodingToRubyEncoding(encoding);
     }
 
-    @JRubyMethod(name = "guess1", required = 1, module = true)
+    @JRubyMethod(name = "guess1", module = true)
     public static IRubyObject guess1(ThreadContext context, IRubyObject recv, IRubyObject str) {
         return guess(context, recv, str);
     }
 
-    @JRubyMethod(name = "guess2", required = 1, module = true)
+    @JRubyMethod(name = "guess2", module = true)
     public static IRubyObject guess2(ThreadContext context, IRubyObject recv, IRubyObject str) {
         return guess(context, recv, str);
     }
 
-    @JRubyMethod(name = "nkf", required = 2, module = true)
+    @JRubyMethod(name = "nkf", module = true)
     public static IRubyObject nkf(ThreadContext context, IRubyObject recv, IRubyObject opt, IRubyObject str) {
         Ruby runtime = context.runtime;
 
@@ -536,9 +536,9 @@ public class RubyNKF {
 
             final RubyArray array;
             if ('B' == encode || 'b' == encode) { // BASE64
-                array = Pack.unpack(context.runtime, body, PACK_BASE64);
+                array = Pack.unpack(context, body, PACK_BASE64);
             } else { // Qencode
-                array = Pack.unpack(context.runtime, body, PACK_QENCODE);
+                array = Pack.unpack(context, body, PACK_QENCODE);
             }
             RubyString s = (RubyString) array.entry(0);
             ByteList decodeStr = s.asString().getByteList();
