@@ -2185,7 +2185,9 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
     Operand buildYield(Variable aResult, YieldNode node) {
         if (aResult == null) aResult = temp();
-        if (scope instanceof IRScriptBody || scope instanceof IRModuleBody) throwSyntaxError(getLine(node), "Invalid yield");
+
+        IRScope hardScope = scope.getNearestNonClosurelikeScope();
+        if (hardScope instanceof IRScriptBody || hardScope instanceof IRModuleBody) throwSyntaxError(getLine(node), "Invalid yield");
 
         Variable result = aResult;
         int[] flags = new int[]{0};
