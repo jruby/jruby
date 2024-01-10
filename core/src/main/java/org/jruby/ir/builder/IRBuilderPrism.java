@@ -63,6 +63,7 @@ import org.jruby.parser.ParseResultPrism;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -1286,6 +1287,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
     private Operand buildHash(Node[] elements, boolean hasAssignments) {
         List<KeyValuePair<Operand, Operand>> args = new ArrayList<>();
+        Set<String> keysHack = new HashSet<>(); // Remove once prism #2005 is fixed.
         Variable hash = null;
         // Duplication checks happen when **{} are literals and not **h variable references.
         Operand duplicateCheck = fals();
@@ -1299,8 +1301,15 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
                 if (key instanceof StringNode) {  // FIXME: #2045 in prism about whether it should be marked frozen by parser.
                     keyOperand = buildFrozenString((StringNode) key);
+
+                    String hack = ((FrozenString) keyOperand).getByteList().toString();
+                    if (!keysHack.add(hack)) getManager().getRuntime().getWarnings().warn("key " + hack + " is duplicated and overwritten on line " + (getLine(key) + 1));
                 } else {
                     keyOperand = build(key);
+                    if (keyOperand instanceof Symbol) {
+                        String hack = ((Symbol) keyOperand).getString();
+                        if (!keysHack.add(hack)) getManager().getRuntime().getWarnings().warn("key :" + hack + " is duplicated and overwritten on line " + (getLine(key) + 1));
+                    }
                 }
                 args.add(new KeyValuePair<>(keyOperand, buildWithOrder(((AssocNode) pair).value, hasAssignments)));
             } else {  // AssocHashNode
