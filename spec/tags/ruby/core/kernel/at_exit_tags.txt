@@ -1,1 +1,0 @@
-fails:Kernel.at_exit raises ArgumentError if called without a block
