@@ -1,11 +1,13 @@
 package org.jruby.ir.builder;
 
+import org.apache.tools.ant.util.StringUtils;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.EvalType;
 import org.jruby.ParseResult;
+import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
 import org.jruby.ast.IterNode;
@@ -43,6 +45,7 @@ import org.jruby.util.DefinedMessage;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.cli.Options;
+import org.jruby.util.io.EncodingUtils;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -935,7 +938,18 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         boolean isUSASCII = hackCheckUSASCII(bytes);
         Encoding encoding = isUSASCII ? USASCIIEncoding.INSTANCE :                    // always prefer US-ASCII
                 getEncoding() == USASCIIEncoding.INSTANCE ? ASCIIEncoding.INSTANCE :  // whoops binary in US-ASCII file
-                        getEncoding();                                                // use general encoding
+                        null;
+
+        if (encoding == null) {
+            if (getEncoding() == UTF8Encoding.INSTANCE) {
+                int length = UTF8Encoding.INSTANCE.length(bytes, 0, bytes.length);
+
+                Ruby runtime = getManager().getRuntime();
+                if (length < 0) throw runtime.newEncodingError(str(runtime, "invalid symbol in encoding UTF-8 ",
+                        symbol(new ByteList(bytes, ASCIIEncoding.INSTANCE)).inspect(runtime.getCurrentContext())));
+            }
+            encoding = getEncoding();
+        }
 
         ByteList byteList = new ByteList(bytes, encoding);
 
