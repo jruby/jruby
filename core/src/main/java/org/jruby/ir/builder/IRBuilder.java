@@ -1,6 +1,5 @@
 package org.jruby.ir.builder;
 
-import org.apache.tools.ant.util.StringUtils;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
@@ -31,7 +30,7 @@ import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Integer;
-import org.jruby.parser.ParseResultPrism;
+import org.jruby.prism.parser.ParseResultPrism;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.ArgumentType;
@@ -45,7 +44,6 @@ import org.jruby.util.DefinedMessage;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.cli.Options;
-import org.jruby.util.io.EncodingUtils;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;

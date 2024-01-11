@@ -17,7 +17,7 @@ import org.jruby.ir.operands.IRException;
 import org.jruby.ir.persistence.IRDumper;
 import org.jruby.ir.runtime.IRBreakJump;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.parser.ParseResultPrism;
+import org.jruby.prism.parser.ParseResultPrism;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;

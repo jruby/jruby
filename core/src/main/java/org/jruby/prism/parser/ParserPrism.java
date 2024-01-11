@@ -1,4 +1,4 @@
-package org.jruby.parser;
+package org.jruby.prism.parser;
 
 import jnr.ffi.LibraryLoader;
 import org.jcodings.Encoding;
@@ -10,6 +10,10 @@ import org.jruby.RubyIO;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
 import org.jruby.management.ParserStats;
+import org.jruby.parser.Parser;
+import org.jruby.parser.ParserManager;
+import org.jruby.parser.ParserType;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.load.LoadServiceResourceInputStream;
 import org.jruby.util.ByteList;
@@ -118,7 +122,7 @@ public class ParserPrism extends Parser {
     }
 
     @Override
-    ParseResult parse(String fileName, int lineNumber, InputStream in, Encoding encoding,
+    protected ParseResult parse(String fileName, int lineNumber, InputStream in, Encoding encoding,
                       DynamicScope existingScope, ParserType type) {
         byte[] source = getSourceAsBytes(fileName, in);
         byte[] metadata = generateMetadata(fileName, lineNumber, encoding, existingScope, type);
@@ -189,6 +193,9 @@ public class ParserPrism extends Parser {
 
         // supress warnings
         metadata.append(runtime.getInstanceConfig().getVerbosity() == RubyInstanceConfig.Verbosity.NIL ? 1 : 0);
+
+        // FIXME: versioning seems to be potentially in-flux 5 == 3.3 (make enum once we know this)
+        metadata.append(5);
 
         // Eval scopes (or none for normal parses)
         if (type == EVAL) {

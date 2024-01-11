@@ -1,8 +1,9 @@
-package org.jruby.parser;
+package org.jruby.prism.parser;
 
 import org.jcodings.Encoding;
 import org.jruby.ParseResult;
 import org.jruby.ir.builder.IRBuilderPrism;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.prism.Nodes;
 

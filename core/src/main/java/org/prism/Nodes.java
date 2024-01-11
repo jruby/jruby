@@ -10,6 +10,10 @@ package org.prism;
 import java.lang.Override;
 import java.lang.String;
 import java.lang.StringBuilder;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,8 +22,12 @@ import java.util.Arrays;
 // @formatter:off
 public abstract class Nodes {
 
-    public static final byte[][] EMPTY_BYTE_ARRAY_ARRAY = {};
     public static final org.jruby.RubySymbol[] EMPTY_STRING_ARRAY = {};
+
+    @Target(ElementType.FIELD)
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface Nullable {
+    }
 
     public static final class Location {
 
@@ -246,6 +254,9 @@ public abstract class Nodes {
         // a call that is an attribute write, so the value being written should be returned
         public static final short ATTRIBUTE_WRITE = 1 << 2;
 
+        // a call that ignores method visibility
+        public static final short IGNORE_VISIBILITY = 1 << 3;
+
         public static boolean isSafeNavigation(short flags) {
             return (flags & SAFE_NAVIGATION) != 0;
         }
@@ -256,6 +267,10 @@ public abstract class Nodes {
 
         public static boolean isAttributeWrite(short flags) {
             return (flags & ATTRIBUTE_WRITE) != 0;
+        }
+
+        public static boolean isIgnoreVisibility(short flags) {
+            return (flags & IGNORE_VISIBILITY) != 0;
         }
 
         private final short flags;
@@ -293,6 +308,10 @@ public abstract class Nodes {
 
         public boolean isAttributeWrite() {
             return (flags & ATTRIBUTE_WRITE) != 0;
+        }
+
+        public boolean isIgnoreVisibility() {
+            return (flags & IGNORE_VISIBILITY) != 0;
         }
 
     }
@@ -509,6 +528,49 @@ public abstract class Nodes {
 
         public boolean isBeginModifier() {
             return (flags & BEGIN_MODIFIER) != 0;
+        }
+
+    }
+
+    /**
+     * Flags for parameter nodes.
+     */
+    public static final class ParameterFlags implements Comparable<ParameterFlags> {
+
+        // a parameter name that has been repeated in the method signature
+        public static final short REPEATED_PARAMETER = 1 << 0;
+
+        public static boolean isRepeatedParameter(short flags) {
+            return (flags & REPEATED_PARAMETER) != 0;
+        }
+
+        private final short flags;
+
+        public ParameterFlags(short flags) {
+            this.flags = flags;
+        }
+
+        @Override
+        public int hashCode() {
+            return flags;
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if (!(other instanceof ParameterFlags)) {
+                return false;
+            }
+
+            return flags == ((ParameterFlags) other).flags;
+        }
+
+        @Override
+        public int compareTo(ParameterFlags other) {
+            return flags - other.flags;
+        }
+
+        public boolean isRepeatedParameter() {
+            return (flags & REPEATED_PARAMETER) != 0;
         }
 
     }
@@ -1167,10 +1229,10 @@ public abstract class Nodes {
      *     ^^^^^^^^^^^^^^^^^^^
      */
     public static final class ArrayPatternNode extends Node {
-        /** optional (can be null) */
+        @Nullable
         public final Node constant;
         public final Node[] requireds;
-        /** optional (can be null) */
+        @Nullable
         public final Node rest;
         public final Node[] posts;
 
@@ -1249,8 +1311,35 @@ public abstract class Nodes {
      *       ^^^^^^
      */
     public static final class AssocNode extends Node {
+        /**
+         * <pre>
+         * The key of the association. This can be any node that represents a non-void expression.
+         *
+         *     { a: b }
+         *       ^
+         *
+         *     { foo => bar }
+         *       ^^^
+         *
+         *     { def a; end => 1 }
+         *       ^^^^^^^^^^
+         * </pre>
+         */
         public final Node key;
-        /** optional (can be null) */
+        /**
+         * <pre>
+         * The value of the association, if present. This can be any node that
+         * represents a non-void expression. It can be optionally omitted if this
+         * node is an element in a `HashPatternNode`.
+         *
+         *     { foo => bar }
+         *              ^^^
+         *
+         *     { x: 1 }
+         *          ^
+         * </pre>
+         */
+        @Nullable
         public final Node value;
 
         public AssocNode(Node key, Node value, int startOffset, int length) {
@@ -1300,7 +1389,16 @@ public abstract class Nodes {
      *       ^^^^^
      */
     public static final class AssocSplatNode extends Node {
-        /** optional (can be null) */
+        /**
+         * <pre>
+         * The value to be splatted, if present. Will be missing when keyword
+         * rest argument forwarding is used.
+         *
+         *     { **foo }
+         *         ^^^
+         * </pre>
+         */
+        @Nullable
         public final Node value;
 
         public AssocSplatNode(Node value, int startOffset, int length) {
@@ -1389,13 +1487,13 @@ public abstract class Nodes {
      *     ^^^^^
      */
     public static final class BeginNode extends Node {
-        /** optional (can be null) */
+        @Nullable
         public final StatementsNode statements;
-        /** optional (can be null) */
+        @Nullable
         public final RescueNode rescue_clause;
-        /** optional (can be null) */
+        @Nullable
         public final ElseNode else_clause;
-        /** optional (can be null) */
+        @Nullable
         public final EnsureNode ensure_clause;
 
         public BeginNode(StatementsNode statements, RescueNode rescue_clause, ElseNode else_clause, EnsureNode ensure_clause, int startOffset, int length) {
@@ -1466,7 +1564,7 @@ public abstract class Nodes {
      *     ^^^^^^^^^^
      */
     public static final class BlockArgumentNode extends Node {
-        /** optional (can be null) */
+        @Nullable
         public final Node expression;
 
         public BlockArgumentNode(Node expression, int startOffset, int length) {
@@ -1511,13 +1609,19 @@ public abstract class Nodes {
      *            ^
      */
     public static final class BlockLocalVariableNode extends Node {
+        public final short flags;
         public final org.jruby.RubySymbol name;
 
-        public BlockLocalVariableNode(org.jruby.RubySymbol name, int startOffset, int length) {
+        public BlockLocalVariableNode(short flags, org.jruby.RubySymbol name, int startOffset, int length) {
             super(startOffset, length);
+            this.flags = flags;
             this.name = name;
         }
-                
+        
+        public boolean isRepeatedParameter() {
+            return ParameterFlags.isRepeatedParameter(this.flags);
+        }
+        
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
         }
 
@@ -1539,6 +1643,10 @@ public abstract class Nodes {
             builder.append('\n');
             String nextIndent = indent + "  ";
             builder.append(nextIndent);
+            builder.append("flags: ");
+            builder.append(this.flags);
+            builder.append('\n');
+            builder.append(nextIndent);
             builder.append("name: ");
             builder.append('"').append(this.name).append('"');
             builder.append('\n');
@@ -1555,9 +1663,9 @@ public abstract class Nodes {
     public static final class BlockNode extends Node {
         public final org.jruby.RubySymbol[] locals;
         public final int locals_body_index;
-        /** optional (can be null) */
+        @Nullable
         public final Node parameters;
-        /** optional (can be null) */
+        @Nullable
         public final Node body;
 
         public BlockNode(org.jruby.RubySymbol[] locals, int locals_body_index, Node parameters, Node body, int startOffset, int length) {
@@ -1623,14 +1731,20 @@ public abstract class Nodes {
      *     end
      */
     public static final class BlockParameterNode extends Node {
-        /** optional (can be null) */
+        public final short flags;
+        @Nullable
         public final org.jruby.RubySymbol name;
 
-        public BlockParameterNode(org.jruby.RubySymbol name, int startOffset, int length) {
+        public BlockParameterNode(short flags, org.jruby.RubySymbol name, int startOffset, int length) {
             super(startOffset, length);
+            this.flags = flags;
             this.name = name;
         }
-                
+        
+        public boolean isRepeatedParameter() {
+            return ParameterFlags.isRepeatedParameter(this.flags);
+        }
+        
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
         }
 
@@ -1652,6 +1766,10 @@ public abstract class Nodes {
             builder.append('\n');
             String nextIndent = indent + "  ";
             builder.append(nextIndent);
+            builder.append("flags: ");
+            builder.append(this.flags);
+            builder.append('\n');
+            builder.append(nextIndent);
             builder.append("name: ");
             builder.append(this.name == null ? "null" : "\"" + this.name + "\"");
             builder.append('\n');
@@ -1670,7 +1788,7 @@ public abstract class Nodes {
      *     end
      */
     public static final class BlockParametersNode extends Node {
-        /** optional (can be null) */
+        @Nullable
         public final ParametersNode parameters;
         public final Node[] locals;
 
@@ -1730,7 +1848,7 @@ public abstract class Nodes {
      *     ^^^^^^^^^
      */
     public static final class BreakNode extends Node {
-        /** optional (can be null) */
+        @Nullable
         public final ArgumentsNode arguments;
 
         public BreakNode(ArgumentsNode arguments, int startOffset, int length) {
@@ -1776,7 +1894,7 @@ public abstract class Nodes {
      */
     public static final class CallAndWriteNode extends Node {
         public final short flags;
-        /** optional (can be null) */
+        @Nullable
         public final Node receiver;
         public final org.jruby.RubySymbol read_name;
         public final org.jruby.RubySymbol write_name;
@@ -1801,6 +1919,10 @@ public abstract class Nodes {
 
         public boolean isAttributeWrite() {
             return CallNodeFlags.isAttributeWrite(this.flags);
+        }
+
+        public boolean isIgnoreVisibility() {
+            return CallNodeFlags.isIgnoreVisibility(this.flags);
         }
         
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
@@ -1872,12 +1994,28 @@ public abstract class Nodes {
      */
     public static final class CallNode extends Node {
         public final short flags;
-        /** optional (can be null) */
+        /**
+         * <pre>
+         * The object that the method is being called on. This can be either
+         * `nil` or a node representing any kind of expression that returns a
+         * non-void value.
+         *
+         *     foo.bar
+         *     ^^^
+         *
+         *     +foo
+         *      ^^^
+         *
+         *     foo + bar
+         *     ^^^
+         * </pre>
+         */
+        @Nullable
         public final Node receiver;
         public final org.jruby.RubySymbol name;
-        /** optional (can be null) */
+        @Nullable
         public final ArgumentsNode arguments;
-        /** optional (can be null) */
+        @Nullable
         public final Node block;
 
         public CallNode(short flags, Node receiver, org.jruby.RubySymbol name, ArgumentsNode arguments, Node block, int startOffset, int length) {
@@ -1899,6 +2037,10 @@ public abstract class Nodes {
 
         public boolean isAttributeWrite() {
             return CallNodeFlags.isAttributeWrite(this.flags);
+        }
+
+        public boolean isIgnoreVisibility() {
+            return CallNodeFlags.isIgnoreVisibility(this.flags);
         }
         
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
@@ -1959,7 +2101,7 @@ public abstract class Nodes {
      */
     public static final class CallOperatorWriteNode extends Node {
         public final short flags;
-        /** optional (can be null) */
+        @Nullable
         public final Node receiver;
         public final org.jruby.RubySymbol read_name;
         public final org.jruby.RubySymbol write_name;
@@ -1986,6 +2128,10 @@ public abstract class Nodes {
 
         public boolean isAttributeWrite() {
             return CallNodeFlags.isAttributeWrite(this.flags);
+        }
+
+        public boolean isIgnoreVisibility() {
+            return CallNodeFlags.isIgnoreVisibility(this.flags);
         }
         
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
@@ -2046,7 +2192,7 @@ public abstract class Nodes {
      */
     public static final class CallOrWriteNode extends Node {
         public final short flags;
-        /** optional (can be null) */
+        @Nullable
         public final Node receiver;
         public final org.jruby.RubySymbol read_name;
         public final org.jruby.RubySymbol write_name;
@@ -2071,6 +2217,10 @@ public abstract class Nodes {
 
         public boolean isAttributeWrite() {
             return CallNodeFlags.isAttributeWrite(this.flags);
+        }
+
+        public boolean isIgnoreVisibility() {
+            return CallNodeFlags.isIgnoreVisibility(this.flags);
         }
         
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
@@ -2155,6 +2305,10 @@ public abstract class Nodes {
 
         public boolean isAttributeWrite() {
             return CallNodeFlags.isAttributeWrite(this.flags);
+        }
+
+        public boolean isIgnoreVisibility() {
+            return CallNodeFlags.isIgnoreVisibility(this.flags);
         }
         
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
@@ -2250,10 +2404,10 @@ public abstract class Nodes {
      *     ^^^^^^^^^
      */
     public static final class CaseMatchNode extends Node {
-        /** optional (can be null) */
+        @Nullable
         public final Node predicate;
         public final Node[] conditions;
-        /** optional (can be null) */
+        @Nullable
         public final ElseNode consequent;
 
         public CaseMatchNode(Node predicate, Node[] conditions, ElseNode consequent, int startOffset, int length) {
@@ -2322,10 +2476,10 @@ public abstract class Nodes {
      *     ^^^^^^^^^^
      */
     public static final class CaseNode extends Node {
-        /** optional (can be null) */
+        @Nullable
         public final Node predicate;
         public final Node[] conditions;
-        /** optional (can be null) */
+        @Nullable
         public final ElseNode consequent;
 
         public CaseNode(Node predicate, Node[] conditions, ElseNode consequent, int startOffset, int length) {
@@ -2394,9 +2548,9 @@ public abstract class Nodes {
     public static final class ClassNode extends Node {
         public final org.jruby.RubySymbol[] locals;
         public final Node constant_path;
-        /** optional (can be null) */
+        @Nullable
         public final Node superclass;
-        /** optional (can be null) */
+        @Nullable
         public final Node body;
         public final org.jruby.RubySymbol name;
 
@@ -2947,7 +3101,7 @@ public abstract class Nodes {
      *     ^^^^^^^^
      */
     public static final class ConstantPathNode extends Node {
-        /** optional (can be null) */
+        @Nullable
         public final Node parent;
         public final Node child;
 
@@ -3100,7 +3254,7 @@ public abstract class Nodes {
      *     ^^^^^^^^  ^^^^^^^^
      */
     public static final class ConstantPathTargetNode extends Node {
-        /** optional (can be null) */
+        @Nullable
         public final Node parent;
         public final Node child;
 
@@ -3340,11 +3494,11 @@ public abstract class Nodes {
     public static final class DefNode extends Node {
         public final int serializedLength;
         public final org.jruby.RubySymbol name;
-        /** optional (can be null) */
+        @Nullable
         public final Node receiver;
-        /** optional (can be null) */
+        @Nullable
         public final ParametersNode parameters;
-        /** optional (can be null) */
+        @Nullable
         public final Node body;
         public final org.jruby.RubySymbol[] locals;
         public final int locals_body_index;
@@ -3466,7 +3620,7 @@ public abstract class Nodes {
      *                 ^^^^^^^^^^
      */
     public static final class ElseNode extends Node {
-        /** optional (can be null) */
+        @Nullable
         public final StatementsNode statements;
 
         public ElseNode(StatementsNode statements, int startOffset, int length) {
@@ -3511,7 +3665,7 @@ public abstract class Nodes {
      *          ^^^^^^
      */
     public static final class EmbeddedStatementsNode extends Node {
-        /** optional (can be null) */
+        @Nullable
         public final StatementsNode statements;
 
         public EmbeddedStatementsNode(StatementsNode statements, int startOffset, int length) {
@@ -3602,7 +3756,7 @@ public abstract class Nodes {
      *     end
      */
     public static final class EnsureNode extends Node {
-        /** optional (can be null) */
+        @Nullable
         public final StatementsNode statements;
 
         public EnsureNode(StatementsNode statements, int startOffset, int length) {
@@ -3689,7 +3843,7 @@ public abstract class Nodes {
      *            ^^^^^^^^^^^^^^^^^^^^
      */
     public static final class FindPatternNode extends Node {
-        /** optional (can be null) */
+        @Nullable
         public final Node constant;
         public final Node left;
         public final Node[] requireds;
@@ -3764,9 +3918,9 @@ public abstract class Nodes {
      */
     public static final class FlipFlopNode extends Node {
         public final short flags;
-        /** optional (can be null) */
+        @Nullable
         public final Node left;
-        /** optional (can be null) */
+        @Nullable
         public final Node right;
 
         public FlipFlopNode(short flags, Node left, Node right, int startOffset, int length) {
@@ -3865,7 +4019,7 @@ public abstract class Nodes {
     public static final class ForNode extends Node {
         public final Node index;
         public final Node collection;
-        /** optional (can be null) */
+        @Nullable
         public final StatementsNode statements;
 
         public ForNode(Node index, Node collection, StatementsNode statements, int startOffset, int length) {
@@ -3995,7 +4149,7 @@ public abstract class Nodes {
      *     ^^^^^
      */
     public static final class ForwardingSuperNode extends Node {
-        /** optional (can be null) */
+        @Nullable
         public final BlockNode block;
 
         public ForwardingSuperNode(BlockNode block, int startOffset, int length) {
@@ -4322,6 +4476,17 @@ public abstract class Nodes {
      *     ^^^^^^^^^^
      */
     public static final class HashNode extends Node {
+        /**
+         * <pre>
+         * The elements of the hash. These can be either `AssocNode`s or `AssocSplatNode`s.
+         *
+         *     { a: b }
+         *       ^^^^
+         *
+         *     { **foo }
+         *       ^^^^^
+         * </pre>
+         */
         public final Node[] elements;
 
         public HashNode(Node[] elements, int startOffset, int length) {
@@ -4373,10 +4538,10 @@ public abstract class Nodes {
      *            ^^^^^^^^^^^^^^^^^^^
      */
     public static final class HashPatternNode extends Node {
-        /** optional (can be null) */
+        @Nullable
         public final Node constant;
         public final Node[] elements;
-        /** optional (can be null) */
+        @Nullable
         public final Node rest;
 
         public HashPatternNode(Node constant, Node[] elements, Node rest, int startOffset, int length) {
@@ -4447,9 +4612,9 @@ public abstract class Nodes {
      */
     public static final class IfNode extends Node {
         public final Node predicate;
-        /** optional (can be null) */
+        @Nullable
         public final StatementsNode statements;
-        /** optional (can be null) */
+        @Nullable
         public final Node consequent;
 
         public IfNode(Node predicate, StatementsNode statements, Node consequent, int startOffset, int length) {
@@ -4645,7 +4810,7 @@ public abstract class Nodes {
      */
     public static final class InNode extends Node {
         public final Node pattern;
-        /** optional (can be null) */
+        @Nullable
         public final StatementsNode statements;
 
         public InNode(Node pattern, StatementsNode statements, int startOffset, int length) {
@@ -4696,11 +4861,11 @@ public abstract class Nodes {
      */
     public static final class IndexAndWriteNode extends Node {
         public final short flags;
-        /** optional (can be null) */
+        @Nullable
         public final Node receiver;
-        /** optional (can be null) */
+        @Nullable
         public final ArgumentsNode arguments;
-        /** optional (can be null) */
+        @Nullable
         public final Node block;
         public final Node value;
 
@@ -4723,6 +4888,10 @@ public abstract class Nodes {
 
         public boolean isAttributeWrite() {
             return CallNodeFlags.isAttributeWrite(this.flags);
+        }
+
+        public boolean isIgnoreVisibility() {
+            return CallNodeFlags.isIgnoreVisibility(this.flags);
         }
         
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
@@ -4783,11 +4952,11 @@ public abstract class Nodes {
      */
     public static final class IndexOperatorWriteNode extends Node {
         public final short flags;
-        /** optional (can be null) */
+        @Nullable
         public final Node receiver;
-        /** optional (can be null) */
+        @Nullable
         public final ArgumentsNode arguments;
-        /** optional (can be null) */
+        @Nullable
         public final Node block;
         public final org.jruby.RubySymbol operator;
         public final Node value;
@@ -4812,6 +4981,10 @@ public abstract class Nodes {
 
         public boolean isAttributeWrite() {
             return CallNodeFlags.isAttributeWrite(this.flags);
+        }
+
+        public boolean isIgnoreVisibility() {
+            return CallNodeFlags.isIgnoreVisibility(this.flags);
         }
         
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
@@ -4876,11 +5049,11 @@ public abstract class Nodes {
      */
     public static final class IndexOrWriteNode extends Node {
         public final short flags;
-        /** optional (can be null) */
+        @Nullable
         public final Node receiver;
-        /** optional (can be null) */
+        @Nullable
         public final ArgumentsNode arguments;
-        /** optional (can be null) */
+        @Nullable
         public final Node block;
         public final Node value;
 
@@ -4903,6 +5076,10 @@ public abstract class Nodes {
 
         public boolean isAttributeWrite() {
             return CallNodeFlags.isAttributeWrite(this.flags);
+        }
+
+        public boolean isIgnoreVisibility() {
+            return CallNodeFlags.isIgnoreVisibility(this.flags);
         }
         
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
@@ -4972,9 +5149,9 @@ public abstract class Nodes {
     public static final class IndexTargetNode extends Node {
         public final short flags;
         public final Node receiver;
-        /** optional (can be null) */
+        @Nullable
         public final ArgumentsNode arguments;
-        /** optional (can be null) */
+        @Nullable
         public final Node block;
 
         public IndexTargetNode(short flags, Node receiver, ArgumentsNode arguments, Node block, int startOffset, int length) {
@@ -4995,6 +5172,10 @@ public abstract class Nodes {
 
         public boolean isAttributeWrite() {
             return CallNodeFlags.isAttributeWrite(this.flags);
+        }
+
+        public boolean isIgnoreVisibility() {
+            return CallNodeFlags.isIgnoreVisibility(this.flags);
         }
         
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
@@ -5330,6 +5511,22 @@ public abstract class Nodes {
      *     ^
      */
     public static final class IntegerNode extends Node {
+        /**
+         * <pre>
+         * Represents flag indicating the base of the integer
+         *
+         *     10    base decimal, value 10
+         *     0d10  base decimal, value 10
+         *     0b10  base binary, value 2
+         *     0o10  base octal, value 8
+         *     010   base octal, value 8
+         *     0x10  base hexidecimal, value 16
+         *
+         * A 0 prefix indicates the number has a different base.
+         * The d, b, o, and x prefixes indicate the base. If one of those
+         * four letters is omitted, the base is assumed to be octal.
+         * </pre>
+         */
         public final short flags;
 
         public IntegerNode(short flags, int startOffset, int length) {
@@ -5829,14 +6026,20 @@ public abstract class Nodes {
      *     end
      */
     public static final class KeywordRestParameterNode extends Node {
-        /** optional (can be null) */
+        public final short flags;
+        @Nullable
         public final org.jruby.RubySymbol name;
 
-        public KeywordRestParameterNode(org.jruby.RubySymbol name, int startOffset, int length) {
+        public KeywordRestParameterNode(short flags, org.jruby.RubySymbol name, int startOffset, int length) {
             super(startOffset, length);
+            this.flags = flags;
             this.name = name;
         }
-                
+        
+        public boolean isRepeatedParameter() {
+            return ParameterFlags.isRepeatedParameter(this.flags);
+        }
+        
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
         }
 
@@ -5858,6 +6061,10 @@ public abstract class Nodes {
             builder.append('\n');
             String nextIndent = indent + "  ";
             builder.append(nextIndent);
+            builder.append("flags: ");
+            builder.append(this.flags);
+            builder.append('\n');
+            builder.append(nextIndent);
             builder.append("name: ");
             builder.append(this.name == null ? "null" : "\"" + this.name + "\"");
             builder.append('\n');
@@ -5874,9 +6081,9 @@ public abstract class Nodes {
     public static final class LambdaNode extends Node {
         public final org.jruby.RubySymbol[] locals;
         public final int locals_body_index;
-        /** optional (can be null) */
+        @Nullable
         public final Node parameters;
-        /** optional (can be null) */
+        @Nullable
         public final Node body;
 
         public LambdaNode(org.jruby.RubySymbol[] locals, int locals_body_index, Node parameters, Node body, int startOffset, int length) {
@@ -6545,7 +6752,7 @@ public abstract class Nodes {
     public static final class ModuleNode extends Node {
         public final org.jruby.RubySymbol[] locals;
         public final Node constant_path;
-        /** optional (can be null) */
+        @Nullable
         public final Node body;
         public final org.jruby.RubySymbol name;
 
@@ -6610,7 +6817,7 @@ public abstract class Nodes {
      */
     public static final class MultiTargetNode extends Node {
         public final Node[] lefts;
-        /** optional (can be null) */
+        @Nullable
         public final Node rest;
         public final Node[] rights;
 
@@ -6682,7 +6889,7 @@ public abstract class Nodes {
      */
     public static final class MultiWriteNode extends Node {
         public final Node[] lefts;
-        /** optional (can be null) */
+        @Nullable
         public final Node rest;
         public final Node[] rights;
         public final Node value;
@@ -6760,7 +6967,7 @@ public abstract class Nodes {
      *     ^^^^^^
      */
     public static final class NextNode extends Node {
-        /** optional (can be null) */
+        @Nullable
         public final ArgumentsNode arguments;
 
         public NextNode(ArgumentsNode arguments, int startOffset, int length) {
@@ -6964,15 +7171,21 @@ public abstract class Nodes {
      *     end
      */
     public static final class OptionalKeywordParameterNode extends Node {
+        public final short flags;
         public final org.jruby.RubySymbol name;
         public final Node value;
 
-        public OptionalKeywordParameterNode(org.jruby.RubySymbol name, Node value, int startOffset, int length) {
+        public OptionalKeywordParameterNode(short flags, org.jruby.RubySymbol name, Node value, int startOffset, int length) {
             super(startOffset, length);
+            this.flags = flags;
             this.name = name;
             this.value = value;
         }
-                
+        
+        public boolean isRepeatedParameter() {
+            return ParameterFlags.isRepeatedParameter(this.flags);
+        }
+        
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
             this.value.accept(visitor);
         }
@@ -6995,6 +7208,10 @@ public abstract class Nodes {
             builder.append('\n');
             String nextIndent = indent + "  ";
             builder.append(nextIndent);
+            builder.append("flags: ");
+            builder.append(this.flags);
+            builder.append('\n');
+            builder.append(nextIndent);
             builder.append("name: ");
             builder.append('"').append(this.name).append('"');
             builder.append('\n');
@@ -7013,15 +7230,21 @@ public abstract class Nodes {
      *     end
      */
     public static final class OptionalParameterNode extends Node {
+        public final short flags;
         public final org.jruby.RubySymbol name;
         public final Node value;
 
-        public OptionalParameterNode(org.jruby.RubySymbol name, Node value, int startOffset, int length) {
+        public OptionalParameterNode(short flags, org.jruby.RubySymbol name, Node value, int startOffset, int length) {
             super(startOffset, length);
+            this.flags = flags;
             this.name = name;
             this.value = value;
         }
-                
+        
+        public boolean isRepeatedParameter() {
+            return ParameterFlags.isRepeatedParameter(this.flags);
+        }
+        
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
             this.value.accept(visitor);
         }
@@ -7043,6 +7266,10 @@ public abstract class Nodes {
             }
             builder.append('\n');
             String nextIndent = indent + "  ";
+            builder.append(nextIndent);
+            builder.append("flags: ");
+            builder.append(this.flags);
+            builder.append('\n');
             builder.append(nextIndent);
             builder.append("name: ");
             builder.append('"').append(this.name).append('"');
@@ -7112,13 +7339,13 @@ public abstract class Nodes {
     public static final class ParametersNode extends Node {
         public final Node[] requireds;
         public final Node[] optionals;
-        /** optional (can be null) */
+        @Nullable
         public final Node rest;
         public final Node[] posts;
         public final Node[] keywords;
-        /** optional (can be null) */
+        @Nullable
         public final Node keyword_rest;
-        /** optional (can be null) */
+        @Nullable
         public final BlockParameterNode block;
 
         public ParametersNode(Node[] requireds, Node[] optionals, Node rest, Node[] posts, Node[] keywords, Node keyword_rest, BlockParameterNode block, int startOffset, int length) {
@@ -7226,7 +7453,7 @@ public abstract class Nodes {
      *     ^^^^^^^^^
      */
     public static final class ParenthesesNode extends Node {
-        /** optional (can be null) */
+        @Nullable
         public final Node body;
 
         public ParenthesesNode(Node body, int startOffset, int length) {
@@ -7362,7 +7589,7 @@ public abstract class Nodes {
      *     ^^^^^^^^^^^
      */
     public static final class PostExecutionNode extends Node {
-        /** optional (can be null) */
+        @Nullable
         public final StatementsNode statements;
 
         public PostExecutionNode(StatementsNode statements, int startOffset, int length) {
@@ -7407,7 +7634,7 @@ public abstract class Nodes {
      *     ^^^^^^^^^^^^^
      */
     public static final class PreExecutionNode extends Node {
-        /** optional (can be null) */
+        @Nullable
         public final StatementsNode statements;
 
         public PreExecutionNode(StatementsNode statements, int startOffset, int length) {
@@ -7503,10 +7730,47 @@ public abstract class Nodes {
      *          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
      */
     public static final class RangeNode extends Node {
+        /**
+         * <pre>
+         * A flag indicating whether the range excludes the end value.
+         *
+         *     1..3  # includes 3
+         *
+         *     1...3 # excludes 3
+         * </pre>
+         */
         public final short flags;
-        /** optional (can be null) */
+        /**
+         * <pre>
+         * The left-hand side of the range, if present. Can be either `nil` or
+         * a node representing any kind of expression that returns a non-void
+         * value.
+         *
+         *     1...
+         *     ^
+         *
+         *     hello...goodbye
+         *     ^^^^^
+         * </pre>
+         */
+        @Nullable
         public final Node left;
-        /** optional (can be null) */
+        /**
+         * <pre>
+         * The right-hand side of the range, if present. Can be either `nil` or
+         * a node representing any kind of expression that returns a non-void
+         * value.
+         *
+         *     ..5
+         *       ^
+         *
+         *     1...foo
+         *         ^^^
+         * If neither right-hand or left-hand side was included, this will be a
+         * MissingNode.
+         * </pre>
+         */
+        @Nullable
         public final Node right;
 
         public RangeNode(short flags, Node left, Node right, int startOffset, int length) {
@@ -7738,13 +8002,19 @@ public abstract class Nodes {
      *     end
      */
     public static final class RequiredKeywordParameterNode extends Node {
+        public final short flags;
         public final org.jruby.RubySymbol name;
 
-        public RequiredKeywordParameterNode(org.jruby.RubySymbol name, int startOffset, int length) {
+        public RequiredKeywordParameterNode(short flags, org.jruby.RubySymbol name, int startOffset, int length) {
             super(startOffset, length);
+            this.flags = flags;
             this.name = name;
         }
-                
+        
+        public boolean isRepeatedParameter() {
+            return ParameterFlags.isRepeatedParameter(this.flags);
+        }
+        
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
         }
 
@@ -7766,6 +8036,10 @@ public abstract class Nodes {
             builder.append('\n');
             String nextIndent = indent + "  ";
             builder.append(nextIndent);
+            builder.append("flags: ");
+            builder.append(this.flags);
+            builder.append('\n');
+            builder.append(nextIndent);
             builder.append("name: ");
             builder.append('"').append(this.name).append('"');
             builder.append('\n');
@@ -7781,13 +8055,19 @@ public abstract class Nodes {
      *     end
      */
     public static final class RequiredParameterNode extends Node {
+        public final short flags;
         public final org.jruby.RubySymbol name;
 
-        public RequiredParameterNode(org.jruby.RubySymbol name, int startOffset, int length) {
+        public RequiredParameterNode(short flags, org.jruby.RubySymbol name, int startOffset, int length) {
             super(startOffset, length);
+            this.flags = flags;
             this.name = name;
         }
-                
+        
+        public boolean isRepeatedParameter() {
+            return ParameterFlags.isRepeatedParameter(this.flags);
+        }
+        
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
         }
 
@@ -7808,6 +8088,10 @@ public abstract class Nodes {
             }
             builder.append('\n');
             String nextIndent = indent + "  ";
+            builder.append(nextIndent);
+            builder.append("flags: ");
+            builder.append(this.flags);
+            builder.append('\n');
             builder.append(nextIndent);
             builder.append("name: ");
             builder.append('"').append(this.name).append('"');
@@ -7883,11 +8167,11 @@ public abstract class Nodes {
      */
     public static final class RescueNode extends Node {
         public final Node[] exceptions;
-        /** optional (can be null) */
+        @Nullable
         public final Node reference;
-        /** optional (can be null) */
+        @Nullable
         public final StatementsNode statements;
-        /** optional (can be null) */
+        @Nullable
         public final RescueNode consequent;
 
         public RescueNode(Node[] exceptions, Node reference, StatementsNode statements, RescueNode consequent, int startOffset, int length) {
@@ -7963,14 +8247,20 @@ public abstract class Nodes {
      *     end
      */
     public static final class RestParameterNode extends Node {
-        /** optional (can be null) */
+        public final short flags;
+        @Nullable
         public final org.jruby.RubySymbol name;
 
-        public RestParameterNode(org.jruby.RubySymbol name, int startOffset, int length) {
+        public RestParameterNode(short flags, org.jruby.RubySymbol name, int startOffset, int length) {
             super(startOffset, length);
+            this.flags = flags;
             this.name = name;
         }
-                
+        
+        public boolean isRepeatedParameter() {
+            return ParameterFlags.isRepeatedParameter(this.flags);
+        }
+        
         public <T> void visitChildNodes(AbstractNodeVisitor<T> visitor) {
         }
 
@@ -7991,6 +8281,10 @@ public abstract class Nodes {
             }
             builder.append('\n');
             String nextIndent = indent + "  ";
+            builder.append(nextIndent);
+            builder.append("flags: ");
+            builder.append(this.flags);
+            builder.append('\n');
             builder.append(nextIndent);
             builder.append("name: ");
             builder.append(this.name == null ? "null" : "\"" + this.name + "\"");
@@ -8042,7 +8336,7 @@ public abstract class Nodes {
      *     ^^^^^^^^
      */
     public static final class ReturnNode extends Node {
-        /** optional (can be null) */
+        @Nullable
         public final ArgumentsNode arguments;
 
         public ReturnNode(ArgumentsNode arguments, int startOffset, int length) {
@@ -8125,7 +8419,7 @@ public abstract class Nodes {
     public static final class SingletonClassNode extends Node {
         public final org.jruby.RubySymbol[] locals;
         public final Node expression;
-        /** optional (can be null) */
+        @Nullable
         public final Node body;
 
         public SingletonClassNode(org.jruby.RubySymbol[] locals, Node expression, Node body, int startOffset, int length) {
@@ -8297,7 +8591,7 @@ public abstract class Nodes {
      *      ^^
      */
     public static final class SplatNode extends Node {
-        /** optional (can be null) */
+        @Nullable
         public final Node expression;
 
         public SplatNode(Node expression, int startOffset, int length) {
@@ -8460,9 +8754,9 @@ public abstract class Nodes {
      *     ^^^^^^^^^^^^^^
      */
     public static final class SuperNode extends Node {
-        /** optional (can be null) */
+        @Nullable
         public final ArgumentsNode arguments;
-        /** optional (can be null) */
+        @Nullable
         public final Node block;
 
         public SuperNode(ArgumentsNode arguments, Node block, int startOffset, int length) {
@@ -8665,9 +8959,9 @@ public abstract class Nodes {
      */
     public static final class UnlessNode extends Node {
         public final Node predicate;
-        /** optional (can be null) */
+        @Nullable
         public final StatementsNode statements;
-        /** optional (can be null) */
+        @Nullable
         public final ElseNode consequent;
 
         public UnlessNode(Node predicate, StatementsNode statements, ElseNode consequent, int startOffset, int length) {
@@ -8734,7 +9028,7 @@ public abstract class Nodes {
     public static final class UntilNode extends Node {
         public final short flags;
         public final Node predicate;
-        /** optional (can be null) */
+        @Nullable
         public final StatementsNode statements;
 
         public UntilNode(short flags, Node predicate, StatementsNode statements, int startOffset, int length) {
@@ -8801,7 +9095,7 @@ public abstract class Nodes {
      */
     public static final class WhenNode extends Node {
         public final Node[] conditions;
-        /** optional (can be null) */
+        @Nullable
         public final StatementsNode statements;
 
         public WhenNode(Node[] conditions, StatementsNode statements, int startOffset, int length) {
@@ -8865,7 +9159,7 @@ public abstract class Nodes {
     public static final class WhileNode extends Node {
         public final short flags;
         public final Node predicate;
-        /** optional (can be null) */
+        @Nullable
         public final StatementsNode statements;
 
         public WhileNode(short flags, Node predicate, StatementsNode statements, int startOffset, int length) {
@@ -8985,7 +9279,7 @@ public abstract class Nodes {
      *     ^^^^^^^
      */
     public static final class YieldNode extends Node {
-        /** optional (can be null) */
+        @Nullable
         public final ArgumentsNode arguments;
 
         public YieldNode(ArgumentsNode arguments, int startOffset, int length) {

@@ -72,7 +72,7 @@ public class Parser {
                 existingScope, type);
     }
 
-    ParseResult parse(String fileName, int lineNumber, InputStream in, Encoding encoding,
+    protected ParseResult parse(String fileName, int lineNumber, InputStream in, Encoding encoding,
                              DynamicScope existingScope, ParserType type) {
         RubyArray list = getLines(type == EVAL, fileName, -1);
 
@@ -203,7 +203,7 @@ public class Parser {
         return result.getAST();
     }
 
-    RubyArray getLines(boolean isEvalParse, String file, int length) {
+    protected RubyArray getLines(boolean isEvalParse, String file, int length) {
         if (isEvalParse) return null;
 
         IRubyObject scriptLines = runtime.getObject().getConstantAt("SCRIPT_LINES__");

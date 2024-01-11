@@ -9,6 +9,7 @@ import org.jruby.ir.persistence.IRReader;
 import org.jruby.ir.persistence.IRReaderStream;
 import org.jruby.ir.persistence.util.IRFileExpert;
 import org.jruby.management.ParserStats;
+import org.jruby.prism.parser.ParserPrism;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.util.ByteList;
 import org.jruby.util.cli.Options;
@@ -26,7 +27,7 @@ import static org.jruby.parser.ParserType.*;
  *   1. file parses can deserialize from IR but evals never do.
  */
 public class ParserManager {
-    static final boolean PARSER_TIMING = Options.PARSER_SUMMARY.load();
+    public static final boolean PARSER_TIMING = Options.PARSER_SUMMARY.load();
 
     private final Ruby runtime;
 

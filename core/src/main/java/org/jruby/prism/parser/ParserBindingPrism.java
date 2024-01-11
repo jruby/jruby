@@ -1,4 +1,4 @@
-package org.jruby.parser;
+package org.jruby.prism.parser;
 
 import jnr.ffi.Struct;
 import jnr.ffi.annotations.In;

@@ -59,7 +59,7 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 import org.prism.Nodes;
 import org.prism.Nodes.*;
-import org.jruby.parser.ParseResultPrism;
+import org.jruby.prism.parser.ParseResultPrism;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;

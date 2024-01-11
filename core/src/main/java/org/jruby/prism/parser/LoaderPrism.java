@@ -1,4 +1,4 @@
-package org.jruby.parser;
+package org.jruby.prism.parser;
 
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
