@@ -44,7 +44,7 @@ public final class JRubyFiberLocal extends JRubyExecutionContextLocal {
         super(runtime, type);
     }
 
-    @JRubyMethod(name = "with_value", required = 1)
+    @JRubyMethod(name = "with_value")
     public IRubyObject withValue(ThreadContext context, IRubyObject value, Block block) {
         final Map<Object, IRubyObject> contextVariables;
         contextVariables = getContextVariables(context);

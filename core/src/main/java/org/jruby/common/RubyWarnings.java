@@ -155,7 +155,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
         RubySymbol cat = (RubySymbol) TypeConverter.convertToType(category, runtime.getSymbol(), "to_sym");
 
-        if (runtime.getWarningCategories().contains(Category.fromId(cat.idString()))) warn(context, null, errorString);
+        if (runtime.getWarningCategories().contains(Category.fromId(cat.idString()))) warn(context, context.runtime.getKernel(), errorString);
 
         return context.nil;
     }
@@ -264,10 +264,21 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         return flag;
     }
 
-    // This used to be jrubymethod but leave recv behind for backwards compat
+    @JRubyMethod
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         TypeConverter.checkType(context, arg, context.runtime.getString());
         return warn(context, (RubyString) arg);
+    }
+
+    @JRubyMethod
+    public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
+        IRubyObject opts = TypeConverter.checkHashType(context.runtime, arg1);
+        IRubyObject ret = ArgsUtil.extractKeywordArg(context, (RubyHash) opts, "category");
+        if (ret.isNil()) {
+            return warn(context, recv, arg0);
+        } else {
+            return warnWithCategory(context, arg0, ret);
+        }
     }
 
     public static IRubyObject warn(ThreadContext context, RubyString str) {
@@ -276,36 +287,8 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         return context.nil;
     }
 
-    @JRubyMethod(required = 1, optional = 1, checkArity = false)
-    public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        int argc = Arity.checkArgumentCount(context, args, 1, 2);
-
-        if (argc > 1) {
-            IRubyObject opts = TypeConverter.checkHashType(context.runtime, args[1]);
-            IRubyObject ret = ArgsUtil.extractKeywordArg(context, (RubyHash) opts, "category");
-            if (ret.isNil()) {
-                return warn(context, recv, args[0]);
-            } else {
-                return warnWithCategory(context, args[0], ret);
-            }
-        } else {
-            return warn(context, recv, args[0]);
-        }
-    }
-
     private static JavaSites.WarningSites sites(ThreadContext context) {
         return context.sites.Warning;
-    }
-
-    /**
-     * Prints a warning, unless $VERBOSE is nil.
-     */
-    @Override
-    @Deprecated
-    public void warn(ID id, String fileName, String message) {
-        if (!runtime.warningsEnabled()) return;
-
-        warn(runtime.getCurrentContext(), runtime.newString(fileName + " warning: " + message + '\n'));
     }
 
     public enum Category {
@@ -325,6 +308,29 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
             }
 
             return null;
+        }
+    }
+
+    /**
+     * Prints a warning, unless $VERBOSE is nil.
+     */
+    @Override
+    @Deprecated
+    public void warn(ID id, String fileName, String message) {
+        if (!runtime.warningsEnabled()) return;
+
+        warn(runtime.getCurrentContext(), runtime.newString(fileName + " warning: " + message + '\n'));
+    }
+
+    @Deprecated
+    public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        switch (args.length) {
+            case 1:
+                return warn(context, recv, args[0]);
+            case 2:
+                return warn(context, recv, args[0], args[1]);
+            default:
+                throw context.runtime.newArgumentError(args.length, 1, 2);
         }
     }
 }

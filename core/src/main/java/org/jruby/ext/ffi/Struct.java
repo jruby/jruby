@@ -344,12 +344,12 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
         return RubyBoolean.newBoolean(context, getMemory().getMemoryIO().isNull());
     }
 
-    @JRubyMethod(name = "order", required = 0)
+    @JRubyMethod(name = "order")
     public final IRubyObject order(ThreadContext context) {
         return context.runtime.newSymbol(getMemoryIO().order().equals(ByteOrder.LITTLE_ENDIAN) ? "little" : "big");
     }
 
-    @JRubyMethod(name = "order", required = 1)
+    @JRubyMethod(name = "order")
     public final IRubyObject order(ThreadContext context, IRubyObject byte_order) {
         ByteOrder order = Util.parseByteOrder(context.runtime, byte_order);
         return new Struct(context.runtime, getMetaClass(), layout,

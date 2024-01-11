@@ -569,7 +569,7 @@ public abstract class RubyInteger extends RubyNumeric {
         return this;
     }
 
-    @JRubyMethod(name = "ceil", required = 1)
+    @JRubyMethod(name = "ceil")
     public abstract IRubyObject ceil(ThreadContext context, IRubyObject arg);
 
     @JRubyMethod(name = "floor")
@@ -577,7 +577,7 @@ public abstract class RubyInteger extends RubyNumeric {
         return this;
     }
 
-    @JRubyMethod(name = "floor", required = 1)
+    @JRubyMethod(name = "floor")
     public abstract IRubyObject floor(ThreadContext context, IRubyObject arg);
 
     @JRubyMethod(name = "truncate")
@@ -585,7 +585,7 @@ public abstract class RubyInteger extends RubyNumeric {
         return this;
     }
 
-    @JRubyMethod(name = "truncate", required = 1)
+    @JRubyMethod(name = "truncate")
     public abstract IRubyObject truncate(ThreadContext context, IRubyObject arg);
 
     @Override

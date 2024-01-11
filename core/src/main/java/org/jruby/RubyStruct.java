@@ -174,7 +174,9 @@ public class RubyStruct extends RubyObject {
         IRubyObject[] values = this.values;
         for (int i = 0; i < values.length; i++) {
             h = (h << 1) | (h < 0 ? 1 : 0);
-            IRubyObject hash = context.safeRecurse(HashRecursive.INSTANCE, runtime, values[i], "hash", true);
+            IRubyObject hash = context.safeRecurse(
+                    (ctx, runtime1, obj, recur) -> recur ? RubyFixnum.zero(runtime1) : invokedynamic(ctx, obj, HASH),
+                    runtime, values[i], "hash", true);
             h ^= RubyNumeric.num2long(hash);
         }
 
@@ -606,7 +608,7 @@ public class RubyStruct extends RubyObject {
         System.arraycopy(values, 0, struct.values, 0, values.length);
     }
 
-    @JRubyMethod(name = "==", required = 1)
+    @JRubyMethod(name = "==")
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         if (this == other) return context.tru;
@@ -620,7 +622,7 @@ public class RubyStruct extends RubyObject {
         return RecursiveComparator.compare(context, sites(context).op_equal, this, other);
     }
 
-    @JRubyMethod(name = "eql?", required = 1)
+    @JRubyMethod(name = "eql?")
     public IRubyObject eql_p(ThreadContext context, IRubyObject other) {
         if (this == other) return context.tru;
         if (!(other instanceof RubyStruct)) return context.fals;
@@ -696,7 +698,7 @@ public class RubyStruct extends RubyObject {
     @JRubyMethod(name = {"inspect", "to_s"})
     public RubyString inspect(final ThreadContext context) {
         // recursion guard
-        return (RubyString) context.safeRecurse(InspectRecursive.INSTANCE, this, this, "inspect", false);
+        return (RubyString) context.safeRecurse((ctx, self, obj, recur) -> self.inspectStruct(ctx, recur), this, this, "inspect", false);
     }
 
     @JRubyMethod(name = {"to_a", "deconstruct", "values"})
@@ -774,7 +776,7 @@ public class RubyStruct extends RubyObject {
         return block.isGiven() ? each_pairInternal(context, block) : enumeratorizeWithSize(context, this, "each_pair", RubyStruct::size);
     }
 
-    @JRubyMethod(name = "[]", required = 1)
+    @JRubyMethod(name = "[]")
     public IRubyObject aref(IRubyObject key) {
         return arefImpl( key, false );
     }
@@ -805,7 +807,7 @@ public class RubyStruct extends RubyObject {
         return values[newIdx];
     }
 
-    @JRubyMethod(name = "[]=", required = 2)
+    @JRubyMethod(name = "[]=")
     public IRubyObject aset(IRubyObject key, IRubyObject value) {
         if (key instanceof RubyString || key instanceof RubySymbol) {
             final String name = key.asJavaString();
@@ -940,7 +942,7 @@ public class RubyStruct extends RubyObject {
     }
 
     @Override
-    @JRubyMethod(required = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize_copy(IRubyObject arg) {
         if (this == arg) return this;
         RubyStruct original = (RubyStruct) arg;
@@ -1032,17 +1034,6 @@ public class RubyStruct extends RubyObject {
         }
     }
 
-    private static class HashRecursive implements ThreadContext.RecursiveFunctionEx<Ruby> {
-
-        static final HashRecursive INSTANCE = new HashRecursive();
-
-        @Override
-        public IRubyObject call(ThreadContext context, Ruby runtime, IRubyObject obj, boolean recur) {
-            if (recur) return RubyFixnum.zero(runtime);
-            return invokedynamic(context, obj, HASH);
-        }
-    }
-
     private static class EqualRecursive implements ThreadContext.RecursiveFunctionEx<IRubyObject> {
 
         private static final EqualRecursive INSTANCE = new EqualRecursive();
@@ -1057,15 +1048,6 @@ public class RubyStruct extends RubyObject {
                 if (!equalInternal(context, values[i], otherValues[i])) return context.fals;
             }
             return context.tru;
-        }
-    }
-
-    private static class InspectRecursive implements ThreadContext.RecursiveFunctionEx<RubyStruct> {
-
-        private static final ThreadContext.RecursiveFunctionEx INSTANCE = new InspectRecursive();
-
-        public IRubyObject call(ThreadContext context, RubyStruct self, IRubyObject obj, boolean recur) {
-            return self.inspectStruct(context, recur);
         }
     }
 

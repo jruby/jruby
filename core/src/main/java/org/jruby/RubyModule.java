@@ -838,7 +838,7 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "refine", required = 1, reads = SCOPE)
+    @JRubyMethod(name = "refine", reads = SCOPE)
     public IRubyObject refine(ThreadContext context, IRubyObject klass, Block block) {
         if (!block.isGiven()) throw context.runtime.newArgumentError("no block given");
 
@@ -950,7 +950,7 @@ public class RubyModule extends RubyObject {
         activatedRefinements.put(moduleToRefine, iclass);
     }
 
-    @JRubyMethod(name = "using", required = 1, visibility = PRIVATE, reads = {SELF, SCOPE})
+    @JRubyMethod(name = "using", visibility = PRIVATE, reads = {SELF, SCOPE})
     public IRubyObject using(ThreadContext context, IRubyObject refinedModule) {
         if (context.getFrameSelf() != this) throw context.runtime.newRuntimeError("Module#using is not called on self");
         if (context.getCurrentStaticScope().isWithinMethod()) {
@@ -1479,7 +1479,7 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "include?", required = 1)
+    @JRubyMethod(name = "include?")
     public IRubyObject include_p(ThreadContext context, IRubyObject arg) {
         if (!arg.isModule()) {
             throw context.runtime.newTypeError(arg, context.runtime.getModule());
@@ -2639,7 +2639,7 @@ public class RubyModule extends RubyObject {
     /** mri: rb_mod_init_copy
      *
      */
-    @JRubyMethod(name = "initialize_copy", required = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize_copy(IRubyObject original) {
         if (this instanceof RubyClass) {
@@ -2816,7 +2816,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_eqq
      *
      */
-    @JRubyMethod(name = "===", required = 1)
+    @JRubyMethod(name = "===")
     @Override
     public RubyBoolean op_eqq(ThreadContext context, IRubyObject obj) {
         return RubyBoolean.newBoolean(context, isInstance(obj));
@@ -2833,7 +2833,7 @@ public class RubyModule extends RubyObject {
         return this == other;
     }
 
-    @JRubyMethod(name = "==", required = 1)
+    @JRubyMethod(name = "==")
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         if(!(other instanceof RubyModule)) return context.fals;
@@ -2859,7 +2859,7 @@ public class RubyModule extends RubyObject {
     /**
     * MRI: rb_class_inherited_p
     */
-    @JRubyMethod(name = "<=", required = 1)
+    @JRubyMethod(name = "<=")
     public IRubyObject op_le(IRubyObject arg) {
         Ruby runtime = getRuntime();
 
@@ -2896,7 +2896,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_lt
     *
     */
-    @JRubyMethod(name = "<", required = 1)
+    @JRubyMethod(name = "<")
     public IRubyObject op_lt(IRubyObject obj) {
         return obj == this ? getRuntime().getFalse() : op_le(obj);
     }
@@ -2904,7 +2904,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_ge
     *
     */
-    @JRubyMethod(name = ">=", required = 1)
+    @JRubyMethod(name = ">=")
     public IRubyObject op_ge(IRubyObject obj) {
         if (!(obj instanceof RubyModule)) {
             throw getRuntime().newTypeError("compared with non class/module");
@@ -2916,7 +2916,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_gt
     *
     */
-    @JRubyMethod(name = ">", required = 1)
+    @JRubyMethod(name = ">")
     public IRubyObject op_gt(IRubyObject obj) {
         return this == obj ? getRuntime().getFalse() : op_ge(obj);
     }
@@ -2924,7 +2924,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_cmp
     *
     */
-    @JRubyMethod(name = "<=>", required = 1)
+    @JRubyMethod(name = "<=>")
     public IRubyObject op_cmp(IRubyObject obj) {
         if (this == obj) return getRuntime().newFixnum(0);
         if (!(obj instanceof RubyModule)) return getRuntime().getNil();
@@ -3215,7 +3215,7 @@ public class RubyModule extends RubyObject {
         return instanceMethods(args, PUBLIC, false, false);
     }
 
-    @JRubyMethod(name = "instance_method", required = 1, reads = SCOPE)
+    @JRubyMethod(name = "instance_method", reads = SCOPE)
     public IRubyObject instance_method(ThreadContext context, IRubyObject symbol) {
         return newMethod(null, TypeConverter.checkID(symbol).idString(), context.getCurrentStaticScope(), false, null);
     }
@@ -3224,7 +3224,7 @@ public class RubyModule extends RubyObject {
         return newMethod(null, TypeConverter.checkID(symbol).idString(), false, null);
     }
 
-    @JRubyMethod(name = "public_instance_method", required = 1)
+    @JRubyMethod(name = "public_instance_method")
     public IRubyObject public_instance_method(IRubyObject symbol) {
         return newMethod(null, TypeConverter.checkID(symbol).idString(), false, PUBLIC);
     }
@@ -3274,7 +3274,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_prepend_features
      *
      */
-    @JRubyMethod(name = "prepend_features", required = 1, visibility = PRIVATE)
+    @JRubyMethod(name = "prepend_features", visibility = PRIVATE)
     public RubyModule prepend_features(IRubyObject include) {
         if (!isModule()) {
             throw getRuntime().newTypeError(this, getRuntime().getModule());
@@ -3294,7 +3294,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_append_features
      *
      */
-    @JRubyMethod(name = "append_features", required = 1, visibility = PRIVATE)
+    @JRubyMethod(name = "append_features", visibility = PRIVATE)
     public RubyModule append_features(IRubyObject include) {
         if (!isModule()) {
             throw getRuntime().newTypeError(this, getRuntime().getModule());
@@ -3314,7 +3314,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_extend_object
      *
      */
-    @JRubyMethod(name = "extend_object", required = 1, visibility = PRIVATE)
+    @JRubyMethod(name = "extend_object", visibility = PRIVATE)
     public IRubyObject extend_object(IRubyObject obj) {
         if (!isModule()) throw getRuntime().newTypeError(this, getRuntime().getModule());
 
@@ -3349,7 +3349,7 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "include", required = 1) // most common path: include Enumerable
+    @JRubyMethod(name = "include") // most common path: include Enumerable
     public RubyModule include(ThreadContext context, IRubyObject module) {
         if (isRefinement()) throw context.runtime.newTypeError("Refinement#include has been removed");
 
@@ -3360,12 +3360,12 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "included", required = 1, visibility = PRIVATE)
+    @JRubyMethod(name = "included", visibility = PRIVATE)
     public IRubyObject included(ThreadContext context, IRubyObject other) {
         return context.nil;
     }
 
-    @JRubyMethod(name = "extended", required = 1, visibility = PRIVATE)
+    @JRubyMethod(name = "extended", visibility = PRIVATE)
     public IRubyObject extended(ThreadContext context, IRubyObject other, Block block) {
         return context.nil;
     }
@@ -3552,17 +3552,17 @@ public class RubyModule extends RubyObject {
         return context.nil;
     }
 
-    @JRubyMethod(name = "method_added", required = 1, visibility = PRIVATE)
+    @JRubyMethod(name = "method_added", visibility = PRIVATE)
     public IRubyObject method_added(ThreadContext context, IRubyObject nothing) {
         return context.nil;
     }
 
-    @JRubyMethod(name = "method_removed", required = 1, visibility = PRIVATE)
+    @JRubyMethod(name = "method_removed", visibility = PRIVATE)
     public IRubyObject method_removed(ThreadContext context, IRubyObject nothing) {
         return context.nil;
     }
 
-    @JRubyMethod(name = "method_undefined", required = 1, visibility = PRIVATE)
+    @JRubyMethod(name = "method_undefined", visibility = PRIVATE)
     public IRubyObject method_undefined(ThreadContext context, IRubyObject nothing) {
         return context.nil;
     }
@@ -3657,7 +3657,7 @@ public class RubyModule extends RubyObject {
      * @param oldId the current name of the method
      * @return the new name
      */
-    @JRubyMethod(name = "alias_method", required = 2)
+    @JRubyMethod(name = "alias_method")
     public IRubyObject aliasMethod(ThreadContext context, IRubyObject newId, IRubyObject oldId) {
         RubySymbol newSym = TypeConverter.checkID(newId);
         RubySymbol oldSym = TypeConverter.checkID(oldId); //  MRI uses rb_to_id but we return existing symbol
@@ -4008,7 +4008,7 @@ public class RubyModule extends RubyObject {
     ////////////////// CLASS VARIABLE RUBY METHODS ////////////////
     //
 
-    @JRubyMethod(name = "class_variable_defined?", required = 1)
+    @JRubyMethod(name = "class_variable_defined?")
     public IRubyObject class_variable_defined_p(ThreadContext context, IRubyObject var) {
         String id = validateClassVariable(context.runtime, var);
 
@@ -4190,31 +4190,21 @@ public class RubyModule extends RubyObject {
         return mod.getConstantSkipAutoload(id, inherit, inherit) != null;
     }
 
-    public IRubyObject const_get(IRubyObject symbol) {
-        return const_get(getRuntime().getCurrentContext(), new IRubyObject[]{symbol});
+    // MRI: rb_mod_const_get
+    @JRubyMethod(name = "const_get")
+    public IRubyObject const_get(ThreadContext context, IRubyObject arg0) {
+        return constGetCommon(context, arg0, true);
     }
 
-    @Deprecated
-    public IRubyObject const_get_1_9(ThreadContext context, IRubyObject[] args) {
-        return const_get(context, args);
+    // MRI: rb_mod_const_get
+    @JRubyMethod(name = "const_get")
+    public IRubyObject const_get(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        return constGetCommon(context, arg0, arg1.isTrue());
     }
 
-    @Deprecated
-    public IRubyObject const_get_2_0(ThreadContext context, IRubyObject[] args) {
-        return const_get(context, args);
-    }
-
-    /** rb_mod_const_get
-     *
-     */
-    @JRubyMethod(name = "const_get", required = 1, optional = 1, checkArity = false)
-    public IRubyObject const_get(ThreadContext context, IRubyObject... args) {
-        int argc = Arity.checkArgumentCount(context, args, 1, 2);
-
+    private IRubyObject constGetCommon(ThreadContext context, IRubyObject symbol, boolean inherit) {
         final Ruby runtime = context.runtime;
-        boolean inherit = argc == 1 || ( ! args[1].isNil() && args[1].isTrue() );
 
-        final IRubyObject symbol = args[0];
         RubySymbol fullName = TypeConverter.checkID(symbol);
         String name = fullName.idString();
 
@@ -4355,13 +4345,13 @@ public class RubyModule extends RubyObject {
     /** rb_mod_const_set
      *
      */
-    @JRubyMethod(name = "const_set", required = 2)
+    @JRubyMethod(name = "const_set")
     public IRubyObject const_set(IRubyObject name, IRubyObject value) {
         ThreadContext context = getRuntime().getCurrentContext();
         return setConstant(validateConstant(name), value, context.getFile(), context.getLine() + 1);
     }
 
-    @JRubyMethod(name = "remove_const", required = 1, visibility = PRIVATE)
+    @JRubyMethod(name = "remove_const", visibility = PRIVATE)
     public IRubyObject remove_const(ThreadContext context, IRubyObject rubyName) {
         String id = validateConstant(rubyName);
         IRubyObject value = deleteConstant(id);
@@ -4396,7 +4386,7 @@ public class RubyModule extends RubyObject {
      * @param rubyName The constant name which was found to be missing
      * @return Nothing! Absolutely nothing! (though subclasses might choose to return something)
      */
-    @JRubyMethod(name = "const_missing", required = 1)
+    @JRubyMethod(name = "const_missing")
     public IRubyObject const_missing(ThreadContext context, IRubyObject rubyName, Block block) {
         Ruby runtime = context.runtime;
 
@@ -4577,7 +4567,7 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "prepended", required = 1, visibility = PRIVATE)
+    @JRubyMethod(name = "prepended", visibility = PRIVATE)
     public IRubyObject prepended(ThreadContext context, IRubyObject other) {
         return context.nil;
     }
@@ -6257,4 +6247,29 @@ public class RubyModule extends RubyObject {
     private static final MethodHandle testModuleMatch = Binder
             .from(boolean.class, ThreadContext.class, IRubyObject.class, int.class)
             .invokeStaticQuiet(LOOKUP, RubyModule.class, "testModuleMatch");
+
+    @Deprecated
+    public IRubyObject const_get(IRubyObject symbol) {
+        return const_get(getRuntime().getCurrentContext(), symbol);
+    }
+
+    @Deprecated
+    public IRubyObject const_get(ThreadContext context, IRubyObject... args) {
+        int argc = Arity.checkArgumentCount(context, args, 1, 2);
+
+        boolean inherit = argc == 1 || ( ! args[1].isNil() && args[1].isTrue() );
+
+        final IRubyObject symbol = args[0];
+        return constGetCommon(context, symbol, inherit);
+    }
+
+    @Deprecated
+    public IRubyObject const_get_1_9(ThreadContext context, IRubyObject[] args) {
+        return const_get(context, args);
+    }
+
+    @Deprecated
+    public IRubyObject const_get_2_0(ThreadContext context, IRubyObject[] args) {
+        return const_get(context, args);
+    }
 }

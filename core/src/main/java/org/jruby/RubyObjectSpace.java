@@ -109,13 +109,13 @@ public class RubyObjectSpace {
         return block.getBinding().getSelf() == object;
     }
 
-    @JRubyMethod(required = 1, module = true, visibility = PRIVATE)
+    @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject undefine_finalizer(IRubyObject recv, IRubyObject obj, Block block) {
         recv.getRuntime().getObjectSpace().removeFinalizers(RubyNumeric.fix2long(obj.id()));
         return recv;
     }
 
-    @JRubyMethod(name = "_id2ref", required = 1, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "_id2ref", module = true, visibility = PRIVATE)
     public static IRubyObject id2ref(IRubyObject recv, IRubyObject id) {
         final Ruby runtime = id.getRuntime();
         if (!(id instanceof RubyFixnum)) {

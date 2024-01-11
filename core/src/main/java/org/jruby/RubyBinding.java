@@ -106,7 +106,7 @@ public class RubyBinding extends RubyObject {
         return this;
     }
     
-    @JRubyMethod(name = "initialize_copy", required = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize_copy(IRubyObject other) {
         RubyBinding otherBinding = (RubyBinding)other;

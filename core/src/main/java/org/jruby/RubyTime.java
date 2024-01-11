@@ -561,7 +561,7 @@ public class RubyTime extends RubyObject {
         return t;
     }
 
-    @JRubyMethod(required = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize_copy(IRubyObject original) {
         if (!(original instanceof RubyTime)) {
@@ -689,13 +689,13 @@ public class RubyTime extends RubyObject {
         return strftime(getRuntime().getCurrentContext(), format);
     }
 
-    @JRubyMethod(required = 1)
+    @JRubyMethod
     public RubyString strftime(ThreadContext context, IRubyObject format) {
         final RubyDateFormatter rdf = context.getRubyDateFormatter();
         return rdf.compileAndFormat(format.convertToString().getByteList(), false, dt, nsec, null);
     }
 
-    @JRubyMethod(name = "==", required = 1)
+    @JRubyMethod(name = "==")
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
@@ -719,7 +719,7 @@ public class RubyTime extends RubyObject {
         return cmpResult;
     }
 
-    @JRubyMethod(name = ">=", required = 1)
+    @JRubyMethod(name = ">=")
     public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
             return RubyBoolean.newBoolean(context, safeCmp(context, this, other) >= 0);
@@ -728,7 +728,7 @@ public class RubyTime extends RubyObject {
         return RubyComparable.op_ge(context, this, other);
     }
 
-    @JRubyMethod(name = ">", required = 1)
+    @JRubyMethod(name = ">")
     public IRubyObject op_gt(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
             return RubyBoolean.newBoolean(context, safeCmp(context, this, other) > 0);
@@ -737,7 +737,7 @@ public class RubyTime extends RubyObject {
         return RubyComparable.op_gt(context, this, other);
     }
 
-    @JRubyMethod(name = "<=", required = 1)
+    @JRubyMethod(name = "<=")
     public IRubyObject op_le(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
             return RubyBoolean.newBoolean(context, safeCmp(context, this, other) <= 0);
@@ -746,7 +746,7 @@ public class RubyTime extends RubyObject {
         return RubyComparable.op_le(context, this, other);
     }
 
-    @JRubyMethod(name = "<", required = 1)
+    @JRubyMethod(name = "<")
     public IRubyObject op_lt(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
             return RubyBoolean.newBoolean(context, safeCmp(context, this, other) < 0);
@@ -776,7 +776,7 @@ public class RubyTime extends RubyObject {
         return op_plus(getRuntime().getCurrentContext(), other);
     }
 
-    @JRubyMethod(name = "+", required = 1)
+    @JRubyMethod(name = "+")
     public IRubyObject op_plus(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
             throw context.runtime.newTypeError("time + time?");
@@ -823,7 +823,7 @@ public class RubyTime extends RubyObject {
         return op_minus(getRuntime().getCurrentContext(), other);
     }
 
-    @JRubyMethod(name = "-", required = 1)
+    @JRubyMethod(name = "-")
     public IRubyObject op_minus(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) return opMinus(context.runtime, (RubyTime) other);
 
@@ -859,7 +859,7 @@ public class RubyTime extends RubyObject {
         return newTime;
     }
 
-    @JRubyMethod(name = "===", required = 1)
+    @JRubyMethod(name = "===")
     @Override
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
@@ -869,7 +869,7 @@ public class RubyTime extends RubyObject {
         return context.fals;
     }
 
-    @JRubyMethod(name = "<=>", required = 1)
+    @JRubyMethod(name = "<=>")
     @Override
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
@@ -879,7 +879,7 @@ public class RubyTime extends RubyObject {
         return invcmp(context, sites(context).recursive_cmp, this, other);
     }
 
-    @JRubyMethod(name = "eql?", required = 1)
+    @JRubyMethod(name = "eql?")
     @Override
     public IRubyObject eql_p(IRubyObject other) {
         if (other instanceof RubyTime) {

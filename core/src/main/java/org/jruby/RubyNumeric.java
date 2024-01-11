@@ -605,22 +605,25 @@ public class RubyNumeric extends RubyObject {
     }
 
     protected final IRubyObject coerceBit(ThreadContext context, JavaSites.CheckedSites site, IRubyObject other) {
-        RubyArray ary = doCoerce(context, other, true);
-        final IRubyObject x = ary.eltOk(0);
-        IRubyObject y = ary.eltOk(1);
-        IRubyObject ret = context.safeRecurse(new ThreadContext.RecursiveFunctionEx<JavaSites.CheckedSites>() {
-            @Override
-            public IRubyObject call(ThreadContext context, JavaSites.CheckedSites site, IRubyObject obj, boolean recur) {
-                if (recur) {
-                    throw context.runtime.newNameError(str(context.runtime, "recursive call to ", ids(context.runtime, site.methodName)), context.runtime.newSymbol(site.methodName));
-                }
-                return getMetaClass(x).finvokeChecked(context, x, site, obj);
-            }
-        }, site, y, site.methodName, true);
+        IRubyObject ret = context.safeRecurse(RubyNumeric::coerceBitRecursive, site, doCoerce(context, other, true), site.methodName, true);
         if (ret == null) {
             coerceFailed(context, other);
         }
         return ret;
+    }
+
+    private static IRubyObject coerceBitRecursive(ThreadContext context, JavaSites.CheckedSites site, IRubyObject _array, boolean recur) {
+        if (recur) {
+            Ruby runtime = context.runtime;
+            String methodName = site.methodName;
+            throw runtime.newNameError(str(runtime, "recursive call to ", ids(runtime, methodName)), runtime.newSymbol(methodName));
+        }
+
+        RubyArray array = (RubyArray) _array;
+        IRubyObject x = array.eltOk(0);
+        IRubyObject y = array.eltOk(1);
+
+        return getMetaClass(x).finvokeChecked(context, x, site, y);
     }
 
     /** rb_num_coerce_cmp
@@ -1649,11 +1652,47 @@ public class RubyNumeric extends RubyObject {
     }
 
     public static IRubyObject numFuncall(ThreadContext context, IRubyObject x, CallSite site) {
-        return context.safeRecurse(new NumFuncall0(), site, x, site.methodName, true);
+        return context.safeRecurse(RubyNumeric::numFuncall0, site, x, site.methodName, true);
     }
 
     public static IRubyObject numFuncall(ThreadContext context, final IRubyObject x, CallSite site, final IRubyObject value) {
         return context.safeRecurse(new NumFuncall1(value), site, x, site.methodName, true);
+    }
+
+    private static IRubyObject numFuncall0(ThreadContext context, CallSite site, IRubyObject obj, boolean recur) {
+        if (recur) {
+            String name = site.methodName;
+            if (name.length() > 0 && Character.isLetterOrDigit(name.charAt(0))) {
+                throw context.runtime.newNameError(name, obj, name);
+            } else if (name.length() == 2 && name.charAt(1) == '@') {
+                throw context.runtime.newNameError(name, obj, name.substring(0, 1));
+            } else {
+                throw context.runtime.newNameError(name, obj, name);
+            }
+        }
+        return site.call(context, obj, obj);
+    }
+
+    private static class NumFuncall1 implements ThreadContext.RecursiveFunctionEx<CallSite> {
+        private final IRubyObject value;
+
+        public NumFuncall1(IRubyObject value) {
+            this.value = value;
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, CallSite site, IRubyObject obj, boolean recur) {
+            if (recur) {
+                String name = site.methodName;
+                Ruby runtime = context.runtime;
+                if (name.length() > 0 && Character.isLetterOrDigit(name.charAt(0))) {
+                    throw runtime.newNameError(name, obj, name);
+                } else {
+                    throw runtime.newNameError(name, obj, name);
+                }
+            }
+            return site.call(context, obj, obj, value);
+        }
     }
 
     // MRI: macro FIXABLE, RB_FIXABLE
@@ -1688,44 +1727,6 @@ public class RubyNumeric extends RubyObject {
     // MRI: macro NEGFIXABLE, RB_NEGFIXABLE
     public static boolean negFixable(double l) {
         return l >= RubyFixnum.MIN;
-    }
-
-    private static class NumFuncall1 implements ThreadContext.RecursiveFunctionEx<CallSite> {
-        private final IRubyObject value;
-
-        public NumFuncall1(IRubyObject value) {
-            this.value = value;
-        }
-
-        @Override
-        public IRubyObject call(ThreadContext context, CallSite site, IRubyObject obj, boolean recur) {
-            if (recur) {
-                String name = site.methodName;
-                if (name.length() > 0 && Character.isLetterOrDigit(name.charAt(0))) {
-                    throw context.runtime.newNameError(name, obj, name);
-                } else {
-                    throw context.runtime.newNameError(name, obj, name);
-                }
-            }
-            return site.call(context, obj, obj, value);
-        }
-    }
-
-    private static class NumFuncall0 implements ThreadContext.RecursiveFunctionEx<CallSite> {
-        @Override
-        public IRubyObject call(ThreadContext context, CallSite site, IRubyObject obj, boolean recur) {
-            if (recur) {
-                String name = site.methodName;
-                if (name.length() > 0 && Character.isLetterOrDigit(name.charAt(0))) {
-                    throw context.runtime.newNameError(name, obj, name);
-                } else if (name.length() == 2 && name.charAt(1) == '@') {
-                    throw context.runtime.newNameError(name, obj, name.substring(0,1));
-                } else {
-                    throw context.runtime.newNameError(name, obj, name);
-                }
-            }
-            return site.call(context, obj, obj);
-        }
     }
 
     @Deprecated

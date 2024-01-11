@@ -40,7 +40,7 @@ import java.nio.ByteBuffer;
 @JRubyModule(name="Etc")
 public class RubyEtc {
     public static class IOExt {
-        @JRubyMethod(required = 1)
+        @JRubyMethod
         public static synchronized IRubyObject pathconf(ThreadContext context, IRubyObject recv, IRubyObject arg) {
             Pathconf name = Pathconf.valueOf(RubyNumeric.num2long(arg));
             RubyIO io = (RubyIO) recv;
@@ -159,7 +159,7 @@ public class RubyEtc {
         return RubyArray.newArrayMayCopy(runtime, arr);
     }
     
-    @JRubyMethod(required = 1, module = true)
+    @JRubyMethod(module = true)
     public static synchronized IRubyObject sysconf(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         Ruby runtime = context.runtime;
         Sysconf name = Sysconf.valueOf(RubyNumeric.num2long(arg));
@@ -181,7 +181,7 @@ public class RubyEtc {
         return RubyFixnum.newFixnum(runtime, ret);
     }
     
-    @JRubyMethod(required = 1, module = true)
+    @JRubyMethod(module = true)
     public static synchronized IRubyObject confstr(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         Confstr name = Confstr.valueOf(RubyNumeric.num2long(arg));
         ByteBuffer buf;
@@ -244,7 +244,7 @@ public class RubyEtc {
         }
     }
 
-    @JRubyMethod(required=1, module = true)
+    @JRubyMethod(module = true)
     public static synchronized IRubyObject getpwnam(IRubyObject recv, IRubyObject name) {
         Ruby runtime = recv.getRuntime();
         String nam = name.convertToString().toString();
@@ -373,7 +373,7 @@ public class RubyEtc {
         }
     }
 
-    @JRubyMethod(required=1, module = true)
+    @JRubyMethod(module = true)
     public static synchronized IRubyObject getgrnam(IRubyObject recv, IRubyObject name) {
         Ruby runtime = recv.getRuntime();
         String nam = name.convertToString().toString();

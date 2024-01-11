@@ -190,7 +190,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return realIo;
     }
 
-    @JRubyMethod(name = {"append", "<<"}, required = 1)
+    @JRubyMethod(name = {"append", "<<"})
     public IRubyObject append(IRubyObject p1) {
         this.write(p1);
         
@@ -223,7 +223,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return RubyNumeric.int2fix(getRuntime(), io.getTotalIn());
     }
 
-    @JRubyMethod(name = "orig_name=", required = 1)
+    @JRubyMethod(name = "orig_name=")
     public IRubyObject set_orig_name(IRubyObject obj) {
         nullFreeOrigName = obj.convertToString().strDup(getRuntime());
         ensureNonNull(nullFreeOrigName);
@@ -237,7 +237,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return obj;
     }
 
-    @JRubyMethod(name = "comment=", required = 1)
+    @JRubyMethod(name = "comment=")
     public IRubyObject set_comment(IRubyObject obj) {
         nullFreeComment = obj.convertToString().strDup(getRuntime());
         ensureNonNull(nullFreeComment);
@@ -260,7 +260,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         }
     }
 
-    @JRubyMethod(name = "putc", required = 1)
+    @JRubyMethod(name = "putc")
     public IRubyObject putc(IRubyObject p1) {
         try {
             io.write(RubyNumeric.num2chr(p1));
@@ -318,7 +318,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return getRuntime().getNil();
     }
 
-    @JRubyMethod(name = "mtime=", required = 1)
+    @JRubyMethod(name = "mtime=")
     public IRubyObject set_mtime(IRubyObject arg) {
         Ruby runtime = getRuntime();
 
@@ -352,7 +352,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return getRuntime().newFixnum(crc);
     }
 
-    @JRubyMethod(name = "write", required = 1)
+    @JRubyMethod(name = "write")
     public IRubyObject write(IRubyObject p1) {
         Ruby runtime = getRuntime();
         RubyString str = p1.asString();

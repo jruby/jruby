@@ -198,7 +198,7 @@ public class RubySet extends RubyObject implements Set {
     /**
      * initialize(enum = nil, &amp;block)
      */
-    @JRubyMethod(required = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject enume, Block block) {
         if ( enume.isNil() ) return initialize(context, block);
 

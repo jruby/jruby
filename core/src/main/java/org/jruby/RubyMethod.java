@@ -44,6 +44,7 @@ import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.MethodBlockBody;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.PositionAware;
@@ -154,19 +155,19 @@ public class RubyMethod extends AbstractRubyMethod {
         return getRuntime().newFixnum(method.getSignature().arityValue());
     }
 
-    @JRubyMethod(name = "eql?", required = 1)
+    @JRubyMethod(name = "eql?")
     public IRubyObject op_eql(ThreadContext context, IRubyObject other) {
         return op_equal(context, other);
     }
 
     @Override
-    @JRubyMethod(name = "==", required = 1)
+    @JRubyMethod(name = "==")
     public RubyBoolean op_equal(ThreadContext context, IRubyObject other) {
         return RubyBoolean.newBoolean(context,  equals(other) );
     }
 
     @Override
-    @JRubyMethod(name = "===", required = 1)
+    @JRubyMethod(name = "===")
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
         return method.call(context, receiver, sourceModule, methodName, other, Block.NULL_BLOCK);
     }
@@ -364,9 +365,16 @@ public class RubyMethod extends AbstractRubyMethod {
         return Helpers.methodToParameters(context.runtime, this);
     }
 
-    @JRubyMethod(optional = 1, checkArity = false)
-    public IRubyObject curry(ThreadContext context, IRubyObject[] args) {
-        return to_proc(context).callMethod(context, "curry", args);
+    @JRubyMethod
+    public IRubyObject curry(ThreadContext context) {
+        IRubyObject proc = to_proc(context);
+        return sites(context).curry.call(context, proc, proc);
+    }
+
+    @JRubyMethod
+    public IRubyObject curry(ThreadContext context, IRubyObject arg0) {
+        IRubyObject proc = to_proc(context);
+        return sites(context).curry.call(context, proc, proc, arg0);
     }
 
     @JRubyMethod
@@ -395,6 +403,16 @@ public class RubyMethod extends AbstractRubyMethod {
 
     public IRubyObject getReceiver() {
         return receiver;
+    }
+
+    @Deprecated
+    public IRubyObject curry(ThreadContext context, IRubyObject[] args) {
+        IRubyObject proc = to_proc(context);
+        return sites(context).curry.call(context, proc, proc, args);
+    }
+
+    private static JavaSites.MethodSites sites(ThreadContext context) {
+        return context.sites.Method;
     }
 
 }

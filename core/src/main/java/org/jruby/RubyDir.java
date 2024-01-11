@@ -467,7 +467,7 @@ public class RubyDir extends RubyObject implements Closeable {
     /**
      * Changes the root directory (only allowed by super user).  Not available on all platforms.
      */
-    @JRubyMethod(name = "chroot", required = 1, meta = true, notImplemented = true)
+    @JRubyMethod(name = "chroot", meta = true, notImplemented = true)
     public static IRubyObject chroot(IRubyObject recv, IRubyObject path) {
         throw recv.getRuntime().newNotImplementedError("chroot not implemented: chroot is non-portable and is not supported.");
     }
@@ -499,7 +499,7 @@ public class RubyDir extends RubyObject implements Closeable {
         return rmdir19(recv.getRuntime().getCurrentContext(), recv, path);
     }
 
-    @JRubyMethod(name = {"rmdir", "unlink", "delete"}, required = 1, meta = true)
+    @JRubyMethod(name = {"rmdir", "unlink", "delete"}, meta = true)
     public static IRubyObject rmdir19(ThreadContext context, IRubyObject recv, IRubyObject path) {
         Ruby runtime = context.runtime;
         RubyString cleanPath = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, path));
@@ -854,7 +854,7 @@ public class RubyDir extends RubyObject implements Closeable {
      * returned by <code>tell</code> or 0.
      */
 
-    @JRubyMethod(name = "seek", required = 1)
+    @JRubyMethod(name = "seek")
     public IRubyObject seek(IRubyObject newPos) {
         checkDir();
 
@@ -862,7 +862,7 @@ public class RubyDir extends RubyObject implements Closeable {
         return this;
     }
 
-    @JRubyMethod(name = "pos=", required = 1)
+    @JRubyMethod(name = "pos=")
     public IRubyObject set_pos(IRubyObject newPos) {
         int pos2 = RubyNumeric.fix2int(newPos);
         if (pos2 >= 0) this.pos = pos2;

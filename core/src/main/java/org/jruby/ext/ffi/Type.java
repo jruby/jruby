@@ -215,18 +215,18 @@ public abstract class Type extends RubyObject {
         }
 
         @Override
-        @JRubyMethod(name = "==", required = 1)
+        @JRubyMethod(name = "==")
         public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
             return RubyBoolean.newBoolean(context, this.equals(obj));
         }
 
         @Override
-        @JRubyMethod(name = "equal?", required = 1)
+        @JRubyMethod(name = "equal?")
         public IRubyObject equal_p(ThreadContext context, IRubyObject obj) {
             return RubyBoolean.newBoolean(context, this.equals(obj));
         }
         
-        @JRubyMethod(name = "eql?", required = 1)
+        @JRubyMethod(name = "eql?")
         public IRubyObject eql_p(ThreadContext context, IRubyObject obj) {
             return RubyBoolean.newBoolean(context, this.equals(obj));
         }

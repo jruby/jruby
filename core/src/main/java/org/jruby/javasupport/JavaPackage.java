@@ -121,12 +121,12 @@ public class JavaPackage extends RubyModule {
         return RubyBoolean.newBoolean(context, obj == this || isInstance(obj));
     }
 
-    @JRubyMethod(name = "const_missing", required = 1)
+    @JRubyMethod(name = "const_missing")
     public IRubyObject const_missing(final ThreadContext context, final IRubyObject name) {
         return relativeJavaClassOrPackage(context, name, false);
     }
 
-    @JRubyMethod(name = "const_get", required = 1)
+    @JRubyMethod(name = "const_get")
     public final IRubyObject const_get(final ThreadContext context, final IRubyObject name) {
         // skip constant validation and do not inherit or include object
         IRubyObject constant = getConstantNoConstMissing(name.toString(), false, false);
@@ -134,7 +134,7 @@ public class JavaPackage extends RubyModule {
         return relativeJavaClassOrPackage(context, name, false); // e.g. javax.const_get(:script)
     }
 
-    @JRubyMethod(name = "const_get", required = 2)
+    @JRubyMethod(name = "const_get")
     public final IRubyObject const_get(final ThreadContext context,
         final IRubyObject name, final IRubyObject inherit) {
         IRubyObject constant = getConstantNoConstMissing(name.toString(), inherit.isTrue(), false);

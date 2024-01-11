@@ -178,7 +178,7 @@ public class RubyChain extends RubyObject {
         return total;
     }
 
-    @JRubyMethod(name = "+", required = 1)
+    @JRubyMethod(name = "+")
     public IRubyObject op_plus(ThreadContext context, IRubyObject obj) {
         return RubyChain.newChain(context, new IRubyObject[] {this, obj});
     }

@@ -1237,7 +1237,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return op_plus19(context, arg);
     }
 
-    @JRubyMethod(name = "+", required = 1)
+    @JRubyMethod(name = "+")
     public IRubyObject op_plus19(ThreadContext context, IRubyObject arg) {
         RubyString str = arg.convertToString();
         Encoding enc = checkEncoding(str);
@@ -1254,7 +1254,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return op_mul19(context, other);
     }
 
-    @JRubyMethod(name = "*", required = 1)
+    @JRubyMethod(name = "*")
     public IRubyObject op_mul19(ThreadContext context, IRubyObject other) {
         RubyString result = multiplyByteList(context, other);
         result.value.setEncoding(value.getEncoding());
@@ -1286,7 +1286,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return result;
     }
 
-    @JRubyMethod(name = "%", required = 1)
+    @JRubyMethod(name = "%")
     public RubyString op_format(ThreadContext context, IRubyObject arg) {
         IRubyObject tmp;
         if (arg instanceof RubyHash) {
@@ -1499,13 +1499,13 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return replace19(other);
     }
 
-    @JRubyMethod(name = "initialize_copy", required = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
     @Override
     public RubyString initialize_copy(IRubyObject other) {
         return replace19(other);
     }
 
-    @JRubyMethod(name = "replace", required = 1)
+    @JRubyMethod(name = "replace")
     public RubyString replace19(IRubyObject other) {
         modifyCheck();
         if (this == other) return this;
@@ -1733,7 +1733,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return match19(context, pattern, Block.NULL_BLOCK);
     }
 
-    @JRubyMethod(name = "match", required = 1, writes = BACKREF)
+    @JRubyMethod(name = "match", writes = BACKREF)
     public IRubyObject match19(ThreadContext context, IRubyObject pattern, Block block) {
         RubyRegexp coercedPattern = getPattern(context.runtime, pattern);
         IRubyObject result = sites(context).match.call(context, coercedPattern, coercedPattern, this);

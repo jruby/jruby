@@ -92,7 +92,7 @@ public class FileDescriptorIO extends RubyIO {
         return new FileDescriptorIO(context.runtime, fd);
     }
 
-    @JRubyMethod(name = "wrap", required = 1, meta = true)
+    @JRubyMethod(name = "wrap", meta = true)
     public static RubyIO wrap(ThreadContext context, IRubyObject recv, IRubyObject fd) {
         return new FileDescriptorIO(context.runtime, fd);
     }
