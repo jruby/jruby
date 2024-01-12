@@ -91,7 +91,7 @@ public class ParserPrism extends Parser {
             populateScriptData(source, encoding, lines);
         }
 
-        ParseResult result = new ParseResultPrism(fileName, source, (Nodes.ProgramNode) res.value, nodeSource, encoding);
+        ParseResultPrism result = new ParseResultPrism(fileName, source, (Nodes.ProgramNode) res.value, nodeSource, encoding);
         if (blockScope != null) {
             if (type == MAIN) { // update TOPLEVEL_BINDNG
                 RubySymbol[] locals = ((Nodes.ProgramNode) result.getAST()).locals;
@@ -99,6 +99,7 @@ public class ParserPrism extends Parser {
                     blockScope.getStaticScope().addVariableThisScope(locals[i].idString());
                 }
                 blockScope.growIfNeeded();
+                result.setDynamicScope(blockScope);
             } else {
                 result.getStaticScope().setEnclosingScope(blockScope.getStaticScope());
             }

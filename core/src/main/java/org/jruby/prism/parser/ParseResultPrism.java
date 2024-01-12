@@ -26,8 +26,13 @@ public class ParseResultPrism implements ParseResult {
         this.encoding = encoding;
     }
 
+    public void setDynamicScope(DynamicScope scope) {
+        this.toplevelScope = scope;
+        this.rootScope = scope.getStaticScope();
+    }
+
     public DynamicScope getDynamicScope() {
-        getStaticScope();
+        if (rootScope == null) getStaticScope();
         return toplevelScope;
     }
 

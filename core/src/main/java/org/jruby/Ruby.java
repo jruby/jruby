@@ -1030,7 +1030,7 @@ public final class Ruby implements Constantizable {
 
     public ParseResult parseFromMain(String fileName, InputStream in) {
         return getParserManager().parseMainFile(fileName, 0, in, setupSourceEncoding(UTF8Encoding.INSTANCE),
-                getCurrentContext().getCurrentScope(), config.isInlineScript() ? INLINE : MAIN);
+                getTopLevelBinding().getBinding().getDynamicScope(), config.isInlineScript() ? INLINE : MAIN);
     }
 
     /**
@@ -4927,6 +4927,14 @@ public final class Ruby implements Constantizable {
         setVerbose(verbose);
     }
 
+    public void setTopLevelBinding(RubyBinding rubyBinding) {
+        this.topLevelBinding = rubyBinding;
+    }
+
+    public RubyBinding getTopLevelBinding() {
+        return topLevelBinding;
+    }
+
     static class FStringEqual {
         RubyString string;
         public boolean equals(Object other) {
@@ -5341,6 +5349,7 @@ public final class Ruby implements Constantizable {
 
     // Default objects
     private final IRubyObject topSelf;
+    private RubyBinding topLevelBinding;
     private final RubyNil nilObject;
     private final IRubyObject[] singleNilArray;
     private final RubyBoolean trueObject;
