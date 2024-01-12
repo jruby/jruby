@@ -27,6 +27,7 @@ import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.Bignum;
 import org.jruby.ir.operands.Complex;
 import org.jruby.ir.operands.CurrentScope;
+import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.FrozenString;
 import org.jruby.ir.operands.Hash;
@@ -1287,7 +1288,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
     private Operand buildHash(Node[] elements, boolean hasAssignments) {
         List<KeyValuePair<Operand, Operand>> args = new ArrayList<>();
-        Set<String> keysHack = new HashSet<>(); // Remove once prism #2005 is fixed.
+        Set<Object> keysHack = new HashSet<>(); // Remove once prism #2005 is fixed.
         Variable hash = null;
         // Duplication checks happen when **{} are literals and not **h variable references.
         Operand duplicateCheck = fals();
@@ -1303,12 +1304,18 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
                     keyOperand = buildFrozenString((StringNode) key);
 
                     String hack = ((FrozenString) keyOperand).getByteList().toString();
-                    if (!keysHack.add(hack)) getManager().getRuntime().getWarnings().warn("key " + hack + " is duplicated and overwritten on line " + (getLine(key) + 1));
+                    if (!keysHack.add(hack)) getManager().getRuntime().getWarnings().warn("key \"" + hack + "\" is duplicated and overwritten on line " + (getLine(key) + 1));
                 } else {
                     keyOperand = build(key);
                     if (keyOperand instanceof Symbol) {
                         String hack = ((Symbol) keyOperand).getString();
                         if (!keysHack.add(hack)) getManager().getRuntime().getWarnings().warn("key :" + hack + " is duplicated and overwritten on line " + (getLine(key) + 1));
+                    } else if (keyOperand instanceof Fixnum) {
+                        long hack = ((Fixnum) keyOperand).value;
+                        if (!keysHack.add(new Long(hack))) getManager().getRuntime().getWarnings().warn("key " + hack + " is duplicated and overwritten on line " + (getLine(key) + 1));
+                    } else if (keyOperand instanceof Float) {
+                        double hack = ((Float) keyOperand).value;
+                        if (!keysHack.add(new Double(hack))) getManager().getRuntime().getWarnings().warn("key " + hack + " is duplicated and overwritten on line " + (getLine(key) + 1));
                     }
                 }
                 args.add(new KeyValuePair<>(keyOperand, buildWithOrder(((AssocNode) pair).value, hasAssignments)));
