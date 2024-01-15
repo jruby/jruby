@@ -1860,7 +1860,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         if (node.isFrozen()) {
             return new FrozenString(bytelistFrom(node), CR_UNKNOWN, scope.getFile(), getLine(node));
         } else {
-            return new MutableString(bytelistFrom(node), CR_UNKNOWN, scope.getFile(), getLine(node));
+            return copy(temp(), new MutableString(bytelistFrom(node), CR_UNKNOWN, scope.getFile(), getLine(node)));
         }
     }
 
@@ -2311,7 +2311,19 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         if (node instanceof LocalVariableWriteNode ||
                 node instanceof LocalVariableOperatorWriteNode ||
                 node instanceof LocalVariableAndWriteNode ||
-                node instanceof LocalVariableOrWriteNode) {
+                node instanceof LocalVariableOrWriteNode ||
+                node instanceof InstanceVariableWriteNode ||
+                node instanceof InstanceVariableOperatorWriteNode ||
+                node instanceof InstanceVariableAndWriteNode ||
+                node instanceof InstanceVariableOrWriteNode ||
+                node instanceof GlobalVariableWriteNode ||
+                node instanceof GlobalVariableOperatorWriteNode ||
+                node instanceof GlobalVariableAndWriteNode ||
+                node instanceof GlobalVariableOrWriteNode ||
+                node instanceof ClassVariableWriteNode ||
+                node instanceof ClassVariableOperatorWriteNode ||
+                node instanceof ClassVariableAndWriteNode ||
+                node instanceof ClassVariableOrWriteNode) {
             return true;
         }
         return false;
