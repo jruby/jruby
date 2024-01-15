@@ -45,12 +45,15 @@ import org.jruby.RubyArray;
 import org.jruby.RubyFile;
 import org.jruby.RubyHash;
 import org.jruby.RubyIO;
+import org.jruby.ast.LineStubVisitor;
 import org.jruby.ast.Node;
+import org.jruby.ast.RootNode;
 import org.jruby.lexer.ByteListLexerSource;
 import org.jruby.lexer.GetsLexerSource;
 import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadServiceResourceInputStream;
 import org.jruby.util.ByteList;
@@ -212,5 +215,16 @@ public class Parser {
         RubyArray list = length == -1 ? runtime.newArray() : runtime.newArray(length);
         ((RubyHash) scriptLines).op_aset(runtime.getCurrentContext(), runtime.newString(file), list);
         return list;
+    }
+
+    public IRubyObject getLineStub(ThreadContext context, ParseResult result, int lineCount) {
+        RubyArray lines = context.runtime.newArray();
+        LineStubVisitor lineVisitor = new LineStubVisitor(context.runtime, lines);
+        lineVisitor.visitRootNode(((RootNode) result));
+
+        for (int i = 0; i <= lineCount - lines.size(); i++) {
+            lines.append(context.nil);
+        }
+        return lines;
     }
 }

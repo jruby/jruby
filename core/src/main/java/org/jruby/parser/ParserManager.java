@@ -4,13 +4,19 @@ import org.jcodings.Encoding;
 
 import org.jruby.ParseResult;
 import org.jruby.Ruby;
+import org.jruby.RubyFile;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyString;
 import org.jruby.ir.persistence.IRReader;
 import org.jruby.ir.persistence.IRReaderStream;
 import org.jruby.ir.persistence.util.IRFileExpert;
 import org.jruby.management.ParserStats;
 import org.jruby.prism.parser.ParserPrism;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.load.LoadServiceResourceInputStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.cli.Options;
 
@@ -141,5 +147,21 @@ public class ParserManager {
         Charset charset = runtime.getDefaultCharset();
 
         return charset == null ? string.getBytes() : string.getBytes(charset);
+    }
+
+    public IRubyObject getLineStub(ThreadContext context, IRubyObject arg) {
+        ByteList contents = ((RubyString) RubyFile.read(context, arg, new IRubyObject[] { arg }, Block.NULL_BLOCK)).getByteList();
+        int begin = contents.begin();
+        int length = contents.realSize();
+        byte[] bytes = contents.unsafeBytes();
+
+        int lineCount = 0;
+        for (int i = begin; i < length; i++) {
+            if (bytes[i] == '\n') lineCount++;
+        }
+
+        // FIXME: Semantic problem.  Linenumber affects both differently due to prism being 1-indexed and AST being 0-indexed.
+        ParseResult result = parseFile("", Options.PARSER_PRISM.load() ? 0 : -1, new LoadServiceResourceInputStream(contents.bytes()), contents.getEncoding());
+        return parser.getLineStub(context, result, lineCount);
     }
 }

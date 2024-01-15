@@ -9,12 +9,15 @@ import org.jruby.RubyArray;
 import org.jruby.RubyIO;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
+import org.jruby.ext.coverage.CoverageData;
 import org.jruby.management.ParserStats;
 import org.jruby.parser.Parser;
 import org.jruby.parser.ParserManager;
 import org.jruby.parser.ParserType;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadServiceResourceInputStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.ChannelHelper;
@@ -24,6 +27,7 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 
 import static org.jruby.parser.ParserType.EVAL;
 import static org.jruby.parser.ParserType.MAIN;
@@ -86,12 +90,24 @@ public class ParserPrism extends Parser {
             runtime.defineDATA(RubyIO.newIO(runtime, ChannelHelper.readableChannel(bais)));
         }
 
-        RubyArray lines = getLines(type == EVAL, fileName, nodeSource.getLineCount());
+        int lineCount = nodeSource.getLineCount();
+        RubyArray lines = getLines(type == EVAL, fileName, lineCount);
         if (lines != null) {  // SCRIPT_DATA__ exists we need source filled in for this parse
             populateScriptData(source, encoding, lines);
         }
 
-        ParseResultPrism result = new ParseResultPrism(fileName, source, (Nodes.ProgramNode) res.value, nodeSource, encoding);
+        int coverageMode = CoverageData.NONE;
+
+        if (type != EVAL && runtime.getCoverageData().isCoverageEnabled()) {
+            int[] coverage = new int[lineCount - 1];
+            Arrays.fill(coverage, -1);
+            CoverageLineVisitor visitor = new CoverageLineVisitor(nodeSource, coverage);
+            visitor.defaultVisit(res.value);
+            runtime.getCoverageData().prepareCoverage(fileName, coverage);
+            coverageMode = runtime.getCoverageData().getMode();
+        }
+
+        ParseResultPrism result = new ParseResultPrism(fileName, source, (Nodes.ProgramNode) res.value, nodeSource, encoding, coverageMode);
         if (blockScope != null) {
             if (type == MAIN) { // update TOPLEVEL_BINDNG
                 RubySymbol[] locals = ((Nodes.ProgramNode) result.getAST()).locals;
@@ -246,5 +262,24 @@ public class ParserPrism extends Parser {
         }
 
         return count;
+    }
+
+    public IRubyObject getLineStub(ThreadContext context, ParseResult arg, int lineCount) {
+        ParseResultPrism result = (ParseResultPrism) arg;
+        int[] lines = new int[lineCount];
+        Arrays.fill(lines, -1);
+        CoverageLineVisitor lineVisitor = new CoverageLineVisitor(result.nodeSource, lines);
+        lineVisitor.defaultVisit(result.root);
+        RubyArray lineStubs = context.runtime.newArray(lineCount);
+
+        for (int i = 0; i < lines.length; i++) {
+            if (lines[i] == 0) {
+                lineStubs.set(i, context.runtime.newFixnum(0));
+            } else {
+                lineStubs.set(i, context.runtime.getNil());
+            }
+        }
+
+        return lineStubs;
     }
 }

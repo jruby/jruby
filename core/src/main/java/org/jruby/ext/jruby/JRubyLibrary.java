@@ -201,10 +201,16 @@ public class JRubyLibrary implements Library {
     @JRubyMethod(module = true, name = "parse", alias = "ast_for", required = 1, optional = 3, checkArity = false)
     public static IRubyObject parse(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         // def parse(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, lineno = 0, &block)
+        return Java.wrapJavaObject(context.runtime, parseImpl(context, args, block).getAST());
+    }
+
+    @JRubyMethod(module = true, name = "parse_result", required = 1, optional = 3, checkArity = false)
+    public static IRubyObject parse_result(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        // def parse(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, lineno = 0, &block)
         return Java.wrapJavaObject(context.runtime, parseImpl(context, args, block));
     }
 
-    private static Node parseImpl(ThreadContext context, IRubyObject[] args, Block block) {
+    private static ParseResult parseImpl(ThreadContext context, IRubyObject[] args, Block block) {
         if (block.isGiven()) {
             throw context.runtime.newNotImplementedError("JRuby.parse with block returning AST no longer supported");
         }
@@ -238,9 +244,9 @@ public class JRubyLibrary implements Library {
         Encoding encoding = content.getEncoding() == ASCIIEncoding.INSTANCE ? context.runtime.setupSourceEncoding(UTF8Encoding.INSTANCE) : bytes.getEncoding();
 
         if (inlineSource) {
-            return (Node) context.runtime.getParserManager().parseMainFile(filename, lineno, stream, encoding, context.getCurrentScope(), INLINE).getAST();
+            return context.runtime.getParserManager().parseMainFile(filename, lineno, stream, encoding, context.getCurrentScope(), INLINE);
         } else {
-            return (Node) context.runtime.getParserManager().parseFile(filename, lineno, stream, encoding).getAST();
+            return context.runtime.getParserManager().parseFile(filename, lineno, stream, encoding);
         }
     }
 
@@ -251,10 +257,10 @@ public class JRubyLibrary implements Library {
     }
 
     private static IRScriptBody compileIR(ThreadContext context, IRubyObject[] args, Block block) {
-        RootNode node = (RootNode) parseImpl(context, args, block);
+        ParseResult result = parseImpl(context, args, block);
         IRManager manager = new IRManager(context.runtime, context.runtime.getInstanceConfig());
-        IRScriptBody scope = (IRScriptBody) IRBuilderAST.buildRoot(manager, node).getScope();
-        scope.setScriptDynamicScope(node.getDynamicScope());
+        IRScriptBody scope = (IRScriptBody) IRBuilderAST.buildRoot(manager, result).getScope();
+        scope.setScriptDynamicScope(result.getDynamicScope());
         scope.getStaticScope().setIRScope(scope);
         return scope;
     }

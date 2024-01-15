@@ -15,15 +15,18 @@ public class ParseResultPrism implements ParseResult {
     final Nodes.Source nodeSource;
     final String fileName;
     final byte[] source;
+    final int coverageMode;
 
     DynamicScope toplevelScope;
 
-    public ParseResultPrism(String fileName, byte[] source, Nodes.ProgramNode root, Nodes.Source nodeSource, Encoding encoding) {
+    public ParseResultPrism(String fileName, byte[] source, Nodes.ProgramNode root, Nodes.Source nodeSource,
+                            Encoding encoding, int coverageMode) {
         this.root = root;
         this.fileName = fileName;
         this.source = source;
         this.nodeSource = nodeSource;
         this.encoding = encoding;
+        this.coverageMode = coverageMode;
     }
 
     public void setDynamicScope(DynamicScope scope) {
@@ -57,10 +60,9 @@ public class ParseResultPrism implements ParseResult {
         return fileName;
     }
 
-    // FIXME: Missing
     @Override
     public int getCoverageMode() {
-        return 0;
+        return coverageMode;
     }
 
     public Nodes.ProgramNode getRoot() {
