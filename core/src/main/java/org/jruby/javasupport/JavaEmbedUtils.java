@@ -32,6 +32,7 @@ import java.io.InputStream;
 import java.util.List;
 
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.ParseResult;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyInstanceConfig;
@@ -162,7 +163,7 @@ public class JavaEmbedUtils {
              * @return an object which can be run
              */
             public EvalUnit parse(Ruby runtime, String script, String filename, int lineNumber) {
-                return new InterpretedEvalUnit(runtime, (Node) runtime.getParserManager().parseEval(filename, lineNumber, script, null).getAST());
+                return new InterpretedEvalUnit(runtime, runtime.getParserManager().parseEval(filename, lineNumber, script, null));
             }
 
             /**
@@ -175,7 +176,7 @@ public class JavaEmbedUtils {
              * @return an object which can be run
              */
             public EvalUnit parse(Ruby runtime, InputStream in, String filename, int lineNumber) {
-                return new InterpretedEvalUnit(runtime, (Node) runtime.getParserManager().parseFile(filename, lineNumber, in, runtime.setupSourceEncoding(UTF8Encoding.INSTANCE)).getAST());
+                return new InterpretedEvalUnit(runtime, runtime.getParserManager().parseFile(filename, lineNumber, in, runtime.setupSourceEncoding(UTF8Encoding.INSTANCE)));
             }
         };
     }
@@ -196,15 +197,20 @@ public class JavaEmbedUtils {
      */
     public static class InterpretedEvalUnit implements EvalUnit {
         private final Ruby runtime;
-        private final Node node;
+        private final ParseResult result;
 
-        protected InterpretedEvalUnit(Ruby runtime, Node node) {
+        protected InterpretedEvalUnit(Ruby runtime, ParseResult result) {
             this.runtime = runtime;
-            this.node = node;
+            this.result = result;
+        }
+
+        @Deprecated
+        protected InterpretedEvalUnit(Ruby runtime, Node node) {
+            this(runtime, (ParseResult) node);
         }
 
         public IRubyObject run() {
-            return runtime.runInterpreter(node);
+            return runtime.runInterpreter(result);
         }
     }
 

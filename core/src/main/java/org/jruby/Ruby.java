@@ -961,12 +961,7 @@ public final class Ruby implements Constantizable {
             if (config.isAssumePrinting() || config.isAssumeLoop()) {
                 runWithGetsLoop(result, config.isAssumePrinting(), config.isProcessLineEnds(), config.isSplit());
             } else {
-                try {
-                    // FIXME: We need prism to compile
-                    runNormally((RootNode) result);
-                } catch (Throwable t) {
-                    runInterpreter(result);
-                }
+                runNormally(result, getTopSelf(), false);
             }
         } finally {
             context.setFileAndLine(oldFile, oldLine);
@@ -1066,7 +1061,7 @@ public final class Ruby implements Constantizable {
         if (compile) {
             try {
                 // FIXME: prism will always fail until this becomes parseresult (will fall back to interp)
-                script = tryCompile((RootNode) scriptNode);
+                script = tryCompile(scriptNode);
                 if (Options.JIT_LOGGING.load()) {
                     LOG.info("successfully compiled: {}", scriptNode.getFile());
                 }
@@ -1115,15 +1110,21 @@ public final class Ruby implements Constantizable {
  *     @param wrap whether to wrap the execution in an anonymous module
      * @return The result of executing the script
      */
+    @Deprecated
     public IRubyObject runNormally(Node scriptNode, boolean wrap) {
         return runNormally(scriptNode, getTopSelf(), wrap);
     }
 
+    @Deprecated
     public IRubyObject runNormally(Node scriptNode, IRubyObject self, boolean wrap) {
+        return runNormally((ParseResult) scriptNode, self, wrap);
+    }
+
+    public IRubyObject runNormally(ParseResult scriptNode, IRubyObject self, boolean wrap) {
         ScriptAndCode scriptAndCode = null;
         boolean compile = getInstanceConfig().getCompileMode().shouldPrecompileCLI();
         if (compile || config.isShowBytecode()) {
-            scriptAndCode = precompileCLI((RootNode) scriptNode);
+            scriptAndCode = precompileCLI(scriptNode);
         }
 
         if (scriptAndCode != null) {
@@ -1151,11 +1152,12 @@ public final class Ruby implements Constantizable {
      * bytecode before execution
      * @return The result of executing the script
      */
+    @Deprecated
     public IRubyObject runNormally(Node scriptNode) {
         return runNormally(scriptNode, false);
     }
 
-    private ScriptAndCode precompileCLI(RootNode scriptNode) {
+    private ScriptAndCode precompileCLI(ParseResult scriptNode) {
         ScriptAndCode scriptAndCode = null;
 
         // IR JIT does not handle all scripts yet, so let those that fail run in interpreter instead
@@ -1180,28 +1182,32 @@ public final class Ruby implements Constantizable {
         return scriptAndCode;
     }
 
+    @Deprecated
+    public Script tryCompile(Node node) {
+        return tryCompile((ParseResult) node);
+    }
+
     /**
      * Try to compile the code associated with the given Node, returning an
      * instance of the successfully-compiled Script or null if the script could
      * not be compiled.
      *
-     * @param node The node to attempt to compiled
+     * @param result The result to attempt to compiled
      * @return an instance of the successfully-compiled Script, or null.
      */
-    public Script tryCompile(Node node) {
-        return tryCompile((RootNode) node, new ClassDefiningJRubyClassLoader(getJRubyClassLoader())).script();
+    public Script tryCompile(ParseResult result) {
+        return tryCompile(result, new ClassDefiningJRubyClassLoader(getJRubyClassLoader())).script();
     }
 
-    private ScriptAndCode tryCompile(RootNode root, ClassDefiningClassLoader classLoader) {
+    private ScriptAndCode tryCompile(ParseResult result, ClassDefiningClassLoader classLoader) {
         try {
-            return Compiler.getInstance().execute(this, root, classLoader);
+            return Compiler.getInstance().execute(this, result, classLoader);
         } catch (NotCompilableException | VerifyError e) {
             if (Options.JIT_LOGGING.load()) {
                 if (Options.JIT_LOGGING_VERBOSE.load()) {
-                    LOG.error("failed to compile target script: " + root.getFile(), e);
-                }
-                else {
-                    LOG.error("failed to compile target script: " + root.getFile() + " - " + e.getLocalizedMessage());
+                    LOG.error("failed to compile target script: " + result.getFile(), e);
+                } else {
+                    LOG.error("failed to compile target script: " + result.getFile() + " - " + e.getLocalizedMessage());
                 }
             }
             return null;
@@ -2979,15 +2985,14 @@ public final class Ruby implements Constantizable {
         }
 
         ParseResult parseResult = getParserManager().parseFile(filename, 0, in, setupSourceEncoding(UTF8Encoding.INSTANCE));
-        RootNode root = (RootNode) parseResult;
 
         if (wrap) {
-            wrapWithModule((RubyBasicObject) self, root);
+            wrapWithModule((RubyBasicObject) self, parseResult);
         } else {
-            root.getStaticScope().setModule(getObject());
+            parseResult.getStaticScope().setModule(getObject());
         }
 
-        runNormally(root, self, wrap);
+        runNormally(parseResult, self, wrap);
     }
 
     public StaticScope setupWrappedToplevel(IRubyObject self, StaticScope top) {
