@@ -45,9 +45,18 @@ import org.jruby.RubyArray;
 import org.jruby.RubyFile;
 import org.jruby.RubyHash;
 import org.jruby.RubyIO;
+import org.jruby.RubySymbol;
+import org.jruby.ast.ArrayNode;
+import org.jruby.ast.BlockNode;
+import org.jruby.ast.CallNode;
+import org.jruby.ast.FCallNode;
+import org.jruby.ast.GlobalAsgnNode;
+import org.jruby.ast.GlobalVarNode;
 import org.jruby.ast.LineStubVisitor;
 import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
+import org.jruby.ast.VCallNode;
+import org.jruby.ast.WhileNode;
 import org.jruby.lexer.ByteListLexerSource;
 import org.jruby.lexer.GetsLexerSource;
 import org.jruby.lexer.LexerSource;
@@ -57,6 +66,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadServiceResourceInputStream;
 import org.jruby.util.ByteList;
+import org.jruby.util.CommonByteLists;
 
 import static org.jruby.parser.ParserType.*;
 
@@ -227,4 +237,33 @@ public class Parser {
         }
         return lines;
     }
+
+    public ParseResult addGetsLoop(Ruby runtime, ParseResult oldRoot, boolean printing, boolean processLineEndings, boolean split) {
+        int line = oldRoot.getLine();
+        BlockNode newBody = new BlockNode(line);
+
+        if (processLineEndings) {
+            RubySymbol dollarSlash = runtime.newSymbol(CommonByteLists.DOLLAR_SLASH);
+            newBody.add(new GlobalAsgnNode(line, runtime.newSymbol(CommonByteLists.DOLLAR_BACKSLASH), new GlobalVarNode(line, dollarSlash)));
+        }
+
+        GlobalVarNode dollarUnderscore = new GlobalVarNode(line, runtime.newSymbol("$_"));
+
+        BlockNode whileBody = new BlockNode(line);
+        newBody.add(new WhileNode(line, new VCallNode(line, runtime.newSymbol("gets")), whileBody));
+
+        if (processLineEndings) whileBody.add(new CallNode(line, dollarUnderscore, runtime.newSymbol("chomp!"), null, null, false));
+        if (split) whileBody.add(new GlobalAsgnNode(line, runtime.newSymbol("$F"), new CallNode(line, dollarUnderscore, runtime.newSymbol("split"), null, null, false)));
+
+        if (((RootNode) oldRoot).getBodyNode() instanceof BlockNode) {   // common case n stmts
+            whileBody.addAll(((BlockNode) ((RootNode) oldRoot).getBodyNode()));
+        } else {                                            // single expr script
+            whileBody.add(((RootNode) oldRoot).getBodyNode());
+        }
+
+        if (printing) whileBody.add(new FCallNode(line, runtime.newSymbol("print"), new ArrayNode(line, dollarUnderscore), null));
+
+        return new RootNode(line, oldRoot.getDynamicScope(), newBody, oldRoot.getFile());
+    }
+
 }

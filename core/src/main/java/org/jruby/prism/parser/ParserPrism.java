@@ -20,15 +20,20 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadServiceResourceInputStream;
 import org.jruby.util.ByteList;
+import org.jruby.util.CommonByteLists;
 import org.jruby.util.io.ChannelHelper;
 import org.prism.Nodes;
+import org.prism.Nodes.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
+import static org.jruby.lexer.LexingCommon.DOLLAR_UNDERSCORE;
 import static org.jruby.parser.ParserType.EVAL;
 import static org.jruby.parser.ParserType.MAIN;
 
@@ -281,5 +286,51 @@ public class ParserPrism extends Parser {
         }
 
         return lineStubs;
+    }
+
+    // It looks weird to see 0 everywhere but these are all virtual instrs and if they raise during execution it will
+    // show it happening on line 1 (which is what it should do).
+    @Override
+    public ParseResult addGetsLoop(Ruby runtime, ParseResult result, boolean printing, boolean processLineEndings, boolean split) {
+        List<Nodes.Node> newBody = new ArrayList<>();
+
+        if (processLineEndings) {
+            newBody.add(new Nodes.GlobalVariableWriteNode(runtime.newSymbol(CommonByteLists.DOLLAR_BACKSLASH),
+                    new GlobalVariableReadNode(runtime.newSymbol(CommonByteLists.DOLLAR_SLASH), 0, 0), 0, 0));
+        }
+
+        Nodes.GlobalVariableReadNode dollarUnderscore = new GlobalVariableReadNode(runtime.newSymbol(DOLLAR_UNDERSCORE), 0, 0);
+
+        List<Nodes.Node> whileBody = new ArrayList<>();
+
+        if (processLineEndings) {
+            whileBody.add(new CallNode((short) 0, dollarUnderscore, runtime.newSymbol("chomp!"), null, null, 0, 0));
+        }
+        if (split) {
+            whileBody.add(new GlobalVariableWriteNode(runtime.newSymbol("$F"),
+                    new Nodes.CallNode((short) 0, dollarUnderscore, runtime.newSymbol("split"), null, null, 0, 0), 0, 0));
+        }
+
+        StatementsNode stmts = ((ProgramNode) result.getAST()).statements;
+        if (stmts != null && stmts.body != null) whileBody.addAll(Arrays.asList(stmts.body));
+
+        ArgumentsNode args = new ArgumentsNode((short) 0, new Node[] { dollarUnderscore }, 0, 0);
+        if (printing) whileBody.add(new CallNode((short) 0, null, runtime.newSymbol("print"), args, null, 0, 0));
+
+        Node[] nodes = new Node[whileBody.size()];
+        whileBody.toArray(nodes);
+        StatementsNode statements = new StatementsNode(nodes, 0, 0);
+
+        newBody.add(new WhileNode((short) 0,
+                new CallNode(CallNodeFlags.VARIABLE_CALL, null, runtime.newSymbol("gets"), null, null, 0, 0),
+                statements, 0, 0));
+
+        nodes = new Node[newBody.size()];
+        newBody.toArray(nodes);
+        Nodes.ProgramNode newRoot = new Nodes.ProgramNode(new RubySymbol[] {}, new StatementsNode(nodes, 0, 0), 0, 0);
+
+        ((ParseResultPrism) result).setRoot(newRoot);
+
+        return result;
     }
 }

@@ -43,14 +43,6 @@ package org.jruby;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.anno.FrameField;
 import org.jruby.anno.TypePopulator;
-import org.jruby.ast.ArrayNode;
-import org.jruby.ast.BlockNode;
-import org.jruby.ast.CallNode;
-import org.jruby.ast.FCallNode;
-import org.jruby.ast.GlobalAsgnNode;
-import org.jruby.ast.GlobalVarNode;
-import org.jruby.ast.VCallNode;
-import org.jruby.ast.WhileNode;
 import org.jruby.compiler.Constantizable;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.exceptions.LocalJumpError;
@@ -76,7 +68,6 @@ import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.TraceEventManager;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
-import org.jruby.util.CommonByteLists;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.MRIRecursionGuard;
 import org.jruby.util.StringSupport;
@@ -953,35 +944,32 @@ public final class Ruby implements Constantizable {
             }
         }
 
-        ParseResult parseResult = parseFromMain(filename, inputStream);
+        ParseResult result = parseFromMain(filename, inputStream);
 
         // if no DATA, we're done with the stream, shut it down
         if (fetchGlobalConstant("DATA") == null) {
             try {inputStream.close();} catch (IOException ioe) {}
         }
 
-        if (parseResult instanceof RootNode) {
-            RootNode scriptNode = (RootNode) parseResult;
+        ThreadContext context = getCurrentContext();
 
-            ThreadContext context = getCurrentContext();
+        String oldFile = context.getFile();
+        int oldLine = context.getLine();
+        try {
+            context.setFileAndLine(result.getFile(), result.getLine());
 
-            String oldFile = context.getFile();
-            int oldLine = context.getLine();
-            try {
-                context.setFileAndLine(scriptNode.getFile(), scriptNode.getLine());
-
-                if (config.isAssumePrinting() || config.isAssumeLoop()) {
-                    runWithGetsLoop(scriptNode, config.isAssumePrinting(), config.isProcessLineEnds(),
-                            config.isSplit());
-                } else {
-                    runNormally(scriptNode);
+            if (config.isAssumePrinting() || config.isAssumeLoop()) {
+                runWithGetsLoop(result, config.isAssumePrinting(), config.isProcessLineEnds(), config.isSplit());
+            } else {
+                try {
+                    // FIXME: We need prism to compile
+                    runNormally((RootNode) result);
+                } catch (Throwable t) {
+                    runInterpreter(result);
                 }
-            } finally {
-                context.setFileAndLine(oldFile, oldLine);
             }
-        } else {
-            // TODO: Only interpreter supported so far
-            runInterpreter(parseResult);
+        } finally {
+            context.setFileAndLine(oldFile, oldLine);
         }
     }
 
@@ -1066,18 +1054,19 @@ public final class Ruby implements Constantizable {
      * bytecode before executing.
      * @return The result of executing the specified script
      */
-    public IRubyObject runWithGetsLoop(RootNode scriptNode, boolean printing, boolean processLineEnds, boolean split) {
+    public IRubyObject runWithGetsLoop(ParseResult scriptNode, boolean printing, boolean processLineEnds, boolean split) {
         ThreadContext context = getCurrentContext();
 
         // We do not want special scope types in IR so we amend the AST tree to contain the elements representing
         // a while gets; ...your code...; end
-        scriptNode = addGetsLoop(scriptNode, printing, processLineEnds, split);
+        scriptNode = getParserManager().addGetsLoop(this, scriptNode, printing, processLineEnds, split);
 
         Script script = null;
         boolean compile = getInstanceConfig().getCompileMode().shouldPrecompileCLI();
         if (compile) {
             try {
-                script = tryCompile(scriptNode);
+                // FIXME: prism will always fail until this becomes parseresult (will fall back to interp)
+                script = tryCompile((RootNode) scriptNode);
                 if (Options.JIT_LOGGING.load()) {
                     LOG.info("successfully compiled: {}", scriptNode.getFile());
                 }
@@ -1101,13 +1090,13 @@ public final class Ruby implements Constantizable {
 
         // we do pre and post load outside the "body" versions to pre-prepare
         // and pre-push the dynamic scope we need for lastline
-        Helpers.preLoad(context, ((RootNode) scriptNode).getStaticScope().getVariables());
+        Helpers.preLoad(context, scriptNode.getStaticScope().getVariables());
 
         try {
             if (script != null) {
                 runScriptBody(script);
             } else {
-                runInterpreterBody(scriptNode);
+                runInterpreter(scriptNode);
             }
 
         } finally {
@@ -1115,35 +1104,6 @@ public final class Ruby implements Constantizable {
         }
 
         return getNil();
-    }
-
-    // Modifies incoming source for -n, -p, and -F
-    private RootNode addGetsLoop(RootNode oldRoot, boolean printing, boolean processLineEndings, boolean split) {
-        int line = oldRoot.getLine();
-        BlockNode newBody = new BlockNode(line);
-
-        if (processLineEndings) {
-            RubySymbol dollarSlash = newSymbol(CommonByteLists.DOLLAR_SLASH);
-            newBody.add(new GlobalAsgnNode(line, newSymbol(CommonByteLists.DOLLAR_BACKSLASH), new GlobalVarNode(line, dollarSlash)));
-        }
-
-        GlobalVarNode dollarUnderscore = new GlobalVarNode(line, newSymbol("$_"));
-
-        BlockNode whileBody = new BlockNode(line);
-        newBody.add(new WhileNode(line, new VCallNode(line, newSymbol("gets")), whileBody));
-
-        if (processLineEndings) whileBody.add(new CallNode(line, dollarUnderscore, newSymbol("chomp!"), null, null, false));
-        if (split) whileBody.add(new GlobalAsgnNode(line, newSymbol("$F"), new CallNode(line, dollarUnderscore, newSymbol("split"), null, null, false)));
-
-        if (oldRoot.getBodyNode() instanceof BlockNode) {   // common case n stmts
-            whileBody.addAll(((BlockNode) oldRoot.getBodyNode()));
-        } else {                                            // single expr script
-            whileBody.add(oldRoot.getBodyNode());
-        }
-
-        if (printing) whileBody.add(new FCallNode(line, newSymbol("print"), new ArrayNode(line, dollarUnderscore), null));
-
-        return new RootNode(line, oldRoot.getDynamicScope(), newBody, oldRoot.getFile());
     }
 
     /**

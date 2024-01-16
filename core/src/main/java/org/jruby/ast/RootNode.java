@@ -31,6 +31,7 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jcodings.Encoding;
 import org.jruby.ParseResult;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.ext.coverage.CoverageData;
@@ -129,5 +130,9 @@ public class RootNode extends Node implements ParseResult {
 
     public Object getAST() {
         return this;
+    }
+
+    public Encoding getEncoding() {
+        return null;  // AST will encode all individual nodes as appropiate so this value is not needed (but is for prism).
     }
 }

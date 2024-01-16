@@ -164,4 +164,9 @@ public class ParserManager {
         ParseResult result = parseFile("", Options.PARSER_PRISM.load() ? 0 : -1, new LoadServiceResourceInputStream(contents.bytes()), contents.getEncoding());
         return parser.getLineStub(context, result, lineCount);
     }
+
+    // Modifies incoming source for -n, -p, and -F
+    public ParseResult addGetsLoop(Ruby runtime, ParseResult oldRoot, boolean printing, boolean processLineEndings, boolean split) {
+        return parser.addGetsLoop(runtime, oldRoot, printing, processLineEndings, split);
+    }
 }

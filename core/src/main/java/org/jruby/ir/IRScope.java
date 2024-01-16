@@ -1,5 +1,6 @@
 package org.jruby.ir;
 
+import org.jcodings.Encoding;
 import org.jruby.ParseResult;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
@@ -369,6 +370,10 @@ public abstract class IRScope implements ParseResult {
 
     public void setFileName(String filename) {
         getRootLexicalScope().setFileName(filename);
+    }
+
+    public Encoding getEncoding() {
+        throw new IllegalArgumentException("This is only here because prism requires this in ParseResult");
     }
 
     @Deprecated

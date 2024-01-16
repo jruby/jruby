@@ -10,7 +10,7 @@ import org.prism.Nodes;
 public class ParseResultPrism implements ParseResult {
     final Encoding encoding;
     StaticScope rootScope;
-    final Nodes.ProgramNode root;
+    Nodes.ProgramNode root;
 
     final Nodes.Source nodeSource;
     final String fileName;
@@ -67,6 +67,10 @@ public class ParseResultPrism implements ParseResult {
 
     public Nodes.ProgramNode getRoot() {
         return root;
+    }
+
+    public void setRoot(Nodes.ProgramNode root) {
+        this.root = root;
     }
 
     public byte[] getSource() {
