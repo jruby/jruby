@@ -1,4 +1,4 @@
-package org.jruby.ir.builder;
+package org.jruby.prism.builder;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
@@ -20,6 +20,8 @@ import org.jruby.ir.IRModuleBody;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.Tuple;
+import org.jruby.ir.builder.IRBuilder;
+import org.jruby.ir.builder.LazyMethodDefinition;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
@@ -92,6 +94,18 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         staticScope.setFile(scope.getFile()); // staticScope and IRScope contain the same field.
     }
 
+    // FIXME: Delete once we are no longer depedent on source code
+    public void setSourceFrom(IRBuilderPrism other) {
+        this.nodeSource = other.nodeSource;
+        this.source = other.source;
+    }
+
+    // FIXME: Delete once we are no longer depedent on source code
+    public void setSourceFrom(Nodes.Source nodeSource, byte[] source) {
+        this.nodeSource = nodeSource;
+        this.source = source;
+    }
+
     @Override
     public Operand build(ParseResult result) {
         // FIXME: Missing support for executes once
@@ -105,7 +119,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return build(((ParseResultPrism) result).getRoot().statements);
     }
 
-    Operand build(Node node) {
+    protected Operand build(Node node) {
         return build(null, node);
     }
 
@@ -113,7 +127,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
      * @param result preferred result variable (this reduces temp vars pinning values).
      * @param node to be built
      */
-    Operand build(Variable result, Node node) {
+    protected Operand build(Variable result, Node node) {
         if (node == null) return nil();
 
         if (node.hasNewLineFlag()) determineIfWeNeedLineNumber(getLine(node), true, false, node instanceof DefNode);
@@ -461,7 +475,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     // This method is called to build assignments for a multiple-assignment instruction
-    public void buildAssignment(Node node, Operand rhsVal) {
+    protected void buildAssignment(Node node, Operand rhsVal) {
         if (node == null) return; // case of 'a, = something'
 
         if (node instanceof CallTargetNode) {
@@ -505,7 +519,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     @Override
-    Operand[] buildAttrAssignCallArgs(Node argsNode, Operand[] rhs, boolean containsAssignment) {
+    protected Operand[] buildAttrAssignCallArgs(Node argsNode, Operand[] rhs, boolean containsAssignment) {
         Operand[] args = buildCallArgs(argsNode, new int[] { 0 });
         rhs[0] = args[args.length - 1];
         return args;
@@ -566,7 +580,8 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return v;
     }
 
-    void receiveForArgs(Node node) {
+    @Override
+    protected void receiveForArgs(Node node) {
         Variable keywords = copy(temp(), UndefinedValue.UNDEFINED);
 
         // FIXME: I think this should rip out receivePre and stop sharingh with method defs
@@ -733,7 +748,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     @Override
-    Operand[] buildCallArgs(Node args, int[] flags) {
+    protected Operand[] buildCallArgs(Node args, int[] flags) {
         return buildCallArgsArray(((ArgumentsNode) args).arguments, flags);
 
     }
@@ -840,7 +855,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     @Override
-    Operand buildColon2ForConstAsgnDeclNode(Node lhs, Variable valueResult, boolean constMissing) {
+    protected Operand buildColon2ForConstAsgnDeclNode(Node lhs, Variable valueResult, boolean constMissing) {
         Variable leftModule = temp();
         ConstantPathNode colon2Node = (ConstantPathNode) lhs;
         RubySymbol name = symbol(determineBaseName(colon2Node));
@@ -1003,7 +1018,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     @Override
-    Operand buildGetDefinition(Node node) {
+    protected Operand buildGetDefinition(Node node) {
         if (node == null) return new FrozenString("expression");
 
         // FIXME: all opassignments needs to return assignment
@@ -1408,7 +1423,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return buildDRegex(result, node.parts, calculateRegexpOptions(node.flags));
     }
 
-    Operand buildDRegex(Variable result, Node[] children, RegexpOptions options) {
+    protected Operand buildDRegex(Variable result, Node[] children, RegexpOptions options) {
         Node[] pieces;
         if (children.length == 1) { // Case of interpolation only being an embedded element
             // We add an empty string here because the internal RubyRegexp.processDRegexp expects there
@@ -1918,44 +1933,44 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
     // FIXME: implement
     @Override
-    boolean alwaysFalse(Node node) {
+    protected boolean alwaysFalse(Node node) {
         return false;
     }
 
     // FIXME: implement
     @Override
-    boolean alwaysTrue(Node node) {
+    protected boolean alwaysTrue(Node node) {
         return false;
     }
 
     @Override
-    Node[] exceptionNodesFor(RescueNode node) {
+    protected Node[] exceptionNodesFor(RescueNode node) {
         return node.exceptions;
     }
 
     @Override
-    Node bodyFor(RescueNode node) {
+    protected Node bodyFor(RescueNode node) {
         return node.statements;
     }
 
     @Override
-    RescueNode optRescueFor(RescueNode node) {
+    protected RescueNode optRescueFor(RescueNode node) {
         return node.consequent;
     }
 
     // FIXME: Implement
     @Override
-    boolean isSideEffectFree(Node node) {
+    protected boolean isSideEffectFree(Node node) {
         return false;
     }
 
     // FIXME: Implement
     @Override
-    boolean isErrorInfoGlobal(Node body) {
+    protected boolean isErrorInfoGlobal(Node body) {
         return false;
     }
 
-    int dynamicPiece(Operand[] pieces, int i, Node pieceNode, Encoding encoding) {
+    protected int dynamicPiece(Operand[] pieces, int i, Node pieceNode, Encoding encoding) {
         Operand piece;
 
         // somewhat arbitrary minimum size for interpolated values
@@ -2176,7 +2191,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     @Override
-    void buildWhenArgs(WhenNode whenNode, Operand testValue, Label bodyLabel, Set<IRubyObject> seenLiterals) {
+    protected void buildWhenArgs(WhenNode whenNode, Operand testValue, Label bodyLabel, Set<IRubyObject> seenLiterals) {
         Variable eqqResult = temp();
         Node[] exprNodes = whenNode.conditions;
 
@@ -2297,17 +2312,11 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return lhs;
     }
 
-    private Operand buildArray(List<Operand> elts) {
-        Operand[] args= new Operand[elts.size()];
-        return new Array(elts.toArray(args));
-    }
-
-
     // Assumption: @, @@, $ assignments are all accessed directly through instructions
     // so they will always be indirected through temporary variables.  LocalVariables
     // are just operands so we only need to be aware of these being used within assignments.
     @Override
-    boolean containsVariableAssignment(Node node) {
+    protected boolean containsVariableAssignment(Node node) {
         if (node instanceof LocalVariableWriteNode ||
                 node instanceof LocalVariableOperatorWriteNode ||
                 node instanceof LocalVariableAndWriteNode ||
@@ -2338,13 +2347,13 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     @Override
-    Operand frozen_string(Node node) {
+    protected Operand frozen_string(Node node) {
         // FIXME: this + isStringLiteral might need to change.
         return buildString((StringNode) node);
     }
 
     @Override
-    Operand getContainerFromCPath(Node node) {
+    protected Operand getContainerFromCPath(Node node) {
 
         if (node instanceof ConstantReadNode) {
             return findContainerModule();
@@ -2362,7 +2371,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     @Override
-    Variable buildPatternEach(Label testEnd, Variable result, Operand original, Variable deconstructed, Operand value, Node exprNodes, boolean inAlternation, boolean isSinglePattern, Variable errorString) {
+    protected Variable buildPatternEach(Label testEnd, Variable result, Operand original, Variable deconstructed, Operand value, Node exprNodes, boolean inAlternation, boolean isSinglePattern, Variable errorString) {
         if (exprNodes instanceof StatementsNode && ((StatementsNode) exprNodes).body.length == 1) {
             buildPatternEach(testEnd, result, original, deconstructed, value, ((StatementsNode) exprNodes).body[0], inAlternation, isSinglePattern, errorString);
         } else if (exprNodes instanceof ArrayPatternNode) {
@@ -2465,7 +2474,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     @Override
-    void buildAssocs(Label testEnd, Operand original, Variable result, HashPatternNode assocs, boolean inAlteration, boolean isSinglePattern, Variable errorString, boolean hasRest, Variable d) {
+    protected void buildAssocs(Label testEnd, Operand original, Variable result, HashPatternNode assocs, boolean inAlteration, boolean isSinglePattern, Variable errorString, boolean hasRest, Variable d) {
 
         for (Node node: assocs.elements) {
             // FIXME: There can be more than  AssocNode in here.
@@ -2498,22 +2507,22 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     @Override
-    boolean isNilRest(Node rest) {
+    protected boolean isNilRest(Node rest) {
         return rest instanceof NoKeywordsParameterNode;
     }
 
     @Override
-    Node getInExpression(Node node) {
+    protected Node getInExpression(Node node) {
         return ((InNode) node).pattern;
     }
 
     @Override
-    Node getInBody(Node node) {
+    protected Node getInBody(Node node) {
         return ((InNode) node).statements;
     }
 
     @Override
-    boolean isBareStar(Node node) {
+    protected boolean isBareStar(Node node) {
         return node instanceof AssocSplatNode && ((AssocSplatNode) node).value == null;
     }
 
@@ -2525,7 +2534,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     @Override
-    int getLine(Node node) {
+    protected int getLine(Node node) {
         int line = nodeSource.line(node.startOffset);
         //System.out.println("LINE(0): " + line);
         // internals expect 0-based value.
@@ -2541,7 +2550,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     @Override
-    IRubyObject getWhenLiteral(Node node) {
+    protected IRubyObject getWhenLiteral(Node node) {
         Ruby runtime = scope.getManager().getRuntime();
 
         if (node instanceof IntegerNode) {
@@ -2578,13 +2587,13 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     @Override
-    boolean isLiteralString(Node node) {
+    protected boolean isLiteralString(Node node) {
         return node instanceof StringNode;
     }
 
     // FIXME: This only seems to be used in opelasgnor on the first element (lhs) but it is very unclear what is possible here.
     @Override
-    boolean needsDefinitionCheck(Node node) {
+    protected boolean needsDefinitionCheck(Node node) {
         return !(node instanceof ClassVariableWriteNode ||
                 node instanceof ConstantPathWriteNode ||
                 node instanceof LocalVariableWriteNode ||
@@ -2600,11 +2609,12 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     @Override
-    public void receiveMethodArgs(DefNode defNode) {
+    protected void receiveMethodArgs(DefNode defNode) {
         buildParameters(defNode.parameters);
     }
 
-    Operand setupCallClosure(Node args, Node block) {
+    @Override
+    protected Operand setupCallClosure(Node args, Node block) {
         if (block == null) {
             if (args != null && isForwardingArguments(args)) {
                 return getLocalVariable(symbol(FWD_BLOCK), scope.getStaticScope().isDefined("&"));
@@ -2640,10 +2650,6 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
     private ByteList bytelistFrom(Node node) {
         return new ByteList(source, node.startOffset, node.length);
-    }
-
-    private ByteList bytelist(byte[] bytes) {
-        return new ByteList(bytes);
     }
 
     public static Signature calculateSignature(ParametersNode parameters) {
@@ -2713,7 +2719,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     // FIXME: need to know about breaks
-    boolean canBeLazyMethod(DefNode node) {
+    protected boolean canBeLazyMethod(DefNode node) {
         return true;
     }
 
@@ -2742,16 +2748,17 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         return true;
     }
     @Override
-    Operand putConstant(ConstantPathNode path, Operand value) {
+    protected Operand putConstant(ConstantPathNode path, Operand value) {
         return putConstant(buildModuleParent(path.parent), ((ConstantReadNode) path.child).name, value);
     }
 
-    Node referenceFor(RescueNode node) {
+    @Override
+    protected Node referenceFor(RescueNode node) {
         return node.reference;
     }
 
     @Override
-    Node whenBody(WhenNode arm) {
+    protected Node whenBody(WhenNode arm) {
         return arm.statements;
     }
 }

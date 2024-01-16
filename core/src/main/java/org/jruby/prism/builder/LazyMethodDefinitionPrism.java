@@ -1,8 +1,11 @@
-package org.jruby.ir.builder;
+package org.jruby.prism.builder;
 
 import org.jcodings.Encoding;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRMethod;
+import org.jruby.ir.builder.IRBuilder;
+import org.jruby.ir.builder.LazyMethodDefinition;
+import org.jruby.prism.builder.IRBuilderPrism;
 import org.prism.AbstractNodeVisitor;
 import org.prism.Nodes;
 import org.prism.Nodes.ConstantPathNode;
@@ -79,8 +82,7 @@ public class LazyMethodDefinitionPrism implements LazyMethodDefinition<Node, Def
     public IRBuilder<Node, DefNode, WhenNode, RescueNode, ConstantPathNode, Nodes.HashPatternNode> getBuilder(IRManager manager, IRMethod methodScope) {
         IRBuilder<Node, DefNode, WhenNode, RescueNode, ConstantPathNode, Nodes.HashPatternNode> builder = IRBuilder.newIRBuilder(manager, methodScope, null, encoding, true);
 
-        ((IRBuilderPrism) builder).source = source;
-        ((IRBuilderPrism) builder).nodeSource = nodeSource;
+        ((IRBuilderPrism) builder).setSourceFrom(nodeSource, source);
 
         return builder;
     }

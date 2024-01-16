@@ -515,7 +515,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     // This method is called to build assignments for a multiple-assignment instruction
-    void buildAssignment(Node node, Operand rhsVal) {
+    protected void buildAssignment(Node node, Operand rhsVal) {
         switch (node.getNodeType()) {
             case ATTRASSIGNNODE:
                 buildAttrAssignAssignment(node, rhsVal);
@@ -795,11 +795,11 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return result;
     }
 
-    boolean isNilRest(Node rest) {
+    protected boolean isNilRest(Node rest) {
         return rest instanceof NilRestArgNode;
     }
 
-    void buildAssocs(Label testEnd, Operand original, Variable result, HashNode assocs, boolean inAlteration,
+    protected void buildAssocs(Label testEnd, Operand original, Variable result, HashNode assocs, boolean inAlteration,
                      boolean isSinglePattern, Variable errorString, boolean hasRest, Variable d) {
         List<KeyValuePair<Node,Node>> kwargs = assocs.getPairs();
 
@@ -816,7 +816,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         }
     }
 
-    Variable buildPatternEach(Label testEnd, Variable result, Operand original, Variable deconstructed, Operand value,
+    protected Variable buildPatternEach(Label testEnd, Variable result, Operand original, Variable deconstructed, Operand value,
                               Node exprNodes, boolean inAlternation, boolean isSinglePattern, Variable errorString) {
         if (exprNodes instanceof ArrayPatternNode) {
             ArrayPatternNode node = (ArrayPatternNode) exprNodes;
@@ -858,17 +858,17 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     @Override
-    Node getInExpression(Node node) {
+    protected Node getInExpression(Node node) {
         return ((InNode) node).getExpression();
     }
 
     @Override
-    Node getInBody(Node node) {
+    protected Node getInBody(Node node) {
         return ((InNode) node).getBody();
     }
 
     @Override
-    boolean isBareStar(Node node) {
+    protected boolean isBareStar(Node node) {
         return node instanceof StarNode;
     }
 
@@ -905,23 +905,23 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return buildCase(caseNode.getCaseNode(), caseNode.getCases().children(), caseNode.getElseNode());
     }
 
-    Node whenBody(WhenNode when) {
+    protected Node whenBody(WhenNode when) {
         return when.getBodyNode();
     }
 
     @Override
-    boolean containsVariableAssignment(Node node) {
+    protected boolean containsVariableAssignment(Node node) {
         return node.containsVariableAssignment();
     }
 
     @Override
-    Operand frozen_string(Node node) {
+    protected Operand frozen_string(Node node) {
         ((StrNode) node).setFrozen(true);
         return buildStrRaw((StrNode) node);
     }
 
     @Override
-    int getLine(Node node) {
+    protected int getLine(Node node) {
         return node.getLine();
     }
 
@@ -944,7 +944,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         }
     }
 
-    void buildWhenArgs(WhenNode whenNode, Operand testValue, Label bodyLabel, Set<IRubyObject> seenLiterals) {
+    protected void buildWhenArgs(WhenNode whenNode, Operand testValue, Label bodyLabel, Set<IRubyObject> seenLiterals) {
         Variable eqqResult = temp();
         Node exprNodes = whenNode.getExpressionNodes();
 
@@ -960,7 +960,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     // Note: This is potentially a little wasteful in that we eagerly create these literals for a duplicated warning
     // check.  In most cases these would be made anyways (e.g. symbols/fixnum) but in others we double allocation
     // (e.g. strings).
-    IRubyObject getWhenLiteral(Node node) {
+    protected IRubyObject getWhenLiteral(Node node) {
         Ruby runtime = scope.getManager().getRuntime();
 
         switch(node.getNodeType()) {
@@ -990,7 +990,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     @Override
-    boolean isLiteralString(Node node) {
+    protected boolean isLiteralString(Node node) {
         return node instanceof StrNode;
     }
 
@@ -1171,7 +1171,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return putConstant((Colon3Node) constNode, value);
     }
 
-    Operand putConstant(Colon3Node colonNode, Operand value) {
+    protected Operand putConstant(Colon3Node colonNode, Operand value) {
         if (colonNode.getNodeType() == NodeType.COLON2NODE) {
             Colon2Node colon2Node = (Colon2Node) colonNode;
             return putConstant(build(colon2Node.getLeftNode()), colon2Node.getName(), value);
@@ -1198,11 +1198,11 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return new Complex((ImmutableLiteral) build(node.getNumber()));
     }
 
-    boolean needsDefinitionCheck(Node node) {
+    protected boolean needsDefinitionCheck(Node node) {
         return node.needsDefinitionCheck();
     }
 
-    Operand buildGetDefinition(Node node) {
+    protected Operand buildGetDefinition(Node node) {
         if (node == null) return new FrozenString("expression");
 
         switch (node.getNodeType()) {
@@ -1568,7 +1568,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         // because of the use of copyAndReturnValue method for literal objects.
     }
 
-    boolean canBeLazyMethod(DefNode node) {
+    protected boolean canBeLazyMethod(DefNode node) {
         return !((MethodDefNode) node).containsBreakNext();
     }
 
@@ -1916,11 +1916,11 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         receiveArgs(argsNode);
     }
 
-    void receiveForArgs(Node node) {
+    protected void receiveForArgs(Node node) {
         receiveBlockArgs(node);
     }
 
-    void receiveBlockArgs(Node args) {
+    protected void receiveBlockArgs(Node args) {
         if (args instanceof ArgsNode) { // regular blocks
             ((IRClosure) scope).setArgumentDescriptors(Helpers.argsNodeToArgumentDescriptors(((ArgsNode) args)));
             receiveArgs((ArgsNode)args);
@@ -1934,7 +1934,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return buildRange(node.getBeginNode(), node.getEndNode(), node.isExclusive());
     }
 
-    int dynamicPiece(Operand[] pieces, int i, Node pieceNode, Encoding _unused) {
+    protected int dynamicPiece(Operand[] pieces, int i, Node pieceNode, Encoding _unused) {
         Operand piece;
 
         // somewhat arbitrary minimum size for interpolated values
@@ -2042,7 +2042,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
                 node.getLine(), node.isNewline());
     }
 
-    Operand setupCallClosure(Node _unused, Node node) {
+    protected Operand setupCallClosure(Node _unused, Node node) {
         if (node == null) return NullBlock.INSTANCE;
 
         switch (node.getNodeType()) {
@@ -2225,7 +2225,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return addResultInstr(new MatchInstr(scope, result, receiver, value));
     }
 
-    Operand getContainerFromCPath(Node cpath) {
+    protected Operand getContainerFromCPath(Node cpath) {
         Operand container;
 
         if (cpath instanceof Colon2Node) {
@@ -2265,7 +2265,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
                 node.getVariableSymbolNameAsgn(), node.getOperatorSymbolName(), node.isLazy());
     }
 
-    Operand buildColon2ForConstAsgnDeclNode(Node lhs, Variable valueResult, boolean constMissing) {
+    protected Operand buildColon2ForConstAsgnDeclNode(Node lhs, Variable valueResult, boolean constMissing) {
         RubySymbol name = ((INameNode) lhs).getName();
         Variable leftModule = copy(lhs instanceof Colon2Node ?
                 build(((Colon2Node) lhs).getLeftNode()) : getManager().getObjectClass());
@@ -2323,12 +2323,6 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
     }
 
-    private List<Instr> buildPreExeInner(Node body) {
-        build(body);
-
-        return instructions;
-    }
-
     public Operand buildPostExe(PostExeNode postExeNode) {
         IRScope topLevel = scope.getRootLexicalScope();
         IRScope nearestLVarScope = scope.getNearestTopLocalVariableScope();
@@ -2378,11 +2372,11 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     // FIXME: This MIGHT be able to expand to more complicated expressions like Hash or Array if they
     // contain only SideEffectFree nodes.  Constructing a literal out of these should be safe from
     // effecting or being able to access $!.
-    boolean isSideEffectFree(final Node node) {
+    protected boolean isSideEffectFree(final Node node) {
         return node instanceof SideEffectFree;
     }
 
-    boolean isErrorInfoGlobal(final Node body) {
+    protected boolean isErrorInfoGlobal(final Node body) {
         if (!(body instanceof GlobalVarNode)) return false;
 
         String id = ((GlobalVarNode) body).getName().idString();
@@ -2406,20 +2400,20 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return new Node[] { node };
     }
 
-    Node[] exceptionNodesFor(RescueBodyNode node) {
+    protected Node[] exceptionNodesFor(RescueBodyNode node) {
         return asList(node.getExceptionNodes());
     }
 
-    Node bodyFor(RescueBodyNode node) {
+    protected Node bodyFor(RescueBodyNode node) {
         return node.getBodyNode();
     }
 
-    RescueBodyNode optRescueFor(RescueBodyNode node) {
+    protected RescueBodyNode optRescueFor(RescueBodyNode node) {
         return node.getOptRescueNode();
     }
 
     @Override
-    Node referenceFor(RescueBodyNode node) {
+    protected Node referenceFor(RescueBodyNode node) {
         return null;
     }
 
@@ -2538,12 +2532,12 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     @Override
-    boolean alwaysFalse(Node node) {
+    protected boolean alwaysFalse(Node node) {
         return node.getNodeType().alwaysFalse();
     }
 
     @Override
-    boolean alwaysTrue(Node node) {
+    protected  boolean alwaysTrue(Node node) {
         return node.getNodeType().alwaysTrue();
     }
 
