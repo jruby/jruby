@@ -487,8 +487,17 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), ((ClassVariableTargetNode) node).name, rhsVal));
         } else if (node instanceof ConstantPathTargetNode) {
             Operand parent = buildModuleParent(((ConstantPathTargetNode) node).parent);
-            // FIXME can this be anything else for child?  calls for child will just end up being callnodes.
-            addInstr(new PutConstInstr(parent, (((ConstantTargetNode) ((ConstantPathTargetNode) node).child)).name, rhsVal));
+            Node child = ((ConstantPathTargetNode) node).child;
+            RubySymbol name;
+            if (child instanceof ConstantTargetNode) {
+                name = ((ConstantTargetNode) child).name;
+            } else if (child instanceof ConstantReadNode) {
+                name = ((ConstantReadNode) child).name;
+            } else {
+                throwSyntaxError(getLine(child), "Unknown child in ConstantPathTargetNode");
+                name = null;
+            }
+            addInstr(new PutConstInstr(parent, name, rhsVal));
         } else if (node instanceof ConstantTargetNode) {
             addInstr(new PutConstInstr(getCurrentModuleVariable(), ((ConstantTargetNode) node).name, rhsVal));
         } else if (node instanceof LocalVariableTargetNode) {
