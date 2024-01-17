@@ -224,8 +224,40 @@ public class RubyProcess {
         }
 
         @JRubyMethod(name = "&")
-        public IRubyObject op_and(IRubyObject arg) {
-            return getRuntime().newFixnum(status & arg.convertToInteger().getLongValue());
+        public IRubyObject op_and(ThreadContext context, IRubyObject arg) {
+            long mask = arg.convertToInteger().getLongValue();
+
+            if (mask < 0) {
+                throw context.runtime.newArgumentError("negative mask value: " + mask);
+            }
+
+            if (mask > Integer.MAX_VALUE || mask < Integer.MIN_VALUE) {
+                throw context.runtime.newRangeError("mask value out of range: " + mask);
+            }
+
+            switch ((int) mask) {
+                case 0x80:
+                    deprecateAndSuggest(context, "&", "Process::Status#coredump?");
+                    break;
+                case 0x7f:
+                    deprecateAndSuggest(context, "&", "Process::Status#signaled? or Process::Status#termsig");
+                    break;
+                case 0xff:
+                    deprecateAndSuggest(context, "&", "Process::Status#exited?, Process::Status#stopped? or Process::Status#coredump?");
+                    break;
+                case 0xff00:
+                    deprecateAndSuggest(context, "&", "Process::Status#exitstatus or Process::Status#stopsig");
+                    break;
+                default:
+                    deprecateAndSuggest(context, "&", "other Process::Status predicates");
+                    break;
+            }
+
+            return getRuntime().newFixnum(status & mask);
+        }
+
+        private static void deprecateAndSuggest(ThreadContext context, String method, String suggest) {
+            context.runtime.getWarnings().warnDeprecatedForRemoval("Use " + suggest + " instead of Process::Status#" + method, "3.4");
         }
 
         @JRubyMethod(name = "stopped?")
@@ -269,7 +301,29 @@ public class RubyProcess {
 
         @JRubyMethod(name = ">>")
         public IRubyObject op_rshift(ThreadContext context, IRubyObject other) {
-            return op_rshift(context.runtime, other);
+            long places = other.convertToInteger().getLongValue();
+
+            if (places < 0) {
+                throw context.runtime.newArgumentError("negative shift value: " + places);
+            }
+
+            if (places > Integer.MAX_VALUE || places < Integer.MIN_VALUE) {
+                throw context.runtime.newRangeError("shift value out of range: " + places);
+            }
+
+            switch ((int) places) {
+                case 7:
+                    deprecateAndSuggest(context, ">>", "Process::Status#coredump?");
+                    break;
+                case 8:
+                    deprecateAndSuggest(context, ">>", "Process::Status#exitstatus or Process::Status#stopsig");
+                    break;
+                default:
+                    deprecateAndSuggest(context, ">>", "other Process::Status attributes");
+                    break;
+            }
+
+            return context.runtime.newFixnum(status >> places);
         }
 
         @Override
@@ -316,11 +370,6 @@ public class RubyProcess {
 
         public long getStatus() {
             return status;
-        }
-
-        public IRubyObject op_rshift(Ruby runtime, IRubyObject other) {
-            long shiftValue = other.convertToInteger().getLongValue();
-            return runtime.newFixnum(status >> shiftValue);
         }
 
         public IRubyObject to_i(Ruby runtime) {
@@ -404,13 +453,19 @@ public class RubyProcess {
         }
 
         @Deprecated
-        public IRubyObject op_rshift(IRubyObject other) {
-            return op_rshift(getRuntime(), other);
+        public IRubyObject to_i() {
+            return to_i(getRuntime());
         }
 
         @Deprecated
-        public IRubyObject to_i() {
-            return to_i(getRuntime());
+        public IRubyObject op_rshift(Ruby runtime, IRubyObject other) {
+            long shiftValue = other.convertToInteger().getLongValue();
+            return runtime.newFixnum(status >> shiftValue);
+        }
+
+        @Deprecated
+        public IRubyObject op_and(IRubyObject arg) {
+            return op_and(getRuntime().getCurrentContext(), arg);
         }
     }
 
