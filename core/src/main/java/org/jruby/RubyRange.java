@@ -59,6 +59,7 @@ import org.jruby.runtime.ThreadContext;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyNumeric.dbl2num;
+import static org.jruby.RubyNumeric.fix2long;
 import static org.jruby.runtime.Helpers.hashEnd;
 import static org.jruby.runtime.Helpers.hashStart;
 import static org.jruby.runtime.Helpers.invokedynamic;
@@ -624,6 +625,150 @@ public class RubyRange extends RubyObject {
             to--;
         }
         RubyInteger.fixnumUpto(context, ((RubyFixnum) begin).value, to, block);
+    }
+
+    // MRI: range_reverse_each
+    @JRubyMethod
+    public IRubyObject reverse_each(ThreadContext context, Block block) {
+        if (!block.isGiven()) {
+            return enumeratorizeWithSize(context, this, "reverse_each", RubyRange::size);
+        }
+
+        IRubyObject beg = this.begin;
+        IRubyObject end = this.end;
+        boolean excl = isExclusive;
+
+        if (end.isNil()) {
+            throw context.runtime.newTypeError("can't iterate from " + end);
+        }
+
+        if (beg instanceof RubyFixnum && end instanceof RubyFixnum) {
+            if (excl) {
+                RubyFixnum endFixnum = (RubyFixnum) end;
+                if (endFixnum.getLongValue() == RubyFixnum.MIN) return this;
+
+                end = endFixnum.op_minus(context, 1);
+            }
+
+            reverseEachFixnum(context, beg, (RubyInteger) end, block);
+        } else if ((beg.isNil() || beg instanceof RubyInteger) && end instanceof RubyInteger) {
+            RubyInteger endInteger = (RubyInteger) end;
+            if (excl) {
+                endInteger = (RubyInteger) endInteger.op_minus(context, 1);
+            }
+
+            reverseEachPositiveBignum(context, beg, endInteger, block);
+            reverseEachFixnum(context, beg, endInteger, block);
+            reverseEachNegativeBignum(context, beg, endInteger, block);
+        } else {
+            return RubyEnumerable.reverse_each(context, this, block);
+        }
+
+        return this;
+    }
+
+    // MRI: range_reverse_each_fixnum_section
+    private void reverseEachFixnum(ThreadContext context, IRubyObject beg, RubyInteger end, Block block) {
+        if (beg.isNil()) {
+            beg = RubyFixnum.newFixnum(context.runtime, RubyFixnum.MIN);
+        }
+
+        reverseEachFixnum(context, (RubyInteger) beg, end, block);
+    }
+
+    // MRI: range_reverse_each_fixnum_section
+    private void reverseEachFixnum(ThreadContext context, RubyInteger beg, RubyInteger end, Block block) {
+        assert (!end.isNil());
+
+        if (!(beg instanceof RubyFixnum)) {
+            if (!beg.isNil() && bignumPositive(beg)) return;
+
+            beg = RubyFixnum.newFixnum(context.runtime, RubyFixnum.MIN);
+        }
+
+        if (!(end instanceof RubyFixnum)) {
+            if (bignumNegative(end)) return;
+
+            end = RubyFixnum.newFixnum(context.runtime, RubyFixnum.MAX);
+        }
+
+        long b = fix2long(beg);
+        long e = fix2long(end);
+
+        for (long i = e; i >= b; --i) {
+            block.yieldSpecific(context, RubyFixnum.newFixnum(context.runtime, i));
+            // avoid underflow
+            if (i == b) break;
+        }
+    }
+
+    // MRI: range_reverse_each_positive_bignum_section
+    private void reverseEachPositiveBignum(ThreadContext context, IRubyObject beg, RubyInteger end, Block block) {
+        assert (!end.isNil());
+
+        if (end instanceof RubyFixnum || bignumNegative(end)) return;
+
+        if (beg.isNil() || beg instanceof RubyFixnum || bignumNegative(beg)) {
+            beg = RubyBignum.newBignum(context.runtime, RubyBignum.LONG_MAX_PLUS_ONE);
+        }
+
+        reverseEachBignum(context, (RubyInteger) beg, end, block);
+    }
+
+    // MRI: range_reverse_each_negative_bignum_section
+    private void reverseEachNegativeBignum(ThreadContext context, IRubyObject beg, RubyInteger end, Block block) {
+        assert (!end.isNil());
+
+        if (end instanceof RubyFixnum || bignumPositive(end)) {
+            end = RubyBignum.newBignum(context.runtime, RubyBignum.LONG_MIN_MINUS_ONE);
+        }
+
+        if (beg.isNil()) {
+            reverseEachBignumBeginless(context, end, block);
+        }
+
+        if (beg instanceof RubyFixnum || bignumPositive(beg)) return;
+
+        reverseEachBignum(context, (RubyInteger) beg, end, block);
+    }
+
+    // MRI: range_reverse_each_bignum
+    private void reverseEachBignum(ThreadContext context, RubyInteger beg, RubyInteger end, Block block) {
+        assert (bignumPositive(beg) == bignumPositive(end));
+
+        Ruby runtime = context.runtime;
+        RubyFixnum one = RubyFixnum.one(runtime);
+        RubyFixnum zero = RubyFixnum.zero(runtime);
+
+        IRubyObject c;
+        while (!(c = beg.op_cmp(context, end)).equals(one)) {
+            block.yieldSpecific(context, end);
+            if (c == zero) break;
+            end = (RubyInteger) end.op_minus(context, one);
+        }
+    }
+
+    // MRI: range_reverse_each_bignum_beginless
+    private void reverseEachBignumBeginless(ThreadContext context, RubyInteger end, Block block) {
+        assert (bignumNegative(end));
+
+        for (; ; end = (RubyInteger) end.op_minus(context, 1)) {
+            block.yieldSpecific(context, end);
+        }
+    }
+
+    // MRI: RBIGNUM_NEGATIVE
+    private static boolean bignumNegative(IRubyObject end) {
+        assert (end instanceof RubyBignum);
+        RubyBignum bigEnd = (RubyBignum) end;
+        return bigEnd.signum() == -1;
+    }
+
+    // MRI: RBIGNUM_POSITIVE
+    private static boolean bignumPositive(IRubyObject num) {
+        assert (num instanceof RubyBignum);
+        RubyBignum bigNum = (RubyBignum) num;
+        return bigNum.signum() == 1;
     }
 
     @Deprecated
