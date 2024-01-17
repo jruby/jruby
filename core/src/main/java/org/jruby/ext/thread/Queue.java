@@ -331,8 +331,7 @@ public class Queue extends RubyObject implements DataType {
     @JRubyMethod(name = "freeze")
     @Override
     public final IRubyObject freeze(ThreadContext context) {
-        throw context.runtime.newRaiseException(context.runtime.getTypeError(), "cannot freeze " + getMetaClass().getName());
-
+        throw context.runtime.newTypeError("cannot freeze " + this);
     }
 
     @JRubyMethod(name = "empty?")
