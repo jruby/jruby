@@ -117,6 +117,10 @@ namespace :test do
             ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} #{extra_jruby_opts} #{opts}"
             ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes:test/mri/excludes_wip -q -- #{files}"
           end
+          task "#{task}:prism" do
+            ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} #{extra_jruby_opts} -Xparser.prism #{opts}"
+            ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes:test/mri/excludes_wip -q -- #{files}"
+          end
         end
       end
 
