@@ -30,7 +30,6 @@
 
 package org.jruby;
 
-import com.headius.backport9.modules.Modules;
 import jnr.constants.platform.RLIM;
 import jnr.constants.platform.RLIMIT;
 import jnr.constants.platform.Sysconf;
@@ -44,21 +43,17 @@ import jnr.posix.Timeval;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
-import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 
-import static org.jruby.RubyNumeric.fix2long;
 import static org.jruby.runtime.Helpers.throwException;
-import static org.jruby.runtime.Helpers.tryThrow;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
