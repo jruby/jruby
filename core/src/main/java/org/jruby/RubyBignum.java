@@ -1271,7 +1271,7 @@ public class RubyBignum extends RubyInteger {
 
     @Override
     public final boolean isZero() {
-        return value.equals(BigInteger.ZERO);
+        return value.signum() == 0;
     }
 
     @Override
