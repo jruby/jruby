@@ -29,7 +29,8 @@ public enum RubyEvent {
     // A_CALL is CALL + B_CALL + C_CALL
     A_CALL   ("a_call"),
     // A_RETURN is RETURN + B_RETURN + C_RETURN
-    A_RETURN ("a_return");
+    A_RETURN ("a_return"),
+    RESCUE ("rescue", false);
 
     public static final Set<RubyEvent> ALL_EVENTS = Collections.synchronizedSet(EnumSet.allOf(RubyEvent.class));
     public static final EnumSet ALL_EVENTS_ENUMSET = EnumSet.copyOf(RubyEvent.ALL_EVENTS);

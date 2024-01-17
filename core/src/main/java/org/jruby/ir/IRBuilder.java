@@ -4632,6 +4632,8 @@ public class IRBuilder {
         // Caught exception case -- build rescue body
         addInstr(new LabelInstr(caughtLabel));
         Node realBody = rescueBodyNode.getBodyNode();
+        int line = realBody instanceof NilImplicitNode ? rescueBodyNode.getLine() : realBody.getLine();
+        addInstr(new RuntimeHelperCall(createTemporaryVariable(), TRACE_RESCUE, new Operand[]{new FrozenString(getFileName()), new Integer(line + 1)}));
         Operand x = build(realBody);
         if (x != U_NIL) { // can be U_NIL if the rescue block has an explicit return
             // Set up node return value 'rv'
