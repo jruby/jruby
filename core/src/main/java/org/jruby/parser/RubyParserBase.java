@@ -1779,7 +1779,8 @@ public abstract class RubyParserBase {
     public void compile_error(String message) { // mri: rb_compile_error_with_enc
         String line = lexer.getCurrentLine();
         int pos = lexer.getRubySourceline();
-        String errorMessage = lexer.getFile() + ":" + (pos + 1) + ": ";
+        String file = lexer.getFile();
+        String errorMessage = file + ":" + (pos + 1) + ": ";
 
         if (line != null && line.length() > 5) {
             boolean addNewline = message != null && ! message.endsWith("\n");
@@ -1787,7 +1788,7 @@ public abstract class RubyParserBase {
             message += (addNewline ? "\n" : "") + line;
         }
 
-        throw getConfiguration().getRuntime().newSyntaxError(errorMessage + message);
+        throw getConfiguration().getRuntime().newSyntaxError(errorMessage + message, file);
     }
 
     public Node new_regexp(int line, Node contents, RegexpNode end) {

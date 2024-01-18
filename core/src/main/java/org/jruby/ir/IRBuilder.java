@@ -1191,7 +1191,7 @@ public class IRBuilder {
 
     private void throwSyntaxError(Node node, String message) {
         String errorMessage = getFileName() + ":" + (node.getLine() + 1) + ": " + message;
-        throw scope.getManager().getRuntime().newSyntaxError(errorMessage);
+        throw scope.getManager().getRuntime().newSyntaxError(errorMessage, getFileName());
     }
 
     private void handleNonlocalReturnInMethod() {

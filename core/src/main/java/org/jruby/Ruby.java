@@ -3958,6 +3958,14 @@ public final class Ruby implements Constantizable {
         return newRaiseException(getSyntaxError(), message);
     }
 
+    public RaiseException newSyntaxError(String message, String path) {
+        RaiseException syntaxError = newRaiseException(getSyntaxError(), message);
+
+        syntaxError.getException().setInstanceVariable("@path", newString(path));
+
+        return syntaxError;
+    }
+
     public RaiseException newRegexpError(String message) {
         return newRaiseException(getRegexpError(), message);
     }
