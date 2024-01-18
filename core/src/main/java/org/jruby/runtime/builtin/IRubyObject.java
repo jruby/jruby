@@ -256,6 +256,14 @@ public interface IRubyObject {
      * @return a dup-ed object
      */
     IRubyObject dup();
+
+    /**
+     * RubyMethod dup.
+     * @return a dup-ed object
+     */
+    default IRubyObject dup(ThreadContext context) {
+        return dup();
+    }
     
     /**
      * RubyMethod inspect.
