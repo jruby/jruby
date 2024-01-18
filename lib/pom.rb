@@ -29,9 +29,6 @@ default_gems = [
     # Currently using a stub gem for JRuby until we can incorporate our code.
     # https://github.com/ruby/date/issues/48
     ['date', '3.3.4'],
-    # Newer versions require deep control over CRuby, needs work to support JRuby.
-    # See bundled gems below.
-    ['debug', '0.2.1'],
     ['delegate', '0.3.1'],
     ['did_you_mean', '1.6.3'],
     ['digest', '3.1.1'],
@@ -123,8 +120,9 @@ default_gems = [
 ]
 
 bundled_gems = [
-    # Depends on many CRuby internals
-    # ['debug', '1.4.0'],
+    # Newer versions require deep control over CRuby internals, needs work to support JRuby.
+    # ['debug', '1.9.1'],
+    ['debug', '0.2.1'],
     ['matrix', '0.4.2'],
     ['minitest', '5.20.0'],
     ['net-ftp', '0.3.3'],
