@@ -135,7 +135,12 @@ public class RubyProc extends RubyObject implements DataType {
     }
 
     public static RubyProc newProc(Ruby runtime, Block block, Block.Type type, String file, int line) {
-        RubyProc proc = new RubyProc(runtime, runtime.getProc(), type, file, line);
+        RubyClass clazz = runtime.getProc();
+        return newProc(runtime, clazz, block, type, file, line);
+    }
+
+    public static RubyProc newProc(Ruby runtime, RubyClass clazz, Block block, Block.Type type, String file, int line) {
+        RubyProc proc = new RubyProc(runtime, clazz, type, file, line);
         proc.setup(block);
 
         return proc;
@@ -227,7 +232,7 @@ public class RubyProc extends RubyObject implements DataType {
     }
 
     private RubyProc procDup() {
-        return newProc(getRuntime(), block, type, file, line);
+        return newProc(getRuntime(), getMetaClass(), block, type, file, line);
     }
 
     @Override
