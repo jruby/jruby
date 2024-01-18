@@ -78,10 +78,11 @@ default_gems = [
     ['psych', '5.1.2'],
     ['rake-ant', '1.0.6'],
     ['rdoc', '6.6.2'],
+    # Ext removed from CRuby in 3.3, equivalent for us would be to remove jruby-readline but unknown implications.
+    # The gem below just attempts to load the extension, and failing that loads reline. Our current readline.rb in
+    # jruby-readline does largely the same, but it finds the extension and does not load reline.
     # https://github.com/ruby/readline/issues/5
-    # ['readline', '0.0.3'],
-    # Will be solved with readline
-    # ['readline-ext', '0.1.4'],
+    # ['readline', '0.0.4'],
     ['reline', '0.4.1'],
     # https://github.com/ruby/resolv/issues/19
     # ['resolv', '0.2.1'],
