@@ -132,6 +132,7 @@ bundled_gems = [
     ['net-smtp', '0.4.0'],
     ['prime', '0.1.2'],
     ['power_assert', '2.0.3'],
+    ['racc', '1.7.3'],
     ['rake', '${rake.version}'],
     # Depends on many CRuby internals
     # ['rbs', '2.0.0'],
