@@ -1226,6 +1226,11 @@ public class RubyClass extends RubyModule {
         return superClazz != null ? superClazz : context.nil;
     }
 
+    @JRubyMethod
+    public IRubyObject attached_object(ThreadContext context) {
+        throw context.runtime.newTypeError("`" + this + "' is not a singleton class");
+    }
+
     private void checkNotInitialized() {
         if (superClass != null || this == runtime.getBasicObject()) {
             throw runtime.newTypeError("already initialized class");
