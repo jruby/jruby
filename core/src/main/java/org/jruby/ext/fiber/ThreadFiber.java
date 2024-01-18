@@ -7,8 +7,10 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyHash;
 import org.jruby.RubyKernel;
 import org.jruby.RubyObject;
+import org.jruby.RubySymbol;
 import org.jruby.RubyThread;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
@@ -42,6 +44,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
     private static final BiConsumer<Ruby, Runnable> FIBER_LAUNCHER;
     private static final MethodHandle VTHREAD_START_METHOD;
+    private static final String[] INITIALIZE_KWARGS = {"blocking", "pool", "storage"};
 
     static {
         BiConsumer<Ruby, Runnable> fiberLauncher = ThreadFiber::nativeThreadLauncher;
@@ -111,6 +114,8 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
         if (!block.isGiven()) throw runtime.newArgumentError("tried to create Proc object without block");
 
+        inheritFiberStorage(context);
+
         data = new FiberData(new FiberQueue(runtime), context.getFiberCurrentThread(), this, false);
 
         FiberData currentFiberData = context.getFiber().data;
@@ -131,7 +136,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         boolean blocking = false;
 
         if (!opts.isNil()) {
-            IRubyObject[] blockingPoolOpt = ArgsUtil.extractKeywordArgs(context, opts, "blocking", "pool");
+            IRubyObject[] blockingPoolOpt = ArgsUtil.extractKeywordArgs(context, opts, INITIALIZE_KWARGS);
 
             if (blockingPoolOpt != null) {
                 IRubyObject blockingOpt = blockingPoolOpt[0];
@@ -140,6 +145,14 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                 }
 
                 // TODO: pooling
+
+                IRubyObject storage = blockingPoolOpt[2];
+
+                if (storage == null || storage == context.tru) {
+                    inheritFiberStorage(context);
+                } else {
+                    setStorage(context, storage);
+                }
             }
         }
 
@@ -150,6 +163,12 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         thread = createThread(runtime, data, currentFiberData.queue, block);
 
         return context.nil;
+    }
+
+    // MRI: inherit_fiber_storage
+    public void inheritFiberStorage(ThreadContext context) {
+        RubyHash storage = context.getFiber().storage;
+        this.storage = storage == null ? null : (RubyHash) storage.dup(context);
     }
     
     @JRubyMethod(rest = true, keywords = true)
@@ -691,6 +710,103 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         return threadFiber.thread.backtrace_locations(context, level, length);
     }
 
+    @JRubyMethod(name = "[]", meta = true)
+    public static IRubyObject op_aref(ThreadContext context, IRubyObject recv, IRubyObject key) {
+        if (!(key instanceof RubySymbol)) {
+            throw context.runtime.newTypeError(key, context.runtime.getSymbol());
+        }
+
+        RubyHash storage = context.getFiber().storage;
+
+        if (storage == null) return context.nil;
+
+        IRubyObject value = storage.op_aref(context, key);
+
+        if (value == null) return context.nil;
+
+        return value;
+    }
+
+    @JRubyMethod(name = "[]=", meta = true)
+    public static IRubyObject op_aset(ThreadContext context, IRubyObject recv, IRubyObject key, IRubyObject value) {
+        if (!(key instanceof RubySymbol)) {
+            throw context.runtime.newTypeError(key, context.runtime.getSymbol());
+        }
+
+        RubyHash storage;
+
+        ThreadFiber current = context.getFiber();
+        boolean nil = value.isNil();
+
+        storage = current.storage;
+
+        if (storage == null) {
+            if (nil) return context.nil;
+
+            current.storage = storage = RubyHash.newHash(context.runtime);
+        }
+
+        if (nil) {
+            storage.delete(context, key);
+        } else {
+            storage.op_aset(context, key, value);
+        }
+
+        return value;
+    }
+
+    @JRubyMethod
+    public IRubyObject storage(ThreadContext context) {
+        checkSameFiber(context);
+
+        RubyHash storage = this.storage;
+
+        if (storage == null) {
+            return context.nil;
+        }
+
+        return storage.dup(context);
+    }
+
+    private void checkSameFiber(ThreadContext context) {
+        if (context.getFiber() != this) {
+            throw context.runtime.newArgumentError("Fiber storage can only be accessed from the Fiber it belongs to");
+        }
+    }
+
+    @JRubyMethod(name = "storage=")
+    public IRubyObject storage_set(ThreadContext context, IRubyObject hash) {
+        checkSameFiber(context);
+
+        setStorage(context, hash);
+
+        return hash;
+    }
+
+    private void setStorage(ThreadContext context, IRubyObject hash) {
+        validateStorage(context, hash);
+        this.storage = hash.isNil() ? null : (RubyHash) hash.dup(context);
+    }
+
+    private static void validateStorage(ThreadContext context, IRubyObject hash) {
+        // nil is an allowed value and will be lazily initialized.
+        if (hash == context.nil) return;
+
+        if (!(hash instanceof RubyHash)) {
+            throw context.runtime.newTypeError("storage must be a Hash");
+        }
+
+        if (hash.isFrozen()) {
+            throw context.runtime.newFrozenError("storage must not be frozen");
+        }
+
+        ((RubyHash) hash).visitAll(context, (ctx, self, key, value, index) -> {
+            if (!(key instanceof RubySymbol)) {
+                throw context.runtime.newTypeError(key, context.runtime.getSymbol());
+            }
+        });
+    }
+
     public static class FiberSchedulerSupport {
         // MRI: rb_fiber_s_schedule_kw and rb_fiber_s_schedule, kw passes on context
         @JRubyMethod(name = "schedule", meta = true, rest = true, keywords = true)
@@ -757,5 +873,6 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     
     volatile FiberData data;
     volatile RubyThread thread;
+    RubyHash storage;
     final boolean root;
 }
