@@ -41,6 +41,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -162,26 +163,56 @@ public class SizedQueue extends Queue {
         final AtomicInteger count = this.count;
         if (count.get() == capacity)
             return false;
-        int c = -1;
-        Node node = new Node(e);
+        final int c;
+        final Node node = new Node(e);
         final ReentrantLock putLock = this.putLock;
         putLock.lock();
         try {
             if (closed) {
                 raiseClosedError(context);
             }
-            if (count.get() < capacity) {
-                enqueue(node);
-                c = count.getAndIncrement();
-                if (c + 1 < capacity)
-                    notFull.signal();
-            }
+            if (count.get() == capacity)
+                return false;
+            enqueue(node);
+            c = count.getAndIncrement();
+            if (c + 1 < capacity)
+                notFull.signal();
         } finally {
             putLock.unlock();
         }
         if (c == 0)
             signalNotEmpty();
-        return c >= 0;
+        return true;
+    }
+
+    public boolean offerInternal(ThreadContext context, IRubyObject e, long timeout, TimeUnit unit)
+            throws InterruptedException {
+
+        if (e == null) throw new NullPointerException();
+        long nanos = unit.toNanos(timeout);
+        final int c;
+        final ReentrantLock putLock = this.putLock;
+        final AtomicInteger count = this.count;
+        putLock.lockInterruptibly();
+        try {
+            if (closed) {
+                raiseClosedError(context);
+            }
+            while (count.get() == capacity) {
+                if (nanos <= 0L)
+                    return false;
+                nanos = notFull.awaitNanos(nanos);
+            }
+            enqueue(new Node(e));
+            c = count.getAndIncrement();
+            if (c + 1 < capacity)
+                notFull.signal();
+        } finally {
+            putLock.unlock();
+        }
+        if (c == 0)
+            signalNotEmpty();
+        return true;
     }
 
     private final RubyThread.Task<IRubyObject, IRubyObject> blockingPushTask = new RubyThread.Task<IRubyObject, IRubyObject>() {

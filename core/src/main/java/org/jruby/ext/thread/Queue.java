@@ -29,6 +29,7 @@
 package org.jruby.ext.thread;
 
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -590,30 +591,49 @@ public class Queue extends RubyObject implements DataType {
         final AtomicInteger count = this.count;
         if (count.get() == 0)
             return null;
-        IRubyObject x = null;
-        boolean notFullSignalNeeded = false;
+        final IRubyObject x;
+        final int c;
         final ReentrantLock takeLock = this.takeLock;
-        takeLock.lockInterruptibly();
+        takeLock.lock();
         try {
-            if (count.get() > 0) {
-                x = dequeue();
-                int c = count.getAndDecrement();
-                if (c > 1)
-                    notEmpty.signal();
-                // LinkedBlockingQueue diff: moved this check into locked
-                // section because of SizedQueue.max=, this might not be
-                // necessary (just be being overly cautious). With that move
-                // `int c` declaration is also now in locked region.
-                notFullSignalNeeded = c == capacity;
-            }
+            if (count.get() == 0)
+                return null;
+            x = dequeue();
+            c = count.getAndDecrement();
+            if (c > 1)
+                notEmpty.signal();
         } finally {
             takeLock.unlock();
         }
-        if (notFullSignalNeeded)
+        if (c == capacity)
             signalNotFull();
         return x;
     }
 
+    public IRubyObject pollInternal(long timeout, TimeUnit unit) throws InterruptedException {
+        final IRubyObject x;
+        final int c;
+        long nanos = unit.toNanos(timeout);
+        final AtomicInteger count = this.count;
+        final ReentrantLock takeLock = this.takeLock;
+        takeLock.lockInterruptibly();
+        try {
+            while (count.get() == 0) {
+                if (nanos <= 0L)
+                    return null;
+                nanos = notEmpty.awaitNanos(nanos);
+            }
+            x = dequeue();
+            c = count.getAndDecrement();
+            if (c > 1)
+                notEmpty.signal();
+        } finally {
+            takeLock.unlock();
+        }
+        if (c == capacity)
+            signalNotFull();
+        return x;
+    }
 
     private static final RubyThread.Task<Queue, IRubyObject> BLOCKING_POP_TASK = new RubyThread.Task<Queue, IRubyObject>() {
         public IRubyObject run(ThreadContext context, Queue queue) throws InterruptedException {
