@@ -1928,6 +1928,8 @@ public class RubyHash extends RubyObject implements Map {
     public IRubyObject shift(ThreadContext context) {
         modify();
 
+        if (isEmpty()) return context.nil;
+
         RubyHashEntry entry = head.nextAdded;
         if (entry != head) {
             RubyArray result = RubyArray.newArray(context.runtime, entry.key, entry.value);
