@@ -46,7 +46,6 @@ default_gems = [
     ['fileutils', '1.7.2'],
     ['find', '0.2.0'],
     ['forwardable', '1.3.3'],
-    # ['gdbm', '2.1.0'],
     ['getoptlong', '0.2.1'],
     ['io-console', '0.7.1'],
     # https://github.com/ruby/io-nonblock/issues/4
