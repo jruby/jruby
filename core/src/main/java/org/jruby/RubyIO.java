@@ -4438,65 +4438,37 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    @Deprecated
-    public static IRubyObject pipe19(ThreadContext context, IRubyObject recv) {
-        return pipe19(context, recv, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
-    }
-
-    @Deprecated
-    public static IRubyObject pipe19(ThreadContext context, IRubyObject recv, IRubyObject modes) {
-        return pipe19(context, recv, new IRubyObject[] {modes}, Block.NULL_BLOCK);
-    }
-
-    @Deprecated
-    public static IRubyObject pipe19(ThreadContext context, IRubyObject klass, IRubyObject[] argv, Block block) {
-        return pipe(context, klass, argv, block);
-    }
-
-
     public static IRubyObject pipe(ThreadContext context, IRubyObject recv) {
-        return pipe(context, recv, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+        return pipe(context, recv, Block.NULL_BLOCK);
     }
 
-    @JRubyMethod(name = "pipe", optional = 3, checkArity = false, meta = true)
-    public static IRubyObject pipe(ThreadContext context, IRubyObject klass, IRubyObject[] argv, Block block) {
-        int argc = Arity.checkArgumentCount(context, argv, 0, 3);
+    @JRubyMethod(name = "pipe", meta = true)
+    public static IRubyObject pipe(ThreadContext context, IRubyObject klass, Block block) {
+        return pipe(context, klass, context.nil, context.nil, context.nil, block);
+    }
 
+    @JRubyMethod(name = "pipe", meta = true)
+    public static IRubyObject pipe(ThreadContext context, IRubyObject klass, IRubyObject arg0, Block block) {
+        IRubyObject opt = TypeConverter.checkHashType(context.runtime, arg0);
+
+        return pipe(context, klass, opt.isNil() ? arg0 : context.nil, context.nil, opt, block);
+    }
+
+    @JRubyMethod(name = "pipe", meta = true)
+    public static IRubyObject pipe(ThreadContext context, IRubyObject klass, IRubyObject arg0, IRubyObject arg1, Block block) {
+        IRubyObject opt = TypeConverter.checkHashType(context.runtime, arg1);
+
+        return pipe(context, klass, arg0, !opt.isNil() ? context.nil : arg1, opt, block);
+    }
+
+    @JRubyMethod(name = "pipe", meta = true)
+    public static IRubyObject pipe(ThreadContext context, IRubyObject klass, IRubyObject v1, IRubyObject v2, IRubyObject opt, Block block) {
         Ruby runtime = context.runtime;
-        int state;
+
         RubyIO r, w;
-//        IRubyObject args[] = new IRubyObject[3]
-        IRubyObject v1, v2;
-        IRubyObject opt;
-        v1 = v2 = opt = context.nil;
         OpenFile fptr, fptr2;
         int[] fmode_p = {0};
         IRubyObject ret;
-
-        switch (argc) {
-            case 3:
-                opt = argv[2].convertToHash();
-                argc--;
-                v2 = argv[1];
-                v1 = argv[0];
-                break;
-            case 2:
-                opt = TypeConverter.checkHashType(runtime, argv[1]);
-                if (!opt.isNil()) {
-                    argc--;
-                } else {
-                    v2 = argv[1];
-                }
-                v1 = argv[0];
-                break;
-            case 1:
-                opt = TypeConverter.checkHashType(runtime, argv[0]);
-                if (!opt.isNil()) {
-                    argc--;
-                } else {
-                    v1 = argv[0];
-                }
-        }
 
         PosixShim posix = new PosixShim(runtime);
         Channel[] fds = posix.pipe();
@@ -4512,7 +4484,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 //            close(pipes[1]);
 //            rb_jump_tag(state);
 //        }
-        r = new RubyIO(runtime, (RubyClass)klass);
+        r = new RubyIO(runtime, (RubyClass) klass);
         r.initializeCommon(context, new ChannelFD(fds[0], runtime.getPosix(), runtime.getFilenoUtil()), runtime.newFixnum(OpenFlags.O_RDONLY), context.nil);
         fptr = r.getOpenFileChecked();
 
@@ -4526,7 +4498,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 //            if (!NIL_P(r)) rb_io_close(r);
 //            rb_jump_tag(state);
 //        }
-        w = new RubyIO(runtime, (RubyClass)klass);
+        w = new RubyIO(runtime, (RubyClass) klass);
         w.initializeCommon(context, new ChannelFD(fds[1], runtime.getPosix(), runtime.getFilenoUtil()), runtime.newFixnum(OpenFlags.O_WRONLY), context.nil);
         fptr2 = w.getOpenFileChecked();
         fptr2.setSync(true);
@@ -5644,6 +5616,37 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         IRubyObject _str = argc >= 2 ? args[1] : context.nil;
 
         return sysreadCommon(context, runtime, _length, _str);
+    }
+
+    @Deprecated
+    public static IRubyObject pipe19(ThreadContext context, IRubyObject recv) {
+        return pipe19(context, recv, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+    }
+
+    @Deprecated
+    public static IRubyObject pipe19(ThreadContext context, IRubyObject recv, IRubyObject modes) {
+        return pipe19(context, recv, new IRubyObject[] {modes}, Block.NULL_BLOCK);
+    }
+
+    @Deprecated
+    public static IRubyObject pipe19(ThreadContext context, IRubyObject klass, IRubyObject[] argv, Block block) {
+        return pipe(context, klass, argv, block);
+    }
+
+    @Deprecated
+    public static IRubyObject pipe(ThreadContext context, IRubyObject klass, IRubyObject[] argv, Block block) {
+        switch (argv.length) {
+            case 0:
+                return pipe(context, klass, block);
+            case 1:
+                return pipe(context, klass, argv[0], block);
+            case 2:
+                return pipe(context, klass, argv[0], argv[1], block);
+            case 3:
+                return pipe(context, klass, argv[0], argv[1], argv[2], block);
+            default:
+                throw context.runtime.newArgumentError(argv.length, 0, 3);
+        }
     }
 
     protected OpenFile openFile;
