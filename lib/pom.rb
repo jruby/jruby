@@ -50,7 +50,7 @@ default_gems = [
     ['forwardable', '1.3.2'],
     # ['gdbm', '2.1.0'],
     ['getoptlong', '0.1.1'],
-    ['io-console', '0.5.11'],
+    ['io-console', '0.7.2'],
     # https://github.com/ruby/io-nonblock/issues/4
     # ['io-nonblock', '0.1.0'],
     ['io-wait', '0.3.0'],
