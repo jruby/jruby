@@ -72,6 +72,8 @@ public class MethodGatherer {
     static {
         STATIC_RESERVED_NAMES = newReservedNamesMap(1);
         STATIC_RESERVED_NAMES.put("new", new AssignedName("new", Priority.RESERVED));
+        // "singleton_method_added" gets called on the metaclass for metaclass method definitions
+        STATIC_RESERVED_NAMES.put("singleton_method_added", new AssignedName("singleton_method_added", Priority.RESERVED));
     }
 
     static {
@@ -82,6 +84,8 @@ public class MethodGatherer {
         INSTANCE_RESERVED_NAMES.put("initialize", new AssignedName("initialize", Priority.RESERVED));
         // "equal?" should not be overridden (GH-5990)
         INSTANCE_RESERVED_NAMES.put("equal?", new AssignedName("equal?", Priority.RESERVED));
+        // "singleton_method_added" gets called on the object for singleton method definitions
+        INSTANCE_RESERVED_NAMES.put("singleton_method_added", new AssignedName("singleton_method_added", Priority.RESERVED));
     }
 
     // TODO: other reserved names?
