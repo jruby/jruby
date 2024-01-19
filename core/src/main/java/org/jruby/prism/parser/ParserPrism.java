@@ -204,22 +204,19 @@ public class ParserPrism extends Parser {
         System.out.println("source: " + new String(source));
         System.out.println("metadata: " + new String(metadata));
 
-//        Value[] sourcePointer = calloc.apply(Value.i32(1), Value.i32(sourceLength));
-//        System.out.println("sourcePointer: " + sourcePointer[0].asInt());
-//        Value[] optionsPointer = calloc.apply(Value.i32(1), Value.i32(metadata.length));
-//        System.out.println("optionsPointer: " + optionsPointer[0].asInt());
-//
-//        Value[] bufferPointer = calloc.apply(pmBufferSizeof.apply()[0], Value.i32(1));
-//        System.out.println("bufferPointer: " + bufferPointer[0].asInt());
+        Value[] sourcePointer = calloc.apply(Value.i32(1), Value.i32(sourceLength));
+        System.out.println("sourcePointer: " + sourcePointer[0].asInt());
+        Value[] optionsPointer = calloc.apply(Value.i32(1), Value.i32(metadata.length));
+        System.out.println("optionsPointer: " + optionsPointer[0].asInt());
 
-        prism.getMemory().write(0, source);
-        prism.getMemory().write(sourceLength, metadata);
+        Value[] bufferPointer = calloc.apply(pmBufferSizeof.apply()[0], Value.i32(1));
+        pmBufferInit.apply(bufferPointer);
+        System.out.println("bufferPointer: " + bufferPointer[0].asInt());
 
-        int bufferPointer = sourceLength + metadata.length;
+        prism.getMemory().write(0, source, sourcePointer[0].asInt(), sourceLength);
+        prism.getMemory().write(0, metadata, optionsPointer[0].asInt(), metadata.length);
 
-        pmBufferInit.apply(Value.i32(bufferPointer));
-
-        pmSerializeParse.apply(Value.i32(bufferPointer), Value.i32(0), Value.i32(sourceLength), Value.i32(sourceLength));
+        pmSerializeParse.apply(bufferPointer[0], sourcePointer[0], optionsPointer[0], optionsPointer[0]);
         System.out.println("done?");
 
         if (ParserManager.PARSER_TIMING) {
@@ -228,7 +225,7 @@ public class ParserPrism extends Parser {
             stats.addYARPTimeCParseSerialize(System.nanoTime() - time);
         }
 
-        byte[] result = prism.getMemory().readBytes(pmBufferValue.apply(Value.i32(bufferPointer))[0].asInt(), pmBufferLength.apply(Value.i32(bufferPointer))[0].asInt());
+        byte[] result = prism.getMemory().readBytes(pmBufferValue.apply(bufferPointer[0])[0].asInt(), pmBufferLength.apply(bufferPointer[0])[0].asInt());
         System.out.println("result: " + Arrays.toString(result));
 //        System.out.println("DEBUG Chicory result: " + Arrays.toString(result));
 //
