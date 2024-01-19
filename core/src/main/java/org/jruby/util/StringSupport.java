@@ -2071,7 +2071,7 @@ public final class StringSupport {
             if (wantarray) {
                 // this code should be live in 3.0
                 if (false) { // #if STRING_ENUMERATORS_WANTARRAY
-                    runtime.getWarnings().warning(ID.BLOCK_UNUSED, "given block not used");
+                    runtime.getWarnings().warn(ID.BLOCK_UNUSED, "given block not used");
                 } else {
                     runtime.getWarnings().warning(ID.BLOCK_DEPRECATED, "passing a block to String#lines is deprecated");
                     wantarray = false;

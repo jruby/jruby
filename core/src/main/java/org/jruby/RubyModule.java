@@ -4912,9 +4912,9 @@ public class RubyModule extends RubyObject {
             if (notAutoload || !setAutoloadConstant(name, value, file, line)) {
                 if (warn && notAutoload) {
                     if (this.equals(getRuntime().getObject())) {
-                        getRuntime().getWarnings().warning(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name);
+                        getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name);
                     } else {
-                        getRuntime().getWarnings().warning(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + this + "::" + name);
+                        getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + this + "::" + name);
                     }
                 }
 

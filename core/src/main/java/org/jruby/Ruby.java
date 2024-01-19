@@ -5608,7 +5608,7 @@ public final class Ruby implements Constantizable {
     private final WarnCallback regexpWarnings = new WarnCallback() {
         @Override
         public void warn(String message) {
-            getWarnings().warning(message);
+            getWarnings().warn(message);
         }
     };
 
