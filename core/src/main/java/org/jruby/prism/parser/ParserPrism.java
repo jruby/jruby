@@ -1,5 +1,7 @@
 package org.jruby.prism.parser;
 
+import com.dylibso.chicory.runtime.Module;
+import com.dylibso.chicory.wasm.types.Value;
 import jnr.ffi.LibraryLoader;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ISO8859_1Encoding;
@@ -27,11 +29,15 @@ import org.prism.Nodes.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import com.dylibso.chicory.runtime.*;
+import com.dylibso.chicory.runtime.wasi.*;
 
 import static org.jruby.lexer.LexingCommon.DOLLAR_UNDERSCORE;
 import static org.jruby.parser.ParserType.EVAL;
@@ -176,20 +182,66 @@ public class ParserPrism extends Parser {
     private byte[] parse(byte[] source, int sourceLength, byte[] metadata) {
         long time = 0;
         if (ParserManager.PARSER_TIMING) time = System.nanoTime();
-        ParserBindingPrism.Buffer buffer = new ParserBindingPrism.Buffer(jnr.ffi.Runtime.getRuntime(prismLibrary));
-        prismLibrary.pm_buffer_init(buffer);
-        prismLibrary.pm_serialize_parse(buffer, source, sourceLength, metadata);
+
+        // TODO: wasi seems to be not required here
+        WasiOptions wasiOpts = WasiOptions.builder().inheritSystem().build();
+        WasiPreview1 wasi = new WasiPreview1(wasiOpts);
+        HostImports imports = new HostImports(wasi.toHostFunctions());
+        // TODO: initialize the module during the object instantiation
+        Instance prism = Module.build(
+                // TODO: load from resources this.getClass().getResourceAsStream("/prism.wasm")
+                new File("core/src/main/resources/prism.wasm")
+                ).instantiate(imports);
+
+        ExportFunction calloc = prism.getExport("calloc");
+        ExportFunction pmSerializeParse = prism.getExport("pm_serialize_parse");
+        ExportFunction pmBufferInit = prism.getExport("pm_buffer_init");
+        ExportFunction pmBufferSizeof = prism.getExport("pm_buffer_sizeof");
+        ExportFunction pmBufferValue = prism.getExport("pm_buffer_value");
+        ExportFunction pmBufferLength = prism.getExport("pm_buffer_length");
+
+        System.out.println("source: " + source.length + " length " + sourceLength);
+        System.out.println("source: " + new String(source));
+        System.out.println("metadata: " + new String(metadata));
+
+//        Value[] sourcePointer = calloc.apply(Value.i32(1), Value.i32(sourceLength));
+//        System.out.println("sourcePointer: " + sourcePointer[0].asInt());
+//        Value[] optionsPointer = calloc.apply(Value.i32(1), Value.i32(metadata.length));
+//        System.out.println("optionsPointer: " + optionsPointer[0].asInt());
+//
+//        Value[] bufferPointer = calloc.apply(pmBufferSizeof.apply()[0], Value.i32(1));
+//        System.out.println("bufferPointer: " + bufferPointer[0].asInt());
+
+        prism.getMemory().write(0, source);
+        prism.getMemory().write(sourceLength, metadata);
+
+        int bufferPointer = sourceLength + metadata.length;
+
+        pmBufferInit.apply(Value.i32(bufferPointer));
+
+        pmSerializeParse.apply(Value.i32(bufferPointer), Value.i32(0), Value.i32(sourceLength), Value.i32(sourceLength));
+        System.out.println("done?");
+
         if (ParserManager.PARSER_TIMING) {
             ParserStats stats = runtime.getParserManager().getParserStats();
 
             stats.addYARPTimeCParseSerialize(System.nanoTime() - time);
         }
 
-        int length = buffer.length.intValue();
-        byte[] src = new byte[length];
-        buffer.value.get().get(0, src, 0, length);
+        byte[] result = prism.getMemory().readBytes(pmBufferValue.apply(Value.i32(bufferPointer))[0].asInt(), pmBufferLength.apply(Value.i32(bufferPointer))[0].asInt());
+        System.out.println("result: " + Arrays.toString(result));
+//        System.out.println("DEBUG Chicory result: " + Arrays.toString(result));
+//
+//        ParserBindingPrism.Buffer buffer = new ParserBindingPrism.Buffer(jnr.ffi.Runtime.getRuntime(prismLibrary));
+//        prismLibrary.pm_buffer_init(buffer);
+//        prismLibrary.pm_serialize_parse(buffer, source, sourceLength, metadata);
+//        int length = buffer.length.intValue();
+//        byte[] src = new byte[length];
+//        buffer.value.get().get(0, src, 0, length);
+//
+//        System.out.println("DEBUG Previous result: " + Arrays.toString(src));
 
-        return src;
+        return result;
     }
 
     // lineNumber (0-indexed)
