@@ -1,5 +1,3 @@
-hangs:SizedQueue#enq with a timeout returns self if the item was pushed in time
-hangs:SizedQueue#enq with a timeout interrupts enqueuing threads with ClosedQueueError when the queue is closed
 fails:SizedQueue#enq with a timeout does nothing if the timeout is nil
 fails:SizedQueue#enq with a timeout returns nil if no space is avialable and timeout is 0
 fails:SizedQueue#enq with a timeout returns nil if no space is available in time
