@@ -30,10 +30,12 @@ package org.jruby.ext.thread;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyHash;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyThread;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -143,13 +145,68 @@ public class SizedQueue extends Queue {
     }
 
     @JRubyMethod(name = {"push", "<<", "enq"})
-    public IRubyObject push(ThreadContext context, final IRubyObject arg0, final IRubyObject nonblock) {
+    public IRubyObject push(ThreadContext context, final IRubyObject arg0, final IRubyObject nonblockOrOpts) {
         initializedCheck();
 
+        boolean nonblock = false;
+        long timeoutNS = 0;
+
+        RubyHash opts = ArgsUtil.extractKeywords(nonblockOrOpts);
+
+        if (opts != null) {
+            IRubyObject _timeout = ArgsUtil.extractKeywordArg(context, "timeout", opts);
+
+            if (!_timeout.isNil()) {
+                timeoutNS = queueTimeoutToNanos(context, _timeout);
+
+                if (timeoutNS == 0 && count.get() == capacity) {
+                    return context.nil;
+                }
+            }
+        } else {
+            nonblock = nonblockOrOpts.isTrue();
+        }
+
+        return pushCommon(context, arg0, nonblock, timeoutNS);
+    }
+
+    @JRubyMethod(name = {"push", "<<", "enq"})
+    public IRubyObject push(ThreadContext context, final IRubyObject arg0, final IRubyObject _nonblock, IRubyObject _opts) {
+        initializedCheck();
+
+        boolean nonblock = _nonblock.isTrue();
+        long timeoutNS = 0;
+
+        IRubyObject _timeout = ArgsUtil.extractKeywordArg(context, "timeout", _opts);
+
+        if (!_timeout.isNil()) {
+            if (nonblock) {
+                throw context.runtime.newArgumentError("can't set a timeout if non_block is enabled");
+            }
+
+            timeoutNS = queueTimeoutToNanos(context, _timeout);
+
+            if (timeoutNS == 0 && count.get() == capacity) {
+                return context.nil;
+            }
+        }
+
+        return pushCommon(context, arg0, nonblock, timeoutNS);
+    }
+
+    private IRubyObject pushCommon(ThreadContext context, IRubyObject arg0, boolean nonblock, long timeoutNS) {
         try {
             RubyThread thread = context.getThread();
-            if (nonblock.isTrue()) {
-                return thread.executeTask(context, arg0, nonblockingPushTask);
+            if (nonblock || timeoutNS != 0) {
+                boolean result = timeoutNS == 0 ? offerInternal(context, arg0) : offerInternal(context, arg0, timeoutNS, TimeUnit.NANOSECONDS);
+                if (!result) {
+                    if (timeoutNS == 0) {
+                        throw context.runtime.newThreadError("queue full");
+                    } else {
+                        return context.nil;
+                    }
+                }
+                return this;
             } else {
                 return thread.executeTaskBlocking(context, arg0, blockingPushTask);
             }

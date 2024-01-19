@@ -38,12 +38,15 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyHash;
 import org.jruby.RubyMarshal;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyThread;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -375,12 +378,60 @@ public class Queue extends RubyObject implements DataType {
     }
 
     @JRubyMethod(name = {"pop", "deq", "shift"})
-    public IRubyObject pop(ThreadContext context, IRubyObject nonblock) {
+    public IRubyObject pop(ThreadContext context, IRubyObject nonblockOrOpts) {
         initializedCheck();
+
+        boolean nonblock = false;
+        long timeoutNS = 0;
+
+        RubyHash opts = ArgsUtil.extractKeywords(nonblockOrOpts);
+
+        if (opts != null) {
+            IRubyObject _timeout = ArgsUtil.extractKeywordArg(context, "timeout", opts);
+
+            if (!_timeout.isNil()) {
+                timeoutNS = queueTimeoutToNanos(context, _timeout);
+
+                if (timeoutNS == 0 && count.get() == 0) {
+                    return context.nil;
+                }
+            }
+        } else {
+            nonblock = nonblockOrOpts.isTrue();
+        }
+
+        return popCommon(context, nonblock, timeoutNS);
+    }
+
+    @JRubyMethod(name = {"pop", "deq", "shift"})
+    public IRubyObject pop(ThreadContext context, IRubyObject _nonblock, IRubyObject _opts) {
+        initializedCheck();
+
+        boolean nonblock = _nonblock.isTrue();
+        long timeoutNS = 0;
+
+        IRubyObject _timeout = ArgsUtil.extractKeywordArg(context, "timeout", _opts);
+
+        if (!_timeout.isNil()) {
+            if (nonblock) {
+                throw context.runtime.newArgumentError("can't set a timeout if non_block is enabled");
+            }
+
+            timeoutNS = queueTimeoutToNanos(context, _timeout);
+
+            if (timeoutNS == 0 && count.get() == 0) {
+                return context.nil;
+            }
+        }
+
+        return popCommon(context, nonblock, 0);
+    }
+
+    private IRubyObject popCommon(ThreadContext context, boolean nonblock, long timeoutNS) {
         try {
-            if (nonblock.isTrue()) {
-                IRubyObject result = pollInternal();
-                if (result == null) {
+            if (nonblock || timeoutNS != 0) {
+                IRubyObject result = timeoutNS == 0 ? pollInternal() : pollInternal(timeoutNS, TimeUnit.NANOSECONDS);
+                if (result == null && timeoutNS == 0) {
                     throw context.runtime.newThreadError("queue empty");
                 } else {
                     return result;
@@ -391,6 +442,19 @@ public class Queue extends RubyObject implements DataType {
         } catch (InterruptedException ie) {
             throw createInterruptedError(context, "pop");
         }
+    }
+
+    protected static long queueTimeoutToNanos(ThreadContext context, IRubyObject _timeout) {
+        long timeoutNS;
+
+        if (_timeout.isNil()) {
+            timeoutNS = 0;
+        } else if (_timeout instanceof RubyFixnum) {
+            timeoutNS = TimeUnit.NANOSECONDS.convert(_timeout.convertToInteger().getLongValue(), TimeUnit.SECONDS);
+        } else {
+            timeoutNS = (long) (RubyNumeric.num2dbl(context, _timeout) * 1_000_000_000);
+        }
+        return timeoutNS;
     }
 
     @JRubyMethod(name = {"push", "<<", "enq"})
