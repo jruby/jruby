@@ -62,6 +62,7 @@ default_gems = [
     ['net-http', '0.4.0'],
     ['net-protocol', '0.2.2'],
     # Partial implementation in JRuby, unsure whether this is important
+    # Our ext is moving to the gem: https://github.com/ruby/nkf/pull/15
     # ['nkf', '0.1.1'],
     ['observer', '0.1.2'],
     ['open3', '0.2.1'],
