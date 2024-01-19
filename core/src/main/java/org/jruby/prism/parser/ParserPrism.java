@@ -213,10 +213,10 @@ public class ParserPrism extends Parser {
         pmBufferInit.apply(bufferPointer);
         System.out.println("bufferPointer: " + bufferPointer[0].asInt());
 
-        prism.getMemory().write(0, source, sourcePointer[0].asInt(), sourceLength);
         prism.getMemory().write(0, metadata, optionsPointer[0].asInt(), metadata.length);
+        prism.getMemory().write(0, source, sourcePointer[0].asInt(), sourceLength);
 
-        pmSerializeParse.apply(bufferPointer[0], sourcePointer[0], optionsPointer[0], optionsPointer[0]);
+        pmSerializeParse.apply(bufferPointer[0], sourcePointer[0], optionsPointer[0], Value.i32(metadata.length));
         System.out.println("done?");
 
         if (ParserManager.PARSER_TIMING) {
