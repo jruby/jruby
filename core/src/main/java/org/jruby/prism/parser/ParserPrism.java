@@ -204,19 +204,30 @@ public class ParserPrism extends Parser {
         System.out.println("source: " + new String(source));
         System.out.println("metadata: " + new String(metadata));
 
-        Value[] sourcePointer = calloc.apply(Value.i32(1), Value.i32(sourceLength));
-        System.out.println("sourcePointer: " + sourcePointer[0].asInt());
-        Value[] optionsPointer = calloc.apply(Value.i32(1), Value.i32(metadata.length));
-        System.out.println("optionsPointer: " + optionsPointer[0].asInt());
+//        Value[] sourcePointer = calloc.apply(Value.i32(1), Value.i32(sourceLength));
+//        System.out.println("sourcePointer: " + sourcePointer[0].asInt());
+//        Value[] optionsPointer = calloc.apply(Value.i32(1), Value.i32(metadata.length));
+//        System.out.println("optionsPointer: " + optionsPointer[0].asInt());
 
-        Value[] bufferPointer = calloc.apply(pmBufferSizeof.apply()[0], Value.i32(1));
-        pmBufferInit.apply(bufferPointer);
-        System.out.println("bufferPointer: " + bufferPointer[0].asInt());
+//        Value[] bufferPointer = calloc.apply(pmBufferSizeof.apply()[0], Value.i32(1));
+//        pmBufferInit.apply(bufferPointer);
+//        System.out.println("bufferPointer: " + bufferPointer[0].asInt());
 
-        prism.getMemory().write(0, metadata, optionsPointer[0].asInt(), metadata.length);
-        prism.getMemory().write(0, source, sourcePointer[0].asInt(), sourceLength);
+        int sourcePointer = 0;
+        int optionsPointer = sourceLength + 1;
 
-        pmSerializeParse.apply(bufferPointer[0], sourcePointer[0], optionsPointer[0], Value.i32(metadata.length));
+        int bufferPointer = optionsPointer + metadata.length + 1;
+        pmBufferInit.apply(Value.i32(bufferPointer));
+
+        prism.getMemory().write(0, source);
+//        prism.getMemory().write(0, metadata, optionsPointer, metadata.length);
+        prism.getMemory().write(optionsPointer, metadata);
+//        prism.getMemory().write(0, source, sourcePointer, sourceLength);
+
+//        prism.getMemory().write(0, metadata, optionsPointer, metadata.length);
+//        prism.getMemory().write(0, source, sourcePointer, sourceLength);
+
+        pmSerializeParse.apply(Value.i32(bufferPointer), Value.i32(sourcePointer), Value.i32(sourceLength), Value.i32(optionsPointer));
         System.out.println("done?");
 
         if (ParserManager.PARSER_TIMING) {
@@ -225,7 +236,7 @@ public class ParserPrism extends Parser {
             stats.addYARPTimeCParseSerialize(System.nanoTime() - time);
         }
 
-        byte[] result = prism.getMemory().readBytes(pmBufferValue.apply(bufferPointer[0])[0].asInt(), pmBufferLength.apply(bufferPointer[0])[0].asInt());
+        byte[] result = prism.getMemory().readBytes(pmBufferValue.apply(Value.i32(bufferPointer))[0].asInt(), pmBufferLength.apply(Value.i32(bufferPointer))[0].asInt());
         System.out.println("result: " + Arrays.toString(result));
 //        System.out.println("DEBUG Chicory result: " + Arrays.toString(result));
 //
