@@ -1444,11 +1444,9 @@ public class RubyModule extends RubyObject {
         }
         methodLocation.addMethod(name, UndefinedMethod.getInstance());
 
-        if (isSingleton()) {
-            ((MetaClass) this).getAttached().callMethod(context, "singleton_method_undefined", runtime.newSymbol(name));
-        } else {
-            callMethod(context, "method_undefined", runtime.newSymbol(name));
-        }
+        RubySymbol nameSymbol = runtime.newSymbol(name);
+
+        methodUndefined(context, nameSymbol);
     }
 
     @JRubyMethod(name = "include?")
@@ -1567,11 +1565,7 @@ public class RubyModule extends RubyObject {
             invalidateCacheDescendants();
         }
 
-        if (isSingleton()) {
-            ((MetaClass) this).getAttached().callMethod(context, "singleton_method_removed", name);
-        } else {
-            callMethod(context, "method_removed", name);
-        }
+        methodRemoved(context, name);
     }
 
     private static void warnMethodRemoval(final ThreadContext context, final String id) {
@@ -2303,6 +2297,22 @@ public class RubyModule extends RubyObject {
             ((MetaClass) this).getAttached().callMethod(context, "singleton_method_added", identifier);
         } else {
             callMethod(context, "method_added", identifier);
+        }
+    }
+
+    private void methodUndefined(ThreadContext context, RubySymbol nameSymbol) {
+        if (isSingleton()) {
+            ((MetaClass) this).getAttached().callMethod(context, "singleton_method_undefined", nameSymbol);
+        } else {
+            callMethod(context, "method_undefined", nameSymbol);
+        }
+    }
+
+    private void methodRemoved(ThreadContext context, RubySymbol name) {
+        if (isSingleton()) {
+            ((MetaClass) this).getAttached().callMethod(context, "singleton_method_removed", name);
+        } else {
+            callMethod(context, "method_removed", name);
         }
     }
 
