@@ -1819,6 +1819,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         int i;
         IRubyObject line;
         int argc = args.length;
+        IRubyObject outputFS = runtime.getGlobalVariables().get("$,");
 
         /* if no argument given, print `$_' */
         if (argc == 0) {
@@ -1826,8 +1827,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             line = context.getLastLine();
             args = new IRubyObject[]{line};
         }
+        if (argc > 1 && !outputFS.isNil()) {
+            runtime.getWarnings().warnDeprecated("$, is set to non-nil value");
+        }
         for (i=0; i<argc; i++) {
-            IRubyObject outputFS = runtime.getGlobalVariables().get("$,");
             if (!outputFS.isNil() && i>0) {
                 write(context, out, outputFS);
             }
@@ -2403,7 +2406,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         if (fptr == null || (fd = fptr.fd().realFileno) == -1
                 || !posix.isNative() || Platform.IS_WINDOWS ) {
-            runtime.getWarnings().warning("close_on_exec is not implemented on this platform for this stream type: " + fptr.fd().ch.getClass().getSimpleName());
+            runtime.getWarnings().warningDeprecated("close_on_exec is not implemented on this platform for this stream type: " + fptr.fd().ch.getClass().getSimpleName());
             return context.nil;
         }
 
@@ -2858,7 +2861,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         } else {
             sep = '#';
         }
-        runtime.getWarnings().warning(klass.toString() + sep + "write is outdated interface which accepts just one argument");
+        runtime.getWarnings().warningDeprecated(klass.toString() + sep + "write is outdated interface which accepts just one argument");
     }
 
     @JRubyMethod

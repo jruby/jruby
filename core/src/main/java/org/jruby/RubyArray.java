@@ -2210,7 +2210,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         IRubyObject sep;
         sep = runtime.getGlobalVariables().get("$,");
         if (!sep.isNil()) {
-            runtime.getWarnings().warn("$, is set to non-nil value");
+            runtime.getWarnings().warningDeprecated("$, is set to non-nil value");
         }
         return sep;
     }
