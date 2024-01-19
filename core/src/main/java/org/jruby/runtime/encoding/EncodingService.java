@@ -25,9 +25,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.jcodings.specific.USASCIIEncoding;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
-import org.jruby.ext.nkf.RubyNKF;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.io.EncodingUtils;
 
@@ -283,11 +281,6 @@ public final class EncodingService {
 
         if (arg instanceof RubyEncoding) {
             return ((RubyEncoding) arg).getEncoding();
-        }
-        if (arg instanceof RubyFixnum) {
-            final int id = (int) arg.convertToInteger().getLongValue();
-            final String name = RubyNKF.NKFCharsetMap.get(id);
-            if ( name != null ) return getEncodingFromNKFName(name);
         }
         if ( ( arg = arg.checkStringType() ).isNil() ) {
             return null;
