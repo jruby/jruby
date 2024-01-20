@@ -3018,7 +3018,7 @@ public class RubyModule extends RubyObject {
         Ruby runtime = context.runtime;
 
         if (args.length == 2 && (args[1] == runtime.getTrue() || args[1] == runtime.getFalse())) {
-            runtime.getWarnings().warning(ID.OBSOLETE_ARGUMENT, "optional boolean argument is obsoleted");
+            runtime.getWarnings().warnDeprecated(ID.OBSOLETE_ARGUMENT, "optional boolean argument is obsoleted");
             boolean writeable = args[1].isTrue();
             RubySymbol sym = TypeConverter.checkID(args[0]);
             addAccessor(context, sym, getCurrentVisibilityForDefineMethod(context), args[0].isTrue(), writeable);
@@ -4926,9 +4926,9 @@ public class RubyModule extends RubyObject {
             if (notAutoload || !setAutoloadConstant(name, value, file, line)) {
                 if (warn && notAutoload) {
                     if (this.equals(getRuntime().getObject())) {
-                        getRuntime().getWarnings().warning(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name);
+                        getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name);
                     } else {
-                        getRuntime().getWarnings().warning(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + this + "::" + name);
+                        getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + this + "::" + name);
                     }
                 }
 

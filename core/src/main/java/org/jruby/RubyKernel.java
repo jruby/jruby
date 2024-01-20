@@ -1933,7 +1933,7 @@ public class RubyKernel {
         return RubyProcess.spawn(context, recv, args);
     }
 
-    @JRubyMethod(required = 1, optional = 9, checkArity = false, module = true, visibility = PRIVATE)
+    @JRubyMethod(required = 1, optional = 9, checkArity = false, module = true, notImplemented = true, visibility = PRIVATE)
     public static IRubyObject syscall(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         throw context.runtime.newNotImplementedError("Kernel#syscall is not implemented in JRuby");
     }
@@ -2493,7 +2493,7 @@ public class RubyKernel {
     // Writes backref due to decendant calls ending up in Regexp#=~
     @JRubyMethod(name = "=~", writes = FrameField.BACKREF)
     public static IRubyObject op_match(ThreadContext context, IRubyObject self, IRubyObject arg) {
-        context.runtime.getWarnings().warn(ID.DEPRECATED_METHOD,
+        context.runtime.getWarnings().warnDeprecated(ID.DEPRECATED_METHOD,
             "deprecated Object#=~ is called on " + ((RubyBasicObject) self).type() +
                 "; it always returns nil");
         return ((RubyBasicObject) self).op_match(context, arg);
