@@ -117,6 +117,7 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.runtime.profile.MethodEnhancer;
+import org.jruby.util.RubyStringBuilder;
 import org.jruby.util.ByteList;
 import org.jruby.util.ClassProvider;
 import org.jruby.util.CommonByteLists;
@@ -4510,6 +4511,36 @@ public class RubyModule extends RubyObject {
         storeConstant(name, entry.value, hidden, entry.getFile(), entry.getLine());
     }
 
+    @JRubyMethod(name = "refinements")
+    public IRubyObject refinements(ThreadContext context) {
+        RubyArray<RubyModule> refinementModules = context.runtime.newArray();
+
+        refinements.forEach((key, value) -> {
+            refinementModules.append(value);
+        });
+        return refinementModules;
+    }
+
+    @JRubyMethod(name = "target")
+    public IRubyObject target(ThreadContext context) {
+        return getRefinedClassOrThrow(context, true);
+    }
+
+    @JRubyMethod(name = "refined_class")
+    public IRubyObject refined_class(ThreadContext context) {
+        return getRefinedClassOrThrow(context, false);
+    }
+
+    private IRubyObject getRefinedClassOrThrow(ThreadContext context, boolean nameIsTarget) {
+        if (!isRefinement()) {
+            String methodName = nameIsTarget ? "target" : "refined_class";
+            String errMsg = RubyStringBuilder.str(context.runtime,
+                    "undefined method `"+ methodName +"' for ", rubyBaseName(),
+                    ":", getMetaClass());
+            throw context.runtime.newNoMethodError(errMsg, this, "target", context.runtime.newEmptyArray());
+        }
+        return refinedClass;
+    }
     //
     ////////////////// CLASS VARIABLE API METHODS ////////////////
     //
