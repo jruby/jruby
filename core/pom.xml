@@ -447,6 +447,13 @@ DO NOT MODIFY - GENERATED CODE
                 <compilerArg>-J-Dfile.encoding=UTF-8</compilerArg>
                 <compilerArg>-J-Xmx${jruby.compile.memory}</compilerArg>
               </compilerArgs>
+              <annotationProcessorPaths>
+                <annotationProcessorPath>
+                  <groupId>org.jruby</groupId>
+                  <artifactId>jruby-base</artifactId>
+                  <version>${project.version}</version>
+                </annotationProcessorPath>
+              </annotationProcessorPaths>
             </configuration>
           </execution>
           <execution>
@@ -733,6 +740,13 @@ DO NOT MODIFY - GENERATED CODE
                     <compilerArg>-XDcompilePolicy=simple</compilerArg>
                     <compilerArg>-Xplugin:ErrorProne</compilerArg>
                   </compilerArgs>
+                  <annotationProcessorPaths>
+                    <annotationProcessorPath>
+                      <groupId>org.jruby</groupId>
+                      <artifactId>jruby-base</artifactId>
+                      <version>${project.version}</version>
+                    </annotationProcessorPath>
+                  </annotationProcessorPaths>
                   <annotationProcessorPaths>
                     <path>
                       <groupId>com.google.errorprone</groupId>
