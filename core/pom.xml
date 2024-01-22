@@ -241,7 +241,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>wasi</artifactId>
-      <version>999-SNAPSHOT</version>
+      <version>0.0.5</version>
     </dependency>
   </dependencies>
   <build>

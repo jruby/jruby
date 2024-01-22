@@ -78,7 +78,7 @@ project 'JRuby Base' do
 
   jar 'jakarta.annotation:jakarta.annotation-api:2.0.0', scope: 'provided'
 
-  jar 'com.dylibso.chicory:wasi:999-SNAPSHOT'
+  jar 'com.dylibso.chicory:wasi:0.0.5'
 
   plugin_management do
     plugin( 'org.eclipse.m2e:lifecycle-mapping:1.0.0',
