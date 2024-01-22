@@ -173,7 +173,12 @@ project 'JRuby Base' do
     'fork' => 'true',
     'annotationProcessors' => [ 'org.jruby.anno.AnnotationBinder' ],
     'generatedSourcesDirectory' =>  'target/generated-sources',
-    'compilerArgs' => fork_compiler_args
+    'compilerArgs' => fork_compiler_args,
+    annotationProcessorPaths: [
+      groupId: "org.jruby",
+      artifactId: "jruby-base",
+      version: "${project.version}"
+    ]
   }
 
   plugin( :compiler,
