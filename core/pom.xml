@@ -517,6 +517,12 @@ DO NOT MODIFY - GENERATED CODE
                     <include>lib/jni/**</include>
                   </includes>
                 </fileset>
+                <fileset>
+                  <directory>${project.basedir}/..</directory>
+                  <includes>
+                    <include>lib/modules/**</include>
+                  </includes>
+                </fileset>
               </filesets>
               <failOnError>false</failOnError>
             </configuration>
@@ -566,6 +572,7 @@ DO NOT MODIFY - GENERATED CODE
             </goals>
             <configuration>
               <prependGroupId>true</prependGroupId>
+              <includeScope>runtime</includeScope>
               <outputDirectory>${basedir}/../lib/modules</outputDirectory>
               <excludeArtifactIds>joda-timezones</excludeArtifactIds>
             </configuration>

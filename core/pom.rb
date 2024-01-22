@@ -227,7 +227,9 @@ project 'JRuby Base' do
                                    { 'directory' =>  '${project.basedir}/..',
                                      'includes' => [ 'bin/jruby' ] },
                                    { 'directory' =>  '${project.basedir}/..',
-                                     'includes' => [ 'lib/jni/**' ] } ],
+                                     'includes' => [ 'lib/jni/**' ] },
+                                   { 'directory' =>  '${project.basedir}/..',
+                                     'includes' => [ 'lib/modules/**' ] } ],
                    'failOnError' =>  'false' )
   end
 
@@ -269,6 +271,7 @@ project 'JRuby Base' do
       execute_goals('copy-dependencies',
                     id: 'copy dependencies to lib',
                     prependGroupId: true,
+                    includeScope: "runtime",
                     outputDirectory: "${basedir}/../lib/modules",
                     excludeArtifactIds: 'joda-timezones')
       execute_goals('copy',
