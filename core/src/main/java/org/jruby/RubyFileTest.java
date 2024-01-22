@@ -119,7 +119,7 @@ public class RubyFileTest {
         return exist_p(recv.getRuntime().getCurrentContext(), recv, filename);
     }
 
-    @JRubyMethod(name = {"exist?", "exists?"}, module = true)
+    @JRubyMethod(name = "exist?", module = true)
     public static IRubyObject exist_p(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         // We get_path here to prevent doing it both existsOnClasspath and fileResource (Only call to_path once).
         return RubyBoolean.newBoolean(context, exist(context, get_path(context, filename)));
