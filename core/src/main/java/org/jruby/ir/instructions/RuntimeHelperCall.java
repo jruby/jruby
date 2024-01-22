@@ -7,7 +7,12 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Boolean;
-import org.jruby.ir.operands.*;
+import org.jruby.ir.operands.Fixnum;
+import org.jruby.ir.operands.FrozenString;
+import org.jruby.ir.operands.Integer;
+import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.Stringable;
+import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -27,7 +32,8 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
         HANDLE_PROPAGATED_BREAK, HANDLE_NONLOCAL_RETURN, HANDLE_BREAK_AND_RETURNS_IN_LAMBDA,
         IS_DEFINED_BACKREF, IS_DEFINED_NTH_REF, IS_DEFINED_GLOBAL,
         IS_DEFINED_CLASS_VAR, IS_DEFINED_SUPER, IS_DEFINED_METHOD, IS_DEFINED_CALL,
-        IS_DEFINED_CONSTANT_OR_METHOD, MERGE_KWARGS, IS_HASH_EMPTY, HASH_CHECK, ARRAY_LENGTH;
+        IS_DEFINED_CONSTANT_OR_METHOD, MERGE_KWARGS, IS_HASH_EMPTY, HASH_CHECK, ARRAY_LENGTH,
+        TRACE_RESCUE;
 
         private static final Methods[] VALUES = values();
 
@@ -96,13 +102,12 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
                              Object[] temp, Block block) {
         Operand[] operands = getOperands();
 
-        if (helperMethod == Methods.IS_DEFINED_BACKREF) {
-            return IRRuntimeHelpers.isDefinedBackref(
-                    context,
-                    (IRubyObject) operands[0].retrieve(context, self, currScope, currDynScope, temp));
-        }
-
+        // These have special operands[0] that we may not want to execute
         switch (helperMethod) {
+            case IS_DEFINED_BACKREF:
+                return IRRuntimeHelpers.isDefinedBackref(
+                        context,
+                        (IRubyObject) operands[0].retrieve(context, self, currScope, currDynScope, temp));
             case IS_DEFINED_NTH_REF:
                 return IRRuntimeHelpers.isDefinedNthRef(
                         context,
@@ -113,6 +118,9 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
                         context,
                         ((Stringable) operands[0]).getString(),
                         (IRubyObject) operands[1].retrieve(context, self, currScope, currDynScope, temp));
+            case TRACE_RESCUE:
+                IRRuntimeHelpers.traceRescue(context, ((Stringable) operands[0]).getString(), (int) ((Integer) operands[1]).getValue());
+                return context.nil;
         }
 
         Object arg1 = operands[0].retrieve(context, self, currScope, currDynScope, temp);

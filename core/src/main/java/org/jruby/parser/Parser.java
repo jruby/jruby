@@ -140,9 +140,9 @@ public class Parser {
         } catch (IOException e) {
             // Enebo: We may want to change this error to be more specific,
             // but I am not sure which conditions leads to this...so lame message.
-            throw runtime.newSyntaxError("Problem reading source: " + e);
+            throw runtime.newSyntaxError("Problem reading source: " + e, file);
         } catch (SyntaxException e) {
-            throw runtime.newSyntaxError(e.getFile() + ":" + (e.getLine() + 1) + ": " + e.getMessage());
+            throw runtime.newSyntaxError(e.getFile() + ":" + (e.getLine() + 1) + ": " + e.getMessage(), e.getFile());
         }
 
         Node ast = result.getAST();

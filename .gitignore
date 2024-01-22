@@ -50,7 +50,6 @@ core/src/main/java/META-INF/
 lib/jni
 lib/modules
 lib/native
-lib/ruby/cext/
 lib/ruby/gems
 
 # Ruby stdlib files installed from external sources
@@ -76,9 +75,7 @@ lib/ruby/stdlib/ffi*
 lib/ruby/stdlib/fileutils*
 lib/ruby/stdlib/find*
 lib/ruby/stdlib/forwardable*
-lib/ruby/stdlib/gauntlet_rdoc.rb
 lib/ruby/stdlib/getoptlong*
-lib/ruby/stdlib/hoe*
 lib/ruby/stdlib/io/console*
 lib/ruby/stdlib/io/wait*
 lib/ruby/stdlib/ipaddr*
@@ -87,7 +84,6 @@ lib/ruby/stdlib/jar*
 lib/ruby/stdlib/jline
 lib/ruby/stdlib/jopenssl*
 lib/ruby/stdlib/json*
-lib/ruby/stdlib/krypt*
 lib/ruby/stdlib/libfixposix*
 lib/ruby/stdlib/logger*
 lib/ruby/stdlib/matrix*
@@ -110,7 +106,6 @@ lib/ruby/stdlib/prime*
 lib/ruby/stdlib/pstore*
 lib/ruby/stdlib/psych*
 lib/ruby/stdlib/random*
-lib/ruby/stdlib/racc*
 lib/ruby/stdlib/rake*
 lib/ruby/stdlib/rdoc*
 lib/ruby/stdlib/readline*
@@ -127,9 +122,9 @@ lib/ruby/stdlib/singleton*
 lib/ruby/stdlib/stringio*
 lib/ruby/stdlib/strscan*
 lib/ruby/stdlib/subspawn*
+lib/ruby/stdlib/syntax_suggest*
 lib/ruby/stdlib/time.rb
 lib/ruby/stdlib/timeout*
-lib/ruby/stdlib/tracer*
 lib/ruby/stdlib/tsort*
 lib/ruby/stdlib/un*
 lib/ruby/stdlib/uri*

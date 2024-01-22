@@ -48,6 +48,7 @@ import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.IRBlockBody;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.MethodBlockBody;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
@@ -134,7 +135,12 @@ public class RubyProc extends RubyObject implements DataType {
     }
 
     public static RubyProc newProc(Ruby runtime, Block block, Block.Type type, String file, int line) {
-        RubyProc proc = new RubyProc(runtime, runtime.getProc(), type, file, line);
+        RubyClass clazz = runtime.getProc();
+        return newProc(runtime, clazz, block, type, file, line);
+    }
+
+    public static RubyProc newProc(Ruby runtime, RubyClass clazz, Block block, Block.Type type, String file, int line) {
+        RubyProc proc = new RubyProc(runtime, clazz, type, file, line);
         proc.setup(block);
 
         return proc;
@@ -212,15 +218,21 @@ public class RubyProc extends RubyObject implements DataType {
     }
 
     @JRubyMethod(name = "clone")
-    @Override
-    public IRubyObject rbClone() {
-    	return newProc(getRuntime(), block, type, file, line);
+    public IRubyObject rbClone(ThreadContext context) {
+        RubyProc clone = procDup();
+        sites(context).initialize_clone.call(context, clone, clone, this);
+        return clone;
     }
 
     @JRubyMethod(name = "dup")
-    @Override
-    public IRubyObject dup() {
-        return newProc(getRuntime(), block, type, file, line);
+    public IRubyObject dup(ThreadContext context) {
+        RubyProc dup = procDup();
+        sites(context).initialize_dup.call(context, dup, dup, this);
+        return dup;
+    }
+
+    private RubyProc procDup() {
+        return newProc(getRuntime(), getMetaClass(), block, type, file, line);
     }
 
     @Override
@@ -453,6 +465,10 @@ public class RubyProc extends RubyObject implements DataType {
         return type.equals(Block.Type.THREAD);
     }
 
+    private static JavaSites.ProcSites sites(ThreadContext context) {
+        return context.sites.Proc;
+    }
+
     @Deprecated
     public final IRubyObject call19(ThreadContext context, IRubyObject[] args, Block block) {
         return call(context, args, block);
@@ -466,6 +482,16 @@ public class RubyProc extends RubyObject implements DataType {
     @Deprecated
     public final IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject self, Block passedBlock) {
         return block.call(context, args, passedBlock);
+    }
+
+    @Deprecated
+    public IRubyObject rbClone() {
+        return rbClone(getRuntime().getCurrentContext());
+    }
+
+    @Deprecated
+    public IRubyObject dup() {
+        return dup(getRuntime().getCurrentContext());
     }
 
     public void setFromMethod() {

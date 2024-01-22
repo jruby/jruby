@@ -30,6 +30,7 @@
 
 package org.jruby;
 
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
@@ -110,6 +111,11 @@ public final class MetaClass extends RubyClass {
     @Override
     RubyClass toSingletonClass(RubyBasicObject target) {
         return attached == target ? this : super.toSingletonClass(target);
+    }
+
+    @Override
+    public IRubyObject attached_object(ThreadContext context) {
+        return attached;
     }
 
     public RubyBasicObject getAttached() {

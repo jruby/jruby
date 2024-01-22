@@ -29,9 +29,6 @@ default_gems = [
     # Currently using a stub gem for JRuby until we can incorporate our code.
     # https://github.com/ruby/date/issues/48
     ['date', '3.3.4'],
-    # Newer versions require deep control over CRuby, needs work to support JRuby.
-    # See bundled gems below.
-    ['debug', '0.2.1'],
     ['delegate', '0.3.1'],
     ['did_you_mean', '1.6.3'],
     ['digest', '3.1.1'],
@@ -49,7 +46,6 @@ default_gems = [
     ['fileutils', '1.7.2'],
     ['find', '0.2.0'],
     ['forwardable', '1.3.3'],
-    # ['gdbm', '2.1.0'],
     ['getoptlong', '0.2.1'],
     ['io-console', '0.7.1'],
     # https://github.com/ruby/io-nonblock/issues/4
@@ -82,10 +78,11 @@ default_gems = [
     ['psych', '5.1.2'],
     ['rake-ant', '1.0.6'],
     ['rdoc', '6.6.2'],
+    # Ext removed from CRuby in 3.3, equivalent for us would be to remove jruby-readline but unknown implications.
+    # The gem below just attempts to load the extension, and failing that loads reline. Our current readline.rb in
+    # jruby-readline does largely the same, but it finds the extension and does not load reline.
     # https://github.com/ruby/readline/issues/5
-    # ['readline', '0.0.3'],
-    # Will be solved with readline
-    # ['readline-ext', '0.1.4'],
+    # ['readline', '0.0.4'],
     ['reline', '0.4.1'],
     # https://github.com/ruby/resolv/issues/19
     # ['resolv', '0.2.1'],
@@ -103,6 +100,7 @@ default_gems = [
       ['subspawn-posix', '0.1.1'],
       ['ffi-binary-libfixposix', '0.5.1.1'],
       ['ffi-bindings-libfixposix', '0.5.1.0'],
+    ['syntax_suggest', '1.0.1'],
     # https://github.com/ruby/syslog/issues/1
     # ['syslog', '0.1.0'],
     # https://github.com/ruby/tempfile/issues/7
@@ -123,8 +121,9 @@ default_gems = [
 ]
 
 bundled_gems = [
-    # Depends on many CRuby internals
-    # ['debug', '1.4.0'],
+    # Newer versions require deep control over CRuby internals, needs work to support JRuby.
+    # ['debug', '1.9.1'],
+    ['debug', '0.2.1'],
     ['matrix', '0.4.2'],
     ['minitest', '5.20.0'],
     ['net-ftp', '0.3.3'],
@@ -133,6 +132,7 @@ bundled_gems = [
     ['net-smtp', '0.4.0'],
     ['prime', '0.1.2'],
     ['power_assert', '2.0.3'],
+    ['racc', '1.7.3'],
     ['rake', '${rake.version}'],
     # Depends on many CRuby internals
     # ['rbs', '2.0.0'],

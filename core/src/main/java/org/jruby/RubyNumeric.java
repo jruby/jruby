@@ -336,10 +336,13 @@ public class RubyNumeric extends RubyObject {
                 if (context.sites.Rational.to_f.isBuiltin(arg)) return ((RubyRational) arg).getDoubleValue();
                 break;
             case STRING:
+                throw context.runtime.newTypeError("no implicit conversion to float from string");
             case NIL:
+                throw context.runtime.newTypeError("no implicit conversion to float from nil");
             case TRUE:
+                throw context.runtime.newTypeError("no implicit conversion to float from true");
             case FALSE:
-                throw context.runtime.newTypeError(str(context.runtime, "can't convert ", arg.inspect(), " into Float"));
+                throw context.runtime.newTypeError("no implicit conversion to float from false");
         }
         IRubyObject val = TypeConverter.convertToType(arg, context.runtime.getFloat(), "to_f");
         return ((RubyFloat) val).value;

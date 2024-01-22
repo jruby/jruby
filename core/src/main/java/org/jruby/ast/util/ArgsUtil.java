@@ -123,6 +123,7 @@ public final class ArgsUtil {
 
     private static final IRubyObject[] NULL_1 = new IRubyObject[] { null };
     private static final IRubyObject[] NULL_2 = new IRubyObject[] { null, null };
+    private static final IRubyObject[] NULL_3 = new IRubyObject[] { null, null, null };
 
     public static final RubyHash.VisitorWithState<RubySymbol> SINGLE_KEY_CHECK_VISITOR = new RubyHash.VisitorWithState<RubySymbol>() {
         @Override
@@ -151,6 +152,7 @@ public final class ArgsUtil {
             switch (validKeys.length) {
                 case 1 : return NULL_1;
                 case 2 : return NULL_2;
+                case 3 : return NULL_3;
                 default: return new IRubyObject[validKeys.length];
             }
         }

@@ -641,7 +641,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (threadImpl != ThreadLike.DUMMY) throw context.runtime.newThreadError("already initialized thread");
 
         BlockBody body = block.getBody();
-        startThread(context, new RubyRunnable(this, args, block, callInfo), body.getFile(), body.getLine());
+        startThread(context, new RubyRunnable(this, context, args, block, callInfo), body.getFile(), body.getLine());
 
         return context.nil;
     }

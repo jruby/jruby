@@ -55,16 +55,20 @@ public class RubyRunnable implements ThreadedRunnable {
     private final int callInfo;
     private final RubyThread rubyThread;
 
+    // nulled out when run
+    private volatile ThreadContext creatorContext;
+
     private Thread javaThread;
     private static boolean warnedAboutTC = false;
 
-    public RubyRunnable(RubyThread rubyThread, IRubyObject[] args, Block currentBlock, int callInfo) {
+    public RubyRunnable(RubyThread rubyThread, ThreadContext creatorContext, IRubyObject[] args, Block currentBlock, int callInfo) {
         this.rubyThread = rubyThread;
         this.runtime = rubyThread.getRuntime();
 
         proc = runtime.newProc(Block.Type.THREAD, currentBlock);
         this.arguments = args;
         this.callInfo = callInfo;
+        this.creatorContext = creatorContext;
     }
 
     @Deprecated
@@ -81,6 +85,11 @@ public class RubyRunnable implements ThreadedRunnable {
         javaThread = Thread.currentThread();
         ThreadContext context = runtime.getThreadService().registerNewThread(rubyThread);
         context.callInfo = callInfo;
+
+        if (creatorContext != null && creatorContext.getFiber() != null) {
+            context.getFiber().inheritFiberStorage(creatorContext);
+        }
+        creatorContext = null;
 
         // set thread context JRuby classloader here, for Ruby-owned thread
         ClassLoader oldContextClassLoader = null;
