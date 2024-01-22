@@ -191,6 +191,10 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         if (runtime.getWarningCategories().contains(Category.DEPRECATED)) warn(id, message);
     }
 
+    public void warnDeprecated(String message) {
+        if (runtime.getWarningCategories().contains(Category.DEPRECATED)) warn(message);
+    }
+
     public void warnDeprecatedAlternate(String name, String alternate) {
         if (runtime.getWarningCategories().contains(Category.DEPRECATED)) warn(ID.DEPRECATED_METHOD, name + " is deprecated; use " + alternate + " instead");
     }
@@ -208,15 +212,27 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     }
 
     /**
-     * Verbose mode warning methods, their contract is that consumer must explicitly check for runtime.isVerbose() before calling them
+     * Verbose mode warning methods, only warn in verbose mode
      */
     public void warning(String message) {
         warning(ID.MISCELLANEOUS, message);
     }
 
+    public void warningDeprecated(String message) {
+        warningDeprecated(ID.MISCELLANEOUS, message);
+    }
+
     @Override
     public void warning(ID id, String message) {
+        if (!isVerbose()) return;
+
         warn(id, message);
+    }
+
+    public void warningDeprecated(ID id, String message) {
+        if (!isVerbose()) return;
+
+        warnDeprecated(id, message);
     }
 
     /**
@@ -224,10 +240,14 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      */
     @Override
     public void warning(ID id, String fileName, int lineNumber, String message) {
+        if (!isVerbose()) return;
+
         warn(id, fileName, lineNumber, message);
     }
 
     public void warning(String fileName, int lineNumber, String message) {
+        if (!isVerbose()) return;
+
         warn(fileName, lineNumber, message);
     }
 

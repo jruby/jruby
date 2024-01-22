@@ -47,7 +47,7 @@ default_gems = [
     ['find', '0.2.0'],
     ['forwardable', '1.3.3'],
     ['getoptlong', '0.2.1'],
-    ['io-console', '0.7.1'],
+    ['io-console', '0.7.2'],
     # https://github.com/ruby/io-nonblock/issues/4
     # ['io-nonblock', '0.1.0'],
     ['io-wait', '0.3.1'],
@@ -95,7 +95,7 @@ default_gems = [
     ['shellwords', '0.2.0'],
     ['singleton', '0.2.0'],
     ['stringio', '3.1.0'],
-    ['strscan', '3.0.7'],
+    ['strscan', '3.0.9'],
     ['subspawn', '0.1.1'], # has 3 transitive deps:
       ['subspawn-posix', '0.1.1'],
       ['ffi-binary-libfixposix', '0.5.1.1'],

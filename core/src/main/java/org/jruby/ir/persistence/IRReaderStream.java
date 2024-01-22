@@ -529,6 +529,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case GLOBAL_VARIABLE: return GlobalVariable.decode(this);
             case HASH: return Hash.decode(this);
             case IR_EXCEPTION: return IRException.decode(this);
+            case INTEGER: return org.jruby.ir.operands.Integer.decode(this);
             case LABEL: return Label.decode(this);
             case LOCAL_VARIABLE: return LocalVariable.decode(this);
             case NIL: return manager.getNil();
