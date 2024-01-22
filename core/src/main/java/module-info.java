@@ -20,7 +20,6 @@ open module org.jruby.base {
     requires org.joda.time;
     requires java.management;
     requires org.jruby.dirgra;
-    requires static java.xml.ws.annotation;
     requires org.jruby.jzlib;
     requires static java.scripting;
     requires static java.sql;
