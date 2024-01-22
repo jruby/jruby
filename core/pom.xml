@@ -226,12 +226,6 @@ DO NOT MODIFY - GENERATED CODE
       <artifactId>backport9</artifactId>
       <version>1.13</version>
     </dependency>
-    <dependency>
-      <groupId>jakarta.annotation</groupId>
-      <artifactId>jakarta.annotation-api</artifactId>
-      <version>2.0.0</version>
-      <scope>provided</scope>
-    </dependency>
   </dependencies>
   <build>
     <defaultGoal>package</defaultGoal>
