@@ -193,6 +193,9 @@ public class ParserPrism extends Parser {
                 new File("core/src/main/resources/prism.wasm")
                 ).instantiate(imports);
 
+        // TODO: verify how those metadata should be passed around.
+        metadata = new byte[0];
+
         ExportFunction calloc = prism.getExport("calloc");
         ExportFunction pmSerializeParse = prism.getExport("pm_serialize_parse");
         ExportFunction pmBufferInit = prism.getExport("pm_buffer_init");
@@ -200,35 +203,16 @@ public class ParserPrism extends Parser {
         ExportFunction pmBufferValue = prism.getExport("pm_buffer_value");
         ExportFunction pmBufferLength = prism.getExport("pm_buffer_length");
 
-        System.out.println("source: " + source.length + " length " + sourceLength);
-        System.out.println("source: " + new String(source));
-        System.out.println("metadata: " + new String(metadata));
+       Value[] sourcePointer = calloc.apply(Value.i32(1), Value.i32(sourceLength));
+       Value[] optionsPointer = calloc.apply(Value.i32(1), Value.i32(metadata.length));
 
-//        Value[] sourcePointer = calloc.apply(Value.i32(1), Value.i32(sourceLength));
-//        System.out.println("sourcePointer: " + sourcePointer[0].asInt());
-//        Value[] optionsPointer = calloc.apply(Value.i32(1), Value.i32(metadata.length));
-//        System.out.println("optionsPointer: " + optionsPointer[0].asInt());
+       Value[] bufferPointer = calloc.apply(pmBufferSizeof.apply()[0], Value.i32(1));
+       pmBufferInit.apply(bufferPointer);
 
-//        Value[] bufferPointer = calloc.apply(pmBufferSizeof.apply()[0], Value.i32(1));
-//        pmBufferInit.apply(bufferPointer);
-//        System.out.println("bufferPointer: " + bufferPointer[0].asInt());
+        prism.getMemory().writeString(optionsPointer[0].asInt(), new String(metadata));
+        prism.getMemory().writeString(sourcePointer[0].asInt(), new String(source));
 
-        int sourcePointer = 0;
-        int optionsPointer = sourceLength + 1;
-
-        int bufferPointer = optionsPointer + metadata.length + 1;
-        pmBufferInit.apply(Value.i32(bufferPointer));
-
-        prism.getMemory().write(0, source);
-//        prism.getMemory().write(0, metadata, optionsPointer, metadata.length);
-        prism.getMemory().write(optionsPointer, metadata);
-//        prism.getMemory().write(0, source, sourcePointer, sourceLength);
-
-//        prism.getMemory().write(0, metadata, optionsPointer, metadata.length);
-//        prism.getMemory().write(0, source, sourcePointer, sourceLength);
-
-        pmSerializeParse.apply(Value.i32(bufferPointer), Value.i32(sourcePointer), Value.i32(sourceLength), Value.i32(optionsPointer));
-        System.out.println("done?");
+        pmSerializeParse.apply(bufferPointer[0], sourcePointer[0], Value.i32(sourceLength), optionsPointer[0]);
 
         if (ParserManager.PARSER_TIMING) {
             ParserStats stats = runtime.getParserManager().getParserStats();
@@ -236,18 +220,7 @@ public class ParserPrism extends Parser {
             stats.addYARPTimeCParseSerialize(System.nanoTime() - time);
         }
 
-        byte[] result = prism.getMemory().readBytes(pmBufferValue.apply(Value.i32(bufferPointer))[0].asInt(), pmBufferLength.apply(Value.i32(bufferPointer))[0].asInt());
-        System.out.println("result: " + Arrays.toString(result));
-//        System.out.println("DEBUG Chicory result: " + Arrays.toString(result));
-//
-//        ParserBindingPrism.Buffer buffer = new ParserBindingPrism.Buffer(jnr.ffi.Runtime.getRuntime(prismLibrary));
-//        prismLibrary.pm_buffer_init(buffer);
-//        prismLibrary.pm_serialize_parse(buffer, source, sourceLength, metadata);
-//        int length = buffer.length.intValue();
-//        byte[] src = new byte[length];
-//        buffer.value.get().get(0, src, 0, length);
-//
-//        System.out.println("DEBUG Previous result: " + Arrays.toString(src));
+        byte[] result = prism.getMemory().readBytes(pmBufferValue.apply(bufferPointer)[0].asInt(), pmBufferLength.apply(bufferPointer)[0].asInt());
 
         return result;
     }
