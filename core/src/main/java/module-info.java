@@ -26,7 +26,6 @@ module org.jruby.base {
     requires static java.sql;
     requires static java.compiler;
     requires me.qmx.jitescript;
-    requires ant;
     requires static slf4j.api;
     requires static org.osgi.core;
     requires jakarta.annotation;
