@@ -1,4 +1,4 @@
-module org.jruby.base {
+open module org.jruby.base {
     requires java.base;
     requires com.headius.options;
     requires org.jruby.jcodings;
