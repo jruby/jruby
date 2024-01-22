@@ -1672,7 +1672,7 @@ public class ShellLauncher {
                 args = new String[] { getPathEntry((RubyArray) rawArgs[0]) };
             } else {
                 synchronized (runtime.getLoadService()) {
-                    runtime.getLoadService().require("jruby/path_helper");
+                    runtime.getLoadService().require("org/jruby/kernel/path_helper");
                 }
                 RubyModule pathHelper = runtime.getClassFromPath("JRuby::PathHelper");
                 RubyArray parts = (RubyArray) Helpers.invoke(

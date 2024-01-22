@@ -19,7 +19,7 @@ class TestJRubyInternals < Test::Unit::TestCase
   end
 
   def test_smart_split_paths
-    require 'jruby/path_helper'
+    require 'org/jruby/kernel/path_helper'
     assert_equal %w(foo bar blah),
       JRuby::PathHelper.smart_split_command("foo bar blah")
     assert_equal [@file, *(%w{foo bar blah})],
