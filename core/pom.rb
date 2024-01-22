@@ -61,7 +61,6 @@ project 'JRuby Base' do
   jar 'org.jruby:jzlib:1.1.5'
   jar 'junit:junit', :scope => 'test'
   jar 'org.awaitility:awaitility', :scope => 'test'
-  jar 'org.apache.ant:ant:${ant.version}', :scope => 'provided'
   jar 'org.osgi:org.osgi.core:5.0.0', :scope => 'provided'
 
   # joda timezone must be before joda-time to be packed correctly
