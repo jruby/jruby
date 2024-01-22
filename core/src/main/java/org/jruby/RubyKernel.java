@@ -1933,7 +1933,7 @@ public class RubyKernel {
         return RubyProcess.spawn(context, recv, args);
     }
 
-    @JRubyMethod(required = 1, optional = 9, checkArity = false, module = true, visibility = PRIVATE)
+    @JRubyMethod(required = 1, optional = 9, checkArity = false, module = true, notImplemented = true, visibility = PRIVATE)
     public static IRubyObject syscall(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         throw context.runtime.newNotImplementedError("Kernel#syscall is not implemented in JRuby");
     }
