@@ -26,6 +26,8 @@ import org.jruby.util.CommonByteLists;
 import org.jruby.util.io.ChannelHelper;
 import org.prism.Nodes;
 import org.prism.Nodes.*;
+import org.prism.ParsingOptions;
+import org.prism.PrismWasmWrapper;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
@@ -36,15 +38,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.dylibso.chicory.runtime.*;
-import com.dylibso.chicory.runtime.wasi.*;
-
 import static org.jruby.lexer.LexingCommon.DOLLAR_UNDERSCORE;
 import static org.jruby.parser.ParserType.EVAL;
 import static org.jruby.parser.ParserType.MAIN;
 
 public class ParserPrism extends Parser {
     ParserBindingPrism prismLibrary;
+    PrismWasmWrapper prismWasmWrapper;
 
     public ParserPrism(Ruby runtime) {
         super(runtime);
@@ -52,6 +52,8 @@ public class ParserPrism extends Parser {
         String path = runtime.getInstanceConfig().getJRubyHome() + "/lib/prism.so";
         //System.out.println("Binding to " + path);
         prismLibrary = LibraryLoader.create(ParserBindingPrism.class).load(path);
+
+        prismWasmWrapper = new PrismWasmWrapper();
     }
     // FIXME: error/warn when cannot bind to yarp (probably silent fail-over option too)
 
@@ -182,45 +184,21 @@ public class ParserPrism extends Parser {
     private byte[] parse(byte[] source, int sourceLength, byte[] metadata) {
         long time = 0;
         if (ParserManager.PARSER_TIMING) time = System.nanoTime();
+        assert(source.length == sourceLength); // TODO: throw a better exception
 
-        // TODO: wasi seems to be not required here
-        WasiOptions wasiOpts = WasiOptions.builder().inheritSystem().build();
-        WasiPreview1 wasi = new WasiPreview1(wasiOpts);
-        HostImports imports = new HostImports(wasi.toHostFunctions());
-        // TODO: initialize the module during the object instantiation
-        Instance prism = Module.build(
-                // TODO: load from resources this.getClass().getResourceAsStream("/prism.wasm")
-                new File("core/src/main/resources/prism.wasm")
-                ).instantiate(imports);
-
-        // TODO: verify how those metadata should be passed around.
-        metadata = new byte[0];
-
-        ExportFunction calloc = prism.getExport("calloc");
-        ExportFunction pmSerializeParse = prism.getExport("pm_serialize_parse");
-        ExportFunction pmBufferInit = prism.getExport("pm_buffer_init");
-        ExportFunction pmBufferSizeof = prism.getExport("pm_buffer_sizeof");
-        ExportFunction pmBufferValue = prism.getExport("pm_buffer_value");
-        ExportFunction pmBufferLength = prism.getExport("pm_buffer_length");
-
-       Value[] sourcePointer = calloc.apply(Value.i32(1), Value.i32(sourceLength));
-       Value[] optionsPointer = calloc.apply(Value.i32(1), Value.i32(metadata.length));
-
-       Value[] bufferPointer = calloc.apply(pmBufferSizeof.apply()[0], Value.i32(1));
-       pmBufferInit.apply(bufferPointer);
-
-        prism.getMemory().writeString(optionsPointer[0].asInt(), new String(metadata));
-        prism.getMemory().writeString(sourcePointer[0].asInt(), new String(source));
-
-        pmSerializeParse.apply(bufferPointer[0], sourcePointer[0], Value.i32(sourceLength), optionsPointer[0]);
+        byte[] options = ParsingOptions.serialize(new byte[0], 0, metadata, true, false, (byte) 0, new byte[0][0][0]);
+        byte[] result = null;
+        try {
+            result = prismWasmWrapper.parse(source, options);
+        } finally {
+            prismWasmWrapper.close();
+        }
 
         if (ParserManager.PARSER_TIMING) {
             ParserStats stats = runtime.getParserManager().getParserStats();
 
             stats.addYARPTimeCParseSerialize(System.nanoTime() - time);
         }
-
-        byte[] result = prism.getMemory().readBytes(pmBufferValue.apply(bufferPointer)[0].asInt(), pmBufferLength.apply(bufferPointer)[0].asInt());
 
         return result;
     }
