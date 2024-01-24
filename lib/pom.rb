@@ -35,7 +35,7 @@ default_gems = [
     ['drb', '2.2.0'],
     ['english', '0.8.0'],
     # Ongoing discussion about the -java gem, since it just omits the ext: https://github.com/ruby/erb/issues/52
-    ['erb', '4.0.3'],
+    ['erb', '4.0.4'],
     ['error_highlight', '0.6.0'],
     # https://github.com/ruby/etc/issues/19
     # ['etc', '1.3.0'],
