@@ -1,7 +1,5 @@
 package org.jruby.prism.parser;
 
-import com.dylibso.chicory.runtime.Module;
-import com.dylibso.chicory.wasm.types.Value;
 import jnr.ffi.LibraryLoader;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ISO8859_1Encoding;
@@ -26,12 +24,10 @@ import org.jruby.util.CommonByteLists;
 import org.jruby.util.io.ChannelHelper;
 import org.prism.Nodes;
 import org.prism.Nodes.*;
-import org.prism.ParsingOptions;
 import org.prism.PrismWasmWrapper;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -181,15 +177,39 @@ public class ParserPrism extends Parser {
         }
     }
 
+
     private byte[] parse(byte[] source, int sourceLength, byte[] metadata) {
+        if (ParserManager.PARSER_WASM) {
+            return parseChicory(source, sourceLength, metadata);
+        }
+
+        long time = 0;
+        if (ParserManager.PARSER_TIMING) time = System.nanoTime();
+
+        ParserBindingPrism.Buffer buffer = new ParserBindingPrism.Buffer(jnr.ffi.Runtime.getRuntime(prismLibrary));
+        prismLibrary.pm_buffer_init(buffer);
+        prismLibrary.pm_serialize_parse(buffer, source, sourceLength, metadata);
+        if (ParserManager.PARSER_TIMING) {
+            ParserStats stats = runtime.getParserManager().getParserStats();
+
+            stats.addYARPTimeCParseSerialize(System.nanoTime() - time);
+        }
+
+        int length = buffer.length.intValue();
+        byte[] src = new byte[length];
+        buffer.value.get().get(0, src, 0, length);
+
+        return src;
+    }
+
+    private byte[] parseChicory(byte[] source, int sourceLength, byte[] metadata) {
         long time = 0;
         if (ParserManager.PARSER_TIMING) time = System.nanoTime();
         assert(source.length == sourceLength); // TODO: throw a better exception
 
-        byte[] options = ParsingOptions.serialize(new byte[0], 0, metadata, true, false, (byte) 0, new byte[0][0][0]);
-        byte[] result = null;
+        byte[] src;
         try {
-            result = prismWasmWrapper.parse(source, options);
+            src = prismWasmWrapper.parse(source, metadata);
         } finally {
             prismWasmWrapper.close();
         }
@@ -200,7 +220,7 @@ public class ParserPrism extends Parser {
             stats.addYARPTimeCParseSerialize(System.nanoTime() - time);
         }
 
-        return result;
+        return src;
     }
 
     // lineNumber (0-indexed)
