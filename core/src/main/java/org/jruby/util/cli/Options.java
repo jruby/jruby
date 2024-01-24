@@ -180,6 +180,7 @@ public class Options {
     public static final Option<Boolean> REWRITE_JAVA_TRACE = bool(DEBUG, "rewrite.java.trace", true, "Rewrite stack traces from exceptions raised in Java calls.");
 
     public static final Option<Boolean> PARSER_PRISM = bool(DEBUG, "parser.prism", false, "Parse and build Ruby using the prism parser.");
+    public static final Option<Boolean> PARSER_WASM = bool(DEBUG, "parser.prism.wasm", false, "Parse and build Ruby using the wasm prism parser.");
 
     public static final Option<Boolean> JI_SETACCESSIBLE = bool(JAVA_INTEGRATION, "ji.setAccessible", true, "Try to set inaccessible Java methods to be accessible.");
     public static final Option<Boolean> JI_UPPER_CASE_PACKAGE_NAME_ALLOWED = bool(JAVA_INTEGRATION, "ji.upper.case.package.name.allowed", false, "Allow Capitalized Java package names.");

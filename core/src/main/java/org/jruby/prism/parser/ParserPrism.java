@@ -24,6 +24,7 @@ import org.jruby.util.CommonByteLists;
 import org.jruby.util.io.ChannelHelper;
 import org.prism.Nodes;
 import org.prism.Nodes.*;
+import org.prism.PrismWasmWrapper;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
@@ -39,6 +40,7 @@ import static org.jruby.parser.ParserType.MAIN;
 
 public class ParserPrism extends Parser {
     ParserBindingPrism prismLibrary;
+    PrismWasmWrapper prismWasmWrapper;
 
     public ParserPrism(Ruby runtime) {
         super(runtime);
@@ -46,6 +48,8 @@ public class ParserPrism extends Parser {
         String path = runtime.getInstanceConfig().getJRubyHome() + "/lib/prism.so";
         //System.out.println("Binding to " + path);
         prismLibrary = LibraryLoader.create(ParserBindingPrism.class).load(path);
+
+        prismWasmWrapper = new PrismWasmWrapper();
     }
     // FIXME: error/warn when cannot bind to yarp (probably silent fail-over option too)
 
@@ -173,9 +177,15 @@ public class ParserPrism extends Parser {
         }
     }
 
+
     private byte[] parse(byte[] source, int sourceLength, byte[] metadata) {
+        if (ParserManager.PARSER_WASM) {
+            return parseChicory(source, sourceLength, metadata);
+        }
+
         long time = 0;
         if (ParserManager.PARSER_TIMING) time = System.nanoTime();
+
         ParserBindingPrism.Buffer buffer = new ParserBindingPrism.Buffer(jnr.ffi.Runtime.getRuntime(prismLibrary));
         prismLibrary.pm_buffer_init(buffer);
         prismLibrary.pm_serialize_parse(buffer, source, sourceLength, metadata);
@@ -188,6 +198,27 @@ public class ParserPrism extends Parser {
         int length = buffer.length.intValue();
         byte[] src = new byte[length];
         buffer.value.get().get(0, src, 0, length);
+
+        return src;
+    }
+
+    private byte[] parseChicory(byte[] source, int sourceLength, byte[] metadata) {
+        long time = 0;
+        if (ParserManager.PARSER_TIMING) time = System.nanoTime();
+        assert(source.length == sourceLength); // TODO: throw a better exception
+
+        byte[] src;
+        try {
+            src = prismWasmWrapper.parse(source, metadata);
+        } finally {
+            prismWasmWrapper.close();
+        }
+
+        if (ParserManager.PARSER_TIMING) {
+            ParserStats stats = runtime.getParserManager().getParserStats();
+
+            stats.addYARPTimeCParseSerialize(System.nanoTime() - time);
+        }
 
         return src;
     }

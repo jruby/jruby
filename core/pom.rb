@@ -78,6 +78,8 @@ project 'JRuby Base' do
 
   jar 'jakarta.annotation:jakarta.annotation-api:2.0.0', scope: 'provided'
 
+  jar 'com.dylibso.chicory:runtime:999-SNAPSHOT'
+
   plugin_management do
     plugin( 'org.eclipse.m2e:lifecycle-mapping:1.0.0',
             'lifecycleMappingMetadata' => {
@@ -264,6 +266,16 @@ project 'JRuby Base' do
     resource do
       directory 'src/main/resources'
       includes 'META-INF/**/*'
+    end
+
+    resource do
+      directory 'src/main/resources/wasm'
+      includes '**/*wasm'
+    end
+
+    resource do
+      directory 'src/main/resources'
+      includes '**/*properties'
     end
 
   end

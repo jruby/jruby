@@ -3,6 +3,7 @@ package org.jruby.management;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import org.jruby.Ruby;
+import org.jruby.parser.ParserManager;
 import org.jruby.util.cli.Options;
 
 public class ParserStats implements ParserStatsMBean {
@@ -90,6 +91,8 @@ public class ParserStats implements ParserStatsMBean {
         System.out.println("--------------------------------------------------------------------------------");
         System.out.println("Parser Statistics:");
         System.out.println("  Generic:");
+        System.out.println("    parser type: " + (ParserManager.PARSER_WASM ? "Prism(wasm)" :
+                (Options.PARSER_PRISM.load() ? "Prism(C)" : "Legacy")));
         System.out.println("    bytes processed: " + getTotalParsedBytes());
         System.out.println("    files parsed: " + getNumberOfLoadParses());
         System.out.println("    evals parsed: " + getNumberOfEvalParses());

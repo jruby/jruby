@@ -34,6 +34,7 @@ import static org.jruby.parser.ParserType.*;
  */
 public class ParserManager {
     public static final boolean PARSER_TIMING = Options.PARSER_SUMMARY.load();
+    public static final boolean PARSER_WASM = Options.PARSER_WASM.load();
 
     private final Ruby runtime;
 
@@ -44,7 +45,7 @@ public class ParserManager {
 
     public ParserManager(Ruby runtime) {
         this.runtime = runtime;
-        parser = Options.PARSER_PRISM.load() ? new ParserPrism(runtime) : new Parser(runtime);
+        parser = Options.PARSER_PRISM.load() || Options.PARSER_WASM.load() ? new ParserPrism(runtime) : new Parser(runtime);
         parserStats = new ParserStats(runtime);
     }
 
