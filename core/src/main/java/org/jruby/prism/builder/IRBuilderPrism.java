@@ -3,6 +3,7 @@ package org.jruby.prism.builder;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.EUCJPEncoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.specific.Windows_31JEncoding;
 import org.jruby.ParseResult;
@@ -678,7 +679,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
     private Operand buildBlockArgument(BlockArgumentNode node) {
         if (node.expression instanceof SymbolNode && !scope.maybeUsingRefinements()) {
-            return new SymbolProc(symbol(((SymbolNode) node.expression).unescaped));
+            return new SymbolProc(symbol(((SymbolNode) node.expression)));
         } else if (node.expression == null) {
             return getYieldClosureVariable();
         }
@@ -1897,7 +1898,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildSymbol(SymbolNode node) {
-        return new Symbol(symbol(node.unescaped));
+        return new Symbol(symbol(node));
     }
 
     private Operand buildUndef(UndefNode node) {
@@ -2407,6 +2408,8 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
             buildPatternEachIf(result, original, deconstructed, value, node.predicate, node.consequent, node.statements, inAlternation, isSinglePattern, errorString);
         } else if (exprNodes instanceof LocalVariableTargetNode) {
             buildPatternLocal((LocalVariableTargetNode) exprNodes, value, inAlternation);
+        } else if (exprNodes instanceof ImplicitNode) {
+            buildPatternEach(testEnd, result, original, deconstructed, value, ((ImplicitNode) exprNodes).value, inAlternation, isSinglePattern, errorString);
         } else if (exprNodes instanceof AssocSplatNode) {
             AssocSplatNode node = (AssocSplatNode) exprNodes;
 
@@ -2500,7 +2503,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
                     Node keyHack = ((AssocNode) node).key;
                     RubySymbol name = null;
                     if (keyHack instanceof SymbolNode) {
-                        name = symbol(((SymbolNode) keyHack).unescaped);
+                        name = symbol((SymbolNode) keyHack);
                     } else {
                         throwSyntaxError(getLine(node), "what else is in this");
                     }
@@ -2587,7 +2590,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         } else if (node instanceof FalseNode) {
             return runtime.getFalse();
         } else if (node instanceof SymbolNode) {
-            return symbol(((SymbolNode) node).unescaped);
+            return symbol((SymbolNode) node);
         } else if (node instanceof StringNode) {
             return runtime.newString((bytelistFrom((StringNode) node)));
         }
@@ -2759,6 +2762,17 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     @Override
     protected Operand putConstant(ConstantPathNode path, Operand value) {
         return putConstant(buildModuleParent(path.parent), ((ConstantReadNode) path.child).name, value);
+    }
+
+    protected RubySymbol symbol(SymbolNode node) {
+        short flags = node.flags;
+        Encoding encoding = SymbolFlags.isForcedUsAsciiEncoding(flags) ? USASCIIEncoding.INSTANCE :
+                SymbolFlags.isForcedUtf8Encoding(flags) ? UTF8Encoding.INSTANCE :
+                        SymbolFlags.isForcedBinaryEncoding(flags) ? ASCIIEncoding.INSTANCE :
+                                getEncoding();
+        ByteList bytelist = new ByteList(node.unescaped, encoding);
+
+        return symbol(bytelist);
     }
 
     @Override

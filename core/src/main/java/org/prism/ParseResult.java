@@ -13,23 +13,43 @@ public final class ParseResult {
         }
     }
 
+    public enum ErrorLevel {
+        /** For errors that cannot be recovered from. */
+        ERROR_FATAL
+    }
+
+    public static ErrorLevel[] ERROR_LEVELS = ErrorLevel.values();
+
     public static final class Error {
         public final String message;
         public final Nodes.Location location;
+        public final ErrorLevel level;
 
-        public Error(String message, Nodes.Location location) {
+        public Error(String message, Nodes.Location location, ErrorLevel level) {
             this.message = message;
             this.location = location;
+            this.level = level;
         }
     }
+
+    public enum WarningLevel {
+        /** For warnings which should be emitted if $VERBOSE != nil. */
+        WARNING_DEFAULT,
+        /** For warnings which should be emitted if $VERBOSE == true. */
+        WARNING_VERBOSE
+    }
+
+    public static WarningLevel[] WARNING_LEVELS = WarningLevel.values();
 
     public static final class Warning {
         public final String message;
         public final Nodes.Location location;
+        public final WarningLevel level;
 
-        public Warning(String message, Nodes.Location location) {
+        public Warning(String message, Nodes.Location location, WarningLevel level) {
             this.message = message;
             this.location = location;
+            this.level = level;
         }
     }
 

@@ -30,7 +30,7 @@ public class PrismWasmWrapper {
             Logger.getAnonymousLogger().severe(e.getMessage());
         }
 
-        this.prism = Module.build(this.getClass().getResourceAsStream("/prism.wasm")).instantiate();
+        this.prism = Module.builder(this.getClass().getResourceAsStream("/prism.wasm")).build().instantiate();
 
         this.calloc = prism.export("calloc");
         this.free = prism.export("free");

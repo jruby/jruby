@@ -925,28 +925,6 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         return manager.getNil();
     }
 
-    protected RubySymbol symbol(byte[] bytes) {
-        boolean isUSASCII = hackCheckUSASCII(bytes);
-        Encoding encoding = isUSASCII ? USASCIIEncoding.INSTANCE :                    // always prefer US-ASCII
-                getEncoding() == USASCIIEncoding.INSTANCE ? ASCIIEncoding.INSTANCE :  // whoops binary in US-ASCII file
-                        null;
-
-        if (encoding == null) {
-            if (getEncoding() == UTF8Encoding.INSTANCE) {
-                int length = UTF8Encoding.INSTANCE.length(bytes, 0, bytes.length);
-
-                Ruby runtime = getManager().getRuntime();
-                if (length < 0) throw runtime.newEncodingError(str(runtime, "invalid symbol in encoding UTF-8 ",
-                        symbol(new ByteList(bytes, ASCIIEncoding.INSTANCE)).inspect(runtime.getCurrentContext())));
-            }
-            encoding = getEncoding();
-        }
-
-        ByteList byteList = new ByteList(bytes, encoding);
-
-        return symbol(byteList);
-    }
-
     private boolean hackCheckUSASCII(byte[] bytes) {
         for (int i = 0; i < bytes.length; i++) {
             if (bytes[i] < 0) return false;
