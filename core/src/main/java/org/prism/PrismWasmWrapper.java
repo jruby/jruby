@@ -5,13 +5,12 @@ import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Module;
 import com.dylibso.chicory.wasm.types.Value;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
-public class PrismWasmWrapper implements Closeable {
+public class PrismWasmWrapper {
     private final Instance prism;
     private final ExportFunction calloc;
     private final ExportFunction free;
@@ -20,9 +19,6 @@ public class PrismWasmWrapper implements Closeable {
     private final ExportFunction pmBufferSizeof;
     private final ExportFunction pmBufferValue;
     private final ExportFunction pmBufferLength;
-    int sourcePointer = -1;
-    int optionsPointer = -1;
-    int resultPointer = -1;
 
     public PrismWasmWrapper() {
         // Configure Java Platform Logging
@@ -34,17 +30,15 @@ public class PrismWasmWrapper implements Closeable {
             Logger.getAnonymousLogger().severe(e.getMessage());
         }
 
-        this.prism = Module.build(
-                this.getClass().getResourceAsStream("/prism.wasm")
-        ).instantiate();
+        this.prism = Module.build(this.getClass().getResourceAsStream("/prism.wasm")).instantiate();
 
-        this.calloc = prism.getExport("calloc");
-        this.free = prism.getExport("free");
-        this.pmSerializeParse = prism.getExport("pm_serialize_parse");
-        this.pmBufferInit = prism.getExport("pm_buffer_init");
-        this.pmBufferSizeof = prism.getExport("pm_buffer_sizeof");
-        this.pmBufferValue = prism.getExport("pm_buffer_value");
-        this.pmBufferLength = prism.getExport("pm_buffer_length");
+        this.calloc = prism.export("calloc");
+        this.free = prism.export("free");
+        this.pmSerializeParse = prism.export("pm_serialize_parse");
+        this.pmBufferInit = prism.export("pm_buffer_init");
+        this.pmBufferSizeof = prism.export("pm_buffer_sizeof");
+        this.pmBufferValue = prism.export("pm_buffer_value");
+        this.pmBufferLength = prism.export("pm_buffer_length");
     }
 
     private int calloc(int bytes, int length) {
@@ -71,35 +65,26 @@ public class PrismWasmWrapper implements Closeable {
         pmSerializeParse.apply(Value.i32(resultPointer), Value.i32(sourcePointer), Value.i32(sourceLength), Value.i32(optionsPointer));
     }
 
-    public byte[] parse(byte[] source, byte[] options) {
-        this.sourcePointer = calloc(1, source.length);
-        this.optionsPointer = calloc(1, options.length);
-        this.resultPointer = calloc(pmBufferSizeof.apply()[0].asInt(), 1);
+    public byte[] parse(byte[] source, int sourceLength, byte[] options) {
+        int sourcePointer = calloc(1, source.length);
+        int optionsPointer = calloc(1, options.length);
+        int resultPointer = calloc(pmBufferSizeof.apply()[0].asInt(), 1);
 
         pmBufferInit(resultPointer);
-        prism.getMemory().write(optionsPointer, options);
-        prism.getMemory().write(sourcePointer, source);
+        prism.memory().write(optionsPointer, options);
+        prism.memory().write(sourcePointer, source);
 
-        pmSerializeParse(resultPointer, sourcePointer, source.length, optionsPointer);
+        pmSerializeParse(resultPointer, sourcePointer, sourceLength, optionsPointer);
 
-        byte[] result = prism.getMemory().readBytes(pmBufferValue(resultPointer), pmBufferLength(resultPointer));
-
-        return result;
-    }
-
-    @Override
-    public void close() {
-        if (sourcePointer != -1) {
+        byte[] serialized;
+        try {
+            serialized = prism.memory().readBytes(pmBufferValue(resultPointer), pmBufferLength(resultPointer));
+        } finally {
             free(sourcePointer);
-            sourcePointer = -1;
-        }
-        if (optionsPointer != -1) {
             free(optionsPointer);
-            optionsPointer = -1;
-        }
-        if (resultPointer != -1) {
             free(resultPointer);
-            resultPointer = -1;
         }
+
+        return serialized;
     }
 }

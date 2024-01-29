@@ -49,7 +49,7 @@ public class ParserPrism extends Parser {
         //System.out.println("Binding to " + path);
         prismLibrary = LibraryLoader.create(ParserBindingPrism.class).load(path);
 
-        prismWasmWrapper = new PrismWasmWrapper();
+        prismWasmWrapper = ParserManager.PARSER_WASM ? new PrismWasmWrapper() : null;
     }
     // FIXME: error/warn when cannot bind to yarp (probably silent fail-over option too)
 
@@ -205,14 +205,8 @@ public class ParserPrism extends Parser {
     private byte[] parseChicory(byte[] source, int sourceLength, byte[] metadata) {
         long time = 0;
         if (ParserManager.PARSER_TIMING) time = System.nanoTime();
-        assert(source.length == sourceLength); // TODO: throw a better exception
 
-        byte[] src;
-        try {
-            src = prismWasmWrapper.parse(source, metadata);
-        } finally {
-            prismWasmWrapper.close();
-        }
+        byte[] serialized = prismWasmWrapper.parse(source, sourceLength, metadata);
 
         if (ParserManager.PARSER_TIMING) {
             ParserStats stats = runtime.getParserManager().getParserStats();
@@ -220,7 +214,7 @@ public class ParserPrism extends Parser {
             stats.addYARPTimeCParseSerialize(System.nanoTime() - time);
         }
 
-        return src;
+        return serialized;
     }
 
     // lineNumber (0-indexed)
