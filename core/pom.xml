@@ -255,12 +255,6 @@ DO NOT MODIFY - GENERATED CODE
         </includes>
       </resource>
       <resource>
-        <directory>src/main/resources/wasm</directory>
-        <includes>
-          <include>**/*wasm</include>
-        </includes>
-      </resource>
-      <resource>
         <directory>src/main/resources</directory>
         <includes>
           <include>**/*properties</include>
