@@ -2,12 +2,12 @@ package org.jruby.ir.interpreter;
 
 import java.io.ByteArrayOutputStream;
 
-import org.jcodings.Encoding;
 import org.jruby.EvalType;
 import org.jruby.ParseResult;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
+import org.jruby.ir.IRManager;
 import org.jruby.ir.builder.IRBuilder;
 import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRScope;
@@ -18,7 +18,6 @@ import org.jruby.ir.persistence.IRDumper;
 import org.jruby.ir.runtime.IRBreakJump;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
-import org.jruby.prism.parser.ParseResultPrism;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
@@ -208,9 +207,8 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         // we end up growing dynamicscope potentially based on any changes made.
         staticScope.setIRScope(script);
 
-        boolean yarp = result instanceof ParseResultPrism;
-        Encoding encoding = yarp ? ((ParseResultPrism) result).getEncoding() : null;
-        IRBuilder builder = IRBuilder.newIRBuilder(runtime.getIRManager(), script, null, encoding, yarp);
+        IRManager manager = runtime.getIRManager();
+        IRBuilder builder = manager.getBuilderFactory().newIRBuilder(manager, script, null, result.getEncoding());
         builder.evalType = !bindingGiven && evalType == EvalType.BINDING_EVAL ? EvalType.INSTANCE_EVAL : evalType;
         InterpreterContext ic = builder.buildEvalRoot(result);
 

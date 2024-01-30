@@ -1,12 +1,9 @@
 package org.jruby.ir.builder;
 
 import org.jcodings.Encoding;
-import org.jcodings.specific.ASCIIEncoding;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.EvalType;
 import org.jruby.ParseResult;
-import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
 import org.jruby.ast.IterNode;
@@ -30,8 +27,6 @@ import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Integer;
-import org.jruby.prism.builder.IRBuilderPrism;
-import org.jruby.prism.parser.ParseResultPrism;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.ArgumentType;
@@ -165,32 +160,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         IRScriptBody script = new IRScriptBody(manager, file == null ? "(anon)" : file, rootNode.getStaticScope());
 
         //System.out.println("Building " + file);
-        return topIRBuilder(manager, script, rootNode).buildRootInner(rootNode);
-    }
-
-    public static IRBuilder newIRBuilder(IRManager manager, IRScope newScope, IRBuilder parent, Encoding encoding, boolean yarp) {
-        if (yarp) {
-            return new IRBuilderPrism(manager, newScope, parent, null, encoding);
-        } else {
-            return new IRBuilderAST(manager, newScope, parent, null, encoding);
-        }
-    }
-
-    // For BEGIN processing
-    public static IRBuilder newIRBuilder(IRManager manager, IRScope newScope, IRBuilder parent, IRBuilder variableBuilder, Encoding encoding, boolean yarp) {
-        if (yarp) {
-            return new IRBuilderPrism(manager, newScope, parent, variableBuilder, encoding);
-        } else {
-            return new IRBuilderAST(manager, newScope, parent, variableBuilder, encoding);
-        }
-    }
-
-    public static IRBuilder topIRBuilder(IRManager manager, IRScope newScope, ParseResult rootNode) {
-        if (rootNode instanceof RootNode) {
-            return new IRBuilderAST(manager, newScope, null, null, null);
-        } else {
-            return new IRBuilderPrism(manager, newScope, null, null, ((ParseResultPrism) rootNode).getEncoding());
-        }
+        return manager.getBuilderFactory().topIRBuilder(manager, script, rootNode).buildRootInner(rootNode);
     }
 
     // FIXME: consider mod_rescue, rescue, and pure ensure as separate entries
@@ -1211,7 +1181,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         IRClassBody body = new IRClassBody(getManager(), this.scope, className, line, scope, executesOnce);
         Variable bodyResult = addResultInstr(new DefineClassInstr(temp(), body, container, superClass));
 
-        newIRBuilder(getManager(), body, this, encoding, this instanceof IRBuilderPrism).buildModuleOrClassBody(bodyNode, line, endLine);
+        getManager().getBuilderFactory().newIRBuilder(getManager(), body, this, encoding).buildModuleOrClassBody(bodyNode, line, endLine);
         return bodyResult;
     }
 
@@ -1359,7 +1329,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         IRClosure closure = new IRFor(getManager(), scope, line, staticScope, signature);
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        newIRBuilder(getManager(), closure, this, encoding, this instanceof IRBuilderPrism).buildIterInner(null, var, body, endLine);
+        getManager().getBuilderFactory().newIRBuilder(getManager(), closure, this, encoding).buildIterInner(null, var, body, endLine);
 
         return new WrappedIRClosure(buildSelf(), closure);
     }
@@ -1449,7 +1419,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         IRClosure closure = new IRClosure(getManager(), scope, line, staticScope, signature, coverageMode);
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        newIRBuilder(getManager(), closure, this, encoding, this instanceof IRBuilderPrism).buildIterInner(methodName, var, body, endLine);
+        getManager().getBuilderFactory().newIRBuilder(getManager(), closure, this, encoding).buildIterInner(methodName, var, body, endLine);
 
         methodName = null;
 
@@ -1504,7 +1474,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         IRClosure closure = new IRClosure(getManager(), scope, line, staticScope, signature, coverageMode);
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        newIRBuilder(getManager(), closure, this, encoding, this instanceof IRBuilderPrism).buildLambdaInner(args, body);
+        getManager().getBuilderFactory().newIRBuilder(getManager(), closure, this, encoding).buildLambdaInner(args, body);
 
         Variable lambda = temp();
         WrappedIRClosure lambdaBody = new WrappedIRClosure(closure.getSelf(), closure);
@@ -1649,7 +1619,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         IRModuleBody body = new IRModuleBody(getManager(), this.scope, name, line, scope, executesOnce);
         Variable bodyResult = addResultInstr(new DefineModuleInstr(temp(), container, body));
 
-        newIRBuilder(getManager(), body, this, encoding, this instanceof IRBuilderPrism).buildModuleOrClassBody(bodyNode, line, endLine);
+        getManager().getBuilderFactory().newIRBuilder(getManager(), body, this, encoding).buildModuleOrClassBody(bodyNode, line, endLine);
 
         return bodyResult;
     }
@@ -2278,6 +2248,10 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         label("pattern_end", testEnd -> buildPatternEach(testEnd, result, original, deconstructed, obj, arg, inAlternation, isSinglePattern, errorString));
     }
 
+    // FIXME: Remove once all dependence on source in prism is gone.
+    protected void hackPostExeSource(IRBuilder builder) {
+    }
+
     protected Operand buildPostExe(U body, int line) {
         IRScope topLevel = scope.getRootLexicalScope();
         IRScope nearestLVarScope = scope.getNearestTopLocalVariableScope();
@@ -2289,12 +2263,10 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         staticScope.setIRScope(endClosure);
         endClosure.setIsEND();
 
-        boolean prism = this instanceof IRBuilderPrism;
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        IRBuilder builder = newIRBuilder(getManager(), endClosure, null, encoding, prism);
+        IRBuilder builder = getManager().getBuilderFactory().newIRBuilder(getManager(), endClosure, null, encoding);
 
-        // FIXME: Hack around depending on source to compile in prism (remove once source is removalable).
-        if (prism) ((IRBuilderPrism) builder).setSourceFrom((IRBuilderPrism) this);
+        hackPostExeSource(this);
 
         builder.buildPrePostExeInner(body);
 
@@ -2319,7 +2291,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     protected Operand buildPreExe(U body) {
-        List<Instr> beginInstrs = newIRBuilder(getManager(), scope, this, this, encoding, this instanceof IRBuilderPrism).buildPreExeInner(body);
+        List<Instr> beginInstrs = getManager().getBuilderFactory().newIRBuilder(getManager(), scope, this, this, encoding).buildPreExeInner(body);
 
         instructions.addAll(afterPrologueIndex, beginInstrs);
         afterPrologueIndex += beginInstrs.size();
@@ -2617,7 +2589,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
         // sclass bodies inherit the block of their containing method
         Variable bodyResult = addResultInstr(new ProcessModuleBodyInstr(temp(), sClassVar));
-        newIRBuilder(getManager(), body, this, encoding, this instanceof IRBuilderPrism).buildModuleOrClassBody(bodyNode, line, endLine);
+        getManager().getBuilderFactory().newIRBuilder(getManager(), body, this, encoding).buildModuleOrClassBody(bodyNode, line, endLine);
         return bodyResult;
     }
 

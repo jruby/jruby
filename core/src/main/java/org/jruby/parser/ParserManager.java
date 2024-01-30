@@ -11,7 +11,6 @@ import org.jruby.ir.persistence.IRReader;
 import org.jruby.ir.persistence.IRReaderStream;
 import org.jruby.ir.persistence.util.IRFileExpert;
 import org.jruby.management.ParserStats;
-import org.jruby.prism.parser.ParserPrism;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -45,7 +44,9 @@ public class ParserManager {
 
     public ParserManager(Ruby runtime) {
         this.runtime = runtime;
-        parser = Options.PARSER_PRISM.load() || Options.PARSER_WASM.load() ? new ParserPrism(runtime) : new Parser(runtime);
+        ParserProvider provider = ParserServiceLoader.provider(Options.PARSER_PRISM.load() || Options.PARSER_WASM.load());
+        runtime.getIRManager().setBuilderFactory(provider.getBuilderFactory());
+        parser = provider.getParser(runtime);
         parserStats = new ParserStats(runtime);
     }
 

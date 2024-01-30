@@ -133,6 +133,6 @@ public class RootNode extends Node implements ParseResult {
     }
 
     public Encoding getEncoding() {
-        return null;  // AST will encode all individual nodes as appropiate so this value is not needed (but is for prism).
+        return null;  // This AST will encode all nodes with proper encoding.
     }
 }

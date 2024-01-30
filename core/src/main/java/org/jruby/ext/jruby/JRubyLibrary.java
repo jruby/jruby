@@ -259,6 +259,7 @@ public class JRubyLibrary implements Library {
     private static IRScriptBody compileIR(ThreadContext context, IRubyObject[] args, Block block) {
         ParseResult result = parseImpl(context, args, block);
         IRManager manager = new IRManager(context.runtime, context.runtime.getInstanceConfig());
+        manager.setBuilderFactory(context.runtime.getIRManager().getBuilderFactory());
         IRScriptBody scope = (IRScriptBody) IRBuilderAST.buildRoot(manager, result).getScope();
         scope.setScriptDynamicScope(result.getDynamicScope());
         scope.getStaticScope().setIRScope(scope);

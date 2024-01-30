@@ -238,11 +238,6 @@ DO NOT MODIFY - GENERATED CODE
       <version>2.0.0</version>
       <scope>provided</scope>
     </dependency>
-    <dependency>
-      <groupId>com.dylibso.chicory</groupId>
-      <artifactId>runtime</artifactId>
-      <version>999-SNAPSHOT</version>
-    </dependency>
   </dependencies>
   <build>
     <defaultGoal>package</defaultGoal>

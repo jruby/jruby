@@ -54,6 +54,7 @@ import org.jruby.ext.thread.Queue;
 import org.jruby.ext.thread.SizedQueue;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
+import org.jruby.ir.builder.IRBuilderFactory;
 import org.jruby.ir.runtime.IRReturnJump;
 import org.jruby.java.util.ClassUtils;
 import org.jruby.javasupport.Java;
@@ -236,6 +237,7 @@ public final class Ruby implements Constantizable {
         this.staticScopeFactory = new StaticScopeFactory(this);
         this.beanManager        = BeanManagerFactory.create(this, config.isManagementEnabled());
         this.jitCompiler        = new JITCompiler(this);
+        this.irManager          = new IRManager(this, config);
         this.parserManager      = new ParserManager(this);
         this.inlineStats        = new InlineStats();
         this.caches             = new Caches();
@@ -485,8 +487,6 @@ public final class Ruby implements Constantizable {
         // set up thread statuses
         initThreadStatuses();
 
-        // Create an IR manager and a top-level IR scope and bind it to the top-level static-scope object
-        irManager = new IRManager(this, getInstanceConfig());
         // FIXME: This registers itself into static scope as a side-effect.  Let's make this
         // relationship handled either more directly or through a descriptive method
         // FIXME: We need a failing test case for this since removing it did not regress tests
@@ -5806,6 +5806,8 @@ public final class Ruby implements Constantizable {
     transient RubyString tzVar;
 
     ParserManager parserManager;
+
+    private IRBuilderFactory builderFactory;
 
     @Deprecated
     private void setNetworkStack() {

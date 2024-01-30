@@ -15,6 +15,7 @@ import org.jruby.ast.ModuleNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
 import org.jruby.ext.coverage.CoverageData;
+import org.jruby.ir.builder.IRBuilderFactory;
 import org.jruby.ir.builder.LazyMethodDefinitionAST;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.ReceiveSelfInstr;
@@ -90,6 +91,7 @@ public class IRManager {
     private final List<CompilerPass> safePasses;
     private final RubyInstanceConfig config;
     public final Ruby runtime;
+    private IRBuilderFactory builderFactory;
 
     public IRManager(Ruby runtime, RubyInstanceConfig config) {
         this.runtime = runtime;
@@ -101,6 +103,14 @@ public class IRManager {
         safePasses = CompilerPass.getPassesFromString(null, SAFE_COMPILER_PASSES);
 
         if (RubyInstanceConfig.IR_DEBUG_IGV != null) instrsListener = new IGVInstrListener();
+    }
+
+    public void setBuilderFactory(IRBuilderFactory builderFactory) {
+        this.builderFactory = builderFactory;
+    }
+
+    public IRBuilderFactory getBuilderFactory() {
+        return builderFactory;
     }
 
     public Ruby getRuntime() {
