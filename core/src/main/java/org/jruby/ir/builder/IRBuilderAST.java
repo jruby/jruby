@@ -1739,12 +1739,6 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     public void receiveArgs(final ArgsNode argsNode) {
         Signature signature = scope.getStaticScope().getSignature();
 
-        if (signature.equals(Signature.NO_ARGUMENTS)) {
-            addInstr(new CheckArityInstr(0, 0, false, -1, UndefinedValue.UNDEFINED));
-            receiveBlockArg(argsNode);
-            return;
-        }
-
         Variable keywords = addResultInstr(new ReceiveKeywordsInstr(temp(), signature.hasRest(), argsNode.hasKwargs()));
 
         KeywordRestArgNode keyRest = argsNode.getKeyRest();
