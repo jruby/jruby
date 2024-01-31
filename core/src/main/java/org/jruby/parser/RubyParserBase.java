@@ -1601,7 +1601,7 @@ public abstract class RubyParserBase {
     }
 
     public void warning(ID id, String file, int line, String message) {
-        warnings.warn(id, file, line + 1, message); // node/lexer lines are 0 based
+        getWarnings().warn(id, file, line + 1, message); // node/lexer lines are 0 based
     }
 
     // ENEBO: Totally weird naming (in MRI is not allocated and is a local var name) [1.9]

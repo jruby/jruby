@@ -266,11 +266,6 @@ project 'JRuby Base' do
       includes 'META-INF/**/*'
     end
 
-    resource do
-      directory 'src/main/resources'
-      includes '**/*properties'
-    end
-
   end
 
   plugin :resources do
