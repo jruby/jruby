@@ -117,6 +117,7 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.runtime.profile.MethodEnhancer;
+import org.jruby.util.RubyStringBuilder;
 import org.jruby.util.ByteList;
 import org.jruby.util.ClassProvider;
 import org.jruby.util.CommonByteLists;
@@ -1444,11 +1445,9 @@ public class RubyModule extends RubyObject {
         }
         methodLocation.addMethod(name, UndefinedMethod.getInstance());
 
-        if (isSingleton()) {
-            ((MetaClass) this).getAttached().callMethod(context, "singleton_method_undefined", runtime.newSymbol(name));
-        } else {
-            callMethod(context, "method_undefined", runtime.newSymbol(name));
-        }
+        RubySymbol nameSymbol = runtime.newSymbol(name);
+
+        methodUndefined(context, nameSymbol);
     }
 
     @JRubyMethod(name = "include?")
@@ -1567,11 +1566,7 @@ public class RubyModule extends RubyObject {
             invalidateCacheDescendants();
         }
 
-        if (isSingleton()) {
-            ((MetaClass) this).getAttached().callMethod(context, "singleton_method_removed", name);
-        } else {
-            callMethod(context, "method_removed", name);
-        }
+        methodRemoved(context, name);
     }
 
     private static void warnMethodRemoval(final ThreadContext context, final String id) {
@@ -2289,12 +2284,36 @@ public class RubyModule extends RubyObject {
         final String variableName = identifier.asInstanceVariable().idString();
         if (readable) {
             addMethod(internedIdentifier, new AttrReaderMethod(methodLocation, visibility, variableName));
-            callMethod(context, "method_added", identifier);
+            methodAdded(context, identifier);
         }
         if (writeable) {
             identifier = identifier.asWriter();
             addMethod(identifier.idString(), new AttrWriterMethod(methodLocation, visibility, variableName));
+            methodAdded(context, identifier);
+        }
+    }
+
+    protected void methodAdded(ThreadContext context, RubySymbol identifier) {
+        if (isSingleton()) {
+            ((MetaClass) this).getAttached().callMethod(context, "singleton_method_added", identifier);
+        } else {
             callMethod(context, "method_added", identifier);
+        }
+    }
+
+    private void methodUndefined(ThreadContext context, RubySymbol nameSymbol) {
+        if (isSingleton()) {
+            ((MetaClass) this).getAttached().callMethod(context, "singleton_method_undefined", nameSymbol);
+        } else {
+            callMethod(context, "method_undefined", nameSymbol);
+        }
+    }
+
+    private void methodRemoved(ThreadContext context, RubySymbol name) {
+        if (isSingleton()) {
+            ((MetaClass) this).getAttached().callMethod(context, "singleton_method_removed", name);
+        } else {
+            callMethod(context, "method_removed", name);
         }
     }
 
@@ -3000,7 +3019,7 @@ public class RubyModule extends RubyObject {
         Ruby runtime = context.runtime;
 
         if (args.length == 2 && (args[1] == runtime.getTrue() || args[1] == runtime.getFalse())) {
-            runtime.getWarnings().warning(ID.OBSOLETE_ARGUMENT, "optional boolean argument is obsoleted");
+            runtime.getWarnings().warnDeprecated(ID.OBSOLETE_ARGUMENT, "optional boolean argument is obsoleted");
             boolean writeable = args[1].isTrue();
             RubySymbol sym = TypeConverter.checkID(args[0]);
             addAccessor(context, sym, getCurrentVisibilityForDefineMethod(context), args[0].isTrue(), writeable);
@@ -3491,7 +3510,7 @@ public class RubyModule extends RubyObject {
                 newMethod.setImplementationClass(getSingletonClass());
                 newMethod.setVisibility(PUBLIC);
                 getSingletonClass().addMethod(name.idString(), newMethod);
-                callMethod(context, "singleton_method_added", name);
+                getSingletonClass().methodAdded(context, name);
             }
         }
 
@@ -3619,11 +3638,7 @@ public class RubyModule extends RubyObject {
 
         defineAlias(newSym.idString(), oldSym.idString());
 
-        if (isSingleton()) {
-            ((MetaClass) this).getAttached().callMethod(context, "singleton_method_added", newSym);
-        } else {
-            callMethod(context, "method_added", newSym);
-        }
+        methodAdded(context, newSym);
 
         return newSym;
     }
@@ -4496,6 +4511,36 @@ public class RubyModule extends RubyObject {
         storeConstant(name, entry.value, hidden, entry.getFile(), entry.getLine());
     }
 
+    @JRubyMethod(name = "refinements")
+    public IRubyObject refinements(ThreadContext context) {
+        RubyArray<RubyModule> refinementModules = context.runtime.newArray();
+
+        refinements.forEach((key, value) -> {
+            refinementModules.append(value);
+        });
+        return refinementModules;
+    }
+
+    @JRubyMethod(name = "target")
+    public IRubyObject target(ThreadContext context) {
+        return getRefinedClassOrThrow(context, true);
+    }
+
+    @JRubyMethod(name = "refined_class")
+    public IRubyObject refined_class(ThreadContext context) {
+        return getRefinedClassOrThrow(context, false);
+    }
+
+    private IRubyObject getRefinedClassOrThrow(ThreadContext context, boolean nameIsTarget) {
+        if (!isRefinement()) {
+            String methodName = nameIsTarget ? "target" : "refined_class";
+            String errMsg = RubyStringBuilder.str(context.runtime,
+                    "undefined method `"+ methodName +"' for ", rubyBaseName(),
+                    ":", getMetaClass());
+            throw context.runtime.newNoMethodError(errMsg, this, "target", context.runtime.newEmptyArray());
+        }
+        return refinedClass;
+    }
     //
     ////////////////// CLASS VARIABLE API METHODS ////////////////
     //
@@ -4912,9 +4957,9 @@ public class RubyModule extends RubyObject {
             if (notAutoload || !setAutoloadConstant(name, value, file, line)) {
                 if (warn && notAutoload) {
                     if (this.equals(getRuntime().getObject())) {
-                        getRuntime().getWarnings().warning(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name);
+                        getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name);
                     } else {
-                        getRuntime().getWarnings().warning(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + this + "::" + name);
+                        getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + this + "::" + name);
                     }
                 }
 
