@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.util.EnumSet;
 
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.ParseResult;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
@@ -409,11 +410,12 @@ public class IRManager {
             RubyModule type = self.getMetaClass();
             String fileName = "classpath:/jruby/ruby_implementations/" + type + "/" + method + ".rb";
             FileResource file = JRubyFile.createResourceAsFile(context.runtime, fileName);
-            Node parseResult = parse(context, file, fileName);
-            IScopingNode scopeNode = (IScopingNode) parseResult.childNodes().get(0);
+            ParseResult parseResult = parse(context, file, fileName);
+            // FIXME: PRISM: This does not work on prism but method inlining is current not working anyways.
+            IScopingNode scopeNode = (IScopingNode) ((RootNode) parseResult.getAST()).childNodes().get(0);
             scopeNode.getScope().setModule(type);
             DefNode defNode = (DefNode) scopeNode.getBodyNode();
-            IRScriptBody script = new IRScriptBody(this, parseResult.getFile(), ((RootNode) parseResult).getStaticScope());
+            IRScriptBody script = new IRScriptBody(this, parseResult.getFile(), parseResult.getStaticScope());
             IRModuleBody containingScope;
             if (scopeNode instanceof ModuleNode) {
                 containingScope = new IRModuleBody(this, script, scopeNode.getCPath().getName().getBytes(), 0, scopeNode.getScope(), false);
@@ -433,9 +435,9 @@ public class IRManager {
         }
     }
 
-    private Node parse(ThreadContext context, FileResource file, String fileName) throws IOException {
+    private ParseResult parse(ThreadContext context, FileResource file, String fileName) throws IOException {
         try (InputStream stream = file.openInputStream()) {
-            return (Node) context.runtime.getParserManager().parseFile(fileName, 0, stream, UTF8Encoding.INSTANCE).getAST();
+            return context.runtime.getParserManager().parseFile(fileName, 0, stream, UTF8Encoding.INSTANCE);
         }
     }
 

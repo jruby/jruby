@@ -200,7 +200,7 @@ public class IRClosure extends IRScope {
         DefNode def = source;
         source = null;
 
-        // FIXME: will not work when YARP is used.
+        // FIXME: PRISM: Explicit check for ast.IterNode prevents source from being set so this cannot be hit from prism.
         LazyMethodDefinitionAST defn = new LazyMethodDefinitionAST(def);
         return new IRMethod(getManager(), getLexicalParent(), defn, name, true,  getLine(), getStaticScope().duplicate(), getCoverageMode());
     }
