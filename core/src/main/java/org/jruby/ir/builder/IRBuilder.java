@@ -2375,7 +2375,10 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
         // Caught exception case -- build rescue body
         addInstr(new LabelInstr(caughtLabel));
-        if (reference != null) buildAssignment(reference, exc);  // YARP does not desugar
+        if (reference != null) {
+            Variable exception = addResultInstr(new GetGlobalVariableInstr(temp(), symbol("$!")));
+            buildAssignment(reference, exception);  // YARP does not desugar
+        }
         Operand x = build(body);
         if (x != U_NIL) { // can be U_NIL if the rescue block has an explicit return
             // Set up node return value 'rv'
