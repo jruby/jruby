@@ -61,8 +61,7 @@ default_gems = [
     ['mutex_m', '0.2.0'],
     ['net-http', '0.4.0'],
     ['net-protocol', '0.2.2'],
-    # Partial implementation in JRuby, unsure whether this is important
-    # ['nkf', '0.1.1'],
+    ['nkf', '0.2.0'],
     ['observer', '0.1.2'],
     ['open3', '0.2.1'],
     # https://github.com/ruby/openssl/issues/20#issuecomment-1022872855

@@ -84,6 +84,8 @@ lib/ruby/stdlib/jar*
 lib/ruby/stdlib/jline
 lib/ruby/stdlib/jopenssl*
 lib/ruby/stdlib/json*
+lib/ruby/stdlib/kconv.rb
+lib/ruby/stdlib/krypt*
 lib/ruby/stdlib/libfixposix*
 lib/ruby/stdlib/logger*
 lib/ruby/stdlib/matrix*
@@ -91,6 +93,7 @@ lib/ruby/stdlib/minitest*
 lib/ruby/stdlib/mutex_m.rb
 lib/ruby/stdlib/net/protocol*
 lib/ruby/stdlib/net/http*
+lib/ruby/stdlib/nkf*
 lib/ruby/stdlib/observer*
 lib/ruby/stdlib/open3*
 lib/ruby/stdlib/open-uri*
