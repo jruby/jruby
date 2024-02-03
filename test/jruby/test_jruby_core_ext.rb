@@ -56,12 +56,9 @@ class TestJRubyCoreExt < Test::Unit::TestCase
 
     SuperUser.extend Module.new
     SuperUser.send :include, Module.new
-    assert_equal [ SuperUser ], User.subclasses(true)
     assert_equal [ ], SuperUser.subclasses
-    assert_equal [ ], SuperUser.subclasses(true)
     klass = Class.new(SuperUser)
     assert_equal [ klass ], SuperUser.subclasses
-    assert_equal [ SuperUser, klass ], User.subclasses(true)
 
     assert User.to_java.subclasses(true).include? SuperUser
     assert Base.to_java.subclasses # basically that () works

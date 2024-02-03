@@ -1026,31 +1026,6 @@ public class RubyClass extends RubyModule {
         return subs;
     }
 
-    /**
-     * JRuby had historically provided Class#subclasses as an opt-in extension, which got deprecated in JRuby 9.2.
-     *
-     * Once Ruby 3.1 compatibility was implemented (JRuby 9.4) the <code>require 'jruby/core_ext.class.rb'</code> used
-     * to still cause a redefinition of the <code>Class#subclasses</code> and print deprecation warnings even for the
-     * supported `subclasses()` (no-argument) version.
-     *
-     * @implNote This method was deprecated since it's inception and should be safe to remove in JRuby 9.5 or later
-     *
-     * @param context
-     * @param recursive { true/false } whether to recurse all sub-classes
-     * @return sub-classes of this class
-     */
-    @Deprecated
-    @JRubyMethod
-    public IRubyObject subclasses(ThreadContext context, IRubyObject recursive) {
-        context.runtime.getWarnings().warnDeprecated(IRubyWarnings.ID.DEPRECATED_METHOD,
-            "Class#subclasses(opts) is deprecated, please use the supported Class#subclasses() version");
-        IRubyObject opts = context.nil;
-        if (recursive != context.nil) {
-            opts = RubyHash.newKwargs(context.runtime, "all", recursive);
-        }
-        return org.jruby.ext.jruby.JRubyLibrary.subclasses(context, this, this, opts);
-    }
-
     // introduced solely to provide some level of compatibility with previous
     // Class#subclasses implementation ... `ruby_class.to_java.subclasses`
     public final Collection<RubyClass> subclasses() {
