@@ -1,0 +1,1 @@
+fails:A block yielded a single Array raises error when required keyword arguments are present
