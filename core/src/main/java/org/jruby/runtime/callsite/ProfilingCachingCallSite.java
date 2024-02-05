@@ -80,6 +80,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         }
     }
 
+    @Override
     protected boolean methodMissing(DynamicMethod method, IRubyObject caller) {
         return method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(caller, callType));
     }
@@ -108,6 +109,21 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         }
     }
 
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, int callInfo, IRubyObject... args) {
+        RubyClass selfType = getClass(self);
+        CacheEntry cache = this.cache;  // This must be retrieved *once* to avoid racing with other threads.
+
+        if (cache.typeOk(selfType)) {
+            if ((totalMonomorphicCalls.incrementAndGet() % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
+            return cache.method.call(context, self, cache.sourceModule, methodName, callInfo, args);
+        } else {
+            totalMonomorphicCalls.set(1);
+            return cacheAndCall(context, caller, self, selfType, callInfo, args);
+        }
+    }
+
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) {
         RubyClass selfType = getClass(self);
         CacheEntry cache = this.cache; // This must be retrieved *once* to avoid racing with other threads.
@@ -118,6 +134,20 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         } else {
             totalMonomorphicCalls.set(1);
             return cacheAndCall(context, caller, self, selfType, args, block);
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, int callInfo, Block block, IRubyObject... args) {
+        RubyClass selfType = getClass(self);
+        CacheEntry cache = this.cache; // This must be retrieved *once* to avoid racing with other threads.
+
+        if (cache.typeOk(selfType)) {
+            if ((totalMonomorphicCalls.incrementAndGet() % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
+            return cache.method.call(context, self, cache.sourceModule, methodName, callInfo, block, args);
+        } else {
+            totalMonomorphicCalls.set(1);
+            return cacheAndCall(context, caller, self, selfType, callInfo, block, args);
         }
     }
 
@@ -135,6 +165,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         }
     }
 
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, Block block) {
         RubyClass selfType = getClass(self);
         // This must be retrieved *once* to avoid racing with other threads.
@@ -162,6 +193,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         }
     }
 
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, Block block) {
         RubyClass selfType = getClass(self);
         // This must be retrieved *once* to avoid racing with other threads.
@@ -189,6 +221,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         }
     }
 
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block) {
         RubyClass selfType = getClass(self);
         // This must be retrieved *once* to avoid racing with other threads.
@@ -216,6 +249,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         }
     }
 
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
         RubyClass selfType = getClass(self);
         // This must be retrieved *once* to avoid racing with other threads.

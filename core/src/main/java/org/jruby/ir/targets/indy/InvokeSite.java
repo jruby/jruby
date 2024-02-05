@@ -178,11 +178,33 @@ public abstract class InvokeSite extends MutableCallSite {
             binder = binder.collect("args", "arg.*", constructObjectArrayHandle(arity));
         }
 
+        if (arity < 0 || arity > 3) {
+            // add call info to varargs path because thread-local wrapper logic only added for specific-arity paths
+            binder = binder.insert(5, "callInfo", flags);
+            if (signature.argOffset("block") != -1) {
+                binder = binder.permute("method", "context", "self", "rubyClass", "name", "callInfo", "block", "args");
+            }
+        } else {
+            binder = setThreadLocalCallInfo(binder);
+        }
+
         if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
             LOG.info(name() + "\tbound indirectly " + method + ", " + Bootstrap.logMethod(method));
         }
 
         return binder.invokeVirtualQuiet(LOOKUP, "call").handle();
+    }
+
+    private SmartBinder setThreadLocalCallInfo(SmartBinder binder) {
+        SmartHandle callInfoWrapper;
+        SmartBinder baseBinder = SmartBinder.from(binder.signature().changeReturn(void.class)).permute("context");
+        if (flags == 0) {
+            callInfoWrapper = baseBinder.invokeVirtualQuiet(LOOKUP, "clearCallInfo");
+        } else {
+            callInfoWrapper = baseBinder.append("flags", flags).invokeStaticQuiet(LOOKUP, IRRuntimeHelpers.class, "setCallInfo");
+        }
+        binder = binder.foldVoid(callInfoWrapper);
+        return binder;
     }
 
     private static SmartBinder permuteForGenericCall(SmartBinder binder, DynamicMethod method, String... basePermutes) {
@@ -385,6 +407,9 @@ public abstract class InvokeSite extends MutableCallSite {
             binder = SmartBinder.from(signature)
                     .permute("context", "self", "arg.*", "block");
 
+            // no jitted forms accept callInfo yet so we always set in thread local
+            binder = setThreadLocalCallInfo(binder);
+
             if (arity == -1) {
                 // already [], nothing to do
                 mh = (MethodHandle)compiledIRMethod.getHandle();
@@ -468,6 +493,9 @@ public abstract class InvokeSite extends MutableCallSite {
                 }
 
                 if (binder != null) {
+
+                    // no native methods accept callInfo directly, so we always set thread local
+                    binder = setThreadLocalCallInfo(binder);
 
                     // clean up non-arguments, ordering, types
                     if (!nc.hasContext()) {
@@ -699,15 +727,6 @@ public abstract class InvokeSite extends MutableCallSite {
                     .invoke(mh);
         }
 
-        SmartHandle callInfoWrapper;
-        SmartBinder baseBinder = SmartBinder.from(signature.changeReturn(void.class)).permute("context");
-        if (flags == 0) {
-            callInfoWrapper = baseBinder.invokeVirtualQuiet(LOOKUP, "clearCallInfo");
-        } else {
-            callInfoWrapper = baseBinder.append("flags", flags).invokeStaticQuiet(LOOKUP, IRRuntimeHelpers.class, "setCallInfo");
-        }
-        mh = foldArguments(mh, callInfoWrapper.handle());
-
         updateInvocationTarget(mh, self, selfClass, entry.method, switchPoint);
     }
 
@@ -715,14 +734,12 @@ public abstract class InvokeSite extends MutableCallSite {
         RubyModule sourceModule = entry.sourceModule;
         DynamicMethod method = entry.method;
 
-        IRRuntimeHelpers.setCallInfo(context, flags);
-
         if (literalClosure) {
             try {
                 if (passSymbol) {
-                    return method.call(context, self, sourceModule, "method_missing", Helpers.arrayOf(context.runtime.newSymbol(methodName), args), block);
+                    return method.call(context, self, sourceModule, "method_missing", flags, block, Helpers.arrayOf(context.runtime.newSymbol(methodName), args));
                 } else {
-                    return method.call(context, self, sourceModule, methodName, args, block);
+                    return method.call(context, self, sourceModule, methodName, flags, block, args);
                 }
             } finally {
                 block.escape();
@@ -730,9 +747,9 @@ public abstract class InvokeSite extends MutableCallSite {
         }
 
         if (passSymbol) {
-            return method.call(context, self, sourceModule, methodName, Helpers.arrayOf(context.runtime.newSymbol(methodName), args), block);
+            return method.call(context, self, sourceModule, methodName, flags, block, Helpers.arrayOf(context.runtime.newSymbol(methodName), args));
         } else {
-            return method.call(context, self, sourceModule, methodName, args, block);
+            return method.call(context, self, sourceModule, methodName, flags, block, args);
         }
     }
 
@@ -760,16 +777,15 @@ public abstract class InvokeSite extends MutableCallSite {
         String name = methodName;
         CacheEntry entry = cache;
 
-        IRRuntimeHelpers.setCallInfo(context, flags);
 
         if (entry.typeOk(selfClass)) {
-            return entry.method.call(context, self, entry.sourceModule, name, args, block);
+            return entry.method.call(context, self, entry.sourceModule, name, flags, block, args);
         }
 
         entry = selfClass.searchWithCache(name);
 
         if (methodMissing(entry, caller)) {
-            return callMethodMissing(entry, callType, context, self, selfClass, name, args, block);
+            return callMethodMissing(entry, callType, context, self, selfClass, name, flags, args, block);
         }
 
         cache = entry;
@@ -785,16 +801,14 @@ public abstract class InvokeSite extends MutableCallSite {
         String name = methodName;
         CacheEntry entry = cache;
 
-        IRRuntimeHelpers.setCallInfo(context, flags);
-
         if (entry.typeOk(selfClass)) {
-            return entry.method.call(context, self, entry.sourceModule, name, args, block);
+            return entry.method.call(context, self, entry.sourceModule, name, flags, block, args);
         }
 
         entry = selfClass.searchWithCache(name);
 
         if (methodMissing(entry)) {
-            return callMethodMissing(entry, callType, context, self, selfClass, name, args, block);
+            return callMethodMissing(entry, callType, context, self, selfClass, name, flags, args, block);
         }
 
         cache = entry;
@@ -1416,13 +1430,20 @@ public abstract class InvokeSite extends MutableCallSite {
     }
 
     /**
+     * Variable arity method_missing invocation. Arity zero also passes through here.
+     */
+    public static IRubyObject callMethodMissing(CacheEntry entry, CallType callType, ThreadContext context, IRubyObject self,
+                                                RubyClass selfClass, String name, int callInfo, IRubyObject[] args, Block block) {
+        return Helpers.callMethodMissing(context, self, selfClass, entry.method.getVisibility(), name, callType, callInfo, args, block);
+    }
+
+    /**
      * Arity one method_missing invocation
      */
     public static IRubyObject callMethodMissing(CacheEntry entry, CallType callType, ThreadContext context, IRubyObject self,
                                          RubyClass selfClass, String name, IRubyObject arg0, Block block) {
         return Helpers.callMethodMissing(context, self, selfClass, entry.method.getVisibility(), name, callType, arg0, block);
     }
-
 
     /**
      * Arity two method_missing invocation
@@ -1431,7 +1452,6 @@ public abstract class InvokeSite extends MutableCallSite {
                                          RubyClass selfClass, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
         return Helpers.callMethodMissing(context, self, selfClass, entry.method.getVisibility(), name, callType, arg0, arg1, block);
     }
-
 
     /**
      * Arity three method_missing invocation

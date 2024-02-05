@@ -164,6 +164,31 @@ public abstract class CallSite {
 
     /**
      * Call the site's method against the target object passing arguments.
+     *
+     * @param context the ThreadContext for the current thread
+     * @param caller the caller, for visibility checks
+     * @param self the target object to call against
+     * @param callInfo the keyword call info
+     * @param args the arguments to pass
+     * @return the result of the call
+     */
+    public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, int callInfo, IRubyObject... args);
+
+    /**
+     * Call the site's method against the target object passing arguments.
+     *
+     * @param context the ThreadContext for the current thread
+     * @param caller the caller, for visibility checks
+     * @param self the target object to call against
+     * @param callInfo the keyword call info
+     * @param block the block for the call
+     * @param args the arguments to pass
+     * @return the result of the call
+     */
+    public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, int callInfo, Block block, IRubyObject... args);
+
+    /**
+     * Call the site's method against the target object passing arguments.
      * 
      * As a "varargs" method, this will use the length of the args array to
      * dispatch to the correct arity call, rather than dispatching unconditionally
@@ -334,6 +359,21 @@ public abstract class CallSite {
      * @return the result of the call
      */
     public abstract IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block);
+
+    /**
+     * Call the site's method against the target object passing arguments and
+     * a literal block. This version handles break jumps by returning their
+     * value if this is the appropriate place in the call stack to do so.
+     *
+     * @param context the ThreadContext for the current thread
+     * @param caller the caller, for visibility checks
+     * @param self the target object to call against
+     * @param callInfo the keyword call info
+     * @param block the literal block to pass
+     * @param args the arguments to pass
+     * @return the result of the call
+     */
+    public abstract IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, int callInfo, Block block, IRubyObject... args);
 
     /**
      * Call the site's method against the target object passing arguments and

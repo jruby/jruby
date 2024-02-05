@@ -116,9 +116,18 @@ public class Helpers {
         return selectMethodMissing(context, klass, visibility, name, callType).call(context, self, klass, name, args, block);
     }
 
+    public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, RubyClass klass, Visibility visibility, String name, CallType callType, int callInfo, IRubyObject[] args, Block block) {
+        return selectMethodMissing(context, klass, visibility, name, callType).call(context, self, klass, name, callInfo, block, args);
+    }
+
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, Visibility visibility, String name, CallType callType, IRubyObject[] args, Block block) {
         final RubyClass klass = getMetaClass(receiver);
         return selectMethodMissing(context, klass, visibility, name, callType).call(context, receiver, klass, name, args, block);
+    }
+
+    public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, Visibility visibility, String name, CallType callType, int callInfo, IRubyObject[] args, Block block) {
+        final RubyClass klass = getMetaClass(receiver);
+        return selectMethodMissing(context, klass, visibility, name, callType).call(context, receiver, klass, name, callInfo, block, args);
     }
 
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, RubyClass klass, Visibility visibility, String name, CallType callType, IRubyObject arg0, Block block) {

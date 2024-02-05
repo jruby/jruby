@@ -539,13 +539,13 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         IRubyObject[] values = prepareArguments(context, self, currScope, dynamicScope, temp);
         Block preparedBlock = prepareBlock(context, self, currScope, dynamicScope, temp);
 
-        IRRuntimeHelpers.setCallInfo(context, getFlags());
+        int callInfo = getFlags();
 
         if (hasLiteralClosure()) {
-            return callSite.callIter(context, self, object, values, preparedBlock);
+            return callSite.callIter(context, self, object, callInfo, preparedBlock, values);
         }
 
-        return callSite.call(context, self, object, values, preparedBlock);
+        return callSite.call(context, self, object, callInfo, preparedBlock, values);
     }
 
     public IRubyObject[] prepareArguments(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope dynamicScope, Object[] temp) {

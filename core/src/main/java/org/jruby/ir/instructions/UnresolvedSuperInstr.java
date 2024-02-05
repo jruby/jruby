@@ -115,12 +115,12 @@ public class UnresolvedSuperInstr extends CallInstr {
         IRubyObject[] args = prepareArguments(context, self, currScope, currDynScope, temp);
         Block block = prepareBlock(context, self, currScope, currDynScope, temp);
 
-        IRRuntimeHelpers.setCallInfo(context, getFlags());
+        int flags = getFlags();
 
         if (isLiteralBlock) {
-            return IRRuntimeHelpers.unresolvedSuperIter(context, self, args, block);
+            return IRRuntimeHelpers.unresolvedSuperIter(context, self, flags, args, block);
         } else {
-            return IRRuntimeHelpers.unresolvedSuper(context, self, args, block);
+            return IRRuntimeHelpers.unresolvedSuper(context, self, flags, args, block);
         }
     }
 
