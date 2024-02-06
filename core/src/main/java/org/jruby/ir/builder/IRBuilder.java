@@ -2266,7 +2266,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
         IRBuilder builder = getManager().getBuilderFactory().newIRBuilder(getManager(), endClosure, null, encoding);
 
-        hackPostExeSource(this);
+        builder.hackPostExeSource(this);
 
         builder.buildPrePostExeInner(body);
 
