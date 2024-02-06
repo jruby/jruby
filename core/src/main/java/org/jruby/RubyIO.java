@@ -2619,9 +2619,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             return runtime.newFixnum(close_on_exec_p(context).isTrue() ? FD_CLOEXEC : 0);
         } else if (realCmd == Fcntl.F_SETFL.intValue()) {
             if ((nArg & OpenFlags.O_NONBLOCK.intValue()) != 0) {
-                fptr.setBlocking(runtime, true);
-            } else {
                 fptr.setBlocking(runtime, false);
+            } else {
+                fptr.setBlocking(runtime, true);
             }
 
             if ((nArg & OpenFlags.O_CLOEXEC.intValue()) != 0) {
