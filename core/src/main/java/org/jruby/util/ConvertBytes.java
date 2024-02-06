@@ -558,7 +558,7 @@ public class ConvertBytes {
                         break;
                     }
                 } else {
-                    us += 0;
+                    us = 0;
                 }
                 beg++;
             }
