@@ -5902,7 +5902,7 @@ states[668] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
 };
 states[669] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
 {IRubyObject v1, v2, v3;
-                    v1 = p.intern("-");
+                    v1 = p.intern("-@");
                     v2 = ((IRubyObject)yyVals[0+yyTop].value);
                     v3 = p.dispatch("on_unary", v1, v2);
                     yyVal = v3;}
