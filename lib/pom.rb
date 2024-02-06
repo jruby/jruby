@@ -97,7 +97,7 @@ default_gems = [
     ['shellwords', '0.1.0'],
     ['singleton', '0.1.1'],
     ['stringio', '3.0.8'],
-    ['strscan', '3.0.9'],
+    ['strscan', '3.1.0'],
     ['subspawn', '0.1.1'], # has 3 transitive deps:
       ['subspawn-posix', '0.1.1'],
       ['ffi-binary-libfixposix', '0.5.1.1'],
