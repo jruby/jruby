@@ -702,43 +702,70 @@ public class IRRuntimeHelpers {
     // this logic is the same as recieveKeywords but we know it will never be a keyword argument (jit
     // will save %undefined as the keyword value).
     @JIT // Only used for specificArity JITted methods with at least one parameter
-    public static IRubyObject receiveSpecificArityKeywords(ThreadContext context, StaticScope staticScope, IRubyObject last) {
-        IRScope scope = staticScope.getIRScope();
+    public static IRubyObject receiveSpecificArityKeywords(ThreadContext context, IRubyObject last) {
+        if (!(last instanceof RubyHash)) {
+            context.resetCallInfo();
+            return last;
+        }
+
+        return receiveSpecificArityHashKeywords(context, last);
+    }
+
+    private static IRubyObject receiveSpecificArityHashKeywords(ThreadContext context, IRubyObject last) {
         int callInfo = context.resetCallInfo();
+        boolean isKwarg = (callInfo & CALL_KEYWORD) != 0;
 
-        /*
-        if ((callInfo & CALL_KEYWORD_EMPTY) != 0) {
-            System.out.println("HERE.2a");
-            return UNDEFINED;
-        }*/
+        return receiverSpecificArityKwargsCommon(context, last, callInfo, isKwarg);
+    }
 
-        if (!(last instanceof RubyHash)) return last;
+    // same as receiveSpecificArityKeywords but only used when the scope demands ruby2 keywords.
+    @JIT // Only used for specificArity JITted methods with at least one parameter
+    public static IRubyObject receiveSpecificArityRuby2Keywords(ThreadContext context, IRubyObject last) {
+        if (!(last instanceof RubyHash)) {
+            context.resetCallInfo();
+            return last;
+        }
 
-        RubyHash hash = (RubyHash) last;
+        return receiveSpecificArityRuby2HashKeywords(context, last);
+    }
 
+    private static IRubyObject receiveSpecificArityRuby2HashKeywords(ThreadContext context, IRubyObject last) {
+        int callInfo = context.resetCallInfo();
         boolean isKwarg = (callInfo & CALL_KEYWORD) != 0;
 
         // ruby2_keywords only get unmarked if it enters a method which accepts keywords.
         // This means methods which don't just keep that marked hash around in case it is passed
         // onto another method which accepts keywords.
-        if (scope.isRuby2Keywords() && isKwarg) {
+        if (isKwarg) {
             // a ruby2_keywords method which happens to receive a keyword.  Mark hash as ruby2_keyword
             // So it can be used similarly to an ordinary hash passed in this way.
 
+            RubyHash hash = (RubyHash) last;
             hash = hash.dupFast(context);
             hash.setRuby2KeywordHash(true);
 
             return hash;
-        } else if ((callInfo & CALL_KEYWORD_REST) != 0) {
+        }
+
+        return receiverSpecificArityKwargsCommon(context, last, callInfo, isKwarg);
+    }
+
+    private static IRubyObject receiverSpecificArityKwargsCommon(ThreadContext context, IRubyObject last, int callInfo, boolean isKwarg) {
+        // ruby2_keywords only get unmarked if it enters a method which accepts keywords.
+        // This means methods which don't just keep that marked hash around in case it is passed
+        // onto another method which accepts keywords.
+        if ((callInfo & CALL_KEYWORD_REST) != 0) {
             // This is kwrest passed to a method which does not accept kwargs
 
             // We pass empty kwrest through so kwrest does not try and slurp it up as normal argument.
             // This complicates check_arity but empty ** is special case.
+            RubyHash hash = (RubyHash) last;
             return hash;
         } else if (!isKwarg) {
             // This is just an ordinary hash as last argument
             return last;
         } else {
+            RubyHash hash = (RubyHash) last;
             return hash.dupFast(context);
         }
     }

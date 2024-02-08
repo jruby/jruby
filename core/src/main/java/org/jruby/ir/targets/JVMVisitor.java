@@ -2154,9 +2154,10 @@ public class JVMVisitor extends IRVisitor {
         if (argsLength >= 0) {
             if (argsLength > 0) {
                 jvmMethod().loadContext();
-                jvmMethod().loadStaticScope();
                 jvmAdapter().aload(3 + argsLength - 1); // 3 - 0-2 are not args // FIXME: This should get abstracted
-                jvmMethod().invokeIRHelper("receiveSpecificArityKeywords", sig(IRubyObject.class, ThreadContext.class, StaticScope.class, IRubyObject.class));
+                jvmMethod().invokeIRHelper(
+                        jvm.methodData().scope.isRuby2Keywords() ? "receiveSpecificArityRuby2Keywords" : "receiveSpecificArityKeywords",
+                        sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
                 jvmAdapter().astore(3 + argsLength - 1); // 3 - 0-2 are not args // FIXME: This should get abstracted
             } else {
                 jvmMethod().loadContext();
