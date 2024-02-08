@@ -664,36 +664,6 @@ public class IRRuntimeHelpers {
         return  isEmpty ? context.tru : context.fals;
     }
 
-    /*
-     * If the callsite splats the argument list then we might manipulate the incoming arguments.
-     * For `foo(*args) at the sight:
-     *   - def foo(**kwargs) we eliminate ruby2_keywords hash with a dup'd value
-     *   - def foo(args) same
-     */
-    private static void callSiteFunging(ThreadContext context, IRubyObject[] args, RubyHash lastArg, int callInfo,
-                                        boolean hasRestArgs, boolean acceptsKeywords,
-                                        boolean ruby2_keywords_hash) {
-        if ((callInfo & CALL_SPLATS) == 0) return;
-
-        if (acceptsKeywords || !hasRestArgs) {
-            IRubyObject unmarked = maybeUnmarkLast(context, lastArg, ruby2_keywords_hash);
-
-            if (unmarked != null) args[args.length - 1] = unmarked;
-        }
-    }
-
-    private static IRubyObject maybeUnmarkLast(ThreadContext context, RubyHash last, boolean ruby2_keywords_hash) {
-        if (ruby2_keywords_hash && !last.isEmpty()) {
-            RubyHash newHash = last.dupFast(context);
-
-            newHash.setRuby2KeywordHash(false);
-
-            return newHash;
-        }
-
-        return null;
-    }
-
     public static IRubyObject undefined() {
         return UNDEFINED;
     }
@@ -770,26 +740,107 @@ public class IRRuntimeHelpers {
         }
     }
 
+    /**
+     * Simplified receiveKeywords when:
+     * <li>receiver is not a ruby2_keywords method</li>
+     * <li>receiver does not accept keywords</li>
+     * <li>there's no rest argument</li>
+     *
+     * @param context
+     * @param args
+     * @return the prepared kwargs hash, or UNDEFINED as a sigil for no kwargs
+     */
     @JIT
-    public static IRubyObject receiveKeywords(ThreadContext context, StaticScope staticScope, IRubyObject[] args, boolean hasRestArgs, boolean acceptKeywords) {
-        return receiveKeywords(context, args, hasRestArgs, acceptKeywords, staticScope.getIRScope().isRuby2Keywords());
+    public static IRubyObject receiveNormalKeywordsNoRestNoKeywords(ThreadContext context, IRubyObject[] args) {
+        int callInfo = ThreadContext.resetCallInfo(context);
+        if (shouldHandleKwargs(args, callInfo) && (callInfo & CALL_SPLATS) != 0) {
+            return receiveKeywordsWithSplatsNoRestNoKeywords(context, args);
+        }
+
+        return UNDEFINED;
     }
 
-    // We return as undefined and not null when no kwarg since null gets auto-converted to nil because
-    // temp vars do this to work around no explicit initialization of temp values (e.g. they might start as null).
+    /**
+     * Simplified receiveKeywords when receiver IS NOT a ruby2_keywords method.
+     *
+     * @param context
+     * @param args
+     * @param hasRestArgs
+     * @param acceptKeywords
+     * @return the prepared kwargs hash, or UNDEFINED as a sigil for no kwargs
+     */
+    @JIT
+    public static IRubyObject receiveNormalKeywords(ThreadContext context, IRubyObject[] args, boolean hasRestArgs, boolean acceptKeywords) {
+        return receiveKeywords(context, args, hasRestArgs, acceptKeywords, false);
+    }
+
+    /**
+     * Simplified receiveKeywords when receiver IS a ruby2_keywords method.
+     *
+     * @param context
+     * @param args
+     * @param hasRestArgs
+     * @param acceptKeywords
+     * @return the prepared kwargs hash, or UNDEFINED as a sigil for no kwargs
+     */
+    @JIT
+    public static IRubyObject receiveRuby2Keywords(ThreadContext context, IRubyObject[] args, boolean hasRestArgs, boolean acceptKeywords) {
+        return receiveKeywords(context, args, hasRestArgs, acceptKeywords, true);
+    }
+
+    /**
+     * Handle incoming keyword arguments given the receiver's rest arg, keyword acceptance, and need for ruby2_keywords.
+     *
+     * We return as undefined and not null when no kwarg since null gets auto-converted to nil because
+     * temp vars do this to work around no explicit initialization of temp values (e.g. they might start as null).
+     *
+     * @param context
+     * @param args
+     * @param hasRestArgs
+     * @param acceptsKeywords
+     * @param ruby2_keywords_method
+     * @return
+     */
     @Interp
     public static IRubyObject receiveKeywords(ThreadContext context, IRubyObject[] args, boolean hasRestArgs,
                                               boolean acceptsKeywords, boolean ruby2_keywords_method) {
         int callInfo = ThreadContext.resetCallInfo(context);
+        if (shouldHandleKwargs(args, callInfo)) {
+            return receiveKeywordsHash(context, args, hasRestArgs, acceptsKeywords, ruby2_keywords_method, callInfo);
+        }
 
-        if ((callInfo & CALL_KEYWORD_EMPTY) != 0) return UNDEFINED;
-        if (args.length < 1) return UNDEFINED;
+        return UNDEFINED;
+    }
 
-        IRubyObject last = args[args.length - 1];
+    private static IRubyObject receiveKeywordsWithSplatsNoRestNoKeywords(ThreadContext context, IRubyObject[] args) {
+        RubyHash hash = (RubyHash) args[args.length - 1];
 
-        if (!(last instanceof RubyHash)) return UNDEFINED;
+        if (hash.isRuby2KeywordHash()) {
+            if (hash.isEmpty()) {
+                // case where we somehow (hash.clear) a marked ruby2_keyword.  We pass it as keyword even in non-keyword
+                // accepting methods so it is subtracted from the arity count.  Normally empty keyword arguments are not
+                // passed along but ruby2_keyword is a strange case since it is mutable by users.
+                return hash;
+            }
 
-        RubyHash hash = (RubyHash) last;
+            clearTrailingHashRuby2Keywords(context, args, hash);
+        }
+
+        return UNDEFINED;
+    }
+
+    private static void clearTrailingHashRuby2Keywords(ThreadContext context, IRubyObject[] args, RubyHash hash) {
+        RubyHash newHash = hash.dupFast(context);
+        newHash.setRuby2KeywordHash(false);
+        args[args.length - 1] = newHash;
+    }
+
+    private static boolean shouldHandleKwargs(IRubyObject[] args, int callInfo) {
+        return (callInfo & CALL_KEYWORD_EMPTY) == 0 && args.length >= 1 && args[args.length - 1] instanceof RubyHash;
+    }
+
+    private static IRubyObject receiveKeywordsHash(ThreadContext context, IRubyObject[] args, boolean hasRestArgs, boolean acceptsKeywords, boolean ruby2_keywords_method, int callInfo) {
+        RubyHash hash = (RubyHash) args[args.length - 1];
 
         // We record before funging last arg because we may unmark and replace last arg.
         boolean ruby2_keywords_hash = hash.isRuby2KeywordHash();
@@ -797,44 +848,50 @@ public class IRRuntimeHelpers {
         // ruby2_keywords only get unmarked if it enters a method which accepts keywords.
         // This means methods which don't just keep that marked hash around in case it is passed
         // onto another method which accepts keywords.
-        if (ruby2_keywords_hash) {
-            if (acceptsKeywords) {
-                if (!hash.isEmpty()) hash = hash.dupFast(context);
-                if (!ruby2_keywords_method) hash.setRuby2KeywordHash(false);
+        if (ruby2_keywords_hash && acceptsKeywords) {
+            if (!hash.isEmpty()) hash = hash.dupFast(context);
+            if (!ruby2_keywords_method) hash.setRuby2KeywordHash(false);
+            return hash;
+        }
 
+        boolean callSplats = (callInfo & CALL_SPLATS) != 0;
+        boolean callSplatsWithRuby2KeywordsHash = callSplats && ruby2_keywords_hash;
+
+        // if we're splatting a ruby2_keywords hash
+        //    AND the hash is non-empty
+        //    AND keywords are accepted OR there's no rest args,
+        // clear the ruby2_keywords flag from the hash
+        if (callSplatsWithRuby2KeywordsHash
+                && !hash.isEmpty()
+                && (acceptsKeywords || !hasRestArgs)) {
+            clearTrailingHashRuby2Keywords(context, args, hash);
+        }
+
+        boolean callKeyword = (callInfo & CALL_KEYWORD) != 0;
+
+        // If method wants ruby2 keywords and call has keywords, convert to ruby2_keywords hash
+        if (ruby2_keywords_method && callKeyword) {
+            setTrailingHashRuby2Keywords(context, args, hash);
+        } else {
+            // If splat call with ruby2_keywords hash that's not empty, just return it
+            if (callSplatsWithRuby2KeywordsHash && hash.isEmpty()) {
                 return hash;
+            }
+
+            // If ordinary hash as last argument, dup and return it
+            if (callKeyword && acceptsKeywords && !hash.isEmpty()) {
+                return hash.dupFast(context);
             }
         }
 
-        callSiteFunging(context, args, hash, callInfo, hasRestArgs, acceptsKeywords, ruby2_keywords_hash);
+        // All other situations no-op
+        return UNDEFINED;
+    }
 
-
-        if (ruby2_keywords_method && (callInfo & CALL_KEYWORD) != 0) {
-            // a ruby2_keywords method which happens to receive a keyword.  Mark hash as ruby2_keyword
-            // So it can be used similarly to an ordinary hash passed in this way.
-            hash = hash.dupFast(context);
-            hash.setRuby2KeywordHash(true);
-
-            args[args.length - 1] = hash;
-            return UNDEFINED;
-        } else if ((callInfo & CALL_SPLATS) != 0 && ruby2_keywords_hash && hash.isEmpty()) {
-            // case where we somehow (hash.clear) a marked ruby2_keyword.  We pass it as keyword even in non-keyword
-            // accepting methods so it is subtracted from the arity count.  Normally empty keyword arguments are not
-            // passed along but ruby2_keyword is a strange case since it is mutable by users.
-            return hash;
-        } else if (!acceptsKeywords && (callInfo & CALL_KEYWORD_REST) != 0) {
-            // This is kwrest passed to a method which does not accept kwargs
-
-            // We pass empty kwrest through so kwrest does not try and slurp it up as normal argument.
-            // This complicates check_arity but empty ** is special case.
-            return UNDEFINED;
-        } else if ((callInfo & CALL_KEYWORD) == 0) {
-            // This is just an ordinary hash as last argument
-            return UNDEFINED;
-        } else {
-            // This last check needs explaining.  We never pass empty kwargs hashes so this means it is really a normal argument.
-            return !acceptsKeywords || hash.isEmpty() ? UNDEFINED : hash.dupFast(context);
-        }
+    private static void setTrailingHashRuby2Keywords(ThreadContext context, IRubyObject[] args, RubyHash hash) {
+        hash = hash.dupFast(context);
+        hash.setRuby2KeywordHash(true);
+        args[args.length - 1] = hash;
     }
 
     /**

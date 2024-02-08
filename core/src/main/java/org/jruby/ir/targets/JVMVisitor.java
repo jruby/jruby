@@ -2151,12 +2151,14 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void ReceiveKeywordsInstr(ReceiveKeywordsInstr instr) {
         int argsLength = jvm.methodData().specificArity;
+        boolean ruby2KeywordsMethod = jvm.methodData().scope.isRuby2Keywords();
+
         if (argsLength >= 0) {
             if (argsLength > 0) {
                 jvmMethod().loadContext();
                 jvmAdapter().aload(3 + argsLength - 1); // 3 - 0-2 are not args // FIXME: This should get abstracted
                 jvmMethod().invokeIRHelper(
-                        jvm.methodData().scope.isRuby2Keywords() ? "receiveSpecificArityRuby2Keywords" : "receiveSpecificArityKeywords",
+                        ruby2KeywordsMethod ? "receiveSpecificArityRuby2Keywords" : "receiveSpecificArityKeywords",
                         sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
                 jvmAdapter().astore(3 + argsLength - 1); // 3 - 0-2 are not args // FIXME: This should get abstracted
             } else {
@@ -2166,11 +2168,16 @@ public class JVMVisitor extends IRVisitor {
             jvmMethod().invokeIRHelper("undefined", sig(IRubyObject.class));
         } else {
             jvmMethod().loadContext();
-            jvmMethod().loadStaticScope();
             jvmMethod().loadArgs();
-            jvmAdapter().ldc(instr.hasRestArg());
-            jvmAdapter().ldc(instr.acceptsKeywords());
-            jvmMethod().invokeIRHelper("receiveKeywords", sig(IRubyObject.class, ThreadContext.class, StaticScope.class, IRubyObject[].class, boolean.class, boolean.class));
+            if (!(ruby2KeywordsMethod || instr.hasRestArg() || instr.acceptsKeywords())) {
+                jvmMethod().invokeIRHelper("receiveNormalKeywordsNoRestNoKeywords", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class));
+            } else {
+                jvmAdapter().ldc(instr.hasRestArg());
+                jvmAdapter().ldc(instr.acceptsKeywords());
+                jvmMethod().invokeIRHelper(
+                        ruby2KeywordsMethod ? "receiveRuby2Keywords" : "receiveNormalKeywords",
+                        sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, boolean.class, boolean.class));
+            }
         }
         jvmStoreLocal(instr.getResult());
     }
