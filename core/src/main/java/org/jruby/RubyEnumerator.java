@@ -207,7 +207,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         int argc = Arity.checkArgumentCount(context, args, 2, 4);
 
         boolean keywords = (context.callInfo & CALL_KEYWORD) != 0 && (context.callInfo & ThreadContext.CALL_KEYWORD_EMPTY) == 0;
-        context.resetCallInfo();
+        ThreadContext.resetCallInfo(context);
 
         // Lazy.__from(enum, method, *args, size)
         IRubyObject object = args[0];

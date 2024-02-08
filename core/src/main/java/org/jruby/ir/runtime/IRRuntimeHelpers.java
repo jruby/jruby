@@ -704,7 +704,7 @@ public class IRRuntimeHelpers {
     @JIT // Only used for specificArity JITted methods with at least one parameter
     public static IRubyObject receiveSpecificArityKeywords(ThreadContext context, IRubyObject last) {
         if (!(last instanceof RubyHash)) {
-            context.resetCallInfo();
+            ThreadContext.clearCallInfo(context);
             return last;
         }
 
@@ -712,7 +712,7 @@ public class IRRuntimeHelpers {
     }
 
     private static IRubyObject receiveSpecificArityHashKeywords(ThreadContext context, IRubyObject last) {
-        int callInfo = context.resetCallInfo();
+        int callInfo = ThreadContext.resetCallInfo(context);
         boolean isKwarg = (callInfo & CALL_KEYWORD) != 0;
 
         return receiverSpecificArityKwargsCommon(context, last, callInfo, isKwarg);
@@ -722,7 +722,7 @@ public class IRRuntimeHelpers {
     @JIT // Only used for specificArity JITted methods with at least one parameter
     public static IRubyObject receiveSpecificArityRuby2Keywords(ThreadContext context, IRubyObject last) {
         if (!(last instanceof RubyHash)) {
-            context.resetCallInfo();
+            ThreadContext.clearCallInfo(context);
             return last;
         }
 
@@ -730,7 +730,7 @@ public class IRRuntimeHelpers {
     }
 
     private static IRubyObject receiveSpecificArityRuby2HashKeywords(ThreadContext context, IRubyObject last) {
-        int callInfo = context.resetCallInfo();
+        int callInfo = ThreadContext.resetCallInfo(context);
         boolean isKwarg = (callInfo & CALL_KEYWORD) != 0;
 
         // ruby2_keywords only get unmarked if it enters a method which accepts keywords.
@@ -780,7 +780,7 @@ public class IRRuntimeHelpers {
     @Interp
     public static IRubyObject receiveKeywords(ThreadContext context, IRubyObject[] args, boolean hasRestArgs,
                                               boolean acceptsKeywords, boolean ruby2_keywords_method) {
-        int callInfo = context.resetCallInfo();
+        int callInfo = ThreadContext.resetCallInfo(context);
 
         if ((callInfo & CALL_KEYWORD_EMPTY) != 0) return UNDEFINED;
         if (args.length < 1) return UNDEFINED;
@@ -856,17 +856,6 @@ public class IRRuntimeHelpers {
     public static void setCallInfo(ThreadContext context, int flags) {
         // FIXME: This may propagate empty more than the current call?   empty might need to be stuff elsewhere to prevent this.
         context.callInfo = (context.callInfo & CALL_KEYWORD_EMPTY) | flags;
-    }
-
-    // specific args of arity 0 does not receive kwargs so we have to reset this.
-    @JIT
-    public static void resetCallInfo(ThreadContext context) {
-        context.resetCallInfo();
-    }
-
-    @JIT
-    public static void clearCallInfo(ThreadContext context) {
-        context.clearCallInfo();
     }
 
     public static void checkForExtraUnwantedKeywordArgs(ThreadContext context, final StaticScope scope, RubyHash keywordArgs) {
@@ -1986,7 +1975,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static RubyArray irSplat(ThreadContext context, IRubyObject ary) {
         Ruby runtime = context.runtime;
-        int callInfo = context.resetCallInfo();
+        int callInfo = ThreadContext.resetCallInfo(context);
         IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, ary, runtime.getArray(), sites(context).to_a_checked);
         if (tmp.isNil()) {
             tmp = runtime.newArray(ary);

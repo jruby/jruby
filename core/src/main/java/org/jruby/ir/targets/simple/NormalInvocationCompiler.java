@@ -485,7 +485,7 @@ public class NormalInvocationCompiler implements InvocationCompiler {
     public void setCallInfo(int flags) {
         compiler.loadContext();
         if (flags == 0) {
-            compiler.invokeIRHelper("clearCallInfo", sig(void.class, ThreadContext.class));
+            compiler.adapter.invokestatic(p(ThreadContext.class), "clearCallInfo", sig(void.class, ThreadContext.class));
         } else {
             compiler.adapter.ldc(flags);
             compiler.invokeIRHelper("setCallInfo", sig(void.class, ThreadContext.class, int.class));

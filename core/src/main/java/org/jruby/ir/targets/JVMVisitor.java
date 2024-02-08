@@ -2161,7 +2161,7 @@ public class JVMVisitor extends IRVisitor {
                 jvmAdapter().astore(3 + argsLength - 1); // 3 - 0-2 are not args // FIXME: This should get abstracted
             } else {
                 jvmMethod().loadContext();
-                jvmMethod().invokeIRHelper("resetCallInfo", sig(void.class, ThreadContext.class));
+                jvmMethod().adapter.invokestatic(p(ThreadContext.class), "clearCallInfo", sig(void.class, ThreadContext.class));
             }
             jvmMethod().invokeIRHelper("undefined", sig(IRubyObject.class));
         } else {

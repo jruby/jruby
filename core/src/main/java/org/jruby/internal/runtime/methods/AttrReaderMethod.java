@@ -54,7 +54,7 @@ public class AttrReaderMethod extends JavaMethodZero {
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-        context.resetCallInfo();
+        ThreadContext.resetCallInfo(context);
         IRubyObject variable = (IRubyObject) verifyAccessor(self.getMetaClass().getRealClass()).get(self);
         return variable == null ? context.nil : variable;
     }

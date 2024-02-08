@@ -56,7 +56,7 @@ public class AttrWriterMethod extends JavaMethodOne {
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg1) {
-        context.resetCallInfo();
+        ThreadContext.resetCallInfo(context);
         verifyAccessor(self.getMetaClass().getRealClass()).set(self, arg1);
         return arg1;
     }
