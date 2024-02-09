@@ -29,7 +29,6 @@
 
 package org.jruby.internal.runtime.methods;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
