@@ -62,7 +62,7 @@ public class CoverageModule {
         }
 
         if (argc != 0) {
-            boolean keyword = hasKeywords(context.resetCallInfo());
+            boolean keyword = hasKeywords(ThreadContext.resetCallInfo(context));
 
             if (keyword) {
                 RubyHash keywords = (RubyHash) TypeConverter.convertToType(args[0], runtime.getHash(), "to_hash");
@@ -151,7 +151,7 @@ public class CoverageModule {
         boolean stop = true;
         boolean clear = true;
 
-        if (argc > 0 && hasKeywords(context.resetCallInfo())) {
+        if (argc > 0 && hasKeywords(ThreadContext.resetCallInfo(context))) {
             RubyHash keywords = (RubyHash) TypeConverter.convertToType(args[0], runtime.getHash(), "to_hash");
             stop = ArgsUtil.extractKeywordArg(context, "stop", keywords).isTrue();
             clear = ArgsUtil.extractKeywordArg(context, "clear", keywords).isTrue();

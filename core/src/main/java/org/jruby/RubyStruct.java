@@ -414,7 +414,7 @@ public class RubyStruct extends RubyObject {
     }
 
     private void checkForKeywords(ThreadContext context, boolean keywordInit) {
-        if (hasKeywords(context.resetCallInfo()) && !keywordInit) {
+        if (hasKeywords(ThreadContext.resetCallInfo(context)) && !keywordInit) {
             context.runtime.getWarnings().warn("Passing only keyword arguments to Struct#initialize will behave differently from Ruby 3.2. Please use a Hash literal like .new({k: v}) instead of .new(k: v).");
         }
     }
@@ -423,7 +423,7 @@ public class RubyStruct extends RubyObject {
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         IRubyObject keywordInit = RubyStruct.getInternalVariable(classOf(), KEYWORD_INIT_VAR);
         checkForKeywords(context, !keywordInit.isNil());
-        context.resetCallInfo();
+        ThreadContext.resetCallInfo(context);
         modify();
         checkSize(args.length);
 
@@ -467,7 +467,7 @@ public class RubyStruct extends RubyObject {
     public IRubyObject initialize(ThreadContext context, IRubyObject arg0) {
         IRubyObject keywordInit = RubyStruct.getInternalVariable(classOf(), KEYWORD_INIT_VAR);
         checkForKeywords(context, !keywordInit.isNil());
-        context.resetCallInfo();
+        ThreadContext.resetCallInfo(context);
         Ruby runtime = context.runtime;
 
         if (keywordInit.isTrue()) {
