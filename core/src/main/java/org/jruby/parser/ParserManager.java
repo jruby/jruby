@@ -7,10 +7,12 @@ import org.jruby.Ruby;
 import org.jruby.RubyFile;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyString;
+import org.jruby.common.RubyWarnings;
 import org.jruby.ir.persistence.IRReader;
 import org.jruby.ir.persistence.IRReaderStream;
 import org.jruby.ir.persistence.util.IRFileExpert;
 import org.jruby.management.ParserStats;
+import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -44,10 +46,23 @@ public class ParserManager {
 
     public ParserManager(Ruby runtime) {
         this.runtime = runtime;
-        ParserProvider provider = ParserServiceLoader.provider(Options.PARSER_PRISM.load() || Options.PARSER_WASM.load());
+        ParserProvider provider;
+        try {
+            provider = ParserServiceLoader.provider(Options.PARSER_PRISM.load() || Options.PARSER_WASM.load());
+            provider.initialize(runtime.getJRubyHome() + "/lib/libprism." + getLibraryExtension());
+        } catch (UnsatisfiedLinkError e) {
+            System.err.println("warning: Problem loading requested parser. Falling back to default parser.\nOriginal error message: " + e.getMessage());
+            provider = new ParserProviderDefault();
+        }
         runtime.getIRManager().setBuilderFactory(provider.getBuilderFactory());
         parser = provider.getParser(runtime);
         parserStats = new ParserStats(runtime);
+    }
+
+    private static String getLibraryExtension() {
+        if (Platform.IS_WINDOWS) return "dll";
+        if (Platform.IS_MAC) return "dylib";
+        return "so";
     }
 
     public Parser getParser() {
