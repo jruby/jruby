@@ -120,7 +120,7 @@ namespace :spec do
     mspec :compile_mode => "JIT",
        :jit_threshold => 0,
        :format => 'd'
-       :jruby_opts => "-Xparser.prism",
+       :jruby_opts => "-Xparser.prism"
   end
 
   desc "Tagged specs in AOT mode only"
