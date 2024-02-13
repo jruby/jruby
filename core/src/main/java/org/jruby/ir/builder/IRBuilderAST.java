@@ -473,7 +473,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
                 return buildCallArgsArray((ListNode) args, flags);
             case SPLATNODE:
                 flags[0] |= CALL_SPLATS;
-                return new Operand[] { new Splat(addResultInstr(new BuildSplatInstr(temp(), build(args), false))) };
+                return new Operand[] { new Splat(addResultInstr(new BuildSplatInstr(temp(), build(((SplatNode) args).getValue()), true))) };
 
         }
 
