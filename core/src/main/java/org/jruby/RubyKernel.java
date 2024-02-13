@@ -1817,7 +1817,7 @@ public class RubyKernel {
         case '>': // ?>  | boolean | True if the modification time of file1 is after that of file2
             return context.runtime.newFileStat(arg1.convertToString().toString(), false).mtimeGreaterThan(arg2);
         case '-': // ?-  | boolean | True if file1 and file2 are identical
-            return RubyFileTest.identical_p(recv, arg1, arg2);
+            return RubyFileTest.identical_p(context, recv, arg1, arg2);
         default:
             throw new InternalError("unreachable code reached!");
         }
