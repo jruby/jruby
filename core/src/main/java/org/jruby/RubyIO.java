@@ -3919,6 +3919,112 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return args.go(context);
     }
 
+    @JRubyMethod(optional = 1)
+    public IRubyObject wait_readable(ThreadContext context, IRubyObject[] argv) {
+        OpenFile fptr = this.getOpenFileChecked();
+
+        fptr.checkReadable(context);
+
+        long tv = prepareTimeout(context, argv);
+
+        if (fptr.readPending() != 0) return context.tru;
+
+        return doWait(context, fptr, tv, SelectionKey.OP_READ | SelectionKey.OP_ACCEPT);
+    }
+
+    /**
+     * waits until input available or timed out and returns self, or nil when EOF reached.
+     */
+    @JRubyMethod(optional = 1)
+    public IRubyObject wait_writable(ThreadContext context, IRubyObject[] argv) {
+        OpenFile fptr = this.getOpenFileChecked();
+
+        fptr.checkWritable(context);
+
+        long tv = prepareTimeout(context, argv);
+
+        return doWait(context, fptr, tv, SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE);
+    }
+
+    @JRubyMethod(optional = 2)
+    public IRubyObject wait(ThreadContext context, IRubyObject[] argv) {
+        OpenFile fptr = this.getOpenFileChecked();
+
+        int ops = 0;
+
+        if (argv.length == 2) {
+            if (argv[1] instanceof RubySymbol) {
+                RubySymbol sym = (RubySymbol) argv[1];
+                switch (sym.asJavaString()) { // 7 bit comparison
+                    case "r":
+                    case "read":
+                    case "readable":
+                        ops |= SelectionKey.OP_ACCEPT | SelectionKey.OP_READ;
+                        break;
+                    case "w":
+                    case "write":
+                    case "writable":
+                        ops |= SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE;
+                        break;
+                    case "rw":
+                    case "read_write":
+                    case "readable_writable":
+                        ops |= SelectionKey.OP_ACCEPT | SelectionKey.OP_READ | SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE;
+                        break;
+                    default:
+                        throw context.runtime.newArgumentError("unsupported mode: " + sym);
+                }
+            } else if (argv[1] instanceof RubyFixnum) {
+                RubyFixnum fix = (RubyFixnum) argv[1];
+                if ((fix.getIntValue() & IOEvent.IO_READABLE.value) != 0) {
+                    ops |= SelectionKey.OP_ACCEPT | SelectionKey.OP_READ;
+                }
+                if ((fix.getIntValue() & IOEvent.IO_WRITABLE.value) != 0) {
+                    ops |= SelectionKey.OP_WRITE | SelectionKey.OP_WRITE;
+                }
+            } else {
+                throw context.runtime.newArgumentError("unsupported mode: " + argv[1].getType());
+            }
+        } else {
+            ops |= SelectionKey.OP_ACCEPT | SelectionKey.OP_READ;
+        }
+
+        if ((ops & SelectionKey.OP_READ) == SelectionKey.OP_READ && fptr.readPending() != 0) return context.tru;
+
+        long tv = prepareTimeout(context, argv);
+
+        return doWait(context, fptr, tv, ops);
+    }
+
+    private IRubyObject doWait(ThreadContext context, OpenFile fptr, long tv, int ops) {
+        boolean ready = fptr.ready(context.runtime, context.getThread(), ops, tv);
+        fptr.checkClosed();
+        if (ready) return this;
+        return context.nil;
+    }
+
+    private static long prepareTimeout(ThreadContext context, IRubyObject[] argv) {
+        IRubyObject timeout;
+        long tv;
+        switch (argv.length) {
+            case 2:
+            case 1:
+                timeout = argv[0];
+                break;
+            default:
+                timeout = context.nil;
+        }
+
+        if (timeout.isNil()) {
+            tv = -1;
+        }
+        else {
+            tv = (long)(RubyTime.convertTimeInterval(context, timeout) * 1000);
+            if (tv < 0) throw context.runtime.newArgumentError("time interval must be positive");
+        }
+        return tv;
+    }
+
     // MRI: rb_io_advise
     @JRubyMethod(required = 1, optional = 2, checkArity = false)
     public IRubyObject advise(ThreadContext context, IRubyObject[] argv) {
