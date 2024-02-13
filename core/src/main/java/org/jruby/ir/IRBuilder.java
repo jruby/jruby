@@ -818,7 +818,7 @@ public class IRBuilder {
                 return buildCallArgsArray((ListNode) args, flags);
             case SPLATNODE:
                 flags[0] |= CALL_SPLATS;
-                return new Operand[] { new Splat(addResultInstr(new BuildSplatInstr(createTemporaryVariable(), build(args), false))) };
+                return new Operand[] { new Splat(addResultInstr(new BuildSplatInstr(createTemporaryVariable(), build(((SplatNode) args).getValue()), true))) };
 
         }
 
