@@ -931,6 +931,10 @@ public abstract class IRScope implements ParseResult {
         return false;
     }
 
+    public boolean isFlipScope() {
+        return true;
+    }
+
     /**
      * Is this IRClassBody but not IRMetaClassBody?
      */

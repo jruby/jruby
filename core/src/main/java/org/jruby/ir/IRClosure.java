@@ -143,6 +143,10 @@ public class IRClosure extends IRScope {
         return isEND;
     }
 
+    public boolean isFlipScope() {
+        return true;
+    }
+
     @Override
     public int getNextClosureId() {
         return getLexicalParent().getNextClosureId();

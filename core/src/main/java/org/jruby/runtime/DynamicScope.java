@@ -97,6 +97,21 @@ public abstract class DynamicScope implements Cloneable {
         return newDynamicScope(staticScope, null);
     }
 
+
+    /**
+     * Find the scope to use for flip-flops. Flip-flops live either in the
+     * topmost "method scope" or in their nearest containing "eval scope".
+     *
+     * @return The scope to use for flip-flops
+     */
+    public DynamicScope getFlipScope() {
+        if (staticScope.getLocalScope() == staticScope) {
+            return this;
+        } else {
+            return parent.getFlipScope();
+        }
+    }
+
     /**
      * Get the static scope associated with this DynamicScope.
      *

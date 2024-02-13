@@ -1308,9 +1308,104 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         return addResultInstr(new GetEncodingInstr(temp(), encoding));
     }
 
+    /* ----------------------------------------------------------------------
+     * Consider a simple 2-state (s1, s2) FSM with the following transitions:
+     *
+     *     new_state(s1, F) = s1
+     *     new_state(s1, T) = s2
+     *     new_state(s2, F) = s2
+     *     new_state(s2, T) = s1
+     *
+     * Here is the pseudo-code for evaluating the flip-node.
+     * Let 'v' holds the value of the current state.
+     *
+     *    1. if (v == 's1') f1 = eval_condition(s1-condition); v = new_state(v, f1); ret = f1
+     *    2. if (v == 's2') f2 = eval_condition(s2-condition); v = new_state(v, f2); ret = true
+     *    3. return ret
+     *
+     * For exclusive flip conditions, line 2 changes to:
+     *    2. if (!f1 && (v == 's2')) f2 = eval_condition(s2-condition); v = new_state(v, f2)
+     *
+     * In IR code below, we are representing the two states as 1 and 2.  Any
+     * two values are good enough (even true and false), but 1 and 2 is simple
+     * enough and also makes the IR output readable
+     * ---------------------------------------------------------------------- */
     protected Operand buildFlip(U begin, U end, boolean isExclusive) {
-        addRaiseError("NotImplementedError", "flip-flop is no longer supported in JRuby");
-        return nil(); // not-reached
+            Fixnum s1 = manager.newFixnum(1);
+            Fixnum s2 = manager.newFixnum(2);
+
+            // Create a variable to hold the flip state
+            IRBuilder nearestNonClosureBuilder = getNearestFlipVariableScopeBuilder();
+
+            // Flip is completely broken atm and it was semi-broken in its last incarnation.
+            // Method and closures (or evals) are not built at the same time and if -X-C or JIT or AOT
+            // and jit.threshold=0 then the non-closure where we want to store the hidden flip variable
+            // is unable to get more instrs added to it (not quite true for -X-C but definitely true
+            // for JIT/AOT.  Also it means needing to grow the size of any heap scope for variables.
+            if (nearestNonClosureBuilder == null) {
+                Variable excType = createTemporaryVariable();
+                addInstr(new InheritanceSearchConstInstr(excType, manager.getObjectClass(),
+                        manager.runtime.newSymbol(CommonByteLists.NOT_IMPLEMENTED_ERROR)));
+                Variable exc = addResultInstr(CallInstr.create(scope, NORMAL, temp(), symbol(CommonByteLists.NEW),
+                        excType, new Operand[] {new FrozenString("Flip support currently broken")}, NullBlock.INSTANCE, 0));
+                addInstr(new ThrowExceptionInstr(exc));
+                return nil();
+            }
+            // FIXME: This should be special local variable added at this builders SCOPE.
+            Variable flipState = nearestNonClosureBuilder.temp();
+            nearestNonClosureBuilder.initFlipStateVariable(flipState, s1);
+            if (scope instanceof IRClosure) {
+                // Clone the flip variable to be usable at the proper-depth.
+                int n = 0;
+                IRScope x = scope;
+                while (!x.isFlipScope()) {
+                    n++;
+                    x = x.getLexicalParent();
+                }
+                if (n > 0) flipState = ((LocalVariable)flipState).cloneForDepth(n);
+            }
+
+            // Variables and labels needed for the code
+            Variable returnVal = createTemporaryVariable();
+            Label    s2Label   = getNewLabel();
+            Label    doneLabel = getNewLabel();
+
+            // Init
+            addInstr(new CopyInstr(returnVal, manager.getFalse()));
+
+            // Are we in state 1?
+            addInstr(BNEInstr.create(s2Label, flipState, s1));
+
+            // ----- Code for when we are in state 1 -----
+            Operand s1Val = build(begin);
+            addInstr(BNEInstr.create(s2Label, s1Val, tru()));
+
+            // s1 condition is true => set returnVal to true & move to state 2
+            addInstr(new CopyInstr(returnVal, tru()));
+            addInstr(new CopyInstr(flipState, s2));
+
+            // Check for state 2
+            addInstr(new LabelInstr(s2Label));
+
+            // For exclusive ranges/flips, we dont evaluate s2's condition if s1's condition was satisfied
+            if (isExclusive) addInstr(createBranch(returnVal, tru(), doneLabel));
+
+            // Are we in state 2?
+            addInstr(BNEInstr.create(doneLabel, flipState, s2));
+
+            // ----- Code for when we are in state 2 -----
+            Operand s2Val = build(end);
+            addInstr(new CopyInstr(returnVal, tru()));
+            addInstr(BNEInstr.create(doneLabel, s2Val, tru()));
+
+            // s2 condition is true => move to state 1
+            addInstr(new CopyInstr(flipState, s1));
+
+            // Done testing for s1's and s2's conditions.
+            // returnVal will have the result of the flip condition
+            addInstr(new LabelInstr(doneLabel));
+
+            return returnVal;
     }
 
     protected Operand buildFor(U receiverNode, U var, U body, StaticScope staticScope, Signature signature, int line, int endLine) {
@@ -3104,6 +3199,20 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     // FIXME: Currently only valid value in Prism.
     protected Encoding getEncoding() {
         return encoding;
+    }
+
+    public void initFlipStateVariable(Variable v, Operand initState) {
+        addInstrAtBeginning(new CopyInstr(v, initState));
+    }
+
+    private IRBuilder getNearestFlipVariableScopeBuilder() {
+        IRBuilder current = this;
+
+        while (current != null && !this.scope.isFlipScope()) {
+            current = current.parent;
+        }
+
+        return current;
     }
 }
 
