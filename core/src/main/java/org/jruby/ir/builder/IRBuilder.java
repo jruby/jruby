@@ -1973,22 +1973,6 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         return result;
     }
 
-    protected Operand buildOpAsgnOrWithDefined(U definitionNode, VoidCodeBlockOne getter, CodeBlock setter) {
-        Label existsDone = getNewLabel();
-        Label done = getNewLabel();
-        Operand def = buildGetDefinition(definitionNode);
-        Variable result = def instanceof Variable ? (Variable) def : copy(temp(), def);
-        addInstr(createBranch(result, nil(), existsDone));
-        getter.run(result);
-        addInstr(new LabelInstr(existsDone));
-        addInstr(createBranch(result, getManager().getTrue(), done));
-        Operand value = setter.run();
-        copy(result, value);
-        addInstr(new LabelInstr(done));
-
-        return result;
-    }
-
     protected Operand buildOr(Operand left, CodeBlock right, BinaryType type) {
         // lazy evaluation opt.  Don't bother building rhs of expr is lhs is unconditionally true.
         if (type == BinaryType.LeftTrue) return left;
