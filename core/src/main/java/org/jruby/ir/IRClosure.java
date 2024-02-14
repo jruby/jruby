@@ -143,8 +143,8 @@ public class IRClosure extends IRScope {
         return isEND;
     }
 
-    public boolean isFlipScope() {
-        return true;
+    public boolean isWhereFlipFlopStateVariableIs() {
+        return false;
     }
 
     @Override

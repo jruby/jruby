@@ -49,7 +49,7 @@ public class IREvalScript extends IRClosure {
         return IRScopeType.EVAL_SCRIPT;
     }
 
-    public boolean isFlipScope() {
+    public boolean isWhereFlipFlopStateVariableIs() {
         return true;
     }
 

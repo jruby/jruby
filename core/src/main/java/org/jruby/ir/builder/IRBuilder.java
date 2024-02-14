@@ -7,7 +7,6 @@ import org.jruby.ParseResult;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
 import org.jruby.ast.IterNode;
-import org.jruby.ast.RootNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.ext.coverage.CoverageData;
 import org.jruby.ir.IRClassBody;
@@ -85,6 +84,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     // FIXME: AST does not use this but YARP does.  AST could put encoding up to RootNode since it is same
     protected Encoding encoding;
+    protected int flipVariableCount = 0;
 
     // We do not need n consecutive line num instrs but only the last one in the sequence.
     // We set this flag to indicate that we need to emit a line number but have not yet.
@@ -1352,13 +1352,13 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                 return nil();
             }
             // FIXME: This should be special local variable added at this builders SCOPE.
-            Variable flipState = nearestNonClosureBuilder.temp();
+            Variable flipState = nearestNonClosureBuilder.getNewFlipFlopStateVariable();
             nearestNonClosureBuilder.initFlipStateVariable(flipState, s1);
             if (scope instanceof IRClosure) {
                 // Clone the flip variable to be usable at the proper-depth.
                 int n = 0;
                 IRScope x = scope;
-                while (!x.isFlipScope()) {
+                while (!x.isWhereFlipFlopStateVariableIs()) {
                     n++;
                     x = x.getLexicalParent();
                 }
@@ -1406,6 +1406,11 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             addInstr(new LabelInstr(doneLabel));
 
             return returnVal;
+    }
+
+    private Variable getNewFlipFlopStateVariable() {
+        scope.setHasFlipFlops(true);
+        return getNewLocalVariable(symbol("%flip" + flipVariableCount++), 0);
     }
 
     protected Operand buildFor(U receiverNode, U var, U body, StaticScope staticScope, Signature signature, int line, int endLine) {
@@ -3208,11 +3213,10 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     private IRBuilder getNearestFlipVariableScopeBuilder() {
         IRBuilder current = this;
 
-        while (current != null && !this.scope.isFlipScope()) {
+        while (current != null && !current.scope.isWhereFlipFlopStateVariableIs()) {
             current = current.parent;
         }
 
         return current;
     }
 }
-

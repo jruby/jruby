@@ -128,6 +128,7 @@ public abstract class IRScope implements ParseResult {
     // optimization passes it is incredibly unlikely any of these could ever be unset anyways; So this is not
     // a poor list of 'truisms' for this Scope.
     private boolean hasBreakInstructions;
+    private boolean hasFlipFlops;
     private boolean hasLoops;
     private boolean hasNonLocalReturns;
     private boolean receivesClosureArg;
@@ -467,6 +468,14 @@ public abstract class IRScope implements ParseResult {
 
     public boolean accessesParentsLocalVariables() {
         return accessesParentsLocalVariables;
+    }
+
+    public boolean hasFlipFlops() {
+        return hasFlipFlops;
+    }
+
+    public void setHasFlipFlops(boolean hasFlipFlops) {
+        this.hasFlipFlops = hasFlipFlops;
     }
 
     public void setHasLoops() {
@@ -931,7 +940,7 @@ public abstract class IRScope implements ParseResult {
         return false;
     }
 
-    public boolean isFlipScope() {
+    public boolean isWhereFlipFlopStateVariableIs() {
         return true;
     }
 
