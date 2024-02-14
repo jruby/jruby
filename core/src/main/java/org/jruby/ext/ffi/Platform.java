@@ -63,7 +63,6 @@ public class Platform {
     protected final int addressSize, longSize;
     private final long addressMask;
     protected final Pattern libPattern;
-    private int javaVersionMajor = -1;
 
     public enum OS_TYPE {
         DARWIN,
@@ -276,34 +275,9 @@ public class Platform {
         return CPU;
     }
 
-    /**
-     * Gets the version of the Java Virtual Machine (JVM) jffi is running on.
-     *
-     * @return A number representing the java version.  e.g. 8 for java 1.8, 9 for java 9
-     */
+    @Deprecated
     public final int getJavaMajorVersion() {
-        if (javaVersionMajor != -1) return javaVersionMajor;
-
-        int version = 5;
-        try {
-            String versionString = SafePropertyAccessor.getProperty("java.version");
-            if (versionString != null) {
-                // remove additional version identifiers, e.g. -ea
-                versionString = versionString.split("-|\\+")[0];
-                String[] v = versionString.split("\\.");
-                if (v[0].equals("1")) {
-                    // Pre Java 9, 1.x style
-                    version = Integer.valueOf(v[1]);
-                } else {
-                    // Java 9+, x.y.z style
-                    version = Integer.valueOf(v[0]);
-                }
-            }
-        } catch (Exception ex) {
-            version = 0;
-        }
-
-        return javaVersionMajor = version;
+        return org.jruby.platform.Platform.JAVA_VERSION;
     }
     public final boolean isBSD() {
         return OS == OS.FREEBSD || OS == OS.OPENBSD || OS == OS.NETBSD || OS == OS.DARWIN || OS == OS.DRAGONFLYBSD;

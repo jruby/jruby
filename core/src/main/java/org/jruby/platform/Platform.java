@@ -94,10 +94,41 @@ public abstract class Platform {
         return arch;
     }
 
+
+    /**
+     * Gets the version of the Java platform that JRuby is running on.
+     */
+    private static int initJavaVersion() {
+        int version = 5;
+        try {
+            String versionString = SafePropertyAccessor.getProperty("java.version");
+            if (versionString != null) {
+                // remove additional version identifiers, e.g. -ea
+                versionString = versionString.split("-|\\+")[0];
+                String[] v = versionString.split("\\.");
+                if (v[0].equals("1")) {
+                    // Pre Java 9, 1.x style
+                    version = Integer.valueOf(v[1]);
+                } else {
+                    // Java 9+, x.y.z style
+                    version = Integer.valueOf(v[0]);
+                }
+            }
+        } catch (Exception ex) {
+            version = 0;
+        }
+
+        return version;
+    }
+
     public static final String ARCH = initArchitecture();
     public static final String OS = initOperatingSystem();
     public static final String JVM = getProperty("java.vm.name", "unknown");
     public static final String OS_VERSION = getProperty("os.version", "unknown");
+    /**
+     * An integer value representing the major Java/JDK release, e.g. 8 for java 1.8, 9 for java 9.
+     */
+    public static final int JAVA_VERSION = initJavaVersion();
 
     public static final boolean IS_WINDOWS = OS.equals(WINDOWS);
 

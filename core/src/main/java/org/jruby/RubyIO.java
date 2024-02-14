@@ -124,6 +124,20 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     public static final ByteList PARAGRAPH_SEPARATOR = ByteList.create("\n\n");
     public static final String CLOSED_STREAM_MSG = "closed stream";
 
+    public enum IOEvent {
+        IO_READABLE(1), IO_PRIORITY(2), IO_WRITABLE(4);
+
+        final int value;
+
+        IOEvent(int value) {
+            this.value = value;
+        }
+
+        int getValue() {
+            return value;
+        }
+    }
+
     // This should only be called by this and RubyFile.
     // It allows this object to be created without a IOHandler.
     public RubyIO(Ruby runtime, RubyClass type) {
@@ -321,6 +335,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         ioClass.setConstant("SEEK_SET", runtime.newFixnum(PosixShim.SEEK_SET));
         ioClass.setConstant("SEEK_CUR", runtime.newFixnum(PosixShim.SEEK_CUR));
         ioClass.setConstant("SEEK_END", runtime.newFixnum(PosixShim.SEEK_END));
+
+        ioClass.setConstant("READABLE", runtime.newFixnum(IOEvent.IO_READABLE.getValue()));
+        ioClass.setConstant("WRITABLE", runtime.newFixnum(IOEvent.IO_WRITABLE.getValue()));
+        ioClass.setConstant("PRIORITY", runtime.newFixnum(IOEvent.IO_PRIORITY.getValue()));
 
         ioClass.defineModuleUnder("WaitReadable");
         ioClass.defineModuleUnder("WaitWritable");
@@ -2664,9 +2682,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             return runtime.newFixnum(close_on_exec_p(context).isTrue() ? FD_CLOEXEC : 0);
         } else if (realCmd == Fcntl.F_SETFL.intValue()) {
             if ((nArg & OpenFlags.O_NONBLOCK.intValue()) != 0) {
-                fptr.setBlocking(runtime, true);
-            } else {
                 fptr.setBlocking(runtime, false);
+            } else {
+                fptr.setBlocking(runtime, true);
             }
 
             if ((nArg & OpenFlags.O_CLOEXEC.intValue()) != 0) {
@@ -3899,6 +3917,112 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         SelectExecutor args = new SelectExecutor(read, write, except, timeout);
 
         return args.go(context);
+    }
+
+    @JRubyMethod(optional = 1)
+    public IRubyObject wait_readable(ThreadContext context, IRubyObject[] argv) {
+        OpenFile fptr = this.getOpenFileChecked();
+
+        fptr.checkReadable(context);
+
+        long tv = prepareTimeout(context, argv);
+
+        if (fptr.readPending() != 0) return context.tru;
+
+        return doWait(context, fptr, tv, SelectionKey.OP_READ | SelectionKey.OP_ACCEPT);
+    }
+
+    /**
+     * waits until input available or timed out and returns self, or nil when EOF reached.
+     */
+    @JRubyMethod(optional = 1)
+    public IRubyObject wait_writable(ThreadContext context, IRubyObject[] argv) {
+        OpenFile fptr = this.getOpenFileChecked();
+
+        fptr.checkWritable(context);
+
+        long tv = prepareTimeout(context, argv);
+
+        return doWait(context, fptr, tv, SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE);
+    }
+
+    @JRubyMethod(optional = 2)
+    public IRubyObject wait(ThreadContext context, IRubyObject[] argv) {
+        OpenFile fptr = this.getOpenFileChecked();
+
+        int ops = 0;
+
+        if (argv.length == 2) {
+            if (argv[1] instanceof RubySymbol) {
+                RubySymbol sym = (RubySymbol) argv[1];
+                switch (sym.asJavaString()) { // 7 bit comparison
+                    case "r":
+                    case "read":
+                    case "readable":
+                        ops |= SelectionKey.OP_ACCEPT | SelectionKey.OP_READ;
+                        break;
+                    case "w":
+                    case "write":
+                    case "writable":
+                        ops |= SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE;
+                        break;
+                    case "rw":
+                    case "read_write":
+                    case "readable_writable":
+                        ops |= SelectionKey.OP_ACCEPT | SelectionKey.OP_READ | SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE;
+                        break;
+                    default:
+                        throw context.runtime.newArgumentError("unsupported mode: " + sym);
+                }
+            } else if (argv[1] instanceof RubyFixnum) {
+                RubyFixnum fix = (RubyFixnum) argv[1];
+                if ((fix.getIntValue() & IOEvent.IO_READABLE.value) != 0) {
+                    ops |= SelectionKey.OP_ACCEPT | SelectionKey.OP_READ;
+                }
+                if ((fix.getIntValue() & IOEvent.IO_WRITABLE.value) != 0) {
+                    ops |= SelectionKey.OP_WRITE | SelectionKey.OP_WRITE;
+                }
+            } else {
+                throw context.runtime.newArgumentError("unsupported mode: " + argv[1].getType());
+            }
+        } else {
+            ops |= SelectionKey.OP_ACCEPT | SelectionKey.OP_READ;
+        }
+
+        if ((ops & SelectionKey.OP_READ) == SelectionKey.OP_READ && fptr.readPending() != 0) return context.tru;
+
+        long tv = prepareTimeout(context, argv);
+
+        return doWait(context, fptr, tv, ops);
+    }
+
+    private IRubyObject doWait(ThreadContext context, OpenFile fptr, long tv, int ops) {
+        boolean ready = fptr.ready(context.runtime, context.getThread(), ops, tv);
+        fptr.checkClosed();
+        if (ready) return this;
+        return context.nil;
+    }
+
+    private static long prepareTimeout(ThreadContext context, IRubyObject[] argv) {
+        IRubyObject timeout;
+        long tv;
+        switch (argv.length) {
+            case 2:
+            case 1:
+                timeout = argv[0];
+                break;
+            default:
+                timeout = context.nil;
+        }
+
+        if (timeout.isNil()) {
+            tv = -1;
+        }
+        else {
+            tv = (long)(RubyTime.convertTimeInterval(context, timeout) * 1000);
+            if (tv < 0) throw context.runtime.newArgumentError("time interval must be positive");
+        }
+        return tv;
     }
 
     // MRI: rb_io_advise

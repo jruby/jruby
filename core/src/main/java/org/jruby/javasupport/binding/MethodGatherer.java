@@ -8,6 +8,7 @@ import org.jruby.java.invokers.ConstructorInvoker;
 import org.jruby.java.util.ClassUtils;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaSupportImpl;
+import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -717,17 +718,28 @@ public class MethodGatherer {
         }
 
         private static boolean filterAccessible(Method method, int mod) {
-            // Skip private methods, since they may mess with dispatch
-            if (Modifier.isPrivate(mod)) return false;
-
-            // Skip protected methods if we can't set accessible
-            if (!Modifier.isPublic(mod) && !Java.trySetAccessible(method)) return false;
-
-            // ignore bridge methods because we'd rather directly call methods that this method
-            // is bridging (and such methods are by definition always available.)
+            // Exclude bridge methods
             if ((mod & ACC_BRIDGE) != 0) return false;
 
-            return true;
+            if (Modifier.isPublic(mod)) {
+                // Include public
+                return true;
+            } else if (Modifier.isPrivate(mod)) {
+                // Exclude private
+                return false;
+            } else if (Modifier.isProtected(mod)) {
+                // Include protected if they can be set accessible
+                return Java.trySetAccessible(method);
+            } else {
+                // We split this on 17 because at that level unopened non-public functions are inaccessible
+                if (Platform.JAVA_VERSION < 17) {
+                    // Include package-private if they can be set accessible on Java 16 and earlier
+                    return Java.trySetAccessible(method);
+                } else {
+                    // Exclude package-private on Java 17 and later
+                    return false;
+                }
+            }
         }
     }
 }

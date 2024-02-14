@@ -261,7 +261,7 @@ public class RubyKernel {
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         int argc = Arity.checkArgumentCount(context, args, 1, 4);
 
-        boolean keywords = hasKeywords(context.resetCallInfo());
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
         Ruby runtime = context.runtime;
         //        symbol to_open = 0;
         boolean redirect = false;
@@ -1817,7 +1817,7 @@ public class RubyKernel {
         case '>': // ?>  | boolean | True if the modification time of file1 is after that of file2
             return context.runtime.newFileStat(arg1.convertToString().toString(), false).mtimeGreaterThan(arg2);
         case '-': // ?-  | boolean | True if file1 and file2 are identical
-            return RubyFileTest.identical_p(recv, arg1, arg2);
+            return RubyFileTest.identical_p(context, recv, arg1, arg2);
         default:
             throw new InternalError("unreachable code reached!");
         }
@@ -2166,7 +2166,7 @@ public class RubyKernel {
 
         boolean keywords = (callInfo & ThreadContext.CALL_KEYWORD) != 0 && (callInfo & ThreadContext.CALL_KEYWORD_EMPTY) == 0;
 
-        context.resetCallInfo();
+        ThreadContext.resetCallInfo(context);
         return enumeratorizeWithSize(context, self, method, args, sizeFn, keywords);
     }
 

@@ -155,31 +155,32 @@ public class RubyFileTest {
     }
 
     @JRubyMethod(name = "identical?", module = true)
-    public static IRubyObject identical_p(IRubyObject recv, IRubyObject filename1, IRubyObject filename2) {
-        Ruby runtime = recv.getRuntime();
+    public static IRubyObject identical_p(ThreadContext context, IRubyObject recv, IRubyObject filename1, IRubyObject filename2) {
+        Ruby runtime = context.runtime;
+
         FileResource file1 = fileResource(filename1);
         FileResource file2 = fileResource(filename2);
 
-        // try NIO2 first to support more platforms
+        // Try posix first
+        if (!Platform.IS_WINDOWS && runtime.getPosix().isNative()) {
+            FileStat stat1 = file1.stat();
+            FileStat stat2 = file2.stat();
+
+            return runtime.newBoolean(stat1 != null && stat2 != null && stat1.isIdentical(stat2));
+        }
+
+        // fallback to NIO2 to support more platforms
         if (file1.exists() && file2.exists()) {
             try {
                 Path canon1 = new File(file1.absolutePath()).getCanonicalFile().toPath();
                 Path canon2 = new File(file2.absolutePath()).getCanonicalFile().toPath();
                 return runtime.newBoolean(Files.isSameFile(canon1, canon2));
             } catch (IOException canonicalizationError) {
-                // fall through to native logic
+                // fall through
             }
         }
 
-        // if we can't use NIO2 and we're on Windows or don't have native posix, just return false?
-        if (Platform.IS_WINDOWS || !runtime.getPosix().isNative()) {
-            return runtime.getFalse();
-        }
-
-        FileStat stat1 = file1.stat();
-        FileStat stat2 = file2.stat();
-
-        return runtime.newBoolean(stat1 != null && stat2 != null && stat1.isIdentical(stat2));
+        return context.fals;
     }
 
     @JRubyMethod(name = "owned?", module = true)
@@ -383,8 +384,8 @@ public class RubyFileTest {
         }
 
         @JRubyMethod(name = "identical?")
-        public static IRubyObject identical_p(IRubyObject recv, IRubyObject filename1, IRubyObject filename2) {
-            return RubyFileTest.identical_p(recv, filename1, filename2);
+        public static IRubyObject identical_p(ThreadContext context, IRubyObject recv, IRubyObject filename1, IRubyObject filename2) {
+            return RubyFileTest.identical_p(context, recv, filename1, filename2);
         }
 
         @JRubyMethod(name = "owned?")
@@ -456,6 +457,11 @@ public class RubyFileTest {
         public static IRubyObject worldWritable(ThreadContext context, IRubyObject recv, IRubyObject filename) {
             return RubyFileTest.worldWritable(context, recv, filename);
         }
+
+        @Deprecated
+        public static IRubyObject identical_p(IRubyObject recv, IRubyObject filename1, IRubyObject filename2) {
+            return RubyFileTest.identical_p(recv, filename1, filename2);
+        }
     }
 
     private static RubyFileStat getRubyFileStat(ThreadContext context, IRubyObject filename) {
@@ -502,5 +508,10 @@ public class RubyFileTest {
     private static void noFileError(IRubyObject filename) {
         throw filename.getRuntime().newErrnoENOENTError("No such file or directory - " +
                 filename.convertToString());
+    }
+
+    @Deprecated
+    public static IRubyObject identical_p(IRubyObject recv, IRubyObject filename1, IRubyObject filename2) {
+        return identical_p(recv.getRuntime().getCurrentContext(), recv, filename1, filename2);
     }
 }

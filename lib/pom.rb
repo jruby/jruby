@@ -59,7 +59,7 @@ default_gems = [
     ['jar-dependencies', '0.4.1'],
     ['jruby-readline', '1.3.7'],
     ['jruby-openssl', '0.14.2'],
-    ['json', '2.6.1'],
+    ['json', '2.7.1'],
     ['logger', '1.5.1'],
     ['mutex_m', '0.1.1'],
     ['net-http', '0.3.0'],
@@ -85,7 +85,7 @@ default_gems = [
     # ['readline', '0.0.3'],
     # Will be solved with readline
     # ['readline-ext', '0.1.4'],
-    ['reline', '0.3.5'],
+    ['reline', '0.4.2'],
     # https://github.com/ruby/resolv/issues/19
     # ['resolv', '0.2.1'],
     ['resolv-replace', '0.1.0'],
@@ -97,7 +97,7 @@ default_gems = [
     ['shellwords', '0.1.0'],
     ['singleton', '0.1.1'],
     ['stringio', '3.0.8'],
-    ['strscan', '3.0.9'],
+    ['strscan', '3.1.0'],
     ['subspawn', '0.1.1'], # has 3 transitive deps:
       ['subspawn-posix', '0.1.1'],
       ['ffi-binary-libfixposix', '0.5.1.1'],

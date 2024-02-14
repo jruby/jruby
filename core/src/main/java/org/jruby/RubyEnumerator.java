@@ -33,9 +33,7 @@ import org.jruby.anno.JRubyModule;
 import org.jruby.exceptions.StopIteration;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
@@ -207,7 +205,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         int argc = Arity.checkArgumentCount(context, args, 2, 4);
 
         boolean keywords = (context.callInfo & CALL_KEYWORD) != 0 && (context.callInfo & ThreadContext.CALL_KEYWORD_EMPTY) == 0;
-        context.resetCallInfo();
+        ThreadContext.resetCallInfo(context);
 
         // Lazy.__from(enum, method, *args, size)
         IRubyObject object = args[0];

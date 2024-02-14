@@ -1523,18 +1523,41 @@ public final class ThreadContext {
      * Reset call info state and return the value of call info right before
      * it is reset.
      * @return the old call info
+     * @deprecated use the trivially-inlinable static version
      */
+    @Deprecated
     public int resetCallInfo() {
-        int callInfo = this.callInfo;
-        this.callInfo = 0;
+        return resetCallInfo(this);
+    }
+
+    /**
+     * Reset call info state and return the value of call info right before
+     * it is reset. This method is static to make it trivially inlinable on
+     * most JVM JITs
+     *
+     * @return the old call info
+     */
+    public static int resetCallInfo(ThreadContext context) {
+        int callInfo = context.callInfo;
+        context.callInfo = 0;
         return callInfo;
     }
 
     /**
      * Clear call info state (set to 0).
+     * @deprecated use the trivially-inlinable static version
      */
+    @Deprecated
     public void clearCallInfo() {
-        this.callInfo = 0;
+        clearCallInfo(this);
+    }
+
+    /**
+     * Clear call info state (set to 0). This method is static to make it trivially
+     * inlinable on most JVM JITs
+     */
+    public static void clearCallInfo(ThreadContext context) {
+        context.callInfo = 0;
     }
 
     public static boolean hasKeywords(int callInfo) {
