@@ -29,7 +29,6 @@
 
 package org.jruby.util.cli;
 
-import java.io.Console;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -68,6 +67,7 @@ public class Options {
     public static final Option<Boolean> PARSER_WARN_ARGUMENT_PREFIX = bool(PARSER, "parser.warn.argument_prefix", true, "Warn about splat operators being interpreted as argument prefixes.");
     public static final Option<Boolean> PARSER_WARN_AMBIGUOUS_ARGUMENTS = bool(PARSER, "parser.warn.ambiguous_argument", true, "Warn about ambiguous arguments.");
     public static final Option<Boolean> PARSER_WARN_FLAGS_IGNORED = bool(PARSER, "parser.warn.flags_ignored", true, "Warn about ignored regex flags being ignored.");
+    public static final Option<Boolean> PARSER_SUMMARY = bool(PARSER, "parser.summary", false, "print out summary of parsing activities");
 
     public static final Option<CompileMode> COMPILE_MODE = enumeration(COMPILER, "compile.mode", CompileMode.class, CompileMode.JIT, "Set compilation mode. JIT = at runtime; FORCE = before execution.");
     public static final Option<Boolean> COMPILE_DUMP = bool(COMPILER, "compile.dump", false, "Dump to console all bytecode generated at runtime.");
@@ -178,6 +178,9 @@ public class Options {
     public static final Option<String> LOGGER_CLASS = string(DEBUG, "logger.class", new String[]{"class name"}, "org.jruby.util.log.StandardErrorLogger", "Use specified class for logging.");
     public static final Option<Boolean> DUMP_INSTANCE_VARS = bool(DEBUG, "dump.variables", false, "Dump class + instance var names on first new of Object subclasses.");
     public static final Option<Boolean> REWRITE_JAVA_TRACE = bool(DEBUG, "rewrite.java.trace", true, "Rewrite stack traces from exceptions raised in Java calls.");
+
+    public static final Option<Boolean> PARSER_PRISM = bool(DEBUG, "parser.prism", false, "Parse and build Ruby using the prism parser.");
+    public static final Option<Boolean> PARSER_WASM = bool(DEBUG, "parser.prism.wasm", false, "Parse and build Ruby using the wasm prism parser.");
 
     public static final Option<Boolean> JI_SETACCESSIBLE = bool(JAVA_INTEGRATION, "ji.setAccessible", true, "Try to set inaccessible Java methods to be accessible.");
     public static final Option<Boolean> JI_UPPER_CASE_PACKAGE_NAME_ALLOWED = bool(JAVA_INTEGRATION, "ji.upper.case.package.name.allowed", false, "Allow Capitalized Java package names.");

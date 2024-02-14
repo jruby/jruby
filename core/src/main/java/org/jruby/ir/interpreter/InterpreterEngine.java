@@ -91,11 +91,7 @@ public class InterpreterEngine {
     public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self,
                                  InterpreterContext interpreterContext, RubyModule implClass,
                                  String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block blockArg) {
-        try {
-            return interpret(context, block, self, interpreterContext, implClass, name, new IRubyObject[] {arg1, arg2, arg3}, blockArg);
-        } catch (ArrayStoreException ase) {
-            throw ase;
-        }
+        return interpret(context, block, self, interpreterContext, implClass, name, new IRubyObject[] {arg1, arg2, arg3}, blockArg);
     }
 
     public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self,
@@ -571,6 +567,8 @@ public class InterpreterEngine {
             // * one for FLOAT
             temp[((TemporaryLocalVariable)resultVar).offset] = result;
         } else {
+            if (result instanceof Exception) ((Exception) result).printStackTrace();
+            if (result instanceof AssertionError) ((Error) result).printStackTrace();
             LocalVariable lv = (LocalVariable)resultVar;
             currDynScope.setValueVoid((IRubyObject) result, lv.getLocation(), lv.getScopeDepth());
         }

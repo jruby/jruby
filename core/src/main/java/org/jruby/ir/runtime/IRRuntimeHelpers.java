@@ -15,7 +15,6 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyComplex;
 import org.jruby.RubyEncoding;
-import org.jruby.RubyException;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
@@ -931,7 +930,7 @@ public class IRRuntimeHelpers {
     public static DynamicScope prepareScriptScope(ThreadContext context, StaticScope scope) {
         IRScope irScope = scope.getIRScope();
 
-        if (irScope != null && irScope.isScriptScope()) {
+        if (irScope != null && irScope.isScriptScope() && !irScope.hasFlipFlops()) {
             DynamicScope tlbScope = ((IRScriptBody) irScope).getScriptDynamicScope();
             if (tlbScope != null) {
                 context.preScopedBody(tlbScope);
@@ -2621,6 +2620,11 @@ public class IRRuntimeHelpers {
     @JIT
     public static RubyClass getObject(ThreadContext context) {
         return context.runtime.getObject();
+    }
+
+    @JIT
+    public static RubyClass getSymbol(ThreadContext context) {
+        return context.runtime.getSymbol();
     }
 
     @JIT @Interp

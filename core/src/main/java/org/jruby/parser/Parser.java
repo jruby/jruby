@@ -38,63 +38,126 @@ import java.io.InputStream;
 
 import java.nio.channels.Channels;
 
+import org.jcodings.Encoding;
+import org.jruby.ParseResult;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyFile;
 import org.jruby.RubyHash;
 import org.jruby.RubyIO;
+import org.jruby.RubySymbol;
+import org.jruby.ast.ArrayNode;
+import org.jruby.ast.BlockNode;
+import org.jruby.ast.CallNode;
+import org.jruby.ast.FCallNode;
+import org.jruby.ast.GlobalAsgnNode;
+import org.jruby.ast.GlobalVarNode;
+import org.jruby.ast.LineStubVisitor;
 import org.jruby.ast.Node;
+import org.jruby.ast.RootNode;
+import org.jruby.ast.VCallNode;
+import org.jruby.ast.WhileNode;
 import org.jruby.lexer.ByteListLexerSource;
 import org.jruby.lexer.GetsLexerSource;
 import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadServiceResourceInputStream;
 import org.jruby.util.ByteList;
+import org.jruby.util.CommonByteLists;
+
+import static org.jruby.parser.ParserType.*;
 
 /**
  * Serves as a simple facade for all the parsing magic.
  */
 public class Parser {
-    private final Ruby runtime;
-    private volatile long totalTime;
-    private volatile int totalBytes;
+    protected final Ruby runtime;
 
     public Parser(Ruby runtime) {
         this.runtime = runtime;
     }
 
-    public long getTotalTime() {
-        return totalTime;
+    public ParseResult parse(String fileName, int lineNumber, ByteList content, DynamicScope existingScope, ParserType type) {
+        return parse(new ByteListLexerSource(fileName, lineNumber, content, getLines(type == EVAL, fileName, -1)),
+                existingScope, type);
     }
 
-    public int getTotalBytes() {
-        return totalBytes;
+    protected ParseResult parse(String fileName, int lineNumber, InputStream in, Encoding encoding,
+                             DynamicScope existingScope, ParserType type) {
+        RubyArray list = getLines(type == EVAL, fileName, -1);
+
+        if (in instanceof LoadServiceResourceInputStream) {
+            ByteList source = new ByteList(((LoadServiceResourceInputStream) in).getBytes(), encoding);
+            LexerSource lexerSource = new ByteListLexerSource(fileName, lineNumber, source, list);
+            return parse(lexerSource, existingScope, type);
+        } else {
+            boolean requiresClosing = false;
+            RubyIO io;
+            if (in instanceof FileInputStream) {
+                io = new RubyFile(runtime, fileName, ((FileInputStream) in).getChannel());
+            } else {
+                requiresClosing = true;
+                io = RubyIO.newIO(runtime, Channels.newChannel(in));
+            }
+            LexerSource lexerSource = new GetsLexerSource(fileName, lineNumber, io, list, encoding);
+
+            try {
+                return parse(lexerSource, existingScope, type);
+            } finally {
+                if (requiresClosing && runtime.getObject().getConstantAt("DATA") != io) io.close();
+
+                // In case of GetsLexerSource we actually will dispatch to gets which will increment $.
+                // We do not want that in the case of raw parsing.
+                runtime.setCurrentLine(0);
+            }
+        }
     }
-    
+
+    private ParseResult parse(LexerSource lexerSource, DynamicScope existingScope, ParserType type) {
+        RubyParser parser = new RubyParser(runtime, lexerSource, existingScope, type);
+        RubyParserResult result;
+        try {
+            result = parser.parse();
+            if (parser.isEndSeen() && type == ParserType.MAIN) runtime.defineDATA(lexerSource.getRemainingAsIO());
+        } catch (IOException e) {
+            throw runtime.newSyntaxError("Problem reading source: " + e);
+        } catch (SyntaxException e) {
+            throw runtime.newSyntaxError(e.getFile() + ":" + (e.getLine() + 1) + ": " + e.getMessage());
+        }
+
+        runtime.getParserManager().getParserStats().addParsedBytes(lexerSource.getOffset());
+
+        return (ParseResult) result.getAST();
+    }
+
+    @Deprecated
     public Node parse(String file, ByteList content, DynamicScope blockScope,
             ParserConfiguration configuration) {
         configuration.setDefaultEncoding(content.getEncoding());
-        RubyArray list = getLines(configuration, runtime, file);
+        RubyArray list = getLines(configuration.isEvalParse(), file, -1);
         LexerSource lexerSource = new ByteListLexerSource(file, configuration.getLineNumber(), content, list);
         return parse(file, lexerSource, blockScope, configuration);
     }
 
+    @Deprecated
     public Node parse(String file, byte[] content, DynamicScope blockScope,
             ParserConfiguration configuration) {
-        RubyArray list = getLines(configuration, runtime, file);
+        RubyArray list = getLines(configuration.isEvalParse(), file, -1);
         ByteList in = new ByteList(content, configuration.getDefaultEncoding());
         LexerSource lexerSource = new ByteListLexerSource(file, configuration.getLineNumber(), in,  list);
         return parse(file, lexerSource, blockScope, configuration);
     }
 
+    @Deprecated
     public Node parse(String file, InputStream content, DynamicScope blockScope,
             ParserConfiguration configuration) {
         if (content instanceof LoadServiceResourceInputStream) {
             return parse(file, ((LoadServiceResourceInputStream) content).getBytes(), blockScope, configuration);
         } else {
-            RubyArray list = getLines(configuration, runtime, file);
+            RubyArray list = getLines(configuration.isEvalParse(), file, -1);
             boolean requiresClosing = false;
             RubyIO io;
             if (content instanceof FileInputStream) {
@@ -117,6 +180,7 @@ public class Parser {
         }
     }
 
+    @Deprecated
     public Node parse(String file, LexerSource lexerSource, DynamicScope blockScope,
             ParserConfiguration configuration) {
         // We only need to pass in current scope if we are evaluating as a block (which
@@ -126,11 +190,15 @@ public class Parser {
             configuration.parseAsBlock(blockScope);
         }
 
-        long startTime = System.nanoTime();
-        RubyParser parser = new RubyParser(lexerSource, runtime.getWarnings());
+        ParserType type = configuration.isEvalParse() ? EVAL :
+                configuration.isInlineSource() ? INLINE :
+                        configuration.isSaveData() ? MAIN :
+                                NORMAL;
+
+        RubyParser parser = new RubyParser(runtime, lexerSource, blockScope, type);
         RubyParserResult result;
         try {
-            result = parser.parse(configuration);
+            result = parser.parse();
             if (parser.lexer.isEndSeen() && configuration.isSaveData()) {
                 IRubyObject verbose = runtime.getVerbose();
                 runtime.setVerbose(runtime.getNil());
@@ -145,23 +213,57 @@ public class Parser {
             throw runtime.newSyntaxError(e.getFile() + ":" + (e.getLine() + 1) + ": " + e.getMessage());
         }
 
-        Node ast = result.getAST();
-        
-        totalTime += System.nanoTime() - startTime;
-        totalBytes += lexerSource.getOffset();
-
-        return ast;
+        return result.getAST();
     }
 
-    private RubyArray getLines(ParserConfiguration configuration, Ruby runtime, String file) {
-        RubyArray list = null;
+    protected RubyArray getLines(boolean isEvalParse, String file, int length) {
+        if (isEvalParse) return null;
+
         IRubyObject scriptLines = runtime.getObject().getConstantAt("SCRIPT_LINES__");
-        if (!configuration.isEvalParse() && scriptLines != null) {
-            if (scriptLines instanceof RubyHash) {
-                list = runtime.newArray();
-                ((RubyHash) scriptLines).op_aset(runtime.getCurrentContext(), runtime.newString(file), list);
-            }
-        }
+        if (scriptLines == null || !(scriptLines instanceof RubyHash)) return null;
+
+        RubyArray list = length == -1 ? runtime.newArray() : runtime.newArray(length);
+        ((RubyHash) scriptLines).op_aset(runtime.getCurrentContext(), runtime.newString(file), list);
         return list;
     }
+
+    public IRubyObject getLineStub(ThreadContext context, ParseResult result, int lineCount) {
+        RubyArray lines = context.runtime.newArray();
+        LineStubVisitor lineVisitor = new LineStubVisitor(context.runtime, lines);
+        lineVisitor.visitRootNode(((RootNode) result));
+
+        for (int i = 0; i <= lineCount - lines.size(); i++) {
+            lines.append(context.nil);
+        }
+        return lines;
+    }
+
+    public ParseResult addGetsLoop(Ruby runtime, ParseResult oldRoot, boolean printing, boolean processLineEndings, boolean split) {
+        int line = oldRoot.getLine();
+        BlockNode newBody = new BlockNode(line);
+
+        if (processLineEndings) {
+            RubySymbol dollarSlash = runtime.newSymbol(CommonByteLists.DOLLAR_SLASH);
+            newBody.add(new GlobalAsgnNode(line, runtime.newSymbol(CommonByteLists.DOLLAR_BACKSLASH), new GlobalVarNode(line, dollarSlash)));
+        }
+
+        GlobalVarNode dollarUnderscore = new GlobalVarNode(line, runtime.newSymbol("$_"));
+
+        BlockNode whileBody = new BlockNode(line);
+        newBody.add(new WhileNode(line, new VCallNode(line, runtime.newSymbol("gets")), whileBody));
+
+        if (processLineEndings) whileBody.add(new CallNode(line, dollarUnderscore, runtime.newSymbol("chomp!"), null, null, false));
+        if (split) whileBody.add(new GlobalAsgnNode(line, runtime.newSymbol("$F"), new CallNode(line, dollarUnderscore, runtime.newSymbol("split"), null, null, false)));
+
+        if (((RootNode) oldRoot).getBodyNode() instanceof BlockNode) {   // common case n stmts
+            whileBody.addAll(((BlockNode) ((RootNode) oldRoot).getBodyNode()));
+        } else {                                            // single expr script
+            whileBody.add(((RootNode) oldRoot).getBodyNode());
+        }
+
+        if (printing) whileBody.add(new FCallNode(line, runtime.newSymbol("print"), new ArrayNode(line, dollarUnderscore), null));
+
+        return new RootNode(line, oldRoot.getDynamicScope(), newBody, oldRoot.getFile());
+    }
+
 }

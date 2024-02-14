@@ -50,8 +50,8 @@ public class Compiler extends IRTranslator<ScriptAndCode, ClassDefiningClassLoad
         byte[] bytecode;
 
         // Check for eval in any scope, which isn't supported for AOT right now
-        if (scope.anyUsesEval()) {
-            throw new NotCompilableException("AOT not supported for scripts containing eval");
+        if (scope.anyUsesEval() || scope.hasFlipFlops()) {
+            throw new NotCompilableException("AOT not supported for scripts containing eval or flip-flops.");
         }
 
         boolean cacheClasses = Options.COMPILE_CACHE_CLASSES.load();
