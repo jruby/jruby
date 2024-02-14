@@ -1478,7 +1478,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
                             )
                     );
                     addInstr(createBranch(tmpVar, nil(), undefLabel));
-                    return tmpVar;
+                    return buildDefnCheckIfThenPaths(undefLabel, tmpVar);
                 }
             };
 
