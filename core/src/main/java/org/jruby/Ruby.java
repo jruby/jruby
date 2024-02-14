@@ -164,14 +164,33 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.ClassReader;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FileDescriptor;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.ref.WeakReference;
 import java.net.BindException;
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
 import java.security.SecureRandom;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.EnumSet;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -2898,7 +2917,7 @@ public final class Ruby implements Constantizable {
         if (ex == null) return;
 
         PrintStream errorStream = getErrorStream();
-        String backtrace = config.getTraceType().printBacktrace(ex, errorStream == System.err && getPosix().isatty(FileDescriptor.err));
+        String backtrace = config.getTraceType().printBacktrace(ex, (errorStream == System.err) && getPosix().isatty(FileDescriptor.err));
         try {
             errorStream.print(backtrace);
         } catch (Exception e) {
