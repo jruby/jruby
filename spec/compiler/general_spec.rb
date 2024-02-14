@@ -1213,7 +1213,7 @@ modes.each do |mode|
 
     it "handles defined? a.b= forms" do
       run('a = Class.new { attr_writer :b; def []=(_,_); end; def a; [defined? self.b=0, defined? self[0]=0]; end }.new; [a.a, defined? a.b = 0, defined? a[0] = 0]') do |x|
-        expect(x).to eq([["assignment", "assignment"], "assignment", "assignment"])
+        expect(x).to eq([["method", "method"], "method", "method"])
       end
     end
 
