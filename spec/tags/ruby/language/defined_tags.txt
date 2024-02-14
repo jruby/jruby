@@ -1,2 +1,2 @@
 fails:The defined? keyword when called with a method name in a void context does not execute the receiver
-fails:The defined? keyword when called with a method name having a local variable as receiver returns 'method' for []=
+

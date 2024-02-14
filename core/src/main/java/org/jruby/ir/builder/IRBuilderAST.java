@@ -1464,11 +1464,10 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
                      * Hide the complexity of instrs 2-4 into a verifyMethodIsPublicAccessible call
                      * which can executely entirely in Java-land.  No reason to expose the guts in IR.
                      * ------------------------------------------------------------------------------ */
-                    Variable tmpVar     = temp();
                     Operand  receiver   = build(attrAssign.getReceiverNode());
-                    addInstr(
+                    Variable tmpVar = addResultInstr(
                             new RuntimeHelperCall(
-                                    tmpVar,
+                                    temp(),
                                     IS_DEFINED_METHOD,
                                     new Operand[] {
                                             receiver,
@@ -1479,8 +1478,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
                             )
                     );
                     addInstr(createBranch(tmpVar, nil(), undefLabel));
-                    Operand argsCheckDefn = buildGetArgumentDefinition(attrAssign.getArgsNode(), "assignment");
-                    return buildDefnCheckIfThenPaths(undefLabel, argsCheckDefn);
+                    return tmpVar;
                 }
             };
 
