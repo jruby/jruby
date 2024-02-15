@@ -1,0 +1,1 @@
+fails(JIT transitions may recreate literals https://github.com/jruby/jruby/issues/8030):Literal Ranges creates a simple range as an object literal
