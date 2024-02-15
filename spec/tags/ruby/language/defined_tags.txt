@@ -1,2 +1,1 @@
 fails:The defined? keyword when called with a method name in a void context does not execute the receiver
-
