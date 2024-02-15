@@ -379,6 +379,11 @@ public abstract class RubyParserBase {
         if (isNumParam && numberedParam(id)) {
             if (isNumParamNested()) return null;
 
+            // We go over the top here and make sure the order is always ascending even if the other
+            // numbered params are not used. This is so local_variables will properly display in
+            // ascending order.
+            makePreNumArgs(Integer.parseInt(id.substring(1)));
+
             slot = currentScope.addVariable(id);
             node = currentScope.isBlockScope() ?
                     new DVarNode(lexer.tokline, slot, name) :
