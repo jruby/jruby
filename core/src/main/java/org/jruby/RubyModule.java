@@ -4602,12 +4602,18 @@ public class RubyModule extends RubyObject {
         assert IdUtil.isClassVariable(name);
         RubyModule module = this;
         RubyModule highest = null;
+        RubyModule lowest = null;
 
         do {
             if (module.hasClassVariable(name)) {
                 highest = module;
+                if (lowest == null) lowest = module;
             }
         } while ((module = module.getSuperClass()) != null);
+
+        if (lowest != highest) {
+            throw getRuntime().newRuntimeError(str(getRuntime(), "class variable " + name + " of ", lowest, " is overtaken by ", highest));
+        }
 
         if (highest != null) return highest.fetchClassVariable(name);
 
