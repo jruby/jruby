@@ -33,11 +33,14 @@
 
 package org.jruby.parser;
 
+import java.io.IOException;
 import java.util.Set;
 
 import org.jruby.Ruby;
 import org.jruby.RubySymbol;
 import org.jruby.ast.*;
+import org.jruby.common.IRubyWarnings;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.LexingCommon;
 import org.jruby.runtime.DynamicScope;
@@ -50,18 +53,25 @@ import org.jruby.util.StringSupport;
 import org.jruby.lexer.yacc.LexContext;
 import org.jruby.lexer.yacc.RubyLexer;
 import org.jruby.lexer.yacc.StackState;
-
+import org.jruby.parser.ProductionState;
+import org.jruby.parser.ParserState;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.lexer.yacc.RubyLexer.*;
 import static org.jruby.lexer.LexingCommon.AMPERSAND;
 import static org.jruby.lexer.LexingCommon.AMPERSAND_AMPERSAND;
 import static org.jruby.lexer.LexingCommon.AMPERSAND_DOT;
 import static org.jruby.lexer.LexingCommon.AND_KEYWORD;
+import static org.jruby.lexer.LexingCommon.BACKTICK;
 import static org.jruby.lexer.LexingCommon.BANG;
 import static org.jruby.lexer.LexingCommon.CARET;
+import static org.jruby.lexer.LexingCommon.COLON_COLON;
 import static org.jruby.lexer.LexingCommon.DOLLAR_BANG;
+import static org.jruby.lexer.LexingCommon.DOT;
 import static org.jruby.lexer.LexingCommon.GT;
 import static org.jruby.lexer.LexingCommon.GT_EQ;
 import static org.jruby.lexer.LexingCommon.LBRACKET_RBRACKET;
+import static org.jruby.lexer.LexingCommon.LCURLY;
 import static org.jruby.lexer.LexingCommon.LT;
 import static org.jruby.lexer.LexingCommon.LT_EQ;
 import static org.jruby.lexer.LexingCommon.LT_LT;
@@ -91,7 +101,7 @@ import static org.jruby.util.CommonByteLists.FWD_BLOCK;
 import static org.jruby.util.CommonByteLists.FWD_KWREST;
  
  public class RubyParser extends RubyParserBase {
-    public RubyParser(Ruby runtime, LexerSource source, DynamicScope scope, ParserType type) {
+    public RubyParser(Ruby runtime, LexerSource source, DynamicScope scope, org.jruby.parser.ParserType type) {
         super(runtime, source, scope, type);
     }
 					// line 108 "-"
@@ -6691,9 +6701,8 @@ states[785] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[786] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     if (((Node)yyVals[-2+yyTop].value) instanceof StrNode) {
-                        DStrNode dnode = new DStrNode(yyVals[yyTop - count + 2].start(), p.getEncoding());
-                        dnode.add(((Node)yyVals[-2+yyTop].value));
-                        yyVal = p.createKeyValue(new DSymbolNode(yyVals[yyTop - count + 2].start(), dnode), ((Node)yyVals[0+yyTop].value));
+                        Node label = p.asSymbol(yyVals[yyTop - count + 2].start(), ((Node)yyVals[-2+yyTop].value));
+                        yyVal = p.createKeyValue(label, ((Node)yyVals[0+yyTop].value));
                     } else if (((Node)yyVals[-2+yyTop].value) instanceof DStrNode) {
                         yyVal = p.createKeyValue(new DSymbolNode(yyVals[yyTop - count + 2].start(), ((DStrNode)yyVals[-2+yyTop].value)), ((Node)yyVals[0+yyTop].value));
                     } else {
@@ -6791,7 +6800,7 @@ states[819] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4771 "parse.y"
+					// line 4770 "parse.y"
 
 }
-					// line 14587 "-"
+					// line 14586 "-"

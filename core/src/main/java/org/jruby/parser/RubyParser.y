@@ -11,7 +11,7 @@
          '%type <IRubyObject> program'
     ],
     'ParserConstructorParams' => [
-        'Ruby runtime, LexerSource source, DynamicScope scope, org.jruby.parser.ParserManager.ParserType type',
+        'Ruby runtime, LexerSource source, DynamicScope scope, org.jruby.parser.ParserType type',
         'ThreadContext context, IRubyObject ripper, LexerSource source'
     ],
     'ParserConstructorBody' => [
@@ -4748,9 +4748,8 @@ assoc           : arg_value tASSOC arg_value {
                 | tSTRING_BEG string_contents tLABEL_END arg_value {
                     /*%%%*/
                     if ($2 instanceof StrNode) {
-                        DStrNode dnode = new DStrNode(@2.start(), p.getEncoding());
-                        dnode.add($2);
-                        $$ = p.createKeyValue(new DSymbolNode(@2.start(), dnode), $4);
+                        Node label = p.asSymbol(@2.start(), $2);
+                        $$ = p.createKeyValue(label, $4);
                     } else if ($2 instanceof DStrNode) {
                         $$ = p.createKeyValue(new DSymbolNode(@2.start(), $<DStrNode>2), $4);
                     } else {
