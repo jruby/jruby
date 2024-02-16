@@ -299,7 +299,7 @@ public class RegexpOptions implements Cloneable {
                 ")";
     }
 
-    // Assumes options string has already been parsed so that we do not need to detect unknown options (YARP will do this).
+    // Assumes options string has already been parsed so that we do not need to detect unknown options (Prism will do this).
     public static RegexpOptions newRegexpOptions(String validOptions) {
         RegexpOptions options = new RegexpOptions();
         int length = validOptions.length();

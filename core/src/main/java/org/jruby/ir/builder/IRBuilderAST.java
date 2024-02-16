@@ -1482,10 +1482,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
                 }
             };
 
-            // rescue block
-            CodeBlock rescueBlock = new CodeBlock() {
-                public Operand run() { return nil(); } // Nothing to do if we got an exception
-            };
+            // rescue block: Nothing to do if we got an exception
+            CodeBlock rescueBlock = () -> nil();
 
             // Try verifying definition, and if we get an JumpException exception, process it with the rescue block above
             return protectCodeWithRescue(protectedCode, rescueBlock);
@@ -2385,7 +2383,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         }
     }
 
-    // In order to line up with YARP we will spend some cost making Node[] in legacy parser.
+    // In order to line up with Prism we will spend some cost making Node[] in legacy parser.
     private Node[] asList(Node node) {
         if (node == null) return null;
         if (node instanceof ListNode) return ((ListNode) node).children();

@@ -82,7 +82,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     int lastProcessedLineNum = -1;
     private Variable currentModuleVariable = null;
 
-    // FIXME: AST does not use this but YARP does.  AST could put encoding up to RootNode since it is same
+    // FIXME: AST does not use this but Prism does.  AST could put encoding up to RootNode since it is same
     protected Encoding encoding;
     protected int flipVariableCount = 0;
 
@@ -164,7 +164,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     // FIXME: consider mod_rescue, rescue, and pure ensure as separate entries
-    // Note: reference is only passed in via YARP on legacy this is desugared into AST.
+    // Note: reference is only passed in via Prism on legacy this is desugared into AST.
     protected Operand buildEnsureInternal(U body, U elseNode, U[] exceptions, U rescueBody, X optRescue, boolean isModifier,
                                 U ensureNode, boolean isRescue, U reference) {
         // Save $!
@@ -1105,7 +1105,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     protected Operand buildCase(U predicate, U[] arms, U elsey) {
-        // FIXME: Missing optimized homogeneous here (still in AST but will be missed by YARP).
+        // FIXME: Missing optimized homogeneous here (still in AST but will be missed by Prism).
 
         Operand testValue = buildCaseTestValue(predicate); // what each when arm gets tested against.
         Label elseLabel = getNewLabel();                  // where else body is location (implicit or explicit).
@@ -2461,7 +2461,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         addInstr(new LabelInstr(caughtLabel));
         if (reference != null) {
             Variable exception = addResultInstr(new GetGlobalVariableInstr(temp(), symbol("$!")));
-            buildAssignment(reference, exception);  // YARP does not desugar
+            buildAssignment(reference, exception);  // Prism does not desugar
         }
         Operand x = build(body);
         if (x != U_NIL) { // can be U_NIL if the rescue block has an explicit return
@@ -2902,7 +2902,6 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
         Operand rv = build(defNode.getMethodBody());
 
-        // FIXME: Need commonality for line numbers between YARP and AST
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             int endLine = defNode.getEndLine();
             addInstr(new LineNumberInstr(endLine));
@@ -3029,7 +3028,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         if (CommonByteLists.DEFINE_METHOD_METHOD.equals(name.getBytes()) && block instanceof WrappedIRClosure) {
             IRClosure closure = ((WrappedIRClosure) block).getClosure();
 
-            // FIXME: YARP will never do this because it will never be old IterNode.
+            // FIXME: Prism will never do this because it will never be old IterNode.
+            // FIXME: Prism support define_method optimization
             // To convert to a method we need its variable scoping to appear like a normal method.
             if (!closure.accessesParentsLocalVariables() && iter instanceof IterNode) {
                 closure.setSource((IterNode) iter);
