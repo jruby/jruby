@@ -88,26 +88,26 @@ public class ParserStats implements ParserStatsMBean {
     }
 
     public void printParserStatistics() {
-        System.out.println("--------------------------------------------------------------------------------");
-        System.out.println("Parser Statistics:");
-        System.out.println("  Generic:");
-        System.out.println("    parser type: " + (ParserManager.PARSER_WASM ? "Prism(wasm)" :
+        System.err.println("--------------------------------------------------------------------------------");
+        System.err.println("Parser Statistics:");
+        System.err.println("  Generic:");
+        System.err.println("    parser type: " + (ParserManager.PARSER_WASM ? "Prism(wasm)" :
                 (Options.PARSER_PRISM.load() ? "Prism(C)" : "Legacy")));
-        System.out.println("    bytes processed: " + getTotalParsedBytes());
-        System.out.println("    files parsed: " + getNumberOfLoadParses());
-        System.out.println("    evals parsed: " + getNumberOfEvalParses());
-        System.out.println("    time spent parsing(s): " + getTotalParseTime());
-        System.out.println("    time spend parsing + building: " + (getTotalParseTime() + getIRBuildTime()));
+        System.err.println("    bytes processed: " + getTotalParsedBytes());
+        System.err.println("    files parsed: " + getNumberOfLoadParses());
+        System.err.println("    evals parsed: " + getNumberOfEvalParses());
+        System.err.println("    time spent parsing(s): " + getTotalParseTime());
+        System.err.println("    time spend parsing + building: " + (getTotalParseTime() + getIRBuildTime()));
         if (Options.PARSER_PRISM.load()) {
-            System.out.println("  Prism:");
-            System.out.println("    time C parse+serialize: " + getPrismCParseSerializeTime());
-            System.out.println("    time deserializing: " + getPrismDeserializingTime());
-            System.out.println("    serialized bytes: " + getTotalPrismSerializedBytes());
-            System.out.println("    serialized to source ratio: x" +
+            System.err.println("  Prism:");
+            System.err.println("    time C parse+serialize: " + getPrismCParseSerializeTime());
+            System.err.println("    time deserializing: " + getPrismDeserializingTime());
+            System.err.println("    serialized bytes: " + getTotalPrismSerializedBytes());
+            System.err.println("    serialized to source ratio: x" +
                     ((float) getTotalPrismSerializedBytes() / getTotalParsedBytes()));
         }
-        System.out.println("  IRBuild:");
-        System.out.println("    build time: " + getIRBuildTime());
+        System.err.println("  IRBuild:");
+        System.err.println("    build time: " + getIRBuildTime());
     }
 
     private double getIRBuildTime() {
