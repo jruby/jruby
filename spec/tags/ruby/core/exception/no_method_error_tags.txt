@@ -1,1 +1,0 @@
-fails:NoMethodError#dup copies the name, arguments and receiver
