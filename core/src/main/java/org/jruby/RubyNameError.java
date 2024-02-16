@@ -287,6 +287,7 @@ public class RubyNameError extends RubyStandardError {
     public void copySpecialInstanceVariables(IRubyObject clone) {
         super.copySpecialInstanceVariables(clone);
         RubyNameError exception = (RubyNameError)clone;
+        exception.receiver = receiver;
         exception.name = name;
     }
 
