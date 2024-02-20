@@ -22,7 +22,7 @@ GEM
     mustermann (2.0.2)
       ruby2_keywords (~> 0.0.1)
     nio4r (2.7.0-java)
-    puma (6.3.1-java)
+    puma (6.4.2-java)
       nio4r (~> 2.0)
     rack (2.2.8)
     rack-protection (2.2.4)
@@ -42,7 +42,7 @@ PLATFORMS
 
 DEPENDENCIES
   leafy-complete (~> 0.6)
-  puma (= 6.3.1)
+  puma (~> 6.4)
   rack (~> 2.2)
   rake (>= 12.3.3)
   sinatra (~> 2.2.0)
