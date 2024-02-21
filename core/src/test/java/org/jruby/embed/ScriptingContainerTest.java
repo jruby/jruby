@@ -492,8 +492,7 @@ public class ScriptingContainerTest {
 
         script = "";
         Ruby runtime = JavaEmbedUtils.initialize(new ArrayList());
-        Node node = runtime.parseEval(script, "<script>", null, 0);
-        IRubyObject expRet = runtime.runInterpreter(node);
+        IRubyObject expRet = runtime.evalScriptlet(script);
         result = instance.parse(script);
         IRubyObject ret = result.run();
         assertEquals(expRet.toJava(String.class), ret.toJava(String.class));
@@ -505,7 +504,7 @@ public class ScriptingContainerTest {
                    "\"はろ〜、わぁ〜るど！\"\n" +
                  "end\n" +
                  "say_something";
-        expRet = runtime.runInterpreter(runtime.parseEval(script, "<script>", null, 0));
+        expRet = runtime.evalScriptlet(script);
         ret = instance.parse(script).run();
         assertEquals(expRet.toJava(String.class), ret.toJava(String.class));
 

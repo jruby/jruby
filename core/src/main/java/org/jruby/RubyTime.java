@@ -1717,7 +1717,7 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = "initialize", optional = 7, checkArity = false, visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
-        boolean keywords = hasKeywords(context.resetCallInfo());
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
         IRubyObject zone = null;
         IRubyObject nil = context.nil;
 

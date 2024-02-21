@@ -9,6 +9,7 @@ import org.jruby.RubySymbol;
 import org.jruby.ast.DefNode;
 import org.jruby.ast.IterNode;
 import org.jruby.ext.coverage.CoverageData;
+import org.jruby.ir.builder.LazyMethodDefinitionAST;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.interpreter.ClosureInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
@@ -142,6 +143,10 @@ public class IRClosure extends IRScope {
         return isEND;
     }
 
+    public boolean isWhereFlipFlopStateVariableIs() {
+        return false;
+    }
+
     @Override
     public int getNextClosureId() {
         return getLexicalParent().getNextClosureId();
@@ -199,7 +204,13 @@ public class IRClosure extends IRScope {
         DefNode def = source;
         source = null;
 
-        return new IRMethod(getManager(), getLexicalParent(), def, name, true,  getLine(), getStaticScope().duplicate(), getCoverageMode());
+        // FIXME: PRISM: Explicit check for ast.IterNode prevents source from being set so this cannot be hit from prism.
+        LazyMethodDefinitionAST defn = new LazyMethodDefinitionAST(def);
+        return new IRMethod(getManager(), getLexicalParent(), defn, name, true,  getLine(), getStaticScope().duplicate(), getCoverageMode());
+    }
+
+    public void setSignature(Signature signature) {
+        this.signature = signature;
     }
 
     public void setSource(IterNode iter) {

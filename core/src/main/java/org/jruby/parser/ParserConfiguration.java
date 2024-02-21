@@ -40,10 +40,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.KCode;
 
-import java.util.Arrays;
-
 public class ParserConfiguration {
-    private DynamicScope existingScope = null;
 
     // What linenumber will the source think it starts from?
     private int lineNumber = 0;
@@ -51,19 +48,12 @@ public class ParserConfiguration {
     private boolean inlineSource = false;
     // We parse evals more often in source so assume an eval parse.
     private boolean isEvalParse = true;
-    // Should we display extra debug information while parsing?
-    private boolean isDebug = true;
+
     // whether we should save the end-of-file data as DATA
     private boolean saveData = false;
 
-    private boolean frozenStringLiteral = false;
-
     private Encoding defaultEncoding;
     private final Ruby runtime;
-
-    private int[] coverage = EMPTY_COVERAGE;
-
-    private static final int[] EMPTY_COVERAGE = new int[0];
 
     public ParserConfiguration(Ruby runtime, int lineNumber, boolean inlineSource, boolean isFileParse, boolean saveData) {
         this.runtime = runtime;
@@ -73,6 +63,7 @@ public class ParserConfiguration {
         this.saveData = saveData;
     }
 
+    @Deprecated
     public ParserConfiguration(Ruby runtime, int lineNumber,
             boolean inlineSource, boolean isFileParse, RubyInstanceConfig config) {
         this(runtime, lineNumber, inlineSource, isFileParse, false, config);
@@ -81,17 +72,6 @@ public class ParserConfiguration {
     public ParserConfiguration(Ruby runtime, int lineNumber,
             boolean inlineSource, boolean isFileParse, boolean saveData, RubyInstanceConfig config) {
         this(runtime, lineNumber, inlineSource, isFileParse, saveData);
-
-        this.isDebug = config.isParserDebug();
-        this.frozenStringLiteral = config.isFrozenStringLiteral();
-    }
-
-    public void setFrozenStringLiteral(boolean frozenStringLiteral) {
-        this.frozenStringLiteral = frozenStringLiteral;
-    }
-
-    public boolean isFrozenStringLiteral() {
-        return frozenStringLiteral;
     }
 
     public void setDefaultEncoding(Encoding encoding) {
@@ -111,7 +91,7 @@ public class ParserConfiguration {
     }
 
     public boolean isDebug() {
-        return isDebug;
+        return runtime.getInstanceConfig().isDebug();
     }
 
     /**
@@ -138,40 +118,13 @@ public class ParserConfiguration {
      * @param existingScope is the scope that captures new vars, etc...
      */
     public void parseAsBlock(DynamicScope existingScope) {
-        this.existingScope = existingScope;
     }
 
     public Ruby getRuntime() {
         return runtime;
     }
 
-    /**
-     * Returns the static scope which represents the top of the parse.  If an eval
-     * then we will have an existing scope to return.  If not then we make a new
-     * one since we are starting from scratch.
-     *
-     * @param file to name top scope if we have a new scope
-     * @return a static scope
-     */
-    public StaticScope getTopStaticScope(String file) {
-        return existingScope != null ?
-                existingScope.getStaticScope() :
-                runtime.getStaticScopeFactory().newLocalScope(null, file);
-    }
 
-    public DynamicScope finalizeDynamicScope(StaticScope staticScope) {
-        // Eval scooped up some new variables changing the size of the scope.
-        if (existingScope != null) {
-            existingScope.growIfNeeded();
-            return existingScope;
-        }
-
-        return DynamicScope.newDynamicScope(staticScope, existingScope);
-    }
-
-    public boolean isCoverageEnabled() {
-        return !isEvalParse() && runtime.getCoverageData().isCoverageEnabled();
-    }
 
     /**
      * Get whether we are saving the DATA contents of the file.
@@ -188,55 +141,4 @@ public class ParserConfiguration {
     public boolean isInlineSource() {
         return inlineSource;
     }
-
-    /**
-     * Zero out coverable lines as they're encountered
-     */
-    public void coverLine(int i) {
-        // We had an overflow so we cannot mark whatever line this is as covered.
-        if (i < 0) return;
-        if (isCoverageEnabled()) {
-            growCoverageLines(i);
-            coverage[i] = 0;
-        }
-    }
-
-    /**
-     *  Called by coverLine to grow it large enough to add new covered line.
-     *  Also called at end up parse to pick up any extra non-code lines which
-     *  should be marked -1 for not valid code lines.
-     */
-    public void growCoverageLines(int i) {
-        if (coverage == null) {
-            coverage = new int[i + 1];
-        } else if (coverage.length <= i) {
-            int[] newCoverage = new int[i + 1];
-            Arrays.fill(newCoverage, -1);
-            System.arraycopy(coverage, 0, newCoverage, 0, coverage.length);
-            coverage = newCoverage;
-        }
-    }
-
-    /**
-     * At end of a parse if coverage is enabled we will do final processing
-     * of the primitive coverage array and make sure runtimes coverage data
-     * has been updated with this new data.
-     */
-    public CoverageData finishCoverage(String file, int lines) {
-        if (!isCoverageEnabled()) return null;
-
-        growCoverageLines(lines);
-        CoverageData data = runtime.getCoverageData();
-        data.prepareCoverage(file, coverage);
-        return data;
-    }
-
-    /**
-     * Get the coverage array, indicating all coverable lines
-     */
-    @Deprecated
-    public int[] getCoverage() {
-        return coverage;
-    }
-
 }

@@ -181,4 +181,6 @@ public interface ValueCompiler {
      * Stack required: none
      */
     void pushBufferString(Encoding encoding, int size);
+
+    void pushSymbolClass();
 }

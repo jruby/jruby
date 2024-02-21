@@ -39,11 +39,12 @@ import java.io.StringReader;
 import java.net.URL;
 import java.util.Objects;
 
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.ParseResult;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.RubyRuntimeAdapter;
 import org.jruby.RubyString;
-import org.jruby.ast.Node;
 import org.jruby.ast.executable.Script;
 import org.jruby.embed.AttributeName;
 import org.jruby.embed.EmbedEvalUnit;
@@ -58,6 +59,7 @@ import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.javasupport.JavaEmbedUtils.EvalUnit;
+import org.jruby.parser.ParserType;
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.StaticScopeFactory;
 import org.jruby.runtime.DynamicScope;
@@ -182,11 +184,12 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
             scope = createLocalVarScope(runtime, container.getVarMap().getLocalVarNames());
         }
         try {
-            final Node node;
+            final ParseResult node;
             if (input instanceof String) {
-                node = runtime.parseEval((String) input, filename, scope, line);
+                node = runtime.getParserManager().parseEval(filename, line, (String) input, scope);
             } else {
-                node = runtime.parseFile((InputStream) input, filename, scope, line);
+                node = runtime.getParserManager().parseMainFile(filename, line, (InputStream) input,
+                        runtime.setupSourceEncoding(UTF8Encoding.INSTANCE), scope, ParserType.EVAL);
             }
             CompileMode compileMode = runtime.getInstanceConfig().getCompileMode();
             if (compileMode == CompileMode.FORCE) {

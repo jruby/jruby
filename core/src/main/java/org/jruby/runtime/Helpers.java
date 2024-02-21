@@ -9,6 +9,7 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.Array;
 
 import java.net.PortUnreachableException;
+import java.net.SocketException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.NonReadableChannelException;
 import java.nio.channels.NonWritableChannelException;

@@ -46,8 +46,16 @@ public class ArrayPatternNode extends Node {
         return constant;
     }
 
+    public Node[] getPre() {
+        return preArgs == null ? null : preArgs.children();
+    }
+
     public ListNode getPreArgs() {
         return preArgs;
+    }
+
+    public Node[] getPost() {
+        return postArgs == null ? null : postArgs.children();
     }
 
     public ListNode getPostArgs() {

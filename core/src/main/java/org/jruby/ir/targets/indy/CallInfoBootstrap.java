@@ -26,7 +26,7 @@ public class CallInfoBootstrap {
     public static CallSite callInfoBootstrap(MethodHandles.Lookup lookup, String name, MethodType type, int callInfo) throws Throwable {
         MethodHandle handle;
         if (callInfo == 0) {
-            handle = lookup.findVirtual(ThreadContext.class, "clearCallInfo", methodType(void.class));
+            handle = lookup.findStatic(ThreadContext.class, "clearCallInfo", methodType(void.class, ThreadContext.class));
         } else {
             handle = lookup.findStatic(IRRuntimeHelpers.class, "setCallInfo", methodType(void.class, ThreadContext.class, int.class));
             handle = insertArguments(handle, 1, callInfo);

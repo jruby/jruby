@@ -55,7 +55,7 @@ default_gems = [
     ['irb', '1.11.0'],
     ['jar-dependencies', '0.4.1'],
     ['jruby-readline', '1.3.7'],
-    ['jruby-openssl', '0.14.2'],
+    ['jruby-openssl', '0.14.3'],
     ['json', '2.7.1'],
     ['logger', '1.6.0'],
     ['mutex_m', '0.2.0'],
@@ -82,7 +82,9 @@ default_gems = [
     # jruby-readline does largely the same, but it finds the extension and does not load reline.
     # https://github.com/ruby/readline/issues/5
     # ['readline', '0.0.4'],
-    ['reline', '0.4.1'],
+    # Will be solved with readline
+    # ['readline-ext', '0.1.4'],
+    ['reline', '0.4.2'],
     # https://github.com/ruby/resolv/issues/19
     # ['resolv', '0.2.1'],
     ['resolv-replace', '0.1.1'],
@@ -94,7 +96,7 @@ default_gems = [
     ['shellwords', '0.2.0'],
     ['singleton', '0.2.0'],
     ['stringio', '3.1.0'],
-    ['strscan', '3.0.9'],
+    ['strscan', '3.1.0'],
     ['subspawn', '0.1.1'], # has 3 transitive deps:
       ['subspawn-posix', '0.1.1'],
       ['ffi-binary-libfixposix', '0.5.1.1'],

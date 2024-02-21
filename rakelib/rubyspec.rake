@@ -29,6 +29,15 @@ namespace :spec do
           :spec_config => "spec/jruby.mspec"
   end
 
+  desc "Run fast specs that do not spawn many subprocesses (prism)"
+  task :'ruby:fast:prism' do
+    mspec :compile_mode => "OFF",
+          :format => MSPEC_FORMAT,
+          :spec_target => ":fast",
+          :jruby_opts => "--dev -Xparser.prism",
+          :spec_config => "spec/jruby.mspec"
+  end
+  
   desc "Run fast specs that do not spawn many subprocesses"
   task :'ruby:fast:jit' do
     mspec :compile_mode => "JIT",
@@ -104,6 +113,14 @@ namespace :spec do
     mspec :compile_mode => "JIT",
        :jit_threshold => 0,
        :format => 'd'
+  end
+
+  desc "Tagged specs in JIT mode only (threshold=0)"
+  task :'compiled:prism' do
+    mspec :compile_mode => "JIT",
+       :jit_threshold => 0,
+       :format => 'd'
+       :jruby_opts => "-Xparser.prism"
   end
 
   desc "Tagged specs in AOT mode only"

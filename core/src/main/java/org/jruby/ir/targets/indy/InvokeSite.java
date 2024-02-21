@@ -702,7 +702,7 @@ public abstract class InvokeSite extends MutableCallSite {
         SmartHandle callInfoWrapper;
         SmartBinder baseBinder = SmartBinder.from(signature.changeReturn(void.class)).permute("context");
         if (flags == 0) {
-            callInfoWrapper = baseBinder.invokeVirtualQuiet(LOOKUP, "clearCallInfo");
+            callInfoWrapper = baseBinder.invokeStaticQuiet(LOOKUP, ThreadContext.class, "clearCallInfo");
         } else {
             callInfoWrapper = baseBinder.append("flags", flags).invokeStaticQuiet(LOOKUP, IRRuntimeHelpers.class, "setCallInfo");
         }

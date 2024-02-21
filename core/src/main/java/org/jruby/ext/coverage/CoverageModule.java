@@ -27,6 +27,7 @@
 package org.jruby.ext.coverage;
 
 import java.util.Map;
+
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyHash;
@@ -62,7 +63,7 @@ public class CoverageModule {
         }
 
         if (argc != 0) {
-            boolean keyword = hasKeywords(context.resetCallInfo());
+            boolean keyword = hasKeywords(ThreadContext.resetCallInfo(context));
 
             if (keyword) {
                 RubyHash keywords = (RubyHash) TypeConverter.convertToType(args[0], runtime.getHash(), "to_hash");
@@ -151,7 +152,7 @@ public class CoverageModule {
         boolean stop = true;
         boolean clear = true;
 
-        if (argc > 0 && hasKeywords(context.resetCallInfo())) {
+        if (argc > 0 && hasKeywords(ThreadContext.resetCallInfo(context))) {
             RubyHash keywords = (RubyHash) TypeConverter.convertToType(args[0], runtime.getHash(), "to_hash");
             stop = ArgsUtil.extractKeywordArg(context, "stop", keywords).isTrue();
             clear = ArgsUtil.extractKeywordArg(context, "clear", keywords).isTrue();
@@ -187,7 +188,7 @@ public class CoverageModule {
         if (!coverageData.isCoverageEnabled()) {
             throw runtime.newRuntimeError("coverage measurement is not enabled");
         }
-        
+
         return convertCoverageToRuby(context, runtime, coverageData.getCoverage(), coverageData.getCurrentMode());
     }
 
@@ -207,6 +208,11 @@ public class CoverageModule {
         }
 
         return context.nil;
+    }
+
+    @JRubyMethod(module = true)
+    public static IRubyObject line_stub(ThreadContext context, IRubyObject self, IRubyObject arg) {
+        return context.runtime.getParserManager().getLineStub(context, arg);
     }
 
 

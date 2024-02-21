@@ -92,7 +92,7 @@ class DSL
     elsif value == "idCall"
       '"call"'
     elsif value == "idUMinus"
-      '"-"'
+      '"-@"'
     else
       raise ArgumentError "Unknown id value: #{value}"
     end

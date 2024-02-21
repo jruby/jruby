@@ -45,8 +45,8 @@ public class FindPatternNode extends Node {
         return constant;
     }
 
-    public ListNode getArgs() {
-        return args;
+    public Node[] getArgs() {
+        return args.children();
     }
 
     public Node getPreRestArg() {

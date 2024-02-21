@@ -186,4 +186,15 @@ public class HashNode extends Node implements ILiteralNode {
     public boolean isMaybeKwargs() {
         return !isLiteral;
     }
+
+    public Node[] getKeys() {
+        int length = pairs.size();
+        Node[] keys = new Node[length];
+
+        for (int i = 0; i < length; i++) {
+            keys[i] = pairs.get(i).getKey();
+        }
+
+        return keys;
+    }
 }

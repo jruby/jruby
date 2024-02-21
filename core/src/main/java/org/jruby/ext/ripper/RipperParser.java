@@ -36,12 +36,14 @@ package org.jruby.ext.ripper;
 import java.io.IOException;
 import java.util.Set;
 
+import org.jruby.Ruby;
 import org.jruby.RubySymbol;
 import org.jruby.ast.*;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.LexingCommon;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.ext.ripper.StrTerm;
 import org.jruby.util.KeyValuePair; import org.jruby.RubyArray;
 import org.jruby.util.ByteList;
@@ -102,7 +104,7 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
     public RipperParser(ThreadContext context, IRubyObject ripper, LexerSource source) {
         super(context, ripper, source);
     }
-					// line 106 "-"
+					// line 108 "-"
   // %token constants
   public static final int keyword_class = 257;
   public static final int keyword_module = 258;
@@ -5902,7 +5904,7 @@ states[668] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
 };
 states[669] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
 {IRubyObject v1, v2, v3;
-                    v1 = p.intern("-");
+                    v1 = p.intern("-@");
                     v2 = ((IRubyObject)yyVals[0+yyTop].value);
                     v3 = p.dispatch("on_unary", v1, v2);
                     yyVal = v3;}
@@ -6635,7 +6637,7 @@ states[819] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 }
-					// line 4605 "ripper_RubyParser.out"
+					// line 4607 "ripper_RubyParser.out"
 
 }
-					// line 14421 "-"
+					// line 14423 "-"

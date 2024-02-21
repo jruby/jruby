@@ -1,0 +1,2 @@
+fails:TCPSocket#initialize using IPv4 when a server is listening on the given address creates a socket which is set to nonblocking
+fails:TCPSocket#initialize using IPv6 when a server is listening on the given address creates a socket which is set to nonblocking

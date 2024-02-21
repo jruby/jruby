@@ -43,6 +43,7 @@ import org.joni.NameEntry;
 import org.joni.Regex;
 import org.joni.Region;
 import org.joni.exception.JOniException;
+import org.joni.exception.ValueException;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.ast.util.ArgsUtil;
@@ -55,6 +56,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.ByteListHolder;
 import org.jruby.util.RegexpOptions;
+import org.jruby.util.RubyStringBuilder;
 import org.jruby.util.StringSupport;
 
 /**
@@ -486,6 +488,10 @@ public class RubyMatchData extends RubyObject {
         try {
             return pattern.nameToBackrefNumber(value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), regs);
         } catch (JOniException je) {
+            if (je instanceof ValueException) {
+                throw runtime.newIndexError(RubyStringBuilder.str(runtime, "undefined group name reference: ", runtime.newString(value)));
+            }
+            // FIXME: I think we could only catch ValueException here, but someone needs to audit that.
             throw runtime.newIndexError(je.getMessage());
         }
     }

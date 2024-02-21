@@ -139,9 +139,8 @@ public class Module {
         proxyClass = Java.getProxyClass(runtime, javaClass);
 
         try {
-            if (!target.const_defined_p(context, runtime.newSymbol(constant)).isTrue() ||
-                    !target.getConstant(constant).equals(proxyClass)) {
-                target.setConstant(constant, proxyClass);
+            if (!target.constDefinedAt(constant) || !target.getConstant(constant, false).equals(proxyClass)) {
+                target.const_set(runtime.newSymbol(constant), proxyClass); // setConstant would not validate const-name
             }
         } catch (NameError e) {
             String message = "cannot import Java class " + javaClass.getName() + " as `" + constant + "' : " + e.getException().getMessage();

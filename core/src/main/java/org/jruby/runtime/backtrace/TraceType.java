@@ -728,7 +728,7 @@ public class TraceType {
     }
 
     public static boolean isInternalFile(String filename) {
-        return filename.startsWith("uri:classloader:/jruby/kernel/");
+        return filename != null && filename.startsWith("uri:classloader:/jruby/kernel/");
     }
 
     public static boolean hasInternalMarker(String filename) {

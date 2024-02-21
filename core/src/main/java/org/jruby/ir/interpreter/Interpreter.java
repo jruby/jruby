@@ -1,12 +1,14 @@
 package org.jruby.ir.interpreter;
 
 import java.io.ByteArrayOutputStream;
+
 import org.jruby.EvalType;
+import org.jruby.ParseResult;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
-import org.jruby.ast.RootNode;
-import org.jruby.ir.IRBuilder;
+import org.jruby.ir.IRManager;
+import org.jruby.ir.builder.IRBuilder;
 import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
@@ -194,7 +196,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                                                         String file, int lineNumber, EvalType evalType, boolean bindingGiven) {
         Ruby runtime = context.runtime;
         IRScope containingIRScope = evalScope.getStaticScope().getEnclosingScope().getIRScope();
-        RootNode rootNode = (RootNode) runtime.parseEval(src.convertToString().getByteList(), file, evalScope, lineNumber);
+        ParseResult result = runtime.getParserManager().parseEval(file, lineNumber, src.convertToString().getByteList(), evalScope);
         StaticScope staticScope = evalScope.getStaticScope();
 
         // Top-level script!
@@ -205,13 +207,14 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             script.setIsMaybeUsingRefinements();
         }
 
-        // We link IRScope to StaticScope because we may add additional variables (like %block).  During execution
+        // We link IRScope to StaticScope because we may add additional variables (like %block).  During execution,
         // we end up growing dynamicscope potentially based on any changes made.
         staticScope.setIRScope(script);
 
-        IRBuilder builder = IRBuilder.topIRBuilder(runtime.getIRManager(), script);
+        IRManager manager = runtime.getIRManager();
+        IRBuilder builder = manager.getBuilderFactory().newIRBuilder(manager, script, null, result.getEncoding());
         builder.evalType = !bindingGiven && evalType == EvalType.BINDING_EVAL ? EvalType.INSTANCE_EVAL : evalType;
-        InterpreterContext ic = builder.buildEvalRoot(rootNode);
+        InterpreterContext ic = builder.buildEvalRoot(result);
 
         if (IRRuntimeHelpers.isDebug()) LOG.info(script.debugOutput());
 

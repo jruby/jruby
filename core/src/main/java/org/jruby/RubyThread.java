@@ -636,7 +636,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(rest = true, visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
-        int callInfo = context.resetCallInfo();
+        int callInfo = ThreadContext.resetCallInfo(context);
         if (!block.isGiven()) throw context.runtime.newThreadError("must be called with a block");
         if (threadImpl != ThreadLike.DUMMY) throw context.runtime.newThreadError("already initialized thread");
 

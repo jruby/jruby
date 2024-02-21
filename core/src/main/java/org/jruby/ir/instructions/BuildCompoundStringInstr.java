@@ -66,7 +66,6 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
     }
 
     public static BuildCompoundStringInstr decode(IRReaderDecoder d) {
-        boolean debuggingFrozenStringLiteral = d.getCurrentScope().getManager().getInstanceConfig().isDebuggingFrozenStringLiteral();
         return new BuildCompoundStringInstr(d.decodeVariable(), d.decodeOperandArray(), d.decodeEncoding(), d.decodeInt(), d.decodeBoolean(), d.decodeString(), d.decodeInt());
     }
 

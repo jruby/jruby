@@ -93,6 +93,7 @@ namespace :test do
     jruby_opts = {
         # interpreter is set to threshold=1 to encourage full builds to run for code called twice
         int: "--dev -Xjit.threshold=1 -Xjit.background=false",
+        :'int:prism' => "-X-C -Xjit.threshold=1 -Xjit.background=false -Xparser.prism",
         fullint: "-X-C -Xjit.threshold=0 -Xjit.background=false",
         jit: "-Xjit.threshold=0 -Xjit.background=false",
         aot: "-X+C -Xjit.background=false #{get_meta_size.call()}"
@@ -114,6 +115,10 @@ namespace :test do
 
           task task do
             ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} #{extra_jruby_opts} #{opts}"
+            ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes:test/mri/excludes_wip -q -- #{files}"
+          end
+          task "#{task}:prism" do
+            ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} #{extra_jruby_opts} -Xparser.prism #{opts}"
             ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes:test/mri/excludes_wip -q -- #{files}"
           end
         end
