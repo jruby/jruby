@@ -128,4 +128,11 @@ public interface InvocationCompiler {
      * Stack required: none
      */
     void setCallInfo(int flags);
+
+    /**
+     * Invoke block_given? with awareness of any built-in methods.
+     *
+     * @param call a CallBase representing the call to block_given?
+     */
+    void invokeBlockGiven(String file, String scopeFieldName, CallBase call);
 }

@@ -129,19 +129,24 @@ public class IndyInvocationCompiler implements InvocationCompiler {
 
         String action = call.getCallType() == CallType.FUNCTIONAL ? "callFunctional" : "callVariable";
         IRBytecodeAdapter.BlockPassType blockPassType = IRBytecodeAdapter.BlockPassType.fromIR(call);
+        String callName = constructIndyCallName(action, id);
         if (blockPassType != IRBytecodeAdapter.BlockPassType.NONE) {
             if (arity == -1) {
-                compiler.adapter.invokedynamic(action + ':' + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class)), SelfInvokeSite.BOOTSTRAP, blockPassType.literal(), flags, file, compiler.getLastLine());
+                compiler.adapter.invokedynamic(callName, sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class)), SelfInvokeSite.BOOTSTRAP, blockPassType.literal(), flags, file, compiler.getLastLine());
             } else {
-                compiler.adapter.invokedynamic(action + ':' + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, arity + 1, Block.class)), SelfInvokeSite.BOOTSTRAP, blockPassType.literal(), flags, file, compiler.getLastLine());
+                compiler.adapter.invokedynamic(callName, sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, arity + 1, Block.class)), SelfInvokeSite.BOOTSTRAP, blockPassType.literal(), flags, file, compiler.getLastLine());
             }
         } else {
             if (arity == -1) {
-                compiler.adapter.invokedynamic(action + ':' + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT_ARRAY)), SelfInvokeSite.BOOTSTRAP, false, flags, file, compiler.getLastLine());
+                compiler.adapter.invokedynamic(callName, sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT_ARRAY)), SelfInvokeSite.BOOTSTRAP, false, flags, file, compiler.getLastLine());
             } else {
-                compiler.adapter.invokedynamic(action + ':' + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, arity)), SelfInvokeSite.BOOTSTRAP, false, flags, file, compiler.getLastLine());
+                compiler.adapter.invokedynamic(callName, sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, arity)), SelfInvokeSite.BOOTSTRAP, false, flags, file, compiler.getLastLine());
             }
         }
+    }
+
+    private static String constructIndyCallName(String action, String id) {
+        return action + ':' + JavaNameMangler.mangleMethodName(id);
     }
 
     public void invokeInstanceSuper(String file, String name, int arity, boolean hasClosure, boolean literalClosure, boolean[] splatmap, int flags) {
@@ -214,5 +219,13 @@ public class IndyInvocationCompiler implements InvocationCompiler {
     public void setCallInfo(int flags) {
         compiler.loadContext();
         compiler.adapter.invokedynamic("callInfo", sig(void.class, ThreadContext.class), CallInfoBootstrap.CALL_INFO_BOOTSTRAP, flags);
+    }
+
+    @Override
+    public void invokeBlockGiven(String file, String scopeFieldName, CallBase call) {
+        compiler.loadContext();
+        compiler.loadSelf();
+        compiler.loadBlock();
+        compiler.adapter.invokedynamic(constructIndyCallName("callFunctional", "block_given?"), sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, Block.class), Bootstrap.BLOCK_GIVEN_BOOTSTRAP);
     }
 }

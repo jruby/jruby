@@ -491,4 +491,12 @@ public class NormalInvocationCompiler implements InvocationCompiler {
             compiler.invokeIRHelper("setCallInfo", sig(void.class, ThreadContext.class, int.class));
         }
     }
+
+    @Override
+    public void invokeBlockGiven(String file, String scopeFieldName, CallBase call) {
+        // just invoke normally; no magic without indy
+        compiler.loadContext();
+        compiler.loadSelf();
+        invokeSelf(file, scopeFieldName, call, 0);
+    }
 }
