@@ -58,7 +58,7 @@ import static org.jruby.util.CodegenUtils.sig;
  */
 public class RubyObjectSpecializer {
 
-    public static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+    public static final MethodHandles.Lookup LOOKUP = MethodHandles.publicLookup();
 
     private static ClassAndAllocator getClassForSize(int size) {
         return SPECIALIZED_CLASSES.get(size);

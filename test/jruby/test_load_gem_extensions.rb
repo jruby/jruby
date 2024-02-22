@@ -1,6 +1,6 @@
 require 'test/unit'
 require 'test/jruby/test_helper'
-require 'jruby/path_helper'
+require 'org/jruby/kernel/path_helper'
 
 class TestLoadGemExtensions < Test::Unit::TestCase
   include TestHelper

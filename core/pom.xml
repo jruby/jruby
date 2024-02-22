@@ -159,7 +159,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>dirgra</artifactId>
-      <version>0.3</version>
+      <version>0.4</version>
     </dependency>
     <dependency>
       <groupId>com.headius</groupId>
@@ -185,12 +185,6 @@ DO NOT MODIFY - GENERATED CODE
       <groupId>org.awaitility</groupId>
       <artifactId>awaitility</artifactId>
       <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.ant</groupId>
-      <artifactId>ant</artifactId>
-      <version>${ant.version}</version>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.osgi</groupId>
@@ -219,7 +213,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>me.qmx.jitescript</groupId>
       <artifactId>jitescript</artifactId>
-      <version>0.4.1</version>
+      <version>0.4.3</version>
       <exclusions>
         <exclusion>
           <groupId>org.ow2.asm</groupId>
@@ -231,12 +225,6 @@ DO NOT MODIFY - GENERATED CODE
       <groupId>com.headius</groupId>
       <artifactId>backport9</artifactId>
       <version>1.13</version>
-    </dependency>
-    <dependency>
-      <groupId>jakarta.annotation</groupId>
-      <artifactId>jakarta.annotation-api</artifactId>
-      <version>2.0.0</version>
-      <scope>provided</scope>
     </dependency>
   </dependencies>
   <build>
@@ -434,6 +422,7 @@ DO NOT MODIFY - GENERATED CODE
                 <include>org/jruby/util/CodegenUtils.java</include>
                 <include>org/jruby/util/SafePropertyAccessor.java</include>
               </includes>
+              <release>8</release>
             </configuration>
           </execution>
           <execution>
@@ -454,6 +443,13 @@ DO NOT MODIFY - GENERATED CODE
                 <compilerArg>-J-Dfile.encoding=UTF-8</compilerArg>
                 <compilerArg>-J-Xmx${jruby.compile.memory}</compilerArg>
               </compilerArgs>
+              <annotationProcessorPaths>
+                <annotationProcessorPath>
+                  <groupId>org.jruby</groupId>
+                  <artifactId>jruby-base</artifactId>
+                  <version>${project.version}</version>
+                </annotationProcessorPath>
+              </annotationProcessorPaths>
             </configuration>
           </execution>
           <execution>
@@ -463,8 +459,7 @@ DO NOT MODIFY - GENERATED CODE
               <goal>compile</goal>
             </goals>
             <configuration>
-              <debug>false</debug>
-              <fork>true</fork>
+              <debug>true</debug>
               <compilerArgs>
                 <compilerArg>-XDignore.symbol.file=true</compilerArg>
                 <compilerArg>-J-Duser.language=en</compilerArg>
@@ -473,6 +468,7 @@ DO NOT MODIFY - GENERATED CODE
               </compilerArgs>
               <includes>
                 <include>org/jruby/gen/**/*.java</include>
+                <include>module-info.java</include>
               </includes>
             </configuration>
           </execution>
@@ -495,10 +491,7 @@ DO NOT MODIFY - GENERATED CODE
           <verbose>false</verbose>
           <showWarnings>true</showWarnings>
           <showDeprecation>true</showDeprecation>
-          <source>${base.java.version}</source>
-          <source>17</source>
-          <target>${base.javac.version}</target>
-          <target>17</target>
+          <release>17</release>
           <useIncrementalCompilation>false</useIncrementalCompilation>
         </configuration>
       </plugin>
@@ -529,6 +522,12 @@ DO NOT MODIFY - GENERATED CODE
                   <directory>${project.basedir}/..</directory>
                   <includes>
                     <include>lib/jni/**</include>
+                  </includes>
+                </fileset>
+                <fileset>
+                  <directory>${project.basedir}/..</directory>
+                  <includes>
+                    <include>lib/modules/**</include>
                   </includes>
                 </fileset>
               </filesets>
@@ -565,10 +564,45 @@ DO NOT MODIFY - GENERATED CODE
         <configuration>
           <archive>
             <manifestEntries>
-              <Automatic-Module-Name>org.jruby</Automatic-Module-Name>
+              <Automatic-Module-Name>org.jruby.base</Automatic-Module-Name>
             </manifestEntries>
           </archive>
         </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>copy dependencies to lib</id>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+              <prependGroupId>true</prependGroupId>
+              <includeScope>runtime</includeScope>
+              <outputDirectory>${basedir}/../lib/modules</outputDirectory>
+              <excludeArtifactIds>joda-timezones</excludeArtifactIds>
+            </configuration>
+          </execution>
+          <execution>
+            <id>copy jruby jar to lib</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <configuration>
+              <prependGroupId>true</prependGroupId>
+              <outputDirectory>${basedir}/../lib/modules</outputDirectory>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>${project.groupId}</groupId>
+                  <artifactId>${project.artifactId}</artifactId>
+                  <version>${project.version}</version>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <artifactId>maven-resources-plugin</artifactId>
@@ -702,6 +736,13 @@ DO NOT MODIFY - GENERATED CODE
                     <compilerArg>-XDcompilePolicy=simple</compilerArg>
                     <compilerArg>-Xplugin:ErrorProne</compilerArg>
                   </compilerArgs>
+                  <annotationProcessorPaths>
+                    <annotationProcessorPath>
+                      <groupId>org.jruby</groupId>
+                      <artifactId>jruby-base</artifactId>
+                      <version>${project.version}</version>
+                    </annotationProcessorPath>
+                  </annotationProcessorPaths>
                   <annotationProcessorPaths>
                     <path>
                       <groupId>com.google.errorprone</groupId>
