@@ -1,0 +1,1 @@
+fails:A Symbol literal raises an SyntaxError at parse time when Symbol with invalid bytes
