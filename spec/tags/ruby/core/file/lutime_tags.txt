@@ -1,0 +1,5 @@
+fails:File.lutime sets the access and modification time of each file
+fails:File.lutime accepts an object that has a #to_path method
+fails:File.lutime may set nanosecond precision
+fails:File.lutime returns the number of filenames in the arguments
+fails:File.lutime allows Time instances in the far future to set mtime and atime (but some filesystems limit it up to 2446-05-10 or 2038-01-19 or 2486-07-02)

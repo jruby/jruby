@@ -1,1 +1,3 @@
 fails:The ** operator makes a copy when calling a method taking a positional Hash
+fails:Hash literal raises a SyntaxError at parse time when Symbol key with invalid bytes
+fails:Hash literal raises a SyntaxError at parse time when Symbol key with invalid bytes and 'key: value' syntax used
