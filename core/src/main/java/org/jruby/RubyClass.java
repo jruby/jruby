@@ -1087,7 +1087,7 @@ public class RubyClass extends RubyModule {
             Set<RubyClass> keys = subclasses.keySet();
             for (RubyClass klass: keys) {
                 if (klass.isSingleton()) continue;
-                if (klass.isIncluded()) {
+                if (klass.isIncluded() || klass.isPrepended()) {
                     klass.concreteSubclasses(subs);
                     continue;
                 }
