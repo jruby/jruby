@@ -217,6 +217,7 @@ public class RubyMethod extends AbstractRubyMethod {
     public RubyMethod rbClone() {
         RubyMethod newMethod = newMethod(implementationModule, methodName, originModule, originName, entry, receiver);
         newMethod.setMetaClass(getMetaClass());
+        newMethod.setFrozen(isFrozen());
         return newMethod;
     }
 
