@@ -213,7 +213,9 @@ public class RubyProc extends RubyObject implements DataType {
     @JRubyMethod(name = "clone")
     @Override
     public IRubyObject rbClone() {
-    	return newProc(getRuntime(), block, type, file, line);
+        RubyProc proc = newProc(getRuntime(), block, type, file, line);
+        if (isFrozen()) proc.setFrozen(true);
+    	return proc;
     }
 
     @JRubyMethod(name = "dup")
