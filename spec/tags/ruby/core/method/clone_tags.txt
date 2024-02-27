@@ -1,1 +1,0 @@
-fails:Method#clone preserves frozen status
