@@ -135,8 +135,9 @@ public class Signature {
         int oneForKeywords = requiredKwargs > 0 ? 1 : 0;
         int fixedValue = pre() + post() + oneForKeywords;
         boolean hasOptionalKeywords = kwargs - requiredKwargs > 0;
+        boolean optionalFromRest = rest() != Rest.NONE && rest != Rest.ANON;
 
-        if (opt() > 0 || rest() != Rest.NONE || (hasOptionalKeywords || restKwargs()) && oneForKeywords == 0) {
+        if (opt() > 0 || optionalFromRest || (hasOptionalKeywords || restKwargs()) && oneForKeywords == 0) {
             return -1 * (fixedValue + 1);
         }
 
