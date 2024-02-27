@@ -1,1 +1,0 @@
-fails:Method#parameters returns [[:nokey]] for a method with a single **nil parameter
