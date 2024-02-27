@@ -1306,8 +1306,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         long[] mtimeval = null;
 
         if (args[0] != context.nil || args[1] != context.nil) {
-            atimeval = extractTimespec(context, args[0]);
-            mtimeval = extractTimespec(context, args[1]);
+            atimeval = convertTimespecToTimeval(extractTimespec(context, args[0]));
+            mtimeval = convertTimespecToTimeval(extractTimespec(context, args[1]));
         }
 
         for (int i = 2, j = argc; i < j; i++) {
@@ -1356,7 +1356,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 result = runtime.getPosix().utimensat(0, fileToTouch.getAbsolutePath(), atimespec, mtimespec, 0);
             } catch (NotImplementedError re) {
                 // fall back on utimes
-                result = runtime.getPosix().utimes(fileToTouch.getAbsolutePath(), atimespec, mtimespec);
                 long[] atimeval = convertTimespecToTimeval(atimespec);
                 long[] mtimeval = convertTimespecToTimeval(mtimespec);
                 result = runtime.getPosix().utimes(fileToTouch.getAbsolutePath(), atimeval, mtimeval);
