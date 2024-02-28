@@ -18,25 +18,28 @@ module Fiddle
     Pointer.to_ptr(val)
   end
 
-  TYPE_VOID         = 0
-  TYPE_VOIDP        = 1
-  TYPE_CHAR         = 2
-  TYPE_UCHAR        = -2
-  TYPE_SHORT        = 3
-  TYPE_USHORT       = -3
-  TYPE_INT          = 4
-  TYPE_UINT         = -4
-  TYPE_LONG         = 5
-  TYPE_ULONG        = -5
-  TYPE_LONG_LONG    = 6
-  TYPE_ULONG_LONG   = -6
-  TYPE_FLOAT        = 7
-  TYPE_DOUBLE       = 8
-  TYPE_SSIZE_T      = 9
-  TYPE_SIZE_T       = 10
-  TYPE_PTRDIFF_T    = 11
-  TYPE_INTPTR_T     = 12
-  TYPE_UINTPTR_T    = 13
+  module Types
+    VOID         = 0
+    VOIDP        = 1
+    CHAR         = 2
+    UCHAR        = -2
+    SHORT        = 3
+    USHORT       = -3
+    INT          = 4
+    UINT         = -4
+    LONG         = 5
+    ULONG        = -5
+    LONG_LONG    = 6
+    ULONG_LONG   = -6
+    FLOAT        = 7
+    DOUBLE       = 8
+    SSIZE_T      = 9
+    SIZE_T       = 10
+    PTRDIFF_T    = 11
+    INTPTR_T     = 12
+    UINTPTR_T    = 13
+    BOOL         = 14
+  end
 
   WINDOWS = FFI::Platform.windows?
 
@@ -50,27 +53,29 @@ module Fiddle
         'd' => FFI::Type::FLOAT64,
         'p' => FFI::Type::POINTER,
         's' => FFI::Type::STRING,
+        'b' => FFI::Type::BOOL,
 
-        TYPE_VOID => FFI::Type::Builtin::VOID,
-        TYPE_VOIDP => FFI::Type::Builtin::POINTER,
-        TYPE_CHAR => FFI::Type::Builtin::CHAR,
-        TYPE_UCHAR => FFI::Type::Builtin::UCHAR,
-        TYPE_SHORT => FFI::Type::Builtin::SHORT,
-        TYPE_USHORT => FFI::Type::Builtin::USHORT,
-        TYPE_INT => FFI::Type::Builtin::INT,
-        TYPE_UINT => FFI::Type::Builtin::UINT,
-        TYPE_LONG => FFI::Type::Builtin::LONG,
-        TYPE_ULONG => FFI::Type::Builtin::ULONG,
-        TYPE_LONG_LONG => FFI::Type::Builtin::LONG_LONG,
-        TYPE_ULONG_LONG => FFI::Type::Builtin::ULONG_LONG,
-        TYPE_FLOAT => FFI::Type::Builtin::FLOAT,
-        TYPE_DOUBLE => FFI::Type::Builtin::DOUBLE,
+        Types::VOID => FFI::Type::Builtin::VOID,
+        Types::VOIDP => FFI::Type::Builtin::POINTER,
+        Types::CHAR => FFI::Type::Builtin::CHAR,
+        Types::UCHAR => FFI::Type::Builtin::UCHAR,
+        Types::SHORT => FFI::Type::Builtin::SHORT,
+        Types::USHORT => FFI::Type::Builtin::USHORT,
+        Types::INT => FFI::Type::Builtin::INT,
+        Types::UINT => FFI::Type::Builtin::UINT,
+        Types::LONG => FFI::Type::Builtin::LONG,
+        Types::ULONG => FFI::Type::Builtin::ULONG,
+        Types::LONG_LONG => FFI::Type::Builtin::LONG_LONG,
+        Types::ULONG_LONG => FFI::Type::Builtin::ULONG_LONG,
+        Types::FLOAT => FFI::Type::Builtin::FLOAT,
+        Types::DOUBLE => FFI::Type::Builtin::DOUBLE,
+        Types::BOOL => FFI::Type::Builtin::BOOL,
 
         # FIXME: platform specific values?
-        TYPE_SIZE_T => FFI::Type::Builtin::LONG_LONG,
-        TYPE_PTRDIFF_T => FFI::Type::Builtin::LONG_LONG,
-        TYPE_INTPTR_T => FFI::Type::Builtin::LONG_LONG,
-        TYPE_UINTPTR_T => FFI::Type::Builtin::LONG_LONG,
+        Types::SIZE_T => FFI::Type::Builtin::LONG_LONG,
+        Types::PTRDIFF_T => FFI::Type::Builtin::LONG_LONG,
+        Types::INTPTR_T => FFI::Type::Builtin::LONG_LONG,
+        Types::UINTPTR_T => FFI::Type::Builtin::LONG_LONG,
     }
 
     def self.__ffi_type__(dl_type)
@@ -426,31 +431,33 @@ module Fiddle
   RUBY_FREE = Fiddle::Pointer::LibC::FREE.address
   NULL = Fiddle::Pointer.new(0)
 
-  ALIGN_VOIDP       = Fiddle::JRuby::FFITypes[TYPE_VOIDP].alignment
-  ALIGN_CHAR        = Fiddle::JRuby::FFITypes[TYPE_CHAR].alignment
-  ALIGN_SHORT       = Fiddle::JRuby::FFITypes[TYPE_SHORT].alignment
-  ALIGN_INT         = Fiddle::JRuby::FFITypes[TYPE_INT].alignment
-  ALIGN_LONG        = Fiddle::JRuby::FFITypes[TYPE_LONG].alignment
-  ALIGN_LONG_LONG   = Fiddle::JRuby::FFITypes[TYPE_LONG_LONG].alignment
-  ALIGN_FLOAT       = Fiddle::JRuby::FFITypes[TYPE_FLOAT].alignment
-  ALIGN_DOUBLE      = Fiddle::JRuby::FFITypes[TYPE_DOUBLE].alignment
-  ALIGN_SIZE_T      = Fiddle::JRuby::FFITypes[TYPE_SIZE_T].alignment
+  ALIGN_VOIDP       = Fiddle::JRuby::FFITypes[Types::VOIDP].alignment
+  ALIGN_CHAR        = Fiddle::JRuby::FFITypes[Types::CHAR].alignment
+  ALIGN_SHORT       = Fiddle::JRuby::FFITypes[Types::SHORT].alignment
+  ALIGN_INT         = Fiddle::JRuby::FFITypes[Types::INT].alignment
+  ALIGN_LONG        = Fiddle::JRuby::FFITypes[Types::LONG].alignment
+  ALIGN_LONG_LONG   = Fiddle::JRuby::FFITypes[Types::LONG_LONG].alignment
+  ALIGN_FLOAT       = Fiddle::JRuby::FFITypes[Types::FLOAT].alignment
+  ALIGN_DOUBLE      = Fiddle::JRuby::FFITypes[Types::DOUBLE].alignment
+  ALIGN_SIZE_T      = Fiddle::JRuby::FFITypes[Types::SIZE_T].alignment
   ALIGN_SSIZE_T     = ALIGN_SIZE_T
-  ALIGN_PTRDIFF_T   = Fiddle::JRuby::FFITypes[TYPE_PTRDIFF_T].alignment
-  ALIGN_INTPTR_T    = Fiddle::JRuby::FFITypes[TYPE_INTPTR_T].alignment
-  ALIGN_UINTPTR_T   = Fiddle::JRuby::FFITypes[TYPE_UINTPTR_T].alignment
+  ALIGN_PTRDIFF_T   = Fiddle::JRuby::FFITypes[Types::PTRDIFF_T].alignment
+  ALIGN_INTPTR_T    = Fiddle::JRuby::FFITypes[Types::INTPTR_T].alignment
+  ALIGN_UINTPTR_T   = Fiddle::JRuby::FFITypes[Types::UINTPTR_T].alignment
+  ALIGN_BOOL        = Fiddle::JRuby::FFITypes[Types::BOOL].alignment
 
-  SIZEOF_VOIDP       = Fiddle::JRuby::FFITypes[TYPE_VOIDP].size
-  SIZEOF_CHAR        = Fiddle::JRuby::FFITypes[TYPE_CHAR].size
-  SIZEOF_SHORT       = Fiddle::JRuby::FFITypes[TYPE_SHORT].size
-  SIZEOF_INT         = Fiddle::JRuby::FFITypes[TYPE_INT].size
-  SIZEOF_LONG        = Fiddle::JRuby::FFITypes[TYPE_LONG].size
-  SIZEOF_LONG_LONG   = Fiddle::JRuby::FFITypes[TYPE_LONG_LONG].size
-  SIZEOF_FLOAT       = Fiddle::JRuby::FFITypes[TYPE_FLOAT].size
-  SIZEOF_DOUBLE      = Fiddle::JRuby::FFITypes[TYPE_DOUBLE].size
-  SIZEOF_SIZE_T      = Fiddle::JRuby::FFITypes[TYPE_SIZE_T].size
+  SIZEOF_VOIDP       = Fiddle::JRuby::FFITypes[Types::VOIDP].size
+  SIZEOF_CHAR        = Fiddle::JRuby::FFITypes[Types::CHAR].size
+  SIZEOF_SHORT       = Fiddle::JRuby::FFITypes[Types::SHORT].size
+  SIZEOF_INT         = Fiddle::JRuby::FFITypes[Types::INT].size
+  SIZEOF_LONG        = Fiddle::JRuby::FFITypes[Types::LONG].size
+  SIZEOF_LONG_LONG   = Fiddle::JRuby::FFITypes[Types::LONG_LONG].size
+  SIZEOF_FLOAT       = Fiddle::JRuby::FFITypes[Types::FLOAT].size
+  SIZEOF_DOUBLE      = Fiddle::JRuby::FFITypes[Types::DOUBLE].size
+  SIZEOF_SIZE_T      = Fiddle::JRuby::FFITypes[Types::SIZE_T].size
   SIZEOF_SSIZE_T     = SIZEOF_SIZE_T
-  SIZEOF_PTRDIFF_T   = Fiddle::JRuby::FFITypes[TYPE_PTRDIFF_T].size
-  SIZEOF_INTPTR_T    = Fiddle::JRuby::FFITypes[TYPE_INTPTR_T].size
-  SIZEOF_UINTPTR_T   = Fiddle::JRuby::FFITypes[TYPE_UINTPTR_T].size
+  SIZEOF_PTRDIFF_T   = Fiddle::JRuby::FFITypes[Types::PTRDIFF_T].size
+  SIZEOF_INTPTR_T    = Fiddle::JRuby::FFITypes[Types::INTPTR_T].size
+  SIZEOF_UINTPTR_T   = Fiddle::JRuby::FFITypes[Types::UINTPTR_T].size
+  SIZEOF_BOOL   = Fiddle::JRuby::FFITypes[Types::BOOL].size
 end
