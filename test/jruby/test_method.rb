@@ -26,7 +26,7 @@ class TestMethod < Test::Unit::TestCase
     assert_equal [[:key, :foo], [:key, :bar]], Methods.method(:key).parameters
     assert_equal [[:key, :foo], [:keyrest, :bar]], Methods.method(:keyrest).parameters
     assert_equal [[:key, :foo], [:block, :bar]], Methods.method(:key_block).parameters
-    assert_equal [[:keyrest]], Methods.method(:anonkeyrest).parameters
+    assert_equal [[:keyrest, :**]], Methods.method(:anonkeyrest).parameters
 
     assert_equal [[:rest, :a]], Methods.method(:resta).parameters
     assert_equal [[ :rest ]], String.method(:new).parameters
@@ -38,9 +38,9 @@ class TestMethod < Test::Unit::TestCase
 
     assert_equal [[:key, :foo], [:key, :bar]], lambda { |foo: 1, bar: 2| }.parameters
     assert_equal [[:key, :foo], [:keyrest, :bar]], lambda { |foo: 1, **bar| }.parameters
-    assert_equal [[:keyrest]], lambda { |**| }.parameters
+    assert_equal [[:keyrest, :**]], lambda { |**| }.parameters
 
-    assert_equal [[:rest]], lambda { |*| }.parameters
+    assert_equal [[:rest, :*]], lambda { |*| }.parameters
 
     assert_equal [[:req, :a1], [:rest, :a2], [:req, :a3], [:key, :foo], [:keyrest, :bar]], lambda { |a1, *a2, a3, foo: 1, **bar| }.parameters
   end
