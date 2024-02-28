@@ -138,7 +138,7 @@ public class SizedQueue extends Queue {
         initializedCheck();
 
         try {
-            return context.getThread().executeTaskBlocking(context, arg0, blockingPushTask);
+            return context.getThread().executeTaskBlocking(context, arg0, blockingPutTask);
         } catch (InterruptedException ie) {
             throw createInterruptedError(context, "push");
         }
@@ -197,19 +197,22 @@ public class SizedQueue extends Queue {
     private IRubyObject pushCommon(ThreadContext context, IRubyObject arg0, boolean nonblock, long timeoutNS) {
         try {
             RubyThread thread = context.getThread();
-            if (nonblock || timeoutNS != 0) {
-                boolean result = timeoutNS == 0 ? offerInternal(context, arg0) : offerInternal(context, arg0, timeoutNS, TimeUnit.NANOSECONDS);
+            if (nonblock) {
+                boolean result = offerInternal(context, arg0);
                 if (!result) {
-                    if (timeoutNS == 0) {
-                        throw context.runtime.newThreadError("queue full");
-                    } else {
-                        return context.nil;
-                    }
+                    throw context.runtime.newThreadError("queue full");
                 }
                 return this;
-            } else {
-                return thread.executeTaskBlocking(context, arg0, blockingPushTask);
             }
+
+            RubyThread.Task<IRubyObject, IRubyObject> task;
+            if (timeoutNS != 0) {
+                task = new BlockingOfferTask(timeoutNS);
+            } else {
+                task = blockingPutTask;
+            }
+
+            return thread.executeTaskBlocking(context, arg0, task);
         } catch (InterruptedException ie) {
             throw createInterruptedError(context, "push");
         }
@@ -272,7 +275,7 @@ public class SizedQueue extends Queue {
         return true;
     }
 
-    private final RubyThread.Task<IRubyObject, IRubyObject> blockingPushTask = new RubyThread.Task<IRubyObject, IRubyObject>() {
+    private final RubyThread.Task<IRubyObject, IRubyObject> blockingPutTask = new RubyThread.Task<>() {
         @Override
         public IRubyObject run(ThreadContext context, IRubyObject value) throws InterruptedException {
             putInternal(context, value);
@@ -285,20 +288,27 @@ public class SizedQueue extends Queue {
         }
     };
 
-    private final RubyThread.Task<IRubyObject, IRubyObject> nonblockingPushTask = new RubyThread.Task<IRubyObject, IRubyObject>() {
+    private final class BlockingOfferTask implements RubyThread.Task<IRubyObject, IRubyObject> {
+        private final long timeoutNS;
+
+        public BlockingOfferTask(long timeoutNS) {
+            this.timeoutNS = timeoutNS;
+        }
+
         @Override
-        public IRubyObject run(ThreadContext context, IRubyObject value) {
-            if (!offerInternal(context, value)) {
-                throw context.runtime.newThreadError("queue full");
+        public IRubyObject run(ThreadContext context, IRubyObject value) throws InterruptedException {
+            boolean result = offerInternal(context, value, timeoutNS, TimeUnit.NANOSECONDS);
+            if (!result) {
+                return context.nil;
             }
             return SizedQueue.this;
         }
 
         @Override
-        public void wakeup(RubyThread thread, IRubyObject value) {
+        public void wakeup(RubyThread thread, IRubyObject sizedQueue) {
             thread.getNativeThread().interrupt();
         }
-    };
+    }
 
     @Deprecated
     public IRubyObject push(ThreadContext context, final IRubyObject[] argv) {
