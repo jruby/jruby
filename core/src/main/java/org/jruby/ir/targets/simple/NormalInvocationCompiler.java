@@ -296,6 +296,16 @@ public class NormalInvocationCompiler implements InvocationCompiler {
         performSuper(file, compiler.getLastLine(), name, arity, hasClosure, splatmap, noSplatMethod, splatMethod, false);
     }
 
+    public void invokeModuleSuper(String file, String name, int arity, boolean hasClosure, boolean literalClosure, boolean[] splatmap) {
+        if (arity > IRBytecodeAdapter.MAX_ARGUMENTS)
+            throw new NotCompilableException("call to unresolved super has more than " + IRBytecodeAdapter.MAX_ARGUMENTS + " arguments");
+
+        String noSplatMethod = "moduleSuper";
+        String splatMethod = "moduleSuperSplatArgs";
+
+        performSuper(file, compiler.getLastLine(), name, arity, hasClosure, splatmap, noSplatMethod, splatMethod, true);
+    }
+
     public void invokeUnresolvedSuper(String file, String name, int arity, boolean hasClosure, boolean literalClosure, boolean[] splatmap) {
         if (arity > IRBytecodeAdapter.MAX_ARGUMENTS)
             throw new NotCompilableException("call to unresolved super has more than " + IRBytecodeAdapter.MAX_ARGUMENTS + " arguments");
