@@ -2848,8 +2848,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     d.var      #=&gt; nil
      */
     public IRubyObject remove_instance_variable(ThreadContext context, IRubyObject name, Block block) {
+        String id = validateInstanceVariable(name);
         ensureInstanceVariablesSettable();
-        IRubyObject value = (IRubyObject) variableTableRemove(validateInstanceVariable(name));
+        IRubyObject value = (IRubyObject) variableTableRemove(id);
         if (value != null) return value;
         throw context.runtime.newNameError("instance variable %1$s not defined", this, name);
     }
