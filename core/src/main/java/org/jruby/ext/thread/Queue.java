@@ -370,7 +370,7 @@ public class Queue extends RubyObject implements DataType {
     public IRubyObject pop(ThreadContext context) {
         initializedCheck();
         try {
-            return context.getThread().executeTaskBlocking(context, this, BLOCKING_POP_TASK);
+            return context.getThread().executeTaskBlocking(context, this, BLOCKING_TAKE_TASK);
         } catch (InterruptedException ie) {
             // FIXME: is this the right thing to do?
             throw createInterruptedError(context, "pop");
@@ -424,21 +424,28 @@ public class Queue extends RubyObject implements DataType {
             }
         }
 
-        return popCommon(context, nonblock, 0);
+        return popCommon(context, nonblock, timeoutNS);
     }
 
     private IRubyObject popCommon(ThreadContext context, boolean nonblock, long timeoutNS) {
         try {
-            if (nonblock || timeoutNS != 0) {
-                IRubyObject result = timeoutNS == 0 ? pollInternal() : pollInternal(timeoutNS, TimeUnit.NANOSECONDS);
-                if (result == null && timeoutNS == 0) {
+            RubyThread.Task<Queue, IRubyObject> task;
+
+            if (nonblock) {
+                IRubyObject result = pollInternal();
+                if (result == null) {
                     throw context.runtime.newThreadError("queue empty");
-                } else {
-                    return result;
                 }
-            } else {
-                return context.getThread().executeTaskBlocking(context, this, BLOCKING_POP_TASK);
+                return result;
             }
+
+            if (timeoutNS != 0) {
+                task = new BlockingPollTask(timeoutNS);
+            } else {
+                task = BLOCKING_TAKE_TASK;
+            }
+
+            return context.getThread().executeTaskBlocking(context, this, task);
         } catch (InterruptedException ie) {
             throw createInterruptedError(context, "pop");
         }
@@ -699,7 +706,7 @@ public class Queue extends RubyObject implements DataType {
         return x;
     }
 
-    private static final RubyThread.Task<Queue, IRubyObject> BLOCKING_POP_TASK = new RubyThread.Task<Queue, IRubyObject>() {
+    private static final RubyThread.Task<Queue, IRubyObject> BLOCKING_TAKE_TASK = new RubyThread.Task<Queue, IRubyObject>() {
         public IRubyObject run(ThreadContext context, Queue queue) throws InterruptedException {
             while (true) {
                 try {
@@ -721,5 +728,28 @@ public class Queue extends RubyObject implements DataType {
 
     protected RaiseException createInterruptedError(ThreadContext context, String methodName) {
         return context.runtime.newThreadError("interrupted in " + getMetaClass().getName() + "#" + methodName);
+    }
+
+    private static class BlockingPollTask implements RubyThread.Task<Queue, IRubyObject> {
+        private final long timeoutNS;
+
+        public BlockingPollTask(long timeoutNS) {
+            this.timeoutNS = timeoutNS;
+        }
+
+        @Override
+        public IRubyObject run(ThreadContext context, Queue queue) throws InterruptedException {
+                IRubyObject result = timeoutNS == 0 ? queue.pollInternal() : queue.pollInternal(timeoutNS, TimeUnit.NANOSECONDS);
+                if (result == null && timeoutNS == 0) {
+                    throw context.runtime.newThreadError("queue empty");
+                } else {
+                    return result;
+                }
+            }
+
+        @Override
+        public void wakeup(RubyThread thread, Queue queue) {
+            thread.getNativeThread().interrupt();
+        }
     }
 }
