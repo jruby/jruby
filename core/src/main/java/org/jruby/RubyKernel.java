@@ -94,6 +94,7 @@ import org.jruby.util.io.PopenExecutor;
 
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.RubyFile.fileResource;
 import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.RubyIO.checkUnsupportedOptions;
 import static org.jruby.RubyIO.checkValidSpawnOptions;
@@ -1760,13 +1761,13 @@ public class RubyKernel {
 
         switch (cmd) {
         case 'A': // ?A  | Time    | Last access time for file1
-            return context.runtime.newFileStat(arg1.convertToString().toString(), false).atime();
+            return context.runtime.newFileStat(fileResource(arg1).path(), false).atime();
         case 'b': // ?b  | boolean | True if file1 is a block device
             return RubyFileTest.blockdev_p(recv, arg1);
         case 'c': // ?c  | boolean | True if file1 is a character device
             return RubyFileTest.chardev_p(recv, arg1);
         case 'C': // ?C  | Time    | Last change time for file1
-            return context.runtime.newFileStat(arg1.convertToString().toString(), false).ctime();
+            return context.runtime.newFileStat(fileResource(arg1).path(), false).ctime();
         case 'd': // ?d  | boolean | True if file1 exists and is a directory
             return RubyFileTest.directory_p(context, recv, arg1);
         case 'e': // ?e  | boolean | True if file1 exists
@@ -1780,7 +1781,7 @@ public class RubyKernel {
         case 'k': // ?k  | boolean | True if file1 exists and has the sticky bit set
             return RubyFileTest.sticky_p(recv, arg1);
         case 'M': // ?M  | Time    | Last modification time for file1
-            return context.runtime.newFileStat(arg1.convertToString().toString(), false).mtime();
+            return context.runtime.newFileStat(fileResource(arg1).path(), false).mtime();
         case 'l': // ?l  | boolean | True if file1 exists and is a symbolic link
             return RubyFileTest.symlink_p(recv, arg1);
         case 'o': // ?o  | boolean | True if file1 exists and is owned by the caller's effective uid
