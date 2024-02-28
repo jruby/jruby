@@ -177,7 +177,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
 
   def test_dash_big_x_sets_extended_options
     # turn on ObjectSpace
-    with_temp_script("ObjectSpace.each_object(Fixnum) {|o| puts o.inspect}") do |s|
+    with_temp_script("ObjectSpace.each_object(Integer) {|o| puts o.inspect}") do |s|
       assert_no_match(/ObjectSpace is disabled/, jruby("-X+O #{s.path} 2>&1"))
       assert_equal 0, $?.exitstatus
     end
