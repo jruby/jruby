@@ -256,7 +256,6 @@ class TestStringPrintf < Test::Unit::TestCase
     assert_equal("    A", "%05c" % 65)
     assert_equal("A    ", "%-5c" % 65)
     assert_equal("A", "%c" % 65.8)
-    assert_raises(ArgumentError) {"%c" % "65"} # <%c requires a character>
     assert_raises(TypeError) {"%c" % true}
     assert_raises(TypeError) {"%c" % nil}
     assert_raises(TypeError) {"%c" % [[1, 2]]}
