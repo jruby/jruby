@@ -228,7 +228,7 @@ public class RubyFileStat extends RubyObject {
         checkInitialized();
         FileTime btime;
 
-        if (Platform.IS_LINUX || Platform.IS_BSD) {
+        if (Platform.IS_LINUX) {
             throw getRuntime().newNotImplementedError("birthtime() function is unimplemented on this machine");
         }
 
