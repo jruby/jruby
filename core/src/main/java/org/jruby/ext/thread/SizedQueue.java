@@ -258,10 +258,25 @@ public class SizedQueue extends Queue {
             if (closed) {
                 raiseClosedError(context);
             }
-            while (count.get() == capacity) {
+            /*
+            Similar to differences in Queue from LinkedBlockingQueue, this checks for the closed flag,
+            propagating a ClosedError along the waiters if we find the queue has been closed while waiting.
+             */
+            boolean isClosed;
+            while (!(isClosed = closed) && count.get() == capacity) {
                 if (nanos <= 0L)
                     return false;
                 nanos = notFull.awaitNanos(nanos);
+            }
+            if (isClosed) {
+                // wake the next in line
+                notFull.signal();
+                // note that this is now a new early exit from the method,
+                // this doesn't matter because for the closed queues it is
+                // not a producer's responsibility to wake the blocked consumers
+                // (they wake each other, while the first in line gets notified
+                // by the close() caller)
+                raiseClosedError(context);
             }
             enqueue(new Node(e));
             c = count.getAndIncrement();
