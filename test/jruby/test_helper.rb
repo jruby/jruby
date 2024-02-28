@@ -34,9 +34,9 @@ module TestHelper
     DEVNULL = '/dev/null'
   end
 
-  IS_JRUBY = defined?(JRUBY_VERSION) ? true : false
+  IS_JRUBY = RUBY_ENGINE == 'jruby'
 
-  if defined? JRUBY_VERSION
+  if IS_JRUBY
     arch = java.lang.System.getProperty('sun.arch.data.model')
     WINDOWS_JVM_64 = (WINDOWS && arch == '64')
   end
