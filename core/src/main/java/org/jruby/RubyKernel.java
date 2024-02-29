@@ -1616,7 +1616,12 @@ public class RubyKernel {
         if (argc == 1) {
             proc = RubyProc.newProc(context.runtime, block, Block.Type.PROC);
         } else if (argc == 2) {
-            proc = (RubyProc)TypeConverter.convertToType(args[1], context.runtime.getProc(), "to_proc", true);
+            if (args[1] instanceof RubyString) {
+                RubyString s = context.runtime.newString("proc {").cat19(((RubyString) args[1])).cat('}');
+                proc = (RubyProc) evalCommon(context, recv, new IRubyObject[] { s });
+            } else {
+                proc = (RubyProc) TypeConverter.convertToType(args[1], context.runtime.getProc(), "to_proc", true);
+            }
         }
 
         context.runtime.getGlobalVariables().setTraceVar(var, proc);
