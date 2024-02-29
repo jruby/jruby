@@ -9,7 +9,6 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.Array;
 
 import java.net.PortUnreachableException;
-import java.net.SocketException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.NonReadableChannelException;
 import java.nio.channels.NonWritableChannelException;
@@ -2574,9 +2573,7 @@ public class Helpers {
 
         ArgumentNode restArg = argsNode.getRestArgNode();
         if (restArg != null) {
-            if (restArg instanceof UnnamedRestArgNode) {
-                if (((UnnamedRestArgNode) restArg).isStar()) descs.add(new ArgumentDescriptor(ArgumentType.anonrest));
-            } else {
+            if (!(restArg instanceof UnnamedRestArgNode) || ((UnnamedRestArgNode) restArg).isStar()) {
                 descs.add(new ArgumentDescriptor(ArgumentType.rest, restArg.getName()));
             }
         }
@@ -2608,8 +2605,7 @@ public class Helpers {
 
         if (argsNode.getKeyRest() != null) {
             RubySymbol argName = argsNode.getKeyRest().getName();
-            // FIXME: Should a argName of "" really get saved that way here?
-            ArgumentType type = argName == null || argName.getBytes().length() == 0 ? ArgumentType.anonkeyrest : ArgumentType.keyrest;
+            ArgumentType type = argName == null ? ArgumentType.anonkeyrest : ArgumentType.keyrest;
             descs.add(new ArgumentDescriptor(type, argName));
         }
         if (argsNode.getBlock() != null) descs.add(new ArgumentDescriptor(ArgumentType.block, argsNode.getBlock().getName()));

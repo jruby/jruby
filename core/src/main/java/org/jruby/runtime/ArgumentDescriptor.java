@@ -41,6 +41,21 @@ public class ArgumentDescriptor {
     public final RubyArray toArrayForm(Ruby runtime, boolean isLambda) {
         ArgumentType argType = type == ArgumentType.req && !isLambda ? ArgumentType.opt : type;
 
+        RubySymbol name = this.name;
+
+        // FIXME: When consolidating block and method parameter arg descriptors eliminate this special *,** handling.
+
+        // Normal {,key}rest arguments have a name but no `*`.  Empty `*` and `**` also have no name but
+        // are displayed as `*` and `**`.  We do not set name properly when defining these because for
+        // methods we have no reference to runtime to construct the symbol for `*` or `**`.
+        if (!type.anonymous && name.getBytes().length() == 0) {
+            if (type == ArgumentType.rest) {
+                name = runtime.newSymbol("*");
+            } else if (type == ArgumentType.keyrest) {
+                name = runtime.newSymbol("**");
+            }
+        }
+
         return argType.toArrayForm(runtime, name);
     }
 
