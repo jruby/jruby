@@ -38,10 +38,10 @@ public class ArgumentDescriptor {
         this(type, null);
     }
 
-    public final RubyArray toArrayForm(Ruby runtime, boolean isLambda, boolean isNative) {
+    public final RubyArray toArrayForm(Ruby runtime, boolean isLambda) {
         ArgumentType argType = type == ArgumentType.req && !isLambda ? ArgumentType.opt : type;
 
-        return argType.toArrayForm(runtime, name, isNative);
+        return argType.toArrayForm(runtime, name);
     }
 
     public RubyString asParameterName(ThreadContext context) {
