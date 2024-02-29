@@ -107,6 +107,7 @@ import static com.headius.backport9.buffer.Buffers.flipBuffer;
 import static com.headius.backport9.buffer.Buffers.limitBuffer;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.anno.FrameField.LASTLINE;
+import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
@@ -1024,8 +1025,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return initializeCommon(context, fileno, vmode, options);
     }
 
-    @JRubyMethod(name = "initialize", visibility = PRIVATE)
+    @JRubyMethod(name = "initialize", visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject fileNumber, IRubyObject modeValue, IRubyObject options, Block unused) {
+        int callInfo = ThreadContext.resetCallInfo(context);
         int fileno = RubyNumeric.fix2int(fileNumber);
 
         // TODO: MRI has a method name in ArgumentError. 
@@ -1033,9 +1035,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         if (modeValue != null && !modeValue.isNil() && !(modeValue instanceof RubyInteger) && !(modeValue instanceof RubyString)) {
             throw context.runtime.newArgumentError(3, 1, 2);
         }
-        if (options == null || options.isNil()) {
-            throw context.runtime.newArgumentError(3, 1, 2);
-        }
+        if (!hasKeywords(callInfo)) throw context.runtime.newArgumentError(3, 1, 2);
 
         return initializeCommon(context, fileno, modeValue, options);
     }
