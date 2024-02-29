@@ -1,4 +1,0 @@
-windows:Kernel#open opens an io when path starts with a pipe
-windows:Kernel#open opens an io when called with a block
-fails:Kernel#open accepts options as keyword arguments
-fails:Kernel#open when given an object that responds to to_open passes keyword arguments onto #to_open as keyword arguments if to_open accepts them

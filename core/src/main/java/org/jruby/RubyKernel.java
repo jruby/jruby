@@ -259,14 +259,12 @@ public class RubyKernel {
 
     @JRubyMethod(name = "open", required = 1, optional = 3, checkArity = false, module = true, visibility = PRIVATE, keywords = true)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        int argc = Arity.checkArgumentCount(context, args, 1, 4);
-
-        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
         Ruby runtime = context.runtime;
-        //        symbol to_open = 0;
         boolean redirect = false;
+        int callInfo = ThreadContext.resetCallInfo(context);
+        boolean keywords = hasKeywords(callInfo);
 
-        if (argc >= 1) {
+        if (args.length >= 1) {
             //            CONST_ID(to_open, "to_open");
             if (args[0].respondsTo("to_open")) {
                 redirect = true;
@@ -288,6 +286,13 @@ public class RubyKernel {
                 }
             }
         }
+
+        // Mild hack. We want to arity-mismatch if extra arg is not really a kwarg but not if it is one.
+        int maxArgs = keywords ? 5 : 4;
+        Arity.checkArgumentCount(context, args, 1, maxArgs);
+
+        //        symbol to_open = 0;
+
         if (redirect) {
             if (keywords) context.callInfo = ThreadContext.CALL_KEYWORD;
             IRubyObject io = args[0].callMethod(context, "to_open", Arrays.copyOfRange(args, 1, args.length));
@@ -295,6 +300,9 @@ public class RubyKernel {
             RubyIO.ensureYieldClose(context, io, block);
             return io;
         }
+
+        // We had to save callInfo from original call because kwargs needs to still pass through to IO#open
+        context.callInfo = callInfo;
         return RubyIO.open(context, runtime.getFile(), args, block);
     }
 
