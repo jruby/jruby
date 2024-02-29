@@ -441,7 +441,7 @@ public class RubyProc extends RubyObject implements DataType {
         BlockBody body = this.getBlock().getBody();
 
         return Helpers.argumentDescriptorsToParameters(context.runtime,
-                body.getArgumentDescriptors(), isLambda);
+                body.getArgumentDescriptors(), isLambda, false);
     }
 
     @JRubyMethod(name = "lambda?")

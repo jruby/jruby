@@ -63,11 +63,14 @@ public enum ArgumentType {
         }
     }
 
-    public RubyArray toArrayForm(Ruby runtime, RubySymbol name) {
+    public RubyArray toArrayForm(Ruby runtime, RubySymbol name, boolean isNative) {
         RubySymbol typeName = runtime.newSymbol(typeId);
 
-        if (this == ArgumentType.anonrest) return runtime.newArray(typeName, runtime.newSymbol("*"));
-        if (this == ArgumentType.anonkeyrest) return runtime.newArray(typeName, runtime.newSymbol("**"));
+        // native methods with anonrest or anonkeyrest do not include :* or :**
+        if (!isNative) {
+            if (this == ArgumentType.anonrest) return runtime.newArray(typeName, runtime.newSymbol("*"));
+            if (this == ArgumentType.anonkeyrest) return runtime.newArray(typeName, runtime.newSymbol("**"));
+        }
 
         return anonymous ? runtime.newArray(typeName) : runtime.newArray(typeName, name);
     }

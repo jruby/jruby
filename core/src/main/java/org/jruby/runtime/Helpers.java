@@ -2647,14 +2647,14 @@ public class Helpers {
     }
 
     /** Convert a parameter list from ArgumentDescriptor format to "Array of Array" format */
-    public static RubyArray argumentDescriptorsToParameters(Ruby runtime, ArgumentDescriptor[] argsDesc, boolean isLambda) {
+    public static RubyArray argumentDescriptorsToParameters(Ruby runtime, ArgumentDescriptor[] argsDesc, boolean isLambda, boolean isNative) {
         if (argsDesc == null) Thread.dumpStack();
 
         final RubyArray params = RubyArray.newBlankArray(runtime, argsDesc.length);
 
         for (int i = 0; i < argsDesc.length; i++) {
             ArgumentDescriptor param = argsDesc[i];
-            params.store(i, param.toArrayForm(runtime, isLambda));
+            params.store(i, param.toArrayForm(runtime, isLambda, isNative));
         }
 
         return params;
@@ -2675,7 +2675,7 @@ public class Helpers {
     public static IRubyObject methodToParameters(Ruby runtime, AbstractRubyMethod recv) {
         DynamicMethod method = recv.getMethod().getRealMethod();
 
-        return argumentDescriptorsToParameters(runtime, methodToArgumentDescriptors(method), true);
+        return argumentDescriptorsToParameters(runtime, methodToArgumentDescriptors(method), true, method.isNative());
     }
 
     public static IRubyObject getDefinedCall(ThreadContext context, IRubyObject self, IRubyObject receiver, String name, IRubyObject definedMessage) {
