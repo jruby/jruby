@@ -4278,25 +4278,27 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     // rb_io_s_binwrite
-    @JRubyMethod(meta = true, required = 2, optional = 2, checkArity = false)
+    @JRubyMethod(meta = true, required = 2, optional = 2, checkArity = false, keywords = true)
     public static IRubyObject binwrite(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return ioStaticWrite(context, recv, args, true);
     }
 
     // MRI: rb_io_s_write
-    @JRubyMethod(name = "write", meta = true, required = 2, optional = 2, checkArity = false)
+    @JRubyMethod(name = "write", meta = true, required = 2, optional = 2, checkArity = false, keywords = true)
     public static IRubyObject write(ThreadContext context, IRubyObject recv, IRubyObject[] argv) {
         return (ioStaticWrite(context, recv, argv, false));
     }
 
     // MRI: io_s_write
     public static IRubyObject ioStaticWrite(ThreadContext context, IRubyObject recv, IRubyObject[] argv, boolean binary) {
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
         final Ruby runtime = context.runtime;
         IRubyObject string, offset, opt;
         string = offset = opt = context.nil;
 
         switch (argv.length) {
             case 4:
+                if (!keywords) throw runtime.newArgumentError(argv.length, 2, 3);
                 opt = argv[3].convertToHash();
                 offset = argv[2];
                 string = argv[1];
