@@ -72,6 +72,11 @@ public class NormalValueCompiler implements ValueCompiler {
         compiler.invokeIRHelper("getObject", sig(RubyClass.class, ThreadContext.class));
     }
 
+    public void pushSymbolClass() {
+        compiler.loadContext();
+        compiler.invokeIRHelper("getObject", sig(RubyClass.class, ThreadContext.class));
+    }
+
     public void pushUndefined() {
         compiler.adapter.getstatic(p(UndefinedValue.class), "UNDEFINED", ci(UndefinedValue.class));
     }

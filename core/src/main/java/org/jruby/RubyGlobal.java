@@ -116,7 +116,8 @@ public class RubyGlobal {
     public static void createGlobals(Ruby runtime) {
         GlobalVariables globals = runtime.getGlobalVariables();
 
-        runtime.defineGlobalConstant("TOPLEVEL_BINDING", runtime.newBinding());
+        runtime.setTopLevelBinding(runtime.newBinding());
+        runtime.defineGlobalConstant("TOPLEVEL_BINDING", runtime.getTopLevelBinding());
 
         initARGV(runtime);
 

@@ -286,7 +286,7 @@ public class RubyLexer extends LexingCommon {
     private IRubyWarnings warnings;
 
     public Ruby getRuntime() {
-        return parser.getConfiguration().getRuntime();
+        return parser.getRuntime();
     }
 
     public int tokenize_ident(int result) {
@@ -539,7 +539,7 @@ public class RubyLexer extends LexingCommon {
 
         // Enebo: This is a hash in MRI for multiple potential compile options but we currently only support one.
         // I am just going to set it and when a second is done we will reevaluate how they are populated.
-        parser.getConfiguration().setFrozenStringLiteral(b == 1);
+        parser.setFrozenStringLiteral(b == 1);
     }
 
     @Override
@@ -674,7 +674,7 @@ public class RubyLexer extends LexingCommon {
 
         StrNode newStr = new StrNode(ruby_sourceline, buffer, codeRange);
 
-        if (parser.getConfiguration().isFrozenStringLiteral()) newStr.setFrozen(true);
+        if (parser.isFrozenStringLiteral()) newStr.setFrozen(true);
 
         return newStr;
     }

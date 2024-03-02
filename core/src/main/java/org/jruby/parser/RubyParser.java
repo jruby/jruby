@@ -36,12 +36,14 @@ package org.jruby.parser;
 import java.io.IOException;
 import java.util.Set;
 
+import org.jruby.Ruby;
 import org.jruby.RubySymbol;
 import org.jruby.ast.*;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.LexingCommon;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.lexer.yacc.StrTerm;
 
 import org.jruby.util.ByteList;
@@ -99,10 +101,10 @@ import static org.jruby.util.CommonByteLists.FWD_BLOCK;
 import static org.jruby.util.CommonByteLists.FWD_KWREST;
  
  public class RubyParser extends RubyParserBase {
-    public RubyParser(LexerSource source, IRubyWarnings warnings) {
-        super(warnings); setLexer(new RubyLexer(this, source, warnings));
+    public RubyParser(Ruby runtime, LexerSource source, DynamicScope scope, org.jruby.parser.ParserType type) {
+        super(runtime, source, scope, type);
     }
-					// line 106 "-"
+					// line 108 "-"
   // %token constants
   public static final int keyword_class = 257;
   public static final int keyword_module = 258;
@@ -1989,7 +1991,7 @@ states[1] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, in
 states[2] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                   /*%%%*/
                   Node expr = ((Node)yyVals[0+yyTop].value);
-                  if (expr != null && !p.getConfiguration().isEvalParse()) {
+                  if (expr != null && !p.isEval()) {
                       /* last expression should not be void */
                       if (((Node)yyVals[0+yyTop].value) instanceof BlockNode) {
                         expr = ((BlockNode)yyVals[0+yyTop].value).getLast();
@@ -6699,9 +6701,8 @@ states[785] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[786] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     if (((Node)yyVals[-2+yyTop].value) instanceof StrNode) {
-                        DStrNode dnode = new DStrNode(yyVals[yyTop - count + 2].start(), p.getEncoding());
-                        dnode.add(((Node)yyVals[-2+yyTop].value));
-                        yyVal = p.createKeyValue(new DSymbolNode(yyVals[yyTop - count + 2].start(), dnode), ((Node)yyVals[0+yyTop].value));
+                        Node label = p.asSymbol(yyVals[yyTop - count + 2].start(), ((Node)yyVals[-2+yyTop].value));
+                        yyVal = p.createKeyValue(label, ((Node)yyVals[0+yyTop].value));
                     } else if (((Node)yyVals[-2+yyTop].value) instanceof DStrNode) {
                         yyVal = p.createKeyValue(new DSymbolNode(yyVals[yyTop - count + 2].start(), ((DStrNode)yyVals[-2+yyTop].value)), ((Node)yyVals[0+yyTop].value));
                     } else {
@@ -6799,7 +6800,7 @@ states[819] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4769 "parse.y"
+					// line 4770 "parse.y"
 
 }
-					// line 14585 "-"
+					// line 14586 "-"

@@ -3,7 +3,7 @@ package org.jruby.ir;
 import org.jruby.ParseResult;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
-import org.jruby.ast.RootNode;
+import org.jruby.ir.builder.IRBuilder;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.persistence.IRWriter;
 import org.jruby.ir.persistence.IRWriterStream;
@@ -19,15 +19,14 @@ import java.io.IOException;
  */
 public abstract class IRTranslator<R, S> {
     public R execute(Ruby runtime, ParseResult result, S specificObject) {
-        IRScriptBody scope = null;
+        IRScriptBody scope;
 
         if (result instanceof IRScriptBody) { // Already have it (likely from read from persistent store).
             scope = (IRScriptBody) result;
-        } else if (result instanceof RootNode) { // Need to perform create IR from AST
-            // FIXME: In terms of writing and reading we should emit enough to rebuild IC + minimal IRScope state
-            InterpreterContext ic = IRBuilder.buildRoot(runtime.getIRManager(), (RootNode) result);
+        } else {
+            InterpreterContext ic = IRBuilder.buildRoot(runtime.getIRManager(), result);
             scope = (IRScriptBody) ic.getScope();
-            scope.setScriptDynamicScope(((RootNode) result).getScope());
+            scope.setScriptDynamicScope(result.getDynamicScope());
 
             if (RubyInstanceConfig.IR_WRITING) {
                 try {

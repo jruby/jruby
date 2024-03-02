@@ -27,11 +27,8 @@
 package org.jruby.ir;
 
 import org.jruby.RubySymbol;
-import org.jruby.ast.DefNode;
-import org.jruby.ast.InstAsgnNode;
-import org.jruby.ast.InstVarNode;
-import org.jruby.ast.Node;
-import org.jruby.ast.visitor.AbstractNodeVisitor;
+import org.jruby.ir.builder.IRBuilder;
+import org.jruby.ir.builder.LazyMethodDefinition;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.GetFieldInstr;
 import org.jruby.ir.instructions.Instr;
@@ -60,10 +57,10 @@ public class IRMethod extends IRScope {
     // Argument description
     protected ArgumentDescriptor[] argDesc = ArgumentDescriptor.EMPTY_ARRAY;
 
-    private volatile DefNode defNode;
+    private volatile LazyMethodDefinition defNode;
 
-    public IRMethod(IRManager manager, IRScope lexicalParent, DefNode defn, ByteList name,
-            boolean isInstanceMethod, int lineNumber, StaticScope staticScope, int coverageMode) {
+    public IRMethod(IRManager manager, IRScope lexicalParent, LazyMethodDefinition defn, ByteList name,
+                    boolean isInstanceMethod, int lineNumber, StaticScope staticScope, int coverageMode) {
         super(manager, lexicalParent, name, lineNumber, staticScope, coverageMode);
 
         this.defNode = defn;
@@ -81,28 +78,13 @@ public class IRMethod extends IRScope {
     }
 
     public MethodData getMethodData() {
-        List<String> ivarNames = new ArrayList<>();
+        List<String> ivarNames;
 
-        DefNode def = defNode;
-        if (def != null) {
-            // walk AST
-            def.getBodyNode().accept(new AbstractNodeVisitor<Object>() {
-                @Override
-                protected Object defaultVisit(Node node) {
-                    if (node == null) return null;
-
-                    if (node instanceof InstVarNode) {
-                        ivarNames.add(((InstVarNode) node).getName().idString());
-                    } else if (node instanceof InstAsgnNode) {
-                        ivarNames.add(((InstAsgnNode) node).getName().idString());
-                    }
-
-                    node.childNodes().forEach(this::defaultVisit);
-
-                    return null;
-                }
-            });
+        LazyMethodDefinition def = defNode;
+        if (def != null) { // walk AST
+            ivarNames = def.getMethodData();
         } else {
+            ivarNames = new ArrayList<>();
             InterpreterContext context = lazilyAcquireInterpreterContext();
 
             // walk instructions
@@ -214,7 +196,7 @@ public class IRMethod extends IRScope {
         return builtInterpreterContextForJavaConstructor();
     }
 
-    final InterpreterContext lazilyAcquireInterpreterContext() {
+    public final InterpreterContext lazilyAcquireInterpreterContext() {
         if (!hasBeenBuilt()) buildMethodImpl();
 
         return interpreterContext;
@@ -223,7 +205,7 @@ public class IRMethod extends IRScope {
     private synchronized void buildMethodImpl() {
         if (hasBeenBuilt()) return;
 
-        IRBuilder builder = IRBuilder.topIRBuilder(getManager(), this);
+        IRBuilder builder = defNode.getBuilder(getManager(), this);
         builder.executesOnce = false; // set up so nested things (modules+) which think it could execute once knows it cannot (it is in a method).
         builder.defineMethodInner(defNode, getLexicalParent(), getCoverageMode()); // sets interpreterContext
         this.defNode = null;
@@ -242,7 +224,6 @@ public class IRMethod extends IRScope {
 
     @Override
     protected LocalVariable findExistingLocalVariable(RubySymbol name, int scopeDepth) {
-        assert scopeDepth == 0: "Local variable depth in IRMethod should always be zero (" + name + " had depth of " + scopeDepth + ")";
         return localVars.get(name);
     }
 

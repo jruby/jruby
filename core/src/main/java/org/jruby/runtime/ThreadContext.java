@@ -784,6 +784,10 @@ public final class ThreadContext {
         return backtrace[backtraceIndex].line;
     }
 
+    public String getFileAndLine() {
+        return "" + getFile() + ":" + getLine();
+    }
+
     public void setLine(int line) {
         backtrace[backtraceIndex].line = line;
     }

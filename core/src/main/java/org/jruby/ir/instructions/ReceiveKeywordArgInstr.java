@@ -19,17 +19,15 @@ import java.util.EnumSet;
 
 public class ReceiveKeywordArgInstr extends ReceiveArgBase implements FixedArityInstr {
     public final RubySymbol key;
-    public final int required;
 
-    public ReceiveKeywordArgInstr(Variable result, Variable keyword, RubySymbol key, int required) {
+    public ReceiveKeywordArgInstr(Variable result, Variable keyword, RubySymbol key) {
         super(Operation.RECV_KW_ARG, result, keyword);
         this.key = key;
-        this.required = required;
     }
 
     @Override
     public String[] toStringNonOperandArgs() {
-        return new String[] { "name: " + getKey(), "req: " + required};
+        return new String[] { "name: " + getKey() };
     }
 
     @Override
@@ -48,18 +46,17 @@ public class ReceiveKeywordArgInstr extends ReceiveArgBase implements FixedArity
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new ReceiveKeywordArgInstr(ii.getRenamedVariable(result), ii.getRenamedVariable(getKeywords()), getKey(), required);
+        return new ReceiveKeywordArgInstr(ii.getRenamedVariable(result), ii.getRenamedVariable(getKeywords()), getKey());
     }
 
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getKey());
-        e.encode(required);
     }
 
     public static ReceiveKeywordArgInstr decode(IRReaderDecoder d) {
-        return new ReceiveKeywordArgInstr(d.decodeVariable(), d.decodeVariable(), d.decodeSymbol(), d.decodeInt());
+        return new ReceiveKeywordArgInstr(d.decodeVariable(), d.decodeVariable(), d.decodeSymbol());
     }
 
     @Override

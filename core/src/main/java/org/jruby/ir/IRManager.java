@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.EnumSet;
 
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.ParseResult;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
@@ -14,6 +16,8 @@ import org.jruby.ast.ModuleNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
 import org.jruby.ext.coverage.CoverageData;
+import org.jruby.ir.builder.IRBuilderFactory;
+import org.jruby.ir.builder.LazyMethodDefinitionAST;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.ReceiveSelfInstr;
 import org.jruby.ir.instructions.ToggleBacktraceInstr;
@@ -68,6 +72,8 @@ public class IRManager {
     private final BuiltinClass arrayClass = new BuiltinClass(BuiltinClass.Type.ARRAY);
     private final BuiltinClass hashClass = new BuiltinClass(BuiltinClass.Type.HASH);
     private final BuiltinClass objectClass = new BuiltinClass(BuiltinClass.Type.OBJECT);
+
+    private final BuiltinClass symbolClass = new BuiltinClass(BuiltinClass.Type.SYMBOL);
     private final StandardError standardError = new StandardError();
     public final ToggleBacktraceInstr needsBacktrace = new ToggleBacktraceInstr(true);
     public final ToggleBacktraceInstr needsNoBacktrace = new ToggleBacktraceInstr(false);
@@ -86,6 +92,7 @@ public class IRManager {
     private final List<CompilerPass> safePasses;
     private final RubyInstanceConfig config;
     public final Ruby runtime;
+    private IRBuilderFactory builderFactory;
 
     public IRManager(Ruby runtime, RubyInstanceConfig config) {
         this.runtime = runtime;
@@ -97,6 +104,14 @@ public class IRManager {
         safePasses = CompilerPass.getPassesFromString(null, SAFE_COMPILER_PASSES);
 
         if (RubyInstanceConfig.IR_DEBUG_IGV != null) instrsListener = new IGVInstrListener();
+    }
+
+    public void setBuilderFactory(IRBuilderFactory builderFactory) {
+        this.builderFactory = builderFactory;
+    }
+
+    public IRBuilderFactory getBuilderFactory() {
+        return builderFactory;
     }
 
     public Ruby getRuntime() {
@@ -395,18 +410,21 @@ public class IRManager {
             RubyModule type = self.getMetaClass();
             String fileName = "classpath:/jruby/ruby_implementations/" + type + "/" + method + ".rb";
             FileResource file = JRubyFile.createResourceAsFile(context.runtime, fileName);
-            Node parseResult = parse(context, file, fileName);
-            IScopingNode scopeNode = (IScopingNode) parseResult.childNodes().get(0);
+            ParseResult parseResult = parse(context, file, fileName);
+            // FIXME: PRISM: This does not work on prism but method inlining is current not working anyways.
+            IScopingNode scopeNode = (IScopingNode) ((RootNode) parseResult.getAST()).childNodes().get(0);
             scopeNode.getScope().setModule(type);
             DefNode defNode = (DefNode) scopeNode.getBodyNode();
-            IRScriptBody script = new IRScriptBody(this, parseResult.getFile(), ((RootNode) parseResult).getStaticScope());
+            IRScriptBody script = new IRScriptBody(this, parseResult.getFile(), parseResult.getStaticScope());
             IRModuleBody containingScope;
             if (scopeNode instanceof ModuleNode) {
                 containingScope = new IRModuleBody(this, script, scopeNode.getCPath().getName().getBytes(), 0, scopeNode.getScope(), false);
             } else {
                 containingScope = new IRClassBody(this, script, scopeNode.getCPath().getName().getBytes(), 0, scopeNode.getScope(), false);
             }
-            IRMethod newMethod = new IRMethod(this, containingScope, defNode, context.runtime.newSymbol(method).getBytes(), true, 0, defNode.getScope(), CoverageData.NONE);
+            // FIXME: Broken with Prism
+            LazyMethodDefinitionAST defn = new LazyMethodDefinitionAST(defNode);
+            IRMethod newMethod = new IRMethod(this, containingScope, defn, context.runtime.newSymbol(method).getBytes(), true, 0, defNode.getScope(), CoverageData.NONE);
 
             newMethod.prepareForCompilation();
 
@@ -417,9 +435,13 @@ public class IRManager {
         }
     }
 
-    private Node parse(ThreadContext context, FileResource file, String fileName) throws IOException {
+    private ParseResult parse(ThreadContext context, FileResource file, String fileName) throws IOException {
         try (InputStream stream = file.openInputStream()) {
-            return context.runtime.parseFile(stream, fileName, null, 0);
+            return context.runtime.getParserManager().parseFile(fileName, 0, stream, UTF8Encoding.INSTANCE);
         }
+    }
+
+    public BuiltinClass getSymbolClass() {
+        return symbolClass;
     }
 }

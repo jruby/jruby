@@ -298,6 +298,46 @@ public class RegexpOptions implements Cloneable {
                 (once == true ? ", once" : "") +                
                 ")";
     }
+
+    // Assumes options string has already been parsed so that we do not need to detect unknown options (Prism will do this).
+    public static RegexpOptions newRegexpOptions(String validOptions) {
+        RegexpOptions options = new RegexpOptions();
+        int length = validOptions.length();
+
+        for (int i = 0; i < length; i++) {
+            switch (validOptions.charAt(i)) {
+                case 'i':
+                    options.setIgnorecase(true);
+                    break;
+                case 'x':
+                    options.setExtended(true);
+                    break;
+                case 'm':
+                    options.setMultiline(true);
+                    break;
+                case 'o':
+                    options.setOnce(true);
+                    break;
+                case 'n':
+                    options.setExplicitKCode(KCode.NONE);
+                    break;
+                case 'e':
+                    options.setExplicitKCode(KCode.EUC);
+                    break;
+                case 's':
+                    options.setExplicitKCode(KCode.SJIS);
+                    break;
+                case 'u':
+                    options.setExplicitKCode(KCode.UTF8);
+                    break;
+                case 'j':
+                    options.setJava(true);
+                    break;
+            }
+        }
+
+        return options;
+    }
     
     private KCode kcode;
     private boolean fixed;

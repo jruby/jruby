@@ -47,7 +47,7 @@ public class FFIService implements Library {
             Factory.getInstance().init(runtime, ffi);
         } catch (Exception e) {
             throw runtime.newLoadError("Could not load FFI Provider: " + e.getLocalizedMessage()
-                    + " See http://jira.codehaus.org/browse/JRUBY-4583");
+                    + "\nSee https://github.com/jruby/jruby/wiki/Native-Libraries#could-not-load-ffi-provider");
         }
     }
 }

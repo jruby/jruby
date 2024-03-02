@@ -17,7 +17,7 @@ import java.util.List;
  */
 public class BuiltinClass extends Operand {
     public enum Type {
-        OBJECT, ARRAY, HASH;
+        OBJECT, ARRAY, HASH, SYMBOL;
 
         public static Type fromOrdinal(int value) {
             return value < 0 || value >= values().length ? null : values()[value];
@@ -75,6 +75,8 @@ public class BuiltinClass extends Operand {
                 return d.getCurrentScope().getManager().getHashClass();
             case OBJECT:
                 return d.getCurrentScope().getManager().getObjectClass();
+            case SYMBOL:
+                return d.getCurrentScope().getManager().getSymbolClass();
             default:
                 throw new RuntimeException("BuiltinClass has unknown type");
         }
@@ -89,6 +91,8 @@ public class BuiltinClass extends Operand {
                 return context.getRuntime().getHash();
             case OBJECT:
                 return context.getRuntime().getObject();
+            case SYMBOL:
+                return context.getRuntime().getSymbol();
             default:
                 throw new RuntimeException("BuiltinClass has unknown type");
         }

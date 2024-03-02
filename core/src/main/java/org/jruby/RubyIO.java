@@ -107,6 +107,7 @@ import static com.headius.backport9.buffer.Buffers.flipBuffer;
 import static com.headius.backport9.buffer.Buffers.limitBuffer;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.anno.FrameField.LASTLINE;
+import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
@@ -123,6 +124,20 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     public static final ByteList PARAGRAPH_SEPARATOR = ByteList.create("\n\n");
     public static final String CLOSED_STREAM_MSG = "closed stream";
+
+    public enum IOEvent {
+        IO_READABLE(1), IO_PRIORITY(2), IO_WRITABLE(4);
+
+        final int value;
+
+        IOEvent(int value) {
+            this.value = value;
+        }
+
+        int getValue() {
+            return value;
+        }
+    }
 
     // This should only be called by this and RubyFile.
     // It allows this object to be created without a IOHandler.
@@ -321,6 +336,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         ioClass.setConstant("SEEK_SET", runtime.newFixnum(PosixShim.SEEK_SET));
         ioClass.setConstant("SEEK_CUR", runtime.newFixnum(PosixShim.SEEK_CUR));
         ioClass.setConstant("SEEK_END", runtime.newFixnum(PosixShim.SEEK_END));
+
+        ioClass.setConstant("READABLE", runtime.newFixnum(IOEvent.IO_READABLE.getValue()));
+        ioClass.setConstant("WRITABLE", runtime.newFixnum(IOEvent.IO_WRITABLE.getValue()));
+        ioClass.setConstant("PRIORITY", runtime.newFixnum(IOEvent.IO_PRIORITY.getValue()));
 
         ioClass.defineModuleUnder("WaitReadable");
         ioClass.defineModuleUnder("WaitWritable");
@@ -869,7 +888,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return klass.newInstance(context, args, block);
     }
 
-    @JRubyMethod(rest = true, meta = true)
+    @JRubyMethod(rest = true, meta = true, keywords = true)
     public static IRubyObject for_fd(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         RubyClass klass = (RubyClass)recv;
 
@@ -1006,8 +1025,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return initializeCommon(context, fileno, vmode, options);
     }
 
-    @JRubyMethod(name = "initialize", visibility = PRIVATE)
+    @JRubyMethod(name = "initialize", visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject fileNumber, IRubyObject modeValue, IRubyObject options, Block unused) {
+        int callInfo = ThreadContext.resetCallInfo(context);
         int fileno = RubyNumeric.fix2int(fileNumber);
 
         // TODO: MRI has a method name in ArgumentError. 
@@ -1015,9 +1035,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         if (modeValue != null && !modeValue.isNil() && !(modeValue instanceof RubyInteger) && !(modeValue instanceof RubyString)) {
             throw context.runtime.newArgumentError(3, 1, 2);
         }
-        if (options == null || options.isNil()) {
-            throw context.runtime.newArgumentError(3, 1, 2);
-        }
+        if (!hasKeywords(callInfo)) throw context.runtime.newArgumentError(3, 1, 2);
 
         return initializeCommon(context, fileno, modeValue, options);
     }
@@ -3901,6 +3919,112 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return args.go(context);
     }
 
+    @JRubyMethod(optional = 1)
+    public IRubyObject wait_readable(ThreadContext context, IRubyObject[] argv) {
+        OpenFile fptr = this.getOpenFileChecked();
+
+        fptr.checkReadable(context);
+
+        long tv = prepareTimeout(context, argv);
+
+        if (fptr.readPending() != 0) return context.tru;
+
+        return doWait(context, fptr, tv, SelectionKey.OP_READ | SelectionKey.OP_ACCEPT);
+    }
+
+    /**
+     * waits until input available or timed out and returns self, or nil when EOF reached.
+     */
+    @JRubyMethod(optional = 1)
+    public IRubyObject wait_writable(ThreadContext context, IRubyObject[] argv) {
+        OpenFile fptr = this.getOpenFileChecked();
+
+        fptr.checkWritable(context);
+
+        long tv = prepareTimeout(context, argv);
+
+        return doWait(context, fptr, tv, SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE);
+    }
+
+    @JRubyMethod(optional = 2)
+    public IRubyObject wait(ThreadContext context, IRubyObject[] argv) {
+        OpenFile fptr = this.getOpenFileChecked();
+
+        int ops = 0;
+
+        if (argv.length == 2) {
+            if (argv[1] instanceof RubySymbol) {
+                RubySymbol sym = (RubySymbol) argv[1];
+                switch (sym.asJavaString()) { // 7 bit comparison
+                    case "r":
+                    case "read":
+                    case "readable":
+                        ops |= SelectionKey.OP_ACCEPT | SelectionKey.OP_READ;
+                        break;
+                    case "w":
+                    case "write":
+                    case "writable":
+                        ops |= SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE;
+                        break;
+                    case "rw":
+                    case "read_write":
+                    case "readable_writable":
+                        ops |= SelectionKey.OP_ACCEPT | SelectionKey.OP_READ | SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE;
+                        break;
+                    default:
+                        throw context.runtime.newArgumentError("unsupported mode: " + sym);
+                }
+            } else if (argv[1] instanceof RubyFixnum) {
+                RubyFixnum fix = (RubyFixnum) argv[1];
+                if ((fix.getIntValue() & IOEvent.IO_READABLE.value) != 0) {
+                    ops |= SelectionKey.OP_ACCEPT | SelectionKey.OP_READ;
+                }
+                if ((fix.getIntValue() & IOEvent.IO_WRITABLE.value) != 0) {
+                    ops |= SelectionKey.OP_WRITE | SelectionKey.OP_WRITE;
+                }
+            } else {
+                throw context.runtime.newArgumentError("unsupported mode: " + argv[1].getType());
+            }
+        } else {
+            ops |= SelectionKey.OP_ACCEPT | SelectionKey.OP_READ;
+        }
+
+        if ((ops & SelectionKey.OP_READ) == SelectionKey.OP_READ && fptr.readPending() != 0) return context.tru;
+
+        long tv = prepareTimeout(context, argv);
+
+        return doWait(context, fptr, tv, ops);
+    }
+
+    private IRubyObject doWait(ThreadContext context, OpenFile fptr, long tv, int ops) {
+        boolean ready = fptr.ready(context.runtime, context.getThread(), ops, tv);
+        fptr.checkClosed();
+        if (ready) return this;
+        return context.nil;
+    }
+
+    private static long prepareTimeout(ThreadContext context, IRubyObject[] argv) {
+        IRubyObject timeout;
+        long tv;
+        switch (argv.length) {
+            case 2:
+            case 1:
+                timeout = argv[0];
+                break;
+            default:
+                timeout = context.nil;
+        }
+
+        if (timeout.isNil()) {
+            tv = -1;
+        }
+        else {
+            tv = (long)(RubyTime.convertTimeInterval(context, timeout) * 1000);
+            if (tv < 0) throw context.runtime.newArgumentError("time interval must be positive");
+        }
+        return tv;
+    }
+
     // MRI: rb_io_advise
     @JRubyMethod(required = 1, optional = 2, checkArity = false)
     public IRubyObject advise(ThreadContext context, IRubyObject[] argv) {
@@ -4102,8 +4226,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     // Enebo: annotation processing forced me to do pangea method here...
-    @JRubyMethod(name = "read", meta = true, required = 1, optional = 3, checkArity = false)
+    @JRubyMethod(name = "read", meta = true, required = 1, optional = 3, checkArity = false, keywords = true)
     public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
         int argc = Arity.checkArgumentCount(context, args, 1, 4);
 
         Ruby runtime = context.runtime;
@@ -4113,7 +4238,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         { // rb_scan_args logic, basically
             if (argc > 3) {
-                if (!(args[3] instanceof RubyHash)) throw runtime.newTypeError("Must be a hash");
+                if (!keywords) throw runtime.newArgumentError(args.length, 1, 4);
                 options = (RubyHash) args[3];
                 offset = args[2];
                 length = args[1];
@@ -4154,25 +4279,27 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     // rb_io_s_binwrite
-    @JRubyMethod(meta = true, required = 2, optional = 2, checkArity = false)
+    @JRubyMethod(meta = true, required = 2, optional = 2, checkArity = false, keywords = true)
     public static IRubyObject binwrite(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return ioStaticWrite(context, recv, args, true);
     }
 
     // MRI: rb_io_s_write
-    @JRubyMethod(name = "write", meta = true, required = 2, optional = 2, checkArity = false)
+    @JRubyMethod(name = "write", meta = true, required = 2, optional = 2, checkArity = false, keywords = true)
     public static IRubyObject write(ThreadContext context, IRubyObject recv, IRubyObject[] argv) {
         return (ioStaticWrite(context, recv, argv, false));
     }
 
     // MRI: io_s_write
     public static IRubyObject ioStaticWrite(ThreadContext context, IRubyObject recv, IRubyObject[] argv, boolean binary) {
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
         final Ruby runtime = context.runtime;
         IRubyObject string, offset, opt;
         string = offset = opt = context.nil;
 
         switch (argv.length) {
             case 4:
+                if (!keywords) throw runtime.newArgumentError(argv.length, 2, 3);
                 opt = argv[3].convertToHash();
                 offset = argv[2];
                 string = argv[1];
