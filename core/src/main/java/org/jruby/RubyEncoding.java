@@ -554,11 +554,6 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         return runtime.getEncodingService().rubyEncodingFromObject(str);
     }
 
-    @JRubyMethod(name = "replicate")
-    public IRubyObject replicate(ThreadContext context, IRubyObject arg) {
-        return new RubyEncoding(context.runtime, arg.convertToString().getBytes(), getEncoding(), isDummy);
-    }
-
     @JRubyMethod(name = "_dump")
     public IRubyObject _dump(ThreadContext context, IRubyObject arg) {
         return to_s(context);
