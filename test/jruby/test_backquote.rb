@@ -7,7 +7,7 @@ class TestBackquote < Test::Unit::TestCase
 
   WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
   def test_backquote_special_commands
-    if File.exists?("/bin/echo")
+    if File.exist?("/bin/echo")
       output = `/bin/echo hello`
       assert_equal("hello\n", output)
     end
@@ -16,7 +16,7 @@ class TestBackquote < Test::Unit::TestCase
 #  def test_backquote_special_commands_and_cwd_inside_classloader
 #    # not sure why it fails with java-1.6 - assume it is rare feature
 #    # and works for java-1.7+
-#    if File.exists?("/bin/echo") and not ENV_JAVA['java.version'].start_with?("1.6.")
+#    if File.exist?("/bin/echo") and not ENV_JAVA['java.version'].start_with?("1.6.")
 #      begin
 #        cwd = Dir.pwd
 #        Dir.chdir('uri:classloader:/')
@@ -29,12 +29,12 @@ class TestBackquote < Test::Unit::TestCase
 #  end
 
   def test_system_special_commands
-    if File.exists?("/bin/true")
+    if File.exist?("/bin/true")
       assert(system("/bin/true"))
       assert_equal(0, $?.exitstatus)
     end
 
-    if File.exists?("/bin/false")
+    if File.exist?("/bin/false")
       assert(! system("/bin/false"))
       assert($?.exitstatus > 0)
     end
@@ -56,7 +56,7 @@ class TestBackquote < Test::Unit::TestCase
 
   # http://jira.codehaus.org/browse/JRUBY-1557
   def test_backquotes_with_redirects_pass_through_shell
-    if File.exists?("/dev/null")
+    if File.exist?("/dev/null")
       File.open("arguments", "w") do |f|
         f << %q{#!/bin/sh} << "\n"
         f << %q{echo "arguments: $@"}

@@ -262,7 +262,7 @@ DEPS
   def test_load_from_jar_with_symlink_in_path
     if !WINDOWS
       begin
-        Dir.mkdir 'not_A' unless File.exists? 'not_A'
+        Dir.mkdir 'not_A' unless File.exist? 'not_A'
         File.symlink("not_A", "A") unless File.symlink?('A')
         with_jruby_shell_spawning do
           `bin/jruby -e "load File.join('file:', File.join(File.expand_path(File.dirname(File.dirname('#{__FILE__}'))), 'jruby/requireTest-1.0.jar!'), 'A', 'B.rb') ; B"`
@@ -270,7 +270,7 @@ DEPS
         end
       ensure
         File.delete("A") if File.symlink?('A')
-        Dir.rmdir 'not_A' if File.exists? 'not_A'
+        Dir.rmdir 'not_A' if File.exist? 'not_A'
       end
     end
   end
@@ -310,7 +310,7 @@ DEPS
 
   def test_symlinked_jar
     Dir.chdir('test/jruby') do
-      FileUtils.cp 'jar_with_ruby_files.jar', 'jarwithoutextension' unless File.exists?('jarwithoutextension')
+      FileUtils.cp 'jar_with_ruby_files.jar', 'jarwithoutextension' unless File.exist?('jarwithoutextension')
       File.symlink 'jarwithoutextension', 'symlink.jar' unless File.symlink?('symlink.jar')
     end
 
