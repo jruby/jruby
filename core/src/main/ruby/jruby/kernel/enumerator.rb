@@ -503,10 +503,10 @@ class Enumerator::Product < Enumerator
   def size
     total_size = 1
     @__enums.each do |enum|
-      return nil if !enum.respond_to?(:size)
+      return nil unless enum.respond_to?(:size)
       size = enum.size
       return size if size == nil || size == Float::INFINITY || size == -Float::INFINITY
-      return nil if !size.kind_of?(Integer) || size.equal?(Float::NAN)
+      return nil unless size.kind_of?(Integer)
       total_size *= size
     end
     total_size
