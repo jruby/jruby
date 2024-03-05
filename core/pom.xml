@@ -12,7 +12,7 @@ DO NOT MODIFY - GENERATED CODE
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>9.5.0.0-SNAPSHOT</version>
+    <version>10.0.0.0-SNAPSHOT</version>
   </parent>
   <artifactId>jruby-base</artifactId>
   <name>JRuby Base</name>
@@ -55,8 +55,8 @@ DO NOT MODIFY - GENERATED CODE
     <test.results.dir>${build.dir}/test-results</test.results.dir>
     <tzdata.scope>provided</tzdata.scope>
     <tzdata.version>2019c</tzdata.version>
-    <version.ruby>3.3.0</version.ruby>
-    <version.ruby.major>3.3</version.ruby.major>
+    <version.ruby>3.4.0</version.ruby>
+    <version.ruby.major>3.4</version.ruby.major>
     <version.ruby.minor>0</version.ruby.minor>
   </properties>
   <dependencies>
@@ -711,7 +711,7 @@ DO NOT MODIFY - GENERATED CODE
                     <path>
                       <groupId>org.jruby</groupId>
                       <artifactId>jruby-base</artifactId>
-                      <version>9.5.0.0-SNAPSHOT</version>
+                      <version>10.0.0.0-SNAPSHOT</version>
                     </path>
                   </annotationProcessorPaths>
                 </configuration>
