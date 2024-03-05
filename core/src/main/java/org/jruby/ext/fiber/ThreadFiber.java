@@ -198,8 +198,8 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
             default: val = new FiberRequest(RubyArray.newArrayMayCopy(runtime, values), RequestType.DATA);
         }
         
-        if (data.parent != context.getFiberCurrentThread()) throw runtime.newFiberError("fiber called across threads");
-        
+        if (data.parent != context.getFiberCurrentThread()) fiberCalledAcrossThreads(runtime);
+
         data.prev = context.getFiber();
 
         FiberRequest result;
@@ -218,6 +218,10 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         }
 
         return processResultData(context, result);
+    }
+
+    private static void fiberCalledAcrossThreads(Ruby runtime) {
+        throw runtime.newFiberError("fiber called across threads");
     }
 
     @JRubyMethod(rest = true)
@@ -349,8 +353,8 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
             default: val = new FiberRequest(RubyArray.newArrayMayCopy(runtime, values), RequestType.DATA);
         }
         
-        if (data.parent != context.getFiberCurrentThread()) throw runtime.newFiberError("fiber called across threads");
-        
+        if (data.parent != context.getFiberCurrentThread()) fiberCalledAcrossThreads(runtime);
+
         if (currentFiberData.prev != null) {
             // new fiber should answer to current prev and this fiber is marked as transferred
             data.prev = currentFiberData.prev;
@@ -388,7 +392,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
             RubyKernel.raise(context, this, exception);
         }
 
-        if (data.parent != context.getFiberCurrentThread()) throw runtime.newFiberError("fiber called across threads");
+        if (data.parent != context.getFiberCurrentThread()) fiberCalledAcrossThreads(runtime);
 
         FiberRequest val = new FiberRequest(exception, RequestType.RAISE);
 
