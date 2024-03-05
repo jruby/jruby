@@ -27,4 +27,4 @@ load 'jruby/kernel/range.rb'
 load 'jruby/kernel/file.rb'
 load 'jruby/kernel/method.rb'
 load 'jruby/kernel/thread.rb'
-
+load 'jruby/kernel/data.rb'
