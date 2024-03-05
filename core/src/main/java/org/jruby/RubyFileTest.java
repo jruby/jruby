@@ -368,7 +368,7 @@ public class RubyFileTest {
             return RubyFileTest.executable_real_p(recv, filename);
         }
 
-        @JRubyMethod(name = {"exist?", "exists?"})
+        @JRubyMethod(name = {"exist?"})
         public static IRubyObject exist_p(ThreadContext context, IRubyObject recv, IRubyObject filename) {
             return RubyFileTest.exist_p(context, recv, filename);
         }
