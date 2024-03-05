@@ -1404,8 +1404,7 @@ public class RubyClass extends RubyModule {
         final boolean concreteExt = java_box[0]; 
 
         // calculate an appropriate name, for anonymous using inspect like format e.g. "Class:0x628fad4a"
-        final String name = getBaseName() != null ? getName() :
-                ( "Class_0x" + Integer.toHexString(System.identityHashCode(this)) );
+        final String name = getBaseName() != null ? getName() : ( "Class_0x" + Integer.toHexString(System.identityHashCode(this)) );
 
         final String javaName = "rubyobj." + StringSupport.replaceAll(name, "::", ".");
         final String javaPath = "rubyobj/" + StringSupport.replaceAll(name, "::", "/");
@@ -1415,8 +1414,8 @@ public class RubyClass extends RubyModule {
             throw getClassRuntime().newTypeError(getName() + "'s parent class is not yet reified");
         }
 
-        Class reifiedParent = RubyObject.class;
-        if (superClass.reifiedClass != null) reifiedParent = superClass.reifiedClass;
+        Class<?> reifiedParent = superClass.reifiedClass;
+        if (reifiedParent == null) reifiedParent = RubyObject.class;
 
         Reificator reifier;
         if (concreteExt) {
@@ -1427,24 +1426,29 @@ public class RubyClass extends RubyModule {
 
         final byte[] classBytes = reifier.reify();
 
-        final ClassDefiningClassLoader parentCL;
+        ClassDefiningClassLoader classLoader; // usually parent's class-loader
         if (parentReified.getClassLoader() instanceof OneShotClassLoader) {
-            parentCL = (OneShotClassLoader) parentReified.getClassLoader();
+            classLoader = (OneShotClassLoader) parentReified.getClassLoader();
+
+            if (classLoader.hasDefinedClass(javaName)) { // class removed after being reified but parent got kept around
+                // while this seems like a leak the parent Java class might be GCable just hasn't been collected, yet
+                classLoader = new OneShotClassLoader((OneShotClassLoader) classLoader);
+            }
         } else {
             if (useChildLoader) {
                 MultiClassLoader parentLoader = new MultiClassLoader(runtime.getJRubyClassLoader());
                 for(Loader cLoader : runtime.getInstanceConfig().getExtraLoaders()) {
                     parentLoader.addClassLoader(cLoader.getClassLoader());
                 }
-                parentCL = new OneShotClassLoader(parentLoader);
+                classLoader = new OneShotClassLoader(parentLoader);
             } else {
-                parentCL = runtime.getJRubyClassLoader();
+                classLoader = runtime.getJRubyClassLoader();
             }
         }
         boolean nearEnd = false;
         // Attempt to load the name we plan to use; skip reification if it exists already (see #1229).
         try {
-            Class result = parentCL.defineClass(javaName, classBytes);
+            Class result = classLoader.defineClass(javaName, classBytes);
             dumpReifiedClass(classDumpDir, javaPath, classBytes);
 
             //Trigger initilization
