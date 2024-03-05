@@ -3348,7 +3348,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         Ruby runtime = context.runtime;
 
         for (int i = 0; i < realLength; i++) {
-            IRubyObject v = eltOk(i);
+            IRubyObject v = TypeConverter.checkArrayType(context, sites(context).to_ary_checked, eltOk(i));
             if (v instanceof RubyArray) {
                 RubyArray arr = (RubyArray)v;
                 if (arr.realLength > 1 && equalInternal(context, arr.eltOk(1), value)) return arr;
