@@ -1356,10 +1356,12 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (step == 1) return subseq(beg, len);
 
         long orig_len = len;
-        if ((step > 0 && step >= len) || (step < 0 && (step < -len))) {
+        if (step > 0 && step >= len) {
             RubyArray result = newArray(runtime, 1);
             result.append(eltOk(beg));
             return result;
+        } else if (step < 0 && (step < -len)) {
+            step = -len;
         }
 
         long ustep = (step < 0) ? -step : step;
