@@ -611,9 +611,7 @@ public class RubyGlobal {
         @JRubyMethod(name = "clone")
         @Override
         public IRubyObject rbClone(ThreadContext context) {
-            context.runtime.getWarnings().warnDeprecatedAlternate("ENV.clone", "ENV.to_h");
-
-            return this;
+            throw context.runtime.newTypeError("Cannot clone ENV, use ENV.to_h to get a copy of ENV as a hash");
         }
 
         @JRubyMethod(name = "clone")
