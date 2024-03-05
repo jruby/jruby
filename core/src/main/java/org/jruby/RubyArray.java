@@ -3345,8 +3345,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     @JRubyMethod(name = "rassoc")
     public IRubyObject rassoc(ThreadContext context, IRubyObject value) {
-        Ruby runtime = context.runtime;
-
         for (int i = 0; i < realLength; i++) {
             IRubyObject v = TypeConverter.checkArrayType(context, sites(context).to_ary_checked, eltOk(i));
             if (v instanceof RubyArray) {
