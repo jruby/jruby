@@ -875,6 +875,11 @@ public class RubyNumeric extends RubyObject {
 
     public IRubyObject numRemainder(ThreadContext context, IRubyObject y) {
         RubyNumeric x = this;
+        if (!(y instanceof RubyNumeric)) {
+            RubyArray coerced = doCoerce(context, y, true);
+            y = coerced.eltOk(1);
+            x = (RubyNumeric) coerced.eltOk(0);
+        }
         JavaSites.NumericSites sites = sites(context);
         IRubyObject z = sites.op_mod.call(context, this, this, y);
 
