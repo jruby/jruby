@@ -19,7 +19,7 @@ default_gems = [
     # - we do not want bin/update_rubygems or bin/gem overrides
     ['rubygems-update', '3.5.6', { bin: false, require_paths: ['lib'] }],
     ['benchmark', '0.3.0'],
-    ['bundler', '2.5.3'],
+    ['bundler', '2.5.6'],
     ['cgi', '0.4.1'],
     # Currently using a stub gem for JRuby until we can incorporate our code.
     # https://github.com/ruby/date/issues/48
@@ -45,13 +45,13 @@ default_gems = [
     # ['io-nonblock', '0.1.0'],
     ['io-wait', '0.3.1'],
     ['ipaddr', '1.2.6'],
-    ['irb', '1.11.0'],
+    ['irb', '1.11.2'],
     ['jar-dependencies', '0.4.1'],
     ['jruby-readline', '1.3.7'],
     ['jruby-openssl', '0.14.3'],
     ['json', '2.7.1'],
     ['logger', '1.6.0'],
-    ['net-http', '0.4.0'],
+    ['net-http', '0.4.1'],
     ['net-protocol', '0.2.2'],
     ['open3', '0.2.1'],
     # https://github.com/ruby/openssl/issues/20#issuecomment-1022872855
@@ -74,7 +74,7 @@ default_gems = [
     # ['readline', '0.0.4'],
     # Will be solved with readline
     # ['readline-ext', '0.1.4'],
-    ['reline', '0.4.2'],
+    ['reline', '0.4.3'],
     # https://github.com/ruby/resolv/issues/19
     # ['resolv', '0.2.1'],
     ['ruby2_keywords', '0.0.5'],
@@ -89,7 +89,7 @@ default_gems = [
       ['subspawn-posix', '0.1.1'],
       ['ffi-binary-libfixposix', '0.5.1.1'],
       ['ffi-bindings-libfixposix', '0.5.1.0'],
-    ['syntax_suggest', '1.0.1'],
+    ['syntax_suggest', '2.0.0'],
     # https://github.com/ruby/tempfile/issues/7
     # ['tempfile', '0.1.2'],
     ['time', '0.3.0'],
