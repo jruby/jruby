@@ -137,6 +137,7 @@ public class EncodingUtils {
         return value == null ? runtime.getNil() : value;
     }
 
+    // MRI: rb_ascii8bit_encoding
     public static Encoding ascii8bitEncoding(Ruby runtime) {
         return runtime.getEncodingService().getAscii8bitEncoding();
     }
@@ -2308,8 +2309,8 @@ public class EncodingUtils {
         return getEncoding(str.getByteList());
     }
 
-    public static RubyString rbStrEscape(Ruby runtime, RubyString str) {
-        return (RubyString) RubyString.rbStrEscape(runtime.getCurrentContext(), str);
+    public static RubyString rbStrEscape(ThreadContext context, RubyString str) {
+        return (RubyString) RubyString.rbStrEscape(context, str);
     }
 
     // MRI: ISPRINT
