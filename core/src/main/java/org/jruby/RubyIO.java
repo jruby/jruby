@@ -2435,11 +2435,11 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         if (this != write_io) {
             fptr = write_io.getOpenFileChecked();
             if (fptr != null && 0 <= (fd = fptr.fd().realFileno)) {
-                if ((ret = posix.fcntl(fd, Fcntl.F_GETFD)) == -1) return API.rb_sys_fail_path(runtime, fptr.getPath());
+                if ((ret = posix.fcntl(fd, Fcntl.F_GETFD)) == -1) return API.sysFailWithPath(context, fptr.getPath());
                 if ((ret & FD_CLOEXEC) != flag) {
                     ret = (ret & ~FD_CLOEXEC) | flag;
                     ret = posix.fcntlInt(fd, Fcntl.F_SETFD, ret);
-                    if (ret == -1) API.rb_sys_fail_path(runtime, fptr.getPath());
+                    if (ret == -1) API.sysFailWithPath(context, fptr.getPath());
                 }
             }
 
@@ -2447,11 +2447,11 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         fptr = getOpenFileChecked();
         if (fptr != null && 0 <= (fd = fptr.fd().realFileno)) {
-            if ((ret = posix.fcntl(fd, Fcntl.F_GETFD)) == -1) API.rb_sys_fail_path(runtime, fptr.getPath());
+            if ((ret = posix.fcntl(fd, Fcntl.F_GETFD)) == -1) API.sysFailWithPath(context, fptr.getPath());
             if ((ret & FD_CLOEXEC) != flag) {
                 ret = (ret & ~FD_CLOEXEC) | flag;
                 ret = posix.fcntlInt(fd, Fcntl.F_SETFD, ret);
-                if (ret == -1) API.rb_sys_fail_path(runtime, fptr.getPath());
+                if (ret == -1) API.sysFailWithPath(context, fptr.getPath());
             }
         }
 
@@ -2477,14 +2477,14 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         if (this != write_io) {
             fptr = write_io.getOpenFileChecked();
             if (fptr != null && 0 <= (fd = fptr.fd().realFileno)) {
-                if ((ret = posix.fcntl(fd, Fcntl.F_GETFD)) == -1) API.rb_sys_fail_path(runtime, fptr.getPath());
+                if ((ret = posix.fcntl(fd, Fcntl.F_GETFD)) == -1) API.sysFailWithPath(context, fptr.getPath());
                 if ((ret & FD_CLOEXEC) == 0) return context.fals;
             }
         }
 
         fptr = getOpenFileChecked();
         if (fptr != null && 0 <= (fd = fptr.fd().realFileno)) {
-            if ((ret = posix.fcntl(fd, Fcntl.F_GETFD)) == -1) API.rb_sys_fail_path(runtime, fptr.getPath());
+            if ((ret = posix.fcntl(fd, Fcntl.F_GETFD)) == -1) API.sysFailWithPath(context, fptr.getPath());
             if ((ret & FD_CLOEXEC) == 0) return context.fals;
         }
         return context.tru;

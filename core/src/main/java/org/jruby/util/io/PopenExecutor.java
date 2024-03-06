@@ -601,9 +601,9 @@ public class PopenExecutor {
         int[] pair = {-1,-1}, writePair = {-1, -1};
         switch (fmode & (OpenFile.READABLE|OpenFile.WRITABLE)) {
             case OpenFile.READABLE | OpenFile.WRITABLE:
-                if (API.rb_pipe(runtime, writePair) == -1)
+                if (API.newPipe(context, writePair) == -1)
                     throw runtime.newErrnoFromErrno(posix.getErrno(), prog.toString());
-                if (API.rb_pipe(runtime, pair) == -1) {
+                if (API.newPipe(context, pair) == -1) {
                     e = posix.getErrno();
                     runtime.getPosix().close(writePair[1]);
                     runtime.getPosix().close(writePair[0]);
@@ -615,14 +615,14 @@ public class PopenExecutor {
 
                 break;
             case OpenFile.READABLE:
-                if (API.rb_pipe(runtime, pair) == -1)
+                if (API.newPipe(context, pair) == -1)
                     throw runtime.newErrnoFromErrno(posix.getErrno(), prog.toString());
 
                 if (eargp != null) prepareStdioRedirects(runtime, pair, null, eargp);
 
                 break;
             case OpenFile.WRITABLE:
-                if (API.rb_pipe(runtime, pair) == -1)
+                if (API.newPipe(context, pair) == -1)
                     throw runtime.newErrnoFromErrno(posix.getErrno(), prog.toString());
 
                 if (eargp != null) prepareStdioRedirects(runtime, null, pair, eargp);
