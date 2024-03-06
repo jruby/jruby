@@ -828,6 +828,8 @@ public class RubyKernel {
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject sleep(ThreadContext context, IRubyObject recv, IRubyObject timeout) {
+        if (timeout.isNil()) return sleep(context, recv);
+
         long milliseconds = (long) (RubyTime.convertTimeInterval(context, timeout) * 1000);
         // Explicit zero in MRI returns immediately
         if (milliseconds == 0) return RubyFixnum.zero(context.runtime);
