@@ -294,7 +294,7 @@ public abstract class JavaUtil {
                 } else {
                     buf.setEncoding(s.getEncoding());
                 }
-                buf.cat19(s);
+                buf.catWithCodeRange(s);
             }
         }
 

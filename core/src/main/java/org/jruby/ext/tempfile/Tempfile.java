@@ -231,11 +231,6 @@ public class Tempfile extends RubyFile implements Finalizable {
         }
     }
 
-    @Deprecated
-    public static IRubyObject open19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        return open(context, recv, args, block);
-    }
-
     @JRubyMethod(optional = 4, checkArity = false, meta = true, keywords = true)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         RubyClass klass = (RubyClass) recv;

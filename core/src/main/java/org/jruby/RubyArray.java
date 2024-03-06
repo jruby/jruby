@@ -41,7 +41,6 @@ package org.jruby;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
@@ -59,7 +58,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.RangeError;
 import org.jruby.java.util.ArrayUtils;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
@@ -811,11 +809,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return false;
     }
 
-    @Deprecated
-    public RubyFixnum hash19(ThreadContext context) {
-        return hash(context);
-    }
-
     @Override
     public RubyFixnum hash() {
         return hash(metaClass.runtime.getCurrentContext());
@@ -1141,11 +1134,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return this;
     }
 
-    @Deprecated
-    public IRubyObject insert19(IRubyObject arg) {
-        return insert(arg);
-    }
-
     @JRubyMethod(name = "insert")
     public IRubyObject insert(IRubyObject arg1, IRubyObject arg2) {
         modifyCheck();
@@ -1165,11 +1153,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         }
 
         spliceOne(pos, val); // rb_ary_new4
-    }
-
-    @Deprecated
-    public IRubyObject insert19(IRubyObject arg1, IRubyObject arg2) {
-        return insert(arg1, arg2);
     }
 
     @JRubyMethod(name = "insert", required = 1, rest = true, checkArity = false)
@@ -1197,11 +1180,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         splice(runtime, checkInt(runtime, pos), 0, inserted, inserted.realLength); // rb_ary_new4
 
         return this;
-    }
-
-    @Deprecated
-    public IRubyObject insert19(IRubyObject[] args) {
-        return insert(args);
     }
 
     /** rb_ary_transpose
@@ -1477,11 +1455,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return this;
     }
 
-    @Deprecated
-    public RubyArray push_m19(IRubyObject[] items) {
-        return push(items);
-    }
-
     /** rb_ary_pop
      *
      */
@@ -1545,11 +1518,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return this;
     }
 
-    @Deprecated
-    public IRubyObject unshift19() {
-        return unshift();
-    }
-
     /** rb_ary_unshift
      *
      */
@@ -1577,11 +1545,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return this;
     }
 
-    @Deprecated
-    public IRubyObject unshift19(IRubyObject item) {
-        return unshift(item);
-    }
-
     @JRubyMethod(name = "unshift", alias = "prepend",  rest = true)
     public IRubyObject unshift(IRubyObject[] items) {
         unpack();
@@ -1602,11 +1565,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         }
 
         return this;
-    }
-
-    @Deprecated
-    public IRubyObject unshift19(IRubyObject[] items) {
-        return unshift(items);
     }
 
     /** rb_ary_includes
@@ -1659,11 +1617,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         }
     }
 
-    @Deprecated
-    public IRubyObject aref19(IRubyObject arg0) {
-        return aref(getRuntime().getCurrentContext(), arg0);
-    }
-
     private IRubyObject arefCommon(IRubyObject arg0) {
         Ruby runtime = metaClass.runtime;
 
@@ -1687,11 +1640,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     @JRubyMethod(name = {"[]", "slice"})
     public IRubyObject aref(IRubyObject arg0, IRubyObject arg1) {
         return arefCommon(arg0, arg1);
-    }
-
-    @Deprecated
-    public IRubyObject aref19(IRubyObject arg0, IRubyObject arg1) {
-        return aref(arg0, arg1);
     }
 
     private IRubyObject arefCommon(IRubyObject arg0, IRubyObject arg1) {
@@ -1756,11 +1704,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         }
     }
 
-    @Deprecated
-    public IRubyObject aset19(IRubyObject arg0, IRubyObject arg1) {
-        return aset(arg0, arg1);
-    }
-
     /** rb_ary_aset
     *
     */
@@ -1769,11 +1712,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         modifyCheck();
         splice(metaClass.runtime, RubyNumeric.num2int(arg0), RubyNumeric.num2int(arg1), arg2);
         return arg2;
-    }
-
-    @Deprecated
-    public IRubyObject aset19(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        return aset(arg0, arg1, arg2);
     }
 
     /** rb_ary_at
@@ -1831,11 +1769,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return concat(metaClass.runtime.getCurrentContext(), obj);
     }
 
-    @Deprecated
-    public RubyArray concat19(IRubyObject obj) {
-        return concat(obj);
-    }
-
     /** inspect_ary
      *
      */
@@ -1853,7 +1786,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             } else {
                 EncodingUtils.encAssociateIndex(str, s.getEncoding());
             }
-            str.cat19(s);
+            str.catWithCodeRange(s);
         }
         str.cat((byte) ']');
 
@@ -2067,17 +2000,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return block.isGiven() ? reverseEach(context, block) : enumeratorizeWithSize(context, this, "reverse_each", RubyArray::size);
     }
 
-    /** rb_ary_join
-     *
-     */
-    public IRubyObject join(ThreadContext context, IRubyObject sep) {
-        return join19(context, sep);
-    }
-
-    public IRubyObject join(ThreadContext context) {
-        return join19(context);
-    }
-
     // MRI: ary_join_0
     protected int joinStrings(RubyString sep, int max, RubyString result) {
         IRubyObject first;
@@ -2090,7 +2012,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             for (i = 0; i < max; i++) {
                 IRubyObject val = eltInternal(i);
                 if (!(val instanceof RubyString)) break;
-                if (i > 0 && sep != null) result.cat19(sep);
+                if (i > 0 && sep != null) result.catWithCodeRange(sep);
                 result.append(val);
             }
         } catch (ArrayIndexOutOfBoundsException e) {
@@ -2108,7 +2030,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         JavaSites.CheckedSites to_ary_checked = null;
 
         for (; i < realLength; i++) {
-            if (i > 0 && sep != null) result.cat19(sep);
+            if (i > 0 && sep != null) result.catWithCodeRange(sep);
 
             IRubyObject val = eltOk(i);
 
@@ -2139,7 +2061,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     // MRI: ary_join_1, str_join label
     private static void strJoin(RubyString result, RubyString val, boolean[] first) {
-        result.cat19(val);
+        result.catWithCodeRange(val);
         if (first[0]) {
             result.setEncoding(val.getEncoding());
             first[0] = false;
@@ -2156,11 +2078,16 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         context.safeRecurse(JOIN_RECURSIVE, new JoinRecursive.State(ary, outValue, sep, result, first), outValue, "join", true);
     }
 
+    @Deprecated
+    public IRubyObject join19(final ThreadContext context, IRubyObject sep) {
+        return join(context, sep);
+    }
+
     /** rb_ary_join
      *
      */
     @JRubyMethod(name = "join")
-    public IRubyObject join19(final ThreadContext context, IRubyObject sep) {
+    public IRubyObject join(final ThreadContext context, IRubyObject sep) {
         final Ruby runtime = context.runtime;
 
         if (sep == context.nil) {
@@ -2197,9 +2124,14 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return result;
     }
 
-    @JRubyMethod(name = "join")
+    @Deprecated
     public IRubyObject join19(ThreadContext context) {
-        return join19(context, getDefaultSeparator(context.runtime));
+        return join(context);
+    }
+
+    @JRubyMethod(name = "join")
+    public IRubyObject join(ThreadContext context) {
+        return join(context, getDefaultSeparator(context.runtime));
     }
 
     private IRubyObject getDefaultSeparator(Ruby runtime) {
@@ -2370,11 +2302,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         RubyArray ary = aryDup();
         ary.compact_bang();
         return ary;
-    }
-
-    @Deprecated
-    public IRubyObject compact19() {
-        return compact();
     }
 
     /** rb_ary_empty_p
@@ -3465,11 +3392,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return context.nil;
     }
 
-    @Deprecated
-    public IRubyObject flatten_bang19(ThreadContext context, IRubyObject arg) {
-        return flatten_bang(context, arg);
-    }
-
     @JRubyMethod(name = "flatten")
     public IRubyObject flatten(ThreadContext context) {
         Ruby runtime = context.runtime;
@@ -3488,16 +3410,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         RubyArray result = new RubyArray(runtime, runtime.getArray(), realLength);
         flatten(context, level, result);
         return result;
-    }
-
-    @Deprecated
-    public IRubyObject flatten19(ThreadContext context) {
-        return flatten(context);
-    }
-
-    @Deprecated
-    public IRubyObject flatten19(ThreadContext context, IRubyObject arg) {
-        return flatten(context, arg);
     }
 
     @JRubyMethod(name = "count")
@@ -3579,7 +3491,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     public IRubyObject op_times(ThreadContext context, IRubyObject times) {
         IRubyObject tmp = times.checkStringType();
 
-        if (!tmp.isNil()) return join19(context, tmp);
+        if (!tmp.isNil()) return join(context, tmp);
 
         long len = RubyNumeric.num2long(times);
         Ruby runtime = context.runtime;
@@ -3605,11 +3517,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         }
 
         return ary2;
-    }
-
-    @Deprecated
-    public IRubyObject op_times19(ThreadContext context, IRubyObject times) {
-        return op_times(context, times);
     }
 
     /** ary_make_hash
@@ -3695,11 +3602,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return this;
     }
 
-    @Deprecated
-    public IRubyObject uniq_bang19(ThreadContext context, Block block) {
-        return uniq_bang(context, block);
-    }
-
     /** rb_ary_uniq
      *
      */
@@ -3727,11 +3629,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         result.setValuesFrom(context, hash);
         result.realLength = newLength;
         return result;
-    }
-
-    @Deprecated
-    public IRubyObject uniq19(ThreadContext context, Block block) {
-        return uniq(context, block);
     }
 
     /** rb_ary_diff
@@ -3966,11 +3863,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return ary;
     }
 
-    @Deprecated
-    public RubyArray sort19(ThreadContext context, Block block) {
-        return sort(context, block);
-    }
-
     /** rb_ary_sort_bang
      *
      */
@@ -3981,11 +3873,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             return block.isGiven() ? sortInternal(context, block) : sortInternal(context, true);
         }
         return this;
-    }
-
-    @Deprecated
-    public IRubyObject sort_bang19(ThreadContext context, Block block) {
-        return sort_bang(context, block);
     }
 
     protected IRubyObject sortInternal(final ThreadContext context, final boolean honorOverride) {
@@ -4336,11 +4223,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (useBlock) return this;
         result.realLength = resultLen;
         return result;
-    }
-
-    @Deprecated
-    public IRubyObject product19(ThreadContext context, IRubyObject[] args, Block block) {
-        return product(context, args, block);
     }
 
     /** rb_ary_combination
@@ -6014,16 +5896,6 @@ float_loop:
         return context.sites.Array;
     }
 
-    @Deprecated
-    public IRubyObject compatc19() {
-        return compact19();
-    }
-
-    @Deprecated
-    public final RubyArray aryDup19() {
-        return aryDup();
-    }
-
     /**
      * Increases the capacity of this <code>Array</code>, if necessary.
      * @param minCapacity the desired minimum capacity of the internal array
@@ -6039,21 +5911,6 @@ float_loop:
             this.values = values;
             this.begin = 0;
         }
-    }
-
-    @Deprecated
-    public IRubyObject flatten_bang19(ThreadContext context) {
-        return flatten_bang(context);
-    }
-
-    @Deprecated
-    public IRubyObject map19(ThreadContext context, Block block) {
-        return map(context, block);
-    }
-
-    @Deprecated
-    public IRubyObject collect19(ThreadContext context, Block block) {
-        return rbCollect(context, block);
     }
 
     @Deprecated

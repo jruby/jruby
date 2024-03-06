@@ -400,7 +400,8 @@ public class EncodingUtils {
         /* when the conversion failed for some reason, just ignore the
          * default_internal and result in the given encoding as-is. */
         try {
-            convertedString.cat19(encodeBytelist(string, encoding), CR_UNKNOWN);
+            ByteList other = encodeBytelist(string, encoding);
+            convertedString.catWithCodeRange(other, CR_UNKNOWN);
         } catch (org.jruby.exceptions.EncodingError.CompatibilityError ce) {
             return newString(runtime, string, encoding);
         }
@@ -435,7 +436,8 @@ public class EncodingUtils {
         /* when the conversion failed for some reason, just ignore the
          * default_internal and result in the given encoding as-is. */
         try {
-            convertedString.cat19(encodeBytelist(bytelist, encoding), CR_UNKNOWN);
+            ByteList other = encodeBytelist(bytelist, encoding);
+            convertedString.catWithCodeRange(other, CR_UNKNOWN);
         } catch (org.jruby.exceptions.EncodingError.CompatibilityError ce) {
             return newString(runtime, bytelist, encoding);
         }
@@ -878,7 +880,7 @@ public class EncodingUtils {
             // set to same superclass
             newstr.setMetaClass(str.getMetaClass());
         }
-        newstr.modify19();
+        newstr.modifyAndClearCodeRange();
         return strEncodeAssociate(newstr, encindex);
     }
 

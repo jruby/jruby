@@ -423,11 +423,6 @@ public class RubyFloat extends RubyNumeric {
         return RubyFloat.newFloat(context.runtime, mod);
     }
 
-    @Deprecated
-    public final IRubyObject op_mod19(ThreadContext context, IRubyObject other) {
-        return op_mod(context, other);
-    }
-
     /** flo_divmod
      *
      */
@@ -481,11 +476,6 @@ public class RubyFloat extends RubyNumeric {
 
     public IRubyObject op_pow(ThreadContext context, double other) {
         return RubyFloat.newFloat(context.runtime, Math.pow(value, other));
-    }
-
-    @Deprecated
-    public IRubyObject op_pow19(ThreadContext context, IRubyObject other) {
-        return op_pow(context, other);
     }
 
     /** flo_eq
@@ -1230,7 +1220,7 @@ public class RubyFloat extends RubyNumeric {
         } else if (value.equals(INFINITY_BYTELIST)) {
             return RubyFloat.newFloat(input.getRuntime(), Double.POSITIVE_INFINITY);
         } else {
-            return RubyFloat.newFloat(input.getRuntime(), ConvertDouble.byteListToDouble19(value, false));
+            return RubyFloat.newFloat(input.getRuntime(), ConvertDouble.byteListToDouble(value, false));
         }
     }
 

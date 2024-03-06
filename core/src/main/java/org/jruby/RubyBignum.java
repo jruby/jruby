@@ -519,11 +519,6 @@ public class RubyBignum extends RubyInteger {
         return bignorm(context.runtime, value.multiply(((RubyBignum) other).value));
     }
 
-    @Deprecated
-    public final IRubyObject op_mul19(ThreadContext context, IRubyObject other) {
-        return op_mul(context, other);
-    }
-
     @Override
     public final IRubyObject op_mul(ThreadContext context, long other) {
         return bignorm(context.runtime, value.multiply(long2big(other)));
@@ -669,11 +664,6 @@ public class RubyBignum extends RubyInteger {
         return op_mod(context, other);
     }
 
-    @Deprecated
-    public IRubyObject op_mod19(ThreadContext context, IRubyObject other) {
-        return op_mod(context, other);
-    }
-
     /** rb_big_remainder
      *
      */
@@ -699,11 +689,6 @@ public class RubyBignum extends RubyInteger {
         return bignorm(context.runtime, value.remainder(otherValue));
     }
 
-    @Deprecated
-    public IRubyObject remainder19(ThreadContext context, IRubyObject other) {
-        return remainder(context, other);
-    }
-
     /** rb_big_quo
      *
      */
@@ -722,11 +707,6 @@ public class RubyBignum extends RubyInteger {
         } else {
             return coerceBin(context, sites(context).quo, other);
         }
-    }
-
-    @Deprecated
-    public final IRubyObject quo19(ThreadContext context, IRubyObject other) {
-        return quo(context, other);
     }
 
     /** rb_big_pow
@@ -792,11 +772,6 @@ public class RubyBignum extends RubyInteger {
         }
     }
 
-    @Deprecated
-    public IRubyObject op_pow19(ThreadContext context, IRubyObject other) {
-        return op_pow(context, other);
-    }
-
     /** rb_big_and
      *
      */
@@ -813,11 +788,6 @@ public class RubyBignum extends RubyInteger {
 
     final RubyInteger op_and(ThreadContext context, RubyFixnum other) {
         return bignorm(context.runtime, value.and(fix2big(other)));
-    }
-
-    @Deprecated
-    public IRubyObject op_and19(ThreadContext context, IRubyObject other) {
-        return op_and(context, other);
     }
 
     /** rb_big_or
@@ -843,11 +813,6 @@ public class RubyBignum extends RubyInteger {
         return context.runtime.newFixnum(value.bitLength());
     }
 
-    @Deprecated
-    public IRubyObject op_or19(ThreadContext context, IRubyObject other) {
-        return op_or(context, other);
-    }
-
     /** rb_big_xor
      *
      */
@@ -860,11 +825,6 @@ public class RubyBignum extends RubyInteger {
             return bignorm(context.runtime, value.xor(BigInteger.valueOf(((RubyFixnum) other).value)));
         }
         return coerceBit(context, sites(context).checked_op_xor, other);
-    }
-
-    @Deprecated
-    public IRubyObject op_xor19(ThreadContext context, IRubyObject other) {
-        return op_xor(context, other);
     }
 
     /** rb_big_neg
@@ -1205,11 +1165,6 @@ public class RubyBignum extends RubyInteger {
     public IRubyObject eql_p(IRubyObject other) {
         // '==' and '===' are the same, but they differ from 'eql?'.
         return op_equal(metaClass.runtime.getCurrentContext(), other);
-    }
-
-    @Deprecated
-    public IRubyObject eql_p19(IRubyObject other) {
-        return eql_p(other);
     }
 
     /** rb_big_hash

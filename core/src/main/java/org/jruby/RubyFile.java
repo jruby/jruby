@@ -1268,13 +1268,14 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
     }
 
-    // Can we produce IOError which bypasses a close?
-    public static IRubyObject truncate(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
-        return truncate19(context, recv, arg1, arg2);
+    @Deprecated
+    public static IRubyObject truncate19(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
+        return truncate(context, recv, arg1, arg2);
     }
 
+    // Can we produce IOError which bypasses a close?
     @JRubyMethod(name = "truncate", meta = true)
-    public static IRubyObject truncate19(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
+    public static IRubyObject truncate(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
         RubyString path = StringSupport.checkEmbeddedNulls(context.runtime, get_path(context, arg1));
         return truncateCommon(context, recv, path, arg2);
     }
@@ -2520,11 +2521,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return context.sites.File;
     }
 
-    @Deprecated
-    public IRubyObject initialize19(IRubyObject[] args, Block block) {
-        return initialize(null, args, block);
-    }
-
     private static final long serialVersionUID = 1L;
 
     public static final int LOCK_SH = PosixShim.LOCK_SH;
@@ -2567,11 +2563,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             default:
                 throw context.runtime.newArgumentError(args.length, 1, 2);
         }
-    }
-
-    @Deprecated
-    public static IRubyObject expand_path19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return expand_path(context, recv, args);
     }
 
     @Deprecated

@@ -1213,11 +1213,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return sysopen(recv.getRuntime().getCurrentContext(), recv, args, block);
     }
 
-    @Deprecated
-    public static IRubyObject sysopen19(ThreadContext context, IRubyObject recv, IRubyObject[] argv, Block block) {
-        return sysopen(context, recv, argv, block);
-    }
-
     // rb_io_s_sysopen
     @JRubyMethod(name = "sysopen", required = 1, optional = 2, checkArity = false, meta = true)
     public static IRubyObject sysopen(ThreadContext context, IRubyObject recv, IRubyObject[] argv, Block block) {
@@ -3013,11 +3008,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    @Deprecated
-    public final IRubyObject getc19(ThreadContext context) {
-        return getc(context);
-    }
-
     // rb_io_ungetbyte
     @JRubyMethod
     public IRubyObject ungetbyte(ThreadContext context, IRubyObject b) {
@@ -4350,11 +4340,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return io.seek(context, offset);
     }
 
-    @Deprecated
-    public static IRubyObject readlines19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-        return readlines(context, recv, args, unusedBlock);
-    }
-
     // rb_io_s_readlines
     @JRubyMethod(name = "readlines", required = 1, optional = 3, checkArity = false, meta = true)
     public static IRubyObject readlines(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
@@ -5503,26 +5488,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     @Deprecated
-    public IRubyObject lines19(final ThreadContext context, Block block) {
-        return lines(context, block);
-    }
-
-    @Deprecated
-    public IRubyObject each_char19(final ThreadContext context, final Block block) {
-        return each_char(context, block);
-    }
-
-    @Deprecated
-    public IRubyObject chars19(final ThreadContext context, final Block block) {
-        return chars(context, block);
-    }
-
-    @Deprecated
-    public RubyArray readlines19(ThreadContext context, IRubyObject[] args) {
-        return readlines(context, args);
-    }
-
-    @Deprecated
     public RubyIO(Ruby runtime, STDIO stdio) {
         super(runtime, runtime.getIO());
 
@@ -5773,11 +5738,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     @Deprecated
-    public static IRubyObject read19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-        return read(context, recv, args, unusedBlock);
-    }
-
-    @Deprecated
     public IRubyObject write_nonblock(ThreadContext context, IRubyObject[] argv) {
         switch (argv.length) {
             case 1:
@@ -5825,21 +5785,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         IRubyObject _str = argc >= 2 ? args[1] : context.nil;
 
         return sysreadCommon(context, runtime, _length, _str);
-    }
-
-    @Deprecated
-    public static IRubyObject pipe19(ThreadContext context, IRubyObject recv) {
-        return pipe19(context, recv, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
-    }
-
-    @Deprecated
-    public static IRubyObject pipe19(ThreadContext context, IRubyObject recv, IRubyObject modes) {
-        return pipe19(context, recv, new IRubyObject[] {modes}, Block.NULL_BLOCK);
-    }
-
-    @Deprecated
-    public static IRubyObject pipe19(ThreadContext context, IRubyObject klass, IRubyObject[] argv, Block block) {
-        return pipe(context, klass, argv, block);
     }
 
     @Deprecated

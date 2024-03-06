@@ -178,21 +178,6 @@ public final class IdUtil {
         return false;
     }
 
-    @Deprecated
-    public static boolean isValidConstantName19(String id) {
-        return isValidConstantName(id);
-    }
-
-    @Deprecated
-    public static boolean isNameCharacter19(char c) {
-        return isNameCharacter(c);
-    }
-
-    @Deprecated
-    public static boolean isNameString19(String id, int start, int limit) {
-        return isNameString(id, start, limit);
-    }
-
     // mri: rb_enc_symname_type (minus support for allowed_attrset).
     public static SymbolNameType determineSymbolNameType(Ruby runtime, ByteList data) {
         Encoding encoding = data.getEncoding();

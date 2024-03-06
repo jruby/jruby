@@ -928,9 +928,9 @@ public class RubyHash extends RubyObject implements Map {
 
             if (index > 0) bytes.append((byte) ',').append((byte) ' ');
 
-            str.cat19(keyStr);
+            str.catWithCodeRange(keyStr);
             bytes.append((byte) '=').append((byte) '>');
-            str.cat19(valStr);
+            str.catWithCodeRange(valStr);
         }
     };
 
@@ -955,11 +955,6 @@ public class RubyHash extends RubyObject implements Map {
         } finally {
             runtime.unregisterInspecting(this);
         }
-    }
-
-    @Deprecated
-    public IRubyObject inspect19(ThreadContext context) {
-        return inspect(context);
     }
 
     /** rb_hash_size
@@ -1018,10 +1013,6 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s(ThreadContext context) {
         return inspect(context);
-    }
-
-    public final IRubyObject to_s19(ThreadContext context) {
-        return to_s(context);
     }
 
     /** rb_hash_rehash
@@ -1306,11 +1297,6 @@ public class RubyHash extends RubyObject implements Map {
         return RecursiveComparator.compare(context, FindMismatchUsingEqlVisitor, this, other);
     }
 
-    @Deprecated
-    public IRubyObject op_eql19(final ThreadContext context, IRubyObject other) {
-        return op_eql(context, other);
-    }
-
     /** rb_hash_aref
      *
      */
@@ -1395,11 +1381,6 @@ public class RubyHash extends RubyObject implements Map {
             hval[0] ^= Helpers.multAndMix(context.runtime.getHashSeedK0(), Arrays.hashCode(buffer.array()));
         }
     };
-
-    @Deprecated
-    public final RubyFixnum hash19() {
-        return hash(getRuntime().getCurrentContext());
-    }
 
     /** rb_hash_fetch
      *
@@ -1818,11 +1799,6 @@ public class RubyHash extends RubyObject implements Map {
         return to_a(context).sort_bang(context, block);
     }
 
-    @Deprecated
-    public IRubyObject index19(ThreadContext context, IRubyObject expected) {
-        return key(context, expected);
-    }
-
     @JRubyMethod
     public IRubyObject key(ThreadContext context, IRubyObject expected) {
         IRubyObject key = internalIndex(context, expected);
@@ -2007,11 +1983,6 @@ public class RubyHash extends RubyObject implements Map {
         return result;
     }
 
-    @Deprecated
-    public IRubyObject select19(ThreadContext context, Block block) {
-        return select(context, block);
-    }
-
     /** rb_hash_delete_if
      *
      */
@@ -2136,11 +2107,6 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     @Deprecated
-    public RubyHash merge_bang19(ThreadContext context, IRubyObject other, Block block) {
-        return merge_bang(context, other, block);
-    }
-
-    @Deprecated
     public RubyHash merge(ThreadContext context, IRubyObject other, Block block) {
         return merge(context, new IRubyObject[]{other}, block);
     }
@@ -2157,11 +2123,6 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod(name = "initialize_copy", visibility = PRIVATE)
     public RubyHash initialize_copy(ThreadContext context, IRubyObject other) {
         return replace(context, other);
-    }
-
-    @Deprecated
-    public RubyHash initialize_copy19(ThreadContext context, IRubyObject other) {
-        return initialize_copy(context, other);
     }
 
     /** rb_hash_replace
@@ -2950,14 +2911,6 @@ public class RubyHash extends RubyObject implements Map {
         }
     }
 
-    @Deprecated
-    public IRubyObject op_aset19(ThreadContext context, IRubyObject key, IRubyObject value) {
-        modify();
-
-        fastASetCheckString19(context.runtime, key, value);
-        return value;
-    }
-
     /**
      * Note: this is included as a compatibility measure for AR-JDBC
      * @deprecated use RubyHash.op_aset instead
@@ -2979,16 +2932,6 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     @Deprecated
-    public final void fastASetCheckString19(Ruby runtime, IRubyObject key, IRubyObject value) {
-        fastASetCheckString(runtime, key, value);
-    }
-
-    @Deprecated
-    public final void fastASetSmallCheckString19(Ruby runtime, IRubyObject key, IRubyObject value) {
-        fastASetSmallCheckString(runtime, key, value);
-    }
-
-    @Deprecated
     public IRubyObject op_aset(IRubyObject key, IRubyObject value) {
         return op_aset(metaClass.runtime.getCurrentContext(), key, value);
     }
@@ -3003,11 +2946,6 @@ public class RubyHash extends RubyObject implements Map {
         iteratorVisitAll(context, YieldKeyValueArrayVisitor, block);
 
         return this;
-    }
-
-    @Deprecated
-    public RubyHash replace19(final ThreadContext context, IRubyObject other) {
-        return replace(context, other);
     }
 
     @Deprecated
@@ -3089,11 +3027,6 @@ public class RubyHash extends RubyObject implements Map {
     @Deprecated
     public RubyHash rb_clear() {
         return rb_clear(getRuntime().getCurrentContext());
-    }
-
-    @Deprecated
-    public IRubyObject each19(final ThreadContext context, final Block block) {
-        return each(context, block);
     }
 
     @Deprecated

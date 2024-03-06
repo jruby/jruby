@@ -252,11 +252,6 @@ public class RubyKernel {
         return format;
     }
 
-    @Deprecated
-    public static IRubyObject open19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        return open(context, recv, args, block);
-    }
-
     @JRubyMethod(name = "open", required = 1, optional = 3, checkArity = false, module = true, visibility = PRIVATE, keywords = true)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         int argc = Arity.checkArgumentCount(context, args, 1, 4);
@@ -628,11 +623,6 @@ public class RubyKernel {
         return tmp;
     }
 
-    @Deprecated
-    public static IRubyObject new_string19(ThreadContext context, IRubyObject recv, IRubyObject object) {
-        return new_string(context, recv, object);
-    }
-
     // MRI: rb_f_p
     @JRubyMethod(rest = true, module = true, visibility = PRIVATE)
     public static IRubyObject p(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
@@ -936,11 +926,6 @@ public class RubyKernel {
         return globalVariables;
     }
 
-    @Deprecated
-    public static RubyArray global_variables19(ThreadContext context, IRubyObject recv) {
-        return global_variables(context, recv);
-    }
-
     /**
      * @param context
      * @param recv
@@ -951,21 +936,11 @@ public class RubyKernel {
         return context.getCurrentStaticScope().getLocalVariables(context.runtime);
     }
 
-    @Deprecated
-    public static RubyArray local_variables19(ThreadContext context, IRubyObject recv) {
-        return local_variables(context, recv);
-    }
-
     @JRubyMethod(name = "binding", module = true, visibility = PRIVATE,
             reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
             writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public static RubyBinding binding(ThreadContext context, IRubyObject recv, Block block) {
         return RubyBinding.newBinding(context.runtime, context.currentBinding());
-    }
-
-    @Deprecated
-    public static RubyBinding binding19(ThreadContext context, IRubyObject recv, Block block) {
-        return binding(context, recv, block);
     }
 
     @JRubyMethod(name = {"block_given?", "iterator?"}, module = true, visibility = PRIVATE, reads = BLOCK)
@@ -1229,16 +1204,6 @@ public class RubyKernel {
         return null; // not reached
     }
 
-    @Deprecated
-    public static IRubyObject load(IRubyObject recv, IRubyObject[] args, Block block) {
-        return load19(recv.getRuntime().getCurrentContext(), recv, args, block);
-    }
-
-    @Deprecated
-    public static IRubyObject load19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        return load(context, recv, args, block);
-    }
-
     private static IRubyObject loadCommon(Ruby runtime, RubyString path, boolean wrap) {
         runtime.getLoadService().load(path.toString(), wrap);
 
@@ -1265,11 +1230,6 @@ public class RubyKernel {
         int argc = Arity.checkArgumentCount(context, args, 1, 4);
 
         return evalCommon(context, recv, args);
-    }
-
-    @Deprecated
-    public static IRubyObject eval19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        return eval(context, recv, args, block);
     }
 
     private static IRubyObject evalCommon(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
@@ -1416,16 +1376,6 @@ public class RubyKernel {
         return new CatchThrow(tag).enter(context, tag, block);
     }
 
-    @Deprecated
-    public static IRubyObject rbCatch19(ThreadContext context, IRubyObject recv, Block block) {
-        return rbCatch(context, recv, block);
-    }
-
-    @Deprecated
-    public static IRubyObject rbCatch19(ThreadContext context, IRubyObject recv, IRubyObject tag, Block block) {
-        return rbCatch(context, recv, tag, block);
-    }
-
     @JRubyMethod(name = "throw", module = true, visibility = PRIVATE)
     public static IRubyObject rbThrow(ThreadContext context, IRubyObject recv, IRubyObject tag, Block block) {
         return rbThrowInternal(context, tag, null);
@@ -1433,16 +1383,6 @@ public class RubyKernel {
 
     @JRubyMethod(name = "throw", module = true, visibility = PRIVATE)
     public static IRubyObject rbThrow(ThreadContext context, IRubyObject recv, IRubyObject tag, IRubyObject value, Block block) {
-        return rbThrowInternal(context, tag, value);
-    }
-
-    @Deprecated
-    public static IRubyObject rbThrow19(ThreadContext context, IRubyObject recv, IRubyObject tag, Block block) {
-        return rbThrowInternal(context, tag, null);
-    }
-
-    @Deprecated
-    public static IRubyObject rbThrow19(ThreadContext context, IRubyObject recv, IRubyObject tag, IRubyObject value, Block block) {
         return rbThrowInternal(context, tag, value);
     }
 
@@ -1570,7 +1510,8 @@ public class RubyKernel {
         } else {
             message.catString("warning: ");
         }
-        return (RubyString) message.op_plus19(context, arg.asString());
+        IRubyObject arg1 = arg.asString();
+        return (RubyString) message.op_plus(context, arg1);
     }
 
     @JRubyMethod(module = true, alias = "then")
@@ -1974,11 +1915,6 @@ public class RubyKernel {
         }
     }
 
-    @Deprecated
-    public static IRubyObject system19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return system(context, recv, args);
-    }
-
     private static int systemCommon(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         long[] tuple;
@@ -2141,11 +2077,6 @@ public class RubyKernel {
         throw runtime.newNotImplementedError("fork is not available on this platform");
     }
 
-    @Deprecated
-    public static IRubyObject fork19(ThreadContext context, IRubyObject recv, Block block) {
-        return fork(context, recv, block);
-    }
-
     @JRubyMethod(name = {"to_enum", "enum_for"}, rest = true, keywords = true)
     public static IRubyObject obj_to_enum(final ThreadContext context, IRubyObject self, IRubyObject[] args, final Block block) {
         // to_enum is a bit strange in that it will propagate the arguments it passes to each element it calls.  We are determining
@@ -2278,18 +2209,8 @@ public class RubyKernel {
     }
 
     @Deprecated
-    public static IRubyObject respond_to_p19(IRubyObject self, IRubyObject mname) {
-        return ((RubyBasicObject) self).respond_to_p19(mname);
-    }
-
-    @Deprecated
     public static RubyBoolean respond_to_p(IRubyObject self, IRubyObject mname, IRubyObject includePrivate) {
         return ((RubyBasicObject) self).respond_to_p(mname, includePrivate);
-    }
-
-    @Deprecated
-    public static IRubyObject respond_to_p19(IRubyObject self, IRubyObject mname, IRubyObject includePrivate) {
-        return ((RubyBasicObject) self).respond_to_p19(mname, includePrivate);
     }
 
     @JRubyMethod(name = "respond_to?")
@@ -2371,11 +2292,6 @@ public class RubyKernel {
         return ((RubyBasicObject)self).methods(context, args);
     }
 
-    @Deprecated
-    public static IRubyObject methods19(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        return ((RubyBasicObject)self).methods(context, args);
-    }
-
     @JRubyMethod(name = "object_id")
     public static IRubyObject object_id(IRubyObject self) {
         return self.id();
@@ -2388,20 +2304,10 @@ public class RubyKernel {
         return ((RubyBasicObject)self).public_methods(context, args);
     }
 
-    @Deprecated
-    public static IRubyObject public_methods19(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        return ((RubyBasicObject)self).public_methods(context, args);
-    }
-
     @JRubyMethod(name = "protected_methods", optional = 1, checkArity = false)
     public static IRubyObject protected_methods(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 1);
 
-        return ((RubyBasicObject)self).protected_methods(context, args);
-    }
-
-    @Deprecated
-    public static IRubyObject protected_methods19(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         return ((RubyBasicObject)self).protected_methods(context, args);
     }
 
@@ -2412,20 +2318,10 @@ public class RubyKernel {
         return ((RubyBasicObject)self).private_methods(context, args);
     }
 
-    @Deprecated
-    public static IRubyObject private_methods19(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        return ((RubyBasicObject)self).private_methods(context, args);
-    }
-
     @JRubyMethod(name = "singleton_methods", optional = 1, checkArity = false)
     public static RubyArray singleton_methods(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 1);
 
-        return ((RubyBasicObject)self).singleton_methods(context, args);
-    }
-
-    @Deprecated
-    public static RubyArray singleton_methods19(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         return ((RubyBasicObject)self).singleton_methods(context, args);
     }
 
@@ -2470,23 +2366,6 @@ public class RubyKernel {
         return ((RubyBasicObject)self).send(context, args, block);
     }
 
-    @Deprecated
-    public static IRubyObject send19(ThreadContext context, IRubyObject self, IRubyObject arg0, Block block) {
-        return send(context, self, arg0, block);
-    }
-    @Deprecated
-    public static IRubyObject send19(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) {
-        return send(context, self, arg0, arg1, block);
-    }
-    @Deprecated
-    public static IRubyObject send19(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return send(context, self, arg0, arg1, arg2, block);
-    }
-    @Deprecated
-    public static IRubyObject send19(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-        return send(context, self, args, block);
-    }
-
     @JRubyMethod(name = "nil?")
     public static IRubyObject nil_p(ThreadContext context, IRubyObject self) {
         return ((RubyBasicObject) self).nil_p(context);
@@ -2521,11 +2400,6 @@ public class RubyKernel {
     @JRubyMethod(name = "instance_variables")
     public static RubyArray instance_variables(ThreadContext context, IRubyObject self) {
         return ((RubyBasicObject) self).instance_variables(context);
-    }
-
-    @Deprecated
-    public static RubyArray instance_variables19(ThreadContext context, IRubyObject self) {
-        return instance_variables(context, self);
     }
 
     /* end delegated bindings */
@@ -2601,16 +2475,6 @@ public class RubyKernel {
     }
 
     @Deprecated
-    public static IRubyObject caller20(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        return caller(context, recv, args, block);
-    }
-
-    @Deprecated
-    public static IRubyObject caller19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        return caller(context, recv, args, block);
-    }
-
-    @Deprecated
     private static IRubyObject caller(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         switch (args.length) {
             case 0:
@@ -2646,16 +2510,6 @@ public class RubyKernel {
     }
 
     @Deprecated
-    public static IRubyObject require19(ThreadContext context, IRubyObject recv, IRubyObject name, Block block) {
-        return require(context, recv, name, block);
-    }
-
-    @Deprecated
-    public static IRubyObject op_match19(ThreadContext context, IRubyObject self, IRubyObject arg) {
-        return op_match(context, self, arg);
-    }
-
-    @Deprecated
     public static IRubyObject op_match(ThreadContext context, IRubyObject self, IRubyObject arg) {
         context.runtime.getWarnings().warn(ID.DEPRECATED_METHOD,
                 "deprecated Object#=~ is called on " + ((RubyBasicObject) self).type() +
@@ -2664,28 +2518,8 @@ public class RubyKernel {
     }
 
     @Deprecated
-    public static IRubyObject new_integer19(ThreadContext context, IRubyObject recv, IRubyObject object) {
-        return new_integer(context, recv, object);
-    }
-
-    @Deprecated
-    public static RubyFloat new_float19(IRubyObject recv, IRubyObject object) {
-        return new_float(recv, object);
-    }
-
-    @Deprecated
     public static IRubyObject autoload(final IRubyObject recv, IRubyObject symbol, IRubyObject file) {
         return autoload(recv.getRuntime().getCurrentContext(), recv, symbol, file);
-    }
-
-    @Deprecated
-    public static IRubyObject rand18(ThreadContext context, IRubyObject recv, IRubyObject[] arg) {
-        return rand(context, recv, arg);
-    }
-
-    @Deprecated
-    public static IRubyObject rand19(ThreadContext context, IRubyObject recv, IRubyObject[] arg) {
-        return rand(context, recv, arg);
     }
 
     @Deprecated
@@ -2703,11 +2537,6 @@ public class RubyKernel {
     @Deprecated
     public static IRubyObject method(IRubyObject self, IRubyObject symbol) {
         return ((RubyBasicObject)self).method(symbol);
-    }
-
-    @Deprecated
-    public static IRubyObject method19(IRubyObject self, IRubyObject symbol) {
-        return method(self, symbol);
     }
 
     // defined in Ruby now but left here for backward compat

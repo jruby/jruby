@@ -44,7 +44,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.regex.Pattern;
 
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
@@ -173,11 +172,6 @@ public class RubyDir extends RubyObject implements Closeable {
         this.snapshot = getEntries(context, dir, adjustedPath);
 
         return this;
-    }
-
-    @Deprecated
-    public IRubyObject initialize19(ThreadContext context, IRubyObject arg) {
-        return initialize(context, arg);
     }
 
 // ----- Ruby Class Methods ----------------------------------------------------
@@ -492,15 +486,16 @@ public class RubyDir extends RubyObject implements Closeable {
         return dir.children(context);
     }
 
+    @Deprecated
+    public static IRubyObject rmdir19(IRubyObject recv, IRubyObject path) {
+        return rmdir(recv.getRuntime().getCurrentContext(), recv, path);
+    }
+
     /**
      * Deletes the directory specified by <code>path</code>.  The directory must be empty.
      */
-    public static IRubyObject rmdir(IRubyObject recv, IRubyObject path) {
-        return rmdir19(recv.getRuntime().getCurrentContext(), recv, path);
-    }
-
     @JRubyMethod(name = {"rmdir", "unlink", "delete"}, meta = true)
-    public static IRubyObject rmdir19(ThreadContext context, IRubyObject recv, IRubyObject path) {
+    public static IRubyObject rmdir(ThreadContext context, IRubyObject recv, IRubyObject path) {
         Ruby runtime = context.runtime;
         RubyString cleanPath = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, path));
         return rmdirCommon(runtime, cleanPath.asJavaString());
@@ -663,11 +658,6 @@ public class RubyDir extends RubyObject implements Closeable {
         return mkdir(recv.getRuntime().getCurrentContext(), recv, args);
     }
 
-    @Deprecated
-    public static IRubyObject mkdir19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return mkdir(context, recv, args);
-    }
-
     private static IRubyObject mkdirCommon(Ruby runtime, String path, IRubyObject[] args) {
         if (path.startsWith("uri:")) throw runtime.newErrnoEACCESError(path);
 
@@ -732,11 +722,6 @@ public class RubyDir extends RubyObject implements Closeable {
         }
     }
 
-    @Deprecated
-    public static IRubyObject open19(ThreadContext context, IRubyObject recv, IRubyObject path, Block block) {
-        return open(context, recv, path, block);
-    }
-
 // ----- Ruby Instance Methods -------------------------------------------------
 
     /**
@@ -781,16 +766,6 @@ public class RubyDir extends RubyObject implements Closeable {
         Encoding encoding = getEncodingFromOpts(context, encOpts);
 
         return block.isGiven() ? each(context, encoding, block) : enumeratorize(context.runtime, this, "each", encOpts);
-    }
-
-    @Deprecated
-    public IRubyObject each19(ThreadContext context, Block block) {
-        return each(context, block);
-    }
-
-    @Deprecated
-    public IRubyObject each19(ThreadContext context, IRubyObject encoding, Block block) {
-        return each(context, encoding, block);
     }
 
     /**
@@ -1181,30 +1156,10 @@ public class RubyDir extends RubyObject implements Closeable {
     }
 
     @Deprecated
-    public static RubyArray entries19(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        return entries(context, recv, arg);
-    }
-
-    @Deprecated
-    public static RubyArray entries19(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject opts) {
-        return entries(context, recv, arg, opts);
-    }
-
-    @Deprecated
     public static IRubyObject home(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         if (args.length > 0 && args[0] != context.nil) return getHomeDirectoryPath(context, args[0].toString());
 
         return getHomeDirectoryPath(context);
-    }
-
-    @Deprecated
-    public static IRubyObject foreach19(ThreadContext context, IRubyObject recv, IRubyObject path, Block block) {
-        return foreachCommon(context, recv, RubyFile.get_path(context, path), null, block);
-    }
-
-    @Deprecated
-    public static IRubyObject foreach19(ThreadContext context, IRubyObject recv, IRubyObject path, IRubyObject enc, Block block) {
-        return foreachCommon(context, recv, RubyFile.get_path(context, path), RubyHash.newKwargs(context.runtime, "encoding", enc), block);
     }
 
     @Deprecated

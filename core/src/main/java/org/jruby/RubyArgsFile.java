@@ -587,19 +587,9 @@ public class RubyArgsFile extends RubyObject {
         return each_line(context, recv, args, block);
     }
 
-    @Deprecated
-    public static IRubyObject each_line19(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
-        return each_line(context, recv, args, block);
-    }
-
     @JRubyMethod(name = "each", optional = 1, checkArity = false)
     public static IRubyObject each(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
         return block.isGiven() ? each_line(context, recv, args, block) : enumeratorize(context.runtime, recv, "each", args);
-    }
-
-    @Deprecated
-    public static IRubyObject each19(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
-        return each(context, recv, args, block);
     }
 
     @JRubyMethod(name = "file")

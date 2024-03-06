@@ -130,26 +130,6 @@ public class TypeConverter {
         return val;
     }
 
-    @Deprecated // not-used
-    public static IRubyObject convertToType19(IRubyObject obj, RubyClass target, String convertMethod, boolean raise) {
-        return convertToType(obj, target, convertMethod, raise);
-    }
-
-    @Deprecated // not-used
-    public static IRubyObject convertToType19(ThreadContext context, IRubyObject obj, RubyClass target, JavaSites.CheckedSites sites, boolean raise) {
-        return convertToType(context, obj, target, sites, raise);
-    }
-
-    @Deprecated // not-used
-    public static IRubyObject convertToType19(IRubyObject obj, RubyClass target, String convertMethod) {
-        return convertToType(obj, target, convertMethod);
-    }
-
-    @Deprecated // not-used
-    public static IRubyObject convertToType19(ThreadContext context, IRubyObject obj, RubyClass target, JavaSites.CheckedSites sites) {
-        return convertToType(context, obj, target, sites);
-    }
-
     // MRI: rb_to_float - adjusted to handle also Java numbers (non RubyNumeric types)
     public static RubyFloat toFloat(Ruby runtime, IRubyObject obj) {
         if (obj instanceof RubyNumeric) return ((RubyNumeric) obj).convertToFloat();
@@ -255,16 +235,6 @@ public class TypeConverter {
             throw newTypeErrorMismatch(context.runtime, obj, target, sites.methodName, val);
         }
         return val;
-    }
-
-    @Deprecated
-    public static IRubyObject convertToTypeWithCheck19(IRubyObject obj, RubyClass target, String convertMethod) {
-        return convertToTypeWithCheck(obj, target, convertMethod);
-    }
-
-    @Deprecated
-    public static IRubyObject convertToTypeWithCheck19(ThreadContext context, IRubyObject obj, RubyClass target, JavaSites.CheckedSites sites) {
-        return convertToTypeWithCheck(context, obj, target, sites);
     }
 
     public static RaiseException newTypeError(IRubyObject obj, RubyClass target, String convertMethod, IRubyObject val) {

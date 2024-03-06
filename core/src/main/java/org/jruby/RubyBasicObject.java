@@ -226,15 +226,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return context.nil;
     }
 
-    @Deprecated
-    public IRubyObject initialize19(ThreadContext context) {
-        return initialize(context);
-    }
-
-    //public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
-    //    return initialize(context);
-    //}
-
     /**
      * Standard path for object creation. Objects are entered into ObjectSpace
      * only if ObjectSpace is enabled.
@@ -768,15 +759,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return TypeConverter.checkStringType(context, sites.to_str_checked, this);
     }
 
-    /**
-     * @deprecated
-     * @see #checkStringType()
-     */
-    @Override
-    public final IRubyObject checkStringType19() {
-        return checkStringType();
-    }
-
     /** rb_check_array_type
     *
     * Returns the result of trying to convert this object to an Array with "to_ary".
@@ -1214,11 +1196,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return this == obj ? context.tru : context.fals;
     }
 
-    @Deprecated
-    public IRubyObject op_equal_19(ThreadContext context, IRubyObject obj) {
-        return op_equal(context, obj);
-    }
-
     @Override
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
         // Remain unimplemented due to problems with the double java hierarchy
@@ -1621,21 +1598,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return context.nil;
     }
 
-    @Deprecated
-    public static IRubyObject singleton_method_added19(ThreadContext context, IRubyObject recv, IRubyObject symbolId, Block block) {
-        return singleton_method_added(context, recv, symbolId, block);
-    }
-
-    @Deprecated
-    public static IRubyObject singleton_method_removed19(ThreadContext context, IRubyObject recv, IRubyObject symbolId, Block block) {
-        return singleton_method_removed(context, recv, symbolId, block);
-    }
-
-    @Deprecated
-    public static IRubyObject singleton_method_undefined19(ThreadContext context, IRubyObject recv, IRubyObject symbolId, Block block) {
-        return singleton_method_undefined(context, recv, symbolId, block);
-    }
-
     @JRubyMethod(name = "method_missing", rest = true, module = true, omit = true, visibility = PRIVATE)
     public static IRubyObject method_missing(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Visibility lastVis = context.getLastVisibility();
@@ -1646,11 +1608,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
 
         return RubyKernel.methodMissingDirect(context, recv, (RubySymbol)args[0], lastVis, lastCallType, args);
-    }
-
-    @Deprecated
-    public static IRubyObject method_missing19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        return method_missing(context, recv, args, block);
     }
 
     @JRubyMethod(name = "__send__", omit = true, keywords = true)
@@ -1969,11 +1926,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return this == other ? context.tru : context.fals;
     }
 
-    @Deprecated
-    public IRubyObject equal_p19(ThreadContext context, IRubyObject other) {
-        return equal_p(context, other);
-    }
-
     /** rb_obj_equal
      *
      * Just like "==" and "equal?", "eql?" will use identity equality for Object.
@@ -2040,20 +1992,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return getRuntime().newBoolean(getMetaClass().respondsToMethod(mname.asJavaString(), true));
     }
 
-    @Deprecated
-    public final RubyBoolean respond_to_p19(IRubyObject mname) {
-        return respond_to_p(getRuntime().getCurrentContext(), mname, false);
-    }
-
     @Deprecated // NOTE: does not match Ruby 2.x rules (does method bound check only)
     public final RubyBoolean respond_to_p(IRubyObject mname, IRubyObject includePrivate) {
         String name = mname.asJavaString();
         return getRuntime().newBoolean(getMetaClass().isMethodBound(name, !includePrivate.isTrue()));
-    }
-
-    @Deprecated
-    public final RubyBoolean respond_to_p19(IRubyObject mname, IRubyObject includePrivate) {
-        return respond_to_p(getRuntime().getCurrentContext(), mname, includePrivate.isTrue());
     }
 
     final RubyBoolean respond_to_p(ThreadContext context, IRubyObject methodName, final boolean includePrivate) {
@@ -2248,11 +2190,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return methodsImpl(context, args.length == 1 ? args[0].isTrue() : true);
     }
 
-    @Deprecated
-    public IRubyObject methods19(ThreadContext context, IRubyObject[] args) {
-        return methods(context, args);
-    }
-
     final IRubyObject methodsImpl(ThreadContext context, final boolean all) {
         final RubyArray methods = RubyArray.newArray(context.runtime);
         final Set<String> seen = new HashSet<>();
@@ -2288,11 +2225,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return getMetaClass().instanceMethods(args, PUBLIC, true, false);
     }
 
-    @Deprecated
-    public IRubyObject public_methods19(ThreadContext context, IRubyObject[] args) {
-        return public_methods(context, args);
-    }
-
     /** rb_obj_protected_methods
      *
      *  call-seq:
@@ -2309,11 +2241,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return getMetaClass().instanceMethods(args, PROTECTED, true, false);
     }
 
-    @Deprecated
-    public IRubyObject protected_methods19(ThreadContext context, IRubyObject[] args) {
-        return protected_methods(context, args);
-    }
-
     /** rb_obj_private_methods
      *
      *  call-seq:
@@ -2328,11 +2255,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     public IRubyObject private_methods(ThreadContext context, IRubyObject[] args) {
         return getMetaClass().instanceMethods(args, PRIVATE, true, false);
-    }
-
-    @Deprecated
-    public IRubyObject private_methods19(ThreadContext context, IRubyObject[] args) {
-        return private_methods(context, args);
     }
 
     /** rb_obj_singleton_methods
@@ -2460,11 +2382,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return getMetaClass().newMethod(this, symbol.idString(), refinedScope, true, null, true);
     }
 
-    @Deprecated
-    public IRubyObject method19(IRubyObject name) {
-        return method(name);
-    }
-
     /** rb_any_to_s
      *
      *  call-seq:
@@ -2566,23 +2483,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         throw context.runtime.newArgumentError(args.length, 1, 3);
     }
 
-    @Deprecated
-    public IRubyObject instance_eval19(ThreadContext context, Block block) {
-        return specificEval(context, getInstanceEvalClass(), block, EvalType.INSTANCE_EVAL);
-    }
-    @Deprecated
-    public IRubyObject instance_eval19(ThreadContext context, IRubyObject arg0, Block block) {
-        return specificEval(context, getInstanceEvalClass(), arg0, block, EvalType.INSTANCE_EVAL);
-    }
-    @Deprecated
-    public IRubyObject instance_eval19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        return specificEval(context, getInstanceEvalClass(), arg0, arg1, block, EvalType.INSTANCE_EVAL);
-    }
-    @Deprecated
-    public IRubyObject instance_eval19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return specificEval(context, getInstanceEvalClass(), arg0, arg1, arg2, block, EvalType.INSTANCE_EVAL);
-    }
-
     /** rb_obj_instance_exec
      *
      *  call-seq:
@@ -2618,11 +2518,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
 
         return yieldUnder(context, klazz, args, block, EvalType.INSTANCE_EVAL);
-    }
-
-    @Deprecated
-    public IRubyObject instance_exec19(ThreadContext context, IRubyObject[] args, Block block) {
-        return instance_exec(context, args, block);
     }
 
     /** rb_obj_extend
@@ -2666,49 +2561,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             args[i].callMethod(context, "extended", this);
         }
         return this;
-    }
-
-    /** rb_f_send
-     *
-     * send( aSymbol  [, args  ]*   )$ -&gt; anObject
-     *
-     * Invokes the method identified by aSymbol, passing it any arguments
-     * specified. You can use __send__ if the name send clashes with an
-     * existing method in this object.
-     *
-     * <pre>
-     * class Klass
-     *   def hello(*args)
-     *     "Hello " + args.join(' ')
-     *   end
-     * end
-     *
-     * k = Klass.new
-     * k.send :hello, "gentle", "readers"
-     * </pre>
-     *
-     * @return the result of invoking the method identified by aSymbol.
-     */
-    @Deprecated
-    public IRubyObject send(ThreadContext context, Block block) {
-        throw context.runtime.newArgumentError(0, 1);
-    }
-    @Deprecated
-    public IRubyObject send19(ThreadContext context, IRubyObject arg0, Block block) {
-        return send(context, arg0, block);
-    }
-    @Deprecated
-    public IRubyObject send19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        return send(context, arg0, arg1, block);
-    }
-    @Deprecated
-    public IRubyObject send19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return send(context, arg0, arg1, arg2, block);
-    }
-    @Deprecated
-    public IRubyObject send19(ThreadContext context, IRubyObject[] args, Block block) {
-        if (args.length == 0) throw context.runtime.newArgumentError(0, 1);
-        return send(context, args, block);
     }
 
     /** rb_false
@@ -2884,11 +2736,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         array.realLength = size;
 
         return array;
-    }
-
-    @Deprecated
-    public RubyArray instance_variables19(ThreadContext context) {
-        return instance_variables(context);
     }
 
     /**
@@ -3155,11 +3002,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public synchronized Object dataGetStructChecked() {
         TypeConverter.checkData(this);
         return getInternalVariable("__wrap_struct__");
-    }
-
-    @Deprecated
-    public IRubyObject op_match19(ThreadContext context, IRubyObject arg) {
-        return context.nil;
     }
 
     @Deprecated

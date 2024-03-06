@@ -371,7 +371,7 @@ public class RubyRipper extends RubyObject {
     public static IRubyObject dedent_string(ThreadContext context, IRubyObject self, IRubyObject _input, IRubyObject _width) {
         RubyString input = _input.convertToString();
         int wid = _width.convertToInteger().getIntValue();
-        input.modify19();
+        input.modifyAndClearCodeRange();
         int col = LexingCommon.dedent_string(input.getByteList(), wid);
         return context.runtime.newFixnum(col);
     }

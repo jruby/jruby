@@ -142,12 +142,13 @@ public class RubyFileStat extends RubyObject {
         }
     }
 
-    public IRubyObject initialize(IRubyObject fname, Block unusedBlock) {
-        return initialize19(fname, unusedBlock);
+    @Deprecated
+    public IRubyObject initialize19(IRubyObject fname, Block unusedBlock) {
+        return initialize(fname, unusedBlock);
     }
 
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
-    public IRubyObject initialize19(IRubyObject fname, Block unusedBlock) {
+    public IRubyObject initialize(IRubyObject fname, Block unusedBlock) {
         Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
         RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, fname));

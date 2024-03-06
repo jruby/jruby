@@ -460,11 +460,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return RubyString.newString(runtime, result);
     }
 
-    @Deprecated
-    public IRubyObject inspect19(ThreadContext context) {
-        return inspect(context);
-    }
-
     @Override
     public IRubyObject to_s() {
         return to_s(metaClass.runtime);
@@ -556,9 +551,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     @JRubyMethod(name = { "to_sym", "intern" })
     public IRubyObject to_sym() { return this; }
 
-    @Deprecated
-    public IRubyObject to_sym19() { return this; }
-
     private RubyString newShared(Ruby runtime) {
         return RubyString.newStringShared(runtime, symbolBytes);
     }
@@ -602,17 +594,17 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @JRubyMethod(name = "match")
     public IRubyObject match_m(ThreadContext context, IRubyObject other, Block block) {
-        return newShared(context.runtime).match19(context, other, block);
+        return newShared(context.runtime).match(context, other, block);
     }
 
     @JRubyMethod(name = "match")
     public IRubyObject match_m(ThreadContext context, IRubyObject other, IRubyObject pos, Block block) {
-        return newShared(context.runtime).match19(context, other, pos, block);
+        return newShared(context.runtime).match(context, other, pos, block);
     }
 
     @JRubyMethod(name = "match", required = 1, rest = true, checkArity = false)
     public IRubyObject match_m(ThreadContext context, IRubyObject[] args, Block block) {
-        return newShared(context.runtime).match19(context, args, block);
+        return newShared(context.runtime).match(context, args, block);
     }
 
     @JRubyMethod(name = "match?")

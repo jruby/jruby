@@ -324,9 +324,6 @@ public class RubyException extends RubyObject {
         return context.runtime.newString(getMetaClass().getRealClass().getName());
     }
 
-    @Deprecated
-    public IRubyObject to_s19(ThreadContext context) { return to_s(context); }
-
     @JRubyMethod(name = "message")
     public IRubyObject message(ThreadContext context) {
         return callMethod(context, "to_s");

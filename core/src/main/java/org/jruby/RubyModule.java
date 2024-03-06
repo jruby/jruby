@@ -111,7 +111,6 @@ import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callsite.CacheEntry;
-import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -121,13 +120,11 @@ import org.jruby.runtime.profile.MethodEnhancer;
 import org.jruby.util.RubyStringBuilder;
 import org.jruby.util.ByteList;
 import org.jruby.util.ClassProvider;
-import org.jruby.util.CommonByteLists;
 import org.jruby.util.IdUtil;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
 import org.jruby.util.collections.WeakHashSet;
-import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -148,7 +145,6 @@ import static org.jruby.runtime.Visibility.PUBLIC;
 
 import static org.jruby.runtime.Visibility.UNDEFINED;
 import static org.jruby.util.CommonByteLists.COLON_COLON;
-import static org.jruby.util.IdUtil.isValidConstantName;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
 import static org.jruby.util.RubyStringBuilder.types;
@@ -719,9 +715,10 @@ public class RubyModule extends RubyObject {
         RubyString fullName = runtime.newString();       // newString creates empty ByteList which ends up as
         fullName.setEncoding(USASCIIEncoding.INSTANCE);  // ASCII-8BIT.  8BIT is unfriendly to string concats.
         for (RubyString parent:  parents) {
-            fullName.cat19(parent).cat19(colons);
+            RubyString rubyString = fullName.catWithCodeRange(parent);
+            rubyString.catWithCodeRange(colons);
         }
-        fullName.cat19(rubyBaseName());
+        fullName.catWithCodeRange(rubyBaseName());
 
         fullName.setFrozen(true);
 
@@ -2633,11 +2630,6 @@ public class RubyModule extends RubyObject {
         return getBaseName() == null ? context.nil : rubyName();
     }
 
-    @Deprecated
-    public IRubyObject name19() {
-        return getBaseName() == null ? getRuntime().getNil() : rubyName().strDup(getRuntime());
-    }
-
     protected final IRubyObject cloneMethods(RubyModule clone) {
         Ruby runtime = getRuntime();
         RubyModule realType = this.getOrigin();
@@ -2810,9 +2802,9 @@ public class RubyModule extends RubyObject {
             RubyString buffer = runtime.newString("#<Class:");
 
             if (attached instanceof RubyModule) {
-                buffer.cat19(attached.inspect().convertToString());
+                buffer.catWithCodeRange(attached.inspect().convertToString());
             } else if (attached != null) {
-                buffer.cat19((RubyString) attached.anyToString());
+                buffer.catWithCodeRange((RubyString) attached.anyToString());
             }
             buffer.cat('>', buffer.getEncoding());
 
@@ -2824,9 +2816,9 @@ public class RubyModule extends RubyObject {
         if (refinedClass != null) {
             RubyString buffer = runtime.newString("#<refinement:");
 
-            buffer.cat19(refinedClass.inspect().convertToString());
+            buffer.catWithCodeRange(refinedClass.inspect().convertToString());
             buffer.cat('@', buffer.getEncoding());
-            buffer.cat19((definedAt.inspect().convertToString()));
+            buffer.catWithCodeRange((definedAt.inspect().convertToString()));
             buffer.cat('>', buffer.getEncoding());
 
             return buffer;
@@ -3071,11 +3063,6 @@ public class RubyModule extends RubyObject {
     }
 
     @Deprecated
-    public IRubyObject attr19(ThreadContext context, IRubyObject[] args) {
-        return attr(context, args);
-    }
-
-    @Deprecated
     public IRubyObject attr_reader(IRubyObject[] args) {
         return attr_reader(getRuntime().getCurrentContext(), args);
     }
@@ -3215,23 +3202,25 @@ public class RubyModule extends RubyObject {
         });
     }
 
-    public RubyArray instance_methods(IRubyObject[] args) {
-        return instance_methods19(args);
+    @Deprecated
+    public RubyArray instance_methods19(IRubyObject[] args) {
+        return instance_methods(args);
     }
 
     @JRubyMethod(name = "instance_methods", optional = 1, checkArity = false)
-    public RubyArray instance_methods19(IRubyObject[] args) {
+    public RubyArray instance_methods(IRubyObject[] args) {
         Arity.checkArgumentCount(getRuntime(), args, 0, 1);
 
         return instanceMethods(args, PRIVATE, false, true);
     }
 
-    public RubyArray public_instance_methods(IRubyObject[] args) {
-        return public_instance_methods19(args);
+    @Deprecated
+    public RubyArray public_instance_methods19(IRubyObject[] args) {
+        return public_instance_methods(args);
     }
 
     @JRubyMethod(name = "public_instance_methods", optional = 1, checkArity = false)
-    public RubyArray public_instance_methods19(IRubyObject[] args) {
+    public RubyArray public_instance_methods(IRubyObject[] args) {
         Arity.checkArgumentCount(getRuntime(), args, 0, 1);
 
         return instanceMethods(args, PUBLIC, false, false);
@@ -3261,11 +3250,6 @@ public class RubyModule extends RubyObject {
         return instanceMethods(args, PROTECTED, false, false);
     }
 
-    @Deprecated
-    public RubyArray protected_instance_methods19(IRubyObject[] args) {
-        return protected_instance_methods(args);
-    }
-
     /** rb_class_private_instance_methods
      *
      */
@@ -3274,11 +3258,6 @@ public class RubyModule extends RubyObject {
         Arity.checkArgumentCount(getRuntime(), args, 0, 1);
 
         return instanceMethods(args, PRIVATE, false, false);
-    }
-
-    @Deprecated
-    public RubyArray private_instance_methods19(IRubyObject[] args) {
-        return private_instance_methods(args);
     }
 
     @JRubyMethod(name = "undefined_instance_methods")
@@ -4037,26 +4016,28 @@ public class RubyModule extends RubyObject {
         return context.fals;
     }
 
+    @Deprecated
+    public IRubyObject class_variable_get19(IRubyObject name) {
+        return class_variable_get(name);
+    }
+
     /** rb_mod_cvar_get
      *
      */
+    @JRubyMethod(name = "class_variable_get")
     public IRubyObject class_variable_get(IRubyObject name) {
         return getClassVar(name, validateClassVariable(getRuntime(), name));
-    }
-
-    @JRubyMethod(name = "class_variable_get")
-    public IRubyObject class_variable_get19(IRubyObject name) {
-        return class_variable_get(name);
     }
 
     /** rb_mod_cvar_set
      *
      */
+    @JRubyMethod(name = "class_variable_set")
     public IRubyObject class_variable_set(IRubyObject name, IRubyObject value) {
         return setClassVar(validateClassVariable(getRuntime(), name), value);
     }
 
-    @JRubyMethod(name = "class_variable_set")
+    @Deprecated
     public IRubyObject class_variable_set19(IRubyObject name, IRubyObject value) {
         return class_variable_set(name, value);
     }
@@ -4064,18 +4045,14 @@ public class RubyModule extends RubyObject {
     /** rb_mod_remove_cvar
      *
      */
+    @JRubyMethod(name = "remove_class_variable")
     public IRubyObject remove_class_variable(ThreadContext context, IRubyObject name) {
         return removeClassVariable(validateClassVariable(context.runtime, name));
     }
 
-    @JRubyMethod(name = "remove_class_variable")
+    @Deprecated
     public IRubyObject remove_class_variable19(ThreadContext context, IRubyObject name) {
         return remove_class_variable(context, name);
-    }
-
-    @Deprecated
-    public RubyArray class_variables19(ThreadContext context) {
-        return class_variables(context);
     }
 
     @JRubyMethod(name = "class_variables")
@@ -4431,21 +4408,6 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "constants")
     public RubyArray constants(ThreadContext context, IRubyObject allConstants) {
         return constantsCommon(context, false, allConstants.isTrue());
-    }
-
-    @Deprecated
-    public RubyArray constants19(ThreadContext context) {
-        return constants(context);
-    }
-
-    @Deprecated
-    public RubyArray constants19(ThreadContext context, IRubyObject allConstants) {
-        return constants(context, allConstants);
-    }
-
-    @Deprecated // no longer used
-    public RubyArray constantsCommon19(ThreadContext context, boolean replaceModule, boolean allConstants) {
-        return constantsCommon(context, replaceModule, allConstants);
     }
 
     private RubyArray constantsCommon(ThreadContext context, boolean replaceModule, boolean allConstants) {
@@ -6192,29 +6154,6 @@ public class RubyModule extends RubyObject {
     @Deprecated
     public boolean fastIsConstantDefined(String internedName){
         return isConstantDefined(internedName);
-    }
-
-    @Deprecated
-    public boolean fastIsConstantDefined19(String internedName) {
-        return isConstantDefined(internedName, true);
-    }
-
-    @Deprecated
-    public boolean fastIsConstantDefined19(String internedName, boolean inherit) {
-        return isConstantDefined(internedName, inherit);
-    }
-
-    @Deprecated
-    public RubyBoolean const_defined_p19(ThreadContext context, IRubyObject[] args) {
-        switch (args.length) {
-            case 1:
-                return const_defined_p(context, args[0]);
-            case 2:
-                return const_defined_p(context, args[0], args[1]);
-        }
-
-        Arity.checkArgumentCount(context, args, 1, 2);
-        return null; // not reached
     }
 
     @Deprecated
