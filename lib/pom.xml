@@ -34,7 +34,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>rubygems-update</artifactId>
-      <version>3.5.3</version>
+      <version>3.5.6</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1092,7 +1092,7 @@ DO NOT MODIFY - GENERATED CODE
         <directory>${gem.home}</directory>
         <includes>
           <include>specifications/default/*</include>
-          <include>specifications/rubygems-update-3.5.3*</include>
+          <include>specifications/rubygems-update-3.5.6*</include>
           <include>specifications/benchmark-0.3.0*</include>
           <include>specifications/bundler-2.5.3*</include>
           <include>specifications/cgi-0.4.1*</include>
@@ -1172,7 +1172,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/rinda-0.2.0*</include>
           <include>specifications/rss-0.3.0*</include>
           <include>specifications/test-unit-3.6.2*</include>
-          <include>gems/rubygems-update-3.5.3*/**/*</include>
+          <include>gems/rubygems-update-3.5.6*/**/*</include>
           <include>gems/benchmark-0.3.0*/**/*</include>
           <include>gems/bundler-2.5.3*/**/*</include>
           <include>gems/cgi-0.4.1*/**/*</include>
@@ -1252,7 +1252,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/rinda-0.2.0*/**/*</include>
           <include>gems/rss-0.3.0*/**/*</include>
           <include>gems/test-unit-3.6.2*/**/*</include>
-          <include>cache/rubygems-update-3.5.3*</include>
+          <include>cache/rubygems-update-3.5.6*</include>
           <include>cache/benchmark-0.3.0*</include>
           <include>cache/bundler-2.5.3*</include>
           <include>cache/cgi-0.4.1*</include>

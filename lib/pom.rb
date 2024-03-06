@@ -17,7 +17,7 @@ end
 default_gems = [
     # treat RGs update special:
     # - we do not want bin/update_rubygems or bin/gem overrides
-    ['rubygems-update', '3.5.3', { bin: false, require_paths: ['lib'] }],
+    ['rubygems-update', '3.5.6', { bin: false, require_paths: ['lib'] }],
     ['benchmark', '0.3.0'],
     ['bundler', '2.5.3'],
     ['cgi', '0.4.1'],
