@@ -4619,7 +4619,13 @@ public class RubyModule extends RubyObject {
         } while ((module = module.getSuperClass()) != null);
 
         if (lowest != highest) {
-            throw getRuntime().newRuntimeError(str(getRuntime(), "class variable " + name + " of ", lowest, " is overtaken by ", highest));
+            if (lowest.getOrigin().getRealModule() != highest.getOrigin().getRealModule()) {
+                throw getRuntime().newRuntimeError(str(getRuntime(), "class variable " + name + " of ", lowest, " is overtaken by ", highest));
+            }
+            /*
+            if (!(lowest instanceof IncludedModule || lowest instanceof PrependedModule)) {
+                lowest.removeClassVariable(name);
+            }*/
         }
 
         if (highest != null) return highest.fetchClassVariable(name);
