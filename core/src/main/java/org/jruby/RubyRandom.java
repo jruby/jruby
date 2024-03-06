@@ -207,8 +207,6 @@ public class RubyRandom extends RubyRandomBase {
         RubyClass randomClass = runtime.defineClass("Random", baseClass, RubyRandom::new);
         randomClass.defineConstant("Base", baseClass);
         randomClass.defineAnnotatedMethods(RubyRandom.class);
-        randomClass.defineConstant("DEFAULT", randomClass);
-        randomClass.deprecateConstant(runtime, "DEFAULT");
 
         runtime.setDefaultRandom(newRandom(runtime, randomClass, randomSeed(runtime)));
 
