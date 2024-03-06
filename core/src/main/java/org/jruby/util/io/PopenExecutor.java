@@ -306,7 +306,7 @@ public class PopenExecutor {
         Ruby runtime = context.runtime;
         String modestr;
         IRubyObject pname, port, tmp, opt = context.nil, env = context.nil;
-        Object pmode = EncodingUtils.vmodeVperm(null, null);
+        API.ModeAndPermission pmode = EncodingUtils.vmodeVperm(null, null);
         ExecArg eargp;
         int[] oflags_p = {0}, fmode_p = {0};
         IOEncodable.ConvConfig convconfig = new IOEncodable.ConvConfig();

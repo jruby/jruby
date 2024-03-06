@@ -84,4 +84,14 @@ public class API {
             context.setExceptionRequiresBacktrace(exceptionRequiresBacktrace);
         }
     }
+
+    public static class ModeAndPermission {
+        public IRubyObject mode;
+        public IRubyObject permission;
+
+        public ModeAndPermission(IRubyObject mode, IRubyObject permission) {
+            this.mode = mode;
+            this.permission = permission;
+        }
+    }
 }

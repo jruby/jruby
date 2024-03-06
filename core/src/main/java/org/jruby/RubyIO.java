@@ -622,7 +622,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         try {
             if (nmode != nil || opt != nil) {
                 ConvConfig convconfig = new ConvConfig();
-                Object vmode_vperm = vmodeVperm(nmode, null);
+                API.ModeAndPermission vmode_vperm = vmodeVperm(nmode, null);
                 int[] fmode_p = {0};
 
                 EncodingUtils.extractModeEncoding(context, convconfig, vmode_vperm, opt, oflags_p, fmode_p);
@@ -955,7 +955,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             throw runtime.newErrnoEBADFError();
         }
 
-        Object pm = EncodingUtils.vmodeVperm(vmodeArg, runtime.newFixnum(0));
+        API.ModeAndPermission pm = EncodingUtils.vmodeVperm(vmodeArg, runtime.newFixnum(0));
         int[] fmode_p = {0};
         ConvConfig convconfig = new ConvConfig();
         EncodingUtils.extractModeEncoding(context, convconfig, pm, opt, oflags_p, fmode_p);
@@ -4154,7 +4154,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         int[] oflags_p = {0}, fmode_p = {0};
         ConvConfig convConfig = new ConvConfig();
 
-        Object pm = EncodingUtils.vmodeVperm(vmode, vperm);
+        API.ModeAndPermission pm = EncodingUtils.vmodeVperm(vmode, vperm);
         EncodingUtils.extractModeEncoding(context, convConfig, pm, opt, oflags_p, fmode_p);
         vperm = vperm(pm);
         int perm = (vperm == null || vperm == context.nil) ? 0666 : RubyNumeric.num2int(vperm);
@@ -4520,7 +4520,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         io.MakeOpenFile();
 
-        Object pm = vmodeVperm(pmode, runtime.newFixnum(0));
+        API.ModeAndPermission pm = vmodeVperm(pmode, runtime.newFixnum(0));
         int[] oflags_p = {0}, fmode_p = {0};
         EncodingUtils.extractModeEncoding(context, io, pm, options, oflags_p, fmode_p);
         ModeFlags modes = ModeFlags.createModeFlags(oflags_p[0]);
