@@ -2686,28 +2686,4 @@ public class ScriptingContainerTest {
 //        }
 //    }
 
-// NOTE: test makes no sense on 9K
-//    @Test
-//    public void testSystemPropertyCatcherSetCompatVersion() {
-//        ScriptingContainer container;
-//
-//        System.setProperty(PropertyName.COMPATVERSION.toString(), "1.8");
-//        container = new ScriptingContainer(LocalContextScope.THREADSAFE);
-//        org.jruby.embed.util.SystemPropertyCatcher.setConfiguration(container);
-//        assertEquals("1.8.7", container.runScriptlet("RUBY_VERSION"));
-//        container.terminate();
-//
-//        System.setProperty(PropertyName.COMPATVERSION.toString(), "RUBY2_0");
-//        container = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
-//        org.jruby.embed.util.SystemPropertyCatcher.setConfiguration(container);
-//        assertEquals("2.0.0", container.runScriptlet("RUBY_VERSION"));
-//        container.terminate();
-//
-//        System.setProperty(PropertyName.COMPATVERSION.toString(), "1.9");
-//        container = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
-//        org.jruby.embed.util.SystemPropertyCatcher.setConfiguration(container);
-//        assertEquals("1.9.3", container.runScriptlet("RUBY_VERSION"));
-//        container.terminate();
-//    }
-
 }

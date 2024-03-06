@@ -28,7 +28,6 @@
 package org.jruby.test;
 
 
-import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyMethod;
 import org.jruby.RubyModule;

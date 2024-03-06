@@ -38,9 +38,4 @@ public interface ConfigMBean {
     public boolean isFullTraceEnabled();
     public boolean isShowBytecode();
     public String getExcludedMethods();
-
-    @Deprecated
-    default String getCompatVersion() {
-        return org.jruby.CompatVersion.RUBY2_1.name();
-    }
 }

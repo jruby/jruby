@@ -441,8 +441,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
 
     /**
      * Returns a compile mode currently chosen, which is one of CompileMode.JIT,
-     * CompileMode.FORCE, CompileMode.OFF. The default mode is CompileMode.OFF
-     * if CompatVersion.RUBY1_9 is chosen, otherwise, CompileMode.JIT. Also,
+     * CompileMode.FORCE, CompileMode.OFF. The default mode is CompileMode.JIT. Also,
      * CompileMode.OFF is chosen when a security restriction is set.
      *
      * @since JRuby 1.5.0.
@@ -1938,14 +1937,5 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
 
     protected void addGemPath(String uri) {
         runScriptlet( "require 'rubygems';Gem::Specification.add_dir '" + uri + "' unless Gem::Specification.dirs.member?( '" + uri + "' )" );
-    }
-
-    @Deprecated
-    public org.jruby.CompatVersion getCompatVersion() {
-        return provider.getRubyInstanceConfig().getCompatVersion();
-    }
-
-    @Deprecated
-    public void setCompatVersion(org.jruby.CompatVersion version) {
     }
 }
