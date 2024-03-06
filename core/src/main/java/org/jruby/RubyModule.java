@@ -303,7 +303,7 @@ public class RubyModule extends RubyObject {
             // Not sure how but this happens in test_objects_are_released_by_cache_map
             if (cl == null) return false;
 
-            return cl.searchAncestor(type.getDelegate().getOrigin()) != null;
+            return cl.hasAncestor(type);
         }
     }
 
@@ -322,6 +322,10 @@ public class RubyModule extends RubyObject {
 
     public boolean isInstance(IRubyObject object) {
         return kindOf.isKindOf(object, this);
+    }
+
+    public boolean hasAncestor(RubyModule type) {
+        return searchAncestor(type.getDelegate().getOrigin()) != null;
     }
 
     public Map<String, ConstantEntry> getConstantMap() {
