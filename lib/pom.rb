@@ -18,21 +18,15 @@ default_gems = [
     # treat RGs update special:
     # - we do not want bin/update_rubygems or bin/gem overrides
     ['rubygems-update', '3.5.3', { bin: false, require_paths: ['lib'] }],
-    ['abbrev', '0.1.2'],
-    ['base64', '0.2.0'],
     ['benchmark', '0.3.0'],
-    # Extension still lives in JRuby. See https://github.com/ruby/bigdecimal/issues/268
-    ['bigdecimal', '3.1.5'],
     ['bundler', '2.5.3'],
     ['cgi', '0.4.1'],
-    ['csv', '3.2.8'],
     # Currently using a stub gem for JRuby until we can incorporate our code.
     # https://github.com/ruby/date/issues/48
     ['date', '3.3.4'],
     ['delegate', '0.3.1'],
     ['did_you_mean', '1.6.3'],
     ['digest', '3.1.1'],
-    ['drb', '2.2.0'],
     ['english', '0.8.0'],
     # Ongoing discussion about the -java gem, since it just omits the ext: https://github.com/ruby/erb/issues/52
     ['erb', '4.0.4'],
@@ -46,7 +40,6 @@ default_gems = [
     ['fileutils', '1.7.2'],
     ['find', '0.2.0'],
     ['forwardable', '1.3.3'],
-    ['getoptlong', '0.2.1'],
     ['io-console', '0.7.2'],
     # https://github.com/ruby/io-nonblock/issues/4
     # ['io-nonblock', '0.1.0'],
@@ -58,11 +51,9 @@ default_gems = [
     ['jruby-openssl', '0.14.3'],
     ['json', '2.7.1'],
     ['logger', '1.6.0'],
-    ['mutex_m', '0.2.0'],
     ['net-http', '0.4.0'],
     ['net-protocol', '0.2.2'],
     ['nkf', '0.2.0'],
-    ['observer', '0.1.2'],
     ['open3', '0.2.1'],
     # https://github.com/ruby/openssl/issues/20#issuecomment-1022872855
     # ['openssl', '3.0.0'],
@@ -87,8 +78,6 @@ default_gems = [
     ['reline', '0.4.2'],
     # https://github.com/ruby/resolv/issues/19
     # ['resolv', '0.2.1'],
-    ['resolv-replace', '0.1.1'],
-    ['rinda', '0.2.0'],
     ['ruby2_keywords', '0.0.5'],
     ['securerandom', '0.3.1'],
     # https://github.com/ruby/set/issues/21
@@ -102,8 +91,6 @@ default_gems = [
       ['ffi-binary-libfixposix', '0.5.1.1'],
       ['ffi-bindings-libfixposix', '0.5.1.0'],
     ['syntax_suggest', '1.0.1'],
-    # https://github.com/ruby/syslog/issues/1
-    # ['syslog', '0.1.0'],
     # https://github.com/ruby/tempfile/issues/7
     # ['tempfile', '0.1.2'],
     ['time', '0.3.0'],
@@ -122,24 +109,37 @@ default_gems = [
 ]
 
 bundled_gems = [
+    ['abbrev', '0.1.2'],
+    ['base64', '0.2.0'],
+    # Extension still lives in JRuby. See https://github.com/ruby/bigdecimal/issues/268
+    ['bigdecimal', '3.1.6'],
+    ['csv', '3.2.8'],
     # Newer versions require deep control over CRuby internals, needs work to support JRuby.
     # ['debug', '1.9.1'],
     ['debug', '0.2.1'],
+    ['drb', '2.2.1'],
+    ['getoptlong', '0.2.1'],
     ['matrix', '0.4.2'],
-    ['minitest', '5.20.0'],
-    ['net-ftp', '0.3.3'],
-    ['net-imap', '0.4.9'],
+    ['minitest', '5.22.2'],
+    ['mutex_m', '0.2.0'],
+    ['net-ftp', '0.3.4'],
+    ['net-imap', '0.4.10'],
     ['net-pop', '0.1.2'],
-    ['net-smtp', '0.4.0'],
+    ['net-smtp', '0.4.0.1'],
+    ['observer', '0.1.2'],
     ['prime', '0.1.2'],
     ['power_assert', '2.0.3'],
     ['racc', '1.7.3'],
     ['rake', '${rake.version}'],
     # Depends on many CRuby internals
     # ['rbs', '2.0.0'],
+    ['resolv-replace', '0.1.1'],
     ['rexml', '3.2.6'],
+    ['rinda', '0.2.0'],
     ['rss', '0.3.0'],
-    ['test-unit', '3.6.1'],
+    # https://github.com/ruby/syslog/issues/1
+    # ['syslog', '0.1.0'],
+    ['test-unit', '3.6.2'],
     # Depends on many CRuby internals
     # ['typeprof', '0.21.1'],
 ]
