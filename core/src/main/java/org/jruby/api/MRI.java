@@ -11,6 +11,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.ByteListHolder;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.IOEncodable;
 import org.jruby.util.io.OpenFile;
@@ -171,6 +172,18 @@ public class MRI {
 
     public static Encoding rb_default_external_encoding(ThreadContext context) {
         return EncodingUtils.defaultExternalEncoding(context.runtime);
+    }
+
+    public static void  rb_str_buf_cat(Ruby runtime, RubyString str, ByteList ptr) {
+        EncodingUtils.rbStrBufCat(runtime, str, ptr);
+    }
+
+    public static void  rb_str_buf_cat(Ruby runtime, ByteListHolder str, byte[] ptrBytes, int ptr, int len) {
+        EncodingUtils.rbStrBufCat(runtime, str, ptrBytes, ptr, len);
+    }
+
+    public static void  rb_str_buf_cat(Ruby runtime, ByteList str, byte[] ptrBytes, int ptr, int len) {
+        EncodingUtils.rbStrBufCat(runtime, str, ptrBytes, ptr, len);
     }
 
     public static void rb_enc_str_buf_cat(ThreadContext context, RubyString str, ByteList ptr, Encoding enc) {
