@@ -53,7 +53,6 @@ default_gems = [
     ['logger', '1.6.0'],
     ['net-http', '0.4.0'],
     ['net-protocol', '0.2.2'],
-    ['nkf', '0.2.0'],
     ['open3', '0.2.1'],
     # https://github.com/ruby/openssl/issues/20#issuecomment-1022872855
     # ['openssl', '3.0.0'],
@@ -126,6 +125,7 @@ bundled_gems = [
     ['net-imap', '0.4.10'],
     ['net-pop', '0.1.2'],
     ['net-smtp', '0.4.0.1'],
+    ['nkf', '0.2.0'],
     ['observer', '0.1.2'],
     ['prime', '0.1.2'],
     ['power_assert', '2.0.3'],
