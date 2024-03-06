@@ -765,7 +765,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @JRubyMethod
     public IRubyObject to_proc(ThreadContext context) {
-        BlockBody body = new SymbolProcBody(context.runtime, symbol);
+        BlockBody body = new SymbolProcBody(context.runtime, symbol, this);
 
         return RubyProc.newProc(context.runtime,
                                 new Block(body, Block.NULL_BLOCK.getBinding()),
@@ -773,7 +773,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     }
 
     public IRubyObject toRefinedProc(ThreadContext context, StaticScope scope) {
-        BlockBody body = new SymbolProcBody(context.runtime, symbol, scope);
+        BlockBody body = new SymbolProcBody(context.runtime, symbol, this, scope);
 
         return RubyProc.newProc(context.runtime,
                 new Block(body, Block.NULL_BLOCK.getBinding()),
@@ -1491,17 +1491,20 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     public static final class SymbolProcBody extends ContextAwareBlockBody {
         private final CallSite site;
         private final String id;
+        private final RubySymbol symbol;
 
-        public SymbolProcBody(Ruby runtime, String id) {
+        public SymbolProcBody(Ruby runtime, String id, RubySymbol symbol) {
             super(runtime.getStaticScopeFactory().getDummyScope(), Signature.OPTIONAL);
-            this.site = MethodIndex.getFunctionalCallSite(id);
+            this.site = MethodIndex.getCallSite(id);
             this.id = id;
+            this.symbol = symbol;
         }
 
-        public SymbolProcBody(Ruby runtime, String id, StaticScope scope) {
+        public SymbolProcBody(Ruby runtime, String id, RubySymbol symbol, StaticScope scope) {
             super(scope, Signature.OPTIONAL);
-            this.site = new RefinedCachingCallSite(id, scope, CallType.FUNCTIONAL);
+            this.site = new RefinedCachingCallSite(id, scope, CallType.NORMAL);
             this.id = id;
+            this.symbol = symbol;
         }
 
         private IRubyObject yieldInner(ThreadContext context, RubyArray array, Block blockArg) {
@@ -1510,7 +1513,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
             }
 
             final IRubyObject self = array.shift(context);
-            return site.call(context, self, self, array.toJavaArray(), blockArg);
+            return site.call(context, symbol, self, array.toJavaArray(), blockArg);
         }
 
         @Override
