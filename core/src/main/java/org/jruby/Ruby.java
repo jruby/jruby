@@ -3529,6 +3529,16 @@ public final class Ruby implements Constantizable {
         return RubyString.newStringShared(this, byteList);
     }
 
+    /**
+     * Create a new Symbol or lookup a symbol from an ISO_8859_1 "id" String.  This is more of an internal method
+     * where if you had, for example, a multi-byte string in UTF-8 then you would dump those bytes
+     * into a String with a charset of ISO_8859_1.  These raw bytes are considered the "id" of the symbol.
+     * Our internal symbol table is based on ISO_8859_1 raw string values which can return back the properly
+     * encoded Symbol instance.
+     *
+     * @param name raw bytes to store into the symbol table or use to lookup an existing symbol.
+     * @return A Ruby Symbol representing the name/id.
+     */
     public RubySymbol newSymbol(String name) {
         return symbolTable.getSymbol(name);
     }

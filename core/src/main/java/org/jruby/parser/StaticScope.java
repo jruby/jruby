@@ -608,11 +608,6 @@ public class StaticScope implements Serializable {
         return isArgumentScope;
     }
 
-    // FIXME: Remove this once YARP Loader properly defines this.
-    public void setIsArgumentScope(boolean value) {
-        this.isArgumentScope = value;
-    }
-
     public void makeArgumentScope() {
         this.isArgumentScope = true;
     }

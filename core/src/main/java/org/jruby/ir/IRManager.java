@@ -422,7 +422,7 @@ public class IRManager {
             } else {
                 containingScope = new IRClassBody(this, script, scopeNode.getCPath().getName().getBytes(), 0, scopeNode.getScope(), false);
             }
-            // FIXME: Broken with YARP
+            // FIXME: Broken with Prism
             LazyMethodDefinitionAST defn = new LazyMethodDefinitionAST(defNode);
             IRMethod newMethod = new IRMethod(this, containingScope, defn, context.runtime.newSymbol(method).getBytes(), true, 0, defNode.getScope(), CoverageData.NONE);
 

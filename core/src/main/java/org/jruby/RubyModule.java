@@ -303,7 +303,7 @@ public class RubyModule extends RubyObject {
             // Not sure how but this happens in test_objects_are_released_by_cache_map
             if (cl == null) return false;
 
-            return cl.searchAncestor(type.getDelegate().getOrigin()) != null;
+            return cl.hasAncestor(type);
         }
     }
 
@@ -322,6 +322,10 @@ public class RubyModule extends RubyObject {
 
     public boolean isInstance(IRubyObject object) {
         return kindOf.isKindOf(object, this);
+    }
+
+    public boolean hasAncestor(RubyModule type) {
+        return searchAncestor(type.getDelegate().getOrigin()) != null;
     }
 
     public Map<String, ConstantEntry> getConstantMap() {
@@ -1425,29 +1429,32 @@ public class RubyModule extends RubyObject {
         }
 
         DynamicMethod method = searchMethod(name);
-        if (method.isUndefined()) {
-            String s0 = " class";
-            RubyModule c = this;
-
-            if (c.isSingleton()) {
-                IRubyObject obj = ((MetaClass) c).getAttached();
-
-                if (obj instanceof RubyModule) {
-                    if (!(obj instanceof RubyClass)) s0 = "";
-                    c = (RubyModule) obj;
-                }
-            } else if (c.isModule()) {
-                s0 = " module";
-            }
-
-            // FIXME: Since we found no method we probably do not have symbol entry...do not want to pollute symbol table here.
-            throw runtime.newNameError("undefined method `" + name + "' for" + s0 + " `" + c.getName() + "'", name);
-        }
+        if (method.isUndefined()) raiseUndefinedNameError(name, runtime);
         methodLocation.addMethod(name, UndefinedMethod.getInstance());
 
         RubySymbol nameSymbol = runtime.newSymbol(name);
 
         methodUndefined(context, nameSymbol);
+    }
+
+    private void raiseUndefinedNameError(String name, Ruby runtime) {
+        String s0 = " class";
+        RubyModule c = this;
+
+        if (c.isSingleton()) {
+            IRubyObject obj = ((MetaClass) c).getAttached();
+
+            if (obj instanceof RubyClass) {
+                c = (RubyModule) obj;
+            } else if (obj instanceof RubyModule) {
+                s0 = "";
+            }
+        } else if (c.isModule()) {
+            s0 = " module";
+        }
+
+        // FIXME: Since we found no method we probably do not have symbol entry...do not want to pollute symbol table here.
+        throw runtime.newNameError(str(runtime, "undefined method `" + name + "' for" + s0 + " `", c, "'"), name);
     }
 
     @JRubyMethod(name = "include?")
@@ -2555,7 +2562,7 @@ public class RubyModule extends RubyObject {
             newMethod.setImplementationClass(this);
             newMethod.setVisibility(visibility);
         } else {
-            throw runtime.newTypeError("wrong argument type " + arg1.getType().getName() + " (expected Proc/Method)");
+            throw runtime.newTypeError(str(runtime, "wrong argument type ", arg1.getType(), " (expected Proc/Method/UnboundMethod)"));
         }
 
         Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);

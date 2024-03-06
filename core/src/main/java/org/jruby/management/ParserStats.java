@@ -9,9 +9,9 @@ import org.jruby.util.cli.Options;
 public class ParserStats implements ParserStatsMBean {
     private final AtomicLong totalIRBuildTime = new AtomicLong(0); // nanos
     private final AtomicLong totalParseTime = new AtomicLong(0); // nanos
-    private final AtomicLong totalYARPDeserializingTime = new AtomicLong(0); // nanos
-    private final AtomicLong totalYARPCParseSerializingTime = new AtomicLong(0); // nanos
-    private final AtomicLong totalYARPSerializedBytes = new AtomicLong(0);
+    private final AtomicLong totalPrismDeserializingTime = new AtomicLong(0); // nanos
+    private final AtomicLong totalPrismCParseSerializingTime = new AtomicLong(0); // nanos
+    private final AtomicLong totalPrismSerializedBytes = new AtomicLong(0);
     private final AtomicLong totalParsedBytes = new AtomicLong(0);
     private final AtomicInteger totalEvalParses = new AtomicInteger(0);
     private final AtomicInteger totalLoadParses = new AtomicInteger(0);
@@ -49,16 +49,16 @@ public class ParserStats implements ParserStatsMBean {
         return totalParsedBytes.get();
     }
 
-    public long getTotalYARPSerializedBytes() {
-        return totalYARPSerializedBytes.get();
+    public long getTotalPrismSerializedBytes() {
+        return totalPrismSerializedBytes.get();
     }
 
-    public double getYARPCParseSerializeTime() {
-        return totalYARPCParseSerializingTime.get() / 1_000_000_000.0;
+    public double getPrismCParseSerializeTime() {
+        return totalPrismCParseSerializingTime.get() / 1_000_000_000.0;
     }
 
-    public double getYARPDeserializingTime() {
-        return totalYARPDeserializingTime.get() / 1_000_000_000.0;
+    public double getPrismDeserializingTime() {
+        return totalPrismDeserializingTime.get() / 1_000_000_000.0;
     }
 
     public double getParseTimePerKB() {
@@ -75,39 +75,39 @@ public class ParserStats implements ParserStatsMBean {
         return totalLoadParses.get();
     }
 
-    public void addYARPTimeDeserializing(long time) {
-        totalYARPDeserializingTime.addAndGet(time);
+    public void addPrismTimeDeserializing(long time) {
+        totalPrismDeserializingTime.addAndGet(time);
     }
 
-    public void addYARPSerializedBytes(int length) {
-        totalYARPSerializedBytes.addAndGet(length);
+    public void addPrismSerializedBytes(int length) {
+        totalPrismSerializedBytes.addAndGet(length);
     }
 
-    public void addYARPTimeCParseSerialize(long time) {
-        totalYARPCParseSerializingTime.addAndGet(time);
+    public void addPrismTimeCParseSerialize(long time) {
+        totalPrismCParseSerializingTime.addAndGet(time);
     }
 
     public void printParserStatistics() {
-        System.out.println("--------------------------------------------------------------------------------");
-        System.out.println("Parser Statistics:");
-        System.out.println("  Generic:");
-        System.out.println("    parser type: " + (ParserManager.PARSER_WASM ? "Prism(wasm)" :
+        System.err.println("--------------------------------------------------------------------------------");
+        System.err.println("Parser Statistics:");
+        System.err.println("  Generic:");
+        System.err.println("    parser type: " + (ParserManager.PARSER_WASM ? "Prism(wasm)" :
                 (Options.PARSER_PRISM.load() ? "Prism(C)" : "Legacy")));
-        System.out.println("    bytes processed: " + getTotalParsedBytes());
-        System.out.println("    files parsed: " + getNumberOfLoadParses());
-        System.out.println("    evals parsed: " + getNumberOfEvalParses());
-        System.out.println("    time spent parsing(s): " + getTotalParseTime());
-        System.out.println("    time spend parsing + building: " + (getTotalParseTime() + getIRBuildTime()));
+        System.err.println("    bytes processed: " + getTotalParsedBytes());
+        System.err.println("    files parsed: " + getNumberOfLoadParses());
+        System.err.println("    evals parsed: " + getNumberOfEvalParses());
+        System.err.println("    time spent parsing(s): " + getTotalParseTime());
+        System.err.println("    time spend parsing + building: " + (getTotalParseTime() + getIRBuildTime()));
         if (Options.PARSER_PRISM.load()) {
-            System.out.println("  YARP:");
-            System.out.println("    time C parse+serialize: " + getYARPCParseSerializeTime());
-            System.out.println("    time deserializing: " + getYARPDeserializingTime());
-            System.out.println("    serialized bytes: " + getTotalYARPSerializedBytes());
-            System.out.println("    serialized to source ratio: x" +
-                    ((float)getTotalYARPSerializedBytes() / getTotalParsedBytes()));
+            System.err.println("  Prism:");
+            System.err.println("    time C parse+serialize: " + getPrismCParseSerializeTime());
+            System.err.println("    time deserializing: " + getPrismDeserializingTime());
+            System.err.println("    serialized bytes: " + getTotalPrismSerializedBytes());
+            System.err.println("    serialized to source ratio: x" +
+                    ((float) getTotalPrismSerializedBytes() / getTotalParsedBytes()));
         }
-        System.out.println("  IRBuild:");
-        System.out.println("    build time: " + getIRBuildTime());
+        System.err.println("  IRBuild:");
+        System.err.println("    build time: " + getIRBuildTime());
     }
 
     private double getIRBuildTime() {

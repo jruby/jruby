@@ -1,2 +1,0 @@
-fails:MatchData#begin when passed a String argument raises IndexError if there is no group with the provided name
-fails:MatchData#begin when passed a Symbol argument raises IndexError if there is no group with the provided name
