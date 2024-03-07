@@ -116,6 +116,39 @@ describe "JRuby class reification" do
     expect(TopLeftOfTheJStack.new.size).to eq 0
     expect(TopRightOfTheJStack.new([:a, :b]).size).to eq (2+3)
   end
+
+  it "supports auto reifying a class hierarchy when class gets redefined" do
+    class ASubList < java.util.ArrayList
+      attr_reader :args
+      def initialize(arg1, arg2)
+        @args = [arg1, arg2]
+        super(arg1 + arg2)
+      end
+    end
+    class ASubSubList < ASubList; end
+    expect( ASubSubList.new(1, 2).args ).to eql [1, 2]
+
+    Object.send(:remove_const, :ASubSubList)
+
+    class ASubSubList < ASubList; end
+    expect( ASubSubList.new(1, 2).args ).to eql [1, 2]
+
+    Object.send(:remove_const, :ASubSubList)
+    Object.send(:remove_const, :ASubList)
+
+    class ASubList < java.util.ArrayList
+      attr_reader :args
+      def initialize(arg1, arg2)
+        @args = [arg2, arg1]
+        super(arg1 + arg2)
+      end
+    end
+    class ASubSubList < ASubList; end
+    expect( ASubSubList.new(1, 2).args ).to eql [2, 1]
+
+    Object.send(:remove_const, :ASubSubList)
+    Object.send(:remove_const, :ASubList)
+  end
   
   it "constructs in the right order using the right methods" do
     class BottomOfTheCJStack < java.util.ArrayList
