@@ -118,174 +118,171 @@ describe "JRuby class reification" do
   end
   
   it "constructs in the right order using the right methods" do
-	class BottomOfTheCJStack < java.util.ArrayList
-		def initialize(lst)
-			lst << :bottom_start
-			super()
-			lst << :bottom_end
-		end
-	end
-    class MiddleLofTheCJStack < BottomOfTheCJStack 
-		def initialize(lst)
-			lst << :mid1_start
-			super
-			lst << :mid1_end
-		end
-	end
-    class MiddleMofTheCJStack < MiddleLofTheCJStack 
-		def initialize(lst)
-			lst << :mid2_error
-			super
-			lst << :mid2_end_error
-		end
-		configure_java_class ctor_name: :reconfigured
-		def reconfigured(lst)
-			lst << :mid2_good_start
-			super
-			lst << :mid2_good_end
-		end
-	end
-    class MiddleUofTheCJStack < MiddleMofTheCJStack 
-		#default init
-	end
-	class TopOfTheCJStack < MiddleUofTheCJStack
-		def initialize(lst)
-		lst << :top_start
-		super
-		lst << :top_end
-		end
-	end
+    class BottomOfTheCJStack < java.util.ArrayList
+      def initialize(lst)
+        lst << :bottom_start
+        super()
+        lst << :bottom_end
+      end
+    end
+    class MiddleLofTheCJStack < BottomOfTheCJStack
+      def initialize(lst)
+        lst << :mid1_start
+        super
+        lst << :mid1_end
+      end
+    end
+    class MiddleMofTheCJStack < MiddleLofTheCJStack
+      def initialize(lst)
+        lst << :mid2_error
+        super
+        lst << :mid2_end_error
+      end
+      configure_java_class ctor_name: :reconfigured
+      def reconfigured(lst)
+        lst << :mid2_good_start
+        super
+        lst << :mid2_good_end
+      end
+    end
+    class MiddleUofTheCJStack < MiddleMofTheCJStack
+      #default init
+    end
+    class TopOfTheCJStack < MiddleUofTheCJStack
+      def initialize(lst)
+      lst << :top_start
+      super
+      lst << :top_end
+      end
+    end
 	
-	trace = []
+	  trace = []
     expect(TopOfTheCJStack.new(trace)).not_to be_nil
     expect(trace).to eql([:top_start, :mid2_good_start, :mid1_start, :bottom_start, :bottom_end, :mid1_end, :mid2_good_end, :top_end])
   end
   
   it "supports reification of java classes with interfaces" do
-	clz = Class.new(java.lang.Exception) do
-		include java.util.Iterator
-		def initialize(array)
-			@array = array
-			super(array.inspect)
-			@at=0
-			@loop = false
-		end
-		def hasNext
-			@at<@array.length
-		end
-		def next()
-			@array[@array.length - 1 - @at].tap{@at+=1}
-		end
-		
-		def remove
-			raise java.lang.StackOverflowError.new if @loop
-			@loop = true
-			begin
-				@array<< :fail1
-				super
-				@array << :fail2
-			rescue java.lang.UnsupportedOperationException => uo
-				@array = [:success]
-			rescue java.lang.StackOverflowError => so
-				@array << :failSO
-			end
-			@loop = false
-		end
-	end
+    clz = Class.new(java.lang.Exception) do
+      include java.util.Iterator
+      def initialize(array)
+        @array = array
+        super(array.inspect)
+        @at = 0
+        @loop = false
+      end
+      def hasNext
+        @at < @array.length
+      end
+      def next()
+        @array[@array.length - 1 - @at].tap{@at+=1}
+      end
+      def remove
+        raise java.lang.StackOverflowError.new if @loop
+        @loop = true
+        begin
+          @array<< :fail1
+          super
+          @array << :fail2
+        rescue java.lang.UnsupportedOperationException => uo
+          @array = [:success]
+        rescue java.lang.StackOverflowError => so
+          @array << :failSO
+        end
+        @loop = false
+      end
+    end
 
-	gotten = []
-	clz.new([:a, :b, :c]).forEachRemaining { |k| gotten << k }
-	expect(gotten).to eql([:c,:b, :a])
-	expect(clz.new([:a, :b, :c]).message).to eql("[:a, :b, :c]")
+    gotten = []
+    clz.new([:a, :b, :c]).forEachRemaining { |k| gotten << k }
+    expect(gotten).to eql([:c,:b, :a])
+    expect(clz.new([:a, :b, :c]).message).to eql("[:a, :b, :c]")
 
-	pending "GH#6479 + reification not yet hooked up"
-	obj = clz.new(["fail3"])
-	obj.remove
-	gotten = []
-	obj.forEachRemaining { |k| gotten << k }
-	expect(gotten).to eql([:success])
-	expect(gotten.length).to eql(2)
+    pending "GH#6479 + reification not yet hooked up"
+    obj = clz.new(["fail3"])
+    obj.remove
+    gotten = []
+    obj.forEachRemaining { |k| gotten << k }
+    expect(gotten).to eql([:success])
+    expect(gotten.length).to eql(2)
   end
   
   it "supports reification of ruby classes with interfaces" do
     pending "GH#6479 + reification not yet hooked up"
 
-	clz = Class.new do
-		include java.util.Iterator
-		def initialize(array)
-			@array = array
-			@at=0
-			@loop = false
-		end
-		def hasNext
-			@at<@array.length
-		end
-		def next()
-			@array[@array.length - 1 - @at].tap{@at+=1}
-		end
-		
-		def remove
-			raise java.lang.StackOverflowError.new if @loop
-			@loop = true
-			begin
-				@array<< :fail1
-				super
-				@array << :fail2
-			rescue java.lang.UnsupportedOperationException => uo
-				@array = [:success]
-			rescue java.lang.StackOverflowError => so
-				@array << :failSO
-			end
-			@loop = false
-		end
-	end
+    clz = Class.new do
+      include java.util.Iterator
+      def initialize(array)
+        @array = array
+        @at = 0
+        @loop = false
+      end
+      def hasNext
+        @at < @array.length
+      end
+      def next()
+        @array[@array.length - 1 - @at].tap{@at+=1}
+      end
 
-	obj = clz.new(["fail3"])
-	obj.remove
-	gotten = []
-	obj.forEachRemaining { |k| gotten << k }
-	expect(gotten).to eql([:success])
-	expect(gotten.length).to eql(2)
+      def remove
+        raise java.lang.StackOverflowError.new if @loop
+        @loop = true
+        begin
+          @array<< :fail1
+          super
+          @array << :fail2
+        rescue java.lang.UnsupportedOperationException => uo
+          @array = [:success]
+        rescue java.lang.StackOverflowError => so
+          @array << :failSO
+        end
+        @loop = false
+      end
+    end
+
+    obj = clz.new(["fail3"])
+    obj.remove
+    gotten = []
+    obj.forEachRemaining { |k| gotten << k }
+    expect(gotten).to eql([:success])
+    expect(gotten.length).to eql(2)
   end
   
-  
   it "supports reification of concrete classes with non-standard construction" do
-  
-	clz = Class.new(java.lang.Exception) do
-		def jinit(str, seq)
-			@seq = seq
-			super("foo: #{str}")
-			seq << :jinit
-		end
-		
-		def initialize(str, foo)
-			@seq << :init
-			@seq << str
-			@seq << foo
-		end
-		
-		def self.new(seq, str)
-			obj = allocate
-			seq << :new
-			obj.__jallocate!(str, seq)
-			seq << :ready
-			obj
-		end
-		
-		configure_java_class ctor_name: :jinit
-	end
+	  clz = Class.new(java.lang.Exception) do
+      def jinit(str, seq)
+        @seq = seq
+        super("foo: #{str}")
+        seq << :jinit
+      end
+
+      def initialize(str, foo)
+        @seq << :init
+        @seq << str
+        @seq << foo
+      end
+
+      def self.new(seq, str)
+        obj = allocate
+        seq << :new
+        obj.__jallocate!(str, seq)
+        seq << :ready
+        obj
+      end
+
+      configure_java_class ctor_name: :jinit
+	  end
 	
-	bclz = clz.become_java!
-	
-	lst = []
-	obj = clz.new(lst, :bar)
-	expect(obj).not_to be_nil
-	expect(lst).to eq([:new, :jinit, :ready])
-	expect(obj.message).to eq("foo: bar")
-	obj.send :initialize, :x, "y"
-	expect(lst).to eq([:new, :jinit, :ready, :init, :x, "y"])
-	expect(bclz).to eq(clz.java_class)
-	expect(bclz).not_to eq(java.lang.Exception.java_class)
+    bclz = clz.become_java!
+
+    lst = []
+    obj = clz.new(lst, :bar)
+    expect(obj).not_to be_nil
+    expect(lst).to eq([:new, :jinit, :ready])
+    expect(obj.message).to eq("foo: bar")
+    obj.send :initialize, :x, "y"
+    expect(lst).to eq([:new, :jinit, :ready, :init, :x, "y"])
+    expect(bclz).to eq(clz.java_class)
+    expect(bclz).not_to eq(java.lang.Exception.java_class)
   end
 
   it "supports reification of annotations and signatures on static methods without parameters" do
