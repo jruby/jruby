@@ -795,17 +795,17 @@ public class RubyModule extends RubyObject {
     }
 
     private String calculateAnonymousName() {
-        String cachedName = this.cachedName; // re-use cachedName field since it won't be set for anonymous class
+        String cachedName = this.cachedName;
         if (cachedName == null) {
             // anonymous classes get the #<Class:0xdeadbeef> format
-            StringBuilder anonBase = new StringBuilder(24);
-            anonBase.append("#<").append(metaClass.getRealClass().getName()).append(":0x");
-            anonBase.append(Integer.toHexString(System.identityHashCode(this))).append('>');
-            cachedName = this.cachedName = anonBase.toString();
+            cachedName = this.cachedName = "#<" + anonymousMetaNameWithIdentifier() + '>';
         }
         return cachedName;
     }
 
+    String anonymousMetaNameWithIdentifier() {
+        return metaClass.getRealClass().getName() + ":0x" + Integer.toHexString(System.identityHashCode(this));
+    }
 
     @JRubyMethod(name = "refine", reads = SCOPE)
     public IRubyObject refine(ThreadContext context, IRubyObject klass, Block block) {

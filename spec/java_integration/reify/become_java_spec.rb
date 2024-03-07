@@ -22,21 +22,24 @@ describe "JRuby class reification" do
 
   it "uses the nesting of the class for its package name" do
     class ReifyInterfacesClass1
-      class ReifyInterfacesClass2
+      module Nested
+        class InnerClass
+        end
       end
     end
     ReifyInterfacesClass1.become_java!
-    ReifyInterfacesClass1::ReifyInterfacesClass2.become_java!
+    ReifyInterfacesClass1::Nested::InnerClass.become_java!
 
     jclass = java.lang.Class
 
-    expect(ReifyInterfacesClass1.to_java(jclass).name).to eq("rubyobj.ReifyInterfacesClass1")
-    expect(ReifyInterfacesClass1::ReifyInterfacesClass2.to_java(jclass).name).to eq("rubyobj.ReifyInterfacesClass1.ReifyInterfacesClass2")
+    outer_java_class_name = ReifyInterfacesClass1.to_java(jclass).name
+    expect(outer_java_class_name).to match /^rubyobj\.(\w)*?\.ReifyInterfacesClass1$/
+    expect(ReifyInterfacesClass1::Nested::InnerClass.to_java(jclass).name).to match /^rubyobj\.(\w)*?\.ReifyInterfacesClass1\.Nested\.InnerClass$/
 
     # checking that the packages are valid for Java's purposes
     expect do
       ReifyInterfacesClass1.new
-      ReifyInterfacesClass1::ReifyInterfacesClass2.new
+      ReifyInterfacesClass1::Nested::InnerClass.new
     end.not_to raise_error
   end
 
@@ -465,11 +468,11 @@ describe "JRuby class reification" do
   it 'has a similar Java class name' do
     ReifiedSample.become_java!
     klass = ReifiedSample.java_class
-    expect( klass.getName ).to eql 'rubyobj.ReifiedSample'
+    expect( klass.getName ).to match /rubyobj\.(\w)*?\.ReifiedSample/
     klass = Class.new(ReifiedSample)
     hexid = klass.inspect.match(/(0x[0-9a-f]+)/)[1]
     klass = klass.become_java!
-    expect( klass.getName ).to match /^rubyobj\.Class_#{hexid}/ # rubyobj.Class_0x599f1b7
+    expect( klass.getName ).to match /^rubyobj\.Class\$#{hexid}/ # rubyobj.Class$0x599f1b7
   end
 
   it 'works when reflecting annotations' do
