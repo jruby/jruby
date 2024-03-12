@@ -2994,11 +2994,6 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     @Deprecated
-    public IRubyObject set_default_proc20(IRubyObject proc) {
-        return set_default_proc(proc);
-    }
-
-    @Deprecated
     public RubyFixnum rb_size() {
         return metaClass.runtime.newFixnum(size());
     }

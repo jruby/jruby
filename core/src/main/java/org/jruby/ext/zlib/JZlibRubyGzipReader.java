@@ -302,11 +302,6 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         }
     }
 
-    @Deprecated
-    public IRubyObject gets_18(ThreadContext context, IRubyObject[] args) {
-        return gets(context, args);
-    }
-
     @JRubyMethod(name = "gets", optional = 2, checkArity = false, writes = FrameField.LASTLINE)
     public IRubyObject gets(ThreadContext context, IRubyObject[] args) {
         try {
