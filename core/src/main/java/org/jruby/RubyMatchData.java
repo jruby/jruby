@@ -581,12 +581,6 @@ public class RubyMatchData extends RubyObject {
         return matchArySubseq(context, begLen[0], begLen[1], result);
     }
 
-
-    @Deprecated
-    public IRubyObject op_aref19(IRubyObject idx, IRubyObject rest) {
-        return op_aref(getRuntime().getCurrentContext(), idx, rest);
-    }
-
     /** match_aref
      *
      */
@@ -679,15 +673,16 @@ public class RubyMatchData extends RubyObject {
         return RubyFixnum.newFixnum(runtime, e);
     }
 
+    @Deprecated
+    public IRubyObject offset19(ThreadContext context, IRubyObject index) {
+        return offset(context, index);
+    }
+
     /** match_offset
      *
      */
-    public IRubyObject offset(ThreadContext context, IRubyObject index) {
-        return offset19(context, index);
-    }
-
     @JRubyMethod(name = "offset")
-    public IRubyObject offset19(ThreadContext context, IRubyObject index) {
+    public IRubyObject offset(ThreadContext context, IRubyObject index) {
         check();
 
         final Ruby runtime = context.runtime;

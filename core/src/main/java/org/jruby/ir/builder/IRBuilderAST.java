@@ -221,7 +221,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             case MATCH3NODE: return buildMatch3(result, (Match3Node) node);
             case MATCHNODE: return buildMatch(result, (MatchNode) node);
             case MODULENODE: return buildModule((ModuleNode) node);
-            case MULTIPLEASGNNODE: return buildMultipleAsgn19((MultipleAsgnNode) node);
+            case MULTIPLEASGNNODE: return buildMultipleAsgn((MultipleAsgnNode) node);
             case NEXTNODE: return buildNext((NextNode) node);
             case NTHREFNODE: return buildNthRef((NthRefNode) node);
             case NILNODE: return buildNil();
@@ -306,7 +306,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     // Non-arg masgn
-    public Operand buildMultipleAsgn19(MultipleAsgnNode multipleAsgnNode) {
+    public Operand buildMultipleAsgn(MultipleAsgnNode multipleAsgnNode) {
         Node valueNode = multipleAsgnNode.getValueNode();
         Variable ret = getValueInTemporaryVariable(build(valueNode));
         if (valueNode instanceof ArrayNode || valueNode instanceof ZArrayNode) {

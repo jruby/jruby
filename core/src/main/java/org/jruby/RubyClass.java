@@ -2915,16 +2915,6 @@ public class RubyClass extends RubyModule {
     }
 
     @Deprecated
-    public IRubyObject initialize19(ThreadContext context, Block block) {
-        return initialize(context, block);
-    }
-
-    @Deprecated
-    public IRubyObject initialize19(ThreadContext context, IRubyObject superObject, Block block) {
-        return initialize(context, superObject, block);
-    }
-
-    @Deprecated
     public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
                                   Block block) {
         CacheEntry entry = searchWithCache(name);

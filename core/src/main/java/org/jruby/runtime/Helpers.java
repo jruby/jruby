@@ -1947,45 +1947,12 @@ public class Helpers {
     }
 
     @Deprecated // not used
-    public static IRubyObject aValueSplat19(IRubyObject value) {
-        if (!(value instanceof RubyArray)) {
-            return value.getRuntime().getNil();
-        }
-
-        return (RubyArray) value;
-    }
-
-    @Deprecated // not used
     public static RubyArray splatValue(IRubyObject value) {
         if (value.isNil()) {
             return value.getRuntime().newArray(value);
         }
 
         return arrayValue(value);
-    }
-
-    @Deprecated // not used
-    public static RubyArray splatValue19(IRubyObject value) {
-        if (value.isNil()) {
-            return value.getRuntime().newEmptyArray();
-        }
-
-        return arrayValue(value);
-    }
-
-    @Deprecated // not used
-    public static IRubyObject unsplatValue19(IRubyObject argsResult) {
-        if (argsResult instanceof RubyArray) {
-            RubyArray array = (RubyArray) argsResult;
-
-            if (array.size() == 1) {
-                IRubyObject newResult = array.eltInternal(0);
-                if (!((newResult instanceof RubyArray) && ((RubyArray) newResult).size() == 0)) {
-                    argsResult = newResult;
-                }
-            }
-        }
-        return argsResult;
     }
 
     @Deprecated // no longer used

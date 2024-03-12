@@ -346,7 +346,7 @@ public class RubyStruct extends RubyObject {
 
         @JRubyMethod
         public static IRubyObject members(IRubyObject recv, Block block) {
-            return RubyStruct.members19(recv, block);
+            return RubyStruct.members(recv, block);
         }
 
         @JRubyMethod
@@ -557,11 +557,6 @@ public class RubyStruct extends RubyObject {
         return members(classOf());
     }
 
-    @Deprecated
-    public final RubyArray members19() {
-        return members();
-    }
-
     @JRubyMethod
     public IRubyObject select(ThreadContext context, Block block) {
         if (!block.isGiven()) {
@@ -683,12 +678,12 @@ public class RubyStruct extends RubyObject {
             }
             RubySymbol slot = (RubySymbol) member.eltInternal(i);
             if (slot.validLocalVariableName() || slot.validConstantName()) {
-                buffer.cat19(RubyString.objAsString(context, slot));
+                buffer.catWithCodeRange(RubyString.objAsString(context, slot));
             } else {
-                buffer.cat19(((RubyString) slot.inspect(context)));
+                buffer.catWithCodeRange(((RubyString) slot.inspect(context)));
             }
             buffer.cat('=');
-            buffer.cat19(inspect(context, values[i]));
+            buffer.catWithCodeRange(inspect(context, values[i]));
         }
 
         buffer.cat('>');
@@ -1010,11 +1005,6 @@ public class RubyStruct extends RubyObject {
         public int getIndex() {
             return index;
         }
-    }
-
-    @Deprecated
-    public static RubyArray members19(IRubyObject recv, Block block) {
-        return members(recv, block);
     }
 
     private static class EqlRecursive implements ThreadContext.RecursiveFunctionEx<IRubyObject> {

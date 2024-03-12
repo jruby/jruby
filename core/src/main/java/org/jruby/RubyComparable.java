@@ -154,11 +154,6 @@ public class RubyComparable {
         return callCmpMethod(context, recv, other, context.fals);
     }
 
-    @Deprecated
-    public static IRubyObject op_equal19(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        return op_equal(context, recv, other);
-    }
-
     private static IRubyObject callCmpMethod(final ThreadContext context, final IRubyObject recv, final IRubyObject other, IRubyObject returnValueOnError) {
         final Ruby runtime = context.runtime;
 

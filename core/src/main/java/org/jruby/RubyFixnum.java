@@ -835,11 +835,6 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return powerFixnum(context, RubyFixnum.newFixnum(context.runtime, other));
     }
 
-    @Deprecated
-    public IRubyObject op_pow_19(ThreadContext context, IRubyObject other) {
-        return op_pow(context, other);
-    }
-
     private IRubyObject powerOther(ThreadContext context, IRubyObject other) {
         final Ruby runtime = context.runtime;
         final long a = this.value;

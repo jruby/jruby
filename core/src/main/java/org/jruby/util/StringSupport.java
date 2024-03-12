@@ -1166,13 +1166,6 @@ public final class StringSupport {
         }
     }
 
-    /**
-     * @deprecated renamed to {@link #strCount(ByteList, Ruby, boolean[], TrTables, Encoding)}
-     */
-    public static int countCommon19(ByteList str, Ruby runtime, boolean[] table, TrTables tables, Encoding enc) {
-        return strCount(str, runtime, table, tables, enc);
-    }
-
     // MRI: rb_str_rindex
     public static int rindex(ByteList source, int sourceChars, int subChars, int pos, CodeRangeable subStringCodeRangeable, Encoding enc) {
         if (subStringCodeRangeable.scanForCodeRange() == CR_BROKEN) return -1;
@@ -1884,8 +1877,18 @@ public final class StringSupport {
         return source.getByteList();
     }
 
-    // MRI: rb_str_update, second half
+    @Deprecated
     public static void replaceInternal19(int beg, int len, CodeRangeable source, CodeRangeable repl) {
+        strUpdate(beg, len, source, repl);
+    }
+
+    @Deprecated
+    public static void replaceInternal19(Ruby runtime, int beg, int len, RubyString source, RubyString repl) {
+        strUpdate(runtime, beg, len, source, repl);
+    }
+
+    // MRI: rb_str_update, second half
+    public static void strUpdate(int beg, int len, CodeRangeable source, CodeRangeable repl) {
         Encoding enc = source.checkEncoding(repl);
 
         source.modify();
@@ -1909,7 +1912,7 @@ public final class StringSupport {
     }
 
     // MRI: rb_str_update, first half
-    public static void replaceInternal19(Ruby runtime, int beg, int len, RubyString source, RubyString repl) {
+    public static void strUpdate(Ruby runtime, int beg, int len, RubyString source, RubyString repl) {
         if (len < 0) throw runtime.newIndexError("negative length " + len);
 
         int slen = strLengthFromRubyString(source, source.checkEncoding(repl));
@@ -1927,7 +1930,7 @@ public final class StringSupport {
             len = slen - beg;
         }
 
-        replaceInternal19(beg, len, source, repl);
+        strUpdate(beg, len, source, repl);
     }
 
     public static boolean isAsciiOnly(CodeRangeable string) {
@@ -2009,11 +2012,6 @@ public final class StringSupport {
             if (p2 != -1 && EncodingUtils.encAscget(bl.unsafeBytes(),  p2, end, null, enc) == '\r') p = p2;
         }
         return p - beg;
-    }
-
-    @Deprecated
-    public static int choppedLength19(CodeRangeable str, Ruby runtime) {
-        return choppedLength(str);
     }
 
     /**

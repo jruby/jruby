@@ -77,11 +77,6 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
         return getRuntime().newFixnum(method.getSignature().arityValue());
     }
 
-    @Deprecated
-    public final IRubyObject op_eql19(ThreadContext context, IRubyObject other) {
-        return op_eql(context, other);
-    }
-
     @JRubyMethod(name = "eql?")
     public IRubyObject op_eql(ThreadContext context, IRubyObject other) {
         return RubyBoolean.newBoolean(context,  equals(other) );

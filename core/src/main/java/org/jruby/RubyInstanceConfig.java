@@ -1947,15 +1947,6 @@ public class RubyInstanceConfig {
     }
 
     @Deprecated
-    public CompatVersion getCompatVersion() {
-        return CompatVersion.RUBY2_1;
-    }
-
-    @Deprecated
-    public void setCompatVersion(CompatVersion compatVersion) {
-    }
-
-    @Deprecated
     public boolean isJitDumping() {
         return jitDumping;
     }

@@ -1215,7 +1215,7 @@ public class RubySet extends RubyObject implements Set {
             final RubyString s = inspect(context, elem);
             if ( notFirst ) str.cat((byte) ',').cat((byte) ' ');
             else str.setEncoding( s.getEncoding() ); notFirst = true;
-            str.cat19( s );
+            str.catWithCodeRange(s);
         }
 
         str.cat((byte) '}');

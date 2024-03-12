@@ -429,7 +429,6 @@ DO NOT MODIFY - GENERATED CODE
                 <include>org/jruby/anno/AnnotationBinder.java</include>
                 <include>org/jruby/anno/JRubyMethod.java</include>
                 <include>org/jruby/anno/FrameField.java</include>
-                <include>org/jruby/CompatVersion.java</include>
                 <include>org/jruby/runtime/Visibility.java</include>
                 <include>org/jruby/util/CodegenUtils.java</include>
                 <include>org/jruby/util/SafePropertyAccessor.java</include>

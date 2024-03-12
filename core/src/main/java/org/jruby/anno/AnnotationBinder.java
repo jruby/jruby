@@ -181,8 +181,6 @@ public class AnnotationBinder extends AbstractProcessor {
 
                 if (anno == null) continue;
 
-                if (anno.compat() == org.jruby.CompatVersion.RUBY1_8) continue;
-
                 methodCount++;
 
                 checkForThrows(cd, method);

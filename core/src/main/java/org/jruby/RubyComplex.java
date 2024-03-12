@@ -413,11 +413,6 @@ public class RubyComplex extends RubyNumeric {
         return f_complex_polar(context, (RubyClass) clazz, abs, arg);
     }
 
-    @Deprecated
-    public static IRubyObject polar19(ThreadContext context, IRubyObject clazz, IRubyObject[] args) {
-        return polar(context, clazz, args);
-    }
-
     /** rb_Complex1
      * 
      */

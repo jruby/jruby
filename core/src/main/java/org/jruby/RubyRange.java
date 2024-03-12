@@ -574,11 +574,6 @@ public class RubyRange extends RubyObject {
         return RubyEnumerable.to_a(context, this);
     }
 
-    @Deprecated
-    public IRubyObject each19(ThreadContext context, final Block block) {
-        return each(context, block);
-    }
-
     @JRubyMethod(name = "each")
     public IRubyObject each(final ThreadContext context, final Block block) {
         if (!block.isGiven()) {
@@ -771,16 +766,6 @@ public class RubyRange extends RubyObject {
         return bigNum.signum() == 1;
     }
 
-    @Deprecated
-    public IRubyObject step19(ThreadContext context, IRubyObject step, Block block) {
-        return step(context, step, block);
-    }
-
-    @Deprecated
-    public IRubyObject step19(ThreadContext context, Block block) {
-        return step(context, block);
-    }
-
     @JRubyMethod(name = "step")
     public IRubyObject step(final ThreadContext context, final Block block) {
         return block.isGiven() ? stepCommon(context, RubyFixnum.one(context.runtime), block) : step(context, context.runtime.getNil(), block);
@@ -970,11 +955,6 @@ public class RubyRange extends RubyObject {
         }
 
         return context.nil;
-    }
-
-    @Deprecated
-    public IRubyObject include_p19(ThreadContext context, IRubyObject obj) {
-        return include_p(context, obj);
     }
 
     // framed for invokeSuper
