@@ -1404,9 +1404,17 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return this;
     }
 
-    // // rb_str_buf_append against VALUE
+    // Needs to remain in place until StringIO has migrated to the new methods
+    // See https://github.com/ruby/stringio/issues/83
+    @Deprecated
     public final RubyString cat19(RubyString str2) {
-        int str2_cr = cat19(str2.getByteList(), str2.getCodeRange());
+        return catWithCodeRange(str2);
+    }
+
+    // // rb_str_buf_append against VALUE
+    public final RubyString catWithCodeRange(RubyString str2) {
+        ByteList other = str2.getByteList();
+        int str2_cr = catWithCodeRange(other, str2.getCodeRange());
 
         str2.setCodeRange(str2_cr);
 
@@ -1414,12 +1422,19 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     public final RubyString cat(ByteList other, int codeRange) {
-        cat19(other, codeRange);
+        catWithCodeRange(other, codeRange);
         return this;
     }
 
-    // rb_str_buf_append against ptr
+    // Needs to remain in place until StringIO has migrated to the new methods
+    // See https://github.com/ruby/stringio/issues/83
+    @Deprecated
     public final int cat19(ByteList other, int codeRange) {
+        return catWithCodeRange(other, codeRange);
+    }
+
+    // rb_str_buf_append against ptr
+    public final int catWithCodeRange(ByteList other, int codeRange) {
         return EncodingUtils.encCrStrBufCat(metaClass.runtime, this, other, other.getEncoding(), codeRange);
     }
 

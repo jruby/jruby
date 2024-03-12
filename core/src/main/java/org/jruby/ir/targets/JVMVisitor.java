@@ -1179,7 +1179,7 @@ public class JVMVisitor extends IRVisitor {
                 // we have bytelist and CR in hand, go straight to cat logic
                 FrozenString str = (FrozenString) p;
                 jvmMethod().getValueCompiler().pushFrozenString(str.getByteList(), str.getCodeRange(), str.getFile(), str.getLine());
-                jvmAdapter().invokevirtual(p(RubyString.class), "cat19", sig(RubyString.class, RubyString.class));
+                jvmAdapter().invokevirtual(p(RubyString.class), "catWithCodeRange", sig(RubyString.class, RubyString.class));
             } else if (p instanceof StringLiteral) {
                 StringLiteral str = (StringLiteral) p;
                 jvmMethod().getValueCompiler().pushByteList(str.getByteList());
