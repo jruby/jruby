@@ -1293,11 +1293,6 @@ public class RubyBigDecimal extends RubyNumeric {
         return addInternal(context, getVpValueWithPrec(context, b, false), b, vpPrecLimit(context.runtime));
     }
 
-    @Deprecated
-    public IRubyObject op_plus19(ThreadContext context, IRubyObject b) {
-        return op_plus(context, b);
-    }
-
     @JRubyMethod(name = "add")
     public IRubyObject add2(ThreadContext context, IRubyObject b, IRubyObject digits) {
         return addInternal(context, getVpValueWithPrec(context, b, false), b, digits);

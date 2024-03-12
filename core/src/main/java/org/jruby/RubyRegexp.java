@@ -182,17 +182,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return regex;
     }
 
-    //static Regex getQuotedRegexpFromCache(Ruby runtime, ByteList bytes, RegexpOptions options, boolean asciiOnly) {
-    //    Regex regex = quotedPatternCache.get(bytes);
-    //    Encoding enc = asciiOnly ? USASCIIEncoding.INSTANCE : bytes.getEncoding();
-    //    if (regex != null && regex.getEncoding() == enc && regex.getOptions() == options.toJoniOptions()) return regex;
-    //    final ByteList quoted = quote19(bytes, asciiOnly);
-    //    regex = makeRegexp(runtime, quoted, options, quoted.getEncoding());
-    //    regex.setUserObject(quoted);
-    //    quotedPatternCache.put(bytes, regex);
-    //    return regex;
-    //}
-
     private static Regex getPreprocessedRegexpFromCache(Ruby runtime, ByteList bytes, Encoding enc, RegexpOptions options, RegexpSupport.ErrorMode mode) {
         Regex regex = preprocessedPatternCache.get(bytes);
         if (regex != null && regex.getEncoding() == enc && regex.getOptions() == options.toJoniOptions()) return regex;
