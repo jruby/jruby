@@ -673,11 +673,6 @@ public class RubyMatchData extends RubyObject {
         return RubyFixnum.newFixnum(runtime, e);
     }
 
-    @Deprecated
-    public IRubyObject offset19(ThreadContext context, IRubyObject index) {
-        return offset(context, index);
-    }
-
     /** match_offset
      *
      */

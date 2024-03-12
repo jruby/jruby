@@ -1877,16 +1877,6 @@ public final class StringSupport {
         return source.getByteList();
     }
 
-    @Deprecated
-    public static void replaceInternal19(int beg, int len, CodeRangeable source, CodeRangeable repl) {
-        strUpdate(beg, len, source, repl);
-    }
-
-    @Deprecated
-    public static void replaceInternal19(Ruby runtime, int beg, int len, RubyString source, RubyString repl) {
-        strUpdate(runtime, beg, len, source, repl);
-    }
-
     // MRI: rb_str_update, second half
     public static void strUpdate(int beg, int len, CodeRangeable source, CodeRangeable repl) {
         Encoding enc = source.checkEncoding(repl);

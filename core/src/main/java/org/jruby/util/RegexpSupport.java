@@ -185,20 +185,10 @@ public class RegexpSupport {
         return 0;
     }
 
-    @Deprecated
-    public static void raiseRegexpError19(Ruby runtime, ByteList bytes, Encoding enc, RegexpOptions options, String err) {
-        raiseRegexpError(runtime, bytes, enc, options, err);
-    }
-
     // rb_enc_reg_raise
     public static void raiseRegexpError(Ruby runtime, ByteList bytes, Encoding enc, RegexpOptions options, String err) {
         // TODO: we loose encoding information here, fix it
         throw runtime.newRegexpError(err + ": " + regexpDescription(runtime, bytes, options, enc));
-    }
-
-    @Deprecated
-    public static ByteList regexpDescription19(Ruby runtime, ByteList bytes, RegexpOptions options, Encoding enc) {
-        return regexpDescription(runtime, bytes, options, enc);
     }
 
     // rb_enc_reg_error_desc
@@ -221,11 +211,6 @@ public class RegexpSupport {
         appendOptions(description, options);
         if (options.isEncodingNone()) description.append((byte) 'n');
         return description;
-    }
-
-    @Deprecated
-    public static void appendRegexpString19(Ruby runtime, ByteList to, byte[] bytes, int start, int len, Encoding enc, Encoding resEnc) {
-        appendRegexpString(runtime, to, bytes, start, len, enc, resEnc);
     }
 
     public static void appendRegexpString(Ruby runtime, ByteList to, byte[] bytes, int start, int len, Encoding enc, Encoding resEnc) {

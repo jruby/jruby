@@ -486,11 +486,6 @@ public class RubyDir extends RubyObject implements Closeable {
         return dir.children(context);
     }
 
-    @Deprecated
-    public static IRubyObject rmdir19(IRubyObject recv, IRubyObject path) {
-        return rmdir(recv.getRuntime().getCurrentContext(), recv, path);
-    }
-
     /**
      * Deletes the directory specified by <code>path</code>.  The directory must be empty.
      */

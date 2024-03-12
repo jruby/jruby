@@ -2078,11 +2078,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         context.safeRecurse(JOIN_RECURSIVE, new JoinRecursive.State(ary, outValue, sep, result, first), outValue, "join", true);
     }
 
-    @Deprecated
-    public IRubyObject join19(final ThreadContext context, IRubyObject sep) {
-        return join(context, sep);
-    }
-
     /** rb_ary_join
      *
      */
@@ -2122,11 +2117,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         joinStrings(sepString, realLength, result);
 
         return result;
-    }
-
-    @Deprecated
-    public IRubyObject join19(ThreadContext context) {
-        return join(context);
     }
 
     @JRubyMethod(name = "join")

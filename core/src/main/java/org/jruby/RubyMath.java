@@ -370,11 +370,6 @@ public class RubyMath {
         return RubyFloat.newFloat(context.runtime, result);
     }
 
-    @Deprecated
-    public static RubyFloat hypot19(ThreadContext context, IRubyObject recv, IRubyObject x, IRubyObject y) {
-        return hypot(context, recv, x, y);
-    }    
-
     @JRubyMethod(name = "hypot", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat hypot(ThreadContext context, IRubyObject recv, IRubyObject x, IRubyObject y) {
         double valuea = RubyNumeric.num2dbl(context, x);

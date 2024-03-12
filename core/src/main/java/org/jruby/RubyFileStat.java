@@ -142,11 +142,6 @@ public class RubyFileStat extends RubyObject {
         }
     }
 
-    @Deprecated
-    public IRubyObject initialize19(IRubyObject fname, Block unusedBlock) {
-        return initialize(fname, unusedBlock);
-    }
-
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject fname, Block unusedBlock) {
         Ruby runtime = getRuntime();
