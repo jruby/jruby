@@ -540,7 +540,7 @@ public final class ArrayJavaProxy extends JavaProxy {
                     } else {
                         buf.setEncoding(s.getEncoding());
                     }
-                    buf.cat19(s);
+                    buf.catWithCodeRange(s);
                 }
                 RubyStringBuilder.cat(runtime, buf, END_BRACKET); // ]
             } finally {

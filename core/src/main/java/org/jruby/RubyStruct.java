@@ -683,12 +683,12 @@ public class RubyStruct extends RubyObject {
             }
             RubySymbol slot = (RubySymbol) member.eltInternal(i);
             if (slot.validLocalVariableName() || slot.validConstantName()) {
-                buffer.cat19(RubyString.objAsString(context, slot));
+                buffer.catWithCodeRange(RubyString.objAsString(context, slot));
             } else {
-                buffer.cat19(((RubyString) slot.inspect(context)));
+                buffer.catWithCodeRange(((RubyString) slot.inspect(context)));
             }
             buffer.cat('=');
-            buffer.cat19(inspect(context, values[i]));
+            buffer.catWithCodeRange(inspect(context, values[i]));
         }
 
         buffer.cat('>');

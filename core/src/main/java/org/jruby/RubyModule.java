@@ -713,9 +713,10 @@ public class RubyModule extends RubyObject {
         RubyString fullName = runtime.newString();       // newString creates empty ByteList which ends up as
         fullName.setEncoding(USASCIIEncoding.INSTANCE);  // ASCII-8BIT.  8BIT is unfriendly to string concats.
         for (RubyString parent:  parents) {
-            fullName.cat19(parent).cat19(colons);
+            RubyString rubyString = fullName.catWithCodeRange(parent);
+            rubyString.catWithCodeRange(colons);
         }
-        fullName.cat19(rubyBaseName());
+        fullName.catWithCodeRange(rubyBaseName());
 
         fullName.setFrozen(true);
 
@@ -2786,9 +2787,9 @@ public class RubyModule extends RubyObject {
             RubyString buffer = runtime.newString("#<Class:");
 
             if (attached instanceof RubyModule) {
-                buffer.cat19(attached.inspect().convertToString());
+                buffer.catWithCodeRange(attached.inspect().convertToString());
             } else if (attached != null) {
-                buffer.cat19((RubyString) attached.anyToString());
+                buffer.catWithCodeRange((RubyString) attached.anyToString());
             }
             buffer.cat('>', buffer.getEncoding());
 
@@ -2800,9 +2801,9 @@ public class RubyModule extends RubyObject {
         if (refinedClass != null) {
             RubyString buffer = runtime.newString("#<refinement:");
 
-            buffer.cat19(refinedClass.inspect().convertToString());
+            buffer.catWithCodeRange(refinedClass.inspect().convertToString());
             buffer.cat('@', buffer.getEncoding());
-            buffer.cat19((definedAt.inspect().convertToString()));
+            buffer.catWithCodeRange((definedAt.inspect().convertToString()));
             buffer.cat('>', buffer.getEncoding());
 
             return buffer;

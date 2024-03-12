@@ -1,6 +1,5 @@
 package org.jruby.specialized;
 
-import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -141,7 +140,7 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
 
         RubyString s = inspect(context, value);
         EncodingUtils.encAssociateIndex(str, s.getEncoding());
-        str.cat19(s);
+        str.catWithCodeRange(s);
 
         str.cat((byte) ']');
 
