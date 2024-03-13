@@ -80,6 +80,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import static org.jruby.RubyInteger.singleCharByteList;
+import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.StringSupport.*;
 import static org.jruby.util.io.EncodingUtils.vmode;
@@ -341,13 +342,14 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     // rb_file_initialize
-    @JRubyMethod(name = "initialize", required = 1, optional = 3, checkArity = false, visibility = PRIVATE)
+    @JRubyMethod(name = "initialize", required = 1, optional = 3, checkArity = false, visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
-        int argc = Arity.checkArgumentCount(context, args, 1, 4);
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
+        // Mild hack. We want to arity-mismatch if extra arg is not really a kwarg but not if it is one.
+        int maxArgs = keywords ? 4 : 3;
+        int argc = Arity.checkArgumentCount(context, args, 1, maxArgs);
 
-        if (openFile != null) {
-            throw context.runtime.newRuntimeError("reinitializing File");
-        }
+        if (openFile != null) throw context.runtime.newRuntimeError("reinitializing File");
 
         if (argc > 0 && argc <= 3) {
             IRubyObject fd = TypeConverter.convertToTypeWithCheck(context, args[0], context.runtime.getFixnum(), sites(context).to_int_checked);
@@ -1307,8 +1309,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         long[] mtimeval = null;
 
         if (args[0] != context.nil || args[1] != context.nil) {
-            atimeval = extractTimespec(context, args[0]);
-            mtimeval = extractTimespec(context, args[1]);
+            atimeval = convertTimespecToTimeval(extractTimespec(context, args[0]));
+            mtimeval = convertTimespecToTimeval(extractTimespec(context, args[1]));
         }
 
         for (int i = 2, j = argc; i < j; i++) {
@@ -1357,7 +1359,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 result = runtime.getPosix().utimensat(0, fileToTouch.getAbsolutePath(), atimespec, mtimespec, 0);
             } catch (NotImplementedError re) {
                 // fall back on utimes
-                result = runtime.getPosix().utimes(fileToTouch.getAbsolutePath(), atimespec, mtimespec);
                 long[] atimeval = convertTimespecToTimeval(atimespec);
                 long[] mtimeval = convertTimespecToTimeval(mtimespec);
                 result = runtime.getPosix().utimes(fileToTouch.getAbsolutePath(), atimeval, mtimeval);

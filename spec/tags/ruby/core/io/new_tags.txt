@@ -1,2 +1,0 @@
-fails:IO.new accepts options as keyword arguments
-

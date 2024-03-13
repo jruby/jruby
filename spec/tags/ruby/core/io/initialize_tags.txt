@@ -1,1 +1,0 @@
-fails:IO#initialize accepts options as keyword arguments

@@ -1775,7 +1775,18 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
 
         // 2.0 keyword rest arg
         if (keyRest != null) {
-            ArgumentType type = restName == null ? ArgumentType.anonkeyrest : ArgumentType.keyrest;
+            ArgumentType type;
+            // FIXME: combined processing of argumentType could be removed and use same helper that blocks use.
+
+            // anonymous keyrest
+            if (restName == null || restName.getBytes().realSize() == 0) {
+                type = ArgumentType.anonkeyrest;
+            } else if (restName.getBytes().equals(CommonByteLists.NIL)) {
+                type = ArgumentType.nokey;
+            } else {
+                type = ArgumentType.keyrest;
+            }
+
             Variable av = getNewLocalVariable(restName, 0);
             if (scope instanceof IRMethod) addArgumentDescription(type, restName);
 

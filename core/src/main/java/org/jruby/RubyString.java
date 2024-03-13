@@ -1394,6 +1394,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return this;
     }
 
+    // Needs to remain in place until StringIO has migrated to the new methods
+    // See https://github.com/ruby/stringio/issues/83
     @Deprecated
     public final RubyString cat19(RubyString str2) {
         return catWithCodeRange(str2);
@@ -1414,6 +1416,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return this;
     }
 
+    // Needs to remain in place until StringIO has migrated to the new methods
+    // See https://github.com/ruby/stringio/issues/83
     @Deprecated
     public final int cat19(ByteList other, int codeRange) {
         return catWithCodeRange(other, codeRange);
@@ -2630,6 +2634,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return catWithCodeRange(other);
     }
 
+    @Deprecated
+    public RubyString append19(IRubyObject other) {
+        return append(other);
+    }
+
     public RubyString appendAsDynamicString(IRubyObject other) {
         // fast path for fixnum straight into ascii-compatible bytelist
         if (other instanceof RubyFixnum && value.getEncoding().isAsciiCompatible()) {
@@ -2647,6 +2656,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         }
 
         return catWithCodeRange(other.asString());
+    }
+
+    // NOTE: append(RubyString) should pbly just do the encoding aware cat
+    final RubyString append19(RubyString other) {
+        modifyCheck();
+        return catWithCodeRange(other);
     }
 
     /** rb_str_concat
@@ -3603,6 +3618,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         IRubyObject obj = byteSubstr(runtime, index, 1);
         if (obj.isNil() || ((RubyString)obj).getByteList().length() == 0) return runtime.getNil();
         return obj;
+    }
+
+    @Deprecated
+    public final IRubyObject substr19(Ruby runtime, int beg, int len) {
+        return substrEnc(runtime, beg, len);
     }
 
     public final IRubyObject substrEnc(Ruby runtime, int beg, int len) {
@@ -6464,6 +6484,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @JRubyMethod
     public IRubyObject to_c(ThreadContext context) {
         Ruby runtime = context.runtime;
+
+        verifyAsciiCompatible();
 
         RubyRegexp underscore_pattern = RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.underscores_pat);
         RubyString s = gsubFast(context, underscore_pattern, runtime.newString(UNDERSCORE), Block.NULL_BLOCK);

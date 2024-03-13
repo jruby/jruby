@@ -94,6 +94,7 @@ import org.jruby.util.io.PopenExecutor;
 
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.RubyFile.fileResource;
 import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.RubyIO.checkUnsupportedOptions;
 import static org.jruby.RubyIO.checkValidSpawnOptions;
@@ -254,14 +255,12 @@ public class RubyKernel {
 
     @JRubyMethod(name = "open", required = 1, optional = 3, checkArity = false, module = true, visibility = PRIVATE, keywords = true)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        int argc = Arity.checkArgumentCount(context, args, 1, 4);
-
-        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
         Ruby runtime = context.runtime;
-        //        symbol to_open = 0;
         boolean redirect = false;
+        int callInfo = ThreadContext.resetCallInfo(context);
+        boolean keywords = hasKeywords(callInfo);
 
-        if (argc >= 1) {
+        if (args.length >= 1) {
             //            CONST_ID(to_open, "to_open");
             if (args[0].respondsTo("to_open")) {
                 redirect = true;
@@ -283,6 +282,13 @@ public class RubyKernel {
                 }
             }
         }
+
+        // Mild hack. We want to arity-mismatch if extra arg is not really a kwarg but not if it is one.
+        int maxArgs = keywords ? 5 : 4;
+        Arity.checkArgumentCount(context, args, 1, maxArgs);
+
+        //        symbol to_open = 0;
+
         if (redirect) {
             if (keywords) context.callInfo = ThreadContext.CALL_KEYWORD;
             IRubyObject io = args[0].callMethod(context, "to_open", Arrays.copyOfRange(args, 1, args.length));
@@ -290,6 +296,9 @@ public class RubyKernel {
             RubyIO.ensureYieldClose(context, io, block);
             return io;
         }
+
+        // We had to save callInfo from original call because kwargs needs to still pass through to IO#open
+        context.callInfo = callInfo;
         return RubyIO.open(context, runtime.getFile(), args, block);
     }
 
@@ -1558,7 +1567,13 @@ public class RubyKernel {
         if (argc == 1) {
             proc = RubyProc.newProc(context.runtime, block, Block.Type.PROC);
         } else if (argc == 2) {
-            proc = (RubyProc)TypeConverter.convertToType(args[1], context.runtime.getProc(), "to_proc", true);
+            if (args[1] instanceof RubyString) {
+                RubyString rubyString = context.runtime.newString("proc {");
+                RubyString s = rubyString.catWithCodeRange(((RubyString) args[1])).cat('}');
+                proc = (RubyProc) evalCommon(context, recv, new IRubyObject[] { s });
+            } else {
+                proc = (RubyProc) TypeConverter.convertToType(args[1], context.runtime.getProc(), "to_proc", true);
+            }
         }
 
         context.runtime.getGlobalVariables().setTraceVar(var, proc);
@@ -1703,13 +1718,13 @@ public class RubyKernel {
 
         switch (cmd) {
         case 'A': // ?A  | Time    | Last access time for file1
-            return context.runtime.newFileStat(arg1.convertToString().toString(), false).atime();
+            return context.runtime.newFileStat(fileResource(arg1).path(), false).atime();
         case 'b': // ?b  | boolean | True if file1 is a block device
             return RubyFileTest.blockdev_p(recv, arg1);
         case 'c': // ?c  | boolean | True if file1 is a character device
             return RubyFileTest.chardev_p(recv, arg1);
         case 'C': // ?C  | Time    | Last change time for file1
-            return context.runtime.newFileStat(arg1.convertToString().toString(), false).ctime();
+            return context.runtime.newFileStat(fileResource(arg1).path(), false).ctime();
         case 'd': // ?d  | boolean | True if file1 exists and is a directory
             return RubyFileTest.directory_p(context, recv, arg1);
         case 'e': // ?e  | boolean | True if file1 exists
@@ -1723,7 +1738,7 @@ public class RubyKernel {
         case 'k': // ?k  | boolean | True if file1 exists and has the sticky bit set
             return RubyFileTest.sticky_p(recv, arg1);
         case 'M': // ?M  | Time    | Last modification time for file1
-            return context.runtime.newFileStat(arg1.convertToString().toString(), false).mtime();
+            return context.runtime.newFileStat(fileResource(arg1).path(), false).mtime();
         case 'l': // ?l  | boolean | True if file1 exists and is a symbolic link
             return RubyFileTest.symlink_p(recv, arg1);
         case 'o': // ?o  | boolean | True if file1 exists and is owned by the caller's effective uid
