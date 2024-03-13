@@ -880,7 +880,7 @@ public class EncodingUtils {
             // set to same superclass
             newstr.setMetaClass(str.getMetaClass());
         }
-        newstr.modify19();
+        newstr.modifyAndClearCodeRange();
         return strEncodeAssociate(newstr, encindex);
     }
 

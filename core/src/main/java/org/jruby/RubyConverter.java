@@ -287,12 +287,12 @@ public class RubyConverter extends RubyObject {
             inBytes = new ByteList();
         } else {
             input = args[0].convertToString();
-            input.modify19();
+            input.modifyAndClearCodeRange();
             inBytes = input.getByteList();
         }
         
         output = args[1].convertToString();
-        output.modify19();
+        output.modifyAndClearCodeRange();
         outBytes = output.getByteList();
 
         Ptr inPtr = new Ptr();
