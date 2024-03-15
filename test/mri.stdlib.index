@@ -2,7 +2,6 @@
 
 benchmark
 cgi
-dbm
 digest
 dtrace
 erb
@@ -34,7 +33,6 @@ ostruct
 pathname
 psych
 rdoc
-readline
 reline
 resolv
 ripper
@@ -53,7 +51,6 @@ test_forwardable.rb
 test_ipaddr.rb
 test_pp.rb
 test_prettyprint.rb
-test_prime.rb
 test_pstore.rb
 test_pty.rb
 test_rbconfig.rb
