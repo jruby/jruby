@@ -70,6 +70,10 @@ public class ScopedParserState {
         this.namedCaptures = newNamedCaptures;
     }
 
+    public boolean hasDefinedVariables() {
+        return definedVariables != null;
+    }
+
     public boolean isNamedCapture(int index) {
         boolean[] namedCaptures = this.namedCaptures;
         return namedCaptures != null && index < namedCaptures.length && namedCaptures[index];

@@ -250,6 +250,11 @@ public abstract class AbstractNodeVisitor<T> implements NodeVisitor<T> {
     }
 
     @Override
+    public T visitErrorNode(ErrorNode node) {
+        return defaultVisit(node);
+    }
+
+    @Override
     public T visitEvStrNode(EvStrNode node) {
         return defaultVisit(node);
     }

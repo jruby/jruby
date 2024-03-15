@@ -268,6 +268,10 @@ public abstract class LexingCommon {
         return lexContext;
     }
 
+    public void setLexContext(LexContext context) {
+        lexContext = context;
+    }
+
     public int getBraceNest() {
         return braceNest;
     }
