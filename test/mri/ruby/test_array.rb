@@ -529,14 +529,19 @@ class TestArray < Test::Unit::TestCase
   end
 
   def test_assoc
+    def (a4 = Object.new).to_ary
+      %w( pork porcine )
+    end
+
     a1 = @cls[*%w( cat feline )]
     a2 = @cls[*%w( dog canine )]
     a3 = @cls[*%w( mule asinine )]
 
-    a = @cls[ a1, a2, a3 ]
+    a = @cls[ a1, a2, a3, a4 ]
 
     assert_equal(a1, a.assoc('cat'))
     assert_equal(a3, a.assoc('mule'))
+    assert_equal(%w( pork porcine ), a.assoc("pork"))
     assert_equal(nil, a.assoc('asinine'))
     assert_equal(nil, a.assoc('wombat'))
     assert_equal(nil, a.assoc(1..2))
@@ -1329,13 +1334,17 @@ class TestArray < Test::Unit::TestCase
   end
 
   def test_rassoc
+    def (a4 = Object.new).to_ary
+      %w( pork porcine )
+    end
     a1 = @cls[*%w( cat  feline )]
     a2 = @cls[*%w( dog  canine )]
     a3 = @cls[*%w( mule asinine )]
-    a  = @cls[ a1, a2, a3 ]
+    a  = @cls[ a1, a2, a3, a4 ]
 
     assert_equal(a1,  a.rassoc('feline'))
     assert_equal(a3,  a.rassoc('asinine'))
+    assert_equal(%w( pork porcine ), a.rassoc("porcine"))
     assert_equal(nil, a.rassoc('dog'))
     assert_equal(nil, a.rassoc('mule'))
     assert_equal(nil, a.rassoc(1..2))
@@ -1691,6 +1700,15 @@ class TestArray < Test::Unit::TestCase
     assert_equal @cls[], a.slice(10..7)
 
     assert_equal([100], a.slice(-1, 1_000_000_000))
+  end
+
+  def test_slice_gc_compact_stress
+    omit "compaction doesn't work well on s390x" if RUBY_PLATFORM =~ /s390x/ # https://github.com/ruby/ruby/pull/5077
+    EnvUtil.under_gc_compact_stress { assert_equal([1, 2, 3, 4, 5], (0..10).to_a[1, 5]) }
+    EnvUtil.under_gc_compact_stress do
+      a = [0, 1, 2, 3, 4, 5]
+      assert_equal([2, 1, 0], a.slice((2..).step(-1)))
+    end
   end
 
   def test_slice!
@@ -3336,6 +3354,8 @@ class TestArray < Test::Unit::TestCase
     assert_equal(nil, a.bsearch {|x|   1  * (2**100) })
     assert_equal(nil, a.bsearch {|x| (-1) * (2**100) })
 
+    assert_equal(4, a.bsearch {|x| (4 - x).to_r })
+
     assert_include([4, 7], a.bsearch {|x| (2**100).coerce((1 - x / 4) * (2**100)).first })
   end
 
@@ -3370,6 +3390,8 @@ class TestArray < Test::Unit::TestCase
     assert_include([1, 2], a.bsearch_index {|x| (1 - x / 4) * (2**100) })
     assert_equal(nil, a.bsearch_index {|x|   1  * (2**100) })
     assert_equal(nil, a.bsearch_index {|x| (-1) * (2**100) })
+
+    assert_equal(1, a.bsearch_index {|x| (4 - x).to_r })
 
     assert_include([1, 2], a.bsearch_index {|x| (2**100).coerce((1 - x / 4) * (2**100)).first })
   end
@@ -3539,6 +3561,7 @@ class TestArray < Test::Unit::TestCase
     unless respond_to?(:callcc, true)
       EnvUtil.suppress_warning {require 'continuation'}
     end
+    omit 'requires callcc support' unless respond_to?(:callcc, true)
   end
 end
 

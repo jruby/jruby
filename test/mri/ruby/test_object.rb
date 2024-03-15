@@ -355,6 +355,41 @@ class TestObject < Test::Unit::TestCase
     end
   end
 
+  def test_remove_instance_variable_re_embed
+    require "objspace"
+
+    c = Class.new do
+      def a = @a
+
+      def b = @b
+
+      def c = @c
+    end
+
+    o1 = c.new
+    o2 = c.new
+
+    o1.instance_variable_set(:@foo, 5)
+    o1.instance_variable_set(:@a, 0)
+    o1.instance_variable_set(:@b, 1)
+    o1.instance_variable_set(:@c, 2)
+    refute_includes ObjectSpace.dump(o1), '"embedded":true'
+    o1.remove_instance_variable(:@foo)
+    assert_includes ObjectSpace.dump(o1), '"embedded":true'
+
+    o2.instance_variable_set(:@a, 0)
+    o2.instance_variable_set(:@b, 1)
+    o2.instance_variable_set(:@c, 2)
+    assert_includes ObjectSpace.dump(o2), '"embedded":true'
+
+    assert_equal(0, o1.a)
+    assert_equal(1, o1.b)
+    assert_equal(2, o1.c)
+    assert_equal(0, o2.a)
+    assert_equal(1, o2.b)
+    assert_equal(2, o2.c)
+  end
+
   def test_convert_string
     o = Object.new
     def o.to_s; 1; end
@@ -422,6 +457,18 @@ class TestObject < Test::Unit::TestCase
     assert_equal(1+3+5+7+9, n)
   end
 
+  def test_max_shape_variation_with_performance_warnings
+    assert_in_out_err([], <<-INPUT, %w(), /The class Foo reached 8 shape variations, instance variables accesses will be slower and memory usage increased/)
+      $VERBOSE = false
+      Warning[:performance] = true
+
+      class Foo; end
+      10.times do |i|
+        Foo.new.instance_variable_set(:"@a\#{i}", nil)
+      end
+    INPUT
+  end
+
   def test_redefine_method_under_verbose
     assert_in_out_err([], <<-INPUT, %w(2), /warning: method redefined; discarding old foo$/)
       $VERBOSE = true
@@ -433,12 +480,12 @@ class TestObject < Test::Unit::TestCase
   end
 
   def test_redefine_method_which_may_case_serious_problem
-    assert_in_out_err([], <<-INPUT, [], %r"warning: redefining `object_id' may cause serious problems$")
+    assert_in_out_err([], <<-INPUT, [], %r"warning: redefining 'object_id' may cause serious problems$")
       $VERBOSE = false
       def (Object.new).object_id; end
     INPUT
 
-    assert_in_out_err([], <<-INPUT, [], %r"warning: redefining `__send__' may cause serious problems$")
+    assert_in_out_err([], <<-INPUT, [], %r"warning: redefining '__send__' may cause serious problems$")
       $VERBOSE = false
       def (Object.new).__send__; end
     INPUT
@@ -481,7 +528,7 @@ class TestObject < Test::Unit::TestCase
     assert_raise(NoMethodError, bug2202) {o2.meth2}
 
     %w(object_id __send__ initialize).each do |m|
-      assert_in_out_err([], <<-INPUT, %w(:ok), %r"warning: removing `#{m}' may cause serious problems$")
+      assert_in_out_err([], <<-INPUT, %w(:ok), %r"warning: removing '#{m}' may cause serious problems$")
         $VERBOSE = false
         begin
           Class.new.instance_eval { remove_method(:#{m}) }

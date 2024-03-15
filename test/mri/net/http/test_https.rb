@@ -148,7 +148,7 @@ class TestNetHTTPS < Test::Unit::TestCase
       # support session resuse.  Limiting the version to the TLSv1.2 stack allows
       # this test to continue to work on LibreSSL 3.2+.  LibreSSL may eventually
       # support session reuse, but there are no current plans to do so.
-      http.ssl_version = :TLSv1
+      http.ssl_version = :TLSv1_2
     end
 
     http.start
@@ -167,6 +167,7 @@ class TestNetHTTPS < Test::Unit::TestCase
   def test_session_reuse_but_expire
     # FIXME: The new_session_cb is known broken for clients in OpenSSL 1.1.0h.
     omit if OpenSSL::OPENSSL_LIBRARY_VERSION.include?('OpenSSL 1.1.0h')
+    omit if OpenSSL::OPENSSL_LIBRARY_VERSION.include?('OpenSSL 3.2.')
 
     http = Net::HTTP.new(HOST, config("port"))
     http.use_ssl = true
@@ -181,7 +182,7 @@ class TestNetHTTPS < Test::Unit::TestCase
     http.get("/")
 
     socket = http.instance_variable_get(:@socket).io
-    assert_equal false, socket.session_reused?
+    assert_equal false, socket.session_reused?, "NOTE: OpenSSL library version is #{OpenSSL::OPENSSL_LIBRARY_VERSION}"
 
     http.finish
   end

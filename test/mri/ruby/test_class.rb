@@ -96,6 +96,13 @@ class TestClass < Test::Unit::TestCase
 
   def test_superclass_of_basicobject
     assert_equal(nil, BasicObject.superclass)
+
+    assert_separately([], "#{<<~"begin;"}\n#{<<~'end;'}")
+    begin;
+      module Mod end
+      BasicObject.include(Mod)
+      assert_equal(nil, BasicObject.superclass)
+    end;
   end
 
   def test_module_function
@@ -353,6 +360,17 @@ class TestClass < Test::Unit::TestCase
       end
     END
     assert_equal(42, PrivateClass.new.foo)
+  end
+
+  def test_private_const_access
+    assert_raise_with_message NameError, /uninitialized/ do
+      begin
+        eval('class ::TestClass::PrivateClass; end')
+      rescue NameError
+      end
+
+      Object.const_get "NOT_AVAILABLE_CONST_NAME_#{__LINE__}"
+    end
   end
 
   StrClone = String.clone
@@ -771,15 +789,15 @@ class TestClass < Test::Unit::TestCase
       c.attached_object
     end
 
-    assert_raise_with_message(TypeError, /`NilClass' is not a singleton class/) do
+    assert_raise_with_message(TypeError, /'NilClass' is not a singleton class/) do
       nil.singleton_class.attached_object
     end
 
-    assert_raise_with_message(TypeError, /`FalseClass' is not a singleton class/) do
+    assert_raise_with_message(TypeError, /'FalseClass' is not a singleton class/) do
       false.singleton_class.attached_object
     end
 
-    assert_raise_with_message(TypeError, /`TrueClass' is not a singleton class/) do
+    assert_raise_with_message(TypeError, /'TrueClass' is not a singleton class/) do
       true.singleton_class.attached_object
     end
   end

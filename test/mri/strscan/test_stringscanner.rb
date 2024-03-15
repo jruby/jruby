@@ -7,9 +7,28 @@
 require 'strscan'
 require 'test/unit'
 
-class TestStringScanner < Test::Unit::TestCase
-  def create_string_scanner(string, *args)
-    StringScanner.new(string, *args)
+module StringScannerTests
+  def test_peek_byte
+    s = create_string_scanner('ab')
+    assert_equal 97, s.peek_byte
+    assert_equal 97, s.scan_byte
+    assert_equal 98, s.peek_byte
+    assert_equal 98, s.scan_byte
+    assert_nil s.peek_byte
+    assert_nil s.scan_byte
+  end
+
+  def test_scan_byte
+    s = create_string_scanner('ab')
+    assert_equal 97, s.scan_byte
+    assert_equal 98, s.scan_byte
+    assert_nil s.scan_byte
+
+    str = "\244\242".dup.force_encoding("euc-jp")
+    s = StringScanner.new(str)
+    assert_equal str.getbyte(s.pos), s.scan_byte
+    assert_equal str.getbyte(s.pos), s.scan_byte
+    assert_nil s.scan_byte
   end
 
   def test_s_new
@@ -155,8 +174,10 @@ class TestStringScanner < Test::Unit::TestCase
   end
 
   def test_string
-    s = create_string_scanner('test')
-    assert_equal 'test', s.string
+    s = create_string_scanner('test string')
+    assert_equal 'test string', s.string
+    s.scan(/test/)
+    assert_equal 'test string', s.string
     s.string = 'a'
     assert_equal 'a', s.string
     s.scan(/a/)
@@ -467,7 +488,10 @@ class TestStringScanner < Test::Unit::TestCase
     assert_equal 'foo', s['a']
     assert_equal 'bar', s['b']
     assert_raise(IndexError) { s['c'] }
-    assert_raise_with_message(IndexError, /\u{30c6 30b9 30c8}/) { s["\u{30c6 30b9 30c8}"] }
+    # see https://github.com/jruby/jruby/issues/7644
+    unless RUBY_ENGINE == "jruby" && RbConfig::CONFIG['host_os'] =~ /mswin|win32|mingw/
+      assert_raise_with_message(IndexError, /\u{30c6 30b9 30c8}/) { s["\u{30c6 30b9 30c8}"] }
+    end
   end
 
   def test_pre_match
@@ -555,6 +579,16 @@ class TestStringScanner < Test::Unit::TestCase
     assert_equal 4, s.matched_size
     s.terminate
     assert_nil s.matched_size
+  end
+
+  def test_empty_encoding_utf8
+    ss = create_string_scanner('')
+    assert_equal(Encoding::UTF_8, ss.rest.encoding)
+  end
+
+  def test_empty_encoding_ascii_8bit
+    ss = create_string_scanner(''.dup.force_encoding("ASCII-8BIT"))
+    assert_equal(Encoding::ASCII_8BIT, ss.rest.encoding)
   end
 
   def test_encoding
@@ -736,8 +770,8 @@ class TestStringScanner < Test::Unit::TestCase
   def test_captures
     s = create_string_scanner("Timestamp: Fri Dec 12 1975 14:39")
     s.scan("Timestamp: ")
-    s.scan(/(\w+) (\w+) (\d+) /)
-    assert_equal(["Fri", "Dec", "12"], s.captures)
+    s.scan(/(\w+) (\w+) (\d+) (1980)?/)
+    assert_equal(["Fri", "Dec", "12", nil], s.captures)
     s.scan(/(\w+) (\w+) (\d+) /)
     assert_nil(s.captures)
   end
@@ -749,19 +783,6 @@ class TestStringScanner < Test::Unit::TestCase
     assert_equal(["Fri Dec 12 ", "12", nil, "Dec"], s.values_at(0, -1, 5, 2))
     s.scan(/(\w+) (\w+) (\d+) /)
     assert_nil(s.values_at(0, -1, 5, 2))
-  end
-
-  def test_fixed_anchor_true
-    assert_equal(true,  StringScanner.new("a", fixed_anchor: true).fixed_anchor?)
-  end
-
-  def test_fixed_anchor_false
-    assert_equal(false, StringScanner.new("a").fixed_anchor?)
-    assert_equal(false, StringScanner.new("a", true).fixed_anchor?)
-    assert_equal(false, StringScanner.new("a", false).fixed_anchor?)
-    assert_equal(false, StringScanner.new("a", {}).fixed_anchor?)
-    assert_equal(false, StringScanner.new("a", fixed_anchor: nil).fixed_anchor?)
-    assert_equal(false, StringScanner.new("a", fixed_anchor: false).fixed_anchor?)
   end
 
   def test_scan_aref_repeatedly
@@ -787,12 +808,36 @@ class TestStringScanner < Test::Unit::TestCase
   def test_named_captures
     omit("not implemented on TruffleRuby") if ["truffleruby"].include?(RUBY_ENGINE)
     scan = StringScanner.new("foobarbaz")
+    assert_equal({}, scan.named_captures)
     assert_equal(9, scan.match?(/(?<f>foo)(?<r>bar)(?<z>baz)/))
     assert_equal({"f" => "foo", "r" => "bar", "z" => "baz"}, scan.named_captures)
   end
 end
 
-class TestStringScannerFixedAnchor < TestStringScanner
+class TestStringScanner < Test::Unit::TestCase
+  include StringScannerTests
+
+  def create_string_scanner(string, *args)
+    StringScanner.new(string, *args)
+  end
+
+  def test_fixed_anchor_true
+    assert_equal(true,  StringScanner.new("a", fixed_anchor: true).fixed_anchor?)
+  end
+
+  def test_fixed_anchor_false
+    assert_equal(false, StringScanner.new("a").fixed_anchor?)
+    assert_equal(false, StringScanner.new("a", true).fixed_anchor?)
+    assert_equal(false, StringScanner.new("a", false).fixed_anchor?)
+    assert_equal(false, StringScanner.new("a", {}).fixed_anchor?)
+    assert_equal(false, StringScanner.new("a", fixed_anchor: nil).fixed_anchor?)
+    assert_equal(false, StringScanner.new("a", fixed_anchor: false).fixed_anchor?)
+  end
+end
+
+class TestStringScannerFixedAnchor < Test::Unit::TestCase
+  include StringScannerTests
+
   def create_string_scanner(string, *args)
     StringScanner.new(string, fixed_anchor: true)
   end
@@ -818,5 +863,13 @@ class TestStringScannerFixedAnchor < TestStringScanner
     s = create_string_scanner("ab")
     assert_equal 1, s.skip(/a/)
     assert_nil      s.skip(/^b/)
+  end
+
+  # ruby/strscan#86
+  def test_scan_shared_string
+    s = "hellohello"[5..-1]
+    ss = StringScanner.new(s).scan(/hello/)
+
+    assert_equal "hello", ss
   end
 end
