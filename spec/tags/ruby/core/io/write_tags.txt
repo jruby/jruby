@@ -2,4 +2,4 @@ windows:IO.write doesn't truncate the file and writes the given string if an off
 windows:IO.write doesn't truncate and writes at the given offset after passing empty opts
 windows:IO#write on Windows normalizes line endings in text mode
 fails:IO#write on STDOUT raises SignalException SIGPIPE if the stream is closed instead of Errno::EPIPE like other IOs
-fails:IO.write accepts options as a keyword argument
+

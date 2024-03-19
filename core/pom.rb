@@ -194,7 +194,6 @@ project 'JRuby Base' do
                                    'org/jruby/anno/AnnotationBinder.java',
                                    'org/jruby/anno/JRubyMethod.java',
                                    'org/jruby/anno/FrameField.java',
-                                   'org/jruby/CompatVersion.java',
                                    'org/jruby/runtime/Visibility.java',
                                    'org/jruby/util/CodegenUtils.java',
                                    'org/jruby/util/SafePropertyAccessor.java' ] )

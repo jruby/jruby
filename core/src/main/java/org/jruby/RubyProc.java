@@ -470,16 +470,6 @@ public class RubyProc extends RubyObject implements DataType {
     }
 
     @Deprecated
-    public final IRubyObject call19(ThreadContext context, IRubyObject[] args, Block block) {
-        return call(context, args, block);
-    }
-
-    @Deprecated
-    public IRubyObject to_s19() {
-        return to_s();
-    }
-
-    @Deprecated
     public final IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject self, Block passedBlock) {
         return block.call(context, args, passedBlock);
     }

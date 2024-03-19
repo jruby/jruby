@@ -91,7 +91,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
     }
 
     @JRubyMethod(name = "open", required = 1, optional = 1, checkArity = false, meta = true)
-    public static IRubyObject open19(final ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+    public static IRubyObject open(final ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Arity.checkArgumentCount(context, args, 1, 2);
 
         Ruby runtime = recv.getRuntime();
@@ -143,7 +143,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
     }
 
     @JRubyMethod(name = "initialize", required = 1, optional = 1, checkArity = false, visibility = PRIVATE)
-    public IRubyObject initialize19(ThreadContext context, IRubyObject[] args) {
+    public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 1, 2);
 
         Ruby runtime = context.runtime;
@@ -300,11 +300,6 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
                 break;
             }
         }
-    }
-
-    @Deprecated
-    public IRubyObject gets_18(ThreadContext context, IRubyObject[] args) {
-        return gets(context, args);
     }
 
     @JRubyMethod(name = "gets", optional = 2, checkArity = false, writes = FrameField.LASTLINE)
@@ -484,45 +479,60 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         }
     }
 
-    @JRubyMethod(name = "getbyte")
+    @Deprecated
     public IRubyObject getc() {
+        return getbyte(getRuntime().getCurrentContext());
+    }
+
+    @JRubyMethod(name = "getbyte")
+    public IRubyObject getbyte(ThreadContext context) {
+        Ruby runtime = context.runtime;
+
         try {
             int value = bufferedStream.read();
-            if (value == -1) return getRuntime().getNil();
+            if (value == -1) return runtime.getNil();
 
             position++;
 
-            return getRuntime().newFixnum(value);
+            return runtime.newFixnum(value);
         } catch (IOException ioe) {
-            throw getRuntime().newIOErrorFromException(ioe);
+            throw runtime.newIOErrorFromException(ioe);
         }
     }
 
+    @Deprecated
     public IRubyObject getbyte() {
-        return getc();
+        return getbyte(getRuntime().getCurrentContext());
+    }
+
+    @Deprecated
+    public IRubyObject readbyte() {
+        return readbyte(getRuntime().getCurrentContext());
     }
 
     @JRubyMethod(name = "readbyte")
-    public IRubyObject readbyte() {
-        IRubyObject dst = getbyte();
+    public IRubyObject readbyte(ThreadContext context) {
+        IRubyObject dst = getbyte(context);
         if (dst.isNil()) {
-            throw getRuntime().newEOFError();
+            throw context.runtime.newEOFError();
         }
         return dst;
     }
 
     @JRubyMethod(name = "getc")
-    public IRubyObject getc_19() {
+    public IRubyObject getc(ThreadContext context) {
+        Ruby runtime = context.runtime;
+
         try {
             int value = bufferedStream.read();
-            if (value == -1) return getRuntime().getNil();
+            if (value == -1) return runtime.getNil();
 
             position++;
             // TODO: must handle encoding. Move encoding handling methods to util class from RubyIO and use it.
             // TODO: StringIO needs a love, too.
-            return getRuntime().newString(String.valueOf((char) (value & 0xFF)));
+            return runtime.newString(String.valueOf((char) (value & 0xFF)));
         } catch (IOException ioe) {
-            throw getRuntime().newIOErrorFromException(ioe);
+            throw runtime.newIOErrorFromException(ioe);
         }
     }
 

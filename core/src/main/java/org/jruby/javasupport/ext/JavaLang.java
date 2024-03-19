@@ -825,7 +825,7 @@ public abstract class JavaLang {
 
             RubyString buf = inspectPrefix(context, self.getMetaClass());
             RubyStringBuilder.cat(context.runtime, buf, SPACE);
-            buf.cat19(RubyString.newString(context.runtime, str).inspect());
+            buf.catWithCodeRange(RubyString.newString(context.runtime, str).inspect());
             RubyStringBuilder.cat(context.runtime, buf, GT); // >
 
             return buf;

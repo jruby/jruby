@@ -446,10 +446,4 @@ public interface EmbedRubyInstanceConfigAdapter {
      * @return version information.
      */
     public String getSupportedRubyVersion();
-
-    @Deprecated
-    public org.jruby.CompatVersion getCompatVersion();
-
-    @Deprecated
-    public void setCompatVersion(org.jruby.CompatVersion version);
 }

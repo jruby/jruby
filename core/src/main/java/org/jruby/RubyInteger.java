@@ -514,11 +514,6 @@ public abstract class RubyInteger extends RubyNumeric {
         return NUMERR_TYPE;
     }
 
-    @Deprecated
-    public final RubyString chr19(ThreadContext context) {
-        return chr(context);
-    }
-
     @JRubyMethod(name = "chr")
     public RubyString chr(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.runtime;
@@ -532,11 +527,6 @@ public abstract class RubyInteger extends RubyNumeric {
             enc =  arg.convertToString().toEncoding(runtime);
         }
         return chrCommon(context, uint, enc);
-    }
-
-    @Deprecated
-    public RubyString chr19(ThreadContext context, IRubyObject arg) {
-        return chr(context, arg);
     }
 
     private RubyString chrCommon(ThreadContext context, long value, Encoding enc) {
@@ -1195,16 +1185,6 @@ public abstract class RubyInteger extends RubyNumeric {
     @Deprecated
     public IRubyObject truncate(){
         return this;
-    }
-
-    @Deprecated
-    public final IRubyObject round19() {
-        return round(getRuntime().getCurrentContext());
-    }
-
-    @Deprecated
-    public final IRubyObject round19(ThreadContext context, IRubyObject arg) {
-        return round(context, arg);
     }
 
     @Deprecated

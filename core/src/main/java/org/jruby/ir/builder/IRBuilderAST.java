@@ -221,7 +221,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             case MATCH3NODE: return buildMatch3(result, (Match3Node) node);
             case MATCHNODE: return buildMatch(result, (MatchNode) node);
             case MODULENODE: return buildModule((ModuleNode) node);
-            case MULTIPLEASGNNODE: return buildMultipleAsgn19((MultipleAsgnNode) node);
+            case MULTIPLEASGNNODE: return buildMultipleAsgn((MultipleAsgnNode) node);
             case NEXTNODE: return buildNext((NextNode) node);
             case NTHREFNODE: return buildNthRef((NthRefNode) node);
             case NILNODE: return buildNil();
@@ -306,7 +306,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     // Non-arg masgn
-    public Operand buildMultipleAsgn19(MultipleAsgnNode multipleAsgnNode) {
+    public Operand buildMultipleAsgn(MultipleAsgnNode multipleAsgnNode) {
         Node valueNode = multipleAsgnNode.getValueNode();
         Variable ret = getValueInTemporaryVariable(build(valueNode));
         if (valueNode instanceof ArrayNode || valueNode instanceof ZArrayNode) {
@@ -1775,7 +1775,18 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
 
         // 2.0 keyword rest arg
         if (keyRest != null) {
-            ArgumentType type = restName == null ? ArgumentType.anonkeyrest : ArgumentType.keyrest;
+            ArgumentType type;
+            // FIXME: combined processing of argumentType could be removed and use same helper that blocks use.
+
+            // anonymous keyrest
+            if (restName == null || restName.getBytes().realSize() == 0) {
+                type = ArgumentType.anonkeyrest;
+            } else if (restName.getBytes().equals(CommonByteLists.NIL)) {
+                type = ArgumentType.nokey;
+            } else {
+                type = ArgumentType.keyrest;
+            }
+
             Variable av = getNewLocalVariable(restName, 0);
             if (scope instanceof IRMethod) addArgumentDescription(type, restName);
 

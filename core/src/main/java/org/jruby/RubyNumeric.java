@@ -468,7 +468,8 @@ public class RubyNumeric extends RubyObject {
      */
     public static IRubyObject str2fnum(Ruby runtime, RubyString arg, boolean strict, boolean exception) {
         try {
-            double value = ConvertDouble.byteListToDouble19(arg.getByteList(), strict);
+            ByteList bytes = arg.getByteList();
+            double value = ConvertDouble.byteListToDouble(bytes, strict);
             return RubyFloat.newFloat(runtime, value);
         } catch (NumberFormatException e) {
             if (strict) {
@@ -804,11 +805,6 @@ public class RubyNumeric extends RubyObject {
     @JRubyMethod(name = "quo")
     public IRubyObject quo(ThreadContext context, IRubyObject other) {
         return RubyRational.numericQuo(context, this, other);
-    }
-
-    @Deprecated
-    public final IRubyObject quo_19(ThreadContext context, IRubyObject other) {
-        return quo(context, other);
     }
 
     /**
@@ -1762,25 +1758,5 @@ public class RubyNumeric extends RubyObject {
 
     private static JavaSites.NumericSites sites(ThreadContext context) {
         return context.sites.Numeric;
-    }
-
-    @Deprecated
-    public static RubyFloat str2fnum19(Ruby runtime, RubyString arg, boolean strict) {
-        return str2fnum(runtime, arg, strict);
-    }
-
-    @Deprecated
-    public final IRubyObject div19(ThreadContext context, IRubyObject other) {
-        return div(context, other);
-    }
-
-    @Deprecated
-    public final IRubyObject divmod19(ThreadContext context, IRubyObject other) {
-        return divmod(context, other);
-    }
-
-    @Deprecated
-    public final IRubyObject modulo19(ThreadContext context, IRubyObject other) {
-        return modulo(context, other);
     }
 }

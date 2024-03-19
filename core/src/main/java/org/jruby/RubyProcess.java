@@ -1814,17 +1814,18 @@ public class RubyProcess {
         return runtime.newFixnum(runtime.getPosix().getpid());
     }
 
-    public static IRubyObject fork(ThreadContext context, IRubyObject recv, Block block) {
-        return RubyKernel.fork(context, recv, block);
-    }
-
     @JRubyMethod(module = true, visibility = PRIVATE, notImplemented = true)
     public static IRubyObject _fork(ThreadContext context, IRubyObject recv, Block block) {
         throw context.runtime.newNotImplementedError("fork is not available on this platform");
     }
 
-    @JRubyMethod(name = "fork", module = true, visibility = PRIVATE, notImplemented = true)
+    @Deprecated
     public static IRubyObject fork19(ThreadContext context, IRubyObject recv, Block block) {
+        return fork(context, recv, block);
+    }
+
+    @JRubyMethod(name = "fork", module = true, visibility = PRIVATE, notImplemented = true)
+    public static IRubyObject fork(ThreadContext context, IRubyObject recv, Block block) {
         return RubyKernel.fork(context, recv, block);
     }
 

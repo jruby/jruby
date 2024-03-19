@@ -1,6 +1,5 @@
 package org.jruby.specialized;
 
-import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -158,12 +157,12 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
         RubyString s1 = inspect(context, car);
         RubyString s2 = inspect(context, cdr);
         EncodingUtils.encAssociateIndex(str, s1.getEncoding());
-        str.cat19(s1);
+        str.catWithCodeRange(s1);
 
         ByteList bytes = str.getByteList();
         bytes.append((byte) ',').append((byte) ' ');
 
-        str.cat19(s2);
+        str.catWithCodeRange(s2);
 
         str.cat((byte) ']');
 

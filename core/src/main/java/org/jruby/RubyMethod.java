@@ -47,10 +47,8 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.MethodBlockBody;
 import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 
@@ -217,6 +215,7 @@ public class RubyMethod extends AbstractRubyMethod {
     public RubyMethod rbClone() {
         RubyMethod newMethod = newMethod(implementationModule, methodName, originModule, originName, entry, receiver);
         newMethod.setMetaClass(getMetaClass());
+        if (isFrozen()) newMethod.setFrozen(true);
         return newMethod;
     }
 
@@ -281,14 +280,14 @@ public class RubyMethod extends AbstractRubyMethod {
         if (mklass.isSingleton()) {
             IRubyObject attached = ((MetaClass) mklass).getAttached();
             if (receiver == null) {
-                str.cat19(inspect(context, mklass).convertToString());
+                str.catWithCodeRange(inspect(context, mklass).convertToString());
             } else if (receiver == attached) {
-                str.cat19(inspect(context, attached).convertToString());
+                str.catWithCodeRange(inspect(context, attached).convertToString());
                 sharp = ".";
             } else {
-                str.cat19(inspect(context, receiver).convertToString());
+                str.catWithCodeRange(inspect(context, receiver).convertToString());
                 str.catString("(");
-                str.cat19(inspect(context, attached).convertToString());
+                str.catWithCodeRange(inspect(context, attached).convertToString());
                 str.catString(")");
                 sharp = ".";
             }

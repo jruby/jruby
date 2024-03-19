@@ -107,6 +107,7 @@ import static com.headius.backport9.buffer.Buffers.flipBuffer;
 import static com.headius.backport9.buffer.Buffers.limitBuffer;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.anno.FrameField.LASTLINE;
+import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
@@ -887,7 +888,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return klass.newInstance(context, args, block);
     }
 
-    @JRubyMethod(rest = true, meta = true)
+    @JRubyMethod(rest = true, meta = true, keywords = true)
     public static IRubyObject for_fd(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         RubyClass klass = (RubyClass)recv;
 
@@ -1024,8 +1025,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return initializeCommon(context, fileno, vmode, options);
     }
 
-    @JRubyMethod(name = "initialize", visibility = PRIVATE)
+    @JRubyMethod(name = "initialize", visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject fileNumber, IRubyObject modeValue, IRubyObject options, Block unused) {
+        int callInfo = ThreadContext.resetCallInfo(context);
         int fileno = RubyNumeric.fix2int(fileNumber);
 
         // TODO: MRI has a method name in ArgumentError. 
@@ -1033,9 +1035,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         if (modeValue != null && !modeValue.isNil() && !(modeValue instanceof RubyInteger) && !(modeValue instanceof RubyString)) {
             throw context.runtime.newArgumentError(3, 1, 2);
         }
-        if (options == null || options.isNil()) {
-            throw context.runtime.newArgumentError(3, 1, 2);
-        }
+        if (!hasKeywords(callInfo)) throw context.runtime.newArgumentError(3, 1, 2);
 
         return initializeCommon(context, fileno, modeValue, options);
     }
@@ -1211,11 +1211,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     @Deprecated
     public static IRubyObject sysopen(IRubyObject recv, IRubyObject[] args, Block block) {
         return sysopen(recv.getRuntime().getCurrentContext(), recv, args, block);
-    }
-
-    @Deprecated
-    public static IRubyObject sysopen19(ThreadContext context, IRubyObject recv, IRubyObject[] argv, Block block) {
-        return sysopen(context, recv, argv, block);
     }
 
     // rb_io_s_sysopen
@@ -3013,11 +3008,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    @Deprecated
-    public final IRubyObject getc19(ThreadContext context) {
-        return getc(context);
-    }
-
     // rb_io_ungetbyte
     @JRubyMethod
     public IRubyObject ungetbyte(ThreadContext context, IRubyObject b) {
@@ -4227,8 +4217,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     // Enebo: annotation processing forced me to do pangea method here...
-    @JRubyMethod(name = "read", meta = true, required = 1, optional = 3, checkArity = false)
+    @JRubyMethod(name = "read", meta = true, required = 1, optional = 3, checkArity = false, keywords = true)
     public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
         int argc = Arity.checkArgumentCount(context, args, 1, 4);
 
         Ruby runtime = context.runtime;
@@ -4238,7 +4229,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         { // rb_scan_args logic, basically
             if (argc > 3) {
-                if (!(args[3] instanceof RubyHash)) throw runtime.newTypeError("Must be a hash");
+                if (!keywords) throw runtime.newArgumentError(args.length, 1, 4);
                 options = (RubyHash) args[3];
                 offset = args[2];
                 length = args[1];
@@ -4279,25 +4270,27 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     // rb_io_s_binwrite
-    @JRubyMethod(meta = true, required = 2, optional = 2, checkArity = false)
+    @JRubyMethod(meta = true, required = 2, optional = 2, checkArity = false, keywords = true)
     public static IRubyObject binwrite(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return ioStaticWrite(context, recv, args, true);
     }
 
     // MRI: rb_io_s_write
-    @JRubyMethod(name = "write", meta = true, required = 2, optional = 2, checkArity = false)
+    @JRubyMethod(name = "write", meta = true, required = 2, optional = 2, checkArity = false, keywords = true)
     public static IRubyObject write(ThreadContext context, IRubyObject recv, IRubyObject[] argv) {
         return (ioStaticWrite(context, recv, argv, false));
     }
 
     // MRI: io_s_write
     public static IRubyObject ioStaticWrite(ThreadContext context, IRubyObject recv, IRubyObject[] argv, boolean binary) {
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
         final Ruby runtime = context.runtime;
         IRubyObject string, offset, opt;
         string = offset = opt = context.nil;
 
         switch (argv.length) {
             case 4:
+                if (!keywords) throw runtime.newArgumentError(argv.length, 2, 3);
                 opt = argv[3].convertToHash();
                 offset = argv[2];
                 string = argv[1];
@@ -4348,11 +4341,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     static IRubyObject seekBeforeAccess(ThreadContext context, RubyIO io, IRubyObject offset) {
         io.setBinmode();
         return io.seek(context, offset);
-    }
-
-    @Deprecated
-    public static IRubyObject readlines19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-        return readlines(context, recv, args, unusedBlock);
     }
 
     // rb_io_s_readlines
@@ -5503,26 +5491,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     @Deprecated
-    public IRubyObject lines19(final ThreadContext context, Block block) {
-        return lines(context, block);
-    }
-
-    @Deprecated
-    public IRubyObject each_char19(final ThreadContext context, final Block block) {
-        return each_char(context, block);
-    }
-
-    @Deprecated
-    public IRubyObject chars19(final ThreadContext context, final Block block) {
-        return chars(context, block);
-    }
-
-    @Deprecated
-    public RubyArray readlines19(ThreadContext context, IRubyObject[] args) {
-        return readlines(context, args);
-    }
-
-    @Deprecated
     public RubyIO(Ruby runtime, STDIO stdio) {
         super(runtime, runtime.getIO());
 
@@ -5773,11 +5741,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     @Deprecated
-    public static IRubyObject read19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-        return read(context, recv, args, unusedBlock);
-    }
-
-    @Deprecated
     public IRubyObject write_nonblock(ThreadContext context, IRubyObject[] argv) {
         switch (argv.length) {
             case 1:
@@ -5825,21 +5788,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         IRubyObject _str = argc >= 2 ? args[1] : context.nil;
 
         return sysreadCommon(context, runtime, _length, _str);
-    }
-
-    @Deprecated
-    public static IRubyObject pipe19(ThreadContext context, IRubyObject recv) {
-        return pipe19(context, recv, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
-    }
-
-    @Deprecated
-    public static IRubyObject pipe19(ThreadContext context, IRubyObject recv, IRubyObject modes) {
-        return pipe19(context, recv, new IRubyObject[] {modes}, Block.NULL_BLOCK);
-    }
-
-    @Deprecated
-    public static IRubyObject pipe19(ThreadContext context, IRubyObject klass, IRubyObject[] argv, Block block) {
-        return pipe(context, klass, argv, block);
     }
 
     @Deprecated

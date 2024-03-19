@@ -70,6 +70,7 @@ import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
+import org.jruby.util.CommonByteLists;
 import org.jruby.util.MurmurHash;
 import org.jruby.util.TypeConverter;
 
@@ -1947,45 +1948,12 @@ public class Helpers {
     }
 
     @Deprecated // not used
-    public static IRubyObject aValueSplat19(IRubyObject value) {
-        if (!(value instanceof RubyArray)) {
-            return value.getRuntime().getNil();
-        }
-
-        return (RubyArray) value;
-    }
-
-    @Deprecated // not used
     public static RubyArray splatValue(IRubyObject value) {
         if (value.isNil()) {
             return value.getRuntime().newArray(value);
         }
 
         return arrayValue(value);
-    }
-
-    @Deprecated // not used
-    public static RubyArray splatValue19(IRubyObject value) {
-        if (value.isNil()) {
-            return value.getRuntime().newEmptyArray();
-        }
-
-        return arrayValue(value);
-    }
-
-    @Deprecated // not used
-    public static IRubyObject unsplatValue19(IRubyObject argsResult) {
-        if (argsResult instanceof RubyArray) {
-            RubyArray array = (RubyArray) argsResult;
-
-            if (array.size() == 1) {
-                IRubyObject newResult = array.eltInternal(0);
-                if (!((newResult instanceof RubyArray) && ((RubyArray) newResult).size() == 0)) {
-                    argsResult = newResult;
-                }
-            }
-        }
-        return argsResult;
     }
 
     @Deprecated // no longer used
@@ -2605,7 +2573,15 @@ public class Helpers {
 
         if (argsNode.getKeyRest() != null) {
             RubySymbol argName = argsNode.getKeyRest().getName();
-            ArgumentType type = argName == null ? ArgumentType.anonkeyrest : ArgumentType.keyrest;
+            ArgumentType type;
+
+            if (argName == null || argName.getBytes().length() == 0) {
+                type = ArgumentType.anonkeyrest;
+            } else if (argName.getBytes().equals(CommonByteLists.NIL)) {
+                type = ArgumentType.nokey;
+            } else {
+                type = ArgumentType.keyrest;
+            }
             descs.add(new ArgumentDescriptor(type, argName));
         }
         if (argsNode.getBlock() != null) descs.add(new ArgumentDescriptor(ArgumentType.block, argsNode.getBlock().getName()));
@@ -2624,7 +2600,6 @@ public class Helpers {
             String param = parameterList[i];
 
             if (param.equals("NONE")) break;
-            if (param.equals("nil")) param = "n"; // make length 1 so we don't look for a name
 
             ArgumentType type = ArgumentType.valueOf(param.charAt(0));
 

@@ -401,6 +401,7 @@ public interface IRubyObject {
     /**
      * @deprecated Use {@link #checkStringType()} instead.
      */
+    @Deprecated
     default IRubyObject checkStringType19() {
         return checkStringType();
     }

@@ -41,7 +41,8 @@ project 'JRuby Complete' do
               :mainClass => 'org.jruby.Main'
             },
             manifestEntries: {
-              'Automatic-Module-Name' => 'org.jruby.complete'
+              'Automatic-Module-Name' => 'org.jruby.complete',
+              'Add-Opens' => 'java.base/java.io java.base/java.nio.channels java.base/sun.nio.ch java.management/sun.management'
             }
           },
           :instructions => {

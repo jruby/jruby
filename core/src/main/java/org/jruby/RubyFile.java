@@ -80,6 +80,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import static org.jruby.RubyInteger.singleCharByteList;
+import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.StringSupport.*;
 import static org.jruby.util.io.EncodingUtils.vmode;
@@ -341,13 +342,14 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     // rb_file_initialize
-    @JRubyMethod(name = "initialize", required = 1, optional = 3, checkArity = false, visibility = PRIVATE)
+    @JRubyMethod(name = "initialize", required = 1, optional = 3, checkArity = false, visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
-        int argc = Arity.checkArgumentCount(context, args, 1, 4);
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
+        // Mild hack. We want to arity-mismatch if extra arg is not really a kwarg but not if it is one.
+        int maxArgs = keywords ? 4 : 3;
+        int argc = Arity.checkArgumentCount(context, args, 1, maxArgs);
 
-        if (openFile != null) {
-            throw context.runtime.newRuntimeError("reinitializing File");
-        }
+        if (openFile != null) throw context.runtime.newRuntimeError("reinitializing File");
 
         if (argc > 0 && argc <= 3) {
             IRubyObject fd = TypeConverter.convertToTypeWithCheck(context, args[0], context.runtime.getFixnum(), sites(context).to_int_checked);
@@ -1268,13 +1270,14 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
     }
 
-    // Can we produce IOError which bypasses a close?
-    public static IRubyObject truncate(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
-        return truncate19(context, recv, arg1, arg2);
+    @Deprecated
+    public static IRubyObject truncate19(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
+        return truncate(context, recv, arg1, arg2);
     }
 
+    // Can we produce IOError which bypasses a close?
     @JRubyMethod(name = "truncate", meta = true)
-    public static IRubyObject truncate19(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
+    public static IRubyObject truncate(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
         RubyString path = StringSupport.checkEmbeddedNulls(context.runtime, get_path(context, arg1));
         return truncateCommon(context, recv, path, arg2);
     }
@@ -1306,8 +1309,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         long[] mtimeval = null;
 
         if (args[0] != context.nil || args[1] != context.nil) {
-            atimeval = extractTimespec(context, args[0]);
-            mtimeval = extractTimespec(context, args[1]);
+            atimeval = convertTimespecToTimeval(extractTimespec(context, args[0]));
+            mtimeval = convertTimespecToTimeval(extractTimespec(context, args[1]));
         }
 
         for (int i = 2, j = argc; i < j; i++) {
@@ -1356,7 +1359,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 result = runtime.getPosix().utimensat(0, fileToTouch.getAbsolutePath(), atimespec, mtimespec, 0);
             } catch (NotImplementedError re) {
                 // fall back on utimes
-                result = runtime.getPosix().utimes(fileToTouch.getAbsolutePath(), atimespec, mtimespec);
                 long[] atimeval = convertTimespecToTimeval(atimespec);
                 long[] mtimeval = convertTimespecToTimeval(mtimespec);
                 result = runtime.getPosix().utimes(fileToTouch.getAbsolutePath(), atimeval, mtimeval);
@@ -2520,11 +2522,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return context.sites.File;
     }
 
-    @Deprecated
-    public IRubyObject initialize19(IRubyObject[] args, Block block) {
-        return initialize(null, args, block);
-    }
-
     private static final long serialVersionUID = 1L;
 
     public static final int LOCK_SH = PosixShim.LOCK_SH;
@@ -2567,11 +2564,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             default:
                 throw context.runtime.newArgumentError(args.length, 1, 2);
         }
-    }
-
-    @Deprecated
-    public static IRubyObject expand_path19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return expand_path(context, recv, args);
     }
 
     @Deprecated

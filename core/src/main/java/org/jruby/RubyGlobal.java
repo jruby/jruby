@@ -694,12 +694,6 @@ public class RubyGlobal {
             return case_aware_op_aset(context, key, value);
         }
 
-        @Override
-        @Deprecated
-        public IRubyObject op_aset19(ThreadContext context, IRubyObject key, IRubyObject value) {
-            return op_aset(context, key, value);
-        }
-
         private IRubyObject case_aware_op_aset(ThreadContext context, IRubyObject key, final IRubyObject value) {
             RubyString keyAsStr = verifyValidKey(context, verifyStringLike(context, key).convertToString(), value);
 

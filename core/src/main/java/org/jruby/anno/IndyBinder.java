@@ -192,8 +192,6 @@ public class IndyBinder extends AbstractProcessor {
                 JRubyMethod anno = method.getAnnotation(JRubyMethod.class);
                 if (anno == null) continue;
 
-                if (anno.compat() == org.jruby.CompatVersion.RUBY1_8) continue;
-
                 methodCount++;
 
                 AnnotationBinder.checkForThrows(cd, method);

@@ -1062,7 +1062,7 @@ public class RubyClass extends RubyModule {
             Set<RubyClass> keys = subclasses.keySet();
             for (RubyClass klass: keys) {
                 if (klass.isSingleton()) continue;
-                if (klass.isIncluded()) {
+                if (klass.isIncluded() || klass.isPrepended()) {
                     klass.concreteSubclasses(subs);
                     continue;
                 }
@@ -2912,16 +2912,6 @@ public class RubyClass extends RubyModule {
     @Deprecated
     public VariableAccessorField getObjectGroupAccessorField() {
         return variableTableManager.getObjectGroupAccessorField();
-    }
-
-    @Deprecated
-    public IRubyObject initialize19(ThreadContext context, Block block) {
-        return initialize(context, block);
-    }
-
-    @Deprecated
-    public IRubyObject initialize19(ThreadContext context, IRubyObject superObject, Block block) {
-        return initialize(context, superObject, block);
     }
 
     @Deprecated

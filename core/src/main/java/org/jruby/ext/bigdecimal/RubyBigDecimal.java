@@ -1008,20 +1008,10 @@ public class RubyBigDecimal extends RubyNumeric {
         return new RubyBigDecimal(context.runtime, modulo).setResult();
     }
 
-    @Deprecated
-    public IRubyObject op_mod19(ThreadContext context, IRubyObject arg) {
-        return op_mod(context, arg);
-    }
-
     @Override
     @JRubyMethod(name = "remainder")
     public IRubyObject remainder(ThreadContext context, IRubyObject arg) {
         return remainderInternal(context, getVpValueWithPrec(context, arg, false), arg);
-    }
-
-    @Deprecated
-    public IRubyObject remainder19(ThreadContext context, IRubyObject arg) {
-        return remainder(context, arg);
     }
 
     private IRubyObject remainderInternal(ThreadContext context, RubyBigDecimal val, IRubyObject arg) {
@@ -1039,11 +1029,6 @@ public class RubyBigDecimal extends RubyNumeric {
         RubyBigDecimal val = getVpValueWithPrec(context, arg, false);
         if (val == null) return callCoerced(context, sites(context).op_times, arg, true);
         return multImpl(context.runtime, val);
-    }
-
-    @Deprecated
-    public IRubyObject op_mul19(ThreadContext context, IRubyObject arg) {
-        return op_mul(context, arg);
     }
 
     @JRubyMethod(name = "mult")
@@ -1113,11 +1098,6 @@ public class RubyBigDecimal extends RubyNumeric {
         if (!strict) return getZero(runtime, 1);
         if (!exception) return runtime.getNil();
         throw runtime.newFloatDomainError(message);
-    }
-
-    @Deprecated
-    public IRubyObject mult219(ThreadContext context, IRubyObject b, IRubyObject n) {
-        return mult2(context, b, n);
     }
 
     // Calculate appropriate zero or infinity depending on exponent...
@@ -1313,19 +1293,9 @@ public class RubyBigDecimal extends RubyNumeric {
         return addInternal(context, getVpValueWithPrec(context, b, false), b, vpPrecLimit(context.runtime));
     }
 
-    @Deprecated
-    public IRubyObject op_plus19(ThreadContext context, IRubyObject b) {
-        return op_plus(context, b);
-    }
-
     @JRubyMethod(name = "add")
     public IRubyObject add2(ThreadContext context, IRubyObject b, IRubyObject digits) {
         return addInternal(context, getVpValueWithPrec(context, b, false), b, digits);
-    }
-
-    @Deprecated
-    public IRubyObject add219(ThreadContext context, IRubyObject b, IRubyObject digits) {
-        return add2(context, b, digits);
     }
 
     private IRubyObject addInternal(ThreadContext context, RubyBigDecimal val, IRubyObject b, IRubyObject digits) {
@@ -1410,19 +1380,9 @@ public class RubyBigDecimal extends RubyNumeric {
         return subInternal(context, getVpValueWithPrec(context, b, false), b, 0);
     }
 
-    @Deprecated
-    public IRubyObject op_minus19(ThreadContext context, IRubyObject b) {
-        return op_minus(context, b);
-    }
-
     @JRubyMethod(name = "sub")
     public IRubyObject sub2(ThreadContext context, IRubyObject b, IRubyObject n) {
         return subInternal(context, getVpValueWithPrec(context, b, false), b, getPositiveInt(context, n));
-    }
-
-    @Deprecated
-    public IRubyObject sub219(ThreadContext context, IRubyObject b, IRubyObject n) {
-        return sub2(context, b, n);
     }
 
     private IRubyObject subInternal(ThreadContext context, RubyBigDecimal val, IRubyObject b, int prec) {
@@ -1566,16 +1526,6 @@ public class RubyBigDecimal extends RubyNumeric {
         return new RubyBigDecimal(context.runtime, thiz.value.divide(that.value, mathContext)).setResult(ix);
     }
 
-    @Deprecated
-    public IRubyObject op_quo19(ThreadContext context, IRubyObject other) {
-        return op_quo(context, other);
-    }
-
-    @Deprecated
-    public IRubyObject op_quo20(ThreadContext context, IRubyObject other) {
-        return op_quo(context, other);
-    }
-
     // mri : BigDecimal_div3
     @JRubyMethod(name = "div")
     public IRubyObject op_div(ThreadContext context, IRubyObject other) {
@@ -1655,16 +1605,6 @@ public class RubyBigDecimal extends RubyNumeric {
         if (isZero()) return getZero(context.runtime, zeroSign * val.value.signum());
 
         return null;
-    }
-
-    @Deprecated
-    public final IRubyObject op_div19(ThreadContext context, IRubyObject r) {
-        return op_div(context, r);
-    }
-
-    @Deprecated
-    public final IRubyObject op_div19(ThreadContext context, IRubyObject other, IRubyObject digits) {
-        return op_div(context, other, digits);
     }
 
     private IRubyObject cmp(ThreadContext context, final IRubyObject arg, final char op) {
@@ -2311,11 +2251,6 @@ public class RubyBigDecimal extends RubyNumeric {
         BigInteger denominator = BigInteger.TEN.pow(scale);
 
         return RubyRational.newInstance(context, RubyBignum.newBignum(context.runtime, numerator), RubyBignum.newBignum(context.runtime, denominator));
-    }
-
-    @Deprecated // not-used
-    public IRubyObject to_int19() {
-        return to_int();
     }
 
     private static String removeTrailingZeroes(final String str) {

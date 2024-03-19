@@ -79,7 +79,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
     }
 
     @JRubyMethod(name = "open", required = 1, optional = 3, checkArity = false, meta = true)
-    public static IRubyObject open19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+    public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         int argc = Arity.checkArgumentCount(context, args, 1, 4);
 
         Ruby runtime = recv.getRuntime();
@@ -96,11 +96,11 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
     }
 
     public IRubyObject initialize(IRubyObject[] args) {
-        return initialize19(getRuntime().getCurrentContext(), args, Block.NULL_BLOCK);
+        return initialize(getRuntime().getCurrentContext(), args, Block.NULL_BLOCK);
     }
 
     @JRubyMethod(name = "initialize", rest = true, visibility = PRIVATE)
-    public IRubyObject initialize19(ThreadContext context, IRubyObject[] args, Block block) {
+    public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
         Ruby runtime = context.getRuntime();
         IRubyObject opt = context.nil;
         

@@ -615,15 +615,6 @@ public class RubyTime extends RubyObject {
         return this;
     }
 
-    @Deprecated
-    public final RubyTime localtime19(ThreadContext context, IRubyObject[] args) {
-        switch(args.length) {
-            case 0: return localtime(context);
-            case 1: return localtime(context, args[0]);
-        }
-        throw new AssertionError(java.util.Arrays.toString(args));
-    }
-
     @JRubyMethod(name = {"gmt?", "utc?", "gmtime?"})
     public RubyBoolean gmt() {
         return metaClass.runtime.newBoolean(isUTC());
@@ -673,15 +664,6 @@ public class RubyTime extends RubyObject {
         }
 
         return ((RubyTime) dup()).adjustTimeZone(runtime, dtz, false);
-    }
-
-    @Deprecated
-    public RubyTime getlocal19(ThreadContext context, IRubyObject[] args) {
-        switch(args.length) {
-            case 0: return getlocal(context);
-            case 1: return getlocal(context, args[0]);
-        }
-        throw new AssertionError(java.util.Arrays.toString(args));
     }
 
     @Deprecated
@@ -786,11 +768,6 @@ public class RubyTime extends RubyObject {
         return opPlusMillis(context.runtime, adjustMillis);
     }
 
-    @Deprecated
-    public IRubyObject op_plus19(ThreadContext context, IRubyObject other) {
-        return op_plus(context, other);
-    }
-
     private RubyTime opPlusMillis(final Ruby runtime, double adjustMillis) {
         long currentMillis = getTimeInMillis();
 
@@ -828,11 +805,6 @@ public class RubyTime extends RubyObject {
         if (other instanceof RubyTime) return opMinus(context.runtime, (RubyTime) other);
 
         return opMinus(context.runtime, RubyNumeric.num2dbl(context, numExact(context, other)));
-    }
-    
-    @Deprecated
-    public IRubyObject op_minus19(ThreadContext context, IRubyObject other) {
-        return op_minus(context, other);
     }
 
     private RubyTime opMinus(Ruby runtime, double other) {
@@ -932,11 +904,6 @@ public class RubyTime extends RubyObject {
         builder.append(isUTC() ? " UTC" : TZ_FORMATTER.print(dtz));
 
         return RubyString.newString(getRuntime(), builder.toString(), USASCIIEncoding.INSTANCE);
-    }
-
-    @Deprecated
-    public final IRubyObject to_s19() {
-        return to_s();
     }
 
     private DateTime getInspectDateTime() {

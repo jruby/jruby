@@ -324,11 +324,6 @@ public class RubyRandom extends RubyRandomBase {
         return previousSeed;
     }
 
-    @Deprecated
-    public IRubyObject op_equal_19(ThreadContext context, IRubyObject obj) {
-        return op_equal(context, obj);
-    }
-
     // c: random_equal
     @Override
     @JRubyMethod(name = "==")
@@ -453,11 +448,6 @@ public class RubyRandom extends RubyRandomBase {
             if (!(obj instanceof RubyRandom)) return null;
             return ((RubyRandom) obj).getRandomType();
         }
-    }
-
-    @Deprecated // not-used
-    public static IRubyObject randCommon19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return randKernel(context, args);
     }
 
     @Deprecated

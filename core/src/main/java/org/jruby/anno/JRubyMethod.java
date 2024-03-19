@@ -123,8 +123,5 @@ public @interface JRubyMethod {
     boolean scope() default false;
 
     @Deprecated
-    org.jruby.CompatVersion compat() default org.jruby.CompatVersion.BOTH;
-
-    @Deprecated
     boolean backtrace() default false;
 }

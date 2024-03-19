@@ -29,11 +29,16 @@
 package org.jruby.util;
 
 public class ConvertDouble {
+    @Deprecated
+    public static double byteListToDouble19(ByteList bytes, boolean strict) {
+        return byteListToDouble(bytes, strict);
+    }
+
     /**
      * Converts supplied ByteList into a double.  strict-mode will not like
      * extra text non-numeric text or multiple sequention underscores.
      */
-    public static double byteListToDouble19(ByteList bytes, boolean strict) {
+    public static double byteListToDouble(ByteList bytes, boolean strict) {
         return new DoubleConverter().parse(bytes, strict, true);
     }
 
