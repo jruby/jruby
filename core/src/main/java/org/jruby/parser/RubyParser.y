@@ -3406,7 +3406,7 @@ p_find          : p_rest ',' p_args_post ',' p_rest {
 // ByteList
 p_rest          : tSTAR tIDENTIFIER {
                     p.error_duplicate_pattern_variable($2);
-                    $$ = p.assignableInCurr($2, null);
+                    $$ = $2;
                     /*% ripper: ripper_assignable(p, $2, var_field(p, get_value($:2))) %*/
                 }
                 | tSTAR {

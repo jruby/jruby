@@ -5274,7 +5274,7 @@ states[560] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[561] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.error_duplicate_pattern_variable(((ByteList)yyVals[0+yyTop].value));
-                    yyVal = p.assignableInCurr(((ByteList)yyVals[0+yyTop].value), null);
+                    yyVal = ((ByteList)yyVals[0+yyTop].value);
                     /*% ripper: ripper_assignable(p, $2, var_field(p, get_value($:2))) %*/
   return yyVal;
 };
