@@ -327,9 +327,9 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
    195,   195,   170,   170,   194,   194,   171,   171,   172,   172,
      1,   276,     1,   104,   104,   105,   105,   106,   106,   106,
    106,   106,   106,   164,   164,   164,   165,   165,   166,   166,
-   166,   182,   182,   178,   178,   179,   179,   197,   198,   208,
-   245,   245,   245,   253,   253,   230,   230,   131,   199,   229,
-   229,   236,   236,
+   166,   182,   182,   178,   178,   179,   179,   229,   229,   236,
+   236,   197,   198,   208,   245,   245,   245,   253,   253,   230,
+   230,   131,   199,
     }, yyLen = {
 //yyLen 823
      2,     0,     2,     2,     1,     1,     3,     1,     2,     1,
@@ -412,15 +412,15 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
      1,     1,     2,     1,     1,     1,     2,     1,     2,     0,
      1,     0,     4,     1,     2,     1,     3,     3,     2,     1,
      4,     2,     1,     1,     1,     1,     1,     1,     1,     1,
-     1,     1,     1,     1,     1,     1,     1,     2,     2,     2,
-     0,     1,     1,     1,     1,     1,     2,     0,     0,     0,
-     1,     0,     1,
+     1,     1,     1,     1,     1,     1,     1,     0,     1,     0,
+     1,     2,     2,     2,     0,     1,     1,     1,     1,     1,
+     2,     0,     0,
     }, yyDefRed = {
 //yyDefRed 1399
      1,     0,     0,    43,   400,   401,   402,     0,   393,   394,
    395,   398,    23,    23,    23,     0,     0,   390,   391,   412,
    413,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-   817,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+   821,     0,     0,     0,     0,     0,     0,     0,     0,     0,
    674,   675,   676,   677,   626,   705,   706,     0,     0,     0,
      0,     0,     0,     0,     0,     0,     0,     0,   475,     0,
    648,   650,   652,     0,     0,     0,     0,     0,     0,   338,
@@ -442,7 +442,7 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
      0,     0,     0,     0,     0,     0,     0,     0,     0,   648,
      0,     0,     0,     0,   315,     0,     0,     0,   327,    95,
    319,     0,     0,   785,     0,     0,    96,     0,   494,    92,
-     0,     0,   822,     0,     0,    25,     0,     9,     0,     8,
+     0,     0,   810,     0,     0,    25,     0,     9,     0,     8,
    295,    24,     0,   388,   389,     0,   263,     0,     0,   357,
      0,     0,     0,     0,     0,    21,     0,     0,     0,    18,
      0,    17,     0,     0,   350,     0,     0,     0,   299,     0,
@@ -453,24 +453,24 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
      0,   275,    64,   276,   628,     0,   384,     0,     0,   711,
      0,   386,     0,     0,     0,     0,     0,     0,     0,     0,
      0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-     0,     0,   423,   424,   813,   814,     3,     0,   815,     0,
-     0,     0,     0,   817,     0,     0,    67,     0,     0,     0,
+     0,     0,   423,   424,   817,   818,     3,     0,   819,     0,
+     0,     0,     0,   821,     0,     0,    67,     0,     0,     0,
      0,     0,   291,   292,     0,     0,     0,     0,     0,     0,
      0,     0,    65,     0,   289,   290,     0,     0,     0,     0,
      0,     0,     0,     0,     0,   404,   484,   501,   403,   499,
    366,   501,   804,     0,     0,   803,     0,     0,   488,     0,
-   364,   817,   806,   805,     0,   817,   817,   817,     0,     0,
+   364,   821,   806,   805,     0,   821,   821,   821,     0,     0,
      0,   113,    94,     0,    75,     0,     0,     0,     0,     0,
      0,     0,     0,     0,     0,   683,   682,     0,   685,   781,
      0,    71,   780,    70,     0,   374,     0,     0,   687,   686,
    688,   689,   691,   690,   692,     0,     0,     0,     0,     0,
      0,   346,   158,   382,     0,     0,    93,   168,   788,     0,
    330,   791,   322,     0,     0,     0,     0,     0,     0,     0,
-     0,   316,   325,   817,     0,   317,   817,   817,     0,     0,
+     0,   316,   325,   821,     0,   317,   821,   821,     0,     0,
    311,     0,     0,   310,     0,   321,     0,   363,     0,    63,
-    27,    29,    28,     0,   817,   296,     0,     0,     0,     0,
-     0,   817,     0,     0,   352,    16,     0,     0,     0,     0,
-   811,   300,   355,     0,   302,   356,   784,     0,   673,     0,
+    27,    29,    28,     0,   821,   296,     0,     0,     0,     0,
+     0,   821,     0,     0,   352,    16,     0,     0,     0,     0,
+   815,   300,   355,     0,   302,   356,   784,     0,   673,     0,
    115,     0,   713,     0,     0,     0,     0,   473,   654,   671,
    657,   655,   649,   629,   630,   651,   631,   653,   633,     0,
      0,     0,     0,   744,   741,   740,   739,   742,   750,   759,
@@ -478,19 +478,19 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
    748,     0,   768,     0,   757,     0,   719,   745,   743,   436,
      0,     0,   761,   437,     0,   720,     0,     0,     0,     0,
      0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-     0,    76,   816,     6,    31,    32,    33,    34,   297,     0,
+     0,    76,   820,     6,    31,    32,    33,    34,   297,     0,
     61,    62,   512,     0,     0,     0,     0,     0,     0,     0,
      0,     0,     0,     0,     0,     0,   512,     0,     0,     0,
      0,     0,     0,     0,     0,     0,     0,     0,   472,     0,
    472,     0,     0,     0,     0,   493,   796,     0,   491,     0,
      0,     0,     0,   795,     0,   492,     0,   797,     0,   499,
     86,     0,   793,   794,     0,     0,     0,     0,     0,     0,
-     0,   114,     0,   817,   415,     0,     0,     0,   802,   801,
+     0,   114,     0,   821,   415,     0,     0,     0,   802,   801,
     72,     0,     0,     0,   380,   155,     0,   157,   707,   378,
      0,     0,     0,     0,     0,     0,   359,     0,     0,     0,
      0,   787,     0,     0,     0,     0,     0,     0,   329,   324,
      0,     0,   786,     0,     0,     0,   305,     0,   307,   362,
-   807,    26,     0,     0,    10,     0,     0,     0,     0,     0,
+   811,    26,     0,     0,    10,     0,     0,     0,     0,     0,
     22,     0,    19,   351,     0,     0,     0,     0,     0,     0,
      0,     0,   474,   658,     0,   634,   637,     0,     0,   642,
    639,     0,     0,   643,     0,     0,   427,     0,     0,     0,
@@ -499,24 +499,24 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
      0,     0,     0,     0,    54,   715,     0,     0,     0,   410,
    411,   370,   418,    77,   417,   371,     0,     0,     0,     0,
      0,     0,    35,   510,   510,     0,   483,   473,   497,   473,
-   498,   817,   817,   499,   490,     0,     0,     0,     0,   817,
-   817,   309,   489,     0,   308,     0,     0,     0,     0,    45,
+   498,   821,   821,   499,   490,     0,     0,     0,     0,   821,
+   821,   309,   489,     0,   308,     0,     0,     0,     0,    45,
    242,    59,     0,     0,     0,     0,    53,   249,     0,     0,
    326,     0,    44,   241,    39,    38,     0,   332,     0,   112,
      0,     0,   349,     0,     0,   416,     0,     0,   512,     0,
      0,   407,     0,     0,     0,     0,     0,     0,     0,     0,
-   159,     0,     0,     0,   358,   169,   790,     0,   817,   817,
-     0,   817,   817,   318,     0,     0,     0,   248,   301,   116,
+   159,     0,     0,     0,   358,   169,   790,     0,   821,   821,
+     0,   821,   821,   318,     0,     0,     0,   248,   301,   116,
      0,    23,   659,   665,   656,   664,   638,     0,     0,     0,
      0,     0,   434,     0,     0,   747,   721,   749,     0,     0,
      0,   769,     0,   758,   778,     0,     0,     0,   746,   764,
-   439,   385,     0,   817,   817,   387,    78,     0,     0,   511,
-   511,     0,   474,   474,     0,     0,     0,    90,   817,   808,
-     0,     0,    88,    83,   817,   817,     0,     0,     0,   817,
-   486,   487,     0,     0,   817,     0,   405,     0,   615,     0,
+   439,   385,     0,   821,   821,   387,    78,     0,     0,   511,
+   511,     0,   474,   474,     0,     0,     0,    90,   821,   812,
+     0,     0,    88,    83,   821,   821,     0,     0,     0,   821,
+   486,   487,     0,     0,   821,     0,   405,     0,   615,     0,
    409,   408,     0,   419,   421,     0,     0,   782,    73,   510,
    376,     0,   375,     0,   503,     0,     0,     0,     0,     0,
-   496,   383,    36,     0,     0,     0,   817,     0,     0,     0,
+   496,   383,    36,     0,     0,     0,   821,     0,     0,     0,
    306,   361,     0,   660,   426,   428,     0,     0,     0,   725,
      0,   727,     0,   733,     0,   730,   716,   735,     0,     0,
      0,     0,   377,     0,     0,     0,    23,    23,    50,   246,
@@ -534,14 +534,14 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
      0,   406,    15,   622,     0,     0,     0,   620,     0,     0,
      0,   505,     0,   381,     0,     0,     0,     0,   726,     0,
    723,   728,   731,   589,   590,   156,   611,     0,     0,     0,
-     0,     0,   555,     0,   545,   548,   817,     0,   561,     0,
+     0,     0,   555,     0,   545,   548,   821,     0,   561,     0,
    608,     0,   609,     0,     0,     0,     0,     0,     0,     0,
      0,     0,     0,     0,     0,     0,   576,     0,     0,   463,
    462,     0,    12,   621,     0,     0,     0,     0,     0,     0,
      0,     0,     0,     0,     0,     0,     0,     0,     0,   619,
      0,     0,     0,     0,   506,   508,   509,   507,     0,     0,
    481,     0,   477,   663,   662,   661,     0,     0,   544,   543,
-     0,     0,     0,   556,   546,   809,   575,     0,   527,   522,
+     0,     0,     0,   556,   546,   813,   575,     0,   527,   522,
      0,   529,   582,   583,   612,   542,   532,   538,   531,     0,
      0,     0,     0,     0,     0,   648,   571,   566,     0,   563,
    461,     0,   766,     0,     0,     0,   755,     0,     0,   443,
@@ -1766,6 +1766,10 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
     "call_op : tANDDOT",
     "call_op2 : call_op",
     "call_op2 : tCOLON2",
+    "opt_terms :",
+    "opt_terms : terms",
+    "opt_nl :",
+    "opt_nl : '\\n'",
     "rparen : opt_nl ')'",
     "rbracket : opt_nl ']'",
     "rbrace : opt_nl '}'",
@@ -1778,10 +1782,6 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
     "terms : terms ';'",
     "none :",
     "none_block_pass :",
-    "opt_terms :",
-    "opt_terms : terms",
-    "opt_nl :",
-    "opt_nl : '\\n'",
     };
 
   protected org.jruby.parser.YYDebug yydebug;
@@ -2003,7 +2003,7 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
     }
   }
 
-static ParserState<RubyParser>[] states = new ParserState[819];
+static ParserState<RubyParser>[] states = new ParserState[823];
 static {
 states[1] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                   p.setState(EXPR_BEG);
@@ -4971,6 +4971,7 @@ states[500] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[501] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.pushBlockScope();
+                    p.getCmdArgumentState().push0();
   return yyVal;
 };
 states[502] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6787,28 +6788,28 @@ states[806] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     yyVal = ((ByteList)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[807] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[811] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = RPAREN;
   return yyVal;
 };
-states[808] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[812] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = RBRACKET;
   return yyVal;
 };
-states[809] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[813] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = RCURLY;
   return yyVal;
 };
-states[817] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[821] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                       yyVal = null;
   return yyVal;
 };
-states[818] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[822] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                   yyVal = null;
   return yyVal;
 };
 }
-					// line 4828 "parse.y"
+					// line 4829 "parse.y"
 
 }
-					// line 14940 "-"
+					// line 14941 "-"

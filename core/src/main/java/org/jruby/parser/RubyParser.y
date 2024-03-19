@@ -3116,6 +3116,7 @@ brace_body      : {
 
 do_body 	: {
                     p.pushBlockScope();
+                    p.getCmdArgumentState().push0();
                 } max_numparam numparam it_id allow_exits opt_block_param bodystmt {
                     Node it_id = p.it_id();
                     int max_numparam = p.restoreMaxNumParam($<Integer>2);
@@ -4865,6 +4866,12 @@ call_op2        : call_op
                     $$ = $1;
                 };
   
+opt_terms       : | terms
+                ;
+
+opt_nl          : | '\n'
+                ;
+
 rparen          : opt_nl ')' {
                     $$ = RPAREN;
                 };
@@ -4895,12 +4902,6 @@ none            : {
 none_block_pass : {  
                   $$ = null;
                 };
-
-opt_terms       : | terms
-                ;
-
-opt_nl          : | '\n'
-                ;
 
 %%
 
