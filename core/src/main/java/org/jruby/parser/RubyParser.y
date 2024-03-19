@@ -2192,9 +2192,7 @@ arg_splat       : tSTAR arg_value {
                 }
                 | tSTAR /* none */ {
                     p.forwarding_arg_check(FWD_REST, FWD_ALL, "rest");
-                    int slot = p.getCurrentScope().addVariableThisScope(FWD_REST.toString());
-                    $$ = new UnnamedRestArgNode(@1.start(), p.symbolID(FWD_REST), slot);
-
+                    $$ = p.declareIdentifier(FWD_REST);
                     /*% ripper: Qnil %*/
                 };
 

@@ -3966,9 +3966,7 @@ states[330] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[331] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.forwarding_arg_check(FWD_REST, FWD_ALL, "rest");
-                    int slot = p.getCurrentScope().addVariableThisScope(FWD_REST.toString());
-                    yyVal = new UnnamedRestArgNode(yyVals[yyTop - count + 1].start(), p.symbolID(FWD_REST), slot);
-
+                    yyVal = p.declareIdentifier(FWD_REST);
                     /*% ripper: Qnil %*/
   return yyVal;
 };
@@ -6809,7 +6807,7 @@ states[822] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4828 "parse.y"
+					// line 4826 "parse.y"
 
 }
-					// line 14941 "-"
+					// line 14939 "-"
