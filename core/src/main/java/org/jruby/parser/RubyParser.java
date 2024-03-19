@@ -2090,9 +2090,9 @@ states[12] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
 };
 states[13] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                   /*%%%*/
-                   yyVal = p.new_bodystmt(((Node)yyVals[-7+yyTop].value), ((RescueBodyNode)yyVals[-5+yyTop].value), ((Node)yyVals[-2+yyTop].value), ((Node)yyVals[-1+yyTop].value));
+                   yyVal = p.new_bodystmt(((Node)yyVals[-7+yyTop].value), ((RescueBodyNode)yyVals[-5+yyTop].value), ((Node)yyVals[-2+yyTop].value), ((Node)yyVals[0+yyTop].value));
                   /*% %*/
-                  /*% ripper: bodystmt!(escape_Qundef($1), escape_Qundef($2), escape_Qundef($5), escape_Qundef($6)) %*/
+                  /*% ripper: bodystmt!(escape_Qundef($1), escape_Qundef($3), escape_Qundef($6), escape_Qundef($8)) %*/
   return yyVal;
 };
 states[14] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -2103,7 +2103,7 @@ states[15] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
                   /*%%%*/
                    yyVal = p.new_bodystmt(((Node)yyVals[-4+yyTop].value), ((RescueBodyNode)yyVals[-2+yyTop].value), null, ((Node)yyVals[0+yyTop].value));
                   /*% %*/
-                  /*% ripper: bodystmt!(escape_Qundef($1), escape_Qundef($3), Qnil, escape_Qundef($4)) %*/
+                  /*% ripper: bodystmt!(escape_Qundef($1), escape_Qundef($3), Qnil, escape_Qundef($5)) %*/
   return yyVal;
 };
 states[16] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {

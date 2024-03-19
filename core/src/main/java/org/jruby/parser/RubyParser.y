@@ -532,9 +532,9 @@ bodystmt      : compstmt lex_ctxt opt_rescue k_else {
                   p.next_rescue_context($2, LexContext.InRescue.AFTER_ENSURE);
               } opt_ensure {
                   /*%%%*/
-                   $$ = p.new_bodystmt($1, $3, $6, $7);
+                   $$ = p.new_bodystmt($1, $3, $6, $8);
                   /*% %*/
-                  /*% ripper: bodystmt!(escape_Qundef($1), escape_Qundef($2), escape_Qundef($5), escape_Qundef($6)) %*/
+                  /*% ripper: bodystmt!(escape_Qundef($1), escape_Qundef($3), escape_Qundef($6), escape_Qundef($8)) %*/
               }
               | compstmt lex_ctxt opt_rescue {
                   p.next_rescue_context($2, LexContext.InRescue.AFTER_ENSURE);
@@ -542,7 +542,7 @@ bodystmt      : compstmt lex_ctxt opt_rescue k_else {
                   /*%%%*/
                    $$ = p.new_bodystmt($1, $3, null, $5);
                   /*% %*/
-                  /*% ripper: bodystmt!(escape_Qundef($1), escape_Qundef($3), Qnil, escape_Qundef($4)) %*/
+                  /*% ripper: bodystmt!(escape_Qundef($1), escape_Qundef($3), Qnil, escape_Qundef($5)) %*/
               };
 
 compstmt      : stmts opt_terms {
