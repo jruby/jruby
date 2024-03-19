@@ -80,6 +80,7 @@ public interface NodeVisitor<T> {
     T visitDotNode(DotNode iVisited);
     T visitEncodingNode(EncodingNode iVisited);
     T visitEnsureNode(EnsureNode iVisited);
+    T visitErrorNode(ErrorNode iVisited);
     T visitEvStrNode(EvStrNode iVisited);
     T visitFCallNode(FCallNode iVisited);
     T visitFalseNode(FalseNode iVisited);

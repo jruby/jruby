@@ -20,7 +20,7 @@
 .  /** parser tables.
 .      Order is mandated by <i>jay</i>.
 .    */
-.  protected static final short[] yyLhs = {
+.  protected static final int[] yyLhs = {
  yyLhs
 .    }, yyLen = {
  yyLen
@@ -35,10 +35,10 @@
 .    }, yyGindex = {
  yyGindex
 .    };
-.  protected static final short[] yyTable = {
+.  protected static final int[] yyTable = {
  yyTable
 .    };
-.  protected static final short[] yyCheck = {
+.  protected static final int[] yyCheck = {
  yyCheck
 .    };
 .
@@ -51,7 +51,7 @@
 .
 t  /** printable rules for debugging.
 t    */
-t  protected static final String [] yyRule = {
+t  protected static final String[] yyRule = {
  yyRule-strings
 t    };
 t
@@ -233,7 +233,8 @@ t                    if (yydebug != null) yydebug.discard(yystate, yytoken, yyNa
 .
 t        if (yydebug != null) yydebug.reduce(yystate, yystates[yytop-yyLen[yyn]].state, yyn, yyRule[yyn], yyLen[yyn]);
 .
-.        ParserState parserState = states[yyn];
+.        ParserState parserState = yyn >= states.length ? null : states[yyn];
+.//        ParserState parserState = states[yyn];
 .        if (parserState == null) {
 .            yyVal = yyLen[yyn] > 0 ? yystates[yytop - yyLen[yyn] + 1].value : null;
 .        } else {

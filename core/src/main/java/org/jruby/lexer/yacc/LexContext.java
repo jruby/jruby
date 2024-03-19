@@ -3,6 +3,13 @@ package org.jruby.lexer.yacc;
 import org.jruby.ast.DefHolder;
 
 public class LexContext {
+    public enum InRescue {
+        NONE,
+        BEFORE_RESCUE,
+        AFTER_RESCUE,
+        AFTER_ELSE,
+        AFTER_ENSURE
+    }
     // Is the parser currently within a class body.
     public boolean in_class;
 
@@ -16,6 +23,8 @@ public class LexContext {
     public ShareableConstantValue shareable_constant_value;
     public boolean in_argdef;
 
+    public InRescue in_rescue = InRescue.NONE;
+
     public void reset() {
         in_def = false;
     }
@@ -25,6 +34,8 @@ public class LexContext {
         context.in_class = in_class;
         context.in_def = in_def;
         context.in_defined = in_defined;
+        context.in_rescue = in_rescue;
+        context.in_argdef = in_argdef;
         context.shareable_constant_value = shareable_constant_value;
 
         return context;
@@ -33,5 +44,6 @@ public class LexContext {
     public void restore(DefHolder holder) {
         this.in_def = holder.ctxt.in_def;
         this.shareable_constant_value = holder.ctxt.shareable_constant_value;
+        this.in_rescue = holder.ctxt.in_rescue;
     }
 }

@@ -39,7 +39,6 @@ import java.util.Collections;
 import java.util.List;
 
 import org.jruby.ast.types.INameNode;
-import org.jruby.ast.visitor.AbstractNodeVisitor;
 import org.jruby.ast.visitor.NodeVisitor;
 
 /**
@@ -192,9 +191,9 @@ public abstract class Node {
 
     /**
      * Overridden by nodes that have additional internal state to be displated in toString.
-     *
+     * <p>
      * For nodes that have it, name is handled separately, by implementing INameNode.
-     *
+     * <p>
      * Child nodes are handled via iterating #childNodes.
      *
      * @return A string representing internal node state, or null if none.
@@ -204,29 +203,12 @@ public abstract class Node {
     }
 
     private static void indent(int indentation, StringBuilder builder) {
-        for (int n = 0; n < indentation; n++) {
-            builder.append("  ");
-        }
+        builder.append("  ".repeat(Math.max(0, indentation)));
     }
 
     protected String getNodeName() {
         String name = getClass().getName();
         return name.substring(name.lastIndexOf('.') + 1);
-    }
-
-    public <T extends org.jruby.ast.Node> T findFirstChild(final Class<T> nodeClass) {
-        return accept(new AbstractNodeVisitor<T>() {
-
-            @Override
-            protected T defaultVisit(Node node) {
-                if (nodeClass.isAssignableFrom(node.getClass())) {
-                    return (T) node;
-                } else {
-                    return visitFirstChild(node);
-                }
-            }
-
-        });
     }
 
     /**
