@@ -6518,7 +6518,7 @@ states[762] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[763] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = p.INTERNAL_ID;
+                    yyVal = FWD_KWREST;
                     /*% %*/
                     /*% ripper: kwrest_param!(Qnil) %*/
   return yyVal;
@@ -6732,7 +6732,7 @@ states[791] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[792] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.forwarding_arg_check(FWD_KWREST, FWD_ALL, "keyword rest");
-                    yyVal = p.newArrayNode(yyVals[yyTop - count + 1].start(), p.arg_var(FWD_KWREST));
+                    yyVal = p.createKeyValue(null, p.declareIdentifier(FWD_KWREST));
                     /*% ripper: assoc_splat!(Qnil) %*/
   return yyVal;
 };
@@ -6809,7 +6809,7 @@ states[822] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4829 "parse.y"
+					// line 4828 "parse.y"
 
 }
 					// line 14941 "-"

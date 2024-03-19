@@ -4610,7 +4610,7 @@ f_kwrest        : kwrest_mark tIDENTIFIER {
                 }
                 | kwrest_mark {
                     /*%%%*/
-                    $$ = p.INTERNAL_ID;
+                    $$ = FWD_KWREST;
                     /*% %*/
                     /*% ripper: kwrest_param!(Qnil) %*/
                 };
@@ -4792,7 +4792,6 @@ assoc           : arg_value tASSOC arg_value {
                     /*% %*/
                     /*% ripper: assoc_new!($1, Qnil) %*/
                 }
- 
                 | tSTRING_BEG string_contents tLABEL_END arg_value {
                     /*%%%*/
                     if ($2 instanceof StrNode) {
@@ -4815,7 +4814,7 @@ assoc           : arg_value tASSOC arg_value {
                 }
                 | tDSTAR {
                     p.forwarding_arg_check(FWD_KWREST, FWD_ALL, "keyword rest");
-                    $$ = p.newArrayNode(@1.start(), p.arg_var(FWD_KWREST));
+                    $$ = p.createKeyValue(null, p.declareIdentifier(FWD_KWREST));
                     /*% ripper: assoc_splat!(Qnil) %*/
                 };
 

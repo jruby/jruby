@@ -398,6 +398,9 @@ public abstract class RubyParserBase {
                     new DVarNode(lexer.tokline, slot, name) :
                     new LocalVarNode(lexer.tokline, slot, name);
             if (numParamCurrent == null) numParamCurrent = node;
+        } else if ("**".equals(id)) {
+            slot = currentScope.addVariable(id);
+            node = new LocalVarNode(lexer.tokline, slot, name);
         }  else {
             node = currentScope.declare(lexer.tokline, name);
             slot = currentScope.isDefined(id); // FIXME: we should not do this extra call.
