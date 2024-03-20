@@ -202,13 +202,19 @@ public abstract class RubyParserBase {
     }
 
     public ArgsNode args_with_numbered(ArgsNode args, int paramCount, Node itNode) {
-        if (paramCount > 0) {
+        if (paramCount == 0) {
             if (args == null) { // FIXME: I think this is not possible.
                 ListNode pre = makePreNumArgs(paramCount);
                 args = new_args(lexer.getRubySourceline(), pre, null, null, null, null);
             } else if (args.getArgs().length == 0) {
-                ListNode pre = makePreNumArgs(paramCount);
-                args = new_args(lexer.getRubySourceline(), pre, null, null, null, null);
+                if (paramCount > 0) {
+                    ListNode pre = makePreNumArgs(paramCount);
+                    args = new_args(lexer.getRubySourceline(), pre, null, null, null, null);
+                } else if (itNode != null) {
+                    DVarNode dvar = (DVarNode) itNode;
+                    Node arg = new ArgumentNode(dvar.getLine(), dvar.getName(), dvar.getDepth());
+                    args = new_args(lexer.getRubySourceline(), newArrayNode(arg.getLine(), arg), null, null, null, null);
+                }
             } else {
                 // FIXME: not sure where errors are printed in all this but could be here.
             }
@@ -401,6 +407,10 @@ public abstract class RubyParserBase {
         } else if ("**".equals(id)) {
             slot = currentScope.addVariable(id);
             node = new LocalVarNode(lexer.tokline, slot, name);
+        } else if (id.equals("it") && !this.scopedParserState.hasDefinedVariables()) {
+            slot = currentScope.addVariable(id);
+            node = new DVarNode(lexer.tokline, slot, name);
+            set_it_id(node);
         }  else {
             node = currentScope.declare(lexer.tokline, name);
             slot = currentScope.isDefined(id); // FIXME: we should not do this extra call.
