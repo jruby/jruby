@@ -989,27 +989,35 @@ public abstract class LexingCommon {
         return (mask & state) == mask;
     }
 
-    protected boolean isARG() {
+    protected static boolean ISSPACE(int c) {
+        return Character.isWhitespace(c);
+    }
+
+    protected boolean IS_ARG() {
         return isLexState(lex_state, EXPR_ARG_ANY);
     }
 
-    protected boolean isBEG() {
-        return isLexState(lex_state, EXPR_BEG_ANY) || isLexStateAll(lex_state, EXPR_ARG|EXPR_LABELED);
-    }
-
-    protected boolean isEND() {
+    protected boolean IS_END() {
         return isLexState(lex_state, EXPR_END_ANY);
     }
 
-    protected boolean isLabelPossible(boolean commandState) {
-        return (isLexState(lex_state, EXPR_LABEL|EXPR_ENDFN) && !commandState) || isARG();
+    protected boolean IS_BEG() {
+        return isLexState(lex_state, EXPR_BEG_ANY) || isLexStateAll(lex_state, EXPR_ARG|EXPR_LABELED);
     }
 
-    public boolean isLabelSuffix() {
+    protected boolean IS_SPCARG(int c, boolean spaceSeen) {
+        return IS_ARG() && spaceSeen && !ISSPACE(c);
+    }
+
+    protected boolean IS_LABEL_POSSIBLE(boolean commandState) {
+        return (isLexState(lex_state, EXPR_LABEL|EXPR_ENDFN) && !commandState) || IS_ARG();
+    }
+
+    public boolean IS_LABEL_SUFFIX() {
         return peek(':') && !peek(':', 1);
     }
 
-    protected boolean isAfterOperator() {
+    protected boolean IS_AFTER_OPERATOR() {
         return isLexState(lex_state, EXPR_FNAME|EXPR_DOT);
     }
 
@@ -1030,10 +1038,6 @@ public abstract class LexingCommon {
 
     public static boolean isSpace(int c) {
         return c == ' ' || ('\t' <= c && c <= '\r');
-    }
-
-    protected boolean isSpaceArg(int c, boolean spaceSeen) {
-        return isARG() && spaceSeen && !Character.isWhitespace(c);
     }
 
     /* MRI: magic_comment_marker */

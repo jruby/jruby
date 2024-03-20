@@ -2415,7 +2415,7 @@ states[65] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
 };
 states[66] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.pop_pvtbl(((Set)yyVals[-2+yyTop].value));
-                    p.pop_pvtbl(((Set)yyVals[-1+yyTop].value));
+                    p.pop_pktbl(((Set)yyVals[-1+yyTop].value));
                     LexContext ctxt = p.getLexContext();
                     ctxt.in_kwarg = ((LexContext)yyVals[-3+yyTop].value).in_kwarg;
                     /*%%%*/
@@ -2430,7 +2430,7 @@ states[67] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
 };
 states[68] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.pop_pvtbl(((Set)yyVals[-2+yyTop].value));
-                    p.pop_pvtbl(((Set)yyVals[-1+yyTop].value));
+                    p.pop_pktbl(((Set)yyVals[-1+yyTop].value));
                     LexContext ctxt = p.getLexContext();
                     ctxt.in_kwarg = ((LexContext)yyVals[-3+yyTop].value).in_kwarg;
                     /*%%%*/
@@ -5033,15 +5033,15 @@ states[511] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[512] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+                    yyVal = p.getLexContext();
                     p.setState(EXPR_BEG|EXPR_LABEL);
                     p.setCommandStart(false);
-                    yyVal = p.getLexContext();
                     p.getLexContext().in_kwarg = true;
   return yyVal;
 };
 states[513] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    p.pop_pktbl(((Set)yyVals[-3+yyTop].value));
-                    p.pop_pvtbl(((Set)yyVals[-2+yyTop].value));
+                    p.pop_pvtbl(((Set)yyVals[-3+yyTop].value));
+                    p.pop_pktbl(((Set)yyVals[-2+yyTop].value));
                     p.getLexContext().in_kwarg = ((LexContext)yyVals[-4+yyTop].value).in_kwarg;
   return yyVal;
 };
@@ -6224,16 +6224,15 @@ states[713] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[714] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    LexContext ctxt = p.getLexContext();
-                    yyVal = ctxt.in_kwarg;
-                    ctxt.in_kwarg = true;
-                    ctxt.in_argdef = true;
+                    yyVal = p.getLexContext();
+                    p.getLexContext().in_kwarg = true;
+                    p.getLexContext().in_argdef = true;
                     p.setState(p.getState() | EXPR_LABEL);
   return yyVal;
 };
 states[715] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     LexContext ctxt = p.getLexContext();
-                    ctxt.in_kwarg = ((Boolean)yyVals[-2+yyTop].value);
+                    ctxt.in_kwarg = ((LexContext)yyVals[-2+yyTop].value).in_kwarg;
                     ctxt.in_argdef = false;
                     yyVal = ((ArgsNode)yyVals[-1+yyTop].value);
                     p.setState(EXPR_BEG);
@@ -6807,7 +6806,7 @@ states[822] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4826 "parse.y"
+					// line 4825 "parse.y"
 
 }
-					// line 14939 "-"
+					// line 14938 "-"

@@ -821,7 +821,7 @@ expr            : command_call
                     p.value_expr($1);
                 } p_in_kwarg p_pvtbl p_pktbl p_top_expr_body {
                     p.pop_pvtbl($<Set>5);
-                    p.pop_pvtbl($<Set>6);
+                    p.pop_pktbl($<Set>6);
                     LexContext ctxt = p.getLexContext();
                     ctxt.in_kwarg = $4.in_kwarg;
                     /*%%%*/
@@ -833,7 +833,7 @@ expr            : command_call
                     p.value_expr($1);
                 } p_in_kwarg p_pvtbl p_pktbl p_top_expr_body {
                     p.pop_pvtbl($<Set>5);
-                    p.pop_pvtbl($<Set>6);
+                    p.pop_pktbl($<Set>6);
                     LexContext ctxt = p.getLexContext();
                     ctxt.in_kwarg = $4.in_kwarg;
                     /*%%%*/
@@ -3177,16 +3177,16 @@ p_pktbl         : {
                 };
 
 p_in_kwarg      : {
+                    $$ = p.getLexContext();
                     p.setState(EXPR_BEG|EXPR_LABEL);
                     p.setCommandStart(false);
-                    $$ = p.getLexContext();
                     p.getLexContext().in_kwarg = true;
                 };
 
 // InNode - [!null]
 p_case_body     : keyword_in p_in_kwarg p_pvtbl p_pktbl p_top_expr then {
-                    p.pop_pktbl($<Set>3);
-                    p.pop_pvtbl($<Set>4);
+                    p.pop_pvtbl($<Set>3);
+                    p.pop_pktbl($<Set>4);
                     p.getLexContext().in_kwarg = $2.in_kwarg;
                 } compstmt p_cases {
                     /*%%%*/
@@ -4341,14 +4341,13 @@ f_arglist       : f_paren_args {
                    $$ = $1;
                 }
                 | {
-                    LexContext ctxt = p.getLexContext();
-                    $$ = ctxt.in_kwarg;
-                    ctxt.in_kwarg = true;
-                    ctxt.in_argdef = true;
+                    $$ = p.getLexContext();
+                    p.getLexContext().in_kwarg = true;
+                    p.getLexContext().in_argdef = true;
                     p.setState(p.getState() | EXPR_LABEL);
                 } f_args term {
                     LexContext ctxt = p.getLexContext();
-                    ctxt.in_kwarg = $<Boolean>1;
+                    ctxt.in_kwarg = $<LexContext>1.in_kwarg;
                     ctxt.in_argdef = false;
                     $$ = $2;
                     p.setState(EXPR_BEG);

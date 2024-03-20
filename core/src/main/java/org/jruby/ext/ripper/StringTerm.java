@@ -97,7 +97,7 @@ public class StringTerm extends StrTerm {
             return RipperParser.tREGEXP_END;
         }
 
-        if ((flags & STR_FUNC_LABEL) != 0 && lexer.isLabelSuffix()) {
+        if ((flags & STR_FUNC_LABEL) != 0 && lexer.IS_LABEL_SUFFIX()) {
             lexer.nextc();
             lexer.setState(EXPR_BEG | EXPR_LABEL);
             return RipperParser.tLABEL_END;
