@@ -36,12 +36,12 @@ class TestGemExtCargoBuilder < Gem::TestCase
     end
 
     output = output.join "\n"
-    bundle = File.join(@dest_path, "rust_ruby_example.#{RbConfig::CONFIG['DLEXT']}")
+    bundle = File.join(@dest_path, "rust_ruby_example.#{RbConfig::CONFIG["DLEXT"]}")
 
     assert_match(/Finished/, output)
     assert_match(/release/, output)
     assert_ffi_handle bundle, "Init_rust_ruby_example"
-  rescue Exception => e
+  rescue StandardError => e
     pp output if output
 
     raise(e)
@@ -62,12 +62,12 @@ class TestGemExtCargoBuilder < Gem::TestCase
     end
 
     output = output.join "\n"
-    bundle = File.join(@dest_path, "rust_ruby_example.#{RbConfig::CONFIG['DLEXT']}")
+    bundle = File.join(@dest_path, "rust_ruby_example.#{RbConfig::CONFIG["DLEXT"]}")
 
     assert_ffi_handle bundle, "hello_from_rubygems"
     assert_ffi_handle bundle, "hello_from_rubygems_version"
     refute_ffi_handle bundle, "should_never_exist"
-  rescue Exception => e
+  rescue StandardError => e
     pp output if output
 
     raise(e)
@@ -87,7 +87,7 @@ class TestGemExtCargoBuilder < Gem::TestCase
       end
     end
 
-    assert_match /cargo\s.*\sfailed/, error.message
+    assert_match(/cargo\s.*\sfailed/, error.message)
   end
 
   def test_full_integration
@@ -100,7 +100,7 @@ class TestGemExtCargoBuilder < Gem::TestCase
       require "tmpdir"
 
       env_for_subprocess = @rust_envs.merge("GEM_HOME" => Gem.paths.home)
-      gem = [env_for_subprocess, *ruby_with_rubygems_in_load_path, File.expand_path("../../bin/gem", __dir__)]
+      gem = [env_for_subprocess, *ruby_with_rubygems_in_load_path, File.expand_path("../../exe/gem", __dir__)]
 
       Dir.mktmpdir("rust_ruby_example") do |dir|
         built_gem = File.expand_path(File.join(dir, "rust_ruby_example.gem"))
@@ -122,7 +122,7 @@ class TestGemExtCargoBuilder < Gem::TestCase
       require "tmpdir"
 
       env_for_subprocess = @rust_envs.merge("GEM_HOME" => Gem.paths.home)
-      gem = [env_for_subprocess, *ruby_with_rubygems_in_load_path, File.expand_path("../../bin/gem", __dir__)]
+      gem = [env_for_subprocess, *ruby_with_rubygems_in_load_path, File.expand_path("../../exe/gem", __dir__)]
 
       Dir.mktmpdir("custom_name") do |dir|
         built_gem = File.expand_path(File.join(dir, "custom_name.gem"))
@@ -140,23 +140,28 @@ class TestGemExtCargoBuilder < Gem::TestCase
   private
 
   def skip_unsupported_platforms!
-    pend "jruby not supported" if java_platform?
+    pend "jruby not supported" if Gem.java_platform?
     pend "truffleruby not supported (yet)" if RUBY_ENGINE == "truffleruby"
     system(@rust_envs, "cargo", "-V", out: IO::NULL, err: [:child, :out])
     pend "cargo not present" unless $?.success?
     pend "ruby.h is not provided by ruby repo" if ruby_repo?
+    pend "rust toolchain of mingw is broken" if mingw_windows?
   end
 
   def assert_ffi_handle(bundle, name)
     require "fiddle"
     dylib_handle = Fiddle.dlopen bundle
     assert_nothing_raised { dylib_handle[name] }
+  ensure
+    dylib_handle&.close
   end
 
   def refute_ffi_handle(bundle, name)
     require "fiddle"
     dylib_handle = Fiddle.dlopen bundle
     assert_raise { dylib_handle[name] }
+  ensure
+    dylib_handle&.close
   end
 
   def replace_in_rust_file(name, from, to)

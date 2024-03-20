@@ -214,6 +214,128 @@ class TestAst < Test::Unit::TestCase
     end
   end
 
+  def assert_parse(code, warning: '')
+    node = assert_warning(warning) {RubyVM::AbstractSyntaxTree.parse(code)}
+    assert_kind_of(RubyVM::AbstractSyntaxTree::Node, node, code)
+  end
+
+  def assert_invalid_parse(msg, code)
+    assert_raise_with_message(SyntaxError, msg, code) do
+      RubyVM::AbstractSyntaxTree.parse(code)
+    end
+  end
+
+  def test_invalid_exit
+    [
+      "break",
+      "break true",
+      "next",
+      "next true",
+      "redo",
+    ].each do |code, *args|
+      msg = /Invalid #{code[/\A\w+/]}/
+      assert_parse("while false; #{code}; end")
+      assert_parse("until true; #{code}; end")
+      assert_parse("begin #{code}; end while false")
+      assert_parse("begin #{code}; end until true")
+      assert_parse("->{#{code}}")
+      assert_parse("->{class X; #{code}; end}")
+      assert_invalid_parse(msg, "#{code}")
+      assert_invalid_parse(msg, "def m; #{code}; end")
+      assert_invalid_parse(msg, "begin; #{code}; end")
+      assert_parse("END {#{code}}")
+
+      assert_parse("!defined?(#{code})")
+      assert_parse("def m; defined?(#{code}); end")
+      assert_parse("!begin; defined?(#{code}); end")
+
+      next if code.include?(" ")
+      assert_parse("!defined? #{code}")
+      assert_parse("def m; defined? #{code}; end")
+      assert_parse("!begin; defined? #{code}; end")
+    end
+  end
+
+  def test_invalid_retry
+    msg = /Invalid retry/
+    assert_invalid_parse(msg, "retry")
+    assert_invalid_parse(msg, "def m; retry; end")
+    assert_invalid_parse(msg, "begin retry; end")
+    assert_parse("begin rescue; retry; end")
+    assert_invalid_parse(msg, "begin rescue; else; retry; end")
+    assert_invalid_parse(msg, "begin rescue; ensure; retry; end")
+    assert_parse("nil rescue retry")
+    assert_invalid_parse(msg, "END {retry}")
+    assert_invalid_parse(msg, "begin rescue; END {retry}; end")
+
+    assert_parse("!defined?(retry)")
+    assert_parse("def m; defined?(retry); end")
+    assert_parse("!begin defined?(retry); end")
+    assert_parse("begin rescue; else; defined?(retry); end")
+    assert_parse("begin rescue; ensure; defined?(retry); end")
+    assert_parse("END {defined?(retry)}")
+    assert_parse("begin rescue; END {defined?(retry)}; end")
+    assert_parse("!defined? retry")
+
+    assert_parse("def m; defined? retry; end")
+    assert_parse("!begin defined? retry; end")
+    assert_parse("begin rescue; else; defined? retry; end")
+    assert_parse("begin rescue; ensure; defined? retry; end")
+    assert_parse("END {defined? retry}")
+    assert_parse("begin rescue; END {defined? retry}; end")
+
+    assert_parse("#{<<-"begin;"}\n#{<<-'end;'}")
+    begin;
+      def foo
+        begin
+          yield
+        rescue StandardError => e
+          begin
+            puts "hi"
+            retry
+          rescue
+            retry unless e
+            raise e
+          else
+            retry
+          ensure
+            retry
+          end
+        end
+      end
+    end;
+  end
+
+  def test_invalid_yield
+    msg = /Invalid yield/
+    assert_invalid_parse(msg, "yield")
+    assert_invalid_parse(msg, "class C; yield; end")
+    assert_invalid_parse(msg, "BEGIN {yield}")
+    assert_invalid_parse(msg, "END {yield}")
+    assert_invalid_parse(msg, "-> {yield}")
+
+    assert_invalid_parse(msg, "yield true")
+    assert_invalid_parse(msg, "class C; yield true; end")
+    assert_invalid_parse(msg, "BEGIN {yield true}")
+    assert_invalid_parse(msg, "END {yield true}")
+    assert_invalid_parse(msg, "-> {yield true}")
+
+    assert_parse("!defined?(yield)")
+    assert_parse("class C; defined?(yield); end")
+    assert_parse("BEGIN {defined?(yield)}")
+    assert_parse("END {defined?(yield)}")
+
+    assert_parse("!defined?(yield true)")
+    assert_parse("class C; defined?(yield true); end")
+    assert_parse("BEGIN {defined?(yield true)}")
+    assert_parse("END {defined?(yield true)}")
+
+    assert_parse("!defined? yield")
+    assert_parse("class C; defined? yield; end")
+    assert_parse("BEGIN {defined? yield}")
+    assert_parse("END {defined? yield}")
+  end
+
   def test_node_id_for_location
     exception = begin
                   raise
@@ -467,7 +589,7 @@ class TestAst < Test::Unit::TestCase
     assert_equal("foo", head)
     assert_equal(:EVSTR, body.type)
     body, = body.children
-    assert_equal(:LIT, body.type)
+    assert_equal(:INTEGER, body.type)
     assert_equal([1], body.children)
   end
 
@@ -539,7 +661,7 @@ class TestAst < Test::Unit::TestCase
       node ? [node.children[-4], node.children[-2]&.children, node.children[-1]] : []
     end
 
-    assert_equal([:*, nil, :&], forwarding.call('...'))
+    assert_equal([:*, [:**], :&], forwarding.call('...'))
   end
 
   def test_ranges_numbered_parameter
@@ -622,6 +744,41 @@ dummy
 
     assert_equal("{ 1 + 2 }", node_proc.source)
     assert_equal("def test_keep_script_lines_for_of\n", node_method.source.lines.first)
+  end
+
+  def test_source_with_multibyte_characters
+    ast = RubyVM::AbstractSyntaxTree.parse(%{a("\u00a7");b("\u00a9")}, keep_script_lines: true)
+    a_fcall, b_fcall = ast.children[2].children
+
+    assert_equal(%{a("\u00a7")}, a_fcall.source)
+    assert_equal(%{b("\u00a9")}, b_fcall.source)
+  end
+
+  def test_keep_tokens_for_parse
+    node = RubyVM::AbstractSyntaxTree.parse(<<~END, keep_tokens: true)
+    1.times do
+    end
+    __END__
+    dummy
+    END
+
+    expected = [
+      [:tINTEGER, "1"],
+      [:".", "."],
+      [:tIDENTIFIER, "times"],
+      [:tSP, " "],
+      [:keyword_do, "do"],
+      [:tIGNORED_NL, "\n"],
+      [:keyword_end, "end"],
+      [:nl, "\n"],
+    ]
+    assert_equal(expected, node.all_tokens.map { [_2, _3]})
+  end
+
+  def test_keep_tokens_unexpected_backslash
+    assert_raise_with_message(SyntaxError, /unexpected backslash/) do
+      RubyVM::AbstractSyntaxTree.parse("\\", keep_tokens: true)
+    end
   end
 
   def test_encoding_with_keep_script_lines
@@ -728,7 +885,7 @@ dummy
       begin
         a = 1
     STR
-      (SCOPE@1:0-2:7 tbl: [:a] args: nil body: (LASGN@2:2-2:7 :a (LIT@2:6-2:7 1)))
+      (SCOPE@1:0-2:7 tbl: [:a] args: nil body: (LASGN@2:2-2:7 :a (INTEGER@2:6-2:7 1)))
     EXP
   end
 
@@ -741,7 +898,8 @@ dummy
        tbl: [:a]
        args: nil
        body:
-         (IF@1:0-2:7 (VCALL@1:3-1:7 :cond) (LASGN@2:2-2:7 :a (LIT@2:6-2:7 1)) nil))
+         (IF@1:0-2:7 (VCALL@1:3-1:7 :cond) (LASGN@2:2-2:7 :a (INTEGER@2:6-2:7 1))
+            nil))
     EXP
 
     assert_error_tolerant(<<~STR, <<~EXP)
@@ -753,7 +911,7 @@ dummy
        tbl: [:a]
        args: nil
        body:
-         (IF@1:0-3:4 (VCALL@1:3-1:7 :cond) (LASGN@2:2-2:7 :a (LIT@2:6-2:7 1))
+         (IF@1:0-3:4 (VCALL@1:3-1:7 :cond) (LASGN@2:2-2:7 :a (INTEGER@2:6-2:7 1))
             (BEGIN@3:4-3:4 nil)))
     EXP
   end
@@ -767,7 +925,7 @@ dummy
        tbl: [:a]
        args: nil
        body:
-         (UNLESS@1:0-2:7 (VCALL@1:7-1:11 :cond) (LASGN@2:2-2:7 :a (LIT@2:6-2:7 1))
+         (UNLESS@1:0-2:7 (VCALL@1:7-1:11 :cond) (LASGN@2:2-2:7 :a (INTEGER@2:6-2:7 1))
             nil))
     EXP
 
@@ -780,7 +938,7 @@ dummy
        tbl: [:a]
        args: nil
        body:
-         (UNLESS@1:0-3:4 (VCALL@1:7-1:11 :cond) (LASGN@2:2-2:7 :a (LIT@2:6-2:7 1))
+         (UNLESS@1:0-3:4 (VCALL@1:7-1:11 :cond) (LASGN@2:2-2:7 :a (INTEGER@2:6-2:7 1))
             (BEGIN@3:4-3:4 nil)))
     EXP
   end
@@ -819,7 +977,7 @@ dummy
        args: nil
        body:
          (CASE@1:0-2:6 (VCALL@1:5-1:6 :a)
-            (WHEN@2:0-2:6 (LIST@2:5-2:6 (LIT@2:5-2:6 1) nil) (BEGIN@2:6-2:6 nil)
+            (WHEN@2:0-2:6 (LIST@2:5-2:6 (INTEGER@2:5-2:6 1) nil) (BEGIN@2:6-2:6 nil)
                nil)))
     EXP
 
@@ -836,7 +994,7 @@ dummy
             (WHEN@2:0-2:11
                (LIST@2:5-2:11
                   (OPCALL@2:5-2:11 (VCALL@2:5-2:6 :a) :==
-                     (LIST@2:10-2:11 (LIT@2:10-2:11 1) nil)) nil)
+                     (LIST@2:10-2:11 (INTEGER@2:10-2:11 1) nil)) nil)
                (BEGIN@2:11-2:11 nil) nil)))
     EXP
 
@@ -855,7 +1013,7 @@ dummy
                 const: nil
                 kw:
                   (HASH@2:4-2:13
-                     (LIST@2:4-2:13 (LIT@2:4-2:6 :a) (CONST@2:7-2:13 :String) nil))
+                     (LIST@2:4-2:13 (SYM@2:4-2:6 :a) (CONST@2:7-2:13 :String) nil))
                 kwrest: nil) (BEGIN@2:14-2:14 nil) nil)))
     EXP
   end
@@ -937,7 +1095,7 @@ dummy
        tbl: []
        args: nil
        body:
-         (ITER@1:0-2:3 (FCALL@1:0-1:3 :m (LIST@1:2-1:3 (LIT@1:2-1:3 1) nil))
+         (ITER@1:0-2:3 (FCALL@1:0-1:3 :m (LIST@1:2-1:3 (INTEGER@1:2-1:3 1) nil))
             (SCOPE@1:4-2:3 tbl: [] args: nil body: (VCALL@2:2-2:3 :a))))
     EXP
   end
@@ -1048,10 +1206,23 @@ dummy
     EXP
   end
 
-  def assert_error_tolerant(src, expected)
+  def test_error_tolerant_unexpected_backslash
+    node = assert_error_tolerant("\\", <<~EXP, keep_tokens: true)
+      (SCOPE@1:0-1:1 tbl: [] args: nil body: (ERROR@1:0-1:1))
+    EXP
+    assert_equal([[0, :backslash, "\\", [1, 0, 1, 1]]], node.children.last.tokens)
+  end
+
+  def test_with_bom
+    assert_error_tolerant("\u{feff}nil", <<~EXP)
+      (SCOPE@1:0-1:3 tbl: [] args: nil body: (NIL@1:0-1:3))
+    EXP
+  end
+
+  def assert_error_tolerant(src, expected, keep_tokens: false)
     begin
       verbose_bak, $VERBOSE = $VERBOSE, false
-      node = RubyVM::AbstractSyntaxTree.parse(src, error_tolerant: true)
+      node = RubyVM::AbstractSyntaxTree.parse(src, error_tolerant: true, keep_tokens: keep_tokens)
     ensure
       $VERBOSE = verbose_bak
     end
@@ -1059,5 +1230,6 @@ dummy
     str = ""
     PP.pp(node, str, 80)
     assert_equal(expected, str)
+    node
   end
 end

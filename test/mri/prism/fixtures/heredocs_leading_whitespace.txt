@@ -1,0 +1,24 @@
+<<-'  FOO'
+a
+b
+     FOO
+
+<<-"  FOO"
+a
+b
+     FOO
+
+<<-'  FOO'
+a
+b
+  FOO
+
+<<~'  FOO'
+a
+b
+     FOO
+
+<<~'  FOO'
+a
+b
+  FOO

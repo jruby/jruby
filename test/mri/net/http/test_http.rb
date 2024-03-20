@@ -126,10 +126,10 @@ class TestNetHTTP < Test::Unit::TestCase
 
   def test_proxy_address_no_proxy
     TestNetHTTPUtils.clean_http_proxy_env do
-      http = Net::HTTP.new 'hostname.example', nil, 'proxy.example', nil, nil, nil, 'example'
+      http = Net::HTTP.new 'hostname.example', nil, 'proxy.com', nil, nil, nil, 'example'
       assert_nil http.proxy_address
 
-      http = Net::HTTP.new '10.224.1.1', nil, 'proxy.example', nil, nil, nil, 'example,10.224.0.0/22'
+      http = Net::HTTP.new '10.224.1.1', nil, 'proxy.com', nil, nil, nil, 'example,10.224.0.0/22'
       assert_nil http.proxy_address
     end
   end
@@ -1232,6 +1232,16 @@ class TestNetHTTPKeepAlive < Test::Unit::TestCase
       assert_raise(Errno::ECONNRESET){ http.get('/') }
       assert_equal 11, socket.count
     }
+  end
+
+  def test_http_retry_failed_with_block
+    start {|http|
+      http.max_retries = 10
+      called = 0
+      assert_raise(Errno::ECONNRESET){ http.get('/'){called += 1; raise Errno::ECONNRESET} }
+      assert_equal 1, called
+    }
+    @log_tester = nil
   end
 
   def test_keep_alive_server_close

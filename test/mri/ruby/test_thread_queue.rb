@@ -8,14 +8,23 @@ class TestThreadQueue < Test::Unit::TestCase
   SizedQueue = Thread::SizedQueue
 
   def test_queue_initialized
-    assert_raise(TypeError) {
+    assert_raise_with_message(TypeError, /\bQueue.* not initialized/) {
       Queue.allocate.push(nil)
     }
   end
 
   def test_sized_queue_initialized
-    assert_raise(TypeError) {
+    assert_raise_with_message(TypeError, /\bSizedQueue.* not initialized/) {
       SizedQueue.allocate.push(nil)
+    }
+  end
+
+  def test_freeze
+    assert_raise(TypeError) {
+      Queue.new.freeze
+    }
+    assert_raise(TypeError) {
+      SizedQueue.new(5).freeze
     }
   end
 
@@ -208,14 +217,14 @@ class TestThreadQueue < Test::Unit::TestCase
 
     bug5343 = '[ruby-core:39634]'
     Dir.mktmpdir {|d|
-      timeout = EnvUtil.apply_timeout_scale(60)
+      timeout = 60
       total_count = 250
       begin
-        assert_normal_exit(<<-"_eom", bug5343, **{:timeout => timeout, :chdir=>d})
+        assert_normal_exit(<<-"_eom", bug5343, timeout: timeout, chdir: d)
+          r, w = IO.pipe
           #{total_count}.times do |i|
-            open("test_thr_kill_count", "w") {|f| f.puts i }
+            File.open("test_thr_kill_count", "w") {|f| f.puts i }
             queue = Thread::Queue.new
-            r, w = IO.pipe
             th = Thread.start {
               queue.push(nil)
               r.read 1

@@ -142,6 +142,8 @@ class TestRubyLiteral < Test::Unit::TestCase
   end
 
   def test_frozen_string
+    default = eval("'test'").frozen?
+
     all_assertions do |a|
       a.for("false with indicator") do
         str = eval("# -*- frozen-string-literal: false -*-\n""'foo'")
@@ -161,19 +163,19 @@ class TestRubyLiteral < Test::Unit::TestCase
       end
       a.for("false with preceding garbage") do
         str = eval("# x frozen-string-literal: false\n""'foo'")
-        assert_not_predicate(str, :frozen?)
+        assert_equal(default, str.frozen?)
       end
       a.for("true with preceding garbage") do
         str = eval("# x frozen-string-literal: true\n""'foo'")
-        assert_not_predicate(str, :frozen?)
+        assert_equal(default, str.frozen?)
       end
       a.for("false with succeeding garbage") do
         str = eval("# frozen-string-literal: false x\n""'foo'")
-        assert_not_predicate(str, :frozen?)
+        assert_equal(default, str.frozen?)
       end
       a.for("true with succeeding garbage") do
         str = eval("# frozen-string-literal: true x\n""'foo'")
-        assert_not_predicate(str, :frozen?)
+        assert_equal(default, str.frozen?)
       end
     end
   end
@@ -182,6 +184,11 @@ class TestRubyLiteral < Test::Unit::TestCase
     list = eval("# frozen-string-literal: true\n""['foo', 'bar']")
     assert_equal 2, list.length
     list.each { |str| assert_predicate str, :frozen? }
+  end
+
+  def test_string_in_hash_literal
+    hash = eval("# frozen-string-literal: false\n""{foo: 'foo'}")
+    assert_not_predicate(hash[:foo], :frozen?)
   end
 
   if defined?(RubyVM::InstructionSequence.compile_option) and
@@ -496,11 +503,15 @@ class TestRubyLiteral < Test::Unit::TestCase
       '1.0i',
       '1.72723e-77',
       '//',
+      '__LINE__',
+      '__FILE__',
+      '__ENCODING__',
     ) do |key|
-      assert_warning(/key #{Regexp.quote(eval(key).inspect)} is duplicated/) do
-        eval("{#{key} => :bar, #{key} => :foo}")
-      end
+      assert_warning(/key #{Regexp.quote(eval(key).inspect)} is duplicated/) { eval("{#{key} => :bar, #{key} => :foo}") }
     end
+
+    assert_warning(/key 1 is duplicated/) { eval("{__LINE__ => :bar, 1 => :foo}") }
+    assert_warning(/key \"FILENAME\" is duplicated/) { eval("{__FILE__ => :bar, 'FILENAME' => :foo}", binding, "FILENAME") }
   end
 
   def test_hash_frozen_key_id

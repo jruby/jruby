@@ -506,6 +506,7 @@ if defined? Zlib
     end
 
     def test_multithread_deflate
+      pend 'hangs' if RUBY_ENGINE == 'truffleruby'
       zd = Zlib::Deflate.new
 
       s = "x" * 10000
@@ -522,6 +523,7 @@ if defined? Zlib
     end
 
     def test_multithread_inflate
+      pend 'hangs' if RUBY_ENGINE == 'truffleruby'
       zi = Zlib::Inflate.new
 
       s = Zlib.deflate("x" * 10000)
@@ -792,7 +794,7 @@ if defined? Zlib
       }
     end
 
-    if defined? File::TMPFILE
+    if defined?(File::TMPFILE) and RUBY_ENGINE != 'truffleruby'
       def test_path_tmpfile
         sio = StringIO.new("".dup, 'w')
         gz = Zlib::GzipWriter.new(sio)
@@ -804,10 +806,16 @@ if defined? Zlib
           io.rewind
 
           gz0 = Zlib::GzipWriter.new(io)
-          assert_nil gz0.path
-
           gz1 = Zlib::GzipReader.new(io)
-          assert_nil gz1.path
+
+          if IO.method_defined?(:path)
+            assert_nil gz0.path
+            assert_nil gz1.path
+          else
+            assert_raise(NoMethodError) { gz0.path }
+            assert_raise(NoMethodError) { gz1.path }
+          end
+
           gz0.close
           gz1.close
         end
@@ -1197,6 +1205,38 @@ if defined? Zlib
       }
     end
 
+    # Various methods of Zlib::GzipReader failed when to reading files
+    # just a few bytes larger than GZFILE_READ_SIZE.
+    def test_gzfile_read_size_boundary
+      Tempfile.create("test_zlib_gzip_read_size_boundary") {|t|
+        t.close
+        # NO_COMPRESSION helps with recreating the error condition.
+        # The error happens on compressed files too, but it's harder to reproduce.
+        # For example, ~12750 bytes are needed to trigger the error using __FILE__.
+        # We avoid this because the test file will change over time.
+        Zlib::GzipWriter.open(t.path, Zlib::NO_COMPRESSION) do |gz|
+          gz.print("\n" * 2024) # range from 2024 to 2033 triggers the error
+          gz.flush
+        end
+
+        Zlib::GzipReader.open(t.path) do |f|
+          f.readpartial(1024) until f.eof?
+          assert_raise(EOFError) { f.readpartial(1) }
+        end
+
+        Zlib::GzipReader.open(t.path) do |f|
+          f.readline until f.eof?
+          assert_raise(EOFError) { f.readline }
+        end
+
+        Zlib::GzipReader.open(t.path) do |f|
+          b = f.readbyte until f.eof?
+          f.ungetbyte(b)
+          f.readbyte
+          assert_raise(EOFError) { f.readbyte }
+        end
+      }
+    end
   end
 
   class TestZlibGzipWriter < Test::Unit::TestCase
@@ -1449,6 +1489,13 @@ if defined? Zlib
 
       src = %w[1f8b080000000000000].pack("H*")
       assert_raise(Zlib::GzipFile::Error){ Zlib.gunzip(src) }
+    end
+
+    # Zlib.gunzip input is always considered a binary string, regardless of its String#encoding.
+    def test_gunzip_encoding
+      #                vvvvvvvv = mtime, but valid UTF-8 string of U+0080
+      src = %w[1f8b0800c28000000003cb48cdc9c9070086a6103605000000].pack("H*").force_encoding('UTF-8')
+      assert_equal 'hello', Zlib.gunzip(src.freeze)
     end
 
     def test_gunzip_no_memory_leak

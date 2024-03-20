@@ -8,7 +8,7 @@ class Reline::KeyActor::ViInsert::Test < Reline::TestCase
     @config.read_lines(<<~LINES.split(/(?<=\n)/))
       set editing-mode vi
     LINES
-    @encoding = Reline::IOGate.encoding
+    @encoding = Reline.core.encoding
     @line_editor = Reline::LineEditor.new(@config, @encoding)
     @line_editor.reset(@prompt, encoding: @encoding)
   end
@@ -1453,6 +1453,16 @@ class Reline::KeyActor::ViInsert::Test < Reline::TestCase
     assert_cursor(0)
     assert_cursor_max(1)
     assert_line('c')
+  end
+
+  def test_vi_change_to_eol
+    input_keys("abcdef\C-[2hC")
+    assert_line("abc")
+    input_keys("\C-[0C")
+    assert_line("")
+    assert_cursor(0)
+    assert_cursor_max(0)
+    assert_instance_of(Reline::KeyActor::ViInsert, @config.editing_mode)
   end
 
   def test_vi_motion_operators

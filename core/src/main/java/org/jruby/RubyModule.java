@@ -4598,6 +4598,13 @@ public class RubyModule extends RubyObject {
         }
         return refinedClass;
     }
+
+    @JRubyMethod(name = "used_refinements")
+    public IRubyObject used_refinements(ThreadContext context) {
+        // TODO: not implemented
+        return RubyArray.newEmptyArray(context.runtime);
+    }
+
     //
     ////////////////// CLASS VARIABLE API METHODS ////////////////
     //

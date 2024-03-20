@@ -14,14 +14,19 @@ class TestStringIO < Test::Unit::TestCase
 
   include TestEOF::Seek
 
+  def test_version
+    assert_kind_of(String, StringIO::VERSION)
+  end
+
   def test_initialize
     assert_kind_of StringIO, StringIO.new
     assert_kind_of StringIO, StringIO.new('str')
     assert_kind_of StringIO, StringIO.new('str', 'r+')
+    assert_kind_of StringIO, StringIO.new(nil)
     assert_raise(ArgumentError) { StringIO.new('', 'x') }
     assert_raise(ArgumentError) { StringIO.new('', 'rx') }
     assert_raise(ArgumentError) { StringIO.new('', 'rbt') }
-    assert_raise(TypeError) { StringIO.new(nil) }
+    assert_raise(TypeError) { StringIO.new(Object) }
 
     o = Object.new
     def o.to_str
@@ -34,6 +39,13 @@ class TestStringIO < Test::Unit::TestCase
       'str'
     end
     assert_kind_of StringIO, StringIO.new(o)
+  end
+
+  def test_null
+    io = StringIO.new(nil)
+    assert_nil io.gets
+    io.puts "abc"
+    assert_nil io.string
   end
 
   def test_truncate
@@ -82,6 +94,14 @@ class TestStringIO < Test::Unit::TestCase
     assert_nothing_raised {StringIO.new("").gets(nil, nil)}
 
     assert_string("", Encoding::UTF_8, StringIO.new("foo").gets(0))
+  end
+
+  def test_gets_utf_16
+    stringio = StringIO.new("line1\nline2\nline3\n".encode("utf-16le"))
+    assert_equal("line1\n".encode("utf-16le"), stringio.gets)
+    assert_equal("line2\n".encode("utf-16le"), stringio.gets)
+    assert_equal("line3\n".encode("utf-16le"), stringio.gets)
+    assert_nil(stringio.gets)
   end
 
   def test_gets_chomp
@@ -225,7 +245,7 @@ class TestStringIO < Test::Unit::TestCase
 
   def test_write_integer_overflow
     f = StringIO.new
-    f.pos = RbConfig::LIMITS["LONG_MAX"]
+    f.pos = StringIO::MAX_LENGTH
     assert_raise(ArgumentError) {
       f.write("pos + len overflows")
     }
@@ -729,6 +749,32 @@ class TestStringIO < Test::Unit::TestCase
     assert_equal Encoding::ASCII_8BIT, f.sysread(3).encoding
   end
 
+  def test_pread
+    f = StringIO.new("pread")
+    f.read
+
+    assert_equal "pre".b, f.pread(3, 0)
+    assert_equal "read".b, f.pread(4, 1)
+    assert_equal Encoding::ASCII_8BIT, f.pread(4, 1).encoding
+
+    buf = "".b
+    f.pread(3, 0, buf)
+    assert_equal "pre".b, buf
+    f.pread(4, 1, buf)
+    assert_equal "read".b, buf
+
+    assert_raise(EOFError) { f.pread(1, 5) }
+    assert_raise(ArgumentError) { f.pread(-1, 0) }
+    assert_raise(Errno::EINVAL) { f.pread(3, -1) }
+
+    assert_equal "".b, StringIO.new("").pread(0, 0)
+    assert_equal "".b, StringIO.new("").pread(0, -10)
+
+    buf = "stale".b
+    assert_equal "stale".b, StringIO.new("").pread(0, 0, buf)
+    assert_equal "stale".b, buf
+  end
+
   def test_size
     f = StringIO.new("1234")
     assert_equal(4, f.size)
@@ -861,8 +907,9 @@ class TestStringIO < Test::Unit::TestCase
   end
 
   def test_overflow
-    return if RbConfig::SIZEOF["void*"] > RbConfig::SIZEOF["long"]
-    limit = RbConfig::LIMITS["INTPTR_MAX"] - 0x10
+    intptr_max = RbConfig::LIMITS["INTPTR_MAX"]
+    return if intptr_max > StringIO::MAX_LENGTH
+    limit = intptr_max - 0x10
     assert_separately(%w[-rstringio], "#{<<-"begin;"}\n#{<<-"end;"}")
     begin;
       limit = #{limit}
@@ -913,6 +960,22 @@ class TestStringIO < Test::Unit::TestCase
     $VERBOSE = nil
     Encoding.default_internal = default_internal
     $VERBOSE = verbose
+  end
+
+  def test_coderange_after_overwrite
+    s = StringIO.new("".b)
+
+    s.write("a=b&c=d")
+    s.rewind
+    assert_predicate(s.string, :ascii_only?)
+    s.write "\u{431 43e 433 443 441}"
+    assert_not_predicate(s.string, :ascii_only?)
+
+    s = StringIO.new("\u{3042}")
+    s.rewind
+    assert_not_predicate(s.string, :ascii_only?)
+    s.write('aaaa')
+    assert_predicate(s.string, :ascii_only?)
   end
 
   def assert_string(content, encoding, str, mesg = nil)
