@@ -144,7 +144,7 @@ public class BasicBlock implements ExplicitVertexID, Comparable<BasicBlock> {
     }
 
     // Adds all instrs after the found instr to a new BB and removes them from the original BB
-    // If includeSpltpointInstr is true it will include that instr in the new BB.
+    // If includeSplitpointInstr is true it will include that instr in the new BB.
     public BasicBlock splitAtInstruction(Site splitPoint, Label newLabel, boolean includeSplitPointInstr) {
         BasicBlock newBB = new BasicBlock(cfg, newLabel);
         int idx = 0;
@@ -156,7 +156,7 @@ public class BasicBlock implements ExplicitVertexID, Comparable<BasicBlock> {
 
             // Move instructions from split point into the new bb
             if (found) {
-                // FIXME: move includeSplit when found so we can remove consuing site id logic from here...
+                // FIXME: move includeSplit when found so we can remove consuming site id logic from here...
                 if (includeSplitPointInstr ||
                         !(i instanceof Site) ||
                         ((Site) i).getCallSiteId() != splitPoint.getCallSiteId()) newBB.addInstr(i);
@@ -165,7 +165,7 @@ public class BasicBlock implements ExplicitVertexID, Comparable<BasicBlock> {
             }
         }
 
-        if (!found) throw new RuntimeException("Cound not find split point: " + splitPoint);
+        if (!found) throw new RuntimeException("Could not find split point: " + splitPoint);
 
         // Remove all instructions from current bb that were moved over.
         for (int j = 0; j < numInstrs-idx; j++) {
@@ -187,14 +187,14 @@ public class BasicBlock implements ExplicitVertexID, Comparable<BasicBlock> {
 
         for (Instr instr: instrs) {
             Instr newInstr = instr.clone(info);
-            // Inlining clones the original CFG/BBs and we want to maintain ipc since it is how
+            // Inlining clones the original CFG/BBs, and we want to maintain ipc since it is how
             // we find which instr we want (we clone original instr and ipc is our identity).
             //if (info instanceof SimpleCloneInfo && ((SimpleCloneInfo) info).shouldCloneIPC()) {
             //    newInstr.setIPC(instr.getIPC());
             //    newInstr.setRPC(instr.getRPC());
             //}
 
-            // All call-derived types do not clone this field.  Inliner clones original instrs
+            // All call-derived types do not clone this field.  Inliner clones original instrs,
             // and we need this preserved to make sure we do not endless inline the same call.
             if (instr instanceof CallBase && ((CallBase) instr).inliningBlocked()) {
                 ((CallBase) newInstr).blockInlining();
@@ -248,10 +248,7 @@ public class BasicBlock implements ExplicitVertexID, Comparable<BasicBlock> {
 
     @Override
     public int compareTo(final BasicBlock other) {
-        if (id == other.id) return 0;
-        if (id < other.id) return -1;
-
-        return 1;
+        return Integer.compare(id, other.id);
     }
 
     @Override

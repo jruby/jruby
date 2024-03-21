@@ -302,8 +302,8 @@ public class CFGInliner {
                 throw new RuntimeException("Encountered a dynamic closure arg.  Cannot inline it here!  Convert the yield to a call by converting the closure into a dummy method (have to convert all frame vars to call arguments, or at least convert the frame into a call arg");
             }
 
-            for (Tuple t: yieldSites) {
-                inlineClosureAtYieldSite(ii, ((WrappedIRClosure) closureArg).getClosure(), (BasicBlock) t.a, (YieldInstr) t.b);
+            for (Tuple<BasicBlock, YieldInstr> t: yieldSites) {
+                inlineClosureAtYieldSite(ii, ((WrappedIRClosure) closureArg).getClosure(), t.a, t.b);
             }
         }
 
