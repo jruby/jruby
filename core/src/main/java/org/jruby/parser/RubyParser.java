@@ -2454,7 +2454,7 @@ states[70] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
                         $$ = new DefHolder(p.get_id(yyVals[yyTop - count + 1].id), currentArg, p.get_value($1), (LexContext) ctxt.clone());
                     %*/
                     ctxt.in_def = true;
-                    p.getLexContext().in_rescue = LexContext.InRescue.BEFORE_RESCUE;
+                    ctxt.in_rescue = LexContext.InRescue.BEFORE_RESCUE;
                     p.setCurrentArg(null);
   return yyVal;
 };
@@ -4239,12 +4239,7 @@ states[377] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[378] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    LexContext ctxt = p.getLexContext();
-                    if (ctxt.in_def) {
-                        p.yyerror("class definition in method body");
-                    }
-                    ctxt.in_class = true;
-                    p.pushLocalScope();
+                    p.begin_definition("class");
   return yyVal;
 };
 states[379] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -4261,10 +4256,7 @@ states[379] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[380] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    LexContext ctxt = p.getLexContext();
-                    ctxt.in_def = false;
-                    ctxt.in_class = false;
-                    p.pushLocalScope();
+                    p.begin_definition(null);
   return yyVal;
 };
 states[381] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -4282,12 +4274,7 @@ states[381] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[382] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    LexContext ctxt = p.getLexContext();
-                    if (ctxt.in_def) { 
-                        p.yyerror("module definition in method body");
-                    }
-                    ctxt.in_class = true;
-                    p.pushLocalScope();
+                    p.begin_definition("module");
   return yyVal;
 };
 states[383] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6806,7 +6793,7 @@ states[822] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4825 "parse.y"
+					// line 4812 "parse.y"
 
 }
-					// line 14938 "-"
+					// line 14925 "-"

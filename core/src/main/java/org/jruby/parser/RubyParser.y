@@ -861,7 +861,7 @@ def_name        : fname {
                         $$ = new DefHolder(p.get_id(@1.id), currentArg, p.get_value($1), (LexContext) ctxt.clone());
                     %*/
                     ctxt.in_def = true;
-                    p.getLexContext().in_rescue = LexContext.InRescue.BEFORE_RESCUE;
+                    ctxt.in_rescue = LexContext.InRescue.BEFORE_RESCUE;
                     p.setCurrentArg(null);
                 };
 
@@ -2432,12 +2432,7 @@ primary         : literal
                     /*% ripper: for!($2, $4, $5) %*/
                 }
                 | k_class cpath superclass {
-                    LexContext ctxt = p.getLexContext();
-                    if (ctxt.in_def) {
-                        p.yyerror("class definition in method body");
-                    }
-                    ctxt.in_class = true;
-                    p.pushLocalScope();
+                    p.begin_definition("class");
                 } bodystmt k_end {
                     /*%%%*/
                     Node body = p.makeNullNil($5);
@@ -2451,10 +2446,7 @@ primary         : literal
                     ctxt.shareable_constant_value = $1.shareable_constant_value;
                 }
                 | k_class tLSHFT expr_value {
-                    LexContext ctxt = p.getLexContext();
-                    ctxt.in_def = false;
-                    ctxt.in_class = false;
-                    p.pushLocalScope();
+                    p.begin_definition(null);
                 } term bodystmt k_end {
                     /*%%%*/
                     Node body = p.makeNullNil($6);
@@ -2469,12 +2461,7 @@ primary         : literal
                     p.popCurrentScope();
                 }
                 | k_module cpath {
-                    LexContext ctxt = p.getLexContext();
-                    if (ctxt.in_def) { 
-                        p.yyerror("module definition in method body");
-                    }
-                    ctxt.in_class = true;
-                    p.pushLocalScope();
+                    p.begin_definition("module");
                 } bodystmt k_end {
                     /*%%%*/
                     Node body = p.makeNullNil($4);

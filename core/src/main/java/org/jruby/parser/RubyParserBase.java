@@ -1922,6 +1922,16 @@ public abstract class RubyParserBase {
         return INTERNAL_ID.toString();
     }
 
+    protected void begin_definition(String name) {
+        LexContext ctxt = getLexContext();
+        ctxt.in_class = name != null;
+        if (!ctxt.in_class) {
+            ctxt.in_def = false;
+        } else if (ctxt.in_def) {
+            yyerror((name != null ? (name + " ") : "") + "definition in method body");
+        }
+        pushLocalScope();
+    }
     public Set<ByteList> push_pvtbl() {
         Set<ByteList> currentTable = variableTable;
 
