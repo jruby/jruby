@@ -262,9 +262,9 @@ public class BasicBlock implements ExplicitVertexID, Comparable<BasicBlock> {
     public String toStringInstrs() {
         StringBuilder buf = new StringBuilder(toString());
 
-        Collection<Edge<BasicBlock>> outs = cfg.getOutgoingEdges(this);
+        Collection<Edge<BasicBlock, CFG.EdgeType>> outs = cfg.getOutgoingEdges(this);
         if (!outs.isEmpty()) {
-            for (Edge<BasicBlock> edge : outs) {
+            for (Edge<BasicBlock, CFG.EdgeType> edge : outs) {
                 buf.append(" -").append(edge.getType()).append("->").append(edge.getDestination().getID());
             }
         }
