@@ -147,11 +147,18 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
     }
 
     @JRubyMethod(name = "clone")
-    @Override
     public RubyUnboundMethod rbClone() {
         RubyUnboundMethod unboundMethod = newUnboundMethod(implementationModule, methodName, originModule, originName, entry);
-        if (isFrozen()) unboundMethod.setFrozen(true);
-        return unboundMethod;
+        ThreadContext context = getRuntime().getCurrentContext();
+
+        return (RubyUnboundMethod) cloneSetup(context, unboundMethod, context.nil);
+    }
+
+    @JRubyMethod
+    public RubyUnboundMethod dup(ThreadContext context) {
+        RubyUnboundMethod unboundMethod = newUnboundMethod(implementationModule, methodName, originModule, originName, entry);
+
+        return (RubyUnboundMethod) dupSetup(context, unboundMethod);
     }
 
     @JRubyMethod(required =  1, rest = true, checkArity = false, keywords = true)
