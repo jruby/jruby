@@ -202,23 +202,28 @@ public abstract class RubyParserBase {
     }
 
     public ArgsNode args_with_numbered(ArgsNode args, int paramCount, Node itNode) {
-        if (paramCount == 0) {
-            if (args == null) { // FIXME: I think this is not possible.
+        if (args.isEmpty()) {
+            if (paramCount > 0) {
                 ListNode pre = makePreNumArgs(paramCount);
                 args = new_args(lexer.getRubySourceline(), pre, null, null, null, null);
-            } else if (args.getArgs().length == 0) {
-                if (paramCount > 0) {
-                    ListNode pre = makePreNumArgs(paramCount);
-                    args = new_args(lexer.getRubySourceline(), pre, null, null, null, null);
-                } else if (itNode != null) {
-                    DVarNode dvar = (DVarNode) itNode;
-                    Node arg = new ArgumentNode(dvar.getLine(), dvar.getName(), dvar.getDepth());
-                    args = new_args(lexer.getRubySourceline(), newArrayNode(arg.getLine(), arg), null, null, null, null);
-                }
-            } else {
-                // FIXME: not sure where errors are printed in all this but could be here.
+            } else if (itNode != null) {
+                DVarNode dvar = (DVarNode) itNode;
+                Node arg = new ArgumentNode(dvar.getLine(), dvar.getName(), dvar.getDepth());
+                args = new_args(lexer.getRubySourceline(), newArrayNode(arg.getLine(), arg), null, null, null, null);
             }
-            // FIXME: it just sets pre-value here but what existing args node would work here?
+        } else {
+            if (itNode != null) {
+                boolean hasNormalIt = false;
+                for (Node arg : args.getArgs()) {
+                    if (arg instanceof INameNode && "it".equals(((INameNode) arg).getName().idString())) {
+                        hasNormalIt = true;
+                        break;
+                    }
+                }
+
+                if (!hasNormalIt) yyerror("ordinary parameter is defined");
+            }
+            // FIXME: multiple mismatch errors need to be defined.
         }
         return args;
     }
