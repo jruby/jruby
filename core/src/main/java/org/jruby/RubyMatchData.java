@@ -314,15 +314,13 @@ public class RubyMatchData extends RubyObject {
                 return runtime.newArray(ss);
             }
         } else {
-            RubyArray arr = RubyArray.newBlankArray(runtime, regs.getNumRegs() - start);
-            int index = 0;
-            for (int i=start; i < regs.getNumRegs(); i++) {
-                if (regs.getBeg(i) == -1) {
-                    arr.storeInternal(index++, context.nil);
-                } else {
-                    RubyString ss = str.makeSharedString(runtime, regs.getBeg(i), regs.getEnd(i) - regs.getBeg(i));
-                    arr.storeInternal(index++, ss);
-                }
+            int count = regs.getNumRegs() - start;
+            RubyArray arr = RubyArray.newBlankArray(runtime, count);
+            for (int i=0; i < count; i++) {
+                int beg = regs.getBeg(i+start);
+                arr.storeInternal(i, beg == -1 ?
+                        context.nil :
+                        str.makeSharedString(runtime, beg, regs.getEnd(i+start) - beg));
             }
             return arr;
         }
