@@ -33,6 +33,7 @@ public class LexContext {
         LexContext context = new LexContext();
         context.in_class = in_class;
         context.in_def = in_def;
+        context.in_kwarg = in_kwarg;
         context.in_defined = in_defined;
         context.in_rescue = in_rescue;
         context.in_argdef = in_argdef;

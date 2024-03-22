@@ -821,7 +821,7 @@ expr            : command_call
                     p.value_expr($1);
                 } p_in_kwarg p_pvtbl p_pktbl p_top_expr_body {
                     p.pop_pvtbl($<Set>5);
-                    p.pop_pvtbl($<Set>6);
+                    p.pop_pktbl($<Set>6);
                     LexContext ctxt = p.getLexContext();
                     ctxt.in_kwarg = $4.in_kwarg;
                     /*%%%*/
@@ -833,7 +833,7 @@ expr            : command_call
                     p.value_expr($1);
                 } p_in_kwarg p_pvtbl p_pktbl p_top_expr_body {
                     p.pop_pvtbl($<Set>5);
-                    p.pop_pvtbl($<Set>6);
+                    p.pop_pktbl($<Set>6);
                     LexContext ctxt = p.getLexContext();
                     ctxt.in_kwarg = $4.in_kwarg;
                     /*%%%*/
@@ -861,7 +861,7 @@ def_name        : fname {
                         $$ = new DefHolder(p.get_id(@1.id), currentArg, p.get_value($1), (LexContext) ctxt.clone());
                     %*/
                     ctxt.in_def = true;
-                    p.getLexContext().in_rescue = LexContext.InRescue.BEFORE_RESCUE;
+                    ctxt.in_rescue = LexContext.InRescue.BEFORE_RESCUE;
                     p.setCurrentArg(null);
                 };
 
@@ -2432,12 +2432,7 @@ primary         : literal
                     /*% ripper: for!($2, $4, $5) %*/
                 }
                 | k_class cpath superclass {
-                    LexContext ctxt = p.getLexContext();
-                    if (ctxt.in_def) {
-                        p.yyerror("class definition in method body");
-                    }
-                    ctxt.in_class = true;
-                    p.pushLocalScope();
+                    p.begin_definition("class");
                 } bodystmt k_end {
                     /*%%%*/
                     Node body = p.makeNullNil($5);
@@ -2451,10 +2446,7 @@ primary         : literal
                     ctxt.shareable_constant_value = $1.shareable_constant_value;
                 }
                 | k_class tLSHFT expr_value {
-                    LexContext ctxt = p.getLexContext();
-                    ctxt.in_def = false;
-                    ctxt.in_class = false;
-                    p.pushLocalScope();
+                    p.begin_definition(null);
                 } term bodystmt k_end {
                     /*%%%*/
                     Node body = p.makeNullNil($6);
@@ -2469,12 +2461,7 @@ primary         : literal
                     p.popCurrentScope();
                 }
                 | k_module cpath {
-                    LexContext ctxt = p.getLexContext();
-                    if (ctxt.in_def) { 
-                        p.yyerror("module definition in method body");
-                    }
-                    ctxt.in_class = true;
-                    p.pushLocalScope();
+                    p.begin_definition("module");
                 } bodystmt k_end {
                     /*%%%*/
                     Node body = p.makeNullNil($4);
@@ -2619,12 +2606,12 @@ k_do_block      : keyword_do_block {
                 };
 
 k_rescue        : keyword_rescue {
-                    $$ = p.getLexContext();
+                    $$ = p.getLexContext().clone();
                     p.getLexContext().in_rescue = LexContext.InRescue.AFTER_RESCUE;
                 };
 
 k_ensure        : keyword_ensure {
-                    $$ = p.getLexContext();
+                    $$ = p.getLexContext().clone();
                 };
  
 k_when          : keyword_when {
@@ -3177,16 +3164,16 @@ p_pktbl         : {
                 };
 
 p_in_kwarg      : {
+                    $$ = p.getLexContext().clone();
                     p.setState(EXPR_BEG|EXPR_LABEL);
                     p.setCommandStart(false);
-                    $$ = p.getLexContext();
                     p.getLexContext().in_kwarg = true;
                 };
 
 // InNode - [!null]
 p_case_body     : keyword_in p_in_kwarg p_pvtbl p_pktbl p_top_expr then {
-                    p.pop_pktbl($<Set>3);
-                    p.pop_pvtbl($<Set>4);
+                    p.pop_pvtbl($<Set>3);
+                    p.pop_pktbl($<Set>4);
                     p.getLexContext().in_kwarg = $2.in_kwarg;
                 } compstmt p_cases {
                     /*%%%*/
@@ -4341,14 +4328,13 @@ f_arglist       : f_paren_args {
                    $$ = $1;
                 }
                 | {
-                    LexContext ctxt = p.getLexContext();
-                    $$ = ctxt.in_kwarg;
-                    ctxt.in_kwarg = true;
-                    ctxt.in_argdef = true;
+                    $$ = p.getLexContext().clone();
+                    p.getLexContext().in_kwarg = true;
+                    p.getLexContext().in_argdef = true;
                     p.setState(p.getState() | EXPR_LABEL);
                 } f_args term {
                     LexContext ctxt = p.getLexContext();
-                    ctxt.in_kwarg = $<Boolean>1;
+                    ctxt.in_kwarg = $<LexContext>1.in_kwarg;
                     ctxt.in_argdef = false;
                     $$ = $2;
                     p.setState(EXPR_BEG);

@@ -892,7 +892,7 @@ public abstract class LexingCommon {
     }
 
     protected int warn_balanced(int c, boolean spaceSeen, int token, String op, String syn) {
-        if (!isLexState(last_state, EXPR_CLASS|EXPR_DOT|EXPR_FNAME|EXPR_ENDFN) && spaceSeen && !Character.isWhitespace(c)) {
+        if (!IS_lex_state(last_state, EXPR_CLASS|EXPR_DOT|EXPR_FNAME|EXPR_ENDFN) && spaceSeen && !Character.isWhitespace(c)) {
             ambiguousOperator(op, syn);
         }
 
@@ -981,36 +981,44 @@ public abstract class LexingCommon {
         return Character.isDigit(c) || ('a' <= c && c <= 'f') || ('A' <= c && c <= 'F');
     }
 
-    public static boolean isLexState(int state, int mask) {
+    public static boolean IS_lex_state(int state, int mask) {
         return (mask & state) != 0;
     }
 
-    protected boolean isLexStateAll(int state, int mask) {
+    protected boolean IS_lex_state_all(int state, int mask) {
         return (mask & state) == mask;
     }
 
-    protected boolean isARG() {
-        return isLexState(lex_state, EXPR_ARG_ANY);
+    protected static boolean ISSPACE(int c) {
+        return Character.isWhitespace(c);
     }
 
-    protected boolean isBEG() {
-        return isLexState(lex_state, EXPR_BEG_ANY) || isLexStateAll(lex_state, EXPR_ARG|EXPR_LABELED);
+    protected boolean IS_ARG() {
+        return IS_lex_state(lex_state, EXPR_ARG_ANY);
     }
 
-    protected boolean isEND() {
-        return isLexState(lex_state, EXPR_END_ANY);
+    protected boolean IS_END() {
+        return IS_lex_state(lex_state, EXPR_END_ANY);
     }
 
-    protected boolean isLabelPossible(boolean commandState) {
-        return (isLexState(lex_state, EXPR_LABEL|EXPR_ENDFN) && !commandState) || isARG();
+    protected boolean IS_BEG() {
+        return IS_lex_state(lex_state, EXPR_BEG_ANY) || IS_lex_state_all(lex_state, EXPR_ARG|EXPR_LABELED);
     }
 
-    public boolean isLabelSuffix() {
+    protected boolean IS_SPCARG(int c, boolean spaceSeen) {
+        return IS_ARG() && spaceSeen && !ISSPACE(c);
+    }
+
+    protected boolean IS_LABEL_POSSIBLE(boolean commandState) {
+        return (IS_lex_state(lex_state, EXPR_LABEL|EXPR_ENDFN) && !commandState) || IS_ARG();
+    }
+
+    public boolean IS_LABEL_SUFFIX() {
         return peek(':') && !peek(':', 1);
     }
 
-    protected boolean isAfterOperator() {
-        return isLexState(lex_state, EXPR_FNAME|EXPR_DOT);
+    protected boolean IS_AFTER_OPERATOR() {
+        return IS_lex_state(lex_state, EXPR_FNAME|EXPR_DOT);
     }
 
     protected boolean isNext_identchar() throws IOException {
@@ -1030,10 +1038,6 @@ public abstract class LexingCommon {
 
     public static boolean isSpace(int c) {
         return c == ' ' || ('\t' <= c && c <= '\r');
-    }
-
-    protected boolean isSpaceArg(int c, boolean spaceSeen) {
-        return isARG() && spaceSeen && !Character.isWhitespace(c);
     }
 
     /* MRI: magic_comment_marker */
