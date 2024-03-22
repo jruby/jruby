@@ -2606,12 +2606,12 @@ k_do_block      : keyword_do_block {
                 };
 
 k_rescue        : keyword_rescue {
-                    $$ = p.getLexContext();
+                    $$ = p.getLexContext().clone();
                     p.getLexContext().in_rescue = LexContext.InRescue.AFTER_RESCUE;
                 };
 
 k_ensure        : keyword_ensure {
-                    $$ = p.getLexContext();
+                    $$ = p.getLexContext().clone();
                 };
  
 k_when          : keyword_when {
@@ -3164,7 +3164,7 @@ p_pktbl         : {
                 };
 
 p_in_kwarg      : {
-                    $$ = p.getLexContext();
+                    $$ = p.getLexContext().clone();
                     p.setState(EXPR_BEG|EXPR_LABEL);
                     p.setCommandStart(false);
                     p.getLexContext().in_kwarg = true;
@@ -4328,7 +4328,7 @@ f_arglist       : f_paren_args {
                    $$ = $1;
                 }
                 | {
-                    $$ = p.getLexContext();
+                    $$ = p.getLexContext().clone();
                     p.getLexContext().in_kwarg = true;
                     p.getLexContext().in_argdef = true;
                     p.setState(p.getState() | EXPR_LABEL);
