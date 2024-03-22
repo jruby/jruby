@@ -80,10 +80,11 @@ public class TracePoint extends RubyObject {
 
         if (!block.isGiven()) throw runtime.newArgumentError("must be called with a block");
 
+        final ThreadContext threadToTrace = context;
         hook = new EventHook() {
             @Override
             public void event(ThreadContext context, RubyEvent event, String file, int line, String name, IRubyObject type) {
-                if (!enabled || context.isWithinTrace()) return;
+                if (!enabled || threadToTrace != context || context.isWithinTrace()) return;
 
                 synchronized (this) {
                     inside = true;
