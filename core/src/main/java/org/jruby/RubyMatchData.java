@@ -301,13 +301,14 @@ public class RubyMatchData extends RubyObject {
         return this.regexp = RubyRegexp.newRegexp(metaClass.runtime, (ByteList) pattern.getUserObject(), pattern);
     }
 
-    private RubyArray match_array(Ruby runtime, int start) {
+    private RubyArray match_array(ThreadContext context, int start) {
+        Ruby runtime = context.runtime;
         check();
-        IRubyObject nil = runtime.getNil();
+
         if (regs == null) {
             if (start != 0) return runtime.newEmptyArray();
             if (begin == -1) {
-                return runtime.newArray(nil);
+                return runtime.newArray(context.nil);
             } else {
                 RubyString ss = str.makeSharedString(runtime, begin, end - begin);
                 return runtime.newArray(ss);
@@ -317,7 +318,7 @@ public class RubyMatchData extends RubyObject {
             int index = 0;
             for (int i=start; i < regs.getNumRegs(); i++) {
                 if (regs.getBeg(i) == -1) {
-                    arr.storeInternal(index++, nil);
+                    arr.storeInternal(index++, context.nil);
                 } else {
                     RubyString ss = str.makeSharedString(runtime, regs.getBeg(i), regs.getEnd(i) - regs.getBeg(i));
                     arr.storeInternal(index++, ss);
@@ -439,7 +440,7 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod
     @Override
     public RubyArray to_a(ThreadContext context) {
-        return match_array(context.runtime, 0);
+        return match_array(context, 0);
     }
 
     @JRubyMethod(rest = true)
@@ -474,7 +475,7 @@ public class RubyMatchData extends RubyObject {
      */
     @JRubyMethod
     public IRubyObject captures(ThreadContext context) {
-        return match_array(context.runtime, 1);
+        return match_array(context, 1);
     }
 
     private int nameToBackrefNumber(RubyString str) {
@@ -913,6 +914,11 @@ public class RubyMatchData extends RubyObject {
         return hash;
     }
 
+    @JRubyMethod
+    public IRubyObject deconstruct(ThreadContext context) {
+        return match_array(context, 1);
+    }
+
     /**
      * Get the begin offset of the given region, or -1 if the region does not exist.
      *
@@ -955,7 +961,7 @@ public class RubyMatchData extends RubyObject {
     @Deprecated
     @Override
     public RubyArray to_a() {
-        return match_array(getRuntime(), 0);
+        return match_array(getRuntime().getCurrentContext(), 0);
     }
 
     @Deprecated
