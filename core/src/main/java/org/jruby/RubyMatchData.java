@@ -822,11 +822,8 @@ public class RubyMatchData extends RubyObject {
 
         checkFrozen();
 
-        if (!(original instanceof RubyMatchData)) {
-            throw getRuntime().newTypeError("wrong argument class");
-        }
+        if (!(original instanceof RubyMatchData origMatchData)) throw getRuntime().newTypeError("wrong argument class");
 
-        RubyMatchData origMatchData = (RubyMatchData)original;
         str = origMatchData.str;
         regs = origMatchData.regs;
 
@@ -836,9 +833,7 @@ public class RubyMatchData extends RubyObject {
     @Override
     public boolean equals(Object other) {
         if (this == other) return true;
-        if (!(other instanceof RubyMatchData)) return false;
-
-        final RubyMatchData that = (RubyMatchData) other;
+        if (!(other instanceof RubyMatchData that)) return false;
 
         return (this.str == that.str || (this.str != null && this.str.equals(that.str))) &&
                (this.regexp == that.regexp || (this.getRegexp().equals(that.getRegexp()))) &&
