@@ -219,16 +219,12 @@ public class RubyProc extends RubyObject implements DataType {
 
     @JRubyMethod(name = "clone")
     public IRubyObject rbClone(ThreadContext context) {
-        RubyProc clone = procDup();
-        sites(context).initialize_clone.call(context, clone, clone, this);
-        return clone;
+        return cloneSetup(context, procDup(), context.nil);
     }
 
     @JRubyMethod(name = "dup")
     public IRubyObject dup(ThreadContext context) {
-        RubyProc dup = procDup();
-        sites(context).initialize_dup.call(context, dup, dup, this);
-        return dup;
+        return dupSetup(context, procDup());
     }
 
     private RubyProc procDup() {

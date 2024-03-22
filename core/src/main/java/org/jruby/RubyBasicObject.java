@@ -897,19 +897,16 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return rbCloneInternal(context, kwfreeze);
     }
 
-    // freeze (false, true, nil)
-    private RubyBasicObject rbCloneInternal(ThreadContext context, IRubyObject freeze) {
+    // MRI: rb_dup_setup
+    protected RubyBasicObject dupSetup(ThreadContext context, RubyBasicObject dup) {
+        initCopy(context, dup, this);
+        sites(context).initialize_dup.call(context, dup, dup, this);
 
-        // MRI: immutable_obj_clone
-        if (isSpecialObject()) {
-            final Ruby runtime = context.runtime;
-            if (freeze == runtime.getFalse()) throw runtime.newArgumentError(str(runtime, "can't unfreeze ", types(runtime, getType())));
+        return dup;
+    }
 
-            return this;
-        }
-
-        // We're cloning ourselves, so we know the result should be a RubyObject
-        RubyBasicObject clone = (RubyBasicObject) metaClass.getRealClass().allocate();
+    // MRI: rb_clone_setup
+    protected RubyBasicObject cloneSetup(ThreadContext context, RubyBasicObject clone, IRubyObject freeze) {
         clone.setMetaClass(getSingletonClassCloneAndAttach(clone));
 
         initCopy(context, clone, this);
@@ -927,6 +924,24 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
 
         return clone;
+    }
+
+
+    // freeze (false, true, nil)
+    private RubyBasicObject rbCloneInternal(ThreadContext context, IRubyObject freeze) {
+
+        // MRI: immutable_obj_clone
+        if (isSpecialObject()) {
+            final Ruby runtime = context.runtime;
+            if (freeze == runtime.getFalse()) throw runtime.newArgumentError(str(runtime, "can't unfreeze ", types(runtime, getType())));
+
+            return this;
+        }
+
+        // We're cloning ourselves, so we know the result should be a RubyObject
+        RubyBasicObject clone = (RubyBasicObject) metaClass.getRealClass().allocate();
+
+        return cloneSetup(context, clone, freeze);
     }
 
 
