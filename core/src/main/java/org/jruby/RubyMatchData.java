@@ -36,6 +36,8 @@ package org.jruby;
 
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import org.jcodings.Encoding;
 import org.joni.Matcher;
@@ -58,6 +60,8 @@ import org.jruby.util.ByteListHolder;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.RubyStringBuilder;
 import org.jruby.util.StringSupport;
+
+import static org.jruby.util.RubyStringBuilder.str;
 
 /**
  * @author olabini
@@ -488,10 +492,18 @@ public class RubyMatchData extends RubyObject {
             return pattern.nameToBackrefNumber(value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), regs);
         } catch (JOniException je) {
             if (je instanceof ValueException) {
-                throw runtime.newIndexError(RubyStringBuilder.str(runtime, "undefined group name reference: ", runtime.newString(value)));
+                throw runtime.newIndexError(str(runtime, "undefined group name reference: ", runtime.newString(value)));
             }
             // FIXME: I think we could only catch ValueException here, but someone needs to audit that.
             throw runtime.newIndexError(je.getMessage());
+        }
+    }
+
+    private static int nameToBackrefNumber(Regex pattern, Region regs, ByteList name) {
+        try {
+            return pattern.nameToBackrefNumber(name.getUnsafeBytes(), name.getBegin(), name.getBegin() + name.getRealSize(), regs);
+        } catch (JOniException je) {
+            return -1;
         }
     }
 
@@ -869,31 +881,24 @@ public class RubyMatchData extends RubyObject {
         RubyHash hash = RubyHash.newSmallHash(runtime);
         if (regexp == context.nil) return hash;
 
-        boolean symbolizeNames = false;
+        final boolean symbolizeNames;
         if (argc == 1) {
-            final IRubyObject opts = args[0];
-            if (opts instanceof RubyHash) {
-                symbolizeNames = ArgsUtil.extractKeywordArg(context, (RubyHash) opts, "symbolize_names").isTrue();
-            } else {
-                throw runtime.newArgumentError(1, 0);
-            }
+            if (!(args[0] instanceof RubyHash)) throw runtime.newArgumentError(1, 0);
+            IRubyObject value = ArgsUtil.extractKeywordArg(context, (RubyHash) args[0], "symbolize_names");
+            symbolizeNames = value != null && value.isTrue();
+        } else {
+            symbolizeNames = false;
         }
 
-        for (Iterator<NameEntry> i = getPattern().namedBackrefIterator(); i.hasNext();) {
-            NameEntry entry = i.next();
-            IRubyObject key;
-            if (symbolizeNames) {
-                key = runtime.newSymbol(new ByteList(entry.name, entry.nameP, entry.nameEnd - entry.nameP, regexp.getEncoding(), false));
-            } else {
-                key = RubyString.newStringShared(runtime, new ByteList(entry.name, entry.nameP, entry.nameEnd - entry.nameP, regexp.getEncoding(), false));
-            }
-
+        getNamedBackrefKeys(context).forEach(entry -> {
+            IRubyObject key = symbolizeNames ?
+                    symbolFromNameEntry(context, entry) : stringFromNameEntry(context, entry);
             boolean found = false;
 
             for (int b : entry.getBackRefs()) {
                 IRubyObject value = RubyRegexp.nth_match(b, this);
-                if (value.isTrue()) {
 
+                if (value.isTrue()) {
                     hash.op_aset(context, key, value);
                     found = true;
                 }
@@ -902,7 +907,7 @@ public class RubyMatchData extends RubyObject {
             if (!found) {
                 hash.op_aset(context, key, context.nil);
             }
-        }
+        });
 
         return hash;
     }
@@ -910,6 +915,61 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod
     public IRubyObject deconstruct(ThreadContext context) {
         return match_array(context, 1);
+    }
+
+    @JRubyMethod
+    public IRubyObject deconstruct_keys(ThreadContext context, IRubyObject what) {
+        Ruby runtime = context.runtime;
+        RubyHash hash = RubyHash.newSmallHash(runtime);
+
+        if (what.isNil()) {
+            getNamedBackrefKeys(context).forEach(entry -> {
+                RubySymbol key = symbolFromNameEntry(context, entry);
+
+                for (int b : entry.getBackRefs()) {
+                    IRubyObject value = RubyRegexp.nth_match(b, this);
+                    if (value.isTrue()) hash.op_aset(context, key, value);
+                }
+            });
+        } else if (what instanceof RubyArray arr) {
+            if (getPattern().numberOfNames() < arr.size()) return hash;
+
+            Iterable<IRubyObject> iterable = () -> arr.rubyStream().iterator();
+            for (IRubyObject obj : iterable) {
+                if (!(obj instanceof RubySymbol)) {
+                    throw runtime.newTypeError(str(runtime, "wrong argument type ", obj.getMetaClass(), " (expected Symbol)"));
+                }
+                RubySymbol requestedKey = (RubySymbol) obj;
+
+                int index = nameToBackrefNumber(getPattern(), regs, requestedKey.getBytes());
+                if (index == -1) break;
+
+                IRubyObject value = RubyRegexp.nth_match(index, this);
+                if (!value.isTrue()) break;
+
+                hash.op_aset(context, requestedKey, value);
+            }
+        } else {
+            throw context.runtime.newTypeError(str(runtime, "wrong argument type ", what.getMetaClass(), " (expected Array)"));
+        }
+        return hash;
+    }
+
+    private Stream<NameEntry> getNamedBackrefKeys(ThreadContext context) {
+        Iterable<NameEntry> iterable = () -> getPattern().namedBackrefIterator();
+        return StreamSupport.stream(iterable.spliterator(), false);
+    }
+
+    private static ByteList byteListFromNameEntry(ThreadContext context, NameEntry entry, Encoding encoding) {
+        return new ByteList(entry.name, entry.nameP, entry.nameEnd - entry.nameP, encoding, false);
+    }
+
+    private RubySymbol symbolFromNameEntry(ThreadContext context, NameEntry entry) {
+        return context.runtime.newSymbol(byteListFromNameEntry(context, entry, regexp.getEncoding()));
+    }
+
+    private RubyString stringFromNameEntry(ThreadContext context, NameEntry entry) {
+        return RubyString.newStringShared(context.runtime, byteListFromNameEntry(context, entry, regexp.getEncoding()));
     }
 
     /**
