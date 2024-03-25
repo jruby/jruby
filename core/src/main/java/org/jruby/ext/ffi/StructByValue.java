@@ -11,6 +11,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Err.typeError;
 
 
 @JRubyClass(name="FFI::StructByValue", parent="FFI::Type")
@@ -31,13 +32,9 @@ public final class StructByValue extends Type {
 
     @JRubyMethod(name = "new", meta = true)
     public static final IRubyObject newStructByValue(ThreadContext context, IRubyObject klass, IRubyObject structClass) {
-        if (!(structClass instanceof RubyClass)) {
-            throw context.runtime.newTypeError("wrong argument type "
-                    + structClass.getMetaClass().getName() + " (expected Class)");
-        }
+        if (!(structClass instanceof RubyClass)) typeError(context, structClass, "Class");
         if (!((RubyClass) structClass).isKindOfModule(context.runtime.getFFI().structClass)) {
-            throw context.runtime.newTypeError("wrong argument type "
-                    + structClass.getMetaClass().getName() + " (expected subclass of FFI::Struct)");
+            typeError(context, structClass.getMetaClass(), "subclass of FFI::Struct");
         }
 
         return new StructByValue(context.runtime, (RubyClass) klass,

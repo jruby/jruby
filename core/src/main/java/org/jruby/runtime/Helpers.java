@@ -81,6 +81,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.unicode.UnicodeEncoding;
 
 import static org.jruby.RubyBasicObject.getMetaClass;
+import static org.jruby.api.Err.typeError;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_EMPTY;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
@@ -984,9 +985,7 @@ public class Helpers {
     private static IRubyObject coerceProc(IRubyObject maybeProc, Ruby runtime) throws RaiseException {
         IRubyObject proc = TypeConverter.convertToType(maybeProc, runtime.getProc(), "to_proc", false);
 
-        if (!(proc instanceof RubyProc)) {
-            throw runtime.newTypeError(str(runtime, "wrong argument type ", types(runtime, maybeProc.getMetaClass()), " (expected Proc)"));
-        }
+        if (!(proc instanceof RubyProc)) typeError(runtime.getCurrentContext(), maybeProc, "Proc");
 
         return proc;
     }

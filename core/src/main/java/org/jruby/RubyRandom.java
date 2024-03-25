@@ -33,6 +33,8 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Err.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -246,11 +248,8 @@ public class RubyRandom extends RubyRandomBase {
     @JRubyMethod(name = "initialize_copy", visibility = PRIVATE)
     @Override
     public IRubyObject initialize_copy(IRubyObject orig) {
-        if (!(orig instanceof RubyRandom)) {
-            throw getRuntime().newTypeError(String.format(
-                    "wrong argument type %s (expected %s)", orig.getMetaClass().getName(), getMetaClass().getName())
-            );
-        }
+        if (!(orig instanceof RubyRandom)) typeError(getRuntime().getCurrentContext(), orig, getMetaClass());
+
         checkFrozen();
         random = new RandomType(((RubyRandom) orig).random);
         return this;

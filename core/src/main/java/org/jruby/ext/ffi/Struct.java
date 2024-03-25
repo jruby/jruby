@@ -13,6 +13,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 
+import static org.jruby.api.Err.typeError;
 import static org.jruby.runtime.Visibility.*;
 
 @JRubyClass(name="FFI::Struct", parent="Object")
@@ -74,8 +75,7 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
         this.layout = layout;
 
         if (!(memory == null || memory instanceof AbstractMemory)) {
-            throw runtime.newTypeError("wrong argument type "
-                    + memory.getMetaClass().getName() + " (expected Pointer or Buffer)");
+            typeError(runtime.getCurrentContext(), memory, "Pointer or Buffer");
         }
 
         this.memory = (AbstractMemory) memory;
@@ -111,8 +111,7 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
 
         } catch (ClassCastException ex) {
             if (!(structClass instanceof RubyClass)) {
-                throw runtime.newTypeError("wrong argument type "
-                        + structClass.getMetaClass().getName() + " (expected subclass of Struct)");
+                typeError(runtime.getCurrentContext(), structClass, "subclass of Struct");
             }
             throw runtime.newRuntimeError("invalid layout set for struct " + ((RubyClass) structClass).getName());
         }
@@ -129,12 +128,9 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
     public IRubyObject initialize(ThreadContext context, IRubyObject ptr) {
         
         if (!(ptr instanceof AbstractMemory)) {
-            if (ptr.isNil()) {
-                return initialize(context);
-            }
+            if (ptr.isNil()) return initialize(context);
 
-            throw context.runtime.newTypeError("wrong argument type "
-                    + ptr.getMetaClass().getName() + " (expected Pointer or Buffer)");
+            typeError(context, ptr, "Pointer or Buffer");
         }
 
         if (((AbstractMemory) ptr).getSize() < layout.getSize()) {

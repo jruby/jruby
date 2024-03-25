@@ -58,6 +58,8 @@ import org.jruby.util.Numeric;
 import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
 
+import static org.jruby.api.Err.typeError;
+
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
@@ -379,9 +381,7 @@ public class RubyBigDecimal extends RubyNumeric {
         IRubyObject mode = args[0];
         IRubyObject value = args[1];
 
-        if (!(mode instanceof RubyFixnum)) {
-            throw context.runtime.newTypeError("wrong argument type " + mode.getMetaClass() + " (expected Fixnum)");
-        }
+        if (!(mode instanceof RubyFixnum)) typeError(context, mode, "Fixnum");
 
         long longMode = ((RubyFixnum)mode).getLongValue();
         if ((longMode & EXCEPTION_ALL) != 0) {
@@ -1158,21 +1158,14 @@ public class RubyBigDecimal extends RubyNumeric {
         final Ruby runtime = context.runtime;
 
         if (isNaN()) return getNaN(runtime);
+        if (!(exp instanceof RubyNumeric)) typeError(context, exp, "scalar Numeric");
 
-        if ( ! (exp instanceof RubyNumeric) ) {
-            throw context.runtime.newTypeError("wrong argument type " + exp.getMetaClass() + " (expected scalar Numeric)");
-        } else if (exp instanceof RubyFixnum) {
-
-        } else if (exp instanceof RubyBignum) {
-
+        if (exp instanceof RubyBignum || exp instanceof RubyFixnum) {
         } else if (exp instanceof RubyFloat) {
-            double d = RubyNumeric.num2dbl(context, exp);
+            double d = ((RubyFloat) exp).getValue();
             if (d == Math.round(d)) {
-                if (RubyNumeric.fixable(runtime, d)) {
-                    exp = RubyFixnum.newFixnum(runtime, (long)d);
-                } else {
-                    exp = RubyBignum.newBignorm(runtime, d);
-                }
+                exp = RubyNumeric.fixable(runtime, d) ?
+                        RubyFixnum.newFixnum(runtime, (long) d) : RubyBignum.newBignorm(runtime, d);
             }
         } else if (exp instanceof RubyRational) {
             if (Numeric.f_zero_p(context, Numeric.f_numerator(context, exp))) {

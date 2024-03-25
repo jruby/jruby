@@ -40,6 +40,8 @@ import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 
+import static org.jruby.api.Err.typeError;
+
 /**
  * @author Bill Dortch
  *
@@ -64,18 +66,14 @@ public class JavaArrayUtilities {
 
         if (wrappedObject instanceof JavaProxy) {
             Object wrapped = ((JavaProxy) wrappedObject).getObject();
-            if ( wrapped instanceof byte[] ) bytes = (byte[]) wrapped;
+            if (wrapped instanceof byte[]) bytes = (byte[]) wrapped;
         }
 
-        if (bytes == null) {
-            throw context.runtime.newTypeError("wrong argument type " +
-                wrappedObject.getMetaClass() + " (expected byte[])"
-            );
-        }
+        if (bytes == null) typeError(context, wrappedObject, "byte[]");
 
         RubyString string = context.runtime.newString(new ByteList(bytes, true));
 
-        if ( ! encoding.isNil() ) string.force_encoding(context, encoding);
+        if (!encoding.isNil()) string.force_encoding(context, encoding);
 
         return string;
     }

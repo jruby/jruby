@@ -59,6 +59,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.RecursiveComparator;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.api.Err.typeError;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -138,9 +139,7 @@ public class RubyStruct extends RubyObject {
     public IRubyObject deconstruct_keys(ThreadContext context, IRubyObject keysArg) {
         if (keysArg.isNil()) return to_h(context, Block.NULL_BLOCK);
 
-        if (!(keysArg instanceof RubyArray)) {
-            throw context.runtime.newTypeError(str(context.runtime, "wrong argument type ", keysArg.getMetaClass(), "(expected Array or nil)"));
-        }
+        if (!(keysArg instanceof RubyArray)) typeError(context, keysArg, "Array or nil");
 
         RubyArray keys = (RubyArray) keysArg;
         int length = keys.size();

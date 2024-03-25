@@ -138,6 +138,7 @@ import static org.jruby.anno.FrameField.METHODNAME;
 import static org.jruby.anno.FrameField.SCOPE;
 import static org.jruby.anno.FrameField.SELF;
 import static org.jruby.anno.FrameField.VISIBILITY;
+import static org.jruby.api.Err.typeError;
 import static org.jruby.runtime.Visibility.MODULE_FUNCTION;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PROTECTED;
@@ -849,7 +850,7 @@ public class RubyModule extends RubyObject {
 
         if (block.isEscaped()) throw context.runtime.newArgumentError("can't pass a Proc as a block to Module#refine");
 
-        if (!(klass instanceof RubyModule)) throw context.runtime.newTypeError("wrong argument type " + klass.getType() + " (expected Class or Module)");
+        if (!(klass instanceof RubyModule)) typeError(context, klass, "Class or Module");
 
         if (refinements == Collections.EMPTY_MAP) refinements = newRefinementsMap();
         if (activatedRefinements == Collections.EMPTY_MAP) activatedRefinements = newActivatedRefinementsMap();
@@ -974,30 +975,27 @@ public class RubyModule extends RubyObject {
     public static void usingModule(ThreadContext context, RubyModule cref, IRubyObject refinedModule) {
         if (!(refinedModule instanceof RubyModule)) throw context.runtime.newTypeError(refinedModule, context.runtime.getModule());
 
-        usingModuleRecursive(cref, (RubyModule) refinedModule);
+        usingModuleRecursive(context, cref, (RubyModule) refinedModule);
     }
 
     // mri: using_module_recursive
-    private static void usingModuleRecursive(RubyModule cref, RubyModule module) {
-        Ruby runtime = cref.getRuntime();
+    private static void usingModuleRecursive(ThreadContext context, RubyModule cref, RubyModule module) {
         RubyClass superClass = module.getSuperClass();
 
         // For each superClass of the refined module also use their refinements for the given cref
-        if (superClass != null) usingModuleRecursive(cref, superClass);
+        if (superClass != null) usingModuleRecursive(context, cref, superClass);
 
         if (module instanceof DelegatedModule) {
             module = module.getDelegate();
-        } else if (module.isModule()) {
-            // ok as is
-        } else {
-            throw runtime.newTypeError("wrong argument type " + module.getName() + " (expected Module)");
+        } else if (!module.isModule()) {
+            typeError(context, module, "Module");
         }
 
         Map<RubyModule, RubyModule> refinements = module.refinements;
         if (refinements == null) return; // No refinements registered for this module
 
         for (Map.Entry<RubyModule, RubyModule> entry: refinements.entrySet()) {
-            usingRefinement(runtime, cref, entry.getKey(), entry.getValue());
+            usingRefinement(context.runtime, cref, entry.getKey(), entry.getValue());
         }
     }
 
@@ -1042,7 +1040,7 @@ public class RubyModule extends RubyObject {
         module = module.getSuperClass();
         while (module != null && module != klass) {
             module.setFlag(IS_OVERLAID_F, true);
-            c.setSuperClass(new IncludedModuleWrapper(cref.getRuntime(), c.getSuperClass(), module));
+            c.setSuperClass(new IncludedModuleWrapper(runtime, c.getSuperClass(), module));
             c = c.getSuperClass();
             c.refinedClass = klass;
             module = module.getSuperClass();
@@ -1181,10 +1179,8 @@ public class RubyModule extends RubyObject {
     @Deprecated
     public void prependModule(IRubyObject arg) {
         assert arg != null;
-        if (!(arg instanceof RubyModule)) {
-            throw getRuntime().newTypeError("Wrong argument type " + arg.getMetaClass().getName() +
-                    " (expected Module).");
-        }
+        if (!(arg instanceof RubyModule)) typeError(getRuntime().getCurrentContext(), arg, "Module");
+
         prependModule((RubyModule) arg);
     }
 
@@ -1198,10 +1194,7 @@ public class RubyModule extends RubyObject {
 
         testFrozen("module");
 
-        if (!(arg instanceof RubyModule)) {
-            throw getRuntime().newTypeError("Wrong argument type " + arg.getMetaClass().getName() +
-                    " (expected Module).");
-        }
+        if (!(arg instanceof RubyModule)) typeError(getRuntime().getCurrentContext(), arg, "Module");
 
         RubyModule module = (RubyModule) arg;
 
@@ -2588,7 +2581,8 @@ public class RubyModule extends RubyObject {
             newMethod.setImplementationClass(this);
             newMethod.setVisibility(visibility);
         } else {
-            throw runtime.newTypeError(str(runtime, "wrong argument type ", arg1.getType(), " (expected Proc/Method/UnboundMethod)"));
+            typeError(context, arg1, "Proc/Method/UnboundMethod");
+            return null; // not reached.
         }
 
         Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
