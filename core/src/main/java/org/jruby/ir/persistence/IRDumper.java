@@ -172,16 +172,16 @@ public class IRDumper extends IRVisitor {
             for (BasicBlock bb : bbs) {
                 printAnsi(BLOCK_COLOR, "\nblock #" + bb.getID());
 
-                Iterable<Edge<BasicBlock>> outs;
+                Iterable<Edge<BasicBlock, CFG.EdgeType>> outs;
                 if ((outs = ic.getCFG().getOutgoingEdges(bb)) != null && outs.iterator().hasNext()) {
 
                     printAnsi(BLOCK_COLOR, " (out: ");
 
                     boolean first = true;
-                    for (Edge<BasicBlock> out : outs) {
+                    for (Edge<BasicBlock, CFG.EdgeType> out : outs) {
                         if (!first) printAnsi(BLOCK_COLOR, ", ");
                         first = false;
-                        CFG.EdgeType type = (CFG.EdgeType) out.getType();
+                        CFG.EdgeType type = out.getType();
                         BasicBlock block = out.getDestination().getOutgoingDestinationData();
                         switch (type) {
                             case EXIT:
