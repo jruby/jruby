@@ -338,43 +338,24 @@ public class RubyBignum extends RubyInteger {
     @Override
     public RubyArray digits(ThreadContext context, IRubyObject base) {
         BigInteger self = value;
-        Ruby runtime = context.runtime;
-        if (self.compareTo(BigInteger.ZERO) == -1) {
-            throw runtime.newMathDomainError("out of domain");
-        }
-        if (!(base instanceof RubyInteger)) {
-            try {
-                base = base.convertToInteger();
-            } catch (ClassCastException e) {
-                String cname = getMetaClass(base).getRealClass().getName();
-                throw runtime.newTypeError("wrong argument type " + cname + " (expected Integer)");
-            }
-        }
 
-        BigInteger bigBase;
-        if (base instanceof RubyBignum) {
-            bigBase = ((RubyBignum) base).value;
-        } else {
-            bigBase = long2big( ((RubyFixnum) base).value );
-        }
+        if (self.compareTo(BigInteger.ZERO) == -1) throw context.runtime.newMathDomainError("out of domain");
 
-        if (bigBase.signum() == -1) {
-            throw runtime.newArgumentError("negative radix");
-        }
-        if (bigBase.compareTo(BigInteger.valueOf(2)) == -1) {
-            throw runtime.newArgumentError("invalid radix: " + bigBase);
-        }
+        base = base.convertToInteger();
+
+        BigInteger bigBase = base instanceof RubyBignum ?
+                ((RubyBignum) base).value : long2big(((RubyFixnum) base).value);
+
+        if (bigBase.signum() == -1) throw context.runtime.newArgumentError("negative radix");
+        if (bigBase.compareTo(BigInteger.valueOf(2)) == -1) throw context.runtime.newArgumentError("invalid radix: " + bigBase);
 
         RubyArray res = RubyArray.newArray(context.runtime, 0);
 
-        if (self.signum() == 0) {
-            res.append(RubyFixnum.newFixnum(context.getRuntime(), 0));
-            return res;
-        }
+        if (self.signum() == 0) return res.append(RubyFixnum.newFixnum(context.runtime, 0));
 
         while (self.signum() > 0) {
             BigInteger q = self.mod(bigBase);
-            res.append(RubyBignum.newBignum(context.getRuntime(), q));
+            res.append(RubyBignum.newBignum(context.runtime, q));
             self = self.divide(bigBase);
         }
 
