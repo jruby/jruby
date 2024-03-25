@@ -11,7 +11,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import static org.jruby.api.Err.typeError;
+import static org.jruby.api.Raise.typeError;
 
 
 @JRubyClass(name="FFI::StructByValue", parent="FFI::Type")

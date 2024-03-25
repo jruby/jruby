@@ -30,7 +30,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import static org.jruby.api.Err.typeError;
+import static org.jruby.api.Raise.typeError;
 
 
 public final class DefaultMethodFactory extends MethodFactory {

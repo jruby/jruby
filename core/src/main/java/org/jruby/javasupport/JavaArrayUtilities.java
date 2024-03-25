@@ -40,7 +40,7 @@ import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 
-import static org.jruby.api.Err.typeError;
+import static org.jruby.api.Raise.typeError;
 
 /**
  * @author Bill Dortch

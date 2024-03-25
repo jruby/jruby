@@ -8,7 +8,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
 
-public class Err {
+public class Raise {
     /**
      * Throw a TypeError with the given message.
      *

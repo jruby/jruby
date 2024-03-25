@@ -49,7 +49,7 @@ import static java.lang.Character.isUpperCase;
 import static java.lang.Character.isDigit;
 import static java.lang.Character.toLowerCase;
 import static java.lang.Character.toUpperCase;
-import static org.jruby.api.Err.typeError;
+import static org.jruby.api.Raise.typeError;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
