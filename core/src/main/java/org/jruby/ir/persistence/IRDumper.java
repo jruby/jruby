@@ -7,6 +7,7 @@
 package org.jruby.ir.persistence;
 
 import org.jruby.RubySymbol;
+import org.jruby.dirgra.Edge;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
@@ -57,6 +58,7 @@ import org.jruby.ir.operands.UnexecutableNil;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.representations.BasicBlock;
+import org.jruby.ir.representations.CFG;
 import org.jruby.runtime.Signature;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.cli.Options;
@@ -170,16 +172,23 @@ public class IRDumper extends IRVisitor {
             for (BasicBlock bb : bbs) {
                 printAnsi(BLOCK_COLOR, "\nblock #" + bb.getID());
 
-                Iterable<BasicBlock> outs;
-                if ((outs = ic.getCFG().getOutgoingDestinations(bb)) != null && outs.iterator().hasNext()) {
+                Iterable<Edge<BasicBlock>> outs;
+                if ((outs = ic.getCFG().getOutgoingEdges(bb)) != null && outs.iterator().hasNext()) {
 
                     printAnsi(BLOCK_COLOR, " (out: ");
 
                     boolean first = true;
-                    for (BasicBlock out : outs) {
-                        if (!first) printAnsi(BLOCK_COLOR, ",");
+                    for (Edge<BasicBlock> out : outs) {
+                        if (!first) printAnsi(BLOCK_COLOR, ", ");
                         first = false;
-                        printAnsi(BLOCK_COLOR, "" + out.getID());
+                        CFG.EdgeType type = (CFG.EdgeType) out.getType();
+                        BasicBlock block = out.getDestination().getOutgoingDestinationData();
+                        switch (type) {
+                            case EXIT -> printAnsi(BLOCK_COLOR, "exit");
+                            case REGULAR -> printAnsi(BLOCK_COLOR, "" + block.getID());
+                            case EXCEPTION -> printAnsi(BLOCK_COLOR, block.getID() + "!");
+                            case FALL_THROUGH -> printAnsi(BLOCK_COLOR, block.getID() + "↓");
+                        }
                     }
 
                     printAnsi(BLOCK_COLOR, ")");
