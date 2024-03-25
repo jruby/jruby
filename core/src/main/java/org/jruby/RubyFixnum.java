@@ -387,16 +387,18 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         if (longBase < 0) throw context.runtime.newArgumentError("negative radix");
         if (longBase < 2) throw context.runtime.newArgumentError("invalid radix: " + longBase);
 
-        if (value == 0) return RubyArray.newArray(context.runtime, zero(context.runtime));
+        if (value == 0) {
+            return RubyArray.newArray(context.runtime, zero(context.runtime));
+        } else {
+            RubyArray res = RubyArray.newArray(context.runtime, 0);
 
-        RubyArray res = RubyArray.newArray(context.runtime, 0);
+            while (value > 0) {
+                res.append(newFixnum(context.runtime, value % longBase));
+                value /= longBase;
+            }
 
-        while (value > 0) {
-            res.append(newFixnum(context.runtime, value % longBase));
-            value /= longBase;
+            return res;
         }
-
-        return res;
     }
 
 
