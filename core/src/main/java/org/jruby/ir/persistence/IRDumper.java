@@ -184,10 +184,18 @@ public class IRDumper extends IRVisitor {
                         CFG.EdgeType type = (CFG.EdgeType) out.getType();
                         BasicBlock block = out.getDestination().getOutgoingDestinationData();
                         switch (type) {
-                            case EXIT -> printAnsi(BLOCK_COLOR, "exit");
-                            case REGULAR -> printAnsi(BLOCK_COLOR, "" + block.getID());
-                            case EXCEPTION -> printAnsi(BLOCK_COLOR, block.getID() + "!");
-                            case FALL_THROUGH -> printAnsi(BLOCK_COLOR, block.getID() + "↓");
+                            case EXIT:
+                                printAnsi(BLOCK_COLOR, "exit");
+                                break;
+                            case REGULAR:
+                                printAnsi(BLOCK_COLOR, "" + block.getID());
+                                break;
+                            case EXCEPTION:
+                                printAnsi(BLOCK_COLOR, block.getID() + "!");
+                                break;
+                            case FALL_THROUGH:
+                                printAnsi(BLOCK_COLOR, block.getID() + "↓");
+                                break;
                         }
                     }
 
