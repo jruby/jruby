@@ -51,6 +51,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.RandomAccess;
 import java.util.Stack;
+import java.util.stream.Stream;
 
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
@@ -5961,5 +5962,13 @@ float_loop:
             default:
                 throw context.runtime.newArgumentError(args.length, 0, 1);
         }
+    }
+
+    /**
+     * Returns a stream of each IRubyObject
+     * @return
+     */
+    public Stream<IRubyObject> rubyStream() {
+        return Stream.iterate(0, i -> i + 1).limit(realLength).map(this::eltInternal);
     }
 }
