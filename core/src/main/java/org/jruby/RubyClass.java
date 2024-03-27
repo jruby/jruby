@@ -1401,22 +1401,18 @@ public class RubyClass extends RubyModule {
         boolean[] java_box = { false };
         // re-check reifiable in case another reify call has jumped in ahead of us
         if (!isReifiable(java_box)) return;
-        final boolean concreteExt = java_box[0]; 
+        final boolean concreteExt = java_box[0];
 
-        // calculate an appropriate name, for anonymous using inspect like format e.g. "Class:0x628fad4a"
-        final String name = getBaseName() != null ? getName() :
-                ( "Class_0x" + Integer.toHexString(System.identityHashCode(this)) );
-
-        final String javaName = "rubyobj." + StringSupport.replaceAll(name, "::", ".");
-        final String javaPath = "rubyobj/" + StringSupport.replaceAll(name, "::", "/");
+        final String javaName = getReifiedJavaClassName();
+        final String javaPath = javaName.replace('.', '/');
 
         final Class<?> parentReified = superClass.getRealClass().getReifiedClass();
         if (parentReified == null) {
             throw getClassRuntime().newTypeError(getName() + "'s parent class is not yet reified");
         }
 
-        Class reifiedParent = RubyObject.class;
-        if (superClass.reifiedClass != null) reifiedParent = superClass.reifiedClass;
+        Class<?> reifiedParent = superClass.reifiedClass;
+        if (reifiedParent == null) reifiedParent = RubyObject.class;
 
         Reificator reifier;
         if (concreteExt) {
@@ -1427,24 +1423,24 @@ public class RubyClass extends RubyModule {
 
         final byte[] classBytes = reifier.reify();
 
-        final ClassDefiningClassLoader parentCL;
+        ClassDefiningClassLoader classLoader; // usually parent's class-loader
         if (parentReified.getClassLoader() instanceof OneShotClassLoader) {
-            parentCL = (OneShotClassLoader) parentReified.getClassLoader();
+            classLoader = (OneShotClassLoader) parentReified.getClassLoader();
         } else {
             if (useChildLoader) {
                 MultiClassLoader parentLoader = new MultiClassLoader(runtime.getJRubyClassLoader());
                 for(Loader cLoader : runtime.getInstanceConfig().getExtraLoaders()) {
                     parentLoader.addClassLoader(cLoader.getClassLoader());
                 }
-                parentCL = new OneShotClassLoader(parentLoader);
+                classLoader = new OneShotClassLoader(parentLoader);
             } else {
-                parentCL = runtime.getJRubyClassLoader();
+                classLoader = runtime.getJRubyClassLoader();
             }
         }
         boolean nearEnd = false;
         // Attempt to load the name we plan to use; skip reification if it exists already (see #1229).
         try {
-            Class result = parentCL.defineClass(javaName, classBytes);
+            Class result = classLoader.defineClass(javaName, classBytes);
             dumpReifiedClass(classDumpDir, javaPath, classBytes);
 
             //Trigger initilization
@@ -1494,6 +1490,18 @@ public class RubyClass extends RubyModule {
             reifiedClass = superClass.reifiedClass;
             allocator = superClass.allocator;
         }
+    }
+
+    private String getReifiedJavaClassName() {
+        final String basePackagePrefix = "rubyobj.";
+        if (getBaseName() == null) { // anonymous Class instance: rubyobj.Class$0x1234abcd
+            return basePackagePrefix + anonymousMetaNameWithIdentifier().replace(':', '$');
+        }
+        final String identityHash = Integer.toHexString(System.identityHashCode(this));
+        final CharSequence name = StringSupport.replaceAll(getName(), "::", ".");
+        // we need to include a Class identifier in the Java class name, since a Ruby class might be dropped
+        // (using remove_const) and re-created in which case using the same name would cause a conflict...
+        return basePackagePrefix + identityHash + '.' + name; // TheFoo::Bar -> rubyobj.320efdf5.TheFoo.Bar
     }
 
     interface Reificator {

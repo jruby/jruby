@@ -21,4 +21,14 @@ public class OneShotClassLoader extends ClassLoader implements ClassDefiningClas
         resolveClass(cls);
         return cls;
     }
+
+    @Override
+    public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+        return super.loadClass(name, resolve);
+    }
+
+    @Override
+    public boolean hasDefinedClass(String name) {
+        return super.findLoadedClass(name) != null;
+    }
 }
