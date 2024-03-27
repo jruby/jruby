@@ -20,27 +20,26 @@ import java.util.Objects;
  * A call to block_given? which can be optimized like defined?(yield) or a regular call.
  */
 public class BlockGivenCallInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
-    private final String callName;
     private final FunctionalCachingCallSite blockGivenSite;
 
-    public BlockGivenCallInstr(Variable result, Operand block, String callName) {
+    public BlockGivenCallInstr(Variable result, Operand block, String methodName) {
         super(Operation.BLOCK_GIVEN_CALL, Objects.requireNonNull(result, "BlockGivenCallInstr result is null"), block);
 
-        this.callName = Objects.requireNonNull(callName, "BlockGivenCallInstr callName is null");
-        this.blockGivenSite = new FunctionalCachingCallSite(callName);
+        this.blockGivenSite =
+                new FunctionalCachingCallSite(Objects.requireNonNull(methodName, "BlockGivenCallInstr methodName is null"));
     }
 
     public Operand getBlockArg() {
         return getOperand1();
     }
 
-    public String getCallName() {
-        return callName;
+    public String getMethodName() {
+        return blockGivenSite.getMethodName();
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new BlockGivenCallInstr(ii.getRenamedVariable(result), getBlockArg().cloneForInlining(ii), callName);
+        return new BlockGivenCallInstr(ii.getRenamedVariable(result), getBlockArg().cloneForInlining(ii), blockGivenSite.getMethodName());
     }
 
     public static BlockGivenCallInstr decode(IRReaderDecoder d) {
@@ -50,7 +49,7 @@ public class BlockGivenCallInstr extends OneOperandResultBaseInstr implements Fi
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(callName);
+        e.encode(blockGivenSite.getMethodName());
     }
 
     @Override

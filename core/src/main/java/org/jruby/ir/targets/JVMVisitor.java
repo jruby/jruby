@@ -824,9 +824,9 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void BlockGivenCallInstr(BlockGivenCallInstr blockGivenCallInstr) {
-        String callName = blockGivenCallInstr.getCallName();
+        String methodName = blockGivenCallInstr.getMethodName();
         IRBytecodeAdapter m = jvmMethod();
-        m.getInvocationCompiler().invokeBlockGiven(callName, file);
+        m.getInvocationCompiler().invokeBlockGiven(methodName, file);
         handleCallResult(m, blockGivenCallInstr.getResult());
     }
 

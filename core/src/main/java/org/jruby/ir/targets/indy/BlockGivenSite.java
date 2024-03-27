@@ -48,9 +48,9 @@ public class BlockGivenSite extends MutableCallSite {
     }
 
     public IRubyObject blockGivenFallback(String name, ThreadContext context, IRubyObject self, Block block) throws Throwable {
-        String callName = name.split(":")[1];
+        String methodName = name.split(":")[1];
 
-        CacheEntry entry = self.getMetaClass().searchWithCache(callName);
+        CacheEntry entry = self.getMetaClass().searchWithCache(methodName);
         MethodHandle target;
 
         if (entry.method.isBuiltin()) {
