@@ -37,6 +37,7 @@ public abstract class IRVisitor {
     public void AttrAssignInstr(AttrAssignInstr attrassigninstr) { error(attrassigninstr); }
     public void BFalseInstr(BFalseInstr bfalseinstr) { error(bfalseinstr); }
     public void BlockGivenInstr(BlockGivenInstr blockgiveninstr) { error(blockgiveninstr); }
+    public void BlockGivenCallInstr(BlockGivenCallInstr blockgivencallinstr) { error(blockgivencallinstr); }
     public void BIntInstr(BIntInstr bIntInstr) { error(bIntInstr); }
     public void BNEInstr(BNEInstr bneinstr) { error(bneinstr); }
     public void BNilInstr(BNilInstr bnilinstr) { error(bnilinstr); }

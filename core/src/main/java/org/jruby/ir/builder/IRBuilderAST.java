@@ -2035,6 +2035,18 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         if (result == null) result = temp();
         RubySymbol name = methodName = node.getName();
 
+        // special case methods with frame handling
+        String callName = name.idString();
+        switch (callName) {
+            case "block_given?":
+            case "iterator?":
+                if (node.getArgsNode() == null
+                        && node.getIterNode() == null) {
+                    addInstr(new BlockGivenCallInstr(result, getYieldClosureVariable(), callName));
+                    return result;
+                }
+        }
+
         return createCall(result, buildSelf(), FUNCTIONAL, name, node.getArgsNode(), node.getIterNode(),
                 node.getLine(), node.isNewline());
     }

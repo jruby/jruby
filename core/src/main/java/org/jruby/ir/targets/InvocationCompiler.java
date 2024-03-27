@@ -128,4 +128,9 @@ public interface InvocationCompiler {
      * Stack required: none
      */
     void setCallInfo(int flags);
+
+    /**
+     * Invoke block_given? or iterator? with awareness of any built-in methods.
+     */
+    void invokeBlockGiven(String methodName, String file);
 }

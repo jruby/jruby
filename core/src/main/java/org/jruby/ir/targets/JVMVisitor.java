@@ -823,6 +823,14 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void BlockGivenCallInstr(BlockGivenCallInstr blockGivenCallInstr) {
+        String methodName = blockGivenCallInstr.getMethodName();
+        IRBytecodeAdapter m = jvmMethod();
+        m.getInvocationCompiler().invokeBlockGiven(methodName, file);
+        handleCallResult(m, blockGivenCallInstr.getResult());
+    }
+
+    @Override
     public void BIntInstr(BIntInstr bIntInstr) {
         visit(bIntInstr.getArg1());
         visit(bIntInstr.getArg2());
@@ -1323,7 +1331,10 @@ public class JVMVisitor extends IRVisitor {
                 break;
         }
 
-        Variable result = call.getResult();
+        handleCallResult(m, call.getResult());
+    }
+
+    private void handleCallResult(IRBytecodeAdapter m, Variable result) {
         if (result != null) {
             if (!omitStoreLoad) jvmStoreLocal(result);
         } else {

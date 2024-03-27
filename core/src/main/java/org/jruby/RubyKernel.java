@@ -957,6 +957,10 @@ public class RubyKernel {
         return RubyBoolean.newBoolean(context, context.getCurrentFrame().getBlock().isGiven());
     }
 
+    public static RubyBoolean blockGiven(ThreadContext context, IRubyObject recv, Block frameBlock) {
+        return RubyBoolean.newBoolean(context, frameBlock.isGiven());
+    }
+
     @JRubyMethod(name = {"sprintf", "format"}, required = 1, rest = true, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject sprintf(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         if (args.length == 0) {

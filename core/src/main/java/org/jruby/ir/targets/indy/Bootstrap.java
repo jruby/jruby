@@ -26,6 +26,7 @@
 
 package org.jruby.ir.targets.indy;
 
+import com.headius.invokebinder.Binder;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Block;
 import org.jruby.util.log.Logger;
@@ -51,7 +52,6 @@ public class Bootstrap {
     public final static String BOOTSTRAP_INT_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class, int.class);
     public final static String BOOTSTRAP_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class);
     private static final Logger LOG = LoggerFactory.getLogger(Bootstrap.class);
-    private static final Lookup LOOKUP = MethodHandles.lookup();
 
     static String logMethod(DynamicMethod method) {
         return "[#" + method.getSerialNumber() + " " + method.getImplementationClass().getMethodLocation() + "]";
@@ -73,4 +73,5 @@ public class Bootstrap {
                 sig,
                 false);
     }
+
 }
