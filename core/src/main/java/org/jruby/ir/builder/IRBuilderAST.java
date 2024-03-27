@@ -1301,7 +1301,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
                     )
             );
         case YIELDNODE:
-            return buildDefinitionCheck(new BlockGivenInstr(temp(), getYieldClosureVariable(), true), DefinedMessage.YIELD.getText());
+            return buildDefinitionCheck(new BlockGivenInstr(temp(), getYieldClosureVariable()), DefinedMessage.YIELD.getText());
         case ZSUPERNODE:
             return addResultInstr(
                     new RuntimeHelperCall(
@@ -2036,11 +2036,15 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         RubySymbol name = methodName = node.getName();
 
         // special case methods with frame handling
-        if (name.idString().equals("block_given?")
-                && node.getArgsNode() == null
-                && node.getIterNode() == null) {
-            addInstr(new BlockGivenInstr(result, getYieldClosureVariable(), false));
-            return result;
+        String callName = name.idString();
+        switch (callName) {
+            case "block_given?":
+            case "iterator?":
+                if (node.getArgsNode() == null
+                        && node.getIterNode() == null) {
+                    addInstr(new BlockGivenInstr(result, getYieldClosureVariable(), callName));
+                    return result;
+                }
         }
 
         return createCall(result, buildSelf(), FUNCTIONAL, name, node.getArgsNode(), node.getIterNode(),

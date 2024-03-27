@@ -8,12 +8,10 @@ import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.instructions.AsStringInstr;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.EQQInstr;
-import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.targets.IRBytecodeAdapter;
 import org.jruby.ir.targets.InvocationCompiler;
 import org.jruby.ir.targets.JVM;
-import org.jruby.ir.targets.indy.Bootstrap;
 import org.jruby.ir.targets.indy.IndyInvocationCompiler;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -496,10 +494,8 @@ public class NormalInvocationCompiler implements InvocationCompiler {
     }
 
     @Override
-    public void invokeBlockGiven(String file, String scopeFieldName) {
-        compiler.loadContext();
-        compiler.loadSelf();
-        compiler.loadBlock();
-        compiler.adapter.invokedynamic(IndyInvocationCompiler.constructIndyCallName("callFunctional", "block_given?"), sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, Block.class), Bootstrap.BLOCK_GIVEN_BOOTSTRAP);
+    public void invokeBlockGiven(String callName, String file) {
+        // direct block_given? calls always use indy
+        IndyInvocationCompiler.invokeBlockGiven(compiler, callName, file);
     }
 }

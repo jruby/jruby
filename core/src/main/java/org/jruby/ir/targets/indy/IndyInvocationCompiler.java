@@ -222,8 +222,15 @@ public class IndyInvocationCompiler implements InvocationCompiler {
     }
 
     @Override
-    public void invokeBlockGiven(String file, String scopeFieldName) {
-        // block_given? explicit calls always use indy
-        normalCompiler.invokeBlockGiven(file, scopeFieldName);
+    public void invokeBlockGiven(String callName, String file) {
+        invokeBlockGiven(compiler, callName, file);
+    }
+
+    // shared with normal for now
+    public static void invokeBlockGiven(IRBytecodeAdapter compiler, String callName, String file) {
+        compiler.loadContext();
+        compiler.loadSelf();
+        compiler.loadBlock();
+        compiler.adapter.invokedynamic(IndyInvocationCompiler.constructIndyCallName("callFunctional", callName), sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, Block.class), BlockGivenSite.BLOCK_GIVEN_BOOTSTRAP, file, compiler.getLastLine());
     }
 }

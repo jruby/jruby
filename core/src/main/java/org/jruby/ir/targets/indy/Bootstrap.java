@@ -29,23 +29,17 @@ package org.jruby.ir.targets.indy;
 import com.headius.invokebinder.Binder;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.invoke.CallSite;
-import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.invoke.MutableCallSite;
 
 import static java.lang.invoke.MethodHandles.Lookup;
 import static java.lang.invoke.MethodHandles.dropArguments;
-import static java.lang.invoke.MethodHandles.lookup;
 import static java.lang.invoke.MethodType.methodType;
 import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.util.CodegenUtils.p;
@@ -58,7 +52,6 @@ public class Bootstrap {
     public final static String BOOTSTRAP_INT_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class, int.class);
     public final static String BOOTSTRAP_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class);
     private static final Logger LOG = LoggerFactory.getLogger(Bootstrap.class);
-    private static final Lookup LOOKUP = MethodHandles.lookup();
 
     static String logMethod(DynamicMethod method) {
         return "[#" + method.getSerialNumber() + " " + method.getImplementationClass().getMethodLocation() + "]";
@@ -81,36 +74,4 @@ public class Bootstrap {
                 false);
     }
 
-    public static final Handle BLOCK_GIVEN_BOOTSTRAP = getBootstrapHandle("blockGivenBootstrap", Bootstrap.class, sig(CallSite.class, Lookup.class, String.class, MethodType.class));
-
-    public static CallSite blockGivenBootstrap(Lookup lookup, String name, MethodType methodType) {
-        MutableCallSite blockGivenSite = new MutableCallSite(methodType);
-
-        blockGivenSite.setTarget(Binder.from(methodType).prepend(blockGivenSite, name).invokeStaticQuiet(Bootstrap.class, "blockGivenFallback"));
-
-        return blockGivenSite;
-    }
-
-    public static IRubyObject blockGivenFallback(MutableCallSite blockGivenSite, String name, ThreadContext context, IRubyObject self, Block block) throws Throwable {
-        CacheEntry entry = self.getMetaClass().searchWithCache("block_given?");
-        MethodHandle target;
-
-        if (entry.method.isBuiltin()) {
-            target = Binder.from(blockGivenSite.type())
-                    .permute(0, 2)
-                    .invokeStaticQuiet(Bootstrap.class, "blockGiven");
-        } else {
-            target = Binder.from(blockGivenSite.type())
-                    .permute(0, 1)
-                    .invoke(SelfInvokeSite.bootstrap(lookup(), name, methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class), 0, 0, "", 0).dynamicInvoker());
-        }
-
-        blockGivenSite.setTarget(target);
-
-        return (IRubyObject) target.invokeExact(context, self, block);
-    }
-
-    public static IRubyObject blockGiven(ThreadContext context, Block block) {
-        return block.isGiven() ? context.tru : context.fals;
-    }
 }

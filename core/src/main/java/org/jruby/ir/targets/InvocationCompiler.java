@@ -130,7 +130,7 @@ public interface InvocationCompiler {
     void setCallInfo(int flags);
 
     /**
-     * Invoke block_given? with awareness of any built-in methods.
+     * Invoke block_given? or iterator? with awareness of any built-in methods.
      */
-    void invokeBlockGiven(String file, String scopeFieldName);
+    void invokeBlockGiven(String callName, String file);
 }

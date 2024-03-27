@@ -19,20 +19,24 @@ import org.jruby.runtime.callsite.FunctionalCachingCallSite;
  * requiring special access to the caller's frame.
  */
 public class BlockGivenInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
-    private final boolean defined;
+    private final String callName;
     private final FunctionalCachingCallSite blockGivenSite;
 
-    public BlockGivenInstr(Variable result, Operand block, boolean defined) {
+    public BlockGivenInstr(Variable result, Operand block) {
+        this(result, block, null);
+    }
+
+    public BlockGivenInstr(Variable result, Operand block, String callName) {
         super(Operation.BLOCK_GIVEN, result, block);
 
         assert result != null: "BlockGivenInstr result is null";
 
-        this.defined = defined;
+        this.callName = callName;
 
-        if (defined) {
+        if (callName == null) {
             blockGivenSite = null;
         } else {
-            blockGivenSite = new FunctionalCachingCallSite("block_given?");
+            blockGivenSite = new FunctionalCachingCallSite(callName);
         }
     }
 
@@ -40,30 +44,30 @@ public class BlockGivenInstr extends OneOperandResultBaseInstr implements FixedA
         return getOperand1();
     }
 
-    public boolean isDefined() {
-        return defined;
+    public String getCallName() {
+        return callName;
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new BlockGivenInstr(ii.getRenamedVariable(result), getBlockArg().cloneForInlining(ii), defined);
+        return new BlockGivenInstr(ii.getRenamedVariable(result), getBlockArg().cloneForInlining(ii), callName);
     }
 
     public static BlockGivenInstr decode(IRReaderDecoder d) {
-        return new BlockGivenInstr(d.decodeVariable(), d.decodeOperand(), d.decodeBoolean());
+        return new BlockGivenInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString());
     }
 
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(defined);
+        e.encode(callName);
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         Object blk = getBlockArg().retrieve(context, self, currScope, currDynScope, temp);
 
-        if (!defined) {
+        if (callName != null) {
             return IRRuntimeHelpers.blockGivenOrCall(context, self, blockGivenSite, blk);
         }
 
