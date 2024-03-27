@@ -156,7 +156,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
 
                     // ensure we've got code ready for JIT
                     ensureInstrsReady();
-                    closure.getNearestTopLocalVariableScope().prepareForCompilation();
+                    closure.getNearestUncompiledScope().prepareForCompilation();
 
                     FullInterpreterContext fic = closure.getFullInterpreterContext();
 
