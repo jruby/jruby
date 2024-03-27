@@ -840,7 +840,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         original.copySpecialInstanceVariables(clone);
 
-        if (original.hasVariables()) clone.syncVariables(original);
+        if (original.hasVariables()) {
+            clone.syncVariables(original);
+            ((RubyBasicObject) clone).dupFinalizer();
+        }
         if (original instanceof RubyModule) {
             RubyModule cloneMod = (RubyModule)clone;
             cloneMod.syncConstants((RubyModule)original);
@@ -897,19 +900,16 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return rbCloneInternal(context, kwfreeze);
     }
 
-    // freeze (false, true, nil)
-    private RubyBasicObject rbCloneInternal(ThreadContext context, IRubyObject freeze) {
+    // MRI: rb_dup_setup
+    protected RubyBasicObject dupSetup(ThreadContext context, RubyBasicObject dup) {
+        initCopy(context, dup, this);
+        sites(context).initialize_dup.call(context, dup, dup, this);
 
-        // MRI: immutable_obj_clone
-        if (isSpecialObject()) {
-            final Ruby runtime = context.runtime;
-            if (freeze == runtime.getFalse()) throw runtime.newArgumentError(str(runtime, "can't unfreeze ", types(runtime, getType())));
+        return dup;
+    }
 
-            return this;
-        }
-
-        // We're cloning ourselves, so we know the result should be a RubyObject
-        RubyBasicObject clone = (RubyBasicObject) metaClass.getRealClass().allocate();
+    // MRI: rb_clone_setup
+    protected RubyBasicObject cloneSetup(ThreadContext context, RubyBasicObject clone, IRubyObject freeze) {
         clone.setMetaClass(getSingletonClassCloneAndAttach(clone));
 
         initCopy(context, clone, this);
@@ -927,6 +927,24 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
 
         return clone;
+    }
+
+
+    // freeze (false, true, nil)
+    private RubyBasicObject rbCloneInternal(ThreadContext context, IRubyObject freeze) {
+
+        // MRI: immutable_obj_clone
+        if (isSpecialObject()) {
+            final Ruby runtime = context.runtime;
+            if (freeze == runtime.getFalse()) throw runtime.newArgumentError(str(runtime, "can't unfreeze ", types(runtime, getType())));
+
+            return this;
+        }
+
+        // We're cloning ourselves, so we know the result should be a RubyObject
+        RubyBasicObject clone = (RubyBasicObject) metaClass.getRealClass().allocate();
+
+        return cloneSetup(context, clone, freeze);
     }
 
 
@@ -1226,20 +1244,41 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public void addFinalizer(IRubyObject f) {
         Finalizer finalizer = (Finalizer) getInternalVariable("__finalizer__");
         if (finalizer == null) {
-            // since this is the first time we're registering a finalizer, we
-            // must also register this object in ObjectSpace, so that future
-            // calls to undefine_finalizer, which takes an object symbol, can
-            // locate the object properly. See JRUBY-4839.
-            long id = getObjectId();
-            IRubyObject fixnumId = id();
-
-            getRuntime().getObjectSpace().registerObjectId(id, this);
+            IRubyObject fixnumId = registerWithObjectSpace();
 
             finalizer = new Finalizer(fixnumId);
             setInternalVariable("__finalizer__", finalizer);
             getRuntime().addFinalizer(finalizer);
         }
         finalizer.addFinalizer(f);
+    }
+
+    private IRubyObject registerWithObjectSpace() {
+        // since this is the first time we're registering a finalizer, we
+        // must also register this object in ObjectSpace, so that future
+        // calls to undefine_finalizer, which takes an object symbol, can
+        // locate the object properly. See JRUBY-4839.
+        long id = getObjectId();
+        IRubyObject fixnumId = id();
+
+        getRuntime().getObjectSpace().registerObjectId(id, this);
+        return fixnumId;
+    }
+
+    /**
+     * Stange method.  We will dup the __finalizer__ variable in a freshly dup'd object,
+     * but it needs to be set to this objects __finalizer__.
+     */
+    protected void dupFinalizer() {
+        Finalizer finalizer = (Finalizer) getInternalVariable("__finalizer__");
+        if (finalizer != null) {
+            // We need ObjectSpace to make this object reachable for the finalization
+            IRubyObject fixnumId = registerWithObjectSpace();
+
+            finalizer = new Finalizer(fixnumId, finalizer);
+            setInternalVariable("__finalizer__", finalizer);
+            getRuntime().addFinalizer(finalizer);
+        }
     }
 
     /**
@@ -1870,6 +1909,17 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             this((IRubyObject) id);
         }
 
+        /**
+         * Cloning finalizer needs new copy with its own id.
+         * @param id
+         * @param original
+         */
+        public Finalizer(IRubyObject id, Finalizer original) {
+            this(id);
+            this.firstFinalizer = original.firstFinalizer;
+            this.finalizers = original.finalizers == null ? null : new ArrayList<>(original.finalizers);
+        }
+
         Finalizer(IRubyObject id) {
             this.id = id;
             this.finalized = new AtomicBoolean(false);
@@ -1879,7 +1929,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             if (firstFinalizer == null) {
                 firstFinalizer = finalizer;
             } else {
-                if (finalizers == null) finalizers = new ArrayList<IRubyObject>(4);
+                if (finalizers == null) finalizers = new ArrayList<>(4);
                 finalizers.add(finalizer);
             }
         }

@@ -70,10 +70,10 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     private final IRManager manager;
     protected final IRScope scope;
-    protected final IRBuilder parent;
+    protected final IRBuilder<U, V, W, X, Y, Z> parent;
     protected final List<Instr> instructions;
     protected int coverageMode;
-    protected IRBuilder variableBuilder;
+    protected IRBuilder<U, V, W, X, Y, Z> variableBuilder;
     protected List<Object> argumentDescriptions;
     public boolean executesOnce = true;
     int temporaryVariableIndex = -1;
@@ -140,7 +140,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     private boolean selfUsed = false;
     private boolean currentModuleUsed = false;
 
-    public IRBuilder(IRManager manager, IRScope scope, IRBuilder parent, IRBuilder variableBuilder, Encoding encoding) {
+    public IRBuilder(IRManager manager, IRScope scope, IRBuilder<U, V, W, X, Y, Z> parent, IRBuilder<U, V, W, X, Y, Z> variableBuilder, Encoding encoding) {
         this.manager = manager;
         this.scope = scope;
         this.parent = parent;
@@ -457,8 +457,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         // Protected region code
         addInstr(new LabelInstr(rBeginLabel));
         addInstr(new ExceptionRegionStartMarkerInstr(rescueLabel));
-        Object v1 = protectedCode.run(); // YIELD: Run the protected code block
-        addInstr(new CopyInstr(rv, (Operand)v1));
+        Operand v1 = protectedCode.run(); // YIELD: Run the protected code block
+        addInstr(new CopyInstr(rv, v1));
         addInstr(new JumpInstr(rEndLabel));
         addInstr(new ExceptionRegionEndMarkerInstr());
 
@@ -523,9 +523,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     // FIXME: Add this to clone on branch instrs so if something changes (like an inline) it will replace with opted branch/jump/nop.
     public static Instr createBranch(Operand v1, Operand v2, Label jmpTarget) {
-        if (v2 instanceof Boolean) {
-            Boolean lhs = (Boolean) v2;
-
+        if (v2 instanceof Boolean lhs) {
             if (lhs.isTrue()) {
                 if (v1.isTruthyImmediate()) return new JumpInstr(jmpTarget);
                 if (v1.isFalseyImmediate()) return NopInstr.NOP;
@@ -667,8 +665,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         if (instr instanceof ReceiveKeywordRestArgInstr) {
             // Always add the keyword rest arg to the beginning
             keywordArgs.add(0, new KeyValuePair<>(Symbol.KW_REST_ARG_DUMMY, ((ReceiveArgBase) instr).getResult()));
-        } else if (instr instanceof ReceiveKeywordArgInstr) {
-            ReceiveKeywordArgInstr receiveKwargInstr = (ReceiveKeywordArgInstr) instr;
+        } else if (instr instanceof ReceiveKeywordArgInstr receiveKwargInstr) {
             keywordArgs.add(new KeyValuePair<>(new Symbol(receiveKwargInstr.getKey()), receiveKwargInstr.getResult()));
         } else if (instr instanceof ReceiveRestArgInstr) {
             callArgs.add(new Splat(((ReceiveRestArgInstr) instr).getResult()));
@@ -733,13 +730,13 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         addInstr(new LabelInstr(rEndLabel));
     }
 
-    private Operand receiveBreakException(Operand block, CodeBlock codeBlock) {
+    private void receiveBreakException(Operand block, CodeBlock codeBlock) {
         // Check if we have to handle a break
-        if (block == null ||
-                !(block instanceof WrappedIRClosure) ||
+        if (!(block instanceof WrappedIRClosure) ||
                 !(((WrappedIRClosure) block).getClosure()).hasBreakInstructions()) {
             // No protection needed -- add the call and return
-            return codeBlock.run();
+            codeBlock.run();
+            return;
         }
 
         Label rBeginLabel = getNewLabel();
@@ -764,8 +761,6 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
         // End
         addInstr(new LabelInstr(rEndLabel));
-
-        return callResult;
     }
 
     // for simple calls without splats or keywords
@@ -895,14 +890,6 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         return manager.getNil();
     }
 
-    private boolean hackCheckUSASCII(byte[] bytes) {
-        for (int i = 0; i < bytes.length; i++) {
-            if (bytes[i] < 0) return false;
-        }
-
-        return true;
-    }
-
     protected RubySymbol symbol(String id) {
         return manager.runtime.newSymbol(id);
     }
@@ -977,9 +964,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     protected Variable getValueInTemporaryVariable(Operand val) {
-        if (val != null && val instanceof TemporaryVariable) return (Variable) val;
-
-        return copy(val);
+        return val instanceof TemporaryVariable ? (Variable) val : copy(val);
     }
 
     /**
@@ -1008,7 +993,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             return args;
         }
 
-        return callArgs.toArray(new Operand[callArgs.size()]);
+        return callArgs.toArray(new Operand[0]);
     }
 
 
@@ -1057,17 +1042,17 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     // Note: passing NORMAL just removes ability to remove a branch and will be semantically correct.
     protected Operand buildAnd(Operand left, CodeBlock right, BinaryType truth) {
-        switch(truth) {
-            case LeftTrue:  // left is statically true so we return whatever right expr is.
-                return right.run();
-            case LeftFalse: // left is already false.  we done.
-                return left;
-        }
+        return switch (truth) {
+            // left is statically true so we return whatever right expr is.
+            case LeftTrue -> right.run();
+            // left is already false.  we done.
+            case LeftFalse -> left;
+            default -> tap(getValueInTemporaryVariable(left), (ret) ->
+                    label("and", (label) ->
+                            cond(label, left, fals(), () ->
+                                    copy((Variable) ret, right.run()))));
+        };
 
-        return tap(getValueInTemporaryVariable(left), (ret) ->
-                label("and", (label) ->
-                        cond(label, left, fals(), () ->
-                                copy((Variable) ret, right.run()))));
     }
 
     protected Operand buildBreak(CodeBlock value, int line) {
@@ -1335,7 +1320,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             Fixnum s2 = manager.newFixnum(2);
 
             // Create a variable to hold the flip state
-            IRBuilder nearestNonClosureBuilder = getNearestFlipVariableScopeBuilder();
+            IRBuilder<U, V, W, X, Y, Z> nearestNonClosureBuilder = getNearestFlipVariableScopeBuilder();
 
             // Flip is completely broken atm and it was semi-broken in its last incarnation.
             // Method and closures (or evals) are not built at the same time and if -X-C or JIT or AOT
@@ -1526,7 +1511,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         return new WrappedIRClosure(buildSelf(), closure);
     }
 
-    protected InterpreterContext buildIterInner(RubySymbol methodName, U var, U body, int endLine) {
+    protected void buildIterInner(RubySymbol methodName, U var, U body, int endLine) {
         long time = 0;
         if (PARSER_TIMING) time = System.nanoTime();
         this.methodName = methodName;
@@ -1563,11 +1548,9 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         if (!forNode) handleBreakAndReturnsInLambdas();
 
         computeScopeFlagsFrom(instructions);
-        InterpreterContext ic = scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
+        scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
 
         if (PARSER_TIMING) manager.getRuntime().getParserManager().getParserStats().addIRBuildTime(System.nanoTime() - time);
-
-        return ic;
     }
 
     public Operand buildLambda(U args, U body, StaticScope staticScope, Signature signature, int line) {
@@ -1582,7 +1565,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         return lambda;
     }
 
-    protected InterpreterContext buildLambdaInner(U blockArgs, U body) {
+    protected void buildLambdaInner(U blockArgs, U body) {
         long time = 0;
         if (PARSER_TIMING) time = System.nanoTime();
 
@@ -1598,11 +1581,9 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         handleBreakAndReturnsInLambdas();
 
         computeScopeFlagsFrom(instructions);
-        InterpreterContext ic = scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
+        scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
 
         if (PARSER_TIMING) manager.getRuntime().getParserManager().getParserStats().addIRBuildTime(System.nanoTime() - time);
-
-        return ic;
     }
 
     protected Operand buildLocalVariableAssign(RubySymbol name, int depth, U valueNode) {
@@ -1724,7 +1705,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         return bodyResult;
     }
 
-    protected InterpreterContext buildModuleOrClassBody(U body, int startLine, int endLine) {
+    protected void buildModuleOrClassBody(U body, int startLine, int endLine) {
         addInstr(new TraceInstr(RubyEvent.CLASS, getCurrentModuleVariable(), null, getFileName(), startLine + 1));
 
         Operand bodyReturnValue = build(body);
@@ -1739,7 +1720,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         prependUsedImplicitState(null);
 
         computeScopeFlagsFrom(instructions);
-        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
+        scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
     }
 
     protected Operand buildNext(final Operand rv, int line) {
@@ -2104,7 +2085,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                           Variable errorString) {
         if (constant != null) buildPatternConstant(testEnd, result, constant, obj, isSinglePattern, errorString);
 
-        label("deconstruct_end", deconstructCheck -> {
+        label("deconstruct_end", deconstructCheck ->
             cond_ne(deconstructCheck, deconstructed, nil(), () -> {
                 buildPatternDeconstructRespondTo(testEnd, result, obj, isSinglePattern, errorString, "deconstruct");
 
@@ -2113,8 +2094,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                     addInstr(new EQQInstr(scope, result, getManager().getArrayClass(), deconstructed, false, false));
                     cond(arrayCheck, result, tru(), () -> type_error("deconstruct must return Array"));
                 });
-            });
-        });
+            })
+        );
 
         Variable length = addResultInstr(new RuntimeHelperCall(intTemp(), ARRAY_LENGTH, new Operand[]{deconstructed}));
         int fixedArgsLength = args.length;
@@ -2312,12 +2293,12 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     protected abstract boolean isNilRest(U rest);
 
-    protected Operand buildPatternLocal(Operand value, RubySymbol name, int line, int depth, boolean inAlternation) {
+    protected void buildPatternLocal(Operand value, RubySymbol name, int line, int depth, boolean inAlternation) {
         if (inAlternation && name.idString().charAt(0) != '_') {
             throwSyntaxError(line, str(getManager().getRuntime(), "illegal variable in alternative pattern (", name, ")"));
         }
 
-        return copy(getLocalVariable(name, depth), value);
+        copy(getLocalVariable(name, depth), value);
     }
 
     protected void buildPatternOr(Label testEnd, Operand original, Variable result, Variable deconstructed, Operand value, U left,
@@ -2362,7 +2343,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         return nil();
     }
 
-    private InterpreterContext buildPrePostExeInner(U body) {
+    private void buildPrePostExeInner(U body) {
         build(body);
 
         // END does not have either explicit or implicit return, so we add one
@@ -2371,7 +2352,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         prependUsedImplicitState(null);
 
         computeScopeFlagsFrom(instructions);
-        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
+        scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
     }
 
     protected Operand buildPreExe(U body) {
@@ -2443,8 +2424,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         if (exceptions == null || exceptions.length == 0) {
             outputExceptionCheck(getManager().getStandardError(), exc, caughtLabel);
         } else {
-            for (int i = 0; i < exceptions.length; i++) {
-                outputExceptionCheck(build(exceptions[i]), exc, caughtLabel);
+            for (U exception: exceptions) {
+                outputExceptionCheck(build(exception), exc, caughtLabel);
             }
         }
 
@@ -2797,7 +2778,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         if (keywordArgs.size() == 1 && keywordArgs.get(0).getKey().equals(Symbol.KW_REST_ARG_DUMMY)) {
             flags[0] |= (CALL_KEYWORD | CALL_KEYWORD_REST);
             Operand keywordRest = keywordArgs.get(0).getValue();
-            Operand[] args = callArgs.toArray(new Operand[callArgs.size()]);
+            Operand[] args = callArgs.toArray(new Operand[0]);
             Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { keywordRest }));
             if_else(test, tru(),
                     () -> receiveBreakException(block,
@@ -2815,7 +2796,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     protected Operand buildZSuperIfNest(Variable result, final Operand block) {
         int depthFrom = 0;
-        IRBuilder superBuilder = this;
+        IRBuilder<U,V,W,X,Y,Z> superBuilder = this;
         IRScope superScope = scope;
 
         boolean defineMethod = false;
@@ -2842,7 +2823,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             if (keywordArgs.size() == 1 && keywordArgs.get(0).getKey().equals(Symbol.KW_REST_ARG_DUMMY)) {
                 flags[0] |= (CALL_KEYWORD | CALL_KEYWORD_REST);
                 Operand keywordRest = ((DepthCloneable) keywordArgs.get(0).getValue()).cloneForDepth(depthFromSuper);
-                Operand[] args = adjustVariableDepth(callArgs.toArray(new Operand[callArgs.size()]), depthFromSuper);
+                Operand[] args = adjustVariableDepth(callArgs.toArray(new Operand[0]), depthFromSuper);
                 Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[]{keywordRest}));
                 if_else(test, tru(),
                         () -> addInstr(new ZSuperInstr(scope, zsuperResult, buildSelf(), args, block, flags[0], scope.maybeUsingRefinements())),
@@ -2887,7 +2868,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
 
-    public InterpreterContext defineMethodInner(LazyMethodDefinition<U, V, W, X, Y, Z> defNode, IRScope parent, int coverageMode) {
+    public void defineMethodInner(LazyMethodDefinition<U, V, W, X, Y, Z> defNode, IRScope parent, int coverageMode) {
         long time = 0;
         if (PARSER_TIMING) time = System.nanoTime();
         this.coverageMode = coverageMode;
@@ -2922,11 +2903,9 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
         computeScopeFlagsFrom(instructions);
 
-        InterpreterContext ic = scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
+        scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
 
         if (PARSER_TIMING) manager.getRuntime().getParserManager().getParserStats().addIRBuildTime(System.nanoTime() - time);
-
-        return ic;
     }
 
     private void prependUsedImplicitState(IRScope parent) {
@@ -2935,7 +2914,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             if (scope instanceof IRMethod) {
                 numberOfInstrs++;
                 addInstrAtBeginning(new LoadImplicitClosureInstr(getYieldClosureVariable()));
-            } else if (!(scope instanceof IRModuleBody) && !(scope instanceof IRClassBody) && !(scope instanceof IRMetaClassBody)) {
+            } else if (!(scope instanceof IRModuleBody)) { // Class MetaClass are IRModuleBody as well.
                 numberOfInstrs++;
                 addInstrAtBeginning(new LoadFrameClosureInstr(getYieldClosureVariable()));
             }
@@ -3067,7 +3046,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             LineInfo needsCoverage = isNewline ? LineInfo.Coverage : null;
             // DefNode will set it's own line number as part of impl but if it is for coverage we emit as instr also.
             if (needsCoverage != null && (!def || coverageMode != 0)) { // Do not emit multiple line number instrs for the same line
-                needsLineNumInfo = isNewline ? needsCoverage : LineInfo.Backtrace;
+                needsLineNumInfo = needsCoverage;
             }
 
             // This line is already process either by linenum or by instr which emits its own.
@@ -3085,12 +3064,9 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             ByteList methodBytes = methodName.getBytes();
             if (args.length == 1) {
                 refinement = isRefinementCall(methodBytes);
-            } else if (args.length == 2
-                    && CommonByteLists.SEND.equal(methodBytes)) {
-                if (args[0] instanceof Symbol) {
-                    Symbol sendName = (Symbol) args[0];
-                    methodBytes = sendName.getBytes();
-                    refinement = isRefinementCall(methodBytes);
+            } else if (args.length == 2 && CommonByteLists.SEND.equal(methodBytes)) {
+                if (args[0] instanceof Symbol sendName) {
+                    refinement = isRefinementCall(sendName.getBytes());
                 }
             }
         }
@@ -3194,8 +3170,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         addInstrAtBeginning(new CopyInstr(v, initState));
     }
 
-    private IRBuilder getNearestFlipVariableScopeBuilder() {
-        IRBuilder current = this;
+    private IRBuilder<U, V, W, X, Y, Z> getNearestFlipVariableScopeBuilder() {
+        IRBuilder<U, V, W, X, Y, Z> current = this;
 
         while (current != null && !current.scope.isWhereFlipFlopStateVariableIs()) {
             current = current.parent;

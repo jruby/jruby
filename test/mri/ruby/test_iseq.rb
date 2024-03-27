@@ -157,18 +157,18 @@ class TestISeq < Test::Unit::TestCase
     y = nil.instance_eval do
       eval("proc {#{name} = []; proc {|x| #{name}}}").call
     end
-    assert_raise_with_message(Ractor::IsolationError, /`#{name}'/) do
+    assert_raise_with_message(Ractor::IsolationError, /'#{name}'/) do
       Ractor.make_shareable(y)
     end
     obj = Object.new
     def obj.foo(*) nil.instance_eval{ ->{super} } end
-    assert_raise_with_message(Ractor::IsolationError, /refer unshareable object \[\] from variable `\*'/) do
+    assert_raise_with_message(Ractor::IsolationError, /refer unshareable object \[\] from variable '\*'/) do
       Ractor.make_shareable(obj.foo)
     end
   end
 
   def test_disasm_encoding
-    src = "\u{3042} = 1; \u{3042}; \u{3043}"
+    src = +"\u{3042} = 1; \u{3042}; \u{3043}"
     asm = compile(src).disasm
     assert_equal(src.encoding, asm.encoding)
     assert_predicate(asm, :valid_encoding?)
@@ -367,7 +367,7 @@ class TestISeq < Test::Unit::TestCase
       f.puts "end"
       f.close
       path = f.path
-      assert_in_out_err(%W[- #{path}], "#{<<-"begin;"}\n#{<<-"end;"}", /unexpected `end'/, [], success: true)
+      assert_in_out_err(%W[- #{path}], "#{<<-"begin;"}\n#{<<-"end;"}", /unexpected 'end'/, [], success: true)
       begin;
         path = ARGV[0]
         begin
@@ -497,7 +497,8 @@ class TestISeq < Test::Unit::TestCase
                                   [7, :line],
                                   [9, :return]]],
                        [["ensure in foo@2", [[7, :line]]]],
-                       [["rescue in foo@4", [[5, :line]]]]]],
+                       [["rescue in foo@4", [[5, :line],
+                                             [5, :rescue]]]]]],
                    [["<class:D>@17", [[17, :class],
                                       [18, :end]]]]], collect_iseq.call(sample_iseq)
   end
@@ -563,6 +564,23 @@ class TestISeq < Test::Unit::TestCase
       assert_nil(iseq2.script_lines)
     end
     iseq2
+  end
+
+  def test_to_binary_with_hidden_local_variables
+    assert_iseq_to_binary("for foo in bar; end")
+
+    bin = RubyVM::InstructionSequence.compile(<<-RUBY).to_binary
+      Object.new.instance_eval do
+        a = []
+        def self.bar; [1] end
+        for foo in bar
+          a << (foo * 2)
+        end
+        a
+      end
+    RUBY
+    v = RubyVM::InstructionSequence.load_from_binary(bin).eval
+    assert_equal([2], v)
   end
 
   def test_to_binary_with_objects
@@ -637,6 +655,8 @@ class TestISeq < Test::Unit::TestCase
     }
 
     lines
+  ensure
+    Object.send(:remove_const, :A) rescue nil
   end
 
   def test_to_binary_line_tracepoint
@@ -756,5 +776,60 @@ class TestISeq < Test::Unit::TestCase
       }
       assert_equal :new, r.take
     RUBY
+  end
+
+  def test_ever_condition_loop
+    assert_ruby_status([], "BEGIN {exit}; while true && true; end")
+  end
+
+  def test_unreachable_syntax_error
+    mesg = /Invalid break/
+    assert_syntax_error("false and break", mesg)
+    assert_syntax_error("if false and break; end", mesg)
+  end
+
+  def test_unreachable_pattern_matching
+    assert_in_out_err([], "#{<<~"begin;"}\n#{<<~'end;'}", %w[1])
+    begin;
+      if true or {a: 0} in {a:}
+        p 1
+      else
+        p a
+      end
+    end;
+  end
+
+  def test_loading_kwargs_memory_leak
+    assert_no_memory_leak([], "#{<<~"begin;"}", "#{<<~'end;'}", rss: true)
+    a = RubyVM::InstructionSequence.compile("foo(bar: :baz)").to_binary
+    begin;
+      1_000_000.times do
+        RubyVM::InstructionSequence.load_from_binary(a)
+      end
+    end;
+  end
+
+  def test_ibf_bignum
+    iseq = RubyVM::InstructionSequence.compile("0x0"+"_0123_4567_89ab_cdef"*5)
+    expected = iseq.eval
+    result = RubyVM::InstructionSequence.load_from_binary(iseq.to_binary).eval
+    assert_equal expected, result, proc {sprintf("expected: %x, result: %x", expected, result)}
+  end
+
+  def test_compile_prism_with_file
+    Tempfile.create(%w"test_iseq .rb") do |f|
+      f.puts "name = 'Prism'; puts 'hello'"
+      f.close
+
+      assert_nothing_raised(TypeError) do
+        RubyVM::InstructionSequence.compile_prism(f)
+      end
+    end
+  end
+
+  def test_compile_prism_with_invalid_object_type
+    assert_raise(TypeError) do
+      RubyVM::InstructionSequence.compile_prism(Object.new)
+    end
   end
 end

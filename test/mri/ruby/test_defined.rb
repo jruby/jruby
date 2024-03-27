@@ -127,6 +127,18 @@ class TestDefined < Test::Unit::TestCase
     assert_equal nil, defined?($2)
   end
 
+  def test_defined_assignment
+    assert_equal("assignment", defined?(a = 1))
+    assert_equal("assignment", defined?(a += 1))
+    assert_equal("assignment", defined?(a &&= 1))
+    assert_equal("assignment", eval('defined?(A = 1)'))
+    assert_equal("assignment", eval('defined?(A += 1)'))
+    assert_equal("assignment", eval('defined?(A &&= 1)'))
+    assert_equal("assignment", eval('defined?(A::B = 1)'))
+    assert_equal("assignment", eval('defined?(A::B += 1)'))
+    assert_equal("assignment", eval('defined?(A::B &&= 1)'))
+  end
+
   def test_defined_literal
     assert_equal("nil", defined?(nil))
     assert_equal("true", defined?(true))
@@ -301,6 +313,20 @@ class TestDefined < Test::Unit::TestCase
     o = c.new
     o.extend(m)
     assert_equal("super", o.x, bug8367)
+  end
+
+  def test_super_in_basic_object
+    BasicObject.class_eval do
+      def a
+        defined?(super)
+      end
+    end
+
+    assert_nil(a)
+  ensure
+    BasicObject.class_eval do
+      undef_method :a if defined?(a)
+    end
   end
 
   def test_super_toplevel

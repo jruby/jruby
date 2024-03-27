@@ -172,6 +172,19 @@ class TestOpenURI < Test::Unit::TestCase
     assert_raise(ArgumentError) { URI.open("http://127.0.0.1/", :invalid_option=>true) {} }
   end
 
+  def test_pass_keywords
+    begin
+      f = URI.open(File::NULL, mode: 0666)
+      assert_kind_of File, f
+    ensure
+      f&.close
+    end
+
+    o = Object.new
+    def o.open(foo: ) foo end
+    assert_equal 1, URI.open(o, foo: 1)
+  end
+
   def test_mode
     with_http {|srv, dr, url|
       srv.mount_proc("/mode", lambda { |req, res| res.body = "mode" } )
@@ -542,6 +555,25 @@ class TestOpenURI < Test::Unit::TestCase
       setup_redirect_auth(srv, url)
       exc = assert_raise(OpenURI::HTTPError) { URI.open("#{url}/r1/", :http_basic_authentication=>['user', 'pass']) {} }
       assert_equal("401", exc.io.status[0])
+    }
+  end
+
+  def test_max_redirects_success
+    with_http {|srv, dr, url|
+      srv.mount_proc("/r1/") {|req, res| res.status = 301; res["location"] = "#{url}/r2"; res.body = "r1" }
+      srv.mount_proc("/r2/") {|req, res| res.status = 301; res["location"] = "#{url}/r3"; res.body = "r2" }
+      srv.mount_proc("/r3/") {|req, res| res.body = "r3" }
+      URI.open("#{url}/r1/", max_redirects: 2) { |f| assert_equal("r3", f.read) }
+    }
+  end
+
+  def test_max_redirects_too_many
+    with_http {|srv, dr, url|
+      srv.mount_proc("/r1/") {|req, res| res.status = 301; res["location"] = "#{url}/r2"; res.body = "r1" }
+      srv.mount_proc("/r2/") {|req, res| res.status = 301; res["location"] = "#{url}/r3"; res.body = "r2" }
+      srv.mount_proc("/r3/") {|req, res| res.body = "r3" }
+      exc = assert_raise(OpenURI::TooManyRedirects) { URI.open("#{url}/r1/", max_redirects: 1) {} }
+      assert_equal("Too many redirects", exc.message)
     }
   end
 

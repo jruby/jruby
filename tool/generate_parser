@@ -67,27 +67,29 @@ if [ "$SKIP_PARSER" == "" ]; then
     fi
 fi
 
-echo "processing ripper"
-$RUBY $TOOL_DIR/preprocess_parser.rb ripper < $PARSER_BASE.y  > $RIPPER_DIR/ripper_parse.y
+if [ "$SKIP_RIPPER" == "" ]; then
+    echo "processing ripper"
+    $RUBY $TOOL_DIR/preprocess_parser.rb ripper < $PARSER_BASE.y  > $RIPPER_DIR/ripper_parse.y
 
-cd $RIPPER_DIR
-echo "in ripper dir ${PWD}"
+    cd $RIPPER_DIR
+    echo "in ripper dir ${PWD}"
 
-echo "applying ripper DSL"
-$RUBY ../$TOOL_DIR/preproc_ripper.rb ripper_parse.y > ripper_$PARSER_BASE.out
+    echo "applying ripper DSL"
+    $RUBY ../$TOOL_DIR/preproc_ripper.rb ripper_parse.y > ripper_$PARSER_BASE.out
 
-echo "generating ripper using jay"
-$JAY $DEBUG_FLAG ripper_$PARSER_BASE.out < ../../parser/skeleton.parser | grep -v $DEBUG_STR#IP > ripper_$PARSER_BASE.out2
+    echo "generating ripper using jay"
+    $JAY $DEBUG_FLAG ripper_$PARSER_BASE.out < ../../parser/skeleton.parser | grep -v $DEBUG_STR#IP > ripper_$PARSER_BASE.out2
 
-echo "patching ripper"
-$RUBY ../$TOOL_DIR/patch_parser.rb ripper_$PARSER_BASE.out2 $YYTABLE_PREFIX ripper_$PARSER_BASE.out > ripper_$PARSER_BASE.out3
+    echo "patching ripper"
+    $RUBY ../$TOOL_DIR/patch_parser.rb ripper_$PARSER_BASE.out2 $YYTABLE_PREFIX ripper_$PARSER_BASE.out > ripper_$PARSER_BASE.out3
 
-echo "optimizing ripper"
-$RUBY ../$TOOL_DIR/optimize_parser.rb ripper_$PARSER_BASE.out3 $YYTABLE_PREFIX > RipperParser.java
+    echo "optimizing ripper"
+    $RUBY ../$TOOL_DIR/optimize_parser.rb ripper_$PARSER_BASE.out3 $YYTABLE_PREFIX > RipperParser.java
 
-if [ "$BUILD_DEBUG" == "" ]; then
-   rm -f ripper_$PARSER_BASE.out ripper_$PARSER_BASE.out2 ripper_$PARSER_BASE.out3
-   rm -f ripper_parse.y
+    if [ "$BUILD_DEBUG" == "" ]; then
+        rm -f ripper_$PARSER_BASE.out ripper_$PARSER_BASE.out2 ripper_$PARSER_BASE.out3
+        rm -f ripper_parse.y
+    fi
 fi
 
 popd

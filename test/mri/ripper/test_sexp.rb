@@ -18,6 +18,11 @@ class TestRipper::Sexp < Test::Unit::TestCase
     assert_nil Ripper.sexp("/*")
     assert_nil Ripper.sexp("/*/")
     assert_nil Ripper.sexp("/+/")
+    assert_nil Ripper.sexp("m(&nil) {}"), '[Bug #10436]'
+    assert_nil Ripper.sexp("/(?<a>)/ =~ ''; x = a **a, **a if false"), '[Bug #18988]'
+    assert_nil Ripper.sexp("return + return"), '[Bug #20055]'
+    assert_nil Ripper.sexp("1 in [a, a]"), '[Bug #20055]'
+    assert_nil Ripper.sexp("1 + (1 => [a, a])"), '[Bug #20055]'
   end
 
   def test_regexp_content
@@ -32,6 +37,14 @@ class TestRipper::Sexp < Test::Unit::TestCase
 
     sexp = Ripper.sexp('/(?<n>a(b|\g<n>))/')
     assert_equal '(?<n>a(b|\g<n>))', search_sexp(:@tstring_content, search_sexp(:regexp_literal, sexp))[1]
+  end
+
+  def test_regexp_named_capture
+    sexp = Ripper.sexp("/(?<a>)/ =~ ''; x = a **a, a if false")
+    assert_not_nil sexp, '[Bug #18988]'
+
+    sexp = Ripper.sexp("/(?<a>)/ =~ ''; a %(exit)")
+    assert_equal 'exit', search_sexp(:@ident, search_sexp(:paren, sexp))[1], '[Bug #18988]'
   end
 
   def test_heredoc_content
@@ -175,7 +188,7 @@ eot
         [:aryptn,
           nil,
           [[:var_field, [:@ident, "a", [1, 11]]]],
-          [:var_field, nil],
+          nil,
           nil],
         [[:void_stmt]],
         nil]],
@@ -407,6 +420,14 @@ eot
         [[:void_stmt]],
         nil]],
 
+    [__LINE__, %q{ case 0; in [a,]; end }] =>
+    [:case,
+      [:@int, "0", [1, 5]],
+      [:in,
+        [:aryptn, nil, [[:var_field, [:@ident, "a", [1, 12]]]], nil, nil],
+        [[:void_stmt]],
+          nil]],
+
     [__LINE__, %q{ case 0; in []; end }] =>
     [:case,
       [:@int, "0", [1, 5]],
@@ -486,6 +507,22 @@ eot
         [:begin, [:binary, [:@int, "0", [1, 13]], :+, [:@int, "0", [1, 15]]]],
         [[:void_stmt]],
         nil]],
+
+    [__LINE__, %q{ case 0; in [*a]; a; end } ] =>
+    [:case,
+      [:@int, "0", [1, 5]],
+      [:in,
+        [:aryptn, nil, nil, [:var_field, [:@ident, "a", [1, 13]]], nil],
+        [[:var_ref, [:@ident, "a", [1, 17]]]],
+        nil]],
+
+    [__LINE__, %q{ case 0; in {a:}; a; end } ] =>
+    [:case,
+      [:@int, "0", [1, 5]],
+      [:in,
+        [:hshptn, nil, [[[:@label, "a:", [1, 12]], nil]], nil],
+        [[:var_ref, [:@ident, "a", [1, 17]]]],
+          nil]],
   }
   pattern_matching_data.each do |(i, src), expected|
     define_method(:"test_pattern_matching_#{i}") do

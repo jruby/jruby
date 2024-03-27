@@ -166,6 +166,7 @@ public class RubyModule extends RubyObject {
     public static final int IS_OVERLAID_F = ObjectFlags.IS_OVERLAID_F;
     public static final int OMOD_SHARED = ObjectFlags.OMOD_SHARED;
     public static final int INCLUDED_INTO_REFINEMENT = ObjectFlags.INCLUDED_INTO_REFINEMENT;
+    public static final int TEMPORARY_NAME = ObjectFlags.TEMPORARY_NAME;
 
     public static final String BUILTIN_CONSTANT = "";
 
@@ -687,7 +688,7 @@ public class RubyModule extends RubyObject {
 
         if (getBaseName() == null) return calculateAnonymousRubyName(); // no name...anonymous!
 
-        if (!IdUtil.isValidConstantName(baseName)) { // temporary name
+        if (usingTemporaryName()) { // temporary name
             cachedRubyName = getRuntime().newSymbol(baseName).toRubyString(getRuntime().getCurrentContext());
             return cachedRubyName;
         }
@@ -830,6 +831,8 @@ public class RubyModule extends RubyObject {
 
             if (name.length() == 0) throw context.runtime.newArgumentError("empty class/module name");
             if (isValidConstantPath(name)) throw context.runtime.newArgumentError("the temporary name must not be a constant path to avoid confusion");
+
+            setFlag(TEMPORARY_NAME, true);
 
             // We make sure we generate ISO_8859_1 String and also guarantee when we want to print this name
             // later it does not lose track of the orignal encoding.
@@ -4570,6 +4573,13 @@ public class RubyModule extends RubyObject {
         }
         return refinedClass;
     }
+
+    @JRubyMethod(name = "used_refinements")
+    public IRubyObject used_refinements(ThreadContext context) {
+        // TODO: not implemented
+        return RubyArray.newEmptyArray(context.runtime);
+    }
+
     //
     ////////////////// CLASS VARIABLE API METHODS ////////////////
     //
@@ -5006,7 +5016,7 @@ public class RubyModule extends RubyObject {
         // if adding a module under a constant name, set that module's basename to the constant name
         if ( value instanceof RubyModule ) {
             RubyModule module = (RubyModule) value;
-            if (module != this && module.getBaseName() == null) {
+            if (module != this && (module.getBaseName() == null || module.usingTemporaryName())) {
                 module.setBaseName(name);
                 module.setParent(this);
             }
@@ -5988,6 +5998,10 @@ public class RubyModule extends RubyObject {
 
     public boolean isRefinement() {
         return getFlag(REFINED_MODULE_F);
+    }
+
+    public boolean usingTemporaryName() {
+        return getFlag(TEMPORARY_NAME);
     }
 
     public boolean isIncludedIntoRefinement() {

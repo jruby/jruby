@@ -2,7 +2,6 @@
 require 'test/unit'
 EnvUtil.suppress_warning {require 'continuation'}
 require 'stringio'
-require 'delegate'
 
 class TestEnumerable < Test::Unit::TestCase
   def setup
@@ -844,6 +843,8 @@ class TestEnumerable < Test::Unit::TestCase
   end
 
   def test_callcc
+    omit 'requires callcc support' unless respond_to?(:callcc)
+
     assert_raise(RuntimeError) do
       c = nil
       @obj.sort_by {|x| callcc {|c2| c ||= c2 }; x }
@@ -1334,5 +1335,17 @@ class TestEnumerable < Test::Unit::TestCase
     assert_equal([], @obj.filter_map { false })
     assert_equal([], @obj.filter_map { nil })
     assert_instance_of(Enumerator, @obj.filter_map)
+  end
+
+  def test_ruby_svar
+    klass = Class.new do
+      include Enumerable
+      def each
+        %w(bar baz).each{|e| yield e}
+      end
+    end
+    svars = []
+    klass.new.grep(/(b.)/) { svars << $1 }
+    assert_equal(["ba", "ba"], svars)
   end
 end

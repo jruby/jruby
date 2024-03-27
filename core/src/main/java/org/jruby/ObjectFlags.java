@@ -22,6 +22,7 @@ public interface ObjectFlags {
     int IS_OVERLAID_F = registry.newFlag(RubyModule.class);
     int OMOD_SHARED = registry.newFlag(RubyModule.class);
     int INCLUDED_INTO_REFINEMENT = registry.newFlag(RubyModule.class);
+    int TEMPORARY_NAME = registry.newFlag(RubyModule.class);
 
     int CR_7BIT_F    = registry.newFlag(RubyString.class);
     int CR_VALID_F   = registry.newFlag(RubyString.class);

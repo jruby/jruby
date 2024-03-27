@@ -50,7 +50,7 @@ public class CFG {
     private BasicBlock globalEnsureBB;
 
     /** The graph itself */
-    private final DirectedGraph<BasicBlock> graph;
+    private final DirectedGraph<BasicBlock, EdgeType> graph;
 
     private int nextBBId;       // Next available basic block id
 
@@ -115,11 +115,6 @@ public class CFG {
         return postOrderList().descendingIterator();
     }
 
-    public void resetState() {
-        // SSS FIXME: anything else?
-        postOrderList = null;
-    }
-
     public IRScope getScope() {
         return scope;
     }
@@ -139,7 +134,7 @@ public class CFG {
         return graph.getInorderData();
     }
 
-    public void addEdge(BasicBlock source, BasicBlock destination, Object type) {
+    public void addEdge(BasicBlock source, BasicBlock destination, EdgeType type) {
         graph.findOrCreateVertexFor(source).addEdgeTo(destination, type);
     }
 
@@ -155,15 +150,15 @@ public class CFG {
         return graph.findVertexFor(block).getIncomingSourcesData();
     }
 
-    public Iterable<Edge<BasicBlock>> getIncomingEdges(BasicBlock block) {
+    public Iterable<Edge<BasicBlock, EdgeType>> getIncomingEdges(BasicBlock block) {
         return graph.findVertexFor(block).getIncomingEdges();
     }
 
-    public BasicBlock getIncomingSourceOfType(BasicBlock block, Object type) {
+    public BasicBlock getIncomingSourceOfType(BasicBlock block, EdgeType type) {
         return graph.findVertexFor(block).getIncomingSourceDataOfType(type);
     }
 
-    public BasicBlock getOutgoingDestinationOfType(BasicBlock block, Object type) {
+    public BasicBlock getOutgoingDestinationOfType(BasicBlock block, EdgeType type) {
         return graph.findVertexFor(block).getOutgoingDestinationDataOfType(type);
     }
 
@@ -171,15 +166,15 @@ public class CFG {
         return graph.findVertexFor(block).getOutgoingDestinationsData();
     }
 
-    public Iterable<BasicBlock> getOutgoingDestinationsOfType(BasicBlock block, Object type) {
+    public Iterable<BasicBlock> getOutgoingDestinationsOfType(BasicBlock block, EdgeType type) {
         return graph.findVertexFor(block).getOutgoingDestinationsDataOfType(type);
     }
 
-    public Iterable<BasicBlock> getOutgoingDestinationsNotOfType(BasicBlock block, Object type) {
+    public Iterable<BasicBlock> getOutgoingDestinationsNotOfType(BasicBlock block, EdgeType type) {
         return graph.findVertexFor(block).getOutgoingDestinationsDataNotOfType(type);
     }
 
-    public Collection<Edge<BasicBlock>> getOutgoingEdges(BasicBlock block) {
+    public Collection<Edge<BasicBlock, EdgeType>> getOutgoingEdges(BasicBlock block) {
         return graph.findVertexFor(block).getOutgoingEdges();
     }
 
@@ -211,7 +206,7 @@ public class CFG {
     /**
      *  Build the Control Flow Graph
      */
-    public DirectedGraph<BasicBlock> build(Instr[] instrs) {
+    public DirectedGraph<BasicBlock, EdgeType> build(Instr[] instrs) {
         // Map of label & basic blocks which are waiting for a bb with that label
         Map<Label, List<BasicBlock>> forwardRefs = new HashMap<>();
 
@@ -241,7 +236,7 @@ public class CFG {
             if (iop == Operation.LABEL) {
                 Label l = ((LabelInstr) i).getLabel();
                 newBB = createBB(l, nestedExceptionRegions);
-                // Jump instruction bbs dont add an edge to the succeeding bb by default
+                // Jump instruction bbs don't add an edge to the succeeding bb by default
                 if (nextBBIsFallThrough) graph.addEdge(currBB, newBB, EdgeType.FALL_THROUGH);
                 currBB = newBB;
                 bbEnded = false;
@@ -256,16 +251,15 @@ public class CFG {
                 }
             } else if (bbEnded && iop != Operation.EXC_REGION_END) {
                 newBB = createBB(nestedExceptionRegions);
-                // Jump instruction bbs dont add an edge to the succeeding bb by default
+                // Jump instruction bbs don't add an edge to the succeeding bb by default
                 if (nextBBIsFallThrough) graph.addEdge(currBB, newBB, EdgeType.FALL_THROUGH); // currBB cannot be null!
                 currBB = newBB;
                 bbEnded = false;
                 nextBBIsFallThrough = true;
             }
 
-            if (i instanceof ExceptionRegionStartMarkerInstr) {
-                // We dont need the instruction anymore -- so it is not added to the CFG.
-                ExceptionRegionStartMarkerInstr ersmi = (ExceptionRegionStartMarkerInstr) i;
+            if (i instanceof ExceptionRegionStartMarkerInstr ersmi) {
+                // We don't need the instruction anymore -- so it is not added to the CFG.
                 ExceptionRegion rr = new ExceptionRegion(ersmi.getFirstRescueBlockLabel(), currBB);
                 rr.addBB(currBB);
                 allExceptionRegions.add(rr);
@@ -276,7 +270,7 @@ public class CFG {
 
                 nestedExceptionRegions.push(rr);
             } else if (i instanceof ExceptionRegionEndMarkerInstr) {
-                // We dont need the instruction anymore -- so it is not added to the CFG.
+                // We don't need the instruction anymore -- so it is not added to the CFG.
                 nestedExceptionRegions.pop().setEndBB(currBB);
             } else if (iop.endsBasicBlock()) {
                 bbEnded = true;
@@ -292,10 +286,8 @@ public class CFG {
                 } else if (i instanceof JumpInstr) {
                     tgt = ((JumpInstr) i).getJumpTarget();
                 } else if (iop.isReturn()) { // BREAK, RETURN, CLOSURE_RETURN
-                    tgt = null;
                     returnBBs.add(currBB);
                 } else if (i instanceof ThrowExceptionInstr) {
-                    tgt = null;
                     exceptionBBs.add(currBB);
                 } else {
                     throw new RuntimeException("Unhandled case in CFG builder for basic block ending instr: " + i);
@@ -344,13 +336,13 @@ public class CFG {
     public void fixupEdges(BasicBlock bb) {
         Instr lastInstr = bb.getLastInstr();
         if (lastInstr instanceof BranchInstr) {
-            // We assume branches will not turn into other branches so we ignore this
+            // We assume branches will not turn into other branches, so we ignore this
         } else if (bb.getLastInstr() instanceof JumpTargetInstr) { // this is really a jump branch already covered
-            for (Edge<BasicBlock> edge: getOutgoingEdges(bb)) {
+            for (Edge<BasicBlock, EdgeType> edge: getOutgoingEdges(bb)) {
                 if (edge.getType() == EdgeType.FALL_THROUGH) graph.removeEdge(edge);
             }
         } else {
-            for (Edge<BasicBlock> edge: getOutgoingEdges(bb)) {
+            for (Edge<BasicBlock, EdgeType> edge: getOutgoingEdges(bb)) {
                 if (edge.getType() == EdgeType.REGULAR) graph.removeEdge(edge);
             }
         }
@@ -365,12 +357,7 @@ public class CFG {
         }
 
         // Add a forward reference from target -> source
-        List<BasicBlock> forwardReferences = forwardRefs.get(targetLabel);
-
-        if (forwardReferences == null) {
-            forwardReferences = new ArrayList<>();
-            forwardRefs.put(targetLabel, forwardReferences);
-        }
+        List<BasicBlock> forwardReferences = forwardRefs.computeIfAbsent(targetLabel, k -> new ArrayList<>());
 
         forwardReferences.add(src);
     }
@@ -432,12 +419,12 @@ public class CFG {
         graph.findVertexFor(b).removeAllOutgoingEdges();
     }
 
-    private void deleteOrphanedBlocks(DirectedGraph<BasicBlock> graph) {
+    private void deleteOrphanedBlocks(DirectedGraph<BasicBlock, EdgeType> graph) {
         // System.out.println("\nGraph:\n" + toStringGraph());
         // System.out.println("\nInstructions:\n" + toStringInstrs());
 
-        Queue<BasicBlock> worklist = new LinkedList();
-        Set<BasicBlock> living = new HashSet();
+        Queue<BasicBlock> worklist = new LinkedList<>();
+        Set<BasicBlock> living = new HashSet<>();
         worklist.add(entryBB);
         living.add(entryBB);
 
@@ -453,8 +440,8 @@ public class CFG {
         }
 
         // Seems like Java should have simpler way of doing this.
-        // We canot just remove in this loop or we get concmodexc.
-        Set<BasicBlock> dead = new HashSet();
+        // We cannot just remove in this loop, or we get concmodexc.
+        Set<BasicBlock> dead = new HashSet<>();
         for (BasicBlock bb: graph.allData()) {
             if (!living.contains(bb)) dead.add(bb);
         }
@@ -475,7 +462,7 @@ public class CFG {
         //    NOTE: We need not check the ensure block map because all ensure blocks are already
         //    captured in the bb rescue block map.  So, if aR == bR, it is guaranteed that the
         //    ensure blocks for the two are identical.
-        // 2. One of 'a' or 'b' is empty.  We dont need to check for rescue block match because
+        // 2. One of 'a' or 'b' is empty.  We don't need to check for rescue block match because
         //    an empty basic block cannot raise an exception, can it?
         if (aR == bR || a.isEmpty() || b.isEmpty()) {
             // First, remove straight-line jump, if present
@@ -487,12 +474,12 @@ public class CFG {
 
             // Fixup edges
             removeEdge(a, b);
-            for (Edge<BasicBlock> e : getOutgoingEdges(b)) {
+            for (Edge<BasicBlock, EdgeType> e : getOutgoingEdges(b)) {
                 addEdge(a, e.getDestination().getData(), e.getType());
             }
 
             // Move all incoming edges of b to be incoming edges of a.
-            for (Edge<BasicBlock> e : getIncomingEdges(b)) {
+            for (Edge<BasicBlock, EdgeType> e : getIncomingEdges(b)) {
                 BasicBlock fixupBB = e.getSource().getData();
                 removeEdge(fixupBB, b);
                 addEdge(fixupBB, a, e.getType());
@@ -528,7 +515,7 @@ public class CFG {
     }
 
     /**
-     * Wrapped IRClosures in dead BB are lexically rooted to that dead BB so they can
+     * Wrapped IRClosures in dead BB are lexically rooted to that dead BB, so they can
      * be removed from the parent scope if the BB they live in died.
      */
     private void removeNestedScopesFromBB(BasicBlock bb) {
@@ -548,13 +535,12 @@ public class CFG {
         //
         // SSS FIXME: So, we need a cfg/graph API that returns an iterator over
         // frozen data rather than live data.
-        List<BasicBlock> cfgBBs = new ArrayList<>();
-        for (BasicBlock b: getBasicBlocks()) cfgBBs.add(b);
+        List<BasicBlock> cfgBBs = new ArrayList<>(getBasicBlocks());
 
         Set<BasicBlock> mergedBBs = new HashSet<>();
         for (BasicBlock b: cfgBBs) {
             if (!mergedBBs.contains(b) && outDegree(b) == 1) {
-                for (Edge<BasicBlock> e : getOutgoingEdges(b)) {
+                for (Edge<BasicBlock, EdgeType> e : getOutgoingEdges(b)) {
                     BasicBlock outB = e.getDestination().getData();
 
                     // 1:1 BBs can just be one since there is only one place to go.  An empty entering any BB can merge
@@ -582,14 +568,14 @@ public class CFG {
         //
         // If a jump intervenes in 'x', skip over it and if merge succeeds,
         // delete the jump.
-        List<Edge<BasicBlock>> toRemove = new ArrayList<>();
+        List<Edge<BasicBlock, EdgeType>> toRemove = new ArrayList<>();
         for (BasicBlock retBB: returnBBs) {
             List<Instr> rbInstrs = retBB.getInstrs();
             Instr first = rbInstrs.get(0);
             if (first instanceof ReturnInstr) {
                 Operand rv = ((ReturnInstr)first).getReturnValue();
                 if (rv instanceof Variable) {
-                    for (Edge<BasicBlock> e : getIncomingEdges(retBB)) {
+                    for (Edge<BasicBlock, EdgeType> e : getIncomingEdges(retBB)) {
                         BasicBlock srcBB = e.getSource().getData();
                         List<Instr> srcInstrs = srcBB.getInstrs();
                         int n = srcInstrs.size();
@@ -619,7 +605,7 @@ public class CFG {
                 }
             }
         }
-        for (Edge<BasicBlock> edge: toRemove) {
+        for (Edge<BasicBlock, EdgeType> edge: toRemove) {
             graph.removeEdge(edge);
         }
 
@@ -733,7 +719,7 @@ public class CFG {
         // Part 2: Clone graph (build new edges from new BBs made in previous phase)
         for (BasicBlock bb: getBasicBlocks()) {
             BasicBlock newSource = cloneBBMap.get(bb);
-            for (Edge<BasicBlock> edge : getOutgoingEdges(bb)) {
+            for (Edge<BasicBlock, EdgeType> edge : getOutgoingEdges(bb)) {
                 BasicBlock newDestination = cloneBBMap.get(edge.getDestination().getData());
                 newCFG.addEdge(newSource, newDestination, edge.getType());
             }

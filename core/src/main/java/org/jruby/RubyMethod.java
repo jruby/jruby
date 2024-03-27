@@ -214,9 +214,16 @@ public class RubyMethod extends AbstractRubyMethod {
     @Override
     public RubyMethod rbClone() {
         RubyMethod newMethod = newMethod(implementationModule, methodName, originModule, originName, entry, receiver);
-        newMethod.setMetaClass(getMetaClass());
-        if (isFrozen()) newMethod.setFrozen(true);
-        return newMethod;
+        ThreadContext context = getRuntime().getCurrentContext();
+
+        return (RubyMethod) cloneSetup(context, newMethod, context.nil);
+    }
+
+    @JRubyMethod
+    public RubyMethod dup(ThreadContext context) {
+        RubyMethod newMethod = newMethod(implementationModule, methodName, originModule, originName, entry, receiver);
+
+        return (RubyMethod) dupSetup(context, newMethod);
     }
 
     /** Create a Proc object.

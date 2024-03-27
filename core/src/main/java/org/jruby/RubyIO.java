@@ -2573,6 +2573,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     private static final Getline.Callback<RubyIO, RubyIO> GETLINE_YIELD = new Getline.Callback<RubyIO, RubyIO>() {
         @Override
         public RubyIO getline(ThreadContext context, RubyIO self, IRubyObject rs, int limit, boolean chomp, Block block) {
+            if (limit == 0) {
+                throw context.runtime.newArgumentError("invalid limit: 0 for foreach");
+            }
 
             IRubyObject line;
             while ((line = self.getlineImpl(context, rs, limit, chomp)) != context.nil) {
@@ -3837,9 +3840,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 case 3:
                     Getline.getlineCall(context, GETLINE_YIELD, io, io.getReadEncoding(context), args[1], args[2], block);
                     break;
-                case 4:
-                    Getline.getlineCall(context, GETLINE_YIELD, io, io.getReadEncoding(context), args[1], args[2], args[3], block);
-                    break;
             }
         } finally {
             io.close();
@@ -4344,7 +4344,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     // rb_io_s_readlines
-    @JRubyMethod(name = "readlines", required = 1, optional = 3, checkArity = false, meta = true)
+    @JRubyMethod(name = "readlines", required = 1, optional = 2, checkArity = false, meta = true)
     public static IRubyObject readlines(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         IRubyObject opt = ArgsUtil.getOptionsArg(context.runtime, args);
         final RubyIO io = openKeyArgs(context, recv, args, opt);
@@ -4359,11 +4359,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 case 3:
                     if (opt != context.nil) return io.readlines(context, args[1], opt);
                     return io.readlines(context, args[1], args[2]);
-                case 4:
-                    if (opt != context.nil) return io.readlines(context, args[1], args[2], opt);
-                    return io.readlines(context, args[1], args[2], args[3]);
                 default:
-                    Arity.raiseArgumentError(context, args.length, 1, 4);
+                    Arity.raiseArgumentError(context, args.length, 1, 3);
                     throw new AssertionError("BUG");
             }
         } finally { io.close(); }

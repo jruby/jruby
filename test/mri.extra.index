@@ -1,11 +1,8 @@
 # Heavy subprocess tests that slow down the main suite
 
 coverage
-# test_racc_command.rb tests all flags in separate child processes
-racc
 objspace
 test_open3.rb
-test_tracer.rb
 ruby/test_process.rb
 ruby/test_settracefunc.rb
 ruby/test_signal.rb

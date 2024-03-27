@@ -56,7 +56,7 @@ end
 package = ARGV[0] =~ /ripper/i ? 'org.jruby.ext.ripper' : 'org.jruby.parser'
 
 while gets
-  break if /protected static final short\[\] yyTable = \{/ =~ $_
+  break if /protected static final int\[\] yyTable = \{/ =~ $_
   print $_
 end
 
@@ -67,16 +67,16 @@ remaps = generate_yyname_remaps original_grammar_file
 
 table4 = get_numbers_until_end_block
 
-puts "    protected static final short[] yyTable = #{yytable_prefix}YyTables.yyTable();"
+puts "    protected static final int[] yyTable = #{yytable_prefix}YyTables.yyTable();"
 
 while gets
-  break if /protected static final short\[\] yyCheck = \{/ =~ $_
+  break if /protected static final int\[\] yyCheck = \{/ =~ $_
   print $_
 end
 
 check4 = get_numbers_until_end_block
 
-puts "    protected static final short[] yyCheck = #{yytable_prefix}YyTables.yyCheck();"
+puts "    protected static final int[] yyCheck = #{yytable_prefix}YyTables.yyCheck();"
 
 while gets
   print $_
@@ -108,8 +108,8 @@ def printShortArray(table, f)
 end
 
 def printShortMethod(f, table, name)
-  f.puts "   private static final short[] yy#{name}() {"
-  f.puts "      return new short[] {"
+  f.puts "   private static final int[] yy#{name}() {"
+  f.puts "      return new int[] {"
   printShortArray table, f
   f.puts
   f.puts "      };"
@@ -150,9 +150,9 @@ open("#{yytable_prefix}YyTables.java", "w") { |f|
 package #{package};
 
 public class #{yytable_prefix}YyTables {
-   private static short[] combine(short[] t1, short[] t2, 
-                                  short[] t3, short[] t4) {
-      short[] t = new short[t1.length + t2.length + t3.length + t4.length];
+   private static int[] combine(int[] t1, int[] t2, 
+                                  int[] t3, int[] t4) {
+      int[] t = new int[t1.length + t2.length + t3.length + t4.length];
       int index = 0;
       System.arraycopy(t1, 0, t, index, t1.length);
       index += t1.length;
@@ -164,11 +164,11 @@ public class #{yytable_prefix}YyTables {
       return t;
    }
 
-   public static final short[] yyTable() {
+   public static final int[] yyTable() {
       return combine(yyTable1(), yyTable2(), yyTable3(), yyTable4());
    }
 
-   public static final short[] yyCheck() {
+   public static final int[] yyCheck() {
       return combine(yyCheck1(), yyCheck2(), yyCheck3(), yyCheck4());
    }
 END

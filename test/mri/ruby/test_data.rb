@@ -97,6 +97,7 @@ class TestData < Test::Unit::TestCase
 
     # Missing arguments can be fixed in initialize
     assert_equal([[], {foo: 1}], klass.new(foo: 1).passed)
+    assert_equal([[], {foo: 42}], klass.new(42).passed)
 
     # Extra keyword arguments can be dropped in initialize
     assert_equal([[], {foo: 1, bar: 2, baz: 3}], klass.new(foo: 1, bar: 2, baz: 3).passed)
@@ -116,12 +117,29 @@ class TestData < Test::Unit::TestCase
     assert_equal({foo: 1, bar: 2}, test.to_h)
     assert_equal({"foo"=>"1", "bar"=>"2"}, test.to_h { [_1.to_s, _2.to_s] })
 
+    assert_equal([1, 2], test.deconstruct)
     assert_equal({foo: 1, bar: 2}, test.deconstruct_keys(nil))
     assert_equal({foo: 1}, test.deconstruct_keys(%i[foo]))
     assert_equal({foo: 1}, test.deconstruct_keys(%i[foo baz]))
+    assert_equal({}, test.deconstruct_keys(%i[foo bar baz]))
     assert_raise(TypeError) { test.deconstruct_keys(0) }
 
     assert_kind_of(Integer, test.hash)
+  end
+
+  def test_hash
+    measure = Data.define(:amount, :unit)
+
+    assert_equal(measure[1, 'km'].hash, measure[1, 'km'].hash)
+    assert_not_equal(measure[1, 'km'].hash, measure[10, 'km'].hash)
+    assert_not_equal(measure[1, 'km'].hash, measure[1, 'm'].hash)
+    assert_not_equal(measure[1, 'km'].hash, measure[1.0, 'km'].hash)
+
+    # Structurally similar data class, but shouldn't be considered
+    # the same hash key
+    measurement = Data.define(:amount, :unit)
+
+    assert_not_equal(measure[1, 'km'].hash, measurement[1, 'km'].hash)
   end
 
   def test_inspect
@@ -215,6 +233,22 @@ class TestData < Test::Unit::TestCase
     assert_raise_with_message(ArgumentError, "wrong number of arguments (given 1, expected 0)") do
       source.with({ bar: 2 })
     end
+  end
+
+  def test_with_initialize
+    oddclass = Data.define(:odd) do
+      def initialize(odd:)
+        raise ArgumentError, "Not odd" unless odd.odd?
+        super(odd: odd)
+      end
+    end
+    assert_raise_with_message(ArgumentError, "Not odd") {
+      oddclass.new(odd: 0)
+    }
+    odd = oddclass.new(odd: 1)
+    assert_raise_with_message(ArgumentError, "Not odd") {
+      odd.with(odd: 2)
+    }
   end
 
   def test_memberless

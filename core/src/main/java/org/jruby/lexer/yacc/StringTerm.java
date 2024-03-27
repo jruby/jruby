@@ -85,7 +85,7 @@ public class StringTerm extends StrTerm {
             return RubyParser.tREGEXP_END;
         }
 
-        if ((flags & STR_FUNC_LABEL) != 0 && lexer.isLabelSuffix()) {
+        if ((flags & STR_FUNC_LABEL) != 0 && lexer.IS_LABEL_SUFFIX()) {
             lexer.nextc();
             lexer.setState(EXPR_BEG | EXPR_LABEL);
             return RubyParser.tLABEL_END;

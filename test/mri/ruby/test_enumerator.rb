@@ -127,6 +127,17 @@ class TestEnumerator < Test::Unit::TestCase
     assert_equal([[1,5],[2,6],[3,7]], @obj.to_enum(:foo, 1, 2, 3).with_index(5).to_a)
   end
 
+  def test_with_index_under_gc_compact_stress
+    omit "compaction doesn't work well on s390x" if RUBY_PLATFORM =~ /s390x/ # https://github.com/ruby/ruby/pull/5077
+    EnvUtil.under_gc_compact_stress do
+      assert_equal([[1, 0], [2, 1], [3, 2]], @obj.to_enum(:foo, 1, 2, 3).with_index.to_a)
+      assert_equal([[1, 5], [2, 6], [3, 7]], @obj.to_enum(:foo, 1, 2, 3).with_index(5).to_a)
+
+      s = 1 << (8 * 1.size - 2)
+      assert_equal([[1, s], [2, s + 1], [3, s + 2]], @obj.to_enum(:foo, 1, 2, 3).with_index(s).to_a)
+    end
+  end
+
   def test_with_index_large_offset
     bug8010 = '[ruby-dev:47131] [Bug #8010]'
     s = 1 << (8*1.size-2)
@@ -242,6 +253,26 @@ class TestEnumerator < Test::Unit::TestCase
     assert_equal(1, e.next)
     exc = assert_raise(StopIteration) { e.next }
     assert_equal(res, exc.result)
+  end
+
+  def test_stopiteration_rescue
+    e = [1].each
+    res = e.each {}
+    e.next
+    exc0 = assert_raise(StopIteration) { e.peek }
+    assert_include(exc0.backtrace.first, "test_enumerator.rb:#{__LINE__-1}:")
+    assert_nil(exc0.cause)
+    assert_equal(res, exc0.result)
+
+    exc1 = assert_raise(StopIteration) { e.next }
+    assert_include(exc1.backtrace.first, "test_enumerator.rb:#{__LINE__-1}:")
+    assert_same(exc0, exc1.cause)
+    assert_equal(res, exc1.result)
+
+    exc2 = assert_raise(StopIteration) { e.next }
+    assert_include(exc2.backtrace.first, "test_enumerator.rb:#{__LINE__-1}:")
+    assert_same(exc0, exc2.cause)
+    assert_equal(res, exc2.result)
   end
 
   def test_next_values
@@ -832,6 +863,21 @@ class TestEnumerator < Test::Unit::TestCase
     assert_equal(33, chain.next)
   end
 
+  def test_lazy_chain_under_gc_compact_stress
+    omit "compaction doesn't work well on s390x" if RUBY_PLATFORM =~ /s390x/ # https://github.com/ruby/ruby/pull/5077
+    EnvUtil.under_gc_compact_stress do
+      ea = (10..).lazy.select(&:even?).take(10)
+      ed = (20..).lazy.select(&:odd?)
+      chain = (ea + ed).select{|x| x % 3 == 0}
+      assert_equal(12, chain.next)
+      assert_equal(18, chain.next)
+      assert_equal(24, chain.next)
+      assert_equal(21, chain.next)
+      assert_equal(27, chain.next)
+      assert_equal(33, chain.next)
+    end
+  end
+
   def test_chain_undef_methods
     chain = [1].to_enum + [2].to_enum
     meths = (chain.methods & [:feed, :next, :next_values, :peek, :peek_values])
@@ -987,5 +1033,15 @@ class TestEnumerator < Test::Unit::TestCase
     assert_raise(ArgumentError) {
       Enumerator.product(1..3, foo: 1, bar: 2)
     }
+  end
+
+  def test_freeze
+    e = 3.times.freeze
+    assert_raise(FrozenError) { e.next }
+    assert_raise(FrozenError) { e.next_values }
+    assert_raise(FrozenError) { e.peek }
+    assert_raise(FrozenError) { e.peek_values }
+    assert_raise(FrozenError) { e.feed 1 }
+    assert_raise(FrozenError) { e.rewind }
   end
 end

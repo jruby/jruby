@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require_relative "helper"
 require "rubygems/commands/update_command"
 
@@ -78,7 +79,6 @@ class TestGemCommandsUpdateCommand < Gem::TestCase
     end
 
     out = @ui.output.split "\n"
-    assert_equal "Updating rubygems-update", out.shift
     assert_equal "Installing RubyGems 9", out.shift
     assert_equal "RubyGems system software updated", out.shift
 
@@ -122,13 +122,40 @@ class TestGemCommandsUpdateCommand < Gem::TestCase
     end
 
     out = @ui.output.split "\n"
-    assert_equal "Updating rubygems-update", out.shift
     assert_empty out
 
     err = @ui.error.split "\n"
     assert_equal "ERROR:  Error installing rubygems-update:", err.shift
     assert_equal "\trubygems-update-9 requires Ruby version > 9. The current ruby version is #{Gem.ruby_version}.", err.shift
     assert_empty err
+  end
+
+  def test_execute_system_when_latest_does_not_support_your_ruby_but_previous_one_does
+    spec_fetcher do |fetcher|
+      fetcher.download "rubygems-update", 9 do |s|
+        s.files = %w[setup.rb]
+        s.required_ruby_version = "> 9"
+      end
+
+      fetcher.download "rubygems-update", 8 do |s|
+        s.files = %w[setup.rb]
+      end
+    end
+
+    @cmd.options[:args]          = []
+    @cmd.options[:system]        = true
+
+    use_ui @ui do
+      @cmd.execute
+    end
+
+    err = @ui.error.split "\n"
+    assert_empty err
+
+    out = @ui.output.split "\n"
+    assert_equal "Installing RubyGems 8", out.shift
+    assert_equal "RubyGems system software updated", out.shift
+    assert_empty out
   end
 
   def test_execute_system_multiple
@@ -150,7 +177,6 @@ class TestGemCommandsUpdateCommand < Gem::TestCase
     end
 
     out = @ui.output.split "\n"
-    assert_equal "Updating rubygems-update", out.shift
     assert_equal "Installing RubyGems 9", out.shift
     assert_equal "RubyGems system software updated", out.shift
 
@@ -184,7 +210,6 @@ class TestGemCommandsUpdateCommand < Gem::TestCase
     end
 
     out = @ui.output.split "\n"
-    assert_equal "Updating rubygems-update", out.shift
     assert_equal "Installing RubyGems 9", out.shift
     assert_equal "RubyGems system software updated", out.shift
 
@@ -204,7 +229,7 @@ class TestGemCommandsUpdateCommand < Gem::TestCase
 
     gemhome2 = "#{@gemhome}2"
 
-    Gem::Installer.at(rubygems_update_package, :install_dir => gemhome2).install
+    Gem::Installer.at(rubygems_update_package, install_dir: gemhome2).install
 
     Gem.use_paths @gemhome, [gemhome2, @gemhome]
 
@@ -241,7 +266,6 @@ class TestGemCommandsUpdateCommand < Gem::TestCase
     end
 
     out = @ui.output.split "\n"
-    assert_equal "Updating rubygems-update", out.shift
     assert_equal "Installing RubyGems 8", out.shift
     assert_equal "RubyGems system software updated", out.shift
 
@@ -352,7 +376,6 @@ class TestGemCommandsUpdateCommand < Gem::TestCase
     end
 
     out = @ui.output.split "\n"
-    assert_equal "Updating rubygems-update", out.shift
     assert_equal "Installing RubyGems 9", out.shift
     assert_equal "RubyGems system software updated", out.shift
 
@@ -669,10 +692,10 @@ class TestGemCommandsUpdateCommand < Gem::TestCase
     @cmd.handle_options %w[--system]
 
     expected = {
-      :args => [],
-      :document => %w[ri],
-      :force => false,
-      :system => true,
+      args: [],
+      document: %w[ri],
+      force: false,
+      system: true,
     }
 
     assert_equal expected, @cmd.options
@@ -688,10 +711,10 @@ class TestGemCommandsUpdateCommand < Gem::TestCase
     @cmd.handle_options %w[--system 1.3.7]
 
     expected = {
-      :args => [],
-      :document => %w[ri],
-      :force => false,
-      :system => "1.3.7",
+      args: [],
+      document: %w[ri],
+      force: false,
+      system: "1.3.7",
     }
 
     assert_equal expected, @cmd.options
