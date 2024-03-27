@@ -1,1 +1,0 @@
-fails:Accessing a class variable raises a RuntimeError when a class variable is overtaken in an ancestor class
