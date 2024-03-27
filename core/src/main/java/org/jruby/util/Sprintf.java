@@ -44,6 +44,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.EncodingUtils;
 
+import static org.jruby.api.Raise.typeError;
+
 
 /**
  * @author Bill Dortch
@@ -780,9 +782,8 @@ public class Sprintf {
                         break;
                     default:
                         arg = TypeConverter.convertToInteger(runtime.getCurrentContext(), arg, 0);
-                        if (!(arg instanceof RubyInteger)) { // NOTE: likely redundant
-                            throw runtime.newTypeError(arg, runtime.getInteger());
-                        }
+                        // FIXME: Is this needed after a convert?
+                        if (!(arg instanceof RubyInteger)) typeError(runtime.getCurrentContext(), arg, runtime.getInteger());
                         break;
                     }
                     byte[] bytes;

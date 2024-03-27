@@ -38,6 +38,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
+import static org.jruby.api.Raise.typeError;
+
 public class ThreadFiber extends RubyObject implements ExecutionContext {
 
     private static final Logger LOG = LoggerFactory.getLogger(ThreadFiber.class);
@@ -716,9 +718,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "[]", meta = true)
     public static IRubyObject op_aref(ThreadContext context, IRubyObject recv, IRubyObject key) {
-        if (!(key instanceof RubySymbol)) {
-            throw context.runtime.newTypeError(key, context.runtime.getSymbol());
-        }
+        if (!(key instanceof RubySymbol)) typeError(context, key, "Symbol");
 
         RubyHash storage = context.getFiber().storage;
 
@@ -733,16 +733,11 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "[]=", meta = true)
     public static IRubyObject op_aset(ThreadContext context, IRubyObject recv, IRubyObject key, IRubyObject value) {
-        if (!(key instanceof RubySymbol)) {
-            throw context.runtime.newTypeError(key, context.runtime.getSymbol());
-        }
-
-        RubyHash storage;
+        if (!(key instanceof RubySymbol)) typeError(context, key, "Symbol");
 
         ThreadFiber current = context.getFiber();
         boolean nil = value.isNil();
-
-        storage = current.storage;
+        RubyHash storage = current.storage;
 
         if (storage == null) {
             if (nil) return context.nil;
@@ -805,9 +800,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         }
 
         ((RubyHash) hash).visitAll(context, (ctx, self, key, value, index) -> {
-            if (!(key instanceof RubySymbol)) {
-                throw context.runtime.newTypeError(key, context.runtime.getSymbol());
-            }
+            if (!(key instanceof RubySymbol)) typeError(context, key, "Symbol");
         });
     }
 

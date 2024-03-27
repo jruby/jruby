@@ -7,12 +7,11 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import org.jruby.*;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 
+import static org.jruby.api.Raise.typeError;
 import static org.jruby.runtime.Visibility.*;
 
 @JRubyClass(name="FFI::Struct", parent="Object")
@@ -74,8 +73,7 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
         this.layout = layout;
 
         if (!(memory == null || memory instanceof AbstractMemory)) {
-            throw runtime.newTypeError("wrong argument type "
-                    + memory.getMetaClass().getName() + " (expected Pointer or Buffer)");
+            typeError(runtime.getCurrentContext(), memory, "Pointer or Buffer");
         }
 
         this.memory = (AbstractMemory) memory;
@@ -111,8 +109,7 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
 
         } catch (ClassCastException ex) {
             if (!(structClass instanceof RubyClass)) {
-                throw runtime.newTypeError("wrong argument type "
-                        + structClass.getMetaClass().getName() + " (expected subclass of Struct)");
+                typeError(runtime.getCurrentContext(), structClass, "subclass of Struct");
             }
             throw runtime.newRuntimeError("invalid layout set for struct " + ((RubyClass) structClass).getName());
         }
@@ -129,12 +126,9 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
     public IRubyObject initialize(ThreadContext context, IRubyObject ptr) {
         
         if (!(ptr instanceof AbstractMemory)) {
-            if (ptr.isNil()) {
-                return initialize(context);
-            }
+            if (ptr.isNil()) return initialize(context);
 
-            throw context.runtime.newTypeError("wrong argument type "
-                    + ptr.getMetaClass().getName() + " (expected Pointer or Buffer)");
+            typeError(context, ptr, "Pointer or Buffer");
         }
 
         if (((AbstractMemory) ptr).getSize() < layout.getSize()) {
@@ -217,9 +211,8 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
 
     @JRubyMethod(name = { "size" }, meta = true)
     public static IRubyObject size(ThreadContext context, IRubyObject structClass) {
-        if (!(structClass instanceof RubyClass)) {
-            throw context.runtime.newTypeError(structClass, context.runtime.getClassClass());
-        }
+        if (!(structClass instanceof RubyClass)) typeError(context, structClass, context.runtime.getClassClass());
+
         RubyClass klass = (RubyClass) structClass;
 
         Object obj = klass.getFFIHandle();
@@ -244,13 +237,10 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
 
     @JRubyMethod(name = { "layout=" }, meta = true)
     public static IRubyObject set_layout(ThreadContext context, IRubyObject structClass, IRubyObject layout) {
-        if (!(structClass instanceof RubyClass)) {
-            throw context.runtime.newTypeError(structClass, context.runtime.getClassClass());
-        }
+        if (!(structClass instanceof RubyClass)) typeError(context, structClass, context.runtime.getClassClass());
 
         if (!(layout instanceof StructLayout)) {
-            throw context.runtime.newTypeError(layout,
-                    context.runtime.getModule("FFI").getClass("StructLayout"));
+            typeError(context, layout, context.runtime.getModule("FFI").getClass("StructLayout"));
         }
 
         RubyClass klass = (RubyClass) structClass;

@@ -37,6 +37,8 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Raise.typeError;
+
 /**
  * Native part for `require 'jruby/core_ext.rb'`.
  *
@@ -52,12 +54,9 @@ public abstract class CoreExt {
 
         @JRubyMethod
         public static RubyFixnum unseeded_hash(ThreadContext context, IRubyObject recv) {
-            final Ruby runtime = context.runtime;
-            if (!(recv instanceof RubyString)) {
-                throw runtime.newTypeError(recv, runtime.getString());
-            }
+            if (!(recv instanceof RubyString)) typeError(context, recv, "String");
 
-            return runtime.newFixnum(((RubyString) recv).unseededStrHashCode(runtime));
+            return context.runtime.newFixnum(((RubyString) recv).unseededStrHashCode(context.runtime));
         }
 
         @JRubyMethod(name = "alloc", meta = true)

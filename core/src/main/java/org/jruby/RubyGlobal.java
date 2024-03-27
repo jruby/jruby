@@ -72,6 +72,7 @@ import org.jruby.util.io.FilenoUtil;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.STDIO;
 
+import static org.jruby.api.Raise.typeError;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.*;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.io.EncodingUtils.newExternalStringWithEncoding;
@@ -907,12 +908,13 @@ public class RubyGlobal {
         @Override
         public IRubyObject set(IRubyObject value) {
             ThreadContext context = runtime.getCurrentContext();
+
             if (value.isNil()) {
                 context.clearBackRef();
             } else if (value instanceof RubyMatchData) {
                 context.setBackRef((RubyMatchData) value);
             } else {
-                throw runtime.newTypeError(value, runtime.getMatchData());
+                typeError(context, value, "MatchData");
             }
 
             return value;

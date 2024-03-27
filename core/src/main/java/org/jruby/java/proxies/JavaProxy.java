@@ -57,6 +57,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JRubyObjectInputStream;
 
+import static org.jruby.api.Raise.typeError;
 import static org.jruby.runtime.Helpers.arrayOf;
 
 public class JavaProxy extends RubyObject {
@@ -701,10 +702,7 @@ public class JavaProxy extends RubyObject {
 
         @JRubyMethod(meta = true, visibility = Visibility.PRIVATE)
         public static IRubyObject java_alias(ThreadContext context, IRubyObject klass, IRubyObject newName, IRubyObject rubyName, IRubyObject argTypes) {
-            final Ruby runtime = context.runtime;
-            if ( ! ( klass instanceof RubyModule ) ) {
-                throw runtime.newTypeError(klass, runtime.getModule());
-            }
+            if (!(klass instanceof RubyModule)) typeError(context, klass, "Module");
             final RubyModule proxyClass = (RubyModule) klass;
 
             String name = rubyName.asJavaString();
@@ -737,10 +735,7 @@ public class JavaProxy extends RubyObject {
         }
 
         private static AbstractRubyMethod getRubyMethod(ThreadContext context, IRubyObject clazz, String name, Class... argTypesClasses) {
-            final Ruby runtime = context.runtime;
-            if ( ! ( clazz instanceof RubyModule ) ) {
-                throw runtime.newTypeError(clazz, runtime.getModule());
-            }
+            if (!(clazz instanceof RubyModule)) typeError(context, clazz, "Module");
             final RubyModule proxyClass = (RubyModule) clazz;
 
             final Method method = getMethodFromClass(context, JavaUtil.getJavaClass(proxyClass), name, argTypesClasses);

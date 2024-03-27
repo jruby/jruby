@@ -94,6 +94,7 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.jruby.common.IRubyWarnings.ID;
 
+import static org.jruby.api.Raise.typeError;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.RubyStringBuilder.ids;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -1372,8 +1373,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     @JRubyMethod(meta = true)
-    public static IRubyObject kill(IRubyObject receiver, IRubyObject rubyThread, Block block) {
-        if (!(rubyThread instanceof RubyThread)) throw receiver.getRuntime().newTypeError(rubyThread, receiver.getRuntime().getThread());
+    public static IRubyObject kill(IRubyObject recv, IRubyObject rubyThread, Block block) {
+        if (!(rubyThread instanceof RubyThread)) typeError(recv.getRuntime().getCurrentContext(), rubyThread, "Thread");
         return ((RubyThread)rubyThread).kill();
     }
 

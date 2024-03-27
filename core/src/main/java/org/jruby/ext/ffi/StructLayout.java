@@ -58,6 +58,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.util.ByteList;
+
+import static org.jruby.api.Raise.typeError;
 import static org.jruby.runtime.Visibility.*;
 
 /**
@@ -146,7 +148,7 @@ public final class StructLayout extends Type {
 
         return layoutClass;
     }
-    
+
     
     /**
      * Creates a new <code>StructLayout</code> instance.
@@ -171,7 +173,7 @@ public final class StructLayout extends Type {
         for (IRubyObject obj : fields) {
             
             if (!(obj instanceof Field)) {
-                throw runtime.newTypeError(obj, runtime.getModule("FFI").getClass("StructLayout").getClass("Field"));
+                typeError(runtime.getCurrentContext(), obj, runtime.getModule("FFI").getClass("StructLayout").getClass("Field"));
             }
 
             Field f = (Field) obj;
@@ -221,9 +223,7 @@ public final class StructLayout extends Type {
 
         IRubyObject rbFields = args[0], size = args[1], alignment = args[2];
 
-        if (!(rbFields instanceof RubyArray)) {
-            throw context.runtime.newTypeError(rbFields, context.runtime.getArray());
-        }
+        if (!(rbFields instanceof RubyArray)) typeError(context, rbFields, context.runtime.getArray());
 
         List<IRubyObject> fields = Arrays.asList(((RubyArray) rbFields).toJavaArrayMaybeUnsafe());
 
@@ -659,9 +659,8 @@ public final class StructLayout extends Type {
         }
 
         final Type checkType(IRubyObject type) {
-            if (!(type instanceof Type)) {
-                throw getRuntime().newTypeError(type, getRuntime().getModule("FFI").getClass("Type"));
-            }
+            if (!(type instanceof Type)) typeError(getRuntime().getCurrentContext(), type, getRuntime().getModule("FFI").getClass("Type"));
+
             return (Type) type;
         }
 
@@ -838,7 +837,7 @@ public final class StructLayout extends Type {
             IRubyObject type = args[2];
 
             if (!(type instanceof CallbackInfo)) {
-                throw context.runtime.newTypeError(type, context.runtime.getModule("FFI").getClass("Type").getClass("Function"));
+                typeError(context, type, context.runtime.getModule("FFI").getClass("Type").getClass("Function"));
             }
             init(args, FunctionFieldIO.INSTANCE);
 
@@ -861,8 +860,7 @@ public final class StructLayout extends Type {
             IRubyObject type = args[2];
 
             if (!(type instanceof StructByValue)) {
-                throw context.runtime.newTypeError(type,
-                        context.runtime.getModule("FFI").getClass("Type").getClass("Struct"));
+                typeError(context, type, context.runtime.getModule("FFI").getClass("Type").getClass("Struct"));
             }
             init(args, new InnerStructFieldIO((StructByValue) type));
 
@@ -884,8 +882,7 @@ public final class StructLayout extends Type {
 
             IRubyObject type = args[2];
             if (!(type instanceof Type.Array)) {
-                throw context.runtime.newTypeError(type,
-                        context.runtime.getModule("FFI").getClass("Type").getClass("Array"));
+                typeError(context, type, context.runtime.getModule("FFI").getClass("Type").getClass("Array"));
             }
             init(args, new ArrayFieldIO((Type.Array) type));
 
@@ -1235,7 +1232,7 @@ public final class StructLayout extends Type {
 
         public void put(ThreadContext context, StructLayout.Storage cache, Member m, AbstractMemory ptr, IRubyObject value) {
             if (!(value instanceof Struct)) {
-                throw context.runtime.newTypeError(value, context.runtime.getFFI().structClass);
+                typeError(context, value, context.runtime.getFFI().structClass);
             }
 
             Struct s = (Struct) value;

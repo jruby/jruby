@@ -107,6 +107,7 @@ import static com.headius.backport9.buffer.Buffers.flipBuffer;
 import static com.headius.backport9.buffer.Buffers.limitBuffer;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.anno.FrameField.LASTLINE;
+import static org.jruby.api.Raise.typeError;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -4434,7 +4435,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
             if (arg0.isNil()) {
                 if ((arg0 = TypeConverter.checkStringType(runtime, args[firstArg])).isNil()) {
-                    throw runtime.newTypeError(args[firstArg], runtime.getString());
+                    typeError(runtime.getCurrentContext(), args[firstArg], "String");
                 }
                 _cmdPlusArgs = null;
                 _cmd = arg0;

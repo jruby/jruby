@@ -40,6 +40,8 @@ import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 
+import static org.jruby.api.Raise.typeError;
+
 /**
  * @author Bill Dortch
  *
@@ -64,18 +66,14 @@ public class JavaArrayUtilities {
 
         if (wrappedObject instanceof JavaProxy) {
             Object wrapped = ((JavaProxy) wrappedObject).getObject();
-            if ( wrapped instanceof byte[] ) bytes = (byte[]) wrapped;
+            if (wrapped instanceof byte[]) bytes = (byte[]) wrapped;
         }
 
-        if (bytes == null) {
-            throw context.runtime.newTypeError("wrong argument type " +
-                wrappedObject.getMetaClass() + " (expected byte[])"
-            );
-        }
+        if (bytes == null) typeError(context, wrappedObject, "byte[]");
 
         RubyString string = context.runtime.newString(new ByteList(bytes, true));
 
-        if ( ! encoding.isNil() ) string.force_encoding(context, encoding);
+        if (!encoding.isNil()) string.force_encoding(context, encoding);
 
         return string;
     }
@@ -83,17 +81,15 @@ public class JavaArrayUtilities {
     @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject ruby_string_to_bytes(IRubyObject recv, IRubyObject string) {
         Ruby runtime = recv.getRuntime();
-        if (!(string instanceof RubyString)) {
-            throw runtime.newTypeError(string, runtime.getString());
-        }
+        if (!(string instanceof RubyString)) typeError(runtime.getCurrentContext(), string, "String");
+
         return JavaUtil.convertJavaToUsableRubyObject(runtime, ((RubyString)string).getBytes());
     }
 
     @JRubyMethod(module = true)
     public static IRubyObject java_to_ruby(ThreadContext context, IRubyObject recv, IRubyObject ary) {
-        if (!(ary instanceof ArrayJavaProxy)) {
-            throw context.runtime.newTypeError(ary, context.runtime.getJavaSupport().getArrayProxyClass());
-        }
+        if (!(ary instanceof ArrayJavaProxy)) typeError(context, ary, context.runtime.getJavaSupport().getArrayProxyClass());
+
         return ((ArrayJavaProxy)ary).to_a(context);
     }
 

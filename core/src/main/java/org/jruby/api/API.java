@@ -2,6 +2,7 @@ package org.jruby.api;
 
 import org.jruby.Ruby;
 import org.jruby.RubyIO;
+import org.jruby.RubyModule;
 import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -9,6 +10,8 @@ import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.PosixShim;
 
 import java.util.function.Supplier;
+
+import static org.jruby.api.Raise.typeError;
 
 public class API {
     public static IRubyObject rb_sys_fail_path(Ruby runtime, String path) {

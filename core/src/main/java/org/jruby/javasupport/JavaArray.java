@@ -39,6 +39,8 @@ import org.jruby.RubyInteger;
 import org.jruby.java.util.ArrayUtils;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Raise.typeError;
+
 /**
  * Java::JavaArray wrapping is no longer used with JRuby.
  * The (automatic) Java proxy wrapping has been the preferred method for a while and
@@ -84,13 +86,10 @@ public class JavaArray extends JavaObject {
     }
 
     public IRubyObject aset(IRubyObject index, IRubyObject value) {
-         if (! (index instanceof RubyInteger)) {
-            throw getRuntime().newTypeError(index, getRuntime().getInteger());
-        }
+         if (! (index instanceof RubyInteger)) typeError(getRuntime().getCurrentContext(), index, "Integer");
         int intIndex = (int) ((RubyInteger) index).getLongValue();
-        if (! (value instanceof JavaObject)) {
-            throw getRuntime().newTypeError("not a java object:" + value);
-        }
+
+        if (! (value instanceof JavaObject)) typeError(getRuntime().getCurrentContext(), value, "a java object");
         Object javaObject = ((JavaObject) value).getValue();
 
         ArrayUtils.setWithExceptionHandlingDirect(getRuntime(), javaObject, intIndex, javaObject);
@@ -107,18 +106,15 @@ public class JavaArray extends JavaObject {
     }
 
     public IRubyObject afill(IRubyObject beginIndex, IRubyObject endIndex, IRubyObject value) {
-        if (! (beginIndex instanceof RubyInteger)) {
-            throw getRuntime().newTypeError(beginIndex, getRuntime().getInteger());
-        }
+        if (!(beginIndex instanceof RubyInteger)) typeError(getRuntime().getCurrentContext(), beginIndex, "Integer");
         int intIndex = (int) ((RubyInteger) beginIndex).getLongValue();
-        if (! (endIndex instanceof RubyInteger)) {
-            throw getRuntime().newTypeError(endIndex, getRuntime().getInteger());
-        }
+
+        if (!(endIndex instanceof RubyInteger)) typeError(getRuntime().getCurrentContext(), endIndex, "Integer");
         int intEndIndex = (int) ((RubyInteger) endIndex).getLongValue();
-        if (! (value instanceof JavaObject)) {
-            throw getRuntime().newTypeError("not a java object:" + value);
-        }
+
+        if (! (value instanceof JavaObject)) typeError(getRuntime().getCurrentContext(), value, "a java object");
         Object javaValue = ((JavaObject) value).getValue();
+
         fillWithExceptionHandling(intIndex, intEndIndex, javaValue);
         return value;
     }

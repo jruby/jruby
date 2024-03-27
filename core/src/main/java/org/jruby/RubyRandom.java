@@ -30,16 +30,13 @@ import java.math.BigInteger;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Raise.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 import org.jruby.util.Random;
-import org.jruby.util.TypeConverter;
-
-import static org.jruby.util.TypeConverter.toFloat;
 
 /**
  * Implementation of the Random class.
@@ -246,11 +243,8 @@ public class RubyRandom extends RubyRandomBase {
     @JRubyMethod(name = "initialize_copy", visibility = PRIVATE)
     @Override
     public IRubyObject initialize_copy(IRubyObject orig) {
-        if (!(orig instanceof RubyRandom)) {
-            throw getRuntime().newTypeError(String.format(
-                    "wrong argument type %s (expected %s)", orig.getMetaClass().getName(), getMetaClass().getName())
-            );
-        }
+        if (!(orig instanceof RubyRandom)) typeError(getRuntime().getCurrentContext(), orig, getMetaClass());
+
         checkFrozen();
         random = new RandomType(((RubyRandom) orig).random);
         return this;
@@ -374,12 +368,9 @@ public class RubyRandom extends RubyRandomBase {
     @JRubyMethod()
     public IRubyObject marshal_load(ThreadContext context, IRubyObject arg) {
         RubyArray load = arg.convertToArray();
-        if (load.size() != 3) {
-            throw context.runtime.newArgumentError("wrong dump data");
-        }
-        if (!(load.eltInternal(0) instanceof RubyBignum)) {
-            throw context.runtime.newTypeError(load.eltInternal(0), context.runtime.getInteger());
-        }
+        if (load.size() != 3) throw context.runtime.newArgumentError("wrong dump data");
+
+        if (!(load.eltInternal(0) instanceof RubyBignum)) typeError(context, load.eltInternal(0), "Bignum");
         RubyBignum state = (RubyBignum) load.eltInternal(0);
         int left = RubyNumeric.num2int(load.eltInternal(1));
         IRubyObject seed = load.eltInternal(2);

@@ -89,6 +89,8 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import static org.jruby.api.Raise.typeError;
+
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
@@ -149,25 +151,19 @@ public class RubySocket extends RubyBasicSocket {
     public static IRubyObject for_fd(ThreadContext context, IRubyObject socketClass, IRubyObject _fd) {
         Ruby runtime = context.runtime;
 
-        if (_fd instanceof RubyFixnum) {
-            int intFD = (int)((RubyFixnum)_fd).getLongValue();
+        if (!(_fd instanceof RubyFixnum)) typeError(context, _fd, "Fixnum");
 
-            ChannelFD fd = runtime.getFilenoUtil().getWrapperFromFileno(intFD);
+        int intFD = (int)((RubyFixnum)_fd).getLongValue();
+        ChannelFD fd = runtime.getFilenoUtil().getWrapperFromFileno(intFD);
 
-            if (fd == null) {
-                throw runtime.newErrnoEBADFError();
-            }
+        if (fd == null) throw runtime.newErrnoEBADFError();
 
-            RubySocket socket = (RubySocket)((RubyClass)socketClass).allocate();
+        RubySocket socket = (RubySocket)((RubyClass)socketClass).allocate();
 
-            socket.initFieldsFromDescriptor(runtime, fd);
+        socket.initFieldsFromDescriptor(runtime, fd);
+        socket.initSocket(fd);
 
-            socket.initSocket(fd);
-
-            return socket;
-        } else {
-            throw runtime.newTypeError(_fd, context.runtime.getFixnum());
-        }
+        return socket;
     }
 
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)

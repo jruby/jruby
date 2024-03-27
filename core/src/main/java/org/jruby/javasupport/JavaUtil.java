@@ -49,6 +49,7 @@ import static java.lang.Character.isUpperCase;
 import static java.lang.Character.isDigit;
 import static java.lang.Character.toLowerCase;
 import static java.lang.Character.toUpperCase;
+import static org.jruby.api.Raise.typeError;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -1695,9 +1696,7 @@ public class JavaUtil {
         if (wrapped == null) throw new NullPointerException();
 
         Object unwrap = unwrapJava(wrapped, RubyBasicObject.NEVER);
-        if (unwrap == RubyBasicObject.NEVER) {
-            throw wrapped.getRuntime().newTypeError(wrapped, "JavaProxy");
-        }
+        if (unwrap == RubyBasicObject.NEVER) typeError(wrapped.getRuntime().getCurrentContext(), wrapped, "JavaProxy");
         return (T) unwrap;
     }
 
@@ -1711,7 +1710,8 @@ public class JavaUtil {
      */
     public static Class<?> getJavaClass(final RubyModule type) throws TypeError {
         return getJavaClass(type, () -> {
-            throw type.getRuntime().newTypeError("wrong argument type (not a Java proxy nor does respond to java_class) " + type);
+            typeError(type.getRuntime().getCurrentContext(), type, "Java proxy of responds to java_class");
+            return null;
         });
     }
 
