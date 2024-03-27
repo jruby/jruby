@@ -2042,7 +2042,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             case "iterator?":
                 if (node.getArgsNode() == null
                         && node.getIterNode() == null) {
-                    addInstr(new BlockGivenInstr(result, getYieldClosureVariable(), callName));
+                    addInstr(new BlockGivenCallInstr(result, getYieldClosureVariable(), callName));
                     return result;
                 }
         }

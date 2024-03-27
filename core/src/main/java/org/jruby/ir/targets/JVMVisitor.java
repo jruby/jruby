@@ -816,19 +816,18 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void BlockGivenInstr(BlockGivenInstr blockGivenInstr) {
-        String callName = blockGivenInstr.getCallName();
-
-        if (callName != null) {
-            IRBytecodeAdapter m = jvmMethod();
-            m.getInvocationCompiler().invokeBlockGiven(callName, file);
-            handleCallResult(m, blockGivenInstr.getResult());
-            return;
-        }
-
         jvmMethod().loadContext();
         visit(blockGivenInstr.getBlockArg());
         jvmMethod().invokeIRHelper("isBlockGiven", sig(RubyBoolean.class, ThreadContext.class, Object.class));
         jvmStoreLocal(blockGivenInstr.getResult());
+    }
+
+    @Override
+    public void BlockGivenCallInstr(BlockGivenCallInstr blockGivenCallInstr) {
+        String callName = blockGivenCallInstr.getCallName();
+        IRBytecodeAdapter m = jvmMethod();
+        m.getInvocationCompiler().invokeBlockGiven(callName, file);
+        handleCallResult(m, blockGivenCallInstr.getResult());
     }
 
     @Override
