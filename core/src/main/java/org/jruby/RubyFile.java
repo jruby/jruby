@@ -44,6 +44,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.API;
 import org.jruby.exceptions.NotImplementedError;
 import org.jruby.runtime.*;
 import org.jruby.runtime.JavaSites.FileSites;
@@ -1489,7 +1490,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     protected IRubyObject openFile(ThreadContext context, IRubyObject args[]) {
         Ruby runtime = context.runtime;
 
-        Object pm = EncodingUtils.vmodeVperm(null, null);
+        API.ModeAndPermission pm = EncodingUtils.vmodeVperm(null, null);
         IRubyObject options = context.nil;
 
         switch(args.length) {

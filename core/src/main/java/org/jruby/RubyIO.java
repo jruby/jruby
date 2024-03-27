@@ -623,7 +623,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         try {
             if (nmode != nil || opt != nil) {
                 ConvConfig convconfig = new ConvConfig();
-                Object vmode_vperm = vmodeVperm(nmode, null);
+                API.ModeAndPermission vmode_vperm = vmodeVperm(nmode, null);
                 int[] fmode_p = {0};
 
                 EncodingUtils.extractModeEncoding(context, convconfig, vmode_vperm, opt, oflags_p, fmode_p);
@@ -956,7 +956,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             throw runtime.newErrnoEBADFError();
         }
 
-        Object pm = EncodingUtils.vmodeVperm(vmodeArg, runtime.newFixnum(0));
+        API.ModeAndPermission pm = EncodingUtils.vmodeVperm(vmodeArg, runtime.newFixnum(0));
         int[] fmode_p = {0};
         ConvConfig convconfig = new ConvConfig();
         EncodingUtils.extractModeEncoding(context, convconfig, pm, opt, oflags_p, fmode_p);
@@ -2430,11 +2430,11 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         if (this != write_io) {
             fptr = write_io.getOpenFileChecked();
             if (fptr != null && 0 <= (fd = fptr.fd().realFileno)) {
-                if ((ret = posix.fcntl(fd, Fcntl.F_GETFD)) == -1) return API.rb_sys_fail_path(runtime, fptr.getPath());
+                if ((ret = posix.fcntl(fd, Fcntl.F_GETFD)) == -1) return API.sysFailWithPath(context, fptr.getPath());
                 if ((ret & FD_CLOEXEC) != flag) {
                     ret = (ret & ~FD_CLOEXEC) | flag;
                     ret = posix.fcntlInt(fd, Fcntl.F_SETFD, ret);
-                    if (ret == -1) API.rb_sys_fail_path(runtime, fptr.getPath());
+                    if (ret == -1) API.sysFailWithPath(context, fptr.getPath());
                 }
             }
 
@@ -2442,11 +2442,11 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         fptr = getOpenFileChecked();
         if (fptr != null && 0 <= (fd = fptr.fd().realFileno)) {
-            if ((ret = posix.fcntl(fd, Fcntl.F_GETFD)) == -1) API.rb_sys_fail_path(runtime, fptr.getPath());
+            if ((ret = posix.fcntl(fd, Fcntl.F_GETFD)) == -1) API.sysFailWithPath(context, fptr.getPath());
             if ((ret & FD_CLOEXEC) != flag) {
                 ret = (ret & ~FD_CLOEXEC) | flag;
                 ret = posix.fcntlInt(fd, Fcntl.F_SETFD, ret);
-                if (ret == -1) API.rb_sys_fail_path(runtime, fptr.getPath());
+                if (ret == -1) API.sysFailWithPath(context, fptr.getPath());
             }
         }
 
@@ -2472,14 +2472,14 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         if (this != write_io) {
             fptr = write_io.getOpenFileChecked();
             if (fptr != null && 0 <= (fd = fptr.fd().realFileno)) {
-                if ((ret = posix.fcntl(fd, Fcntl.F_GETFD)) == -1) API.rb_sys_fail_path(runtime, fptr.getPath());
+                if ((ret = posix.fcntl(fd, Fcntl.F_GETFD)) == -1) API.sysFailWithPath(context, fptr.getPath());
                 if ((ret & FD_CLOEXEC) == 0) return context.fals;
             }
         }
 
         fptr = getOpenFileChecked();
         if (fptr != null && 0 <= (fd = fptr.fd().realFileno)) {
-            if ((ret = posix.fcntl(fd, Fcntl.F_GETFD)) == -1) API.rb_sys_fail_path(runtime, fptr.getPath());
+            if ((ret = posix.fcntl(fd, Fcntl.F_GETFD)) == -1) API.sysFailWithPath(context, fptr.getPath());
             if ((ret & FD_CLOEXEC) == 0) return context.fals;
         }
         return context.tru;
@@ -4144,7 +4144,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         int[] oflags_p = {0}, fmode_p = {0};
         ConvConfig convConfig = new ConvConfig();
 
-        Object pm = EncodingUtils.vmodeVperm(vmode, vperm);
+        API.ModeAndPermission pm = EncodingUtils.vmodeVperm(vmode, vperm);
         EncodingUtils.extractModeEncoding(context, convConfig, pm, opt, oflags_p, fmode_p);
         vperm = vperm(pm);
         int perm = (vperm == null || vperm == context.nil) ? 0666 : RubyNumeric.num2int(vperm);
@@ -4505,7 +4505,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         io.MakeOpenFile();
 
-        Object pm = vmodeVperm(pmode, runtime.newFixnum(0));
+        API.ModeAndPermission pm = vmodeVperm(pmode, runtime.newFixnum(0));
         int[] oflags_p = {0}, fmode_p = {0};
         EncodingUtils.extractModeEncoding(context, io, pm, options, oflags_p, fmode_p);
         ModeFlags modes = ModeFlags.createModeFlags(oflags_p[0]);

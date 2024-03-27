@@ -34,6 +34,7 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.api.API;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
@@ -136,31 +137,29 @@ public class EncodingUtils {
         return value == null ? runtime.getNil() : value;
     }
 
+    // MRI: rb_ascii8bit_encoding
     public static Encoding ascii8bitEncoding(Ruby runtime) {
         return runtime.getEncodingService().getAscii8bitEncoding();
     }
 
-    static final int VMODE = 0;
-    static final int PERM = 1;
-
-    public static Object vmodeVperm(IRubyObject vmode, IRubyObject vperm) {
-        return new IRubyObject[] {vmode, vperm};
+    public static API.ModeAndPermission vmodeVperm(IRubyObject vmode, IRubyObject vperm) {
+        return new API.ModeAndPermission(vmode, vperm);
     }
 
-    public static IRubyObject vmode(Object vmodeVperm) {
-        return ((IRubyObject[])vmodeVperm)[VMODE];
+    public static IRubyObject vmode(API.ModeAndPermission vmodeVperm) {
+        return vmodeVperm.mode;
     }
 
-    public static void vmode(Object vmodeVperm, IRubyObject vmode) {
-        ((IRubyObject[])vmodeVperm)[VMODE] = vmode;
+    public static void vmode(API.ModeAndPermission vmodeVperm, IRubyObject vmode) {
+        vmodeVperm.mode = vmode;
     }
 
-    public static IRubyObject vperm(Object vmodeVperm) {
-        return ((IRubyObject[])vmodeVperm)[PERM];
+    public static IRubyObject vperm(API.ModeAndPermission vmodeVperm) {
+        return vmodeVperm.permission;
     }
 
-    public static void vperm(Object vmodeVperm, IRubyObject vperm) {
-        ((IRubyObject[])vmodeVperm)[PERM] = vperm;
+    public static void vperm(API.ModeAndPermission vmodeVperm, IRubyObject vperm) {
+        vmodeVperm.permission = vperm;
     }
 
     public static final int MODE_BTMODE(int fmode, int a, int b, int c) {
@@ -188,7 +187,7 @@ public class EncodingUtils {
      */
     // mri: rb_io_extract_modeenc
     public static void extractModeEncoding(ThreadContext context,
-            IOEncodable ioEncodable, Object vmodeAndVperm_p, IRubyObject options, int[] oflags_p, int[] fmode_p) {
+                                           IOEncodable ioEncodable, API.ModeAndPermission vmodeAndVperm_p, IRubyObject options, int[] oflags_p, int[] fmode_p) {
         Ruby runtime = context.runtime;
         int ecflags;
         IRubyObject[] ecopts_p = {context.nil};
@@ -2312,8 +2311,8 @@ public class EncodingUtils {
         return getEncoding(str.getByteList());
     }
 
-    public static RubyString rbStrEscape(Ruby runtime, RubyString str) {
-        return (RubyString) RubyString.rbStrEscape(runtime.getCurrentContext(), str);
+    public static RubyString rbStrEscape(ThreadContext context, RubyString str) {
+        return (RubyString) RubyString.rbStrEscape(context, str);
     }
 
     // MRI: ISPRINT

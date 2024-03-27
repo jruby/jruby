@@ -557,7 +557,7 @@ public class RubyRange extends RubyObject {
 
         IRubyObject nil = context.nil;
 
-        IRubyObject valMax = API.rb_rescue_typeerror(context, nil, () -> sites(context).max.call(context, this, val));
+        IRubyObject valMax = API.rescueTypeError(context, nil, () -> sites(context).max.call(context, this, val));
 
         if (valMax == nil) return false;
 
