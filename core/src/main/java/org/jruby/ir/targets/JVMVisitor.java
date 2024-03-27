@@ -816,6 +816,13 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void BlockGivenInstr(BlockGivenInstr blockGivenInstr) {
+        if (!blockGivenInstr.isDefined()) {
+            IRBytecodeAdapter m = jvmMethod();
+            m.getInvocationCompiler().invokeBlockGiven(file, jvm.methodData().scopeField);
+            handleCallResult(m, blockGivenInstr.getResult());
+            return;
+        }
+
         jvmMethod().loadContext();
         visit(blockGivenInstr.getBlockArg());
         jvmMethod().invokeIRHelper("isBlockGiven", sig(RubyBoolean.class, ThreadContext.class, Object.class));
@@ -1281,18 +1288,6 @@ public class JVMVisitor extends IRVisitor {
                 throw new NotCompilableException("ruby2_keywords can change behavior of already-compiled code");
         }
 
-        // known frame-aware methods get compiled with special call sites that pass frame data through
-        switch (call.getName().idString()) {
-            case "block_given?":
-                if (call.getArgsCount() == 0 && !call.isPotentiallyRefined() && call.getClosureArg() == NullBlock.INSTANCE) {
-                    /* likely a call to built-in block_given? which just checks the frame block isGiven. Only optimized
-                       for method scopes currently. */
-                    m.getInvocationCompiler().invokeBlockGiven(file, jvm.methodData().scopeField, call);
-                    handleCallResult(m, call);
-                    return;
-                }
-        }
-
         boolean functional = call.getCallType() == CallType.FUNCTIONAL || call.getCallType() == CallType.VARIABLE;
 
         Operand[] args = call.getCallArgs();
@@ -1335,11 +1330,10 @@ public class JVMVisitor extends IRVisitor {
                 break;
         }
 
-        handleCallResult(m, call);
+        handleCallResult(m, call.getResult());
     }
 
-    private void handleCallResult(IRBytecodeAdapter m, CallBase call) {
-        Variable result = call.getResult();
+    private void handleCallResult(IRBytecodeAdapter m, Variable result) {
         if (result != null) {
             if (!omitStoreLoad) jvmStoreLocal(result);
         } else {

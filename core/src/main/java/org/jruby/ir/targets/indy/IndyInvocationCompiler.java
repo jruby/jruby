@@ -145,7 +145,7 @@ public class IndyInvocationCompiler implements InvocationCompiler {
         }
     }
 
-    private static String constructIndyCallName(String action, String id) {
+    public static String constructIndyCallName(String action, String id) {
         return action + ':' + JavaNameMangler.mangleMethodName(id);
     }
 
@@ -222,10 +222,8 @@ public class IndyInvocationCompiler implements InvocationCompiler {
     }
 
     @Override
-    public void invokeBlockGiven(String file, String scopeFieldName, CallBase call) {
-        compiler.loadContext();
-        compiler.loadSelf();
-        compiler.loadBlock();
-        compiler.adapter.invokedynamic(constructIndyCallName("callFunctional", "block_given?"), sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, Block.class), Bootstrap.BLOCK_GIVEN_BOOTSTRAP);
+    public void invokeBlockGiven(String file, String scopeFieldName) {
+        // block_given? explicit calls always use indy
+        normalCompiler.invokeBlockGiven(file, scopeFieldName);
     }
 }

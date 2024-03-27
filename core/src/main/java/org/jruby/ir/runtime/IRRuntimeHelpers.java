@@ -944,6 +944,16 @@ public class IRRuntimeHelpers {
         return dynScope;
     }
 
+    public static IRubyObject blockGivenOrCall(ThreadContext context, IRubyObject self, FunctionalCachingCallSite blockGivenSite, Object blk) {
+        CacheEntry blockGivenEntry = blockGivenSite.retrieveCache(self);
+
+        if (!blockGivenEntry.method.getRealMethod().isBuiltin()) {
+            return blockGivenSite.call(context, self, self);
+        }
+
+        return isBlockGiven(context, blk);
+    }
+
     private static class InvalidKeyException extends RuntimeException {}
     private static final InvalidKeyException INVALID_KEY_EXCEPTION = new InvalidKeyException();
     private static final RubyHash.VisitorWithState<StaticScope> CheckUnwantedKeywordsVisitor = new RubyHash.VisitorWithState<StaticScope>() {
