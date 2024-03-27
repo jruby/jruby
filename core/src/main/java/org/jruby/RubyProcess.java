@@ -1819,11 +1819,6 @@ public class RubyProcess {
         throw context.runtime.newNotImplementedError("fork is not available on this platform");
     }
 
-    @Deprecated
-    public static IRubyObject fork19(ThreadContext context, IRubyObject recv, Block block) {
-        return fork(context, recv, block);
-    }
-
     @JRubyMethod(name = "fork", module = true, visibility = PRIVATE, notImplemented = true)
     public static IRubyObject fork(ThreadContext context, IRubyObject recv, Block block) {
         return RubyKernel.fork(context, recv, block);

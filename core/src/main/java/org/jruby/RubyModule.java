@@ -3207,21 +3207,11 @@ public class RubyModule extends RubyObject {
         });
     }
 
-    @Deprecated
-    public RubyArray instance_methods19(IRubyObject[] args) {
-        return instance_methods(args);
-    }
-
     @JRubyMethod(name = "instance_methods", optional = 1, checkArity = false)
     public RubyArray instance_methods(IRubyObject[] args) {
         Arity.checkArgumentCount(getRuntime(), args, 0, 1);
 
         return instanceMethods(args, PRIVATE, false, true);
-    }
-
-    @Deprecated
-    public RubyArray public_instance_methods19(IRubyObject[] args) {
-        return public_instance_methods(args);
     }
 
     @JRubyMethod(name = "public_instance_methods", optional = 1, checkArity = false)
@@ -4021,11 +4011,6 @@ public class RubyModule extends RubyObject {
         return context.fals;
     }
 
-    @Deprecated
-    public IRubyObject class_variable_get19(IRubyObject name) {
-        return class_variable_get(name);
-    }
-
     /** rb_mod_cvar_get
      *
      */
@@ -4042,22 +4027,12 @@ public class RubyModule extends RubyObject {
         return setClassVar(validateClassVariable(getRuntime(), name), value);
     }
 
-    @Deprecated
-    public IRubyObject class_variable_set19(IRubyObject name, IRubyObject value) {
-        return class_variable_set(name, value);
-    }
-
     /** rb_mod_remove_cvar
      *
      */
     @JRubyMethod(name = "remove_class_variable")
     public IRubyObject remove_class_variable(ThreadContext context, IRubyObject name) {
         return removeClassVariable(validateClassVariable(context.runtime, name));
-    }
-
-    @Deprecated
-    public IRubyObject remove_class_variable19(ThreadContext context, IRubyObject name) {
-        return remove_class_variable(context, name);
     }
 
     @JRubyMethod(name = "class_variables")

@@ -29,12 +29,6 @@
 package org.jruby.util;
 
 public class ConvertDouble {
-    // Must remain in place until json has migrated to the new method for some time (https://github.com/flori/json/pull/576)
-    @Deprecated
-    public static double byteListToDouble19(ByteList bytes, boolean strict) {
-        return byteListToDouble(bytes, strict);
-    }
-
     /**
      * Converts supplied ByteList into a double.  strict-mode will not like
      * extra text non-numeric text or multiple sequention underscores.

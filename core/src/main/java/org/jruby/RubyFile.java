@@ -1270,11 +1270,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
     }
 
-    @Deprecated
-    public static IRubyObject truncate19(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
-        return truncate(context, recv, arg1, arg2);
-    }
-
     // Can we produce IOError which bypasses a close?
     @JRubyMethod(name = "truncate", meta = true)
     public static IRubyObject truncate(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {

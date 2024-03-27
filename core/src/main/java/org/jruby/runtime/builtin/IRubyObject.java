@@ -399,14 +399,6 @@ public interface IRubyObject {
     public void setVariable(int index, Object value);
 
     /**
-     * @deprecated Use {@link #checkStringType()} instead.
-     */
-    @Deprecated
-    default IRubyObject checkStringType19() {
-        return checkStringType();
-    }
-
-    /**
      * @param convertMethod
      * @param convertMethodIndex
      * @see #convertToInteger(String)
