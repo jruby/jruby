@@ -81,17 +81,15 @@ public class JavaArrayUtilities {
     @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject ruby_string_to_bytes(IRubyObject recv, IRubyObject string) {
         Ruby runtime = recv.getRuntime();
-        if (!(string instanceof RubyString)) {
-            throw runtime.newTypeError(string, runtime.getString());
-        }
+        if (!(string instanceof RubyString)) typeError(runtime.getCurrentContext(), string, "String");
+
         return JavaUtil.convertJavaToUsableRubyObject(runtime, ((RubyString)string).getBytes());
     }
 
     @JRubyMethod(module = true)
     public static IRubyObject java_to_ruby(ThreadContext context, IRubyObject recv, IRubyObject ary) {
-        if (!(ary instanceof ArrayJavaProxy)) {
-            throw context.runtime.newTypeError(ary, context.runtime.getJavaSupport().getArrayProxyClass());
-        }
+        if (!(ary instanceof ArrayJavaProxy)) typeError(context, ary, context.runtime.getJavaSupport().getArrayProxyClass());
+
         return ((ArrayJavaProxy)ary).to_a(context);
     }
 

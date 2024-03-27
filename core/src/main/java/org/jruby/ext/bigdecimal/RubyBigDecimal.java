@@ -328,7 +328,7 @@ public class RubyBigDecimal extends RubyNumeric {
         IRubyObject old = limit(context, recv);
 
         if (arg == context.nil) return old;
-        if (!(arg instanceof RubyFixnum)) throw context.runtime.newTypeError(arg, context.runtime.getFixnum());
+        if (!(arg instanceof RubyFixnum)) typeError(context, arg, "Fixnum");
         if (0 > ((RubyFixnum)arg).getLongValue()) throw context.runtime.newArgumentError("argument must be positive");
 
         ((RubyModule) recv).setInternalModuleVariable("vpPrecLimit", arg);
@@ -1315,14 +1315,11 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private static int getPositiveInt(ThreadContext context, IRubyObject arg) {
-        if ( arg instanceof RubyFixnum ) {
-            int value = RubyNumeric.fix2int(arg);
-            if (value < 0) {
-                throw context.runtime.newArgumentError("argument must be positive");
-            }
-            return value;
-        }
-        throw context.runtime.newTypeError(arg, context.runtime.getFixnum());
+        if (!(arg instanceof RubyFixnum)) typeError(context, arg, "Fixnum");
+
+        int value = RubyNumeric.fix2int(arg);
+        if (value < 0) throw context.runtime.newArgumentError("argument must be positive");
+        return value;
     }
 
     private RubyBigDecimal addSpecialCases(ThreadContext context, RubyBigDecimal val) {

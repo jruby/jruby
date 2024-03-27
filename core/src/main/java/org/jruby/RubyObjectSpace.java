@@ -47,6 +47,8 @@ import org.jruby.javasupport.JavaPackage;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Raise.typeError;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.Inspector.inspectPrefix;
 
@@ -118,9 +120,8 @@ public class RubyObjectSpace {
     @JRubyMethod(name = "_id2ref", module = true, visibility = PRIVATE)
     public static IRubyObject id2ref(IRubyObject recv, IRubyObject id) {
         final Ruby runtime = id.getRuntime();
-        if (!(id instanceof RubyFixnum)) {
-            throw runtime.newTypeError(id, runtime.getFixnum());
-        }
+        if (!(id instanceof RubyFixnum)) typeError(runtime.getCurrentContext(), id, runtime.getFixnum());
+
         long longId = ((RubyFixnum) id).getLongValue();
         if (longId == 0) {
             return runtime.getFalse();

@@ -50,6 +50,7 @@ import org.jruby.runtime.JavaSites.TypeConverterSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Raise.typeError;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
 
@@ -132,8 +133,8 @@ public class TypeConverter {
 
     // MRI: rb_to_float - adjusted to handle also Java numbers (non RubyNumeric types)
     public static RubyFloat toFloat(Ruby runtime, IRubyObject obj) {
-        if (obj instanceof RubyNumeric) return ((RubyNumeric) obj).convertToFloat();
-        if (obj instanceof RubyString || obj.isNil()) throw runtime.newTypeError(obj, "Float");
+        if (obj instanceof RubyNumeric) return obj.convertToFloat();
+        if (obj instanceof RubyString || obj.isNil()) typeError(runtime.getCurrentContext(), obj, "Float");
 
         // Java types which can become floats pass to to_f logic and we don't try and match this error string.
         if (!(obj instanceof JavaProxy) && !obj.getMetaClass().isKindOfModule(runtime.getNumeric())) {

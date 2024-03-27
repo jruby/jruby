@@ -16,6 +16,8 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Raise.typeError;
+
 /**
  *
  */
@@ -265,9 +267,7 @@ public abstract class Type extends RubyObject {
 
         @JRubyMethod(name = "new", required = 2, meta = true)
         public static final IRubyObject newInstance(ThreadContext context, IRubyObject klass, IRubyObject componentType, IRubyObject length) {
-            if (!(componentType instanceof Type)) {
-                throw context.runtime.newTypeError(componentType, getTypeClass(context.runtime));
-            }
+            if (!(componentType instanceof Type)) typeError(context, componentType, getTypeClass(context.runtime));
 
             return new Array(context.runtime, (RubyClass) klass, (Type) componentType, RubyNumeric.fix2int(length));
         }

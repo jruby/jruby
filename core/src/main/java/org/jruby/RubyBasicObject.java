@@ -63,6 +63,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 
 import static org.jruby.anno.FrameField.*;
+import static org.jruby.api.Raise.typeError;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
 import static org.jruby.runtime.Helpers.invokeChecked;
 import static org.jruby.runtime.ThreadContext.*;
@@ -2596,14 +2597,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     k.hello         #=&gt; "Hello from Mod.\n"
      */
     public IRubyObject extend(IRubyObject[] args) {
-        Ruby runtime = metaClass.runtime;
+        ThreadContext context = getRuntime().getCurrentContext();
 
         // Make sure all arguments are modules before calling the callbacks
         for (int i = 0; i < args.length; i++) {
-            if (!args[i].isModule()) throw runtime.newTypeError(args[i], runtime.getModule());
+            if (!args[i].isModule()) typeError(context, args[i], "Module");
         }
-
-        ThreadContext context = runtime.getCurrentContext();
 
         // MRI extends in order from last to first
         for (int i = args.length - 1; i >= 0; i--) {

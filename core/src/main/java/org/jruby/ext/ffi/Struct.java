@@ -211,9 +211,8 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
 
     @JRubyMethod(name = { "size" }, meta = true)
     public static IRubyObject size(ThreadContext context, IRubyObject structClass) {
-        if (!(structClass instanceof RubyClass)) {
-            throw context.runtime.newTypeError(structClass, context.runtime.getClassClass());
-        }
+        if (!(structClass instanceof RubyClass)) typeError(context, structClass, context.runtime.getClassClass());
+
         RubyClass klass = (RubyClass) structClass;
 
         Object obj = klass.getFFIHandle();
@@ -238,13 +237,10 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
 
     @JRubyMethod(name = { "layout=" }, meta = true)
     public static IRubyObject set_layout(ThreadContext context, IRubyObject structClass, IRubyObject layout) {
-        if (!(structClass instanceof RubyClass)) {
-            throw context.runtime.newTypeError(structClass, context.runtime.getClassClass());
-        }
+        if (!(structClass instanceof RubyClass)) typeError(context, structClass, context.runtime.getClassClass());
 
         if (!(layout instanceof StructLayout)) {
-            throw context.runtime.newTypeError(layout,
-                    context.runtime.getModule("FFI").getClass("StructLayout"));
+            typeError(context, layout, context.runtime.getModule("FFI").getClass("StructLayout"));
         }
 
         RubyClass klass = (RubyClass) structClass;

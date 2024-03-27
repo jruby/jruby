@@ -45,6 +45,7 @@ import org.jruby.util.ByteList;
 import java.util.Spliterator;
 import java.util.stream.Stream;
 
+import static org.jruby.api.Raise.typeError;
 import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -250,19 +251,19 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         return initializeWithSize(context, size, block);
     }
 
-    private static void checkSize(IRubyObject size, Ruby runtime) {
+    private static void checkSize(ThreadContext context, IRubyObject size) {
         if (size != null &&
                 !(size.isNil() || size.respondsTo("call")) &&
                 !(size instanceof RubyFloat && ((RubyFloat) size).value == Float.POSITIVE_INFINITY) &&
                 !(size instanceof RubyInteger)) {
-            throw runtime.newTypeError(size, runtime.getInteger());
+            typeError(context, size, "Integer");
         }
     }
 
     private IRubyObject initializeWithSize(ThreadContext context, IRubyObject size, Block block) {
         Ruby runtime = context.runtime;
 
-        checkSize(size, runtime);
+        checkSize(context, size);
 
         IRubyObject object = runtime.getGenerator().newInstance(context, NULL_ARRAY, block);
         IRubyObject method = runtime.newSymbol("each");

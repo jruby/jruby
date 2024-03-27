@@ -22,6 +22,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
 
+import static org.jruby.api.Raise.typeError;
+
 @JRubyClass(name = "FFI::VariadicInvoker", parent = "Object")
 public class VariadicInvoker extends RubyObject {
     private final CallingConvention convention;
@@ -109,9 +111,7 @@ public class VariadicInvoker extends RubyObject {
                     + rbParameterTypes.getMetaClass().getName() + " (expected Array)");
         }
 
-        if (!(rbFunction instanceof Pointer)) {
-            throw context.runtime.newTypeError(rbFunction, context.runtime.getFFI().pointerClass);
-        }
+        if (!(rbFunction instanceof Pointer)) typeError(context, rbFunction, context.runtime.getFFI().pointerClass);
         final Pointer address = (Pointer) rbFunction;
 
         CallingConvention callConvention = "stdcall".equals(convention)

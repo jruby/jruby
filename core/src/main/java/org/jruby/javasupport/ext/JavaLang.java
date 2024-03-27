@@ -55,6 +55,7 @@ import java.lang.reflect.Modifier;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyModule.undefinedMethodMessage;
+import static org.jruby.api.Raise.typeError;
 import static org.jruby.javasupport.JavaUtil.convertJavaToUsableRubyObject;
 import static org.jruby.javasupport.JavaUtil.isJavaObject;
 import static org.jruby.javasupport.JavaUtil.unwrapIfJavaObject;
@@ -766,9 +767,8 @@ public abstract class JavaLang {
                 final int[] dimensions = new int[len];
                 for (int i = len; --i >= 0; ) {
                     IRubyObject dimLength = aryLengths[i];
-                    if (!( dimLength instanceof RubyInteger)) {
-                        throw context.runtime.newTypeError(dimLength, context.runtime.getInteger());
-                    }
+                    if (!(dimLength instanceof RubyInteger)) typeError(context, dimLength, "Integer");
+
                     dimensions[i] = ((RubyInteger) dimLength).getIntValue();
                 }
                 return ArrayJavaProxy.newArray(context.runtime, klass, dimensions);

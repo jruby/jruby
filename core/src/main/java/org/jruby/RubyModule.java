@@ -973,7 +973,7 @@ public class RubyModule extends RubyObject {
 
     // mri: rb_using_module
     public static void usingModule(ThreadContext context, RubyModule cref, IRubyObject refinedModule) {
-        if (!(refinedModule instanceof RubyModule)) throw context.runtime.newTypeError(refinedModule, context.runtime.getModule());
+        if (!(refinedModule instanceof RubyModule)) typeError(context, refinedModule, "Module");
 
         usingModuleRecursive(context, cref, (RubyModule) refinedModule);
     }
@@ -1478,9 +1478,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "include?")
     public IRubyObject include_p(ThreadContext context, IRubyObject arg) {
-        if (!arg.isModule()) {
-            throw context.runtime.newTypeError(arg, context.runtime.getModule());
-        }
+        if (!arg.isModule()) typeError(context, arg, "Module");
         RubyModule moduleToCompare = (RubyModule) arg;
 
         // See if module is in chain...Cannot match against itself so start at superClass.
@@ -3276,16 +3274,11 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "prepend_features", visibility = PRIVATE)
     public RubyModule prepend_features(IRubyObject include) {
-        if (!isModule()) {
-            throw getRuntime().newTypeError(this, getRuntime().getModule());
-        }
-        if (!(include instanceof RubyModule)) {
-            throw getRuntime().newTypeError(include, getRuntime().getModule());
-        }
+        ThreadContext context = getRuntime().getCurrentContext();
 
-        if (!(include.isModule() || include.isClass())) {
-            throw getRuntime().newTypeError(include, getRuntime().getModule());
-        }
+        if (!isModule()) typeError(context, this, "Module");
+        if (!(include instanceof RubyModule)) typeError(context, include, "Module");
+        if (!(include.isModule() || include.isClass())) typeError(context, include, "Module");
 
         ((RubyModule) include).prependModule(this);
         return this;
@@ -3296,16 +3289,11 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "append_features", visibility = PRIVATE)
     public RubyModule append_features(IRubyObject include) {
-        if (!isModule()) {
-            throw getRuntime().newTypeError(this, getRuntime().getModule());
-        }
-        if (!(include instanceof RubyModule)) {
-            throw getRuntime().newTypeError(include, getRuntime().getModule());
-        }
+        ThreadContext context = getRuntime().getCurrentContext();
 
-        if (!(include.isModule() || include.isClass())) {
-            throw getRuntime().newTypeError(include, getRuntime().getModule());
-        }
+        if (!isModule()) typeError(context, this, "Module");
+        if (!(include instanceof RubyModule)) typeError(context, include, "Module");
+        if (!(include.isModule() || include.isClass())) typeError(context, include, "Module");
 
         ((RubyModule) include).includeModule(this);
         return this;
@@ -3316,7 +3304,7 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "extend_object", visibility = PRIVATE)
     public IRubyObject extend_object(IRubyObject obj) {
-        if (!isModule()) throw getRuntime().newTypeError(this, getRuntime().getModule());
+        if (!isModule()) typeError(getRuntime().getCurrentContext(), this, "Module");
 
         obj.getSingletonClass().includeModule(this);
         return obj;
@@ -3334,7 +3322,7 @@ public class RubyModule extends RubyObject {
         if (isRefinement()) throw runtime.newTypeError("Refinement#include has been removed");
 
         for (IRubyObject module: modules) {
-            if (!module.isModule()) throw runtime.newTypeError(module, runtime.getModule());
+            if (!module.isModule()) typeError(getRuntime().getCurrentContext(), module, "Module");
             if (((RubyModule) module).isRefinement()) throw runtime.newTypeError("Cannot include refinement");
         }
 
@@ -3352,8 +3340,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "include") // most common path: include Enumerable
     public RubyModule include(ThreadContext context, IRubyObject module) {
         if (isRefinement()) throw context.runtime.newTypeError("Refinement#include has been removed");
-
-        if (!module.isModule()) throw context.runtime.newTypeError(module, context.runtime.getModule());
+        if (!module.isModule()) typeError(getRuntime().getCurrentContext(), module, "Module");
 
         module.callMethod(context, "append_features", this);
         module.callMethod(context, "included", this);
@@ -3372,15 +3359,11 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "mix", visibility = PRIVATE)
     public IRubyObject mix(ThreadContext context, IRubyObject mod) {
-        Ruby runtime = context.runtime;
-
-        if (!mod.isModule()) {
-            throw runtime.newTypeError(mod, runtime.getModule());
-        }
+        if (!mod.isModule()) typeError(context, mod, "Module");
 
         for (Map.Entry<String, DynamicMethod> entry : ((RubyModule)mod).methods.entrySet()) {
             if (methodLocation.getMethods().containsKey(entry.getKey())) {
-                throw runtime.newArgumentError("method would conflict - " + entry.getKey());
+                throw context.runtime.newArgumentError("method would conflict - " + entry.getKey());
             }
         }
 
@@ -3393,35 +3376,26 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "mix", visibility = PRIVATE)
     public IRubyObject mix(ThreadContext context, IRubyObject mod, IRubyObject hash0) {
-        Ruby runtime = context.runtime;
-        RubyHash methodNames;
-
-        if (!mod.isModule()) {
-            throw runtime.newTypeError(mod, runtime.getModule());
-        }
-
-        if (hash0 instanceof RubyHash) {
-            methodNames = (RubyHash)hash0;
-        } else {
-            throw runtime.newTypeError(hash0, runtime.getHash());
-        }
+        if (!mod.isModule()) typeError(context, mod, "Module");
+        if (!(hash0 instanceof RubyHash)) typeError(context, hash0, "Hash");
+        RubyHash methodNames = (RubyHash) hash0;
 
         for (Map.Entry<IRubyObject, IRubyObject> entry : (Set<Map.Entry<IRubyObject, IRubyObject>>)methodNames.directEntrySet()) {
             String name = entry.getValue().toString();
             if (methods.containsKey(entry.getValue().toString())) {
-                throw runtime.newArgumentError("constant would conflict - " + name);
+                throw context.runtime.newArgumentError("constant would conflict - " + name);
             }
         }
 
         for (Map.Entry<String, DynamicMethod> entry : ((RubyModule)mod).methods.entrySet()) {
             if (methods.containsKey(entry.getKey())) {
-                throw runtime.newArgumentError("method would conflict - " + entry.getKey());
+                throw context.runtime.newArgumentError("method would conflict - " + entry.getKey());
             }
         }
 
         for (Map.Entry<String, DynamicMethod> entry : ((RubyModule)mod).methods.entrySet()) {
             String id = entry.getKey();
-            IRubyObject mapped = methodNames.fastARef(runtime.newSymbol(id));
+            IRubyObject mapped = methodNames.fastARef(context.runtime.newSymbol(id));
             if (mapped == NEVER) {
                 // unmapped
             } else if (mapped == context.nil) {
@@ -4533,7 +4507,7 @@ public class RubyModule extends RubyObject {
 
         // MRI checks all types first:
         for (int i = argc; --i >= 0; ) {
-            if (!modules[i].isModule()) throw runtime.newTypeError(modules[i], runtime.getModule());
+            if (!modules[i].isModule()) typeError(context, modules[i], "Module");
             if (((RubyModule) modules[i]).isRefinement()) throw runtime.newTypeError("Cannot prepend refinement");
 
         }
@@ -6075,10 +6049,7 @@ public class RubyModule extends RubyObject {
             RubyModule selfModule = (RubyModule) self;
 
             for (IRubyObject _module : modules) {
-                if (!(_module instanceof RubyModule)) {
-                    throw runtime.newTypeError(_module, runtime.getModule());
-                }
-
+                if (!(_module instanceof RubyModule)) typeError(context, _module, runtime.getModule());
                 RubyModule module = (RubyModule) _module;
 
                 if (module.getSuperClass() != runtime.getObject()) {

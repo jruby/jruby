@@ -54,6 +54,8 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 
+import static org.jruby.api.Raise.typeError;
+
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
@@ -84,11 +86,8 @@ public class RubyTCPServer extends RubyTCPSocket {
                 _host = args[0];
                 _port = args[1];
 
-                if (_host.isNil()) {
-                    break;
-                } else if (_host instanceof RubyFixnum) {
-                    throw runtime.newTypeError(_host, runtime.getString());
-                }
+                if (_host.isNil()) break;
+                if (_host instanceof RubyFixnum) typeError(context, _host, "String");
 
                 RubyString hostString = _host.convertToString();
                 if (hostString.size() > 0) host = hostString.toString();

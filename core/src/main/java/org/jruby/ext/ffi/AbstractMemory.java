@@ -50,6 +50,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
+import static org.jruby.api.Raise.typeError;
+
 /**
  * A abstract memory object that defines operations common to both pointers and
  * memory buffers
@@ -127,9 +129,7 @@ abstract public class AbstractMemory extends MemoryObject {
     }
 
     static AbstractMemory cast(ThreadContext context, IRubyObject ptr) {
-        if (!(ptr instanceof AbstractMemory)) {
-            throw context.runtime.newTypeError(ptr, context.runtime.getFFI().memoryClass);
-        }
+        if (!(ptr instanceof AbstractMemory)) typeError(context, ptr, context.runtime.getFFI().memoryClass);
 
         return (AbstractMemory) ptr;
     }
@@ -2028,7 +2028,7 @@ abstract public class AbstractMemory extends MemoryObject {
             putPointer(context, offset, conversionMethod.call(context, value, value.getMetaClass(), "to_ptr"));
         
         } else {
-            throw context.runtime.newTypeError(value, context.runtime.getFFI().pointerClass);
+            typeError(context, value, context.runtime.getFFI().pointerClass);
         }
     }
 

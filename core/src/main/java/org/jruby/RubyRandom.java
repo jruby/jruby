@@ -368,12 +368,9 @@ public class RubyRandom extends RubyRandomBase {
     @JRubyMethod()
     public IRubyObject marshal_load(ThreadContext context, IRubyObject arg) {
         RubyArray load = arg.convertToArray();
-        if (load.size() != 3) {
-            throw context.runtime.newArgumentError("wrong dump data");
-        }
-        if (!(load.eltInternal(0) instanceof RubyBignum)) {
-            throw context.runtime.newTypeError(load.eltInternal(0), context.runtime.getInteger());
-        }
+        if (load.size() != 3) throw context.runtime.newArgumentError("wrong dump data");
+
+        if (!(load.eltInternal(0) instanceof RubyBignum)) typeError(context, load.eltInternal(0), "Bignum");
         RubyBignum state = (RubyBignum) load.eltInternal(0);
         int left = RubyNumeric.num2int(load.eltInternal(1));
         IRubyObject seed = load.eltInternal(2);

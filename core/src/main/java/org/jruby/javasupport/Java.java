@@ -97,6 +97,7 @@ import org.jruby.util.*;
 import org.jruby.util.cli.Options;
 import org.jruby.util.collections.NonBlockingHashMapLong;
 
+import static org.jruby.api.Raise.typeError;
 import static org.jruby.runtime.Visibility.*;
 
 @JRubyModule(name = "Java")
@@ -226,9 +227,8 @@ public class Java implements Library {
 
         @JRubyMethod
         public static IRubyObject inherited(ThreadContext context, IRubyObject self, IRubyObject subclass) {
-            if ( ! ( subclass instanceof RubyClass ) ) {
-                throw context.runtime.newTypeError(subclass, context.runtime.getClassClass());
-            }
+            if (!(subclass instanceof RubyClass)) typeError(context, subclass, "Class");
+
             JavaInterfaceTemplate.addRealImplClassNew((RubyClass) subclass);
             return context.nil;
         }
@@ -242,9 +242,7 @@ public class Java implements Library {
             IRubyObject module) {
         final Ruby runtime = self.getRuntime();
 
-        if ( ! ( module instanceof RubyModule ) ) {
-            throw runtime.newTypeError(module, runtime.getModule());
-        }
+        if (!(module instanceof RubyModule)) typeError(runtime.getCurrentContext(), module, "Module");
 
         return setProxyClass(runtime, (RubyModule) module, name.asJavaString(), resolveJavaClassArgument(runtime, javaClass));
     }
@@ -568,9 +566,8 @@ public class Java implements Library {
         final JavaSupport javaSupport = context.runtime.getJavaSupport();
         RubyClass javaProxyClass = javaSupport.getJavaProxyClass().getMetaClass();
         Helpers.invokeAs(context, javaProxyClass, clazz, "inherited", subclazz, Block.NULL_BLOCK);
-        if ( ! ( subclazz instanceof RubyClass ) ) {
-            throw context.runtime.newTypeError(subclazz, context.runtime.getClassClass());
-        }
+        if (!(subclazz instanceof RubyClass)) typeError(context, subclazz, context.runtime.getClassClass());
+
         setupJavaSubclass(context, (RubyClass) subclazz);
         return context.nil;
     }
@@ -1090,9 +1087,8 @@ public class Java implements Library {
     public static IRubyObject get_proxy_or_package_under_package(final ThreadContext context,
         final IRubyObject self, final IRubyObject parentPackage, final IRubyObject name) {
         final Ruby runtime = context.runtime;
-        if ( ! ( parentPackage instanceof RubyModule ) ) {
-            throw runtime.newTypeError(parentPackage, runtime.getModule());
-        }
+        if (!(parentPackage instanceof RubyModule)) typeError(context, parentPackage, runtime.getModule());
+
         final RubyModule result = getProxyOrPackageUnderPackage(context, (RubyModule) parentPackage, name.asJavaString(), true);
         return result != null ? result : context.nil;
     }

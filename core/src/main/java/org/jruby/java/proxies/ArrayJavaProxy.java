@@ -18,6 +18,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.RubyStringBuilder;
 
+import static org.jruby.api.Raise.typeError;
 import static org.jruby.javasupport.ext.JavaLang.Character.inspectCharValue;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.util.Inspector.*;
@@ -817,10 +818,9 @@ public final class ArrayJavaProxy extends JavaProxy {
     }
 
     public IRubyObject getRange(ThreadContext context, IRubyObject arg0) {
-        if ( arg0 instanceof RubyRange ) {
-            return arrayRange(context, (RubyRange) arg0);
-        }
-        throw context.runtime.newTypeError(arg0, context.runtime.getRange());
+        if (!(arg0 instanceof RubyRange)) typeError(context, arg0, "Range");
+
+        return arrayRange(context, (RubyRange) arg0);
     }
 
     private IRubyObject arrayRange(final ThreadContext context, final RubyRange range) {
@@ -901,11 +901,7 @@ public final class ArrayJavaProxy extends JavaProxy {
 
         @Override
         public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
-            final Ruby runtime = context.runtime;
-
-            if (!(arg0 instanceof ArrayJavaProxy)) {
-                throw runtime.newTypeError(arg0, "ArrayJavaProxy");
-            }
+            if (!(arg0 instanceof ArrayJavaProxy)) typeError(context, arg0, "ArrayJavaProxy");
 
             IRubyObject proxy = newMethod.call(context, self, clazz, "new_proxy");
             proxy.dataWrapStruct(arg0);

@@ -14,6 +14,8 @@ import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 
 import java.lang.ref.WeakReference;
 
+import static org.jruby.api.Raise.typeError;
+
 /**
  * Wraps a ruby proc in a JFFI Closure
  */
@@ -196,7 +198,7 @@ final class NativeClosureProxy implements Closure {
                 buffer.setStructReturn(new byte[type.getNativeSize()], 0);
 
             } else {
-                throw runtime.newTypeError(value, runtime.getFFI().structClass);
+                typeError(runtime.getCurrentContext(), value, runtime.getFFI().structClass);
             }
 
         } else if (type instanceof MappedType) {

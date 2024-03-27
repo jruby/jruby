@@ -26,6 +26,7 @@ import java.nio.channels.FileChannel;
 import java.util.Arrays;
 
 import static org.jruby.RubyBoolean.newBoolean;
+import static org.jruby.api.Raise.typeError;
 
 public class RubyIOBuffer extends RubyObject {
 
@@ -158,9 +159,7 @@ public class RubyIOBuffer extends RubyObject {
     private static RubyFile checkFile(ThreadContext context, IRubyObject _file) {
         RubyIO io = RubyIO.convertToIO(context, _file);
 
-        if (!(io instanceof RubyFile)) {
-            throw context.runtime.newTypeError(_file, context.runtime.getFile());
-        }
+        if (!(io instanceof RubyFile)) typeError(context, _file, "File");
 
         RubyFile file = (RubyFile) io;
         return file;
@@ -1590,7 +1589,7 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "&")
     public IRubyObject op_and(ThreadContext context, IRubyObject _mask) {
-        RubyIOBuffer maskBuffer = (RubyIOBuffer) _mask;
+        RubyIOBuffer maskBuffer = castToMaskData(context, _mask);
 
         checkMask(context, maskBuffer);
 
@@ -1603,7 +1602,7 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "|")
     public IRubyObject op_or(ThreadContext context, IRubyObject _mask) {
-        RubyIOBuffer maskBuffer = (RubyIOBuffer) _mask;
+        RubyIOBuffer maskBuffer = castToMaskData(context, _mask);
 
         checkMask(context, maskBuffer);
 
@@ -1616,7 +1615,7 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "^")
     public IRubyObject op_xor(ThreadContext context, IRubyObject _mask) {
-        RubyIOBuffer maskBuffer = (RubyIOBuffer) _mask;
+        RubyIOBuffer maskBuffer = castToMaskData(context, _mask);
 
         checkMask(context, maskBuffer);
 
@@ -1638,11 +1637,7 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "and!")
     public IRubyObject and_bang(ThreadContext context, IRubyObject _mask) {
-        if (!(_mask instanceof RubyIOBuffer)) {
-            throw context.runtime.newTypeError(_mask, context.runtime.getIOBuffer());
-        }
-
-        RubyIOBuffer maskData = (RubyIOBuffer) _mask;
+        RubyIOBuffer maskData = castToMaskData(context, _mask);
 
         checkMask(context, maskData);
         checkOverlaps(context, maskData);
@@ -1657,11 +1652,7 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "or!")
     public IRubyObject or_bang(ThreadContext context, IRubyObject _mask) {
-        if (!(_mask instanceof RubyIOBuffer)) {
-            throw context.runtime.newTypeError(_mask, context.runtime.getIOBuffer());
-        }
-
-        RubyIOBuffer maskData = (RubyIOBuffer) _mask;
+        RubyIOBuffer maskData = castToMaskData(context, _mask);
 
         checkMask(context, maskData);
         checkOverlaps(context, maskData);
@@ -1676,11 +1667,7 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "xor!")
     public IRubyObject xor_bang(ThreadContext context, IRubyObject _mask) {
-        if (!(_mask instanceof RubyIOBuffer)) {
-            throw context.runtime.newTypeError(_mask, context.runtime.getIOBuffer());
-        }
-
-        RubyIOBuffer maskData = (RubyIOBuffer) _mask;
+        RubyIOBuffer maskData = castToMaskData(context, _mask);
 
         checkMask(context, maskData);
         checkOverlaps(context, maskData);
@@ -1691,6 +1678,11 @@ public class RubyIOBuffer extends RubyObject {
         bufferXorInPlace(base, size, maskBase, maskData.size);
 
         return this;
+    }
+
+    private static RubyIOBuffer castToMaskData(ThreadContext context, IRubyObject _mask) {
+        if (!(_mask instanceof RubyIOBuffer)) typeError(context, _mask, context.runtime.getIOBuffer());
+        return (RubyIOBuffer) _mask;
     }
 
     @JRubyMethod(name = "not!")

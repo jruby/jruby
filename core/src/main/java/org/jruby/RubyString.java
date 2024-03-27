@@ -3815,7 +3815,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     public IRubyObject bytesplice(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         int[] beglen = new int[2];
         if (!RubyRange.rangeBeginLength(context, arg0, value.realSize(), beglen, 2).isTrue()) {
-            throw context.runtime.newTypeError(arg0, context.runtime.getRange());
+            typeError(context, arg0, "Range");
         }
         checkBegLen(context, beglen);
 
@@ -3859,7 +3859,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         int[] beglen = new int[2];
 
         if (!RubyRange.rangeBeginLength(context, arg0, value.realSize(), beglen, 2).isTrue()) {
-            throw context.runtime.newTypeError(arg0, context.runtime.getRange());
+            typeError(context, arg0, context.runtime.getRange());
         }
         checkBegLen(context, beglen);
 
@@ -3867,7 +3867,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         int[] vbegvlen = new int[2];
         if (!RubyRange.rangeBeginLength(context, arg2, val.getByteList().realSize(), vbegvlen, 2).isTrue()) {
-            throw context.runtime.newTypeError(arg2, context.runtime.getRange());
+            typeError(context, arg2, context.runtime.getRange());
         }
         val.checkBegLen(context, vbegvlen);
 

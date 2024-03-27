@@ -208,6 +208,8 @@ import static java.lang.invoke.MethodHandles.insertArguments;
 import static java.lang.invoke.MethodType.methodType;
 import static org.jruby.RubyBoolean.FALSE_BYTES;
 import static org.jruby.RubyBoolean.TRUE_BYTES;
+import static org.jruby.api.Raise.createTypeError;
+import static org.jruby.api.Raise.createTypeErrorMessage;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.GLOBAL;
 import static org.jruby.parser.ParserType.*;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -4200,12 +4202,16 @@ public final class Ruby implements Constantizable {
         return Helpers.newIOErrorFromException(this, ex);
     }
 
+    @Deprecated
     public RaiseException newTypeError(IRubyObject receivedObject, RubyClass expectedType) {
-        return newTypeError(receivedObject, expectedType.getName());
+        ThreadContext context = getCurrentContext();
+        return createTypeError(context, createTypeErrorMessage(context, receivedObject, expectedType));
     }
 
+    @Deprecated
     public RaiseException newTypeError(IRubyObject receivedObject, RubyModule expectedType) {
-        return newTypeError(receivedObject, expectedType.getName());
+        ThreadContext context = getCurrentContext();
+        return createTypeError(context, createTypeErrorMessage(context, receivedObject, expectedType));
     }
 
     public RaiseException newTypeError(IRubyObject receivedObject, String expectedType) {

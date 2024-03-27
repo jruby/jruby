@@ -38,6 +38,8 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ArraySupport;
 
+import static org.jruby.api.Raise.typeError;
+
 @JRubyClass(name = "Enumerator::Generator")
 public class RubyGenerator extends RubyObject {
     public static RubyClass createGeneratorClass(Ruby runtime, RubyClass enumeratorModule) {
@@ -65,10 +67,7 @@ public class RubyGenerator extends RubyObject {
         if (argc == 0) {
             proc = RubyProc.newProc(runtime, block, Block.Type.PROC);
         } else {
-            if (!(args[0] instanceof RubyProc)) {
-                throw runtime.newTypeError(args[0], runtime.getProc());
-            }
-
+            if (!(args[0] instanceof RubyProc)) typeError(context, args[0], "Proc");
             proc = (RubyProc) args[0];
 
             if (block.isGiven()) {
@@ -84,9 +83,7 @@ public class RubyGenerator extends RubyObject {
     // generator_init_copy
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize_copy(ThreadContext context, IRubyObject other) {
-        if (!(other instanceof RubyGenerator)) {
-            throw context.runtime.newTypeError(other, context.runtime.getGenerator());
-        }
+        if (!(other instanceof RubyGenerator)) typeError(context, other, context.runtime.getGenerator());
 
         checkFrozen();
 

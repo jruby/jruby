@@ -3115,7 +3115,8 @@ public class Helpers {
 
     @Deprecated
     public static IRubyObject setBackref(Ruby runtime, ThreadContext context, IRubyObject value) {
-        if (!value.isNil() && !(value instanceof RubyMatchData)) throw runtime.newTypeError(value, runtime.getMatchData());
+        if (!value.isNil() && !(value instanceof RubyMatchData)) typeError(context, value, "MatchData");
+
         return context.setBackRef(value);
     }
 

@@ -1696,9 +1696,7 @@ public class JavaUtil {
         if (wrapped == null) throw new NullPointerException();
 
         Object unwrap = unwrapJava(wrapped, RubyBasicObject.NEVER);
-        if (unwrap == RubyBasicObject.NEVER) {
-            throw wrapped.getRuntime().newTypeError(wrapped, "JavaProxy");
-        }
+        if (unwrap == RubyBasicObject.NEVER) typeError(wrapped.getRuntime().getCurrentContext(), wrapped, "JavaProxy");
         return (T) unwrap;
     }
 

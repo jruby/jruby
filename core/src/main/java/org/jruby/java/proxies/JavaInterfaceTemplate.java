@@ -56,6 +56,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Raise.typeError;
+
 public class JavaInterfaceTemplate {
 
     public static RubyModule createJavaInterfaceTemplateModule(ThreadContext context) {
@@ -81,10 +83,7 @@ public class JavaInterfaceTemplate {
     // check for reserved Ruby names, conflicting methods, etc.
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public static IRubyObject implement(ThreadContext context, IRubyObject self, IRubyObject clazz) {
-        if ( ! (clazz instanceof RubyModule) ) {
-            final Ruby runtime = context.runtime;
-            throw runtime.newTypeError(clazz, runtime.getModule());
-        }
+        if (!(clazz instanceof RubyModule)) typeError(context, clazz, "Module");
 
         final RubyModule targetModule = (RubyModule) clazz;
         final IRubyObject javaClass = JavaProxy.getJavaClass((RubyModule) self);
