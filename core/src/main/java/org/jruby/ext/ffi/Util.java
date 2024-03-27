@@ -183,7 +183,7 @@ public final class Util {
     }
 
     public static ByteOrder parseByteOrder(Ruby runtime, IRubyObject byte_order) {
-        if (!(byte_order instanceof RubySymbol && byte_order instanceof RubyString)) {
+        if (!(byte_order instanceof RubySymbol) && !(byte_order instanceof RubyString)) {
             typeError(runtime.getCurrentContext(), byte_order , "Symbol or String");
         }
 
