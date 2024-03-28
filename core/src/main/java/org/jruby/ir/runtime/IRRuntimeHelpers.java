@@ -1964,7 +1964,7 @@ public class IRRuntimeHelpers {
     public static IRubyObject invokeModuleBody(ThreadContext context, DynamicMethod method) {
         RubyModule implClass = method.getImplementationClass();
 
-        return method.call(context, implClass, implClass, "", Block.NULL_BLOCK);
+        return method.call(context, implClass, implClass, null, Block.NULL_BLOCK);
     }
 
     @JIT
