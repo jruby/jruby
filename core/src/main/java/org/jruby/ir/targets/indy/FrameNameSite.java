@@ -1,6 +1,7 @@
 package org.jruby.ir.targets.indy;
 
 import com.headius.invokebinder.Binder;
+import org.jruby.RubySymbol;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -69,10 +70,10 @@ public class FrameNameSite extends MutableCallSite {
     }
 
     public static IRubyObject __callee__(ThreadContext context, String frameName) {
-        return context.runtime.newSymbol(Helpers.getCalleeNameFromCompositeName(frameName));
+        return RubySymbol.newCalleeSymbolFromCompound(context.runtime, frameName);
     }
 
     public static IRubyObject __method__(ThreadContext context, String frameName) {
-        return context.runtime.newSymbol(Helpers.getSuperNameFromCompositeName(frameName));
+        return RubySymbol.newMethodSymbolFromCompound(context.runtime, frameName);
     }
 }

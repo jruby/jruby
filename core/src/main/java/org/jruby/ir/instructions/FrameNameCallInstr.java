@@ -1,12 +1,12 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
@@ -56,10 +56,9 @@ public class FrameNameCallInstr extends NoOperandResultBaseInstr implements Fixe
             return frameNameSite.call(context, self, self);
         }
 
-        return context.runtime.newSymbol(
-                callee ?
-                        Helpers.getSuperNameFromCompositeName(compositeName) :
-                        Helpers.getCalleeNameFromCompositeName(compositeName));
+        return callee ?
+                RubySymbol.newCalleeSymbolFromCompound(context.runtime, compositeName):
+                RubySymbol.newMethodSymbolFromCompound(context.runtime, compositeName);
     }
 
     @Override

@@ -71,6 +71,9 @@ import org.jruby.util.SymbolNameType;
 import org.jruby.util.TypeConverter;
 
 import java.lang.ref.WeakReference;
+import java.util.AbstractMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.jruby.util.RubyStringBuilder.str;
@@ -344,6 +347,14 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     public static RubySymbol newHardSymbol(Ruby runtime, String name) {
         return runtime.getSymbolTable().getSymbol(name, true);
+    }
+
+    public static RubySymbol newMethodSymbolFromCompound(Ruby runtime, String compoundName) {
+        return runtime.getSymbolTable().getCompoundSymbol(compoundName).getKey();
+    }
+
+    public static RubySymbol newCalleeSymbolFromCompound(Ruby runtime, String compoundName) {
+        return runtime.getSymbolTable().getCompoundSymbol(compoundName).getValue();
     }
 
     /**
@@ -979,6 +990,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         private final ReentrantLock tableLock = new ReentrantLock();
         private volatile SymbolEntry[] symbolTable;
+        private Map<String, AbstractMap.SimpleImmutableEntry<RubySymbol, RubySymbol>> compoundSymbolTable = new ConcurrentHashMap<>();
         private int size;
         private int threshold;
         private final float loadFactor;
@@ -1091,6 +1103,21 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
             handler.accept(symbol, false);
 
             return symbol;
+        }
+
+        /**
+         * Get a pair of symbols associated with the given compound method name, used by aliases to pass both the callee
+         * name and the original method name on the stack. This avoids re-parsing the compoundName and constructing new
+         * strings every time __method__ or __callee__ are used in an aliased call.
+         *
+         * @param compoundName the compound name used for a combination of alias and method
+         * @return a Map.Entry representing the __method__ and __callee__ symbols for that compound name as key and value
+         */
+        public Map.Entry<RubySymbol, RubySymbol> getCompoundSymbol(String compoundName) {
+            return compoundSymbolTable.computeIfAbsent(compoundName, (cname) ->
+                    new AbstractMap.SimpleImmutableEntry(
+                            getSymbol(Helpers.getSuperNameFromCompositeName(cname), true),
+                            getSymbol(Helpers.getCalleeNameFromCompositeName(cname), true)));
         }
 
         private RubySymbol findSymbol(ByteList bytes, int hash, boolean hard) {
