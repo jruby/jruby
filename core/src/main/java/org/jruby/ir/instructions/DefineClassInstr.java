@@ -4,7 +4,7 @@ import org.jruby.RubyModule;
 import org.jruby.ir.IRClassBody;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.interpreter.InterpreterContext;
+import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
@@ -13,7 +13,6 @@ import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -69,39 +68,12 @@ public class DefineClassInstr extends TwoOperandResultBaseInstr implements Fixed
         Object container = getContainer().retrieve(context, self, currScope, currDynScope, temp);
         Object superClass = getSuperClass().retrieve(context, self, currScope, currDynScope, temp);
 
+        IRClassBody body = this.body;
+
         RubyModule clazz = IRRuntimeHelpers.newRubyClassFromIR(context.runtime, body.getId(), body.getStaticScope(),
                 superClass, container, body.maybeUsingRefinements());
 
-        //if (IRRuntimeHelpers.isDebug()) doDebug();
-
-        return INTERPRET_CLASS(context, clazz);
-    }
-
-    private IRubyObject INTERPRET_CLASS(ThreadContext context, RubyModule clazz) {
-        InterpreterContext ic = body.getInterpreterContext();
-        String id = body.getId();
-        boolean hasExplicitCallProtocol =  ic.hasExplicitCallProtocol();
-
-        if (!hasExplicitCallProtocol) pre(ic, context, clazz, null, clazz);
-
-        try {
-            ThreadContext.pushBacktrace(context, id, ic.getFileName(), ic.getLine());
-            return ic.getEngine().interpret(context, null, clazz, ic, clazz.getMethodLocation(), null, Block.NULL_BLOCK);
-        } finally {
-            body.cleanupAfterExecution();
-            if (!hasExplicitCallProtocol) post(ic, context);
-            ThreadContext.popBacktrace(context);
-        }
-    }
-
-    private void post(InterpreterContext ic, ThreadContext context) {
-        context.popFrame();
-        if (ic.popDynScope()) context.popScope();
-    }
-
-    private void pre(InterpreterContext ic, ThreadContext context, IRubyObject self, String name, RubyModule implClass) {
-        context.preMethodFrameOnly(implClass, name, self);
-        if (ic.pushNewDynScope()) context.pushScope(DynamicScope.newDynamicScope(ic.getStaticScope()));
+        return Interpreter.INTERPRET_CLASS(context, body, clazz);
     }
 
     @Override

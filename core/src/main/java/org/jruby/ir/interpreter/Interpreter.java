@@ -8,6 +8,8 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.ir.IRManager;
+import org.jruby.ir.IRMethod;
+import org.jruby.ir.IRModuleBody;
 import org.jruby.ir.builder.IRBuilder;
 import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRScope;
@@ -22,12 +24,15 @@ import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Frame;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+
+import static org.jruby.runtime.Helpers.arrayOf;
 
 public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     public static final Logger LOG = LoggerFactory.getLogger(Interpreter.class);
@@ -118,6 +123,83 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             return ic.getEngine().interpret(context, block, self, ic, null, name, args, blockArg);
         } finally {
             ThreadContext.popBacktrace(context);
+        }
+    }
+
+    public static IRubyObject INTERPRET_CLASS(ThreadContext context, IRScope body, RubyModule clazz) {
+        return interpretFrameScope(context, null, body, clazz, null, Visibility.PUBLIC, clazz, null, null, Block.NULL_BLOCK);
+    }
+
+    public static IRubyObject INTERPRET_MODULE(ThreadContext context, IRScope body, RubyModule clazz) {
+        return interpretFrameScope(context, null, body, clazz, null, Visibility.PUBLIC, clazz, null, null, Block.NULL_BLOCK);
+    }
+
+    public static IRubyObject INTERPRET_METACLASS(ThreadContext context, IRScope body, RubyModule clazz, Visibility visibility) {
+        return interpretFrameScope(context, null, body, clazz, context.getCurrentScope(), visibility, clazz, null, null, Block.NULL_BLOCK);
+    }
+
+    public static IRubyObject INTERPRET_METHOD(ThreadContext context, IRScope body, RubyModule implClass,
+                                               IRubyObject self, String name, IRubyObject[] args, Block block) {
+        return interpretFrameScope(context, null, body, implClass, null, Visibility.PUBLIC, self, name, args, block);
+    }
+
+    public static IRubyObject INTERPRET_METHOD(ThreadContext context, IRScope body, RubyModule implClass,
+                                               IRubyObject self, String name, Block block) {
+        return interpretFrameScope(context, null, body, implClass, null, Visibility.PUBLIC, self, name, IRubyObject.NULL_ARRAY, block);
+    }
+
+    public static IRubyObject INTERPRET_METHOD(ThreadContext context, IRScope body, RubyModule implClass,
+                                               IRubyObject self, String name, IRubyObject arg0, Block block) {
+        return interpretFrameScope(context, null, body, implClass, null, Visibility.PUBLIC, self, name, arrayOf(arg0), block);
+    }
+
+    public static IRubyObject INTERPRET_METHOD(ThreadContext context, IRScope body, RubyModule implClass,
+                                               IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+        return interpretFrameScope(context, null, body, implClass, null, Visibility.PUBLIC, self, name, arrayOf(arg0, arg1), block);
+    }
+
+    public static IRubyObject INTERPRET_METHOD(ThreadContext context, IRScope body, RubyModule implClass,
+                                               IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        return interpretFrameScope(context, null, body, implClass, null, Visibility.PUBLIC, self, name, arrayOf(arg0, arg1, arg2), block);
+    }
+
+    private static IRubyObject interpretFrameScope(ThreadContext context, Block selfBlock, IRScope body, RubyModule clazz, DynamicScope parentScope, Visibility visibility, IRubyObject self, String name, IRubyObject[] args, Block block) {
+        InterpreterContext ic = body.getInterpreterContext();
+        String id = body.getId();
+        boolean hasExplicitCallProtocol =  ic.hasExplicitCallProtocol();
+
+        try {
+            ThreadContext.pushBacktrace(context, id, ic.getFileName(), ic.getLine());
+
+            if (!hasExplicitCallProtocol) preFrameScope(ic, context, self, name, block, clazz, parentScope, visibility);
+
+            try {
+                return ic.getEngine().interpret(context, selfBlock, self, ic, clazz, name, args, block);
+            } finally {
+                body.cleanupAfterExecution();
+                if (!hasExplicitCallProtocol) postFrameScope(ic, context);
+            }
+        } finally {
+            ThreadContext.popBacktrace(context);
+        }
+    }
+
+    public static void postFrameScope(InterpreterContext ic, ThreadContext context) {
+        context.popFrame();
+        if (ic.popDynScope()) context.popScope();
+    }
+
+    public static void preFrameScope(InterpreterContext ic, ThreadContext context, IRubyObject self, String name, Block block, RubyModule implClass, DynamicScope parentScope, Visibility visibility) {
+        context.preMethodFrameOnly(implClass, name, self, visibility, block);
+        if (ic.pushNewDynScope()) {
+            if (parentScope == null) {
+                context.pushScope(DynamicScope.newDynamicScope(ic.getStaticScope()));
+            } else {
+                // Add a parent-link to current dynscope to support non-local returns cheaply
+                // This doesn't affect variable scoping since local variables will all have
+                // the right scope depth. Only used by metaclass bodies.
+                context.pushScope(DynamicScope.newDynamicScope(ic.getStaticScope(), context.getCurrentScope()));
+            }
         }
     }
 
