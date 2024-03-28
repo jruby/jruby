@@ -2486,6 +2486,19 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     public Operand buildVCall(Variable result, VCallNode node) {
+        if (result == null) result = temp();
+
+        RubySymbol name = methodName = node.getName();
+
+        // special case methods with frame handling
+        String callName = name.idString();
+        switch (callName) {
+            case "__method__":
+            case "__callee__":
+                addInstr(new FrameNameCallInstr(result, callName));
+                return result;
+        }
+
         return _call(result, VARIABLE, buildSelf(), node.getName());
     }
 

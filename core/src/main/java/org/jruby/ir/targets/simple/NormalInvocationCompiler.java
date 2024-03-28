@@ -495,7 +495,13 @@ public class NormalInvocationCompiler implements InvocationCompiler {
 
     @Override
     public void invokeBlockGiven(String methodName, String file) {
-        // direct block_given? calls always use indy
+        // direct block_given? and iterator? calls always use indy
         IndyInvocationCompiler.invokeBlockGiven(compiler, methodName, file);
+    }
+
+    @Override
+    public void invokeFrameName(String methodName, String file) {
+        // direct __method__ and __callee__ calls always use indy
+        IndyInvocationCompiler.invokeFrameName(compiler, methodName, file);
     }
 }

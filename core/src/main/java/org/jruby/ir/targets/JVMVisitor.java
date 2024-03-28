@@ -1651,6 +1651,12 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void FrameNameCallInstr(FrameNameCallInstr framenamecallinstr) {
+        jvmMethod().getInvocationCompiler().invokeFrameName(framenamecallinstr.getMethodName(), file);
+        handleCallResult(jvmMethod(), framenamecallinstr.getResult());
+    }
+
+    @Override
     public void GetClassVarContainerModuleInstr(GetClassVarContainerModuleInstr getclassvarcontainermoduleinstr) {
         jvmMethod().loadContext();
         visit(getclassvarcontainermoduleinstr.getStartingScope());

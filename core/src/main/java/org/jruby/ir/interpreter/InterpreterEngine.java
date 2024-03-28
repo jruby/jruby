@@ -11,6 +11,7 @@ import org.jruby.ir.instructions.BreakInstr;
 import org.jruby.ir.instructions.CheckArityInstr;
 import org.jruby.ir.instructions.CheckForLJEInstr;
 import org.jruby.ir.instructions.CopyInstr;
+import org.jruby.ir.instructions.FrameNameCallInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LineNumberInstr;
@@ -150,7 +151,7 @@ public class InterpreterEngine {
                         break;
                     case CALL_OP:
                         if (profile) Profiler.updateCallSite(instr, interpreterContext.getScope(), scopeVersion);
-                        processCall(context, instr, operation, currDynScope, currScope, temp, self);
+                        processCall(context, instr, operation, currDynScope, currScope, temp, self, name);
                         break;
                     case RET_OP:
                         return processReturnOp(context, block, instr, operation, currDynScope, temp, self, currScope);
@@ -286,7 +287,7 @@ public class InterpreterEngine {
         }
     }
 
-    protected static void processCall(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope, StaticScope currScope, Object[] temp, IRubyObject self) {
+    protected static void processCall(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope, StaticScope currScope, Object[] temp, IRubyObject self, String name) {
         Object result;
 
         switch(operation) {
@@ -357,6 +358,9 @@ public class InterpreterEngine {
             }
             case NORESULT_CALL:
                 instr.interpret(context, currScope, currDynScope, self, temp);
+                break;
+            case FRAME_NAME_CALL:
+                setResult(temp, currDynScope, instr, ((FrameNameCallInstr) instr).getFrameName(context, self, name));
                 break;
             case CALL:
             default:
