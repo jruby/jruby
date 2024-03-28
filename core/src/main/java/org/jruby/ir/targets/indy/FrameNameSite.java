@@ -30,6 +30,7 @@ import static org.jruby.util.CodegenUtils.sig;
 public class FrameNameSite extends MutableCallSite {
     private final String file;
     private final int line;
+    private RubySymbol methodCached;
 
     public FrameNameSite(MethodType type, String file, int line) {
         super(type);
@@ -56,8 +57,10 @@ public class FrameNameSite extends MutableCallSite {
 
         if (entry.method.isBuiltin()) {
             target = Binder.from(type())
-                    .permute(0, 2)
-                    .invokeStaticQuiet(FrameNameSite.class, methodName);
+                    .permute(2)
+                    .append(context.runtime.getSymbolTable())
+                    .prepend(this)
+                    .invokeVirtualQuiet(methodName);
         } else {
             target = Binder.from(type())
                     .permute(0, 1)
@@ -69,11 +72,28 @@ public class FrameNameSite extends MutableCallSite {
         return (IRubyObject) target.invokeExact(context, self, frameName);
     }
 
-    public static IRubyObject __callee__(ThreadContext context, String frameName) {
-        return RubySymbol.newCalleeSymbolFromCompound(context.runtime, frameName);
+    public IRubyObject __callee__(String frameName, RubySymbol.SymbolTable symbolTable) {
+        if (frameName.charAt(0) != '\0') {
+            return getSimpleName(frameName, symbolTable);
+        }
+        return symbolTable.getCalleeSymbolFromCompound(frameName);
     }
 
-    public static IRubyObject __method__(ThreadContext context, String frameName) {
-        return RubySymbol.newMethodSymbolFromCompound(context.runtime, frameName);
+    public IRubyObject __method__(String frameName, RubySymbol.SymbolTable symbolTable) {
+        if (frameName.charAt(0) != '\0') {
+            return getSimpleName(frameName, symbolTable);
+        }
+        return symbolTable.getMethodSymbolFromCompound(frameName);
+    }
+
+    private RubySymbol getSimpleName(String frameName, RubySymbol.SymbolTable symbolTable) {
+        // simple name, use cached version
+        RubySymbol simpleName = methodCached;
+        if (simpleName == null || !frameName.equals(simpleName.idString())) {
+            // cache the name symbol
+            return methodCached = symbolTable.getSymbol(frameName, true);
+        }
+
+        return simpleName;
     }
 }
