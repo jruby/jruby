@@ -133,4 +133,9 @@ public interface InvocationCompiler {
      * Invoke block_given? or iterator? with awareness of any built-in methods.
      */
     void invokeBlockGiven(String methodName, String file);
+
+    /**
+     * Invoke __method__ or __callee__ with awareness of any built-in methods.
+     */
+    void invokeFrameName(String methodName, String file);
 }

@@ -233,4 +233,17 @@ public class IndyInvocationCompiler implements InvocationCompiler {
         compiler.loadBlock();
         compiler.adapter.invokedynamic(IndyInvocationCompiler.constructIndyCallName("callFunctional", methodName), sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, Block.class), BlockGivenSite.BLOCK_GIVEN_BOOTSTRAP, file, compiler.getLastLine());
     }
+
+    @Override
+    public void invokeFrameName(String methodName, String file) {
+        invokeFrameName(compiler, methodName, file);
+    }
+
+    // shared with normal for now
+    public static void invokeFrameName(IRBytecodeAdapter compiler, String methodName, String file) {
+        compiler.loadContext();
+        compiler.loadSelf();
+        compiler.loadFrameName();
+        compiler.adapter.invokedynamic(IndyInvocationCompiler.constructIndyCallName("callVariable", methodName), sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class), FrameNameSite.FRAME_NAME_BOOTSTRAP, file, compiler.getLastLine());
+    }
 }

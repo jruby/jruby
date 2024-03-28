@@ -84,6 +84,7 @@ public enum Operation {
     CALL_0O(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     NORESULT_CALL_1O(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     BLOCK_GIVEN_CALL(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
+    FRAME_NAME_CALL(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
 
     /** Ruby operators: should all these be calls? Implementing instrs don't inherit from CallBase.java */
     EQQ(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception), // a === call used in when
