@@ -332,7 +332,7 @@ public class IRBytecodeAdapter {
             loadSelfBlock();
             adapter.invokestatic(p(IRRuntimeHelpers.class), "getFrameBlockFromBlock", sig(Block.class, Block.class));
         } else {
-            adapter.aload(superNameOffset);
+            loadBlock();
         }
     }
 
