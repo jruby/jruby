@@ -2668,4 +2668,9 @@ public class IRRuntimeHelpers {
         // FIXME: binding.getMethod does not appear to be the right name in defined_method bodies... WHY?
         return block.getBinding().getFrame().getName();
     }
+
+    @Interp @JIT
+    public static Block getFrameBlockFromBlock(Block block) {
+        return block.getBinding().getFrame().getBlock();
+    }
 }
