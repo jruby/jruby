@@ -2662,4 +2662,10 @@ public class IRRuntimeHelpers {
     public static int arrayLength(RubyArray array) {
         return array.getLength();
     }
+
+    @Interp @JIT
+    public static String getFrameNameFromBlock(Block block) {
+        // FIXME: binding.getMethod does not appear to be the right name in defined_method bodies... WHY?
+        return block.getBinding().getFrame().getName();
+    }
 }

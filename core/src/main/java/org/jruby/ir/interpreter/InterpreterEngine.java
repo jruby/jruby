@@ -360,7 +360,9 @@ public class InterpreterEngine {
                 instr.interpret(context, currScope, currDynScope, self, temp);
                 break;
             case FRAME_NAME_CALL:
-                setResult(temp, currDynScope, instr, ((FrameNameCallInstr) instr).getFrameName(context, self, selfBlock == null ? frameName : selfBlock.getBinding().getFrame().getName()));
+                setResult(temp, currDynScope, instr,
+                        ((FrameNameCallInstr) instr).getFrameName(
+                                context, self, selfBlock == null ? frameName : IRRuntimeHelpers.getFrameNameFromBlock(selfBlock)));
                 break;
             case CALL:
             default:
