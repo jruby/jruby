@@ -295,6 +295,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case EQQ: return EQQInstr.decode(this);
             case EXC_REGION_END: return new ExceptionRegionEndMarkerInstr();
             case EXC_REGION_START: return ExceptionRegionStartMarkerInstr.decode(this);
+            case FRAME_NAME_CALL: return FrameNameCallInstr.decode(this);
             case GET_CVAR: return GetClassVariableInstr.decode(this);
             case GET_ENCODING: return GetEncodingInstr.decode(this);
             case GET_ERROR_INFO: return GetErrorInfoInstr.decode(this);

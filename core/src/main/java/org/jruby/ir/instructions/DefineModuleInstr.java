@@ -77,7 +77,7 @@ public class DefineModuleInstr extends OneOperandResultBaseInstr implements Fixe
 
         try {
             ThreadContext.pushBacktrace(context, id, ic.getFileName(), ic.getLine());
-            return ic.getEngine().interpret(context, null, clazz, ic, clazz.getMethodLocation(), id, Block.NULL_BLOCK);
+            return ic.getEngine().interpret(context, null, clazz, ic, clazz.getMethodLocation(), null, Block.NULL_BLOCK);
         } finally {
             body.cleanupAfterExecution();
             if (!hasExplicitCallProtocol) post(ic, context);

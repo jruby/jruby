@@ -71,6 +71,9 @@ import org.jruby.util.SymbolNameType;
 import org.jruby.util.TypeConverter;
 
 import java.lang.ref.WeakReference;
+import java.util.AbstractMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.jruby.util.RubyStringBuilder.str;
@@ -344,6 +347,14 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     public static RubySymbol newHardSymbol(Ruby runtime, String name) {
         return runtime.getSymbolTable().getSymbol(name, true);
+    }
+
+    public static RubySymbol newMethodSymbolFromCompound(Ruby runtime, String compoundName) {
+        return runtime.getSymbolTable().getMethodSymbolFromCompound(compoundName);
+    }
+
+    public static RubySymbol newCalleeSymbolFromCompound(Ruby runtime, String compoundName) {
+        return runtime.getSymbolTable().getCalleeSymbolFromCompound(compoundName);
     }
 
     /**
@@ -979,6 +990,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         private final ReentrantLock tableLock = new ReentrantLock();
         private volatile SymbolEntry[] symbolTable;
+        private Map<String, CompoundSymbol> compoundSymbolTable = new ConcurrentHashMap<>();
         private int size;
         private int threshold;
         private final float loadFactor;
@@ -1092,6 +1104,46 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
             return symbol;
         }
+
+        /**
+         * Get the method name symbol from a compound name.
+         *
+         * @see #getCompoundSymbol(String)
+         * @param compoundName the compound name
+         * @return the method component of the compound name, as a symbol
+         */
+        public RubySymbol getMethodSymbolFromCompound(String compoundName) {
+            return getCompoundSymbol(compoundName).method;
+        }
+
+
+        /**
+         * Get the callee name symbol from a compound name.
+         *
+         * @see #getCompoundSymbol(String)
+         * @param compoundName the compound name
+         * @return the callee component of the compound name, as a symbol
+         */
+        public RubySymbol getCalleeSymbolFromCompound(String compoundName) {
+            return getCompoundSymbol(compoundName).callee;
+        }
+
+        /**
+         * Get a pair of symbols associated with the given compound method name, used by aliases to pass both the callee
+         * name and the original method name on the stack. This avoids re-parsing the compoundName and constructing new
+         * strings every time __method__ or __callee__ are used in an aliased call.
+         *
+         * @param compoundName the compound name used for a combination of alias and method
+         * @return a Map.Entry representing the __method__ and __callee__ symbols for that compound name as key and value
+         */
+        private CompoundSymbol getCompoundSymbol(String compoundName) {
+            return compoundSymbolTable.computeIfAbsent(compoundName, (cname) ->
+                    new CompoundSymbol(
+                            getSymbol(Helpers.getSuperNameFromCompositeName(cname), true),
+                            getSymbol(Helpers.getCalleeNameFromCompositeName(cname), true)));
+        }
+
+        private record CompoundSymbol(RubySymbol method, RubySymbol callee){}
 
         private RubySymbol findSymbol(ByteList bytes, int hash, boolean hard) {
             RubySymbol symbol = null;

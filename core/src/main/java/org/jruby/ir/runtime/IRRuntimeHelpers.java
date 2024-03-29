@@ -1964,7 +1964,7 @@ public class IRRuntimeHelpers {
     public static IRubyObject invokeModuleBody(ThreadContext context, DynamicMethod method) {
         RubyModule implClass = method.getImplementationClass();
 
-        return method.call(context, implClass, implClass, "", Block.NULL_BLOCK);
+        return method.call(context, implClass, implClass, null, Block.NULL_BLOCK);
     }
 
     @JIT
@@ -2661,5 +2661,11 @@ public class IRRuntimeHelpers {
     @Interp @JIT
     public static int arrayLength(RubyArray array) {
         return array.getLength();
+    }
+
+    @Interp @JIT
+    public static String getFrameNameFromBlock(Block block) {
+        // FIXME: binding.getMethod does not appear to be the right name in defined_method bodies... WHY?
+        return block.getBinding().getFrame().getName();
     }
 }
