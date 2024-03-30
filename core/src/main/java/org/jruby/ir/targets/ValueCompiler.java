@@ -73,6 +73,13 @@ public interface ValueCompiler {
     /**
      * Stack required: none
      *
+     * @param bl ByteList for the String to push
+     */
+    void pushFrozenString(ByteList bl, int cr);
+
+    /**
+     * Stack required: none
+     *
      * @param bl ByteList to push
      */
     void pushByteList(ByteList bl);

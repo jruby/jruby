@@ -120,6 +120,12 @@ public class NormalValueCompiler implements ValueCompiler {
         compiler.invokeIRHelper("newFrozenStringFromRaw", sig(RubyString.class, ThreadContext.class, String.class, String.class, int.class, String.class, int.class));
     }
 
+    public void pushFrozenString(final ByteList bl, final int cr) {
+        cacheValuePermanentlyLoadContext("fstring", RubyString.class, keyFor("fstring", bl), () -> {
+            pushFrozenStringUncached(bl, cr);
+        });
+    }
+
     private void pushFrozenStringUncached(ByteList bl, int cr) {
         compiler.loadContext();
         compiler.adapter.ldc(bl.toString());
