@@ -158,7 +158,7 @@ public class StringBootstrap {
         return new ByteList(size, encoding);
     }
 
-    private static Encoding encodingFromName(String encodingName) {
+    public static Encoding encodingFromName(String encodingName) {
         Encoding encoding;
         EncodingDB.Entry entry = EncodingDB.getEncodings().get(encodingName.getBytes());
         if (entry == null) entry = EncodingDB.getAliases().get(encodingName.getBytes());
