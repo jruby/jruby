@@ -106,6 +106,16 @@ public class IndyValueCompiler implements ValueCompiler {
         compiler.adapter.invokedynamic("range", sig(RubyRange.class, ThreadContext.class, IRubyObject.class, IRubyObject.class), RangeObjectSite.BOOTSTRAP, exclusive ? 1 : 0);
     }
 
+    public void pushRange(long begin, long end, boolean exclusive) {
+        compiler.loadContext();
+        compiler.adapter.invokedynamic("range", sig(RubyRange.class, ThreadContext.class), RangeObjectSite.BOOTSTRAP_LONG_LONG, begin, end, exclusive ? 1 : 0);
+    }
+
+    public void pushRange(ByteList begin, int beginCR, ByteList end, int endCR, boolean exclusive) {
+        compiler.loadContext();
+        compiler.adapter.invokedynamic("range", sig(RubyRange.class, ThreadContext.class), RangeObjectSite.BOOTSTRAP_STRING_STRING, RubyEncoding.decodeRaw(begin), begin.getEncoding().toString(), beginCR, RubyEncoding.decodeRaw(end), end.getEncoding().toString(), endCR, exclusive ? 1 : 0);
+    }
+
     public void pushRegexp(ByteList source, int options) {
         compiler.loadContext();
         compiler.adapter.invokedynamic("regexp", sig(RubyRegexp.class, ThreadContext.class), RegexpObjectSite.BOOTSTRAP, RubyEncoding.decodeRaw(source), source.getEncoding().toString(), options);

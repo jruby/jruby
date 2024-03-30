@@ -2914,10 +2914,18 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Range(Range range) {
-        jvmMethod().getValueCompiler().pushRange(
-                () -> visit(range.getBegin()),
-                () -> visit(range.getEnd()),
-                range.isExclusive());
+        if (range.getBegin() instanceof Fixnum && range.getEnd() instanceof Fixnum) {
+            jvmMethod().getValueCompiler().pushRange(
+                    ((Fixnum) range.getBegin()).getValue(), ((Fixnum) range.getEnd()).getValue(), range.isExclusive());
+        } else if (range.getBegin() instanceof StringLiteral begin && range.getEnd() instanceof StringLiteral end) {
+            jvmMethod().getValueCompiler().pushRange(
+                    begin.getByteList(), begin.getCodeRange(), end.getByteList(), end.getCodeRange(), range.isExclusive());
+        } else {
+            jvmMethod().getValueCompiler().pushRange(
+                    () -> visit(range.getBegin()),
+                    () -> visit(range.getEnd()),
+                    range.isExclusive());
+        }
     }
 
     @Override
