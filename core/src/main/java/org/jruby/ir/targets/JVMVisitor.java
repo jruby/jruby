@@ -1183,16 +1183,10 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().getValueCompiler().pushBufferString(compoundstring.getEncoding(), compoundstring.getInitialSize());
 
         for (Operand p : pieces) {
-            if (p instanceof FrozenString) {
-                // we have bytelist and CR in hand, go straight to cat logic
-                FrozenString str = (FrozenString) p;
+            if (p instanceof StringLiteral str) {
+                // treat all string literal parts of dstring as frozen so they only alloc once
                 jvmMethod().getValueCompiler().pushFrozenString(str.getByteList(), str.getCodeRange());
                 jvmAdapter().invokevirtual(p(RubyString.class), "catWithCodeRange", sig(RubyString.class, RubyString.class));
-            } else if (p instanceof StringLiteral) {
-                StringLiteral str = (StringLiteral) p;
-                jvmMethod().getValueCompiler().pushByteList(str.getByteList());
-                jvmAdapter().pushInt(str.getCodeRange());
-                jvmAdapter().invokevirtual(p(RubyString.class), "cat", sig(RubyString.class, ByteList.class, int.class));
             } else {
                 visit(p);
                 jvmAdapter().invokevirtual(p(RubyString.class), "appendAsDynamicString", sig(RubyString.class, IRubyObject.class));
