@@ -72,8 +72,8 @@ public final class StringSupport {
     public static final int CR_UNKNOWN   = 0;
 
     // We hardcode these so they can be used in a switch below. The assert verifies they match FlagRegistry's value.
-    public static final int CR_7BIT      = 16;
-    public static final int CR_VALID     = 32;
+    public static final int CR_7BIT      = 8;
+    public static final int CR_VALID     = 16;
     static {
         assert CR_7BIT == CR_7BIT_F : "CR_7BIT = " + CR_7BIT + " but should be " + CR_7BIT_F;
         assert CR_VALID == CR_VALID_F : "CR_VALID = " + CR_VALID + " but should be " + CR_VALID_F;
