@@ -4874,6 +4874,7 @@ public final class Ruby implements Constantizable {
 
             // Never use incoming value as key
             deduped = string.strDup(this);
+            deduped.setFlag(ObjectFlags.FSTRING, true);
             deduped.setFrozen(true);
 
             final WeakReference<RubyString> weakref = new WeakReference<>(deduped);

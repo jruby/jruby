@@ -22,6 +22,7 @@ public interface ObjectFlags {
 
     int CR_7BIT_F    = registry.newFlag(RubyString.class);
     int CR_VALID_F   = registry.newFlag(RubyString.class);
+    int FSTRING      = registry.newFlag(RubyString.class);
 
     int MATCH_BUSY = registry.newFlag(RubyMatchData.class);
 
