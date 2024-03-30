@@ -1638,6 +1638,11 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
+    public static RubyString newFrozenStringFromRaw(ThreadContext context, String str, String encoding, int cr) {
+        return newFrozenString(context, newByteListFromRaw(context.runtime, str, encoding), cr);
+    }
+
+    @JIT
     public static final ByteList newByteListFromRaw(Ruby runtime, String str, String encoding) {
         return new ByteList(RubyEncoding.encodeISO(str), runtime.getEncodingService().getEncodingFromString(encoding), false);
     }
@@ -2457,6 +2462,12 @@ public class IRRuntimeHelpers {
         if (runtime.getInstanceConfig().isDebuggingFrozenStringLiteral()) {
             return RubyString.newDebugFrozenString(runtime, runtime.getString(), bytelist, coderange, file, line + 1);
         }
+
+        return runtime.freezeAndDedupString(RubyString.newString(runtime, bytelist, coderange));
+    }
+
+    public static RubyString newFrozenString(ThreadContext context, ByteList bytelist, int coderange) {
+        Ruby runtime = context.runtime;
 
         return runtime.freezeAndDedupString(RubyString.newString(runtime, bytelist, coderange));
     }

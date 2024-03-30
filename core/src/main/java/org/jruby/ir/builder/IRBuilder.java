@@ -7,6 +7,7 @@ import org.jruby.ParseResult;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
 import org.jruby.ast.IterNode;
+import org.jruby.ast.StrNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.ext.coverage.CoverageData;
 import org.jruby.ir.IRClassBody;
@@ -2371,8 +2372,21 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     protected Operand buildRange(U beginNode, U endNode, boolean isExclusive) {
-        Operand begin = build(beginNode);
-        Operand end = build(endNode);
+        Operand begin;
+        Operand end;
+
+        // string ranges should have frozen begin and end
+        if (beginNode instanceof StrNode beginString) {
+            begin = new FrozenString(beginString.getValue(), beginString.getCodeRange(), beginString.getFile(), beginString.getLine());
+        } else {
+            begin = build(beginNode);
+        }
+
+        if (endNode instanceof StrNode endString) {
+            end = new FrozenString(endString.getValue(), endString.getCodeRange(), endString.getFile(), endString.getLine());
+        } else {
+            end = build(endNode);
+        }
 
         if (begin instanceof ImmutableLiteral && end instanceof ImmutableLiteral) {
             // endpoints are free of side effects, cache the range after creation

@@ -89,6 +89,28 @@ public interface ValueCompiler {
     void pushRange(Runnable begin, Runnable end, boolean exclusive);
 
     /**
+     * Build and save a literal fixnum..fixnum range.
+     * <p>
+     * Stack required: context
+     *
+     * @param begin begin value
+     * @param end end value
+     * @param exclusive whether this is an exclusive range
+     */
+    void pushRange(long begin, long end, boolean exclusive);
+
+    /**
+     * Build and save a literal string..string range.
+     * <p>
+     * Stack required: context
+     *
+     * @param begin begin value
+     * @param end end value
+     * @param exclusive whether this is an exclusive range
+     */
+    void pushRange(ByteList begin, int beginCR, ByteList end, int endCR, boolean exclusive);
+
+    /**
      * Build and save a literal regular expression.
      * <p>
      * Stack required: none

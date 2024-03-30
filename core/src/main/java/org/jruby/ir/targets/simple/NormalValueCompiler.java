@@ -106,14 +106,26 @@ public class NormalValueCompiler implements ValueCompiler {
 
     public void pushFrozenString(final ByteList bl, final int cr, final String file, final int line) {
         cacheValuePermanentlyLoadContext("fstring", RubyString.class, keyFor("fstring", bl), () -> {
-            compiler.loadContext();
-            compiler.adapter.ldc(bl.toString());
-            compiler.adapter.ldc(bl.getEncoding().toString());
-            compiler.adapter.ldc(cr);
-            compiler.adapter.ldc(file);
-            compiler.adapter.ldc(line);
-            compiler.invokeIRHelper("newFrozenStringFromRaw", sig(RubyString.class, ThreadContext.class, String.class, String.class, int.class, String.class, int.class));
+            pushFrozenStringUncached(bl, cr, file, line);
         });
+    }
+
+    private void pushFrozenStringUncached(ByteList bl, int cr, String file, int line) {
+        compiler.loadContext();
+        compiler.adapter.ldc(bl.toString());
+        compiler.adapter.ldc(bl.getEncoding().toString());
+        compiler.adapter.ldc(cr);
+        compiler.adapter.ldc(file);
+        compiler.adapter.ldc(line);
+        compiler.invokeIRHelper("newFrozenStringFromRaw", sig(RubyString.class, ThreadContext.class, String.class, String.class, int.class, String.class, int.class));
+    }
+
+    private void pushFrozenStringUncached(ByteList bl, int cr) {
+        compiler.loadContext();
+        compiler.adapter.ldc(bl.toString());
+        compiler.adapter.ldc(bl.getEncoding().toString());
+        compiler.adapter.ldc(cr);
+        compiler.invokeIRHelper("newFrozenStringFromRaw", sig(RubyString.class, ThreadContext.class, String.class, String.class, int.class));
     }
 
     public void pushEmptyString(Encoding encoding) {
@@ -143,8 +155,37 @@ public class NormalValueCompiler implements ValueCompiler {
             compiler.loadContext();
             begin.run();
             end.run();
-            compiler.adapter.pushBoolean(exclusive);
-            compiler.adapter.invokestatic(p(RubyRange.class), "newRange", sig(RubyRange.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, boolean.class));
+            if (exclusive) {
+                compiler.adapter.invokestatic(p(RubyRange.class), "newRange", sig(RubyRange.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
+            } else {
+                compiler.adapter.invokestatic(p(RubyRange.class), "newRange", sig(RubyRange.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
+            }
+        });
+    }
+
+    public void pushRange(long begin, long end, boolean exclusive) {
+        cacheValuePermanentlyLoadContext("range", RubyRange.class, null, () -> {
+            compiler.loadContext();
+            compiler.adapter.ldc(begin);
+            compiler.adapter.ldc(end);
+            if (exclusive) {
+                compiler.adapter.invokestatic(p(RubyRange.class), "newExclusiveRange", sig(RubyRange.class, ThreadContext.class, long.class, long.class));
+            } else {
+                compiler.adapter.invokestatic(p(RubyRange.class), "newInclusiveRange", sig(RubyRange.class, ThreadContext.class, long.class, long.class));
+            }
+        });
+    }
+
+    public void pushRange(ByteList begin, int beginCR, ByteList end, int endCR, boolean exclusive) {
+        cacheValuePermanentlyLoadContext("range", RubyRange.class, null, () -> {
+            compiler.loadContext();
+            pushFrozenStringUncached(begin, beginCR);
+            pushFrozenStringUncached(end, endCR);
+            if (exclusive) {
+                compiler.adapter.invokestatic(p(RubyRange.class), "newExclusiveRange", sig(RubyRange.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
+            } else {
+                compiler.adapter.invokestatic(p(RubyRange.class), "newInclusiveRange", sig(RubyRange.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
+            }
         });
     }
 
