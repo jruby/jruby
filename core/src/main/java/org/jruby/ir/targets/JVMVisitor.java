@@ -49,6 +49,8 @@ import org.jruby.ir.persistence.IRDumper;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.targets.IRBytecodeAdapter.BlockPassType;
+import org.jruby.ir.targets.ValueCompiler.DStringElement;
+import org.jruby.ir.targets.ValueCompiler.DStringElementType;
 import org.jruby.ir.targets.indy.CallTraceSite;
 import org.jruby.ir.targets.indy.CoverageSite;
 import org.jruby.ir.targets.indy.MetaClassBootstrap;
@@ -63,7 +65,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.DynamicScopeGenerator;
-import org.jruby.util.ByteList;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.KeyValuePair;
@@ -79,6 +80,7 @@ import org.objectweb.asm.commons.Method;
 
 import java.io.ByteArrayOutputStream;
 import java.lang.invoke.MethodType;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -1178,30 +1180,24 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void BuildCompoundStringInstr(BuildCompoundStringInstr compoundstring) {
-        Operand[] pieces = compoundstring.getPieces();
-
-        jvmMethod().getValueCompiler().pushBufferString(compoundstring.getEncoding(), compoundstring.getInitialSize());
-
-        for (Operand p : pieces) {
+        List<DStringElement> dstringElements = new ArrayList<>();
+        for (Operand p : compoundstring.getPieces()) {
             if (p instanceof StringLiteral str) {
-                // treat all string literal parts of dstring as frozen so they only alloc once
-                jvmMethod().getValueCompiler().pushFrozenString(str.getByteList(), str.getCodeRange());
-                jvmAdapter().invokevirtual(p(RubyString.class), "catWithCodeRange", sig(RubyString.class, RubyString.class));
+                dstringElements.add(new DStringElement(DStringElementType.STRING, p));
             } else {
-                visit(p);
-                jvmAdapter().invokevirtual(p(RubyString.class), "appendAsDynamicString", sig(RubyString.class, IRubyObject.class));
+                dstringElements.add(new DStringElement(DStringElementType.OTHER, (Runnable) () -> visit(p)));
             }
         }
-        if (compoundstring.isFrozen()) {
-            if (runtime.getInstanceConfig().isDebuggingFrozenStringLiteral()) {
-                jvmMethod().loadContext();
-                jvmAdapter().ldc(compoundstring.getFile());
-                jvmAdapter().ldc(compoundstring.getLine());
-                jvmMethod().invokeIRHelper("freezeLiteralString", sig(RubyString.class, RubyString.class, ThreadContext.class, String.class, int.class));
-            } else {
-                jvmMethod().invokeIRHelper("freezeLiteralString", sig(RubyString.class, RubyString.class));
-            }
-        }
+
+        jvmMethod().getValueCompiler().buildDynamicString(
+                compoundstring.getEncoding(),
+                compoundstring.getInitialSize(),
+                compoundstring.isFrozen(),
+                runtime.getInstanceConfig().isDebuggingFrozenStringLiteral(),
+                compoundstring.getFile(),
+                compoundstring.getLine(),
+                dstringElements);
+
         jvmStoreLocal(compoundstring.getResult());
     }
 

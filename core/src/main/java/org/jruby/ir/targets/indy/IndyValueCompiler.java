@@ -24,6 +24,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
 
 import java.math.BigInteger;
+import java.util.List;
 
 import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.p;
@@ -98,6 +99,10 @@ public class IndyValueCompiler implements ValueCompiler {
     public void pushBufferString(Encoding encoding, int size) {
         compiler.loadContext();
         compiler.adapter.invokedynamic("bufferString", sig(RubyString.class, ThreadContext.class), StringBootstrap.BUFFER_STRING_BOOTSTRAP, encoding.toString(), size);
+    }
+
+    public void buildDynamicString(Encoding encoding, int size, boolean frozen, boolean debugFrozen, String file, int line, List<DStringElement> elements) {
+        normalValueCompiler.buildDynamicString(encoding, size, frozen, debugFrozen, file, line, elements);
     }
 
     public void pushByteList(ByteList bl) {

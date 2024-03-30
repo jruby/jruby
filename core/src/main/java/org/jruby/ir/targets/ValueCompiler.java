@@ -5,6 +5,7 @@ import org.jruby.ir.instructions.CallBase;
 import org.jruby.util.ByteList;
 
 import java.math.BigInteger;
+import java.util.List;
 
 public interface ValueCompiler {
     /**
@@ -210,6 +211,11 @@ public interface ValueCompiler {
      * Stack required: none
      */
     void pushBufferString(Encoding encoding, int size);
+
+    enum DStringElementType { STRING, OTHER }
+    record DStringElement<T>(DStringElementType type, T value) {}
+
+    void buildDynamicString(Encoding encoding, int size, boolean frozen, boolean debugFrozen, String file, int line, List<DStringElement> elements);
 
     void pushSymbolClass();
 }
