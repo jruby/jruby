@@ -66,7 +66,8 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.encoding.MarshalEncoding;
 
 import static org.jruby.RubyBasicObject.getMetaClass;
-import static org.jruby.api.Raise.typeError;
+import static org.jruby.api.Convert.castToString;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.marshal.MarshalCommon.*;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
@@ -215,7 +216,7 @@ public class MarshalStream extends FilterOutputStream {
         if (path.charAt(0) == '#') {
             Ruby runtime = clazz.getRuntime();
             String type = clazz.isClass() ? "class" : "module";
-            throw runtime.newTypeError(str(runtime, "can't dump anonymous " + type + " ", types(runtime, clazz)));
+            throw typeError(runtime.getCurrentContext(), str(runtime, "can't dump anonymous " + type + " ", types(runtime, clazz)));
         }
         
         RubyModule real = clazz.isModule() ? clazz : ((RubyClass)clazz).getRealClass();
@@ -226,7 +227,7 @@ public class MarshalStream extends FilterOutputStream {
         // a properly encoded string.  If this is an issue we should make a clazz.IdPath where all segments are returned
         // by their id names.
         if (runtime.getClassFromPath(path.asJavaString()) != real) {
-            throw runtime.newTypeError(str(runtime, types(runtime, clazz), " can't be referred"));
+            throw typeError(runtime.getCurrentContext(), str(runtime, types(runtime, clazz), " can't be referred"));
         }
         return path.asJavaString();
     }
@@ -239,7 +240,7 @@ public class MarshalStream extends FilterOutputStream {
             if (value instanceof DataType) {
                 Ruby runtime = value.getRuntime();
 
-                throw runtime.newTypeError(str(runtime, "no _dump_data is defined for class ", types(runtime, getMetaClass(value))));
+                throw typeError(runtime.getCurrentContext(), str(runtime, "no _dump_data is defined for class ", types(runtime, getMetaClass(value))));
             }
             ClassIndex nativeClassIndex = ((CoreObjectType)value).getNativeClassIndex();
 
@@ -268,7 +269,7 @@ public class MarshalStream extends FilterOutputStream {
                 RubyBignum.marshalTo((RubyBignum)value, this);
                 return;
             case CLASS:
-                if (((RubyClass)value).isSingleton()) throw runtime.newTypeError("singleton class can't be dumped");
+                if (((RubyClass)value).isSingleton()) throw typeError(runtime.getCurrentContext(),"singleton class can't be dumped");
                 write('c');
                 RubyClass.marshalTo((RubyClass)value, this);
                 return;
@@ -282,7 +283,7 @@ public class MarshalStream extends FilterOutputStream {
                 if(hash.getIfNone() == RubyBasicObject.UNDEF){
                     write('{');
                 } else if (hash.hasDefaultProc()) {
-                    throw hash.getRuntime().newTypeError("can't dump hash with default proc");
+                    throw typeError(runtime.getCurrentContext(), "can't dump hash with default proc");
                 } else {
                     write('}');
                 }
@@ -322,7 +323,7 @@ public class MarshalStream extends FilterOutputStream {
                 write('T');
                 return;
             default:
-                throw runtime.newTypeError(str(runtime, "can't dump ", types(runtime, value.getMetaClass())));
+                throw typeError(runtime.getCurrentContext(), str(runtime, "can't dump ", types(runtime, value.getMetaClass())));
             }
         } else {
             dumpDefaultObjectHeader(value.getMetaClass());
@@ -365,17 +366,17 @@ public class MarshalStream extends FilterOutputStream {
     }
 
     private void userCommon(IRubyObject value, CacheEntry entry) throws IOException {
+        var context = runtime.getCurrentContext();
         RubyFixnum depthLimitFixnum = runtime.newFixnum(depthLimit);
         final RubyClass klass = getMetaClass(value);
         IRubyObject dumpResult;
         if (entry != null) {
-            dumpResult = entry.method.call(runtime.getCurrentContext(), value, entry.sourceModule, "_dump", depthLimitFixnum);
+            dumpResult = entry.method.call(context, value, entry.sourceModule, "_dump", depthLimitFixnum);
         } else {
-            dumpResult = value.callMethod(runtime.getCurrentContext(), "_dump", depthLimitFixnum);
+            dumpResult = value.callMethod(context, "_dump", depthLimitFixnum);
         }
         
-        if (!(dumpResult instanceof RubyString)) typeError(runtime.getCurrentContext(), dumpResult, "String");
-        RubyString marshaled = (RubyString)dumpResult;
+        RubyString marshaled = castToString(context, dumpResult);
 
         List<Variable<Object>> variables = null;
         if (marshaled.hasVariables()) {
@@ -407,7 +408,7 @@ public class MarshalStream extends FilterOutputStream {
         if (type.getName().charAt(0) == '#') {
             Ruby runtime = obj.getRuntime();
 
-            throw runtime.newTypeError(str(runtime, "can't dump anonymous class ", types(runtime, type)));
+            throw typeError(runtime.getCurrentContext(), str(runtime, "can't dump anonymous class ", types(runtime, type)));
         }
         
         // w_symbol
@@ -469,7 +470,7 @@ public class MarshalStream extends FilterOutputStream {
     private RubyClass dumpExtended(RubyClass type) throws IOException {
         if(type.isSingleton()) {
             if (hasSingletonMethods(type) || type.hasVariables()) { // any ivars, since we don't have __attached__ ivar now
-                throw type.getRuntime().newTypeError("singleton can't be dumped");
+                throw typeError(type.getRuntime().getCurrentContext(), "singleton can't be dumped");
             }
             type = type.getSuperClass();
         }

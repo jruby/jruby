@@ -54,6 +54,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
 import org.jruby.util.TypeConverter;
 
+import static org.jruby.api.Error.typeError;
+
 /*
  * Written by Doug Lea with assistance from members of JCP JSR-166
  * Expert Group and released to the public domain, as explained at
@@ -240,7 +242,7 @@ public class Queue extends RubyObject implements DataType {
     protected void initializedCheck() {
         // Ruby initialized check seems to be a genius way to make all methods slower :),
         // here we piggy back on capacity not being allowed to equal 0.
-        if (capacity == 0) throw getRuntime().newTypeError(this + " not initialized");
+        if (capacity == 0) throw typeError(getRuntime().getCurrentContext(), this + " not initialized");
     }
 
     public Queue(Ruby runtime, RubyClass type) {
@@ -278,15 +280,13 @@ public class Queue extends RubyObject implements DataType {
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject items) {
         this.capacity = Integer.MAX_VALUE;
-        Ruby runtime = context.runtime;
-        IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, items, runtime.getArray(), context.sites.TypeConverter.to_a_checked);
-        if (!tmp.isNil()) {
-            RubyArray array = (RubyArray)tmp;
-            for (int i = 0; i < array.getLength(); i++) {
-                push(context, array.eltOk(i));
-            }
-        } else {
-            throw runtime.newTypeError("can't convert " + items.getMetaClass() + " into Array");
+        IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, items, context.runtime.getArray(),
+                context.sites.TypeConverter.to_a_checked);
+        if (tmp.isNil()) throw typeError(context, "can't convert ", items, " into Array");
+
+        RubyArray array = (RubyArray)tmp;
+        for (int i = 0; i < array.getLength(); i++) {
+            push(context, array.eltOk(i));
         }
 
         return this;
@@ -335,7 +335,7 @@ public class Queue extends RubyObject implements DataType {
     @JRubyMethod(name = "freeze")
     @Override
     public final IRubyObject freeze(ThreadContext context) {
-        throw context.runtime.newTypeError("cannot freeze " + this);
+        throw typeError(context, "cannot freeze " + this);
     }
 
     @JRubyMethod(name = "empty?")

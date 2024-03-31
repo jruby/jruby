@@ -59,7 +59,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.RecursiveComparator;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
-import static org.jruby.api.Raise.typeError;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -139,7 +139,7 @@ public class RubyStruct extends RubyObject {
     public IRubyObject deconstruct_keys(ThreadContext context, IRubyObject keysArg) {
         if (keysArg.isNil()) return to_h(context, Block.NULL_BLOCK);
 
-        if (!(keysArg instanceof RubyArray)) typeError(context, keysArg, "Array or nil");
+        if (!(keysArg instanceof RubyArray)) throw typeError(context, keysArg, "Array or nil");
 
         RubyArray keys = (RubyArray) keysArg;
         int length = keys.size();
@@ -714,13 +714,10 @@ public class RubyStruct extends RubyObject {
         if (block.isGiven()) {
             for (int i = 0; i < values.length; i++) {
                 IRubyObject elt = block.yieldValues(context, new IRubyObject[]{members.eltOk(i), values[i]});
-                IRubyObject key_value_pair = elt.checkArrayType();
+                IRubyObject keyValue = elt.checkArrayType();
 
-                if (key_value_pair == context.nil) {
-                    throw context.runtime.newTypeError("wrong element type " + elt.getMetaClass().getRealClass() + " at " + i + " (expected array)");
-                }
-
-                RubyArray ary = (RubyArray)key_value_pair;
+                if (keyValue == context.nil) throw typeError(context, "wrong element type ", elt, " at " + i + " (expected array)");
+                RubyArray ary = (RubyArray)keyValue;
 
                 if (ary.getLength() != 2) {
                     throw context.runtime.newArgumentError("element has wrong array length (expected 2, was " + ary.getLength() + ")");
@@ -922,7 +919,8 @@ public class RubyStruct extends RubyObject {
             RubySymbol slot = input.symbol();
             RubySymbol elem = (RubySymbol) member.eltInternal(i);
             if (!elem.equals(slot)) {
-                throw runtime.newTypeError(str(runtime, "struct ", rbClass, " not compatible (:", slot, " for :", elem, ")"));
+                throw typeError(runtime.getCurrentContext(), str(runtime, "struct ", rbClass,
+                        " not compatible (:", slot, " for :", elem, ")").toString());
             }
             result.aset(i, input.unmarshalObject());
         }

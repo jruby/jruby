@@ -16,6 +16,8 @@ import org.jruby.ext.ffi.Type;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Error.typeError;
+
 /**
  * Some utility functions for FFI &lt;=&gt; jffi conversions
  */
@@ -156,9 +158,7 @@ public final class FFIUtil {
             for (StructLayout.Member m : structMembers) {
                 com.kenai.jffi.Type fieldType;
                 fieldType = FFIUtil.getFFIType(m.type());
-                if (fieldType == null) {
-                    throw layout.getRuntime().newTypeError("unsupported Struct field type " + m);
-                }
+                if (fieldType == null) throw typeError(layout.getRuntime().getCurrentContext(), "unsupported Struct field type " + m);
                 if (fieldType.size() > 0) fields.add(fieldType);
             }
 
@@ -176,7 +176,7 @@ public final class FFIUtil {
         com.kenai.jffi.Type componentType = FFIUtil.getFFIType(arrayType.getComponentType());
 
         if (componentType == null) {
-            throw arrayType.getRuntime().newTypeError("unsupported array element type " + arrayType.getComponentType());
+            throw typeError(arrayType.getRuntime().getCurrentContext(), "unsupported array element type " + arrayType.getComponentType());
         }
 
         return com.kenai.jffi.Array.newArray(componentType, arrayType.length());

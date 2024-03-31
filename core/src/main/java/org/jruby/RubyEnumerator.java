@@ -45,7 +45,7 @@ import org.jruby.util.ByteList;
 import java.util.Spliterator;
 import java.util.stream.Stream;
 
-import static org.jruby.api.Raise.typeError;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -256,7 +256,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
                 !(size.isNil() || size.respondsTo("call")) &&
                 !(size instanceof RubyFloat && ((RubyFloat) size).value == Float.POSITIVE_INFINITY) &&
                 !(size instanceof RubyInteger)) {
-            typeError(context, size, "Integer");
+            throw typeError(context, size, "Integer");
         }
     }
 

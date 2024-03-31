@@ -22,6 +22,8 @@ import org.jruby.util.TypeConverter;
 import java.nio.ByteBuffer;
 import java.util.Locale;
 
+import static org.jruby.api.Error.typeError;
+
 public class Option extends RubyObject {
     public static void createOption(Ruby runtime) {
         RubyClass addrinfo = runtime.getClass("Socket").defineClassUnder(
@@ -196,11 +198,9 @@ public class Option extends RubyObject {
 
     @JRubyMethod(name = "int")
     public IRubyObject asInt(ThreadContext context) {
-        final Ruby runtime = context.getRuntime();
+        validateDataSize(context, data, 4);
 
-        validateDataSize(runtime, data, 4);
-
-        return runtime.newFixnum(unpackInt(data));
+        return context.runtime.newFixnum(unpackInt(data));
     }
 
     @JRubyMethod(required = 4, meta = true)
@@ -215,11 +215,9 @@ public class Option extends RubyObject {
 
     @JRubyMethod
     public IRubyObject bool(ThreadContext context) {
-        final Ruby runtime = context.runtime;
+        validateDataSize(context, data, 4);
 
-        validateDataSize(runtime, data, 4);
-
-        return runtime.newBoolean(unpackInt(data) != 0);
+        return context.runtime.newBoolean(unpackInt(data) != 0);
     }
 
     @JRubyMethod(meta = true)
@@ -242,12 +240,11 @@ public class Option extends RubyObject {
 
     @JRubyMethod
     public IRubyObject linger(ThreadContext context) {
-        final Ruby runtime = context.runtime;
-
-        validateDataSize(runtime, data, 8);
+        validateDataSize(context, data, 8);
 
         int[] linger = Option.unpackLinger(data);
 
+        Ruby runtime = context.runtime;
         return runtime.newArray(runtime.newBoolean(linger[0] != 0), runtime.newFixnum(linger[1]));
     }
 
@@ -261,12 +258,10 @@ public class Option extends RubyObject {
         return RubyString.newString(context.runtime, data);
     }
 
-    private static void validateDataSize(Ruby runtime, ByteList data, int size) {
+    private static void validateDataSize(ThreadContext context, ByteList data, int size) {
         int realSize = data.realSize();
 
-        if (realSize != size) {
-            throw runtime.newTypeError("size differ.  expected as sizeof(int)=" + size + " but " + realSize);
-        }
+        if (realSize != size) throw typeError(context, "size differ.  expected as sizeof(int)=" + size + " but " + realSize);
     }
 
     private ProtocolFamily family;

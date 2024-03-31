@@ -47,6 +47,8 @@ import org.jruby.runtime.callsite.CachingCallSite;
 
 import java.math.BigInteger;
 
+import static org.jruby.api.Error.typeError;
+
 public class Numeric {
     public static final boolean CANON = true;
 
@@ -924,10 +926,9 @@ public class Numeric {
         return nurat_rationalize_internal(context, ary[0], ary[1]);
     }
 
+    @Deprecated
     public static void checkInteger(ThreadContext context, IRubyObject obj) {
-        if (!(obj instanceof RubyInteger)) {
-            throw context.runtime.newTypeError("not an integer");
-        }
+        if (!(obj instanceof RubyInteger)) throw typeError(context, "not an integer");
     }
 
     private static JavaSites.NumericSites sites(ThreadContext context) {

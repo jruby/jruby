@@ -11,7 +11,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.text.MessageFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -57,7 +56,8 @@ import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JRubyObjectInputStream;
 
-import static org.jruby.api.Raise.typeError;
+import static org.jruby.api.Convert.castToModule;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.arrayOf;
 
 public class JavaProxy extends RubyObject {
@@ -454,7 +454,7 @@ public class JavaProxy extends RubyObject {
     @JRubyMethod
     public IRubyObject marshal_dump() {
         if ( ! Serializable.class.isAssignableFrom(object.getClass()) ) {
-            throw getRuntime().newTypeError("Java type is not serializable, cannot be marshaled " + getJavaClass());
+            throw typeError(getRuntime().getCurrentContext(), "Java type is not serializable, cannot be marshaled " + getJavaClass());
         }
         try {
             ByteArrayOutputStream bytes = new ByteArrayOutputStream();
@@ -462,7 +462,7 @@ public class JavaProxy extends RubyObject {
             return getRuntime().newString(new ByteList(bytes.toByteArray(), false));
         }
         catch (IOException ex) {
-            throw getRuntime().newTypeError("Java type is not serializable: " + ex.getMessage());
+            throw typeError(getRuntime().getCurrentContext(), "Java type is not serializable: " + ex.getMessage());
         }
     }
 
@@ -480,7 +480,7 @@ public class JavaProxy extends RubyObject {
             throw context.runtime.newIOErrorFromException(ex);
         }
         catch (ClassNotFoundException ex) {
-            throw context.runtime.newTypeError("Class not found unmarshaling Java type: " + ex.getLocalizedMessage());
+            throw typeError(context, "Class not found unmarshaling Java type: " + ex.getLocalizedMessage());
         }
     }
 
@@ -561,7 +561,7 @@ public class JavaProxy extends RubyObject {
         if ( type.isAssignableFrom(clazz) ) return type.cast(object);
         if ( type.isAssignableFrom(getClass()) ) return type.cast(this); // e.g. IRubyObject.class
 
-        throw getRuntime().newTypeError("failed to coerce " + clazz.getName() + " to " + type.getName());
+        throw typeError(getRuntime().getCurrentContext(), "failed to coerce " + clazz.getName() + " to " + type.getName());
     }
 
     @Override
@@ -702,8 +702,7 @@ public class JavaProxy extends RubyObject {
 
         @JRubyMethod(meta = true, visibility = Visibility.PRIVATE)
         public static IRubyObject java_alias(ThreadContext context, IRubyObject klass, IRubyObject newName, IRubyObject rubyName, IRubyObject argTypes) {
-            if (!(klass instanceof RubyModule)) typeError(context, klass, "Module");
-            final RubyModule proxyClass = (RubyModule) klass;
+            final RubyModule proxyClass = castToModule(context, klass);
 
             String name = rubyName.asJavaString();
             String newNameStr = newName.asJavaString();
@@ -735,9 +734,7 @@ public class JavaProxy extends RubyObject {
         }
 
         private static AbstractRubyMethod getRubyMethod(ThreadContext context, IRubyObject clazz, String name, Class... argTypesClasses) {
-            if (!(clazz instanceof RubyModule)) typeError(context, clazz, "Module");
-            final RubyModule proxyClass = (RubyModule) clazz;
-
+            final RubyModule proxyClass = castToModule(context, clazz);
             final Method method = getMethodFromClass(context, JavaUtil.getJavaClass(proxyClass), name, argTypesClasses);
             final String prettyName = name + CodegenUtils.prettyParams(argTypesClasses);
 

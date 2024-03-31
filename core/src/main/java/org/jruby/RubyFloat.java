@@ -61,6 +61,7 @@ import org.jruby.util.ConvertDouble;
 import org.jruby.util.Numeric;
 import org.jruby.util.Sprintf;
 
+import static org.jruby.api.Error.typeError;
 import static org.jruby.util.Numeric.f_abs;
 import static org.jruby.util.Numeric.f_add;
 import static org.jruby.util.Numeric.f_expt;
@@ -149,7 +150,7 @@ public class RubyFloat extends RubyNumeric {
 
     @Override
     public RubyClass getSingletonClass() {
-        throw getRuntime().newTypeError("can't define singleton");
+        throw typeError(getRuntime().getCurrentContext(), "can't define singleton");
     }
 
     @Override
@@ -241,10 +242,10 @@ public class RubyFloat extends RubyNumeric {
     public static IRubyObject induced_from(ThreadContext context, IRubyObject recv, IRubyObject number) {
         if (number instanceof RubyFixnum || number instanceof RubyBignum || number instanceof RubyRational) {
             return number.callMethod(context, "to_f");
-        } else if (number instanceof RubyFloat) {
-            return number;
         }
-        throw context.runtime.newTypeError("failed to convert " + number.getMetaClass() + " into Float");
+
+        if (!(number instanceof RubyFloat)) throw typeError(context, "failed to convert ", number, " into Float");
+        return number;
     }
 
     /** flo_to_s

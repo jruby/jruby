@@ -20,9 +20,8 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.TypeConverter;
 
-import static org.jruby.api.Raise.typeError;
+import static org.jruby.api.Error.typeError;
 
 @JRubyClass(name = "FFI::VariadicInvoker", parent = "Object")
 public class VariadicInvoker extends RubyObject {
@@ -93,25 +92,21 @@ public class VariadicInvoker extends RubyObject {
 
         enums = options.fastARef(context.runtime.newSymbol("enums"));
         if (enums != null && !enums.isNil() && !(enums instanceof RubyHash || enums instanceof Enums)) {
-            throw context.runtime.newTypeError("wrong type for options[:enum] "
-                + enums.getMetaClass().getName() + " (expected Hash or Enums)");
-
+            throw typeError(context, "wrong type for options[:enum] ", enums, " (expected Hash or Enums)");
         }
+
         typeMap = options.fastARef(context.runtime.newSymbol("type_map"));
         if (typeMap != null && !typeMap.isNil() && !(typeMap instanceof RubyHash)) {
-            throw context.runtime.newTypeError("wrong type for options[:type_map] "
-                    + typeMap.getMetaClass().getName() + " (expected Hash)");
-
+            throw typeError(context, "wrong type for options[:type_map] ", typeMap, " (expected Hash)");
         }
 
         final Type returnType = org.jruby.ext.ffi.Util.findType(context, rbReturnType, typeMap);
 
         if (!(rbParameterTypes instanceof RubyArray)) {
-            throw context.runtime.newTypeError("Invalid parameter array "
-                    + rbParameterTypes.getMetaClass().getName() + " (expected Array)");
+            throw typeError(context, "Invalid parameter array ", rbParameterTypes, " (expected Array)");
         }
 
-        if (!(rbFunction instanceof Pointer)) typeError(context, rbFunction, context.runtime.getFFI().pointerClass);
+        if (!(rbFunction instanceof Pointer)) throw typeError(context, rbFunction, context.runtime.getFFI().pointerClass);
         final Pointer address = (Pointer) rbFunction;
 
         CallingConvention callConvention = "stdcall".equals(convention)

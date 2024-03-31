@@ -81,6 +81,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.jruby.RubyComparable.invcmp;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -335,25 +336,21 @@ public class RubyTime extends RubyObject {
 
     // mri: time.c num_exact
     private static RubyNumeric numExact(ThreadContext context, IRubyObject v) {
-        boolean typeError = false;
+        boolean hasTypeError = false;
 
         switch (v.getMetaClass().getClassIndex()) {
             case NIL:
-                throw context.runtime.newTypeError("can't convert nil into an exact number");
-
+                throw typeError(context, "can't convert nil into an exact number");
             case INTEGER: return (RubyInteger) v;
-
             case RATIONAL: break;
-
-            case STRING: typeError = true; break;
-
+            case STRING: hasTypeError = true; break;
             default:
                 IRubyObject tmp;
                 if ((tmp = v.getMetaClass().finvokeChecked(context, v, sites(context).checked_to_r)) != null) {
                     /* test to_int method availability to reject non-Numeric
                      * objects such as String, Time, etc which have to_r method. */
                     if (!sites(context).respond_to_to_int.respondsTo(context, v, v)) {
-                        typeError = true; break;
+                        hasTypeError = true; break;
                     }
                     v = tmp; break;
                 }
@@ -361,7 +358,7 @@ public class RubyTime extends RubyObject {
                     v = tmp; // return tmp;
                 }
                 else {
-                    typeError = true;
+                    hasTypeError = true;
                 }
         }
 
@@ -375,14 +372,11 @@ public class RubyTime extends RubyObject {
                 break;
 
             default:
-                typeError = true;
+                hasTypeError = true;
                 break;
         }
 
-        if (typeError) {
-            Ruby runtime = context.runtime;
-            throw runtime.newTypeError(str(runtime, "can't convert ", v.getType(), " into an exact number"));
-        }
+        if (hasTypeError) throw typeError(context, "can't convert ", v, " into an exact number");
 
         return (RubyNumeric) v;
     }
@@ -564,10 +558,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize_copy(IRubyObject original) {
-        if (!(original instanceof RubyTime)) {
-            throw getRuntime().newTypeError("Expecting an instance of class Time");
-        }
-
+        if (!(original instanceof RubyTime)) throw typeError(getRuntime().getCurrentContext(), original, "Time");
         RubyTime originalTime = (RubyTime) original;
 
         // We can just use dt, since it is immutable
@@ -760,9 +751,7 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = "+")
     public IRubyObject op_plus(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyTime) {
-            throw context.runtime.newTypeError("time + time?");
-        }
+        if (other instanceof RubyTime) throw typeError(context, "time + time?");
 
         double adjustMillis = RubyNumeric.num2dbl(context, numExact(context, other)) * 1000;
         return opPlusMillis(context.runtime, adjustMillis);
@@ -1999,28 +1988,25 @@ public class RubyTime extends RubyObject {
         // NOTE: we can probably do better here, but we're matching MRI behavior
         // this is for converting custom objects such as ActiveSupport::Duration
         else if ( sites(context).respond_to_divmod.respondsTo(context, sec, sec) ) {
-            final Ruby runtime = context.runtime;
             IRubyObject result = sites(context).divmod.call(context, sec, sec, 1);
-            if ( result instanceof RubyArray ) {
-                seconds = ((RubyNumeric) ((RubyArray) result).eltOk(0) ).getDoubleValue(); // div
-                seconds += ((RubyNumeric) ((RubyArray) result).eltOk(1) ).getDoubleValue(); // mod
-            }
-            else {
-                throw runtime.newTypeError(str(runtime, "unexpected divmod result: into %s", types(runtime, result.getMetaClass())));
+            if (result instanceof RubyArray arr) {
+                seconds = ((RubyNumeric) arr.eltOk(0)).getDoubleValue() + // div
+                        ((RubyNumeric) arr.eltOk(1)).getDoubleValue(); // mod
+            } else {
+                throw typeError(context, "unexpected divmod result: into ", result, "");
             }
         }
         else {
-            seconds = 0; boolean raise = true;
-            if ( sec instanceof JavaProxy ) {
+            boolean raise = true;
+            seconds = 0;
+
+            if (sec instanceof JavaProxy) {
                 try { // support java.lang.Number proxies
                     seconds = sec.convertToFloat().value; raise = false;
                 } catch (TypeError ex) { /* fallback bellow to raising a TypeError */ }
             }
 
-            if (raise) {
-                Ruby runtime = context.runtime;
-                throw context.runtime.newTypeError(str(runtime, "can't convert ", types(runtime, sec.getMetaClass()), " into time interval"));
-            }
+            if (raise) throw typeError(context, "can't convert ", sec, " into time interval");
         }
 
         if ( seconds < 0 ) throw context.runtime.newArgumentError("time interval must not be negative");
@@ -2035,9 +2021,8 @@ public class RubyTime extends RubyObject {
 
         byte[] fromAsBytes;
         fromAsBytes = from.convertToString().getBytes();
-        if (fromAsBytes.length != 8) {
-            throw context.runtime.newTypeError("marshaled time format differ");
-        }
+        if (fromAsBytes.length != 8) throw typeError(context, "marshaled time format differ");
+
         int p=0;
         int s=0;
         for (int i = 0; i < 4; i++) {

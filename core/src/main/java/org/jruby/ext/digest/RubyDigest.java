@@ -50,7 +50,6 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
@@ -60,6 +59,8 @@ import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+
+import static org.jruby.api.Error.typeError;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -550,10 +551,9 @@ public class RubyDigest {
 
             try {
                 this.algo = (MessageDigest) from.algo.clone();
-            }
-            catch (CloneNotSupportedException e) {
+            } catch (CloneNotSupportedException e) {
                 String name = from.algo.getAlgorithm();
-                throw getRuntime().newTypeError("Could not initialize copy of digest (" + name + ")");
+                throw typeError(getRuntime().getCurrentContext(), "Could not initialize copy of digest (" + name + ")");
             }
             return this;
         }

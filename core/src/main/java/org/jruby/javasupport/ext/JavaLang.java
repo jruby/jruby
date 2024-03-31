@@ -55,7 +55,8 @@ import java.lang.reflect.Modifier;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyModule.undefinedMethodMessage;
-import static org.jruby.api.Raise.typeError;
+import static org.jruby.api.Convert.castToInteger;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.javasupport.JavaUtil.convertJavaToUsableRubyObject;
 import static org.jruby.javasupport.JavaUtil.isJavaObject;
 import static org.jruby.javasupport.JavaUtil.unwrapIfJavaObject;
@@ -201,19 +202,16 @@ public abstract class JavaLang {
 
         @JRubyMethod(name = "<=>")
         public static IRubyObject cmp(final ThreadContext context, final IRubyObject self, final IRubyObject other) {
-            java.lang.Comparable comparable = unwrapIfJavaObject(self);
-            if ( other.isNil() ) return context.nil;
+            if (other.isNil()) return context.nil;
 
+            java.lang.Comparable comparable = unwrapIfJavaObject(self);
             final java.lang.Object otherComp = unwrapIfJavaObject(other);
 
-            final int cmp;
             try {
-                cmp = comparable.compareTo(otherComp);
+                return RubyFixnum.newFixnum(context.runtime, comparable.compareTo(otherComp));
+            } catch (ClassCastException ex) {
+                throw typeError(context, ex.getMessage());
             }
-            catch (ClassCastException ex) {
-                throw context.runtime.newTypeError(ex.getMessage());
-            }
-            return RubyFixnum.newFixnum(context.runtime, cmp);
         }
 
     }
@@ -649,7 +647,7 @@ public abstract class JavaLang {
             try {
                 return extender.callMethod(context, "extend_proxy", proxy);
             } catch (NoMethodError ex) {
-                throw context.runtime.newTypeError("proxy extender must have an extend_proxy method");
+                throw typeError(context, "proxy extender must have an extend_proxy method");
             }
         }
 
@@ -766,10 +764,7 @@ public abstract class JavaLang {
                 }
                 final int[] dimensions = new int[len];
                 for (int i = len; --i >= 0; ) {
-                    IRubyObject dimLength = aryLengths[i];
-                    if (!(dimLength instanceof RubyInteger)) typeError(context, dimLength, "Integer");
-
-                    dimensions[i] = ((RubyInteger) dimLength).getIntValue();
+                    dimensions[i] = castToInteger(context, aryLengths[i]).getIntValue();
                 }
                 return ArrayJavaProxy.newArray(context.runtime, klass, dimensions);
             }

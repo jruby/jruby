@@ -38,7 +38,6 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
-import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
@@ -50,7 +49,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
-import static org.jruby.api.Raise.typeError;
+import static org.jruby.api.Error.typeError;
 
 /**
  * A abstract memory object that defines operations common to both pointers and
@@ -102,10 +101,9 @@ abstract public class AbstractMemory extends MemoryObject {
     }
 
     protected static final RubyArray checkArray(IRubyObject obj) {
-        if (!(obj instanceof RubyArray)) {
-            throw obj.getRuntime().newTypeError("Array expected");
-        }
-        return (RubyArray) obj;
+        if (obj instanceof RubyArray arr) return arr;
+
+        throw typeError(obj.getRuntime().getCurrentContext(), "Array expected");
     }
 
     private static int checkArrayLength(IRubyObject val) {
@@ -129,9 +127,8 @@ abstract public class AbstractMemory extends MemoryObject {
     }
 
     static AbstractMemory cast(ThreadContext context, IRubyObject ptr) {
-        if (!(ptr instanceof AbstractMemory)) typeError(context, ptr, context.runtime.getFFI().memoryClass);
-
-        return (AbstractMemory) ptr;
+        if (ptr instanceof AbstractMemory memory) return memory;
+        throw typeError(context, ptr, context.runtime.getFFI().memoryClass);
     }
 
     @Override
@@ -1779,9 +1776,7 @@ abstract public class AbstractMemory extends MemoryObject {
     public IRubyObject read_array_of_type(ThreadContext context, IRubyObject typeArg, IRubyObject lenArg) {
         Type type = context.runtime.getFFI().getTypeResolver().findType(context.runtime, typeArg);
         MemoryOp op = MemoryOp.getMemoryOp(type);
-        if (op == null) {
-            throw context.runtime.newTypeError("cannot get memory reader for type " + type);
-        }
+        if (op == null) throw typeError(context, "cannot get memory reader for type " + type);
 
         int len = checkArrayLength(lenArg);
         RubyArray arr = RubyArray.newArray(context.runtime, len);
@@ -1812,9 +1807,7 @@ abstract public class AbstractMemory extends MemoryObject {
     public IRubyObject write_array_of_type(ThreadContext context, IRubyObject typeArg, IRubyObject aryArg) {
         Type type = context.runtime.getFFI().getTypeResolver().findType(context.runtime, typeArg);
         MemoryOp op = MemoryOp.getMemoryOp(type);
-        if (op == null) {
-            throw context.runtime.newTypeError("cannot get memory writer for type " + type);
-        }
+        if (op == null) throw typeError(context, "cannot get memory writer for type " + type);
 
         RubyArray arr = aryArg.convertToArray();
         int len = arr.size();
@@ -2028,7 +2021,7 @@ abstract public class AbstractMemory extends MemoryObject {
             putPointer(context, offset, conversionMethod.call(context, value, value.getMetaClass(), "to_ptr"));
         
         } else {
-            typeError(context, value, context.runtime.getFFI().pointerClass);
+            throw typeError(context, value, context.runtime.getFFI().pointerClass);
         }
     }
 

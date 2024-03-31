@@ -59,6 +59,8 @@ import org.jruby.util.RegexpOptions;
 import org.jruby.util.RubyStringBuilder;
 import org.jruby.util.StringSupport;
 
+import static org.jruby.api.Error.typeError;
+
 /**
  * @author olabini
  */
@@ -281,13 +283,13 @@ public class RubyMatchData extends RubyObject {
     }
 
     final void check() {
-        if (str == null) throw metaClass.runtime.newTypeError("uninitialized Match");
+        if (str == null) throw typeError(getRuntime().getCurrentContext(), "uninitialized Match");
     }
 
     final Regex getPattern() {
         final Object pattern = this.pattern;
         if (pattern instanceof Regex) return (Regex) pattern;
-        if (pattern == null) throw metaClass.runtime.newTypeError("uninitialized Match (missing pattern)");
+        if (pattern == null) throw typeError(getRuntime().getCurrentContext(), "uninitialized Match (missing pattern)");
         // when a regexp is avoided for matching we lazily instantiate one from the unquoted string :
         Regex regexPattern = RubyRegexp.getQuotedRegexpFromCache(metaClass.runtime, (RubyString) pattern, RegexpOptions.NULL_OPTIONS);
         this.pattern = regexPattern;
@@ -823,13 +825,12 @@ public class RubyMatchData extends RubyObject {
 
         checkFrozen();
 
-        if (!(original instanceof RubyMatchData)) {
-            throw getRuntime().newTypeError("wrong argument class");
+        if (original instanceof RubyMatchData orig) {
+            str = orig.str;
+            regs = orig.regs;
+        } else {
+            throw typeError(getRuntime().getCurrentContext(), "wrong argument class");
         }
-
-        RubyMatchData origMatchData = (RubyMatchData)original;
-        str = origMatchData.str;
-        regs = origMatchData.regs;
 
         return this;
     }

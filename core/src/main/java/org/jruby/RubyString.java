@@ -91,7 +91,7 @@ import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.anno.FrameField.BACKREF;
-import static org.jruby.api.Raise.typeError;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.StringSupport.*;
 
@@ -1708,7 +1708,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @Override
     public IRubyObject op_match(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyRegexp) return ((RubyRegexp) other).op_match(context, this);
-        if (other instanceof RubyString) throw context.runtime.newTypeError("type mismatch: String given");
+        if (other instanceof RubyString) throw typeError(context, "type mismatch: String given");
         return sites(context).op_match.call(context, other, other, this);
     }
     @Deprecated
@@ -2679,20 +2679,20 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             if (c < 0) {
                 throw context.runtime.newRangeError(c + " out of char range");
             }
-            return concatNumeric(context.runtime, (int)(c & 0xFFFFFFFF));
+            return concatNumeric(context, (int)(c & 0xFFFFFFFF));
         }
         if (other instanceof RubyBignum) {
             if (((RubyBignum) other).getBigIntegerValue().signum() < 0) {
                 throw context.runtime.newRangeError("negative string size (or size too big)");
             }
             long c = ((RubyBignum) other).getLongValue();
-            return concatNumeric(context.runtime, (int) c);
+            return concatNumeric(context, (int) c);
         }
         if (other instanceof RubyFloat) {
             modifyCheck();
             return catWithCodeRange((RubyString) ((RubyFloat) other).to_s());
         }
-        if (other instanceof RubySymbol) throw context.runtime.newTypeError("can't convert Symbol into String");
+        if (other instanceof RubySymbol) throw typeError(context, "can't convert Symbol into String");
 
         return append(other.convertToString());
     }
@@ -2732,7 +2732,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     @SuppressWarnings("ReferenceEquality")
-    private RubyString concatNumeric(Ruby runtime, int c) {
+    private RubyString concatNumeric(ThreadContext context, int c) {
         Encoding enc = value.getEncoding();
         int cl;
 
@@ -2740,13 +2740,13 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             cl = codeLength(enc, c);
 
             if (cl <= 0) {
-                throw runtime.newRangeError(c + " out of char range or invalid code point");
+                throw context.runtime.newRangeError(c + " out of char range or invalid code point");
             }
 
             modifyExpand(value.getRealSize() + cl);
 
             if (enc == USASCIIEncoding.INSTANCE) {
-                if (c > 0xff) throw runtime.newRangeError(c + " out of char range");
+                if (c > 0xff) throw context.runtime.newRangeError(c + " out of char range");
                 if (c > 0x79) {
                     value.setEncoding(ASCIIEncoding.INSTANCE);
                     enc = value.getEncoding();
@@ -2754,7 +2754,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             }
             enc.codeToMbc(c, value.getUnsafeBytes(), value.getBegin() + value.getRealSize());
         } catch (EncodingException e) {
-            throw runtime.newRangeError(c + " out of char range");
+            throw context.runtime.newRangeError(c + " out of char range");
         }
         value.setRealSize(value.getRealSize() + cl);
         return this;
@@ -3815,7 +3815,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     public IRubyObject bytesplice(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         int[] beglen = new int[2];
         if (!RubyRange.rangeBeginLength(context, arg0, value.realSize(), beglen, 2).isTrue()) {
-            typeError(context, arg0, "Range");
+            throw typeError(context, arg0, "Range");
         }
         checkBegLen(context, beglen);
 
@@ -3859,7 +3859,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         int[] beglen = new int[2];
 
         if (!RubyRange.rangeBeginLength(context, arg0, value.realSize(), beglen, 2).isTrue()) {
-            typeError(context, arg0, context.runtime.getRange());
+            throw typeError(context, arg0, context.runtime.getRange());
         }
         checkBegLen(context, beglen);
 
@@ -3867,7 +3867,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         int[] vbegvlen = new int[2];
         if (!RubyRange.rangeBeginLength(context, arg2, val.getByteList().realSize(), vbegvlen, 2).isTrue()) {
-            typeError(context, arg2, context.runtime.getRange());
+            throw typeError(context, arg2, context.runtime.getRange());
         }
         val.checkBegLen(context, vbegvlen);
 
@@ -4208,7 +4208,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     final IRubyObject uptoCommon(ThreadContext context, IRubyObject arg, boolean excl, Block block) {
-        if (arg instanceof RubySymbol) throw context.runtime.newTypeError("can't convert Symbol into String");
+        if (arg instanceof RubySymbol) throw typeError(context, "can't convert Symbol into String");
         return uptoCommon(context, arg.convertToString(), excl, block, false);
     }
 
@@ -4911,7 +4911,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     private static RubyString getStringForPattern(ThreadContext context, IRubyObject obj) {
         if (obj instanceof RubyString) return (RubyString) obj;
         IRubyObject val = obj.checkStringType();
-        if (val.isNil()) typeError(context, obj, "Regexp");
+        if (val.isNil()) throw typeError(context, obj, "Regexp");
         return (RubyString) val;
     }
 
@@ -5423,7 +5423,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             sep = makeSharedString(runtime, pos, match.end(0) - pos);
         } else {
             IRubyObject tmp = arg.checkStringType();
-            if (tmp.isNil()) throw runtime.newTypeError("type mismatch: " + arg.getMetaClass().getName() + " given");
+            if (tmp.isNil()) throw typeError(context, "type mismatch: ", arg, " given");
             sep = (RubyString)tmp;
             pos = StringSupport.index(this, sep, 0, this.checkEncoding(sep));
             if (pos < 0) return partitionMismatch(runtime);
@@ -5453,7 +5453,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             sep = (RubyString)RubyRegexp.nth_match(0, context.getLocalMatchOrNil());
         } else {
             IRubyObject tmp = arg.checkStringType();
-            if (tmp.isNil()) throw runtime.newTypeError("type mismatch: " + arg.getMetaClass().getName() + " given");
+            if (tmp.isNil()) throw typeError(context, "type mismatch: ", arg, " given");
             sep = (RubyString)tmp;
             pos = StringSupport.rindex(value, StringSupport.strLengthFromRubyString(this, this.checkEncoding(sep)), StringSupport.strLengthFromRubyString(sep, this.checkEncoding(sep)), subLength(value.getRealSize()), sep, this.checkEncoding(sep));
             if (pos < 0) return rpartitionMismatch(runtime);

@@ -40,7 +40,8 @@ import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 
-import static org.jruby.api.Raise.typeError;
+import static org.jruby.api.Convert.castToString;
+import static org.jruby.api.Error.typeError;
 
 /**
  * @author Bill Dortch
@@ -69,7 +70,7 @@ public class JavaArrayUtilities {
             if (wrapped instanceof byte[]) bytes = (byte[]) wrapped;
         }
 
-        if (bytes == null) typeError(context, wrappedObject, "byte[]");
+        if (bytes == null) throw typeError(context, wrappedObject, "byte[]");
 
         RubyString string = context.runtime.newString(new ByteList(bytes, true));
 
@@ -81,14 +82,13 @@ public class JavaArrayUtilities {
     @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject ruby_string_to_bytes(IRubyObject recv, IRubyObject string) {
         Ruby runtime = recv.getRuntime();
-        if (!(string instanceof RubyString)) typeError(runtime.getCurrentContext(), string, "String");
 
-        return JavaUtil.convertJavaToUsableRubyObject(runtime, ((RubyString)string).getBytes());
+        return JavaUtil.convertJavaToUsableRubyObject(runtime, castToString(runtime.getCurrentContext(), string).getBytes());
     }
 
     @JRubyMethod(module = true)
     public static IRubyObject java_to_ruby(ThreadContext context, IRubyObject recv, IRubyObject ary) {
-        if (!(ary instanceof ArrayJavaProxy)) typeError(context, ary, context.runtime.getJavaSupport().getArrayProxyClass());
+        if (!(ary instanceof ArrayJavaProxy)) throw typeError(context, ary, context.runtime.getJavaSupport().getArrayProxyClass());
 
         return ((ArrayJavaProxy)ary).to_a(context);
     }

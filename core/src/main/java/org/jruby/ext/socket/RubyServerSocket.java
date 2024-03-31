@@ -51,6 +51,8 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
+import static org.jruby.api.Error.typeError;
+
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
@@ -94,11 +96,8 @@ public class RubyServerSocket extends RubySocket {
     public IRubyObject bind(ThreadContext context, IRubyObject addr, IRubyObject backlog) {
         final InetSocketAddress iaddr;
 
-        if (addr instanceof Addrinfo) {
-            Addrinfo addrInfo = (Addrinfo) addr;
-            if (!addrInfo.ip_p(context).isTrue()) {
-                throw context.runtime.newTypeError("not an INET or INET6 address: " + addrInfo);
-            }
+        if (addr instanceof Addrinfo addrInfo) {
+            if (!addrInfo.ip_p(context).isTrue()) throw typeError(context, "not an INET or INET6 address: " + addrInfo);
             iaddr = new InetSocketAddress(addrInfo.getInetAddress().getHostAddress(), addrInfo.getPort());
         } else {
             iaddr = Sockaddr.addressFromSockaddr_in(context, addr);

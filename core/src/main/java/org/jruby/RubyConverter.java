@@ -57,6 +57,7 @@ import org.jruby.util.io.EncodingUtils;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 @JRubyClass(name="Converter")
@@ -147,9 +148,7 @@ public class RubyConverter extends RubyObject {
 
         IRubyObject convpath;
 
-        if (ec != null) {
-            throw runtime.newTypeError("already initialized");
-        }
+        if (ec != null) throw typeError(context, "already initialized");
 
         if (argc == 1 && !(convpath = args[0].checkArrayType()).isNil()) {
             ec = EncodingUtils.econvInitByConvpath(context, convpath, encNames, encs);

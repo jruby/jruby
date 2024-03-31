@@ -97,7 +97,9 @@ import org.jruby.util.*;
 import org.jruby.util.cli.Options;
 import org.jruby.util.collections.NonBlockingHashMapLong;
 
-import static org.jruby.api.Raise.typeError;
+import static org.jruby.api.Convert.*;
+import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Error.withException;
 import static org.jruby.runtime.Visibility.*;
 
 @JRubyModule(name = "Java")
@@ -227,9 +229,7 @@ public class Java implements Library {
 
         @JRubyMethod
         public static IRubyObject inherited(ThreadContext context, IRubyObject self, IRubyObject subclass) {
-            if (!(subclass instanceof RubyClass)) typeError(context, subclass, "Class");
-
-            JavaInterfaceTemplate.addRealImplClassNew((RubyClass) subclass);
+            JavaInterfaceTemplate.addRealImplClassNew(castToClass(context, subclass));
             return context.nil;
         }
     }
@@ -239,12 +239,11 @@ public class Java implements Library {
             IRubyObject self,
             IRubyObject name,
             IRubyObject javaClass,
-            IRubyObject module) {
+            IRubyObject mod) {
         final Ruby runtime = self.getRuntime();
+        RubyModule module = castToModule(runtime.getCurrentContext(), mod);
 
-        if (!(module instanceof RubyModule)) typeError(runtime.getCurrentContext(), module, "Module");
-
-        return setProxyClass(runtime, (RubyModule) module, name.asJavaString(), resolveJavaClassArgument(runtime, javaClass));
+        return setProxyClass(runtime, module, name.asJavaString(), resolveJavaClassArgument(runtime, javaClass));
     }
 
     public static RubyModule setProxyClass(final Ruby runtime, final RubyModule target,
@@ -332,7 +331,7 @@ public class Java implements Library {
 
     public static Class<?> resolveClassType(final ThreadContext context, final IRubyObject type) throws TypeError {
         RubyModule proxyClass = Java.resolveType(context.runtime, type);
-        if (proxyClass == null) throw context.runtime.newTypeError("unable to convert to type: " + type);
+        if (proxyClass == null) throw typeError(context, "unable to convert to type: " + type);
         return JavaUtil.getJavaClass(proxyClass);
     }
 
@@ -345,7 +344,7 @@ public class Java implements Library {
         } else {
             klass = resolveClassType(type);
             if (klass == null) {
-                throw runtime.newTypeError("expected a Java class, got: " + type);
+                throw typeError(runtime.getCurrentContext(), "expected a Java class, got: " + type);
             }
         }
         return getProxyClass(runtime, klass);
@@ -514,7 +513,7 @@ public class Java implements Library {
             proxy.getMetaClass().addMethod("inherited", new org.jruby.internal.runtime.methods.JavaMethod(proxy, PUBLIC, "inherited") {
                 @Override
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                    throw context.runtime.newTypeError("can not extend final Java class: " + clazzName);
+                    throw typeError(context, "can not extend final Java class: " + clazzName);
                 }
             });
         }
@@ -566,9 +565,9 @@ public class Java implements Library {
         final JavaSupport javaSupport = context.runtime.getJavaSupport();
         RubyClass javaProxyClass = javaSupport.getJavaProxyClass().getMetaClass();
         Helpers.invokeAs(context, javaProxyClass, clazz, "inherited", subclazz, Block.NULL_BLOCK);
-        if (!(subclazz instanceof RubyClass)) typeError(context, subclazz, context.runtime.getClassClass());
 
-        setupJavaSubclass(context, (RubyClass) subclazz);
+        setupJavaSubclass(context, castToClass(context, subclazz));
+
         return context.nil;
     }
 
@@ -1084,12 +1083,9 @@ public class Java implements Library {
         catch (RuntimeException ignore) { return 0; }
     }
 
-    public static IRubyObject get_proxy_or_package_under_package(final ThreadContext context,
-        final IRubyObject self, final IRubyObject parentPackage, final IRubyObject name) {
-        final Ruby runtime = context.runtime;
-        if (!(parentPackage instanceof RubyModule)) typeError(context, parentPackage, runtime.getModule());
-
-        final RubyModule result = getProxyOrPackageUnderPackage(context, (RubyModule) parentPackage, name.asJavaString(), true);
+    public static IRubyObject get_proxy_or_package_under_package(final ThreadContext context, final IRubyObject self,
+                                                                 final IRubyObject parentPackage, final IRubyObject name) {
+        final RubyModule result = getProxyOrPackageUnderPackage(context, castToModule(context, parentPackage), name.asJavaString(), true);
         return result != null ? result : context.nil;
     }
 
@@ -1204,10 +1200,8 @@ public class Java implements Library {
         }
 
         private static IRubyObject callProc(ThreadContext context, IRubyObject self, IRubyObject[] procArgs) {
-            if ( ! ( self instanceof RubyProc ) ) {
-                throw context.runtime.newTypeError("interface impl method_missing for block used with non-Proc object");
-            }
-            return ((RubyProc) self).call(context, procArgs);
+            RubyProc proc = castToProc(context, self, "interface impl method_missing for block used with non-Proc object");
+            return proc.call(context, procArgs);
         }
 
         @Override
@@ -1631,15 +1625,13 @@ public class Java implements Library {
     }
 
     private static RaiseException mapGeneratedProxyException(final Ruby runtime, final ReflectiveOperationException e) {
-        RaiseException ex = runtime.newTypeError("Exception instantiating generated interface impl:\n" + e);
-        ex.initCause(e);
-        return ex;
+        return withException(typeError(runtime.getCurrentContext(),
+                "Exception instantiating generated interface impl:\n" + e), e);
     }
 
     private static RaiseException mapGeneratedProxyException(final Ruby runtime, final InvocationTargetException e) {
-        RaiseException ex = runtime.newTypeError("Exception instantiating generated interface impl:\n" + e.getTargetException());
-        ex.initCause(e);
-        return ex;
+        return withException(typeError(runtime.getCurrentContext(),
+                "Exception instantiating generated interface impl:\n" + e.getTargetException()), e);
     }
 
     public static IRubyObject allocateProxy(Object javaObject, RubyClass clazz) {
@@ -1746,4 +1738,8 @@ public class Java implements Library {
         return Modules.isAccessible(member, Java.class);
     }
 
+    public static JavaObject castToJavaObject(ThreadContext context, IRubyObject newValue) {
+        if (!(newValue instanceof JavaObject)) throw typeError(context, newValue, "a java object");
+        return (JavaObject) newValue;
+    }
 }

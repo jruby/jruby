@@ -31,6 +31,8 @@ import org.jruby.ext.socket.SocketUtils;
 import org.jruby.ext.socket.SocketUtilsIPV6;
 import org.jruby.runtime.Helpers;
 
+import static org.jruby.api.Error.typeError;
+
 public class Sockaddr {
 
     public static InetAddress addressFromString(Ruby runtime, String s) {
@@ -52,11 +54,8 @@ public class Sockaddr {
 
     public static InetSocketAddress addressFromArg(ThreadContext context, IRubyObject arg) {
         InetSocketAddress iaddr;
-        if (arg instanceof Addrinfo) {
-            Addrinfo addrinfo = (Addrinfo)arg;
-            if (!addrinfo.ip_p(context).isTrue()) {
-                throw context.runtime.newTypeError("not an INET or INET6 address: " + addrinfo);
-            }
+        if (arg instanceof Addrinfo addrinfo) {
+            if (!addrinfo.ip_p(context).isTrue()) throw typeError(context, "not an INET or INET6 address: " + addrinfo);
             iaddr = new InetSocketAddress(addrinfo.getInetAddress(), addrinfo.getPort());
         } else {
             iaddr = addressFromSockaddr_in(context, arg);
@@ -71,7 +70,7 @@ public class Sockaddr {
     }
 
     public static InetSocketAddress addressFromSockaddr_in(ThreadContext context, ByteList val) {
-        RubyArray sockaddr = (RubyArray) unpack_sockaddr_in(context, val);
+        RubyArray sockaddr = unpack_sockaddr_in(context, val);
 
         IRubyObject addr = sockaddr.pop(context);
         IRubyObject _port = sockaddr.pop(context);

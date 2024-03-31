@@ -59,7 +59,6 @@ import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.ReadonlyGlobalVariable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.ByteList;
 import org.jruby.util.ByteListHelper;
 import org.jruby.util.KCode;
@@ -72,7 +71,7 @@ import org.jruby.util.io.FilenoUtil;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.STDIO;
 
-import static org.jruby.api.Raise.typeError;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.*;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.io.EncodingUtils.newExternalStringWithEncoding;
@@ -446,7 +445,7 @@ public class RubyGlobal {
         @JRubyMethod
         public IRubyObject freeze(ThreadContext context) {
             // FIXME: So far I can see this is only used by ENV so I put it here but perhaps we need to differentiate case
-            throw context.runtime.newTypeError("cannot freeze ENV");
+            throw typeError(context, "cannot freeze ENV");
         }
 
         @JRubyMethod(name = "assoc")
@@ -612,7 +611,7 @@ public class RubyGlobal {
         @JRubyMethod(name = "clone")
         @Override
         public IRubyObject rbClone(ThreadContext context) {
-            throw context.runtime.newTypeError("Cannot clone ENV, use ENV.to_h to get a copy of ENV as a hash");
+            throw typeError(context, "Cannot clone ENV, use ENV.to_h to get a copy of ENV as a hash");
         }
 
         @JRubyMethod(name = "clone")
@@ -625,9 +624,7 @@ public class RubyGlobal {
             }
 
             IRubyObject freeze = ArgsUtil.getFreezeOpt(context, opts);
-            if (freeze != null && freeze.isTrue()) {
-                throw runtime.newTypeError("cannot freeze ENV");
-            }
+            if (freeze != null && freeze.isTrue()) throw typeError(context, "cannot freeze ENV");
 
             return rbClone(context);
         }
@@ -635,7 +632,7 @@ public class RubyGlobal {
         @JRubyMethod()
         @Override
         public IRubyObject dup(ThreadContext context) {
-            throw context.runtime.newTypeError("Cannot dup ENV, use ENV.to_h to get a copy of ENV as a hash");
+            throw typeError(context, "Cannot dup ENV, use ENV.to_h to get a copy of ENV as a hash");
         }
 
         private final RaiseException concurrentModification() {
@@ -725,9 +722,7 @@ public class RubyGlobal {
 
         protected static IRubyObject verifyStringLike(ThreadContext context, IRubyObject test) {
             IRubyObject string = test.checkStringType();
-            if (string.isNil()) {
-                throw context.runtime.newTypeError("no implicit conversion of " + test.getMetaClass() + " into String");
-            }
+            if (string.isNil()) throw typeError(context, "no implicit conversion of ", test, " into String");
 
             return string;
         }
@@ -810,9 +805,7 @@ public class RubyGlobal {
         }
 
         public void modify() {
-            if (isFrozen()) {
-                throw getRuntime().newTypeError("ENV_JAVA is not writable until you require 'java'");
-            }
+            if (isFrozen()) throw typeError(getRuntime().getCurrentContext(), "ENV_JAVA is not writable until you require 'java'");
         }
     }
 
@@ -911,10 +904,10 @@ public class RubyGlobal {
 
             if (value.isNil()) {
                 context.clearBackRef();
-            } else if (value instanceof RubyMatchData) {
-                context.setBackRef((RubyMatchData) value);
+            } else if (value instanceof RubyMatchData match) {
+                context.setBackRef(match);
             } else {
-                typeError(context, value, "MatchData");
+                throw typeError(context, value, "MatchData");
             }
 
             return value;
@@ -952,7 +945,7 @@ public class RubyGlobal {
             if (!value.isNil() &&
                     !runtime.getException().isInstance(value) &&
                     !(JavaUtil.isJavaObject(value) && JavaUtil.unwrapJavaObject(value) instanceof Throwable)) {
-                throw runtime.newTypeError("assigning non-exception to $!");
+                throw typeError(value.getRuntime().getCurrentContext(), "assigning non-exception to $!");
             }
 
             return runtime.getCurrentContext().setErrorInfo(value);
@@ -973,7 +966,7 @@ public class RubyGlobal {
         @Override
         public IRubyObject set(IRubyObject value) {
             if (!value.isNil() && ! (value instanceof RubyString)) {
-                throw runtime.newTypeError("value of " + name() + " must be a String");
+                throw typeError(value.getRuntime().getCurrentContext(), name() + " must be a String");
             }
             return super.set(value);
         }
@@ -1033,7 +1026,7 @@ public class RubyGlobal {
         @Override
         public IRubyObject set(IRubyObject value) {
             if (!value.isNil() && ! (value instanceof RubyString) && ! (value instanceof RubyRegexp)) {
-                throw runtime.newTypeError("value of " + name() + " must be String or Regexp");
+                throw typeError(value.getRuntime().getCurrentContext(), "value of " + name() + " must be String or Regexp");
             }
             return super.set(value);
         }
@@ -1173,8 +1166,7 @@ public class RubyGlobal {
             }
 
             if (!value.respondsTo("write") && !value.respondsToMissing("write")) {
-                throw runtime.newTypeError(name() + " must have write method, " +
-                                    value.getType().getName() + " given");
+                throw typeError(value.getRuntime().getCurrentContext(), name() + " must have write method, ", value, " given");
             }
 
             return super.set(value);

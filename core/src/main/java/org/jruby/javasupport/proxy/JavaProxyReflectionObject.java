@@ -40,6 +40,8 @@ import org.jruby.javasupport.Java;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Error.typeError;
+
 public class JavaProxyReflectionObject extends RubyObject {
 
     public JavaProxyReflectionObject(Ruby runtime, RubyClass metaClass) {
@@ -128,17 +130,17 @@ public class JavaProxyReflectionObject extends RubyObject {
 
     @JRubyMethod
     public RubyFixnum length() {
-        throw getRuntime().newTypeError("not a java array");
+        throw typeError(getRuntime().getCurrentContext(), "not a java array");
     }
 
     @JRubyMethod(name = "[]")
     public IRubyObject aref(IRubyObject index) {
-        throw getRuntime().newTypeError("not a java array");
+        throw typeError(getRuntime().getCurrentContext(), "not a java array");
     }
 
     @JRubyMethod(name = "[]=")
     public IRubyObject aset(IRubyObject index, IRubyObject someValue) {
-        throw getRuntime().newTypeError("not a java array");
+        throw typeError(getRuntime().getCurrentContext(), "not a java array");
     }
 
     @JRubyMethod(name = "java_proxy?")

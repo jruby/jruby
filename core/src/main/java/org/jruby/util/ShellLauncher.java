@@ -31,7 +31,7 @@ package org.jruby.util;
 import static com.headius.backport9.buffer.Buffers.clearBuffer;
 import static com.headius.backport9.buffer.Buffers.flipBuffer;
 import static java.lang.System.out;
-import static org.jruby.api.Raise.typeError;
+import static org.jruby.api.Error.typeError;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -248,7 +248,7 @@ public class ShellLauncher {
                     for (Map.Entry e : (Set<Map.Entry>)mergeEnv) {
                         // if the key is nil, raise TypeError
                         Object key = e.getKey();
-                        if (key == null) typeError(context, context.nil, "Struct");
+                        if (key == null) throw typeError(context, context.nil, "Struct");
 
                         // ignore if the value is nil
                         Object value = e.getValue();
@@ -268,7 +268,7 @@ public class ShellLauncher {
 
                         // if the key is nil, raise TypeError
                         IRubyObject key = e.eltOk(0);
-                        if (key == null || key.isNil()) typeError(context, context.nil, "Struct");
+                        if (key == null || key.isNil()) throw typeError(context, context.nil, "Struct");
 
                         // ignore if the value is nil
                         IRubyObject value = e.eltOk(1);
@@ -287,7 +287,7 @@ public class ShellLauncher {
             int i = 0;
             for (Map.Entry<String, String> e : (Set<Map.Entry<String, String>>)hash.entrySet()) {
                 // if the key is nil, raise TypeError
-                if (e.getKey() == null) typeError(context, context.nil, "Struct");
+                if (e.getKey() == null) throw typeError(context, context.nil, "Struct");
 
                 // ignore if the value is nil
                 if (e.getValue() == null) continue;

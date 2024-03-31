@@ -30,7 +30,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import static org.jruby.api.Raise.typeError;
+import static org.jruby.api.Error.typeError;
 
 
 public final class DefaultMethodFactory extends MethodFactory {
@@ -60,7 +60,7 @@ public final class DefaultMethodFactory extends MethodFactory {
         for (int i = 0; i < parameterTypes.length; ++i)  {
             marshallers[i] = getMarshaller(parameterTypes[i], convention, enums);
             if (marshallers[i] == null) {
-                throw module.getRuntime().newTypeError("Could not create marshaller for " + parameterTypes[i]);
+                throw typeError(module.getRuntime().getCurrentContext(), "Could not create marshaller for " + parameterTypes[i]);
             }
         }
 
@@ -94,7 +94,7 @@ public final class DefaultMethodFactory extends MethodFactory {
             // throw an exception
         }
 
-        throw returnType.getRuntime().newTypeError("Cannot get FunctionInvoker for " + returnType);
+        throw typeError(returnType.getRuntime().getCurrentContext(), "Cannot get FunctionInvoker for " + returnType);
     }
 
     static FunctionInvoker getFunctionInvoker(NativeType returnType) {

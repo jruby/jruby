@@ -42,6 +42,8 @@ import org.jruby.Ruby;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Error.typeError;
+
 public class UnmarshalCache {
     private final Ruby runtime;
     private final List<IRubyObject> links = new ArrayList<>();
@@ -68,7 +70,7 @@ public class UnmarshalCache {
         try {
             return symbols.get(input.unmarshalInt());
         } catch (IndexOutOfBoundsException e) {
-            throw runtime.newTypeError("bad symbol");
+            throw typeError(runtime.getCurrentContext(),"bad symbol");
         }
     }
 

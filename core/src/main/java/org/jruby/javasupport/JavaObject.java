@@ -56,6 +56,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.JRubyObjectInputStream;
 
+import static org.jruby.api.Error.typeError;
 import static org.jruby.javasupport.JavaUtil.unwrapJava;
 
 /**
@@ -222,7 +223,7 @@ public class JavaObject extends RubyObject {
 
     @JRubyMethod
     public RubyFixnum length() {
-        throw getRuntime().newTypeError("not a java array");
+        throw typeError(getRuntime().getCurrentContext(), "not a java array");
     }
 
     @JRubyMethod(name = "java_proxy?")
@@ -253,12 +254,11 @@ public class JavaObject extends RubyObject {
                 new ObjectOutputStream(baos).writeObject(getValue());
 
                 return context.runtime.newString(new ByteList(baos.toByteArray(), false));
-            }
-            catch (IOException ex) {
+            } catch (IOException ex) {
                 throw context.runtime.newIOErrorFromException(ex);
             }
         }
-        throw context.runtime.newTypeError("no marshal_dump is defined for class " + getJavaClass());
+        throw typeError(context, "no marshal_dump is defined for class " + getJavaClass());
     }
 
     @JRubyMethod
@@ -270,12 +270,10 @@ public class JavaObject extends RubyObject {
             dataWrapStruct(new JRubyObjectInputStream(context.runtime, bais).readObject());
 
             return this;
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             throw context.runtime.newIOErrorFromException(ex);
-        }
-        catch (ClassNotFoundException ex) {
-            throw context.runtime.newTypeError("Class not found unmarshaling Java type: " + ex.getLocalizedMessage());
+        } catch (ClassNotFoundException ex) {
+            throw typeError(context, "Class not found unmarshaling Java type: " + ex.getLocalizedMessage());
         }
     }
 

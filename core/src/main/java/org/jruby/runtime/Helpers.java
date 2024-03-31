@@ -81,7 +81,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.unicode.UnicodeEncoding;
 
 import static org.jruby.RubyBasicObject.getMetaClass;
-import static org.jruby.api.Raise.typeError;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_EMPTY;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
@@ -108,7 +108,7 @@ public class Helpers {
 
     public static RubyClass getSingletonClass(Ruby runtime, IRubyObject receiver) {
         if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
-            throw runtime.newTypeError("can't define singleton");
+            throw typeError(runtime.getCurrentContext(), "can't define singleton");
         } else {
             return receiver.getSingletonClass();
         }
@@ -985,7 +985,7 @@ public class Helpers {
     private static IRubyObject coerceProc(IRubyObject maybeProc, Ruby runtime) throws RaiseException {
         IRubyObject proc = TypeConverter.convertToType(maybeProc, runtime.getProc(), "to_proc", false);
 
-        if (!(proc instanceof RubyProc)) typeError(runtime.getCurrentContext(), maybeProc, "Proc");
+        if (!(proc instanceof RubyProc)) throw typeError(runtime.getCurrentContext(), maybeProc, "Proc");
 
         return proc;
     }
@@ -1097,13 +1097,10 @@ public class Helpers {
     }
 
     public static IRubyObject isExceptionHandled(IRubyObject currentException, IRubyObject exception, ThreadContext context) {
-        Ruby runtime = context.runtime;
-        if (!runtime.getModule().isInstance(exception)) {
-            throw runtime.newTypeError("class or module required for rescue clause");
-        }
+        if (!context.runtime.getModule().isInstance(exception)) throw typeError(context, "class or module required for rescue clause");
+
         IRubyObject result = invoke(context, exception, "===", currentException);
-        if (result.isTrue()) return result;
-        return runtime.getFalse();
+        return result.isTrue() ? result : context.fals;
     }
 
     public static IRubyObject isExceptionHandled(RubyException currentException, IRubyObject exception0, IRubyObject exception1, ThreadContext context) {
@@ -1345,7 +1342,7 @@ public class Helpers {
 
     public static IRubyObject setConstantInModule(ThreadContext context, String name, IRubyObject value, IRubyObject module) {
         if (!(module instanceof RubyModule)) {
-            throw context.runtime.newTypeError(str(context.runtime, ids(context.runtime, module), " is not a class/module"));
+            throw typeError(context, str(context.runtime, ids(context.runtime, module), " is not a class/module"));
         }
         ((RubyModule) module).setConstant(name, value);
 
@@ -1871,7 +1868,7 @@ public class Helpers {
                     if (avalue.isNil()) {
                         return runtime.newArray(value);
                     } else {
-                        throw runtime.newTypeError("`to_a' did not return Array");
+                        throw typeError(context, "`to_a' did not return Array");
                     }
                 }
                 return (RubyArray)avalue;
@@ -1886,7 +1883,7 @@ public class Helpers {
                         if (avalue.isNil()) {
                             return runtime.newArray(value);
                         } else {
-                            throw runtime.newTypeError("`to_a' did not return Array");
+                            throw typeError(context, "`to_a' did not return Array");
                         }
                     }
                     return (RubyArray)avalue;
@@ -1985,7 +1982,7 @@ public class Helpers {
             if (avalue.isNil()) {
                 return new IRubyObject[] {value};
             } else {
-                throw runtime.newTypeError("`to_a' did not return Array");
+                throw typeError(runtime.getCurrentContext(), "`to_a' did not return Array");
             }
         }
         return ((RubyArray)avalue).toJavaArray();
@@ -2136,21 +2133,26 @@ public class Helpers {
 
     public static Visibility performNormalMethodChecksAndDetermineVisibility(Ruby runtime, RubyModule clazz,
                                                                              RubySymbol symbol, Visibility visibility) throws RaiseException {
-        String name = symbol.asJavaString(); // We just assume simple ascii string since that is all we are examining.
+        if (clazz == runtime.getDummy()) throw typeError(runtime.getCurrentContext(), "no class/module to add method");
 
-        if (clazz == runtime.getDummy()) {
-            throw runtime.newTypeError("no class/module to add method");
+        switch(symbol.idString()) {
+            case "__id__":
+            case "__send__":
+                runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, str(runtime, "redefining `", ids(runtime, symbol), "' may cause serious problem"));
+                break;
+            case "initialize":
+                if (clazz == runtime.getObject()) {
+                    runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, "redefining Object#initialize may cause infinite loop");
+                }
+            case "initialize_copy":
+            case "initialize_dup":
+            case "initialize_clone":
+            case "respond_to_missing?":
+                visibility = Visibility.PRIVATE;
+                break;
         }
 
-        if (clazz == runtime.getObject() && "initialize".equals(name)) {
-            runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, "redefining Object#initialize may cause infinite loop");
-        }
-
-        if ("__id__".equals(name) || "__send__".equals(name)) {
-            runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, str(runtime, "redefining `", ids(runtime, symbol), "' may cause serious problem"));
-        }
-
-        if ("initialize".equals(name) || "initialize_copy".equals(name) || name.equals("initialize_dup") || name.equals("initialize_clone") || name.equals("respond_to_missing?") || visibility == Visibility.MODULE_FUNCTION) {
+        if (visibility == Visibility.MODULE_FUNCTION) {
             visibility = Visibility.PRIVATE;
         }
 
@@ -2159,16 +2161,12 @@ public class Helpers {
 
     public static RubyClass performSingletonMethodChecks(Ruby runtime, IRubyObject receiver, String name) throws RaiseException {
         if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
-            throw runtime.newTypeError(str(runtime, "can't define singleton method \"", ids(runtime, name), "\" for ", types(runtime, receiver.getMetaClass())));
+            throw typeError(runtime.getCurrentContext(), str(runtime, "can't define singleton method \"", ids(runtime, name), "\" for ", types(runtime, receiver.getMetaClass())));
         }
 
-        if (receiver.isFrozen()) {
-            throw runtime.newFrozenError("object", receiver);
-        }
+        if (receiver.isFrozen()) throw runtime.newFrozenError("object", receiver);
 
-        RubyClass rubyClass = receiver.getSingletonClass();
-
-        return rubyClass;
+        return receiver.getSingletonClass();
     }
 
     @Deprecated // not used
@@ -2270,10 +2268,9 @@ public class Helpers {
     }
 
     public static RubyModule checkIsModule(IRubyObject maybeModule) {
-        if (maybeModule instanceof RubyModule) return (RubyModule)maybeModule;
+        if (maybeModule instanceof RubyModule) return (RubyModule) maybeModule;
 
-        Ruby runtime = maybeModule.getRuntime();
-        throw runtime.newTypeError(str(runtime, ids(runtime, maybeModule), " is not a class/module"));
+        throw typeError(maybeModule.getRuntime().getCurrentContext(), "", maybeModule, " is not a class/module");
     }
 
     public static IRubyObject getGlobalVariable(Ruby runtime, String name) {
@@ -3115,7 +3112,7 @@ public class Helpers {
 
     @Deprecated
     public static IRubyObject setBackref(Ruby runtime, ThreadContext context, IRubyObject value) {
-        if (!value.isNil() && !(value instanceof RubyMatchData)) typeError(context, value, "MatchData");
+        if (!value.isNil() && !(value instanceof RubyMatchData)) throw typeError(context, value, "MatchData");
 
         return context.setBackRef(value);
     }

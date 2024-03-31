@@ -89,6 +89,8 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.Type;
 
+import static org.jruby.api.Convert.castToModule;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.ir.operands.UndefinedValue.UNDEFINED;
 import static org.jruby.runtime.Block.Type.LAMBDA;
 import static org.jruby.runtime.ThreadContext.*;
@@ -297,11 +299,10 @@ public class IRRuntimeHelpers {
     // Used by JIT
     public static IRubyObject undefMethod(ThreadContext context, Object nameArg, DynamicScope currDynScope, IRubyObject self) {
         RubyModule module = IRRuntimeHelpers.findInstanceMethodContainer(context, currDynScope, self);
-        String name = (nameArg instanceof String) ?
-                (String) nameArg : nameArg.toString();
+        String name = (nameArg instanceof String) ? (String) nameArg : nameArg.toString();
 
         if (module == null) {
-            throw context.runtime.newTypeError("No class to undef method '" + name + "'.");
+            throw typeError(context, str(context.runtime, "No class to undef method '",  context.runtime.newSymbol(name), "'."));
         }
 
         module.undef(context, name);
@@ -426,9 +427,8 @@ public class IRRuntimeHelpers {
                 }
             }
         } else if (excObj instanceof IRubyObject) {
-            // SSS FIXME: Should this check be "runtime.getModule().isInstance(excType)"??
             if (!(excType instanceof RubyModule)) {
-                throw context.runtime.newTypeError("class or module required for rescue clause. Found: " + excType);
+                throw typeError(context, str(context.runtime, "class or module required for rescue clause. Found: ", excType));
             }
 
             if (excType.callMethod(context, "===", (IRubyObject)excObj).isTrue()) {
@@ -1079,9 +1079,10 @@ public class IRRuntimeHelpers {
         return RubyRegexp.nth_match(matchNumber, context.getBackRef());
     }
 
-    public static void defineAlias(ThreadContext context, IRubyObject self, DynamicScope currDynScope, IRubyObject newName, IRubyObject oldName) {
+    public static void defineAlias(ThreadContext context, IRubyObject self, DynamicScope currDynScope,
+                                   IRubyObject newName, IRubyObject oldName) {
         if (self == null || self instanceof RubyFixnum || self instanceof RubySymbol) {
-            throw context.runtime.newTypeError("no class to make alias");
+            throw typeError(context, "no class to make alias");
         }
 
         findInstanceMethodContainer(context, currDynScope, self).aliasMethod(context, newName, oldName);
@@ -1116,14 +1117,9 @@ public class IRRuntimeHelpers {
             }
         }
 
-        if ((scope == null) && (arg != null)) {
-            // We ran out of scopes to check -- look in arg's metaclass
-            rubyClass = arg.getMetaClass();
-        }
-
-        if (rubyClass == null) {
-            throw context.runtime.newTypeError("no class/module to define class variable");
-        }
+        // We ran out of scopes to check -- look in arg's metaclass
+        if ((scope == null) && (arg != null)) rubyClass = arg.getMetaClass();
+        if (rubyClass == null) throw typeError(context, "no class/module to define class variable");
 
         return rubyClass;
     }
@@ -1697,12 +1693,8 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static IRubyObject inheritedSearchConst(ThreadContext context, IRubyObject cmVal, String constName, boolean noPrivateConsts) {
-        RubyModule module;
-        if (cmVal instanceof RubyModule) {
-            module = (RubyModule) cmVal;
-        } else {
-            throw context.runtime.newTypeError(cmVal + " is not a type/class");
-        }
+        if (!(cmVal instanceof RubyModule)) throw typeError(context, "", cmVal, " is not a class/module");
+        RubyModule module = (RubyModule) cmVal;
 
         IRubyObject constant = noPrivateConsts ? module.getConstantFromNoConstMissing(constName, false) : module.getConstantNoConstMissing(constName);
 
@@ -1770,9 +1762,7 @@ public class IRRuntimeHelpers {
     @Interp @JIT
     public static RubyModule newRubyModuleFromIR(ThreadContext context, String id, StaticScope scope,
                                                  Object rubyContainer, boolean maybeRefined) {
-        if (!(rubyContainer instanceof RubyModule)) {
-            throw context.runtime.newTypeError("no outer class/module");
-        }
+        if (!(rubyContainer instanceof RubyModule)) throw typeError(context, "no outer class/module");
 
         RubyModule newRubyModule = ((RubyModule) rubyContainer).defineOrGetModuleUnder(id, scope.getFile(), context.getLine() + 1);
         scope.setModule(newRubyModule);
@@ -1786,15 +1776,15 @@ public class IRRuntimeHelpers {
     public static DynamicMethod newCompiledClassBody(ThreadContext context, MethodHandle handle, String id, int line,
                                                      StaticScope scope, Object container,
                                                      Object superClass, boolean maybeRefined) {
-        RubyModule newRubyClass = newRubyClassFromIR(context.runtime, id, scope, superClass, container, maybeRefined);
+        RubyModule newRubyClass = newRubyClassFromIR(context, id, scope, superClass, container, maybeRefined);
 
         return new CompiledIRMethod(handle, id, line, scope, Visibility.PUBLIC, newRubyClass);
     }
 
-    @Interp @JIT
-    public static RubyModule newRubyClassFromIR(Ruby runtime, String id, StaticScope scope, Object superClass,
+    @Interp
+    public static RubyModule newRubyClassFromIR(ThreadContext context, String id, StaticScope scope, Object superClass,
                                                 Object container, boolean maybeRefined) {
-        if (!(container instanceof RubyModule)) throw runtime.newTypeError("no outer class/module");
+        if (!(container instanceof RubyModule)) throw typeError(context, "no outer class/module");
 
         RubyClass sc;
         if (superClass == UNDEFINED) {
@@ -1805,12 +1795,11 @@ public class IRRuntimeHelpers {
             sc = (RubyClass) superClass;
         }
 
-        RubyModule newRubyClass = ((RubyModule)container).defineOrGetClassUnder(id, sc,
-                scope.getFile(), runtime.getCurrentContext().getLine() + 1);
+        RubyModule newRubyClass = ((RubyModule)container).defineOrGetClassUnder(id, sc, scope.getFile(), context.getLine() + 1);
 
         scope.setModule(newRubyClass);
 
-        if (maybeRefined) scope.captureParentRefinements(runtime.getCurrentContext());
+        if (maybeRefined) scope.captureParentRefinements(context);
 
         return newRubyClass;
     }
@@ -1874,7 +1863,7 @@ public class IRRuntimeHelpers {
 
     private static RubyClass checkClassForDef(ThreadContext context, String id, IRubyObject obj) {
         if (obj instanceof RubyFixnum || obj instanceof RubySymbol || obj instanceof RubyFloat) {
-            throw context.runtime.newTypeError(str(context.runtime, "can't define singleton method \"",
+            throw typeError(context, str(context.runtime, "can't define singleton method \"",
                     ids(context.runtime, id), "\" for ", obj.getMetaClass().rubyBaseName()));
         }
 
@@ -2200,11 +2189,8 @@ public class IRRuntimeHelpers {
     public static IRubyObject[] toAry(ThreadContext context, IRubyObject[] args) {
         IRubyObject ary;
         if (args.length == 1 && (ary = Helpers.aryOrToAry(context, args[0])) != context.nil) {
-            if (ary instanceof RubyArray) {
-                args = ((RubyArray) ary).toJavaArray();
-            } else {
-                throw context.runtime.newTypeError(args[0].getType().getName() + "#to_ary should return Array");
-            }
+            if (!(ary instanceof RubyArray)) throw typeError(context, "", args[0], "#to_ary should return Array");
+            args = ((RubyArray) ary).toJavaArray();
         }
         return args;
     }

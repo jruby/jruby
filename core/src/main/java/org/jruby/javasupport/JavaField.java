@@ -46,6 +46,8 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Error.typeError;
+
 @Deprecated
 // @JRubyClass(name="Java::JavaField")
 public class JavaField {
@@ -99,43 +101,26 @@ public class JavaField {
 
     @JRubyMethod
     public IRubyObject value(ThreadContext context, IRubyObject object) {
-        final Ruby runtime = context.runtime;
-
-        final Object javaObject;
-        if ( ! Modifier.isStatic( field.getModifiers() ) ) {
-            javaObject = unwrapJavaObject(context, object);
-        }
-        else {
-            javaObject = null;
-        }
+        var javaObject = !Modifier.isStatic(field.getModifiers()) ? unwrapJavaObject(context, object) : null;
 
         try {
-            return convertToRuby(runtime, field.get(javaObject));
-        }
-        catch (IllegalAccessException iae) {
-            throw runtime.newTypeError("illegal access");
+            return convertToRuby(context.runtime, field.get(javaObject));
+        } catch (IllegalAccessException iae) {
+            throw typeError(context, "illegal access");
         }
     }
 
     @JRubyMethod
     public IRubyObject set_value(ThreadContext context, IRubyObject object, IRubyObject value) {
-        final Object javaObject;
-        if ( ! Modifier.isStatic( field.getModifiers() ) ) {
-            javaObject = unwrapJavaObject(context, object);
-        }
-        else {
-            javaObject = null;
-        }
+        var javaObject = !Modifier.isStatic(field.getModifiers()) ? unwrapJavaObject(context, object) : null;
+        var javaValue = convertValueToJava(value);
 
-        final Object javaValue = convertValueToJava(value);
         try {
             field.set(javaObject, javaValue);
-        }
-        catch (IllegalAccessException iae) {
-            throw context.runtime.newTypeError("illegal access on setting variable: " + iae.getMessage());
-        }
-        catch (IllegalArgumentException iae) {
-            throw context.runtime.newTypeError("wrong type for " + field.getType().getName() + ": " +
+        } catch (IllegalAccessException iae) {
+            throw typeError(context, "illegal access on setting variable: " + iae.getMessage());
+        } catch (IllegalArgumentException iae) {
+            throw typeError(context, "wrong type for " + field.getType().getName() + ": " +
                     ( javaValue == null ? null : javaValue.getClass().getName() ) );
         }
         return value;
@@ -150,27 +135,23 @@ public class JavaField {
     public IRubyObject static_value(ThreadContext context) {
         try {
             return convertToRuby( context.runtime, field.get(null) );
-        }
-        catch (IllegalAccessException iae) {
-            throw context.runtime.newTypeError("illegal static value access: " + iae.getMessage());
+        } catch (IllegalAccessException iae) {
+            throw typeError(context, "illegal static value access: " + iae.getMessage());
         }
     }
 
     @JRubyMethod
     public IRubyObject set_static_value(ThreadContext context, IRubyObject value) {
-        if ( ! ( value instanceof JavaObject ) ) {
-            throw context.runtime.newTypeError("not a java object:" + value);
-        }
-        final Object javaValue = convertValueToJava(value);
+        if (!(value instanceof JavaObject)) throw typeError(context, "not a java object:" + value);
+
+        var javaValue = convertValueToJava(value);
+
         try {
             field.set(null, javaValue);
-        }
-        catch (IllegalAccessException iae) {
-            throw context.runtime.newTypeError(
-                                "illegal access on setting static variable: " + iae.getMessage());
-        }
-        catch (IllegalArgumentException iae) {
-            throw context.runtime.newTypeError("wrong type for " + field.getType().getName() + ": " +
+        } catch (IllegalAccessException iae) {
+            throw typeError(context, "illegal access on setting static variable: " + iae.getMessage());
+        } catch (IllegalArgumentException iae) {
+            throw typeError(context, "wrong type for " + field.getType().getName() + ": " +
                     ( javaValue == null ? null : javaValue.getClass().getName() ) );
         }
         return value;
@@ -186,10 +167,8 @@ public class JavaField {
     }
 
     private Object unwrapJavaObject(ThreadContext context, final IRubyObject object) throws RaiseException {
-        Object javaObject = JavaUtil.unwrapJavaValue(object);
-        if ( javaObject == null ) {
-            throw context.runtime.newTypeError("not a java object: " + object);
-        }
+        var javaObject = JavaUtil.unwrapJavaValue(object);
+        if (javaObject == null) throw typeError(context, "not a java object: " + object);
         return javaObject;
     }
 

@@ -9,6 +9,8 @@ import org.jruby.java.util.ArrayUtils;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Error.typeError;
+
 public class ArrayJavaAddons {
 
     @JRubyMethod(name = "copy_data")
@@ -126,10 +128,8 @@ public class ArrayJavaAddons {
     }
 
     private static ArrayJavaProxy assertJavaArrayProxy(final ThreadContext context, final IRubyObject java_array) {
-        if (java_array instanceof ArrayJavaProxy) {
-            return (ArrayJavaProxy) java_array;
-        }
-        throw context.runtime.newTypeError("expected a Java array, got " + java_array.inspect());
+        if (java_array instanceof ArrayJavaProxy) throw typeError(context, java_array, "Java array");
+        return (ArrayJavaProxy) java_array;
     }
 
 }

@@ -39,7 +39,9 @@ import org.jruby.RubyInteger;
 import org.jruby.java.util.ArrayUtils;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import static org.jruby.api.Raise.typeError;
+import static org.jruby.api.Convert.castToInteger;
+import static org.jruby.api.Error.typeError;
+import static org.jruby.javasupport.Java.castToJavaObject;
 
 /**
  * Java::JavaArray wrapping is no longer used with JRuby.
@@ -85,14 +87,12 @@ public class JavaArray extends JavaObject {
         return ArrayUtils.arefDirect(runtime, getValue(), javaConverter, intIndex);
     }
 
-    public IRubyObject aset(IRubyObject index, IRubyObject value) {
-         if (! (index instanceof RubyInteger)) typeError(getRuntime().getCurrentContext(), index, "Integer");
-        int intIndex = (int) ((RubyInteger) index).getLongValue();
+    public IRubyObject aset(IRubyObject indexArg, IRubyObject value) {
+        var context = getRuntime().getCurrentContext();
+        var index = castToInteger(context, indexArg).getIntValue();
+        var javaObject = castToJavaObject(context, value).getValue();
 
-        if (! (value instanceof JavaObject)) typeError(getRuntime().getCurrentContext(), value, "a java object");
-        Object javaObject = ((JavaObject) value).getValue();
-
-        ArrayUtils.setWithExceptionHandlingDirect(getRuntime(), javaObject, intIndex, javaObject);
+        ArrayUtils.setWithExceptionHandlingDirect(getRuntime(), javaObject, index, javaObject);
 
         return value;
     }
@@ -105,17 +105,14 @@ public class JavaArray extends JavaObject {
         ArrayUtils.setWithExceptionHandlingDirect(getRuntime(), getValue(), intIndex, javaObject);
     }
 
-    public IRubyObject afill(IRubyObject beginIndex, IRubyObject endIndex, IRubyObject value) {
-        if (!(beginIndex instanceof RubyInteger)) typeError(getRuntime().getCurrentContext(), beginIndex, "Integer");
-        int intIndex = (int) ((RubyInteger) beginIndex).getLongValue();
+    public IRubyObject afill(IRubyObject beginArg, IRubyObject endArg, IRubyObject value) {
+        var context = getRuntime().getCurrentContext();
+        var beginIndex = castToInteger(context, beginArg).getIntValue();
+        var endIndex = castToInteger(context, endArg).getIntValue();
+        var javaValue = castToJavaObject(context, value).getValue();
 
-        if (!(endIndex instanceof RubyInteger)) typeError(getRuntime().getCurrentContext(), endIndex, "Integer");
-        int intEndIndex = (int) ((RubyInteger) endIndex).getLongValue();
+        fillWithExceptionHandling(beginIndex, endIndex, javaValue);
 
-        if (! (value instanceof JavaObject)) typeError(getRuntime().getCurrentContext(), value, "a java object");
-        Object javaValue = ((JavaObject) value).getValue();
-
-        fillWithExceptionHandling(intIndex, intEndIndex, javaValue);
         return value;
     }
 

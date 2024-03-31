@@ -69,6 +69,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.StringSupport;
 
+import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.marshal.MarshalCommon.*;
 import static org.jruby.util.RubyStringBuilder.inspectIdentifierByteList;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -111,7 +112,7 @@ public class UnmarshalStream extends InputStream {
         }
 
         if(major != Constants.MARSHAL_MAJOR || minor > Constants.MARSHAL_MINOR) {
-            throw runtime.newTypeError(String.format("incompatible marshal file format (can't be read)\n\tformat version %d.%d required; %d.%d given", Constants.MARSHAL_MAJOR, Constants.MARSHAL_MINOR, major, minor));
+            throw typeError(runtime.getCurrentContext(), String.format("incompatible marshal file format (can't be read)\n\tformat version %d.%d required; %d.%d given", Constants.MARSHAL_MAJOR, Constants.MARSHAL_MINOR, major, minor));
         }
     }
 
@@ -328,7 +329,7 @@ public class UnmarshalStream extends InputStream {
 
     public void prohibitIVar(MarshalState state, String label, String name) {
         if (state != null && state.isIvarWaiting()) {
-            throw runtime.newTypeError("can't override instance variable of " + label + "`" + name + "'");
+            throw typeError(runtime.getCurrentContext(), "can't override instance variable of " + label + "`" + name + "'");
         }
     }
 
@@ -358,7 +359,9 @@ public class UnmarshalStream extends InputStream {
         IRubyObject obj = entry(klass.allocate());
         // FIXME: Missing T_DATA error check?
 
-        if (!obj.respondsTo("_load_data")) throw runtime.newTypeError(str(runtime, name, " needs to have instance method _load_data"));
+        if (!obj.respondsTo("_load_data")) {
+            throw typeError(runtime.getCurrentContext(), str(runtime, name, " needs to have instance method _load_data"));
+        }
 
         IRubyObject arg = object0(state, partial, extendedModules);
         obj.callMethod(runtime.getCurrentContext(), "_load_data", arg);
@@ -432,7 +435,7 @@ public class UnmarshalStream extends InputStream {
     private IRubyObject objectForUClass(boolean partial, List<RubyModule> extendedModules) throws IOException {
         RubyClass c = getClassFromPath(runtime, unique().asJavaString());
 
-        if (c.isSingleton()) throw runtime.newTypeError("singleton can't be loaded");
+        if (c.isSingleton()) throw typeError(runtime.getCurrentContext(), "singleton can't be loaded");
 
         int type = r_byte();
         if (c == runtime.getHash() && (type == TYPE_HASH || type == TYPE_HASH_DEF)) {

@@ -65,8 +65,6 @@ import org.jruby.util.io.Sockaddr;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
-import java.net.Inet6Address;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
@@ -82,14 +80,11 @@ import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Enumeration;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
-import static org.jruby.api.Raise.typeError;
+import static org.jruby.api.Convert.castToFixnum;
+import static org.jruby.api.Error.typeError;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -149,11 +144,8 @@ public class RubySocket extends RubyBasicSocket {
 
     @JRubyMethod(meta = true)
     public static IRubyObject for_fd(ThreadContext context, IRubyObject socketClass, IRubyObject _fd) {
+        int intFD = castToFixnum(context, _fd).getIntValue();
         Ruby runtime = context.runtime;
-
-        if (!(_fd instanceof RubyFixnum)) typeError(context, _fd, "Fixnum");
-
-        int intFD = (int)((RubyFixnum)_fd).getLongValue();
         ChannelFD fd = runtime.getFilenoUtil().getWrapperFromFileno(intFD);
 
         if (fd == null) throw runtime.newErrnoEBADFError();

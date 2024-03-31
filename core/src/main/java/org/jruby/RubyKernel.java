@@ -108,7 +108,7 @@ import static org.jruby.anno.FrameField.METHODNAME;
 import static org.jruby.anno.FrameField.SCOPE;
 import static org.jruby.anno.FrameField.SELF;
 import static org.jruby.anno.FrameField.VISIBILITY;
-import static org.jruby.api.Raise.typeError;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -193,11 +193,9 @@ public class RubyKernel {
 
     @JRubyMethod(required = 2, module = true, visibility = PRIVATE, reads = {SCOPE})
     public static IRubyObject autoload(ThreadContext context, final IRubyObject recv, IRubyObject symbol, IRubyObject file) {
-        RubyModule module = IRRuntimeHelpers.getCurrentClassBase(context, recv);
+        RubyModule module = IRRuntimeHelpers.getCurrentClassBase(context, recv).getRealModule();
 
-        module = module.getRealModule();
-
-        if (module == null || module.isNil()) throw context.runtime.newTypeError("Can not set autoload on singleton class");
+        if (module == null || module.isNil()) throw typeError(context, "Can not set autoload on singleton class");
 
         return module.autoload(context, symbol, file);
     }
@@ -545,9 +543,9 @@ public class RubyKernel {
             }
             return RubyNumeric.str2fnum(runtime, str, true, exception);
         }
-        if (object.isNil()){
-            if (!exception) return object;
-            throw runtime.newTypeError("can't convert nil into Float");
+        if (object.isNil()) {
+            if (exception) throw typeError(context, "can't convert nil into Float");
+            return object;
         }
 
         try {
@@ -571,15 +569,12 @@ public class RubyKernel {
 
     @JRubyMethod(name = "Hash", required = 1, module = true, visibility = PRIVATE)
     public static IRubyObject new_hash(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        IRubyObject tmp;
-        Ruby runtime = context.runtime;
-        if (arg == context.nil) return RubyHash.newHash(runtime);
-        tmp = TypeConverter.checkHashType(context, sites(context).to_hash_checked, arg);
+        if (arg == context.nil) return RubyHash.newHash(context.runtime);
+
+        IRubyObject tmp = TypeConverter.checkHashType(context, sites(context).to_hash_checked, arg);
         if (tmp == context.nil) {
-            if (arg instanceof RubyArray && ((RubyArray) arg).isEmpty()) {
-                return RubyHash.newHash(runtime);
-            }
-            throw runtime.newTypeError("can't convert " + arg.getMetaClass() + " into Hash");
+            if (arg instanceof RubyArray && ((RubyArray) arg).isEmpty()) return RubyHash.newHash(context.runtime);
+            throw typeError(context, "can't convert ", arg, " into Hash");
         }
         return tmp;
     }
@@ -803,16 +798,13 @@ public class RubyKernel {
      * @throws RaiseException TypeError if $_ is not a String or nil.
      * @return value of $_ as String.
      */
-    private static RubyString getLastlineString(ThreadContext context, Ruby runtime) {
+    private static RubyString getLastlineString(ThreadContext context) {
         IRubyObject line = context.getLastLine();
 
-        if (line.isNil()) {
-            throw runtime.newTypeError("$_ value need to be String (nil given).");
-        } else if (!(line instanceof RubyString)) {
-            throw runtime.newTypeError("$_ value need to be String (" + line.getMetaClass().getName() + " given).");
-        } else {
-            return (RubyString) line;
-        }
+        if (line.isNil()) throw typeError(context, "$_ value need to be String (nil given).");
+        if (!(line instanceof RubyString)) throw typeError(context, "$_ value need to be String (", line, " given).");
+
+        return (RubyString) line;
     }
 
     @JRubyMethod(required = 1, optional = 3, checkArity = false, module = true, visibility = PRIVATE)
@@ -997,7 +989,7 @@ public class RubyKernel {
 
         cause = context.getErrorInfo(); // returns nil for no error-info
 
-        maybeRaiseJavaException(runtime, arg0);
+        maybeRaiseJavaException(context, arg0);
 
         RaiseException raise;
         if (arg0 instanceof RubyString) {
@@ -1046,7 +1038,7 @@ public class RubyKernel {
             if ( cause == null ) cause = context.getErrorInfo(); // returns nil for no error-info
         }
 
-        maybeRaiseJavaException(runtime, args, argc);
+        maybeRaiseJavaException(context, args, argc);
 
         RaiseException raise;
         switch (argc) {
@@ -1087,53 +1079,45 @@ public class RubyKernel {
         throw raise;
     }
 
-    private static void maybeRaiseJavaException(final Ruby runtime,
-        final IRubyObject[] args, final int argc) {
+    private static void maybeRaiseJavaException(ThreadContext context, final IRubyObject[] args, final int argc) {
         // Check for a Java exception
         IRubyObject maybeException = null;
         switch (argc) {
             case 0:
-                maybeException = runtime.getGlobalVariables().get("$!");
+                maybeException = context.runtime.getGlobalVariables().get("$!");
                 break;
             case 1:
                 if (args.length == 1) maybeException = args[0];
                 break;
         }
 
-        maybeRaiseJavaException(runtime, maybeException);
+        maybeRaiseJavaException(context, maybeException);
     }
 
-    private static void maybeRaiseJavaException(
-            final Ruby runtime, final IRubyObject arg0) {
+    private static void maybeRaiseJavaException(ThreadContext context, final IRubyObject arg) {
         // Check for a Java exception
-        if (arg0 instanceof ConcreteJavaProxy) {
+        if (arg instanceof ConcreteJavaProxy) {
             // looks like someone's trying to raise a Java exception. Let them.
-            Object maybeThrowable = ((ConcreteJavaProxy) arg0).getObject();
+            Object maybeThrowable = ((ConcreteJavaProxy) arg).getObject();
 
-            if (!(maybeThrowable instanceof Throwable)) {
-                throw runtime.newTypeError("can't raise a non-Throwable Java object");
-            }
+            if (!(maybeThrowable instanceof Throwable)) throw typeError(context, "can't raise a non-Throwable Java object");
 
             final Throwable ex = (Throwable) maybeThrowable;
-            Helpers.throwException(ex); return; // not reached
+            Helpers.throwException(ex);
+            return; // not reached
         }
     }
 
     private static RubyException convertToException(ThreadContext context, IRubyObject obj, IRubyObject optionalMessage) {
-        if (!obj.respondsTo("exception")) {
-            throw context.runtime.newTypeError("exception class/object expected");
-        }
-        IRubyObject exception;
-        if (optionalMessage == null) {
-            exception = obj.callMethod(context, "exception");
-        } else {
-            exception = obj.callMethod(context, "exception", optionalMessage);
-        }
-        try {
-            return (RubyException) exception;
-        } catch (ClassCastException cce) {
-            throw context.runtime.newTypeError("exception object expected");
-        }
+        if (!obj.respondsTo("exception")) throw typeError(context, "exception class/object expected");
+
+        IRubyObject exception = optionalMessage == null ?
+                obj.callMethod(context, "exception") :
+                obj.callMethod(context, "exception", optionalMessage);
+
+        if (!RubyException.class.isInstance(exception)) throw typeError(context, "exception object expected");
+
+        return (RubyException) exception;
     }
 
     private static void printExceptionSummary(Ruby runtime, RubyException rEx) {
@@ -1276,9 +1260,9 @@ public class RubyKernel {
     }
 
     private static Binding getBindingForEval(ThreadContext context, IRubyObject scope) {
-        if (!(scope instanceof RubyBinding)) typeError(context, scope, "Binding");
+        if (scope instanceof RubyBinding binding) return binding.getBinding().cloneForEval();
 
-        return ((RubyBinding) scope).getBinding().cloneForEval();
+        throw typeError(context, scope, "Binding");
     }
 
     @JRubyMethod(name = "caller", module = true, visibility = PRIVATE, omit = true)
@@ -1547,7 +1531,7 @@ public class RubyKernel {
         if (trace_func.isNil()) {
             context.traceEvents.setTraceFunction(null);
         } else if (!(trace_func instanceof RubyProc)) {
-            throw context.runtime.newTypeError("trace_func needs to be Proc.");
+            throw typeError(context, "trace_func needs to be Proc.");
         } else {
             context.traceEvents.setTraceFunction((RubyProc) trace_func);
         }
@@ -1620,7 +1604,7 @@ public class RubyKernel {
                 if (owner.isSingleton() &&
                     !(recv.getMetaClass().isSingleton() && recv.getMetaClass().isKindOfModule(owner))) {
 
-                    throw context.runtime.newTypeError("can't bind singleton method to a different class");
+                    throw typeError(context, "can't bind singleton method to a different class");
                 }
             }
             return singleton_class.defineMethodFromCallable(context, args[0], args[1], PUBLIC);
@@ -2420,7 +2404,7 @@ public class RubyKernel {
     /* end delegated bindings */
 
     public static IRubyObject gsub(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
-        RubyString str = (RubyString) getLastlineString(context, context.runtime).dup();
+        RubyString str = (RubyString) getLastlineString(context).dup();
 
         if (!str.gsub_bang(context, arg0, block).isNil()) {
             context.setLastLine(str);
@@ -2430,7 +2414,7 @@ public class RubyKernel {
     }
 
     public static IRubyObject gsub(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
-        RubyString str = (RubyString) getLastlineString(context, context.runtime).dup();
+        RubyString str = (RubyString) getLastlineString(context).dup();
 
         if (!str.gsub_bang(context, arg0, arg1, block).isNil()) {
             context.setLastLine(str);
@@ -2446,37 +2430,37 @@ public class RubyKernel {
     public static class LoopMethods {
         @JRubyMethod(module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE)
         public static IRubyObject gsub(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
-            return context.setLastLine(getLastlineString(context, context.runtime).gsub(context, arg0, block));
+            return context.setLastLine(getLastlineString(context).gsub(context, arg0, block));
         }
 
         @JRubyMethod(module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE)
         public static IRubyObject gsub(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
-            return context.setLastLine(getLastlineString(context, context.runtime).gsub(context, arg0, arg1, block));
+            return context.setLastLine(getLastlineString(context).gsub(context, arg0, arg1, block));
         }
 
         @JRubyMethod(module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE)
         public static IRubyObject sub(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
-            return context.setLastLine(getLastlineString(context, context.runtime).sub(context, arg0, block));
+            return context.setLastLine(getLastlineString(context).sub(context, arg0, block));
         }
 
         @JRubyMethod(module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE)
         public static IRubyObject sub(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
-            return context.setLastLine(getLastlineString(context, context.runtime).sub(context, arg0, arg1, block));
+            return context.setLastLine(getLastlineString(context).sub(context, arg0, arg1, block));
         }
 
         @JRubyMethod(module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE)
         public static IRubyObject chop(ThreadContext context, IRubyObject recv) {
-            return context.setLastLine(getLastlineString(context, context.runtime).chop(context));
+            return context.setLastLine(getLastlineString(context).chop(context));
         }
 
         @JRubyMethod(module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE)
         public static IRubyObject chomp(ThreadContext context, IRubyObject recv) {
-            return context.setLastLine(getLastlineString(context, context.runtime).chomp(context));
+            return context.setLastLine(getLastlineString(context).chomp(context));
         }
 
         @JRubyMethod(module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE)
         public static IRubyObject chomp(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
-            return context.setLastLine(getLastlineString(context, context.runtime).chomp(context, arg0));
+            return context.setLastLine(getLastlineString(context).chomp(context, arg0));
         }
     }
 

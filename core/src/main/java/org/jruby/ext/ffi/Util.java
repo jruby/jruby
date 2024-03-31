@@ -42,7 +42,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static com.headius.backport9.buffer.Buffers.positionBuffer;
-import static org.jruby.api.Raise.typeError;
+import static org.jruby.api.Error.typeError;
 
 /**
  *
@@ -184,14 +184,14 @@ public final class Util {
 
     public static ByteOrder parseByteOrder(Ruby runtime, IRubyObject byte_order) {
         if (!(byte_order instanceof RubySymbol) && !(byte_order instanceof RubyString)) {
-            typeError(runtime.getCurrentContext(), byte_order , "Symbol or String");
+            throw typeError(runtime.getCurrentContext(), byte_order , "Symbol or String");
         }
 
-        String orderName = byte_order.asJavaString();
-        if ("network".equals(orderName) || "big".equals(orderName)) return ByteOrder.BIG_ENDIAN;
-        if ("little".equals(orderName)) return ByteOrder.LITTLE_ENDIAN;
-
-        throw runtime.newArgumentError("unknown byte order");
+        switch (byte_order.asJavaString()) {
+            case "network": case "big": return ByteOrder.BIG_ENDIAN;
+            case "little": return ByteOrder.LITTLE_ENDIAN;
+            default: throw runtime.newArgumentError("unknown byte order");
+        }
     }
 
     public static int roundUpToPowerOfTwo(int v) {

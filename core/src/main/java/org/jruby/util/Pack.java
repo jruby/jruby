@@ -52,7 +52,7 @@ import org.jruby.util.io.EncodingUtils;
 
 import static com.headius.backport9.buffer.Buffers.markBuffer;
 import static com.headius.backport9.buffer.Buffers.positionBuffer;
-import static org.jruby.api.Raise.typeError;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.TypeConverter.toFloat;
 
@@ -1813,7 +1813,7 @@ public class Pack {
             @Override
             public void encode(Ruby runtime, IRubyObject from, ByteList result) {
                 if (from == runtime.getNil() && converter.getType() != null) {
-                    typeError(runtime.getCurrentContext(), from, converter.getType());
+                    throw typeError(runtime.getCurrentContext(), from, converter.getType());
                 }
                 converter.encode(runtime, from, result);
             }
@@ -2087,7 +2087,7 @@ public class Pack {
             if (packInts.listSize-- <= 0) throw context.runtime.newArgumentError(sTooFew);
 
             IRubyObject from = list.eltInternal(packInts.idx++);
-            if (from == context.nil) throw context.runtime.newTypeError("pack('w') does not take nil");
+            if (from == context.nil) throw typeError(context, "pack('w') does not take nil");
 
             final ByteList buf = new ByteList();
 
@@ -2188,7 +2188,7 @@ public class Pack {
         if (packInts.listSize-- <= 0) throw context.runtime.newArgumentError(sTooFew);
 
         IRubyObject from = list.eltInternal(packInts.idx++);
-        if (from == context.nil) typeError(context, from, "Integer");
+        if (from == context.nil) throw typeError(context, from, "Integer");
         lCurElemString = from.convertToString().getByteList();
         encodeUM(context.runtime, lCurElemString, occurrences, ignoreStar, type, result);
     }

@@ -138,7 +138,8 @@ import static org.jruby.anno.FrameField.METHODNAME;
 import static org.jruby.anno.FrameField.SCOPE;
 import static org.jruby.anno.FrameField.SELF;
 import static org.jruby.anno.FrameField.VISIBILITY;
-import static org.jruby.api.Raise.typeError;
+import static org.jruby.api.Convert.*;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.MODULE_FUNCTION;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PROTECTED;
@@ -188,10 +189,10 @@ public class RubyModule extends RubyObject {
         // Module methods can always be transplanted
         if (!originModule.isModule() && !hasModuleInHierarchy(originModule)) {
             if (originModule instanceof MetaClass) {
-                throw context.runtime.newTypeError("can't bind singleton method to a different class");
+                throw typeError(context, "can't bind singleton method to a different class");
             } else {
                 String thing = fromBind ? "an instance" : "a subclass"; // bind : define_method
-                throw context.runtime.newTypeError("bind argument must be " + thing + " of " + originModule.getName());
+                throw typeError(context, "bind argument must be " + thing + " of ", originModule, "");
             }
         }
     }
@@ -850,7 +851,7 @@ public class RubyModule extends RubyObject {
 
         if (block.isEscaped()) throw context.runtime.newArgumentError("can't pass a Proc as a block to Module#refine");
 
-        if (!(klass instanceof RubyModule)) typeError(context, klass, "Class or Module");
+        if (!(klass instanceof RubyModule)) throw typeError(context, klass, "Class or Module");
 
         if (refinements == Collections.EMPTY_MAP) refinements = newRefinementsMap();
         if (activatedRefinements == Collections.EMPTY_MAP) activatedRefinements = newActivatedRefinementsMap();
@@ -973,9 +974,7 @@ public class RubyModule extends RubyObject {
 
     // mri: rb_using_module
     public static void usingModule(ThreadContext context, RubyModule cref, IRubyObject refinedModule) {
-        if (!(refinedModule instanceof RubyModule)) typeError(context, refinedModule, "Module");
-
-        usingModuleRecursive(context, cref, (RubyModule) refinedModule);
+        usingModuleRecursive(context, cref, castToModule(context, refinedModule));
     }
 
     // mri: using_module_recursive
@@ -988,7 +987,7 @@ public class RubyModule extends RubyObject {
         if (module instanceof DelegatedModule) {
             module = module.getDelegate();
         } else if (!module.isModule()) {
-            typeError(context, module, "Module");
+            throw typeError(context, module, "Module");
         }
 
         Map<RubyModule, RubyModule> refinements = module.refinements;
@@ -1138,7 +1137,7 @@ public class RubyModule extends RubyObject {
     public void prependModule(RubyModule module) {
         testFrozen("module");
 
-        if (module.refinedClass != null) throw getRuntime().newTypeError("Cannot include refinement");
+        if (module.refinedClass != null) throw typeError(getRuntime().getCurrentContext(), "Cannot include refinement");
 
         // Make sure the module we include does not already exist
         checkForCyclicPrepend(module);
@@ -1179,9 +1178,7 @@ public class RubyModule extends RubyObject {
     @Deprecated
     public void prependModule(IRubyObject arg) {
         assert arg != null;
-        if (!(arg instanceof RubyModule)) typeError(getRuntime().getCurrentContext(), arg, "Module");
-
-        prependModule((RubyModule) arg);
+        prependModule(castToModule(getRuntime().getCurrentContext(), arg));
     }
 
     /**
@@ -1194,11 +1191,11 @@ public class RubyModule extends RubyObject {
 
         testFrozen("module");
 
+        // This cannot use castToModule because includeModule happens before first ThreadContext exists.
         if (!(arg instanceof RubyModule)) typeError(getRuntime().getCurrentContext(), arg, "Module");
-
         RubyModule module = (RubyModule) arg;
 
-        if (module.isRefinement()) throw getRuntime().newTypeError("Cannot include refinement");
+        if (module.isRefinement()) throw typeError(getRuntime().getCurrentContext(), "Cannot include refinement");
 
         // Make sure the module we include does not already exist
         checkForCyclicInclude(module);
@@ -2204,19 +2201,19 @@ public class RubyModule extends RubyObject {
         // the Object allocator. It should NOT be used to define classes that require a native allocator.
 
         Ruby runtime = getRuntime();
+        var context = runtime.getCurrentContext();
         IRubyObject classObj = getConstantAtSpecial(name);
         RubyClass clazz;
 
         if (classObj != null) {
-            if (!(classObj instanceof RubyClass)) throw runtime.newTypeError(name + " is not a class");
+            if (!(classObj instanceof RubyClass)) throw typeError(context, name + " is not a class");
             clazz = (RubyClass)classObj;
 
             if (superClazz != null) {
                 RubyClass tmp = clazz.getSuperClass();
                 while (tmp != null && tmp.isIncluded()) tmp = tmp.getSuperClass(); // need to skip IncludedModuleWrappers
                 if (tmp != null) tmp = tmp.getRealClass();
-                if (tmp != superClazz) throw runtime.newTypeError(str(runtime, "superclass mismatch for class ", ids(runtime, name)));
-                // superClazz = null;
+                if (tmp != superClazz) throw typeError(context, "superclass mismatch for class " + ids(runtime, name));
             }
         } else if ((clazz = searchProvidersForClass(name, superClazz)) != null) {
             // reopen a java class
@@ -2267,7 +2264,7 @@ public class RubyModule extends RubyObject {
         IRubyObject moduleObj = getConstantAtSpecial(name);
         RubyModule module;
         if (moduleObj != null) {
-            if (!moduleObj.isModule()) throw runtime.newTypeError(str(runtime, ids(runtime, name), " is not a module"));
+            if (!moduleObj.isModule()) throw typeError(runtime.getCurrentContext(), "", moduleObj, " is not a module");
             module = (RubyModule)moduleObj;
         } else if ((module = searchProvidersForModule(name)) != null) {
             // reopen a java module
@@ -2579,8 +2576,7 @@ public class RubyModule extends RubyObject {
             newMethod.setImplementationClass(this);
             newMethod.setVisibility(visibility);
         } else {
-            typeError(context, arg1, "Proc/Method/UnboundMethod");
-            return null; // not reached.
+            throw typeError(context, arg1, "Proc/Method/UnboundMethod");
         }
 
         Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
@@ -2678,9 +2674,9 @@ public class RubyModule extends RubyObject {
     private void checkSafeTypeToCopy(RubyClass original) {
         Ruby runtime = getRuntime();
 
-        if (original == runtime.getBasicObject()) throw runtime.newTypeError("can't copy the root class");
-        if (getSuperClass() == runtime.getBasicObject()) throw runtime.newTypeError("already initialized class");
-        if (original.isSingleton()) throw runtime.newTypeError("can't copy singleton class");
+        if (original == runtime.getBasicObject()) throw typeError(runtime.getCurrentContext(), "can't copy the root class");
+        if (getSuperClass() == runtime.getBasicObject()) throw typeError(runtime.getCurrentContext(), "already initialized class");
+        if (original.isSingleton()) throw typeError(runtime.getCurrentContext(), "can't copy singleton class");
     }
 
     public void syncConstants(RubyModule other) {
@@ -2873,12 +2869,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "<=")
     public IRubyObject op_le(IRubyObject arg) {
         Ruby runtime = getRuntime();
-
-        if (!(arg instanceof RubyModule)) {
-            throw runtime.newTypeError("compared with non class/module");
-        }
-
-        RubyModule argMod = (RubyModule) arg;
+        RubyModule argMod = castToModule(runtime.getCurrentContext(), arg, "compared with non class/module");
 
         if (searchAncestor(argMod.getMethodLocation()) != null) {
             return runtime.getTrue();
@@ -2917,11 +2908,7 @@ public class RubyModule extends RubyObject {
     */
     @JRubyMethod(name = ">=")
     public IRubyObject op_ge(IRubyObject obj) {
-        if (!(obj instanceof RubyModule)) {
-            throw getRuntime().newTypeError("compared with non class/module");
-        }
-
-        return ((RubyModule) obj).op_le(this);
+        return castToModule(getRuntime().getCurrentContext(), obj, "compared with non class/module").op_le(this);
     }
 
     /** rb_mod_gt
@@ -3274,13 +3261,10 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "prepend_features", visibility = PRIVATE)
     public RubyModule prepend_features(IRubyObject include) {
-        ThreadContext context = getRuntime().getCurrentContext();
+        var context = getRuntime().getCurrentContext();
 
-        if (!isModule()) typeError(context, this, "Module");
-        if (!(include instanceof RubyModule)) typeError(context, include, "Module");
-        if (!(include.isModule() || include.isClass())) typeError(context, include, "Module");
+        verifyNormalModule(context, include).prependModule(this);
 
-        ((RubyModule) include).prependModule(this);
         return this;
     }
 
@@ -3289,14 +3273,22 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "append_features", visibility = PRIVATE)
     public RubyModule append_features(IRubyObject include) {
-        ThreadContext context = getRuntime().getCurrentContext();
+        var context = getRuntime().getCurrentContext();
 
-        if (!isModule()) typeError(context, this, "Module");
-        if (!(include instanceof RubyModule)) typeError(context, include, "Module");
-        if (!(include.isModule() || include.isClass())) typeError(context, include, "Module");
+        verifyNormalModule(context, include).includeModule(this);
 
-        ((RubyModule) include).includeModule(this);
         return this;
+    }
+
+    private RubyModule verifyNormalModule(ThreadContext context, IRubyObject include) {
+        if (!isModule()) throw typeError(context, this, "Module");
+
+        var mod = castToModule(context, include);
+
+        // included and prepended modules happen to be RubyModule but are not "modules".
+        if (!(mod.isModule() || mod.isClass())) throw typeError(context, include, "Module");
+
+        return mod;
     }
 
     /** rb_mod_extend_object
@@ -3304,7 +3296,7 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "extend_object", visibility = PRIVATE)
     public IRubyObject extend_object(IRubyObject obj) {
-        if (!isModule()) typeError(getRuntime().getCurrentContext(), this, "Module");
+        if (!isModule()) throw typeError(getRuntime().getCurrentContext(), this, "Module");
 
         obj.getSingletonClass().includeModule(this);
         return obj;
@@ -3315,18 +3307,15 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "include", required = 1, rest = true, checkArity = false)
     public RubyModule include(IRubyObject[] modules) {
-        Ruby runtime = getRuntime();
+        var context = getRuntime().getCurrentContext();
+        int argc = Arity.checkArgumentCount(context.runtime, modules, 1, -1);
 
-        int argc = Arity.checkArgumentCount(runtime, modules, 1, -1);
-
-        if (isRefinement()) throw runtime.newTypeError("Refinement#include has been removed");
+        if (isRefinement()) throw typeError(context, "Refinement#include has been removed");
 
         for (IRubyObject module: modules) {
-            if (!module.isModule()) typeError(getRuntime().getCurrentContext(), module, "Module");
-            if (((RubyModule) module).isRefinement()) throw runtime.newTypeError("Cannot include refinement");
+            if (!module.isModule()) throw typeError(context, module, "Module");
+            if (((RubyModule) module).isRefinement()) throw typeError(context, "Cannot include refinement");
         }
-
-        ThreadContext context = runtime.getCurrentContext();
 
         for (int i = argc - 1; i >= 0; i--) {
             IRubyObject module = modules[i];
@@ -3339,8 +3328,8 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "include") // most common path: include Enumerable
     public RubyModule include(ThreadContext context, IRubyObject module) {
-        if (isRefinement()) throw context.runtime.newTypeError("Refinement#include has been removed");
-        if (!module.isModule()) typeError(getRuntime().getCurrentContext(), module, "Module");
+        if (isRefinement()) throw typeError(context, "Refinement#include has been removed");
+        if (!module.isModule()) throw typeError(context, module, "Module");
 
         module.callMethod(context, "append_features", this);
         module.callMethod(context, "included", this);
@@ -3358,16 +3347,16 @@ public class RubyModule extends RubyObject {
     }
 
     @JRubyMethod(name = "mix", visibility = PRIVATE)
-    public IRubyObject mix(ThreadContext context, IRubyObject mod) {
-        if (!mod.isModule()) typeError(context, mod, "Module");
+    public IRubyObject mix(ThreadContext context, IRubyObject modArg) {
+        var mod = castToModule(context, modArg);
 
-        for (Map.Entry<String, DynamicMethod> entry : ((RubyModule)mod).methods.entrySet()) {
+        for (Map.Entry<String, DynamicMethod> entry : mod.methods.entrySet()) {
             if (methodLocation.getMethods().containsKey(entry.getKey())) {
                 throw context.runtime.newArgumentError("method would conflict - " + entry.getKey());
             }
         }
 
-        for (Map.Entry<String, DynamicMethod> entry : ((RubyModule)mod).methods.entrySet()) {
+        for (Map.Entry<String, DynamicMethod> entry : mod.methods.entrySet()) {
             methodLocation.getMethodsForWrite().put(entry.getKey(), entry.getValue().dup());
         }
 
@@ -3375,25 +3364,23 @@ public class RubyModule extends RubyObject {
     }
 
     @JRubyMethod(name = "mix", visibility = PRIVATE)
-    public IRubyObject mix(ThreadContext context, IRubyObject mod, IRubyObject hash0) {
-        if (!mod.isModule()) typeError(context, mod, "Module");
-        if (!(hash0 instanceof RubyHash)) typeError(context, hash0, "Hash");
-        RubyHash methodNames = (RubyHash) hash0;
+    public IRubyObject mix(ThreadContext context, IRubyObject modArg, IRubyObject hash0) {
+        var mod = castToModule(context, modArg);
+        if (!mod.isModule()) throw typeError(context, mod, "Module");
+        var methodNames = castToHash(context, hash0);
 
         for (Map.Entry<IRubyObject, IRubyObject> entry : (Set<Map.Entry<IRubyObject, IRubyObject>>)methodNames.directEntrySet()) {
             String name = entry.getValue().toString();
-            if (methods.containsKey(entry.getValue().toString())) {
-                throw context.runtime.newArgumentError("constant would conflict - " + name);
-            }
+            if (methods.containsKey(name)) throw context.runtime.newArgumentError("constant would conflict - " + name);
         }
 
-        for (Map.Entry<String, DynamicMethod> entry : ((RubyModule)mod).methods.entrySet()) {
+        for (Map.Entry<String, DynamicMethod> entry : mod.methods.entrySet()) {
             if (methods.containsKey(entry.getKey())) {
                 throw context.runtime.newArgumentError("method would conflict - " + entry.getKey());
             }
         }
 
-        for (Map.Entry<String, DynamicMethod> entry : ((RubyModule)mod).methods.entrySet()) {
+        for (Map.Entry<String, DynamicMethod> entry : mod.methods.entrySet()) {
             String id = entry.getKey();
             IRubyObject mapped = methodNames.fastARef(context.runtime.newSymbol(id));
             if (mapped == NEVER) {
@@ -3490,9 +3477,7 @@ public class RubyModule extends RubyObject {
     public IRubyObject _module_function(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
 
-        if (!isModule()) {
-            throw context.runtime.newTypeError("module_function must be called for modules");
-        }
+        if (!isModule()) throw typeError(context, "module_function must be called for modules");
 
         if (args.length == 0) {
             context.setCurrentVisibility(MODULE_FUNCTION);
@@ -4073,15 +4058,16 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "const_defined?")
     public RubyBoolean const_defined_p(ThreadContext context, IRubyObject name) {
 
-        return constDefined(context.runtime, name, true) ? context.tru : context.fals;
+        return constDefined(context, name, true) ? context.tru : context.fals;
     }
 
     @JRubyMethod(name = "const_defined?")
     public RubyBoolean const_defined_p(ThreadContext context, IRubyObject name, IRubyObject recurse) {
-        return constDefined(context.runtime, name, recurse.isTrue()) ? context.tru : context.fals;
+        return constDefined(context, name, recurse.isTrue()) ? context.tru : context.fals;
     }
 
-    private boolean constDefined(Ruby runtime, IRubyObject name, boolean inherit) {
+    private boolean constDefined(ThreadContext context, IRubyObject name, boolean inherit) {
+        Ruby runtime = context.runtime;
         if (name instanceof RubySymbol) {
             RubySymbol sym = (RubySymbol) name;
 
@@ -4143,7 +4129,7 @@ public class RubyModule extends RubyObject {
                 obj = mod.getConstantFrom(id);
             }
 
-            if (!(obj instanceof RubyModule)) throw runtime.newTypeError(segment + " does not refer to class/module");
+            if (!(obj instanceof RubyModule)) throw typeError(context, segment + " does not refer to class/module");
 
             mod = (RubyModule) obj;
             currentOffset = patternIndex + pattern.getRealSize();
@@ -4190,7 +4176,7 @@ public class RubyModule extends RubyObject {
         }
 
         // Bare ::
-        if (name.length() == 0) {
+        if (name.isEmpty()) {
             throw runtime.newNameError("wrong constant name ", fullName);
         }
 
@@ -4198,11 +4184,8 @@ public class RubyModule extends RubyObject {
         while ( ( sep = name.indexOf("::") ) != -1 ) {
             final String segment = name.substring(0, sep);
             IRubyObject obj = mod.getConstant(validateConstant(segment, symbol), inherit, inherit);
-            if (obj instanceof RubyModule) {
-                mod = (RubyModule) obj;
-            } else {
-                throw runtime.newTypeError(segment + " does not refer to class/module");
-            }
+            if (!(obj instanceof RubyModule)) throw typeError(context, segment + " does not refer to class/module");
+            mod = (RubyModule) obj;
             name = name.substring(sep + 2);
             firstConstant = false;
         }
@@ -4283,18 +4266,15 @@ public class RubyModule extends RubyObject {
         }
 
         // Bare ::
-        if (name.length() == 0) {
+        if (name.isEmpty()) {
             throw runtime.newNameError("wrong constant name ", symbol);
         }
 
         while ( ( sep = name.indexOf("::") ) != -1 ) {
             final String segment = name.substring(0, sep);
             IRubyObject obj = mod.getConstant(validateConstant(segment, symbol), inherit, inherit);
-            if (obj instanceof RubyModule) {
-                mod = (RubyModule) obj;
-            } else {
-                throw runtime.newTypeError(segment + " does not refer to class/module");
-            }
+            if (!(obj instanceof RubyModule)) throw typeError(context, segment + " does not refer to class/module");
+            mod = (RubyModule) obj;
             name = name.substring(sep + 2);
         }
 
@@ -4501,15 +4481,13 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "prepend", required = 1, rest = true, checkArity = false)
     public IRubyObject prepend(ThreadContext context, IRubyObject[] modules) {
         int argc = Arity.checkArgumentCount(context, modules, 1, -1);
-        Ruby runtime = context.runtime;
 
-        if (isRefinement()) throw runtime.newTypeError("Refinement#prepend has been removed");
+        if (isRefinement()) throw typeError(context, "Refinement#prepend has been removed");
 
         // MRI checks all types first:
         for (int i = argc; --i >= 0; ) {
-            if (!modules[i].isModule()) typeError(context, modules[i], "Module");
-            if (((RubyModule) modules[i]).isRefinement()) throw runtime.newTypeError("Cannot prepend refinement");
-
+            if (!modules[i].isModule()) throw typeError(context, modules[i], "Module");
+            if (((RubyModule) modules[i]).isRefinement()) throw typeError(context, "Cannot prepend refinement");
         }
 
         for (int i = argc - 1; i >= 0; i--) {
@@ -6044,16 +6022,14 @@ public class RubyModule extends RubyObject {
         public static IRubyObject import_methods(ThreadContext context, IRubyObject self, IRubyObject[] modules) {
             Arity.checkArgumentCount(context, modules, 1, -1);
 
-            Ruby runtime = context.runtime;
-
             RubyModule selfModule = (RubyModule) self;
+            RubyClass objectClass = context.runtime.getObject();
 
             for (IRubyObject _module : modules) {
-                if (!(_module instanceof RubyModule)) typeError(context, _module, runtime.getModule());
-                RubyModule module = (RubyModule) _module;
+                RubyModule module = castToModule(context, _module);
 
-                if (module.getSuperClass() != runtime.getObject()) {
-                    runtime.getWarnings().warn(module.getName() + " has ancestors, but Refinement#import_methods doesn't import their methods");
+                if (module.getSuperClass() != objectClass) {
+                    context.runtime.getWarnings().warn(module.getName() + " has ancestors, but Refinement#import_methods doesn't import their methods");
                 }
             }
 
@@ -6061,7 +6037,7 @@ public class RubyModule extends RubyObject {
                 RubyModule module = (RubyModule) _module;
 
                 for (Map.Entry<String, DynamicMethod> entry: module.getMethods().entrySet()) {
-                    refinementImportMethodsIter(runtime, selfModule, module, entry);
+                    refinementImportMethodsIter(context, selfModule, module, entry);
                 }
             }
 
@@ -6069,11 +6045,12 @@ public class RubyModule extends RubyObject {
         }
 
         // MRI: refinement_import_methods_i
-        private static void refinementImportMethodsIter(Ruby runtime, RubyModule selfModule, RubyModule module, Map.Entry<String, DynamicMethod> entry) {
+        private static void refinementImportMethodsIter(ThreadContext context, RubyModule selfModule, RubyModule module,
+                                                        Map.Entry<String, DynamicMethod> entry) {
             DynamicMethod method = entry.getValue();
 
             if (!(method instanceof AbstractIRMethod)) {
-                throw runtime.newArgumentError("Can't import method which is not defined with Ruby code: " + module.getName() + "#" + entry.getKey());
+                throw context.runtime.newArgumentError("Can't import method which is not defined with Ruby code: " + module.getName() + "#" + entry.getKey());
             }
 
             DynamicMethod dup = entry.getValue().dup();

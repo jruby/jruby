@@ -31,6 +31,7 @@
 
 package org.jruby;
 
+import static org.jruby.api.Error.*;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PUBLIC;
 import static org.jruby.util.CodegenUtils.ci;
@@ -57,7 +58,6 @@ import java.util.stream.Collectors;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -235,21 +235,19 @@ public class RubyClass extends RubyModule {
     }
 
     private static RaiseException newTypeError(final Ruby runtime, final String msg, final Exception e) {
-        RaiseException error = runtime.newTypeError(msg);
-        error.initCause(e);
-        return error;
+        return withException(createTypeError(runtime.getCurrentContext(), msg.toString()), e);
     }
 
     @JRubyMethod(name = "allocate")
     public IRubyObject allocate() {
         if (superClass == null) {
             if (this != runtime.getBasicObject()) {
-                throw runtime.newTypeError("can't instantiate uninitialized class");
+                throw typeError(runtime.getCurrentContext(), "can't instantiate uninitialized class");
             }
         }
         IRubyObject obj = allocator.allocate(runtime, this);
         if (getMetaClass(obj).getRealClass() != getRealClass()) {
-            throw runtime.newTypeError("wrong instance allocation");
+            throw typeError(runtime.getCurrentContext(), "wrong instance allocation");
         }
         return obj;
     }
@@ -436,8 +434,8 @@ public class RubyClass extends RubyModule {
      * Corresponds to rb_class_new in MRI.
      */
     public static RubyClass newClass(Ruby runtime, RubyClass superClass) {
-        if (superClass == runtime.getClassClass()) throw runtime.newTypeError("can't make subclass of Class");
-        if (superClass.isSingleton()) throw runtime.newTypeError("can't make subclass of virtual class");
+        if (superClass == runtime.getClassClass()) typeError(runtime.getCurrentContext(), "can't make subclass of Class");
+        if (superClass.isSingleton()) typeError(runtime.getCurrentContext(), "can't make subclass of virtual class");
         return new RubyClass(runtime, superClass);
     }
 
@@ -446,8 +444,8 @@ public class RubyClass extends RubyModule {
      * call sites to improve dynamic invocation.
      */
     public static RubyClass newClass(Ruby runtime, RubyClass superClass, CallSite[] extraCallSites) {
-        if (superClass == runtime.getClassClass()) throw runtime.newTypeError("can't make subclass of Class");
-        if (superClass.isSingleton()) throw runtime.newTypeError("can't make subclass of virtual class");
+        if (superClass == runtime.getClassClass()) throw typeError(runtime.getCurrentContext(), "can't make subclass of Class");
+        if (superClass.isSingleton()) throw typeError(runtime.getCurrentContext(), "can't make subclass of virtual class");
         return new RubyClass(runtime, superClass, extraCallSites);
     }
 
@@ -963,7 +961,7 @@ public class RubyClass extends RubyModule {
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject superObject, Block block) {
         checkNotInitialized();
-        checkInheritable(superObject);
+        checkInheritable(context, superObject);
         return initializeCommon(context, (RubyClass) superObject, block);
     }
 
@@ -989,7 +987,7 @@ public class RubyClass extends RubyModule {
     @Override
     public IRubyObject initialize_copy(IRubyObject original) {
         checkNotInitialized();
-        if (original instanceof MetaClass) throw runtime.newTypeError("can't copy singleton class");
+        if (original instanceof MetaClass) throw typeError(runtime.getCurrentContext(), "can't copy singleton class");
 
         super.initialize_copy(original);
         RubyClass originalClazz = (RubyClass) original;
@@ -1217,7 +1215,7 @@ public class RubyClass extends RubyModule {
 
         if (superClazz == null) {
             if (metaClass == runtime.getBasicObject().metaClass) return context.nil;
-            throw runtime.newTypeError("uninitialized class");
+            throw typeError(runtime.getCurrentContext(), "uninitialized class");
         }
 
         while (superClazz != null && (superClazz.isIncluded() || superClazz.isPrepended())) {
@@ -1229,27 +1227,28 @@ public class RubyClass extends RubyModule {
 
     @JRubyMethod
     public IRubyObject attached_object(ThreadContext context) {
-        throw context.runtime.newTypeError("`" + this + "' is not a singleton class");
+        throw typeError(runtime.getCurrentContext(), "`", this, "' is not a singleton class");
     }
 
     private void checkNotInitialized() {
         if (superClass != null || this == runtime.getBasicObject()) {
-            throw runtime.newTypeError("already initialized class");
+            throw typeError(runtime.getCurrentContext(), "already initialized class");
         }
     }
     /** rb_check_inheritable
      *
      */
+    @Deprecated
     public static void checkInheritable(IRubyObject superClass) {
+        checkInheritable(superClass.getRuntime().getCurrentContext(), superClass);
+    }
+
+    private static void checkInheritable(ThreadContext context, IRubyObject superClass) {
         if (!(superClass instanceof RubyClass)) {
-            throw superClass.getRuntime().newTypeError("superclass must be a Class (" + superClass.getMetaClass() + " given)");
+            throw typeError(context, "superclass must be a Class (" + superClass.getMetaClass() + " given)");
         }
-        if (((RubyClass) superClass).isSingleton()) {
-            throw superClass.getRuntime().newTypeError("can't make subclass of virtual class");
-        }
-        if (superClass == superClass.getRuntime().getClassClass()) {
-            throw superClass.getRuntime().newTypeError("can't make subclass of Class");
-        }
+        if (((RubyClass) superClass).isSingleton()) throw typeError(context, "can't make subclass of virtual class");
+        if (superClass == context.runtime.getClassClass()) throw typeError(context, "can't make subclass of Class");
     }
 
     public final ObjectMarshal getMarshal() {
@@ -1392,7 +1391,7 @@ public class RubyClass extends RubyModule {
 
         final Class<?> parentReified = superClass.getRealClass().getReifiedClass();
         if (parentReified == null) {
-            throw getClassRuntime().newTypeError(getName() + "'s parent class is not yet reified");
+            throw typeError(getClassRuntime().getCurrentContext(), getName() + "'s parent class is not yet reified");
         }
 
         Class reifiedParent = RubyObject.class;
@@ -2165,7 +2164,8 @@ public class RubyClass extends RubyModule {
             } else {
                 // TODO: copy validateArgs
                 // TODO: no ctors = error?
-                throw runtime.newTypeError("class " + reifiedParent.getName() + " doesn't have a public or protected constructor");
+                throw typeError(runtime.getCurrentContext(), "class " + reifiedParent.getName() +
+                        " doesn't have a public or protected constructor");
             }
 
             if (zeroArg.isPresent()) {
@@ -2214,7 +2214,7 @@ public class RubyClass extends RubyModule {
                 RealClassGenerator.makeConcreteConstructorIROProxy(cw, position, this);
             } else if (generatedCtors.size() == 0) {
                 //TODO: Warn for static classe?
-                throw runtime.newTypeError("class "+ this.rubyName + " doesn't have any exposed java constructors");
+                throw typeError(runtime.getCurrentContext(), "class " + getName() + " doesn't have any exposed java constructors");
             }
             
             // generate the real (IRubyObject) ctor. All other ctor generated proxy to this one
@@ -2283,7 +2283,7 @@ public class RubyClass extends RubyModule {
      * Gets a reified Ruby class. Throws if this is a Java class
      */
     public Class<? extends IRubyObject> getReifiedRubyClass() {
-        if (reifiedClassJava == Boolean.TRUE) throw runtime.newTypeError("Attempted to get a Ruby class for a Java class");
+        if (reifiedClassJava == Boolean.TRUE) throw typeError(runtime.getCurrentContext(), "Attempted to get a Ruby class for a Java class");
 
         return (Class<? extends IRubyObject>) reifiedClass;
     }
@@ -2292,11 +2292,10 @@ public class RubyClass extends RubyModule {
      * Gets a reified Java class. Throws if this is a Ruby class
      */
     public Class<? extends ReifiedJavaProxy> getReifiedJavaClass() {
-        if (reifiedClassJava == Boolean.FALSE)
-            // TODO: error type
-            throw runtime.newTypeError("Attempted to get a Java class for a Ruby class");
-        else
-            return (Class<? extends ReifiedJavaProxy>) reifiedClass;
+        // TODO: error type
+        if (reifiedClassJava == Boolean.FALSE) throw typeError(runtime.getCurrentContext(), "Attempted to get a Java class for a Ruby class");
+
+        return (Class<? extends ReifiedJavaProxy>) reifiedClass;
     }
 
     /**
@@ -2621,7 +2620,7 @@ public class RubyClass extends RubyModule {
                     target.callMethod(context, "marshal_load", data);
                     return target;
                 } else {
-                    throw runtime.newTypeError(str(runtime, "class ", types(runtime, this), " needs to have method `marshal_load'"));
+                    throw typeError(context, "class ", this, " needs to have method `marshal_load'");
                 }
 
             } else if (!(cache = searchWithCache("marshal_load")).method.isUndefined()) {
@@ -2672,7 +2671,7 @@ public class RubyClass extends RubyModule {
                 if (method.call(context, this, cache.sourceModule, "respond_to?", runtime.newSymbol("_load")).isTrue()) {
                     return callMethod(context, "_load", data);
                 } else {
-                    throw runtime.newTypeError(str(runtime, "class ", types(runtime, this), " needs to have method `_load'"));
+                    throw typeError(context, "class ", this, " needs to have method `_load'");
                 }
 
             } else if (!(cache = getSingletonClass().searchWithCache("_load")).method.isUndefined()) {
@@ -2682,10 +2681,8 @@ public class RubyClass extends RubyModule {
                 return cache.method.call(context, this, cache.sourceModule, "_load", data);
 
             } else {
-
                 // provide an error, since it doesn't exist
-                throw runtime.newTypeError(str(runtime, "class ", types(runtime, this), " needs to have method `_load'"));
-
+                throw typeError(context, "class ", this, " needs to have method `_load'");
             }
         }
     }

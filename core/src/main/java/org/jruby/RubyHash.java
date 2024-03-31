@@ -78,6 +78,7 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyEnumerator.SizeFn;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.Inspector.*;
 
@@ -862,12 +863,12 @@ public class RubyHash extends RubyObject implements Map {
     /** default_proc_arity_check
      *
      */
-    private void checkDefaultProcArity(IRubyObject proc) {
-        int n = ((RubyProc)proc).getBlock().getSignature().arityValue();
+    private void checkDefaultProcArity(ThreadContext context, Block block) {
+        int n = block.getSignature().arityValue();
 
-        if(((RubyProc)proc).getBlock().type == Block.Type.LAMBDA && n != 2 && (n >= 0 || n < -3)) {
-            if(n < 0) n = -n-1;
-            throw getRuntime().newTypeError("default_proc takes two arguments (2 for " + n + ")");
+        if (block.type == Block.Type.LAMBDA && n != 2 && (n >= 0 || n < -3)) {
+            if (n < 0) n = -n-1;
+            throw typeError(context, "default_proc takes two arguments (2 for " + n + ")");
         }
     }
 
@@ -884,14 +885,11 @@ public class RubyHash extends RubyObject implements Map {
             return proc;
         }
 
-        Ruby runtime = context.runtime;
+        IRubyObject b = TypeConverter.convertToType(proc, context.runtime.getProc(), "to_proc");
+        if (b.isNil() || !(b instanceof RubyProc)) throw typeError(context, "wrong default_proc type ", proc, " (expected Proc)");
 
-        IRubyObject b = TypeConverter.convertToType(proc, runtime.getProc(), "to_proc");
-        if (b.isNil() || !(b instanceof RubyProc)) {
-            throw runtime.newTypeError("wrong default_proc type " + proc.getMetaClass() + " (expected Proc)");
-        }
         proc = b;
-        checkDefaultProcArity(proc);
+        checkDefaultProcArity(context, ((RubyProc) proc).getBlock());
         ifNone = proc;
         flags |= PROCDEFAULT_HASH_F;
         return proc;
@@ -1111,13 +1109,11 @@ public class RubyHash extends RubyObject implements Map {
 
         visitAll(context, (ctxt, self, key, value, index) -> {
             IRubyObject elt = block.yieldArray(ctxt, ctxt.runtime.newArray(key, value), null);
-            IRubyObject key_value_pair = elt.checkArrayType();
+            IRubyObject keyValue = elt.checkArrayType();
 
-            if (key_value_pair == ctxt.nil) {
-                throw context.runtime.newTypeError("wrong element type " + elt.getMetaClass().getRealClass() + " (expected array)");
-            }
+            if (keyValue == ctxt.nil) throw typeError(context, "wrong element type ", elt, " (expected array)");
 
-            RubyArray ary = (RubyArray) key_value_pair;
+            RubyArray ary = (RubyArray) keyValue;
             if (ary.getLength() != 2) {
                 throw context.runtime.newArgumentError("element has wrong array length " + "(expected 2, was " + ary.getLength() + ")");
             }

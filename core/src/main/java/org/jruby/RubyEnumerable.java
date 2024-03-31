@@ -33,7 +33,6 @@ import org.jruby.anno.JRubyModule;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.BlockCallback;
@@ -60,16 +59,15 @@ import org.jruby.util.collections.SingleObject;
 import org.jruby.util.func.ObjectObjectIntFunction;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiFunction;
 
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyObject.equalInternal;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.builtin.IRubyObject.NULL_ARRAY;
@@ -1899,9 +1897,8 @@ public class RubyEnumerable {
         // Handle uncoercibles by trying to_enum conversion
         if (hasUncoercible) {
             final RubySymbol each = runtime.newSymbol("each");
-            if (!arg0.respondsTo("each")) {
-                throw context.runtime.newTypeError("wrong argument type " + arg0.getMetaClass() + " (must respond to :each)");
-            }
+            if (!arg0.respondsTo("each")) throw typeError(context, "wrong argument type ", arg0, " (must respond to :each)");
+
             newArg = sites(context).to_enum.call(context, arg0, arg0, each); // args[i].to_enum(:each)
 
             return zipCommonEnum(context, self, newArg, block);
@@ -1929,9 +1926,8 @@ public class RubyEnumerable {
         if (hasUncoercible) {
             final RubySymbol each = runtime.newSymbol("each");
             for (int i = 0; i < args.length; i++) {
-                if (!args[i].respondsTo("each")) {
-                    throw context.runtime.newTypeError("wrong argument type " + args[i].getMetaClass() + " (must respond to :each)");
-                }
+                if (!args[i].respondsTo("each")) throw typeError(context, "wrong argument type ", args[i], " (must respond to :each)");
+
                 newArgs[i] = sites(context).to_enum.call(context, args[i], args[i], each); // args[i].to_enum(:each)
             }
 
@@ -2363,7 +2359,7 @@ public class RubyEnumerable {
 
         private void callImpl(final Ruby runtime, IRubyObject value) {
             IRubyObject ary = TypeConverter.checkArrayType(runtime, value);
-            if (ary.isNil()) throw runtime.newTypeError("wrong element type " + value.getType().getName() + " (expected array)");
+            if (ary.isNil()) throw typeError(runtime.getCurrentContext(), "wrong element type ", value, " (expected Array)");
             final RubyArray array = (RubyArray) ary;
             if (array.size() != 2) {
                 throw runtime.newArgumentError("element has wrong array length (expected 2, was " + array.size() + ")");

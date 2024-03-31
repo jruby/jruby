@@ -14,7 +14,7 @@ import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 
 import java.lang.ref.WeakReference;
 
-import static org.jruby.api.Raise.typeError;
+import static org.jruby.api.Error.typeError;
 
 /**
  * Wraps a ruby proc in a JFFI Closure
@@ -51,14 +51,14 @@ final class NativeClosureProxy implements Closure {
 
         IRubyObject[] params = new IRubyObject[closureInfo.parameterTypes.length];
         for (int i = 0; i < params.length; ++i) {
-            params[i] = fromNative(runtime, closureInfo.parameterTypes[i], buffer, i);
+            params[i] = fromNative(context, closureInfo.parameterTypes[i], buffer, i);
         }
 
         IRubyObject retVal = recv instanceof Block
                 ? ((Block) recv).call(context, params)
                 : callSite.call(context, (IRubyObject) recv, (IRubyObject) recv, params);
 
-        setReturnValue(runtime, closureInfo.returnType, buffer, retVal);
+        setReturnValue(context, closureInfo.returnType, buffer, retVal);
     }
 
 
@@ -101,12 +101,12 @@ final class NativeClosureProxy implements Closure {
     /**
      * Converts a ruby return value into a native callback return value.
      *
-     * @param runtime The ruby runtime the callback is attached to
+     * @param context The thread context
      * @param type The ruby type of the return value
      * @param buffer The native parameter buffer
      * @param value The ruby value
      */
-    private static final void setReturnValue(Ruby runtime, Type type,
+    private static final void setReturnValue(ThreadContext context, Type type,
             Closure.Buffer buffer, IRubyObject value) {
         if (type instanceof Type.Builtin) {
             switch (type.getNativeType()) {
@@ -160,11 +160,11 @@ final class NativeClosureProxy implements Closure {
             }
         } else if (type instanceof CallbackInfo) {
             if (value instanceof RubyProc || value.respondsTo("call")) {
-                Pointer cb = Factory.getInstance().getCallbackManager().getCallback(runtime, (CallbackInfo) type, value);
+                Pointer cb = Factory.getInstance().getCallbackManager().getCallback(context.runtime, (CallbackInfo) type, value);
                 buffer.setAddressReturn(addressValue(cb));
             } else {
                 buffer.setAddressReturn(0L);
-                throw runtime.newTypeError("invalid callback return value, expected Proc or callable object");
+                throw typeError(context, "invalid callback return value, expected Proc or callable object");
             }
 
         } else if (type instanceof StructByValue) {
@@ -185,43 +185,44 @@ final class NativeClosureProxy implements Closure {
                 } else if (memory instanceof ArrayMemoryIO) {
                     ArrayMemoryIO arrayMemory = (ArrayMemoryIO) memory;
                     if (arrayMemory.arrayLength() < type.getNativeSize()) {
-                        throw runtime.newRuntimeError("size of struct returned from callback too small");
+                        throw context.runtime.newRuntimeError("size of struct returned from callback too small");
                     }
 
                     buffer.setStructReturn(arrayMemory.array(), arrayMemory.arrayOffset());
 
                 } else {
-                    throw runtime.newRuntimeError("struct return value has illegal backing memory");
+                    throw context.runtime.newRuntimeError("struct return value has illegal backing memory");
                 }
             } else if (value.isNil()) {
                 // Zero it out
                 buffer.setStructReturn(new byte[type.getNativeSize()], 0);
 
             } else {
-                typeError(runtime.getCurrentContext(), value, runtime.getFFI().structClass);
+                throw typeError(context, value, context.runtime.getFFI().structClass);
             }
 
         } else if (type instanceof MappedType) {
             MappedType mappedType = (MappedType) type;
-            setReturnValue(runtime, mappedType.getRealType(), buffer, mappedType.toNative(runtime.getCurrentContext(), value));
+            setReturnValue(context, mappedType.getRealType(), buffer, mappedType.toNative(context, value));
 
         } else {
             buffer.setLongReturn(0L);
-            throw runtime.newRuntimeError("unsupported return type from struct: " + type);
+            throw context.runtime.newRuntimeError("unsupported return type from struct: " + type);
         }
     }
 
     /**
      * Converts a native value into a ruby object.
      *
-     * @param runtime The ruby runtime to create the ruby object in
+     * @param context the thread context
      * @param type The type of the native parameter
      * @param buffer The JFFI Closure parameter buffer.
      * @param index The index of the parameter in the buffer.
      * @return A new Ruby object.
      */
-    private static final IRubyObject fromNative(Ruby runtime, Type type,
+    private static final IRubyObject fromNative(ThreadContext context, Type type,
             Closure.Buffer buffer, int index) {
+        Ruby runtime = context.runtime;
         if (type instanceof Type.Builtin) {
             switch (type.getNativeType()) {
                 case VOID:
@@ -270,7 +271,7 @@ final class NativeClosureProxy implements Closure {
                     return runtime.newBoolean(buffer.getByte(index) != 0);
 
                 default:
-                    throw runtime.newTypeError("invalid callback parameter type " + type);
+                    throw typeError(context, "invalid callback parameter type " + type);
             }
 
         } else if (type instanceof CallbackInfo) {
@@ -298,10 +299,10 @@ final class NativeClosureProxy implements Closure {
 
         } else if (type instanceof MappedType) {
             MappedType mappedType = (MappedType) type;
-            return mappedType.fromNative(runtime.getCurrentContext(), fromNative(runtime, mappedType.getRealType(), buffer, index));
+            return mappedType.fromNative(runtime.getCurrentContext(), fromNative(context, mappedType.getRealType(), buffer, index));
 
         } else {
-            throw runtime.newTypeError("unsupported callback parameter type: " + type);
+            throw typeError(context, "unsupported callback parameter type: " + type);
         }
 
     }

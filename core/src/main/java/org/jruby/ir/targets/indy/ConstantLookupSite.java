@@ -2,7 +2,6 @@ package org.jruby.ir.targets.indy;
 
 import com.headius.invokebinder.Binder;
 import org.jruby.Ruby;
-import org.jruby.RubyBasicObject;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
 import org.jruby.ir.operands.UndefinedValue;
@@ -24,6 +23,8 @@ import java.lang.invoke.MutableCallSite;
 import java.lang.invoke.SwitchPoint;
 
 import static java.lang.invoke.MethodHandles.guardWithTest;
+import static org.jruby.api.Convert.castToModule;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
 
@@ -120,8 +121,7 @@ public class ConstantLookupSite extends MutableCallSite {
     }
 
     public IRubyObject searchModuleForConst(ThreadContext context, IRubyObject cmVal) throws Throwable {
-        if (!(cmVal instanceof RubyModule)) throw context.runtime.newTypeError(cmVal + " is not a type/class");
-
+        if (!(cmVal instanceof RubyModule)) throw typeError(context, "", cmVal, " is not a class/module");
         RubyModule module = (RubyModule) cmVal;
 
         if (checkForBailout(module)) {
@@ -159,34 +159,27 @@ public class ConstantLookupSite extends MutableCallSite {
     }
 
     public IRubyObject noCacheSearchModuleForConst(ThreadContext context, IRubyObject cmVal) {
-        if (!(cmVal instanceof RubyModule)) throw context.runtime.newTypeError(cmVal + " is not a type/class");
-
+        if (!(cmVal instanceof RubyModule)) throw typeError(context, cmVal + " is not a type/class");
         RubyModule module = (RubyModule) cmVal;
 
         // Inheritance lookup
         IRubyObject constant = publicOnly ? module.getConstantFromNoConstMissing(name, false) : module.getConstantNoConstMissing(name);
 
         // Call const_missing or cache
-        if (constant == null) {
-            return module.callMethod(context, "const_missing", getSymbolicName(context));
-        }
+        if (constant == null) return module.callMethod(context, "const_missing", getSymbolicName(context));
 
         return constant;
     }
 
     public IRubyObject inheritanceSearchConst(ThreadContext context, IRubyObject cmVal) throws Throwable {
-        Ruby runtime = context.runtime;
-        RubyModule module;
-
-        if (cmVal instanceof RubyModule) {
-            module = (RubyModule) cmVal;
-        } else {
-            throw runtime.newTypeError(cmVal + " is not a type/class");
-        }
+        if (!(cmVal instanceof RubyModule)) throw typeError(context, cmVal, cmVal + " is not a class/module");
+        RubyModule module = (RubyModule) cmVal;
 
         if (checkForBailout(module)) {
             return bail(context, cmVal, noCacheISC());
         }
+
+        Ruby runtime = context.runtime;
 
         // get switchpoint before value
         SwitchPoint switchPoint = getSwitchPointForConstant(runtime);
@@ -211,24 +204,13 @@ public class ConstantLookupSite extends MutableCallSite {
     }
 
     public IRubyObject noCacheInheritanceSearchConst(ThreadContext context, IRubyObject cmVal) {
-        Ruby runtime = context.runtime;
-        RubyModule module;
-
-        if (cmVal instanceof RubyModule) {
-            module = (RubyModule) cmVal;
-        } else {
-            throw runtime.newTypeError(cmVal + " is not a type/class");
-        }
+        if (!(cmVal instanceof RubyModule)) throw typeError(context, "", cmVal, " is not a type/class");
+        RubyModule module = (RubyModule) cmVal;
 
         // Inheritance lookup
-
         IRubyObject constant = module.getConstantNoConstMissingSkipAutoload(name);
 
-        if (constant == null) {
-            constant = UndefinedValue.UNDEFINED;
-        }
-
-        return constant;
+        return constant == null ? UndefinedValue.UNDEFINED : constant;
     }
 
     private MethodHandle getFallback(RubyModule module, MethodHandle cachingFallback) {

@@ -14,7 +14,6 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.cli.Options;
 import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.OpenFile;
 
@@ -26,7 +25,7 @@ import java.nio.channels.FileChannel;
 import java.util.Arrays;
 
 import static org.jruby.RubyBoolean.newBoolean;
-import static org.jruby.api.Raise.typeError;
+import static org.jruby.api.Error.typeError;
 
 public class RubyIOBuffer extends RubyObject {
 
@@ -159,10 +158,9 @@ public class RubyIOBuffer extends RubyObject {
     private static RubyFile checkFile(ThreadContext context, IRubyObject _file) {
         RubyIO io = RubyIO.convertToIO(context, _file);
 
-        if (!(io instanceof RubyFile)) typeError(context, _file, "File");
+        if (!(io instanceof RubyFile)) throw typeError(context, _file, "File");
 
-        RubyFile file = (RubyFile) io;
-        return file;
+        return (RubyFile) io;
     }
 
     @JRubyMethod(name = "map", meta = true)
@@ -272,11 +270,9 @@ public class RubyIOBuffer extends RubyObject {
             buffer.flags |= SHARED;
         }
 
-        ByteBuffer base;
+        if (descriptor.chFile == null) throw typeError(context, "Cannot map non-file resource: " + descriptor.ch);
 
-        if (descriptor.chFile == null) {
-            throw context.runtime.newTypeError("Cannot map non-file resource: " + descriptor.ch);
-        }
+        ByteBuffer base;
 
         try {
             base = descriptor.chFile.map(protect, offset, size);
@@ -1681,7 +1677,7 @@ public class RubyIOBuffer extends RubyObject {
     }
 
     private static RubyIOBuffer castToMaskData(ThreadContext context, IRubyObject _mask) {
-        if (!(_mask instanceof RubyIOBuffer)) typeError(context, _mask, context.runtime.getIOBuffer());
+        if (!(_mask instanceof RubyIOBuffer)) throw typeError(context, _mask, context.runtime.getIOBuffer());
         return (RubyIOBuffer) _mask;
     }
 

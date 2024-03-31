@@ -8,6 +8,8 @@ import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Error.typeError;
+
 public abstract class IRBlockBody extends ContextAwareBlockBody {
     protected final String fileName;
     protected final int lineNumber;
@@ -131,10 +133,9 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
         final IRubyObject ary = Helpers.aryToAry(context, value);
 
         if (ary instanceof RubyArray) return ((RubyArray) ary).toJavaArray();
-
         if (ary == context.nil) return new IRubyObject[] { value };
 
-        throw context.runtime.newTypeError(value.getType().getName() + "#to_ary should return Array");
+        throw typeError(context, "", value, "#to_ary should return Array");
     }
 
     protected IRubyObject doYieldLambda(ThreadContext context, Block block, IRubyObject value) {

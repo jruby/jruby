@@ -57,7 +57,7 @@ import org.jruby.util.ConvertBytes;
 import org.jruby.util.Numeric;
 import org.jruby.util.cli.Options;
 
-import static org.jruby.api.Raise.typeError;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.util.Numeric.f_odd_p;
 
 /**
@@ -178,7 +178,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
 
     @Override
     public RubyClass getSingletonClass() {
-        throw getRuntime().newTypeError("can't define singleton");
+        throw typeError(getRuntime().getCurrentContext(), "can't define singleton");
     }
 
     @Override
@@ -1413,7 +1413,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     // Piece of mri rb_to_id
     @Override
     public String asJavaString() {
-        throw metaClass.runtime.newTypeError(inspect().toString() + " is not a symbol");
+        throw typeError(getRuntime().getCurrentContext(), "", this, " is not a symbol");
     }
 
     public static RubyFixnum unmarshalFrom(UnmarshalStream input) throws java.io.IOException {

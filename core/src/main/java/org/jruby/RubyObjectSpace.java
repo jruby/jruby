@@ -48,7 +48,8 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 
-import static org.jruby.api.Raise.typeError;
+import static org.jruby.api.Convert.castToFixnum;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.Inspector.inspectPrefix;
 
@@ -120,9 +121,7 @@ public class RubyObjectSpace {
     @JRubyMethod(name = "_id2ref", module = true, visibility = PRIVATE)
     public static IRubyObject id2ref(IRubyObject recv, IRubyObject id) {
         final Ruby runtime = id.getRuntime();
-        if (!(id instanceof RubyFixnum)) typeError(runtime.getCurrentContext(), id, runtime.getFixnum());
-
-        long longId = ((RubyFixnum) id).getLongValue();
+        long longId = castToFixnum(runtime.getCurrentContext(), id).getLongValue();
         if (longId == 0) {
             return runtime.getFalse();
         } else if (longId == 20) {
@@ -164,7 +163,7 @@ public class RubyObjectSpace {
         if (args.length == 0) {
             rubyClass = runtime.getObject();
         } else {
-            if (!(args[0] instanceof RubyModule)) throw runtime.newTypeError("class or module required");
+            if (!(args[0] instanceof RubyModule)) runtime.newArgumentError("class or module required");
             rubyClass = (RubyModule) args[0];
         }
         if (rubyClass == runtime.getClassClass() || rubyClass == runtime.getModule()) {

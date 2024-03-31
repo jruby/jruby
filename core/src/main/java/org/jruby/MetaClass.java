@@ -36,6 +36,8 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
+import static org.jruby.api.Error.typeError;
+
 public final class MetaClass extends RubyClass {
 
     @Deprecated
@@ -70,8 +72,8 @@ public final class MetaClass extends RubyClass {
     }
 
     @Override
-    public final IRubyObject allocate(){
-        throw runtime.newTypeError("can't create instance of virtual class");
+    public final IRubyObject allocate() {
+        throw typeError(getRuntime().getCurrentContext(), "can't create instance of virtual class");
     }
 
     @Override

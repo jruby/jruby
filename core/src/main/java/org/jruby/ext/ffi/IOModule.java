@@ -41,6 +41,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.OpenFile;
 
 import static com.headius.backport9.buffer.Buffers.limitBuffer;
+import static org.jruby.api.Error.typeError;
 
 /**
 * FFI specific I/O routines
@@ -55,13 +56,8 @@ public class IOModule {
     @JRubyMethod(name = "native_read", module = true)
     public static final IRubyObject native_read(ThreadContext context, IRubyObject self,
             IRubyObject src, IRubyObject dst, IRubyObject rbLength) {
-        if (!(src instanceof RubyIO)) {
-            throw context.runtime.newTypeError("wrong argument (expected IO)");
-        }
-
-        if (!(dst instanceof AbstractMemory)) {
-            throw context.runtime.newTypeError("wrong argument (expected FFI memory)");
-        }
+        if (!(src instanceof RubyIO)) throw typeError(context, "wrong argument (expected IO)");
+        if (!(dst instanceof AbstractMemory)) throw typeError(context, "wrong argument (expected FFI memory)");
 
         Ruby runtime = context.runtime;
         try {
