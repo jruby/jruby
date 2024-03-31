@@ -1227,7 +1227,7 @@ public class RubyClass extends RubyModule {
 
     @JRubyMethod
     public IRubyObject attached_object(ThreadContext context) {
-        throw typeError(runtime.getCurrentContext(), "`", this, "' is not a singleton class");
+        throw typeError(runtime.getCurrentContext(), "'", this, "' is not a singleton class");
     }
 
     private void checkNotInitialized() {
