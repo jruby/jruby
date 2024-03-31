@@ -624,7 +624,7 @@ public class RubyGlobal {
             }
 
             IRubyObject freeze = ArgsUtil.getFreezeOpt(context, opts);
-            if (freeze != null && freeze.isTrue()) throw typeError(context, "cannot freeze ENV");
+            if (freeze != null && freeze.isTrue()) throw typeError(context, "cannot clone ENV");
 
             return rbClone(context);
         }
