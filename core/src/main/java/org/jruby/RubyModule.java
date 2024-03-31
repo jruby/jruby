@@ -1475,7 +1475,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "include?")
     public IRubyObject include_p(ThreadContext context, IRubyObject arg) {
-        if (!arg.isModule()) typeError(context, arg, "Module");
+        if (!arg.isModule()) throw typeError(context, arg, "Module");
         RubyModule moduleToCompare = (RubyModule) arg;
 
         // See if module is in chain...Cannot match against itself so start at superClass.

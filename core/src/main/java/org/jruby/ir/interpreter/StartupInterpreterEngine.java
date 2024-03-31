@@ -4,7 +4,6 @@ import org.jruby.RubyModule;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.CheckForLJEInstr;
 import org.jruby.ir.instructions.CopyInstr;
-import org.jruby.ir.instructions.GetFieldInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.RuntimeHelperCall;
@@ -15,7 +14,6 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.ivars.VariableAccessor;
 
 /**
  * This interpreter is meant to interpret the instructions generated directly from IRBuild.
@@ -63,7 +61,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                         break;
                     case CALL_OP:
                         if (profile) Profiler.updateCallSite(instr, interpreterContext.getScope(), scopeVersion);
-                        processCall(context, instr, operation, currDynScope, currScope, temp, self);
+                        processCall(context, instr, operation, currDynScope, currScope, temp, self, name, block);
                         break;
                     case RET_OP:
                         return processReturnOp(context, block, instr, operation, currDynScope, temp, self, currScope);

@@ -37,7 +37,6 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.ivars.VariableAccessor;
 
 import static org.jruby.util.RubyStringBuilder.ids;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -108,7 +107,7 @@ public class ExitableInterpreterEngine extends InterpreterEngine {
                         break;
                     case CALL_OP:
                         if (profile) Profiler.updateCallSite(instr, interpreterContext.getScope(), scopeVersion);
-                        processCall(context, instr, operation, currDynScope, currScope, temp, self);
+                        processCall(context, instr, operation, currDynScope, currScope, temp, self, name, block);
                         break;
                     case RET_OP:
                         processReturnOp(context, block, instr, operation, currDynScope, temp, self, currScope);

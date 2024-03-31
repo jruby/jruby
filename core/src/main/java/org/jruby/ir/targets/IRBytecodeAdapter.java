@@ -318,10 +318,21 @@ public class IRBytecodeAdapter {
         if (superNameOffset == -1) {
             // load from self block
             loadSelfBlock();
-            adapter.invokevirtual(p(Block.class), "getBinding", sig(Binding.class));
-            adapter.invokevirtual(p(Binding.class), "getMethod", sig(String.class));
+            adapter.invokestatic(p(IRRuntimeHelpers.class), "getFrameNameFromBlock", sig(String.class, Block.class));
         } else {
             adapter.aload(superNameOffset);
+        }
+    }
+
+    public void loadFrameBlock() {
+        int superNameOffset = signature.argOffset(JVMVisitor.SUPER_NAME_NAME);
+
+        if (superNameOffset == -1) {
+            // load from self block
+            loadSelfBlock();
+            adapter.invokestatic(p(IRRuntimeHelpers.class), "getFrameBlockFromBlock", sig(Block.class, Block.class));
+        } else {
+            loadBlock();
         }
     }
 

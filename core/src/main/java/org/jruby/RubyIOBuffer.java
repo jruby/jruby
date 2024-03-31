@@ -12,6 +12,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.ChannelFD;
@@ -215,6 +216,8 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "map", required = 1, optional = 3, meta = true)
     public static IRubyObject map(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        ioBufferExperimental(context);
+
         switch (args.length) {
             case 1:
                 return map(context, self, args[0]);
@@ -321,6 +324,8 @@ public class RubyIOBuffer extends RubyObject {
 
     // MRI: io_buffer_initialize
     public void initialize(ThreadContext context, byte[] baseBytes, int size, int flags, IRubyObject source) {
+        ioBufferExperimental(context);
+
         ByteBuffer base = null;
 
         if (baseBytes != null) {
@@ -337,6 +342,17 @@ public class RubyIOBuffer extends RubyObject {
         this.size = size;
         this.flags = flags;
         this.source = source.isNil() ? null : source;
+    }
+
+    static boolean warned = false;
+
+    private static void ioBufferExperimental(ThreadContext context) {
+        if (warned) return;
+
+        warned = true;
+
+        RubyStackTraceElement trace = context.getSingleBacktrace(1);
+        context.runtime.getWarnings().warnExperimental(trace.getFileName(), trace.getLineNumber(), "IO::Buffer is experimental and both the Ruby and native interface may change in the future!");
     }
 
     private static ByteBuffer newBufferBase(Ruby runtime, int size, int flags) {

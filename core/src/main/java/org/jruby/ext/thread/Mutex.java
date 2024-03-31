@@ -50,6 +50,11 @@ import org.jruby.runtime.marshal.DataType;
 @JRubyClass(name = "Mutex")
 public class Mutex extends RubyObject implements DataType {
     final ReentrantLock lock = new ReentrantLock();
+    /**
+     * The non-fiber thread that currently holds the lock; this will be the same for all fibers associated with that
+     * thread.
+     */
+    volatile RubyThread lockingThread;
 
     @JRubyMethod(name = "new", rest = true, meta = true)
     public static Mutex newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
@@ -91,27 +96,38 @@ public class Mutex extends RubyObject implements DataType {
         if (lock.isHeldByCurrentThread()) {
             return false;
         }
-        return context.getThread().tryLock(lock);
+        boolean locked = context.getThread().tryLock(lock);
+
+        if (locked) this.lockingThread = context.getThread();
+
+        return locked;
     }
 
     @JRubyMethod
     public IRubyObject lock(ThreadContext context) {
         RubyThread thread = context.getThread();
+        RubyThread parentThread = context.getFiberCurrentThread();
 
         checkRelocking(context);
+
+        if (this.lockingThread == parentThread) {
+            throw context.runtime.newThreadError("deadlock; lock already owned by another fiber belonging to the same thread");
+        }
 
         // try locking without sleep status to avoid looking like blocking
         if (!thread.tryLock(lock)) {
             for (;;) {
                 try {
                     context.getThread().lockInterruptibly(lock);
-                    return this;
+                    break;
                 } catch (InterruptedException ex) {
                     /// ignore, check thread events and try again!
                     context.pollThreadEvents();
                 }
             }
         }
+
+        this.lockingThread = thread;
 
         return this;
     }
@@ -126,6 +142,7 @@ public class Mutex extends RubyObject implements DataType {
         }
 
         boolean hasQueued = lock.hasQueuedThreads();
+        this.lockingThread = null;
         context.getThread().unlock(lock);
         return hasQueued ? context.nil : this;
     }

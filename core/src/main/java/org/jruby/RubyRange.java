@@ -129,11 +129,27 @@ public class RubyRange extends RubyObject {
         return range;
     }
 
+    public static RubyRange newRange(ThreadContext context, long begin, long end, boolean isExclusive) {
+        Ruby runtime = context.runtime;
+        RubyRange range = new RubyRange(runtime, runtime.getRange());
+        range.init(context, runtime.newFixnum(begin), runtime.newFixnum(end), isExclusive);
+        range.isInited = true;
+        return range;
+    }
+
     public static RubyRange newInclusiveRange(ThreadContext context, IRubyObject begin, IRubyObject end) {
         return newRange(context, begin, end, false);
     }
 
+    public static RubyRange newInclusiveRange(ThreadContext context, long begin, long end) {
+        return newRange(context, begin, end, false);
+    }
+
     public static RubyRange newExclusiveRange(ThreadContext context, IRubyObject begin, IRubyObject end) {
+        return newRange(context, begin, end, true);
+    }
+
+    public static RubyRange newExclusiveRange(ThreadContext context, long begin, long end) {
         return newRange(context, begin, end, true);
     }
 
@@ -558,7 +574,7 @@ public class RubyRange extends RubyObject {
 
         IRubyObject nil = context.nil;
 
-        IRubyObject valMax = API.rb_rescue_typeerror(context, nil, () -> sites(context).max.call(context, this, val));
+        IRubyObject valMax = API.rescueTypeError(context, nil, () -> sites(context).max.call(context, this, val));
 
         if (valMax == nil) return false;
 

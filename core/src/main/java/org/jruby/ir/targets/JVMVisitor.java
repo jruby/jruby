@@ -823,6 +823,14 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void BlockGivenCallInstr(BlockGivenCallInstr blockGivenCallInstr) {
+        String methodName = blockGivenCallInstr.getMethodName();
+        IRBytecodeAdapter m = jvmMethod();
+        m.getInvocationCompiler().invokeBlockGiven(methodName, file);
+        handleCallResult(m, blockGivenCallInstr.getResult());
+    }
+
+    @Override
     public void BIntInstr(BIntInstr bIntInstr) {
         visit(bIntInstr.getArg1());
         visit(bIntInstr.getArg2());
@@ -1323,7 +1331,10 @@ public class JVMVisitor extends IRVisitor {
                 break;
         }
 
-        Variable result = call.getResult();
+        handleCallResult(m, call.getResult());
+    }
+
+    private void handleCallResult(IRBytecodeAdapter m, Variable result) {
         if (result != null) {
             if (!omitStoreLoad) jvmStoreLocal(result);
         } else {
@@ -1637,6 +1648,12 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void ExceptionRegionStartMarkerInstr(ExceptionRegionStartMarkerInstr exceptionregionstartmarkerinstr) {
         throw new NotCompilableException("Marker instructions shouldn't reach compiler: " + exceptionregionstartmarkerinstr);
+    }
+
+    @Override
+    public void FrameNameCallInstr(FrameNameCallInstr framenamecallinstr) {
+        jvmMethod().getInvocationCompiler().invokeFrameName(framenamecallinstr.getMethodName(), file);
+        handleCallResult(jvmMethod(), framenamecallinstr.getResult());
     }
 
     @Override
@@ -2897,10 +2914,18 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Range(Range range) {
-        jvmMethod().getValueCompiler().pushRange(
-                () -> visit(range.getBegin()),
-                () -> visit(range.getEnd()),
-                range.isExclusive());
+        if (range.getBegin() instanceof Fixnum && range.getEnd() instanceof Fixnum) {
+            jvmMethod().getValueCompiler().pushRange(
+                    ((Fixnum) range.getBegin()).getValue(), ((Fixnum) range.getEnd()).getValue(), range.isExclusive());
+        } else if (range.getBegin() instanceof StringLiteral begin && range.getEnd() instanceof StringLiteral end) {
+            jvmMethod().getValueCompiler().pushRange(
+                    begin.getByteList(), begin.getCodeRange(), end.getByteList(), end.getCodeRange(), range.isExclusive());
+        } else {
+            jvmMethod().getValueCompiler().pushRange(
+                    () -> visit(range.getBegin()),
+                    () -> visit(range.getEnd()),
+                    range.isExclusive());
+        }
     }
 
     @Override

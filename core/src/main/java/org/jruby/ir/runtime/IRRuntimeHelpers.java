@@ -944,6 +944,16 @@ public class IRRuntimeHelpers {
         return dynScope;
     }
 
+    public static IRubyObject blockGivenOrCall(ThreadContext context, IRubyObject self, FunctionalCachingCallSite blockGivenSite, Object blk) {
+        CacheEntry blockGivenEntry = blockGivenSite.retrieveCache(self);
+
+        if (!blockGivenEntry.method.getRealMethod().isBuiltin()) {
+            return blockGivenSite.call(context, self, self);
+        }
+
+        return isBlockGiven(context, blk);
+    }
+
     private static class InvalidKeyException extends RuntimeException {}
     private static final InvalidKeyException INVALID_KEY_EXCEPTION = new InvalidKeyException();
     private static final RubyHash.VisitorWithState<StaticScope> CheckUnwantedKeywordsVisitor = new RubyHash.VisitorWithState<StaticScope>() {
@@ -1624,6 +1634,11 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
+    public static RubyString newFrozenStringFromRaw(ThreadContext context, String str, String encoding, int cr) {
+        return newFrozenString(context, newByteListFromRaw(context.runtime, str, encoding), cr);
+    }
+
+    @JIT
     public static final ByteList newByteListFromRaw(Ruby runtime, String str, String encoding) {
         return new ByteList(RubyEncoding.encodeISO(str), runtime.getEncodingService().getEncodingFromString(encoding), false);
     }
@@ -1943,7 +1958,7 @@ public class IRRuntimeHelpers {
     public static IRubyObject invokeModuleBody(ThreadContext context, DynamicMethod method) {
         RubyModule implClass = method.getImplementationClass();
 
-        return method.call(context, implClass, implClass, "", Block.NULL_BLOCK);
+        return method.call(context, implClass, implClass, null, Block.NULL_BLOCK);
     }
 
     @JIT
@@ -2437,6 +2452,12 @@ public class IRRuntimeHelpers {
         return runtime.freezeAndDedupString(RubyString.newString(runtime, bytelist, coderange));
     }
 
+    public static RubyString newFrozenString(ThreadContext context, ByteList bytelist, int coderange) {
+        Ruby runtime = context.runtime;
+
+        return runtime.freezeAndDedupString(RubyString.newString(runtime, bytelist, coderange));
+    }
+
     @JIT @Interp
     public static RubyString freezeLiteralString(RubyString string) {
         string.setFrozen(true);
@@ -2637,5 +2658,16 @@ public class IRRuntimeHelpers {
     @Interp @JIT
     public static int arrayLength(RubyArray array) {
         return array.getLength();
+    }
+
+    @Interp @JIT
+    public static String getFrameNameFromBlock(Block block) {
+        // FIXME: binding.getMethod does not appear to be the right name in defined_method bodies... WHY?
+        return block.getBinding().getFrame().getName();
+    }
+
+    @Interp @JIT
+    public static Block getFrameBlockFromBlock(Block block) {
+        return block.getBinding().getFrame().getBlock();
     }
 }
