@@ -2359,7 +2359,7 @@ public class RubyEnumerable {
 
         private void callImpl(final Ruby runtime, IRubyObject value) {
             IRubyObject ary = TypeConverter.checkArrayType(runtime, value);
-            if (ary.isNil()) throw typeError(runtime.getCurrentContext(), "wrong element type ", value, " (expected Array)");
+            if (ary.isNil()) throw typeError(runtime.getCurrentContext(), "wrong element type ", value, " (expected array)");
             final RubyArray array = (RubyArray) ary;
             if (array.size() != 2) {
                 throw runtime.newArgumentError("element has wrong array length (expected 2, was " + array.size() + ")");
