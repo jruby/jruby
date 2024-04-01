@@ -1,11 +1,14 @@
 package org.jruby.ir.instructions;
 
 import org.jcodings.Encoding;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.FrozenString;
+import org.jruby.ir.operands.ImmutableLiteral;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Variable;
@@ -125,14 +128,20 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
         for (Operand piece: getOperands()) {
             // if we have two strings in a row, usually due to constant propagation, combine them
             if (piece instanceof FrozenString strPiece) {
-                ByteList newByteList = combineSiblingStrings(lastString, piece);
-                if (newByteList != null) {
-                    lastString = new FrozenString(newByteList, CR_UNKNOWN, file, line);
-                    // successfully combined, proceed to next piece
+                FrozenString newOperand = combineSiblingStrings(lastString, piece);
+                if (newOperand != null) {
+                    lastString = newOperand;
                 } else if (lastString == null) {
                     lastString = strPiece;
                 } else {
                     pieces.add(lastString);
+                }
+            } else if (piece instanceof ImmutableLiteral imm) {  // note: is lastString exist then this can definitely be combined
+                FrozenString newOperand = combine(manager, lastString, imm);
+                if (newOperand != null) {
+                    lastString = newOperand;
+                } else {
+                    pieces.add(piece);
                 }
             } else {  // not a string, leave lastString behind
                 pieces.add(piece);
@@ -151,14 +160,27 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
         return this;
     }
 
-    private static ByteList combineSiblingStrings(FrozenString lastString, Operand piece) {
-        if (lastString != null && piece instanceof FrozenString strPiece
-                && lastString.getByteList().getEncoding() == strPiece.getByteList().getEncoding()
-                && lastString.getCodeRange() == lastString.getCodeRange()) {
+    private FrozenString combine(IRManager manager, FrozenString lastString, ImmutableLiteral piece) {
+        IRubyObject fix = (IRubyObject) piece.retrieve(manager.getRuntime().getCurrentContext(), null, null, null, null);
+        if (lastString == null) {
+            return asOperand(fix.asString().getByteList());
+        } else {
+            ByteList newByteList = lastString.getByteList().dup();
+            newByteList.append(fix.asString().getByteList());
+            return asOperand(newByteList);
+        }
+    }
+
+    private FrozenString combineSiblingStrings(FrozenString lastString, Operand piece) {
+        if (lastString != null && piece instanceof FrozenString strPiece) {
             ByteList newByteList = lastString.getByteList().dup();
             newByteList.append(strPiece.getByteList());
-            return newByteList;
+            return asOperand(newByteList);
         }
         return null;
+    }
+
+    private FrozenString asOperand(ByteList bytelist) {
+        return new FrozenString(bytelist, CR_UNKNOWN, file, line);
     }
 }
