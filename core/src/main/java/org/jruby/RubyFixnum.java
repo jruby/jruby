@@ -40,7 +40,6 @@ package org.jruby;
 import java.math.BigInteger;
 
 import org.jcodings.specific.USASCIIEncoding;
-import org.jruby.RubyEnumerator.SizeFn;
 import org.jruby.compiler.Constantizable;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -412,8 +411,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
 
     @Override
     public RubyString to_s() {
-        ByteList bytes = ConvertBytes.longToByteList(value, 10);
-        return RubyString.newString(metaClass.runtime, bytes, USASCIIEncoding.INSTANCE);
+        return longToString(value, 10);
     }
 
     @Override
@@ -422,7 +420,18 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         if (base < 2 || base > 36) {
             throw metaClass.runtime.newArgumentError("illegal radix " + base);
         }
-        ByteList bytes = ConvertBytes.longToByteList(value, base);
+
+        return longToString(value, base);
+    }
+
+    private RubyString longToString(long value, int base) {
+        ByteList bytes;
+        if (base == 10 && value >= -256 && value < 256) {
+            bytes = ConvertBytes.byteToSharedByteList((short) value);
+            return RubyString.newStringShared(metaClass.runtime, bytes, USASCIIEncoding.INSTANCE);
+        }
+
+        bytes = ConvertBytes.longToByteList(value, base);
         return RubyString.newString(metaClass.runtime, bytes, USASCIIEncoding.INSTANCE);
     }
 
