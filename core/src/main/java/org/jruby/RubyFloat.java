@@ -255,10 +255,10 @@ public class RubyFloat extends RubyNumeric {
     public IRubyObject to_s() {
         final Ruby runtime = metaClass.runtime;
         if (Double.isInfinite(value)) {
-            return RubyString.newString(runtime, value < 0 ? "-Infinity" : "Infinity");
+            return RubyString.newStringShared(runtime, value < 0 ? NEGATIVE_INFINITY_TO_S_BYTELIST : POSITIVE_INFINITY_TO_S_BYTELIST);
         }
         if (Double.isNaN(value)) {
-            return RubyString.newString(runtime, "NaN");
+            return RubyString.newStringShared(runtime, NAN_TO_S_BYTELIST);
         }
 
         ByteList buf = new ByteList();
@@ -286,6 +286,10 @@ public class RubyFloat extends RubyNumeric {
 
         return runtime.newString(buf);
     }
+
+    public static final ByteList POSITIVE_INFINITY_TO_S_BYTELIST = new ByteList(ByteList.plain("Infinity"), USASCIIEncoding.INSTANCE, false);
+    public static final ByteList NEGATIVE_INFINITY_TO_S_BYTELIST = new ByteList(ByteList.plain("-Infinity"), USASCIIEncoding.INSTANCE, false);
+    public static final ByteList NAN_TO_S_BYTELIST = new ByteList(ByteList.plain("NaN"), USASCIIEncoding.INSTANCE, false);
 
     /** flo_coerce
      *
