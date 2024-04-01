@@ -20,9 +20,10 @@ public interface ObjectFlags {
     int INCLUDED_INTO_REFINEMENT = registry.newFlag(RubyModule.class);
     int TEMPORARY_NAME = registry.newFlag(RubyModule.class);
 
+    // order is important here; CR_7BIT_f needs to be 16 and CR_VALID_F needs to be 32 to match values in Prism parser
+    int FSTRING      = registry.newFlag(RubyString.class);
     int CR_7BIT_F    = registry.newFlag(RubyString.class);
     int CR_VALID_F   = registry.newFlag(RubyString.class);
-    int FSTRING      = registry.newFlag(RubyString.class);
 
     int MATCH_BUSY = registry.newFlag(RubyMatchData.class);
 
