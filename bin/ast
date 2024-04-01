@@ -191,7 +191,7 @@ def ir_setup(root)
   JRuby::IR.compiler_debug = true
 
 
-  builder = org.jruby.ir.IRBuilder
+  builder = org.jruby.ir.builder.IRBuilderAST
 
   scope = builder.build_root(manager, root).scope
   scope.prepare_for_compilation
