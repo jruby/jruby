@@ -123,7 +123,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     public static RubyString[] NULL_ARRAY = {};
 
-    private volatile int shareLevel = SHARE_LEVEL_NONE;
+    protected volatile int shareLevel = SHARE_LEVEL_NONE;
 
     private ByteList value;
 
@@ -861,6 +861,15 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return dup;
     }
 
+    public FString dupAsFString(Ruby runtime, RubyClass clazz) {
+        shareLevel = SHARE_LEVEL_BYTELIST;
+        FString dup = new FString(runtime, clazz, value, getCodeRange());
+        dup.shareLevel = SHARE_LEVEL_BYTELIST;
+        dup.flags |= ObjectFlags.FSTRING | FROZEN_F | (flags & CR_MASK);
+
+        return dup;
+    }
+
     /* rb_str_subseq */
     public final RubyString makeSharedString(Ruby runtime, int index, int len) {
         return makeShared(runtime, runtime.getString(), value, index, len);
@@ -1064,6 +1073,57 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             
             throw runtime.newRaiseException(runtime.getFrozenError(),
                     "can't modify frozen String, created at " + file + ":" + line);
+        }
+    }
+
+    /**
+     * An FString is a frozen string that is also deduplicated and cached. We add a few fields for common conversions
+     * since they'll only be cached in one place and if converted once they'll likely be used again.
+     */
+    public static class FString extends RubyString {
+        private RubySymbol symbol;
+        private IRubyObject integer;
+        private IRubyObject flote;
+
+        protected FString(Ruby runtime, RubyClass rubyClass, ByteList value, int cr) {
+            super(runtime, rubyClass, value, cr);
+
+            // set flag for code that does not use isFrozen
+            setFrozen(true);
+        }
+
+        @Override
+        protected void frozenCheck() {
+            Ruby runtime = getRuntime();
+
+            throw runtime.newFrozenError("String", this);
+        }
+
+        @Override
+        public RubySymbol intern() {
+            RubySymbol symbol = this.symbol;
+            if (symbol == null) {
+                this.symbol = symbol = getRuntime().newSymbol(getByteList());
+            }
+            return symbol;
+        }
+
+        @Override
+        public IRubyObject to_i() {
+            IRubyObject integer = this.integer;
+            if (integer == null) {
+                this.integer = integer = super.to_i();
+            }
+            return integer;
+        }
+
+        @Override
+        public IRubyObject to_f() {
+            IRubyObject flote = this.flote;
+            if (flote == null) {
+                this.flote = flote = super.to_f();
+            }
+            return flote;
         }
     }
 
