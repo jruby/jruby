@@ -227,20 +227,29 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
      * @return the symbol table entry.
      */
     public static RubySymbol retrieveIDSymbol(IRubyObject name) {
-        return name instanceof RubySymbol ?
-                (RubySymbol) name : newIDSymbol(name.getRuntime(), name.convertToString().getByteList());
+        if (name instanceof RubySymbol sym) return sym;
+
+        if (name instanceof RubyString.FString fstring) {
+            return fstring.intern();
+        }
+
+        return newIDSymbol(name.getRuntime(), name.convertToString().getByteList());
     }
 
     /**
-     * Retrieve an ID symbol but call the handler before any new symbol is added to the symbol table.
-     * This can be used for verifying the symbol is valid.
+     * Retrieve an ID symbol but call the handler to verify the symbol is valid.
      *
      * @param name to get symbol table entry for (it may be a symbol already)
      * @return the symbol table entry.
      */
     public static RubySymbol retrieveIDSymbol(IRubyObject name, ObjBooleanConsumer<RubySymbol> handler) {
-        if (name instanceof RubySymbol) {
-            RubySymbol sym = (RubySymbol) name;
+        if (name instanceof RubySymbol sym) {
+            handler.accept(sym, false);
+            return sym;
+        }
+
+        if (name instanceof RubyString.FString fstring) {
+            RubySymbol sym = fstring.intern();
             handler.accept(sym, false);
             return sym;
         }
