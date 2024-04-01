@@ -8,7 +8,6 @@ import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
-import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -39,7 +38,7 @@ public class ToAryInstr extends OneOperandResultBaseInstr implements FixedArityI
     }
 
     @Override
-    public Operand simplifyAndGetResult(IRScope scope, Map<Operand, Operand> valueMap) {
+    public Operand simplifyOperands(IRScope scope, Map<Operand, Operand> valueMap) {
         simplifyOperands(valueMap, false);
         Operand a = getArray().getValue(valueMap);
         return a instanceof Array ? a : null;

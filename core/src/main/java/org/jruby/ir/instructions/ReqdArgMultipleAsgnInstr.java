@@ -5,7 +5,6 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Array;
-import org.jruby.ir.operands.Nil;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
@@ -42,7 +41,7 @@ public class ReqdArgMultipleAsgnInstr extends MultipleAsgnBase implements FixedA
     }
 
     @Override
-    public Operand simplifyAndGetResult(IRScope scope, Map<Operand, Operand> valueMap) {
+    public Operand simplifyOperands(IRScope scope, Map<Operand, Operand> valueMap) {
         simplifyOperands(valueMap, false);
         Operand val = getArray().getValue(valueMap);
         if (val instanceof Array) {

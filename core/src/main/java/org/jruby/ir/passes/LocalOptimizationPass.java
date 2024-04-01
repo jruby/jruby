@@ -69,12 +69,11 @@ public class LocalOptimizationPass extends CompilerPass {
         // System.out.println("BEFORE: " + instr);
 
         // Simplify instruction and record mapping between target variable and simplified value
-        Operand val = instr.simplifyAndGetResult(fic.getScope(), valueMap);
+        Operand val = instr.simplifyOperands(fic.getScope(), valueMap);
 
+        // Simplification of operands may lead an instr to realize it can be something simpler.  For example,
         // A branch may no longer need to be a branch (e.g. b_true(true, label) -> jump(label)).
-        if (instr instanceof BranchInstr) {
-            instr = ((BranchInstr) instr).simplifyBranch(fic);
-        }
+        instr = instr.simplifyInstr(fic.getScope().getManager());
 
         // Variable dst = (instr instanceof ResultInstr) ? ((ResultInstr) instr).getResult() : null;
         // System.out.println("AFTER: " + instr + "; dst = " + dst + "; val = " + val);
