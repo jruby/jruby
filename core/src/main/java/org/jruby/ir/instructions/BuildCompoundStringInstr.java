@@ -21,6 +21,8 @@ import org.jruby.util.ByteList;
 
 import java.util.ArrayList;
 
+import static org.jruby.util.StringSupport.CR_UNKNOWN;
+
 // This represents a compound string in Ruby
 // Ex: - "Hi " + "there"
 //     - "Hi #{name}"
@@ -119,28 +121,28 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
         var piecesArray = getOperands();
         ArrayList<Operand> pieces = new ArrayList<>(piecesArray.length);
         FrozenString lastString = null;
-        boolean combined = false;
 
         for (Operand piece: getOperands()) {
             // if we have two strings in a row, usually due to constant propagation, combine them
             if (piece instanceof FrozenString strPiece) {
-                if (combineSiblingStrings(lastString, piece)) {
+                ByteList newByteList = combineSiblingStrings(lastString, piece);
+                if (newByteList != null) {
+                    lastString = new FrozenString(newByteList, CR_UNKNOWN, file, line);
                     // successfully combined, proceed to next piece
-                    combined = true;
-                    continue;
-                } else {
-                    // could not be combined, this piece is the new lastString
+                } else if (lastString == null) {
                     lastString = strPiece;
+                } else {
+                    pieces.add(lastString);
                 }
-            } else {
-                // not a string, leave lastString behind
+            } else {  // not a string, leave lastString behind
+                pieces.add(piece);
                 lastString = null;
             }
-
-            pieces.add(piece);
         }
 
-        if (combined) {
+        if (lastString != null) pieces.add(lastString);
+
+        if (pieces.size() != piecesArray.length) {
             return pieces.size() == 1 ?
                     new CopyInstr(result, pieces.get(0)) :
                     new BuildCompoundStringInstr(result, pieces.toArray(Operand[]::new), encoding, estimatedSize, frozen, file, line);
@@ -149,13 +151,14 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
         return this;
     }
 
-    private static boolean combineSiblingStrings(FrozenString lastString, Operand piece) {
+    private static ByteList combineSiblingStrings(FrozenString lastString, Operand piece) {
         if (lastString != null && piece instanceof FrozenString strPiece
                 && lastString.getByteList().getEncoding() == strPiece.getByteList().getEncoding()
                 && lastString.getCodeRange() == lastString.getCodeRange()) {
-            lastString.getByteList().dup().append(strPiece.getByteList());
-            return true;
+            ByteList newByteList = lastString.getByteList().dup();
+            newByteList.append(strPiece.getByteList());
+            return newByteList;
         }
-        return false;
+        return null;
     }
 }
