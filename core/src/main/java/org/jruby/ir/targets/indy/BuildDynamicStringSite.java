@@ -3,6 +3,7 @@ package org.jruby.ir.targets.indy;
 import com.headius.invokebinder.Binder;
 import org.jcodings.Encoding;
 import org.jruby.RubyString;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -15,6 +16,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 
+import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
 
@@ -68,29 +70,30 @@ public class BuildDynamicStringSite extends MutableCallSite {
 
         if (specialize) {
             // bind directly to specialized builds
-            binder = binder.prepend(this);
+            binder = binder.append(arrayOf(Encoding.class, int.class), encoding, initialSize);
+            setTarget(binder.invokeStaticQuiet(BuildDynamicStringSite.class, "buildString"));
         } else {
             binder = binder.prepend(this).collect(2, IRubyObject[].class);
+            setTarget(binder.invokeVirtualQuiet("buildString"));
         }
 
-        setTarget(binder.invokeVirtualQuiet("buildString"));
     }
 
-    public RubyString buildString(ThreadContext context, IRubyObject a) { // 0b0
+    public static RubyString buildString(ThreadContext context, IRubyObject a, Encoding encoding, int initialSize) { // 0b0
         RubyString buffer = StringBootstrap.bufferString(context, encoding, initialSize, StringSupport.CR_7BIT);
         buffer.appendAsDynamicString(a);
 
         return buffer;
     }
 
-    public RubyString buildString(ThreadContext context, ByteListAndCodeRange a) { // 0b1
+    public static RubyString buildString(ThreadContext context, ByteListAndCodeRange a, Encoding encoding, int initialSize) { // 0b1
         RubyString buffer = StringBootstrap.bufferString(context, encoding, initialSize, StringSupport.CR_7BIT);
         buffer.catWithCodeRange(a.bl, a.cr);
 
         return buffer;
     }
 
-    public RubyString buildString(ThreadContext context, IRubyObject a, IRubyObject b) { // 0b00
+    public static RubyString buildString(ThreadContext context, IRubyObject a, IRubyObject b, Encoding encoding, int initialSize) { // 0b00
         RubyString buffer = StringBootstrap.bufferString(context, encoding, initialSize, StringSupport.CR_7BIT);
         buffer.appendAsDynamicString(a);
         buffer.appendAsDynamicString(b);
@@ -98,7 +101,7 @@ public class BuildDynamicStringSite extends MutableCallSite {
         return buffer;
     }
 
-    public RubyString buildString(ThreadContext context, IRubyObject a, ByteListAndCodeRange b) { // 0b01
+    public static RubyString buildString(ThreadContext context, IRubyObject a, ByteListAndCodeRange b, Encoding encoding, int initialSize) { // 0b01
         RubyString buffer = StringBootstrap.bufferString(context, encoding, initialSize, StringSupport.CR_7BIT);
         buffer.appendAsDynamicString(a);
         buffer.catWithCodeRange(b.bl, b.cr);
@@ -106,7 +109,7 @@ public class BuildDynamicStringSite extends MutableCallSite {
         return buffer;
     }
 
-    public RubyString buildString(ThreadContext context, ByteListAndCodeRange a, IRubyObject b) { // 0b10
+    public static RubyString buildString(ThreadContext context, ByteListAndCodeRange a, IRubyObject b, Encoding encoding, int initialSize) { // 0b10
         RubyString buffer = StringBootstrap.bufferString(context, encoding, initialSize, StringSupport.CR_7BIT);
         buffer.catWithCodeRange(a.bl, a.cr);
         buffer.appendAsDynamicString(b);
@@ -114,7 +117,7 @@ public class BuildDynamicStringSite extends MutableCallSite {
         return buffer;
     }
 
-    public RubyString buildString(ThreadContext context, ByteListAndCodeRange a, ByteListAndCodeRange b) { // 0b11
+    public static RubyString buildString(ThreadContext context, ByteListAndCodeRange a, ByteListAndCodeRange b, Encoding encoding, int initialSize) { // 0b11
         RubyString buffer = StringBootstrap.bufferString(context, encoding, initialSize, StringSupport.CR_7BIT);
         buffer.catWithCodeRange(a.bl, a.cr);
         buffer.catWithCodeRange(b.bl, b.cr);
@@ -122,7 +125,7 @@ public class BuildDynamicStringSite extends MutableCallSite {
         return buffer;
     }
 
-    public RubyString buildString(ThreadContext context, IRubyObject a, IRubyObject b, IRubyObject c) { // 0b000
+    public static RubyString buildString(ThreadContext context, IRubyObject a, IRubyObject b, IRubyObject c, Encoding encoding, int initialSize) { // 0b000
         RubyString buffer = StringBootstrap.bufferString(context, encoding, initialSize, StringSupport.CR_7BIT);
         buffer.appendAsDynamicString(a);
         buffer.appendAsDynamicString(b);
@@ -131,7 +134,7 @@ public class BuildDynamicStringSite extends MutableCallSite {
         return buffer;
     }
 
-    public RubyString buildString(ThreadContext context, IRubyObject a, IRubyObject b, ByteListAndCodeRange c) { // 0b001
+    public static RubyString buildString(ThreadContext context, IRubyObject a, IRubyObject b, ByteListAndCodeRange c, Encoding encoding, int initialSize) { // 0b001
         RubyString buffer = StringBootstrap.bufferString(context, encoding, initialSize, StringSupport.CR_7BIT);
         buffer.appendAsDynamicString(a);
         buffer.appendAsDynamicString(b);
@@ -140,7 +143,7 @@ public class BuildDynamicStringSite extends MutableCallSite {
         return buffer;
     }
 
-    public RubyString buildString(ThreadContext context, IRubyObject a, ByteListAndCodeRange b, IRubyObject c) { // 0b010
+    public static RubyString buildString(ThreadContext context, IRubyObject a, ByteListAndCodeRange b, IRubyObject c, Encoding encoding, int initialSize) { // 0b010
         RubyString buffer = StringBootstrap.bufferString(context, encoding, initialSize, StringSupport.CR_7BIT);
         buffer.appendAsDynamicString(a);
         buffer.catWithCodeRange(b.bl, b.cr);
@@ -149,7 +152,7 @@ public class BuildDynamicStringSite extends MutableCallSite {
         return buffer;
     }
 
-    public RubyString buildString(ThreadContext context, IRubyObject a, ByteListAndCodeRange b, ByteListAndCodeRange c) { // 0b011
+    public static RubyString buildString(ThreadContext context, IRubyObject a, ByteListAndCodeRange b, ByteListAndCodeRange c, Encoding encoding, int initialSize) { // 0b011
         RubyString buffer = StringBootstrap.bufferString(context, encoding, initialSize, StringSupport.CR_7BIT);
         buffer.appendAsDynamicString(a);
         buffer.catWithCodeRange(b.bl, b.cr);
@@ -158,7 +161,7 @@ public class BuildDynamicStringSite extends MutableCallSite {
         return buffer;
     }
 
-    public RubyString buildString(ThreadContext context, ByteListAndCodeRange a, IRubyObject b, IRubyObject c) { // 0b100
+    public static RubyString buildString(ThreadContext context, ByteListAndCodeRange a, IRubyObject b, IRubyObject c, Encoding encoding, int initialSize) { // 0b100
         RubyString buffer = StringBootstrap.bufferString(context, encoding, initialSize, StringSupport.CR_7BIT);
         buffer.catWithCodeRange(a.bl, a.cr);
         buffer.appendAsDynamicString(b);
@@ -167,7 +170,7 @@ public class BuildDynamicStringSite extends MutableCallSite {
         return buffer;
     }
 
-    public RubyString buildString(ThreadContext context, ByteListAndCodeRange a, IRubyObject b, ByteListAndCodeRange c) { // 0b101
+    public static RubyString buildString(ThreadContext context, ByteListAndCodeRange a, IRubyObject b, ByteListAndCodeRange c, Encoding encoding, int initialSize) { // 0b101
         RubyString buffer = StringBootstrap.bufferString(context, encoding, initialSize, StringSupport.CR_7BIT);
         buffer.catWithCodeRange(a.bl, a.cr);
         buffer.appendAsDynamicString(b);
@@ -176,7 +179,7 @@ public class BuildDynamicStringSite extends MutableCallSite {
         return buffer;
     }
 
-    public RubyString buildString(ThreadContext context, ByteListAndCodeRange a, ByteListAndCodeRange b, IRubyObject c) { // 0b110
+    public static RubyString buildString(ThreadContext context, ByteListAndCodeRange a, ByteListAndCodeRange b, IRubyObject c, Encoding encoding, int initialSize) { // 0b110
         RubyString buffer = StringBootstrap.bufferString(context, encoding, initialSize, StringSupport.CR_7BIT);
         buffer.catWithCodeRange(a.bl, a.cr);
         buffer.catWithCodeRange(b.bl, b.cr);
@@ -185,7 +188,7 @@ public class BuildDynamicStringSite extends MutableCallSite {
         return buffer;
     }
 
-    public RubyString buildString(ThreadContext context, ByteListAndCodeRange a, ByteListAndCodeRange b, ByteListAndCodeRange c) { // 0b111
+    public static RubyString buildString(ThreadContext context, ByteListAndCodeRange a, ByteListAndCodeRange b, ByteListAndCodeRange c, Encoding encoding, int initialSize) { // 0b111
         RubyString buffer = StringBootstrap.bufferString(context, encoding, initialSize, StringSupport.CR_7BIT);
         buffer.catWithCodeRange(a.bl, a.cr);
         buffer.catWithCodeRange(b.bl, b.cr);
@@ -194,7 +197,7 @@ public class BuildDynamicStringSite extends MutableCallSite {
         return buffer;
     }
 
-    public RubyString buildString(ThreadContext context, IRubyObject a, IRubyObject b, IRubyObject c, IRubyObject d) { // 0b0000
+    public static RubyString buildString(ThreadContext context, IRubyObject a, IRubyObject b, IRubyObject c, IRubyObject d, Encoding encoding, int initialSize) { // 0b0000
         RubyString buffer = StringBootstrap.bufferString(context, encoding, initialSize, StringSupport.CR_7BIT);
         buffer.appendAsDynamicString(a);
         buffer.appendAsDynamicString(b);
@@ -204,7 +207,7 @@ public class BuildDynamicStringSite extends MutableCallSite {
         return buffer;
     }
 
-    public RubyString buildString(ThreadContext context, IRubyObject a, IRubyObject b, IRubyObject c, ByteListAndCodeRange d) { // 0b0001
+    public static RubyString buildString(ThreadContext context, IRubyObject a, IRubyObject b, IRubyObject c, ByteListAndCodeRange d, Encoding encoding, int initialSize) { // 0b0001
         RubyString buffer = StringBootstrap.bufferString(context, encoding, initialSize, StringSupport.CR_7BIT);
         buffer.appendAsDynamicString(a);
         buffer.appendAsDynamicString(b);
@@ -214,7 +217,7 @@ public class BuildDynamicStringSite extends MutableCallSite {
         return buffer;
     }
 
-    public RubyString buildString(ThreadContext context, IRubyObject a, IRubyObject b, ByteListAndCodeRange c, IRubyObject d) { // 0b0010
+    public static RubyString buildString(ThreadContext context, IRubyObject a, IRubyObject b, ByteListAndCodeRange c, IRubyObject d, Encoding encoding, int initialSize) { // 0b0010
         RubyString buffer = StringBootstrap.bufferString(context, encoding, initialSize, StringSupport.CR_7BIT);
         buffer.appendAsDynamicString(a);
         buffer.appendAsDynamicString(b);
@@ -224,7 +227,7 @@ public class BuildDynamicStringSite extends MutableCallSite {
         return buffer;
     }
 
-    public RubyString buildString(ThreadContext context, IRubyObject a, IRubyObject b, ByteListAndCodeRange c, ByteListAndCodeRange d) { // 0b0011
+    public static RubyString buildString(ThreadContext context, IRubyObject a, IRubyObject b, ByteListAndCodeRange c, ByteListAndCodeRange d, Encoding encoding, int initialSize) { // 0b0011
         RubyString buffer = StringBootstrap.bufferString(context, encoding, initialSize, StringSupport.CR_7BIT);
         buffer.appendAsDynamicString(a);
         buffer.appendAsDynamicString(b);
@@ -234,7 +237,7 @@ public class BuildDynamicStringSite extends MutableCallSite {
         return buffer;
     }
 
-    public RubyString buildString(ThreadContext context, IRubyObject a, ByteListAndCodeRange b, IRubyObject c, IRubyObject d) { // 0b0100
+    public static RubyString buildString(ThreadContext context, IRubyObject a, ByteListAndCodeRange b, IRubyObject c, IRubyObject d, Encoding encoding, int initialSize) { // 0b0100
         RubyString buffer = StringBootstrap.bufferString(context, encoding, initialSize, StringSupport.CR_7BIT);
         buffer.appendAsDynamicString(a);
         buffer.catWithCodeRange(b.bl, b.cr);
@@ -244,7 +247,7 @@ public class BuildDynamicStringSite extends MutableCallSite {
         return buffer;
     }
 
-    public RubyString buildString(ThreadContext context, IRubyObject a, ByteListAndCodeRange b, IRubyObject c, ByteListAndCodeRange d) { // 0b0101
+    public static RubyString buildString(ThreadContext context, IRubyObject a, ByteListAndCodeRange b, IRubyObject c, ByteListAndCodeRange d, Encoding encoding, int initialSize) { // 0b0101
         RubyString buffer = StringBootstrap.bufferString(context, encoding, initialSize, StringSupport.CR_7BIT);
         buffer.appendAsDynamicString(a);
         buffer.catWithCodeRange(b.bl, b.cr);
@@ -254,7 +257,7 @@ public class BuildDynamicStringSite extends MutableCallSite {
         return buffer;
     }
 
-    public RubyString buildString(ThreadContext context, IRubyObject a, ByteListAndCodeRange b, ByteListAndCodeRange c, IRubyObject d) { // 0b0110
+    public static RubyString buildString(ThreadContext context, IRubyObject a, ByteListAndCodeRange b, ByteListAndCodeRange c, IRubyObject d, Encoding encoding, int initialSize) { // 0b0110
         RubyString buffer = StringBootstrap.bufferString(context, encoding, initialSize, StringSupport.CR_7BIT);
         buffer.appendAsDynamicString(a);
         buffer.catWithCodeRange(b.bl, b.cr);
@@ -264,7 +267,7 @@ public class BuildDynamicStringSite extends MutableCallSite {
         return buffer;
     }
 
-    public RubyString buildString(ThreadContext context, IRubyObject a, ByteListAndCodeRange b, ByteListAndCodeRange c, ByteListAndCodeRange d) { // 0b0111
+    public static RubyString buildString(ThreadContext context, IRubyObject a, ByteListAndCodeRange b, ByteListAndCodeRange c, ByteListAndCodeRange d, Encoding encoding, int initialSize) { // 0b0111
         RubyString buffer = StringBootstrap.bufferString(context, encoding, initialSize, StringSupport.CR_7BIT);
         buffer.appendAsDynamicString(a);
         buffer.catWithCodeRange(b.bl, b.cr);
@@ -274,7 +277,7 @@ public class BuildDynamicStringSite extends MutableCallSite {
         return buffer;
     }
 
-    public RubyString buildString(ThreadContext context, ByteListAndCodeRange a, IRubyObject b, IRubyObject c, IRubyObject d) { // 0b1000
+    public static RubyString buildString(ThreadContext context, ByteListAndCodeRange a, IRubyObject b, IRubyObject c, IRubyObject d, Encoding encoding, int initialSize) { // 0b1000
         RubyString buffer = StringBootstrap.bufferString(context, encoding, initialSize, StringSupport.CR_7BIT);
         buffer.catWithCodeRange(a.bl, a.cr);
         buffer.appendAsDynamicString(b);
@@ -284,7 +287,7 @@ public class BuildDynamicStringSite extends MutableCallSite {
         return buffer;
     }
 
-    public RubyString buildString(ThreadContext context, ByteListAndCodeRange a, IRubyObject b, IRubyObject c, ByteListAndCodeRange d) { // 0b1001
+    public static RubyString buildString(ThreadContext context, ByteListAndCodeRange a, IRubyObject b, IRubyObject c, ByteListAndCodeRange d, Encoding encoding, int initialSize) { // 0b1001
         RubyString buffer = StringBootstrap.bufferString(context, encoding, initialSize, StringSupport.CR_7BIT);
         buffer.catWithCodeRange(a.bl, a.cr);
         buffer.appendAsDynamicString(b);
@@ -294,7 +297,7 @@ public class BuildDynamicStringSite extends MutableCallSite {
         return buffer;
     }
 
-    public RubyString buildString(ThreadContext context, ByteListAndCodeRange a, IRubyObject b, ByteListAndCodeRange c, IRubyObject d) { // 0b1010
+    public static RubyString buildString(ThreadContext context, ByteListAndCodeRange a, IRubyObject b, ByteListAndCodeRange c, IRubyObject d, Encoding encoding, int initialSize) { // 0b1010
         RubyString buffer = StringBootstrap.bufferString(context, encoding, initialSize, StringSupport.CR_7BIT);
         buffer.catWithCodeRange(a.bl, a.cr);
         buffer.appendAsDynamicString(b);
@@ -304,7 +307,7 @@ public class BuildDynamicStringSite extends MutableCallSite {
         return buffer;
     }
 
-    public RubyString buildString(ThreadContext context, ByteListAndCodeRange a, IRubyObject b, ByteListAndCodeRange c, ByteListAndCodeRange d) { // 0b1011
+    public static RubyString buildString(ThreadContext context, ByteListAndCodeRange a, IRubyObject b, ByteListAndCodeRange c, ByteListAndCodeRange d, Encoding encoding, int initialSize) { // 0b1011
         RubyString buffer = StringBootstrap.bufferString(context, encoding, initialSize, StringSupport.CR_7BIT);
         buffer.catWithCodeRange(a.bl, a.cr);
         buffer.appendAsDynamicString(b);
@@ -314,7 +317,7 @@ public class BuildDynamicStringSite extends MutableCallSite {
         return buffer;
     }
 
-    public RubyString buildString(ThreadContext context, ByteListAndCodeRange a, ByteListAndCodeRange b, IRubyObject c, IRubyObject d) { // 0b1100
+    public static RubyString buildString(ThreadContext context, ByteListAndCodeRange a, ByteListAndCodeRange b, IRubyObject c, IRubyObject d, Encoding encoding, int initialSize) { // 0b1100
         RubyString buffer = StringBootstrap.bufferString(context, encoding, initialSize, StringSupport.CR_7BIT);
         buffer.catWithCodeRange(a.bl, a.cr);
         buffer.catWithCodeRange(b.bl, b.cr);
@@ -324,7 +327,7 @@ public class BuildDynamicStringSite extends MutableCallSite {
         return buffer;
     }
 
-    public RubyString buildString(ThreadContext context, ByteListAndCodeRange a, ByteListAndCodeRange b, IRubyObject c, ByteListAndCodeRange d) { // 0b1101
+    public static RubyString buildString(ThreadContext context, ByteListAndCodeRange a, ByteListAndCodeRange b, IRubyObject c, ByteListAndCodeRange d, Encoding encoding, int initialSize) { // 0b1101
         RubyString buffer = StringBootstrap.bufferString(context, encoding, initialSize, StringSupport.CR_7BIT);
         buffer.catWithCodeRange(a.bl, a.cr);
         buffer.catWithCodeRange(b.bl, b.cr);
@@ -334,7 +337,7 @@ public class BuildDynamicStringSite extends MutableCallSite {
         return buffer;
     }
 
-    public RubyString buildString(ThreadContext context, ByteListAndCodeRange a, ByteListAndCodeRange b, ByteListAndCodeRange c, IRubyObject d) { // 0b1110
+    public static RubyString buildString(ThreadContext context, ByteListAndCodeRange a, ByteListAndCodeRange b, ByteListAndCodeRange c, IRubyObject d, Encoding encoding, int initialSize) { // 0b1110
         RubyString buffer = StringBootstrap.bufferString(context, encoding, initialSize, StringSupport.CR_7BIT);
         buffer.catWithCodeRange(a.bl, a.cr);
         buffer.catWithCodeRange(b.bl, b.cr);
@@ -344,7 +347,7 @@ public class BuildDynamicStringSite extends MutableCallSite {
         return buffer;
     }
 
-    public RubyString buildString(ThreadContext context, ByteListAndCodeRange a, ByteListAndCodeRange b, ByteListAndCodeRange c, ByteListAndCodeRange d) { // 0b1111
+    public static RubyString buildString(ThreadContext context, ByteListAndCodeRange a, ByteListAndCodeRange b, ByteListAndCodeRange c, ByteListAndCodeRange d, Encoding encoding, int initialSize) { // 0b1111
         RubyString buffer = StringBootstrap.bufferString(context, encoding, initialSize, StringSupport.CR_7BIT);
         buffer.catWithCodeRange(a.bl, a.cr);
         buffer.catWithCodeRange(b.bl, b.cr);
