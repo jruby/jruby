@@ -2,8 +2,10 @@ package org.jruby.ir.instructions;
 
 import org.jcodings.Encoding;
 import org.jruby.RubyString;
+import org.jruby.ir.IRManager;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.FrozenString;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Variable;
@@ -16,6 +18,8 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+
+import java.util.ArrayList;
 
 // This represents a compound string in Ruby
 // Ex: - "Hi " + "there"
@@ -107,5 +111,51 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
 
     public int getLine() {
         return line;
+    }
+
+
+    @Override
+    public Instr simplifyInstr(IRManager manager) {
+        var piecesArray = getOperands();
+        ArrayList<Operand> pieces = new ArrayList<>(piecesArray.length);
+        FrozenString lastString = null;
+        boolean combined = false;
+
+        for (Operand piece: getOperands()) {
+            // if we have two strings in a row, usually due to constant propagation, combine them
+            if (piece instanceof FrozenString strPiece) {
+                if (combineSiblingStrings(lastString, piece)) {
+                    // successfully combined, proceed to next piece
+                    combined = true;
+                    continue;
+                } else {
+                    // could not be combined, this piece is the new lastString
+                    lastString = strPiece;
+                }
+            } else {
+                // not a string, leave lastString behind
+                lastString = null;
+            }
+
+            pieces.add(piece);
+        }
+
+        if (combined) {
+            return pieces.size() == 1 ?
+                    new CopyInstr(result, pieces.get(0)) :
+                    new BuildCompoundStringInstr(result, pieces.toArray(Operand[]::new), encoding, estimatedSize, frozen, file, line);
+        }
+
+        return this;
+    }
+
+    private static boolean combineSiblingStrings(FrozenString lastString, Operand piece) {
+        if (lastString != null && piece instanceof FrozenString strPiece
+                && lastString.getByteList().getEncoding() == strPiece.getByteList().getEncoding()
+                && lastString.getCodeRange() == lastString.getCodeRange()) {
+            lastString.getByteList().append(strPiece.getByteList());
+            return true;
+        }
+        return false;
     }
 }
