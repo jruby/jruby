@@ -153,7 +153,7 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
         if (lastString != null && piece instanceof FrozenString strPiece
                 && lastString.getByteList().getEncoding() == strPiece.getByteList().getEncoding()
                 && lastString.getCodeRange() == lastString.getCodeRange()) {
-            lastString.getByteList().append(strPiece.getByteList());
+            lastString.getByteList().dup().append(strPiece.getByteList());
             return true;
         }
         return false;
