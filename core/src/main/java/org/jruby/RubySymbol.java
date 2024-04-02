@@ -71,7 +71,6 @@ import org.jruby.util.SymbolNameType;
 import org.jruby.util.TypeConverter;
 
 import java.lang.ref.WeakReference;
-import java.util.AbstractMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
@@ -79,6 +78,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
 import static org.jruby.util.StringSupport.CR_7BIT;
+import static org.jruby.util.StringSupport.CR_UNKNOWN;
 import static org.jruby.util.StringSupport.codeLength;
 import static org.jruby.util.StringSupport.codePoint;
 import static org.jruby.util.StringSupport.codeRangeScan;
@@ -87,7 +87,7 @@ import static org.jruby.util.StringSupport.codeRangeScan;
  * Represents a Ruby symbol (e.g. :bar)
  */
 @JRubyClass(name = "Symbol", include = "Enumerable")
-public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingCapable, Constantizable {
+public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingCapable, Constantizable, Appendable {
     @Deprecated
     public static final long symbolHashSeedK0 = 5238926673095087190l;
 
@@ -1539,6 +1539,11 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         }
 
         return ((RubyString) object).getByteList().toString();
+    }
+
+    @Override
+    public void appendIntoString(RubyString target) {
+        target.catWithCodeRange(getBytes(), CR_UNKNOWN);
     }
 
     public static final class SymbolProcBody extends ContextAwareBlockBody {

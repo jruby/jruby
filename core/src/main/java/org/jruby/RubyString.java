@@ -103,7 +103,7 @@ import static org.jruby.util.StringSupport.*;
  *
  */
 @JRubyClass(name="String", include={"Enumerable", "Comparable"})
-public class RubyString extends RubyObject implements CharSequence, EncodingCapable, MarshalEncoding, CodeRangeable {
+public class RubyString extends RubyObject implements CharSequence, EncodingCapable, MarshalEncoding, CodeRangeable, Appendable {
     static final ASCIIEncoding ASCII = ASCIIEncoding.INSTANCE;
     static final UTF8Encoding UTF8 = UTF8Encoding.INSTANCE;
 
@@ -2668,12 +2668,15 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return value.length() == 0;
     }
 
+    public void appendIntoString(RubyString target) {
+        target.catWithCodeRange(getByteList(), getCodeRange());
+    }
+
     /** rb_str_append
      *
      */
     public RubyString append(IRubyObject other, Function<IRubyObject, RubyString> convert) {
         modifyCheck();
-
         if (other instanceof RubyString str) {
             catWithCodeRange(str.getByteList(), str.getCodeRange());
         } else if (other instanceof RubyFixnum fix && value.getEncoding().isAsciiCompatible()) {
@@ -2705,6 +2708,18 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     public RubyString appendAsDynamicString(IRubyObject other) {
         return append(other, (o) -> o.asString());
+    }
+
+    public RubyString appendAsStringOrAny(IRubyObject other) {
+        modifyCheck();
+
+        if (other instanceof Appendable appendable) {
+            appendable.appendIntoString(this);
+        } else {
+            catWithCodeRange((RubyString) other.anyToString());
+        }
+
+        return this;
     }
 
     // NOTE: append(RubyString) should pbly just do the encoding aware cat

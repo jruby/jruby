@@ -23,6 +23,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
+import org.jruby.util.cli.Options;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -105,7 +106,7 @@ public class IndyValueCompiler implements ValueCompiler {
     }
 
     public void buildDynamicString(Encoding encoding, int estimatedSize, boolean frozen, boolean debugFrozen, String file, int line, List<DStringElement> elements) {
-        if (elements.size() > 50) {
+        if (elements.size() > 50 || !Options.COMPILE_INVOKEDYNAMIC.load()) {
             normalValueCompiler.buildDynamicString(encoding, estimatedSize, frozen, debugFrozen, file, line, elements);
             return;
         }
