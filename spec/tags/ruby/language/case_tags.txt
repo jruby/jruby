@@ -1,0 +1,1 @@
+fails:The 'case'-construct warns if there are identical when clauses

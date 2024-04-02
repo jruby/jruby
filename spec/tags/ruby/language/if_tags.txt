@@ -1,0 +1,1 @@
+fails:The if expression with a boolean range ('flip-flop' operator) warns when Integer literals are used instead of predicates
