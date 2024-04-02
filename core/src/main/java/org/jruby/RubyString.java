@@ -2677,15 +2677,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      */
     public RubyString append(IRubyObject other, Function<IRubyObject, RubyString> convert) {
         modifyCheck();
-        if (other instanceof RubyString str) {
-            catWithCodeRange(str.getByteList(), str.getCodeRange());
-        } else if (other instanceof RubyFixnum fix && value.getEncoding().isAsciiCompatible()) {
-            // fast path for fixnum straight into ascii-compatible bytelist (modify check performed in here)
-            ConvertBytes.longIntoString(this, fix.value);
-        } else if (other instanceof RubyFloat flo) {
-            catWithCodeRange((RubyString) flo.to_s());
-        } else if (other instanceof RubySymbol sym) {
-            catWithCodeRange(sym.getBytes(), CR_UNKNOWN);
+        if (other instanceof Appendable appendable) {
+            appendable.appendIntoString(this);
         } else {
             catWithCodeRange(convert.apply(other));
         }
@@ -2711,15 +2704,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     public RubyString appendAsStringOrAny(IRubyObject other) {
-        modifyCheck();
-
-        if (other instanceof Appendable appendable) {
-            appendable.appendIntoString(this);
-        } else {
-            catWithCodeRange((RubyString) other.anyToString());
-        }
-
-        return this;
+        return append(other, (o) -> (RubyString) o.anyToString());
     }
 
     // NOTE: append(RubyString) should pbly just do the encoding aware cat
