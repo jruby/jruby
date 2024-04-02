@@ -23,8 +23,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
 import java.util.ArrayList;
+import java.util.List;
 
-import static org.jruby.util.StringSupport.CR_UNKNOWN;
+import static org.jruby.util.StringSupport.*;
 
 // This represents a compound string in Ruby
 // Ex: - "Hi " + "there"
@@ -122,31 +123,41 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
     @Override
     public Instr simplifyInstr(IRManager manager) {
         var piecesArray = getOperands();
-        ArrayList<Operand> pieces = new ArrayList<>(piecesArray.length);
-        FrozenString lastString = null;
 
-        for (Operand piece: getOperands()) {
-            // if we have two strings in a row, usually due to constant propagation, combine them
-            if (piece instanceof FrozenString strPiece) {
-                FrozenString newOperand = combineSiblingStrings(lastString, piece);
+        if (piecesArray.length == 0) { // not sure we can have an empty compound string but better safe than sorry.
+            var newByteList = new ByteList(0);
+            newByteList.setEncoding(encoding);
+            return new CopyInstr(getResult(), new FrozenString(newByteList, CR_VALID, file, line));
+        } else if (piecesArray.length == 1) { // not sure we can have a compound string with only one piece AND a non-string.
+            return piecesArray[0] instanceof StringLiteral ? new CopyInstr(result, piecesArray[0]) : this;
+        }
+
+        ThreadContext context = manager.getRuntime().getCurrentContext();
+        int[] i = new int[] { 0 };
+        var pieces = new ArrayList<Operand>(piecesArray.length);
+        FrozenString lastString = findNextFrozenString(context, piecesArray, pieces, i);
+
+        if (lastString == null) return this; // nothing to be combined
+        i[0]++;
+
+        for (; i[0] < piecesArray.length; i[0]++) {
+            Operand piece = piecesArray[i[0]];
+
+            // We found something we can add onto current frozen string.
+            if (piece instanceof ImmutableLiteral imm) {
+                FrozenString newOperand = combine(context, lastString, imm);
                 if (newOperand != null) {
                     lastString = newOperand;
-                } else if (lastString == null) {
-                    lastString = strPiece;
-                } else {
-                    pieces.add(lastString);
+                    continue;
                 }
-            } else if (piece instanceof ImmutableLiteral imm) {  // note: is lastString exist then this can definitely be combined
-                FrozenString newOperand = combine(manager, lastString, imm);
-                if (newOperand != null) {
-                    lastString = newOperand;
-                } else {
-                    pieces.add(piece);
-                }
-            } else {  // not a string, leave lastString behind
-                pieces.add(piece);
-                lastString = null;
             }
+
+            // We did find something.  save last string + piece and get new last string.
+            pieces.add(lastString);
+            pieces.add(piece);
+            i[0]++;
+            lastString = findNextFrozenString(context, piecesArray, pieces, i);
+            if (lastString == null) break;
         }
 
         if (lastString != null) pieces.add(lastString);
@@ -160,24 +171,32 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
         return this;
     }
 
-    private FrozenString combine(IRManager manager, FrozenString lastString, ImmutableLiteral piece) {
-        IRubyObject fix = (IRubyObject) piece.retrieve(manager.getRuntime().getCurrentContext(), null, null, null, null);
-        if (lastString == null) {
-            return asOperand(fix.asString().getByteList());
-        } else {
-            ByteList newByteList = lastString.getByteList().dup();
-            newByteList.append(fix.asString().getByteList());
-            return asOperand(newByteList);
+    private FrozenString findNextFrozenString(ThreadContext context, Operand[] piecesArray, List<Operand> pieces, int[] i) {
+        for (; i[0] < piecesArray.length; i[0]++) {
+            Operand piece = piecesArray[i[0]];
+
+            if (piece instanceof ImmutableLiteral imm) return asFrozenString(context, imm);
+
+            pieces.add(piece);
         }
+
+        return null;
     }
 
-    private FrozenString combineSiblingStrings(FrozenString lastString, Operand piece) {
-        if (lastString != null && piece instanceof FrozenString strPiece) {
-            ByteList newByteList = lastString.getByteList().dup();
-            newByteList.append(strPiece.getByteList());
-            return asOperand(newByteList);
-        }
-        return null;
+    private FrozenString combine(ThreadContext context, FrozenString lastString, ImmutableLiteral piece) {
+        if (lastString == null) return asFrozenString(context, piece);
+
+        IRubyObject fix = (IRubyObject) piece.retrieve(context, null, null, null, null);
+        ByteList newByteList = lastString.getByteList().dup();
+        // FIXME: must properly encoding combine these AND if error we just return original instr as-is
+        newByteList.append(fix.asString().getByteList());
+        return asOperand(newByteList);
+    }
+
+    private FrozenString asFrozenString(ThreadContext context, ImmutableLiteral piece) {
+        if (piece instanceof FrozenString str) return str;
+        IRubyObject fix = (IRubyObject) piece.retrieve(context, null, null, null, null);
+        return asOperand(fix.asString().getByteList());
     }
 
     private FrozenString asOperand(ByteList bytelist) {
