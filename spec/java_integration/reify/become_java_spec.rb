@@ -33,8 +33,8 @@ describe "JRuby class reification" do
     jclass = java.lang.Class
 
     outer_java_class_name = ReifyInterfacesClass1.to_java(jclass).name
-    expect(outer_java_class_name).to match /^rubyobj\.(\w)*?\.ReifyInterfacesClass1$/
-    expect(ReifyInterfacesClass1::Nested::InnerClass.to_java(jclass).name).to match /^rubyobj\.(\w)*?\.ReifyInterfacesClass1\.Nested\.InnerClass$/
+    expect(outer_java_class_name).to eql('rubyobj.ReifyInterfacesClass1')
+    expect(ReifyInterfacesClass1::Nested::InnerClass.to_java(jclass).name).to eql('rubyobj.ReifyInterfacesClass1.Nested.InnerClass')
 
     # checking that the packages are valid for Java's purposes
     expect do
@@ -468,7 +468,7 @@ describe "JRuby class reification" do
   it 'has a similar Java class name' do
     ReifiedSample.become_java!
     klass = ReifiedSample.java_class
-    expect( klass.getName ).to match /rubyobj\.(\w)*?\.ReifiedSample/
+    expect( klass.getName ).to eql('rubyobj.ReifiedSample')
     klass = Class.new(ReifiedSample)
     hexid = klass.inspect.match(/(0x[0-9a-f]+)/)[1]
     klass = klass.become_java!

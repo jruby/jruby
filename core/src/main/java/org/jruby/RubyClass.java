@@ -1403,25 +1403,10 @@ public class RubyClass extends RubyModule {
         if (!isReifiable(java_box)) return;
         final boolean concreteExt = java_box[0];
 
-        final String javaName = getReifiedJavaClassName();
-        final String javaPath = javaName.replace('.', '/');
-
         final Class<?> parentReified = superClass.getRealClass().getReifiedClass();
         if (parentReified == null) {
             throw getClassRuntime().newTypeError(getName() + "'s parent class is not yet reified");
         }
-
-        Class<?> reifiedParent = superClass.reifiedClass;
-        if (reifiedParent == null) reifiedParent = RubyObject.class;
-
-        Reificator reifier;
-        if (concreteExt) {
-            reifier = new ConcreteJavaReifier(parentReified, javaName, javaPath);
-        } else {
-            reifier = new MethodReificator(reifiedParent, javaName, javaPath, null, javaPath);
-        }
-
-        final byte[] classBytes = reifier.reify();
 
         ClassDefiningClassLoader classLoader; // usually parent's class-loader
         if (parentReified.getClassLoader() instanceof OneShotClassLoader) {
@@ -1437,6 +1422,31 @@ public class RubyClass extends RubyModule {
                 classLoader = runtime.getJRubyClassLoader();
             }
         }
+
+        String javaName = getReifiedJavaClassName();
+        // *might* need to include a Class identifier in the Java class name, since a Ruby class might be dropped
+        // (using remove_const) and re-created in which case using the same name would cause a conflict...
+        if (classLoader.hasDefinedClass(javaName)) { // as Ruby class dropping is "unusual" - assume v0 to be the raw name
+            String versionedName; int v = 1;
+            // NOTE: '@' is not supported in Ruby class names thus it's safe to use as a "separator"
+            do {
+                versionedName = javaName + "@v" + (v++); // rubyobj.SomeModule.Foo@v1
+            } while (classLoader.hasDefinedClass(versionedName));
+            javaName = versionedName;
+        }
+        final String javaPath = javaName.replace('.', '/');
+
+        Reificator reifier;
+        if (concreteExt) {
+            reifier = new ConcreteJavaReifier(parentReified, javaName, javaPath);
+        } else {
+            Class<?> reifiedParent = superClass.reifiedClass;
+            if (reifiedParent == null) reifiedParent = RubyObject.class;
+            reifier = new MethodReificator(reifiedParent, javaName, javaPath, null, javaPath);
+        }
+
+        final byte[] classBytes = reifier.reify();
+
         boolean nearEnd = false;
         // Attempt to load the name we plan to use; skip reification if it exists already (see #1229).
         try {
@@ -1497,11 +1507,8 @@ public class RubyClass extends RubyModule {
         if (getBaseName() == null) { // anonymous Class instance: rubyobj.Class$0x1234abcd
             return basePackagePrefix + anonymousMetaNameWithIdentifier().replace(':', '$');
         }
-        final String identityHash = Integer.toHexString(System.identityHashCode(this));
         final CharSequence name = StringSupport.replaceAll(getName(), "::", ".");
-        // we need to include a Class identifier in the Java class name, since a Ruby class might be dropped
-        // (using remove_const) and re-created in which case using the same name would cause a conflict...
-        return basePackagePrefix + identityHash + '.' + name; // TheFoo::Bar -> rubyobj.320efdf5.TheFoo.Bar
+        return basePackagePrefix + name; // TheFoo::Bar -> rubyobj.TheFoo.Bar
     }
 
     interface Reificator {
