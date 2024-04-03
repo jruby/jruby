@@ -807,12 +807,12 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             Operand key = build(pair.getKey());
             call(result, d, "key?", key);
             copy(errorString, key); // Sets to symbol which will not be nil or a regular string.
-            cond_ne(testEnd, result, tru());
+            cond_ne_true(testEnd, result);
 
             String method = hasRest ? "delete" : "[]";
             Operand value = call(temp(), d, method, key);
             buildPatternEach(testEnd, result, original, copy(nil()), value, pair.getValue(), inAlteration, isSinglePattern, errorString);
-            cond_ne(testEnd, result, tru());
+            cond_ne_true(testEnd, result);
         }
     }
 

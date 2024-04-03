@@ -794,13 +794,19 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         body.apply();
     }
 
-    // if-only
-    protected void cond_ne(Label label, Operand value, Operand test) {
-        addInstr(BNEInstr.create(label, value, test));
+    // if-only true
+    protected void cond_ne_true(Label label, Operand value) {
+        addInstr(BNEInstr.create(label, value, tru()));
     }
-    // if !test/else
-    protected void cond_ne(Label endLabel, Operand value, Operand test, RunIt body) {
-        addInstr(BNEInstr.create(endLabel, value, test));
+
+    // if-only false
+    protected void cond_ne_false(Label label, Operand value) {
+        addInstr(BNEInstr.create(label, value, fals()));
+    }
+
+    // if !test/else nil
+    protected void cond_ne_nil(Label endLabel, Operand value, RunIt body) {
+        addInstr(BNEInstr.create(endLabel, value, nil()));
         body.apply();
     }
 
@@ -2012,7 +2018,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         buildPatternDeconstructRespondTo(testEnd, result, obj, isSinglePattern, errorString, "deconstruct");
 
         label("deconstruct_cache_end", (deconstruct_cache_end) ->
-                cond_ne(deconstruct_cache_end, deconstructed, nil(), () -> {
+                cond_ne_nil(deconstruct_cache_end, deconstructed, () -> {
                     call(deconstructed, obj, "deconstruct");
                     label("array_check_end", arrayCheck -> {
                         addInstr(new EQQInstr(scope, result, getManager().getArrayClass(), deconstructed, false, false));
@@ -2032,7 +2038,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             for (int i = 0; i < preArgsSize; i++) {
                 Variable elt = call(temp(), deconstructed, "[]", fix(i));
                 buildPatternEach(testEnd, result, obj, copy(nil()), elt, pre[i], inAlteration, isSinglePattern, errorString);
-                cond_ne(testEnd, result, tru());
+                cond_ne_true(testEnd, result);
             }
         }
 
@@ -2045,7 +2051,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                 Variable elt = call(temp(), deconstructed, "[]", min, max);
 
                 buildPatternMatch(result, obj, copy(nil()), rest, elt, inAlteration, isSinglePattern, errorString);
-                cond_ne(testEnd, result, tru());
+                cond_ne_true(testEnd, result);
             }
         }
 
@@ -2056,7 +2062,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                 Variable elt = call(temp(), deconstructed, "[]", k);
 
                 buildPatternEach(testEnd, result, obj, copy(nil()), elt, post[i], inAlteration, isSinglePattern, errorString);
-                cond_ne(testEnd, result, tru());
+                cond_ne_true(testEnd, result);
             }
         }
     }
@@ -2067,7 +2073,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         if (isSinglePattern) {
             buildPatternSetEQQError(errorString, result, obj, expression, obj);
         }
-        cond_ne(testEnd, result, tru());
+        cond_ne_true(testEnd, result);
     }
 
     protected void buildPatternSetEQQError(Variable errorString, Variable result, Operand obj, Operand expression, Operand value) {
@@ -2076,7 +2082,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     protected void buildPatternSetGeneralError(Variable errorString, Variable result, Operand... args) {
         label("match_succeeded", (matchSucceeded) -> {
-            cond_ne(matchSucceeded, result, fals());
+            cond_ne_false(matchSucceeded, result);
             fcall(errorString, getManager().getObjectClass(), "sprintf", args);
         });
     }
@@ -2087,7 +2093,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         if (constant != null) buildPatternConstant(testEnd, result, constant, obj, isSinglePattern, errorString);
 
         label("deconstruct_end", deconstructCheck ->
-            cond_ne(deconstructCheck, deconstructed, nil(), () -> {
+            cond_ne_nil(deconstructCheck, deconstructed, () -> {
                 buildPatternDeconstructRespondTo(testEnd, result, obj, isSinglePattern, errorString, "deconstruct");
 
                 call(deconstructed, obj, "deconstruct");
@@ -2117,14 +2123,14 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                         Operand deconstructFixnum = as_fixnum(deconstructIndex);
                         Operand test = call(temp(), deconstructed, "[]", deconstructFixnum);
                         buildPatternMatch(result, obj, copy(nil()), pat, test, false, isSinglePattern, errorString);
-                        cond_ne(bottom, result, tru());
+                        cond_ne_true(bottom, result);
                     });
 
                     if (pre != null && !isBareStar(pre)) {
                         Operand iFixnum = as_fixnum(i);
                         Operand test = call(temp(), deconstructed, "[]", getManager().newFixnum(0), iFixnum);
                         buildPatternMatch(result, obj, copy(nil()), pre, test, false, isSinglePattern, errorString);
-                        cond_ne(bottom, result, tru());
+                        cond_ne_true(bottom, result);
                     }
 
                     if (post != null && !isBareStar(post)) {
@@ -2133,7 +2139,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                         Operand lengthFixnum = as_fixnum(length);
                         Operand test = call(temp(), deconstructed, "[]", deconstructFixnum, lengthFixnum);
                         buildPatternMatch(result, obj, copy(nil()), post, test, false, isSinglePattern, errorString);
-                        cond_ne(bottom, result, tru());
+                        cond_ne_true(bottom, result);
                     }
                     jump(after);
                 });
@@ -2158,7 +2164,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         if (isSinglePattern) {
             buildPatternSetGeneralError(errorString, result, new FrozenString("%s: %s does not respond to #" + methodName), obj, obj);
         }
-        cond_ne(testEnd, result, tru());
+        cond_ne_true(testEnd, result);
     }
 
     protected Operand buildPatternCase(U test, U[] cases, U consequent) {
@@ -2240,7 +2246,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             buildPatternMatch(result, original, deconstructed, elseBody, value, inAlternation, isSinglePattern, errorString);
         }
         label("if_else_end", conditionalEnd -> {
-            cond_ne(conditionalEnd, result, tru());
+            cond_ne_true(conditionalEnd, result);
             Operand ifResult = build(condition);
             if (unless) {
                 call(result, ifResult, "!"); // FIXME: need non-dynamic dispatch to reverse result
@@ -2272,17 +2278,17 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         } else {
             call(result, d, "empty?");
             if (isSinglePattern) maybeGenerateIsNotEmptyErrorString(errorString, result, d);
-            cond_ne(testEnd, result, tru());
+            cond_ne_true(testEnd, result);
         }
 
         if (hasRest) {
             if (isNilRest(rest)) {
                 call(result, d, "empty?");
                 if (isSinglePattern) maybeGenerateIsNotEmptyErrorString(errorString, result, d);
-                cond_ne(testEnd, result, tru());
+                cond_ne_true(testEnd, result);
             } else if (!isBareStar(rest)) {
                 buildPatternEach(testEnd, result, obj, copy(nil()), d, rest, inAlteration, isSinglePattern, errorString);
-                cond_ne(testEnd, result, tru());
+                cond_ne_true(testEnd, result);
             }
         }
     }
