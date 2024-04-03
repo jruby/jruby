@@ -17,6 +17,8 @@ import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.CallBase;
+import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.targets.IRBytecodeAdapter;
@@ -38,7 +40,9 @@ import org.objectweb.asm.Type;
 
 import java.lang.invoke.MethodType;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.jruby.util.CodegenUtils.ci;
@@ -120,6 +124,12 @@ public class NormalValueCompiler implements ValueCompiler {
         compiler.invokeIRHelper("newFrozenStringFromRaw", sig(RubyString.class, ThreadContext.class, String.class, String.class, int.class, String.class, int.class));
     }
 
+    public void pushFrozenString(final ByteList bl, final int cr) {
+        cacheValuePermanentlyLoadContext("fstring", RubyString.class, keyFor("fstring", bl), () -> {
+            pushFrozenStringUncached(bl, cr);
+        });
+    }
+
     private void pushFrozenStringUncached(ByteList bl, int cr) {
         compiler.loadContext();
         compiler.adapter.ldc(bl.toString());
@@ -139,6 +149,33 @@ public class NormalValueCompiler implements ValueCompiler {
         compiler.adapter.pushInt(size);
         pushEncoding(encoding);
         compiler.adapter.invokestatic(p(RubyString.class), "newStringLight", sig(RubyString.class, Ruby.class, int.class, Encoding.class));
+    }
+
+    public void buildDynamicString(Encoding encoding, int size, boolean frozen, boolean debugFrozen, String file, int line, List<DStringElement> elements) {
+        pushBufferString(encoding, size);
+
+        for (DStringElement elt : elements) {
+            switch (elt.type()) {
+                case STRING:
+                    StringLiteral str = (StringLiteral) elt.value();
+                    pushFrozenString(str.getByteList(), str.getCodeRange());
+                    compiler.adapter.invokevirtual(p(RubyString.class), "catWithCodeRange", sig(RubyString.class, RubyString.class));
+                    break;
+                case OTHER:
+                    ((Runnable) elt.value()).run();
+                    compiler.adapter.invokevirtual(p(RubyString.class), "appendAsDynamicString", sig(RubyString.class, IRubyObject.class));
+            }
+        }
+        if (frozen) {
+            if (debugFrozen) {
+                compiler.loadContext();
+                compiler.adapter.ldc(file);
+                compiler.adapter.ldc(file);
+                compiler.invokeIRHelper("freezeLiteralString", sig(RubyString.class, RubyString.class, ThreadContext.class, String.class, int.class));
+            } else {
+                compiler.invokeIRHelper("freezeLiteralString", sig(RubyString.class, RubyString.class));
+            }
+        }
     }
 
     public void pushByteList(final ByteList bl) {

@@ -11,6 +11,7 @@ import org.jruby.RubyString;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.instructions.CallBase;
+import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.targets.IRBytecodeAdapter;
 import org.jruby.ir.targets.JVM;
@@ -22,11 +23,15 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
+import org.jruby.util.cli.Options;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.p;
+import static org.jruby.util.CodegenUtils.params;
 import static org.jruby.util.CodegenUtils.sig;
 
 public class IndyValueCompiler implements ValueCompiler {
@@ -85,6 +90,11 @@ public class IndyValueCompiler implements ValueCompiler {
         compiler.adapter.invokedynamic("frozen", sig(RubyString.class, ThreadContext.class), StringBootstrap.FSTRING_BOOTSTRAP, RubyEncoding.decodeRaw(bl), bl.getEncoding().toString(), cr, file, line);
     }
 
+    public void pushFrozenString(ByteList bl, int cr) {
+        compiler.loadContext();
+        compiler.adapter.invokedynamic("frozen", sig(RubyString.class, ThreadContext.class), StringBootstrap.FSTRING_SIMPLE_BOOTSTRAP, RubyEncoding.decodeRaw(bl), bl.getEncoding().toString(), cr);
+    }
+
     public void pushEmptyString(Encoding encoding) {
         compiler.loadContext();
         compiler.adapter.invokedynamic("emptyString", sig(RubyString.class, ThreadContext.class), StringBootstrap.EMPTY_STRING_BOOTSTRAP, encoding.toString());
@@ -93,6 +103,43 @@ public class IndyValueCompiler implements ValueCompiler {
     public void pushBufferString(Encoding encoding, int size) {
         compiler.loadContext();
         compiler.adapter.invokedynamic("bufferString", sig(RubyString.class, ThreadContext.class), StringBootstrap.BUFFER_STRING_BOOTSTRAP, encoding.toString(), size);
+    }
+
+    public void buildDynamicString(Encoding encoding, int estimatedSize, boolean frozen, boolean debugFrozen, String file, int line, List<DStringElement> elements) {
+        if (elements.size() > 50 || !Options.COMPILE_INVOKEDYNAMIC.load()) {
+            normalValueCompiler.buildDynamicString(encoding, estimatedSize, frozen, debugFrozen, file, line, elements);
+            return;
+        }
+
+        compiler.loadContext();
+
+        long descriptor = 0;
+        int bit = 0;
+        int otherCount = 0;
+        ArrayList bootstrapArgs = new ArrayList();
+        for (DStringElement elt: elements) {
+            switch (elt.type()) {
+                case STRING:
+                    StringLiteral str = (StringLiteral) elt.value();
+                    descriptor |= (1 << bit);
+                    bootstrapArgs.add(RubyEncoding.decodeRaw(str.getByteList()));
+                    bootstrapArgs.add(str.getByteList().getEncoding().toString());
+                    bootstrapArgs.add(str.getCodeRange());
+                    break;
+                case OTHER:
+                    ((Runnable) elt.value()).run();
+                    otherCount++;
+                    break;
+            }
+            bit++;
+        }
+        bootstrapArgs.add(estimatedSize * 3/2);
+        bootstrapArgs.add(encoding.toString());
+        bootstrapArgs.add(frozen);
+        bootstrapArgs.add(descriptor);
+        bootstrapArgs.add(bit);
+
+        compiler.adapter.invokedynamic("buildDynamicString", sig(RubyString.class, params(ThreadContext.class, IRubyObject.class, otherCount)), BuildDynamicStringSite.BUILD_DSTRING_BOOTSTRAP, bootstrapArgs.toArray());
     }
 
     public void pushByteList(ByteList bl) {

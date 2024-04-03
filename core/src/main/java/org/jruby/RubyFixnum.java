@@ -55,6 +55,7 @@ import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.Numeric;
+import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
 import static org.jruby.util.Numeric.f_odd_p;
@@ -62,7 +63,7 @@ import static org.jruby.util.Numeric.f_odd_p;
 /**
  * Implementation of the Integer (Fixnum internal) class.
  */
-public class RubyFixnum extends RubyInteger implements Constantizable {
+public class RubyFixnum extends RubyInteger implements Constantizable, Appendable {
 
     public static RubyClass createFixnumClass(Ruby runtime) {
         RubyClass fixnum = runtime.getInteger();
@@ -1512,6 +1513,16 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         long sq = floorSqrt(value);
         
         return RubyFixnum.newFixnum(runtime, sq);
+    }
+
+    @Override
+    public void appendIntoString(RubyString target) {
+        if (target.getEncoding().isAsciiCompatible()) {
+            // fast path for fixnum straight into ascii-compatible bytelist (modify check performed in here)
+            ConvertBytes.longIntoString(target, value);
+        } else {
+            target.catWithCodeRange(ConvertBytes.longToByteListCached(value), StringSupport.CR_7BIT);
+        }
     }
 
     private static JavaSites.FixnumSites sites(ThreadContext context) {
