@@ -213,6 +213,24 @@ public class NormalValueCompiler implements ValueCompiler {
         });
     }
 
+    public void pushEndlessRange(long end, boolean exclusive) {
+        cacheValuePermanentlyLoadContext("range", RubyRange.class, null, () -> {
+            compiler.loadContext();
+            compiler.adapter.ldc(end);
+            compiler.adapter.ldc(exclusive);
+            compiler.adapter.invokestatic(p(RubyRange.class), "newEndlessRange", sig(RubyRange.class, ThreadContext.class, long.class, boolean.class));
+        });
+    }
+
+    public void pushBeginlessRange(long begin, boolean exclusive) {
+        cacheValuePermanentlyLoadContext("range", RubyRange.class, null, () -> {
+            compiler.loadContext();
+            compiler.adapter.ldc(begin);
+            compiler.adapter.ldc(exclusive);
+            compiler.adapter.invokestatic(p(RubyRange.class), "newBeginlessRange", sig(RubyRange.class, ThreadContext.class, long.class, boolean.class));
+        });
+    }
+
     public void pushRange(ByteList begin, int beginCR, ByteList end, int endCR, boolean exclusive) {
         cacheValuePermanentlyLoadContext("range", RubyRange.class, null, () -> {
             compiler.loadContext();

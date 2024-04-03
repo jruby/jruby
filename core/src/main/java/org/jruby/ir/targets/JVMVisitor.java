@@ -2904,18 +2904,30 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Range(Range range) {
-        if (range.getBegin() instanceof Fixnum && range.getEnd() instanceof Fixnum) {
-            jvmMethod().getValueCompiler().pushRange(
-                    ((Fixnum) range.getBegin()).getValue(), ((Fixnum) range.getEnd()).getValue(), range.isExclusive());
-        } else if (range.getBegin() instanceof StringLiteral begin && range.getEnd() instanceof StringLiteral end) {
-            jvmMethod().getValueCompiler().pushRange(
-                    begin.getByteList(), begin.getCodeRange(), end.getByteList(), end.getCodeRange(), range.isExclusive());
-        } else {
-            jvmMethod().getValueCompiler().pushRange(
-                    () -> visit(range.getBegin()),
-                    () -> visit(range.getEnd()),
-                    range.isExclusive());
+        ValueCompiler valueCompiler = jvmMethod().getValueCompiler();
+        ImmutableLiteral begin = range.getBegin();
+        ImmutableLiteral end = range.getEnd();
+
+        if (begin instanceof Fixnum b) {
+            if (end instanceof Fixnum e) {
+                valueCompiler.pushRange(b.getValue(), e.getValue(), range.isExclusive());
+            } else if (end instanceof Nil) {
+                valueCompiler.pushEndlessRange(b.getValue(), range.isExclusive());
+            }
+            return;
+        } else if (begin instanceof Nil && end instanceof Fixnum e) {
+            valueCompiler.pushBeginlessRange(e.getValue(), range.isExclusive());
+            return;
+        } else if (begin instanceof StringLiteral b && end instanceof StringLiteral e) {
+            valueCompiler.pushRange(b.getByteList(), b.getCodeRange(), e.getByteList(), e.getCodeRange(), range.isExclusive());
+            return;
         }
+
+        // fallback
+        valueCompiler.pushRange(
+                () -> visit(begin),
+                () -> visit(end),
+                range.isExclusive());
     }
 
     @Override

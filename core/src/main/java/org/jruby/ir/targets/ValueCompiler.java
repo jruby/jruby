@@ -108,6 +108,26 @@ public interface ValueCompiler {
     void pushRange(long begin, long end, boolean exclusive);
 
     /**
+     * Build and save a literal fixnum.. range.
+     * <p>
+     * Stack required: context
+     *
+     * @param end end value
+     * @param exclusive whether this is an exclusive range
+     */
+    void pushEndlessRange(long end, boolean exclusive);
+
+    /**
+     * Build and save a literal ..fixnum range.
+     * <p>
+     * Stack required: context
+     *
+     * @param begin begin value
+     * @param exclusive whether this is an exclusive range
+     */
+    void pushBeginlessRange(long begin, boolean exclusive);
+
+    /**
      * Build and save a literal string..string range.
      * <p>
      * Stack required: context
