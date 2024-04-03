@@ -796,12 +796,12 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     // if-only true
     protected void cond_ne_true(Label label, Operand value) {
-        addInstr(BNEInstr.create(label, value, tru()));
+        addInstr(new BFalseInstr(label, value));
     }
 
     // if-only false
     protected void cond_ne_false(Label label, Operand value) {
-        addInstr(BNEInstr.create(label, value, fals()));
+        addInstr(new BTrueInstr(label, value));
     }
 
     // if !test/else nil
@@ -1370,7 +1370,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
             // ----- Code for when we are in state 1 -----
             Operand s1Val = build(begin);
-            addInstr(BNEInstr.create(s2Label, s1Val, tru()));
+            addInstr(new BFalseInstr(s2Label, s1Val));
 
             // s1 condition is true => set returnVal to true & move to state 2
             addInstr(new CopyInstr(returnVal, tru()));
@@ -1388,7 +1388,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             // ----- Code for when we are in state 2 -----
             Operand s2Val = build(end);
             addInstr(new CopyInstr(returnVal, tru()));
-            addInstr(BNEInstr.create(doneLabel, s2Val, tru()));
+            addInstr(new BFalseInstr(doneLabel, s2Val));
 
             // s2 condition is true => move to state 1
             addInstr(new CopyInstr(flipState, s1));
@@ -1852,7 +1852,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         addInstr(BNEInstr.create(falseCheck, result, UndefinedValue.UNDEFINED));
         addInstr(new JumpInstr(assign));
         addInstr(new LabelInstr(falseCheck));
-        addInstr(BNEInstr.create(done, result, fals()));
+        addInstr(new BTrueInstr(done, result));
         addInstr(new LabelInstr(assign));
         Operand rhsValue = build(right);
         copy(result, rhsValue);

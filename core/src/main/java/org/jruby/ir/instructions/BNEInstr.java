@@ -22,7 +22,7 @@ public class BNEInstr extends TwoOperandBranchInstr implements FixedArityInstr {
         return new BNEInstr(jmpTarget, v1, v2);
     }
 
-    public BNEInstr(Label jumpTarget, Operand v1, Operand v2) {
+    BNEInstr(Label jumpTarget, Operand v1, Operand v2) {
         super(Operation.BNE, jumpTarget, v1, v2);
     }
 
