@@ -384,6 +384,10 @@ public class BuildDynamicStringSite extends MutableCallSite {
         return buffer;
     }
 
+    public RubyString buildString2(ThreadContext context, Encoding encoding, int initialSize) {
+        return buildString2(context, null, null, null, null, encoding, initialSize);
+    }
+
     public RubyString buildString2(ThreadContext context, IRubyObject a, Encoding encoding, int initialSize) {
         return buildString2(context, a, null, null, null, null, encoding, initialSize);
     }
