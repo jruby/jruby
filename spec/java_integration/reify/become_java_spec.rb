@@ -136,6 +136,8 @@ describe "JRuby class reification" do
     class ASubSubList < ASubList; end
     expect( ASubSubList.new(1, 2).args ).to eql [1, 2]
 
+    old_a_sub_list_reified_class = JRuby.reference(ASubList).reified_class
+
     Object.send(:remove_const, :ASubSubList)
     Object.send(:remove_const, :ASubList)
 
@@ -148,6 +150,8 @@ describe "JRuby class reification" do
     end
     class ASubSubList < ASubList; end
     expect( ASubSubList.new(1, 2).args ).to eql [2, 1]
+
+    expect(JRuby.reference(ASubList).reified_class).to_not equal(old_a_sub_list_reified_class) # new Java class generated
 
     Object.send(:remove_const, :ASubSubList)
     Object.send(:remove_const, :ASubList)
