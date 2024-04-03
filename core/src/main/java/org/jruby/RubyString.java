@@ -1077,13 +1077,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     /**
-     * An FString is a frozen string that is also deduplicated and cached. We add a few fields for common conversions
-     * since they'll only be cached in one place and if converted once they'll likely be used again.
+     * An FString is a frozen string that is also deduplicated and cached. We add a field to hold one type of conversion
+     * so it won't be performed repeatedly. Whatever type of conversion is requested first wins, since it will be very
+     * rare for a String to be converted to a Symbol and a Fixnum and a Float.
      */
     public static class FString extends RubyString {
-        private RubySymbol symbol;
-        private IRubyObject integer;
-        private IRubyObject flote;
+        private IRubyObject converted;
 
         protected FString(Ruby runtime, RubyClass rubyClass, ByteList value, int cr) {
             super(runtime, rubyClass, value, cr);
@@ -1101,29 +1100,47 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         @Override
         public RubySymbol intern() {
-            RubySymbol symbol = this.symbol;
+            IRubyObject symbol = this.converted;
+
             if (symbol == null) {
-                this.symbol = symbol = getRuntime().newSymbol(getByteList());
+                return (RubySymbol) (this.converted = super.intern());
             }
-            return symbol;
+
+            if (symbol instanceof RubySymbol sym) {
+                return sym;
+            }
+
+            return super.intern();
         }
 
         @Override
         public IRubyObject to_i() {
-            IRubyObject integer = this.integer;
+            IRubyObject integer = this.converted;
+
             if (integer == null) {
-                this.integer = integer = super.to_i();
+                return this.converted = super.to_i();
             }
-            return integer;
+
+            if (integer instanceof RubyInteger) {
+                return integer;
+            }
+
+            return super.to_i();
         }
 
         @Override
         public IRubyObject to_f() {
-            IRubyObject flote = this.flote;
+            IRubyObject flote = this.converted;
+
             if (flote == null) {
-                this.flote = flote = super.to_f();
+                return this.converted = super.to_f();
             }
-            return flote;
+
+            if (flote instanceof RubyFloat) {
+                return flote;
+            }
+
+            return super.to_f();
         }
     }
 
