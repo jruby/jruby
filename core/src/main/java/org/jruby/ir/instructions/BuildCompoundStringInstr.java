@@ -1,12 +1,11 @@
 package org.jruby.ir.instructions;
 
 import org.jcodings.Encoding;
-import org.jruby.RubyFixnum;
+import org.jruby.Appendable;
 import org.jruby.RubyString;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.FrozenString;
 import org.jruby.ir.operands.ImmutableLiteral;
 import org.jruby.ir.operands.Operand;
@@ -120,6 +119,14 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
     }
 
 
+    /**
+     * This will make an attempt to combine multiple pieces when they are contiguout frozen strings OR
+     * immutable literals.  It may fail as not all strings can be concatenated together (e.g. mismatched
+     * encodings).
+     *
+     * @param manager the IR manager
+     * @return the simplified instruction or itself when it cannot be simplified.
+     */
     @Override
     public Instr simplifyInstr(IRManager manager) {
         var piecesArray = getOperands();
@@ -145,10 +152,18 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
 
             // We found something we can add onto current frozen string.
             if (piece instanceof ImmutableLiteral imm) {
-                FrozenString newOperand = combine(context, lastString, imm);
-                if (newOperand != null) {
-                    lastString = newOperand;
-                    continue;
+                try {
+                    FrozenString newOperand = combine(context, lastString, imm);
+                    if (newOperand != null) {
+                        lastString = newOperand;
+                        continue;
+                    }
+                } catch (Exception e) {
+                    // This is an error from trying to combine two incompatible strings together.
+                    // As this has to end up as a runtime error vs a syntax error we need to just
+                    // pretend this instr is not optimizable and let the runtime stumble over it
+                    // if it is ever executed.
+                    return this;
                 }
             }
 
@@ -186,11 +201,16 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
     private FrozenString combine(ThreadContext context, FrozenString lastString, ImmutableLiteral piece) {
         if (lastString == null) return asFrozenString(context, piece);
 
-        IRubyObject fix = (IRubyObject) piece.retrieve(context, null, null, null, null);
-        ByteList newByteList = lastString.getByteList().dup();
-        // FIXME: must properly encoding combine these AND if error we just return original instr as-is
-        newByteList.append(fix.asString().getByteList());
-        return asOperand(newByteList);
+        IRubyObject obj = (IRubyObject) piece.retrieve(context, null, null, null, null);
+        if (obj instanceof Appendable app) {
+            // Construct a new String vs retrieve since the retrieve would be a frozen string.
+            RubyString last = RubyString.newString(context.runtime, lastString.getByteList());
+            app.appendIntoString(last);
+            ByteList newByteList = last.getByteList();
+            return asOperand(newByteList);
+        }
+
+        return null;
     }
 
     private FrozenString asFrozenString(ThreadContext context, ImmutableLiteral piece) {
