@@ -369,12 +369,6 @@ public class ConvertBytes {
         return (RubyInteger) new ConvertBytes(runtime, str, off, end, base, badcheck).byteListToInum(true);
     }
 
-    // Must remain in place until json has migrated to the new method for some time (https://github.com/flori/json/pull/576)
-    @Deprecated
-    public static RubyInteger byteListToInum19(Ruby runtime, ByteList str, int base, boolean badcheck) {
-        return byteListToInum(runtime, str, base, badcheck);
-    }
-
     private final static byte[] conv_digit = new byte[128];
     private final static boolean[] digit = new boolean[128];
     private final static boolean[] space = new boolean[128];

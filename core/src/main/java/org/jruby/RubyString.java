@@ -6496,12 +6496,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return symbol;
     }
 
-    // Must remain in place until json has migrated to the new method for some time (https://github.com/flori/json/pull/576)
-    @Deprecated
-    public RubySymbol intern19() {
-        return intern();
-    }
-
     @JRubyMethod
     public IRubyObject ord(ThreadContext context) {
         final Ruby runtime = context.runtime;
