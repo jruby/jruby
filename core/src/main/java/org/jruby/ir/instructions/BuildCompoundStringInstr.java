@@ -204,7 +204,7 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
         IRubyObject obj = (IRubyObject) piece.retrieve(context, null, null, null, null);
         if (obj instanceof Appendable app) {
             // Construct a new String vs retrieve since the retrieve would be a frozen string.
-            RubyString last = RubyString.newString(context.runtime, lastString.getByteList());
+            RubyString last = RubyString.newString(context.runtime, lastString.getByteList().dup());
             app.appendIntoString(last);
             ByteList newByteList = last.getByteList();
             return asOperand(newByteList);
