@@ -24,15 +24,25 @@ public class LocalOptimizationPass extends CompilerPass {
         return "Local Opts";
     }
 
+    private record Result(boolean reexamineCFG, boolean changed) {
+    }
+
     @Override
     public Object execute(FullInterpreterContext fic, Object... data) {
         boolean reexamineCFG = false;
         CFG cfg = fic.getCFG();
 
         for (BasicBlock bb: cfg.getBasicBlocks()) {
-            if (runLocalOptsOnBasicBlock(fic, bb)) {
-                reexamineCFG = true;
-                cfg.fixupEdges(bb);
+            boolean done = false;
+            while (!done) {
+                var result = runLocalOptsOnBasicBlock(fic, bb);
+                if (result.reexamineCFG) {
+                    reexamineCFG = true;
+                    cfg.fixupEdges(bb);
+                }
+                if (!result.changed) {
+                    done = true;
+                }
             }
         }
 
@@ -152,8 +162,9 @@ public class LocalOptimizationPass extends CompilerPass {
         }
     }
 
-    public static boolean runLocalOptsOnBasicBlock(FullInterpreterContext fic, BasicBlock b) {
+    public static Result runLocalOptsOnBasicBlock(FullInterpreterContext fic, BasicBlock b) {
         boolean reexamineCFG = false;  // If we changed something which changes flow we need to update CFG.
+        boolean changed = false;
         ListIterator<Instr> instrs = b.getInstrs().listIterator();
         // Reset value map if this instruction is the start/end of a basic block
         Map<Operand,Operand> valueMap = new HashMap<>();
@@ -162,10 +173,18 @@ public class LocalOptimizationPass extends CompilerPass {
             Instr instr = instrs.next();
             Instr newInstr = optInstr(fic, instr, valueMap, simplificationMap);
             if (newInstr.isDead()) {
-                if (newInstr != instr && instr.getOperation().endsBasicBlock()) reexamineCFG = true;
+                if (newInstr != instr && instr.getOperation().endsBasicBlock()) {
+                    reexamineCFG = true;
+                } else {
+                    changed = true;
+                }
                 instrs.remove();
             } else if (newInstr != instr) {
-                if (instr.getOperation().endsBasicBlock()) reexamineCFG = true;
+                if (instr.getOperation().endsBasicBlock()) {
+                    reexamineCFG = true;
+                } else {
+                    changed = true;
+                }
                 instrs.set(newInstr);
             }
 
@@ -189,6 +208,6 @@ public class LocalOptimizationPass extends CompilerPass {
             }
         }
 
-        return reexamineCFG;
+        return new Result(reexamineCFG, changed);
     }
 }

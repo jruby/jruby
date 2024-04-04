@@ -10,8 +10,4 @@ public abstract class BranchInstr extends Instr implements JumpTargetInstr {
     }
 
     public abstract Label getJumpTarget();
-
-    public Instr simplifyInstr(IRManager manager) {
-        return this;
-    }
 }

@@ -260,7 +260,5 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
     public IRubyObject taint(ThreadContext context) {
         return this;
     }
-
-
 }
 
