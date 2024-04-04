@@ -40,7 +40,6 @@ package org.jruby;
 import java.math.BigInteger;
 
 import org.jcodings.specific.USASCIIEncoding;
-import org.jruby.RubyEnumerator.SizeFn;
 import org.jruby.compiler.Constantizable;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -56,6 +55,7 @@ import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.Numeric;
+import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
 import static org.jruby.util.Numeric.f_odd_p;
@@ -63,7 +63,7 @@ import static org.jruby.util.Numeric.f_odd_p;
 /**
  * Implementation of the Integer (Fixnum internal) class.
  */
-public class RubyFixnum extends RubyInteger implements Constantizable {
+public class RubyFixnum extends RubyInteger implements Constantizable, Appendable {
 
     public static RubyClass createFixnumClass(Ruby runtime) {
         RubyClass fixnum = runtime.getInteger();
@@ -412,8 +412,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
 
     @Override
     public RubyString to_s() {
-        ByteList bytes = ConvertBytes.longToByteList(value, 10);
-        return RubyString.newString(metaClass.runtime, bytes, USASCIIEncoding.INSTANCE);
+        return longToString(value, 10);
     }
 
     @Override
@@ -422,7 +421,18 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         if (base < 2 || base > 36) {
             throw metaClass.runtime.newArgumentError("illegal radix " + base);
         }
-        ByteList bytes = ConvertBytes.longToByteList(value, base);
+
+        return longToString(value, base);
+    }
+
+    private RubyString longToString(long value, int base) {
+        ByteList bytes;
+        if (base == 10 && value >= -256 && value < 256) {
+            bytes = ConvertBytes.byteToSharedByteList((short) value);
+            return RubyString.newStringShared(metaClass.runtime, bytes, USASCIIEncoding.INSTANCE);
+        }
+
+        bytes = ConvertBytes.longToByteList(value, base);
         return RubyString.newString(metaClass.runtime, bytes, USASCIIEncoding.INSTANCE);
     }
 
@@ -1503,6 +1513,16 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         long sq = floorSqrt(value);
         
         return RubyFixnum.newFixnum(runtime, sq);
+    }
+
+    @Override
+    public void appendIntoString(RubyString target) {
+        if (target.getEncoding().isAsciiCompatible()) {
+            // fast path for fixnum straight into ascii-compatible bytelist (modify check performed in here)
+            ConvertBytes.longIntoString(target, value);
+        } else {
+            target.catWithCodeRange(ConvertBytes.longToByteListCached(value), StringSupport.CR_7BIT);
+        }
     }
 
     private static JavaSites.FixnumSites sites(ThreadContext context) {

@@ -35,7 +35,7 @@ import org.jruby.ext.coverage.CoverageData;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.CompiledIRNoProtocolMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.InterpretedIRMetaClassBody;
+import org.jruby.internal.runtime.methods.InterpretedIRBodyMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.IRScope;
@@ -1750,7 +1750,7 @@ public class IRRuntimeHelpers {
     public static DynamicMethod newInterpretedMetaClass(Ruby runtime, IRScope metaClassBody, IRubyObject obj) {
         RubyClass singletonClass = newMetaClassFromIR(runtime, metaClassBody.getStaticScope(), obj, metaClassBody.maybeUsingRefinements());
 
-        return new InterpretedIRMetaClassBody(metaClassBody, singletonClass);
+        return new InterpretedIRBodyMethod(metaClassBody, singletonClass);
     }
 
     /**

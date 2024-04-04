@@ -49,6 +49,8 @@ import org.jruby.ir.persistence.IRDumper;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.targets.IRBytecodeAdapter.BlockPassType;
+import org.jruby.ir.targets.ValueCompiler.DStringElement;
+import org.jruby.ir.targets.ValueCompiler.DStringElementType;
 import org.jruby.ir.targets.indy.CallTraceSite;
 import org.jruby.ir.targets.indy.CoverageSite;
 import org.jruby.ir.targets.indy.MetaClassBootstrap;
@@ -63,7 +65,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.DynamicScopeGenerator;
-import org.jruby.util.ByteList;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.KeyValuePair;
@@ -79,6 +80,7 @@ import org.objectweb.asm.commons.Method;
 
 import java.io.ByteArrayOutputStream;
 import java.lang.invoke.MethodType;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -1178,36 +1180,24 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void BuildCompoundStringInstr(BuildCompoundStringInstr compoundstring) {
-        Operand[] pieces = compoundstring.getPieces();
-
-        jvmMethod().getValueCompiler().pushBufferString(compoundstring.getEncoding(), compoundstring.getInitialSize());
-
-        for (Operand p : pieces) {
-            if (p instanceof FrozenString) {
-                // we have bytelist and CR in hand, go straight to cat logic
-                FrozenString str = (FrozenString) p;
-                jvmMethod().getValueCompiler().pushFrozenString(str.getByteList(), str.getCodeRange(), str.getFile(), str.getLine());
-                jvmAdapter().invokevirtual(p(RubyString.class), "catWithCodeRange", sig(RubyString.class, RubyString.class));
-            } else if (p instanceof StringLiteral) {
-                StringLiteral str = (StringLiteral) p;
-                jvmMethod().getValueCompiler().pushByteList(str.getByteList());
-                jvmAdapter().pushInt(str.getCodeRange());
-                jvmAdapter().invokevirtual(p(RubyString.class), "cat", sig(RubyString.class, ByteList.class, int.class));
+        List<DStringElement> dstringElements = new ArrayList<>();
+        for (Operand p : compoundstring.getPieces()) {
+            if (p instanceof StringLiteral str) {
+                dstringElements.add(new DStringElement(DStringElementType.STRING, p));
             } else {
-                visit(p);
-                jvmAdapter().invokevirtual(p(RubyString.class), "appendAsDynamicString", sig(RubyString.class, IRubyObject.class));
+                dstringElements.add(new DStringElement(DStringElementType.OTHER, (Runnable) () -> visit(p)));
             }
         }
-        if (compoundstring.isFrozen()) {
-            if (runtime.getInstanceConfig().isDebuggingFrozenStringLiteral()) {
-                jvmMethod().loadContext();
-                jvmAdapter().ldc(compoundstring.getFile());
-                jvmAdapter().ldc(compoundstring.getLine());
-                jvmMethod().invokeIRHelper("freezeLiteralString", sig(RubyString.class, RubyString.class, ThreadContext.class, String.class, int.class));
-            } else {
-                jvmMethod().invokeIRHelper("freezeLiteralString", sig(RubyString.class, RubyString.class));
-            }
-        }
+
+        jvmMethod().getValueCompiler().buildDynamicString(
+                compoundstring.getEncoding(),
+                compoundstring.getInitialSize(),
+                compoundstring.isFrozen(),
+                runtime.getInstanceConfig().isDebuggingFrozenStringLiteral(),
+                compoundstring.getFile(),
+                compoundstring.getLine(),
+                dstringElements);
+
         jvmStoreLocal(compoundstring.getResult());
     }
 
@@ -2914,18 +2904,30 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Range(Range range) {
-        if (range.getBegin() instanceof Fixnum && range.getEnd() instanceof Fixnum) {
-            jvmMethod().getValueCompiler().pushRange(
-                    ((Fixnum) range.getBegin()).getValue(), ((Fixnum) range.getEnd()).getValue(), range.isExclusive());
-        } else if (range.getBegin() instanceof StringLiteral begin && range.getEnd() instanceof StringLiteral end) {
-            jvmMethod().getValueCompiler().pushRange(
-                    begin.getByteList(), begin.getCodeRange(), end.getByteList(), end.getCodeRange(), range.isExclusive());
-        } else {
-            jvmMethod().getValueCompiler().pushRange(
-                    () -> visit(range.getBegin()),
-                    () -> visit(range.getEnd()),
-                    range.isExclusive());
+        ValueCompiler valueCompiler = jvmMethod().getValueCompiler();
+        ImmutableLiteral begin = range.getBegin();
+        ImmutableLiteral end = range.getEnd();
+
+        if (begin instanceof Fixnum b) {
+            if (end instanceof Fixnum e) {
+                valueCompiler.pushRange(b.getValue(), e.getValue(), range.isExclusive());
+            } else if (end instanceof Nil) {
+                valueCompiler.pushEndlessRange(b.getValue(), range.isExclusive());
+            }
+            return;
+        } else if (begin instanceof Nil && end instanceof Fixnum e) {
+            valueCompiler.pushBeginlessRange(e.getValue(), range.isExclusive());
+            return;
+        } else if (begin instanceof StringLiteral b && end instanceof StringLiteral e) {
+            valueCompiler.pushRange(b.getByteList(), b.getCodeRange(), e.getByteList(), e.getCodeRange(), range.isExclusive());
+            return;
         }
+
+        // fallback
+        valueCompiler.pushRange(
+                () -> visit(begin),
+                () -> visit(end),
+                range.isExclusive());
     }
 
     @Override

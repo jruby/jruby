@@ -85,6 +85,7 @@ import org.jruby.util.io.EncodingUtils;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.function.Function;
 
 import static org.jruby.RubyComparable.invcmp;
 import static org.jruby.RubyEnumerator.SizeFn;
@@ -102,7 +103,7 @@ import static org.jruby.util.StringSupport.*;
  *
  */
 @JRubyClass(name="String", include={"Enumerable", "Comparable"})
-public class RubyString extends RubyObject implements CharSequence, EncodingCapable, MarshalEncoding, CodeRangeable {
+public class RubyString extends RubyObject implements CharSequence, EncodingCapable, MarshalEncoding, CodeRangeable, Appendable {
     static final ASCIIEncoding ASCII = ASCIIEncoding.INSTANCE;
     static final UTF8Encoding UTF8 = UTF8Encoding.INSTANCE;
 
@@ -123,7 +124,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     public static RubyString[] NULL_ARRAY = {};
 
-    private volatile int shareLevel = SHARE_LEVEL_NONE;
+    protected volatile int shareLevel = SHARE_LEVEL_NONE;
 
     private ByteList value;
 
@@ -861,6 +862,15 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return dup;
     }
 
+    public FString dupAsFString(Ruby runtime, RubyClass clazz) {
+        shareLevel = SHARE_LEVEL_BYTELIST;
+        FString dup = new FString(runtime, clazz, value, getCodeRange());
+        dup.shareLevel = SHARE_LEVEL_BYTELIST;
+        dup.flags |= ObjectFlags.FSTRING | FROZEN_F | (flags & CR_MASK);
+
+        return dup;
+    }
+
     /* rb_str_subseq */
     public final RubyString makeSharedString(Ruby runtime, int index, int len) {
         return makeShared(runtime, runtime.getString(), value, index, len);
@@ -1064,6 +1074,74 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             
             throw runtime.newRaiseException(runtime.getFrozenError(),
                     "can't modify frozen String, created at " + file + ":" + line);
+        }
+    }
+
+    /**
+     * An FString is a frozen string that is also deduplicated and cached. We add a field to hold one type of conversion
+     * so it won't be performed repeatedly. Whatever type of conversion is requested first wins, since it will be very
+     * rare for a String to be converted to a Symbol and a Fixnum and a Float.
+     */
+    public static class FString extends RubyString {
+        private IRubyObject converted;
+
+        protected FString(Ruby runtime, RubyClass rubyClass, ByteList value, int cr) {
+            super(runtime, rubyClass, value, cr);
+
+            // set flag for code that does not use isFrozen
+            setFrozen(true);
+        }
+
+        @Override
+        protected void frozenCheck() {
+            Ruby runtime = getRuntime();
+
+            throw runtime.newFrozenError("String", this);
+        }
+
+        @Override
+        public RubySymbol intern() {
+            IRubyObject symbol = this.converted;
+
+            if (symbol == null) {
+                return (RubySymbol) (this.converted = super.intern());
+            }
+
+            if (symbol instanceof RubySymbol sym) {
+                return sym;
+            }
+
+            return super.intern();
+        }
+
+        @Override
+        public IRubyObject to_i() {
+            IRubyObject integer = this.converted;
+
+            if (integer == null) {
+                return this.converted = super.to_i();
+            }
+
+            if (integer instanceof RubyInteger) {
+                return integer;
+            }
+
+            return super.to_i();
+        }
+
+        @Override
+        public IRubyObject to_f() {
+            IRubyObject flote = this.converted;
+
+            if (flote == null) {
+                return this.converted = super.to_f();
+            }
+
+            if (flote instanceof RubyFloat) {
+                return flote;
+            }
+
+            return super.to_f();
         }
     }
 
@@ -2607,30 +2685,29 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return value.length() == 0;
     }
 
+    public void appendIntoString(RubyString target) {
+        target.catWithCodeRange(getByteList(), getCodeRange());
+    }
+
     /** rb_str_append
      *
      */
-    public RubyString append(IRubyObject other) {
-        // fast path for fixnum straight into ascii-compatible bytelist (modify check performed in here)
-        if (other instanceof RubyFixnum && value.getEncoding().isAsciiCompatible()) {
-            ConvertBytes.longIntoString(this, ((RubyFixnum) other).value);
-            return this;
-        }
-
+    public RubyString append(IRubyObject other, Function<IRubyObject, RubyString> convert) {
         modifyCheck();
-
-        if (other instanceof RubyFloat) {
-            return catWithCodeRange((RubyString) ((RubyFloat) other).to_s());
-        } else if (other instanceof RubySymbol) {
-            catWithCodeRange(((RubySymbol) other).getBytes(), CR_UNKNOWN);
-            return this;
+        if (other instanceof Appendable appendable) {
+            appendable.appendIntoString(this);
+        } else {
+            catWithCodeRange(convert.apply(other));
         }
 
-        return catWithCodeRange(other.convertToString());
+        return this;
+    }
+
+    public RubyString append(IRubyObject other) {
+        return append(other, (o) -> o.convertToString());
     }
 
     public RubyString append(RubyString other) {
-        modifyCheck();
         return catWithCodeRange(other);
     }
 
@@ -2640,22 +2717,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     public RubyString appendAsDynamicString(IRubyObject other) {
-        // fast path for fixnum straight into ascii-compatible bytelist
-        if (other instanceof RubyFixnum && value.getEncoding().isAsciiCompatible()) {
-            ConvertBytes.longIntoString(this, ((RubyFixnum) other).value);
-            return this;
-        }
+        return append(other, (o) -> o.asString());
+    }
 
-        modifyCheck();
-
-        if (other instanceof RubyFloat) {
-            return catWithCodeRange((RubyString) ((RubyFloat) other).to_s());
-        } else if (other instanceof RubySymbol) {
-            catWithCodeRange(((RubySymbol) other).getBytes(), 0);
-            return this;
-        }
-
-        return catWithCodeRange(other.asString());
+    public RubyString appendAsStringOrAny(IRubyObject other) {
+        return append(other, (o) -> (RubyString) o.anyToString());
     }
 
     // NOTE: append(RubyString) should pbly just do the encoding aware cat
@@ -6428,12 +6494,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         RubySymbol symbol = runtime.getSymbolTable().getSymbol(value);
         if (symbol.getBytes() == value) shareLevel = SHARE_LEVEL_BYTELIST;
         return symbol;
-    }
-
-    // Must remain in place until json has migrated to the new method for some time (https://github.com/flori/json/pull/576)
-    @Deprecated
-    public RubySymbol intern19() {
-        return intern();
     }
 
     @JRubyMethod

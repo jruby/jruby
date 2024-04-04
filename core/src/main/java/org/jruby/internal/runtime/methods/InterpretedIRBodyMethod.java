@@ -2,7 +2,7 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
 import org.jruby.ir.IRScope;
-import org.jruby.ir.interpreter.InterpreterContext;
+import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
@@ -34,46 +34,17 @@ public class InterpretedIRBodyMethod extends InterpretedIRMethod {
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
-        return callInternal(context, self, clazz, name, block);
+        return callInternal(context, clazz);
     }
 
-    protected IRubyObject callInternal(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-        InterpreterContext ic = ensureInstrsReady();
+    protected IRubyObject callInternal(ThreadContext context, RubyModule clazz) {
+        ensureInstrsReady();
 
-        boolean hasExplicitCallProtocol = ic.hasExplicitCallProtocol();
-
-        if (!hasExplicitCallProtocol) this.pre(ic, context, self, name, block, getImplementationClass());
-
-        try {
-            switch (getIRScope().getScopeType()) {
-                case MODULE_BODY: return INTERPRET_MODULE(ic, context, self, clazz, getIRScope().getId(), block);
-                case CLASS_BODY: return INTERPRET_CLASS(ic, context, self, clazz, getIRScope().getId(), block);
-                case METACLASS_BODY: return INTERPRET_METACLASS(ic, context, self, clazz, "singleton class", block);
-                default: throw new RuntimeException("invalid body method type: " + getIRScope());
-            }
-        } finally {
-            if (!hasExplicitCallProtocol) this.post(ic, context);
-        }
-    }
-
-    private IRubyObject INTERPRET_METACLASS(InterpreterContext ic, ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-        return interpretWithBacktrace(ic, context, self, name, block);
-    }
-
-    private IRubyObject INTERPRET_MODULE(InterpreterContext ic, ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-        return interpretWithBacktrace(ic, context, self, name, block);
-    }
-
-    private IRubyObject INTERPRET_CLASS(InterpreterContext ic, ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-        return interpretWithBacktrace(ic, context, self, name, block);
-    }
-
-    private IRubyObject interpretWithBacktrace(InterpreterContext ic, ThreadContext context, IRubyObject self, String name, Block block) {
-        try {
-            ThreadContext.pushBacktrace(context, name, ic.getFileName(), ic.getLine());
-            return ic.getEngine().interpret(context, null, self, ic, getImplementationClass().getMethodLocation(), null, block);
-        } finally {
-            ThreadContext.popBacktrace(context);
+        switch (getIRScope().getScopeType()) {
+            case MODULE_BODY: return Interpreter.INTERPRET_MODULE(context, getIRScope(), clazz);
+            case CLASS_BODY: return Interpreter.INTERPRET_CLASS(context, getIRScope(), clazz);
+            case METACLASS_BODY: return Interpreter.INTERPRET_METACLASS(context, getIRScope(), clazz, getVisibility());
+            default: throw new RuntimeException("invalid body method type: " + getIRScope());
         }
     }
 

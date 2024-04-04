@@ -1,7 +1,6 @@
 package org.jruby.ir.targets.indy;
 
 import org.jruby.RubyRange;
-import org.jruby.RubyString;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -17,6 +16,8 @@ import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
 
 public class RangeObjectSite extends LazyObjectSite {
+    public static final String RANGE_BEGINLESS = "rangeBeginless";
+    public static final String RANGE_ENDLESS = "rangeEndless";
     protected final boolean exclusive;
 
     public RangeObjectSite(MethodType type, boolean exclusive) {
@@ -47,23 +48,43 @@ public class RangeObjectSite extends LazyObjectSite {
             sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, long.class, long.class, int.class),
             false);
 
+    public static final Handle BOOTSTRAP_LONG = new Handle(
+            Opcodes.H_INVOKESTATIC,
+            p(RangeObjectSite.class),
+            "bootstrapFixnums",
+            sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, long.class, int.class),
+            false);
+
     public static CallSite bootstrapFixnums(MethodHandles.Lookup lookup, String name, MethodType type, long begin, long end, int exclusive) {
-        return new FixnumRangeObjectSite(type, begin, end, exclusive != 0).bootstrap(lookup);
+        return new FixnumRangeObjectSite(type, begin, end, false, false, exclusive != 0).bootstrap(lookup);
+    }
+
+    public static CallSite bootstrapFixnums(MethodHandles.Lookup lookup, String name, MethodType type, long beginOrEnd, int exclusive) {
+        return new FixnumRangeObjectSite(type, beginOrEnd, 0, name.equals(RANGE_BEGINLESS), name.equals(RANGE_ENDLESS), exclusive != 0).bootstrap(lookup);
     }
 
     public static class FixnumRangeObjectSite extends RangeObjectSite {
-        protected final long begin;
+        protected final long beginOrOnly;
         protected final long end;
+        protected final boolean beginless;
+        protected final boolean endless;
 
-        public FixnumRangeObjectSite(MethodType type, long begin, long end, boolean exclusive) {
+        public FixnumRangeObjectSite(MethodType type, long beginOrOnly, long end, boolean beginless, boolean endless, boolean exclusive) {
             super(type, exclusive);
 
-            this.begin = begin;
+            this.beginOrOnly = beginOrOnly;
             this.end = end;
+            this.beginless = beginless;
+            this.endless = endless;
         }
 
         public IRubyObject construct(ThreadContext context) throws Throwable {
-            return RubyRange.newRange(context, begin, end, exclusive);
+            if (beginless) {
+                return RubyRange.newBeginlessRange(context, beginOrOnly, exclusive);
+            } else if (endless) {
+                return RubyRange.newEndlessRange(context, beginOrOnly, exclusive);
+            }
+            return RubyRange.newRange(context, beginOrOnly, end, exclusive);
         }
     }
 
