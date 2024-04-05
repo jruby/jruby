@@ -8,6 +8,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.FrozenString;
 import org.jruby.ir.operands.ImmutableLiteral;
+import org.jruby.ir.operands.MutableString;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Variable;
@@ -134,9 +135,11 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
         if (piecesArray.length == 0) { // not sure we can have an empty compound string but better safe than sorry.
             var newByteList = new ByteList(0);
             newByteList.setEncoding(encoding);
-            return new CopyInstr(getResult(), new FrozenString(newByteList, CR_VALID, file, line));
+            return new CopyInstr(getResult(), frozen ?
+                    new FrozenString(newByteList, CR_VALID, file, line) :
+                    new MutableString(newByteList, CR_VALID, file, line));
         } else if (piecesArray.length == 1) { // not sure we can have a compound string with only one piece AND a non-string.
-            return piecesArray[0] instanceof StringLiteral ? new CopyInstr(result, piecesArray[0]) : this;
+            return piecesArray[0] instanceof FrozenString froz ? copy(froz) : this;
         }
 
         ThreadContext context = manager.getRuntime().getCurrentContext();
@@ -179,7 +182,7 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
 
         if (pieces.size() != piecesArray.length) {
             return pieces.size() == 1 ?
-                    new CopyInstr(result, pieces.get(0)) :
+                    copy((FrozenString) pieces.get(0)) :
                     new BuildCompoundStringInstr(result, pieces.toArray(Operand[]::new), encoding, estimatedSize, frozen, file, line);
         }
 
@@ -211,6 +214,12 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
         }
 
         return null;
+    }
+
+    private Instr copy(FrozenString string) {
+        return frozen ?
+                new CopyInstr(result, string) :
+                new CopyInstr(result, new MutableString(string.getByteList(), CR_UNKNOWN, file, line));
     }
 
     private FrozenString asFrozenString(ThreadContext context, ImmutableLiteral piece) {
