@@ -499,7 +499,7 @@ public class JVMVisitor extends IRVisitor {
         method.aconst_null(); // args
         method.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class)); // block
         method.aload(4); // self class
-        method.aconst_null(); // call name
+        method.ldc("<root>"); // call name
 
         method.invokestatic(clsName, scopeName, sig(signature.type().returnType(), signature.type().parameterArray()));
         method.areturn();

@@ -40,7 +40,7 @@ public class ProcessModuleBodyInstr extends OneOperandResultBaseInstr implements
         InterpretedIRBodyMethod bodyMethod = (InterpretedIRBodyMethod) getModuleBody().retrieve(context, self, currScope, currDynScope, temp);
 		RubyModule implClass = bodyMethod.getImplementationClass();
 
-        return bodyMethod.call(context, implClass, implClass, null, Block.NULL_BLOCK);
+        return bodyMethod.call(context, implClass, implClass, "<module>", Block.NULL_BLOCK);
     }
 
     @Override

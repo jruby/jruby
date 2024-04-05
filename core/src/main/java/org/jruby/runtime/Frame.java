@@ -96,6 +96,7 @@ public final class Frame {
      * when needed.
      */
     public Frame() {
+        name = "<root>";
     }
 
     /**
@@ -112,6 +113,7 @@ public final class Frame {
      */
     private Frame(Frame frame) {
         assert frame.block != null;
+        assert frame.name != null;
 
         this.self = frame.self;
         this.name = frame.name;
@@ -135,6 +137,7 @@ public final class Frame {
      * @param name The name of the method being called
      */
     public void updateFrame(String name) {
+        assert name != null;
         this.name = name;
     }
 
@@ -147,6 +150,7 @@ public final class Frame {
     public void updateFrame(Frame frame) {
         Block block = frame.block;
         assert block != null;
+        assert frame.name != null;
 
         this.self = frame.self;
         this.name = frame.name;
@@ -165,6 +169,7 @@ public final class Frame {
      */
     public void updateFrame(RubyModule klazz, IRubyObject self, String name, Block block) {
         assert block != null;
+        assert name != null;
         this.self = self;
         this.name = name;
         this.klazz = klazz;
@@ -182,6 +187,7 @@ public final class Frame {
      */
     public void updateFrame(RubyModule klazz, IRubyObject self, String name, Visibility visibility, Block block) {
         assert block != null;
+        assert name != null;
         this.self = self;
         this.name = name;
         this.klazz = klazz;
@@ -196,7 +202,7 @@ public final class Frame {
      */
     public void updateFrameForEval(IRubyObject self) {
         this.self = self;
-        this.name = null;
+        this.name = "<eval>";
         this.visibility = Visibility.PRIVATE;
     }
 
@@ -267,6 +273,7 @@ public final class Frame {
      * @param name the new name
      */
     public void setName(String name) {
+        assert name != null;
         this.name = name;
     }
 
