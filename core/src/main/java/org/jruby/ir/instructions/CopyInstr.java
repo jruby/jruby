@@ -11,7 +11,6 @@ import org.jruby.ir.operands.Variable;
 
 import java.util.Map;
 import org.jruby.ir.persistence.IRReaderDecoder;
-import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 
 public class CopyInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
@@ -28,7 +27,7 @@ public class CopyInstr extends OneOperandResultBaseInstr implements FixedArityIn
     }
 
     @Override
-    public Operand simplifyAndGetResult(IRScope scope, Map<Operand, Operand> valueMap) {
+    public Operand simplifyOperands(IRScope scope, Map<Operand, Operand> valueMap) {
         simplifyOperands(valueMap, false);
 
         return getSource();

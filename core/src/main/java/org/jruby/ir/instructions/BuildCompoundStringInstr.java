@@ -1,9 +1,14 @@
 package org.jruby.ir.instructions;
 
 import org.jcodings.Encoding;
+import org.jruby.Appendable;
 import org.jruby.RubyString;
+import org.jruby.ir.IRManager;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.FrozenString;
+import org.jruby.ir.operands.ImmutableLiteral;
+import org.jruby.ir.operands.MutableString;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Variable;
@@ -16,6 +21,11 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.jruby.util.StringSupport.*;
 
 // This represents a compound string in Ruby
 // Ex: - "Hi " + "there"
@@ -107,5 +117,118 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
 
     public int getLine() {
         return line;
+    }
+
+
+    /**
+     * This will make an attempt to combine multiple pieces when they are contiguout frozen strings OR
+     * immutable literals.  It may fail as not all strings can be concatenated together (e.g. mismatched
+     * encodings).
+     *
+     * @param manager the IR manager
+     * @return the simplified instruction or itself when it cannot be simplified.
+     */
+    @Override
+    public Instr simplifyInstr(IRManager manager) {
+        var piecesArray = getOperands();
+
+        if (piecesArray.length == 0) { // not sure we can have an empty compound string but better safe than sorry.
+            var newByteList = new ByteList(0);
+            newByteList.setEncoding(encoding);
+            return new CopyInstr(getResult(), frozen ?
+                    new FrozenString(newByteList, CR_VALID, file, line) :
+                    new MutableString(newByteList, CR_VALID, file, line));
+        } else if (piecesArray.length == 1) { // not sure we can have a compound string with only one piece AND a non-string.
+            return piecesArray[0] instanceof FrozenString froz ? copy(froz) : this;
+        }
+
+        ThreadContext context = manager.getRuntime().getCurrentContext();
+        int[] i = new int[] { 0 };
+        var pieces = new ArrayList<Operand>(piecesArray.length);
+        FrozenString lastString = findNextFrozenString(context, piecesArray, pieces, i);
+
+        if (lastString == null) return this; // nothing to be combined
+        i[0]++;
+
+        for (; i[0] < piecesArray.length; i[0]++) {
+            Operand piece = piecesArray[i[0]];
+
+            // We found something we can add onto current frozen string.
+            if (piece instanceof ImmutableLiteral imm) {
+                try {
+                    FrozenString newOperand = combine(context, lastString, imm);
+                    if (newOperand != null) {
+                        lastString = newOperand;
+                        continue;
+                    }
+                } catch (Exception e) {
+                    // This is an error from trying to combine two incompatible strings together.
+                    // As this has to end up as a runtime error vs a syntax error we need to just
+                    // pretend this instr is not optimizable and let the runtime stumble over it
+                    // if it is ever executed.
+                    return this;
+                }
+            }
+
+            // We did find something.  save last string + piece and get new last string.
+            pieces.add(lastString);
+            pieces.add(piece);
+            i[0]++;
+            lastString = findNextFrozenString(context, piecesArray, pieces, i);
+            if (lastString == null) break;
+        }
+
+        if (lastString != null) pieces.add(lastString);
+
+        if (pieces.size() != piecesArray.length) {
+            return pieces.size() == 1 ?
+                    copy((FrozenString) pieces.get(0)) :
+                    new BuildCompoundStringInstr(result, pieces.toArray(Operand[]::new), encoding, estimatedSize, frozen, file, line);
+        }
+
+        return this;
+    }
+
+    private FrozenString findNextFrozenString(ThreadContext context, Operand[] piecesArray, List<Operand> pieces, int[] i) {
+        for (; i[0] < piecesArray.length; i[0]++) {
+            Operand piece = piecesArray[i[0]];
+
+            if (piece instanceof ImmutableLiteral imm) return asFrozenString(context, imm);
+
+            pieces.add(piece);
+        }
+
+        return null;
+    }
+
+    private FrozenString combine(ThreadContext context, FrozenString lastString, ImmutableLiteral piece) {
+        if (lastString == null) return asFrozenString(context, piece);
+
+        IRubyObject obj = (IRubyObject) piece.retrieve(context, null, null, null, null);
+        if (obj instanceof Appendable app) {
+            // Construct a new String vs retrieve since the retrieve would be a frozen string.
+            RubyString last = RubyString.newString(context.runtime, lastString.getByteList().dup());
+            app.appendIntoString(last);
+            ByteList newByteList = last.getByteList();
+            return asOperand(newByteList);
+        }
+
+        return null;
+    }
+
+    private Instr copy(FrozenString string) {
+        return frozen ?
+                new CopyInstr(result, string) :
+                new CopyInstr(result, new MutableString(string.getByteList(), CR_UNKNOWN, file, line));
+    }
+
+    private FrozenString asFrozenString(ThreadContext context, ImmutableLiteral piece) {
+        if (piece instanceof FrozenString str) return str;
+        IRubyObject fix = (IRubyObject) piece.retrieve(context, null, null, null, null);
+        return asOperand(fix.asString().getByteList());
+    }
+
+    private FrozenString asOperand(ByteList bytelist) {
+        return new FrozenString(bytelist, CR_UNKNOWN, file, line);
     }
 }

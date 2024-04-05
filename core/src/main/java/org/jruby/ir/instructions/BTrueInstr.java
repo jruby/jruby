@@ -1,8 +1,8 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.ir.IRManager;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.persistence.IRReaderDecoder;
@@ -23,14 +23,11 @@ public class BTrueInstr extends OneOperandBranchInstr implements FixedArityInstr
     }
 
     @Override
-    public Instr simplifyBranch(FullInterpreterContext fic) {
-        if (getArg1().isTruthyImmediate()) {
-            return new JumpInstr(getJumpTarget());
-        } else if (getArg1().isFalseyImmediate()) {
-            return NopInstr.NOP;
-        } else {
-            return super.simplifyBranch(fic);
-        }
+    public Instr simplifyInstr(IRManager manager) {
+        if (getArg1().isTruthyImmediate()) return new JumpInstr(getJumpTarget());
+        if (getArg1().isFalseyImmediate()) return NopInstr.NOP;
+
+        return super.simplifyInstr(manager);
     }
 
     public static BTrueInstr decode(IRReaderDecoder d) {

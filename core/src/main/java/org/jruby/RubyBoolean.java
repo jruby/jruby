@@ -50,7 +50,7 @@ import org.jruby.util.ByteList;
  * @author  jpetersen
  */
 @JRubyClass(name={"TrueClass", "FalseClass"})
-public class RubyBoolean extends RubyObject implements Constantizable {
+public class RubyBoolean extends RubyObject implements Constantizable, Appendable {
 
     private final int hashCode;
     private final transient Object constant;
@@ -142,6 +142,11 @@ public class RubyBoolean extends RubyObject implements Constantizable {
     }
 
     public static final ByteList FALSE_BYTES = new ByteList(new byte[] { 'f','a','l','s','e' }, USASCIIEncoding.INSTANCE);
+
+    @Override
+    public void appendIntoString(RubyString target) {
+        target.append(toS);
+    }
 
     public static class False extends RubyBoolean {
         False(Ruby runtime) {
