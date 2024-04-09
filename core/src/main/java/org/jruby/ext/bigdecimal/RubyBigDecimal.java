@@ -835,6 +835,45 @@ public class RubyBigDecimal extends RubyNumeric {
         throw context.runtime.newArgumentError("can't omit precision for a " + name + ".");
     }
 
+    // Left for arjdbc (being phased out from 61.3 forward and newer points of newer arjdbc versions)
+    @Deprecated
+    public static RubyBigDecimal newInstance(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        return (RubyBigDecimal) newInstance(context, recv, arg, true, true);
+    }
+
+    // Left for arjdbc (being phased out from 61.3 forward and newer points of newer arjdbc versions)
+    @Deprecated
+    public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject arg, boolean strict, boolean exception) {
+        switch (((RubyBasicObject) arg).getNativeClassIndex()) {
+            case RATIONAL:
+                return handleMissingPrecision(context, "Rational", strict, exception);
+            case FLOAT:
+                RubyBigDecimal res = newFloatSpecialCases(context.runtime, (RubyFloat) arg);
+                if (res != null) return res;
+                return handleMissingPrecision(context, "Float", strict, exception);
+            case FIXNUM:
+                return newInstance(context.runtime, recv, (RubyFixnum) arg, MathContext.UNLIMITED);
+            case BIGNUM:
+                return newInstance(context.runtime, recv, (RubyBignum) arg, MathContext.UNLIMITED);
+            case BIGDECIMAL:
+                return arg;
+            case COMPLEX:
+                RubyComplex c = (RubyComplex) arg;
+                if (!((RubyNumeric)c.image()).isZero()) {
+                    throw context.runtime.newArgumentError("Unable to make a BigDecimal from non-zero imaginary number");
+                }
+        }
+
+        IRubyObject maybeString = arg.checkStringType();
+
+        if (maybeString.isNil()) {
+            if (!strict) return getZero(context.runtime, 1);
+            if (!exception) return context.nil;
+            throw context.runtime.newTypeError("no implicit conversion of " + arg.inspect() + "into to String");
+        }
+        return newInstance(context, (RubyClass) recv, maybeString.convertToString(), MathContext.UNLIMITED, strict, exception);
+    }
+
     public static RubyBigDecimal newInstance(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject mathArg) {
         return (RubyBigDecimal) newInstance(context, recv, arg, mathArg, true, true);
     }
