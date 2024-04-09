@@ -3,6 +3,7 @@ package org.jruby.api;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -17,7 +18,7 @@ public class Error {
      * @param object which is the wrong type
      * @param expectedType the expected type(s) that object should have been
      */
-    public static RaiseException typeError(ThreadContext context, IRubyObject object, String expectedType) {
+    public static TypeError typeError(ThreadContext context, IRubyObject object, String expectedType) {
         return createTypeError(context, str(context.runtime, "wrong argument type ",
                 typeFor(context.runtime, object), " (expected " + expectedType + ")"));
     }
@@ -30,7 +31,7 @@ public class Error {
      * @param object which is the wrong type
      * @param restOfMessage the rest of the message
      */
-    public static RaiseException typeError(ThreadContext context, String startOfMessage, IRubyObject object, String restOfMessage) {
+    public static TypeError typeError(ThreadContext context, String startOfMessage, IRubyObject object, String restOfMessage) {
         return createTypeError(context, str(context.runtime, startOfMessage, typeFor(context.runtime, object), restOfMessage));
     }
 
@@ -41,7 +42,7 @@ public class Error {
      * @param object which is the wrong type
      * @param expectedType the expected type that object should have been
      */
-    public static RaiseException typeError(ThreadContext context, IRubyObject object, RubyModule expectedType) {
+    public static TypeError typeError(ThreadContext context, IRubyObject object, RubyModule expectedType) {
         throw createTypeError(context, createTypeErrorMessage(context, object, expectedType));
     }
 
@@ -49,11 +50,11 @@ public class Error {
      * Throw a TypeError with the given message.
      *
      * @param context the current thread context
-     * @param message to be message of the exception.  Note that this message should
+     * @param message to be the message of the exception.  Note that this message should
      *                be properly formatted using RubyStringBuilder.str() or you
      *                absolutely know it is clean ASCII-7BIT
      */
-    public static RaiseException typeError(ThreadContext context, String message) {
+    public static TypeError typeError(ThreadContext context, String message) {
         throw createTypeError(context, message);
     }
 
@@ -61,13 +62,13 @@ public class Error {
      * Create an instance of TypeError with the given message.
      *
      * @param context the current thread context
-     * @param message to be message of the exception.  Note that this message should
+     * @param message to be the message of the exception.  Note that this message should
      *                be properly formatted using RubyStringBuilder.str() or you
      *                absolutely know it is clean ASCII-7BIT
      * @return the created exception
      */
-    public static RaiseException createTypeError(ThreadContext context, String message) {
-        return context.runtime.newRaiseException(context.runtime.getTypeError(), message);
+    public static TypeError createTypeError(ThreadContext context, String message) {
+        return (TypeError) context.runtime.newRaiseException(context.runtime.getTypeError(), message);
     }
 
     /**
