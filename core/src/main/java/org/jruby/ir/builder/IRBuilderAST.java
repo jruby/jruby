@@ -2278,7 +2278,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             return buildOpAsgnConstDeclAnd(node.getFirstNode(), node.getSecondNode(), ((Colon3Node) node.getFirstNode()).getName());
         }
 
-        return buildOpAsgnConstDecl((Colon3Node) node.getFirstNode(), node.getSecondNode(), node.getSymbolOperator());
+        return buildOpAsgnConstDecl((Colon3Node) node.getFirstNode(), ((Colon3Node) node.getFirstNode()).getName(), node.getSecondNode(), node.getSymbolOperator());
     }
 
     public Operand buildOpAsgnAnd(OpAsgnAndNode node) {

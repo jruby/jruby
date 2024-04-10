@@ -1887,11 +1887,20 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     protected abstract Operand buildColon2ForConstAsgnDeclNode(U lhs, Variable valueResult, boolean constMissing);
 
+    @Deprecated
     protected Operand buildOpAsgnConstDecl(Y left, U right, RubySymbol operator) {
         Operand lhs = build((U) left);
         Operand rhs = build(right);
         Variable result = call(temp(), lhs, operator, rhs);
         return copy(temp(), putConstant(left, result));
+    }
+
+    protected Operand buildOpAsgnConstDecl(Y left, RubySymbol name, U right, RubySymbol operator) {
+        Operand parent = buildColon2ForConstAsgnDeclNode((U) left, temp(), false);
+        Operand lhs = searchModuleForConst(temp(), parent, name);
+        Operand rhs = build(right);
+        Variable result = call(temp(), lhs, operator, rhs);
+        return copy(temp(), putConstant(parent, name, result));
     }
 
     protected abstract Operand putConstant(Y constant, Operand value);

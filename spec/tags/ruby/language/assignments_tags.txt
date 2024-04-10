@@ -1,5 +1,3 @@
-fails:Assignments using = evaluation order raises TypeError after evaluation of right-hand-side when compounded constant module is not a module
-fails:Assignments using += using compounded constants causes side-effects of the module part to be applied only once (when assigns)
 fails:Multiple assignments evaluation order evaluates expressions left to right when assignment with an accessor
 fails:Multiple assignments evaluation order evaluates expressions left to right when assignment with a nested accessor
 fails:Multiple assignments evaluation order evaluates expressions left to right when assignment with a deeply nested accessor
