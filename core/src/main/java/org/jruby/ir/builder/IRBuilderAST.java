@@ -221,7 +221,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             case MATCH3NODE: return buildMatch3(result, (Match3Node) node);
             case MATCHNODE: return buildMatch(result, (MatchNode) node);
             case MODULENODE: return buildModule((ModuleNode) node);
-            case MULTIPLEASGNNODE: return buildMultipleAsgn19((MultipleAsgnNode) node);
+            case MULTIPLEASGNNODE: return buildMultipleAsgn((MultipleAsgnNode) node);
             case NEXTNODE: return buildNext((NextNode) node);
             case NTHREFNODE: return buildNthRef((NthRefNode) node);
             case NILNODE: return buildNil();
@@ -318,6 +318,155 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             buildMultipleAssignment(multipleAsgnNode, addResultInstr(new ToAryInstr(temp(), ret)));
         }
         return ret;
+    }
+
+    public Operand buildMultipleAsgn(MultipleAsgnNode multipleAsgnNode) {
+        Node valueNode = multipleAsgnNode.getValueNode();
+        Map<Node, Operand> reads = new HashMap<>();
+        final List<Tuple<Node, ResultInstr>> assigns = new ArrayList<>();
+        Variable values = temp();
+        buildMultipleAssignment2(multipleAsgnNode, assigns, reads, values);
+
+        Variable ret = getValueInTemporaryVariable(build(valueNode));
+        if (valueNode instanceof ArrayNode || valueNode instanceof ZArrayNode) {
+            copy(values, ret);
+        } else if (valueNode instanceof ILiteralNode) {
+            // treat a single literal value as a single-element array
+            copy(values, new Array(new Operand[]{ret}));
+        } else {
+            addResultInstr(new ToAryInstr(values, ret));
+        }
+
+        for (Tuple<Node, ResultInstr> assign: assigns) {
+            addInstr((Instr) assign.b);
+        }
+
+        buildAssignment(assigns, reads);
+
+        return ret;
+    }
+
+
+    protected void buildAssignment(List<Tuple<Node, ResultInstr>> assigns, Map<Node, Operand> reads) {
+
+        for (Tuple<Node, ResultInstr> assign: assigns) {
+            Node node = assign.a;
+            Variable rhs = assign.b.getResult();
+            switch (node.getNodeType()) {
+                // FIXME: These all seem to be same as main build except receiver is prebuilt.
+                case ATTRASSIGNNODE: {
+                    AttrAssignNode attrAssignNode = (AttrAssignNode) node;
+                    Operand receiver = reads.get(node);
+                    int[] flags = new int[]{0};
+                    Operand[] args = setupCallArgs(attrAssignNode.getArgsNode(), flags);
+                    args = addArg(args, rhs);
+                    addInstr(AttrAssignInstr.create(scope, receiver, attrAssignNode.getName(), args, flags[0], scope.maybeUsingRefinements()));
+                    break;
+                }
+                case CLASSVARASGNNODE:
+                    addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), ((ClassVarAsgnNode) node).getName(), rhs));
+                    break;
+                case CONSTDECLNODE: {
+                    ConstDeclNode constDeclNode = (ConstDeclNode) node;
+                    Operand receiver = reads.get(node);
+                    if (receiver == null) {
+                        putConstant(constDeclNode.getName(), rhs);
+                    } else {
+                        putConstant(receiver, constDeclNode.getName(), rhs);
+                    }
+                }
+                break;
+                case DASGNNODE: {
+                    DAsgnNode variable = (DAsgnNode) node;
+                    copy(getLocalVariable(variable.getName(), variable.getDepth()), rhs);
+                    break;
+                }
+                case GLOBALASGNNODE:
+                    addInstr(new PutGlobalVarInstr(((GlobalAsgnNode) node).getName(), rhs));
+                    break;
+                case INSTASGNNODE:
+                    // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
+                    addInstr(new PutFieldInstr(buildSelf(), ((InstAsgnNode) node).getName(), rhs));
+                    break;
+                case LOCALASGNNODE: {
+                    LocalAsgnNode localVariable = (LocalAsgnNode) node;
+                    copy(getLocalVariable(localVariable.getName(), localVariable.getDepth()), rhs);
+                    break;
+                }
+                case MULTIPLEASGNNODE: {
+                    //buildAssignment(assigns, reads);
+                    break;
+                }
+            }
+        }
+    }
+    // List of all left to right reads which needs to happen before any assignments.  Original node is a key to link
+    // to actual assignment values.
+
+    public void buildMultipleAssignment2(final MultipleAsgnNode multipleAsgnNode, List<Tuple<Node, ResultInstr>> assigns,
+                                         Map<Node, Operand> reads, Variable values) {
+        final ListNode masgnPre = multipleAsgnNode.getPre();
+        int i = 0;
+
+        if (masgnPre != null) {
+            for (Node an: masgnPre.children()) {
+                ResultInstr get = new ReqdArgMultipleAsgnInstr(temp(), values, i);
+                assigns.add(new Tuple<>(an, get));
+                processReads(get.getResult(), assigns, reads, an);
+                i++;
+            }
+        }
+
+        Node restNode = multipleAsgnNode.getRest();
+        int postCount = multipleAsgnNode.getPostCount();
+        if (restNode != null && !(restNode instanceof StarNode)) {
+            ResultInstr get = new RestArgMultipleAsgnInstr(temp(), values, 0, i, postCount);
+            assigns.add(new Tuple<>(restNode, get));
+            processReads(get.getResult(), assigns, reads, restNode);
+        }
+
+        final ListNode masgnPost = multipleAsgnNode.getPost();
+        if (masgnPost != null) {
+            int j = 0;
+            for (Node an: masgnPost.children()) {
+                ResultInstr get = new ReqdArgMultipleAsgnInstr(temp(), values, j, i, postCount);
+                assigns.add(new Tuple<>(an, get));
+                processReads(get.getResult(), assigns, reads, an);
+                j++;
+            }
+        }
+    }
+
+    private void processReads(Variable rhsVal, List<Tuple<Node, ResultInstr>> assigns, Map<Node, Operand> reads, Node node) {
+        switch (node.getNodeType()) {
+            case ATTRASSIGNNODE:
+                reads.put(node, build(((AttrAssignNode) node).getReceiverNode()));
+                break;
+            case CLASSVARASGNNODE:
+                reads.put(node, classVarDefinitionContainer());
+                break;
+            case CONSTDECLNODE: {
+                ConstDeclNode constDeclNode = (ConstDeclNode) node;
+                Node constNode = constDeclNode.getConstNode();
+                if (constNode == null) {
+                    reads.put(node, null);
+                } else if (constNode instanceof Colon2Node) {
+                    reads.put(node, build(((Colon2Node) constNode).getLeftNode()));
+                } else if (constNode instanceof Colon3Node) {
+                    reads.put(node, getManager().getObjectClass());
+                } else {
+                    reads.put(node, build(constNode));
+                }
+            }
+            break;
+            case MULTIPLEASGNNODE: {
+                Variable subRet = temp();
+                assigns.add(new Tuple<>(node, new ToAryInstr(subRet, rhsVal)));
+
+                buildMultipleAssignment2((MultipleAsgnNode) node, assigns, reads, subRet);
+            }
+            break;
+        }
     }
 
     protected Operand buildLazyWithOrder(CallNode node, Label lazyLabel, Label endLabel, boolean preserveOrder) {
