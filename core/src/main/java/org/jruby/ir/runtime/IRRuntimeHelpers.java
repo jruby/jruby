@@ -2558,21 +2558,23 @@ public class IRRuntimeHelpers {
     }
 
     @Interp
-    public static void putConst(ThreadContext context, IRubyObject self, RubyModule module, String id, IRubyObject value) {
+    public static void putConst(ThreadContext context, IRubyObject self, IRubyObject module, String id, IRubyObject value) {
         putConst(context, self, module, id, value, context.getFile(), context.getLine() + 1);
     }
 
     @JIT
-    public static void putConst(ThreadContext context, IRubyObject self, RubyModule module, String id, IRubyObject value, StaticScope scope, int line) {
-        warnSetConstInRefinement(context, self);
-
-        module.setConstant(id, value, scope.getFile(), line);
+    public static void putConst(ThreadContext context, IRubyObject self, IRubyObject module, String id, IRubyObject value, StaticScope scope, int line) {
+        putConst(context, self, module, id, value, scope.getFile(), line);
     }
 
-    private static void putConst(ThreadContext context, IRubyObject self, RubyModule module, String id, IRubyObject value, String filename, int line) {
+    private static void putConst(ThreadContext context, IRubyObject self, IRubyObject module, String id, IRubyObject value, String filename, int line) {
+        if (!(module instanceof RubyModule)) {
+            throw context.getRuntime().newTypeError("" + module.inspect() + " is not a class/module");
+        }
+
         warnSetConstInRefinement(context, self);
 
-        module.setConstant(id, value, filename, line);
+        ((RubyModule) module).setConstant(id, value, filename, line);
     }
 
     @Interp @JIT
