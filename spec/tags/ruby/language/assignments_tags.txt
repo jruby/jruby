@@ -1,6 +1,1 @@
-fails:Multiple assignments evaluation order evaluates expressions left to right when assignment with an accessor
-fails:Multiple assignments evaluation order evaluates expressions left to right when assignment with a nested accessor
-fails:Multiple assignments evaluation order evaluates expressions left to right when assignment with a deeply nested accessor
-fails:Multiple assignments evaluation order evaluates expressions left to right when assignment with a #[]=
-fails:Multiple assignments evaluation order evaluates expressions left to right when assignment with a nested #[]=
-fails:Multiple assignments evaluation order evaluates expressions left to right when assignment with a deeply nested #[]=
+fails:Multiple assignments evaluation order evaluates expressions right to left when assignment with compounded constant
