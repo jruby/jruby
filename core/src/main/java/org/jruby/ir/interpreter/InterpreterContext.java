@@ -226,13 +226,13 @@ public class InterpreterContext {
     public boolean pushNewDynScope() {
         initialize();
 
-        return !dynamicScopeEliminated && !reuseParentDynScope && !isEND;
+        return !dynamicScopeEliminated && !reuseParentDynScope();
     }
 
     public boolean reuseParentDynScope() {
         initialize();
 
-        return reuseParentDynScope;
+        return reuseParentDynScope || isEND;
     }
 
     public void setReuseParentDynScope(boolean reuseParentDynScope) {
