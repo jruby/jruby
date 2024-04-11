@@ -307,20 +307,6 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     // Non-arg masgn
-    public Operand buildMultipleAsgn19(MultipleAsgnNode multipleAsgnNode) {
-        Node valueNode = multipleAsgnNode.getValueNode();
-        Variable ret = getValueInTemporaryVariable(build(valueNode));
-        if (valueNode instanceof ArrayNode || valueNode instanceof ZArrayNode) {
-            buildMultipleAssignment(multipleAsgnNode, ret);
-        } else if (valueNode instanceof ILiteralNode) {
-            // treat a single literal value as a single-element array
-            buildMultipleAssignment(multipleAsgnNode, new Array(new Operand[]{ret}));
-        } else {
-            buildMultipleAssignment(multipleAsgnNode, addResultInstr(new ToAryInstr(temp(), ret)));
-        }
-        return ret;
-    }
-
     public Operand buildMultipleAsgn(MultipleAsgnNode multipleAsgnNode) {
         Node valueNode = multipleAsgnNode.getValueNode();
         Map<Node, Operand> reads = new HashMap<>();
@@ -354,7 +340,6 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             Node node = assign.a;
             Variable rhs = assign.b.getResult();
             switch (node.getNodeType()) {
-                // FIXME: These all seem to be same as main build except receiver is prebuilt.
                 case ATTRASSIGNNODE: {
                     AttrAssignNode attrAssignNode = (AttrAssignNode) node;
                     Operand receiver = reads.get(attrAssignNode.getReceiverNode());
@@ -443,6 +428,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     private void processReads(Variable rhsVal, List<Tuple<Node, ResultInstr>> assigns, Map<Node, Operand> reads, Node node) {
         switch (node.getNodeType()) {
             case ATTRASSIGNNODE: {
+                // We do some wild stuff here.  We need to pass flags and our map only holds references to nodes.
+                // We do not have block.  args and receiver are used.  So we stuff flags onto the end of args.
                 AttrAssignNode attrAssignNode = (AttrAssignNode) node;
                 reads.put(attrAssignNode.getReceiverNode(), build(attrAssignNode.getReceiverNode()));
                 int[] flags = new int[]{0};
