@@ -2008,7 +2008,7 @@ public class JVMVisitor extends IRVisitor {
 
         // FIXME: Centralize this out of InterpreterContext
         FullInterpreterContext fullIC = scope.getExecutionContext();
-        boolean reuseParentDynScope = fullIC.reuseParentDynScope();
+        boolean reuseParentDynScope = fullIC.reuseParentDynScope() || fullIC.isEND();
         boolean pushNewDynScope = !fullIC.isDynamicScopeEliminated() && !reuseParentDynScope;
 
         if (pushNewDynScope) {
