@@ -2005,21 +2005,13 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void PushBlockBindingInstr(PushBlockBindingInstr instr) {
         IRScope scope = jvm.methodData().scope;
-
-        // FIXME: Centralize this out of InterpreterContext
         FullInterpreterContext fullIC = scope.getExecutionContext();
-        boolean reuseParentDynScope = fullIC.reuseParentDynScope();
-        boolean pushNewDynScope = !fullIC.isDynamicScopeEliminated() && !reuseParentDynScope;
 
-        if (pushNewDynScope) {
-            if (reuseParentDynScope) {
-                throw new NotCompilableException("BUG: both create new scope and reuse parent scope specified");
-            } else {
-                jvmMethod().loadContext();
-                jvmMethod().loadSelfBlock();
-                jvmMethod().invokeIRHelper("pushBlockDynamicScopeNew", sig(DynamicScope.class, ThreadContext.class, Block.class));
-            }
-        } else if (reuseParentDynScope) {
+        if (fullIC.pushNewDynScope()) {
+            jvmMethod().loadContext();
+            jvmMethod().loadSelfBlock();
+            jvmMethod().invokeIRHelper("pushBlockDynamicScopeNew", sig(DynamicScope.class, ThreadContext.class, Block.class));
+        } else if (fullIC.reuseParentDynScope()) {
             jvmMethod().loadContext();
             jvmMethod().loadSelfBlock();
             jvmMethod().invokeIRHelper("pushBlockDynamicScopeReuse", sig(DynamicScope.class, ThreadContext.class, Block.class));
