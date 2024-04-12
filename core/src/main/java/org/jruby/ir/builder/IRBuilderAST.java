@@ -1073,34 +1073,35 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     private void buildWhenSplatValues(Variable eqqResult, Node node, Operand testValue, Label bodyLabel,
-                                      Set<IRubyObject> seenLiterals) {
+                                      Set<IRubyObject> seenLiterals, Map<IRubyObject, java.lang.Integer> origLocs) {
         if (node instanceof ListNode && !(node instanceof DNode) && !(node instanceof ArrayNode)) {
-            buildWhenValues(eqqResult, ((ListNode) node).children(), testValue, bodyLabel, seenLiterals);
+            buildWhenValues(eqqResult, ((ListNode) node).children(), testValue, bodyLabel, seenLiterals, origLocs);
         } else if (node instanceof SplatNode) {
-            buildWhenValue(eqqResult, testValue, bodyLabel, node, seenLiterals, true);
+            buildWhenValue(eqqResult, testValue, bodyLabel, node, seenLiterals, origLocs, true);
         } else if (node instanceof ArgsCatNode) {
             ArgsCatNode catNode = (ArgsCatNode) node;
-            buildWhenSplatValues(eqqResult, catNode.getFirstNode(), testValue, bodyLabel, seenLiterals);
-            buildWhenSplatValues(eqqResult, catNode.getSecondNode(), testValue, bodyLabel, seenLiterals);
+            buildWhenSplatValues(eqqResult, catNode.getFirstNode(), testValue, bodyLabel, seenLiterals, origLocs);
+            buildWhenSplatValues(eqqResult, catNode.getSecondNode(), testValue, bodyLabel, seenLiterals, origLocs);
         } else if (node instanceof ArgsPushNode) {
             ArgsPushNode pushNode = (ArgsPushNode) node;
-            buildWhenSplatValues(eqqResult, pushNode.getFirstNode(), testValue, bodyLabel, seenLiterals);
-            buildWhenValue(eqqResult, testValue, bodyLabel, pushNode.getSecondNode(), seenLiterals, false);
+            buildWhenSplatValues(eqqResult, pushNode.getFirstNode(), testValue, bodyLabel, seenLiterals, origLocs);
+            buildWhenValue(eqqResult, testValue, bodyLabel, pushNode.getSecondNode(), seenLiterals, origLocs, false);
         } else {
-            buildWhenValue(eqqResult, testValue, bodyLabel, node, seenLiterals, true);
+            buildWhenValue(eqqResult, testValue, bodyLabel, node, seenLiterals, origLocs, true);
         }
     }
 
-    protected void buildWhenArgs(WhenNode whenNode, Operand testValue, Label bodyLabel, Set<IRubyObject> seenLiterals) {
+    protected void buildWhenArgs(WhenNode whenNode, Operand testValue, Label bodyLabel,
+                                 Set<IRubyObject> seenLiterals, Map<IRubyObject, java.lang.Integer> origLocs) {
         Variable eqqResult = temp();
         Node exprNodes = whenNode.getExpressionNodes();
 
         if (exprNodes instanceof ListNode && !(exprNodes instanceof DNode) && !(exprNodes instanceof ArrayNode) && !(exprNodes instanceof ZArrayNode)) {
-            buildWhenValues(eqqResult, ((ListNode) exprNodes).children(), testValue, bodyLabel, seenLiterals);
+            buildWhenValues(eqqResult, ((ListNode) exprNodes).children(), testValue, bodyLabel, seenLiterals, origLocs);
         } else if (exprNodes instanceof ArgsPushNode || exprNodes instanceof SplatNode || exprNodes instanceof ArgsCatNode) {
-            buildWhenSplatValues(eqqResult, exprNodes, testValue, bodyLabel, seenLiterals);
+            buildWhenSplatValues(eqqResult, exprNodes, testValue, bodyLabel, seenLiterals, origLocs);
         } else {
-            buildWhenValue(eqqResult, testValue, bodyLabel, exprNodes, seenLiterals, false);
+            buildWhenValue(eqqResult, testValue, bodyLabel, exprNodes, seenLiterals, origLocs, false);
         }
     }
 
@@ -1164,6 +1165,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     private <T extends Node & ILiteralNode> Map<java.lang.Integer, Label> gatherLiteralWhenBodies(
             CaseNode caseNode, Map<Node, Label> nodeBodies, Function<T, Long> caseFunction) {
         Map<java.lang.Integer, Label> jumpTable = new HashMap<>();
+        Map<java.lang.Integer, Node> origTable = new HashMap<>();
 
         // gather literal when bodies or bail
         for (Node aCase : caseNode.getCases().children()) {
@@ -1176,9 +1178,11 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
 
             if (jumpTable.get((int) exprLong) == null) {
                 jumpTable.put((int) exprLong, bodyLabel);
+                origTable.put((int) exprLong, whenNode);
                 nodeBodies.put(whenNode, bodyLabel);
             } else {
-                scope.getManager().getRuntime().getWarnings().warning(IRubyWarnings.ID.MISCELLANEOUS, getFileName(), expr.getLine(), "duplicated when clause is ignored");
+                getManager().getRuntime().getWarnings().warning(IRubyWarnings.ID.MISCELLANEOUS, getFileName(), expr.getLine() + 1,
+                        "duplicated 'when' clause with line " + (origTable.get((int) exprLong).getLine() + 1) + " is ignored");
             }
         }
 

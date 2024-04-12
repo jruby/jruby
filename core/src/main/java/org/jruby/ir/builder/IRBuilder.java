@@ -1114,10 +1114,11 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         Variable result = temp();      // final result value of the case statement.
         Map<Label, U> bodies = new HashMap<>();        // we save bodies and emit them after processing when values.
         Set<IRubyObject> seenLiterals = new HashSet<>();  // track to warn on duplicated values in when clauses.
+        Map<IRubyObject, java.lang.Integer> originalLocs = new HashMap<>();
 
         for (U arm: arms) { // Emit each when value test against the case value.
             Label bodyLabel = getNewLabel();
-            buildWhenArgs((W) arm, testValue, bodyLabel, seenLiterals);
+            buildWhenArgs((W) arm, testValue, bodyLabel, seenLiterals, originalLocs);
             bodies.put(bodyLabel, whenBody((W) arm));
         }
 
@@ -2731,11 +2732,15 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         return nil();
     }
 
-    protected abstract void buildWhenArgs(W whenNode, Operand testValue, Label bodyLabel, Set<IRubyObject> seenLiterals);
+    // FIXME: This needs to pass node/line of first reference of literals have been shown.
+    protected abstract void buildWhenArgs(W whenNode, Operand testValue, Label bodyLabel,
+                                          Set<IRubyObject> seenLiterals,
+                                          Map<IRubyObject, java.lang.Integer> origLocs);
 
     protected void buildWhenValue(Variable eqqResult, Operand testValue, Label bodyLabel, U node,
-                                Set<IRubyObject> seenLiterals, boolean needsSplat) {
-        if (literalWhenCheck(node, seenLiterals)) { // we only emit first literal of the same value.
+                                  Set<IRubyObject> seenLiterals, Map<IRubyObject, java.lang.Integer> origLocs,
+                                  boolean needsSplat) {
+        if (literalWhenCheck(node, seenLiterals, origLocs)) { // we only emit first literal of the same value.
             Operand expression;
             if (isLiteralString(node)) {  // compile literal string whens as fstrings
                 expression = frozen_string(node);
@@ -2749,9 +2754,9 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     protected void buildWhenValues(Variable eqqResult, U[] exprValues, Operand testValue, Label bodyLabel,
-                         Set<IRubyObject> seenLiterals) {
+                         Set<IRubyObject> seenLiterals, Map<IRubyObject, java.lang.Integer> origLocs) {
         for (U value: exprValues) {
-            buildWhenValue(eqqResult, testValue, bodyLabel, value, seenLiterals, false);
+            buildWhenValue(eqqResult, testValue, bodyLabel, value, seenLiterals, origLocs, false);
         }
     }
 
@@ -2770,16 +2775,17 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     protected abstract Operand setupCallClosure(U args, U iter);
 
     // returns true if we should emit an eqq for this value (e.g. it has not already been seen yet).
-    protected boolean literalWhenCheck(U value, Set<IRubyObject> seenLiterals) {
+    protected boolean literalWhenCheck(U value, Set<IRubyObject> seenLiterals, Map<IRubyObject, java.lang.Integer> origLocs) {
         IRubyObject literal = getWhenLiteral(value);
 
         if (literal != null) {
             if (seenLiterals.contains(literal)) {
-                scope.getManager().getRuntime().getWarnings().warning(IRubyWarnings.ID.MISCELLANEOUS,
-                        getFileName(), getLine(value), "duplicated when clause is ignored");
+                getManager().getRuntime().getWarnings().warning(IRubyWarnings.ID.MISCELLANEOUS, getFileName(), getLine(value),
+                        "duplicated 'when' clause with line " + (origLocs.get(literal) + 1) + " is ignored");
                 return false;
             } else {
                 seenLiterals.add(literal);
+                origLocs.put(literal, getLine(value));
                 return true;
             }
         }
