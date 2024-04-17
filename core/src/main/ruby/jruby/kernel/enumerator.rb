@@ -1,6 +1,11 @@
 class Enumerator
 
   def next
+    vals = next_values
+    vals.size <= 1 ? vals[0] : vals
+  end
+
+  def next_values
     return @__lookahead__.shift unless @__lookahead__.empty?
 
     unless @__generator__
@@ -14,7 +19,7 @@ class Enumerator
     end
 
     begin
-      return @__generator__.next if @__generator__.next?
+      return @__generator__.next_values if @__generator__.next?
     rescue StopIteration
       nil # the enumerator could change between next? and next leading to StopIteration
     end
@@ -25,19 +30,16 @@ class Enumerator
     raise exception
   end
 
-  def next_values
-    Array(self.next)
-  end
-
   def peek
-    return @__lookahead__.first unless @__lookahead__.empty?
-    item = self.next
-    @__lookahead__ << item
-    item
+    vals = peek_values
+    vals.size <= 1 ? vals[0] : vals
   end
 
   def peek_values
-    Array(self.peek).dup
+    return @__lookahead__.first unless @__lookahead__.empty?
+    vals = self.next_values
+    @__lookahead__ << vals
+    vals.dup
   end
 
   def rewind
@@ -70,7 +72,7 @@ class Enumerator
       def initialize(object, method, args, feed_value)
         @to_proc = proc do
           @result = object.__send__ method, *args do |*vals|
-            ret = Fiber.yield(*vals)
+            ret = Fiber.yield(vals, nil)
             val = feed_value.use_value
             ret = val unless val.nil?
             ret
@@ -98,13 +100,18 @@ class Enumerator
     end
 
     def next
+      vals = next_values
+      vals.size <= 1 ? vals[0] : vals
+    end
+
+    def next_values
       reset unless @fiber&.alive?
 
-      val = @fiber.resume
+      vals, _ = @fiber.resume
 
       raise StopIteration, 'iteration has ended' if @state.done
 
-      val
+      vals
     end
 
     def rewind
