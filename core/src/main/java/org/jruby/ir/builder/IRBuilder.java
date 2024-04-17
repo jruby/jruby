@@ -1077,6 +1077,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             // If we have ensure blocks, have to run those first!
             if (!activeEnsureBlockStack.isEmpty()) emitEnsureBlocks(currLoop);
 
+            currLoop.hasBreak = true;
             addInstr(new CopyInstr(currLoop.loopResult, value.run()));
             addInstr(new JumpInstr(currLoop.loopEndLabel));
         } else {
@@ -1666,7 +1667,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             if (bodyNode != null) build(bodyNode);
 
             // Next jumps here
-            addInstr(new LabelInstr(loop.iterEndLabel));
+            if (loop.hasNext) addInstr(new LabelInstr(loop.iterEndLabel));
             if (isLoopHeadCondition) {
                 addInstr(new JumpInstr(loop.loopStartLabel));
             } else {
@@ -1679,7 +1680,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             addInstr(new CopyInstr(loopResult, nil()));
 
             // Loop end -- breaks jump here bypassing the result set up above
-            addInstr(new LabelInstr(loop.loopEndLabel));
+            if (loop.hasBreak) addInstr(new LabelInstr(loop.loopEndLabel));
 
             // Done with loop
             loopStack.pop();
@@ -1750,6 +1751,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         if (!activeEnsureBlockStack.isEmpty()) emitEnsureBlocks(currLoop);
 
         if (currLoop != null) {
+            currLoop.hasNext = true;
             // If a regular loop, the next is simply a jump to the end of the iteration
             addInstr(new JumpInstr(currLoop.iterEndLabel));
         } else {
