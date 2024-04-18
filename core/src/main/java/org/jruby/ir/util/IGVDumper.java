@@ -20,12 +20,16 @@ public class IGVDumper {
     PrintStream writer;
     final String baseLabel;
 
-    public IGVDumper(String baseLabel) {
+    public IGVDumper(String baseLabel, boolean saveToFile) {
         this.baseLabel = baseLabel;
 
         try {
-            socket = new Socket(HOST, PORT);
-            writer = new PrintStream(socket.getOutputStream());
+            if (saveToFile) {
+                writer = System.out;
+            } else {
+                socket = new Socket(HOST, PORT);
+                writer = new PrintStream(socket.getOutputStream());
+            }
             startTag(writer, "graphDocument");
             startTag(writer, "group");
             startTag(writer, "properties");
@@ -44,8 +48,10 @@ public class IGVDumper {
         endTag(writer, "group");
         endTag(writer, "graphDocument");
         try {
-            writer.close();
-            socket.close();
+            if (socket != null) {
+                writer.close();
+                socket.close();
+            }
         } catch (IOException e) {
         }
     }

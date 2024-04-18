@@ -99,6 +99,7 @@ public class Options {
     public static final Option<ClassLoaderMode> JIT_LOADER_MODE = enumeration(JIT, "jit.loader.mode", ClassLoaderMode.class, ClassLoaderMode.UNIQUE, "Set JIT class loader to use. UNIQUE class loader per class; SHARED loader for all classes");
 
     public static final Option<String> IR_DEBUG_IGV          = string(IR, "ir.debug.igv", (String) null, "Specify file:line of scope to jump to IGV");
+    public static final Option<Boolean> IR_DEBUG_IGV_STDOUT = bool(IR, "ir.debug.igv.stdout", false, "Save IGV generated XML to stdout");
     public static final Option<Boolean> IR_DEBUG             = bool(IR, "ir.debug", false, "Debug generation of JRuby IR.");
     public static final Option<Boolean> IR_PROFILE           = bool(IR, "ir.profile", false, "[EXPT]: Profile IR code during interpretation.");
     public static final Option<Boolean> IR_COMPILER_DEBUG    = bool(IR, "ir.compiler.debug", false, "Debug compilation of JRuby IR.");
