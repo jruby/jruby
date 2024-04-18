@@ -2450,8 +2450,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     protected void buildRescueBodyInternal(U[] exceptions, U body, X consequent, Variable rv, Variable exc, Label endLabel,
                                  U reference) {
         // Compare and branch as necessary!
-        Label uncaughtLabel = getNewLabel();
-        Label caughtLabel = getNewLabel();
+        Label uncaughtLabel = getNewLabel("MISSED");
+        Label caughtLabel = getNewLabel("RESCUE");
         if (exceptions == null || exceptions.length == 0) {
             outputExceptionCheck(getManager().getStandardError(), exc, caughtLabel);
         } else {
@@ -2529,7 +2529,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         // Labels marking start, else, end of the begin-rescue(-ensure)-end block
         Label rBeginLabel = getNewLabel();
         Label rEndLabel   = ensure.end;
-        Label rescueLabel = getNewLabel(); // Label marking start of the first rescue code.
+        Label rescueLabel = getNewLabel("RESC_TEST"); // Label marking start of the first rescue code.
         ensure.needsBacktrace = needsBacktrace;
 
         addInstr(new LabelInstr(rBeginLabel));
