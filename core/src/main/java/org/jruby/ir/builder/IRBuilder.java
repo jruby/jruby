@@ -1571,8 +1571,10 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         return ic;
     }
 
+    private static final ByteList LAMBDA_PREFIX = new ByteList(new byte[] {'_', 'L', 'A', 'M', 'B', 'D', 'A', '_'});
+
     public Operand buildLambda(U args, U body, StaticScope staticScope, Signature signature, int line) {
-        IRClosure closure = new IRClosure(getManager(), scope, line, staticScope, signature, coverageMode);
+        IRClosure closure = new IRClosure(getManager(), scope, line, staticScope, signature, LAMBDA_PREFIX, coverageMode);
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
         getManager().getBuilderFactory().newIRBuilder(getManager(), closure, this, encoding).buildLambdaInner(args, body);

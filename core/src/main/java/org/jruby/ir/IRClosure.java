@@ -95,6 +95,9 @@ public class IRClosure extends IRScope {
         this(manager, lexicalParent, lineNumber, staticScope, signature, CLOSURE, false, coverageMode);
     }
 
+    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, ByteList prefix, int coverageMode) {
+        this(manager, lexicalParent, lineNumber, staticScope, signature, prefix, false, coverageMode);
+    }
 
     public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, ByteList prefix) {
         this(manager, lexicalParent, lineNumber, staticScope, signature, prefix, false);
