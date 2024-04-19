@@ -671,7 +671,7 @@ public abstract class IRScope implements ParseResult {
 
             if (spec.contains(":") && spec.equals(getFileName() + ":" + getLineNumber()) ||
                     spec.equals(getFileName())) {
-                return new IGVDumper(getFullyQualifiedName() + "; line " + getLineNumber(), RubyInstanceConfig.IR_DEBUG_IGV_STDOUT);
+                return new IGVDumper(getFullyQualifiedName() + "; line " + (getLineNumber() + 1), RubyInstanceConfig.IR_DEBUG_IGV_STDOUT);
             }
         }
 

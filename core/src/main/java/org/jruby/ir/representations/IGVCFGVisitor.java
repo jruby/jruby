@@ -12,6 +12,7 @@ import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.JumpTargetInstr;
 import org.jruby.ir.util.IGVInstrListener;
 
+import static org.jruby.ir.util.IGVDumper.sanitize;
 import static org.jruby.ir.util.IGVHelper.emptyTag;
 import static org.jruby.ir.util.IGVHelper.endTag;
 import static org.jruby.ir.util.IGVHelper.property;
@@ -112,7 +113,7 @@ public class IGVCFGVisitor {
     public void CFG(CFG cfg, String name) {
         startTag(writer, "graph");
         startTag(writer, "properties");
-        property(writer, "name", name);
+        property(writer, "name", sanitize(name));
         endTag(writer, "properties");
 
         startTag(writer, "nodes");

@@ -64,6 +64,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 
@@ -2691,5 +2693,20 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
 
     public LocalVariable getLocalVariable(RubySymbol name, int scopeDepth) {
         return scope.getLocalVariable(name, scopeDepth);
+    }
+
+    protected void createPrefixFromArgs(ByteList prefix, Node args) {
+        if (args instanceof ArgsNode) {
+            ArgsNode argsNode = (ArgsNode) args;
+            prefix.append(Stream.of(argsNode.getArgs()).
+                    filter(n -> n instanceof INameNode).
+                    map(n -> {
+                        RubySymbol name = ((INameNode) n).getName();
+                        return name == null ? "(null)" : name.idString();
+                    }).
+                    collect(Collectors.joining(",")).getBytes());
+        } else { // for loops
+
+        }
     }
 }

@@ -1518,7 +1518,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     protected Operand buildIter(U var, U body, StaticScope staticScope, Signature signature, int line, int endLine) {
-        IRClosure closure = new IRClosure(getManager(), scope, line, staticScope, signature, coverageMode);
+        ByteList prefix = createPrefixForIter(var);
+        IRClosure closure = new IRClosure(getManager(), scope, line, staticScope, signature, prefix, coverageMode);
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
         getManager().getBuilderFactory().newIRBuilder(getManager(), closure, this, encoding).buildIterInner(methodName, var, body, endLine);
@@ -1526,6 +1527,31 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         methodName = null;
 
         return new WrappedIRClosure(buildSelf(), closure);
+    }
+
+    private ByteList createPrefixForLambda(U var) {
+        ByteList prefix = new ByteList("->(".getBytes());
+        createPrefixFromArgs(prefix, var);
+        prefix.append(')');
+
+        return prefix;
+    }
+
+    private ByteList createPrefixForIter(U var) {
+        ByteList prefix = new ByteList();
+        if (methodName != null) {
+            prefix.append(methodName.getBytes());
+            prefix.append(" ".getBytes());
+        }
+        prefix.append("&|".getBytes());
+        createPrefixFromArgs(prefix, var);
+        prefix.append('|');
+
+        return prefix;
+    }
+
+    protected void createPrefixFromArgs(ByteList prefix, U var) {
+        // FIXME: Made for backwards compat for Prism not having this method in all versions (0.15).
     }
 
     protected InterpreterContext buildIterInner(RubySymbol methodName, U var, U body, int endLine) {
@@ -1572,10 +1598,9 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         return ic;
     }
 
-    private static final ByteList LAMBDA_PREFIX = new ByteList(new byte[] {'_', 'L', 'A', 'M', 'B', 'D', 'A', '_'});
-
     public Operand buildLambda(U args, U body, StaticScope staticScope, Signature signature, int line) {
-        IRClosure closure = new IRClosure(getManager(), scope, line, staticScope, signature, LAMBDA_PREFIX, coverageMode);
+        IRClosure closure = new IRClosure(getManager(), scope, line, staticScope, signature,
+                createPrefixForLambda(args), coverageMode);
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
         getManager().getBuilderFactory().newIRBuilder(getManager(), closure, this, encoding).buildLambdaInner(args, body);

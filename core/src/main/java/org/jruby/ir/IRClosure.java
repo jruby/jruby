@@ -359,16 +359,6 @@ public class IRClosure extends IRScope {
         return cloneForInlining(ii, clonedClosure);
     }
 
-    @Override
-    public void setByteName(ByteList name) {
-        ByteList newName = getLexicalParent().getByteName();
-
-        newName = newName == null ? new ByteList() : newName.dup();
-        newName.append(name);
-
-        super.setByteName(newName);
-    }
-
     public Signature getSignature() {
         return signature;
     }
