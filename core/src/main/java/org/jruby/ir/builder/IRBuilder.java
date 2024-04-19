@@ -1077,6 +1077,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             // If we have ensure blocks, have to run those first!
             if (!activeEnsureBlockStack.isEmpty()) emitEnsureBlocks(currLoop);
 
+            currLoop.hasBreak = true;
             addInstr(new CopyInstr(currLoop.loopResult, value.run()));
             addInstr(new JumpInstr(currLoop.loopEndLabel));
         } else {
@@ -1668,7 +1669,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             if (bodyNode != null) build(bodyNode);
 
             // Next jumps here
-            addInstr(new LabelInstr(loop.iterEndLabel));
+            if (loop.hasNext) addInstr(new LabelInstr(loop.iterEndLabel));
             if (isLoopHeadCondition) {
                 addInstr(new JumpInstr(loop.loopStartLabel));
             } else {
@@ -1681,7 +1682,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             addInstr(new CopyInstr(loopResult, nil()));
 
             // Loop end -- breaks jump here bypassing the result set up above
-            addInstr(new LabelInstr(loop.loopEndLabel));
+            if (loop.hasBreak) addInstr(new LabelInstr(loop.loopEndLabel));
 
             // Done with loop
             loopStack.pop();
@@ -1752,6 +1753,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         if (!activeEnsureBlockStack.isEmpty()) emitEnsureBlocks(currLoop);
 
         if (currLoop != null) {
+            currLoop.hasNext = true;
             // If a regular loop, the next is simply a jump to the end of the iteration
             addInstr(new JumpInstr(currLoop.iterEndLabel));
         } else {
@@ -2450,8 +2452,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     protected void buildRescueBodyInternal(U[] exceptions, U body, X consequent, Variable rv, Variable exc, Label endLabel,
                                  U reference) {
         // Compare and branch as necessary!
-        Label uncaughtLabel = getNewLabel();
-        Label caughtLabel = getNewLabel();
+        Label uncaughtLabel = getNewLabel("MISSED");
+        Label caughtLabel = getNewLabel("RESCUE");
         if (exceptions == null || exceptions.length == 0) {
             outputExceptionCheck(getManager().getStandardError(), exc, caughtLabel);
         } else {
@@ -2529,7 +2531,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         // Labels marking start, else, end of the begin-rescue(-ensure)-end block
         Label rBeginLabel = getNewLabel();
         Label rEndLabel   = ensure.end;
-        Label rescueLabel = getNewLabel(); // Label marking start of the first rescue code.
+        Label rescueLabel = getNewLabel("RESC_TEST"); // Label marking start of the first rescue code.
         ensure.needsBacktrace = needsBacktrace;
 
         addInstr(new LabelInstr(rBeginLabel));

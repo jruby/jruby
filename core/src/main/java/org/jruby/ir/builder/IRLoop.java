@@ -8,10 +8,13 @@ class IRLoop {
     public final IRScope container;
     public final IRLoop   parentLoop;
     public final Label loopStartLabel;
-    public final Label    loopEndLabel;
+    public final Label    loopEndLabel; // for `break`
     public final Label    iterStartLabel;
-    public final Label    iterEndLabel;
+    public final Label    iterEndLabel; // for `next`
     public final Variable loopResult;
+
+    public boolean hasNext = false;
+    public boolean hasBreak = false;
 
     public IRLoop(IRScope s, IRLoop outerLoop, Variable result) {
         container = s;
