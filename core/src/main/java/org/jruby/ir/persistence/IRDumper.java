@@ -93,7 +93,7 @@ public class IRDumper extends IRVisitor {
     }
 
     public void visit(IRScope scope, boolean full, boolean recurse) {
-        println("begin " + scope.getScopeType().name() + "<" + scope.getId() + ">");
+        println("begin " + scope.getFullyQualifiedName());
 
         InterpreterContext ic = full ? scope.getFullInterpreterContext() : scope.getInterpreterContext();
 

@@ -21,7 +21,7 @@ public class IGVDumper {
     final String baseLabel;
 
     public IGVDumper(String baseLabel, boolean saveToFile) {
-        this.baseLabel = baseLabel;
+        this.baseLabel = sanitize(baseLabel);
 
         try {
             if (saveToFile) {
@@ -38,6 +38,14 @@ public class IGVDumper {
 
         } catch (IOException e) {
         }
+    }
+
+    public static String sanitize(String string) {
+        return string.replaceAll("&", "&amp;").
+                replaceAll("\"", "&quot;").
+                replaceAll("<", "&lt;").
+                replaceAll(">", "&gt;").
+                replaceAll("'", "&apos;");
     }
 
     public void dump(CFG cfg, String name) {
