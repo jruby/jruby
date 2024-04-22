@@ -112,6 +112,11 @@ public class AnnotationHelper {
                 for (String name : names) {
                     if (uniqueValues.add(name)) {
                         joiner.add(name);
+
+                        // in order to support these names aliased with "!" we eagerly add those names as well (jruby/jruby#8200)
+                        if (name.matches("^[a-z_]+$")) {
+                            joiner.add(name + '!');
+                        }
                     }
                 }
                 String namesJoined = joiner.toString();
