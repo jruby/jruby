@@ -438,7 +438,9 @@ public abstract class RubyParserBase {
     public Node newline_node(Node node, int line) {
         if (node == null) return null;
 
-        node = remove_begin(node);
+        Node newNode = remove_begin(node);
+        // Conservative fix...try and use line unless we see remove has been removed then use the newNode.
+        if (newNode != node) line = newNode.getLine();
         coverLine(line);
         node.setNewline();
 
