@@ -731,4 +731,8 @@ public class StaticScope implements Serializable {
     public void setInstanceVariableNames(Collection<String> ivarWrites) {
         this.ivarNames = ivarWrites;
     }
+
+    public boolean isRuby2Keywords() {
+        return irScope.isRuby2Keywords();
+    }
 }
