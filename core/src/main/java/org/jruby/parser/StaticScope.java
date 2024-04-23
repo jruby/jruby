@@ -731,15 +731,4 @@ public class StaticScope implements Serializable {
     public void setInstanceVariableNames(Collection<String> ivarWrites) {
         this.ivarNames = ivarWrites;
     }
-
-    private boolean isTopScopeEvals() {
-        Ruby runtime = cref.getRuntime();
-        StaticScope scope = this;
-        while (scope != null && scope.type == Type.EVAL) {
-            if (cref != runtime.getTopSelf()) return false;
-            scope = scope.enclosingScope;
-        }
-
-        return scope != null && scope.enclosingScope == null;
-    }
 }
