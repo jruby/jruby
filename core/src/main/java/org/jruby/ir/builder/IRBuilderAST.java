@@ -1151,8 +1151,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
 
         Map<Node, Label> nodeBodies = new HashMap<>();
 
-        Map<java.lang.Integer, Label> jumpTable = gatherLiteralWhenBodies(caseNode, nodeBodies, caseFunction);
-        Map.Entry<java.lang.Integer, Label>[] jumpEntries = sortJumpEntries(jumpTable);
+        Map<java.lang.Integer, Tuple<Operand, Label>> jumpTable = gatherLiteralWhenBodies(caseNode, nodeBodies, caseFunction);
+        Map.Entry<java.lang.Integer, Tuple<Operand, Label>>[] jumpEntries = sortJumpEntries(jumpTable);
 
         Label     endLabel  = getNewLabel();
         boolean   hasElse   = (caseNode.getElseNode() != null);
@@ -1164,9 +1164,19 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return buildStandardCaseWhen(caseNode, nodeBodies, endLabel, hasElse, elseLabel, value, result);
     }
 
-    private <T extends Node & ILiteralNode> Map<java.lang.Integer, Label> gatherLiteralWhenBodies(
+    private Operand buildOptimizedWhenOperand(Node node) {
+        if (node instanceof SymbolNode) {
+            return buildSymbol((SymbolNode) node);
+        } else if (node instanceof FixnumNode) {
+            return buildFixnum((FixnumNode) node);
+        }
+
+        throw new NotCompilableException("unexpected optimized when value encountered: " + node);
+    }
+
+    private <T extends Node & ILiteralNode> Map<java.lang.Integer, Tuple<Operand, Label>> gatherLiteralWhenBodies(
             CaseNode caseNode, Map<Node, Label> nodeBodies, Function<T, Long> caseFunction) {
-        Map<java.lang.Integer, Label> jumpTable = new HashMap<>();
+        Map<java.lang.Integer, Tuple<Operand, Label>> jumpTable = new HashMap<>();
         Map<java.lang.Integer, Node> origTable = new HashMap<>();
 
         // gather literal when bodies or bail
@@ -1179,7 +1189,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             if (exprLong > java.lang.Integer.MAX_VALUE) throw notCompilable("optimized case has long-ranged value", caseNode);
 
             if (jumpTable.get((int) exprLong) == null) {
-                jumpTable.put((int) exprLong, bodyLabel);
+                jumpTable.put((int) exprLong, new Tuple<>(buildOptimizedWhenOperand(expr), bodyLabel));
                 origTable.put((int) exprLong, whenNode);
                 nodeBodies.put(whenNode, bodyLabel);
             } else {
@@ -1191,35 +1201,32 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return jumpTable;
     }
 
-    private static Map.Entry<java.lang.Integer, Label>[] sortJumpEntries(Map<java.lang.Integer, Label> jumpTable) {
+    private static Map.Entry<java.lang.Integer, Tuple<Operand, Label>>[] sortJumpEntries(Map<java.lang.Integer, Tuple<Operand, Label>> jumpTable) {
         // sort the jump table
-        Map.Entry<java.lang.Integer, Label>[] jumpEntries = jumpTable.entrySet().toArray(new Map.Entry[jumpTable.size()]);
+        Map.Entry<java.lang.Integer, Tuple<Operand, Label>>[] jumpEntries = jumpTable.entrySet().toArray(new Map.Entry[jumpTable.size()]);
         Arrays.sort(jumpEntries, Comparator.comparingInt(Map.Entry::getKey));
         return jumpEntries;
     }
 
-    private void buildOptimizedSwitch(
-            Map<java.lang.Integer, Label> jumpTable,
-            Map.Entry<java.lang.Integer,
-                    Label>[] jumpEntries,
-            Label elseLabel,
-            Operand value,
-            Class valueClass) {
-
-        Label     eqqPath   = getNewLabel();
+    private void buildOptimizedSwitch(Map<java.lang.Integer, Tuple<Operand, Label>> jumpTable,
+            Map.Entry<java.lang.Integer, Tuple<Operand, Label>>[] jumpEntries, Label elseLabel, Operand value, Class valueClass) {
+        Label eqqPath = getNewLabel();
 
         // build a switch
         int[] jumps = new int[jumpTable.size()];
+        Operand[] operands = new Operand[jumpTable.size()];
         Label[] targets = new Label[jumps.length];
         int i = 0;
-        for (Map.Entry<java.lang.Integer, Label> jumpEntry : jumpEntries) {
+        for (Map.Entry<java.lang.Integer, Tuple<Operand, Label>> jumpEntry : jumpEntries) {
             jumps[i] = jumpEntry.getKey();
-            targets[i] = jumpEntry.getValue();
+            Tuple<Operand, Label> tuple = jumpEntry.getValue();
+            operands[i] = tuple.a;
+            targets[i] = tuple.b;
             i++;
         }
 
         // insert fast switch with fallback to eqq
-        addInstr(new BSwitchInstr(jumps, value, eqqPath, targets, elseLabel, valueClass));
+        addInstr(new BSwitchInstr(jumps, operands, value, eqqPath, targets, elseLabel, valueClass));
         addInstr(new LabelInstr(eqqPath));
     }
 
