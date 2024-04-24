@@ -1,12 +1,10 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Fixnum;
-import org.jruby.ir.operands.FrozenString;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Symbol;
@@ -115,7 +113,7 @@ public class BSwitchInstr extends MultiBranchInstr {
                 Operand operand = jumpOperands[i];
                 if (operand instanceof Symbol) {
                     jumps[i] = ((Symbol) operand).getSymbol().getId();
-                } else if (operand instanceof FrozenString) {
+                } else if (operand instanceof Fixnum) {
                     jumps[i] = (int) ((Fixnum) operand).getValue();
                 }
             }
