@@ -1267,20 +1267,6 @@ public class JVMVisitor extends IRVisitor {
     }
 
     private void compileCallCommon(IRBytecodeAdapter m, CallBase call) {
-        // certain methods interfere with compilation and are rejected
-        switch (call.getName().idString()) {
-            case "ruby2_keywords":
-                /*
-                   if called against a child scope (method or block) from a parent that has been compiled, it will have
-                   no effect, since the child is already compiled to use non-ruby2_keywords logic. We reject compiling
-                   such scopes, to avoid too-eagerly compiling a child that is intended to change to ruby2_keywords
-                   logic later. The use of ruby2_keywords is already uncommon but using it in a scope that also is
-                   called frequently enough to JIT is even more uncommon (at time of writing, this pattern only appears
-                   in tests for ruby2_keywords behavior, in mri/ruby/test_keyword.rb).
-                 */
-                throw new NotCompilableException("ruby2_keywords can change behavior of already-compiled code");
-        }
-
         boolean functional = call.getCallType() == CallType.FUNCTIONAL || call.getCallType() == CallType.VARIABLE;
 
         Operand[] args = call.getCallArgs();
@@ -1962,7 +1948,8 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadSelfBlock();
         jvmMethod().loadArgs();
         jvmAdapter().ldc(jvm.methodData().scope.receivesKeywordArgs());
-        jvmAdapter().ldc(jvm.methodData().scope.isRuby2Keywords());
+        jvmMethod().loadStaticScope();
+        jvmAdapter().invokevirtual(p(StaticScope.class), "isRuby2Keywords", sig(boolean.class));
         jvmMethod().invokeIRHelper("prepareBlockArgs", sig(IRubyObject[].class, ThreadContext.class, Block.class, IRubyObject[].class, boolean.class, boolean.class));
         jvmMethod().storeArgs();
     }
@@ -2156,15 +2143,15 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void ReceiveKeywordsInstr(ReceiveKeywordsInstr instr) {
         int argsLength = jvm.methodData().specificArity;
-        boolean ruby2KeywordsMethod = jvm.methodData().scope.isRuby2Keywords();
 
         if (argsLength >= 0) {
             if (argsLength > 0) {
                 jvmMethod().loadContext();
                 jvmAdapter().aload(3 + argsLength - 1); // 3 - 0-2 are not args // FIXME: This should get abstracted
-                jvmMethod().invokeIRHelper(
-                        ruby2KeywordsMethod ? "receiveSpecificArityRuby2Keywords" : "receiveSpecificArityKeywords",
-                        sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
+                jvmMethod().loadStaticScope();
+                jvmAdapter().invokevirtual(p(StaticScope.class), "isRuby2Keywords", sig(boolean.class));
+                jvmMethod().invokeIRHelper("receiveSpecificArityKeywords",
+                        sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, boolean.class));
                 jvmAdapter().astore(3 + argsLength - 1); // 3 - 0-2 are not args // FIXME: This should get abstracted
             } else {
                 jvmMethod().loadContext();
@@ -2174,15 +2161,11 @@ public class JVMVisitor extends IRVisitor {
         } else {
             jvmMethod().loadContext();
             jvmMethod().loadArgs();
-            if (!(ruby2KeywordsMethod || instr.hasRestArg() || instr.acceptsKeywords())) {
-                jvmMethod().invokeIRHelper("receiveNormalKeywordsNoRestNoKeywords", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class));
-            } else {
-                jvmAdapter().ldc(instr.hasRestArg());
-                jvmAdapter().ldc(instr.acceptsKeywords());
-                jvmMethod().invokeIRHelper(
-                        ruby2KeywordsMethod ? "receiveRuby2Keywords" : "receiveNormalKeywords",
-                        sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, boolean.class, boolean.class));
-            }
+            jvmAdapter().ldc(instr.hasRestArg());
+            jvmAdapter().ldc(instr.acceptsKeywords());
+            jvmMethod().loadStaticScope();
+            jvmAdapter().invokevirtual(p(StaticScope.class), "isRuby2Keywords", sig(boolean.class));
+            jvmMethod().invokeIRHelper("receiveKeywords", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, boolean.class, boolean.class, boolean.class));
         }
         jvmStoreLocal(instr.getResult());
     }
