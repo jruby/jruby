@@ -414,9 +414,14 @@ public class Java implements Library {
 
     @SuppressWarnings("deprecation")
     public static RubyModule getProxyClass(final Ruby runtime, final Class<?> clazz) {
+        return getProxyClass(runtime, clazz, Options.JI_EAGER_CONSTANTS.load());
+    }
+
+    @SuppressWarnings("deprecation")
+    public static RubyModule getProxyClass(final Ruby runtime, final Class<?> clazz, boolean setConstant) {
         RubyModule proxy = runtime.getJavaSupport().getUnfinishedProxy(clazz);
         if (proxy != null) return proxy;
-        return runtime.getJavaSupport().getProxyClassFromCache(clazz);
+        return runtime.getJavaSupport().getProxyClassFromCache(clazz, setConstant);
     }
 
     // expected to handle Java proxy (Ruby) sub-classes as well
@@ -473,7 +478,6 @@ public class Java implements Library {
             proxy.includeModule(extModule);
         }
         Initializer.setupProxyModule(runtime, javaClass, proxy);
-        addToJavaPackageModule(proxy);
     }
 
     private static void generateClassProxy(Ruby runtime, Class<?> clazz, RubyClass proxy, RubyClass superClass) {
@@ -495,7 +499,6 @@ public class Java implements Library {
             } else {
                 proxy.getMetaClass().defineAnnotatedMethods(OldStyleExtensionInherited.class);
             }
-            addToJavaPackageModule(proxy);
         }
         else {
             createProxyClass(runtime, proxy, clazz, superClass, false);
@@ -503,9 +506,6 @@ public class Java implements Library {
             final Class<?>[] interfaces = clazz.getInterfaces();
             for ( int i = interfaces.length; --i >= 0; ) {
                 proxy.includeModule(getInterfaceModule(runtime, interfaces[i]));
-            }
-            if ( Modifier.isPublic(clazz.getModifiers()) ) {
-                addToJavaPackageModule(proxy);
             }
         }
 
@@ -824,9 +824,7 @@ public class Java implements Library {
 
     // package scheme 2: separate module for each full package name, constructed
     // from the camel-cased package segments: Java::JavaLang::Object,
-    private static void addToJavaPackageModule(RubyModule proxyClass) {
-        final Ruby runtime = proxyClass.getRuntime();
-        final Class<?> clazz = (Class<?>)proxyClass.dataGetStruct();
+    static void addToJavaPackageModule(Ruby runtime, Class<?> clazz, RubyModule proxyClass) {
         final String fullName;
         if ( ( fullName = clazz.getName() ) == null ) return;
 
@@ -1074,7 +1072,7 @@ public class Java implements Library {
         } catch (ClassNotFoundException ex) { // used to catch NoClassDefFoundError for whatever reason
             return null;
         }
-        return getProxyClass(runtime, clazz);
+        return getProxyClass(runtime, clazz, true);
     }
 
     private static int mapMajorMinorClassVersionToJavaVersion(String msg, final int offset) {
