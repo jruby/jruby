@@ -465,7 +465,9 @@ public abstract class RubyParserBase {
     public Node newline_node(Node node, int line) {
         if (node == null) return null;
 
-        node = remove_begin(node);
+        Node newNode = remove_begin(node);
+        // Conservative fix...try and use line unless we see remove has been removed then use the newNode.
+        if (newNode != node) line = newNode.getLine();
         coverLine(line);
         node.setNewline();
 
@@ -679,11 +681,11 @@ public abstract class RubyParserBase {
     }
     
     public void warnUnlessEOption(ID id, Node node, String message) {
-        if (isInline()) warning(id, lexer.getFile(), node.getLine(), message);
+        if (!isInline()) warning(id, lexer.getFile(), node.getLine(), message);
     }
 
     private boolean isInline() {
-        return type != ParserType.INLINE;
+        return type == ParserType.INLINE;
     }
 
     boolean value_expr_check(Node node) {
@@ -961,7 +963,7 @@ public abstract class RubyParserBase {
         return node == null ? NilImplicitNode.NIL : node;
     }
 
-    private Node cond0(Node node, boolean method) {
+    private Node cond0(Node node, ConditionType type) {
         checkAssignmentInCondition(node);
 
         if (node == null) return new NilNode(lexer.getRubySourceline());
@@ -973,89 +975,110 @@ public abstract class RubyParserBase {
             case DSTRNODE:
             case EVSTRNODE:
             case STRNODE:
-                if (!method) warn(node.getLine(), "string literal in condition");
+                switchByCondTypeWarn(type, node.getLine(), "string ");
                 break;
             case DREGEXPNODE: {
                 int line = node.getLine();
 
+                if (!isInline()) switchByCondTypeWarning(type, node.getLine(), "regex ");
+
                 return new Match2Node(line, node, new GlobalVarNode(line, symbolID(DOLLAR_UNDERSCORE)));
             }
             case ANDNODE:
-                leftNode = cond0(((AndNode) node).getFirstNode(), false);
-                rightNode = cond0(((AndNode) node).getSecondNode(), false);
+                leftNode = cond0(((AndNode) node).getFirstNode(), ConditionType.IN_COND);
+                rightNode = cond0(((AndNode) node).getSecondNode(), ConditionType.IN_COND);
             
                 return new AndNode(node.getLine(), makeNullNil(leftNode), makeNullNil(rightNode));
             case ORNODE:
-                leftNode = cond0(((OrNode) node).getFirstNode(), false);
-                rightNode = cond0(((OrNode) node).getSecondNode(), false);
+                leftNode = cond0(((OrNode) node).getFirstNode(), ConditionType.IN_COND);
+                rightNode = cond0(((OrNode) node).getSecondNode(), ConditionType.IN_COND);
             
                 return new OrNode(node.getLine(), makeNullNil(leftNode), makeNullNil(rightNode));
             case DOTNODE: {
                 DotNode dotNode = (DotNode) node;
-                if (dotNode.isLiteral()) return node;
-            
+
+                // FIXME: I think we can delete this
                 ByteList label = new ByteList(new byte[] {'F', 'L', 'I', 'P'}, USASCII_ENCODING);
                 label.append(Long.toString(node.hashCode()).getBytes());
                 RubySymbol symbolID = symbolID(label);
 
-                if (!method && !isInline()) {
-                    if ((dotNode.getBeginNode() instanceof TrueNode && dotNode.getEndNode() instanceof FalseNode) ||
-                            (dotNode.getBeginNode() instanceof FalseNode && dotNode.getEndNode() instanceof TrueNode)) {
-                        warn(node.getLine(), "range literal in condition");
-                    }
+                Node begin = range_op(((DotNode) node).getBeginNode());
+                Node end = range_op(((DotNode) node).getEndNode());
 
-                }
-
-                return new FlipNode(node.getLine(),
-                        getFlipConditionNode(((DotNode) node).getBeginNode()),
-                        getFlipConditionNode(((DotNode) node).getEndNode()),
+                return new FlipNode(node.getLine(), begin, end,
                         dotNode.isExclusive(), currentScope.getLocalScope().addVariable(symbolID.idString()));
             }
             case SYMBOLNODE:
             case DSYMBOLNODE:
-            case FIXNUMNODE:
-                if (!method) warn(node.getLine(), "literal in condition");
-                break;
+                switchByCondTypeWarning(type, node.getLine(), "symbol ");
             case REGEXPNODE:
                 if (Options.PARSER_WARN_REGEX_CONDITION.load()) {
-                    if (!method) warnUnlessEOption(ID.REGEXP_LITERAL_IN_CONDITION, node, "regex literal in condition");
+                    if (!isInline()) switchByCondTypeWarn(type, node.getLine(), "regex ");
                 }
-            
                 return new MatchNode(node.getLine(), node);
+            case FIXNUMNODE:
+                switchByCondTypeWarning(type, node.getLine(), "");
+                break;
+
         }
 
         return node;
     }
 
+    private void switchByCondTypeWarning(ConditionType type, int line, String string) {
+        switch(type) {
+            case IN_COND:
+                warning(line, string + "literal in condition");
+                break;
+            case IN_FF:
+                warning(line, string + "literal in flip-flop");
+                break;
+        }
+    }
+
+    private void switchByCondTypeWarn(ConditionType type, int line, String string) {
+        switch(type) {
+            case IN_COND:
+                warn(line, string + "literal in condition");
+                break;
+            case IN_FF:
+                warn(line, string + "literal in flip-flop");
+                break;
+        }
+    }
+
     public Node cond(Node node) {
-        return cond0(node, false);
+        return cond0(node, ConditionType.IN_COND);
     }
 
     public Node method_cond(Node node) {
-        return cond0(node, true);
+        return cond0(node, ConditionType.IN_OP);
     }
 
     // we just reverse then/else for unless
     public Node new_if(int line, Node condition, Node thenNode, Node elseNode) {
         if (condition == null) return elseNode;
 
-        condition = cond0(condition, false);
+        condition = cond0(condition, ConditionType.IN_COND);
 
         return new IfNode(line, condition, thenNode, elseNode);
     }
 
-    /* MRI: range_op */
-    private Node getFlipConditionNode(Node node) {
-        if (!isInline()) return node;
-        
-        node = cond0(node, false);
+    enum ConditionType {
+        IN_OP, IN_COND, IN_FF;
+    }
 
+    /* MRI: range_op */
+    private Node range_op(Node node) {
+        if (node == null) return null;
+
+        value_expr(node);
         if (node instanceof FixnumNode) {
-            warnUnlessEOption(ID.LITERAL_IN_CONDITIONAL_RANGE, node, "integer literal in conditional range");
+            warnUnlessEOption(ID.LITERAL_IN_CONDITIONAL_RANGE, node, "integer literal in flip-flop");
             return call_bin_op(node, EQ_EQ, new GlobalVarNode(node.getLine(), symbolID(DOLLAR_DOT)));
         } 
 
-        return node;
+        return cond0(node, ConditionType.IN_FF);
     }
 
     public SValueNode newSValueNode(int line, Node node) {

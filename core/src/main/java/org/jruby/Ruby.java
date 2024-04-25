@@ -4880,8 +4880,7 @@ public final class Ruby implements Constantizable {
             DEDUP_WRAPPER_CACHE.remove();
 
             // Never use incoming value as key
-            deduped = string.strDup(this);
-            deduped.setFrozen(true);
+            deduped = string.dupAsFString(this, stringClass);
 
             final WeakReference<RubyString> weakref = new WeakReference<>(deduped);
 

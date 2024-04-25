@@ -36,6 +36,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.BasicObjectSites;
+import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.ivars.VariableAccessor;
 import java.io.IOException;
@@ -1816,7 +1817,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             evalStr = arg.convertToString();
         }
 
-        String file = "(eval at " + context.getFileAndLine() + ")";
+        RubyStackTraceElement singleBacktrace = context.getSingleBacktrace();
+        String file = "(eval at " + singleBacktrace.getFileName() + ":" +  + singleBacktrace.getLineNumber() + ")";
         int line = 0;
 
         return evalUnder(context, mod, evalStr, file, line, evalType);

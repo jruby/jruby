@@ -5,6 +5,7 @@ import org.jruby.ir.instructions.CallBase;
 import org.jruby.util.ByteList;
 
 import java.math.BigInteger;
+import java.util.List;
 
 public interface ValueCompiler {
     /**
@@ -73,6 +74,13 @@ public interface ValueCompiler {
     /**
      * Stack required: none
      *
+     * @param bl ByteList for the String to push
+     */
+    void pushFrozenString(ByteList bl, int cr);
+
+    /**
+     * Stack required: none
+     *
      * @param bl ByteList to push
      */
     void pushByteList(ByteList bl);
@@ -98,6 +106,26 @@ public interface ValueCompiler {
      * @param exclusive whether this is an exclusive range
      */
     void pushRange(long begin, long end, boolean exclusive);
+
+    /**
+     * Build and save a literal fixnum.. range.
+     * <p>
+     * Stack required: context
+     *
+     * @param end end value
+     * @param exclusive whether this is an exclusive range
+     */
+    void pushEndlessRange(long end, boolean exclusive);
+
+    /**
+     * Build and save a literal ..fixnum range.
+     * <p>
+     * Stack required: context
+     *
+     * @param begin begin value
+     * @param exclusive whether this is an exclusive range
+     */
+    void pushBeginlessRange(long begin, boolean exclusive);
 
     /**
      * Build and save a literal string..string range.
@@ -203,6 +231,11 @@ public interface ValueCompiler {
      * Stack required: none
      */
     void pushBufferString(Encoding encoding, int size);
+
+    enum DStringElementType { STRING, OTHER }
+    record DStringElement<T>(DStringElementType type, T value) {}
+
+    void buildDynamicString(Encoding encoding, int size, boolean frozen, boolean debugFrozen, String file, int line, List<DStringElement> elements);
 
     void pushSymbolClass();
 }

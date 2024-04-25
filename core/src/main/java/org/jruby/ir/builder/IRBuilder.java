@@ -794,13 +794,19 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         body.apply();
     }
 
-    // if-only
-    protected void cond_ne(Label label, Operand value, Operand test) {
-        addInstr(BNEInstr.create(label, value, test));
+    // if-only true
+    protected void cond_ne_true(Label label, Operand value) {
+        addInstr(new BFalseInstr(label, value));
     }
-    // if !test/else
-    protected void cond_ne(Label endLabel, Operand value, Operand test, RunIt body) {
-        addInstr(BNEInstr.create(endLabel, value, test));
+
+    // if-only false
+    protected void cond_ne_false(Label label, Operand value) {
+        addInstr(new BTrueInstr(label, value));
+    }
+
+    // if !test/else nil
+    protected void cond_ne_nil(Label endLabel, Operand value, RunIt body) {
+        addInstr(BNEInstr.create(endLabel, value, nil()));
         body.apply();
     }
 
@@ -1063,6 +1069,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             // If we have ensure blocks, have to run those first!
             if (!activeEnsureBlockStack.isEmpty()) emitEnsureBlocks(currLoop);
 
+            currLoop.hasBreak = true;
             addInstr(new CopyInstr(currLoop.loopResult, value.run()));
             addInstr(new JumpInstr(currLoop.loopEndLabel));
         } else {
@@ -1100,10 +1107,11 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         Variable result = temp();      // final result value of the case statement.
         Map<Label, U> bodies = new HashMap<>();        // we save bodies and emit them after processing when values.
         Set<IRubyObject> seenLiterals = new HashSet<>();  // track to warn on duplicated values in when clauses.
+        Map<IRubyObject, java.lang.Integer> originalLocs = new HashMap<>();
 
         for (U arm: arms) { // Emit each when value test against the case value.
             Label bodyLabel = getNewLabel();
-            buildWhenArgs((W) arm, testValue, bodyLabel, seenLiterals);
+            buildWhenArgs((W) arm, testValue, bodyLabel, seenLiterals, originalLocs);
             bodies.put(bodyLabel, whenBody((W) arm));
         }
 
@@ -1364,7 +1372,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
             // ----- Code for when we are in state 1 -----
             Operand s1Val = build(begin);
-            addInstr(BNEInstr.create(s2Label, s1Val, tru()));
+            addInstr(new BFalseInstr(s2Label, s1Val));
 
             // s1 condition is true => set returnVal to true & move to state 2
             addInstr(new CopyInstr(returnVal, tru()));
@@ -1382,7 +1390,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             // ----- Code for when we are in state 2 -----
             Operand s2Val = build(end);
             addInstr(new CopyInstr(returnVal, tru()));
-            addInstr(BNEInstr.create(doneLabel, s2Val, tru()));
+            addInstr(new BFalseInstr(doneLabel, s2Val));
 
             // s2 condition is true => move to state 1
             addInstr(new CopyInstr(flipState, s1));
@@ -1502,7 +1510,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     protected Operand buildIter(U var, U body, StaticScope staticScope, Signature signature, int line, int endLine) {
-        IRClosure closure = new IRClosure(getManager(), scope, line, staticScope, signature, coverageMode);
+        ByteList prefix = createPrefixForIter(var);
+        IRClosure closure = new IRClosure(getManager(), scope, line, staticScope, signature, prefix, coverageMode);
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
         getManager().getBuilderFactory().newIRBuilder(getManager(), closure, this, encoding).buildIterInner(methodName, var, body, endLine);
@@ -1510,6 +1519,31 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         methodName = null;
 
         return new WrappedIRClosure(buildSelf(), closure);
+    }
+
+    private ByteList createPrefixForLambda(U var) {
+        ByteList prefix = new ByteList("->(".getBytes());
+        createPrefixFromArgs(prefix, var);
+        prefix.append(')');
+
+        return prefix;
+    }
+
+    private ByteList createPrefixForIter(U var) {
+        ByteList prefix = new ByteList();
+        if (methodName != null) {
+            prefix.append(methodName.getBytes());
+            prefix.append(" ".getBytes());
+        }
+        prefix.append("&|".getBytes());
+        createPrefixFromArgs(prefix, var);
+        prefix.append('|');
+
+        return prefix;
+    }
+
+    protected void createPrefixFromArgs(ByteList prefix, U var) {
+        // FIXME: Made for backwards compat for Prism not having this method in all versions (0.15).
     }
 
     protected void buildIterInner(RubySymbol methodName, U var, U body, int endLine) {
@@ -1555,7 +1589,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     public Operand buildLambda(U args, U body, StaticScope staticScope, Signature signature, int line) {
-        IRClosure closure = new IRClosure(getManager(), scope, line, staticScope, signature, coverageMode);
+        IRClosure closure = new IRClosure(getManager(), scope, line, staticScope, signature,
+                createPrefixForLambda(args), coverageMode);
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
         getManager().getBuilderFactory().newIRBuilder(getManager(), closure, this, encoding).buildLambdaInner(args, body);
@@ -1647,7 +1682,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             if (bodyNode != null) build(bodyNode);
 
             // Next jumps here
-            addInstr(new LabelInstr(loop.iterEndLabel));
+            if (loop.hasNext) addInstr(new LabelInstr(loop.iterEndLabel));
             if (isLoopHeadCondition) {
                 addInstr(new JumpInstr(loop.loopStartLabel));
             } else {
@@ -1660,7 +1695,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             addInstr(new CopyInstr(loopResult, nil()));
 
             // Loop end -- breaks jump here bypassing the result set up above
-            addInstr(new LabelInstr(loop.loopEndLabel));
+            if (loop.hasBreak) addInstr(new LabelInstr(loop.loopEndLabel));
 
             // Done with loop
             loopStack.pop();
@@ -1731,6 +1766,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         if (!activeEnsureBlockStack.isEmpty()) emitEnsureBlocks(currLoop);
 
         if (currLoop != null) {
+            currLoop.hasNext = true;
             // If a regular loop, the next is simply a jump to the end of the iteration
             addInstr(new JumpInstr(currLoop.iterEndLabel));
         } else {
@@ -1846,7 +1882,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         addInstr(BNEInstr.create(falseCheck, result, UndefinedValue.UNDEFINED));
         addInstr(new JumpInstr(assign));
         addInstr(new LabelInstr(falseCheck));
-        addInstr(BNEInstr.create(done, result, fals()));
+        addInstr(new BTrueInstr(done, result));
         addInstr(new LabelInstr(assign));
         Operand rhsValue = build(right);
         copy(result, rhsValue);
@@ -1869,11 +1905,20 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     protected abstract Operand buildColon2ForConstAsgnDeclNode(U lhs, Variable valueResult, boolean constMissing);
 
+    @Deprecated
     protected Operand buildOpAsgnConstDecl(Y left, U right, RubySymbol operator) {
         Operand lhs = build((U) left);
         Operand rhs = build(right);
         Variable result = call(temp(), lhs, operator, rhs);
         return copy(temp(), putConstant(left, result));
+    }
+
+    protected Operand buildOpAsgnConstDecl(Y left, RubySymbol name, U right, RubySymbol operator) {
+        Operand parent = buildColon2ForConstAsgnDeclNode((U) left, temp(), false);
+        Operand lhs = searchModuleForConst(temp(), parent, name);
+        Operand rhs = build(right);
+        Variable result = call(temp(), lhs, operator, rhs);
+        return copy(temp(), putConstant(parent, name, result));
     }
 
     protected abstract Operand putConstant(Y constant, Operand value);
@@ -2012,7 +2057,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         buildPatternDeconstructRespondTo(testEnd, result, obj, isSinglePattern, errorString, "deconstruct");
 
         label("deconstruct_cache_end", (deconstruct_cache_end) ->
-                cond_ne(deconstruct_cache_end, deconstructed, nil(), () -> {
+                cond_ne_nil(deconstruct_cache_end, deconstructed, () -> {
                     call(deconstructed, obj, "deconstruct");
                     label("array_check_end", arrayCheck -> {
                         addInstr(new EQQInstr(scope, result, getManager().getArrayClass(), deconstructed, false, false));
@@ -2032,7 +2077,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             for (int i = 0; i < preArgsSize; i++) {
                 Variable elt = call(temp(), deconstructed, "[]", fix(i));
                 buildPatternEach(testEnd, result, obj, copy(nil()), elt, pre[i], inAlteration, isSinglePattern, errorString);
-                cond_ne(testEnd, result, tru());
+                cond_ne_true(testEnd, result);
             }
         }
 
@@ -2045,7 +2090,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                 Variable elt = call(temp(), deconstructed, "[]", min, max);
 
                 buildPatternMatch(result, obj, copy(nil()), rest, elt, inAlteration, isSinglePattern, errorString);
-                cond_ne(testEnd, result, tru());
+                cond_ne_true(testEnd, result);
             }
         }
 
@@ -2056,7 +2101,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                 Variable elt = call(temp(), deconstructed, "[]", k);
 
                 buildPatternEach(testEnd, result, obj, copy(nil()), elt, post[i], inAlteration, isSinglePattern, errorString);
-                cond_ne(testEnd, result, tru());
+                cond_ne_true(testEnd, result);
             }
         }
     }
@@ -2067,7 +2112,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         if (isSinglePattern) {
             buildPatternSetEQQError(errorString, result, obj, expression, obj);
         }
-        cond_ne(testEnd, result, tru());
+        cond_ne_true(testEnd, result);
     }
 
     protected void buildPatternSetEQQError(Variable errorString, Variable result, Operand obj, Operand expression, Operand value) {
@@ -2076,7 +2121,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     protected void buildPatternSetGeneralError(Variable errorString, Variable result, Operand... args) {
         label("match_succeeded", (matchSucceeded) -> {
-            cond_ne(matchSucceeded, result, fals());
+            cond_ne_false(matchSucceeded, result);
             fcall(errorString, getManager().getObjectClass(), "sprintf", args);
         });
     }
@@ -2087,7 +2132,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         if (constant != null) buildPatternConstant(testEnd, result, constant, obj, isSinglePattern, errorString);
 
         label("deconstruct_end", deconstructCheck ->
-            cond_ne(deconstructCheck, deconstructed, nil(), () -> {
+            cond_ne_nil(deconstructCheck, deconstructed, () -> {
                 buildPatternDeconstructRespondTo(testEnd, result, obj, isSinglePattern, errorString, "deconstruct");
 
                 call(deconstructed, obj, "deconstruct");
@@ -2117,14 +2162,14 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                         Operand deconstructFixnum = as_fixnum(deconstructIndex);
                         Operand test = call(temp(), deconstructed, "[]", deconstructFixnum);
                         buildPatternMatch(result, obj, copy(nil()), pat, test, false, isSinglePattern, errorString);
-                        cond_ne(bottom, result, tru());
+                        cond_ne_true(bottom, result);
                     });
 
                     if (pre != null && !isBareStar(pre)) {
                         Operand iFixnum = as_fixnum(i);
                         Operand test = call(temp(), deconstructed, "[]", getManager().newFixnum(0), iFixnum);
                         buildPatternMatch(result, obj, copy(nil()), pre, test, false, isSinglePattern, errorString);
-                        cond_ne(bottom, result, tru());
+                        cond_ne_true(bottom, result);
                     }
 
                     if (post != null && !isBareStar(post)) {
@@ -2133,7 +2178,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                         Operand lengthFixnum = as_fixnum(length);
                         Operand test = call(temp(), deconstructed, "[]", deconstructFixnum, lengthFixnum);
                         buildPatternMatch(result, obj, copy(nil()), post, test, false, isSinglePattern, errorString);
-                        cond_ne(bottom, result, tru());
+                        cond_ne_true(bottom, result);
                     }
                     jump(after);
                 });
@@ -2158,7 +2203,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         if (isSinglePattern) {
             buildPatternSetGeneralError(errorString, result, new FrozenString("%s: %s does not respond to #" + methodName), obj, obj);
         }
-        cond_ne(testEnd, result, tru());
+        cond_ne_true(testEnd, result);
     }
 
     protected Operand buildPatternCase(U test, U[] cases, U consequent) {
@@ -2240,7 +2285,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             buildPatternMatch(result, original, deconstructed, elseBody, value, inAlternation, isSinglePattern, errorString);
         }
         label("if_else_end", conditionalEnd -> {
-            cond_ne(conditionalEnd, result, tru());
+            cond_ne_true(conditionalEnd, result);
             Operand ifResult = build(condition);
             if (unless) {
                 call(result, ifResult, "!"); // FIXME: need non-dynamic dispatch to reverse result
@@ -2272,17 +2317,17 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         } else {
             call(result, d, "empty?");
             if (isSinglePattern) maybeGenerateIsNotEmptyErrorString(errorString, result, d);
-            cond_ne(testEnd, result, tru());
+            cond_ne_true(testEnd, result);
         }
 
         if (hasRest) {
             if (isNilRest(rest)) {
                 call(result, d, "empty?");
                 if (isSinglePattern) maybeGenerateIsNotEmptyErrorString(errorString, result, d);
-                cond_ne(testEnd, result, tru());
+                cond_ne_true(testEnd, result);
             } else if (!isBareStar(rest)) {
                 buildPatternEach(testEnd, result, obj, copy(nil()), d, rest, inAlteration, isSinglePattern, errorString);
-                cond_ne(testEnd, result, tru());
+                cond_ne_true(testEnd, result);
             }
         }
     }
@@ -2433,8 +2478,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     protected void buildRescueBodyInternal(U[] exceptions, U body, X consequent, Variable rv, Variable exc, Label endLabel,
                                  U reference) {
         // Compare and branch as necessary!
-        Label uncaughtLabel = getNewLabel();
-        Label caughtLabel = getNewLabel();
+        Label uncaughtLabel = getNewLabel("MISSED");
+        Label caughtLabel = getNewLabel("RESCUE");
         if (exceptions == null || exceptions.length == 0) {
             outputExceptionCheck(getManager().getStandardError(), exc, caughtLabel);
         } else {
@@ -2512,7 +2557,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         // Labels marking start, else, end of the begin-rescue(-ensure)-end block
         Label rBeginLabel = getNewLabel();
         Label rEndLabel   = ensure.end;
-        Label rescueLabel = getNewLabel(); // Label marking start of the first rescue code.
+        Label rescueLabel = getNewLabel("RESC_TEST"); // Label marking start of the first rescue code.
         ensure.needsBacktrace = needsBacktrace;
 
         addInstr(new LabelInstr(rBeginLabel));
@@ -2717,11 +2762,15 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         return nil();
     }
 
-    protected abstract void buildWhenArgs(W whenNode, Operand testValue, Label bodyLabel, Set<IRubyObject> seenLiterals);
+    // FIXME: This needs to pass node/line of first reference of literals have been shown.
+    protected abstract void buildWhenArgs(W whenNode, Operand testValue, Label bodyLabel,
+                                          Set<IRubyObject> seenLiterals,
+                                          Map<IRubyObject, java.lang.Integer> origLocs);
 
     protected void buildWhenValue(Variable eqqResult, Operand testValue, Label bodyLabel, U node,
-                                Set<IRubyObject> seenLiterals, boolean needsSplat) {
-        if (literalWhenCheck(node, seenLiterals)) { // we only emit first literal of the same value.
+                                  Set<IRubyObject> seenLiterals, Map<IRubyObject, java.lang.Integer> origLocs,
+                                  boolean needsSplat) {
+        if (literalWhenCheck(node, seenLiterals, origLocs)) { // we only emit first literal of the same value.
             Operand expression;
             if (isLiteralString(node)) {  // compile literal string whens as fstrings
                 expression = frozen_string(node);
@@ -2735,9 +2784,9 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     protected void buildWhenValues(Variable eqqResult, U[] exprValues, Operand testValue, Label bodyLabel,
-                         Set<IRubyObject> seenLiterals) {
+                         Set<IRubyObject> seenLiterals, Map<IRubyObject, java.lang.Integer> origLocs) {
         for (U value: exprValues) {
-            buildWhenValue(eqqResult, testValue, bodyLabel, value, seenLiterals, false);
+            buildWhenValue(eqqResult, testValue, bodyLabel, value, seenLiterals, origLocs, false);
         }
     }
 
@@ -2756,16 +2805,17 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     protected abstract Operand setupCallClosure(U args, U iter);
 
     // returns true if we should emit an eqq for this value (e.g. it has not already been seen yet).
-    protected boolean literalWhenCheck(U value, Set<IRubyObject> seenLiterals) {
+    protected boolean literalWhenCheck(U value, Set<IRubyObject> seenLiterals, Map<IRubyObject, java.lang.Integer> origLocs) {
         IRubyObject literal = getWhenLiteral(value);
 
         if (literal != null) {
             if (seenLiterals.contains(literal)) {
-                scope.getManager().getRuntime().getWarnings().warning(IRubyWarnings.ID.MISCELLANEOUS,
-                        getFileName(), getLine(value), "duplicated when clause is ignored");
+                getManager().getRuntime().getWarnings().warning(IRubyWarnings.ID.MISCELLANEOUS, getFileName(), getLine(value),
+                        "duplicated 'when' clause with line " + (origLocs.get(literal) + 1) + " is ignored");
                 return false;
             } else {
                 seenLiterals.add(literal);
+                origLocs.put(literal, getLine(value));
                 return true;
             }
         }

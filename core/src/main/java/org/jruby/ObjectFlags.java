@@ -12,10 +12,6 @@ public interface ObjectFlags {
     int NIL_F = registry.newFlag(RubyBasicObject.class);
     int FROZEN_F = registry.newFlag(RubyBasicObject.class);
 
-    // Deprecated and unused but don't move due to checks elsewhere for the following flags
-    @Deprecated
-    int TAINTED_F = registry.newFlag(RubyBasicObject.class);
-
     int CACHEPROXY_F = registry.newFlag(RubyModule.class);
     int NEEDSIMPL_F = registry.newFlag(RubyModule.class);
     int REFINED_MODULE_F = registry.newFlag(RubyModule.class);
@@ -24,6 +20,8 @@ public interface ObjectFlags {
     int INCLUDED_INTO_REFINEMENT = registry.newFlag(RubyModule.class);
     int TEMPORARY_NAME = registry.newFlag(RubyModule.class);
 
+    // order is important here; CR_7BIT_f needs to be 16 and CR_VALID_F needs to be 32 to match values in Prism parser
+    int FSTRING      = registry.newFlag(RubyString.class);
     int CR_7BIT_F    = registry.newFlag(RubyString.class);
     int CR_VALID_F   = registry.newFlag(RubyString.class);
 

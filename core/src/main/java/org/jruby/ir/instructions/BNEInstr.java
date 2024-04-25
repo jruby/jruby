@@ -1,8 +1,8 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.ir.IRManager;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
@@ -22,7 +22,7 @@ public class BNEInstr extends TwoOperandBranchInstr implements FixedArityInstr {
         return new BNEInstr(jmpTarget, v1, v2);
     }
 
-    public BNEInstr(Label jumpTarget, Operand v1, Operand v2) {
+    BNEInstr(Label jumpTarget, Operand v1, Operand v2) {
         super(Operation.BNE, jumpTarget, v1, v2);
     }
 
@@ -33,12 +33,10 @@ public class BNEInstr extends TwoOperandBranchInstr implements FixedArityInstr {
 
     // FIXME: Add !op_equal logic here for various immutable literal types
     @Override
-    public Instr simplifyBranch(FullInterpreterContext fic) {
-        if (getArg1().equals(getArg2())) {
-            return NopInstr.NOP;
-        } else {
-            return super.simplifyBranch(fic);
-        }
+    public Instr simplifyInstr(IRManager manager) {
+        if (getArg1().equals(getArg2())) return NopInstr.NOP;
+
+        return super.simplifyInstr(manager);
     }
 
     public static BNEInstr decode(IRReaderDecoder d) {
@@ -49,8 +47,12 @@ public class BNEInstr extends TwoOperandBranchInstr implements FixedArityInstr {
     public int interpretAndGetNewIPC(ThreadContext context, DynamicScope currDynScope, StaticScope currScope, IRubyObject self, Object[] temp, int ipc) {
         Object value1 = getArg1().retrieve(context, self, currScope, currDynScope, temp);
         Object value2 = getArg2().retrieve(context, self, currScope, currDynScope, temp);
-        boolean eql = getArg2() == context.getRuntime().getIRManager().getNil() || getArg2() == UndefinedValue.UNDEFINED ?
-                value1 == value2 : ((IRubyObject) value1).op_equal(context, (IRubyObject)value2).isTrue();
+        boolean eql;
+        if (getArg2() == context.getRuntime().getIRManager().getNil() || getArg2() == UndefinedValue.UNDEFINED) {
+            eql = value1 == value2;
+        } else {
+            eql = ((IRubyObject) value1).op_equal(context, (IRubyObject) value2).isTrue();
+        }
         return !eql ? getJumpTarget().getTargetPC() : ipc;
     }
 

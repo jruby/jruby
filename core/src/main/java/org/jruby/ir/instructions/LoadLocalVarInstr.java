@@ -41,7 +41,7 @@ public class LoadLocalVarInstr extends OneOperandResultBaseInstr implements Fixe
      * depth/offset.
      */
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+    protected void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
     }
 
     // SSS FIXME: This feels dirty

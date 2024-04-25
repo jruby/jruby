@@ -4,6 +4,7 @@ package org.jruby.ir.instructions;
 
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.IRFlags;
+import org.jruby.ir.IRManager;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Interp;
@@ -260,7 +261,7 @@ public abstract class Instr {
      * It is not required that it do so -- code correctness is not compromised by failure
      * to simplify
      */
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+    protected void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         Operand[] operands = getOperands();
         for (int i = 0; i < operands.length; i++) {
             setOperand(i, operands[i].getSimplifiedOperand(valueMap, force));
@@ -280,10 +281,14 @@ public abstract class Instr {
      * @param valueMap Mapping from operands to their simplified values
      * @return simplified result / output of this instruction
      */
-    public Operand simplifyAndGetResult(IRScope scope, Map<Operand, Operand> valueMap) {
+    public Operand simplifyOperands(IRScope scope, Map<Operand, Operand> valueMap) {
         simplifyOperands(valueMap, false);
 
         return null; // By default, no simplifications!
+    }
+
+    public Instr simplifyInstr(IRManager manager) {
+        return this;
     }
 
     @Interp

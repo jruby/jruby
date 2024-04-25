@@ -403,8 +403,6 @@ public abstract class RubyInteger extends RubyNumeric {
             bytes.setEncoding(i < 0x80 ? USASCIIEncoding.INSTANCE : ASCIIEncoding.INSTANCE);
         }
     }
-    @Deprecated
-    public static final ByteList[] SINGLE_CHAR_BYTELISTS19 = SINGLE_CHAR_BYTELISTS;
 
     public static ByteList singleCharByteList(final byte index) {
         return SINGLE_CHAR_BYTELISTS[index & 0xFF];

@@ -1594,15 +1594,15 @@ public class RubyDate extends RubyObject {
         str.append(':').append(' ');
         str.append(to_s(context).getByteList()); // to_s
         str.append(' ').append('(').append('(');
-        str.append(ConvertBytes.longToByteList(getJulianDayNumber(), 10));
+        str.append(ConvertBytes.longToByteListCached(getJulianDayNumber()));
         str.append('j').append(',');
-        str.append(ConvertBytes.longToByteList(s, 10));
+        str.append(ConvertBytes.longToByteListCached(s));
         str.append('s').append(',');
-        str.append(ConvertBytes.longToByteList(ns, 10));
+        str.append(ConvertBytes.longToByteListCached(ns));
         str.append('n').append(')');
         str.append(',');
         if (off >= 0) str.append('+');
-        str.append(ConvertBytes.longToByteList(off, 10));
+        str.append(ConvertBytes.longToByteListCached(off));
         str.append('s').append(',');
         if (start == GREGORIAN) {
             str.append('-').append('I').append('n').append('f');
@@ -1611,7 +1611,7 @@ public class RubyDate extends RubyObject {
             str.append('I').append('n').append('f');
         }
         else {
-            str.append(ConvertBytes.longToByteList(start, 10));
+            str.append(ConvertBytes.longToByteListCached(start));
         }
         str.append('j').append(')').append('>');
 
@@ -1955,7 +1955,7 @@ public class RubyDate extends RubyObject {
 
             RubyString d = (RubyString) match.at(1);
             RubyString mon = (RubyString) match.at(2);
-            mon = RubyString.newString(runtime, ConvertBytes.longToByteList(mon_num(mon)));
+            mon = RubyString.newStringShared(runtime, ConvertBytes.byteToSharedByteList((short) mon_num(mon)));
             RubyString b = matchOrNull(context, match, 3);
             RubyString y = matchOrNull(context, match, 4);
 
@@ -1991,7 +1991,7 @@ public class RubyDate extends RubyObject {
             final RubyMatchData match = (RubyMatchData) sub;
 
             RubyString mon = (RubyString) match.at(1);
-            mon = RubyString.newString(runtime, ConvertBytes.longToByteList(mon_num(mon)));
+            mon = RubyString.newStringShared(runtime, ConvertBytes.byteToSharedByteList((short) mon_num(mon)));
             RubyString d = (RubyString) match.at(2);
             RubyString b = matchOrNull(context, match, 3);
             RubyString y = matchOrNull(context, match, 4);

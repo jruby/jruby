@@ -85,9 +85,9 @@ public class RubyStackTraceElement implements java.io.Serializable {
 
         line.setEncoding(methodSym.getEncoding());
 
-        line.cat(element.getFileName().getBytes());
+        line.catString(element.getFileName());
         line.cat(CommonByteLists.COLON);
-        line.cat(ConvertBytes.longToByteList(element.getLineNumber()));
+        line.cat(ConvertBytes.longToByteListCached(element.getLineNumber()));
         line.cat(CommonByteLists.BACKTRACE_IN);
         if (element.getFrameType() == FrameType.BLOCK) line.catString("block in ");
         line.cat(methodSym.getBytes());

@@ -320,7 +320,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     }
 
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+    protected void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         super.simplifyOperands(valueMap, force);
 
         // Recompute splatMap

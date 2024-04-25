@@ -20,12 +20,16 @@ public class IGVDumper {
     PrintStream writer;
     final String baseLabel;
 
-    public IGVDumper(String baseLabel) {
-        this.baseLabel = baseLabel;
+    public IGVDumper(String baseLabel, boolean saveToFile) {
+        this.baseLabel = sanitize(baseLabel);
 
         try {
-            socket = new Socket(HOST, PORT);
-            writer = new PrintStream(socket.getOutputStream());
+            if (saveToFile) {
+                writer = System.out;
+            } else {
+                socket = new Socket(HOST, PORT);
+                writer = new PrintStream(socket.getOutputStream());
+            }
             startTag(writer, "graphDocument");
             startTag(writer, "group");
             startTag(writer, "properties");
@@ -36,6 +40,14 @@ public class IGVDumper {
         }
     }
 
+    public static String sanitize(String string) {
+        return string.replaceAll("&", "&amp;").
+                replaceAll("\"", "&quot;").
+                replaceAll("<", "&lt;").
+                replaceAll(">", "&gt;").
+                replaceAll("'", "&apos;");
+    }
+
     public void dump(CFG cfg, String name) {
         new IGVCFGVisitor(cfg, writer, name);
     }
@@ -44,8 +56,10 @@ public class IGVDumper {
         endTag(writer, "group");
         endTag(writer, "graphDocument");
         try {
-            writer.close();
-            socket.close();
+            if (socket != null) {
+                writer.close();
+                socket.close();
+            }
         } catch (IOException e) {
         }
     }

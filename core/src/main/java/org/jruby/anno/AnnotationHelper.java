@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
@@ -103,15 +104,25 @@ public class AnnotationHelper {
 
     public static void populateMethodIndex(Map<Set<FrameField>, List<String>> accessGroups, BiConsumer<Integer, String> action) {
         if (!accessGroups.isEmpty()) {
-            for (Map.Entry<Set<FrameField>, List<String>> accessEntry : accessGroups.entrySet()) {
-                Set<FrameField> reads = accessEntry.getKey();
-                List<String> names = accessEntry.getValue();
-
+            accessGroups.forEach((reads, names) -> {
                 int bits = FrameField.pack(reads.stream().toArray(n -> new FrameField[n]));
-                String namesJoined = names.stream().distinct().collect(Collectors.joining(";"));
+
+                StringJoiner joiner = new StringJoiner(";");
+                Set<String> uniqueValues = new HashSet<>();
+                for (String name : names) {
+                    if (uniqueValues.add(name)) {
+                        joiner.add(name);
+
+                        // in order to support these names aliased with "!" we eagerly add those names as well (jruby/jruby#8200)
+                        if (name.matches("^[a-z_]+$")) {
+                            joiner.add(name + '!');
+                        }
+                    }
+                }
+                String namesJoined = joiner.toString();
 
                 action.accept(bits, namesJoined);
-            }
+            });
         }
     }
 

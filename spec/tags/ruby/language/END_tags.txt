@@ -1,1 +1,0 @@
-fails:The END keyword is affected by the toplevel assignment

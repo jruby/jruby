@@ -78,7 +78,7 @@ import static org.jruby.util.Numeric.nurat_rationalize_internal;
   * A representation of a float object
  */
 @JRubyClass(name="Float", parent="Numeric")
-public class RubyFloat extends RubyNumeric {
+public class RubyFloat extends RubyNumeric implements Appendable {
     public static final int ROUNDS = 1;
     public static final int RADIX = 2;
     public static final int MANT_DIG = 53;
@@ -256,10 +256,10 @@ public class RubyFloat extends RubyNumeric {
     public IRubyObject to_s() {
         final Ruby runtime = metaClass.runtime;
         if (Double.isInfinite(value)) {
-            return RubyString.newString(runtime, value < 0 ? "-Infinity" : "Infinity");
+            return RubyString.newStringShared(runtime, value < 0 ? NEGATIVE_INFINITY_TO_S_BYTELIST : POSITIVE_INFINITY_TO_S_BYTELIST);
         }
         if (Double.isNaN(value)) {
-            return RubyString.newString(runtime, "NaN");
+            return RubyString.newStringShared(runtime, NAN_TO_S_BYTELIST);
         }
 
         ByteList buf = new ByteList();
@@ -287,6 +287,10 @@ public class RubyFloat extends RubyNumeric {
 
         return runtime.newString(buf);
     }
+
+    public static final ByteList POSITIVE_INFINITY_TO_S_BYTELIST = new ByteList(ByteList.plain("Infinity"), USASCIIEncoding.INSTANCE, false);
+    public static final ByteList NEGATIVE_INFINITY_TO_S_BYTELIST = new ByteList(ByteList.plain("-Infinity"), USASCIIEncoding.INSTANCE, false);
+    public static final ByteList NAN_TO_S_BYTELIST = new ByteList(ByteList.plain("NaN"), USASCIIEncoding.INSTANCE, false);
 
     /** flo_coerce
      *
@@ -1318,6 +1322,11 @@ public class RubyFloat extends RubyNumeric {
      */
     private static boolean positiveZero(long longBits) {
         return longBits == 0;
+    }
+
+    @Override
+    public void appendIntoString(RubyString target) {
+        target.catWithCodeRange((RubyString) to_s());
     }
 
     @Deprecated

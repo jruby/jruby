@@ -129,6 +129,22 @@ public class RubyRange extends RubyObject {
         return range;
     }
 
+    public static RubyRange newBeginlessRange(ThreadContext context, long end, boolean isExclusive) {
+        Ruby runtime = context.runtime;
+        RubyRange range = new RubyRange(runtime, runtime.getRange());
+        range.init(context, context.nil, runtime.newFixnum(end), isExclusive);
+        range.isInited = true;
+        return range;
+    }
+
+    public static RubyRange newEndlessRange(ThreadContext context, long begin, boolean isExclusive) {
+        Ruby runtime = context.runtime;
+        RubyRange range = new RubyRange(runtime, runtime.getRange());
+        range.init(context, runtime.newFixnum(begin), context.nil, isExclusive);
+        range.isInited = true;
+        return range;
+    }
+
     public static RubyRange newRange(ThreadContext context, long begin, long end, boolean isExclusive) {
         Ruby runtime = context.runtime;
         RubyRange range = new RubyRange(runtime, runtime.getRange());

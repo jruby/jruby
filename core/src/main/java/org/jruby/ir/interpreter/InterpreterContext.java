@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import org.jruby.RubySymbol;
+import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRMetaClassBody;
 import org.jruby.ir.IRScope;
@@ -42,6 +43,7 @@ public class InterpreterContext {
     protected boolean dynamicScopeEliminated; // Only can be true in Full+
     private boolean reuseParentDynScope; // Only can be true in Full+
     private final boolean metaClassBodyScope;
+    private final boolean isEND;
 
     private InterpreterEngine engine;
     public final Supplier<List<Instr>> instructionsCallback;
@@ -61,6 +63,7 @@ public class InterpreterContext {
         this.instructionsCallback = null; // engine != null
         this.temporaryVariableCount = temporaryVariableCount;
         this.flags = flags;
+        this.isEND = scope instanceof IRClosure && ((IRClosure) scope).isEND();
     }
 
     public InterpreterContext(IRScope scope, Supplier<List<Instr>> instructions, int temporaryVariableCount, EnumSet<IRFlags> flags) {
@@ -70,6 +73,7 @@ public class InterpreterContext {
         this.instructionsCallback = instructions;
         this.temporaryVariableCount = temporaryVariableCount;
         this.flags = flags;
+        this.isEND = scope instanceof IRClosure && ((IRClosure) scope).isEND();
     }
 
     protected void initialize() {
@@ -215,16 +219,20 @@ public class InterpreterContext {
         this.dynamicScopeEliminated = dynamicScopeEliminated;
     }
 
+    public boolean isEND() {
+        return isEND;
+    }
+
     public boolean pushNewDynScope() {
         initialize();
 
-        return !dynamicScopeEliminated && !reuseParentDynScope;
+        return !dynamicScopeEliminated && !reuseParentDynScope();
     }
 
     public boolean reuseParentDynScope() {
         initialize();
 
-        return reuseParentDynScope;
+        return reuseParentDynScope || isEND;
     }
 
     public void setReuseParentDynScope(boolean reuseParentDynScope) {

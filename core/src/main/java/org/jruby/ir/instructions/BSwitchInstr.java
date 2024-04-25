@@ -1,12 +1,13 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.Symbol;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
@@ -22,6 +23,7 @@ import java.util.Arrays;
  * Represents a multiple-target jump instruction based on a switch-like table
  */
 public class BSwitchInstr extends MultiBranchInstr {
+    private final Operand[] jumpOperands;
     private final int[] jumps;
     private Operand operand;
     private final Label rubyCase;
@@ -29,7 +31,8 @@ public class BSwitchInstr extends MultiBranchInstr {
     private final Label elseTarget;
     private final Class expectedClass;
 
-    public BSwitchInstr(int[] jumps, Operand operand, Label rubyCase, Label[] targets, Label elseTarget, Class expectedClass) {
+    public BSwitchInstr(int[] jumps, Operand[] jumpOperands, Operand operand, Label rubyCase, Label[] targets,
+                        Label elseTarget, Class expectedClass) {
         super(Operation.B_SWITCH);
 
         // We depend on the jump table being sorted, so ensure that's the case here
@@ -38,6 +41,7 @@ public class BSwitchInstr extends MultiBranchInstr {
         // Switch cases must not have an empty "case" value (GH-6440)
         assert operand != null : "Switch cases must not have an empty \"case\" value";
 
+        this.jumpOperands = jumpOperands;
         this.jumps = jumps;
         this.operand = operand;
         this.rubyCase = rubyCase;
@@ -87,13 +91,13 @@ public class BSwitchInstr extends MultiBranchInstr {
         Label[] targets = new Label[this.targets.length];
         for (int i = 0; i < targets.length; i++) targets[i] = info.getRenamedLabel(this.targets[i]);
         Label elseTarget = info.getRenamedLabel(this.elseTarget);
-        return new BSwitchInstr(jumps, operand, rubyCase, targets, elseTarget, expectedClass);
+        return new BSwitchInstr(jumps, jumpOperands, operand, rubyCase, targets, elseTarget, expectedClass);
     }
 
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(jumps);
+        e.encode(jumpOperands);
         e.encode(operand);
         e.encode(rubyCase);
         e.encode(targets); // FXXXX
@@ -103,7 +107,18 @@ public class BSwitchInstr extends MultiBranchInstr {
 
     public static BSwitchInstr decode(IRReaderDecoder d) {
         try {
-            return new BSwitchInstr(d.decodeIntArray(), d.decodeOperand(), d.decodeLabel(), d.decodeLabelArray(), d.decodeLabel(), Class.forName(d.decodeString()));
+            Operand[] jumpOperands = d.decodeOperandArray();
+            int[] jumps = new int[jumpOperands.length];
+            for (int i = 0; i < jumps.length; i++) {
+                Operand operand = jumpOperands[i];
+                if (operand instanceof Symbol) {
+                    jumps[i] = ((Symbol) operand).getSymbol().getId();
+                } else if (operand instanceof Fixnum) {
+                    jumps[i] = (int) ((Fixnum) operand).getValue();
+                }
+            }
+
+            return new BSwitchInstr(jumps, jumpOperands, d.decodeOperand(), d.decodeLabel(), d.decodeLabelArray(), d.decodeLabel(), Class.forName(d.decodeString()));
         } catch (Exception e) {
             // should never happen unless encode was corrupted
             Helpers.throwException(e);

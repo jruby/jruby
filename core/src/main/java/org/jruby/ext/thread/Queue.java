@@ -48,6 +48,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -743,7 +744,7 @@ public class Queue extends RubyObject implements DataType {
                 if (result == null && timeoutNS == 0) {
                     throw context.runtime.newThreadError("queue empty");
                 } else {
-                    return result;
+                    return Helpers.nullToNil(result, context.nil);
                 }
             }
 
