@@ -392,8 +392,9 @@ public class IndyBinder extends AbstractProcessor {
         mv.dup();
 
         mv.aload(implClass);
-        mv.getstatic(p(Visibility.class), anno.visibility().name(), ci(Visibility.class));
-        mv.ldc(AnnotationBinder.getBaseName(anno.name(), methods.get(0)));
+        String baseName = AnnotationBinder.getBaseName(anno.name(), methods.get(0));
+        mv.getstatic(p(Visibility.class), anno.visibility().getDefaultVisibilityFor(baseName).name(), ci(Visibility.class));
+        mv.ldc(baseName);
         mv.ldc(encodeSignature(0, 0, 0, 0, 0, true, false));
         mv.ldc(true);
         mv.ldc(anno.notImplemented());

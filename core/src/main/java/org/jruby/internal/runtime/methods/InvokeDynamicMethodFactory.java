@@ -120,7 +120,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
 
         return new HandleMethod(
                 implementationClass,
-                desc1.anno.visibility(),
+                desc1.anno.visibility().getDefaultVisibilityFor(desc1.name),
                 desc1.name,
                 (min == max) ?
                         org.jruby.runtime.Signature.from(min, 0, 0, 0, 0, org.jruby.runtime.Signature.Rest.NONE, -1).encode() :
