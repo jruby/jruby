@@ -9,3 +9,5 @@ fails:IO#wait [timeout, mode] passed accepts :r, :read, :readable mode to check 
 fails:IO#wait [timeout, mode] passed accepts :w, :write, :writable mode to check WRITABLE event
 fails:IO#wait [timeout, mode] passed accepts :rw, :read_write, :readable_writable mode to check READABLE and WRITABLE events
 fails:IO#wait [timeout, mode] passed accepts a list of modes
+fails:IO#wait [events, timeout] passed changes thread status to 'sleep' when waits for READABLE event
+fails:IO#wait [events, timeout] passed changes thread status to 'sleep' when waits for WRITABLE event

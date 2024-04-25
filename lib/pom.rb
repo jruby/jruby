@@ -48,7 +48,7 @@ default_gems = [
     ['irb', '1.11.2'],
     ['jar-dependencies', '0.4.1'],
     ['jruby-readline', '1.3.7'],
-    ['jruby-openssl', '0.14.3'],
+    ['jruby-openssl', '0.14.5'],
     ['json', '2.7.2'],
     ['logger', '1.6.0'],
     ['net-http', '0.4.1'],

@@ -520,16 +520,8 @@ public class LoadService {
                 destroyLock = true;
 
                 return state;
-            } catch (LoadError le) {
-                // LoadError should be considered a completed load and remove the lock
-                destroyLock = true;
 
-                throw le;
-            } catch (StandardError se) {
-                // standard error, consider file not loaded
-                destroyLock = false;
-
-                throw se;
+            // NOTE: raising errors (LoadError included) should not be considered a completed load: `destroyLock == false`
             } finally {
                 if (destroyLock) {
                     lock.destroyed = true;

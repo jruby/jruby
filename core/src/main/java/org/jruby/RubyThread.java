@@ -909,8 +909,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private boolean pendingInterruptInclude(RubyModule err) {
         Iterator<IRubyObject> iterator = pendingInterruptQueue.iterator();
         while (iterator.hasNext()) {
-            RubyModule e = (RubyModule) iterator.next();
-            if (e.isKindOfModule(err)) return true;
+            IRubyObject e = iterator.next();
+            if (e.getMetaClass().isKindOfModule(err)) return true;
         }
         return false;
     }
