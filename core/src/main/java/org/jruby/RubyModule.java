@@ -2303,13 +2303,14 @@ public class RubyModule extends RubyObject {
         }
 
         final String variableName = identifier.asInstanceVariable().idString();
+        RubyStackTraceElement trace = context.getSingleBacktrace(1);
         if (readable) {
-            addMethod(internedIdentifier, new AttrReaderMethod(methodLocation, visibility, variableName));
+            addMethod(internedIdentifier, new AttrReaderMethod(methodLocation, visibility, variableName, trace));
             methodAdded(context, identifier);
         }
         if (writeable) {
             identifier = identifier.asWriter();
-            addMethod(identifier.idString(), new AttrWriterMethod(methodLocation, visibility, variableName));
+            addMethod(identifier.idString(), new AttrWriterMethod(methodLocation, visibility, variableName, trace));
             methodAdded(context, identifier);
         }
     }

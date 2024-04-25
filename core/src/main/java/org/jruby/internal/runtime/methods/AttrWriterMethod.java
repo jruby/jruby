@@ -34,6 +34,8 @@ import java.util.Collections;
 
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
+import org.jruby.runtime.PositionAware;
+import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodOne;
 import org.jruby.runtime.ThreadContext;
@@ -44,14 +46,20 @@ import org.jruby.runtime.ivars.MethodData;
 /**
  * A method type for attribute writers (as created by attr_writer or attr_accessor).
  */
-public class AttrWriterMethod extends JavaMethodOne {
+public class AttrWriterMethod extends JavaMethodOne implements PositionAware {
     private MethodData methodData;
     private final String variableName;
     private VariableAccessor accessor = VariableAccessor.DUMMY_ACCESSOR;
+    private final String file;
+    private final int line;
 
-    public AttrWriterMethod(RubyModule implementationClass, Visibility visibility, String variableName) {
+    public AttrWriterMethod(RubyModule implementationClass, Visibility visibility, String variableName, RubyStackTraceElement trace) {
         super(implementationClass, visibility, variableName + "=");
+
         this.variableName = variableName;
+
+        this.file = trace == null ? null : trace.getFileName();
+        this.line = trace == null ? -1 : trace.getLineNumber();
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg1) {
@@ -89,6 +97,16 @@ public class AttrWriterMethod extends JavaMethodOne {
     // Used by racc extension, needed for backward-compat with 1.7.
     @Deprecated
     public AttrWriterMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfiguration, String variableName) {
-        this(implementationClass, visibility, variableName);
+        this(implementationClass, visibility, variableName, null);
+    }
+
+    @Override
+    public String getFile() {
+        return file;
+    }
+
+    @Override
+    public int getLine() {
+        return line;
     }
 }

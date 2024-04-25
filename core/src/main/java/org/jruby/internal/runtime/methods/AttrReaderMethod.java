@@ -34,6 +34,8 @@ import java.util.Collections;
 
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
+import org.jruby.runtime.PositionAware;
+import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZero;
 import org.jruby.runtime.ThreadContext;
@@ -44,12 +46,17 @@ import org.jruby.runtime.ivars.MethodData;
 /**
  * A method type for attribute writers (as created by attr_writer or attr_accessor).
  */
-public class AttrReaderMethod extends JavaMethodZero {
+public class AttrReaderMethod extends JavaMethodZero implements PositionAware {
     private MethodData methodData;
     private VariableAccessor accessor = VariableAccessor.DUMMY_ACCESSOR;
+    private final String file;
+    private final int line;
 
-    public AttrReaderMethod(RubyModule implementationClass, Visibility visibility, String variableName) {
+    public AttrReaderMethod(RubyModule implementationClass, Visibility visibility, String variableName, RubyStackTraceElement trace) {
         super(implementationClass, visibility, variableName);
+
+        this.file = trace == null ? null : trace.getFileName();
+        this.line = trace == null ? -1 : trace.getLineNumber();
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
@@ -87,6 +94,16 @@ public class AttrReaderMethod extends JavaMethodZero {
     // Used by racc extension, needed for backward-compat with 1.7.
     @Deprecated
     public AttrReaderMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfiguration, String variableName) {
-        this(implementationClass, visibility, variableName);
+        this(implementationClass, visibility, variableName, null);
+    }
+
+    @Override
+    public String getFile() {
+        return file;
+    }
+
+    @Override
+    public int getLine() {
+        return line;
     }
 }
