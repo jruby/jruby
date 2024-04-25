@@ -18,25 +18,36 @@ module Fiddle
     Pointer.to_ptr(val)
   end
 
-  TYPE_VOID         = 0
-  TYPE_VOIDP        = 1
-  TYPE_CHAR         = 2
+
+  TYPE_VOID=0
+  TYPE_VOIDP=1
+  TYPE_CHAR=2
+  TYPE_SHORT=3
+  TYPE_INT=4
+  TYPE_LONG=5
+  TYPE_LONG_LONG=6
+  TYPE_FLOAT=7
+  TYPE_DOUBLE=8
+  TYPE_SIZE_T=-5
+  TYPE_SSIZE_T=5
+  TYPE_CONST_STRING=10
+  TYPE_PTRDIFF_T=5
+  TYPE_INTPTR_T=5
+  TYPE_UINTPTR_T=-5
+
+  # Types defined in MRI
+  TYPE_INT8_T=2
+  TYPE_INT16_T=3
+  TYPE_INT32_T=4
+  TYPE_INT64_T=5
+  TYPE_VARIADIC=9
+
+  # Leftover types not defined in MRI but were originally in here
   TYPE_UCHAR        = -2
-  TYPE_SHORT        = 3
   TYPE_USHORT       = -3
-  TYPE_INT          = 4
   TYPE_UINT         = -4
-  TYPE_LONG         = 5
   TYPE_ULONG        = -5
-  TYPE_LONG_LONG    = 6
   TYPE_ULONG_LONG   = -6
-  TYPE_FLOAT        = 7
-  TYPE_DOUBLE       = 8
-  TYPE_SSIZE_T      = 9
-  TYPE_SIZE_T       = 10
-  TYPE_PTRDIFF_T    = 11
-  TYPE_INTPTR_T     = 12
-  TYPE_UINTPTR_T    = 13
 
   WINDOWS = FFI::Platform.windows?
 
