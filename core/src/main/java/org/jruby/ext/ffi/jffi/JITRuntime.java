@@ -10,6 +10,8 @@ import org.jruby.runtime.callsite.CachingCallSite;
 
 import java.math.BigInteger;
 
+import static org.jruby.api.Error.typeError;
+
 /**
  *
  */
@@ -153,12 +155,9 @@ public final class JITRuntime {
     }
 
     private static boolean other2bool(IRubyObject parameter) {
-        if (parameter instanceof RubyNumeric) {
-            return ((RubyNumeric) parameter).getLongValue() != 0;
-        }
-        
-        throw parameter.getRuntime().newTypeError("cannot convert " 
-                + parameter.getMetaClass().getRealClass() + " to bool");
+        if (parameter instanceof RubyNumeric numeric) return numeric.getLongValue() != 0;
+
+        throw typeError(parameter.getRuntime().getCurrentContext(), "cannot convert ", parameter, " to bool");
     }
 
     public static boolean boolValue(IRubyObject parameter) {
@@ -568,15 +567,15 @@ public final class JITRuntime {
             return ((AbstractMemory) ptr).getMemoryIO();
         }
 
-        throw parameter.getRuntime().newTypeError(parameter.getMetaClass() + "#" + callSite.getMethodName() 
-                + " should return " + context.runtime.getFFI().pointerClass);
+        throw typeError(context, parameter.getMetaClass() + "#" + callSite.getMethodName() +
+                " should return " + context.runtime.getFFI().pointerClass);
     }
 
     public static DynamicMethod getConversionMethod(IRubyObject parameter, CachingCallSite callSite) {
         DynamicMethod method = callSite.retrieveCache(parameter).method;
         if (method.isUndefined()) {
-            throw parameter.getRuntime().newTypeError("cannot convert parameter of type " + parameter.getMetaClass()
-                    + " to native pointer; does not respond to :" + callSite.getMethodName());
+            throw typeError(parameter.getRuntime().getCurrentContext(), "cannot convert parameter of type ", parameter,
+                    " to native pointer; does not respond to :" + callSite.getMethodName());
         }
         
         return method;

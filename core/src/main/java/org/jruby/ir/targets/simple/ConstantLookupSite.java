@@ -10,6 +10,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.opto.ConstantCache;
 import org.jruby.runtime.opto.Invalidator;
 
+import static org.jruby.api.Error.typeError;
+
 public class ConstantLookupSite {
     private final RubySymbol name;
     private final String id;
@@ -89,9 +91,9 @@ public class ConstantLookupSite {
     }
 
     public IRubyObject inheritanceSearchConst(ThreadContext context, IRubyObject cmVal) {
-        if (!(cmVal instanceof RubyModule)) throw context.runtime.newTypeError(cmVal + " is not a type/class");
-
+        if (!(cmVal instanceof RubyModule)) throw typeError(context, "", cmVal, " is not a class/module");
         RubyModule module = (RubyModule) cmVal;
+
         ConstantCache cache = this.cache;
 
         return !ConstantCache.isCachedFrom(module, cache) ? cacheInheritanceSearchConst(context.runtime, module) : cache.value;
@@ -108,20 +110,15 @@ public class ConstantLookupSite {
     }
 
     public IRubyObject searchModuleForConst(ThreadContext context, IRubyObject cmVal, boolean publicOnly, boolean callConstMissing) {
-        if (!(cmVal instanceof RubyModule)) throw context.runtime.newTypeError(cmVal + " is not a type/class");
-
+        if (!(cmVal instanceof RubyModule)) throw typeError(context, "", cmVal, " is not a class/module");
         RubyModule module = (RubyModule) cmVal;
+
         ConstantCache cache = this.cache;
         IRubyObject result = !ConstantCache.isCachedFrom(module, cache) ? cacheSearchModuleForConst(context.runtime, module, publicOnly) : cache.value;
+        if (result != null) return result;
 
-        if (result == null) {
-            if (callConstMissing) {
-                result = module.callMethod(context, "const_missing", name);
-            } else {
-                result = UndefinedValue.UNDEFINED;
-            }
-        }
-
-        return result;
+        return callConstMissing ?
+                module.callMethod(context, "const_missing", name) :
+                UndefinedValue.UNDEFINED;
     }
 }

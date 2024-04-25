@@ -56,6 +56,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.jruby.RubyString.*;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.util.StringSupport.CR_UNKNOWN;
 import static org.jruby.util.StringSupport.searchNonAscii;
 
@@ -1125,9 +1126,7 @@ public class EncodingUtils {
     // rb_obj_encoding
     public static IRubyObject objEncoding(ThreadContext context, IRubyObject obj) {
         Encoding enc = encGet(context, obj);
-        if (enc == null) {
-            throw context.runtime.newTypeError("unknown encoding");
-        }
+        if (enc == null) throw typeError(context, "unknown encoding");
         return context.runtime.getEncodingService().convertEncodingToRubyEncoding(enc);
     }
 

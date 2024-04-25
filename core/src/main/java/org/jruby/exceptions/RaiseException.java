@@ -53,6 +53,9 @@ import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.castToClass;
+import static org.jruby.api.Error.typeError;
+
 public class RaiseException extends JumpException {
     private static final long serialVersionUID = -7612079169559973951L;
 
@@ -131,8 +134,7 @@ public class RaiseException extends JumpException {
      * @return a RaiseException instance appropriate for the target Ruby exception class
      */
     public static RaiseException from(Ruby runtime, String exceptionPath, String msg) {
-        RubyClass exceptionClass = findExceptionClass(runtime, exceptionPath);
-        return from(runtime, exceptionClass, msg);
+        return from(runtime, findExceptionClass(runtime.getCurrentContext(), exceptionPath), msg);
     }
 
     /**
@@ -145,8 +147,7 @@ public class RaiseException extends JumpException {
      * @return a RaiseException instance appropriate for the target Ruby exception class
      */
     public static RaiseException from(Ruby runtime, String exceptionPath, String msg, IRubyObject backtrace) {
-        RubyClass exceptionClass = findExceptionClass(runtime, exceptionPath);
-        return from(runtime, exceptionClass, msg, backtrace);
+        return from(runtime, findExceptionClass(runtime.getCurrentContext(), exceptionPath), msg, backtrace);
     }
 
     /**
@@ -157,17 +158,16 @@ public class RaiseException extends JumpException {
      * @return a RaiseException instance appropriate for the target Ruby exception class
      */
     public static RaiseException from(Ruby runtime, String exceptionPath, IRubyObject... args) {
-        RubyClass exceptionClass = findExceptionClass(runtime, exceptionPath);
-        return from(runtime, exceptionClass, args);
+        return from(runtime, findExceptionClass(runtime.getCurrentContext(), exceptionPath), args);
     }
 
-    private static RubyClass findExceptionClass(Ruby runtime, String exceptionPath) {
-        IRubyObject exceptionClass = runtime.getObject().getConstant(exceptionPath);
+    private static RubyClass findExceptionClass(ThreadContext context, String exceptionPath) {
+        IRubyObject exceptionClass = context.runtime.getObject().getConstant(exceptionPath);
 
-        if (exceptionClass == null) {
-            throw runtime.newNameError("exception class not found", exceptionPath);
-        } else if (!(exceptionClass instanceof RubyClass)) {
-            throw runtime.newTypeError("expected to find exception class for " + exceptionPath + " but got " + exceptionClass.inspect());
+        if (exceptionClass == null) throw context.runtime.newNameError("exception class not found", exceptionPath);
+
+        if (!(exceptionClass instanceof RubyClass)) {
+            throw typeError(context, "expected to find exception class for " + exceptionPath + " but got " + exceptionClass.inspect());
         }
         return (RubyClass) exceptionClass;
     }

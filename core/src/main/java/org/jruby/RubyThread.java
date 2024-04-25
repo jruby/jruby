@@ -55,7 +55,6 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 
 import com.headius.backport9.stack.StackWalker;
 import org.jcodings.Encoding;
@@ -94,6 +93,7 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.jruby.common.IRubyWarnings.ID;
 
+import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.RubyStringBuilder.ids;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -895,13 +895,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "pending_interrupt?")
     public IRubyObject pending_interrupt_p(ThreadContext context, IRubyObject err) {
-        if (pendingInterruptQueue.isEmpty()) {
-            return context.fals;
-        }
-
-        if (!(err instanceof RubyModule)) {
-            throw context.runtime.newTypeError("class or module required for rescue clause");
-        }
+        if (pendingInterruptQueue.isEmpty()) return context.fals;
+        if (!(err instanceof RubyModule)) throw typeError(context, "class or module required for rescue clause");
 
         return pendingInterruptInclude((RubyModule) err) ? context.tru : context.fals;
     }
@@ -999,11 +994,11 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private RubySymbol getSymbolKey(IRubyObject originalKey) {
         if (originalKey instanceof RubySymbol) return (RubySymbol) originalKey;
 
-        Ruby runtime = getRuntime();
+        if (!(originalKey instanceof RubyString)) {
+            throw typeError(getRuntime().getCurrentContext(), "", originalKey, " is not a symbol nor a string");
+        }
 
-        if (originalKey instanceof RubyString) return runtime.newSymbol(((RubyString) originalKey).getByteList());
-
-        throw runtime.newTypeError(str(runtime, ids(runtime, originalKey), " is not a symbol nor a string"));
+        return getRuntime().newSymbol(((RubyString) originalKey).getByteList());
     }
 
     private Map<IRubyObject, IRubyObject> getFiberLocals() {
@@ -1372,8 +1367,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     @JRubyMethod(meta = true)
-    public static IRubyObject kill(IRubyObject receiver, IRubyObject rubyThread, Block block) {
-        if (!(rubyThread instanceof RubyThread)) throw receiver.getRuntime().newTypeError(rubyThread, receiver.getRuntime().getThread());
+    public static IRubyObject kill(IRubyObject recv, IRubyObject rubyThread, Block block) {
+        if (!(rubyThread instanceof RubyThread)) throw typeError(recv.getRuntime().getCurrentContext(), rubyThread, "Thread");
         return ((RubyThread)rubyThread).kill();
     }
 
@@ -1531,26 +1526,18 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (args.length == 1) {
             if (arg instanceof RubyString) {
                 tmp = runtime.getRuntimeError().newInstance(context, args, Block.NULL_BLOCK);
-            }
-            else if (arg instanceof ConcreteJavaProxy ) {
+            } else if (arg instanceof ConcreteJavaProxy ) {
                 return arg;
-            }
-            else if ( ! arg.respondsTo("exception") ) {
-                throw runtime.newTypeError("exception class/object expected");
             } else {
+                if (!arg.respondsTo("exception")) throw typeError(context, "exception class/object expected");
                 tmp = arg.callMethod(context, "exception");
             }
         } else {
-            if ( ! arg.respondsTo("exception") ) {
-                throw runtime.newTypeError("exception class/object expected");
-            }
-
+            if (!arg.respondsTo("exception")) throw typeError(context, "exception class/object expected");
             tmp = arg.callMethod(context, "exception", args[1]);
         }
 
-        if (!runtime.getException().isInstance(tmp)) {
-            throw runtime.newTypeError("exception object expected");
-        }
+        if (!runtime.getException().isInstance(tmp)) throw typeError(context, "exception object expected");
 
         exception = (RubyException) tmp;
 

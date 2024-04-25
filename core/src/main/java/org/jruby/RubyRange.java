@@ -60,6 +60,7 @@ import org.jruby.runtime.ThreadContext;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyNumeric.dbl2num;
 import static org.jruby.RubyNumeric.fix2long;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.hashEnd;
 import static org.jruby.runtime.Helpers.hashStart;
 import static org.jruby.runtime.Helpers.invokedynamic;
@@ -626,9 +627,7 @@ public class RubyRange extends RubyObject {
                     ((RubyString) tmp).uptoCommon(context, end, isExclusive, block);
                 }
             } else {
-                if (!discreteObject(context, begin)) {
-                    throw context.runtime.newTypeError("can't iterate from " + begin.getMetaClass().getName());
-                }
+                if (!discreteObject(context, begin)) throw typeError(context, "can't iterate from ", begin, "");
                 if (!end.isNil()) {
                     rangeEach(context, (ThreadContext ctx, IRubyObject arg) -> block.yield(ctx, arg));
                 } else {
@@ -665,9 +664,7 @@ public class RubyRange extends RubyObject {
         IRubyObject end = this.end;
         boolean excl = isExclusive;
 
-        if (end.isNil()) {
-            throw context.runtime.newTypeError("can't iterate from " + end);
-        }
+        if (end.isNil()) throw typeError(context, "can't iterate from ", end, "");
 
         if (beg instanceof RubyFixnum && end instanceof RubyFixnum) {
             if (excl) {
@@ -903,9 +900,8 @@ public class RubyRange extends RubyObject {
                     ((RubyString) tmp).uptoCommon(context, end, isExclusive, blockCallback);
                 }
             } else {
-                if (!begin.respondsTo("succ")) {
-                    throw runtime.newTypeError("can't iterate from " + begin.getMetaClass().getName());
-                }
+                if (!begin.respondsTo("succ")) throw typeError(context, "can't iterate from ", begin, "");
+
                 // range_each_func(range, step_i, b, e, args);
                 rangeEach(context, new StepBlockCallBack(block, RubyFixnum.one(runtime), step));
             }
@@ -1122,23 +1118,15 @@ public class RubyRange extends RubyObject {
             return context.nil;
         }
         if (isExclusive) {
-            if (!(end instanceof RubyInteger)) {
-                throw context.runtime.newTypeError("cannot exclude non Integer end value");
-            }
+            if (!(end instanceof RubyInteger)) throw typeError(context, "cannot exclude non Integer end value");
 
-            if (cmp == 0) {
-                return context.nil;
-            }
+            if (cmp == 0) return context.nil;
 
-            if (!(begin instanceof RubyInteger)) {
-                throw context.runtime.newTypeError("cannot exclude end value with non Integer begin value");
-            }
+            if (!(begin instanceof RubyInteger)) throw typeError(context, "cannot exclude end value with non Integer begin value");
 
-            if (end instanceof RubyFixnum) {
-                return RubyFixnum.newFixnum(context.runtime, ((RubyFixnum) end).getLongValue() - 1);
-            }
-
-            return end.callMethod(context, "-", RubyFixnum.one(context.runtime));
+            return end instanceof RubyFixnum fixnum ?
+                    RubyFixnum.newFixnum(context.runtime, fixnum.getLongValue() - 1) :
+                    end.callMethod(context, "-", RubyFixnum.one(context.runtime));
         }
 
         return end;

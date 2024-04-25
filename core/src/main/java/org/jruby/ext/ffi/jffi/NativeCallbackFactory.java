@@ -11,6 +11,8 @@ import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.util.WeakIdentityHashMap;
 
+import static org.jruby.api.Error.typeError;
+
 /**
  * 
  */
@@ -85,12 +87,12 @@ public class NativeCallbackFactory {
         org.jruby.ext.ffi.Type[] paramTypes = cbInfo.getParameterTypes();
         for (int i = 0; i < paramTypes.length; ++i) {
             if (!isParameterTypeValid(paramTypes[i]) || FFIUtil.getFFIType(paramTypes[i]) == null) {
-                throw runtime.newTypeError("invalid callback parameter type: " + paramTypes[i]);
+                throw typeError(runtime.getCurrentContext(), "invalid callback parameter type: " + paramTypes[i]);
             }
         }
 
         if (!isReturnTypeValid(cbInfo.getReturnType()) || FFIUtil.getFFIType(cbInfo.getReturnType()) == null) {
-            throw runtime.newTypeError("invalid callback return type: " + cbInfo.getReturnType());
+            throw typeError(runtime.getCurrentContext(), "invalid callback return type: " + cbInfo.getReturnType());
         }
 
         return new NativeFunctionInfo(runtime, cbInfo.getReturnType(), cbInfo.getParameterTypes(),

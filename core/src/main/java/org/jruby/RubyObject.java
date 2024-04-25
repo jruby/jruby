@@ -55,6 +55,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
 
+import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
@@ -483,7 +484,7 @@ public class RubyObject extends RubyBasicObject {
 
                 }
             } else {
-                throw context.runtime.newTypeError(obj.getMetaClass().getName() + " does not have #dig method");
+                throw typeError(context, "", obj, " does not have #dig method");
             }
         }
 
@@ -498,10 +499,9 @@ public class RubyObject extends RubyBasicObject {
         if (isArrayDig(obj, sites)) return ((RubyArray) obj).dig(context, arg1);
         if (isHashDig(obj, sites)) return ((RubyHash) obj).dig(context, arg1);
         if (isStructDig(obj, sites)) return ((RubyStruct) obj).dig(context, arg1);
-        if (sites.respond_to_dig.respondsTo(context, obj, obj, true) ) {
-            return sites.dig_misc.call(context, obj, obj, arg1);
-        }
-        throw context.runtime.newTypeError(obj.getMetaClass().getName() + " does not have #dig method");
+
+        if (!sites.respond_to_dig.respondsTo(context, obj, obj, true)) throw typeError(context, "", obj," does not have #dig method");
+        return sites.dig_misc.call(context, obj, obj, arg1);
     }
 
     public static IRubyObject dig2(ThreadContext context, IRubyObject obj, IRubyObject arg1, IRubyObject arg2) {
@@ -512,10 +512,9 @@ public class RubyObject extends RubyBasicObject {
         if (isArrayDig(obj, sites)) return ((RubyArray) obj).dig(context, arg1, arg2);
         if (isHashDig(obj, sites)) return ((RubyHash) obj).dig(context, arg1, arg2);
         if (isStructDig(obj, sites)) return ((RubyStruct) obj).dig(context, arg1, arg2);
-        if (sites.respond_to_dig.respondsTo(context, obj, obj, true) ) {
-            return sites.dig_misc.call(context, obj, obj, arg1, arg2);
-        }
-        throw context.runtime.newTypeError(obj.getMetaClass().getName() + " does not have #dig method");
+
+        if (!sites.respond_to_dig.respondsTo(context, obj, obj, true)) throw typeError(context, "", obj," does not have #dig method");
+        return sites.dig_misc.call(context, obj, obj, arg1, arg2);
     }
 
     private static boolean isStructDig(IRubyObject obj, ObjectSites sites) {

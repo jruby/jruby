@@ -50,6 +50,8 @@ import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.StringSupport;
 
+import static org.jruby.api.Error.typeError;
+
 /**
  * Implements File::Stat
  */
@@ -66,7 +68,7 @@ public class RubyFileStat extends RubyObject {
     private FileStat stat;
 
     private void checkInitialized() {
-        if (stat == null) throw getRuntime().newTypeError("uninitialized File::Stat");
+        if (stat == null) throw typeError(getRuntime().getCurrentContext(), "uninitialized File::Stat");
     }
 
     public static RubyClass createFileStatClass(Ruby runtime) {
@@ -306,9 +308,7 @@ public class RubyFileStat extends RubyObject {
     @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize_copy(IRubyObject original) {
-        if (!(original instanceof RubyFileStat)) {
-            throw getRuntime().newTypeError("wrong argument class");
-        }
+        if (!(original instanceof RubyFileStat)) throw typeError(getRuntime().getCurrentContext(), "wrong argument class");
 
         checkFrozen();
         

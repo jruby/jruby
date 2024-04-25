@@ -61,6 +61,8 @@ import java.math.RoundingMode;
 
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.api.Convert.castToInteger;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.util.Numeric.f_gcd;
 import static org.jruby.util.Numeric.f_lcm;
 import static org.jruby.util.Numeric.f_zero_p;
@@ -800,10 +802,8 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     static RubyInteger intValue(ThreadContext context, IRubyObject num) {
-        RubyInteger i;
-        if (( i = RubyInteger.toInteger(context, num) ) == null) {
-            throw context.runtime.newTypeError("not an integer");
-        }
+        RubyInteger i = RubyInteger.toInteger(context, num);
+        if (i == null) throw typeError(context, "not an integer");
         return i;
     }
 
@@ -903,36 +903,31 @@ public abstract class RubyInteger extends RubyNumeric {
         Ruby runtime = context.runtime;
 
         boolean negaFlg = false;
-        if (!(b instanceof RubyInteger)) {
-            throw runtime.newTypeError("Integer#pow() 2nd argument not allowed unless a 1st argument is integer");
-        }
-        if (((RubyInteger) b).isNegative()) {
-            throw runtime.newRangeError("Integer#pow() 1st argument cannot be negative when 2nd argument specified");
-        }
-        if (!(m instanceof RubyInteger)) {
-            throw runtime.newTypeError("Integer#pow() 2nd argument not allowed unless all arguments are integers");
-        }
+        RubyInteger base = castToInteger(context, b, "Integer#pow() 2nd argument not allowed unless a 1st argument is integer");
+        if (base.isNegative()) throw runtime.newRangeError("Integer#pow() 1st argument cannot be negative when 2nd argument specified");
 
-        if (((RubyInteger) m).isNegative()) {
-            m = ((RubyInteger) m).negate();
+        RubyInteger pow = castToInteger(context, m, "Integer#pow() 2nd argument not allowed unless all arguments are integers");
+
+        if (pow.isNegative()) {
+            pow = pow.negate();
             negaFlg = true;
         }
 
-        if (!((RubyInteger) m).isPositive()) throw runtime.newZeroDivisionError();
+        if (!pow.isPositive()) throw runtime.newZeroDivisionError();
 
-        if (m instanceof RubyFixnum) {
-            long mm = ((RubyFixnum) m).value;
+        if (pow instanceof RubyFixnum fixpow) {
+            long mm = fixpow.value;
             if (mm == 1) return RubyFixnum.zero(runtime);
-            RubyFixnum modulo = (RubyFixnum) modulo(context, m);
+            RubyFixnum modulo = (RubyFixnum) modulo(context, fixpow);
             if (mm <= HALF_LONG_MSB) {
-                return modulo.intPowTmp1(context, (RubyInteger) b, mm, negaFlg);
+                return modulo.intPowTmp1(context, base, mm, negaFlg);
             } else {
-                return modulo.intPowTmp2(context, (RubyInteger) b, mm, negaFlg);
+                return modulo.intPowTmp2(context, base, mm, negaFlg);
             }
         }
-        if (m instanceof RubyBignum) {
+        if (pow instanceof RubyBignum bigpow) {
             if (((RubyBignum) m).value == BigInteger.ONE) return RubyFixnum.zero(runtime);
-            return ((RubyInteger) modulo(context, m)).intPowTmp3(context, (RubyInteger) b, (RubyBignum) m, negaFlg);
+            return ((RubyInteger) modulo(context, m)).intPowTmp3(context, base, bigpow, negaFlg);
         }
         // not reached
         throw new AssertionError("BUG: unexpected type " + m.getType());
@@ -1155,14 +1150,13 @@ public abstract class RubyInteger extends RubyNumeric {
      */
     @Deprecated
     public static IRubyObject induced_from(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        if (other instanceof RubyFixnum || other instanceof RubyBignum) {
-            return other;
-        } else if (other instanceof RubyFloat || other instanceof RubyRational) {
-            return other.callMethod(context, "to_i");
-        } else {
-            throw context.runtime.newTypeError(
-                    "failed to convert " + other.getMetaClass().getName() + " into Integer");
+        if (other instanceof RubyFixnum || other instanceof RubyBignum) return other;
+
+        if (!(other instanceof RubyFloat) && !(other instanceof RubyRational)) {
+            throw typeError(context, "failed to convert ", other, " into Integer");
         }
+
+        return other.callMethod(context, "to_i");
     }
 
     @Deprecated

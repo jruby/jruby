@@ -46,6 +46,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 
+import static org.jruby.api.Error.typeError;
+
 public abstract class JavaCallable implements ParameterTypes {
 
     protected final Class<?>[] parameterTypes;
@@ -104,11 +106,11 @@ public abstract class JavaCallable implements ParameterTypes {
     }
 
     final IRubyObject handleIllegalAccessEx(ThreadContext context, final IllegalAccessException ex, Member target) throws RaiseException {
-        throw context.runtime.newTypeError("illegal access on '" + target.getName() + "': " + ex.getMessage());
+        throw typeError(context, "illegal access on '" + target.getName() + "': " + ex.getMessage());
     }
 
     final IRubyObject handleIllegalAccessEx(ThreadContext context, final IllegalAccessException ex, Constructor target)  throws RaiseException {
-        throw context.runtime.newTypeError("illegal access on constructor for type '" + target.getDeclaringClass().getSimpleName() + "': " + ex.getMessage());
+        throw typeError(context, "illegal access on constructor for type '" + target.getDeclaringClass().getSimpleName() + "': " + ex.getMessage());
     }
 
     final IRubyObject handlelIllegalArgumentEx(ThreadContext context, final IllegalArgumentException ex, Method target, Object... arguments) throws RaiseException {
@@ -118,7 +120,7 @@ public abstract class JavaCallable implements ParameterTypes {
         msg.append(" expected "); dumpParameterTypes(msg);
         msg.append("; got: "); dumpArgTypes(arguments, msg);
         msg.append("; error: ").append( ex.getMessage() );
-        throw context.runtime.newTypeError( msg.toString() );
+        throw typeError(context, msg.toString());
     }
 
     final IRubyObject handlelIllegalArgumentEx(ThreadContext context, final IllegalArgumentException ex, Constructor target, Object... arguments) throws RaiseException {
@@ -133,7 +135,7 @@ public abstract class JavaCallable implements ParameterTypes {
         msg.append(" expected "); dumpParameterTypes(msg);
         msg.append("; got: "); dumpArgTypes(arguments, msg);
         msg.append("; error: ").append( ex.getMessage() );
-        throw context.runtime.newTypeError( msg.toString() );
+        throw typeError(context, msg.toString());
     }
 
     private void dumpParameterTypes(final StringBuilder str) {

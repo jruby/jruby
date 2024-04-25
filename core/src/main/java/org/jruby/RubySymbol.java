@@ -75,6 +75,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static org.jruby.api.Error.typeError;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
 import static org.jruby.util.StringSupport.CR_7BIT;
@@ -307,7 +308,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @Override
     public RubyClass getSingletonClass() {
-        throw getRuntime().newTypeError("can't define singleton");
+        throw typeError(getRuntime().getCurrentContext(), "can't define singleton");
     }
 
     public static RubySymbol getSymbolLong(Ruby runtime, long id) {
@@ -1531,9 +1532,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         if (!(object instanceof RubyString)) {
             IRubyObject tmp = TypeConverter.checkStringType(object.getRuntime(), object);
 
-            if (tmp.isNil()) {
-                throw object.getRuntime().newTypeError(str(object.getRuntime(), "", object, " is not a symbol nor a string"));
-            }
+            if (tmp.isNil()) throw typeError(object.getRuntime().getCurrentContext(), "", object, " is not a symbol nor a string");
 
             object = tmp;
         }

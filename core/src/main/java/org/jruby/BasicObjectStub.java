@@ -40,6 +40,7 @@ import org.jruby.runtime.builtin.InternalVariables;
 import org.jruby.runtime.builtin.RubyJavaObject;
 import org.jruby.runtime.builtin.Variable;
 
+import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.invokedynamic.MethodNames.INSPECT;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -149,9 +150,8 @@ public final class BasicObjectStub {
 
     public static String asJavaString(IRubyObject self) {
         IRubyObject asString = checkStringType(self);
-        if(!asString.isNil()) return asString.asJavaString();
-        Ruby runtime = getRuntime(self);
-        throw runtime.newTypeError(str(runtime, "", inspect(self), " is not a string"));
+        if(asString.isNil()) throw typeError(getRuntime(self).getCurrentContext(), "", inspect(self), " is not a string");
+        return asString.asJavaString();
     }
 
     public static RubyString asString(IRubyObject self) {
@@ -182,8 +182,11 @@ public final class BasicObjectStub {
     }
 
     public static RubyInteger convertToInteger(IRubyObject self, String convertMethod) {
-        IRubyObject val = TypeConverter.convertToType(self, getRuntime(self).getInteger(), convertMethod, true);
-        if (!(val instanceof RubyInteger)) throw getRuntime(self).newTypeError(getMetaClass(self).getName() + '#' + convertMethod + " should return Integer");
+        Ruby runtime = getRuntime(self);
+        IRubyObject val = TypeConverter.convertToType(self, runtime.getInteger(), convertMethod, true);
+        if (!(val instanceof RubyInteger)) {
+            throw typeError(runtime.getCurrentContext(), "", self, '#' + convertMethod + " should return Integer");
+        }
         return (RubyInteger) val;
     }
 
@@ -212,8 +215,11 @@ public final class BasicObjectStub {
     }
 
     public static Object toJava(IRubyObject self, Class cls) {
-        if (cls.isAssignableFrom(self.getClass())) return self;
-        throw getRuntime(self).newTypeError("could not convert " + self.getClass() + " to " + cls);
+        if (!cls.isAssignableFrom(self.getClass())) {
+            throw typeError(self.getRuntime().getCurrentContext(), "could not convert ", self, " to " + cls);
+        }
+
+        return self;
     }
 
     public static IRubyObject dup(IRubyObject self) {

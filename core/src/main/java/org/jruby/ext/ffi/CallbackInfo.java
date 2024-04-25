@@ -40,6 +40,9 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.castToArray;
+import static org.jruby.api.Error.typeError;
+
 /**
  * Defines a C callback's parameters and return type.
  */
@@ -104,45 +107,28 @@ public class CallbackInfo extends Type {
     {
         int argc = Arity.checkArgumentCount(context, args, 2, 3);
 
-        IRubyObject returnType = args[0], paramTypes = args[1];
+        IRubyObject returnType = args[0];
 
-        if (!(returnType instanceof Type)) {
-            throw context.runtime.newTypeError("wrong argument type "
-                    + returnType.getMetaClass().getName() + " (expected FFI::Type)");
-        }
+        if (!(returnType instanceof Type)) throw typeError(context, returnType.getMetaClass(), "FFI::Type");
+        var paramTypes = castToArray(context, args[1]);
 
-        if (!(paramTypes instanceof RubyArray)) {
-            throw context.runtime.newTypeError("wrong argument type "
-                    + paramTypes.getMetaClass().getName() + " (expected Array)");
-        }
+        if (returnType instanceof MappedType) returnType = ((MappedType) returnType).getRealType();
 
-        if (returnType instanceof MappedType) {
-            returnType = ((MappedType) returnType).getRealType();
-        }
-
-        Type[] nativeParamTypes = new Type[((RubyArray)paramTypes).size()];
+        Type[] nativeParamTypes = new Type[paramTypes.size()];
         for (int i = 0; i < nativeParamTypes.length; ++i) {
-            IRubyObject obj = ((RubyArray) paramTypes).entry(i);
-            if (!(obj instanceof Type)) {
-                throw context.runtime.newTypeError("wrong argument type "
-                        + obj.getMetaClass().getName() + " (expected array of FFI::Type)");
-            }
+            IRubyObject obj = paramTypes.entry(i);
+            if (!(obj instanceof Type)) throw typeError(context, obj, "array of FFI::Type");
             nativeParamTypes[i] = (Type) obj;
         }
 
         boolean stdcall = false;
         if (argc > 2) {
-            if (!(args[2] instanceof RubyHash)) {
-                throw context.runtime.newTypeError("wrong argument type "
-                        + args[2].getMetaClass().getName() + " (expected Enums or Hash)");
-            }
-            RubyHash hash = (RubyHash) args[2];
-            stdcall = "stdcall".equals(hash.get(context.runtime.newSymbol("convention")));
+            if (!(args[2] instanceof RubyHash)) throw typeError(context, args[2], "Enums or Hash");
+            stdcall = "stdcall".equals(((RubyHash) args[2]).get(context.runtime.newSymbol("convention")));
         }
         
         try {
-            return new CallbackInfo(context.runtime, (RubyClass) klass,
-                    (Type) returnType, nativeParamTypes, stdcall);
+            return new CallbackInfo(context.runtime, (RubyClass) klass, (Type) returnType, nativeParamTypes, stdcall);
         } catch (UnsatisfiedLinkError ex) {
             return context.nil;
         }

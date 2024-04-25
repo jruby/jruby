@@ -64,6 +64,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 
 import static org.jruby.anno.FrameField.*;
+import static org.jruby.api.Convert.castToModule;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
 import static org.jruby.runtime.Helpers.invokeChecked;
 import static org.jruby.runtime.ThreadContext.*;
@@ -599,8 +601,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     @Override
     public String asJavaString() {
         IRubyObject str = checkStringType();
-        if (!str.isNil()) return ((RubyString) str).asJavaString();
-        throw getRuntime().newTypeError(str(getRuntime(), inspect(), " is not a string"));
+        if (str.isNil()) throw typeError(getRuntime().getCurrentContext(), this, "String");
+        return str.asJavaString();
     }
 
     /** rb_obj_as_string
@@ -669,9 +671,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         IRubyObject result = TypeConverter.convertToType(context, this, runtime.getInteger(), sites.to_int_checked, true);
 
-        if (!(result instanceof RubyInteger)) {
-            throw runtime.newTypeError(str(runtime, types(runtime, getMetaClass()), "#to_int should return Integer"));
-        }
+        if (!(result instanceof RubyInteger)) throw typeError(context, "", this, "#to_int should return Integer");
 
         return (RubyInteger) result;
     }
@@ -696,7 +696,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
 
         if (!(result instanceof RubyInteger)) {
-            throw runtime.newTypeError(str(runtime, types(runtime, getMetaClass()), "#", ids(runtime, convertMethod), " should return Integer"));
+            throw typeError(runtime.getCurrentContext(), str(runtime, types(runtime, getMetaClass()),
+                    "#", ids(runtime, convertMethod), " should return Integer"));
         }
 
         return (RubyInteger) result;
@@ -801,11 +802,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
                 return JavaUtil.convertProcToInterface(getRuntime().getCurrentContext(), this, target);
             }
         }
-        else if (target.isAssignableFrom(getClass())) {
-            return (T) this;
+        else if (!target.isAssignableFrom(getClass())) {
+            throw typeError(getRuntime().getCurrentContext(), "cannot convert instance of ", this, " to " + target);
         }
 
-        throw getRuntime().newTypeError("cannot convert instance of " + getClass() + " to " + target);
+        return (T) this;
     }
 
     private Object unwrap_java_object() {
@@ -866,7 +867,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         // Not implemented
 //        checkTrusted();
         if (obj.getClass() != orig.getClass() || obj.getMetaClass().getRealClass() != orig.getMetaClass().getRealClass()) {
-            throw obj.getRuntime().newTypeError("initialize_copy should take same class object");
+            throw typeError(obj.getRuntime().getCurrentContext(), "initialize_copy should take same class object");
         }
     }
 
@@ -2008,7 +2009,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         checkFrozen();
 
         if (getMetaClass().getRealClass() != original.getMetaClass().getRealClass()) {
-            throw getRuntime().newTypeError("initialize_copy should take same class object");
+            throw typeError(getRuntime().getCurrentContext(), "initialize_copy should take same class object");
         }
 
         return this;
@@ -2173,13 +2174,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *  class. See also <code>Object#kind_of?</code>.
      */
     public RubyBoolean instance_of_p(ThreadContext context, IRubyObject type) {
-        if (type() == type) {
-            return context.tru;
-        } else if (!(type instanceof RubyModule)) {
-            throw context.runtime.newTypeError("class or module required");
-        } else {
-            return context.fals;
-        }
+        if (type() == type) return context.tru;
+        if (!(type instanceof RubyModule)) throw typeError(context, "class or module required");
+
+        return context.fals;
     }
 
 
@@ -2210,13 +2208,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     b.kind_of? M       #=&gt; true
      */
     public RubyBoolean kind_of_p(ThreadContext context, IRubyObject type) {
-        // TODO: Generalize this type-checking code into IRubyObject helper.
-        if (!(type instanceof RubyModule)) {
-            // TODO: newTypeError does not offer enough for ruby error string...
-            throw context.runtime.newTypeError("class or module required");
-        }
-
-        return RubyBoolean.newBoolean(context, ((RubyModule) type).isInstance(this));
+        return RubyBoolean.newBoolean(context, castToModule(context, type, "class or module required").isInstance(this));
     }
 
     /** rb_obj_methods
@@ -2598,14 +2590,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     k.hello         #=&gt; "Hello from Mod.\n"
      */
     public IRubyObject extend(IRubyObject[] args) {
-        Ruby runtime = metaClass.runtime;
+        var context = getRuntime().getCurrentContext();
 
         // Make sure all arguments are modules before calling the callbacks
         for (int i = 0; i < args.length; i++) {
-            if (!args[i].isModule()) throw runtime.newTypeError(args[i], runtime.getModule());
+            if (!args[i].isModule()) throw typeError(context, args[i], "Module");
         }
-
-        ThreadContext context = runtime.getCurrentContext();
 
         // MRI extends in order from last to first
         for (int i = args.length - 1; i >= 0; i--) {

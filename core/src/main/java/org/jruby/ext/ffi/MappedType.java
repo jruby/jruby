@@ -17,6 +17,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 
+import static org.jruby.api.Error.typeError;
+
 /**
  * A type which represents a conversion to/from a native type.
  */
@@ -55,7 +57,7 @@ public final class MappedType extends Type {
         try {
             nativeType = (Type) converter.callMethod(context, "native_type");
         } catch (ClassCastException ex) {
-            throw context.runtime.newTypeError("native_type did not return instance of FFI::Type");
+            throw typeError(context, "native_type did not return instance of FFI::Type");
         }
 
         boolean isReferenceRequired;

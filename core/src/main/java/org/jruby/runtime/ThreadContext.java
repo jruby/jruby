@@ -81,6 +81,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.jruby.RubyBasicObject.NEVER;
+import static org.jruby.api.Error.typeError;
 
 public final class ThreadContext {
 
@@ -1373,7 +1374,9 @@ public final class ThreadContext {
     }
 
     public IRubyObject addThreadTraceFunction(IRubyObject trace_func, boolean useContextHook) {
-        if (!(trace_func instanceof RubyProc)) throw runtime.newTypeError("trace_func needs to be Proc.");
+        if (!(trace_func instanceof RubyProc)) {
+            throw typeError(trace_func.getRuntime().getCurrentContext(), "trace_func needs to be Proc.");
+        }
 
         TraceEventManager.CallTraceFuncHook hook;
 

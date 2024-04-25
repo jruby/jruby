@@ -40,6 +40,8 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.util.ByteList;
 
@@ -133,7 +135,7 @@ public class JZlibDeflate extends ZStream {
     @JRubyMethod(visibility = PRIVATE)
     public IRubyObject initialize_copy(IRubyObject _other) {
         if (!(_other instanceof JZlibDeflate)) {
-            throw getRuntime().newTypeError("Expecting an instance of class JZlibDeflate");
+            throw typeError(getRuntime().getCurrentContext(), "Expecting an instance of class JZlibDeflate");
         }
 
         if (this == _other) {
@@ -156,7 +158,7 @@ public class JZlibDeflate extends ZStream {
             throw RubyZlib.newStreamError(getRuntime(), "stream error");
         }
 
-        return (IRubyObject) this;
+        return this;
     }
 
     @JRubyMethod(name = "<<")

@@ -52,6 +52,7 @@ import org.jruby.util.ByteList;
 
 import java.io.ByteArrayInputStream;
 
+import static org.jruby.api.Error.typeError;
 import static org.jruby.parser.ParserType.INLINE;
 
 /**
@@ -128,13 +129,9 @@ public class JRubyLibrary implements Library {
     @JRubyMethod(module = true, name = {"dereference", "deref"})
     public static IRubyObject dereference(ThreadContext context, IRubyObject recv, IRubyObject obj) {
         Object unwrapped = JavaUtil.unwrapIfJavaObject(obj);
-        if (unwrapped == obj) {
-            throw context.runtime.newTypeError("got " + obj.inspect() + ", expected wrapped Java object");
-        }
-        if (!(unwrapped instanceof IRubyObject)) {
-            throw context.runtime.newTypeError("got " + obj.inspect() + ", expected Java-wrapped Ruby object");
-        }
-        return (IRubyObject) unwrapped;
+        if (unwrapped == obj) throw typeError(context, "got " + obj.inspect() + ", expected wrapped Java object");
+        if (unwrapped instanceof IRubyObject robj) return robj;
+        throw typeError(context, "got " + obj.inspect() + ", expected Java-wrapped Ruby object");
     }
 
     /**

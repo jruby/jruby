@@ -41,6 +41,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.WeakHashSet;
 
+import static org.jruby.api.Error.typeError;
+
 /**
  * Implementation of Ruby's <code>ThreadGroup</code> class. This is currently
  * just a stub.
@@ -69,37 +71,24 @@ public class RubyThreadGroup extends RubyObject {
 
     @JRubyMethod(name = "add")
     public IRubyObject add(ThreadContext context, IRubyObject rubyThread, Block block) {
-        if (!(rubyThread instanceof RubyThread)) throw getRuntime().newTypeError(rubyThread, getRuntime().getThread());
+        if (!(rubyThread instanceof RubyThread)) throw typeError(context, rubyThread, "Thread");
         
         // synchronize on the RubyThread for threadgroup updates
-        if (isFrozen()) {
-            throw getRuntime().newTypeError("can't add to the frozen thread group");
-        }
+        if (isFrozen()) throw typeError(context, "can't add to the frozen thread group");
+        if (enclosed) throw typeError(context, "can't move to the enclosed thread group");
 
-        if (enclosed) {
-            throw getRuntime().newTypeError("can't move to the enclosed thread group");
-        }
-        
-        RubyThread thread = (RubyThread)rubyThread;
-
+        RubyThread thread = (RubyThread) rubyThread;
         RubyThreadGroup threadGroup = thread.getThreadGroup();
 
         // edit by headius: ThreadGroup may be null, perhaps if this is an adopted thread etc
         if(threadGroup != null) {
-            if (threadGroup.isFrozen()) {
-                throw getRuntime().newTypeError("can't move from the frozen thread group");
-            }
-
-            if (threadGroup.enclosed_p(block).isTrue()) {
-                throw getRuntime().newTypeError("can't move from the enclosed thread group");
-            }
+            if (threadGroup.isFrozen()) throw typeError(context, "can't move from the frozen thread group");
+            if (threadGroup.enclosed_p(block).isTrue()) throw typeError(context, "can't move from the enclosed thread group");
         }
 
         // we only add live threads
-        if (thread.alive_p(context).isTrue()) {
-            addDirectly(thread);
-        }
-        
+        if (thread.alive_p(context).isTrue()) addDirectly(thread);
+
         return this;
     }
     
@@ -164,7 +153,7 @@ public class RubyThreadGroup extends RubyObject {
 
     @Deprecated
     public IRubyObject add(IRubyObject rubyThread, Block block) {
-        if (!(rubyThread instanceof RubyThread)) throw getRuntime().newTypeError(rubyThread, getRuntime().getThread());
+        if (!(rubyThread instanceof RubyThread)) throw typeError(getRuntime().getCurrentContext(), rubyThread, "Thread");
 
         return add(((RubyThread) rubyThread).getContext(), rubyThread, block);
     }

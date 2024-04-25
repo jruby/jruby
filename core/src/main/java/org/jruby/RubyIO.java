@@ -107,6 +107,7 @@ import static com.headius.backport9.buffer.Buffers.flipBuffer;
 import static com.headius.backport9.buffer.Buffers.limitBuffer;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.anno.FrameField.LASTLINE;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -4073,9 +4074,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     // MRI: advice_arg_check
     static PosixFadvise adviceArgCheck(ThreadContext context, IRubyObject advice) {
-        if (!(advice instanceof RubySymbol)) {
-            throw context.runtime.newTypeError("advise must be a symbol");
-        }
+        if (!(advice instanceof RubySymbol)) throw typeError(context, "advise must be a symbol");
 
         String adviceStr = advice.asJavaString();
         switch (adviceStr) {
@@ -4088,8 +4087,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             case "willneed":
             case "dontneed":
             case "noreuse":
-                String adviceString = advice.toString();
-                return PosixFadvise.valueOf("POSIX_FADV_" + adviceString.toUpperCase());
+                return PosixFadvise.valueOf("POSIX_FADV_" + adviceStr.toUpperCase());
         }
     }
 
@@ -4434,7 +4432,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
             if (arg0.isNil()) {
                 if ((arg0 = TypeConverter.checkStringType(runtime, args[firstArg])).isNil()) {
-                    throw runtime.newTypeError(args[firstArg], runtime.getString());
+                    throw typeError(runtime.getCurrentContext(), args[firstArg], "String");
                 }
                 _cmdPlusArgs = null;
                 _cmd = arg0;

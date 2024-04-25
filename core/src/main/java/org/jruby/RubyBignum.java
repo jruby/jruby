@@ -51,6 +51,7 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 
 import static org.jruby.RubyFixnum.zero;
+import static org.jruby.api.Error.typeError;
 
 /**
  *
@@ -150,7 +151,7 @@ public class RubyBignum extends RubyInteger {
 
     @Override
     public RubyClass getSingletonClass() {
-        throw getRuntime().newTypeError("can't define singleton");
+        throw typeError(getRuntime().getCurrentContext(), "can't define singleton");
     }
 
     /** Getter for property value.

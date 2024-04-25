@@ -43,6 +43,8 @@ import org.jruby.util.TypeConverter;
 import java.util.HashSet;
 import java.util.Set;
 
+import static org.jruby.api.Convert.castToArray;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
 import static org.jruby.util.TypeConverter.booleanExpected;
@@ -76,16 +78,9 @@ public final class ArgsUtil {
         
         IRubyObject newValue = TypeConverter.convertToType(value, runtime.getArray(), "to_ary", false);
 
-        if (newValue.isNil()) {
-            return RubyArray.newArrayLight(runtime, value);
-        }
-        
-        // must be array by now, or error
-        if (!(newValue instanceof RubyArray)) {
-            throw runtime.newTypeError(newValue.getMetaClass() + "#to_ary should return Array");
-        }
-        
-        return (RubyArray) newValue;
+        return newValue.isNil() ?
+                RubyArray.newArrayLight(runtime, value):
+                castToArray(runtime.getCurrentContext(), newValue);
     }
     
     public static int arrayLength(IRubyObject node) {

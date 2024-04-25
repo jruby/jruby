@@ -51,10 +51,12 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 import org.jruby.util.TypeConverter;
 
+import static org.jruby.api.Error.typeError;
 import static org.jruby.ast.util.ArgsUtil.hasExceptionOption;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import static org.jruby.util.Numeric.*;
+import static org.jruby.util.RubyStringBuilder.str;
 
 /**
  * Ruby Rational impl (MRI: rational.c).
@@ -185,7 +187,7 @@ public class RubyRational extends RubyNumeric {
     private static RubyInteger intCheck(ThreadContext context, IRubyObject num) {
         if (num instanceof RubyInteger) return (RubyInteger) num;
         if (!(num instanceof RubyNumeric) || !integer_p(context).call(context, num, num).isTrue()) { // num.integer?
-            throw context.runtime.newTypeError("not an integer");
+            throw typeError(context, "not an integer");
         }
         return num.convertToInteger();
     }
@@ -198,12 +200,10 @@ public class RubyRational extends RubyNumeric {
      * 
      */
     static IRubyObject intValue(ThreadContext context, IRubyObject num, boolean raise) {
-        RubyInteger i;
-        if (( i = RubyInteger.toInteger(context, num) ) == null) {
-            if (raise) {
-                throw context.runtime.newTypeError("can't convert " + num.getMetaClass().getName() + " into Rational");
-            }
+        RubyInteger i = RubyInteger.toInteger(context, num);
 
+        if (i == null) {
+            if (raise) throw typeError(context, "can't convert ", num, " into Rational");
             return context.nil;
         }
 
@@ -374,9 +374,7 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = "convert", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject convert(ThreadContext context, IRubyObject recv, IRubyObject a1) {
-        if (a1 == context.nil) {
-            throw context.runtime.newTypeError("can't convert nil into Rational");
-        }
+        if (a1 == context.nil) throw typeError(context, "can't convert nil into Rational");
 
         return convertCommon(context, (RubyClass) recv, a1, context.nil, true);
     }
@@ -386,26 +384,18 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = "convert", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject convert(ThreadContext context, IRubyObject recv, IRubyObject a1, IRubyObject a2) {
-        Ruby runtime = context.runtime;
-
-        IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(runtime, a2, false);
+        IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(context.runtime, a2, false);
         boolean raise = true;
-
         IRubyObject nil = context.nil;
 
         if (maybeKwargs.isNil()) {
-            if (a1 == nil || a2 == nil) {
-                if (raise) throw runtime.newTypeError("can't convert nil into Rational");
-
-                return nil;
-            }
+            if (a1 == nil || a2 == nil) throw typeError(context, "can't convert nil into Rational");
         } else {
             a2 = nil;
             raise = hasExceptionOption(context, maybeKwargs, raise);
 
             if (a1 == nil) {
-                if (raise) throw runtime.newTypeError("can't convert nil into Rational");
-
+                if (raise) throw typeError(context, "can't convert nil into Rational");
                 return nil;
             }
         }
@@ -418,24 +408,16 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = "convert", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject convert(ThreadContext context, IRubyObject recv, IRubyObject a1, IRubyObject a2, IRubyObject kwargs) {
-        Ruby runtime = context.runtime;
+        IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(context.runtime, kwargs, false);
 
-        IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(runtime, kwargs, false);
-        boolean raise;
-
-        if (maybeKwargs.isNil()) {
-            throw runtime.newArgumentError("convert", 3, 1, 2);
-        }
+        if (maybeKwargs.isNil()) throw context.runtime.newArgumentError("convert", 3, 1, 2);
 
         IRubyObject exception = ArgsUtil.extractKeywordArg(context, "exception", (RubyHash) maybeKwargs);
-
-        raise = exception.isNil() ? true : exception.isTrue();
-
+        boolean raise = exception.isNil() ? true : exception.isTrue();
         IRubyObject nil = context.nil;
 
         if (a1 == nil || a2 == nil) {
-            if (raise) throw runtime.newTypeError("can't convert nil into Rational");
-
+            if (raise) throw typeError(context, "can't convert nil into Rational");
             return nil;
         }
 
@@ -1014,15 +996,15 @@ public class RubyRational extends RubyNumeric {
             return runtime.newArray(other, r_to_f(context, this));
         } else if (other instanceof RubyRational) {
             return runtime.newArray(other, this);
-        } else if (other instanceof RubyComplex) {
-            RubyComplex otherComplex = (RubyComplex)other;
+        } else if (other instanceof RubyComplex otherComplex) {
             if (k_exact_p(otherComplex.getImage()) && f_zero_p(context, otherComplex.getImage())) {
                 return runtime.newArray(RubyRational.newRationalBang(context, getMetaClass(), otherComplex.getReal()), this);
             } else {
                 return runtime.newArray(other, RubyComplex.newComplexCanonicalize(context, this));
             }
         }
-        throw runtime.newTypeError(other.getMetaClass() + " can't be coerced into " + getMetaClass());
+
+        throw typeError(context, str(runtime, other.getMetaClass(), " can't be coerced into ", getMetaClass()));
     }
 
     @Override
@@ -1174,38 +1156,21 @@ public class RubyRational extends RubyNumeric {
     // MRI: f_round_common
     public IRubyObject roundCommon(ThreadContext context, final IRubyObject n, RoundingMode mode) {
         // case : precision arg is not given
-        if (n == null) {
-            return doRound(context, mode);
-        }
-
-        final Ruby runtime = context.runtime;
-
-        if (!(n instanceof RubyInteger)) {
-            throw runtime.newTypeError("not an integer");
-        }
+        if (n == null) return doRound(context, mode);
+        if (!(n instanceof RubyInteger)) typeError(context, "not an integer");
 
         final int nsign = ((RubyInteger) n).signum();
 
-        RubyNumeric b = f_expt(context, runtime.newFixnum(10), (RubyInteger) n);
-        IRubyObject s;
-        if (nsign >= 0) {
-            s = this.op_mul(context, (RubyInteger) b);
-        }
-        else {
-            s = this.op_mul(context, b); // (RubyRational) b
-        }
+        RubyNumeric b = f_expt(context, context.runtime.newFixnum(10), (RubyInteger) n);
+        IRubyObject s = nsign >= 0 ?
+                op_mul(context, (RubyInteger) b) :
+                op_mul(context, b); // (RubyRational) b
 
-        if (s instanceof RubyFloat) {
-            if (nsign < 0) return RubyFixnum.zero(runtime);
-            return this;
-        }
+        if (s instanceof RubyFloat) return nsign < 0 ? RubyFixnum.zero(context.runtime) : this;
 
-        if (!(s instanceof RubyRational)) {
-            s = newRationalBang(context, getMetaClass(), s);
-        }
+        if (!(s instanceof RubyRational)) s = newRationalBang(context, getMetaClass(), s);
 
         s = ((RubyRational) s).doRound(context, mode);
-
         s = newRationalBang(context, getMetaClass(), (RubyInteger) s);
         s = ((RubyRational) s).op_div(context, b);
 
@@ -1500,7 +1465,7 @@ public class RubyRational extends RubyNumeric {
     private static final ObjectMarshal RATIONAL_MARSHAL = new ObjectMarshal() {
         @Override
         public void marshalTo(Ruby runtime, Object obj, RubyClass type, MarshalStream marshalStream) {
-            throw runtime.newTypeError("marshal_dump should be used instead for Rational");
+            throw typeError(runtime.getCurrentContext(), "marshal_dump should be used instead for Rational");
         }
 
         @Override

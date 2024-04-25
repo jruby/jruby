@@ -75,6 +75,7 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.collections.WeakValuedMap;
 
+import static org.jruby.api.Error.typeError;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.StringSupport.CR_7BIT;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
@@ -599,7 +600,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     private void check() {
-        if (pattern == null) throw metaClass.runtime.newTypeError("uninitialized Regexp");
+        if (pattern == null) throw typeError(getRuntime().getCurrentContext(),"uninitialized Regexp");
     }
 
     @JRubyMethod(meta = true)
@@ -862,7 +863,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         checkFrozen();
 
         if (getMetaClass().getRealClass() != re.getMetaClass().getRealClass()) {
-            throw getRuntime().newTypeError("wrong argument type");
+            throw typeError(getRuntime().getCurrentContext(), "wrong argument type");
         }
 
         RubyRegexp regexp = (RubyRegexp)re;
@@ -957,7 +958,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         checkFrozen();
         // FIXME: Something unsets this bit, but we aren't...be more permissive until we figure this out
         //if (isLiteral()) throw runtime.newSecurityError("can't modify literal regexp");
-        if (pattern != null) throw runtime.newTypeError("already initialized regexp");
+        if (pattern != null) throw typeError(runtime.getCurrentContext(), "already initialized regexp");
         if (enc.isDummy()) RegexpSupport.raiseRegexpError(runtime, bytes, enc, options, "can't make regexp with dummy encoding");
 
         Encoding[]fixedEnc = new Encoding[]{null};

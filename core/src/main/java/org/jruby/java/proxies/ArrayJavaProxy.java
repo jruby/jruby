@@ -18,6 +18,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.RubyStringBuilder;
 
+import static org.jruby.api.Convert.castToFixnum;
+import static org.jruby.api.Convert.castToRange;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.javasupport.ext.JavaLang.Character.inspectCharValue;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.util.Inspector.*;
@@ -817,37 +820,26 @@ public final class ArrayJavaProxy extends JavaProxy {
     }
 
     public IRubyObject getRange(ThreadContext context, IRubyObject arg0) {
-        if ( arg0 instanceof RubyRange ) {
-            return arrayRange(context, (RubyRange) arg0);
-        }
-        throw context.runtime.newTypeError(arg0, context.runtime.getRange());
+        return arrayRange(context, castToRange(context, arg0));
     }
 
     private IRubyObject arrayRange(final ThreadContext context, final RubyRange range) {
         final Object array = getObject();
         final int arrayLength = Array.getLength( array );
+        int first = castToFixnum(context, range.first(context), "Only Integer ranges supported").getIntValue();
+        int last = castToFixnum(context, range.last(context), "Only Integer ranges supported").getIntValue();
 
-        final IRubyObject rFirst = range.first(context);
-        final IRubyObject rLast = range.last(context);
-        if ( rFirst instanceof RubyFixnum && rLast instanceof RubyFixnum ) {
-            int first = RubyFixnum.fix2int((RubyFixnum) rFirst);
-            int last = RubyFixnum.fix2int((RubyFixnum) rLast);
+        first = first >= 0 ? first : arrayLength + first;
+        if (first < 0 || first >= arrayLength) return context.nil;
 
-            first = first >= 0 ? first : arrayLength + first;
-            if (first < 0 || first >= arrayLength) return context.nil;
+        last = last >= 0 ? last : arrayLength + last;
 
-            last = last >= 0 ? last : arrayLength + last;
+        int newLength = last - first;
+        if (!range.isExcludeEnd()) newLength++;
 
-            int newLength = last - first;
-            if ( !range.isExcludeEnd() ) newLength++;
-
-            if (newLength <= 0) {
-                return ArrayUtils.emptyJavaArrayDirect(context, array.getClass().getComponentType());
-            }
-
-            return subarrayProxy(context, array, arrayLength, first, newLength);
-        }
-        throw context.runtime.newTypeError("only Integer ranges supported");
+        return newLength <= 0 ?
+                ArrayUtils.emptyJavaArrayDirect(context, array.getClass().getComponentType()) :
+                subarrayProxy(context, array, arrayLength, first, newLength);
     }
 
     public IRubyObject getRange(ThreadContext context, IRubyObject first, IRubyObject length) {
@@ -859,22 +851,17 @@ public final class ArrayJavaProxy extends JavaProxy {
         final Object array = getObject();
         final int arrayLength = Array.getLength( array );
 
-        if ( rFirst instanceof RubyFixnum && rLength instanceof RubyFixnum ) {
-            int first = RubyFixnum.fix2int((RubyFixnum) rFirst);
-            int length = RubyFixnum.fix2int((RubyFixnum) rLength);
+        int first = castToFixnum(context, rFirst, "Only Integer ranges supported").getIntValue();
+        int length = castToFixnum(context, rLength, "Only Integer ranges supported").getIntValue();
 
-            if (length > arrayLength) {
-                throw context.runtime.newIndexError("length specified is longer than array");
-            }
-            if (length < 0) return context.nil;
+        if (length > arrayLength) throw context.runtime.newIndexError("length specified is longer than array");
+        if (length < 0) return context.nil;
 
-            first = first >= 0 ? first : arrayLength + first;
+        first = first >= 0 ? first : arrayLength + first;
 
-            if (first >= arrayLength) return context.nil;
+        if (first >= arrayLength) return context.nil;
 
-            return subarrayProxy(context, array, arrayLength, first, length);
-        }
-        throw context.runtime.newTypeError("only Integer ranges supported");
+        return subarrayProxy(context, array, arrayLength, first, length);
     }
 
     private IRubyObject subarrayProxy(ThreadContext context, Object ary, final int aryLength, int index, int size) {
@@ -901,11 +888,7 @@ public final class ArrayJavaProxy extends JavaProxy {
 
         @Override
         public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
-            final Ruby runtime = context.runtime;
-
-            if (!(arg0 instanceof ArrayJavaProxy)) {
-                throw runtime.newTypeError(arg0, "ArrayJavaProxy");
-            }
+            if (!(arg0 instanceof ArrayJavaProxy)) throw typeError(context, arg0, "ArrayJavaProxy");
 
             IRubyObject proxy = newMethod.call(context, self, clazz, "new_proxy");
             proxy.dataWrapStruct(arg0);

@@ -57,6 +57,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.List;
 
+import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.RubyStringBuilder.str;
 
@@ -291,7 +292,7 @@ public class RubyException extends RubyObject {
         } else if (obj instanceof RubyString) {
             backtrace.backtraceObject = RubyArray.newArray(getRuntime(), obj);
         } else {
-            throw getRuntime().newTypeError("backtrace must be Array of String");
+            throw typeError(getRuntime().getCurrentContext(), "backtrace must be Array of String");
         }
     }
 

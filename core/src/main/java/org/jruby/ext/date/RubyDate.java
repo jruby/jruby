@@ -59,6 +59,9 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 
 import static org.jruby.RubyRegexp.*;
+import static org.jruby.api.Convert.castToArray;
+import static org.jruby.api.Convert.castToNumeric;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.ext.date.DateUtils.*;
 import static org.jruby.util.Numeric.*;
 
@@ -777,10 +780,7 @@ public class RubyDate extends RubyObject {
 
     @Override
     public boolean equals(Object other) {
-        if (other instanceof RubyDate) {
-            return equals((RubyDate) other);
-        }
-        return false;
+        return other instanceof RubyDate date ? equals(date) : false;
     }
 
     public final boolean equals(RubyDate that) {
@@ -791,10 +791,7 @@ public class RubyDate extends RubyObject {
     @Override
     @JRubyMethod(name = "eql?")
     public IRubyObject eql_p(IRubyObject other) {
-        if (other instanceof RubyDate) {
-            return getRuntime().newBoolean( equals((RubyDate) other) );
-        }
-        return getRuntime().getFalse();
+        return getRuntime().newBoolean(equals(other));
     }
 
     /**
@@ -809,12 +806,8 @@ public class RubyDate extends RubyObject {
     @Override
     @JRubyMethod(name = "===")
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyDate) {
-            return f_equal(context, jd(context), ((RubyDate) other).jd(context));
-        }
-        if (other instanceof RubyNumeric) {
-            return f_equal(context, jd(context), other);
-        }
+        if (other instanceof RubyDate date) return f_equal(context, jd(context), date.jd(context));
+        if (other instanceof RubyNumeric) return f_equal(context, jd(context), other);
         return fallback_eqq(context, other); // rb_num_coerce_cmp(self, other, "==")
     }
 
@@ -834,9 +827,7 @@ public class RubyDate extends RubyObject {
     @Override
     @JRubyMethod(name = "<=>")
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyDate) {
-            return context.runtime.newFixnum(cmp(context, (RubyDate) other));
-        }
+        if (other instanceof RubyDate date) return context.runtime.newFixnum(cmp(context, date));
 
         // other (Numeric) - interpreted as an Astronomical Julian Day Number.
 
@@ -847,9 +838,7 @@ public class RubyDate extends RubyObject {
         // with a Date instance, the time of the latter will be
         // considered as falling on midnight UTC.
 
-        if (other instanceof RubyNumeric) {
-            return f_cmp(context, ajd(context), other);
-        }
+        if (other instanceof RubyNumeric) return f_cmp(context, ajd(context), other);
 
         return fallback_cmp(context, other);
     }
@@ -1226,14 +1215,9 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod(name = "+")
     public IRubyObject op_plus(ThreadContext context, IRubyObject n) {
-        if (n instanceof RubyFixnum) {
-            int days = n.convertToInteger().getIntValue();
-            return newInstance(context, dt.plusDays(+days), off, start);
-        }
-        if (n instanceof RubyNumeric) {
-            return op_plus_numeric(context, (RubyNumeric) n);
-        }
-        throw context.runtime.newTypeError("expected numeric");
+        return n instanceof RubyFixnum fixnum ?
+                newInstance(context, dt.plusDays(+fixnum.getIntValue()), off, start) :
+                op_plus_numeric(context, castToNumeric(context, n, "expected numeric"));
     }
 
     RubyDate op_plus_numeric(ThreadContext context, RubyNumeric n) {
@@ -1279,17 +1263,11 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod(name = "-")
     public IRubyObject op_minus(ThreadContext context, IRubyObject n) {
-        if (n instanceof RubyFixnum) {
-            int days = n.convertToInteger().getIntValue();
-            return newInstance(context, dt.plusDays(-days), off, start);
-        }
-        if (n instanceof RubyNumeric) {
-            return op_plus_numeric(context, (RubyNumeric) ((RubyNumeric) n).op_uminus(context));
-        }
-        if (n instanceof RubyDate) {
-            return op_minus_date(context, (RubyDate) n);
-        }
-        throw context.runtime.newTypeError("expected numeric or date");
+        if (n instanceof RubyFixnum fixnum) return newInstance(context, dt.plusDays(-fixnum.getIntValue()), off, start);
+        if (n instanceof RubyNumeric numeric) return op_plus_numeric(context, (RubyNumeric) numeric.op_uminus(context));
+        if (n instanceof RubyDate date) return op_minus_date(context, date);
+
+        throw typeError(context, "expected numeric or date");
     }
 
     private RubyNumeric op_minus_date(ThreadContext context, final RubyDate that) {
@@ -1439,11 +1417,7 @@ public class RubyDate extends RubyObject {
     public RubyDate marshal_load(ThreadContext context, IRubyObject a) {
         checkFrozen();
 
-        if (!(a instanceof RubyArray)) {
-            throw context.runtime.newTypeError("expected an array");
-        }
-
-        final RubyArray ary = (RubyArray) a;
+        final RubyArray ary = castToArray(context, a, "expected an array");
 
         IRubyObject ajd, of, sg;
 
@@ -1471,7 +1445,7 @@ public class RubyDate extends RubyObject {
                 ajd = marshal_load_6(context, jd, df, sf);
                 break;
             default:
-                throw context.runtime.newTypeError("invalid size: " + ary.size());
+                throw typeError(context, "invalid size: " + ary.size());
         }
 
         return initialize(context, ajd, of, sg);

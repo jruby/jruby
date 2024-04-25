@@ -60,6 +60,7 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.util.Numeric.f_abs;
 import static org.jruby.util.Numeric.f_arg;
 import static org.jruby.util.Numeric.f_mul;
@@ -221,11 +222,11 @@ public class RubyNumeric extends RubyObject {
     private static long other2long(IRubyObject arg) throws RaiseException {
         if (arg instanceof RubyFloat) return float2long((RubyFloat) arg);
         if (arg instanceof RubyBignum) return RubyBignum.big2long((RubyBignum) arg);
-        if (arg.isNil()) {
-            throw arg.getRuntime().newTypeError("no implicit conversion from nil to integer");
-        }
 
-        return ((RubyInteger) TypeConverter.convertToType(arg, arg.getRuntime().getInteger(), "to_int")).getLongValue();
+        Ruby runtime = arg.getRuntime();
+        if (arg.isNil()) throw typeError(runtime.getCurrentContext(), "no implicit conversion from nil to integer");
+
+        return ((RubyInteger) TypeConverter.convertToType(arg, runtime.getInteger(), "to_int")).getLongValue();
     }
 
     public static long float2long(RubyFloat flt) {
@@ -256,9 +257,7 @@ public class RubyNumeric extends RubyObject {
             } else if (arg instanceof RubyFloat) {
                 return float2ulong((RubyFloat) arg);
             } else {
-                if (arg.isNil()) {
-                    throw arg.getRuntime().newTypeError("no implicit conversion from nil to integer");
-                }
+                if (arg.isNil()) throw typeError(arg.getRuntime().getCurrentContext(), "no implicit conversion from nil to integer");
                 arg = arg.convertToInteger();
                 // loop again
             }
@@ -336,13 +335,13 @@ public class RubyNumeric extends RubyObject {
                 if (context.sites.Rational.to_f.isBuiltin(arg)) return ((RubyRational) arg).getDoubleValue();
                 break;
             case STRING:
-                throw context.runtime.newTypeError("no implicit conversion to float from string");
+                throw typeError(context, "no implicit conversion to float from string");
             case NIL:
-                throw context.runtime.newTypeError("no implicit conversion to float from nil");
+                throw typeError(context, "no implicit conversion to float from nil");
             case TRUE:
-                throw context.runtime.newTypeError("no implicit conversion to float from true");
+                throw typeError(context, "no implicit conversion to float from true");
             case FALSE:
-                throw context.runtime.newTypeError("no implicit conversion to float from false");
+                throw typeError(context, "no implicit conversion to float from false");
         }
         IRubyObject val = TypeConverter.convertToType(arg, context.runtime.getFloat(), "to_f");
         return ((RubyFloat) val).value;
@@ -491,22 +490,16 @@ public class RubyNumeric extends RubyObject {
      */
 
     protected final IRubyObject[] getCoerced(ThreadContext context, IRubyObject other, boolean error) {
-        final Ruby runtime = context.runtime;
         final IRubyObject $ex = context.getErrorInfo();
-        final IRubyObject result;
         try {
-            result = sites(context).coerce.call(context, other, other, this);
-        }
-        catch (RaiseException e) { // e.g. NoMethodError: undefined method `coerce'
+            IRubyObject result = sites(context).coerce.call(context, other, other, this);
+            return coerceResult(context, result, true).toJavaArrayMaybeUnsafe();
+        } catch (RaiseException e) { // e.g. NoMethodError: undefined method `coerce'
             context.setErrorInfo($ex); // restore $!
 
-            if (error) {
-                throw runtime.newTypeError(str(runtime, types(runtime, other.getMetaClass()), " can't be coerced into ", types(runtime, getMetaClass())));
-            }
+            if (error) throw typeError(context, "", other, " can't be coerced into " + types(context.runtime, getMetaClass()));
             return null;
         }
-
-        return coerceResult(runtime, result, true).toJavaArrayMaybeUnsafe();
     }
 
     protected final IRubyObject callCoerced(ThreadContext context, String method, IRubyObject other, boolean err) {
@@ -544,13 +537,13 @@ public class RubyNumeric extends RubyObject {
         }
         final IRubyObject $ex = context.getErrorInfo();
 
-        return coerceResult(context.runtime, ary, err);
+        return coerceResult(context, ary, err);
     }
 
-    private static RubyArray coerceResult(final Ruby runtime, final IRubyObject result, final boolean err) {
+    private static RubyArray coerceResult(ThreadContext context, final IRubyObject result, final boolean err) {
         if (result instanceof RubyArray && ((RubyArray) result).getLength() == 2) return (RubyArray) result;
 
-        if (err || !result.isNil()) throw runtime.newTypeError("coerce must return [x, y]");
+        if (err || !result.isNil()) throw typeError(context, "coerce must return [x, y]");
 
         return null;
     }
@@ -566,13 +559,12 @@ public class RubyNumeric extends RubyObject {
     /** coerce_failed
      *
      */
-    protected final void coerceFailed(ThreadContext context, IRubyObject other) {
-        if (other.isSpecialConst() || other instanceof RubyFloat) {
-            other = other.inspect();
-        } else {
-            other = other.getMetaClass().name(context);
-        }
-        throw context.runtime.newTypeError(String.format("%s can't be coerced into %s", other, getMetaClass()));
+    protected final void coerceFailed(ThreadContext context, IRubyObject arg) {
+        IRubyObject other = arg.isSpecialConst() || arg instanceof RubyFloat ?
+                arg.inspect() :
+                arg.getMetaClass().name(context);
+
+        throw typeError(context, str(context.runtime, other, " can't be coerced into ", getMetaClass()));
     }
 
     /** rb_num_coerce_bin
@@ -712,7 +704,7 @@ public class RubyNumeric extends RubyObject {
     @JRubyMethod(name = "singleton_method_added")
     public static IRubyObject singleton_method_added(ThreadContext context, IRubyObject self, IRubyObject name) {
         Ruby runtime = context.runtime;
-        throw runtime.newTypeError(str(runtime, "can't define singleton method \"", ids(runtime, name), "\" for ", types(runtime, self.getType())));
+        throw typeError(context, str(runtime, "can't define singleton method \"", ids(runtime, name), "\" for ", types(runtime, self.getType())));
     }
 
     /** num_init_copy
@@ -725,8 +717,7 @@ public class RubyNumeric extends RubyObject {
 
         checkFrozen();
 
-        final Ruby runtime = metaClass.runtime;
-        throw runtime.newTypeError(str(runtime, "can't copy ", types(runtime, getType())));
+        throw typeError(getRuntime().getCurrentContext(), "can't copy ", this, "");
     }
 
     /** num_coerce
@@ -1101,9 +1092,8 @@ public class RubyNumeric extends RubyObject {
             newArgs[1] = step = by;
         } else {
             /* compatibility */
-            if (argc > 1 && step.isNil()) {
-                throw runtime.newTypeError("step must be numeric");
-            }
+            if (argc > 1 && step.isNil()) throw typeError(context, "step must be numeric");
+
             if (step.op_equal(context, RubyFixnum.zero(runtime)).isTrue()) {
                 throw runtime.newArgumentError("step can't be 0");
             }

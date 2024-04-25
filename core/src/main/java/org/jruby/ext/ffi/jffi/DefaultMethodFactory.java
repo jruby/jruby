@@ -30,6 +30,8 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Error.typeError;
+
 
 public final class DefaultMethodFactory extends MethodFactory {
 
@@ -58,7 +60,7 @@ public final class DefaultMethodFactory extends MethodFactory {
         for (int i = 0; i < parameterTypes.length; ++i)  {
             marshallers[i] = getMarshaller(parameterTypes[i], convention, enums);
             if (marshallers[i] == null) {
-                throw module.getRuntime().newTypeError("Could not create marshaller for " + parameterTypes[i]);
+                throw typeError(module.getRuntime().getCurrentContext(), "Could not create marshaller for " + parameterTypes[i]);
             }
         }
 
@@ -92,7 +94,7 @@ public final class DefaultMethodFactory extends MethodFactory {
             // throw an exception
         }
 
-        throw returnType.getRuntime().newTypeError("Cannot get FunctionInvoker for " + returnType);
+        throw typeError(returnType.getRuntime().getCurrentContext(), "Cannot get FunctionInvoker for " + returnType);
     }
 
     static FunctionInvoker getFunctionInvoker(NativeType returnType) {
@@ -149,8 +151,7 @@ public final class DefaultMethodFactory extends MethodFactory {
      */
     static ParameterMarshaller getMarshaller(Type type, CallingConvention convention, IRubyObject enums) {
         if (enums != null && !enums.isNil() && !(enums instanceof RubyHash || enums instanceof Enums)) {
-            throw type.getRuntime().newArgumentError("wrong argument type "
-                    + enums.getMetaClass().getName() + " (expected Hash or Enums)");
+            typeError(type.getRuntime().getCurrentContext(), enums, "Hash or Enums");
         }
 
         if (type instanceof Type.Builtin) {
@@ -192,10 +193,8 @@ public final class DefaultMethodFactory extends MethodFactory {
      * @return A new <code>ParameterMarshaller</code>
      */
     static ParameterMarshaller getEnumMarshaller(Type type, CallingConvention convention, IRubyObject enums) {
-        if (enums != null && !enums.isNil() && !(enums instanceof RubyHash || enums instanceof Enums)) {
-            throw type.getRuntime().newArgumentError("wrong argument type "
-                    + enums.getMetaClass().getName() + " (expected Hash or Enums)");
-        }
+        if (!(enums instanceof Enums)) typeError(type.getRuntime().getCurrentContext(), enums, "Enums");
+
         NativeDataConverter converter = DataConverters.getParameterConverter(type, (Enums)enums);
         ParameterMarshaller marshaller = getMarshaller(type.getNativeType());
         return converter != null ? new ConvertingMarshaller(marshaller, converter) : marshaller;
@@ -688,10 +687,7 @@ public final class DefaultMethodFactory extends MethodFactory {
 
 
         public final void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
-            if (!(parameter instanceof Struct)) {
-                throw context.runtime.newTypeError("wrong argument type "
-                        + parameter.getMetaClass().getName() + " (expected instance of FFI::Struct)");
-            }
+            if (!(parameter instanceof Struct)) typeError(context, parameter, "instance of FFI::Struct");
 
             final AbstractMemory memory = ((Struct) parameter).getMemory();
             if (memory.getSize() < layout.getSize()) {

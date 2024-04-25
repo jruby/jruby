@@ -67,6 +67,7 @@ import java.nio.ByteOrder;
 import java.nio.channels.Channel;
 
 import static com.headius.backport9.buffer.Buffers.flipBuffer;
+import static org.jruby.api.Error.typeError;
 
 
 @JRubyClass(name="UNIXSocket", parent="BasicSocket")
@@ -164,12 +165,10 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         } else if (arg.callMethod(context, "kind_of?", runtime.getFixnum()).isTrue()) {
           fd = ((RubyFixnum) arg).getIntValue();
         } else {
-          throw runtime.newTypeError("neither IO nor file descriptor");
+          throw typeError(context, "neither IO nor file descriptor");
         }
 
-        if (FilenoUtil.isFake(fd)) {
-          throw runtime.newTypeError("file descriptor is not native");
-        }
+        if (FilenoUtil.isFake(fd)) throw typeError(context, "file descriptor is not native");
 
         byte[] dataBytes = new byte[1];
         dataBytes[0] = 0;

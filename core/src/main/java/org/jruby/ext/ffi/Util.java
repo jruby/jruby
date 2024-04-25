@@ -42,6 +42,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static com.headius.backport9.buffer.Buffers.positionBuffer;
+import static org.jruby.api.Error.typeError;
 
 /**
  *
@@ -182,20 +183,14 @@ public final class Util {
     }
 
     public static ByteOrder parseByteOrder(Ruby runtime, IRubyObject byte_order) {
-        if (byte_order instanceof RubySymbol || byte_order instanceof RubyString) {
-            String orderName = byte_order.asJavaString();
-            if ("network".equals(orderName) || "big".equals(orderName)) {
-                return ByteOrder.BIG_ENDIAN;
+        if (!(byte_order instanceof RubySymbol) && !(byte_order instanceof RubyString)) {
+            throw typeError(runtime.getCurrentContext(), byte_order , "Symbol or String");
+        }
 
-            } else if ("little".equals(orderName)) {
-                return ByteOrder.LITTLE_ENDIAN;
-            
-            } else {
-                throw runtime.newArgumentError("unknown byte order");
-            }
-
-        } else {
-            throw runtime.newTypeError(byte_order, runtime.getSymbol());
+        switch (byte_order.asJavaString()) {
+            case "network": case "big": return ByteOrder.BIG_ENDIAN;
+            case "little": return ByteOrder.LITTLE_ENDIAN;
+            default: throw runtime.newArgumentError("unknown byte order");
         }
     }
 

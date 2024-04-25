@@ -56,6 +56,7 @@ import java.util.stream.Stream;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Error;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
@@ -93,6 +94,8 @@ import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyEnumerator.enumWithSize;
 import static org.jruby.RubyNumeric.checkInt;
+import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.addBufferLength;
 import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.runtime.Helpers.calculateBufferLength;
@@ -588,7 +591,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     protected final void modifyCheck() {
         if ((flags & TMPLOCK_OR_FROZEN_ARR_F) != 0) {
             if ((flags & FROZEN_F) != 0) throw getRuntime().newFrozenError(this);
-            if ((flags & TMPLOCK_ARR_F) != 0) throw getRuntime().newTypeError("can't modify array during iteration");
+            if ((flags & TMPLOCK_ARR_F) != 0) throw typeError(getRuntime().getCurrentContext(), "can't modify array during iteration");
         }
     }
 
@@ -2182,9 +2185,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             IRubyObject elt = block.isGiven() ? block.yield(context, e) : e;
             IRubyObject key_value_pair = elt.checkArrayType();
 
-            if (key_value_pair == context.nil) {
-                throw runtime.newTypeError("wrong element type " + elt.getMetaClass().getRealClass() + " at " + i + " (expected array)");
-            }
+            if (key_value_pair == context.nil) throw typeError(context, "wrong element type ", elt, " at " + i + " (expected array)");
 
             RubyArray ary = (RubyArray)key_value_pair;
             if (ary.getLength() != 2) {
@@ -2545,7 +2546,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                     case -1: smaller = false;
                 }
             } else {
-                throw runtime.newTypeError(str(runtime, "wrong argument type ", types(runtime, v.getType()), " (must be numeric, true, false or nil"));
+                throw typeError(context, "wrong argument type ", v, " (must be numeric, true, false or nil");
             }
             if (smaller) {
                 high = mid;
@@ -3079,7 +3080,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             RubySymbol each = runtime.newSymbol("each");
             for (int i = 0; i < args.length; i++) {
                 IRubyObject arg = args[i];
-                if (!arg.respondsTo("each")) throw runtime.newTypeError(arg, "must respond to :each");
+                if (!arg.respondsTo("each")) throw typeError(context, arg, "must respond to :each");
                 newArgs[i] = to_enum.call(context, arg, arg, each);
             }
         }
@@ -5111,7 +5112,7 @@ rational_loop:
                     } else if (result instanceof RubyRational) {
                         result = ((RubyRational) result).op_plus(context, value);
                     } else {
-                        throw runtime.newTypeError("BUG: unexpected type in rational part of Array#sum");
+                        throw typeError(context, "BUG: unexpected type in rational part of Array#sum");
                     }
                 } else if (value instanceof RubyFloat) {
                     result = RubyFloat.newFloat(runtime, ((RubyRational) result).getDoubleValue(context));
@@ -5334,7 +5335,7 @@ float_loop:
             buffer = ArgsUtil.extractKeywordArg(context, (RubyHash) opts, "buffer");
             if (buffer == context.nil) buffer = null;
             if (buffer != null && !(buffer instanceof RubyString)) {
-                throw runtime.newTypeError(str(runtime, "buffer must be String, not ", types(runtime, buffer.getType())));
+                throw typeError(context, "buffer must be String, not ", buffer, "");
             }
         }
 

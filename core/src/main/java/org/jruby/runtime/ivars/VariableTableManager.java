@@ -49,6 +49,8 @@ import org.jruby.specialized.RubyObjectSpecializer;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.cli.Options;
 import org.jruby.util.unsafe.UnsafeHolder;
+
+import static org.jruby.api.Error.typeError;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
 /**
@@ -198,14 +200,16 @@ public class VariableTableManager {
         try {
             Class<? extends Reified> reifiedClass = realClass.getReifiedClass();
             Class<?> fieldType = reifiedClass.getField(config.name).getType();
-            if (fieldType != config.fieldType)
-                throw realClass.getClassRuntime().newTypeError("java_field " + config.name + " has incorrectly specified types for @ivar mapping");
+            if (fieldType != config.fieldType) {
+                throw typeError(realClass.getClassRuntime().getCurrentContext(), "java_field " + config.name + " has incorrectly specified types for @ivar mapping");
+            }
             
             // by default, unwrap if it's not assignable to IRO
             boolean unwrap = config.unwrap == null ? !fieldType.isAssignableFrom(IRubyObject.class) : config.unwrap.booleanValue();
             Class<?> unwrapType = config.unwrapType == null ? fieldType : config.unwrapType;
-            if (unwrap && !fieldType.isAssignableFrom(unwrapType))
-                throw realClass.getClassRuntime().newTypeError("java_field " + config.name + " has incorrectly specified unwrap type for @ivar mapping: type is incompatible");
+            if (unwrap && !fieldType.isAssignableFrom(unwrapType)) {
+                throw typeError(realClass.getClassRuntime().getCurrentContext(), config.name + " has incorrectly specified unwrap type for @ivar mapping: type is incompatible");
+            }
             
             getVariableAccessorForJavaMappedVar("@" + config.name,
                     unwrap,

@@ -15,6 +15,8 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Error.typeError;
+
 public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
     private final Function function;
     private final Type returnType;
@@ -68,18 +70,15 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
 
         if (!(args[0] instanceof Pointer)) {
-            throw context.runtime.newTypeError("Invalid function address "
-                    + args[0].getMetaClass().getName() + " (expected FFI::Pointer)");
+            throw typeError(context, "Invalid function address ", args[0], " (expected FFI::Pointer)");
         }
         
         if (!(args[1] instanceof RubyArray)) {
-            throw context.runtime.newTypeError("Invalid parameter array "
-                    + args[1].getMetaClass().getName() + " (expected Array)");
+            throw typeError(context, "Invalid parameter array ", args[1], " (expected Array)");
         }
 
-        if (!(args[2] instanceof Type)) {
-            throw context.runtime.newTypeError("Invalid return type " + args[2]);
-        }
+        if (!(args[2] instanceof Type)) throw typeError(context, "Invalid return type " + args[2]);
+
         Pointer ptr = (Pointer) args[0];
         RubyArray paramTypes = (RubyArray) args[1];
         Type returnType = (Type) args[2];
@@ -92,9 +91,7 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
             convention = options.fastARef(context.runtime.newSymbol("convention")).asJavaString();
             enums = options.fastARef(context.runtime.newSymbol("enums"));
             if (enums != null && !enums.isNil() && !(enums instanceof RubyHash || enums instanceof Enums)) {
-                throw context.runtime.newTypeError("wrong type for options[:enum] "
-                        + enums.getMetaClass().getName() + " (expected Hash or Enums)");
-
+                throw typeError(context, "wrong type for options[:enum] ", enums, " (expected Hash or Enums)");
             }
         } else {
             convention = args[3].asJavaString();

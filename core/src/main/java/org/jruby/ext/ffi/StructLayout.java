@@ -58,6 +58,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.util.ByteList;
+
+import static org.jruby.api.Convert.castToArray;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.*;
 
 /**
@@ -146,24 +149,24 @@ public final class StructLayout extends Type {
 
         return layoutClass;
     }
-    
+
     
     /**
      * Creates a new <code>StructLayout</code> instance.
      *
-     * @param runtime The runtime for the <code>StructLayout</code>.
+     * @param context The current thread context.
      * @param fields The fields map for this struct.
      * @param size the total size of the struct.
      * @param alignment The minimum alignment required when allocating memory.
      */
-    private StructLayout(Ruby runtime, RubyClass klass, Collection<IRubyObject> fields, int size, int alignment) {
-        super(runtime, klass, NativeType.STRUCT, size, alignment);
+    private StructLayout(ThreadContext context, RubyClass klass, Collection<IRubyObject> fields, int size, int alignment) {
+        super(context.runtime, klass, NativeType.STRUCT, size, alignment);
 
         int cfCount = 0, refCount = 0;
-        List<Field> fieldList = new ArrayList<Field>(fields.size());
-        List<IRubyObject> names = new ArrayList<IRubyObject>(fields.size());
-        List<Member> memberList = new ArrayList<Member>(fields.size());
-        Map<IRubyObject, Member> memberStringMap = new HashMap<IRubyObject, Member>(fields.size());
+        List<Field> fieldList = new ArrayList<>(fields.size());
+        List<IRubyObject> names = new ArrayList<>(fields.size());
+        List<Member> memberList = new ArrayList<>(fields.size());
+        Map<IRubyObject, Member> memberStringMap = new HashMap<>(fields.size());
         Member[] memberSymbolLookupTable = new Member[Util.roundUpToPowerOfTwo(fields.size() * 8)];
         int offset = 0;
         
@@ -171,16 +174,12 @@ public final class StructLayout extends Type {
         for (IRubyObject obj : fields) {
             
             if (!(obj instanceof Field)) {
-                throw runtime.newTypeError(obj, runtime.getModule("FFI").getClass("StructLayout").getClass("Field"));
+                throw typeError(context, obj, context.runtime.getModule("FFI").getClass("StructLayout").getClass("Field"));
             }
 
             Field f = (Field) obj;
-            if (!(f.name instanceof RubySymbol)) {
-                throw runtime.newTypeError("fields list contains field with invalid name");
-            }
-            if (f.type.getNativeSize() < 1 && index < (fields.size() - 1)) {
-                throw runtime.newTypeError("sizeof field == 0");
-            }
+            if (!(f.name instanceof RubySymbol)) throw typeError(context, "fields list contains field with invalid name");
+            if (f.type.getNativeSize() < 1 && index < (fields.size() - 1)) throw typeError(context, "sizeof field == 0");
 
             names.add(f.name);
             fieldList.add(f);
@@ -221,13 +220,9 @@ public final class StructLayout extends Type {
 
         IRubyObject rbFields = args[0], size = args[1], alignment = args[2];
 
-        if (!(rbFields instanceof RubyArray)) {
-            throw context.runtime.newTypeError(rbFields, context.runtime.getArray());
-        }
+        List<IRubyObject> fields = Arrays.asList(castToArray(context, rbFields).toJavaArrayMaybeUnsafe());
 
-        List<IRubyObject> fields = Arrays.asList(((RubyArray) rbFields).toJavaArrayMaybeUnsafe());
-
-        return new StructLayout(context.runtime, (RubyClass) klass, fields,
+        return new StructLayout(context, (RubyClass) klass, fields,
                 RubyNumeric.num2int(size), RubyNumeric.num2int(alignment));
     }
 
@@ -659,10 +654,9 @@ public final class StructLayout extends Type {
         }
 
         final Type checkType(IRubyObject type) {
-            if (!(type instanceof Type)) {
-                throw getRuntime().newTypeError(type, getRuntime().getModule("FFI").getClass("Type"));
-            }
-            return (Type) type;
+            if (type instanceof Type ctype) return ctype;
+
+            throw typeError(getRuntime().getCurrentContext(), type, getRuntime().getModule("FFI").getClass("Type"));
         }
 
         public final int offset() {
@@ -838,7 +832,7 @@ public final class StructLayout extends Type {
             IRubyObject type = args[2];
 
             if (!(type instanceof CallbackInfo)) {
-                throw context.runtime.newTypeError(type, context.runtime.getModule("FFI").getClass("Type").getClass("Function"));
+                throw typeError(context, type, context.runtime.getModule("FFI").getClass("Type").getClass("Function"));
             }
             init(args, FunctionFieldIO.INSTANCE);
 
@@ -861,8 +855,7 @@ public final class StructLayout extends Type {
             IRubyObject type = args[2];
 
             if (!(type instanceof StructByValue)) {
-                throw context.runtime.newTypeError(type,
-                        context.runtime.getModule("FFI").getClass("Type").getClass("Struct"));
+                throw typeError(context, type, context.runtime.getModule("FFI").getClass("Type").getClass("Struct"));
             }
             init(args, new InnerStructFieldIO((StructByValue) type));
 
@@ -884,8 +877,7 @@ public final class StructLayout extends Type {
 
             IRubyObject type = args[2];
             if (!(type instanceof Type.Array)) {
-                throw context.runtime.newTypeError(type,
-                        context.runtime.getModule("FFI").getClass("Type").getClass("Array"));
+                throw typeError(context, type, context.runtime.getModule("FFI").getClass("Type").getClass("Array"));
             }
             init(args, new ArrayFieldIO((Type.Array) type));
 
@@ -1234,14 +1226,10 @@ public final class StructLayout extends Type {
         }
 
         public void put(ThreadContext context, StructLayout.Storage cache, Member m, AbstractMemory ptr, IRubyObject value) {
-            if (!(value instanceof Struct)) {
-                throw context.runtime.newTypeError(value, context.runtime.getFFI().structClass);
-            }
-
+            if (!(value instanceof Struct)) throw typeError(context, value, context.runtime.getFFI().structClass);
             Struct s = (Struct) value;
-            if (!s.getLayout(context).equals(sbv.getStructLayout())) {
-                throw context.runtime.newTypeError("incompatible struct layout");
-            }
+
+            if (!s.getLayout(context).equals(sbv.getStructLayout())) throw typeError(context, "incompatible struct layout");
 
             ByteBuffer src = s.getMemoryIO().asByteBuffer();
             if (src.remaining() != sbv.size) {

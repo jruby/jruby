@@ -38,6 +38,9 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
+import static org.jruby.api.Convert.castToHash;
+import static org.jruby.api.Error.typeError;
+
 public class ThreadFiber extends RubyObject implements ExecutionContext {
 
     private static final Logger LOG = LoggerFactory.getLogger(ThreadFiber.class);
@@ -716,9 +719,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "[]", meta = true)
     public static IRubyObject op_aref(ThreadContext context, IRubyObject recv, IRubyObject key) {
-        if (!(key instanceof RubySymbol)) {
-            throw context.runtime.newTypeError(key, context.runtime.getSymbol());
-        }
+        if (!(key instanceof RubySymbol)) throw typeError(context, key, "Symbol");
 
         RubyHash storage = context.getFiber().storage;
 
@@ -733,16 +734,11 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "[]=", meta = true)
     public static IRubyObject op_aset(ThreadContext context, IRubyObject recv, IRubyObject key, IRubyObject value) {
-        if (!(key instanceof RubySymbol)) {
-            throw context.runtime.newTypeError(key, context.runtime.getSymbol());
-        }
-
-        RubyHash storage;
+        if (!(key instanceof RubySymbol)) throw typeError(context, key, "Symbol");
 
         ThreadFiber current = context.getFiber();
         boolean nil = value.isNil();
-
-        storage = current.storage;
+        RubyHash storage = current.storage;
 
         if (storage == null) {
             if (nil) return context.nil;
@@ -792,22 +788,15 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         this.storage = hash.isNil() ? null : (RubyHash) hash.dup(context);
     }
 
-    private static void validateStorage(ThreadContext context, IRubyObject hash) {
+    private static void validateStorage(ThreadContext context, IRubyObject hashArg) {
         // nil is an allowed value and will be lazily initialized.
-        if (hash == context.nil) return;
+        if (hashArg == context.nil) return;
 
-        if (!(hash instanceof RubyHash)) {
-            throw context.runtime.newTypeError("storage must be a Hash");
-        }
+        var hash = castToHash(context, hashArg, "storage must be a Hash");
+        if (hash.isFrozen()) throw context.runtime.newFrozenError("storage must not be frozen");
 
-        if (hash.isFrozen()) {
-            throw context.runtime.newFrozenError("storage must not be frozen");
-        }
-
-        ((RubyHash) hash).visitAll(context, (ctx, self, key, value, index) -> {
-            if (!(key instanceof RubySymbol)) {
-                throw context.runtime.newTypeError(key, context.runtime.getSymbol());
-            }
+        hash.visitAll(context, (ctx, self, key, value, index) -> {
+            if (!(key instanceof RubySymbol)) throw typeError(context, key, "Symbol");
         });
     }
 

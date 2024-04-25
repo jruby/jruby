@@ -56,6 +56,9 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.castToModule;
+import static org.jruby.api.Error.typeError;
+
 public class JavaInterfaceTemplate {
 
     public static RubyModule createJavaInterfaceTemplateModule(ThreadContext context) {
@@ -81,12 +84,7 @@ public class JavaInterfaceTemplate {
     // check for reserved Ruby names, conflicting methods, etc.
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public static IRubyObject implement(ThreadContext context, IRubyObject self, IRubyObject clazz) {
-        if ( ! (clazz instanceof RubyModule) ) {
-            final Ruby runtime = context.runtime;
-            throw runtime.newTypeError(clazz, runtime.getModule());
-        }
-
-        final RubyModule targetModule = (RubyModule) clazz;
+        final RubyModule targetModule = castToModule(context, self);
         final IRubyObject javaClass = JavaProxy.getJavaClass((RubyModule) self);
         Class<?> klass = JavaUtil.unwrapJavaObject(javaClass);
         final Method[] javaInstanceMethods = klass.getMethods();
@@ -118,14 +116,12 @@ public class JavaInterfaceTemplate {
 
     @JRubyMethod(frame = true) // framed for invokeSuper
     public static IRubyObject append_features(ThreadContext context, IRubyObject self, IRubyObject clazz, Block block) {
-        if ( clazz instanceof RubyClass ) {
+        if (clazz instanceof RubyClass) {
             appendFeaturesToClass(context, self, (RubyClass) clazz);
-        }
-        else if ( clazz instanceof RubyModule ) {
-            appendFeaturesToModule(context, self, (RubyModule) clazz);
-        }
-        else {
-            throw context.runtime.newTypeError("received " + clazz + ", expected Class/Module");
+        } else if (clazz instanceof RubyModule mod) {
+            appendFeaturesToModule(context, self, mod);
+        } else {
+            throw typeError(context, "received ", clazz, ", expected Class/Module");
         }
 
         return Helpers.invokeSuper(context, self, clazz, block);
@@ -316,12 +312,10 @@ public class JavaInterfaceTemplate {
     private static void appendFeaturesToModule(ThreadContext context, final IRubyObject self, final RubyModule module) {
         // assuming the user wants a collection of interfaces that can be
         // included together. make it so.
-        final Ruby runtime = context.runtime;
-
         final IRubyObject java_class = module.getInstanceVariables().getInstanceVariable("@java_class");
         // not allowed for existing Java interface modules
         if (java_class != null && java_class.isTrue()) {
-            throw runtime.newTypeError("can not add Java interface to existing Java interface");
+            throw typeError(context, "can not add Java interface to existing Java interface");
         }
 
         // To turn a module into an "interface collection" we add a class instance
@@ -349,11 +343,7 @@ public class JavaInterfaceTemplate {
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg, Block block) {
-            if ( ! ( arg instanceof RubyModule ) ) {
-                throw context.runtime.newTypeError("append_features called with non-module");
-            }
-
-            final RubyModule target = (RubyModule) arg;
+            RubyModule target = castToModule(context, arg, "append_features called with non-module");
             target.include( getInterfaceModules(self).toJavaArrayMaybeUnsafe() );
 
             return Helpers.invokeAs(context, clazz.getSuperClass(), self, name, arg, block);

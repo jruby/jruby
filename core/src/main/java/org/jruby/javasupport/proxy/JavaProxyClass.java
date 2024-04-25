@@ -64,6 +64,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
+import static org.jruby.api.Convert.castToClass;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.javasupport.JavaCallable.inspectParameterTypes;
 
 /**
@@ -338,8 +340,8 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             }
 
             final IRubyObject invokee = args[0];
-            if ( ! ( invokee instanceof JavaProxy) ) {
-                throw runtime.newTypeError("not a java proxy: " + (invokee == null ? null : invokee.getClass()));
+            if (!(invokee instanceof JavaProxy)) {
+                throw typeError(runtime.getCurrentContext(), "not a java proxy: " + (invokee == null ? null : invokee.getClass()));
             }
 
             Object receiver_value = ((JavaProxy) invokee).getObject();
@@ -356,10 +358,10 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
                 return JavaUtil.convertJavaToRuby(runtime, javaResult, getReturnType());
             }
             catch (IllegalArgumentException ex) {
-                throw runtime.newTypeError("expected " + argument_types().inspect());
+                throw typeError(runtime.getCurrentContext(), "expected " + argument_types().inspect());
             }
             catch (IllegalAccessException ex) {
-                throw runtime.newTypeError("illegal access on '" + superMethod.getName() + "': " +
+                throw typeError(runtime.getCurrentContext(), "illegal access on '" + superMethod.getName() + "': " +
                         ex.getMessage());
             }
             catch (InvocationTargetException ex) {
@@ -512,12 +514,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     @JRubyMethod(meta = true)
     public static RubyObject get_with_class(final IRubyObject self, IRubyObject obj) {
         final Ruby runtime = self.getRuntime();
-
-        if (!(obj instanceof RubyClass)) {
-            throw runtime.newTypeError(obj, runtime.getClassClass());
-        }
-
-        return getProxyClass(runtime, (RubyClass) obj);
+        return getProxyClass(runtime, castToClass(runtime.getCurrentContext(), obj));
     }
     
     // Note: called from <clinit> of reified classes

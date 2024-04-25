@@ -65,8 +65,6 @@ import org.jruby.util.io.Sockaddr;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
-import java.net.Inet6Address;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
@@ -82,12 +80,11 @@ import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Enumeration;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
+
+import static org.jruby.api.Convert.castToFixnum;
+import static org.jruby.api.Error.typeError;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -147,27 +144,18 @@ public class RubySocket extends RubyBasicSocket {
 
     @JRubyMethod(meta = true)
     public static IRubyObject for_fd(ThreadContext context, IRubyObject socketClass, IRubyObject _fd) {
+        int intFD = castToFixnum(context, _fd).getIntValue();
         Ruby runtime = context.runtime;
+        ChannelFD fd = runtime.getFilenoUtil().getWrapperFromFileno(intFD);
 
-        if (_fd instanceof RubyFixnum) {
-            int intFD = (int)((RubyFixnum)_fd).getLongValue();
+        if (fd == null) throw runtime.newErrnoEBADFError();
 
-            ChannelFD fd = runtime.getFilenoUtil().getWrapperFromFileno(intFD);
+        RubySocket socket = (RubySocket)((RubyClass)socketClass).allocate();
 
-            if (fd == null) {
-                throw runtime.newErrnoEBADFError();
-            }
+        socket.initFieldsFromDescriptor(runtime, fd);
+        socket.initSocket(fd);
 
-            RubySocket socket = (RubySocket)((RubyClass)socketClass).allocate();
-
-            socket.initFieldsFromDescriptor(runtime, fd);
-
-            socket.initSocket(fd);
-
-            return socket;
-        } else {
-            throw runtime.newTypeError(_fd, context.runtime.getFixnum());
-        }
+        return socket;
     }
 
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)

@@ -208,6 +208,7 @@ import static java.lang.invoke.MethodHandles.insertArguments;
 import static java.lang.invoke.MethodType.methodType;
 import static org.jruby.RubyBoolean.FALSE_BYTES;
 import static org.jruby.RubyBoolean.TRUE_BYTES;
+import static org.jruby.api.Error.*;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.GLOBAL;
 import static org.jruby.parser.ParserType.*;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -1454,7 +1455,7 @@ public final class Ruby implements Constantizable {
         IRubyObject classObj = parent.getConstantAt(id);
 
         if (classObj != null) {
-            if (!(classObj instanceof RubyClass)) throw newTypeError(str(this, ids(this, id), " is not a class"));
+            if (!(classObj instanceof RubyClass)) throw typeError(getCurrentContext(), str(this, ids(this, id), " is not a class"));
             RubyClass klazz = (RubyClass)classObj;
             if (klazz.getSuperClass().getRealClass() != superClass) {
                 throw newNameError(str(this, ids(this, id), " is already defined"), newSymbol(id));
@@ -1513,7 +1514,7 @@ public final class Ruby implements Constantizable {
             RubyString typeName = parentIsObject ?
                     types(this, moduleObj.getMetaClass()) : types(this, parent, moduleObj.getMetaClass());
 
-            throw newTypeError(str(this, typeName, " is not a module"));
+            throw typeError(getCurrentContext(), str(this, typeName, " is not a module"));
         }
 
         return RubyModule.newModule(this, name, parent, !parentIsObject);
@@ -1531,7 +1532,7 @@ public final class Ruby implements Constantizable {
         if (module == null) {
             module = defineModule(id);
         } else if (!module.isModule()) {
-            throw newTypeError(str(this, ids(this, id), " is not a Module"));
+            throw typeError(getCurrentContext(), str(this, ids(this, id), " is not a Module"));
         }
 
         return (RubyModule) module;
@@ -3899,6 +3900,7 @@ public final class Ruby implements Constantizable {
         }
     }
 
+    @Deprecated
     public RaiseException newTypeError(String message) {
         return newRaiseException(getTypeError(), message);
     }
@@ -4200,14 +4202,19 @@ public final class Ruby implements Constantizable {
         return Helpers.newIOErrorFromException(this, ex);
     }
 
+    @Deprecated
     public RaiseException newTypeError(IRubyObject receivedObject, RubyClass expectedType) {
-        return newTypeError(receivedObject, expectedType.getName());
+        ThreadContext context = getCurrentContext();
+        return createTypeError(context, createTypeErrorMessage(context, receivedObject, expectedType));
     }
 
+    @Deprecated
     public RaiseException newTypeError(IRubyObject receivedObject, RubyModule expectedType) {
-        return newTypeError(receivedObject, expectedType.getName());
+        ThreadContext context = getCurrentContext();
+        return createTypeError(context, createTypeErrorMessage(context, receivedObject, expectedType));
     }
 
+    @Deprecated
     public RaiseException newTypeError(IRubyObject receivedObject, String expectedType) {
         return newRaiseException(getTypeError(),
                 str(this, "wrong argument type ",

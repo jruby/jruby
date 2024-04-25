@@ -41,8 +41,7 @@ import org.jruby.runtime.JavaSites.ComparableSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import static org.jruby.runtime.Helpers.invokedynamic;
-import static org.jruby.util.RubyStringBuilder.str;
+import static org.jruby.api.Convert.castToRange;
 
 /** Implementation of the Comparable module.
  *
@@ -236,19 +235,11 @@ public class RubyComparable {
 
     @JRubyMethod(name = "clamp")
     public static IRubyObject clamp(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        Ruby runtime = context.runtime;
-
-        if (!(arg instanceof RubyRange)) {
-            throw runtime.newArgumentError(str(runtime, "wrong argument type ", arg.getMetaClass(),  "(expected Range)"));
-        }
-
-        RubyRange range = (RubyRange) arg;
+        RubyRange range = castToRange(context, arg);
         IRubyObject min = range.begin(context);
         IRubyObject max = range.end(context);
 
-        if (!max.isNil()) {
-            if (range.isExcludeEnd()) throw runtime.newArgumentError("cannot clamp with an exclusive range");
-        }
+        if (!max.isNil() && range.isExcludeEnd()) throw context.runtime.newArgumentError("cannot clamp with an exclusive range");
 
         return clamp(context, recv, min, max);
     }

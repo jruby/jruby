@@ -9,6 +9,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
+import static org.jruby.api.Error.typeError;
+
 class ReifyingAllocator implements ObjectAllocator {
     private final Class<? extends IRubyObject> klass;
     private final Constructor<? extends IRubyObject> cons;
@@ -32,7 +34,7 @@ class ReifyingAllocator implements ObjectAllocator {
             return klazz.getAllocator().allocate(runtime, klazz);
 
         } catch (InstantiationException ie) {
-            throw runtime.newTypeError("could not allocate " + this.klass + " with default constructor:\n" + ie);
+            throw typeError(runtime.getCurrentContext(), "could not allocate " + klass + " with default constructor:\n" + ie);
         } catch (IllegalAccessException iae) {
             throw runtime.newSecurityError("could not allocate " + this.klass + " due to inaccessible default constructor:\n" + iae);
         } catch (InvocationTargetException ite) {

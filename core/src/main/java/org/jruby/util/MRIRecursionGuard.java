@@ -13,6 +13,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
+import static org.jruby.api.Error.typeError;
+
 /**
  * Deprecated MRI-style recursion guard logic pulled out of {@link Ruby}.
  */
@@ -161,19 +163,18 @@ public class MRIRecursionGuard {
     }
 
     private void recursivePop(IRubyObject list, IRubyObject obj, IRubyObject paired_obj) {
-        if(paired_obj != null) {
+        var context = runtime.getCurrentContext();
+
+        if (paired_obj != null) {
             IRubyObject pair_list = ((RubyHash)list).fastARef(obj);
-            if(pair_list == null) {
-                throw runtime.newTypeError("invalid inspect_tbl pair_list for " + runtime.getCurrentContext().getFrameName());
-            }
-            if(pair_list instanceof RubyHash) {
-                ((RubyHash)pair_list).delete(runtime.getCurrentContext(), paired_obj, Block.NULL_BLOCK);
-                if(!((RubyHash)pair_list).isEmpty()) {
-                    return;
-                }
+            if (pair_list == null) throw typeError(context, "invalid inspect_tbl pair_list for " + context.getFrameName());
+
+            if (pair_list instanceof RubyHash pairHash) {
+                pairHash.delete(context, paired_obj, Block.NULL_BLOCK);
+                if (!pairHash.isEmpty()) return;
             }
         }
-        ((RubyHash)list).delete(runtime.getCurrentContext(), obj, Block.NULL_BLOCK);
+        ((RubyHash)list).delete(context, obj, Block.NULL_BLOCK);
     }
 
     private boolean recursiveCheck(IRubyObject list, IRubyObject obj_id, IRubyObject paired_obj_id) {

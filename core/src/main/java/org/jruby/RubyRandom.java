@@ -30,16 +30,14 @@ import java.math.BigInteger;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Convert.castToBignum;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 import org.jruby.util.Random;
-import org.jruby.util.TypeConverter;
-
-import static org.jruby.util.TypeConverter.toFloat;
 
 /**
  * Implementation of the Random class.
@@ -64,8 +62,7 @@ public class RubyRandom extends RubyRandomBase {
             } else if (this.seed instanceof RubyBignum) {
                 this.impl = randomFromBignum((RubyBignum) this.seed);
             } else {
-                throw seed.getRuntime().newTypeError(
-                        String.format("failed to convert %s into Integer", seed.getMetaClass().getName()));
+                throw typeError(seed.getRuntime().getCurrentContext(), "failed to convert ",  seed, " into Integer");
             }
         }
 
@@ -246,14 +243,12 @@ public class RubyRandom extends RubyRandomBase {
     @JRubyMethod(name = "initialize_copy", visibility = PRIVATE)
     @Override
     public IRubyObject initialize_copy(IRubyObject orig) {
-        if (!(orig instanceof RubyRandom)) {
-            throw getRuntime().newTypeError(String.format(
-                    "wrong argument type %s (expected %s)", orig.getMetaClass().getName(), getMetaClass().getName())
-            );
+        if (orig instanceof RubyRandom rand) {
+            checkFrozen();
+            random = new RandomType(rand.random);
+            return this;
         }
-        checkFrozen();
-        random = new RandomType(((RubyRandom) orig).random);
-        return this;
+        throw typeError(getRuntime().getCurrentContext(), orig, "Random");
     }
 
     // MRI: random_s_rand
@@ -374,13 +369,9 @@ public class RubyRandom extends RubyRandomBase {
     @JRubyMethod()
     public IRubyObject marshal_load(ThreadContext context, IRubyObject arg) {
         RubyArray load = arg.convertToArray();
-        if (load.size() != 3) {
-            throw context.runtime.newArgumentError("wrong dump data");
-        }
-        if (!(load.eltInternal(0) instanceof RubyBignum)) {
-            throw context.runtime.newTypeError(load.eltInternal(0), context.runtime.getInteger());
-        }
-        RubyBignum state = (RubyBignum) load.eltInternal(0);
+        if (load.size() != 3) throw context.runtime.newArgumentError("wrong dump data");
+
+        RubyBignum state = castToBignum(context, load.eltInternal(0));
         int left = RubyNumeric.num2int(load.eltInternal(1));
         IRubyObject seed = load.eltInternal(2);
 

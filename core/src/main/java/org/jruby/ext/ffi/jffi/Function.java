@@ -19,6 +19,8 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Error.typeError;
+
 @JRubyClass(name="FFI::Function", parent="FFI::Pointer")
 public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
     
@@ -78,10 +80,7 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
         Object proc = null;
         int optionsIndex = 2;
 
-        if (!(args[1] instanceof RubyArray)) {
-            throw context.runtime.newTypeError("Invalid parameter array "
-                    + args[1].getMetaClass().getName() + " (expected Array)");
-        }
+        if (!(args[1] instanceof RubyArray)) throw typeError(context, "Invalid parameter array ", args[1], " (expected Array)");
 
         RubyArray paramTypes = (RubyArray) args[1];
         Type[] parameterTypes = new Type[paramTypes.size()];
@@ -99,8 +98,7 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
             proc = block;
             optionsIndex = 2;
         } else {
-            throw context.runtime.newTypeError("Invalid function address "
-                    + args[0].getMetaClass().getName() + " (expected FFI::Pointer)");
+            throw typeError(context, "Invalid function address ", args[0], " (expected FFI::Pointer)");
         }
 
         Type returnType = org.jruby.ext.ffi.Util.findType(context, args[0]);
@@ -124,8 +122,7 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
 
             enums = options.fastARef(context.runtime.newSymbol("enums"));
             if (enums != null && !enums.isNil() && !(enums instanceof RubyHash || enums instanceof Enums)) {
-                throw context.runtime.newTypeError("wrong type for options[:enum] "
-                        + enums.getMetaClass().getName() + " (expected Hash or Enums)");
+                throw typeError(context, "wrong type for options[:enum] ", enums, " (expected Hash or Enums)");
 
             }
         }

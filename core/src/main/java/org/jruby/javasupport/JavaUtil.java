@@ -49,6 +49,7 @@ import static java.lang.Character.isUpperCase;
 import static java.lang.Character.isDigit;
 import static java.lang.Character.toLowerCase;
 import static java.lang.Character.toUpperCase;
+import static org.jruby.api.Error.typeError;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -317,17 +318,12 @@ public class JavaUtil {
 
     @Deprecated // no longer used
     public static Object unwrapJavaValue(final Ruby runtime, final IRubyObject object, final String errorMessage) {
-        if ( object instanceof JavaProxy ) {
-            return ((JavaProxy) object).getObject();
-        }
-        if ( object instanceof JavaObject ) {
-            return ((JavaObject) object).getValue();
-        }
+        if (object instanceof JavaProxy jp) return jp.getObject();
+        if (object instanceof JavaObject jo) return jo.getValue();
+
         final Object unwrap = object.dataGetStruct();
-        if ( unwrap instanceof IRubyObject ) {
-            return unwrapJavaValue(runtime, (IRubyObject) unwrap, errorMessage);
-        }
-        throw runtime.newTypeError(errorMessage);
+        if (unwrap instanceof IRubyObject ro) return unwrapJavaValue(runtime, ro, errorMessage);
+        throw typeError(runtime.getCurrentContext(), errorMessage);
     }
 
     public static RubyString inspectObject(ThreadContext context, Object obj) {
@@ -1006,7 +1002,7 @@ public class JavaUtil {
         final double value = numeric.getDoubleValue();
         // many cases are ok to convert to float; if not one of these, error
         if ( isDoubleFloatable(value) ) return (float) value;
-        throw numeric.getRuntime().newTypeError("too big for float: " + numeric);
+        throw typeError(numeric.getRuntime().getCurrentContext(), "too big for float: " + numeric);
     };
     private static final NumericConverter<Double> NUMERIC_TO_DOUBLE = (numeric, target) -> numeric.getDoubleValue();
     private static final NumericConverter<BigInteger> NUMERIC_TO_BIGINTEGER = (numeric, target) -> numeric.getBigIntegerValue();
@@ -1017,7 +1013,7 @@ public class JavaUtil {
             return numeric;
         }
         // otherwise, error; no conversion available
-        throw numeric.getRuntime().newTypeError("could not coerce " + numeric.getMetaClass() + " to " + target);
+        throw typeError(numeric.getRuntime().getCurrentContext(), "could not coerce " + numeric.getMetaClass() + " to " + target);
     };
     private static final NumericConverter<Object> NUMERIC_TO_OBJECT = (numeric, target) -> {
         // for Object, default to natural wrapper type
@@ -1565,18 +1561,13 @@ public class JavaUtil {
     @Deprecated
     public static Object convertArgument(Ruby runtime, Object argument, Class<?> parameterType) {
         if (argument == null) {
-          if(parameterType.isPrimitive()) {
-            throw runtime.newTypeError("primitives do not accept null");
-          } else {
+            if (parameterType.isPrimitive()) throw typeError(runtime.getCurrentContext(), "primitives do not accept null");
             return null;
-          }
         }
 
         if (argument instanceof JavaObject) {
             argument = ((JavaObject) argument).getValue();
-            if (argument == null) {
-                return null;
-            }
+            if (argument == null) return null;
         }
         Class<?> type = primitiveToWrapper(parameterType);
 
@@ -1674,7 +1665,7 @@ public class JavaUtil {
             if (obj.dataGetStruct() != null && (obj.dataGetStruct() instanceof JavaObject)) {
                 obj = (JavaObject)obj.dataGetStruct();
             } else {
-                throw runtime.newTypeError(errorMessage);
+                throw typeError(runtime.getCurrentContext(), errorMessage);
             }
         }
         return (JavaObject)obj;
@@ -1695,9 +1686,7 @@ public class JavaUtil {
         if (wrapped == null) throw new NullPointerException();
 
         Object unwrap = unwrapJava(wrapped, RubyBasicObject.NEVER);
-        if (unwrap == RubyBasicObject.NEVER) {
-            throw wrapped.getRuntime().newTypeError(wrapped, "JavaProxy");
-        }
+        if (unwrap == RubyBasicObject.NEVER) throw typeError(wrapped.getRuntime().getCurrentContext(), wrapped, "JavaProxy");
         return (T) unwrap;
     }
 
@@ -1711,7 +1700,7 @@ public class JavaUtil {
      */
     public static Class<?> getJavaClass(final RubyModule type) throws TypeError {
         return getJavaClass(type, () -> {
-            throw type.getRuntime().newTypeError("wrong argument type (not a Java proxy nor does respond to java_class) " + type);
+            throw typeError(type.getRuntime().getCurrentContext(), type, "Java proxy of responds to java_class");
         });
     }
 

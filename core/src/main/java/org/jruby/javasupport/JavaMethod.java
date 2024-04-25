@@ -55,6 +55,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.RubyModule.undefinedMethodMessage;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.util.CodegenUtils.getBoxType;
 import static org.jruby.util.CodegenUtils.prettyParams;
 import static org.jruby.util.RubyStringBuilder.ids;
@@ -143,7 +144,7 @@ public class JavaMethod extends JavaCallable {
 
     public IRubyObject invokeDirect(ThreadContext context, Object javaInvokee, Object[] args) {
         checkArity(context, args.length);
-        checkInstanceof(context.runtime, javaInvokee);
+        checkInstanceof(context, javaInvokee);
 
         if (mightBeProxy(javaInvokee)) {
             return tryProxyInvocation(context, javaInvokee, args);
@@ -242,9 +243,10 @@ public class JavaMethod extends JavaCallable {
         return invokeDirectWithExceptionHandling(context, method, null, arg0, arg1, arg2, arg3);
     }
 
-    private void checkInstanceof(final Ruby runtime, Object javaInvokee) throws RaiseException {
+    private void checkInstanceof(ThreadContext context, Object javaInvokee) throws RaiseException {
         if (!method.getDeclaringClass().isInstance(javaInvokee)) {
-            throw runtime.newTypeError("invokee not instance of method's class (" + "got" + javaInvokee.getClass().getName() + " wanted " + method.getDeclaringClass().getName() + ")");
+            throw typeError(context, "invokee not instance of method's class (" + "got" +
+                    javaInvokee.getClass().getName() + " wanted " + method.getDeclaringClass().getName() + ")");
         }
     }
 

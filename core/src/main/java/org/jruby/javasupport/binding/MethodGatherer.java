@@ -30,6 +30,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PUBLIC;
 
 public class MethodGatherer {
@@ -503,7 +504,7 @@ public class MethodGatherer {
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            throw context.runtime.newTypeError("no public constructors for " + clazz);
+            throw typeError(context, "no public constructors for " + clazz);
         }
     }
 

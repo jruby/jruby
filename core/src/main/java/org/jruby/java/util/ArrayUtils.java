@@ -13,6 +13,8 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Error.typeError;
+
 /**
  * A collection of utilities for manipulating Java arrays.
  */
@@ -111,8 +113,8 @@ public class ArrayUtils {
     }
 
     private static RaiseException mapArrayStoreException(final Ruby runtime, final Object array, final Class<?> type) {
-        return runtime.newTypeError("wrong element type " + type.getName() + " (array contains " +
-                array.getClass().getComponentType().getName() + ')');
+        return typeError(runtime.getCurrentContext(), "wrong element type " + type.getName() + "" +
+                " (array contains " + array.getClass().getComponentType().getName() + ')');
     }
 
     private static RaiseException mapIllegalArgumentException(final Ruby runtime, final Object array, final Class<?> type) {

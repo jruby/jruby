@@ -31,18 +31,15 @@ import java.util.Set;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
-import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.Java;
-import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.lang.reflect.Field;
-import java.util.Set;
+import static org.jruby.api.Error.typeError;
 
 /**
  * @author kares
@@ -94,9 +91,8 @@ public abstract class ClassJavaAddons {
         klass.reifyWithAncestors(dumpDir, useChildLoader);
 
         Class<?> reifiedClass = klass.getReifiedClass();
-        if (reifiedClass == null) {
-            throw context.runtime.newTypeError("requested class " + klass.getName() + " was not reifiable");
-        }
+        if (reifiedClass == null) throw typeError(context, "requested class ", klass, " is not reifiable");
+
         generateFieldAccessors(context, klass, reifiedClass);
         return asJavaClass(context.runtime, reifiedClass);
     }

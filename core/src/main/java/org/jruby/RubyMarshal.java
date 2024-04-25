@@ -52,6 +52,8 @@ import org.jruby.util.ByteList;
 import org.jruby.util.IOInputStream;
 import org.jruby.util.IOOutputStream;
 
+import static org.jruby.api.Error.typeError;
+
 /**
  * Marshal module
  *
@@ -84,10 +86,10 @@ public class RubyMarshal {
             IRubyObject arg1 = args[1];
             if (sites(context).respond_to_write.respondsTo(context, arg1, arg1)) {
                 io = arg1;
-            } else if (arg1 instanceof RubyFixnum) {
-                depthLimit = (int) ((RubyFixnum) arg1).getLongValue();
+            } else if (arg1 instanceof RubyFixnum fixnum) {
+                depthLimit = (int) fixnum.getLongValue();
             } else {
-                throw runtime.newTypeError("Instance of IO needed");
+                throw typeError(context, "Instance of IO needed");
             }
             if (argc == 3) {
                 depthLimit = (int) args[2].convertToInteger().getLongValue();
@@ -145,7 +147,7 @@ public class RubyMarshal {
                         sites(context).respond_to_read.respondsTo(context, in, in)) {
                 rawInput = inputStream(context, in);
             } else {
-                throw runtime.newTypeError("instance of IO needed");
+                throw typeError(context, "instance of IO needed");
             }
 
             return new UnmarshalStream(runtime, rawInput, freeze, proc).unmarshalObject();
@@ -184,7 +186,7 @@ public class RubyMarshal {
      * Convenience method for objects that are undumpable. Always throws (a TypeError).
      */
     public static IRubyObject undumpable(ThreadContext context, RubyObject self) {
-        throw context.runtime.newTypeError("can't dump " + self.type());
+        throw typeError(context, "can't dump ", self, "");
     }
 
     private static JavaSites.MarshalSites sites(ThreadContext context) {

@@ -8,6 +8,8 @@ import org.jruby.util.io.PosixShim;
 
 import java.util.function.Supplier;
 
+import static org.jruby.api.Error.typeError;
+
 public class API {
     /**
      * Equivalent to {@link MRI#rb_sys_fail_path(ThreadContext, String)}.

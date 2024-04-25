@@ -26,6 +26,7 @@
 
 package org.jruby.java.proxies;
 
+import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PUBLIC;
 
 import java.lang.reflect.Constructor;
@@ -141,7 +142,7 @@ public class ConcreteJavaProxy extends JavaProxy {
             if (parent.getReifiedClass() == null) {
                 parent.reifyWithAncestors();
                 if (parent.getReifiedClass() == null) {
-                    throw clazz.getRuntime().newTypeError("requested class " + parent.getName() + " was not reifiable");
+                    throw typeError(clazz.getRuntime().getCurrentContext(), "requested class " + parent.getName() + " was not reifiable");
                 }
             }
 
@@ -485,6 +486,6 @@ public class ConcreteJavaProxy extends JavaProxy {
         }
         else if ( type.isAssignableFrom(getClass()) ) return type.cast(this); // e.g. IRubyObject.class
 
-        throw getRuntime().newTypeError("failed to coerce " + clazz.getName() + " to " + type.getName());
+        throw typeError(getRuntime().getCurrentContext(), "failed to coerce " + clazz.getName() + " to " + type.getName());
     }
 }

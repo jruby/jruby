@@ -38,7 +38,6 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
-import org.jruby.RubyTime;
 import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -46,7 +45,6 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -63,6 +61,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.jruby.RubyIO.PARAGRAPH_SEPARATOR;
+import static org.jruby.api.Convert.castToString;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 /**
@@ -364,44 +363,31 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
         try {
             int len = RubyNumeric.fix2int(args[0]);
-
-            if (len < 0) {
-                throw runtime.newArgumentError("negative length " + len + " given");
-            }
+            if (len < 0) throw runtime.newArgumentError("negative length " + len + " given");
 
             if (argc > 1 && !args[1].isNil()) {
-                if (!(args[1] instanceof RubyString)) {
-                    throw runtime.newTypeError(
-                            "wrong argument type " + args[1].getMetaClass().getName()
-                            + " (expected String)");
-                }
-
-                return readPartial(len, (RubyString) args[1]);
+                return readPartial(runtime, len, castToString(runtime.getCurrentContext(), args[1]));
             }
 
-            return readPartial(len, null);
+            return readPartial(runtime, len, null);
         } catch (IOException ioe) {
             throw runtime.newIOErrorFromException(ioe);
         }
     }
 
-    private IRubyObject readPartial(int len, RubyString outbuf) throws IOException {
+    private IRubyObject readPartial(Ruby runtime, int len, RubyString outbuf) throws IOException {
         ByteList val = newReadByteList(10);
         byte[] buffer = new byte[len];
         int read = bufferedStream.read(buffer, 0, len);
 
-        if (read == -1) {
-            return getRuntime().getNil();
-        }
+        if (read == -1) return runtime.getNil();
 
         val.append(buffer, 0, read);
         this.position += val.length();
 
-        if (outbuf != null) {
-            outbuf.view(val);
-        }
+        if (outbuf != null) outbuf.view(val);
 
-        return newStr(getRuntime(), val);
+        return newStr(runtime, val);
     }
 
     private RubyString readAll() throws IOException {

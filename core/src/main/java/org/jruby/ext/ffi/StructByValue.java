@@ -11,6 +11,8 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.castToClass;
+import static org.jruby.api.Error.typeError;
 
 
 @JRubyClass(name="FFI::StructByValue", parent="FFI::Type")
@@ -30,18 +32,15 @@ public final class StructByValue extends Type {
     }
 
     @JRubyMethod(name = "new", meta = true)
-    public static final IRubyObject newStructByValue(ThreadContext context, IRubyObject klass, IRubyObject structClass) {
-        if (!(structClass instanceof RubyClass)) {
-            throw context.runtime.newTypeError("wrong argument type "
-                    + structClass.getMetaClass().getName() + " (expected Class)");
-        }
-        if (!((RubyClass) structClass).isKindOfModule(context.runtime.getFFI().structClass)) {
-            throw context.runtime.newTypeError("wrong argument type "
-                    + structClass.getMetaClass().getName() + " (expected subclass of FFI::Struct)");
+    public static final IRubyObject newStructByValue(ThreadContext context, IRubyObject klass, IRubyObject structClass1) {
+        Ruby runtime = context.runtime;
+        RubyClass structClass = castToClass(context, structClass1);
+
+        if (!structClass.isKindOfModule(runtime.getFFI().structClass)) {
+            throw typeError(context, structClass, "subclass of FFI::Struct");
         }
 
-        return new StructByValue(context.runtime, (RubyClass) klass,
-                (RubyClass) structClass, Struct.getStructLayout(context.runtime, structClass));
+        return new StructByValue(runtime, (RubyClass) klass, structClass, Struct.getStructLayout(runtime, structClass));
     }
 
     private StructByValue(Ruby runtime, RubyClass klass, RubyClass structClass, StructLayout structLayout) {

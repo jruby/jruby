@@ -51,6 +51,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.function.BiFunction;
 
+import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import static org.jruby.util.Numeric.*;
@@ -296,11 +297,8 @@ public class RubyComplex extends RubyNumeric {
         case RATIONAL:
             break;
         default:
-            if (!(num instanceof RubyNumeric ) || !f_real_p(context, num)) {
-                if (raise) {
-                    throw context.runtime.newTypeError("not a real");
-                }
-
+            if (!(num instanceof RubyNumeric) || !f_real_p(context, num)) {
+                if (raise) throw typeError(context, "not a real");
                 return false;
             }
         }
@@ -495,10 +493,7 @@ public class RubyComplex extends RubyNumeric {
         final boolean singleArg = a2 == null;
 
         if (a1 == context.nil || a2 == context.nil) {
-            if (raise) {
-                throw context.runtime.newTypeError("can't convert nil into Complex");
-            }
-
+            if (raise) throw typeError(context, "can't convert nil into Complex");
             return context.nil;
         }
 
@@ -861,12 +856,12 @@ public class RubyComplex extends RubyNumeric {
     public IRubyObject coerce(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyComplex) return context.runtime.newArray(other, this);
 
-        if (other instanceof RubyNumeric && f_real_p(context, other)) {
-            return context.runtime.newArray(newComplexBang(context, getMetaClass(), (RubyNumeric) other), this);
+        if (other instanceof RubyNumeric numeric && f_real_p(context, other)) {
+            return context.runtime.newArray(newComplexBang(context, getMetaClass(), numeric), this);
         }
 
         Ruby runtime = context.runtime;
-        throw runtime.newTypeError(str(runtime, types(runtime, other.getMetaClass()), " can't be coerced into ", types(runtime, getMetaClass())));
+        throw typeError(context, str(runtime, types(runtime, other.getMetaClass()), " can't be coerced into ", types(runtime, getMetaClass())));
     }
 
     /** nucomp_abs 
