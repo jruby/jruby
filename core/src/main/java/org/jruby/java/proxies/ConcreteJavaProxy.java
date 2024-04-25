@@ -211,7 +211,7 @@ public class ConcreteJavaProxy extends JavaProxy {
         StaticJCreateMethod(RubyModule implClass, Constructor<? extends ReifiedJavaProxy> javaProxyConstructor, DynamicMethod oldinit) {
             super(implClass, PUBLIC, "__jcreate_static!");
             this.withBlock = javaProxyConstructor;
-            this.oldInit = oldinit;
+            this.oldInit = oldinit == null ? oldinit : oldinit.getRealMethod(); // ensure we don't use a wrapper (jruby/jruby#8148)
         }
 
         @Override
@@ -374,7 +374,7 @@ public class ConcreteJavaProxy extends JavaProxy {
         final String name = base.getClassConfig().javaCtorMethodName;
         final CacheEntry methodEntry = base.searchWithCache(name);
         final boolean isLateral = isClassOrIncludedPrependedModule(methodEntry.sourceModule, base);
-        DynamicMethod method = methodEntry.method;
+        DynamicMethod method = methodEntry.method.getRealMethod(); // ensure we don't use a wrapper (jruby/jruby#8148)
         if (method instanceof StaticJCreateMethod) method = ((StaticJCreateMethod) method).oldInit;
 
         // jcreate is for nested ruby classes from a java class
