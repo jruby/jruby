@@ -414,7 +414,7 @@ public class Java implements Library {
 
     @SuppressWarnings("deprecation")
     public static RubyModule getProxyClass(final Ruby runtime, final Class<?> clazz) {
-        return getProxyClass(runtime, clazz, false);
+        return getProxyClass(runtime, clazz, Options.JI_EAGER_CONSTANTS.load());
     }
 
     @SuppressWarnings("deprecation")
