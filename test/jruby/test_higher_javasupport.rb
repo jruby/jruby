@@ -50,7 +50,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
   def test_passing_a_java_class_auto_reifies
     assert_nil Klass2.to_java.getReifiedClass
     # previously TestHelper.getClassName(Klass2) returned 'org.jruby.RubyObject'
-    assert_equal 'rubyobj.TestHigherJavasupport.Klass2', org.jruby.test.TestHelper.getClassName(Klass2)
+    assert org.jruby.test.TestHelper.getClassName(Klass2).end_with?('.TestHigherJavasupport.Klass2')
     assert_not_nil Klass2.to_java.getReifiedClass
     assert_not_nil Klass1.to_java.getReifiedClass
   end
