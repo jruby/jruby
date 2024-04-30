@@ -87,7 +87,7 @@ public class PopenExecutor {
         ExecArg eargp;
         IRubyObject fail_str;
 
-        eargp = execargNew(context, argv, true, false);
+        eargp = execargNew(context, argv, context.nil, true, false);
         execargFixup(context, runtime, eargp);
         fail_str = eargp.use_shell ? eargp.command_name : eargp.command_name;
 
@@ -110,7 +110,7 @@ public class PopenExecutor {
         ExecArg eargp;
         long pid;
 
-        eargp = execargNew(context, argv, true, true);
+        eargp = execargNew(context, argv, context.nil, true, true);
         execargFixup(context, runtime, eargp);
         pid = spawnProcess(context, runtime, eargp, errmsg);
 
@@ -297,7 +297,7 @@ public class PopenExecutor {
         ExecArg execArg = null;
 
         if (!isPopenFork(context.runtime, (RubyString)prog))
-            execArg = execargNew(context, argv, true, false);
+            execArg = execargNew(context, argv, context.nil, true, false);
         return new PopenExecutor().pipeOpen(context, execArg, modestr, fmode, convconfig);
     }
 
@@ -340,14 +340,14 @@ public class PopenExecutor {
 //            #endif
             tmp = ((RubyArray)tmp).aryDup();
             //            RBASIC_CLEAR_CLASS(tmp);
-            eargp = execargNew(context, ((RubyArray)tmp).toJavaArray(), false, false);
+            eargp = execargNew(context, ((RubyArray)tmp).toJavaArray(), opt, false, false);
             ((RubyArray)tmp).clear();
         } else {
             pname = pname.convertToString();
             eargp = null;
             if (!isPopenFork(runtime, (RubyString)pname)) {
                 IRubyObject[] pname_p = {pname};
-                eargp = execargNew(context, pname_p, true, false);
+                eargp = execargNew(context, pname_p, opt, true, false);
                 pname = pname_p[0];
             }
         }
@@ -1678,14 +1678,14 @@ public class PopenExecutor {
     private static final int ST_STOP = 1;
 
     // rb_execarg_new
-    public static ExecArg execargNew(ThreadContext context, IRubyObject[] argv, boolean accept_shell, boolean allow_exc_opt) {
+    public static ExecArg execargNew(ThreadContext context, IRubyObject[] argv, IRubyObject optForChdir, boolean accept_shell, boolean allow_exc_opt) {
         ExecArg eargp = new ExecArg();
-        execargInit(context, argv, accept_shell, eargp, allow_exc_opt);
+        execargInit(context, argv, optForChdir, accept_shell, eargp, allow_exc_opt);
         return eargp;
     }
 
     // rb_execarg_init
-    private static RubyString execargInit(ThreadContext context, IRubyObject[] argv, boolean accept_shell, ExecArg eargp, boolean allow_exc_opt) {
+    private static RubyString execargInit(ThreadContext context, IRubyObject[] argv, IRubyObject optForChdir, boolean accept_shell, ExecArg eargp, boolean allow_exc_opt) {
         RubyString prog, ret;
         IRubyObject[] env_opt = {context.nil, context.nil};
         IRubyObject[][] argv_p = {argv};
@@ -1698,6 +1698,14 @@ public class PopenExecutor {
             optHash = optHash.dupFast(context);
             exception = optHash.delete(context, exceptionSym);
         }
+
+        RubySymbol chdirSym = context.runtime.newSymbol("chdir");
+        IRubyObject chdir;
+        if (!optForChdir.isNil() && (chdir = ((RubyHash) optForChdir).delete(chdirSym)) != null) {
+            eargp.chdirGiven = true;
+            eargp.chdir_dir = chdir.convertToString().toString();
+        }
+
         execFillarg(context, prog, argv_p[0], env_opt[0], env_opt[1], eargp);
         if (exception.isTrue()) {
             eargp.exception = true;
