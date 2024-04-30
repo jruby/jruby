@@ -41,7 +41,6 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -136,7 +135,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
             } else {
                 try {
                     runtime.registerInspecting(map);
-                    buf.cat19(inspectHash(context));
+                    buf.catWithCodeRange(inspectHash(context));
                 } finally {
                     runtime.unregisterInspecting(map);
                 }

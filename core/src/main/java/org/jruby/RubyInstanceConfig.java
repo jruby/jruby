@@ -1771,6 +1771,7 @@ public class RubyInstanceConfig {
 
     public static boolean IR_DEBUG = Options.IR_DEBUG.load(); // ast tool can toggle this
     public static final String IR_DEBUG_IGV = Options.IR_DEBUG_IGV.load();
+    public static final boolean IR_DEBUG_IGV_STDOUT = Options.IR_DEBUG_IGV_STDOUT.load();
     public static final boolean IR_PROFILE = Options.IR_PROFILE.load();
     public static boolean IR_COMPILER_DEBUG = Options.IR_COMPILER_DEBUG.load(); // ast tool can toggle this
     public static final boolean IR_WRITING = Options.IR_WRITING.load();

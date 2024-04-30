@@ -670,14 +670,18 @@ public class IRRuntimeHelpers {
     // specific arity methods in JIT will only be fixed arity meaning no kwargs and no rest args.
     // this logic is the same as recieveKeywords but we know it will never be a keyword argument (jit
     // will save %undefined as the keyword value).
-    @JIT // Only used for specificArity JITted methods with at least one parameter
-    public static IRubyObject receiveSpecificArityKeywords(ThreadContext context, IRubyObject last) {
+    // Due to jruby/jruby#8119 and the potential for ruby2_keywords flags to change after JIT, jitted code will always
+    // call on this path and pass in the live value of ruby2_keywords from the scope.
+    @JIT
+    public static IRubyObject receiveSpecificArityKeywords(ThreadContext context, IRubyObject last, boolean ruby2Keywords) {
         if (!(last instanceof RubyHash)) {
             ThreadContext.clearCallInfo(context);
             return last;
         }
 
-        return receiveSpecificArityHashKeywords(context, last);
+        return ruby2Keywords ?
+                receiveSpecificArityRuby2HashKeywords(context, last) :
+                receiveSpecificArityHashKeywords(context, last);
     }
 
     private static IRubyObject receiveSpecificArityHashKeywords(ThreadContext context, IRubyObject last) {
@@ -685,17 +689,6 @@ public class IRRuntimeHelpers {
         boolean isKwarg = (callInfo & CALL_KEYWORD) != 0;
 
         return receiverSpecificArityKwargsCommon(context, last, callInfo, isKwarg);
-    }
-
-    // same as receiveSpecificArityKeywords but only used when the scope demands ruby2 keywords.
-    @JIT // Only used for specificArity JITted methods with at least one parameter
-    public static IRubyObject receiveSpecificArityRuby2Keywords(ThreadContext context, IRubyObject last) {
-        if (!(last instanceof RubyHash)) {
-            ThreadContext.clearCallInfo(context);
-            return last;
-        }
-
-        return receiveSpecificArityRuby2HashKeywords(context, last);
     }
 
     private static IRubyObject receiveSpecificArityRuby2HashKeywords(ThreadContext context, IRubyObject last) {
@@ -757,34 +750,6 @@ public class IRRuntimeHelpers {
         }
 
         return UNDEFINED;
-    }
-
-    /**
-     * Simplified receiveKeywords when receiver IS NOT a ruby2_keywords method.
-     *
-     * @param context
-     * @param args
-     * @param hasRestArgs
-     * @param acceptKeywords
-     * @return the prepared kwargs hash, or UNDEFINED as a sigil for no kwargs
-     */
-    @JIT
-    public static IRubyObject receiveNormalKeywords(ThreadContext context, IRubyObject[] args, boolean hasRestArgs, boolean acceptKeywords) {
-        return receiveKeywords(context, args, hasRestArgs, acceptKeywords, false);
-    }
-
-    /**
-     * Simplified receiveKeywords when receiver IS a ruby2_keywords method.
-     *
-     * @param context
-     * @param args
-     * @param hasRestArgs
-     * @param acceptKeywords
-     * @return the prepared kwargs hash, or UNDEFINED as a sigil for no kwargs
-     */
-    @JIT
-    public static IRubyObject receiveRuby2Keywords(ThreadContext context, IRubyObject[] args, boolean hasRestArgs, boolean acceptKeywords) {
-        return receiveKeywords(context, args, hasRestArgs, acceptKeywords, true);
     }
 
     /**
@@ -2558,21 +2523,23 @@ public class IRRuntimeHelpers {
     }
 
     @Interp
-    public static void putConst(ThreadContext context, IRubyObject self, RubyModule module, String id, IRubyObject value) {
+    public static void putConst(ThreadContext context, IRubyObject self, IRubyObject module, String id, IRubyObject value) {
         putConst(context, self, module, id, value, context.getFile(), context.getLine() + 1);
     }
 
     @JIT
-    public static void putConst(ThreadContext context, IRubyObject self, RubyModule module, String id, IRubyObject value, StaticScope scope, int line) {
-        warnSetConstInRefinement(context, self);
-
-        module.setConstant(id, value, scope.getFile(), line);
+    public static void putConst(ThreadContext context, IRubyObject self, IRubyObject module, String id, IRubyObject value, StaticScope scope, int line) {
+        putConst(context, self, module, id, value, scope.getFile(), line);
     }
 
-    private static void putConst(ThreadContext context, IRubyObject self, RubyModule module, String id, IRubyObject value, String filename, int line) {
+    private static void putConst(ThreadContext context, IRubyObject self, IRubyObject module, String id, IRubyObject value, String filename, int line) {
+        if (!(module instanceof RubyModule)) {
+            throw context.getRuntime().newTypeError("" + module.inspect() + " is not a class/module");
+        }
+
         warnSetConstInRefinement(context, self);
 
-        module.setConstant(id, value, filename, line);
+        ((RubyModule) module).setConstant(id, value, filename, line);
     }
 
     @Interp @JIT

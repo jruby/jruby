@@ -73,7 +73,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'asm.version' => '9.2',
               'jar-dependencies.version' => '0.4.1',
               'jffi.version' => '1.3.13',
-              'joda.time.version' => '2.12.5' )
+              'joda.time.version' => '2.12.7' )
 
   plugin_management do
     jar( 'junit:junit:4.13.1',

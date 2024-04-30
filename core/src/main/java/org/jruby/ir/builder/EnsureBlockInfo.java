@@ -65,10 +65,12 @@ class EnsureBlockInfo {
     final List<Instr> instrs;
 
     public EnsureBlockInfo(IRScope s, IRLoop l, Label bodyRescuer) {
-        regionStart = s.getNewLabel();
-        start       = s.getNewLabel();
-        end         = s.getNewLabel();
-        dummyRescueBlockLabel = s.getNewLabel();
+        // this technically may be any block and not specifically rescue but for the sake of looking at the CFG
+        // it is more or less a begin block with exception handling around it.
+        regionStart = s.getNewLabel("BEGIN");
+        start       = s.getNewLabel("RESC_START");
+        end         = s.getNewLabel("AFTER_RESC");
+        dummyRescueBlockLabel = s.getNewLabel("RESC_DUMMY");
         instrs = new ArrayList<>();
         savedGlobalException = null;
         innermostLoop = l;

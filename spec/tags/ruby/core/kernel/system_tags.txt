@@ -6,3 +6,5 @@ windows:Kernel.system executes the specified command in a subprocess
 windows:Kernel.system does not write to stderr when command execution fails
 windows:Kernel.system expands shell variables when given a single string argument
 windows:Kernel.system does not expand shell variables when given multiples arguments
+fails:Kernel#system executes with `sh` if the command is executable but not binary and there is no shebang
+fails:Kernel.system executes with `sh` if the command is executable but not binary and there is no shebang

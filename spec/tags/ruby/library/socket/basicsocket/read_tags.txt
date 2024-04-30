@@ -1,0 +1,6 @@
+fails:BasicSocket#read using IPv4 receives data after it's ready
+fails:BasicSocket#read using IPv4 returned data is binary encoded regardless of the external encoding
+fails:BasicSocket#read using IPv4 replaces the content of the provided buffer without changing its encoding
+fails:BasicSocket#read using IPv6 receives data after it's ready
+fails:BasicSocket#read using IPv6 returned data is binary encoded regardless of the external encoding
+fails:BasicSocket#read using IPv6 replaces the content of the provided buffer without changing its encoding

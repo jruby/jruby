@@ -2410,7 +2410,7 @@ public class RubyDate extends RubyObject {
             int ep = skipDigits(y, s);
             if (ep != y.strLength()) {
                 oy = y; y = d;
-                d = (RubyString) oy.substr19(context.runtime, bp, ep - bp);
+                d = (RubyString) oy.substrEnc(context.runtime, bp, ep - bp);
             }
         }
 

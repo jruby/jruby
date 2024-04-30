@@ -983,7 +983,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         value.invalidate();
     }
 
+    @Deprecated
     public final void modify19() {
+        modifyAndClearCodeRange();
+    }
+
+    public final void modifyAndClearCodeRange() {
         modify();
         clearCodeRange();
     }
@@ -1404,9 +1409,17 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return this;
     }
 
-    // // rb_str_buf_append against VALUE
+    // Needs to remain in place until StringIO has migrated to the new methods
+    // See https://github.com/ruby/stringio/issues/83
+    @Deprecated
     public final RubyString cat19(RubyString str2) {
-        int str2_cr = cat19(str2.getByteList(), str2.getCodeRange());
+        return catWithCodeRange(str2);
+    }
+
+    // // rb_str_buf_append against VALUE
+    public final RubyString catWithCodeRange(RubyString str2) {
+        ByteList other = str2.getByteList();
+        int str2_cr = catWithCodeRange(other, str2.getCodeRange());
 
         str2.setCodeRange(str2_cr);
 
@@ -1414,17 +1427,25 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     public final RubyString cat(ByteList other, int codeRange) {
-        cat19(other, codeRange);
+        catWithCodeRange(other, codeRange);
         return this;
     }
 
-    // rb_str_buf_append against ptr
+    // Needs to remain in place until StringIO has migrated to the new methods
+    // See https://github.com/ruby/stringio/issues/83
+    @Deprecated
     public final int cat19(ByteList other, int codeRange) {
+        return catWithCodeRange(other, codeRange);
+    }
+
+    // rb_str_buf_append against ptr
+    public final int catWithCodeRange(ByteList other, int codeRange) {
         return EncodingUtils.encCrStrBufCat(metaClass.runtime, this, other, other.getEncoding(), codeRange);
     }
 
     public final RubyString catString(String str) {
-        cat19(encodeBytelist(str, getEncoding()), CR_UNKNOWN);
+        ByteList other = encodeBytelist(str, getEncoding());
+        catWithCodeRange(other, CR_UNKNOWN);
         return this;
     }
 
@@ -2366,7 +2387,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         int index = RubyNumeric.num2int(indexArg);
         if (index == -1) {
             modifyCheck();
-            return cat19(str);
+            return catWithCodeRange(str);
         }
         if (index < 0) index++;
         replaceInternal19(index, 0, str);
@@ -2620,7 +2641,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @Override
     public CharSequence subSequence(int start, int end) {
-        IRubyObject subStr = substr19(getRuntime(), start, end - start);
+        IRubyObject subStr = substrEnc(getRuntime(), start, end - start);
         if (subStr.isNil()) {
             throw new StringIndexOutOfBoundsException("String index out of range: <" + start + ", " + end + ")");
         }
@@ -2661,18 +2682,18 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         modifyCheck();
 
         if (other instanceof RubyFloat) {
-            return cat19((RubyString) ((RubyFloat) other).to_s());
+            return catWithCodeRange((RubyString) ((RubyFloat) other).to_s());
         } else if (other instanceof RubySymbol) {
-            cat19(((RubySymbol) other).getBytes(), CR_UNKNOWN);
+            catWithCodeRange(((RubySymbol) other).getBytes(), CR_UNKNOWN);
             return this;
         }
 
-        return cat19(other.convertToString());
+        return catWithCodeRange(other.convertToString());
     }
 
     public RubyString append(RubyString other) {
         modifyCheck();
-        return cat19(other);
+        return catWithCodeRange(other);
     }
 
     @Deprecated
@@ -2690,19 +2711,19 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         modifyCheck();
 
         if (other instanceof RubyFloat) {
-            return cat19((RubyString) ((RubyFloat) other).to_s());
+            return catWithCodeRange((RubyString) ((RubyFloat) other).to_s());
         } else if (other instanceof RubySymbol) {
-            cat19(((RubySymbol) other).getBytes(), 0);
+            catWithCodeRange(((RubySymbol) other).getBytes(), 0);
             return this;
         }
 
-        return cat19(other.asString());
+        return catWithCodeRange(other.asString());
     }
 
     // NOTE: append(RubyString) should pbly just do the encoding aware cat
     final RubyString append19(RubyString other) {
         modifyCheck();
-        return cat19(other);
+        return catWithCodeRange(other);
     }
 
     /** rb_str_concat
@@ -2730,7 +2751,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         }
         if (other instanceof RubyFloat) {
             modifyCheck();
-            return cat19((RubyString) ((RubyFloat) other).to_s());
+            return catWithCodeRange((RubyString) ((RubyFloat) other).to_s());
         }
         if (other instanceof RubySymbol) throw context.runtime.newTypeError("can't convert Symbol into String");
 
@@ -2761,7 +2782,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 tmp.concatSingle(context, obj);
             }
 
-            cat19(tmp);
+            catWithCodeRange(tmp);
         }
 
         return this;
@@ -3116,7 +3137,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (replSize > plen) {
             modifyExpand(value.getRealSize() + replSize - plen);
         } else {
-            modify19();
+            modifyAndClearCodeRange();
         }
 
         final ByteList value = this.value;
@@ -3306,7 +3327,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
             int len = begz - offset;
             if (len != 0) dest.cat(spBytes, cp, len, str_enc);
-            dest.cat19(val);
+            dest.catWithCodeRange(val);
             offset = endz;
             if (begz == endz) {
                 if (spLen <= endz) break;
@@ -3398,7 +3419,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
             int len = begz - offset;
             if (len != 0) dest.cat(spBytes, cp, len, str_enc);
-            dest.cat19(val);
+            dest.catWithCodeRange(val);
             offset = endz;
             if (begz == endz) {
                 if (spLen <= endz) break;
@@ -3673,7 +3694,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return obj;
     }
 
+    @Deprecated
     public final IRubyObject substr19(Ruby runtime, int beg, int len) {
+        return substrEnc(runtime, beg, len);
+    }
+
+    public final IRubyObject substrEnc(Ruby runtime, int beg, int len) {
         if (len < 0) return runtime.getNil();
         int length = value.getRealSize();
         if (length == 0) len = 0;
@@ -3800,7 +3826,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         } else if (arg instanceof RubyRange) {
             int len = strLength();
             int[] begLen = ((RubyRange) arg).begLenInt(len, 0);
-            return begLen == null ? context.nil : substr19(runtime, begLen[0], begLen[1]);
+            return begLen == null ? context.nil : substrEnc(runtime, begLen[0], begLen[1]);
         } else {
             StringSites sites = sites(context);
             if (RubyRange.isRangeLike(context, arg, sites.respond_to_begin, sites.respond_to_end)) {
@@ -3808,7 +3834,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 RubyRange range = RubyRange.rangeFromRangeLike(context, arg, sites.begin, sites.end, sites.exclude_end);
 
                 int[] begLen = range.begLenInt(len, 0);
-                return begLen == null ? context.nil : substr19(runtime, begLen[0], begLen[1]);
+                return begLen == null ? context.nil : substrEnc(runtime, begLen[0], begLen[1]);
             }
         }
         return op_aref(runtime, RubyNumeric.num2int(arg));
@@ -3818,7 +3844,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     public IRubyObject op_aref(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
         Ruby runtime = context.runtime;
         if (arg1 instanceof RubyRegexp) return subpat(context, (RubyRegexp) arg1, arg2);
-        return substr19(runtime, RubyNumeric.num2int(arg1), RubyNumeric.num2int(arg2));
+        int beg = RubyNumeric.num2int(arg1);
+        return substrEnc(runtime, beg, RubyNumeric.num2int(arg2));
     }
 
     @JRubyMethod
@@ -3832,7 +3859,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private IRubyObject op_aref(Ruby runtime, int idx) {
-        IRubyObject str = substr19(runtime, idx, 1);
+        IRubyObject str = substrEnc(runtime, idx, 1);
         return !str.isNil() && ((RubyString) str).value.getRealSize() == 0 ? runtime.getNil() : str;
     }
 
@@ -4228,7 +4255,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod
     public IRubyObject chr(ThreadContext context) {
-        return substr19(context.runtime, 0, 1);
+        return substrEnc(context.runtime, 0, 1);
     }
 
     @JRubyMethod
@@ -4248,7 +4275,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         IRubyObject w = v.modulo(context, (long)256);
         int b = RubyNumeric.num2int(w) & 0xff;
 
-        modify19();
+        modifyAndClearCodeRange();
         value.getUnsafeBytes()[normalizedIndex] = (byte)b;
         return val;
     }
@@ -5370,10 +5397,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             if (pos < 0) return rpartitionMismatch(runtime);
         }
 
+        int beg = pos + sep.strLength();
+        int len = value.getRealSize();
         return RubyArray.newArrayNoCopy(runtime, new IRubyObject[] {
-                substr19(runtime, 0, pos),
+                substrEnc(runtime, 0, pos),
                 sep,
-                substr19(runtime, pos + sep.strLength(), value.getRealSize())
+                substrEnc(runtime, beg, len)
         });
     }
 
@@ -6600,28 +6629,28 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "encode!")
     public IRubyObject encode_bang(ThreadContext context) {
-        modify19();
+        modifyAndClearCodeRange();
 
         return EncodingUtils.strTranscode(context, this, RubyString::updateFromTranscode);
     }
 
     @JRubyMethod(name = "encode!")
     public IRubyObject encode_bang(ThreadContext context, IRubyObject arg0) {
-        modify19();
+        modifyAndClearCodeRange();
 
         return EncodingUtils.strTranscode(context, arg0, this, RubyString::updateFromTranscode);
     }
 
     @JRubyMethod(name = "encode!")
     public IRubyObject encode_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        modify19();
+        modifyAndClearCodeRange();
 
         return EncodingUtils.strTranscode(context, arg0, arg1, this, RubyString::updateFromTranscode);
     }
 
     @JRubyMethod(name = "encode!")
     public IRubyObject encode_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        modify19();
+        modifyAndClearCodeRange();
 
         return EncodingUtils.strTranscode(context, arg0, arg1, arg2, this, RubyString::updateFromTranscode);
     }
@@ -6666,7 +6695,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     private IRubyObject force_encoding(Encoding encoding) {
         modifyCheck();
-        modify19();
+        modifyAndClearCodeRange();
         associateEncoding(encoding);
         clearCodeRange();
         return this;
@@ -7254,7 +7283,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     public IRubyObject encode_bang(ThreadContext context, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 2);
 
-        modify19();
+        modifyAndClearCodeRange();
 
         return EncodingUtils.strTranscode(context, args, this, RubyString::updateFromTranscode);
     }

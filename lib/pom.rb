@@ -58,7 +58,7 @@ default_gems = [
     ['irb', '1.4.2'],
     ['jar-dependencies', '0.4.1'],
     ['jruby-readline', '1.3.7'],
-    ['jruby-openssl', '0.14.3'],
+    ['jruby-openssl', '0.14.5'],
     ['json', '2.7.1'],
     ['logger', '1.5.1'],
     ['mutex_m', '0.1.1'],
@@ -80,7 +80,7 @@ default_gems = [
     ['psych', '5.1.1.1'],
     ['racc', '1.6.0'],
     ['rake-ant', '1.0.6'],
-    ['rdoc', '6.4.0'],
+    ['rdoc', '6.4.1.1'],
     # https://github.com/ruby/readline/issues/5
     # ['readline', '0.0.3'],
     # Will be solved with readline

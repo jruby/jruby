@@ -928,9 +928,9 @@ public class RubyHash extends RubyObject implements Map {
 
             if (index > 0) bytes.append((byte) ',').append((byte) ' ');
 
-            str.cat19(keyStr);
+            str.catWithCodeRange(keyStr);
             bytes.append((byte) '=').append((byte) '>');
-            str.cat19(valStr);
+            str.catWithCodeRange(valStr);
         }
     };
 

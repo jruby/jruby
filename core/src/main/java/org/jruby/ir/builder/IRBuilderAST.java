@@ -33,6 +33,7 @@ import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.FrozenString;
 import org.jruby.ir.operands.Hash;
 import org.jruby.ir.operands.ImmutableLiteral;;
+import org.jruby.ir.operands.Integer;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.MutableString;
@@ -63,6 +64,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 
@@ -221,7 +224,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             case MATCH3NODE: return buildMatch3(result, (Match3Node) node);
             case MATCHNODE: return buildMatch(result, (MatchNode) node);
             case MODULENODE: return buildModule((ModuleNode) node);
-            case MULTIPLEASGNNODE: return buildMultipleAsgn19((MultipleAsgnNode) node);
+            case MULTIPLEASGNNODE: return buildMultipleAsgn((MultipleAsgnNode) node);
             case NEXTNODE: return buildNext((NextNode) node);
             case NTHREFNODE: return buildNthRef((NthRefNode) node);
             case NILNODE: return buildNil();
@@ -306,18 +309,164 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     // Non-arg masgn
-    public Operand buildMultipleAsgn19(MultipleAsgnNode multipleAsgnNode) {
+    public Operand buildMultipleAsgn(MultipleAsgnNode multipleAsgnNode) {
         Node valueNode = multipleAsgnNode.getValueNode();
+        Map<Node, Operand> reads = new HashMap<>();
+        final List<Tuple<Node, ResultInstr>> assigns = new ArrayList<>();
+        Variable values = temp();
+        buildMultipleAssignment2(multipleAsgnNode, assigns, reads, values);
+
         Variable ret = getValueInTemporaryVariable(build(valueNode));
         if (valueNode instanceof ArrayNode || valueNode instanceof ZArrayNode) {
-            buildMultipleAssignment(multipleAsgnNode, ret);
+            copy(values, ret);
         } else if (valueNode instanceof ILiteralNode) {
             // treat a single literal value as a single-element array
-            buildMultipleAssignment(multipleAsgnNode, new Array(new Operand[]{ret}));
+            copy(values, new Array(new Operand[]{ret}));
         } else {
-            buildMultipleAssignment(multipleAsgnNode, addResultInstr(new ToAryInstr(temp(), ret)));
+            addResultInstr(new ToAryInstr(values, ret));
         }
+
+        for (Tuple<Node, ResultInstr> assign: assigns) {
+            addInstr((Instr) assign.b);
+        }
+
+        buildAssignment(assigns, reads);
+
         return ret;
+    }
+
+
+    protected void buildAssignment(List<Tuple<Node, ResultInstr>> assigns, Map<Node, Operand> reads) {
+
+        for (Tuple<Node, ResultInstr> assign: assigns) {
+            Node node = assign.a;
+            Variable rhs = assign.b.getResult();
+            switch (node.getNodeType()) {
+                case ATTRASSIGNNODE: {
+                    AttrAssignNode attrAssignNode = (AttrAssignNode) node;
+                    Operand receiver = reads.get(attrAssignNode.getReceiverNode());
+                    Array holders = (Array) reads.get(attrAssignNode.getArgsNode());
+                    int flags = ((Integer) holders.get(holders.size() - 1)).value;
+                    Operand[] args = new Operand[holders.size() - 1];
+                    System.arraycopy(holders.getElts(), 0, args, 0, args.length);
+                    args = addArg(args, rhs);
+                    addInstr(AttrAssignInstr.create(scope, receiver, attrAssignNode.getName(), args, flags, scope.maybeUsingRefinements()));
+                    break;
+                }
+                case CLASSVARASGNNODE:
+                    addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), ((ClassVarAsgnNode) node).getName(), rhs));
+                    break;
+                case CONSTDECLNODE: {
+                    ConstDeclNode constDeclNode = (ConstDeclNode) node;
+                    Operand receiver = reads.get(node);
+                    if (receiver == null) {
+                        putConstant(constDeclNode.getName(), rhs);
+                    } else {
+                        putConstant(receiver, constDeclNode.getName(), rhs);
+                    }
+                }
+                break;
+                case DASGNNODE: {
+                    DAsgnNode variable = (DAsgnNode) node;
+                    copy(getLocalVariable(variable.getName(), variable.getDepth()), rhs);
+                    break;
+                }
+                case GLOBALASGNNODE:
+                    addInstr(new PutGlobalVarInstr(((GlobalAsgnNode) node).getName(), rhs));
+                    break;
+                case INSTASGNNODE:
+                    // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
+                    addInstr(new PutFieldInstr(buildSelf(), ((InstAsgnNode) node).getName(), rhs));
+                    break;
+                case LOCALASGNNODE: {
+                    LocalAsgnNode localVariable = (LocalAsgnNode) node;
+                    copy(getLocalVariable(localVariable.getName(), localVariable.getDepth()), rhs);
+                    break;
+                }
+                case MULTIPLEASGNNODE: {
+                    //buildAssignment(assigns, reads);
+                    break;
+                }
+            }
+        }
+    }
+    // List of all left to right reads which needs to happen before any assignments.  Original node is a key to link
+    // to actual assignment values.
+
+    public void buildMultipleAssignment2(final MultipleAsgnNode multipleAsgnNode, List<Tuple<Node, ResultInstr>> assigns,
+                                         Map<Node, Operand> reads, Variable values) {
+        final ListNode masgnPre = multipleAsgnNode.getPre();
+        int i = 0;
+
+        if (masgnPre != null) {
+            for (Node an: masgnPre.children()) {
+                ResultInstr get = new ReqdArgMultipleAsgnInstr(temp(), values, i);
+                assigns.add(new Tuple<>(an, get));
+                processReads(get.getResult(), assigns, reads, an);
+                i++;
+            }
+        }
+
+        Node restNode = multipleAsgnNode.getRest();
+        int postCount = multipleAsgnNode.getPostCount();
+        if (restNode != null && !(restNode instanceof StarNode)) {
+            ResultInstr get = new RestArgMultipleAsgnInstr(temp(), values, 0, i, postCount);
+            assigns.add(new Tuple<>(restNode, get));
+            processReads(get.getResult(), assigns, reads, restNode);
+        }
+
+        final ListNode masgnPost = multipleAsgnNode.getPost();
+        if (masgnPost != null) {
+            int j = 0;
+            for (Node an: masgnPost.children()) {
+                ResultInstr get = new ReqdArgMultipleAsgnInstr(temp(), values, j, i, postCount);
+                assigns.add(new Tuple<>(an, get));
+                processReads(get.getResult(), assigns, reads, an);
+                j++;
+            }
+        }
+    }
+
+    private void processReads(Variable rhsVal, List<Tuple<Node, ResultInstr>> assigns, Map<Node, Operand> reads, Node node) {
+        switch (node.getNodeType()) {
+            case ATTRASSIGNNODE: {
+                // We do some wild stuff here.  We need to pass flags and our map only holds references to nodes.
+                // We do not have block.  args and receiver are used.  So we stuff flags onto the end of args.
+                AttrAssignNode attrAssignNode = (AttrAssignNode) node;
+                reads.put(attrAssignNode.getReceiverNode(), build(attrAssignNode.getReceiverNode()));
+                int[] flags = new int[]{0};
+                Operand[] args = setupCallArgs(attrAssignNode.getArgsNode(), flags);
+                Operand[] hackyArgs = new Operand[args.length + 1];
+                System.arraycopy(args, 0, hackyArgs, 0, args.length);
+                hackyArgs[args.length] = new Integer(flags[0]);
+                reads.put(attrAssignNode.getArgsNode(), new Array(hackyArgs));
+            }
+            break;
+            case CLASSVARASGNNODE:
+                reads.put(node, classVarDefinitionContainer());
+                break;
+            case CONSTDECLNODE: {
+                ConstDeclNode constDeclNode = (ConstDeclNode) node;
+                Node constNode = constDeclNode.getConstNode();
+                if (constNode == null) {
+                    reads.put(node, null);
+                } else if (constNode instanceof Colon2Node) {
+                    reads.put(node, build(((Colon2Node) constNode).getLeftNode()));
+                } else if (constNode instanceof Colon3Node) {
+                    reads.put(node, getManager().getObjectClass());
+                } else {
+                    reads.put(node, build(constNode));
+                }
+            }
+            break;
+            case MULTIPLEASGNNODE: {
+                Variable subRet = temp();
+                assigns.add(new Tuple<>(node, new ToAryInstr(subRet, rhsVal)));
+
+                buildMultipleAssignment2((MultipleAsgnNode) node, assigns, reads, subRet);
+            }
+            break;
+        }
     }
 
     protected Operand buildLazyWithOrder(CallNode node, Label lazyLabel, Label endLabel, boolean preserveOrder) {
@@ -926,34 +1075,35 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     private void buildWhenSplatValues(Variable eqqResult, Node node, Operand testValue, Label bodyLabel,
-                                      Set<IRubyObject> seenLiterals) {
+                                      Set<IRubyObject> seenLiterals, Map<IRubyObject, java.lang.Integer> origLocs) {
         if (node instanceof ListNode && !(node instanceof DNode) && !(node instanceof ArrayNode)) {
-            buildWhenValues(eqqResult, ((ListNode) node).children(), testValue, bodyLabel, seenLiterals);
+            buildWhenValues(eqqResult, ((ListNode) node).children(), testValue, bodyLabel, seenLiterals, origLocs);
         } else if (node instanceof SplatNode) {
-            buildWhenValue(eqqResult, testValue, bodyLabel, node, seenLiterals, true);
+            buildWhenValue(eqqResult, testValue, bodyLabel, node, seenLiterals, origLocs, true);
         } else if (node instanceof ArgsCatNode) {
             ArgsCatNode catNode = (ArgsCatNode) node;
-            buildWhenSplatValues(eqqResult, catNode.getFirstNode(), testValue, bodyLabel, seenLiterals);
-            buildWhenSplatValues(eqqResult, catNode.getSecondNode(), testValue, bodyLabel, seenLiterals);
+            buildWhenSplatValues(eqqResult, catNode.getFirstNode(), testValue, bodyLabel, seenLiterals, origLocs);
+            buildWhenSplatValues(eqqResult, catNode.getSecondNode(), testValue, bodyLabel, seenLiterals, origLocs);
         } else if (node instanceof ArgsPushNode) {
             ArgsPushNode pushNode = (ArgsPushNode) node;
-            buildWhenSplatValues(eqqResult, pushNode.getFirstNode(), testValue, bodyLabel, seenLiterals);
-            buildWhenValue(eqqResult, testValue, bodyLabel, pushNode.getSecondNode(), seenLiterals, false);
+            buildWhenSplatValues(eqqResult, pushNode.getFirstNode(), testValue, bodyLabel, seenLiterals, origLocs);
+            buildWhenValue(eqqResult, testValue, bodyLabel, pushNode.getSecondNode(), seenLiterals, origLocs, false);
         } else {
-            buildWhenValue(eqqResult, testValue, bodyLabel, node, seenLiterals, true);
+            buildWhenValue(eqqResult, testValue, bodyLabel, node, seenLiterals, origLocs, true);
         }
     }
 
-    protected void buildWhenArgs(WhenNode whenNode, Operand testValue, Label bodyLabel, Set<IRubyObject> seenLiterals) {
+    protected void buildWhenArgs(WhenNode whenNode, Operand testValue, Label bodyLabel,
+                                 Set<IRubyObject> seenLiterals, Map<IRubyObject, java.lang.Integer> origLocs) {
         Variable eqqResult = temp();
         Node exprNodes = whenNode.getExpressionNodes();
 
         if (exprNodes instanceof ListNode && !(exprNodes instanceof DNode) && !(exprNodes instanceof ArrayNode) && !(exprNodes instanceof ZArrayNode)) {
-            buildWhenValues(eqqResult, ((ListNode) exprNodes).children(), testValue, bodyLabel, seenLiterals);
+            buildWhenValues(eqqResult, ((ListNode) exprNodes).children(), testValue, bodyLabel, seenLiterals, origLocs);
         } else if (exprNodes instanceof ArgsPushNode || exprNodes instanceof SplatNode || exprNodes instanceof ArgsCatNode) {
-            buildWhenSplatValues(eqqResult, exprNodes, testValue, bodyLabel, seenLiterals);
+            buildWhenSplatValues(eqqResult, exprNodes, testValue, bodyLabel, seenLiterals, origLocs);
         } else {
-            buildWhenValue(eqqResult, testValue, bodyLabel, exprNodes, seenLiterals, false);
+            buildWhenValue(eqqResult, testValue, bodyLabel, exprNodes, seenLiterals, origLocs, false);
         }
     }
 
@@ -1001,8 +1151,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
 
         Map<Node, Label> nodeBodies = new HashMap<>();
 
-        Map<java.lang.Integer, Label> jumpTable = gatherLiteralWhenBodies(caseNode, nodeBodies, caseFunction);
-        Map.Entry<java.lang.Integer, Label>[] jumpEntries = sortJumpEntries(jumpTable);
+        Map<java.lang.Integer, Tuple<Operand, Label>> jumpTable = gatherLiteralWhenBodies(caseNode, nodeBodies, caseFunction);
+        Map.Entry<java.lang.Integer, Tuple<Operand, Label>>[] jumpEntries = sortJumpEntries(jumpTable);
 
         Label     endLabel  = getNewLabel();
         boolean   hasElse   = (caseNode.getElseNode() != null);
@@ -1014,9 +1164,20 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return buildStandardCaseWhen(caseNode, nodeBodies, endLabel, hasElse, elseLabel, value, result);
     }
 
-    private <T extends Node & ILiteralNode> Map<java.lang.Integer, Label> gatherLiteralWhenBodies(
+    private Operand buildOptimizedWhenOperand(Node node) {
+        if (node instanceof SymbolNode) {
+            return buildSymbol((SymbolNode) node);
+        } else if (node instanceof FixnumNode) {
+            return buildFixnum((FixnumNode) node);
+        }
+
+        throw new NotCompilableException("unexpected optimized when value encountered: " + node);
+    }
+
+    private <T extends Node & ILiteralNode> Map<java.lang.Integer, Tuple<Operand, Label>> gatherLiteralWhenBodies(
             CaseNode caseNode, Map<Node, Label> nodeBodies, Function<T, Long> caseFunction) {
-        Map<java.lang.Integer, Label> jumpTable = new HashMap<>();
+        Map<java.lang.Integer, Tuple<Operand, Label>> jumpTable = new HashMap<>();
+        Map<java.lang.Integer, Node> origTable = new HashMap<>();
 
         // gather literal when bodies or bail
         for (Node aCase : caseNode.getCases().children()) {
@@ -1028,45 +1189,44 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             if (exprLong > java.lang.Integer.MAX_VALUE) throw notCompilable("optimized case has long-ranged value", caseNode);
 
             if (jumpTable.get((int) exprLong) == null) {
-                jumpTable.put((int) exprLong, bodyLabel);
+                jumpTable.put((int) exprLong, new Tuple<>(buildOptimizedWhenOperand(expr), bodyLabel));
+                origTable.put((int) exprLong, whenNode);
                 nodeBodies.put(whenNode, bodyLabel);
             } else {
-                scope.getManager().getRuntime().getWarnings().warning(IRubyWarnings.ID.MISCELLANEOUS, getFileName(), expr.getLine(), "duplicated when clause is ignored");
+                getManager().getRuntime().getWarnings().warning(IRubyWarnings.ID.MISCELLANEOUS, getFileName(), expr.getLine() + 1,
+                        "duplicated 'when' clause with line " + (origTable.get((int) exprLong).getLine() + 1) + " is ignored");
             }
         }
 
         return jumpTable;
     }
 
-    private static Map.Entry<java.lang.Integer, Label>[] sortJumpEntries(Map<java.lang.Integer, Label> jumpTable) {
+    private static Map.Entry<java.lang.Integer, Tuple<Operand, Label>>[] sortJumpEntries(Map<java.lang.Integer, Tuple<Operand, Label>> jumpTable) {
         // sort the jump table
-        Map.Entry<java.lang.Integer, Label>[] jumpEntries = jumpTable.entrySet().toArray(new Map.Entry[jumpTable.size()]);
+        Map.Entry<java.lang.Integer, Tuple<Operand, Label>>[] jumpEntries = jumpTable.entrySet().toArray(new Map.Entry[jumpTable.size()]);
         Arrays.sort(jumpEntries, Comparator.comparingInt(Map.Entry::getKey));
         return jumpEntries;
     }
 
-    private void buildOptimizedSwitch(
-            Map<java.lang.Integer, Label> jumpTable,
-            Map.Entry<java.lang.Integer,
-                    Label>[] jumpEntries,
-            Label elseLabel,
-            Operand value,
-            Class valueClass) {
-
-        Label     eqqPath   = getNewLabel();
+    private void buildOptimizedSwitch(Map<java.lang.Integer, Tuple<Operand, Label>> jumpTable,
+            Map.Entry<java.lang.Integer, Tuple<Operand, Label>>[] jumpEntries, Label elseLabel, Operand value, Class valueClass) {
+        Label eqqPath = getNewLabel();
 
         // build a switch
         int[] jumps = new int[jumpTable.size()];
+        Operand[] operands = new Operand[jumpTable.size()];
         Label[] targets = new Label[jumps.length];
         int i = 0;
-        for (Map.Entry<java.lang.Integer, Label> jumpEntry : jumpEntries) {
+        for (Map.Entry<java.lang.Integer, Tuple<Operand, Label>> jumpEntry : jumpEntries) {
             jumps[i] = jumpEntry.getKey();
-            targets[i] = jumpEntry.getValue();
+            Tuple<Operand, Label> tuple = jumpEntry.getValue();
+            operands[i] = tuple.a;
+            targets[i] = tuple.b;
             i++;
         }
 
         // insert fast switch with fallback to eqq
-        addInstr(new BSwitchInstr(jumps, value, eqqPath, targets, elseLabel, valueClass));
+        addInstr(new BSwitchInstr(jumps, operands, value, eqqPath, targets, elseLabel, valueClass));
         addInstr(new LabelInstr(eqqPath));
     }
 
@@ -2278,7 +2438,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             return buildOpAsgnConstDeclAnd(node.getFirstNode(), node.getSecondNode(), ((Colon3Node) node.getFirstNode()).getName());
         }
 
-        return buildOpAsgnConstDecl((Colon3Node) node.getFirstNode(), node.getSecondNode(), node.getSymbolOperator());
+        return buildOpAsgnConstDecl((Colon3Node) node.getFirstNode(), ((Colon3Node) node.getFirstNode()).getName(), node.getSecondNode(), node.getSymbolOperator());
     }
 
     public Operand buildOpAsgnAnd(OpAsgnAndNode node) {
@@ -2540,5 +2700,20 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
 
     public LocalVariable getLocalVariable(RubySymbol name, int scopeDepth) {
         return scope.getLocalVariable(name, scopeDepth);
+    }
+
+    protected void createPrefixFromArgs(ByteList prefix, Node args) {
+        if (args instanceof ArgsNode) {
+            ArgsNode argsNode = (ArgsNode) args;
+            prefix.append(Stream.of(argsNode.getArgs()).
+                    filter(n -> n instanceof INameNode).
+                    map(n -> {
+                        RubySymbol name = ((INameNode) n).getName();
+                        return name == null ? "(null)" : name.idString();
+                    }).
+                    collect(Collectors.joining(",")).getBytes());
+        } else { // for loops
+
+        }
     }
 }

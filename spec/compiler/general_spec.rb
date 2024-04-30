@@ -589,6 +589,47 @@ modes.each do |mode|
       end
     end
 
+    it "handles optimized homogeneous case/when" do
+      run('
+        case "a"
+        when "b"
+          fail
+        when "a"
+          1
+        else
+          fail
+        end
+      ') do |result|
+        expect(result).to eq 1
+      end
+
+      run('
+        case :a
+        when :b
+          fail
+        when :a
+          1
+        else
+          fail
+        end
+      ') do |result|
+        expect(result).to eq 1
+      end
+
+      run('
+        case 1
+        when 2
+          fail
+        when 1
+          1
+        else
+          fail
+        end
+      ') do |result|
+        expect(result).to eq 1
+      end
+    end     
+
     it "handles 0-4 arg and splatted whens in a caseless case/when" do
       run('
         case

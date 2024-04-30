@@ -367,14 +367,14 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         if (recurse) {
             return result.catString("...>");
         } else {
-            result.cat19(RubyObject.inspect(context, object));
+            result.catWithCodeRange(RubyObject.inspect(context, object));
             result.cat(':');
-            result.cat19(getMethod().asString());
+            result.catWithCodeRange(getMethod().asString());
             if (methodArgs.length > 0) {
                 result.cat('(');
                 for (int i= 0; i < methodArgs.length; i++) {
                     if (methodArgsHasKeywords && i == 0) break;
-                    result.cat19(RubyObject.inspect(context, methodArgs[i]));
+                    result.catWithCodeRange(RubyObject.inspect(context, methodArgs[i]));
                     if (i < methodArgs.length - 1) {
                         result.catString(", ");
                     } else {
