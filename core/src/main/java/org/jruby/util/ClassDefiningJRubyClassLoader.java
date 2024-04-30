@@ -73,6 +73,11 @@ public class ClassDefiningJRubyClassLoader extends URLClassLoader implements Cla
      * @return whether it's loadable
      */
     public boolean hasClass(String name) {
-        return definedClasses.contains(name) || super.findResource(name.replace('.', '/') + ".class") != null;
+        return hasDefinedClass(name) || super.findResource(name.replace('.', '/') + ".class") != null;
+    }
+
+    @Override
+    public boolean hasDefinedClass(String name) {
+        return definedClasses.contains(name);
     }
 }

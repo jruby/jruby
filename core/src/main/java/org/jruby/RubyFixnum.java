@@ -375,44 +375,30 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
      */
     @Override
     public RubyArray digits(ThreadContext context, IRubyObject base) {
-        final Ruby runtime = context.runtime;
-
         long value = getLongValue();
 
-        if (value < 0) {
-            throw runtime.newMathDomainError("out of domain");
-        }
-        if (!(base instanceof RubyInteger)) {
-            try {
-                base = base.convertToInteger();
-            } catch (ClassCastException e) {
-                String cname = getMetaClass(base).getRealClass().getName();
-                throw runtime.newTypeError("wrong argument type " + cname + " (expected Integer)");
-            }
-        }
-        if (base instanceof RubyBignum){
-            return RubyArray.newArray(context.runtime, newFixnum(runtime, value));
-        }
+        if (value < 0) throw context.runtime.newMathDomainError("out of domain");
+
+        base = base.convertToInteger();
+
+        if (base instanceof RubyBignum) return RubyArray.newArray(context.runtime, newFixnum(context.runtime, value));
+
         long longBase = ((RubyFixnum) base).value;
-        if (longBase < 0) {
-            throw runtime.newArgumentError("negative radix");
-        }
-        if (longBase < 2) {
-            throw runtime.newArgumentError("invalid radix: " + longBase);
-        }
+        if (longBase < 0) throw context.runtime.newArgumentError("negative radix");
+        if (longBase < 2) throw context.runtime.newArgumentError("invalid radix: " + longBase);
 
         if (value == 0) {
-            return RubyArray.newArray(context.runtime, zero(runtime));
+            return RubyArray.newArray(context.runtime, zero(context.runtime));
+        } else {
+            RubyArray res = RubyArray.newArray(context.runtime, 0);
+
+            while (value > 0) {
+                res.append(newFixnum(context.runtime, value % longBase));
+                value /= longBase;
+            }
+
+            return res;
         }
-
-        RubyArray res = RubyArray.newArray(context.runtime, 0);
-
-        while (value > 0) {
-            res.append(newFixnum(runtime, value % longBase));
-            value /= longBase;
-        }
-
-        return res;
     }
 
 

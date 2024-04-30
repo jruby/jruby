@@ -41,7 +41,6 @@ package org.jruby;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
@@ -59,7 +58,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.RangeError;
 import org.jruby.java.util.ArrayUtils;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
@@ -1851,7 +1849,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             } else {
                 EncodingUtils.encAssociateIndex(str, s.getEncoding());
             }
-            str.cat19(s);
+            str.catWithCodeRange(s);
         }
         str.cat((byte) ']');
 
@@ -2088,7 +2086,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             for (i = 0; i < max; i++) {
                 IRubyObject val = eltInternal(i);
                 if (!(val instanceof RubyString)) break;
-                if (i > 0 && sep != null) result.cat19(sep);
+                if (i > 0 && sep != null) result.catWithCodeRange(sep);
                 result.append(val);
             }
         } catch (ArrayIndexOutOfBoundsException e) {
@@ -2106,7 +2104,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         JavaSites.CheckedSites to_ary_checked = null;
 
         for (; i < realLength; i++) {
-            if (i > 0 && sep != null) result.cat19(sep);
+            if (i > 0 && sep != null) result.catWithCodeRange(sep);
 
             IRubyObject val = eltOk(i);
 
@@ -2137,7 +2135,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     // MRI: ary_join_1, str_join label
     private static void strJoin(RubyString result, RubyString val, boolean[] first) {
-        result.cat19(val);
+        result.catWithCodeRange(val);
         if (first[0]) {
             result.setEncoding(val.getEncoding());
             first[0] = false;

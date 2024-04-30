@@ -86,6 +86,29 @@ OUT
     ASimpleLib.send :remove_const, :Error
   end
 
+  def test_require_raising
+    current_dir = File.expand_path(File.dirname(__FILE__))
+    if $LOAD_PATH.include?(current_dir)
+      current_dir = false
+    else
+      $LOAD_PATH << current_dir
+    end
+
+    threads = 5.times.map do
+      Thread.new do
+        require 'require_raising.rb'
+        'okay'
+      rescue LoadError => e
+        e.message
+      end
+    end
+
+    assert_equal ['raising'] * 5, threads.map(&:value)
+
+  ensure
+    $LOAD_PATH.delete current_dir if current_dir
+  end
+
   # module ::Zlib; end
   #
   # def test_define_class_type_mismatch_ext

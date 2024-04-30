@@ -1,1 +1,1 @@
-fails:Assignments using += using compounded constants causes side-effects of the module part to be applied only once (when assigns)
+fails:Multiple assignments evaluation order evaluates expressions right to left when assignment with compounded constant

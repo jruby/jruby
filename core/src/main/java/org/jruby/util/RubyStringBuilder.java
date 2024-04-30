@@ -175,7 +175,7 @@ public class RubyStringBuilder {
     public static String str(Ruby runtime, String message, IRubyObject value) {
         RubyString buf = runtime.newString(message);
 
-        buf.cat19(value.asString());
+        buf.catWithCodeRange(value.asString());
 
         return buf.toString();
     }
@@ -183,7 +183,7 @@ public class RubyStringBuilder {
     public static String str(Ruby runtime, String messageBegin, IRubyObject value, String messageEnd) {
         RubyString buf = runtime.newString(messageBegin);
 
-        buf.cat19(value.asString());
+        buf.catWithCodeRange(value.asString());
         cat(runtime, buf, messageEnd);
 
         return buf.toString();
@@ -193,7 +193,7 @@ public class RubyStringBuilder {
         RubyString buf = (RubyString) value.asString().dup();
 
         cat(runtime, buf, message);
-        buf.cat19(value2.asString());
+        buf.catWithCodeRange(value2.asString());
 
         return buf.toString();
     }
@@ -202,7 +202,7 @@ public class RubyStringBuilder {
         RubyString buf = (RubyString) value.asString().dup();
 
         cat(runtime, buf, message);
-        buf.cat19(value2.asString());
+        buf.catWithCodeRange(value2.asString());
         cat(runtime, buf, message2);
 
         return buf.toString();
@@ -211,9 +211,9 @@ public class RubyStringBuilder {
     public static String str(Ruby runtime, String messageBegin, IRubyObject value, String messageMiddle, IRubyObject value2) {
         RubyString buf = runtime.newString(messageBegin);
 
-        buf.cat19(value.asString());
+        buf.catWithCodeRange(value.asString());
         cat(runtime, buf, messageMiddle);
-        buf.cat19(value2.asString());
+        buf.catWithCodeRange(value2.asString());
 
         return buf.toString();
     }
@@ -221,9 +221,9 @@ public class RubyStringBuilder {
     public static String str(Ruby runtime, String messageBegin, IRubyObject value, String messageMiddle, IRubyObject value2, String messageEnd) {
         RubyString buf = runtime.newString(messageBegin);
 
-        buf.cat19(value.asString());
+        buf.catWithCodeRange(value.asString());
         cat(runtime, buf, messageMiddle);
-        buf.cat19(value2.asString());
+        buf.catWithCodeRange(value2.asString());
         cat(runtime, buf, messageEnd);
 
         return buf.toString();
@@ -233,11 +233,11 @@ public class RubyStringBuilder {
                              String messageMiddle2, IRubyObject value3, String messageEnd) {
         RubyString buf = runtime.newString(messageBegin);
 
-        buf.cat19(value.asString());
+        buf.catWithCodeRange(value.asString());
         cat(runtime, buf, messageMiddle);
-        buf.cat19(value2.asString());
+        buf.catWithCodeRange(value2.asString());
         cat(runtime, buf, messageMiddle2);
-        buf.cat19(value3.asString());
+        buf.catWithCodeRange(value3.asString());
         cat(runtime, buf, messageEnd);
 
         return buf.toString();
@@ -247,13 +247,13 @@ public class RubyStringBuilder {
                               String messageMiddle2, IRubyObject value3, String messageMiddle3, RubyString value4, String messageEnd) {
         RubyString buf = runtime.newString(messageBegin);
 
-        buf.cat19(value.asString());
+        buf.catWithCodeRange(value.asString());
         cat(runtime, buf, messageMiddle);
-        buf.cat19(value2);
+        buf.catWithCodeRange(value2);
         cat(runtime, buf, messageMiddle2);
-        buf.cat19(value3.asString());
+        buf.catWithCodeRange(value3.asString());
         cat(runtime, buf, messageMiddle3);
-        buf.cat19(value4);
+        buf.catWithCodeRange(value4);
         cat(runtime, buf, messageEnd);
 
         return buf.toString();

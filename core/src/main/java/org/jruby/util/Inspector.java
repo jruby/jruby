@@ -52,7 +52,8 @@ public class Inspector {
         RubyString name = RubyStringBuilder.types(context, type);
         // minimal: "#<Object:0x5a1c0542>"
         RubyString buf = RubyString.newStringLight(context.runtime, 2 + name.length() + 3 + 8 + 1, USASCIIEncoding.INSTANCE);
-        buf.cat('#').cat('<').cat19(name);
+        RubyString rubyString = buf.cat('#').cat('<');
+        rubyString.catWithCodeRange(name);
         return buf;
     }
 

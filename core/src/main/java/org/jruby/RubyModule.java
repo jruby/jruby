@@ -713,9 +713,10 @@ public class RubyModule extends RubyObject {
         RubyString fullName = runtime.newString();       // newString creates empty ByteList which ends up as
         fullName.setEncoding(USASCIIEncoding.INSTANCE);  // ASCII-8BIT.  8BIT is unfriendly to string concats.
         for (RubyString parent:  parents) {
-            fullName.cat19(parent).cat19(colons);
+            RubyString rubyString = fullName.catWithCodeRange(parent);
+            rubyString.catWithCodeRange(colons);
         }
-        fullName.cat19(rubyBaseName());
+        fullName.catWithCodeRange(rubyBaseName());
 
         fullName.setFrozen(true);
 
@@ -799,17 +800,17 @@ public class RubyModule extends RubyObject {
     }
 
     private String calculateAnonymousName() {
-        String cachedName = this.cachedName; // re-use cachedName field since it won't be set for anonymous class
+        String cachedName = this.cachedName;
         if (cachedName == null) {
             // anonymous classes get the #<Class:0xdeadbeef> format
-            StringBuilder anonBase = new StringBuilder(24);
-            anonBase.append("#<").append(metaClass.getRealClass().getName()).append(":0x");
-            anonBase.append(Integer.toHexString(System.identityHashCode(this))).append('>');
-            cachedName = this.cachedName = anonBase.toString();
+            cachedName = this.cachedName = "#<" + anonymousMetaNameWithIdentifier() + '>';
         }
         return cachedName;
     }
 
+    String anonymousMetaNameWithIdentifier() {
+        return metaClass.getRealClass().getName() + ":0x" + Integer.toHexString(System.identityHashCode(this));
+    }
 
     @JRubyMethod(name = "refine", reads = SCOPE)
     public IRubyObject refine(ThreadContext context, IRubyObject klass, Block block) {
@@ -2786,9 +2787,9 @@ public class RubyModule extends RubyObject {
             RubyString buffer = runtime.newString("#<Class:");
 
             if (attached instanceof RubyModule) {
-                buffer.cat19(attached.inspect().convertToString());
+                buffer.catWithCodeRange(attached.inspect().convertToString());
             } else if (attached != null) {
-                buffer.cat19((RubyString) attached.anyToString());
+                buffer.catWithCodeRange((RubyString) attached.anyToString());
             }
             buffer.cat('>', buffer.getEncoding());
 
@@ -2800,9 +2801,9 @@ public class RubyModule extends RubyObject {
         if (refinedClass != null) {
             RubyString buffer = runtime.newString("#<refinement:");
 
-            buffer.cat19(refinedClass.inspect().convertToString());
+            buffer.catWithCodeRange(refinedClass.inspect().convertToString());
             buffer.cat('@', buffer.getEncoding());
-            buffer.cat19((definedAt.inspect().convertToString()));
+            buffer.catWithCodeRange((definedAt.inspect().convertToString()));
             buffer.cat('>', buffer.getEncoding());
 
             return buffer;

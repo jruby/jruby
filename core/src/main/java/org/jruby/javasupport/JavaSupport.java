@@ -50,6 +50,7 @@ import org.jruby.util.collections.ClassValue;
 import org.jruby.util.collections.ClassValueCalculator;
 
 import java.lang.reflect.Member;
+import java.lang.reflect.Modifier;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -369,8 +370,16 @@ public abstract class JavaSupport {
         return null;
     }
 
-    RubyModule getProxyClassFromCache(Class clazz) {
-        return proxyClassCache.get(clazz);
+    RubyModule getProxyClassFromCache(Class clazz, boolean setConstant) {
+        RubyModule proxy = proxyClassCache.get(clazz);
+
+        if (setConstant) {
+            if ( Modifier.isPublic(clazz.getModifiers()) ) {
+                Java.addToJavaPackageModule(runtime, clazz, proxy);
+            }
+        }
+
+        return proxy;
     }
 
 }
